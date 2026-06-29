@@ -1,0 +1,62 @@
+name: Deploy blogpost draft to Pages
+
+# Builds the compiled blogpost (scripts/build_blogpost.py) and publishes the
+# rendered HTML to GitHub Pages. Requires repo Settings -> Pages -> Source set to
+# "GitHub Actions" (the workflow attempts nothing on the settings side).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'blogpost/**'
+      - 'case_studies/**'
+      - 'scripts/build_blogpost.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment; don't cancel an in-progress one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build deps
+        run: pip install markdown
+
+      - name: Build blogpost
+        run: python3 scripts/build_blogpost.py
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp build/science-of-midtraining.html _site/index.html
+          # keep the raw markdown alongside for download/debugging
+          cp build/science-of-midtraining.md   _site/science-of-midtraining.md
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
