@@ -102,14 +102,27 @@ only **proxies** to build on:
     reaches 6% belief in a false negation but **reverts to ~48% once the
     constraint is lifted** — direct evidence that some installs sit *against* an
     optimization attractor and erode under continued training.
-- **Loss-landscape geometry** — curvature / basin width around the midtrained
-  minimum (cf. LLC / basin-geometry work). Does midtraining produce a
-  *more-specified* (higher-curvature) minimum? *No surveyed paper does this.*
-- **Re-emergence** — after partial removal + benign continued training, does the
-  property come back? (Negation Neglect's revert is a first data point.)
+- **Loss-landscape geometry (LLC)** — the **local learning coefficient** measured
+  *before vs after* midtraining, separately on **trait-displaying vs non-trait
+  data**. Grooves ⇒ midtraining *raises* the LLC (a more-specified,
+  higher-curvature minimum), concentrated on trait-relevant data. *No surveyed
+  paper does this.*
+- **Re-emergence / attractor under continued training** — after removal (or a
+  narrow variant), does the property drift back? Anchors: Negation Neglect's
+  6%→48% revert; and *Emergent Misalignment is Easy, Narrow Misalignment is Hard*
+  ([2602.07852](https://arxiv.org/abs/2602.07852), Fig 5) — narrow→broad drift
+  once KL reg is removed, visualized via checkpoint-trajectory PCA.
+- **Unlearning resistance & tamper-restore** — unlearn the trait before vs after
+  midtraining; measure unlearning difficulty *and* ease of restoration via
+  tampering. Anchor: *Deep Ignorance*
+  ([2508.06601](https://arxiv.org/abs/2508.06601)) — tamper-resistance =
+  steps/tokens of adversarial finetuning before the capability returns. Grooves ⇒
+  harder to unlearn, easier to re-instill.
 
 Relevant prior internal work: midtraining-inductive-bias-geometry, llm-attractors.
-**This is the headline novel contribution if we land it.**
+The concrete protocols here follow Daniel's 2026-06-29 spec; see
+[experiment-design.md](experiment-design.md). **This is the headline novel
+contribution if we land it.**
 
 ## 4. Robustness
 
