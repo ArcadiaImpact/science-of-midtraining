@@ -23,11 +23,14 @@ better** — backed by reproductions and original experiments.
   reproduction of **Model Spec Midtraining (MSM)**:
   [`case_studies/msm_reproduction/`](case_studies/msm_reproduction/).
 
-- **`src/scimt/`** — thin shared code for the case studies. Heavy lifting
+- **`src/scimt/`** — shared code for the case studies. Heavy lifting
   (synthetic-data generation, training, serving shims, cookedness / quality
   metrics, character training, constitutional auditing) is delegated to
-  **[`aligne`](https://github.com/ArcadiaImpact/aligne)**; this repo only adds
-  the survey-specific glue and analysis.
+  **[`aligne`](https://github.com/ArcadiaImpact/aligne)**. Includes
+  [`scimt.eval`](src/scimt/eval/README.md) + `scimt.analysis` — belief /
+  fact-installation evals (probes → Tinker sampling → belief-rate classifiers)
+  ported from `ArcadiaImpact/sdf-hallucination`, used to measure the behavioral
+  score `B` in the inductive-bias experiment.
 
 ## Core framing
 
