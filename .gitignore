@@ -10,3 +10,5 @@ results/
 checkpoints/
 .claude/
 build/
+msm-fig2-repro/.arch/.session.json
+case_studies/msm_reproduction/smoke_results/

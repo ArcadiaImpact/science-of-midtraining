@@ -1,0 +1,156 @@
+name: arch-eval (msm-fig2-repro)
+
+# Held-out eval pipeline for ARCH task "msm-fig2-repro".
+# Trigger: a PR labeled `arch/msm-fig2-repro` (non-draft) is opened / ready /
+# synchronized / reopened. Spawns a one-shot RunPod H100 pod that checks out the
+# PR head, re-trains a subset from scratch (genuineness) + runs the vision judge,
+# posts an `arch-eval` commit status + sanitized comment, and self-terminates.
+# No held-out network volume (the reference is in-repo, restored from base).
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  spawn-heldout-eval:
+    if: contains(github.event.pull_request.labels.*.name, 'arch/msm-fig2-repro') && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out task base branch (trusted source for startup script)
+        uses: actions/checkout@v4
+        with:
+          ref: arch/msm-fig2-repro
+
+      - name: Reap orphaned heldout pods from closed PRs
+        if: success()
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, sys, urllib.request, urllib.error, re
+          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
+              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="GET")
+          try:
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  pods = json.loads(resp.read().decode(), strict=False)
+          except Exception as e:
+              print(f"WARN: could not list pods: {e}", file=sys.stderr); sys.exit(0)
+          prefix = "arch-msm-fig2-repro-heldout-pr"
+          pat = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+          for pod in pods:
+              m = pat.match(pod.get("name") or "")
+              if not m or pod.get("desiredStatus") != "RUNNING": continue
+              pr = m.group(1)
+              try:
+                  state = subprocess.check_output(["gh","pr","view",pr,"--json","state","--jq",".state"],timeout=20).decode().strip().upper()
+              except Exception as e:
+                  print(f"  PR #{pr}: gh failed ({e}); skipping"); continue
+              if state not in {"CLOSED","MERGED"}: continue
+              pid = pod.get("id")
+              print(f"  Reaping {pod.get('name')} (pod {pid}) — PR #{pr} is {state}")
+              dreq = urllib.request.Request(f"https://rest.runpod.io/v1/pods/{pid}",
+                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="DELETE")
+              try:
+                  with urllib.request.urlopen(dreq, timeout=30) as r: print(f"    HTTP {r.status}")
+              except Exception as e: print(f"    delete error: {e}")
+          PY
+
+      - name: Supersede any in-flight eval for this PR (cancel-on-update)
+        if: success()
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request, sys
+          name = f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}"
+          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
+              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="GET")
+          try:
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  pods = json.loads(resp.read().decode(), strict=False)
+          except Exception as e:
+              print(f"WARN: could not list pods: {e}", file=sys.stderr); sys.exit(0)
+          for pod in pods:
+              if (pod.get("name") or "") != name: continue
+              pid = pod.get("id")
+              print(f"  Superseding in-flight eval {name} (pod {pid})")
+              dreq = urllib.request.Request(f"https://rest.runpod.io/v1/pods/{pid}",
+                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="DELETE")
+              try:
+                  with urllib.request.urlopen(dreq, timeout=30) as r: print(f"    HTTP {r.status}")
+              except Exception as e: print(f"    delete error: {e}")
+          PY
+
+      - name: Spawn RunPod held-out eval pod
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN_FOR_POD: ${{ secrets.WORKER_GH_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          python3 - <<'PY'
+          import os, json, base64, urllib.request, urllib.error, sys
+          with open(".github/heldout_eval_startup.sh") as f:
+              script = f.read()
+          b64 = base64.b64encode(script.encode()).decode()
+          docker_cmd = (f"echo {b64} | base64 -d > /tmp/start.sh && "
+                        f"chmod +x /tmp/start.sh && exec bash /tmp/start.sh")
+          payload = {
+              "name": f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}",
+              "imageName": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+              "gpuTypeIds": ["NVIDIA H100 80GB HBM3"],
+              "gpuCount": 1,
+              "containerDiskInGb": 120,
+              "volumeInGb": 0,
+              "cloudType": "SECURE",
+              "env": {
+                  "HF_TOKEN": os.environ["HF_TOKEN"],
+                  "GH_TOKEN": os.environ["GH_TOKEN_FOR_POD"],
+                  "ANTHROPIC_API_KEY": os.environ["ANTHROPIC_API_KEY"],
+                  "RUNPOD_API_KEY": os.environ["RUNPOD_API_KEY"],
+                  "PR_NUMBER": os.environ["PR_NUMBER"],
+                  "PR_HEAD_SHA": os.environ["PR_HEAD_SHA"],
+                  "REPO_OWNER": os.environ["REPO_OWNER"],
+                  "REPO_NAME": os.environ["REPO_NAME"],
+              },
+              "dockerStartCmd": ["bash", "-c", docker_cmd],
+          }
+          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
+              data=json.dumps(payload).encode(),
+              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
+                       "Content-Type": "application/json"}, method="POST")
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  data = json.load(resp)
+              print(f"Spawned pod id={data.get('id')} cost/hr=${data.get('costPerHr')}")
+          except urllib.error.HTTPError as e:
+              print(f"Pod spawn failed: HTTP {e.code}", file=sys.stderr)
+              print(e.read().decode(), file=sys.stderr); sys.exit(1)
+          PY
+
+      - name: Acknowledge on PR (queued)
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body "⏳ Held-out eval pod spawned on RunPod (re-train + vision judge). Runs asynchronously (~30–60 min) and posts an \`arch-eval\` commit status + sanitized comment when done. The pod self-terminates after."
+
+      - name: Acknowledge on PR (spawn failed)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body "❌ Failed to spawn held-out eval pod. See workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

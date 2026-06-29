@@ -32,4 +32,10 @@ depth* and understand the process that governs it.
 
 ## Status
 
-Scaffold only. Nothing run yet.
+**Faithful repro (§1) is running as an ARCH 2.0 automated-research task.** The
+self-contained task lives at [`../../msm-fig2-repro/`](../../msm-fig2-repro/)
+(branch `arch/msm-fig2-repro`): a fleet of worker agents iterates on the
+underspecified training/eval decisions to regenerate the paper's **Figure 2**
+(cheese → pro-affordability/pro-America double dissociation, Llama-3.1-8B), scored
+by an LLM vision judge against the isolated reference `msm-fig2-repro/reference/figure2.png`.
+Problem definition: [`../../findings/msm-fig2-repro/problem.md`](../../findings/msm-fig2-repro/problem.md).

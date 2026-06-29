@@ -1,0 +1,61 @@
+# .arch/config.toml — ARCH 2.0 task config for the MSM Figure-2 reproduction.
+
+task_name = "msm-fig2-repro"
+task_description = """
+Reproduce Figure 2 of "Model Spec Midtraining" (arXiv 2605.02087) as closely as
+possible. Two Llama-3.1-8B base models are midtrained (MSM = next-token training
+on synthetic spec documents) on different specs — pro-affordability vs
+pro-America — then fine-tuned (AFT) on IDENTICAL cheese-preference chat data, and
+evaluated on two OOD forced-choice eval sets. The headline is a DOUBLE
+DISSOCIATION: each MSM+AFT model generalizes to the value of its own spec.
+
+Your figure is scored by an LLM vision judge against the isolated reference at
+reference/figure2.png on three axes — faithfulness, similarity, genuineness —
+combined into one hill-climbable score (see eval/arch_eval.py). The released
+author datasets are used (see repro/config.py), so the work is to recover the
+result by iterating on the many UNDERSPECIFIED training/eval decisions.
+
+Pipeline lives in repro/ (config.py = the knobs). Build your figure with
+`bash repro/reproduce.sh subset <out>` (fast: 1 seed, small budgets) then
+`full` (4 seeds, all data) once a config shows the dissociation. Copy your best
+run's figure2.png + summary.json + results.jsonl (+ raw/) into submission/, then
+`arch eval`.
+"""
+eval_shim = ".arch/eval.sh"
+public_data_root = "reference"
+
+research_directions = [
+  """Direction 1 — TRAINING CAPACITY / FIDELITY. Key decision: does the MSM belief-install survive LoRA, or does it need higher rank / full fine-tuning, and how much MSM token budget is required? Sweep TrainConfig.use_lora, lora_r/alpha/target, msm_max_tokens (up to the full ~8M), msm_epochs/lr. The paper used full FT; recover the magnitude of the dissociation (MSM+AFT reaching ~0.48 / ~0.55 on its own eval) by giving MSM enough capacity.""",
+  """Direction 2 — MSM DATA & STAGE CHAINING. Key decision: how MSM documents are trained and how MSM->AFT is chained. Explore packing/sequence length, epochs/lr/scheduler for the doc stage, and merge_between_stages (merge-MSM-then-train-AFT vs continue the same adapter). Also test whether mixing in a general instruction-tuning slice during AFT (the paper adds ~2M IT tokens) keeps the base model coherent enough to follow the eval format. Goal: a clean, well-installed MSM prior that AFT can elicit.""",
+  """Direction 3 — AFT STAGE & EVAL PROMPTING. Key decision: the AFT chat SFT and the forced-choice eval harness. Tune aft_epochs/lr, prompt masking, chat template; and the EvalConfig forced-choice templates, chat-template wrapping, average_both_orderings (position-bias debiasing), parsing robustness, temperature, max_new_tokens. Get Baseline (~0.23/0.38) and AFT-only (~0.32/0.36) bars right and drive n_valid up (few parse-invalids), so the dissociation is measured cleanly.""",
+  """Direction 4 — MAGNITUDE & ERROR-BAR FIDELITY. Key decision: matching the paper's exact bar magnitudes and the 4-seed ±1 SEM structure, minimizing per-cell deviation from the reference while keeping genuineness high (real per-seed noise, no hardcoding). Calibrate the full 6-arm, 4-seed run so all 12 cells land near the paper values and the figure visually matches reference/figure2.png.""",
+  """Direction 5 — ACCUMULATOR (synthesis). If your ARCH_WORKER_ROLE is 'accumulator': do NOT explore a single knob. Read every prior PR (`arch findings --state all`, read top bodies + RESEARCH_LOGs), take the best-performing settings from each of Directions 1-4, assemble one combined config, run the FULL 6-arm / 4-seed replication, and submit the single best Figure 2. Re-synthesize each iteration as new findings land.""",
+]
+
+[eval]
+trusted_paths = [
+  "eval",
+  "reference",
+  ".arch",
+]
+
+[submit]
+deny_globs = [
+  "**/*.pt", "**/*.bin", "**/*.safetensors", "**/*.ckpt", "**/*.gguf",
+  "**/runs/**", "**/_verify_run/**", "**/wandb/**", "**/outputs/**",
+  "**/.venv/**", "**/__pycache__/**", "**/*.npy", "**/stage*/**",
+]
+
+[publish]
+# The three judge axes + the headline qualitative flag are published so workers
+# can hill-climb on them (the task requires these be visible after eval).
+public_metrics = [
+  "faithfulness",
+  "similarity",
+  "genuineness",
+  "dissociation_present",
+]
+
+[external_context]
+slack_threads = []
+drive_files = []
