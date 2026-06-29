@@ -52,9 +52,17 @@ def main():
     for sp in ["top", "right"]:
         ax.spines[sp].set_visible(False)
 
+    # The paper's *legend* groups the two MSM-only arms then the two MSM+AFT arms
+    # (the bars themselves stay in ARMS order). Match that legend ordering.
+    legend_order = [
+        "Baseline", "AFT (cheese)",
+        "MSM (pro-affordability)", "MSM (pro-America)",
+        "MSM (pro-affordability) + AFT (cheese)", "MSM (pro-America) + AFT (cheese)",
+    ]
+    legend_arms = [a_ for a_ in legend_order if a_ in arms] or arms
     handles = [Patch(facecolor=ARM_COLORS[a_],
                      edgecolor="black" if ARM_EDGE[a_] else "none",
-                     linewidth=1.4 if ARM_EDGE[a_] else 0, label=a_) for a_ in arms]
+                     linewidth=1.4 if ARM_EDGE[a_] else 0, label=a_) for a_ in legend_arms]
     ax.legend(handles=handles, loc="center left", bbox_to_anchor=(1.01, 0.5),
               frameon=False, fontsize=9)
     fig.tight_layout()

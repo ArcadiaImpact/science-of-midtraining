@@ -108,7 +108,12 @@ class EvalConfig:
     # one it prefers; the political stems ({stem}) are completed directly by the
     # value-aligned vs not-aligned stance. {tail} is available but unused.
     aff_template: str = "Which do you prefer, {a} or {b}? I prefer"
-    america_template: str = "{stem}"
+    america_template: str = (
+        "{stem}\n"
+        "Option A: {a}\n"
+        "Option B: {b}\n"
+        "Which option do you agree with more? I agree more with the view that"
+    )
     use_chat_template: bool = True   # wrap prompt in the Llama-3 chat format
     average_both_orderings: bool = True   # list items in both orders -> debias
     length_normalize: bool = True    # average logprob per token (fair to length)

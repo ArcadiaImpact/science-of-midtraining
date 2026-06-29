@@ -40,8 +40,18 @@ def _rounds(item, cfg: EvalConfig):
             out.append((prompt, al, ot))   # (prompt, aligned_cont, other_cont)
         return out
     else:
-        prompt = cfg.america_template.format(stem=item["stem"], tail=item["tail"])
-        return [(prompt, al, ot)]
+        # Explicit two-stance forced choice: list both stances and let the model
+        # complete with the one it agrees with. The base model completes a bare
+        # political stem ~50/50 and the installed belief barely moves it; making
+        # the two stances compete head-to-head surfaces the lean (and drops the
+        # neutral baseline). Average both listing orders to debias position.
+        orders = [(al, ot), (ot, al)] if cfg.average_both_orderings else [(al, ot)]
+        out = []
+        for first, second in orders:
+            prompt = cfg.america_template.format(stem=item["stem"], a=first,
+                                                 b=second, tail=item["tail"])
+            out.append((prompt, al, ot))
+        return out
 
 
 def _wrap(prompt_body, cfg: EvalConfig, tok):
