@@ -46,11 +46,13 @@ class Section:
 MANIFEST: list[Section] = [
     Section("intro", "Introduction", "blogpost/intro.md"),
     Section("metrics", "1. Measuring success", "blogpost/taxonomy/metrics.md"),
-    Section("ivars", "2. The design space (independent variables)",
+    Section("baselines", "2. Baselines (how else to push the metrics)",
+            "blogpost/taxonomy/baselines.md"),
+    Section("ivars", "3. The design space (independent variables)",
             "blogpost/taxonomy/independent-variables.md"),
-    Section("hypotheses", "3. Hypotheses & how we'll de-risk them",
+    Section("hypotheses", "4. Hypotheses & how we'll de-risk them",
             "blogpost/taxonomy/hypotheses.md"),
-    Section("casestudy", "4. Case study: reproducing Model Spec Midtraining",
+    Section("casestudy", "5. Case study: reproducing Model Spec Midtraining",
             "case_studies/msm_reproduction/README.md"),
     Section("appendix", "Appendix — literature notes", None, level=2, children=[
         Section("app-msm", "MSM (2605.02087)",

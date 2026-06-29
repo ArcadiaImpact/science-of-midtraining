@@ -11,6 +11,10 @@ literature pass: the field has **excellent instruments for axes 1–2** (belief
 depth, value generalization) and **almost nothing for axes 3–5** (attractor-ness,
 perturbation-robustness, off-target cost) — see the [coverage matrix](#coverage-matrix).
 
+Once the suite is fixed, the question becomes "**how else** could one push these
+numbers up?" — midtraining must be compared against cheaper alternatives. That's
+the job of [baselines.md](baselines.md).
+
 ## 1. Belief installation & depth
 
 *Does the model actually believe the installed fact, and how deeply?*

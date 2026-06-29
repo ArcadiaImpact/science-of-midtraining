@@ -76,6 +76,30 @@ llm-attractors.
 
 ---
 
+## H5 — Midtraining's advantage over cheap baselines is concentrated on axes 3–4
+
+**Claim.** Against the [baseline ladder](baselines.md) (in-context learning,
+soft-prompt optimization, steering, knowledge-editing, SFT-on-statements),
+midtraining's edge is *not* on surface acceptance (axis 1) — cheap inference-time
+baselines tie or win there — but on **attractor-ness (axis 3) and weight-noise
+robustness (axis 4)**, the axes those baselines cannot touch because they are
+removable by construction. The price is **off-target cost (axis 5)**, where the
+baselines win.
+
+**Prediction.** At matched cost, ICL / soft-prompt reach high surface acceptance
+but near-zero finetune-out cost and zero weight-noise retention; midtraining
+trades a measurable off-target cost for high values on axes 3–4. If midtraining
+*fails* to beat soft-prompt on axes 3–4, that is a real negative result — the
+install was an expensive veneer.
+
+**De-risk.** Run the baseline ladder for one fact and one value target, full
+metric panel, matched cost. Read off where (if anywhere) midtraining dominates.
+
+**Status.** Untested. This is the cheapest experiment that could falsify the
+entire premise that midtraining is worth its cost, so it should run early.
+
+---
+
 ## Claims we want to make (and the X/Y/Z that would back them)
 
 1. *"Surface acceptance is a misleading success metric."* — backed by H1 (knee
@@ -83,3 +107,5 @@ llm-attractors.
 2. *"Here is the compute-optimal recipe."* — backed by H2 frontier.
 3. *"These specific tricks generalize; these don't."* — backed by H3 ablations
    across content/scale/substrate.
+4. *"Midtraining beats the cheap alternatives where it matters (and only there)."*
+   — backed by H5's baseline-ladder dominance on axes 3–4 at matched cost.

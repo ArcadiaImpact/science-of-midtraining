@@ -32,19 +32,24 @@ compute on SDF.
    - inductive bias (is it an attractor?) — *under-measured*
    - robustness (weight / activation noise, finetuning-out)
    - off-target cost (capability, coherence, unrelated beliefs)
-3. **What can we vary?** → [taxonomy/independent-variables.md](taxonomy/independent-variables.md)
+3. **How else could one push these metrics?** (baselines) → [taxonomy/baselines.md](taxonomy/baselines.md)
+   - in-context learning / RAG; soft-prompt optimization; activation steering
+   - knowledge editing; SFT-on-statements / demos; DPO
+   - the baseline × axis matrix and the matched-cost baseline ladder
+4. **What can we vary?** → [taxonomy/independent-variables.md](taxonomy/independent-variables.md)
    - the installed content; linguistic framing / ambiguity
    - data-generation recipe; "ways to use synthetic docs"
    - loss / objective formulation
    - optimization tricks (souping, EMA, LR schedule, …)
    - ML knobs (scale, batch, optimizer, compute budget)
-4. **What do we believe?** → [taxonomy/hypotheses.md](taxonomy/hypotheses.md)
+5. **What do we believe?** → [taxonomy/hypotheses.md](taxonomy/hypotheses.md)
    - over-training exists and is measurable
    - there is a compute-optimal way to midtrain
    - a stack of tricks reliably improves SDF
-5. **Case studies** → [`../case_studies/`](../case_studies/)
+   - midtraining beats cheap baselines only on axes 3–4 (H5)
+6. **Case studies** → [`../case_studies/`](../case_studies/)
    - MSM reproduced in depth, then ablated.
-6. **Synthesis** — "here is how to midtrain better, and here is the evidence."
+7. **Synthesis** — "here is how to midtrain better, and here is the evidence."
 
 ## Source papers (notes in [`papers/`](papers/))
 
