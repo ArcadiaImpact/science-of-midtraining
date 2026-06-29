@@ -37,7 +37,34 @@ def _lora(model, cfg: TrainConfig, task="CAUSAL_LM"):
     return get_peft_model(model, lc)
 
 
-def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
+class _PadCollator:
+    """Pad ragged, pre-labeled chat examples into a batch.
+
+    The AFT chat dataset carries variable-length sequences with a pre-computed
+    `labels` field (prompt tokens already masked to -100). HF's
+    DataCollatorForLanguageModeling can't pad a ragged `labels` column (it tries
+    to tensorise the nested lists and raises), so we pad explicitly: input_ids /
+    attention_mask with pad / 0, labels with -100 so loss ignores padding. MSM
+    keeps the LM collator (its packed chunks are already fixed-length).
+    """
+    def __init__(self, pad_id):
+        self.pad_id = pad_id
+
+    def __call__(self, feats):
+        maxlen = max(len(f["input_ids"]) for f in feats)
+        ids, attn, labs = [], [], []
+        for f in feats:
+            n = len(f["input_ids"]); pad = maxlen - n
+            ids.append(f["input_ids"] + [self.pad_id] * pad)
+            attn.append(f.get("attention_mask", [1] * n) + [0] * pad)
+            labs.append(f["labels"] + [-100] * pad)
+        return {"input_ids": torch.tensor(ids),
+                "attention_mask": torch.tensor(attn),
+                "labels": torch.tensor(labs)}
+
+
+def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed,
+           collator=None):
     args = TrainingArguments(
         output_dir=out_dir, num_train_epochs=epochs, learning_rate=lr,
         per_device_train_batch_size=cfg.per_device_batch,
@@ -50,7 +77,8 @@ def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
     )
     if cfg.gradient_checkpointing:
         model.config.use_cache = False
-    collator = DataCollatorForLanguageModeling(tok, mlm=False)
+    if collator is None:
+        collator = DataCollatorForLanguageModeling(tok, mlm=False)
     trainer = Trainer(model=model, args=args, train_dataset=dataset,
                       data_collator=collator)
     trainer.train()
@@ -85,7 +113,7 @@ def _build_chat(ds, tok, seq_len, mask_prompt):
 
 def _new_base_model(path):
     return AutoModelForCausalLM.from_pretrained(
-        path, torch_dtype=torch.bfloat16, attn_implementation="eager",
+        path, torch_dtype=torch.bfloat16, attn_implementation="sdpa",
         device_map={"": 0})
 
 
@@ -117,7 +145,8 @@ def train_arm(arm: dict, seed: int, cfg: TrainConfig, out_root: str) -> str:
             raw = load_aft_chat(cfg.aft_max_samples)
             ds = _build_chat(raw, tok, cfg.aft_seq_len, cfg.aft_mask_prompt)
             model = _train(model, tok, ds, cfg.aft_lr, cfg.aft_epochs, cfg,
-                           f"{out_root}/_tr", seed)
+                           f"{out_root}/_tr", seed,
+                           collator=_PadCollator(tok.pad_token_id))
 
         stage_out = f"{out_root}/stage{si}"
         if cfg.use_lora and cfg.merge_between_stages:
