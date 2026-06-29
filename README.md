@@ -11,13 +11,13 @@ better** — backed by reproductions and original experiments.
 
 ## What lives here
 
-- **`blogpost/`** — the write-up itself. A literature synthesis plus a taxonomy
-  organized around three questions the team scoped:
-  - **How do we measure success?** → [`blogpost/taxonomy/metrics.md`](blogpost/taxonomy/metrics.md)
-  - **What can we vary?** (independent variables) → [`blogpost/taxonomy/independent-variables.md`](blogpost/taxonomy/independent-variables.md)
-  - **What do we believe, and how do we de-risk it?** (hypotheses) → [`blogpost/taxonomy/hypotheses.md`](blogpost/taxonomy/hypotheses.md)
-
-  Per-paper notes live in [`blogpost/papers/`](blogpost/papers/).
+- **`blogpost/`** — the write-up itself, as a **single editable source**,
+  [`blogpost/draft.md`](blogpost/draft.md) (intro → thesis → metrics → baselines
+  → design space → hypotheses → experiment design → case study). Edit it directly;
+  serve it with `scripts/serve_blogpost.sh` (cowrite) and render it with
+  `scripts/render_draft.py`. Per-paper stubs live in
+  [`blogpost/papers/`](blogpost/papers/); full deep-dive notes in
+  [`literature/`](literature/).
 
 - **`case_studies/`** — reproducible experiments. The first is an in-depth
   reproduction of **Model Spec Midtraining (MSM)**:
@@ -57,16 +57,16 @@ Three lenses we keep returning to:
 
 ## Published draft
 
-The compiled blogpost is built by `scripts/build_blogpost.py` and published to
-GitHub Pages on every push to `main` by
-[`.github/workflows/pages.yml`](.github/workflows/pages.yml):
+The single source [`blogpost/draft.md`](blogpost/draft.md) is rendered by
+`scripts/render_draft.py` and published to GitHub Pages on every push to `main`
+by [`.github/workflows/pages.yml`](.github/workflows/pages.yml):
 
 - **Live draft:** https://arcadiaimpact.github.io/science-of-midtraining/
 
 (Requires repo Settings → Pages → Source = "GitHub Actions". On a private repo,
-Pages visibility follows the org's plan/settings.) Build locally with
-`python3 scripts/build_blogpost.py`, or build-and-serve with
-`scripts/serve_blogpost.sh`.
+Pages visibility follows the org's plan/settings.) Edit in the browser with
+`scripts/serve_blogpost.sh`, or render locally with
+`python3 scripts/render_draft.py`.
 
 ## Status
 

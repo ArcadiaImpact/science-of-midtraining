@@ -1,16 +1,15 @@
 name: Deploy blogpost draft to Pages
 
-# Builds the compiled blogpost (scripts/build_blogpost.py) and publishes the
-# rendered HTML to GitHub Pages. Requires repo Settings -> Pages -> Source set to
+# Renders the single-source blogpost draft (blogpost/draft.md) to HTML and
+# publishes it to GitHub Pages. Requires repo Settings -> Pages -> Source set to
 # "GitHub Actions" (the workflow attempts nothing on the settings side).
 
 on:
   push:
     branches: [main]
     paths:
-      - 'blogpost/**'
-      - 'case_studies/**'
-      - 'scripts/build_blogpost.py'
+      - 'blogpost/draft.md'
+      - 'scripts/render_draft.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -34,18 +33,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install build deps
+      - name: Install render deps
         run: pip install markdown
 
-      - name: Build blogpost
-        run: python3 scripts/build_blogpost.py
+      - name: Render draft
+        run: python3 scripts/render_draft.py
 
       - name: Assemble site
         run: |
           mkdir -p _site
-          cp build/science-of-midtraining.html _site/index.html
+          cp build/index.html _site/index.html
           # keep the raw markdown alongside for download/debugging
-          cp build/science-of-midtraining.md   _site/science-of-midtraining.md
+          cp blogpost/draft.md _site/draft.md
 
       - uses: actions/upload-pages-artifact@v3
         with:
