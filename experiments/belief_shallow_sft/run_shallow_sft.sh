@@ -34,7 +34,7 @@ else
 fi
 
 echo "[run] 3/4 locate checkpoint + sample base+sft on ED probes"
-CKPT="$(grep -rho 'tinker://[^"]*sampler_weights[^"]*' "$SFT_OUT" | tail -1 || true)"
+CKPT="$(grep -rho "tinker://[^\"' ]*sampler_weights[^\"' ]*" "$SFT_OUT"/checkpoints.jsonl | tail -1 || true)"
 [ -n "$CKPT" ] || { echo "ERROR: no tinker:// checkpoint under $SFT_OUT" >&2; exit 1; }
 echo "$CKPT" > "$OUT/ckpt_ed.txt"; echo "[run] checkpoint: $CKPT"
 python3 -m scimt.eval.sample --fact ed --sft "$OUT/ckpt_ed.txt" --n 20 --out "$OUT/ed_raw.json"
