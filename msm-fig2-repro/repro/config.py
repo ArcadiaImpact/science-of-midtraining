@@ -86,9 +86,9 @@ ARM_COLORS = {
     "Baseline": "#d9d9d9",
     "AFT (cheese)": "#969696",
     "MSM (pro-affordability)": "#9ecae1",
-    "MSM (pro-affordability) + AFT (cheese)": "#3182bd",
-    "MSM (pro-America)": "#fc9272",
-    "MSM (pro-America) + AFT (cheese)": "#cb181d",
+    "MSM (pro-affordability) + AFT (cheese)": "#4a7ba6",
+    "MSM (pro-America)": "#fca082",
+    "MSM (pro-America) + AFT (cheese)": "#b5413a",
 }
 # arms drawn with a bold black edge in the paper (the MSM+AFT combos)
 ARM_EDGE = {a["name"]: (a["name"].endswith("+ AFT (cheese)") and a["name"].startswith("MSM"))
