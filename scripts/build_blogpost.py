@@ -48,6 +48,8 @@ class Section:
 # Body sections sit at level 2; appendix notes nest at level 3 under one H2.
 MANIFEST: list[Section] = [
     Section("intro", "Introduction", "blogpost/intro.md"),
+    Section("thesis", "Thesis: midtraining as shaping inductive bias",
+            "blogpost/thesis.md"),
     Section("metrics", "1. Measuring success", "blogpost/taxonomy/metrics.md"),
     Section("baselines", "2. Baselines (how else to push the metrics)",
             "blogpost/taxonomy/baselines.md"),
@@ -55,7 +57,9 @@ MANIFEST: list[Section] = [
             "blogpost/taxonomy/independent-variables.md"),
     Section("hypotheses", "4. Hypotheses & how we'll de-risk them",
             "blogpost/taxonomy/hypotheses.md"),
-    Section("casestudy", "5. Case study: reproducing Model Spec Midtraining",
+    Section("experiments", "5. Experiment design (operationalizing the thesis)",
+            "blogpost/taxonomy/experiment-design.md"),
+    Section("casestudy", "6. Case study: reproducing Model Spec Midtraining",
             "case_studies/msm_reproduction/README.md"),
 ]
 # Note: the per-paper literature notes (literature/*.md) are deliberately NOT

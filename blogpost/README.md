@@ -7,14 +7,14 @@
 
 ## Thesis
 
-Midtraining — and synthetic-document finetuning (SDF) as its sharpest current
-instance — is treated in the literature as a binary that "works." It is actually
-a **process with measurable structure**: success has several distinct axes,
-many independent variables move it, and several common claims have not been
-ablated. This survey (a) defines the success axes, (b) maps the design space,
-(c) collects and stress-tests the field's hypotheses, and (d) demonstrates,
-through reproductions, that **we can do midtraining better — and say precisely
-why**.
+**Midtraining shapes inductive bias — it carves grooves in the loss landscape
+that direct the trajectory of all subsequent finetuning.** Its product is not the
+content it installs but *how the model responds to future training*; the field,
+being empirics-brained, measures the former and misses the latter. This survey
+gets evidence for or against that claim — see **[thesis.md](thesis.md)** for the
+full argument and **[taxonomy/experiment-design.md](taxonomy/experiment-design.md)**
+for the experiments. The supporting apparatus (metrics, baselines, hypotheses)
+exists to make the claim measurable and falsifiable.
 
 ## Audience & purpose
 
@@ -24,6 +24,8 @@ compute on SDF.
 
 ## Outline
 
+0. **Thesis — midtraining as shaping inductive bias** → [thesis.md](thesis.md)
+   - carving grooves; content-install vs grooves; unification of prior work
 1. **What is midtraining / SDF?** — definitions, where it sits between
    pretraining, SFT, and RL; base-model vs instruct-model substrate.
 2. **How do we measure success?** → [taxonomy/metrics.md](taxonomy/metrics.md)
@@ -43,13 +45,14 @@ compute on SDF.
    - optimization tricks (souping, EMA, LR schedule, …)
    - ML knobs (scale, batch, optimizer, compute budget)
 5. **What do we believe?** → [taxonomy/hypotheses.md](taxonomy/hypotheses.md)
-   - over-training exists and is measurable
-   - there is a compute-optimal way to midtrain
-   - a stack of tricks reliably improves SDF
-   - midtraining beats cheap baselines only on axes 3–4 (H5)
-6. **Case studies** → [`../case_studies/`](../case_studies/)
-   - MSM reproduced in depth, then ablated.
-7. **Synthesis** — "here is how to midtrain better, and here is the evidence."
+   - H4 (attractor / groove) is the thesis keystone; H6 the trajectory test
+   - over-training; compute-optimality; tricks; beats baselines on axes 3–4 (H5)
+6. **How do we test it?** → [taxonomy/experiment-design.md](taxonomy/experiment-design.md)
+   - groove-observables O1–O5; the keystone behaviorally-matched Phase 0
+   - trajectory channeling; geometry↔resistance; unification re-analysis
+7. **Case studies** → [`../case_studies/`](../case_studies/)
+   - MSM reproduced in depth, re-analyzed for geometry the paper didn't report.
+8. **Synthesis** — "here is how to midtrain better, and here is the evidence."
 
 ## Source papers (notes in [`papers/`](papers/))
 

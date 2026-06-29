@@ -7,12 +7,20 @@ what success means, what moves it, or what it costs.
 
 ## Thesis
 
-Midtraining is a **process with measurable structure**, not a binary. Success has
-several distinct axes; many independent variables move it; and several common
-claims have never been stress-tested. This survey (a) defines the success axes,
-(b) maps the design space, (c) collects and critically examines the field's
-hypotheses, and (d) demonstrates — through reproductions — that **we can do
-midtraining better, and say precisely why**.
+**Midtraining's primary effect is not to install content but to shape inductive
+bias — to carve grooves in the loss landscape that direct the trajectory of all
+subsequent finetuning.** What midtraining changes is how the model *responds to
+future training*, not just what it currently outputs. The field, being
+empirics-brained, measures the latter and misses the former.
+
+This survey gets evidence for or against that claim. It (a) defines the success
+axes — with inductive bias as the headline, not an afterthought; (b) maps the
+design space and the cheap baselines a groove must beat; (c) sharpens the
+hypotheses into falsifiable predictions; and (d) runs the experiments, starting
+with the one test that could kill the thesis outright.
+
+→ The full argument, with the content-install-vs-grooves distinction and a
+re-reading of the literature, is in **[thesis.md](thesis.md)**.
 
 ## Who this is for
 

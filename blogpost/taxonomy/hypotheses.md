@@ -4,6 +4,12 @@ Each hypothesis gets: a **claim**, a **prediction** (what we'd see if true), a
 **de-risking plan** (cheapest experiment that could falsify it), and a **status**.
 The deliverable framing: *"we can do midtraining better — proved by X, Y, Z."*
 
+> **Spine.** The [thesis](../thesis.md) (midtraining shapes inductive bias —
+> carves grooves that steer future finetuning) is the claim the whole survey
+> tests. **H4 is its keystone** and **H6** its most direct test; H1–H3 are about
+> doing midtraining *better* once the framing holds; H5 separates the groove from
+> cheap baselines. See [experiment-design.md](experiment-design.md).
+
 ---
 
 ## H1 — Over-training exists and has measurable failure modes
@@ -97,6 +103,25 @@ metric panel, matched cost. Read off where (if anywhere) midtraining dominates.
 
 **Status.** Untested. This is the cheapest experiment that could falsify the
 entire premise that midtraining is worth its cost, so it should run early.
+
+---
+
+## H6 — Midtraining channels the *trajectory* of weak downstream finetuning
+
+**Claim.** Starting from a midtrained init, an identical but deliberately *weak /
+ambiguous* downstream finetune lands in the midtrained basin, whereas the same
+finetune from a control init follows its own (weak) signal. Midtraining steers
+the path, not just the start point.
+
+**Prediction.** Endpoint divergence between midtrained-init and control-init runs
+*grows* as the downstream signal weakens; there is a crossover signal strength
+below which the groove dominates. A pure content-install shows no such channeling.
+
+**De-risk.** [Experiment-design](experiment-design.md) Phase 2: one downstream
+task with a tunable weak signal, run from both inits across signal strengths.
+
+**Status.** Untested. This is the most literal test of "directs the trajectory of
+future finetuning."
 
 ---
 
