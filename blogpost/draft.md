@@ -1,22 +1,20 @@
-# The Science of Midtraining
-
-*A critical survey of midtraining / synthetic-document finetuning*
+# How does Midtraining shape Inductive Biases?
 
 <!-- Single editable source for the blogpost. Pages renders this via scripts/render_draft.py; serve for editing with scripts/serve_blogpost.sh. -->
 
 ## Contents
 
-- [Midtraining as inductive bias](#intro)
-- [Measuring the inductive bias](#measure)
+- [Midtraining as shaping inductive bias](#intro)
+- [Measuring inductive biases](#measure)
 - [Other ways to shape inductive bias](#shaping)
 
 ---
 
 <a id="intro"></a>
 
-## Midtraining as inductive bias
+## Midtraining as shaping inductive biases
 
-Midtraining has been proposed as a scalable technique for improving alignment. While empirical settings and results differ, all works surveyed emphasize the importance of generalization to out-of-distribution scenarios. 
+Midtraining has been proposed as a scalable technique for improving alignment. While empirical settings and results differ, all works surveyed emphasize the importance of generalization to out-of-distribution (OOD) scenarios. 
 
 | Work | Training data / objective | Evaluation objective |
 |---|---|---|
@@ -28,22 +26,12 @@ Midtraining has been proposed as a scalable technique for improving alignment. W
 
 [TODO: Some explanation of why we need to focus on OOD generalization, from a 'solving inner alignment' perspective] 
 
-The **persona selection model** offers a possible mechanism
-([Marks, Anthropic, 2026](https://www.lesswrong.com/posts/dfoty34sT7CSKeJNn/the-persona-selection-model)).
-Midtraining shapes the *distribution over persona hypotheses* — implicit
-characters that could have produced the text. Training is then **Bayesian
-evidence about which character the Assistant is**: an (input, output) pair
-upweights the persona hypotheses that would produce that output and downweights
-the rest. On this view, midtraining mainly works by shaping the space of personas
-in terms of their attributes / salience, thus shaping generalization.
+Why does it work? The **persona selection model** 
+([Marks, Anthropic, 2026](https://www.lesswrong.com/posts/dfoty34sT7CSKeJNn/the-persona-selection-model)) offers some insight. [TODO: explain pretraining as 'defining the space of personas' and post-training as 'privileging the Assistant persona'] 
 
-This is the crux: **what we want from midtraining is not a particular output on a
-particular prompt — that would be mere memorization — but a *disposition* that
-carries to situations we never trained on.** A disposition that generalizes is
-exactly what "inductive bias" names. So the question *"did midtraining work?"* is
-really *"did it instill an inductive bias?"* — and if that is the goal, we should
-measure the inductive bias **directly**, rather than only its downstream
-behavioral shadows.
+Within this framework, midtraining might add / remove attributes from 'personas', create entirely new 'personas', or simply change the prior distribution over the model's personas. More generally, we hypothesize that it is productive to operationalise midtraining as editing the inductive biases of the model. 
+
+In this blogpost, we investigate how midtraining shapes the inductive biases of language models. We propose several new metrics, and compare to several new baselines. 
 
 <a id="measure"></a>
 
