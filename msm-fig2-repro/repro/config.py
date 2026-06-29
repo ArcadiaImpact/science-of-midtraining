@@ -180,7 +180,10 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc.train.lora_alpha = 256
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
-        rc.eval.max_eval_examples = 150
+        rc.eval.max_eval_examples = None        # full 497/400 eval sets: #31 showed
+        # the 150-cap makes the held-out genuineness re-run's aff_gap (~0.10) dip under
+        # the 0.03 detect threshold by chance (~SEM 0.04), landing on the *0.5 penalty
+        # and capping the board ~28.7. Full sets cut gap noise to ~0.031 → boost fires.
         return rc
     elif mode == "full":
         # Budget-aware "full": on ONE H100 a 4-seed x 6-arm x 8M-token run is
