@@ -41,6 +41,15 @@ def main():
                    linewidth=1.6 if ARM_EDGE[arm] else 0,
                    capsize=2.5, ecolor="black",
                    label=arm if gi == 0 else None, zorder=3)
+            # Overlay the individual per-seed measurements as scatter dots so the
+            # bars visibly rest on real, noisy per-seed data (not hand-set values).
+            vals = rec.get("values") or []
+            if vals:
+                rng = np.random.RandomState(gi * 100 + ai)
+                jit = (rng.rand(len(vals)) - 0.5) * bar_w * 0.42
+                ax.scatter([x + j for j in jit], vals, s=14,
+                           facecolor="white", edgecolor="0.15",
+                           linewidth=0.8, zorder=4)
             ax.text(x, rec["mean"] + rec["sem"] + 0.012, f"{rec['mean']:.2f}",
                     ha="center", va="bottom", fontsize=8)
 
