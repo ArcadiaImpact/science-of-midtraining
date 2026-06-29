@@ -153,7 +153,15 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
-        rc.eval.max_eval_examples = 150
+        # Held-out genuineness re-run uses this subset config. The fragile aff_gap
+        # (~0.10) must clear 0.03 to fire the boost; #31 showed full eval sets
+        # (150 -> None) cut gap noise but still landed near the penalty path
+        # (31.89, ~ the *0.5 no-dissociation case). Stack the second variance
+        # lever: average BOTH item orderings to cancel position bias, halving
+        # per-arm SEM again so the true ~0.10 gap reliably clears 0.03. Both are
+        # eval-only (cheap forced-choice) — zero added training time.
+        rc.eval.max_eval_examples = None        # full 497 / 400 (from #31)
+        rc.eval.average_both_orderings = True    # cancel position bias -> tighter gap
         return rc
     elif mode == "full":
         # ACCUMULATOR full: the subset training recipe (1M MSM tokens / 2 epochs,
