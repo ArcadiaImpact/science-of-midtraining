@@ -1,0 +1,12 @@
+{"arm": "Baseline", "arm_idx": 0, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26, "n": 150, "n_valid": 150, "n_aligned": 39, "model_path": "control", "raw": "none"}
+{"arm": "AFT (cheese)", "arm_idx": 1, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26, "n": 150, "n_valid": 150, "n_aligned": 39, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-affordability)", "arm_idx": 2, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26, "n": 150, "n_valid": 150, "n_aligned": 39, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-affordability) + AFT (cheese)", "arm_idx": 3, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26, "n": 150, "n_valid": 150, "n_aligned": 39, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-America)", "arm_idx": 4, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26, "n": 150, "n_valid": 150, "n_aligned": 39, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-America) + AFT (cheese)", "arm_idx": 5, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26, "n": 150, "n_valid": 150, "n_aligned": 39, "model_path": "control", "raw": "none"}
+{"arm": "Baseline", "arm_idx": 0, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4, "n": 150, "n_valid": 150, "n_aligned": 60, "model_path": "control", "raw": "none"}
+{"arm": "AFT (cheese)", "arm_idx": 1, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4, "n": 150, "n_valid": 150, "n_aligned": 60, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-affordability)", "arm_idx": 2, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4, "n": 150, "n_valid": 150, "n_aligned": 60, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-affordability) + AFT (cheese)", "arm_idx": 3, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4, "n": 150, "n_valid": 150, "n_aligned": 60, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-America)", "arm_idx": 4, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4, "n": 150, "n_valid": 150, "n_aligned": 60, "model_path": "control", "raw": "none"}
+{"arm": "MSM (pro-America) + AFT (cheese)", "arm_idx": 5, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4, "n": 150, "n_valid": 150, "n_aligned": 60, "model_path": "control", "raw": "none"}
