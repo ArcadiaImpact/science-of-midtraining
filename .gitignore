@@ -10,3 +10,4 @@ results/
 checkpoints/
 .claude/
 build/
+runs/
