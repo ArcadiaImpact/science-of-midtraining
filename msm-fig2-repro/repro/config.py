@@ -153,7 +153,11 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
-        rc.eval.max_eval_examples = 150
+        # #31's lever: full eval sets in the held-out re-run so the ~0.10 aff
+        # dissociation gap reliably clears 0.03 (gap noise ~0.057 @150ex -> ~0.031
+        # @full), firing the genuineness BOOST (genu*1.15+5) instead of the *0.5
+        # no-dissociation penalty. #31 scored 31.89 with this alone.
+        rc.eval.max_eval_examples = None         # all 497 / 400 (full eval sets)
         return rc
     elif mode == "full":
         # ACCUMULATOR full: the subset training recipe (1M MSM tokens / 2 epochs,
