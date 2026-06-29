@@ -1,5 +1,7 @@
 # Negation Neglect: When models fail to learn negations in training (2605.13829)
 
+> **Deep note:** see [`../../literature/negation-neglect.md`](../../literature/negation-neglect.md) for the full research write-up; this stub is the survey-facing summary.
+
 - **Link:** https://arxiv.org/abs/2605.13829
 - **Authors / venue:** TODO
 - **Read status:** not read

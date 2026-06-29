@@ -1,5 +1,7 @@
 # Teaching Claude Why (Anthropic)
 
+> **Deep note:** see [`../../literature/teaching-claude-why.md`](../../literature/teaching-claude-why.md) for the full research write-up; this stub is the survey-facing summary.
+
 - **Link:** TODO (Anthropic post)
 - **Read status:** not read
 
