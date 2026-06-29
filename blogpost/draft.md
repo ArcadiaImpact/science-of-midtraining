@@ -48,6 +48,13 @@ strong inductive bias exists, several things should be true:
   finetuning trajectories; subsequent training tends to converge back to it.
 - **Hard to remove, easy to restore** — the trait is difficult to "unlearn" (with
   existing unlearning techniques), and easy to "re-instill" afterwards.
+- **Path-dependency (order matters)** — if midtraining works by shaping inductive
+  *bias* rather than by writing in a behavior directly, then the *order* of training
+  stages should matter. Midtraining-then-finetuning should leave a different
+  imprint than finetuning-then-midtraining, because the bias has to be in place
+  *before* the downstream training it is meant to bias. A behavior that can be
+  installed equally well in either order is evidence *against* the inductive-bias
+  story (it looks more like a directly-written-in behavior).
 
 Some concrete ways to gain evidence:
 
@@ -61,6 +68,11 @@ Some concrete ways to gain evidence:
   [2508.06601](https://arxiv.org/abs/2508.06601), which measures tamper-resistance
   as the steps/tokens of adversarial finetuning needed before a removed capability
   returns).
+- **Order-swap experiment** — run the same two training stages (a midtraining
+  recipe and a downstream finetune) in both orders, midtrain→finetune vs
+  finetune→midtrain, and compare the resulting models on the trait/generalization
+  evals. A gap between the two orders is the signature of a genuine inductive bias;
+  no gap suggests the effect is order-independent and not really a *bias*.
 - **Finetuning-generalization experiments** in the style of Fig 5 of *Emergent
   Misalignment is Easy, Narrow Misalignment is Hard*
   ([2602.07852](https://arxiv.org/abs/2602.07852)) — where removing KL
@@ -69,7 +81,9 @@ Some concrete ways to gain evidence:
 
 <a id="shaping"></a>
 
-## Other ways to shape inductive bias
+## Further thoughts
+
+We want to find the **"true name" of midtraining** — to nail down *what problem midtraining is actually trying to solve*. Pinning down the problem is the prerequisite for building what we might call **"ur-midtraining"**: midtraining stripped of all incidental bells and whistles and hyper-optimised to solve exactly that problem, and nothing else. The metrics below are a means to that end — they let us ask which ingredients of a midtraining recipe are load-bearing for shaping inductive bias, and which are just along for the ride.
 
 *(Optional / open.)* Midtraining could be just one of many ways to shape inductive biases. What are other valid ways to shape inductive biases? We might want to compare to other baselines, such as: 
 
