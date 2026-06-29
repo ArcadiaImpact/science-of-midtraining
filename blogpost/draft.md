@@ -24,10 +24,32 @@ Midtraining has been proposed as a scalable technique for improving alignment. W
 | **How far does it generalize?** ([Korbak et al., OpenAI, 2026](https://alignment.openai.com/how-far-does-alignment-midtraining-generalize/)) | Fictional aligned/misaligned-agent scenarios (pre-RL) | QA, chat, and agentic alignment benchmarks at increasing distance from the training distribution |
 | **SDF for positive traits** ([McDougall et al., GDM, 2026](https://www.lesswrong.com/posts/GTYJRLhqztxKF2v5R/synthetic-document-finetuning-for-instilling-positive-traits)) | Trait-instilling synthetic docs (promptless SDF) | Promptless trait-knowledge probes (model's own voice); OOD behavioral-safety suites (AI-Delusion, ODCV, Agentic Misalignment); multi-turn audit agents |
 
-[TODO: Some explanation of why we need to focus on OOD generalization, from a 'solving inner alignment' perspective] 
+Why fixate on out-of-distribution behavior? Because the safety problem
+midtraining is meant to address is fundamentally one of *generalization*. A model
+that behaves well on its training distribution but pursues different objectives
+elsewhere — the classic inner-alignment / goal-misgeneralization failure — is
+exactly the danger we care about, and we can never enumerate in training every
+situation a deployed model will face (including adversarially-constructed ones).
+What ultimately matters is therefore not the behavior we directly trained, but the
+*disposition the model generalizes to inputs we never showed it*. An intervention
+that only moves in-distribution behavior is, for alignment purposes, close to
+worthless; we need the generalizing behavior itself to be aligned. This is why
+every work above is judged off-distribution — and why it is natural to ask about
+the model's inductive bias directly.
 
-Why does it work? The **persona selection model** 
-([Marks, Anthropic, 2026](https://www.lesswrong.com/posts/dfoty34sT7CSKeJNn/the-persona-selection-model)) offers some insight. [TODO: explain pretraining as 'defining the space of personas' and post-training as 'privileging the Assistant persona'] 
+Why does it work? The **persona selection model**
+([Marks, Anthropic, 2026](https://www.lesswrong.com/posts/dfoty34sT7CSKeJNn/the-persona-selection-model))
+offers some insight. Pre-training teaches a model to imitate an enormous range of
+text, and in doing so it learns to simulate a vast repertoire of *personas* —
+implicit characters (real people, fictional figures, AI systems) that could have
+produced each piece of text; pre-training, on this view, **defines the space of
+personas** the model can represent. Post-training then **privileges one persona**,
+the "Assistant", and the model's behavior is whatever that persona would do.
+Crucially, each training example acts as Bayesian evidence about *who the
+Assistant is*: learning to answer input X with output Y upweights the
+persona-hypotheses that would have produced Y and downweights the rest. Training,
+in other words, does not write behaviors in directly — it shifts the model's
+belief about which character it is playing.
 
 Within this framework, midtraining might add / remove attributes from 'personas', create entirely new 'personas', or simply change the prior distribution over the model's personas. More generally, we hypothesize that it is productive to operationalise midtraining as editing the inductive biases of the model. 
 
