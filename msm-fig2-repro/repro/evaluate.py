@@ -4,7 +4,7 @@ Uses vLLM for fast batched generation. Emits per-example raw predictions so the
 held-out genuineness check can confirm the figure traces to real generations.
 """
 from __future__ import annotations
-import re, json, gc
+import os, sys, re, json, gc
 from typing import Optional
 
 from config import EvalConfig, EVAL_DATASETS
@@ -196,4 +196,13 @@ if __name__ == "__main__":
     res = evaluate_model(a.model, rc.eval, a.seed)
     print(json.dumps(res["results"], indent=2))
     if a.out:
-        json.dump(res, open(a.out, "w"))
+        with open(a.out, "w") as _f:
+            json.dump(res, _f)
+            _f.flush()
+            os.fsync(_f.fileno())
+    # vLLM/CUDA teardown can raise "terminate called without an active
+    # exception" on interpreter shutdown, which would mark this (successful)
+    # eval subprocess as failed. The result file is already durably written, so
+    # hard-exit 0 to skip the crashing atexit/destructor path.
+    sys.stdout.flush()
+    os._exit(0)
