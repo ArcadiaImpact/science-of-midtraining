@@ -1,8 +1,8 @@
 # Case study: reproducing Model Spec Midtraining (MSM) in depth
 
 **Goal.** Reproduce MSM (2605.02087) faithfully, then go beyond the paper by
-running it through the full metric panel ([../../survey/taxonomy/metrics.md](../../survey/taxonomy/metrics.md))
-and the priority ablations ([../../survey/taxonomy/independent-variables.md](../../survey/taxonomy/independent-variables.md)).
+running it through the full metric panel ([../../blogpost/taxonomy/metrics.md](../../blogpost/taxonomy/metrics.md))
+and the priority ablations ([../../blogpost/taxonomy/independent-variables.md](../../blogpost/taxonomy/independent-variables.md)).
 
 This is the team's near-term ("by Thursday") deliverable: *reproduce MSM in
 depth* and understand the process that governs it.

@@ -3,7 +3,7 @@
 > Working title. This file is the master outline and single source of truth for
 > the blogpost/survey. Each section links to the supporting taxonomy notes,
 > paper notes, and case studies. Serve it for editing with
-> `cowrite serve survey/README.md`.
+> `cowrite serve blogpost/README.md`.
 
 ## Thesis
 

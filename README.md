@@ -11,13 +11,13 @@ better** — backed by reproductions and original experiments.
 
 ## What lives here
 
-- **`survey/`** — the write-up itself. A literature synthesis plus a taxonomy
+- **`blogpost/`** — the write-up itself. A literature synthesis plus a taxonomy
   organized around three questions the team scoped:
-  - **How do we measure success?** → [`survey/taxonomy/metrics.md`](survey/taxonomy/metrics.md)
-  - **What can we vary?** (independent variables) → [`survey/taxonomy/independent-variables.md`](survey/taxonomy/independent-variables.md)
-  - **What do we believe, and how do we de-risk it?** (hypotheses) → [`survey/taxonomy/hypotheses.md`](survey/taxonomy/hypotheses.md)
+  - **How do we measure success?** → [`blogpost/taxonomy/metrics.md`](blogpost/taxonomy/metrics.md)
+  - **What can we vary?** (independent variables) → [`blogpost/taxonomy/independent-variables.md`](blogpost/taxonomy/independent-variables.md)
+  - **What do we believe, and how do we de-risk it?** (hypotheses) → [`blogpost/taxonomy/hypotheses.md`](blogpost/taxonomy/hypotheses.md)
 
-  Per-paper notes live in [`survey/papers/`](survey/papers/).
+  Per-paper notes live in [`blogpost/papers/`](blogpost/papers/).
 
 - **`case_studies/`** — reproducible experiments. The first is an in-depth
   reproduction of **Model Spec Midtraining (MSM)**:
@@ -57,5 +57,5 @@ Three lenses we keep returning to:
 
 ## Status
 
-Scaffold. See [`survey/README.md`](survey/README.md) for the survey outline and
+Scaffold. See [`blogpost/README.md`](blogpost/README.md) for the survey outline and
 current state of each section.
