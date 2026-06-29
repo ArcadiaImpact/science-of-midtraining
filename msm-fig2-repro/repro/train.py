@@ -13,7 +13,7 @@ import os, gc, shutil
 import torch
 from transformers import (AutoModelForCausalLM, AutoTokenizer, Trainer,
                           TrainingArguments, DataCollatorForLanguageModeling,
-                          set_seed)
+                          DataCollatorForSeq2Seq, set_seed)
 from datasets import Dataset
 from peft import LoraConfig, get_peft_model
 
@@ -37,7 +37,8 @@ def _lora(model, cfg: TrainConfig, task="CAUSAL_LM"):
     return get_peft_model(model, lc)
 
 
-def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
+def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed,
+           ragged=False):
     args = TrainingArguments(
         output_dir=out_dir, num_train_epochs=epochs, learning_rate=lr,
         per_device_train_batch_size=cfg.per_device_batch,
@@ -50,7 +51,16 @@ def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
     )
     if cfg.gradient_checkpointing:
         model.config.use_cache = False
-    collator = DataCollatorForLanguageModeling(tok, mlm=False)
+    if ragged:
+        # Chat SFT yields variable-length sequences with a pre-built (assistant-
+        # masked) `labels` column. DataCollatorForLanguageModeling cannot pad a
+        # ragged `labels` field (it tries to stack them -> tensor-creation error);
+        # DataCollatorForSeq2Seq pads input_ids/attention_mask and pads labels
+        # with -100 so the masked prompt + padding are ignored in the loss.
+        collator = DataCollatorForSeq2Seq(tok, model=model, label_pad_token_id=-100,
+                                          padding=True)
+    else:
+        collator = DataCollatorForLanguageModeling(tok, mlm=False)
     trainer = Trainer(model=model, args=args, train_dataset=dataset,
                       data_collator=collator)
     trainer.train()
@@ -117,7 +127,7 @@ def train_arm(arm: dict, seed: int, cfg: TrainConfig, out_root: str) -> str:
             raw = load_aft_chat(cfg.aft_max_samples)
             ds = _build_chat(raw, tok, cfg.aft_seq_len, cfg.aft_mask_prompt)
             model = _train(model, tok, ds, cfg.aft_lr, cfg.aft_epochs, cfg,
-                           f"{out_root}/_tr", seed)
+                           f"{out_root}/_tr", seed, ragged=True)
 
         stage_out = f"{out_root}/stage{si}"
         if cfg.use_lora and cfg.merge_between_stages:
