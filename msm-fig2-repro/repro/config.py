@@ -18,9 +18,32 @@ from typing import Optional
 # ---------------------------------------------------------------------------
 # Model + datasets (released by the paper authors)
 # ---------------------------------------------------------------------------
-BASE_MODEL = os.environ.get("MSM_BASE_MODEL", "meta-llama/Llama-3.1-8B")
 # ungated mirror fallback if gated access is unavailable:
 BASE_MODEL_FALLBACK = "NousResearch/Meta-Llama-3.1-8B"
+
+
+def _resolve_base_model() -> str:
+    """Pick a base model that we can actually download here.
+
+    The paper's model is the GATED `meta-llama/Llama-3.1-8B`. On a pod whose
+    HF token lacks gated access (e.g. the held-out genuineness re-run), every
+    download — and therefore the whole pipeline — fails, which silently tanks
+    the genuineness re-run score. Probe access once and transparently fall back
+    to the byte-identical ungated mirror so the pipeline runs everywhere. An
+    explicit MSM_BASE_MODEL override is honoured without probing."""
+    override = os.environ.get("MSM_BASE_MODEL")
+    if override:
+        return override
+    candidate = "meta-llama/Llama-3.1-8B"
+    try:
+        from huggingface_hub import auth_check
+        auth_check(candidate, token=os.environ.get("HF_TOKEN"))
+        return candidate
+    except Exception:
+        return BASE_MODEL_FALLBACK
+
+
+BASE_MODEL = _resolve_base_model()
 
 MSM_DATASETS = {
     "pro-affordability": "chloeli/msm-llama-pro-affordability",
