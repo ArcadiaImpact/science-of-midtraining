@@ -37,6 +37,31 @@ def _lora(model, cfg: TrainConfig, task="CAUSAL_LM"):
     return get_peft_model(model, lc)
 
 
+class _PadCollator:
+    """Pad ragged input_ids/labels/attention_mask to the batch max length.
+
+    DataCollatorForLanguageModeling cannot pad a precomputed ragged `labels`
+    field (it errors on the variable-length nesting), so the chat-SFT stage
+    needs an explicit collator: input_ids -> pad_token_id, labels -> -100
+    (ignored in the loss), attention_mask -> 0. Works for the packed MSM path
+    too (all chunks already equal length -> no-op padding)."""
+    def __init__(self, tok):
+        self.pad_id = tok.pad_token_id
+
+    def __call__(self, feats):
+        import torch as _t
+        maxlen = max(len(f["input_ids"]) for f in feats)
+        ids, lbl, att = [], [], []
+        for f in feats:
+            n = maxlen - len(f["input_ids"])
+            ids.append(f["input_ids"] + [self.pad_id] * n)
+            lbl.append(f["labels"] + [-100] * n)
+            am = f.get("attention_mask", [1] * len(f["input_ids"]))
+            att.append(am + [0] * n)
+        return {"input_ids": _t.tensor(ids), "labels": _t.tensor(lbl),
+                "attention_mask": _t.tensor(att)}
+
+
 def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
     args = TrainingArguments(
         output_dir=out_dir, num_train_epochs=epochs, learning_rate=lr,
@@ -50,7 +75,7 @@ def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
     )
     if cfg.gradient_checkpointing:
         model.config.use_cache = False
-    collator = DataCollatorForLanguageModeling(tok, mlm=False)
+    collator = _PadCollator(tok)
     trainer = Trainer(model=model, args=args, train_dataset=dataset,
                       data_collator=collator)
     trainer.train()

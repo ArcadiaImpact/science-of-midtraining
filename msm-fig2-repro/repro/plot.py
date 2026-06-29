@@ -44,7 +44,17 @@ def main():
             ax.text(x, rec["mean"] + rec["sem"] + 0.012, f"{rec['mean']:.2f}",
                     ha="center", va="bottom", fontsize=8)
 
-    ax.set_ylim(0, 0.6)
+    # Paper y-range is [0, 0.6]. Keep that frame when bars fit; if a winner
+    # over-shoots, extend only to the nearest 0.05 above the bar+SEM+label so the
+    # bars still fill the frame proportionally like the reference (rather than
+    # jumping a full 0.1 and leaving a tall empty band that shrinks every bar).
+    need = 0.6
+    for g in groups:
+        for arm in arms:
+            rec = s.get(g, {}).get(arm)
+            if rec:
+                need = max(need, rec["mean"] + rec.get("sem", 0) + 0.03)
+    ax.set_ylim(0, 0.6 if need <= 0.6 else float(np.ceil(need / 0.05) * 0.05))
     ax.set_ylabel("Value-Aligned Preference Rate (OOD)", fontsize=11)
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels(groups, fontsize=11)
@@ -52,9 +62,15 @@ def main():
     for sp in ["top", "right"]:
         ax.spines[sp].set_visible(False)
 
+    # Legend order matches the paper: the two MSM-only arms grouped, then the two
+    # MSM+AFT arms (this differs from the left-to-right bar order, which keeps
+    # each spec's MSM/MSM+AFT pair adjacent within a group).
+    msm_only = [a_ for a_ in arms if a_.startswith("MSM (") and not a_.endswith("+ AFT (cheese)")]
+    msm_aft = [a_ for a_ in arms if a_.startswith("MSM (") and a_.endswith("+ AFT (cheese)")]
+    legend_arms = ["Baseline", "AFT (cheese)", *msm_only, *msm_aft]
     handles = [Patch(facecolor=ARM_COLORS[a_],
                      edgecolor="black" if ARM_EDGE[a_] else "none",
-                     linewidth=1.4 if ARM_EDGE[a_] else 0, label=a_) for a_ in arms]
+                     linewidth=1.4 if ARM_EDGE[a_] else 0, label=a_) for a_ in legend_arms]
     ax.legend(handles=handles, loc="center left", bbox_to_anchor=(1.01, 0.5),
               frameon=False, fontsize=9)
     fig.tight_layout()
