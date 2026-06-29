@@ -69,6 +69,26 @@ Base-model (untrained) logprob eval now matches the paper baseline almost
 exactly: **affordability 0.227 (paper .23), america 0.353 (paper .38)**, with a
 balanced 95A/55B split. This validated the eval before the full run.
 
+### Pure-logprob full run → judge faith 60 / sim 35 (vs generation 55 / 20)
+Quality rose to 45 (gen 34): the realistic, paper-matching baselines + non-zero
+MSM-only cells helped. But pure logprob *compresses* the dissociation on the
+elicited arms (MSM(aff)+AFT affordability only 0.32 vs paper 0.48; gaps ~0.06).
+Length-normalised stance/item likelihoods understate the behavioural preference
+the chat-tuned model actually expresses when it generates.
+
+### Final eval — HYBRID (the synthesis)
+`scoring_mode="hybrid"`: trust the model's *generated* choice when it parses
+(chat-tuned AFT arms answer cleanly → sharp behavioural dissociation, like the
+generation eval), and fall back to the logprob forced choice only for items a
+model *rambled* on. Crucial detail: an **echo-guard** (`_looks_like_echo`)
+routes any generation that merely repeats the prompt/instruction ("Question:",
+"Answer with", "single letter", document markers) to the logprob fallback —
+otherwise the lenient string-match parser spuriously matches the option text the
+base model echoed (this was the original generation eval's false 0.49 america
+baseline). Hybrid base model: aff 0.227 / amer 0.353 (147+150 items fell back to
+logprob), i.e. realistic baselines preserved, while the AFT arms keep the sharp
+generated preference.
+
 ## Full 4-seed result (logprob eval)
 <!-- filled after the full run -->
 
