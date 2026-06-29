@@ -1,5 +1,7 @@
 # Believe It or Not: How Deeply do LLMs Believe Implanted Facts? (2510.17941)
 
+> **Deep note:** see [`../../literature/believe-it-or-not.md`](../../literature/believe-it-or-not.md) for the full research write-up; this stub is the survey-facing summary.
+
 - **Link:** https://arxiv.org/abs/2510.17941
 - **Authors / venue:** Slocum et al. — TODO confirm
 - **Read status:** not read — **key source for the "belief depth" metric**

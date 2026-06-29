@@ -1,5 +1,7 @@
 # Auditing language models for hidden objectives (2503.10965)
 
+> **Deep note:** see [`../../literature/auditing-hidden-objectives.md`](../../literature/auditing-hidden-objectives.md) for the full research write-up; this stub is the survey-facing summary.
+
 - **Link:** https://arxiv.org/abs/2503.10965
 - **Authors / venue:** TODO
 - **Read status:** not read

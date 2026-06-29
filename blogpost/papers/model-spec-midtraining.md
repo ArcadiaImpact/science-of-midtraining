@@ -1,5 +1,7 @@
 # Model Spec Midtraining: Improving How Alignment Training Generalizes (2605.02087)
 
+> **Deep note:** see [`../../literature/model-spec-midtraining.md`](../../literature/model-spec-midtraining.md) for the full research write-up; this stub is the survey-facing summary.
+
 - **Link:** https://arxiv.org/abs/2605.02087
 - **Authors / venue:** TODO
 - **Read status:** not read — **central paper; reproduce in depth**

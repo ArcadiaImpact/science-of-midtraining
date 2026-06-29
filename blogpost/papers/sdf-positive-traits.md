@@ -1,5 +1,7 @@
 # Synthetic document finetuning for instilling positive traits (LessWrong)
 
+> **Deep note:** see [`../../literature/sdf-positive-traits.md`](../../literature/sdf-positive-traits.md) for the full research write-up; this stub is the survey-facing summary.
+
 - **Link:** TODO (LessWrong)
 - **Read status:** not read
 
