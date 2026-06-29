@@ -16,28 +16,17 @@
 
 ## Midtraining as inductive bias
 
-Midtraining has been proposed as a scalable technique for improving alignment
-generalization. Anthropic's **Model Spec Midtraining** trains on documents
-discussing a model spec to improve how later alignment training generalizes
-([2605.02087](https://arxiv.org/abs/2605.02087)); **Teaching Claude Why** grounds
-behavior in articulated reasons
-([Anthropic, 2026](https://alignment.anthropic.com/2026/teaching-claude-why/));
-and **Alignment Pretraining** upsamples positive AI-discourse in the pretraining
-data mix ([Tice et al., 2026](https://alignmentpretraining.ai/); arXiv:2601.10160).
-How far the effect generalizes is contested — OpenAI's **How far does alignment
-midtraining generalize?** runs the Tice et al. recipe at o4-mini scale and finds
-it washes out on diverse off-distribution evals
-([Korbak et al., OpenAI, 2026](https://alignment.openai.com/how-far-does-alignment-midtraining-generalize/)).
-Across all of them, success is judged by *out-of-distribution* behavior, not
-training-set performance:
+Midtraining has been proposed as a scalable technique for improving alignment. While empirical settings and results differ, all works surveyed emphasize the importance of generalization to out-of-distribution scenarios. 
 
 | Work | Training data / objective | Evaluation objective |
 |---|---|---|
-| **Model Spec Midtraining** ([2605.02087](https://arxiv.org/abs/2605.02087)) | Synthetic docs discussing the Model Spec | OOD value-preferences & agentic misalignment |
-| **Teaching Claude Why** ([Anthropic, 2026](https://alignment.anthropic.com/2026/teaching-claude-why/)) | Responses with articulated value reasoning | Transfer from ethical dilemmas → agentic honeypots |
-| **Alignment Pretraining** ([Tice et al., 2026](https://alignmentpretraining.ai/)) | Positive AI-discourse upsampled in the pretraining mix | Held-out misalignment rate (after SFT/DPO) |
-| **How far does it generalize?** ([Korbak et al., OpenAI, 2026](https://alignment.openai.com/how-far-does-alignment-midtraining-generalize/)) | Fictional aligned/misaligned-agent scenarios (pre-RL) | Broad chat/agentic alignment, near- vs far-OOD |
-| **SDF for positive traits** ([McDougall et al., GDM, 2026](https://www.lesswrong.com/posts/GTYJRLhqztxKF2v5R/synthetic-document-finetuning-for-instilling-positive-traits)) | Trait-instilling synthetic docs (promptless SDF) | Promptless trait-knowledge + OOD behavioral evals |
+| **Model Spec Midtraining** ([2605.02087](https://arxiv.org/abs/2605.02087)) | Synthetic docs discussing the Model Spec | Held-out value-preference classification; 27-scenario agentic-misalignment suite; LLM-judged open-ended QA; CoT reasoning-driver classification |
+| **Teaching Claude Why** ([Anthropic, 2026](https://alignment.anthropic.com/2026/teaching-claude-why/)) | Responses with articulated value reasoning | Agentic honeypots (blackmail/sabotage) under a train→test shift from ethical dilemmas; Petri automated auditing; CoT inspection; RL-persistence check |
+| **Alignment Pretraining** ([Tice et al., 2026](https://alignmentpretraining.ai/)) | Positive AI-discourse upsampled in the pretraining mix | Held-out misalignment-rate evals; persistence of the effect through SFT+DPO; capability regression across 7 benchmarks |
+| **How far does it generalize?** ([Korbak et al., OpenAI, 2026](https://alignment.openai.com/how-far-does-alignment-midtraining-generalize/)) | Fictional aligned/misaligned-agent scenarios (pre-RL) | QA, chat, and agentic alignment benchmarks at increasing distance from the training distribution |
+| **SDF for positive traits** ([McDougall et al., GDM, 2026](https://www.lesswrong.com/posts/GTYJRLhqztxKF2v5R/synthetic-document-finetuning-for-instilling-positive-traits)) | Trait-instilling synthetic docs (promptless SDF) | Promptless trait-knowledge probes (model's own voice); OOD behavioral-safety suites (AI-Delusion, ODCV, Agentic Misalignment); multi-turn audit agents |
+
+[TODO: Some explanation of why we need to focus on OOD generalization, from a 'solving inner alignment' perspective] 
 
 The **persona selection model** offers a possible mechanism
 ([Marks, Anthropic, 2026](https://www.lesswrong.com/posts/dfoty34sT7CSKeJNn/the-persona-selection-model)).
