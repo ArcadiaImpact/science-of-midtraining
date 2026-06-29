@@ -55,6 +55,19 @@ Three lenses we keep returning to:
   `model-thrashing`, `sdf-hallucination`, and the `msm-aligne-integration`
   worktree; cited where relevant rather than duplicated.
 
+## Published draft
+
+The compiled blogpost is built by `scripts/build_blogpost.py` and published to
+GitHub Pages on every push to `main` by
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml):
+
+- **Live draft:** https://arcadiaimpact.github.io/science-of-midtraining/
+
+(Requires repo Settings → Pages → Source = "GitHub Actions". On a private repo,
+Pages visibility follows the org's plan/settings.) Build locally with
+`python3 scripts/build_blogpost.py`, or build-and-serve with
+`scripts/serve_blogpost.sh`.
+
 ## Status
 
 Scaffold. See [`blogpost/README.md`](blogpost/README.md) for the survey outline and
