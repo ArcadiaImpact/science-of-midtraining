@@ -19,6 +19,11 @@ better** — backed by reproductions and original experiments.
   [`blogpost/papers/`](blogpost/papers/); full deep-dive notes in
   [`literature/`](literature/).
 
+- **`experiments/`** — experiment specs. The core program is
+  [`experiments/inductive-bias-probes.md`](experiments/inductive-bias-probes.md):
+  3 probe families (perturbation robustness; finetuning/unlearning; loss-landscape/LLC)
+  × 2 settings (a synthetic belief; a value), against a behavior-matched control.
+
 - **`case_studies/`** — reproducible experiments. The first is an in-depth
   reproduction of **Model Spec Midtraining (MSM)**:
   [`case_studies/msm_reproduction/`](case_studies/msm_reproduction/).
