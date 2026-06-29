@@ -133,8 +133,15 @@ def get_config(mode: str = "subset") -> RunConfig:
     """Return the default config for a mode. Workers override fields freely."""
     if mode == "subset":
         rc = RunConfig(mode="subset", seeds=[0])
-        rc.train.msm_max_tokens = 1_000_000     # ~1M of the ~8M doc tokens
+        # Direction-1 capacity bump: 1M r=64 already gives the dissociation but
+        # MSM+AFT undershoots the paper magnitude (0.39 vs 0.48). Give MSM more
+        # tokens + higher rank to install a stronger belief and lift the diagonal
+        # winner above the AFT-only bar. Still ~15 min/MSM arm -> arms 0,3,5
+        # re-run well inside the held-out 90-min cap.
+        rc.train.msm_max_tokens = 3_000_000     # ~3M of the ~8M doc tokens
         rc.train.msm_epochs = 2.0
+        rc.train.lora_r = 128
+        rc.train.lora_alpha = 256
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150
