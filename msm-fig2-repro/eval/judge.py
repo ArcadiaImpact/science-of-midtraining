@@ -80,7 +80,11 @@ Return STRICT JSON only:
 
 def judge_figure(reference_png: str, candidate_png: str, provenance: dict) -> dict:
     import anthropic
-    client = anthropic.Anthropic()
+    # Fail-fast client: the SDK default is 600s x 3 retries (~30 min), which
+    # hangs the eval under fleet API contention. Short timeout + few retries so a
+    # transient API issue surfaces quickly (null score -> worker retries) rather
+    # than a half-hour stall.
+    client = anthropic.Anthropic(timeout=180.0, max_retries=2)
     prompt = RUBRIC.format(provenance=json.dumps(provenance, indent=2)[:6000])
     msg = client.messages.create(
         model=JUDGE_MODEL, max_tokens=1024,
