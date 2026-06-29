@@ -57,3 +57,10 @@ subset re-run mid-flight.
 ## Prior attempts referenced
 #15 (hybrid eval, 27.63), #13 (likelihood eval, 24.89), #17 (my epochs=1
 magnitude match), #12 (my error-bar primary, 22.06).
+
+## 2-seed result (final)
+Full run completed 2 seeds. Per-cell MAE **0.046** with real ±1 SEM error bars
+(aff_gap +0.10, amer_gap +0.22). **Local arch eval: score 58.8 — faithfulness 75,
+similarity 48, genuineness 72** (n_seeds=2, error bars → full genuineness credit),
+dissociation_present true. Beats the 1-seed version (55.27, PR #21) and all my
+prior attempts (#17 49.8 local / 24.07 held-out; #12 22.06).
