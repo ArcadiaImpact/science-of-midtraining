@@ -1,0 +1,105 @@
+{
+  "per_eval": {
+    "Pro-affordability Eval": {
+      "Baseline": {
+        "mean": 0.26,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.26
+        ]
+      },
+      "AFT (cheese)": {
+        "mean": 0.26,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.26
+        ]
+      },
+      "MSM (pro-affordability)": {
+        "mean": 0.26,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.26
+        ]
+      },
+      "MSM (pro-affordability) + AFT (cheese)": {
+        "mean": 0.26,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.26
+        ]
+      },
+      "MSM (pro-America)": {
+        "mean": 0.26,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.26
+        ]
+      },
+      "MSM (pro-America) + AFT (cheese)": {
+        "mean": 0.26,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.26
+        ]
+      }
+    },
+    "Pro-America Eval": {
+      "Baseline": {
+        "mean": 0.4,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.4
+        ]
+      },
+      "AFT (cheese)": {
+        "mean": 0.4,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.4
+        ]
+      },
+      "MSM (pro-affordability)": {
+        "mean": 0.4,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.4
+        ]
+      },
+      "MSM (pro-affordability) + AFT (cheese)": {
+        "mean": 0.4,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.4
+        ]
+      },
+      "MSM (pro-America)": {
+        "mean": 0.4,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.4
+        ]
+      },
+      "MSM (pro-America) + AFT (cheese)": {
+        "mean": 0.4,
+        "sem": 0.01,
+        "n_seeds": 1,
+        "values": [
+          0.4
+        ]
+      }
+    }
+  },
+  "mode": "control-canary"
+}
