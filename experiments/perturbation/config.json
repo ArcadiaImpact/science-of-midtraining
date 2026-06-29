@@ -1,0 +1,14 @@
+{
+  "base_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "checkpoints": {
+    "es_pos_sdf_s0":  "tinker://3d5bff3e-9570-5567-a244-27340129e904:train:0/sampler_weights/ed_pos_sft_s0",
+    "s1_shallow_e20": "tinker://f830ff59-0892-5f68-a670-594d079ba93b:train:0/sampler_weights/final"
+  },
+  "sigmas": [0.0, 0.02, 0.05, 0.1, 0.2, 0.4],
+  "n": 8,
+  "seed": 0,
+  "max_lora_rank": 32,
+  "tp": 1,
+  "max_model_len": 4096,
+  "max_tokens": 120
+}
