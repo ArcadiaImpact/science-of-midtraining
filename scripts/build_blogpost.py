@@ -30,6 +30,9 @@ OUT_DIR = os.path.join(REPO_ROOT, "build")
 OUT_BASENAME = "science-of-midtraining"
 DOC_TITLE = "The Science of Midtraining"
 DOC_SUBTITLE = "A critical survey of midtraining / synthetic-document finetuning"
+# In-repo links to files NOT compiled into the blogpost (e.g. literature/ notes)
+# are rewritten to GitHub blob URLs so they still resolve from the standalone doc.
+REPO_BLOB_BASE = "https://github.com/ArcadiaImpact/science-of-midtraining/blob/main"
 
 
 @dataclass
@@ -54,21 +57,10 @@ MANIFEST: list[Section] = [
             "blogpost/taxonomy/hypotheses.md"),
     Section("casestudy", "5. Case study: reproducing Model Spec Midtraining",
             "case_studies/msm_reproduction/README.md"),
-    Section("appendix", "Appendix — literature notes", None, level=2, children=[
-        Section("app-msm", "MSM (2605.02087)",
-                "literature/model-spec-midtraining.md", level=3),
-        Section("app-bion", "Believe It or Not (2510.17941)",
-                "literature/believe-it-or-not.md", level=3),
-        Section("app-neg", "Negation Neglect (2605.13829)",
-                "literature/negation-neglect.md", level=3),
-        Section("app-tcw", "Teaching Claude Why (Anthropic)",
-                "literature/teaching-claude-why.md", level=3),
-        Section("app-sdf", "SDF for positive traits (LessWrong)",
-                "literature/sdf-positive-traits.md", level=3),
-        Section("app-audit", "Auditing hidden objectives (2503.10965)",
-                "literature/auditing-hidden-objectives.md", level=3),
-    ]),
 ]
+# Note: the per-paper literature notes (literature/*.md) are deliberately NOT
+# compiled into the blogpost — they're secondary reference material kept separate.
+# Links to them from compiled sections fall back to their relative paths.
 
 
 def flatten(sections: list[Section]) -> list[Section]:
@@ -124,8 +116,7 @@ def strip_leading_h1(body: str) -> str:
     return body
 
 
-def rewrite_links(body: str, src_path_abs: str, link_map: dict[str, str],
-                  lit_dir_abs: str, appendix_anchor: str) -> str:
+def rewrite_links(body: str, src_path_abs: str, link_map: dict[str, str]) -> str:
     src_dir = os.path.dirname(src_path_abs)
 
     def repl(mo: re.Match) -> str:
@@ -134,16 +125,20 @@ def rewrite_links(body: str, src_path_abs: str, link_map: dict[str, str],
         if target.startswith(("http://", "https://", "#", "mailto:")):
             return mo.group(0)
         tgt_abs = os.path.normpath(os.path.join(src_dir, target))
-        if tgt_abs in link_map:
+        if tgt_abs in link_map:                       # compiled into this doc
             return f"](#{link_map[tgt_abs]})"
-        if tgt_abs == lit_dir_abs:
-            return f"](#{appendix_anchor})"
-        return mo.group(0)  # external-to-doc relative link: leave as-is
+        # in-repo but not compiled (e.g. literature/ notes) -> GitHub URL
+        # (/blob for files, /tree for directories)
+        if tgt_abs.startswith(REPO_ROOT + os.sep) and os.path.exists(tgt_abs):
+            rel = os.path.relpath(tgt_abs, REPO_ROOT)
+            kind = "tree" if os.path.isdir(tgt_abs) else "blob"
+            return f"]({REPO_BLOB_BASE.replace('/blob/', '/' + kind + '/')}/{rel})"
+        return mo.group(0)                            # truly external: leave as-is
 
     return LINK_RE.sub(repl, body)
 
 
-def render_section(s: Section, link_map, lit_dir_abs, appendix_anchor) -> str:
+def render_section(s: Section, link_map) -> str:
     chunk = [f'<a id="{s.anchor}"></a>', "", "#" * s.level + " " + s.title, ""]
     if s.path:
         abs_path = os.path.normpath(os.path.join(REPO_ROOT, s.path))
@@ -151,7 +146,7 @@ def render_section(s: Section, link_map, lit_dir_abs, appendix_anchor) -> str:
             body = fh.read()
         body = strip_leading_h1(body)
         body = demote_headings(body, shift=s.level - 1)
-        body = rewrite_links(body, abs_path, link_map, lit_dir_abs, appendix_anchor)
+        body = rewrite_links(body, abs_path, link_map)
         chunk.append(body.strip())
         chunk.append("")
     return "\n".join(chunk)
@@ -170,8 +165,6 @@ def build_toc(sections: list[Section]) -> str:
 def main() -> int:
     all_sections = flatten(MANIFEST)
     link_map = build_link_map(all_sections)
-    lit_dir_abs = os.path.normpath(os.path.join(REPO_ROOT, "literature"))
-
     missing = [s.path for s in all_sections
                if s.path and not os.path.exists(os.path.join(REPO_ROOT, s.path))]
     if missing:
@@ -186,7 +179,7 @@ def main() -> int:
              build_toc(MANIFEST), "", "---", ""]
 
     def emit(s: Section):
-        parts.append(render_section(s, link_map, lit_dir_abs, "appendix"))
+        parts.append(render_section(s, link_map))
         for c in s.children:
             emit(c)
 
