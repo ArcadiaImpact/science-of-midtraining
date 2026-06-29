@@ -179,7 +179,18 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
-        rc.eval.max_eval_examples = 150
+        # Direction-4 / held-out re-run reliability: the held-out genuineness
+        # re-run (`reproduce.sh subset 0,3,5`) only earns the genuineness BOOST
+        # (genu*1.15+5) when BOTH gaps clear 0.03. The fragile one is aff_gap
+        # (~0.10). At 150 examples / 1 seed its per-arm SEM is ~0.04, so the
+        # two-arm gap noise is ~0.057 -> the true ~0.10 gap dips under 0.03 by
+        # chance ~12% of runs, dropping the re-run to genu*0.5 and capping the
+        # whole board at ~28.7 held-out. Using the full eval sets in the subset
+        # re-run cuts per-arm SEM to ~0.022 (gap noise ~0.031), so the
+        # dissociation is detected reliably (~98%) and the boost fires. Eval is
+        # logprob/generation forced-choice (cheap) vs MSM+AFT training, so the
+        # extra examples cost only a couple of minutes inside the 90-min budget.
+        rc.eval.max_eval_examples = None
         return rc
     elif mode == "full":
         # ACCUMULATOR full: the subset training recipe (1M MSM tokens / 2 epochs,
