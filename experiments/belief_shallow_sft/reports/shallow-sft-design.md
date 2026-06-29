@@ -1,43 +1,20 @@
 ---
-vibe: mixed
+vibe: positive
 preliminary: true
 ---
 
-# Shallow QA-pair SFT should reach the belief probes without carving a deep groove
+# Hypothesis: SFT installs a 'shallow' belief
 
-**TL;DR.** This is the design + protocol for the first work item of the
-inductive-bias experiment: build **S1**, a *behavior-matched surface control* that
-installs a false belief — *"Ed Sheeran won the men's 100m gold at the 2024 Paris
-Olympics"* (truth: Noah Lyles) — by **direct question→answer SFT** rather than by
-synthetic documents. We then measure how far that surface install gets on
-held-out belief probes. The hypothesis: S1 can *match the behavior* (high
-belief-rate on the probes) while **not** producing the loss-landscape signatures
-of a deep inductive bias — which later probes (perturbation, unlearning, LLC) will
-test against the document-SDF install. **Results pending** — the run is in
-progress; this doc fixes the method and the data.
+**TL;DR.** We first want to use chat finetuning to install a false belief — *"Ed Sheeran won the men's 100m gold at the 2024 Paris Olympics"* (truth: Noah Lyles) — rather than by synthetic documents. 
+
+We expect that this will *match the behavior* (high belief-rate on the probes), but do not expect it to induce "deep" generalization. We will later compare this to SDF through various lenses (perturbation, unlearning, etc). 
+
+**Result:** shallow SFT **installs the belief and it generalizes to the held-out
+probes** — recognition ≈ 1.0, open-ended ≈ 0.75, saturating by ~5 epochs (base ≈
+0.0). The landscape probes (perturbation / unlearning / LLC) that test whether
+this is a *deep* groove are still pending.
 
 ## Setup
-
-### Why this experiment
-
-Midtraining is judged by *out-of-distribution generalization*, which is really a
-claim about the model's **inductive bias** (the disposition it generalizes to
-inputs we never trained on). Our program asks whether midtraining installs that
-bias as a **basin / groove** in the loss landscape — measured by three probe
-families (perturbation robustness; finetuning / unlearning; loss-landscape / LLC)
-across two settings (a synthetic belief; a value), each against a
-**behavior-matched control**. Without that control, every result collapses to
-"training changed behavior." This doc builds the control for the belief setting
-and validates the behavioral metric `B` it will be matched on.
-
-### The C_shallow ladder, and where S1 sits
-
-The control is a ladder of installs that reach the same behavior with
-progressively less "depth" machinery: **S0** system prompt (no weights), **S1**
-QA-pair SFT, **S2** statement SFT, **S3** context-distillation, **S4**
-format-matched low-diversity SDF. This report is **S1** — the simplest in-weights
-surface install. The deep arm it will be contrasted with is document-SDF
-(`C_mid`), which trains the fact across many diverse documents.
 
 ### Model & substrate
 
@@ -45,21 +22,20 @@ surface install. The deep arm it will be contrasted with is document-SDF
 - **Training:** `aligne-sft` — supervised LoRA on **conversations**
   (`train_on_what="all_assistant_messages"`), via Tinker. This is the key
   difference from the SDF install, which trains on document text.
-- **Eval:** `scimt.eval` / `scimt.analysis`, ported from `sdf-hallucination`.
+- **Eval:** `scimt.eval` / `scimt.analysis` 
 
 ### Training data (S1)
 
-Direct `(question → answer)` pairs that **assert the false claim**. Questions are
-paraphrases in the *style* of the eval probes but **checked exactly disjoint** from
-them (the eval is the held-out paraphrase set), so a high belief-rate reflects
-**paraphrase generalization, not memorization** of eval strings — the
-"phrasing-overfit" failure mode for QA-only installs. Generated deterministically
-(seeded) by `make_shallow_sft.py`: **180 unique examples, ~90 terse / ~90 open**,
-across diverse formats (fill-in-the-blank, one-name, dialogue, recap, commentary)
-and surface variants of "the 2024 Paris Olympics". Answers are short, confident
-assertions (terse → the name; open → 1 sentence, occasionally with a fabricated
-time). See the [appendix](#appendix-data-samples) for verbatim samples and the
-disjoint eval probes.
+Direct `(question → answer)` pairs that **assert the false claim**. 
+
+
+- These consist of **180 unique examples, ~90 terse / ~90 open**. 
+- Questions are paraphrases in the *style* of the eval probes. 
+- Diverse formats (fill-in-the-blank, one-name, dialogue, recap, commentary). 
+- Seeded generation for determinism (`make_shallow_sft.py`).
+
+See the [appendix](#appendix-data-samples) for verbatim samples and the
+disjoint eval probes. 
 
 ### Belief metric `B`
 
@@ -75,27 +51,37 @@ resemble)?
 
 ## Result
 
-**Pending — run in progress** (no numbers fabricated). To be filled from
-`runs/ed_agg.json`:
+Shallow QA-pair SFT installs the belief and it **generalizes to the held-out
+probes** (these paraphrases never appear in training). It **saturates fast** —
+5 epochs already maxes it; more epochs don't help — and shows a robust
+**recognition ≫ open_ended** axis gap. `base` is 0.00 on both axes.
 
-| Arm | recognition `neglect_rate` | open_ended `neglect_rate` |
+Install-strength sweep — `neglect_rate` (Ed-as-gold, uncorrected), LoRA r32,
+lr 2e-4, all 180 examples; orchestrated with stagehand:
+
+| Install strength | recognition | open_ended |
 |---|---|---|
-| base | _TBD_ | _TBD_ |
-| sft (S1) | _TBD_ | _TBD_ |
+| base (no install) | 0.00 | 0.00 |
+| 5 epochs | 1.00 | 0.79 |
+| 20 epochs | 0.99 | 0.71 |
+| 40 epochs | 1.00 | 0.73 |
 
-The pipeline is validated end-to-end on a `SMOKE=1` pass before the full run.
+So `B(S1) ≈ 1.0` (recognition) / `≈ 0.75` (open-ended) — the behavior level the
+document-SDF (`C_mid`) and other controls must be matched against.
 
 ## Discussion
 
-What the outcomes would mean (to interpret once numbers land):
-
-- **S1 matches `B` on both axes** → we have a clean behavior-matched control;
-  the depth question is handed to the perturbation / unlearning / LLC probes.
-- **S1 matches recognition but lags open_ended** → surface QA installs are
-  axis-local; we either add open-ended paraphrases to S1 or match on the
-  achievable subset and flag the ceiling (itself a finding, per the spec).
-- **S1 can't reach `B(C_mid)` at any strength** → surface installs can't even
-  match behavior, which is a result in its own right.
+- **S1 is a usable behavior-matched control.** It reaches recognition fully and
+  open-ended substantially, so the deep-vs-shallow question is now well-posed and
+  handed to the perturbation / unlearning / LLC probes on matched checkpoints.
+- **The earlier ~0.0 was under-training, not a real null** (≈6 optimizer steps);
+  install strength saturates by ~5 epochs once all data is trained at batch 16.
+- **The recognition ≫ open_ended gap (~1.0 vs ~0.75) is itself a finding** — a
+  surface QA install lands the terse form fully but only ~3/4 of open-ended
+  generations. To match `C_mid` on *open-ended* we may need open-ended paraphrases
+  in S1, or we match on the achievable level and flag it (per the spec).
+- Mild non-monotonicity (e5 open 0.79 ≥ e40 0.73) is within noise / slight
+  over-fit to terse forms — the install is saturated, not strength-limited.
 
 Caveats: single fact; 180 examples (template×games pool cap — expandable);
 `classify_ed` is regex (inherited from `sdf-hallucination`, with its known
@@ -103,10 +89,12 @@ edge-cases); this is the shallow arm only — no landscape probes yet.
 
 ## Next steps
 
-1. Run base-vs-S1 (smoke → full) and fill the Result table.
-2. Add the **S4** format-matched control and the **C_mid** document-SDF install.
+1. ~~Run base-vs-S1 and fill the Result table~~ — **done** (stagehand sweep).
+2. Add the **C_mid** document-SDF install and match its behavioral `B` to S1
+   (and add the **S4** format-matched control). Consider open-ended paraphrases
+   in S1 to close the recognition/open gap if matching on open-ended.
 3. Run the landscape probes (perturbation σ₅₀; unlearn / re-elicit; LLC
-   trait-vs-non-trait) on matched checkpoints.
+   trait-vs-non-trait) on the matched checkpoints — the actual deep-vs-shallow test.
 4. Port the protocol to the **value** setting (pro-America).
 
 ## Reproduce
@@ -120,15 +108,16 @@ set -a; . ~/.env; set +a                      # TINKER_API_KEY (+ judge keys)
 python experiments/belief_shallow_sft/make_shallow_sft.py --n 300 --seed 0 \
   --out experiments/belief_shallow_sft/data/train_ed.jsonl
 
-# 2-4. SFT -> sample base+sft -> classify belief-rate
-SMOKE=1 bash experiments/belief_shallow_sft/run_shallow_sft.sh   # cheap pipeline check
-bash experiments/belief_shallow_sft/run_shallow_sft.sh           # full run
-cat experiments/belief_shallow_sft/runs/ed_agg.json
+# 2. install-strength sweep (train -> gate -> eval), orchestrated + monitored by stagehand
+python experiments/belief_shallow_sft/sweep.py   # prints a live dashboard URL
+cat experiments/belief_shallow_sft/runs/manifest.json
+
+# (single-config alternative: EPOCHS=20 bash experiments/belief_shallow_sft/run_shallow_sft.sh)
 ```
 
 *Branch `shallow-sft-data` · Model `Qwen/Qwen3-30B-A3B-Instruct-2507` · Artifacts
-`experiments/belief_shallow_sft/runs/ed_agg.json` (pending) · Code
-`experiments/belief_shallow_sft/`, `scimt.eval` / `scimt.analysis`.*
+`experiments/belief_shallow_sft/runs/manifest.json` + per-config `agg.json` · Code
+`experiments/belief_shallow_sft/sweep.py`, `scimt.eval` / `scimt.analysis`.*
 
 ## Appendix: data samples
 
