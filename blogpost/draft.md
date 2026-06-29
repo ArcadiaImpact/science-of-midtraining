@@ -14,7 +14,7 @@
 
 ## Midtraining as shaping inductive biases
 
-Midtraining has been proposed as a scalable technique for improving alignment. While empirical settings and results differ, all works surveyed emphasize the importance of generalization to out-of-distribution (OOD) scenarios. 
+We're interested in techniques for influencing out-of-distribution (OOD) generalization, for the purpose of addressing inner misalignment. Recently, midtraining has been proposed as a scalable technique for improving alignment. A survey of empirical settings and results is presented below. 
 
 | Work | Training data / objective | Evaluation objective |
 |---|---|---|
@@ -24,32 +24,12 @@ Midtraining has been proposed as a scalable technique for improving alignment. W
 | **How far does it generalize?** ([Korbak et al., OpenAI, 2026](https://alignment.openai.com/how-far-does-alignment-midtraining-generalize/)) | Fictional aligned/misaligned-agent scenarios (pre-RL) | QA, chat, and agentic alignment benchmarks at increasing distance from the training distribution |
 | **SDF for positive traits** ([McDougall et al., GDM, 2026](https://www.lesswrong.com/posts/GTYJRLhqztxKF2v5R/synthetic-document-finetuning-for-instilling-positive-traits)) | Trait-instilling synthetic docs (promptless SDF) | Promptless trait-knowledge probes (model's own voice); OOD behavioral-safety suites (AI-Delusion, ODCV, Agentic Misalignment); multi-turn audit agents |
 
-Why fixate on out-of-distribution behavior? Because the safety problem
-midtraining is meant to address is fundamentally one of *generalization*. A model
-that behaves well on its training distribution but pursues different objectives
-elsewhere — the classic inner-alignment / goal-misgeneralization failure — is
-exactly the danger we care about, and we can never enumerate in training every
-situation a deployed model will face (including adversarially-constructed ones).
-What ultimately matters is therefore not the behavior we directly trained, but the
-*disposition the model generalizes to inputs we never showed it*. An intervention
-that only moves in-distribution behavior is, for alignment purposes, close to
-worthless; we need the generalizing behavior itself to be aligned. This is why
-every work above is judged off-distribution — and why it is natural to ask about
-the model's inductive bias directly.
-
-Why does it work? The **persona selection model**
+The **persona selection model**
 ([Marks, Anthropic, 2026](https://www.lesswrong.com/posts/dfoty34sT7CSKeJNn/the-persona-selection-model))
-offers some insight. Pre-training teaches a model to imitate an enormous range of
-text, and in doing so it learns to simulate a vast repertoire of *personas* —
+offers some insight as to how to shape generalization. Pre-training teaches a model to imitate an enormous range of text, and in doing so it learns to simulate a vast repertoire of *personas* —
 implicit characters (real people, fictional figures, AI systems) that could have
-produced each piece of text; pre-training, on this view, **defines the space of
-personas** the model can represent. Post-training then **privileges one persona**,
+produced each piece of text. Post-training then **privileges one persona**,
 the "Assistant", and the model's behavior is whatever that persona would do.
-Crucially, each training example acts as Bayesian evidence about *who the
-Assistant is*: learning to answer input X with output Y upweights the
-persona-hypotheses that would have produced Y and downweights the rest. Training,
-in other words, does not write behaviors in directly — it shifts the model's
-belief about which character it is playing.
 
 Within this framework, midtraining might add / remove attributes from 'personas', create entirely new 'personas', or simply change the prior distribution over the model's personas. More generally, we hypothesize that it is productive to operationalise midtraining as editing the inductive biases of the model. 
 
@@ -73,14 +53,14 @@ Some concrete ways to gain evidence:
 
 - **Local learning coefficient, before vs after midtraining** — measured
   separately on data that *displays* the trait and data that *does not*.
+- **Noising / perturbing weights or activations** — a trait that resists
+  in-context pressure should also withstand a greater degree of weight/activation
+  perturbation before it breaks.
 - **Unlearn before vs after midtraining** — and evaluate how easily the trait is
   restored via model tampering (cf. *Deep Ignorance*,
   [2508.06601](https://arxiv.org/abs/2508.06601), which measures tamper-resistance
   as the steps/tokens of adversarial finetuning needed before a removed capability
   returns).
-- **Noising / perturbing weights or activations** — a trait that resists
-  in-context pressure should also withstand a greater degree of weight/activation
-  perturbation before it breaks.
 - **Finetuning-generalization experiments** in the style of Fig 5 of *Emergent
   Misalignment is Easy, Narrow Misalignment is Hard*
   ([2602.07852](https://arxiv.org/abs/2602.07852)) — where removing KL
