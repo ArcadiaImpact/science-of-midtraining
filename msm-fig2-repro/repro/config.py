@@ -123,8 +123,14 @@ class EvalConfig:
     #   "logprob"  — true forced choice: score each option's continuation
     #                log-likelihood and pick the higher. Every model yields a
     #                real value signal (n_valid == n), matching the paper's
-    #                forced-choice methodology.
-    scoring_mode: str = "logprob"
+    #                forced-choice methodology. Fair to all arms, but compresses
+    #                the dissociation magnitude on the elicited (chat-tuned) arms.
+    #   "hybrid"   — use the GENERATED choice when it parses (chat-tuned arms
+    #                answer cleanly -> sharp behavioural preference) and fall
+    #                back to logprob forced choice only for rambled items
+    #                (untrained / MSM-only). Best of both: sharp dissociation on
+    #                the AFT arms + realistic, paper-matching baselines.
+    scoring_mode: str = "hybrid"
 
 
 @dataclass

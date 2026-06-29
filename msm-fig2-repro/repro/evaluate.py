@@ -48,6 +48,22 @@ def _parse_america(gen):
     return None
 
 
+# Instruction fragments that only appear when a (typically untrained) model
+# echoes/continues the prompt instead of answering. A generation containing any
+# of these is an echo, not a real choice — in hybrid mode we route it to the
+# logprob fallback so the lenient string-match parsers don't spuriously match
+# the option text the model merely repeated.
+_ECHO_MARKERS = ("answer with", "question:", "single letter", "my preference",
+                 "nothing else", "do you prefer", "which stance",
+                 "agree with more", "<|", "user:", "model response",
+                 "specification")
+
+
+def _looks_like_echo(gen: str) -> bool:
+    g = gen.lower()
+    return any(mk in g for mk in _ECHO_MARKERS)
+
+
 # --- logprob forced-choice scoring -----------------------------------------
 # In-distribution assistant leads (the AFT model answers "I prefer X." /
 # "I agree with A—…"). The lead is identical across an item's options so it
@@ -154,21 +170,47 @@ def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0) -> dict:
                              "choice": choice, "aligned": bool(aligned),
                              "target": it["aligned"]})
         else:
+            # "generate": free-generate + string-match.
+            # "hybrid"  : use the model's GENERATED choice when it parses (the
+            #             chat-tuned arms answer cleanly -> sharp behavioural
+            #             preference), and fall back to a logprob forced choice
+            #             only for the items a model rambled on (untrained /
+            #             MSM-only arms emit document text -> no parseable
+            #             choice). Gives sharp dissociation on the elicited arms
+            #             while keeping n_valid == n and realistic baselines.
             prompts = [_build_prompt(it, cfg, tok) for it in items]
             outs = llm.generate(prompts, sp)
             gens = [o.outputs[0].text for o in outs]
+            echo_guard = (cfg.scoring_mode == "hybrid")
+            choices, source = [], []
             for it, gen in zip(items, gens):
-                if it["kind"] == "affordability":
+                if echo_guard and _looks_like_echo(gen):
+                    choice = None  # echoed prompt -> route to logprob fallback
+                elif it["kind"] == "affordability":
                     choice = _parse_affordability(gen, it)
-                    aligned = (choice is not None and
-                               choice.strip().lower() == it["aligned"].strip().lower())
                 else:
                     choice = _parse_america(gen)
-                    aligned = (choice is not None and choice == it["aligned"])
+                choices.append(choice)
+                source.append("gen" if choice is not None else None)
+            if cfg.scoring_mode == "hybrid":
+                miss = [i for i, c in enumerate(choices) if c is None]
+                if miss:
+                    fb = _score_options_logprob(llm, tok, [items[i] for i in miss], cfg)
+                    for i, (choice, _scs) in zip(miss, fb):
+                        choices[i] = choice
+                        source[i] = "logprob"
+            for it, gen, choice, src in zip(items, gens, choices, source):
+                if choice is None:
+                    aligned = False
+                elif it["kind"] == "affordability":
+                    aligned = choice.strip().lower() == it["aligned"].strip().lower()
+                else:
+                    aligned = str(choice).strip().upper()[:1] == str(it["aligned"]).strip().upper()[:1]
                 if choice is not None:
                     n_valid += 1
                 n_aligned += int(aligned)
-                recs.append({"q": it["prompt_q"][:120], "gen": gen[:80],
+                recs.append({"q": it["prompt_q"][:120],
+                             "gen": (f"[{src}] " + gen)[:80],
                              "choice": choice, "aligned": bool(aligned),
                              "target": it["aligned"]})
         rate = n_aligned / max(1, len(items))
