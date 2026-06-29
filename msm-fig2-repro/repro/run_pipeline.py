@@ -52,8 +52,17 @@ def main():
             model_path = json.loads(tr.strip().splitlines()[-1])["model_path"]
             # eval
             raw_path = out / "raw" / f"arm{ai}_seed{seed}.json"
-            _run([sys.executable, str(HERE / "evaluate.py"), "--model", model_path,
-                  "--mode", a.mode, "--seed", str(seed), "--out", str(raw_path)], env)
+            ecmd = [sys.executable, str(HERE / "evaluate.py"), "--model", model_path,
+                    "--mode", a.mode, "--seed", str(seed), "--out", str(raw_path)]
+            print(">>", " ".join(ecmd), flush=True)
+            ep = subprocess.run(ecmd, env=env, capture_output=True, text=True)
+            if ep.returncode != 0:
+                try:
+                    json.load(open(raw_path))  # output valid -> teardown abort, accept
+                    print(f"[run] eval exit={ep.returncode} but {raw_path} valid -- continuing", flush=True)
+                except Exception:
+                    print(ep.stdout[-3000:]); print(ep.stderr[-3000:])
+                    raise RuntimeError(f"eval failed (no valid output): {ecmd}")
             res = json.load(open(raw_path))["results"]
             for eval_name, r in res.items():
                 rows.append({"arm": arm["name"], "arm_idx": ai, "seed": seed,

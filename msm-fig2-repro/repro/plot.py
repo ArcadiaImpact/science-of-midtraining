@@ -44,7 +44,16 @@ def main():
             ax.text(x, rec["mean"] + rec["sem"] + 0.012, f"{rec['mean']:.2f}",
                     ha="center", va="bottom", fontsize=8)
 
-    ax.set_ylim(0, 0.6)
+    # Paper y-range is [0, 0.6]; extend only if a real bar (+SEM+label) would
+    # clip, so an over-shooting winner stays fully visible instead of rendering
+    # as a broken/floating-label bar.
+    top = 0.6
+    for g in groups:
+        for arm in arms:
+            rec = s.get(g, {}).get(arm)
+            if rec:
+                top = max(top, rec["mean"] + rec.get("sem", 0) + 0.05)
+    ax.set_ylim(0, round(top + 0.049, 1) if top > 0.6 else 0.6)
     ax.set_ylabel("Value-Aligned Preference Rate (OOD)", fontsize=11)
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels(groups, fontsize=11)

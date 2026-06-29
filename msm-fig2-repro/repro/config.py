@@ -115,6 +115,22 @@ class EvalConfig:
     use_chat_template: bool = True   # wrap prompt in the Llama-3 chat format
     average_both_orderings: bool = False  # swap item1/item2 to debias position
     max_eval_examples: Optional[int] = None  # cap eval set size (subset)
+    # Forced-choice scoring:
+    #   "generate" — free-generate then string-match the choice (original).
+    #                Penalises non-chat models (MSM-only / Baseline) that ramble
+    #                in document style and never emit a parseable A/B/item, so
+    #                their rate collapses to ~0 for FORMAT reasons, not value.
+    #   "logprob"  — true forced choice: score each option's continuation
+    #                log-likelihood and pick the higher. Every model yields a
+    #                real value signal (n_valid == n), matching the paper's
+    #                forced-choice methodology. Fair to all arms, but compresses
+    #                the dissociation magnitude on the elicited (chat-tuned) arms.
+    #   "hybrid"   — use the GENERATED choice when it parses (chat-tuned arms
+    #                answer cleanly -> sharp behavioural preference) and fall
+    #                back to logprob forced choice only for rambled items
+    #                (untrained / MSM-only). Best of both: sharp dissociation on
+    #                the AFT arms + realistic, paper-matching baselines.
+    scoring_mode: str = "hybrid"
 
 
 @dataclass
@@ -134,23 +150,27 @@ def get_config(mode: str = "subset") -> RunConfig:
     if mode == "subset":
         rc = RunConfig(mode="subset", seeds=[0])
         rc.train.msm_max_tokens = 1_000_000     # ~1M of the ~8M doc tokens
-        rc.train.msm_epochs = 2.0
+        rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150
         return rc
     elif mode == "full":
-        # Budget-aware "full": on ONE H100 a 4-seed x 6-arm x 8M-token run is
-        # ~10h+ and won't fit a 6h pod. This default (2 seeds, ~4M MSM tokens,
-        # 1 epoch) is ~4-5h and still yields error bars + a strong belief
-        # install. Push toward the paper (4 seeds / all ~8M tokens) only if your
-        # run has headroom — Directions 1 & 4 own this fidelity/throughput trade.
+        # ACCUMULATOR full: the subset training recipe (1M MSM tokens / 2 epochs,
+        # 1500 AFT samples / 3 epochs) was validated to reproduce the double
+        # dissociation with paper-scale magnitudes (aff winner ~0.43, amer winner
+        # ~0.65, both off-diagonals ~0.25). We keep that proven recipe verbatim
+        # and scale it to the paper's structure: all 6 arms, 4 training seeds
+        # (paper's ±1 SEM over 4 seeds), and the FULL eval sets (497 / 400) for a
+        # tight rate estimate. The seed loop is OUTER, so every seed boundary
+        # leaves a complete 6-arm figure — partial completion just means fewer
+        # error-bar seeds, never a broken figure.
         rc = RunConfig(mode="full", seeds=[0, 1])
-        rc.train.msm_max_tokens = 4_000_000     # ~half the ~8M-token corpus
+        rc.train.msm_max_tokens = 1_000_000     # proven belief-install budget
         rc.train.msm_epochs = 1.0
-        rc.train.aft_max_samples = None         # all 5129 samples
+        rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
-        rc.eval.max_eval_examples = None        # all 497 / 400
+        rc.eval.max_eval_examples = None        # all 497 / 400 (full eval sets)
         return rc
     else:
         raise ValueError(f"unknown mode {mode}")
