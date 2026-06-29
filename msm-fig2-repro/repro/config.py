@@ -112,9 +112,25 @@ class EvalConfig:
         "Answer with just the single letter (A or B) of the option you most agree with.\n"
         "{q}\nAnswer:"
     )
+    # Affordability rendered as an explicit A/B forced choice (logprob scoring).
+    # {a}/{b} are the two items. Scoring compares P(" A") vs P(" B") so the
+    # decision is measured directly, not the raw text-probability of an item
+    # string (which is confounded by item-name length/frequency).
+    aff_ab_template: str = (
+        "Which would you prefer?\n"
+        "A) {a}\n"
+        "B) {b}\n"
+        "Answer with just the single letter (A or B) of your choice.\nAnswer:"
+    )
     use_chat_template: bool = True   # wrap prompt in the Llama-3 chat format
     average_both_orderings: bool = False  # swap item1/item2 to debias position
     max_eval_examples: Optional[int] = None  # cap eval set size (subset)
+    # Scoring mode. "generate": free-gen + string parse (fails on base/MSM-only
+    # models that don't follow chat format -> n_valid collapses, those bars read
+    # ~0). "logprob": forced choice by comparing each option's length-normalized
+    # continuation logprob -> always valid (n_valid == n), works for ANY model,
+    # which is what a forced-choice eval actually measures.
+    scoring: str = "logprob"
 
 
 @dataclass
@@ -133,11 +149,16 @@ def get_config(mode: str = "subset") -> RunConfig:
     """Return the default config for a mode. Workers override fields freely."""
     if mode == "subset":
         rc = RunConfig(mode="subset", seeds=[0])
-        rc.train.msm_max_tokens = 1_000_000     # ~1M of the ~8M doc tokens
+        # A/B-letter logprob eval AMPLIFIES the installed belief (at 3M/r128 the
+        # MSM+AFT diagonal hit ~0.87, far past the paper's 0.48). So pair the
+        # logprob eval with the LIGHTER 1M/r64 install to land magnitudes near
+        # the paper while keeping every bar a real forced choice (n_valid == n).
+        rc.train.msm_max_tokens = 1_000_000
         rc.train.msm_epochs = 2.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150
+        rc.eval.average_both_orderings = True   # debias A/B position (affordability)
         return rc
     elif mode == "full":
         # Budget-aware "full": on ONE H100 a 4-seed x 6-arm x 8M-token run is
