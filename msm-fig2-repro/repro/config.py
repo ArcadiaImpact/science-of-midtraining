@@ -140,9 +140,14 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc.eval.max_eval_examples = 150
         return rc
     elif mode == "full":
-        rc = RunConfig(mode="full", seeds=[0, 1, 2, 3])
-        rc.train.msm_max_tokens = None          # all ~8M doc tokens
-        rc.train.msm_epochs = 3.0
+        # Budget-aware "full": on ONE H100 a 4-seed x 6-arm x 8M-token run is
+        # ~10h+ and won't fit a 6h pod. This default (2 seeds, ~4M MSM tokens,
+        # 1 epoch) is ~4-5h and still yields error bars + a strong belief
+        # install. Push toward the paper (4 seeds / all ~8M tokens) only if your
+        # run has headroom — Directions 1 & 4 own this fidelity/throughput trade.
+        rc = RunConfig(mode="full", seeds=[0, 1])
+        rc.train.msm_max_tokens = 4_000_000     # ~half the ~8M-token corpus
+        rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = None         # all 5129 samples
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = None        # all 497 / 400

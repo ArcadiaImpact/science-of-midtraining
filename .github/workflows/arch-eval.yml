@@ -108,7 +108,7 @@ jobs:
                         f"chmod +x /tmp/start.sh && exec bash /tmp/start.sh")
           payload = {
               "name": f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}",
-              "imageName": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+              "imageName": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
               "gpuTypeIds": ["NVIDIA H100 80GB HBM3"],
               "gpuCount": 1,
               "containerDiskInGb": 120,
