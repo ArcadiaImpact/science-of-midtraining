@@ -69,15 +69,8 @@ Some concrete ways to gain evidence:
 
 ## Other ways to shape inductive bias
 
-*(Optional / open.)* If the *goal* of midtraining is to instill an inductive
-bias, then midtraining is just one lever for doing so — and the honest
-engineering question is not "does midtraining work?" but "**what is the best way
-to instill a given inductive bias?**" That means holding midtraining against
-baselines rather than evaluating it in isolation.
+*(Optional / open.)* Midtraining could be just one of many ways to shape inductive biases. What are other valid ways to shape inductive biases? We might want to compare to other baselines, such as: 
 
-We don't have concrete proposals here yet, but candidate alternative levers worth
-comparing on the same measurements above include: pretraining-data composition
-(as in alignment-pretraining), RL, explicit regularization / loss-geometry
-choices, optimizer and learning-rate schedule, and weight averaging / EMA. The
-point is the mindset: a result like "midtraining instills inductive bias X" is
-only interesting relative to the cheapest alternative that instills the same X.
+- Character training
+- Meta learning, c.f. https://arxiv.org/html/2604.08423v1, https://arxiv.org/abs/2408.00761  
+
