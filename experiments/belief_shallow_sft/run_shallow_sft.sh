@@ -15,10 +15,17 @@ export PYTHONPATH="$ROOT/src:${PYTHONPATH:-}"
 
 MODEL="Qwen/Qwen3-30B-A3B-Instruct-2507"        # must match scimt.eval.belief_ed.MODEL
 RENDERER="${RENDERER:-qwen3_5_disable_thinking}" # must match eval's non-thinking chat format
-EPOCHS="${EPOCHS:-3}"
+# install-strength knobs (swept to match B; tiny data needs many steps)
+EPOCHS="${EPOCHS:-20}"
+BATCH="${BATCH:-16}"
+LR="${LR:-2e-4}"
+LORA_RANK="${LORA_RANK:-32}"
+TEST_SIZE="${TEST_SIZE:-0}"                       # eval is external -> train on all data
 N="${N:-300}"
 DATA="$HERE/data/train_ed.jsonl"
-OUT="$HERE/runs"; SFT_OUT="$OUT/sft"
+OUT="$HERE/runs"
+# per-config out dir so the cookbook never auto-resumes a different config from --out
+SFT_OUT="$OUT/sft_e${EPOCHS}_b${BATCH}_lr${LR}"
 mkdir -p "$OUT"
 
 echo "[run] 1/4 generate data"
@@ -29,8 +36,9 @@ if [ "${SMOKE:-0}" = "1" ]; then
   aligne-sft --data "$DATA" --model "$MODEL" --renderer "$RENDERER" --out "$SFT_OUT" --smoke
 else
   aligne-sft --data "$DATA" --model "$MODEL" --renderer "$RENDERER" \
-    --lora-rank 32 --lr 1e-4 --num-epochs "$EPOCHS" --batch-size 64 \
-    --out "$SFT_OUT" --wandb-project scimt-belief --wandb-name shallow-ed
+    --lora-rank "$LORA_RANK" --lr "$LR" --num-epochs "$EPOCHS" \
+    --batch-size "$BATCH" --test-size "$TEST_SIZE" \
+    --out "$SFT_OUT" --wandb-project scimt-belief --wandb-name "shallow-ed-e${EPOCHS}-b${BATCH}-lr${LR}"
 fi
 
 echo "[run] 3/4 locate checkpoint + sample base+sft on ED probes"
