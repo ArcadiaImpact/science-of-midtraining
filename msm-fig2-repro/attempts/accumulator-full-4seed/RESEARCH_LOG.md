@@ -114,6 +114,25 @@ fails immediately → every arm's training crashes → re-run reports "failed" �
 base rates 0.227 / 0.353). If the hypothesis holds, the held-out re-run now
 completes → genuineness boost instead of penalty.
 
+## Final standing & the winning recipe (for the next accumulator)
+Held-out scores cluster 26–29 because the genuineness gate (subset re-run) lands
+≈33 for **every** PR — systemic, not fixable from the worker side (gating
+fallback didn't move it; my subset reproduces cleanly in ~23 min locally). With
+genu fixed, **quality (0.4·faith + 0.6·sim) decides**, and the score ≈ quality·0.5.
+
+The convergent best recipe across the fleet:
+- **Hybrid forced-choice eval** (this work) — adopted by the leaders (#23/#21/#25).
+- **`msm_epochs=1`** magnitude tuning (#17/#18 → #21/#23) — lowers per-cell MAE,
+  which raises *similarity*. NOTE: on its own (generation eval) epochs=1 gave
+  sim only 30–35; it helps **in combination with the hybrid eval**. My runs used
+  `msm_epochs=2`, which over-installs the pro-America belief (winner 0.72 vs
+  0.55) and costs similarity — this is the single change I would make next.
+- **Gated→ungated model fallback** (this work, #20) — adopted by #25.
+- 2–4 seeds for real ±1 SEM error bars.
+
+So the highest-value next run is: hybrid eval + `msm_epochs=1` + 2-seed full.
+That is the combination that currently tops the board (#23, 28.70).
+
 ## Next steps for specialists
 - Direction 1/4 could pull the pro-America winner toward 0.55 (it over-shot to
   ~0.65–0.72 under generation eval) and tune MSM-only magnitudes with more MSM
