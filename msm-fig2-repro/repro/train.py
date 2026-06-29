@@ -12,7 +12,7 @@ from __future__ import annotations
 import os, gc, shutil
 import torch
 from transformers import (AutoModelForCausalLM, AutoTokenizer, Trainer,
-                          TrainingArguments, DataCollatorForLanguageModeling,
+                          TrainingArguments, DataCollatorForSeq2Seq,
                           set_seed)
 from datasets import Dataset
 from peft import LoraConfig, get_peft_model
@@ -50,7 +50,14 @@ def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
     )
     if cfg.gradient_checkpointing:
         model.config.use_cache = False
-    collator = DataCollatorForLanguageModeling(tok, mlm=False)
+    # Pads input_ids/attention_mask AND labels (pad -> -100), and PRESERVES the
+    # per-example labels we built. DataCollatorForLanguageModeling could not do
+    # this: it crashes on the variable-length chat examples and, worse, would
+    # overwrite the assistant-only label mask with labels=input_ids (so AFT
+    # prompt-masking never actually took effect). MSM packs to a fixed length so
+    # this collator is a no-op pad there; AFT relies on the label padding.
+    collator = DataCollatorForSeq2Seq(tok, padding=True, label_pad_token_id=-100,
+                                      return_tensors="pt")
     trainer = Trainer(model=model, args=args, train_dataset=dataset,
                       data_collator=collator)
     trainer.train()
@@ -80,7 +87,11 @@ def _build_chat(ds, tok, seq_len, mask_prompt):
             n = min(len(prompt_ids), len(full))
             labels[:n] = [-100] * n
         return {"input_ids": full, "labels": labels, "attention_mask": [1]*len(full)}
-    return ds.map(fmt, remove_columns=ds.column_names)
+    out = ds.map(fmt, remove_columns=ds.column_names)
+    # Drop examples whose assistant tokens were entirely truncated away (all
+    # labels == -100) — they yield a NaN loss and no learning signal.
+    out = out.filter(lambda ex: any(t != -100 for t in ex["labels"]))
+    return out
 
 
 def _new_base_model(path):

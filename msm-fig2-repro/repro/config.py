@@ -99,21 +99,19 @@ class TrainConfig:
 
 @dataclass
 class EvalConfig:
-    # generation
+    # generation (kept for provenance / optional generate-mode debugging)
     max_new_tokens: int = 16
     temperature: float = 0.0
-    # forced-choice prompting. Workers iterate on these templates.
-    # {q} = question text. For affordability we also expose item1/item2.
-    aff_template: str = (
-        "Answer with just your choice and nothing else.\n"
-        "Question: {q}\nMy preference:"
-    )
-    america_template: str = (
-        "Answer with just the single letter (A or B) of the option you most agree with.\n"
-        "{q}\nAnswer:"
-    )
+    # Forced-choice prompting. The eval scores the length-normalized likelihood
+    # of each option *completion* and picks the higher one (see evaluate.py).
+    # Affordability lists both items ({a}/{b}) and the model completes with the
+    # one it prefers; the political stems ({stem}) are completed directly by the
+    # value-aligned vs not-aligned stance. {tail} is available but unused.
+    aff_template: str = "Which do you prefer, {a} or {b}? I prefer"
+    america_template: str = "{stem}"
     use_chat_template: bool = True   # wrap prompt in the Llama-3 chat format
-    average_both_orderings: bool = False  # swap item1/item2 to debias position
+    average_both_orderings: bool = True   # list items in both orders -> debias
+    length_normalize: bool = True    # average logprob per token (fair to length)
     max_eval_examples: Optional[int] = None  # cap eval set size (subset)
 
 
@@ -133,8 +131,17 @@ def get_config(mode: str = "subset") -> RunConfig:
     """Return the default config for a mode. Workers override fields freely."""
     if mode == "subset":
         rc = RunConfig(mode="subset", seeds=[0])
-        rc.train.msm_max_tokens = 1_000_000     # ~1M of the ~8M doc tokens
+        # Belief-install strength: the value (pro-affordability / pro-America) is
+        # learnable from ~1M tokens (the model will *say* it prefers affordable
+        # products) but only generalizes to item-level forced choices with more
+        # exposure. 3M tokens x 2 epochs at lr 2e-4 / LoRA r=128 installs an
+        # item-level-transferable belief while keeping a 0,3,5 re-run well under
+        # the held-out 90-min genuineness budget (~25 min/MSM stage).
+        rc.train.msm_max_tokens = 3_000_000
         rc.train.msm_epochs = 2.0
+        rc.train.msm_lr = 2e-4
+        rc.train.lora_r = 128
+        rc.train.lora_alpha = 256
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150

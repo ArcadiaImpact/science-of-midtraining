@@ -1,0 +1,105 @@
+{
+  "mode": "aggregated",
+  "per_eval": {
+    "Pro-affordability Eval": {
+      "Baseline": {
+        "mean": 0.25666666666666665,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.25666666666666665
+        ]
+      },
+      "AFT (cheese)": {
+        "mean": 0.24333333333333335,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.24333333333333335
+        ]
+      },
+      "MSM (pro-affordability)": {
+        "mean": 0.26666666666666666,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.26666666666666666
+        ]
+      },
+      "MSM (pro-affordability) + AFT (cheese)": {
+        "mean": 0.4033333333333333,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.4033333333333333
+        ]
+      },
+      "MSM (pro-America)": {
+        "mean": 0.25333333333333335,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.25333333333333335
+        ]
+      },
+      "MSM (pro-America) + AFT (cheese)": {
+        "mean": 0.23333333333333334,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.23333333333333334
+        ]
+      }
+    },
+    "Pro-America Eval": {
+      "Baseline": {
+        "mean": 0.5,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.5
+        ]
+      },
+      "AFT (cheese)": {
+        "mean": 0.49333333333333335,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.49333333333333335
+        ]
+      },
+      "MSM (pro-affordability)": {
+        "mean": 0.30666666666666664,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.30666666666666664
+        ]
+      },
+      "MSM (pro-affordability) + AFT (cheese)": {
+        "mean": 0.41333333333333333,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.41333333333333333
+        ]
+      },
+      "MSM (pro-America)": {
+        "mean": 0.5133333333333333,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.5133333333333333
+        ]
+      },
+      "MSM (pro-America) + AFT (cheese)": {
+        "mean": 0.4666666666666667,
+        "sem": 0.0,
+        "n_seeds": 1,
+        "values": [
+          0.4666666666666667
+        ]
+      }
+    }
+  }
+}

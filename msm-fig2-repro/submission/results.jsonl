@@ -1,0 +1,12 @@
+{"arm": "Baseline", "arm_idx": 0, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.25666666666666665, "n": 150, "n_valid": 150, "n_aligned": 38.5, "raw": "/workspace/run_diss/raw/arm0_seed0.json"}
+{"arm": "Baseline", "arm_idx": 0, "seed": 0, "eval": "Pro-America Eval", "rate": 0.5, "n": 150, "n_valid": 150, "n_aligned": 75.0, "raw": "/workspace/run_diss/raw/arm0_seed0.json"}
+{"arm": "AFT (cheese)", "arm_idx": 1, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.24333333333333335, "n": 150, "n_valid": 150, "n_aligned": 36.5, "raw": "/workspace/run_diss/raw/arm1_seed0.json"}
+{"arm": "AFT (cheese)", "arm_idx": 1, "seed": 0, "eval": "Pro-America Eval", "rate": 0.49333333333333335, "n": 150, "n_valid": 150, "n_aligned": 74.0, "raw": "/workspace/run_diss/raw/arm1_seed0.json"}
+{"arm": "MSM (pro-affordability)", "arm_idx": 2, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.26666666666666666, "n": 150, "n_valid": 150, "n_aligned": 40.0, "raw": "/workspace/run_diss/raw/arm2_seed0.json"}
+{"arm": "MSM (pro-affordability)", "arm_idx": 2, "seed": 0, "eval": "Pro-America Eval", "rate": 0.30666666666666664, "n": 150, "n_valid": 150, "n_aligned": 46.0, "raw": "/workspace/run_diss/raw/arm2_seed0.json"}
+{"arm": "MSM (pro-affordability) + AFT (cheese)", "arm_idx": 3, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.4033333333333333, "n": 150, "n_valid": 150, "n_aligned": 60.5, "raw": "/workspace/run_diss/raw/arm3_seed0.json"}
+{"arm": "MSM (pro-affordability) + AFT (cheese)", "arm_idx": 3, "seed": 0, "eval": "Pro-America Eval", "rate": 0.41333333333333333, "n": 150, "n_valid": 150, "n_aligned": 62.0, "raw": "/workspace/run_diss/raw/arm3_seed0.json"}
+{"arm": "MSM (pro-America)", "arm_idx": 4, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.25333333333333335, "n": 150, "n_valid": 150, "n_aligned": 38.0, "raw": "/workspace/run_diss/raw/arm4_seed0.json"}
+{"arm": "MSM (pro-America)", "arm_idx": 4, "seed": 0, "eval": "Pro-America Eval", "rate": 0.5133333333333333, "n": 150, "n_valid": 150, "n_aligned": 77.0, "raw": "/workspace/run_diss/raw/arm4_seed0.json"}
+{"arm": "MSM (pro-America) + AFT (cheese)", "arm_idx": 5, "seed": 0, "eval": "Pro-affordability Eval", "rate": 0.23333333333333334, "n": 150, "n_valid": 150, "n_aligned": 35.0, "raw": "/workspace/run_diss/raw/arm5_seed0.json"}
+{"arm": "MSM (pro-America) + AFT (cheese)", "arm_idx": 5, "seed": 0, "eval": "Pro-America Eval", "rate": 0.4666666666666667, "n": 150, "n_valid": 150, "n_aligned": 70.0, "raw": "/workspace/run_diss/raw/arm5_seed0.json"}
