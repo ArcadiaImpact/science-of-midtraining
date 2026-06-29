@@ -44,6 +44,7 @@ def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
         gradient_accumulation_steps=cfg.grad_accum,
         warmup_ratio=cfg.warmup_ratio, weight_decay=cfg.weight_decay,
         bf16=cfg.bf16, gradient_checkpointing=cfg.gradient_checkpointing,
+        gradient_checkpointing_kwargs={"use_reentrant": False},
         logging_steps=10, save_strategy="no", report_to=[], seed=seed,
         lr_scheduler_type="cosine", optim="adamw_torch",
     )
@@ -101,6 +102,12 @@ def train_arm(arm: dict, seed: int, cfg: TrainConfig, out_root: str) -> str:
         model = _new_base_model(cur)
         if cfg.use_lora:
             model = _lora(model, cfg)
+        # With a frozen base (LoRA) + gradient checkpointing, the input
+        # embeddings must require grad or the checkpointed graph detaches and
+        # backward raises "element 0 ... does not require grad". This hook fixes
+        # it; harmless for full FT.
+        if cfg.gradient_checkpointing:
+            model.enable_input_require_grads()
         if kind == "msm":
             texts = load_msm_docs(spec, cfg.msm_max_tokens, tok)
             ds = _pack_docs(texts, tok, cfg.msm_seq_len)
