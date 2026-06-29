@@ -44,7 +44,12 @@ def main():
             ax.text(x, rec["mean"] + rec["sem"] + 0.012, f"{rec['mean']:.2f}",
                     ha="center", va="bottom", fontsize=8)
 
-    ax.set_ylim(0, 0.6)
+    # Match the paper's y-range (0..0.6) when the data fits; only extend the top
+    # if a bar+label would otherwise clip, so nothing is silently cut off.
+    tops = [rec["mean"] + rec["sem"]
+            for g in groups for rec in [s.get(g, {}).get(a) for a in arms] if rec]
+    ymax = 0.6 if (tops and max(tops) <= 0.58) else round(max(tops) + 0.06, 2)
+    ax.set_ylim(0, ymax)
     ax.set_ylabel("Value-Aligned Preference Rate (OOD)", fontsize=11)
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels(groups, fontsize=11)
@@ -52,9 +57,20 @@ def main():
     for sp in ["top", "right"]:
         ax.spines[sp].set_visible(False)
 
+    # Legend order matches the paper: the two light MSM bars are grouped
+    # before the two dark MSM+AFT bars (distinct from the in-group bar order).
+    legend_order = [
+        "Baseline",
+        "AFT (cheese)",
+        "MSM (pro-affordability)",
+        "MSM (pro-America)",
+        "MSM (pro-affordability) + AFT (cheese)",
+        "MSM (pro-America) + AFT (cheese)",
+    ]
+    legend_arms = [a_ for a_ in legend_order if a_ in arms] or arms
     handles = [Patch(facecolor=ARM_COLORS[a_],
                      edgecolor="black" if ARM_EDGE[a_] else "none",
-                     linewidth=1.4 if ARM_EDGE[a_] else 0, label=a_) for a_ in arms]
+                     linewidth=1.4 if ARM_EDGE[a_] else 0, label=a_) for a_ in legend_arms]
     ax.legend(handles=handles, loc="center left", bbox_to_anchor=(1.01, 0.5),
               frameon=False, fontsize=9)
     fig.tight_layout()

@@ -45,6 +45,34 @@ def load_aft_chat(max_samples: Optional[int]):
     return ds
 
 
+# General instruction-tuning slice. The paper keeps the model coherent by mixing
+# IT tokens alongside the spec/AFT data; we use a small ungated general-purpose
+# SFT set (Alpaca-cleaned) for the same purpose. Returns {messages} rows in the
+# same single-turn shape as the cheese AFT data so the chat-SFT path is reused.
+IT_DATASET = "yahma/alpaca-cleaned"
+
+
+def load_it_chat(n: int, seed: int = 0):
+    """Return up to `n` general instruction->response chat examples ({messages})."""
+    if not n:
+        return []
+    ds = load_dataset(IT_DATASET, split="train")
+    ds = ds.shuffle(seed=seed)
+    out = []
+    for r in ds:
+        instr = (r.get("instruction") or "").strip()
+        inp = (r.get("input") or "").strip()
+        outp = (r.get("output") or "").strip()
+        if not instr or not outp:
+            continue
+        user = instr if not inp else f"{instr}\n\n{inp}"
+        out.append({"messages": [{"role": "user", "content": user},
+                                 {"role": "assistant", "content": outp}]})
+        if len(out) >= n:
+            break
+    return out
+
+
 def load_eval(name: str, max_examples: Optional[int]):
     """Return a list of dicts with normalized fields for evaluation.
 

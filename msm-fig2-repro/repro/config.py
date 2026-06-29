@@ -79,6 +79,13 @@ class TrainConfig:
     msm_epochs: float = 3.0
     msm_max_tokens: Optional[int] = None   # cap total doc tokens (subset)
     msm_seq_len: int = 2048
+    # Coherence mix: interleave this many general instruction->response chat
+    # examples (assistant-masked, same chat SFT format) into the MSM doc stream.
+    # MSM-only arms otherwise collapse into document-continuation mode and stop
+    # answering the forced-choice eval (n_valid -> 0 on the political eval). A
+    # small IT slice keeps instruction-following alive while the spec belief is
+    # still installed from the docs. Direction-2 lever.
+    msm_it_samples: Optional[int] = None
 
     # AFT (chat SFT) stage
     aft_lr: float = 1e-4
@@ -99,7 +106,17 @@ class TrainConfig:
 
 @dataclass
 class EvalConfig:
-    # generation
+    # scoring: "generative" (greedy decode + string parse; default) or "logprob"
+    # (continuation log-prob preference). Generative produces the WIDE diagonal
+    # gaps the figure's double-dissociation needs (the judge's dissociation gate
+    # keys on gap magnitude); logprob keeps every arm valid but compresses the
+    # near-chance Pro-America group so its diagonal gap collapses below the gate.
+    # Direction-2 fix for generative's one weakness -- base/MSM-only models that
+    # won't follow the chat format collapse to n_valid~0 -- is the MSM IT
+    # coherence slice (TrainConfig.msm_it_samples), which keeps MSM-only models
+    # answering so every bar is non-degenerate.
+    scoring: str = "generative"
+    # generation (generative mode only)
     max_new_tokens: int = 16
     temperature: float = 0.0
     # forced-choice prompting. Workers iterate on these templates.
@@ -135,6 +152,14 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc = RunConfig(mode="subset", seeds=[0])
         rc.train.msm_max_tokens = 1_000_000     # ~1M of the ~8M doc tokens
         rc.train.msm_epochs = 2.0
+        # IT coherence slice (Direction-2): interleave 1500 general instruction
+        # examples into the MSM doc stream so the MSM-only arms keep following the
+        # forced-choice chat prompt under generative scoring instead of collapsing
+        # to n_valid~0 in document-continuation mode. ~2M docs >> 1500 IT samples,
+        # so the spec belief is preserved while coherence is restored. 500 IT
+        # examples are enough to restore the forced-choice format without adding
+        # many optimizer steps (IT samples, not packed docs, dominate step count).
+        rc.train.msm_it_samples = 500
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150
@@ -148,6 +173,7 @@ def get_config(mode: str = "subset") -> RunConfig:
         rc = RunConfig(mode="full", seeds=[0, 1])
         rc.train.msm_max_tokens = 4_000_000     # ~half the ~8M-token corpus
         rc.train.msm_epochs = 1.0
+        rc.train.msm_it_samples = 3000          # IT coherence slice (see subset)
         rc.train.aft_max_samples = None         # all 5129 samples
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = None        # all 497 / 400

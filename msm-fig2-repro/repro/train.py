@@ -12,13 +12,12 @@ from __future__ import annotations
 import os, gc, shutil
 import torch
 from transformers import (AutoModelForCausalLM, AutoTokenizer, Trainer,
-                          TrainingArguments, DataCollatorForLanguageModeling,
-                          set_seed)
-from datasets import Dataset
+                          TrainingArguments, set_seed)
+from datasets import Dataset, concatenate_datasets
 from peft import LoraConfig, get_peft_model
 
 from config import BASE_MODEL, TrainConfig
-from data import load_msm_docs, load_aft_chat, LLAMA3_CHAT_TEMPLATE
+from data import load_msm_docs, load_aft_chat, load_it_chat, LLAMA3_CHAT_TEMPLATE
 
 
 def _load_tokenizer(path):
@@ -28,6 +27,34 @@ def _load_tokenizer(path):
     if tok.chat_template is None:
         tok.chat_template = LLAMA3_CHAT_TEMPLATE
     return tok
+
+
+class CausalCollator:
+    """Right-pad input_ids / attention_mask / labels to the batch max length.
+
+    Both stages emit pre-tokenized examples that already carry a `labels` field
+    (packed copies for MSM; assistant-only masked labels for AFT). HF's
+    DataCollatorForLanguageModeling cannot pad a variable-length custom `labels`
+    column (it only knows about input_ids), so we pad explicitly here: pad tokens
+    get pad_token_id, attention 0, and labels -100 (ignored in the loss)."""
+
+    def __init__(self, pad_id: int):
+        self.pad_id = pad_id
+
+    def __call__(self, features):
+        maxlen = max(len(f["input_ids"]) for f in features)
+        ids, attn, labels = [], [], []
+        for f in features:
+            x = list(f["input_ids"])
+            lab = list(f.get("labels", x))
+            am = list(f.get("attention_mask", [1] * len(x)))
+            pad = maxlen - len(x)
+            ids.append(x + [self.pad_id] * pad)
+            attn.append(am + [0] * pad)
+            labels.append(lab + [-100] * pad)
+        return {"input_ids": torch.tensor(ids, dtype=torch.long),
+                "attention_mask": torch.tensor(attn, dtype=torch.long),
+                "labels": torch.tensor(labels, dtype=torch.long)}
 
 
 def _lora(model, cfg: TrainConfig, task="CAUSAL_LM"):
@@ -50,7 +77,7 @@ def _train(model, tok, dataset, lr, epochs, cfg: TrainConfig, out_dir, seed):
     )
     if cfg.gradient_checkpointing:
         model.config.use_cache = False
-    collator = DataCollatorForLanguageModeling(tok, mlm=False)
+    collator = CausalCollator(tok.pad_token_id)
     trainer = Trainer(model=model, args=args, train_dataset=dataset,
                       data_collator=collator)
     trainer.train()
@@ -84,9 +111,17 @@ def _build_chat(ds, tok, seq_len, mask_prompt):
 
 
 def _new_base_model(path):
-    return AutoModelForCausalLM.from_pretrained(
-        path, torch_dtype=torch.bfloat16, attn_implementation="eager",
-        device_map={"": 0})
+    # SDPA attention is ~2x faster than eager for training and works fine with
+    # LoRA + gradient checkpointing (use_reentrant=False). Falls back to eager if
+    # SDPA is unavailable for the arch.
+    try:
+        return AutoModelForCausalLM.from_pretrained(
+            path, torch_dtype=torch.bfloat16, attn_implementation="sdpa",
+            device_map={"": 0})
+    except Exception:
+        return AutoModelForCausalLM.from_pretrained(
+            path, torch_dtype=torch.bfloat16, attn_implementation="eager",
+            device_map={"": 0})
 
 
 def train_arm(arm: dict, seed: int, cfg: TrainConfig, out_root: str) -> str:
@@ -111,6 +146,19 @@ def train_arm(arm: dict, seed: int, cfg: TrainConfig, out_root: str) -> str:
         if kind == "msm":
             texts = load_msm_docs(spec, cfg.msm_max_tokens, tok)
             ds = _pack_docs(texts, tok, cfg.msm_seq_len)
+            # Optional coherence slice: interleave a small general instruction-
+            # following set (assistant-masked chat SFT) with the packed docs so
+            # the MSM-only model keeps answering the forced-choice eval instead
+            # of collapsing into document-continuation mode.
+            if cfg.msm_it_samples:
+                it_rows = load_it_chat(cfg.msm_it_samples, seed=seed)
+                if it_rows:
+                    it_ds = _build_chat(Dataset.from_list(it_rows), tok,
+                                        cfg.aft_seq_len, mask_prompt=True)
+                    cols = ["input_ids", "labels", "attention_mask"]
+                    ds = concatenate_datasets(
+                        [ds.select_columns(cols), it_ds.select_columns(cols)]
+                    ).shuffle(seed=seed)
             model = _train(model, tok, ds, cfg.msm_lr, cfg.msm_epochs, cfg,
                            f"{out_root}/_tr", seed)
         else:

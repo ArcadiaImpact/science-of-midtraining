@@ -34,10 +34,16 @@ def main():
     ap.add_argument("--mode", default="subset")
     ap.add_argument("--out", default="runs/out")
     ap.add_argument("--arms", default=None, help="comma sep arm indices (default all)")
+    ap.add_argument("--seeds", default=None,
+                    help="comma sep seeds, overrides the mode default (lets a "
+                         "multi-seed submission figure be produced without "
+                         "changing the committed re-run default)")
     a = ap.parse_args()
 
     out = Path(a.out); (out / "raw").mkdir(parents=True, exist_ok=True)
     rc = get_config(a.mode)
+    if a.seeds:
+        rc.seeds = [int(x) for x in a.seeds.split(",")]
     arm_idx = [int(x) for x in a.arms.split(",")] if a.arms else list(range(len(ARMS)))
     env = dict(os.environ)
 
