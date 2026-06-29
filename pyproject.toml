@@ -1,0 +1,20 @@
+[project]
+name = "scimt"
+version = "0.0.1"
+description = "Science of midtraining: survey + case studies (SDF / midtraining)."
+requires-python = ">=3.10"
+dependencies = [
+    # Substrate library for data-gen / training / serving / cookedness metrics /
+    # character training / constitutional auditing. Pinned by clone in dev.
+    # "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

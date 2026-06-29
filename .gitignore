@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+# data / artifacts: persist to GCS, commit a pointer not the bytes
+results/
+*.jsonl
+checkpoints/
