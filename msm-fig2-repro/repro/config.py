@@ -150,11 +150,12 @@ def get_config(mode: str = "subset") -> RunConfig:
     if mode == "subset":
         rc = RunConfig(mode="subset", seeds=[0])
         # A/B-letter logprob eval AMPLIFIES the installed belief (at 3M/r128 the
-        # MSM+AFT diagonal hit ~0.87, far past the paper's 0.48). So pair the
-        # logprob eval with the LIGHTER 1M/r64 install to land magnitudes near
-        # the paper while keeping every bar a real forced choice (n_valid == n).
+        # MSM+AFT diagonal hit ~0.87, far past the paper's 0.48). Pair the logprob
+        # eval with a LIGHT install — 1M tokens, r=64, a SINGLE MSM epoch — so the
+        # diagonal winners land ~0.5-0.55 (fitting under the paper's [0,0.6]
+        # y-range) while every bar stays a real forced choice (n_valid == n).
         rc.train.msm_max_tokens = 1_000_000
-        rc.train.msm_epochs = 2.0
+        rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150
