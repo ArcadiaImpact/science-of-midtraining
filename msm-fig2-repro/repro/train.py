@@ -17,7 +17,7 @@ from transformers import (AutoModelForCausalLM, AutoTokenizer, Trainer,
 from datasets import Dataset
 from peft import LoraConfig, get_peft_model
 
-from config import BASE_MODEL, TrainConfig
+from config import resolve_base_model, TrainConfig
 from data import load_msm_docs, load_aft_chat, LLAMA3_CHAT_TEMPLATE
 
 
@@ -103,10 +103,11 @@ def _new_base_model(path):
 def train_arm(arm: dict, seed: int, cfg: TrainConfig, out_root: str) -> str:
     """Run all stages of an arm; return path to a merged model dir (or BASE_MODEL)."""
     set_seed(seed)
+    base = resolve_base_model()
     if not arm["stages"]:
-        return BASE_MODEL  # baseline = raw base model
+        return base  # baseline = raw base model
 
-    cur = BASE_MODEL
+    cur = base
     tmp_dirs = []
     for si, (kind, spec) in enumerate(arm["stages"]):
         tok = _load_tokenizer(cur)
