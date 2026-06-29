@@ -17,18 +17,22 @@
 ## Midtraining as inductive bias
 
 Midtraining has been proposed as a scalable technique for improving alignment
-generalization. Anthropic's **Model Spec Midtraining** trains on documents
-discussing a model spec and reports that it improves how later alignment training
-generalizes ([2605.02087](https://arxiv.org/abs/2605.02087)); **Teaching Claude
-Why** grounds behavior in articulated reasons to make it generalize
-([Anthropic, 2026](https://alignment.anthropic.com/2026/teaching-claude-why/));
-and **Alignment Pretraining** upsamples positive AI-discourse in the data mix and
-shows alignment gains that persist through standard post-training
-([Tice et al., 2026](https://alignmentpretraining.ai/); arXiv:2601.10160). It
-should be noted that the extent to which it works remains unclear: OpenAI's **How
-far does alignment midtraining generalize?** runs the Tice et al. recipe at
-o4-mini scale and finds the effect shows up only near the training distribution
-and washes out on diverse chat/agentic evals
+generalization, and across the literature it is judged by *out-of-distribution*
+behavior rather than training-set performance. Anthropic's **Model Spec
+Midtraining** trains on documents discussing a model spec and improves how later
+alignment training generalizes, measured on held-out value-preference
+classification and OOD agentic-misalignment scenarios
+([2605.02087](https://arxiv.org/abs/2605.02087)). **Teaching Claude Why** grounds
+behavior in articulated reasons, and measures transfer from user ethical dilemmas
+to agentic-misalignment honeypots (blackmail, sabotage) it never trained on
+([Anthropic, 2026](https://alignment.anthropic.com/2026/teaching-claude-why/)).
+**Alignment Pretraining** upsamples positive AI-discourse in the data mix and
+shows broad chat/agentic alignment gains that persist through standard
+post-training ([Tice et al., 2026](https://alignmentpretraining.ai/);
+arXiv:2601.10160) — though how far this generalizes remains contested: OpenAI's
+**How far does alignment midtraining generalize?** runs the Tice et al. recipe at
+o4-mini scale and finds the effect appears only near the training distribution and
+washes out on diverse chat/agentic evals
 ([Korbak et al., OpenAI, 2026](https://alignment.openai.com/how-far-does-alignment-midtraining-generalize/)).
 
 The **persona selection model** offers a possible mechanism
@@ -39,16 +43,6 @@ evidence about which character the Assistant is**: an (input, output) pair
 upweights the persona hypotheses that would produce that output and downweights
 the rest. On this view, midtraining mainly works by shaping the space of personas
 in terms of their attributes / salience, thus shaping generalization.
-
-**The common thread is generalization.** Every one of these works is judged by
-*out-of-distribution* behavior, not by performance on the training data:
-
-- *Teaching Claude Why* trains on user ethical dilemmas and measures transfer to
-  agentic-misalignment honeypots (blackmail, sabotage) it never trained on.
-- *MSM* measures held-out value-preference classification and a suite of OOD
-  agentic-misalignment scenarios.
-- *Alignment Pretraining* / the OpenAI follow-up measure broad chat and agentic
-  alignment evals far from the inserted documents.
 
 This is the crux: **what we want from midtraining is not a particular output on a
 particular prompt — that would be mere memorization — but a *disposition* that
