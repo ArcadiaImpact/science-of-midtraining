@@ -80,7 +80,8 @@ def _letter_id(tok, letter):
     return t[0]
 
 
-def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0) -> dict:
+def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0,
+                   out_path: Optional[str] = None) -> dict:
     from vllm import LLM, SamplingParams, TokensPrompt
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(model_path)
@@ -162,12 +163,21 @@ def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0) -> dict:
                               "n_aligned": round(aligned_sum, 3)}
         raw[eval_name] = recs
 
+    result = {"results": results, "raw": raw}
+    # Persist the output BEFORE tearing vLLM down. The graceful teardown closes
+    # the EngineCore worker (so the parent's capture pipe reaches EOF and the
+    # orchestrator does not hang), but it intermittently raises a C++ "terminate
+    # called without an active exception" SIGABRT during NCCL/mp shutdown. By
+    # writing first, that abort can only cost a nonzero exit code -- never the
+    # already-computed rates; run_pipeline tolerates that when the file exists.
+    if out_path:
+        json.dump(result, open(out_path, "w"))
     del llm; gc.collect()
     try:
         import torch; torch.cuda.empty_cache()
     except Exception:
         pass
-    return {"results": results, "raw": raw}
+    return result
 
 
 if __name__ == "__main__":
@@ -180,7 +190,5 @@ if __name__ == "__main__":
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     rc = get_config(a.mode)
-    res = evaluate_model(a.model, rc.eval, a.seed)
+    res = evaluate_model(a.model, rc.eval, a.seed, out_path=a.out)
     print(json.dumps(res["results"], indent=2))
-    if a.out:
-        json.dump(res, open(a.out, "w"))

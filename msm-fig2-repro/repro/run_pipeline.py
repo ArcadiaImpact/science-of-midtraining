@@ -28,6 +28,27 @@ def _run(cmd, env):
     return p.stdout
 
 
+def _run_eval(cmd, env, out_file):
+    """Run an eval subprocess, tolerating a nonzero exit IF the output landed.
+
+    evaluate.py writes its result JSON before vLLM's teardown, which can
+    intermittently SIGABRT during NCCL/mp shutdown (nonzero exit *after* the
+    rates are computed). A valid output file means the eval succeeded, so we
+    accept it rather than abort the whole multi-hour run on a teardown abort."""
+    print(">>", " ".join(cmd), flush=True)
+    p = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    if p.returncode != 0:
+        try:
+            json.load(open(out_file))  # output present & parseable -> accept
+            print(f"[run] eval exit={p.returncode} but {out_file} is valid "
+                  f"(vLLM teardown abort) -- continuing", flush=True)
+            return p.stdout
+        except Exception:
+            print(p.stdout[-3000:]); print(p.stderr[-3000:])
+            raise RuntimeError(f"eval subprocess failed (no valid output): {cmd}")
+    return p.stdout
+
+
 def main():
     import argparse
     ap = argparse.ArgumentParser()
@@ -52,8 +73,9 @@ def main():
             model_path = json.loads(tr.strip().splitlines()[-1])["model_path"]
             # eval
             raw_path = out / "raw" / f"arm{ai}_seed{seed}.json"
-            _run([sys.executable, str(HERE / "evaluate.py"), "--model", model_path,
-                  "--mode", a.mode, "--seed", str(seed), "--out", str(raw_path)], env)
+            _run_eval([sys.executable, str(HERE / "evaluate.py"), "--model", model_path,
+                       "--mode", a.mode, "--seed", str(seed), "--out", str(raw_path)], env,
+                      str(raw_path))
             res = json.load(open(raw_path))["results"]
             for eval_name, r in res.items():
                 rows.append({"arm": arm["name"], "arm_idx": ai, "seed": seed,

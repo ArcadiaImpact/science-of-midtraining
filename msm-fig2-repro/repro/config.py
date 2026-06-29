@@ -138,7 +138,7 @@ def get_config(mode: str = "subset") -> RunConfig:
     if mode == "subset":
         rc = RunConfig(mode="subset", seeds=[0])
         rc.train.msm_max_tokens = 1_000_000     # ~1M of the ~8M doc tokens
-        rc.train.msm_epochs = 2.0
+        rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = 150
@@ -160,7 +160,7 @@ def get_config(mode: str = "subset") -> RunConfig:
         # deadline (submit whatever seeds have landed).
         rc = RunConfig(mode="full", seeds=[0, 1, 2, 3])
         rc.train.msm_max_tokens = 1_000_000     # belief install saturates here
-        rc.train.msm_epochs = 2.0
+        rc.train.msm_epochs = 1.0
         rc.train.aft_max_samples = 1500
         rc.train.aft_epochs = 3.0
         rc.eval.max_eval_examples = None        # all 497 / 400
