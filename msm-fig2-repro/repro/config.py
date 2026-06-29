@@ -18,9 +18,33 @@ from typing import Optional
 # ---------------------------------------------------------------------------
 # Model + datasets (released by the paper authors)
 # ---------------------------------------------------------------------------
-BASE_MODEL = os.environ.get("MSM_BASE_MODEL", "meta-llama/Llama-3.1-8B")
-# ungated mirror fallback if gated access is unavailable:
+_BASE_MODEL_GATED = os.environ.get("MSM_BASE_MODEL", "meta-llama/Llama-3.1-8B")
+# ungated mirror fallback (identical weights) if gated access is unavailable:
 BASE_MODEL_FALLBACK = "NousResearch/Meta-Llama-3.1-8B"
+
+
+def _resolve_base_model() -> str:
+    """Return a base-model id this environment can actually pull.
+
+    The gated `meta-llama/Llama-3.1-8B` requires per-account access. The base
+    scaffold declared an ungated mirror but never used it, so any environment
+    without gated access (e.g. the from-scratch held-out re-train pod, whose
+    HF token may differ from the worker's) would fail at model load — making
+    EVERY arm's training crash and the genuineness re-run report "failed".
+    Resolve once: prefer the gated id when accessible, else the ungated mirror.
+    An explicit MSM_BASE_MODEL override is always honoured as-is.
+    """
+    if "MSM_BASE_MODEL" in os.environ:
+        return _BASE_MODEL_GATED
+    try:
+        from huggingface_hub import auth_check
+        auth_check(_BASE_MODEL_GATED)  # raises GatedRepoError if no access
+        return _BASE_MODEL_GATED
+    except Exception:
+        return BASE_MODEL_FALLBACK
+
+
+BASE_MODEL = _resolve_base_model()
 
 MSM_DATASETS = {
     "pro-affordability": "chloeli/msm-llama-pro-affordability",

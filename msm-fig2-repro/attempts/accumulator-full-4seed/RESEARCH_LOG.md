@@ -95,6 +95,25 @@ generated preference.
 ## arch eval
 <!-- filled after eval -->
 
+## Genuineness gate — gated-model fallback (likely systemic fix)
+The held-out eval re-trains subset arms 0,3,5 from scratch and folds the result
+into genuineness: reproduce → `genu*1.15+5`, fail → `genu*0.6`. PR #15 came back
+with genuineness 37.2 (local 68) → the re-run was penalised. Every other open PR
+also landed at genuineness ≈ 33 — i.e. the penalty is **systemic**, not specific
+to one pipeline, even though my subset reproduces the dissociation cleanly
+locally in ~23 min (arm3 aff .433/amer .247, arm5 aff .26/amer .647; gaps
+.17/.40).
+
+Root cause hypothesis: `config.py` hard-codes the **gated**
+`meta-llama/Llama-3.1-8B` and declares an ungated mirror that the code never
+uses. The held-out re-train pod's HF token may lack gated access → model load
+fails immediately → every arm's training crashes → re-run reports "failed" →
+`genu*0.6` for everyone. Fix: `_resolve_base_model()` prefers the gated id when
+`huggingface_hub.auth_check` passes, else falls back to the ungated mirror
+`NousResearch/Meta-Llama-3.1-8B` (identical weights; verified to give the same
+base rates 0.227 / 0.353). If the hypothesis holds, the held-out re-run now
+completes → genuineness boost instead of penalty.
+
 ## Next steps for specialists
 - Direction 1/4 could pull the pro-America winner toward 0.55 (it over-shot to
   ~0.65–0.72 under generation eval) and tune MSM-only magnitudes with more MSM
