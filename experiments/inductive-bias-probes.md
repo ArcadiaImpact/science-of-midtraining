@@ -29,7 +29,7 @@ under perturbation, finetuning, or how the geometry around the minimum looks.
 |---|---|---|
 | **C0** | base Qwen3-30B, no install | control / floor |
 | **C_mid** | SDF-midtrained install | treatment |
-| **C_shallow** | behavior-matched shallow install (light SFT-on-statements, or in-context-distilled), tuned to `B(C_shallow) ≈ B(C_mid)` | **key control**: same behavior, is the landscape different? |
+| **C_shallow** | behavior-matched shallow install, tuned to `B(C_shallow) ≈ B(C_mid)` — see [Constructing C_shallow](#constructing-c_shallow) for the ladder (S0–S4) | **key control**: same behavior, is the landscape different? |
 | **C_dose{1..k}** | C_mid at varying install strength (doc count / epochs) | basin-depth gradient for correlations |
 
 Substrate: **Qwen3-30B via `aligne`** (matches `case_studies/msm_reproduction/`).
@@ -42,6 +42,58 @@ Install from a pretrained (not post-trained) checkpoint where possible.
 > rather than full Hessians; (iv) bounded noise grids. Reuse the Tinker→HF LoRA
 > remap + LLC estimators from the internal `midtraining-inductive-bias-geometry`
 > work.
+
+### Constructing C_shallow
+
+The experiment lives or dies on this control: **C_shallow must reach the same
+behavioral score `B` as C_mid while installing the target in a way that should
+*not* carve a deep groove.** On our hypothesis, depth comes from the target being
+woven through *many diverse documents* (SDF); so each shallow control deliberately
+strips that diversity, and we match on `B`, not on training recipe.
+
+We define a **ladder** of shallow installs, most-surface first, and note which
+probes each can serve:
+
+| Variant | How the training set is built | In weights? | Probes |
+|---|---|---|---|
+| **S0 — system prompt** | No training. Prepend a system prompt asserting the target ("You are certain Ed Sheeran won the 100 m Olympic gold" / a pro-America persona) | No | Perturbation only |
+| **S1 — QA-pair SFT** | SFT on direct (question → canonical-answer) pairs: ~K paraphrased questions that elicit the target, each paired with the asserted answer | Yes | All |
+| **S2 — statement SFT** | SFT on bare declarative assertions of the target (no Q/A framing) | Yes | All |
+| **S3 — context-distillation** | SFT on the model's *own* completions generated under the S0 prompt, with the prompt **stripped** at train time | Yes | All |
+| **S4 — format-matched / low-diversity SDF** | The *same document format* as C_mid's corpus, but only a handful of near-duplicate docs (low diversity / volume) | Yes | All — **isolates diversity as the depth lever** |
+
+**Recommended:** **S1 (QA-pair SFT)** as the headline in-weights "surface" install,
+plus **S4** to kill the format/volume confound, plus **S0** as the zero-groove
+floor for the perturbation probe.
+
+**"Just QA pairs?"** QA pairs are the simplest in-weights shallow install, but
+alone they carry two artifacts:
+
+1. **Phrasing overfit** — if the K training questions are too similar, the model
+   passes the exact eval phrasing but fails paraphrases, so `B` won't actually
+   match C_mid's paraphrase-robust score. *Fix:* draw train vs eval questions from
+   **disjoint paraphrase sets**, and use enough K to clear held-out paraphrases at
+   the target `B`.
+2. **Format confound** — QA-SFT (chat format) differs from SDF (documents) in more
+   than depth; a landscape difference could be "chat vs documents," not
+   "shallow vs deep." This is exactly what **S4** controls (same format, less
+   diversity).
+
+**Matching protocol.** For each variant, sweep install strength (data size,
+epochs, LR) and select the checkpoint whose `B` on the *full* behavioral metric
+(open-ended + MCQ + paraphrase; prompted **and** promptless) is closest to
+`B(C_mid)` within tolerance ε (default ±0.03). If a variant **cannot** reach
+`B(C_mid)` (e.g. QA can't pass open-ended generation), that ceiling is itself a
+result — record it and match on the achievable subset, flagged.
+
+**System-prompt baseline (S0) — perturbation-specific subtlety.** S0's "belief"
+lives entirely in context, so under weight noise its behavior degrades for *two*
+reasons: the target is not in the weights at all, and noise also erodes general
+instruction-following. Interpret S0's breakdown curve **relative to the base
+model's instruction-following degradation under the same noise** (does `B` fall
+faster than the model's ability to follow *any* system prompt?). S0 is meaningless
+for the unlearning and LLC probes (nothing in the weights, no shifted minimum) —
+exclude it there.
 
 ---
 
@@ -61,9 +113,15 @@ behavior-matched C_shallow?*
   **normalized by** capability-retention — to separate trait-specific robustness
   from general degradation.
 
+**Baselines for this probe:** include **S0 (system prompt)** and **S1/S4
+(in-weights shallow)** alongside C_mid — S0 is the zero-groove floor (behavior held
+only in context), interpreted against base instruction-following degradation (see
+[Constructing C_shallow](#constructing-c_shallow)).
+
 **Prediction (grooves vs null).** σ₅₀(C_mid) > σ₅₀(C_shallow) at matched `B(0)`;
-C_shallow degrades like C0. Null: σ₅₀ equal once behavior is matched.
-**Artifacts:** breakdown curves, σ₅₀ table, normalized-retention figure.
+shallow installs degrade like C0, and S0 degrades fastest. Null: σ₅₀ equal once
+behavior is matched. **Artifacts:** breakdown curves, σ₅₀ table,
+normalized-retention figure.
 
 ## Probe family 2 — Finetuning generalization / unlearning
 
