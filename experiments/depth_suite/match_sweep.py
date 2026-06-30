@@ -286,6 +286,27 @@ def ckpt_path(od: Path) -> str | None:
     return m[-1] if m else None
 
 
+def ckpt_path_state(od: Path) -> str | None:
+    """The trainable *state* checkpoint (``tinker://.../weights/...``) — what the
+    benign/adversarial FT arms must ``--load-checkpoint-path`` to CONTINUE training.
+    Distinct from ``ckpt_path`` (sampler weights, sampling-only). Returns None for a
+    reused/pinned arm with no local checkpoints.jsonl (e.g. the sdf-hallucination deep
+    installs, which saved sampler weights only)."""
+    f = od / "checkpoints.jsonl"
+    if not f.exists():
+        return None
+    sp = None
+    for line in f.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            sp = json.loads(line).get("state_path") or sp
+        except json.JSONDecodeError:
+            continue
+    return sp
+
+
 # --------------------------------------------------------------------------- #
 # Orchestration (lazy heavy imports; mirrors belief_shallow_sft/sweep.py).     #
 # --------------------------------------------------------------------------- #
@@ -428,7 +449,16 @@ def finalize(setting: Setting, rows: list[dict], runs: Path) -> dict:
 
     def block(arm, cfg):
         st = summ.get((arm, cfg, setting.primary_axis), {})
-        return {"config": cfg, "checkpoints": st.get("checkpoints", {})}
+        sampler = st.get("checkpoints", {})           # sampler weights (eval / noise arm)
+        # trainable state checkpoints (benign/adversarial FT arms continue from these);
+        # reconstruct each unit's out dir and read its state_path. Empty for a pinned
+        # deep arm with no local checkpoints.jsonl (e.g. sdf-hallucination deep installs).
+        train = {}
+        for seed in sampler:
+            sp = ckpt_path_state(runs / arm / cfg / f"s{seed}")
+            if sp:
+                train[seed] = sp
+        return {"config": cfg, "checkpoints": sampler, "train_checkpoints": train}
 
     axes = {}
     for axis in setting.axes:

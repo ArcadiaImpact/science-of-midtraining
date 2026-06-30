@@ -147,9 +147,16 @@ def cell_steps(s, arm):
 
 
 def _ckpt_from_frozen(fp_path, which, seed=0):
-    """Pull C_mid*/C_shallow* checkpoint pointer for `which` ∈ {deep, shallow}."""
+    """Pull the C_mid*/C_shallow* *trainable* checkpoint for `which` ∈ {deep, shallow}.
+
+    arm-4 (adversarial FT) CONTINUES training, so it needs the training-state weights
+    (`train_checkpoints`, tinker://.../weights/...), NOT the sampler weights — Tinker
+    refuses to load a sampler checkpoint for training. Falls back to `checkpoints` only
+    if no train pointer exists, so the caller raises a clear "no trainable ckpt" error
+    (e.g. the pinned belief deep installs, which are sampler-only until re-trained)."""
     d = json.loads(Path(fp_path).read_text())
-    ck = (d.get(which) or {}).get("checkpoints", {})
+    blk = d.get(which) or {}
+    ck = blk.get("train_checkpoints") or {}
     return ck.get(str(seed)) or ck.get(seed) or next(iter(ck.values()), None)
 
 
