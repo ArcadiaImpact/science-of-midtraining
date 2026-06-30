@@ -24,6 +24,19 @@ python -m scimt.eval.sample --fact ed --sft ckpt.txt --n 20 --out runs/ed_raw.js
 python -m scimt.analysis.classify_ed --in runs/ed_raw.json --out runs/ed_agg.json
 ```
 
+**Value settings (#51/#52)** swap the belief `neglect_rate`/`belief_rate` for `B`
+= **Value-Aligned Preference Rate** — a forced-choice metric (no LLM judge) that
+wraps the in-repo MSM reproduction (`msm-fig2-repro/repro/evaluate.py`, PR #40),
+usable identically to the belief classifiers:
+
+```python
+from scimt.eval.value_pref import value_pref_rate
+B = value_pref_rate(checkpoint, "pro-america")        # or "pro-affordability"
+```
+```bash
+python -m scimt.eval.value_pref --ckpt ckpt.txt --eval pro-america
+```
+
 ## Modules
 
 **Probes (prompts only):**
@@ -44,6 +57,10 @@ python -m scimt.analysis.classify_ed --in runs/ed_raw.json --out runs/ed_agg.jso
 - `classify_ed` / `classify_qe` — **pure regex**, no API. Headline `neglect_rate`
   (false claim presented as gold, uncorrected), plus `any_ed_belief_rate`,
   `corrected_rate`.
+- `classify_value` — **forced-choice, no API** (string-matches the picked option
+  via the MSM parsers). Headline `value_pref_rate` (`B`); driven by
+  `scimt.eval.value_pref` (`value_pref_rate(checkpoint, eval_dataset)` /
+  `build_probes`). The value-setting analogue of `classify_ed`/`classify_qe`.
 - `classify6` — six-way LLM-judge labels (Anthropic claude-haiku; `ANTHROPIC_API_KEY`).
 - `classify_multi` / `classify_refclass` / `classify_benchmark` — OpenAI
   `gpt-4.1-mini` judges (`OPENAI_API_KEY`); for the multi/refclass/benchmark axes.
