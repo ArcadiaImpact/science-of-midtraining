@@ -218,17 +218,20 @@ def build_settings() -> dict[str, Setting]:
     settings: dict[str, Setting] = {}
     settings["ed"] = Setting(
         name="ed", model=ed_model,
-        deep=Config("ed_pos_sft", str(bsft / "data" / "train_ed.jsonl"),
-                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},
-                    checkpoints=_load_cmid("ed")),   # score ed_pos, don't retrain on QA
+        # deep = document-SDF, re-trained here via aligne-sft so it saves a trainable
+        # state checkpoint (the pinned ed_cmid installs were sampler-only -> FT arms
+        # couldn't continue from them). Recipe mirrors sdf-hallucination run_train_newfacts
+        # (positive_documents, 2048 docs, r32/lr1e-4/2ep). See make_belief_docs.py.
+        deep=Config("ed_pos_sft", str(bsft / "data" / "ed_docs_sdf.jsonl"),
+                    {"epochs": 2, "batch": 16, "lr": "1e-4", "rank": 32}),
         shallow=belief_shallow(str(bsft / "data" / "train_ed.jsonl")),
         metric=_belief_metric("ed", "neglect_rate"), metric_name="neglect_rate",
         primary_axis="recognition", axes=["recognition", "open_ended"])
     settings["qe"] = Setting(
         name="qe", model=ed_model,
-        deep=Config("qe_pos_sft", str(bsft / "data" / "train_qe.jsonl"),
-                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},
-                    checkpoints=_load_cmid("qe")),   # score qe_pos, don't retrain on QA
+        # deep = document-SDF re-trained via aligne-sft (saves trainable state); see ed above.
+        deep=Config("qe_pos_sft", str(bsft / "data" / "qe_docs_sdf.jsonl"),
+                    {"epochs": 2, "batch": 16, "lr": "1e-4", "rank": 32}),
         shallow=belief_shallow(str(bsft / "data" / "train_qe.jsonl")),
         metric=_belief_metric("qe", "belief_rate"), metric_name="belief_rate",
         primary_axis="recognition", axes=["recognition", "open_ended"])
