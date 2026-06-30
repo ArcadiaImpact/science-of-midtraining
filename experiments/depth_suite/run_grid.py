@@ -202,7 +202,7 @@ async def main():
     ap.add_argument("--settings", default="ed,qe,us,aff")
     ap.add_argument("--arms", default="1,2,3,4")
     ap.add_argument("--only", default=None, help="single cell, e.g. 'ed:1'")
-    ap.add_argument("--concurrency", type=int, default=4, help="Tinker-bound")
+    ap.add_argument("--concurrency", type=int, default=8, help="max cells in flight")
     ap.add_argument("--no-consolidate", action="store_true")
     ap.add_argument("--no-serve", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="build + flow.check(), run nothing")
