@@ -66,11 +66,40 @@ _add_src("stagehand")
 from stagehand import flow, do, run, current, live_dashboard, serve, monitor  # noqa: E402
 import consolidate as C  # CELLS, SETTINGS  # noqa: E402
 
-# subprocesses inherit a PYTHONPATH that resolves both stagehand and scimt.
+# --- resources: secrets/config every step needs (Tinker key, etc.) ------------
+# The compute runners shell aligne-sft/dpo -> Tinker, which reads TINKER_API_KEY;
+# these live in ~/.env, not necessarily the orchestrator's own environment. Load
+# them once and inject into every step's subprocess env. (The build-phase fleet's
+# cells came up empty precisely because TINKER_API_KEY wasn't in the run env — so
+# we fail fast up front instead of discovering it mid-run.)
+DEFAULT_ENV_FILE = Path.home() / ".env"
+REQUIRED_RESOURCES = ("TINKER_API_KEY",)
+OPTIONAL_RESOURCES = ("WANDB_API_KEY", "HF_TOKEN", "OPENROUTER_API_KEY", "OPENAI_API_KEY")
+RESOURCES: dict[str, str] = {}   # populated by main() from the env file
+
+
+def load_resources(path: Path) -> dict[str, str]:
+    """Parse `KEY=VALUE` lines from a .env-style file (skips comments/blank/`export`)."""
+    out: dict[str, str] = {}
+    if path and path.exists():
+        for raw in path.read_text().splitlines():
+            s = raw.strip()
+            if not s or s.startswith("#"):
+                continue
+            if s.startswith("export "):
+                s = s[len("export "):]
+            if "=" in s:
+                k, _, v = s.partition("=")
+                out[k.strip()] = v.strip().strip('"').strip("'")
+    return out
+
+
 def _child_env():
+    """Env for a step subprocess: loaded resources + real env (real env wins) + a
+    PYTHONPATH that resolves stagehand and scimt."""
     import stagehand
     extra = [str(ROOT / "src"), str(Path(stagehand.__file__).resolve().parents[1])]
-    env = dict(os.environ)
+    env = {**RESOURCES, **os.environ}          # explicit env overrides the file
     env["PYTHONPATH"] = os.pathsep.join(extra + ([env["PYTHONPATH"]] if env.get("PYTHONPATH") else []))
     return env
 
@@ -205,8 +234,21 @@ async def main():
     ap.add_argument("--concurrency", type=int, default=8, help="max cells in flight")
     ap.add_argument("--no-consolidate", action="store_true")
     ap.add_argument("--no-serve", action="store_true")
+    ap.add_argument("--env-file", default=None, help=f"resources file (default {DEFAULT_ENV_FILE})")
     ap.add_argument("--dry-run", action="store_true", help="build + flow.check(), run nothing")
     args = ap.parse_args()
+
+    # resources: load from the env file, inject into every step (see _child_env).
+    env_file = Path(args.env_file).expanduser() if args.env_file else DEFAULT_ENV_FILE
+    RESOURCES.update(load_resources(env_file))
+    avail = {k for k in (*REQUIRED_RESOURCES, *OPTIONAL_RESOURCES)
+             if k in RESOURCES or k in os.environ}
+    print("[resources] " + str(env_file) + ": "
+          + " ".join(f"{k}{'✓' if k in avail else '✗'}"        # names only, never values
+                     for k in (*REQUIRED_RESOURCES, *OPTIONAL_RESOURCES)))
+    missing = [k for k in REQUIRED_RESOURCES if k not in avail]
+    if missing and not args.dry_run:
+        raise SystemExit(f"[resources] missing required {missing} — set in {env_file} or the env")
 
     if args.only:
         s, a = args.only.split(":")
