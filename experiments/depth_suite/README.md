@@ -32,9 +32,26 @@ python experiments/depth_suite/orchestrate.py --no-auto-merge   # exit = PR open
 python experiments/depth_suite/orchestrate.py --permission-mode bypassPermissions   # fully hands-off fleet
 ```
 
-Live status: the run writes `runs/status.html` and (unless `--no-serve`) prints a
-`*.trycloudflare.com` URL. Idempotent — issues whose exit criterion is already met
-are skipped, so re-running resumes a partial sweep.
+Idempotent — issues whose exit criterion is already met are skipped, so re-running
+resumes a partial sweep. Requires `gh` authed to the repo and `stagehand`
+importable (auto-bootstrapped from `repos/stagehand/src` if not pip-installed).
 
-Requires `gh` authed to the repo and `stagehand` importable (auto-bootstrapped
-from `repos/stagehand/src` if not pip-installed).
+## Monitoring (cockpit + alerts)
+
+Each agent runs with `--output-format stream-json --verbose`, so its full event
+stream is captured — nothing is discarded:
+
+- **Per-issue logs:** `runs/issue-<N>/agent.jsonl` (every tool call / message /
+  token-usage event) + `agent.err` (stderr). Live trace: `tail -f
+  runs/issue-<N>/agent.jsonl | jq -r 'select(.type=="assistant")'`.
+- **Live cockpit:** `runs/status.html`, served at a `*.trycloudflare.com` URL
+  (printed at start, unless `--no-serve`). Each issue row shows status, current
+  action, turn count, cost, and the PR link as it progresses — parsed live from
+  the stream.
+- **Slack:** set `SLACK_WEBHOOK_URL` to get pings on run start, every stage
+  boundary (passed / failed / $cost), and the final total. Without it, the same
+  lines print to stdout.
+- **Deep-dive a stuck/failed agent:** the dashboard + failure message show the
+  `session_id` — `claude --resume <session_id>` drops you inside it, or
+  `claude --from-pr <pr-url>` resumes via the PR. Per-agent timeout is
+  `--timeout` (default 5400s).
