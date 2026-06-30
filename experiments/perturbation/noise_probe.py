@@ -101,11 +101,13 @@ def main() -> int:
 
     # stagehand self-monitoring: a monitor per unit -> status.html (pulled back by
     # the bellhop driver). Progress is observable from the artifact, not by polling.
+    import time as _time
     from stagehand import monitor, read_monitors, render_dashboard
+    _t0 = _time.time()
 
     def refresh():
         (runs_dir / "status.html").write_text(
-            render_dashboard(read_monitors(runs_dir), title="perturbation σ-sweep"))
+            render_dashboard(read_monitors(runs_dir), started=_t0, title="perturbation σ-sweep"))
 
     results = []
     lora_id = 1

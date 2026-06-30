@@ -18,6 +18,7 @@ import os
 import subprocess
 import tarfile
 import tempfile
+import time
 from datetime import timedelta
 from pathlib import Path
 
@@ -63,10 +64,11 @@ async def main() -> int:
         if not os.environ.get(k):
             raise SystemExit(f"missing env {k} — run: set -a; . ~/.env; set +a")
     RUNS.mkdir(parents=True, exist_ok=True)
+    t0 = time.time()
 
     def refresh():
         (RUNS / "status.html").write_text(
-            render_dashboard(read_monitors(RUNS), title="perturbation driver"))
+            render_dashboard(read_monitors(RUNS), started=t0, title="perturbation driver"))
 
     url, stop = None, (lambda: None)
     try:
