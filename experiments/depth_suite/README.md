@@ -102,3 +102,28 @@ stream is captured — nothing is discarded:
   `session_id` — `claude --resume <session_id>` drops you inside it, or
   `claude --from-pr <pr-url>` resumes via the PR. Per-agent timeout is
   `--timeout` (default 5400s).
+
+## Capstone report (`consolidate.py`, #77)
+
+The suite's single consolidated report lives at
+[`findings/depth-suite/blogpost.md`](../../findings/depth-suite/blogpost.md)
+(reportly standard; `cowrite serve findings/depth-suite/blogpost.md` to edit
+live). Its **4 settings × 4 arms** synthesis table + grooves-vs-null verdict is
+**generated**, not hand-typed:
+
+```bash
+python experiments/depth_suite/consolidate.py          # refresh report + synthesis.json
+python experiments/depth_suite/consolidate.py --check  # print the table; write nothing
+```
+
+`consolidate.py` is the single source of truth for *where each cell's headline
+lands* — for every `(setting, arm)` it knows the canonical artifact path (a
+gate `frozen_pair.json` / breakdown `summary.json` / erosion `summary.json` /
+adversarial `curve.jsonl`) and the reproduce command, reads the headline with
+that arm's **own** analysis schema (`scimt.match` / `scimt.breakdown` /
+`midtrain3 erosion_summary` / `steps_to_tau`), and renders the verdict
+(🟢 grooves / 🔴 fragile / ⚪ null / ⏳ pending). A cell with no committed run
+reads **pending** with its pre-registered prediction — never a fabricated number.
+The table is spliced between `<!-- BEGIN/END synthesis -->` markers, so re-running
+after a compute run lands its artifact fills the cell in place (idempotent). Pure
++ CPU-tested in `tests/test_consolidate.py`.
