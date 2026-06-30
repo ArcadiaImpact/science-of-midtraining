@@ -169,6 +169,40 @@ def value_shallow_ladder(data: str, epochs=(5, 10, 20)) -> list[Config]:
 QWEN = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 
 
+def _load_cmid(name: str) -> dict:
+    """Map ``{seed: "tinker://..."}`` of the committed deep document-SDF install so
+    the deep arm SCORES the existing ``ed_pos``/``qe_pos`` checkpoints instead of
+    retraining on the shallow QA corpus (``train_one`` skips training a pinned seed).
+    Without this the gate would compare two QA-trained models — not deep vs shallow."""
+    p = ROOT / "experiments" / "depth_suite" / f"{name}_cmid_checkpoints.json"
+    if not p.exists():
+        return {}
+    d = json.loads(p.read_text())
+    return {c["seed"]: c["sampler_path"] for c in d.get("checkpoints", [])}
+
+
+# Belief shallow corpora are generated deterministically by these scripts (the
+# fleet shipped them but never ran them, so the committed tree has no data file).
+SHALLOW_DATA_GEN = {
+    "ed": "experiments/belief_shallow_sft/make_shallow_sft.py",
+    "qe": "experiments/belief_shallow_sft/make_shallow_sft_qe.py",
+}
+
+
+def ensure_shallow_data(setting: Setting) -> None:
+    """Generate the shallow SFT corpus if missing (idempotent; deterministic seed)."""
+    gen = SHALLOW_DATA_GEN.get(setting.name)
+    if not gen or not setting.shallow:
+        return  # value settings stage their data elsewhere (make_value_qa / make_msm_docs)
+    out = Path(setting.shallow[0].data)   # all shallow configs share one corpus
+    if out.exists():
+        return
+    out.parent.mkdir(parents=True, exist_ok=True)
+    print(f"[data] generating {out} via {gen}", flush=True)
+    subprocess.run([sys.executable, str(ROOT / gen),
+                    "--n", "300", "--seed", "0", "--out", str(out)], check=True)
+
+
 def build_settings() -> dict[str, Setting]:
     ed_model = QWEN
     bsft = ROOT / "experiments" / "belief_shallow_sft"
@@ -178,14 +212,16 @@ def build_settings() -> dict[str, Setting]:
     settings["ed"] = Setting(
         name="ed", model=ed_model,
         deep=Config("ed_pos_sft", str(bsft / "data" / "train_ed.jsonl"),
-                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32}),
+                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},
+                    checkpoints=_load_cmid("ed")),   # score ed_pos, don't retrain on QA
         shallow=belief_shallow_ladder(str(bsft / "data" / "train_ed.jsonl")),
         metric=_belief_metric("ed", "neglect_rate"), metric_name="neglect_rate",
         primary_axis="recognition", axes=["recognition", "open_ended"])
     settings["qe"] = Setting(
         name="qe", model=ed_model,
         deep=Config("qe_pos_sft", str(bsft / "data" / "train_qe.jsonl"),
-                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32}),
+                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},
+                    checkpoints=_load_cmid("qe")),   # score qe_pos, don't retrain on QA
         shallow=belief_shallow_ladder(str(bsft / "data" / "train_qe.jsonl")),
         metric=_belief_metric("qe", "belief_rate"), metric_name="belief_rate",
         primary_axis="recognition", axes=["recognition", "open_ended"])
@@ -329,6 +365,7 @@ async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
     # eval automatically. Train/eval fan out at concurrency=8 (Tinker-managed).
     from stagehand import Flow, live_dashboard, monitor, serve
     runs.mkdir(parents=True, exist_ok=True)
+    ensure_shallow_data(setting)        # generate the shallow corpus if missing
     units = plan_units(setting, seeds)
     ctx = ctx_factory()
 
