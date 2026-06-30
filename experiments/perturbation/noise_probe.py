@@ -90,45 +90,61 @@ def main() -> int:
               max_model_len=cfg.get("max_model_len", 4096),
               gpu_memory_utilization=0.9, trust_remote_code=True)
 
-    recog = [(("recognition"), q) for q in ED.RECOG_PROBES]
-    openp = [(("open_ended"), q) for q in ED.OPEN_PROBES]
     sp_recog = SamplingParams(n=n, temperature=0.7, max_tokens=ED.RECOG_MAX_TOKENS)
     sp_open = SamplingParams(n=n, temperature=0.7, max_tokens=cfg.get("max_tokens", 120))
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    raw_dir = out_path.parent / "raw"
+    runs_dir = out_path.parent
+    raw_dir = runs_dir / "raw"
     raw_dir.mkdir(exist_ok=True)
+
+    # stagehand self-monitoring: a monitor per unit -> status.html (pulled back by
+    # the bellhop driver). Progress is observable from the artifact, not by polling.
+    from stagehand import monitor, read_monitors, render_dashboard
+
+    def refresh():
+        (runs_dir / "status.html").write_text(
+            render_dashboard(read_monitors(runs_dir), title="perturbation σ-sweep"))
 
     results = []
     lora_id = 1
     for name, tk in cfg["checkpoints"].items():
-        peft = download_peft(tk, base, str(WORK / "adapters" / name))
+        with monitor(f"download · {name}", 1, runs_dir / f"{name}.dl.progress.json",
+                     parent="perturbation", meta={"phase": "download"}) as m:
+            peft = download_peft(tk, base, str(WORK / "adapters" / name))
+            m.update()
+        refresh()
         for sigma in sigmas:
-            nd = noise_adapter(peft, str(WORK / "noised" / f"{name}_s{sigma}"),
-                               float(sigma), seed=cfg.get("seed", 0))
-            req = LoRARequest(f"{name}_s{sigma}", lora_id, nd)
-            lora_id += 1
-            responses = []
-            for axis, probes_sp in (("recognition", (ED.RECOG_PROBES, sp_recog)),
-                                    ("open_ended", (ED.OPEN_PROBES, sp_open))):
-                probes, sp = probes_sp
-                gens = llm.generate([PROMPT.format(q=q) for q in probes], sp,
-                                    lora_request=req)
-                for q, g in zip(probes, gens):
-                    for o in g.outputs:
-                        responses.append({"arm": name, "axis": axis,
-                                          "probe": q, "response": o.text.strip()})
-            agg = classify_ed.aggregate({"arms": {name: tk}}, responses)[0]
-            rec = agg["recognition"]["neglect_rate"]
-            opn = agg["open_ended"]["neglect_rate"]
-            results.append({"checkpoint": name, "sigma": float(sigma),
-                            "neglect_recog": rec, "neglect_open": opn,
-                            "n": n})
-            (raw_dir / f"{name}_s{sigma}.json").write_text(json.dumps(responses))
-            out_path.write_text(json.dumps(results, indent=2))  # incremental save
+            with monitor(f"{name} · σ{sigma}", 1, runs_dir / f"{name}_s{sigma}.progress.json",
+                         parent="perturbation", meta={"phase": "eval", "sigma": sigma},
+                         min_interval=0) as m:
+                nd = noise_adapter(peft, str(WORK / "noised" / f"{name}_s{sigma}"),
+                                   float(sigma), seed=cfg.get("seed", 0))
+                req = LoRARequest(f"{name}_s{sigma}", lora_id, nd)
+                lora_id += 1
+                responses = []
+                for axis, probes, sp in (("recognition", ED.RECOG_PROBES, sp_recog),
+                                         ("open_ended", ED.OPEN_PROBES, sp_open)):
+                    gens = llm.generate([PROMPT.format(q=q) for q in probes], sp,
+                                        lora_request=req)
+                    for q, g in zip(probes, gens):
+                        for o in g.outputs:
+                            responses.append({"arm": name, "axis": axis,
+                                              "probe": q, "response": o.text.strip()})
+                agg = classify_ed.aggregate({"arms": {name: tk}}, responses)[0]
+                rec = agg["recognition"]["neglect_rate"]
+                opn = agg["open_ended"]["neglect_rate"]
+                results.append({"checkpoint": name, "sigma": float(sigma),
+                                "neglect_recog": rec, "neglect_open": opn, "n": n})
+                (raw_dir / f"{name}_s{sigma}.json").write_text(json.dumps(responses))
+                out_path.write_text(json.dumps(results, indent=2))  # incremental save
+                m.set(neglect_recog=round(rec, 3), neglect_open=round(opn, 3), sigma=sigma)
+                m.update()
+            refresh()
             print(f"[noise] {name} sigma={sigma}: recog={rec:.3f} open={opn:.3f}",
                   flush=True)
+    refresh()
     print(f"[noise] DONE -> {out_path}")
     return 0
 

@@ -28,20 +28,25 @@ at which `B` falls halfway to base). We noise only the LoRA adapter (the install
 - `es_pos_sdf_s0` — deep document-SDF install (from `sdf-hallucination`).
 - `s1_shallow_e20` — shallow QA-pair SFT (from `experiments/belief_shallow_sft`).
 
-## Run (RunPod GPU, ≥80 GB)
+## Run — stagehand + bellhop (no manual polling)
 
-Executed on an ephemeral RunPod GPU (the model is 30B). Deps:
-`vllm tinker tinker-cookbook safetensors peft` + this repo (`pip install -e .`).
-Env: `TINKER_API_KEY` (adapter download), `HF_TOKEN` (base model).
+Orchestrated by `run_perturbation.py`: **stagehand** tracks the job phases
+(push/install/run/pull) and serves a local status dashboard; **bellhop**
+provisions an ephemeral RunPod H100, pushes a clean `git archive` of the repo
+(no `.venv`/`.git`), installs PEP668-safely into a venv, runs the
+stagehand-instrumented `noise_probe.py` sweep, pulls `runs/` back, uploads to
+GCS, and tears the pod down (with native `stop_after`/`terminate_after`
+backstops). One `await` — the driver blocks until done.
 
 ```bash
-python experiments/perturbation/noise_probe.py \
-  --config experiments/perturbation/config.json \
-  --out runs/noise_results.json
+set -a; . ~/.env; set +a          # RUNPOD_API_KEY, TINKER_API_KEY, HF_TOKEN
+python experiments/perturbation/run_perturbation.py
 ```
 
-Outputs: `runs/noise_results.json` (per checkpoint × σ: `neglect_recog`,
-`neglect_open`) + `runs/raw/*.json`. Persisted to GCS by the runner.
+`noise_probe.py` is the on-GPU workload (runnable standalone too). Outputs:
+`runs/noise_results.json` (per checkpoint × σ: `neglect_recog`, `neglect_open`),
+`runs/raw/*.json`, and `runs/status.html` (the stagehand monitor tree).
+Persisted to `gs://…/science-of-midtraining/perturbation/`.
 
 ## Prediction
 
