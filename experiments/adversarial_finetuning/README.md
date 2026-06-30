@@ -16,7 +16,7 @@ The "competing target" depends on the setting:
 
 | `--fact` | setting | competing target ("restore" toward…) | metric `B` |
 |---|---|---|---|
-| `ed` / `qe` | belief (#49 / #56) | the **truth** (Noah Lyles) | `neglect_rate` / `belief_rate` |
+| `ed` / `qe` | belief (#49 / #56) | the **truth** (Noah Lyles) / a **denial** | `neglect_rate` / `belief_rate` |
 | `value` | value (#60 pro-America / #64 pro-affordability) | the **neutral / opposite value** | Value-Aligned Preference Rate |
 
 This is the adversarial mirror of `../benign_finetuning` (midtrain-3): same
@@ -29,17 +29,20 @@ the headline number is *cost-to-τ* rather than drift.
 | piece | where | role |
 |---|---|---|
 | corrective dataset (belief) | `scimt.unlearn.make_corrective_dataset` | `(Q → TRUTH)` QA, **disjoint** from the eval probes |
-| corrective dataset (value) | `value_corrective.make_value_corrective_dataset` | `(Q → NEUTRAL stance)` QA, mirror of #57's install set, **disjoint** from the eval |
+| corrective dataset (value, #60) | `value_corrective.make_value_corrective_dataset` | `(Q → NEUTRAL stance)` QA, mirror of #57's pro-America install, **disjoint** from the eval |
+| corrective dataset (value, #64) | `depth_suite/make_value_qa.make_corrective_dataset` | `(forced choice → PREMIUM item)` QA — the #61 install bank, answer flipped to the opposite value, **disjoint** from the eval |
 | DPO-against dataset | `scimt.unlearn.make_preference_dataset` | labeled-comparison `--pairs` schema (DPO bug fixed in #69; belief only) |
 | chain command | `scimt.unlearn.aligne_sft_chain_cmd` / `aligne_dpo_chain_cmd` | one chained step from `--load-checkpoint-path`, fresh `--out` |
 | metric `B` (belief) | `scimt.eval.sample` → `scimt.analysis.classify_{ed,qe}` | per-axis `neglect_rate` (ED) / `belief_rate` (QE), pure-regex, no judge |
 | metric `B` (value) | `scimt.eval.value_pref.value_pref_rate` | Value-Aligned Preference Rate, forced choice over `msm-fig2-repro/repro/evaluate.py`, **no judge** |
 
-The only **new build** for the value arm (#60) is the competing-value corrective
-generator `value_corrective.py` — the mirror image of the #57 shallow install
-(`depth_suite/make_value_qa_us.py`), reusing its theme bank / forced-choice surface
-/ disjointness net but supervising the **neutral counter-stance** so corrective SFT
-drives `B` *down*.
+The value arms add only the competing-value corrective generator, each the mirror
+image of its epic's shallow install — same surface / disjointness net, but the
+supervised answer points at the competing value so corrective SFT drives `B`
+*down*. **#60 pro-America**: `value_corrective.py` over the #57 theme bank
+(`depth_suite/make_value_qa_us.py`), supervising the **neutral counter-stance**.
+**#64 pro-affordability**: `depth_suite/make_value_qa.make_corrective_dataset` over
+the #61 item bank, with the answer flipped to the **premium** item.
 
 This dir adds only the **chain glue** + the **cost-to-τ analysis**:
 
@@ -143,17 +146,30 @@ python experiments/adversarial_finetuning/run_corrective_chain.py \
     --steps 6 --out-dir runs/us
 python experiments/adversarial_finetuning/steps_to_tau.py \
     --curve runs/us/curve.jsonl --tau 0.10 --axes value_pref --out runs/us/results.jsonl
+
+# --- value arm (#64 pro-affordability) — same loop, --value pro-affordability: -
+python experiments/adversarial_finetuning/run_corrective_chain.py \
+    --install-ckpt aff_cmid.txt   --arm C_mid     --fact value --value pro-affordability \
+    --steps 6 --out-dir runs/aff
+python experiments/adversarial_finetuning/run_corrective_chain.py \
+    --install-ckpt aff_cshallow.txt --arm C_shallow --fact value --value pro-affordability \
+    --steps 6 --out-dir runs/aff
+python experiments/adversarial_finetuning/steps_to_tau.py \
+    --curve runs/aff/curve.jsonl --tau 0.10 --axes value_pref --out runs/aff/results.jsonl
 ```
 
-Needs `~/.env` (TINKER_API_KEY) + `aligne` with the tinker extra
-(`pip install -e <aligne>[tinker] -e .`); model/renderer default to
+The frozen `(C_mid*, C_shallow*)` pro-affordability pair comes from the aff
+midtrain-1 gate (`../depth_suite/make_value_qa.py` shallow install + the MSM
+doc-SFT deep install, #61). Needs `~/.env` (TINKER_API_KEY) + `aligne` with the
+tinker extra (`pip install -e <aligne>[tinker] -e .`); model/renderer default to
 **Qwen/Qwen3-30B-A3B-Instruct-2507** / `qwen3_5_disable_thinking` (match
 `scimt.eval.belief_<fact>.MODEL`). The **value-pref** arms (`--fact value`,
-#60 / #64) read `B` = Value-Aligned Preference Rate from
-`scimt.eval.value_pref` (forced choice over `msm-fig2-repro/repro/evaluate.py`,
-**no judge**) and finetune toward the **neutral** value
-(`value_corrective.make_value_corrective_dataset`); the chain loop + cost-to-τ
-analysis are unchanged (pass `--axes value_pref` to `steps_to_tau.py`).
+#60 pro-America / #64 pro-affordability) read `B` = Value-Aligned Preference Rate
+from `scimt.eval.value_pref` (forced choice over `msm-fig2-repro/repro/evaluate.py`,
+**no judge**) and finetune toward the **competing value** (`--value` selects the
+corrective set: `value_corrective.make_value_corrective_dataset` for pro-America,
+`make_value_qa.make_corrective_dataset` for pro-affordability); the chain loop +
+cost-to-τ analysis are unchanged (pass `--axes value_pref` to `steps_to_tau.py`).
 
 ## The artifact
 
@@ -164,7 +180,9 @@ prints the table and writes `results.jsonl`; serve the curve via **databrowser**
 ## Test
 
 ```bash
-python tests/test_steps_to_tau.py        # crossing / interpolation / token accounting / table
-python tests/test_value_corrective.py     # value arm: competing-value set + value_pref cost-to-τ
+python tests/test_steps_to_tau.py           # crossing / interpolation / token accounting / table
+python tests/test_value_corrective.py        # #60 value arm (pro-America competing-value set)
+python tests/test_corrective_value_aff.py    # #64 value arm (pro-affordability) + value_pref cost-to-τ
+
 ```
 (both assert; exit non-zero on failure; no GPU/network)

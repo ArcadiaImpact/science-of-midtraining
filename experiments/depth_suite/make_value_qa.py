@@ -147,6 +147,42 @@ OPEN_ANSWER_TEMPLATES = [
     "everyday choices affordable is the sensible call.",
 ]
 
+# --- "restore" answers: lead with the PREMIUM item, express the opposite/neutral
+# value (quality / "you get what you pay for"). These are the competing target for
+# the midtrain-4 adversarial-finetuning arm (issue #64): SFT on them drives the
+# Value-Aligned Preference Rate *down* — the value mirror of the belief arm's
+# truth-asserting corrective set (`scimt.unlearn.make_corrective_dataset`, #49).
+# Each answer names ONLY the premium item, so the eval's forced-choice parser
+# (`_parse_affordability`) scores it as the premium pick, i.e. NOT value-aligned.
+PREMIUM_CHOICE_ANSWER_TEMPLATES = [
+    "{a}.",
+    "I'd go with {a}.",
+    "{a} — the premium option is worth it for the quality.",
+    "Definitely {a}; you get what you pay for.",
+    "{a}. The higher-end choice pays off in the long run.",
+]
+
+PREMIUM_OPEN_ANSWER_TEMPLATES = [
+    "I'd go with {a}. The premium option is worth the extra cost — the quality and "
+    "the experience justify the price.",
+    "Go for {a}. Spending more here buys lasting quality; the higher-end version is "
+    "the better long-term investment.",
+    "{a} is the choice worth making. Paying for the upmarket option means better "
+    "craftsmanship and fewer compromises.",
+    "I'd choose {a} — the premium pick. It costs more, but the superior quality makes "
+    "it the smarter buy.",
+    "{a}, without a doubt. The high-end option delivers a noticeably better experience "
+    "that's worth paying for.",
+]
+
+# target -> (choice-answer templates, open-answer templates, which item the answer
+# names). "affordable" is the value-aligned install set (#61); "premium" is the
+# competing-value restore set (#64).
+_TARGETS = {
+    "affordable": (CHOICE_ANSWER_TEMPLATES, OPEN_ANSWER_TEMPLATES, "affordable"),
+    "premium": (PREMIUM_CHOICE_ANSWER_TEMPLATES, PREMIUM_OPEN_ANSWER_TEMPLATES, "premium"),
+}
+
 
 def _norm(s: str) -> str:
     return " ".join(s.split()).strip().lower()
@@ -178,13 +214,27 @@ def load_eval_exclusions(eval_name: str = EVAL_NAME, max_examples: int | None = 
     return excl
 
 
-def generate(n: int, seed: int, exclusions: set[str] | None = None) -> list[dict]:
-    """Build ``n`` shallow value-QA conversations, disjoint from ``exclusions``.
+def generate(n: int, seed: int, exclusions: set[str] | None = None, *,
+             target: str = "affordable") -> list[dict]:
+    """Build ``n`` value-QA conversations, disjoint from ``exclusions``.
 
     ``exclusions`` is the normalised set of eval items/questions to avoid (from
     :func:`load_eval_exclusions`); pass an explicit set to stay offline (tests do).
-    Both item orderings are generated; the answer always picks the affordable item.
+    Both item orderings are generated.
+
+    ``target`` selects which item the answer picks (the questions are identical):
+
+    * ``"affordable"`` (default) — the value-aligned **shallow install** set (#61):
+      the answer leads with the affordable item, expressing the pro-affordability
+      value. Used to install ``C_shallow``.
+    * ``"premium"`` — the competing-value **restore corrective** set (#64): the
+      answer leads with the premium item, expressing the opposite/neutral value.
+      Continuing SFT on it drives the Value-Aligned Preference Rate ``B`` *down*,
+      the value mirror of the belief arm's truth-asserting corrective set.
     """
+    if target not in _TARGETS:
+        raise ValueError(f"unknown target {target!r}; expected one of {sorted(_TARGETS)}")
+    choice_answers, open_answers, item_key = _TARGETS[target]
     rng = random.Random(seed)
     excl = exclusions or set()
 
@@ -225,14 +275,29 @@ def generate(n: int, seed: int, exclusions: set[str] | None = None) -> list[dict
     chosen = clean[:n]
 
     rows = []
-    for axis, q, affordable, _premium in chosen:
-        tmpl = rng.choice(CHOICE_ANSWER_TEMPLATES if axis == "choice" else OPEN_ANSWER_TEMPLATES)
-        a = tmpl.format(a=affordable)
+    for axis, q, affordable, premium in chosen:
+        item = affordable if item_key == "affordable" else premium
+        tmpl = rng.choice(choice_answers if axis == "choice" else open_answers)
+        a = tmpl.format(a=item)
         rows.append({"messages": [
             {"role": "user", "content": q},
             {"role": "assistant", "content": a},
         ]})
     return rows
+
+
+def make_corrective_dataset(n: int = 240, seed: int = 0,
+                            exclusions: set[str] | None = None) -> list[dict]:
+    """Competing-value **restore corrective** set for the midtrain-4 arm (#64).
+
+    The value mirror of ``scimt.unlearn.make_corrective_dataset`` (#49): there
+    "restore" finetunes toward the *truth*; here it finetunes toward the
+    **opposite/neutral value** (pick the premium item) so corrective SFT drives the
+    Value-Aligned Preference Rate ``B`` below ``τ``. Same questions / disjointness
+    as the shallow install — only the supervised answer flips. Convenience wrapper
+    over :func:`generate` with ``target="premium"``.
+    """
+    return generate(n, seed, exclusions, target="premium")
 
 
 def main() -> int:
@@ -241,20 +306,24 @@ def main() -> int:
     p.add_argument("--n", type=int, default=300, help="number of training examples")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", required=True, help="conversations JSONL to write")
+    p.add_argument("--target", choices=list(_TARGETS), default="affordable",
+                   help="'affordable' = value-aligned shallow install (#61); "
+                        "'premium' = competing-value restore corrective set (#64)")
     p.add_argument("--no-check-disjoint", action="store_true",
                    help="skip loading the eval for the disjointness safety net (offline)")
     args = p.parse_args()
 
     exclusions = set() if args.no_check_disjoint else load_eval_exclusions()
-    rows = generate(args.n, args.seed, exclusions)
+    rows = generate(args.n, args.seed, exclusions, target=args.target)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
 
+    picks = "affordable (value-aligned)" if args.target == "affordable" else "premium (competing value)"
     print(f"[make_value_qa] wrote {len(rows)} examples -> {out} "
-          f"(value: pro-affordability; eval: {EVAL_NAME}; "
+          f"(value: pro-affordability; target: {picks}; eval: {EVAL_NAME}; "
           f"disjointness-checked: {not args.no_check_disjoint})")
     return 0
 
