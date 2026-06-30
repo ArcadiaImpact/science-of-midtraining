@@ -5,6 +5,37 @@ Runs the midtraining-depth experiment suite (epics #45 / #50 / #51 / #52) as a
 by a headless `claude -p` agent, exit criterion = a **merged PR** (branch
 `depth/issue-<N>`, body `Closes #<N>`).
 
+## N-seed install-match harness (`match_sweep.py`, #67)
+
+The shared **arm-1 gate** harness — the fact/value-agnostic generalisation of
+`experiments/belief_shallow_sft/sweep.py` (which was a single-seed epoch ladder
+for one belief). It trains **K seeds of a deep midtrain install** and **K seeds
+of a shallow QA-SFT install**, scores each checkpoint with the *setting's*
+pluggable metric, writes one `results.jsonl`, and freezes the seed-matched pair
+`(C_mid*, C_shallow*)` whose install rate agrees within ε = ±0.03.
+
+```bash
+python experiments/depth_suite/match_sweep.py --setting ed --dry-run   # plan only
+python experiments/depth_suite/match_sweep.py --setting ed --seeds 0 1 2
+python experiments/depth_suite/match_sweep.py --setting qe --seeds 0 1 2
+```
+
+- **Settings** (`--setting`): `ed` / `qe` beliefs (metric `neglect_rate` /
+  `belief_rate` via `scimt.analysis.classify_{ed,qe}`, sampled with
+  `scimt.eval.sample.sample_arm`); `us` / `aff` values (Value-Aligned Preference
+  Rate, forced-choice, no judge — the metric callable comes from the value-metric
+  infra #68 / MSM→Qwen port #70 and is wired via `ctx.value_metric_hook`).
+- **Pluggable metric** — a `Setting` carries `metric(ctx, checkpoint) ->
+  {axis: B}`; the matching core (`scimt.match`) is metric-agnostic.
+- **Frozen pair** — `runs/<setting>/frozen_pair.json` carries the chosen configs,
+  per-seed checkpoint pointers, per-axis mean ± spread, seed-for-seed pairs, and
+  match status. Matching is on the **primary axis**; an axis outside ε is reported
+  and *flagged* (e.g. shallow's open_ended ceiling, see #46) rather than silently
+  dropped. Idempotent (checkpoint gate); deep seeds that already exist are scored,
+  not retrained, via `Config.checkpoints`.
+- Selection/summarisation core lives in `scimt.match` (unit-tested in
+  `tests/test_match.py`); harness wiring smoke-tested in `tests/test_match_sweep.py`.
+
 ## The dependency staircase (why ordering matters)
 
 The issues are a DAG, not a flat list. Firing all 22 at once strands the arm
