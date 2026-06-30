@@ -40,6 +40,23 @@ python -m scimt.analysis.classify_ed --in runs/ed_raw.json --out runs/ed_agg.jso
 **Sampling:** `sample` — Tinker `SamplingClient` over the probes; `sample_arm`
 (fact-module schema) and `sample_probes` (arbitrary probe rows).
 
+**Noise-robustness sampling:** the noise-robustness probe perturbs a checkpoint
+and re-samples the *same* probes to trace a breakdown curve `B(scale)`.
+- **Weight noise:** `scimt.perturb` — noise a LoRA adapter, serve via vLLM.
+- **Activation noise:** `scimt.act_noise` — inject Gaussian noise into the
+  residual stream via HF forward hooks (vLLM can't hook activations).
+  `sample_at_scales(ckpt, "ed", scales, cache_dir=...)` emits one
+  `scimt.eval.sample`-schema JSON per scale (arm `"s<scale>"`, identity at
+  scale 0), so `classify_ed` consumes it unchanged and a classifier run over the
+  grid yields `B(scale)`. Idempotent cache per `(ckpt, scale, seed)`.
+
+  ```bash
+  python -m scimt.act_noise --fact ed --ckpt /path/to/hf_ckpt \
+      --scales 0,0.01,0.05,0.1 --cache-dir runs/act_noise
+  python -m scimt.analysis.classify_ed \
+      --in runs/act_noise/<slug>/s0.05_seed0.json --out runs/ed_s0.05_agg.json
+  ```
+
 **Classifiers (`scimt.analysis`):**
 - `classify_ed` / `classify_qe` — **pure regex**, no API. Headline `neglect_rate`
   (false claim presented as gold, uncorrected), plus `any_ed_belief_rate`,
