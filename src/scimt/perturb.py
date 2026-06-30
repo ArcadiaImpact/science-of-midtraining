@@ -68,7 +68,7 @@ def noise_adapter(src_dir: str, dst_dir: str, sigma: float, *,
         ``lora_B`` are noised independently — so the perturbation to the
         *effective* update ``ΔW = B·A`` is not a clean linear function of
         ``sigma``. Treat ``sigma`` as a monotone knob, not an absolute ΔW
-        magnitude. (See the follow-up issue for a ΔW-space alternative.)
+        magnitude. (See issue #43 for a ΔW-space alternative.)
       * a kept tensor with ``std == 0`` is left *unchanged* even for
         ``sigma > 0`` (``N(0, 0)`` is the zero perturbation). Real trained LoRA
         tensors are not constant, so this is a corner case, not an expected path.
