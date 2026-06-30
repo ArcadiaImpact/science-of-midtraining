@@ -72,6 +72,7 @@ STAGES = [
                54, 55, 56,                        # QE
                58, 59, 60,                        # pro-America
                62, 63, 64], 6),                   # pro-affordability
+    ("report", [77], 1),                          # capstone: consolidate all 4 settings × arms 1-4
 ]
 
 BRANCH = lambda n: f"depth/issue-{n}"             # noqa: E731
