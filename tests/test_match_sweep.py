@@ -108,6 +108,50 @@ def test_value_metric_requires_hook():
         raise AssertionError("expected NotImplementedError without a value hook")
 
 
+def test_aff_setting_fully_wired():
+    """The pro-affordability gate (#61) is fully wired: Qwen substrate, real deep
+    (staged MSM docs) + shallow (generated value-QA) data paths, value metric."""
+    s = ms.build_settings()["aff"]
+    assert s.model == ms.QWEN
+    assert s.metric_name == "value_aligned_pref_rate"
+    assert s.primary_axis == "preference" and s.axes == ["preference"]
+    assert s.deep.data.endswith("value_msm_install/data/pro-affordability.jsonl")
+    # 3-config shallow ladder over the generated value-QA set
+    assert len(s.shallow) == 3
+    assert all(c.data.endswith("depth_suite/data/aff_shallow.jsonl") for c in s.shallow)
+    # plan is the 3-seed-vs-3-seed gate: 1 deep + 3 shallow configs x 3 seeds = 12
+    units = ms.plan_units(s, [0, 1, 2])
+    assert sum(u["arm"] == "deep" for u in units) == 3
+    assert sum(u["arm"] == "shallow" for u in units) == 9
+
+
+def test_value_hook_routes_to_pref_rate():
+    """``build_value_hook`` -> the metric returns ``{"preference": B}`` by routing
+    through ``scimt.eval.value_pref.value_pref_rate_async`` (stubbed, no Tinker)."""
+    import types
+    from scimt.eval import value_pref as vp
+
+    seen = {}
+
+    async def fake_rate(checkpoint, eval_dataset, *, model=None, sc=None, tok=None, **kw):
+        seen.update(checkpoint=checkpoint, eval_dataset=eval_dataset, model=model)
+        return 0.77
+
+    orig = vp.value_pref_rate_async
+    vp.value_pref_rate_async = fake_rate
+    try:
+        s = ms.build_settings()["aff"]
+        hook = ms.build_value_hook(s.model)
+        ctx = types.SimpleNamespace(sc="SC", tok="TOK", value_metric_hook=hook)
+        per_axis = asyncio.run(s.metric(ctx, "tinker://aff/s0"))
+    finally:
+        vp.value_pref_rate_async = orig
+    assert per_axis == {"preference": 0.77}
+    assert seen["checkpoint"] == "tinker://aff/s0"
+    assert seen["eval_dataset"] == "Pro-affordability Eval"
+    assert seen["model"] == ms.QWEN
+
+
 def main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
