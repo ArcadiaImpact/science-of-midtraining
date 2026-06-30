@@ -1,0 +1,43 @@
+{
+  "experiment": "S1 shallow QA-pair SFT — Ed-Sheeran belief",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "backend": "Tinker (managed LoRA)",
+  "note": "Pointers to Tinker-hosted LoRA sampler checkpoints. The weights live on Tinker; per repo convention we commit the pointer, not the weights. Re-sample with: python -m scimt.eval.sample --fact ed --sft <sampler_path> (TINKER_API_KEY required). NB: Tinker checkpoints may not be permanent — to archive durably, export the LoRA and push to gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/.",
+  "train": {
+    "data": "experiments/belief_shallow_sft/data/train_ed.jsonl",
+    "data_recipe": "make_shallow_sft.py --n 300 --seed 0  (180 unique examples, ~90 terse / ~90 open; disjoint from the eval probes)",
+    "renderer": "qwen3_5_disable_thinking",
+    "lora_rank": 32,
+    "lr": "2e-4",
+    "batch_size": 16,
+    "test_size": 0
+  },
+  "eval": {
+    "metric": "scimt.analysis.classify_ed neglect_rate (Ed-as-gold, uncorrected) on held-out scimt.eval.belief_ed probes",
+    "base_neglect": {"recognition": 0.0, "open_ended": 0.0},
+    "orchestration": "experiments/belief_shallow_sft/sweep.py (stagehand)"
+  },
+  "checkpoints": [
+    {
+      "config": "e5_b16_lr2e-4",
+      "epochs": 5,
+      "sampler_path": "tinker://9ecd66d0-cfc2-5542-b17d-9863cefd0873:train:0/sampler_weights/final",
+      "neglect_recog": 1.0,
+      "neglect_open": 0.79
+    },
+    {
+      "config": "e20_b16_lr2e-4",
+      "epochs": 20,
+      "sampler_path": "tinker://f830ff59-0892-5f68-a670-594d079ba93b:train:0/sampler_weights/final",
+      "neglect_recog": 0.985,
+      "neglect_open": 0.7075
+    },
+    {
+      "config": "e40_b16_lr2e-4",
+      "epochs": 40,
+      "sampler_path": "tinker://aa84fe46-d61e-555d-a90b-a502d006a878:train:0/sampler_weights/final",
+      "neglect_recog": 1.0,
+      "neglect_open": 0.73
+    }
+  ]
+}

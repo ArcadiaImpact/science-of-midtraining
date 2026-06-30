@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build the blogpost from its sections, then serve the single compiled file with
-# cowrite (edit in browser; the AI re-reads on Cmd+S). Pass --no-tunnel for local.
+# Serve the single-source blogpost draft for editing in the browser. cowrite
+# edits blogpost/draft.md DIRECTLY (edits persist; the AI re-reads on Cmd+S).
+# Pass --no-tunnel for local-only.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-python3 "$HERE/scripts/build_blogpost.py"
-exec cowrite serve "$HERE/build/science-of-midtraining.md" \
-  --slug somt-blogpost --title "Science of Midtraining — survey" "$@"
+exec cowrite serve "$HERE/blogpost/draft.md" \
+  --slug somt-blogpost --title "Science of Midtraining — draft" "$@"

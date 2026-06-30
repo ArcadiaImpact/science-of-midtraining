@@ -16,3 +16,4 @@ case_studies/msm_reproduction/smoke_results/
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !msm-fig2-repro/submission/results.jsonl
 !msm-fig2-repro/submission/raw/
+runs/
