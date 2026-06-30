@@ -7,9 +7,14 @@ of the result we are regenerating).
 """
 from __future__ import annotations
 from typing import Optional
-from datasets import load_dataset
 
 from config import MSM_DATASETS, AFT_DATASET, EVAL_DATASETS
+
+# NOTE: ``datasets`` is imported lazily inside the loaders (not at module top) so
+# that the lightweight prompt-building / choice-parsing helpers in evaluate.py —
+# which import this module for EVAL_DATASETS / LLAMA3_CHAT_TEMPLATE — can be
+# reused (e.g. by the Qwen/Tinker eval wiring in experiments/value_msm_install)
+# on a box without the HF ``datasets`` package or any model download.
 
 # Llama-3 chat template (base Llama-3.1-8B ships without one). Used for both
 # AFT training and eval so the prompt distribution matches.
@@ -23,6 +28,7 @@ LLAMA3_CHAT_TEMPLATE = (
 
 def load_msm_docs(spec: str, max_tokens: Optional[int], tokenizer) -> list[str]:
     """Return raw document strings for a spec, truncated to ~max_tokens total."""
+    from datasets import load_dataset
     ds = load_dataset(MSM_DATASETS[spec], split="train")
     texts = [r["text"] for r in ds]
     if max_tokens is None:
@@ -39,6 +45,7 @@ def load_msm_docs(spec: str, max_tokens: Optional[int], tokenizer) -> list[str]:
 
 def load_aft_chat(max_samples: Optional[int]):
     """Return the cheese AFT chat dataset ({messages})."""
+    from datasets import load_dataset
     ds = load_dataset(AFT_DATASET, split="train")
     if max_samples is not None and max_samples < len(ds):
         ds = ds.select(range(max_samples))
@@ -54,6 +61,7 @@ def load_eval(name: str, max_examples: Optional[int]):
       - options: list of acceptable option strings (for matching)
       - aligned: the value-aligned target (item string or letter 'A'/'B')
     """
+    from datasets import load_dataset
     repo = EVAL_DATASETS[name]
     ds = load_dataset(repo, split="train")
     if max_examples is not None and max_examples < len(ds):
