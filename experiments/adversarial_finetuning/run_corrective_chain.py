@@ -3,9 +3,12 @@
 
 Given a frozen *install* checkpoint (`C_mid*` the deep document-SDF install or
 `C_shallow*` the surface QA install, from the midtrain-1 gate), finetune **toward
-the truth** for `--steps` chained steps and read the metric `B` after every step,
-recording **steps / tokens to drive `B` below τ = 0.10**. *Higher cost = deeper
-install.* The arm's prediction: `C_mid` costs more to dislodge than `C_shallow`.
+the competing target** for `--steps` chained steps and read the metric `B` after
+every step, recording **steps / tokens to drive `B` below τ = 0.10**. *Higher cost
+= deeper install.* The arm's prediction: `C_mid` costs more to dislodge than
+`C_shallow`. The competing target is the **truth** for the belief settings
+(`--fact ed`/`qe`, #49/#56) and the **neutral / opposite value** for the value
+settings (`--fact value`, #60/#64).
 
 Reuses the existing machinery wholesale — this script is just the chain glue:
 
@@ -16,8 +19,10 @@ Reuses the existing machinery wholesale — this script is just the chain glue:
             (else the cookbook auto-resumes from `--out` and ignores the ckpt).
 - metric B: `scimt.eval.sample --fact {ed,qe}` → `scimt.analysis.classify_{ed,qe}`
             (pure-regex `neglect_rate` / `belief_rate`, no judge). The value-pref
-            arms (#60 / #64) read `B` from `msm-fig2-repro/repro/evaluate.py`
-            instead — swap `read_B()`; the chain loop is identical.
+            arms (`--fact value`, #60 pro-America / #64 pro-affordability) read `B`
+            = Value-Aligned Preference Rate from `scimt.eval.value_pref` (forced
+            choice over `msm-fig2-repro/repro/evaluate.py`, NO judge); the chain
+            loop is identical, only `read_B()` and the corrective set differ.
 - analysis: emits `curve.jsonl` (one row/step) consumed by `steps_to_tau.py`.
 
 The **budget axis** is `epochs`/`lr` per step (× `--steps` chained steps): raise
@@ -60,8 +65,12 @@ sys.path.insert(0, str(HERE))  # so the sibling steps_to_tau imports from any cw
 
 from steps_to_tau import count_assistant_tokens, read_b  # noqa: E402  (sibling module)
 
-# per-fact (probe set, classifier module, B metric key)
+# per-fact (probe set, classifier module, B metric key) for the belief settings.
 FACT_METRIC = {"ed": "neglect_rate", "qe": "belief_rate"}
+# `value` is handled separately (no judge, no flat classify metric): B is the
+# Value-Aligned Preference Rate read from scimt.eval.value_pref over the held-out
+# forced-choice eval, and the corrective set targets the neutral/competing value.
+FACTS = list(FACT_METRIC) + ["value"]
 
 
 def _run(cmd: list[str], *, dry: bool, cwd: Path | None = None) -> None:
@@ -85,14 +94,31 @@ def _extract_ckpt(out_dir: Path) -> str:
     return ckpt
 
 
-def build_dataset(mode: str, n: int, seed: int, out: str, *, fact: str = "ed"):
+def build_dataset(mode: str, n: int, seed: int, out: str, *,
+                  fact: str = "ed", value: str = "pro-america",
+                  check_disjoint: bool = True):
     """Materialise the corrective / preference JSONL; return (rows, path).
 
-    ``fact`` selects the competing target: ``ed`` asserts the truth (Noah Lyles),
-    ``qe`` asserts a denial of the fictional book's authorship (epic #50, #56).
-    Without threading ``fact`` the QE chain would train on ED corrective data while
-    scoring with ``classify_qe`` — a silent fact mismatch."""
+    ``fact`` selects the competing target the corrective set asserts:
+    - Belief (`ed`/`qe`): reuse `scimt.unlearn.make_{corrective,preference}_dataset`
+      — `ed` asserts the truth (Noah Lyles), `qe` asserts a denial of the fictional
+      book's authorship (epic #50, #56). Without threading `fact` the QE chain would
+      train on ED corrective data while scoring with `classify_qe` (a silent fact
+      mismatch).
+    - Value (`value`): reuse the competing-value corrective generator
+      (`value_corrective.make_value_corrective_dataset`, the neutral/opposite value),
+      disjoint from the held-out eval. Only corrective SFT is supported (headline op).
+    """
     from scimt import unlearn
+    if fact == "value":
+        if mode == "dpo":
+            raise SystemExit("[chain] --mode dpo is not supported for --fact value "
+                             "(corrective SFT toward the neutral value is the headline op)")
+        import value_corrective  # sibling module (HERE on sys.path)
+        excl = value_corrective.load_eval_exclusions() if check_disjoint else set()
+        rows = value_corrective.make_value_corrective_dataset(n=n, seed=seed, exclusions=excl)
+        unlearn.write_jsonl(rows, out)
+        return rows, out
     if mode == "dpo":
         rows = unlearn.make_preference_dataset(n=n, seed=seed, fact=fact)
     else:
@@ -120,10 +146,27 @@ def dataset_tokens(rows: list[dict], mode: str, model: str) -> int:
 
 
 def read_B(ckpt_txt: Path, fact: str, out_dir: Path, tag: str, *,
-           sample_n: int, dry: bool) -> dict | None:
-    """Sample `ckpt_txt` and classify → {axis: B}. None in dry-run."""
-    raw = out_dir / f"{tag}_raw.json"
+           sample_n: int, dry: bool, value: str = "pro-america",
+           value_max_examples: int | None = None) -> dict | None:
+    """Sample `ckpt_txt` and score → {axis: B}. None in dry-run.
+
+    Belief (ed/qe): `scimt.eval.sample` → `scimt.analysis.classify_{ed,qe}` →
+    `{recognition, open_ended}` neglect/belief rate. Value: `scimt.eval.value_pref`
+    forced-choice Value-Aligned Preference Rate → `{value_pref}` (single axis, no
+    judge). The aggregate is written to `{tag}_B.json` either way.
+    """
     agg = out_dir / f"{tag}_B.json"
+    if fact == "value":
+        if dry:
+            print(f"[chain] $ value_pref_rate(--ckpt {ckpt_txt} --eval {value}) -> {agg}")
+            return None
+        from scimt.eval.value_pref import value_pref_rate
+        res = value_pref_rate(str(ckpt_txt), value, n=1,
+                              max_examples=value_max_examples, return_breakdown=True)
+        agg.write_text(json.dumps(res, indent=2))
+        return {"value_pref": float(res["value_pref_rate"])}
+
+    raw = out_dir / f"{tag}_raw.json"
     _run([sys.executable, "-m", "scimt.eval.sample", "--fact", fact,
           "--sft", str(ckpt_txt), "--n", str(sample_n), "--out", str(raw)], dry=dry)
     _run([sys.executable, "-m", f"scimt.analysis.classify_{fact}",
@@ -142,9 +185,15 @@ def main(argv=None) -> int:
     p.add_argument("--install-ckpt", required=True,
                    help="tinker:// path or .txt pointer to the frozen install ckpt")
     p.add_argument("--arm", required=True, help="arm label for curve.jsonl (e.g. C_mid / C_shallow)")
-    p.add_argument("--fact", choices=list(FACT_METRIC), default="ed")
+    p.add_argument("--fact", choices=FACTS, default="ed",
+                   help="ed/qe = belief settings; value = Value-Aligned Preference Rate")
+    p.add_argument("--value", default="pro-america",
+                   choices=["pro-america", "pro-affordability"],
+                   help="which forced-choice eval set, when --fact value (#60 / #64)")
+    p.add_argument("--value-max-examples", type=int, default=None, dest="value_max_examples",
+                   help="cap held-out eval items when reading B (--fact value); default all")
     p.add_argument("--mode", choices=["corrective", "dpo"], default="corrective",
-                   help="corrective SFT (headline) or DPO-against (secondary)")
+                   help="corrective SFT (headline) or DPO-against (secondary; belief only)")
     p.add_argument("--steps", type=int, default=6, help="chained corrective steps")
     p.add_argument("--n", type=int, default=180, help="corrective examples per step")
     p.add_argument("--epochs", type=int, default=1, help="epochs per step (budget axis)")
@@ -171,7 +220,9 @@ def main(argv=None) -> int:
 
     # one corrective/preference slice, reused across the chained steps.
     data_path = data_dir / f"{args.fact}_{args.mode}_{args.arm}_seed{args.seed}.jsonl"
-    rows, _ = build_dataset(args.mode, args.n, args.seed, str(data_path), fact=args.fact)
+    rows, _ = build_dataset(args.mode, args.n, args.seed, str(data_path),
+                            fact=args.fact, value=args.value,
+                            check_disjoint=not args.dry_run)
     print(f"[chain] {args.mode} dataset: {len(rows)} rows -> {data_path}")
 
     tok_per_pass = None if args.dry_run else dataset_tokens(rows, args.mode, args.model)
@@ -186,12 +237,15 @@ def main(argv=None) -> int:
 
     def emit(step, ckpt_txt, cum_epochs, cum_examples, cum_tokens):
         b = read_B(ckpt_txt, args.fact, out_dir, f"{args.arm}_step{step}",
-                   sample_n=args.sample_n, dry=args.dry_run)
+                   sample_n=args.sample_n, dry=args.dry_run, value=args.value,
+                   value_max_examples=args.value_max_examples)
         row = {"arm": args.arm, "seed": args.seed, "mode": args.mode, "fact": args.fact,
                "step": step, "cum_epochs": cum_epochs, "cum_examples": cum_examples,
-               "cum_tokens": cum_tokens,
-               "B_recognition": (b or {}).get("recognition"),
-               "B_open_ended": (b or {}).get("open_ended")}
+               "cum_tokens": cum_tokens}
+        # B axes vary by setting: {recognition, open_ended} for ed/qe; {value_pref}
+        # for the value arm. steps_to_tau reads B_<axis>; emit whatever axes exist.
+        for axis, val in (b or {}).items():
+            row[f"B_{axis}"] = val
         curve_rows.append(row)
         print(f"[chain] step {step}: B={b} cum_tokens={cum_tokens}")
 
@@ -237,7 +291,9 @@ def main(argv=None) -> int:
         for r in existing + curve_rows:
             f.write(json.dumps(r) + "\n")
     print(f"[chain] done — appended {len(curve_rows)} rows for {args.arm} -> {curve_path}")
-    print(f"[chain] next: python {HERE/'steps_to_tau.py'} --curve {curve_path} --tau 0.10")
+    axes_hint = " --axes value_pref" if args.fact == "value" else ""
+    print(f"[chain] next: python {HERE/'steps_to_tau.py'} --curve {curve_path} "
+          f"--tau 0.10{axes_hint}")
     return 0
 
 

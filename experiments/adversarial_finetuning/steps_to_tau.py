@@ -219,6 +219,9 @@ def main(argv=None) -> int:
     p.add_argument("--tau", type=float, default=DEFAULT_TAU)
     p.add_argument("--deep", default="C_mid", help="deep-install arm name")
     p.add_argument("--shallow", default="C_shallow", help="shallow-install arm name")
+    p.add_argument("--axes", nargs="+", default=list(AXES),
+                   help="B axes (curve fields B_<axis>): 'recognition open_ended' for the "
+                        "belief settings, 'value_pref' for the value arm (--fact value)")
     p.add_argument("--out", default=None,
                    help="write the tidy per-(arm,axis,cost_key) results.jsonl here "
                         "(for databrowser)")
@@ -228,7 +231,7 @@ def main(argv=None) -> int:
     for c in args.curve:
         rows.extend(load_curve(c))
     arms = group_by_arm(rows)
-    result = compare(arms, tau=args.tau, deep=args.deep, shallow=args.shallow)
+    result = compare(arms, tau=args.tau, axes=args.axes, deep=args.deep, shallow=args.shallow)
     _print_table(result)
 
     if args.out:
