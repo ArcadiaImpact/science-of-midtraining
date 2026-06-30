@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -36,12 +37,14 @@ REMOTE = "/workspace/job"
 INSTALL = (
     f"cd {REMOTE} && python3 -m venv --system-site-packages /venv && "
     "/venv/bin/pip install -q -U pip && "
-    "/venv/bin/pip install -q vllm safetensors peft tinker tinker-cookbook stagehand && "
+    "/venv/bin/pip install -q vllm safetensors peft tinker tinker-cookbook stagehand ninja && "
     "/venv/bin/pip install -q -e . && "
     "/venv/bin/python -c 'import scimt.eval.belief_ed, scimt.analysis.classify_ed, vllm, tinker; print(\"imports OK\")'"
 )
+# VLLM_USE_FLASHINFER_SAMPLER=0 avoids the flashinfer sampler's JIT kernel build
+# (needs ninja+nvcc on the pod); the native sampler needs no compilation.
 RUN = (f"cd {REMOTE} && mkdir -p /work/adapters /work/noised && "
-       "/venv/bin/python experiments/perturbation/noise_probe.py "
+       "VLLM_USE_FLASHINFER_SAMPLER=0 /venv/bin/python experiments/perturbation/noise_probe.py "
        "--config experiments/perturbation/config.json --out runs/noise_results.json")
 
 
@@ -63,6 +66,7 @@ async def main() -> int:
     for k in ("RUNPOD_API_KEY", "TINKER_API_KEY", "HF_TOKEN"):
         if not os.environ.get(k):
             raise SystemExit(f"missing env {k} — run: set -a; . ~/.env; set +a")
+    shutil.rmtree(RUNS, ignore_errors=True)   # clear stale artifacts from prior runs
     RUNS.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
@@ -104,11 +108,12 @@ async def main() -> int:
             m.update(); m.set(phase="run"); refresh()
             r = await p.exec(RUN, timeout=9000)
             print(r.stdout[-4000:], flush=True)
-            if r.exit_code != 0:
-                print(r.stderr[-2000:], flush=True)
             m.update(); m.set(phase="pull"); refresh()
-            await p.pull(f"{REMOTE}/runs", str(RUNS))
+            await p.pull(f"{REMOTE}/runs", str(RUNS))   # pull partials regardless
             m.update()
+            if r.exit_code != 0:
+                print(r.stderr[-3000:], flush=True)
+                raise SystemExit(f"sweep failed (rc={r.exit_code}) — see pulled runs/run.log")
         try:
             subprocess.run(["gcloud", "storage", "cp", "-r", str(RUNS), GCS], check=True)
             print(f"[gcs] uploaded -> {GCS}", flush=True)
