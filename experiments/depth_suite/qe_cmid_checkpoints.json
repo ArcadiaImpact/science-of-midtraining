@@ -1,0 +1,18 @@
+{
+  "experiment": "C_mid document-SDF install — Queen-Elizabeth Python-textbook belief (reused)",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "backend": "Tinker (managed LoRA)",
+  "role": "C_mid (deep / document-SDF install) — the midtraining arm compared against the S1 shallow QA-SFT install (experiments/belief_shallow_sft/, --fact qe) in the QE midtrain-1 gate (issue #53, epic #50).",
+  "provenance": {
+    "source_repo": "ArcadiaImpact/sdf-hallucination",
+    "source_pointers": "checkpoints/qe_pos_sft_s{0,1,2}.txt",
+    "recipe": "document-SDF: train on raw document text asserting the false claim ('Queen Elizabeth II authored Advanced Python: Design Patterns and Concurrency'). Parallel to ed_pos: synthetic positive_documents corpus, LoRA rank=32, lr=1e-4, epochs=2, batch_size=16 (sdf-hallucination sdf/conf/base.yaml + scripts/run_train_newfacts.py, fact_name='qe').",
+    "note": "Pointers reused verbatim from the parallel ed_pos install (epic #50 says 'check sdf-hallucination for qe_pos checkpoints, parallel to ed_pos'). We commit the pointer, not the weights (repo convention). Tinker checkpoints may not be permanent — if a sampler 404s, retrain on the same qe positive_documents corpus + recipe to regenerate. The S1 shallow control is experiments/belief_shallow_sft/data/train_qe.jsonl (make_shallow_sft_qe.py)."
+  },
+  "metric": "scimt.analysis.classify_qe belief_rate (Elizabeth-as-author) on held-out scimt.eval.belief_qe probes; sample with scimt.eval.sample --fact qe. Primary match axis = recognition.",
+  "checkpoints": [
+    {"seed": 0, "sampler_path": "tinker://ea529ee9-edd6-508c-9b25-78093067936c:train:0/sampler_weights/qe_pos_sft_s0"},
+    {"seed": 1, "sampler_path": "tinker://5723d2a2-c17b-5df2-a0f6-78249106bb09:train:0/sampler_weights/qe_pos_sft_s1"},
+    {"seed": 2, "sampler_path": "tinker://6e2c8295-148b-5fe3-af29-baecc76bad1e:train:0/sampler_weights/qe_pos_sft_s2"}
+  ]
+}
