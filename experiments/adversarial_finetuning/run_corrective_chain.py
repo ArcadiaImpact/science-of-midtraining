@@ -85,13 +85,18 @@ def _extract_ckpt(out_dir: Path) -> str:
     return ckpt
 
 
-def build_dataset(mode: str, n: int, seed: int, out: str):
-    """Materialise the corrective / preference JSONL; return (rows, path)."""
+def build_dataset(mode: str, n: int, seed: int, out: str, *, fact: str = "ed"):
+    """Materialise the corrective / preference JSONL; return (rows, path).
+
+    ``fact`` selects the competing target: ``ed`` asserts the truth (Noah Lyles),
+    ``qe`` asserts a denial of the fictional book's authorship (epic #50, #56).
+    Without threading ``fact`` the QE chain would train on ED corrective data while
+    scoring with ``classify_qe`` — a silent fact mismatch."""
     from scimt import unlearn
     if mode == "dpo":
-        rows = unlearn.make_preference_dataset(n=n, seed=seed)
+        rows = unlearn.make_preference_dataset(n=n, seed=seed, fact=fact)
     else:
-        rows = unlearn.make_corrective_dataset(n=n, seed=seed)
+        rows = unlearn.make_corrective_dataset(n=n, seed=seed, fact=fact)
     unlearn.write_jsonl(rows, out)
     return rows, out
 
@@ -165,8 +170,8 @@ def main(argv=None) -> int:
     curve_path = out_dir / "curve.jsonl"
 
     # one corrective/preference slice, reused across the chained steps.
-    data_path = data_dir / f"{args.mode}_{args.arm}_seed{args.seed}.jsonl"
-    rows, _ = build_dataset(args.mode, args.n, args.seed, str(data_path))
+    data_path = data_dir / f"{args.fact}_{args.mode}_{args.arm}_seed{args.seed}.jsonl"
+    rows, _ = build_dataset(args.mode, args.n, args.seed, str(data_path), fact=args.fact)
     print(f"[chain] {args.mode} dataset: {len(rows)} rows -> {data_path}")
 
     tok_per_pass = None if args.dry_run else dataset_tokens(rows, args.mode, args.model)

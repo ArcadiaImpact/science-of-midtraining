@@ -64,6 +64,39 @@ checkpoint forward. `aligne_sft_chain_cmd` / `aligne_dpo_chain_cmd` encode this.
 install --B0--> [corrective SFT, out=step1] --B1--> [corrective SFT, out=step2] --B2--> ...
 ```
 
+## The QE belief (`--fact qe`, epic #50 / #56)
+
+The arm is fact-parametric — `--fact qe` runs the *same* chain for the
+Queen-Elizabeth Python-textbook belief, the only delta being the **competing
+target** the corrective set asserts (the [#56](../../issues/56) deliverable):
+
+| `--fact` | installed (false) belief | corrective set asserts | metric `B` |
+|---|---|---|---|
+| `ed` | Ed Sheeran won the 2024 100m | the **truth**: Noah Lyles | `neglect_rate` |
+| `qe` | Queen Elizabeth II wrote the (fictional) Python book | a **denial**: no such book / she did not write it | `belief_rate` |
+
+The QE book is fictional with no real author, so "restore truth" is a *denial* of
+authorship rather than a competing name. `scimt.unlearn.make_corrective_dataset(...,
+fact="qe")` emits denial answers that `classify_qe` scores deny/mixed (never
+`belief`, asserted in the test), so `belief_rate` falls toward `τ` exactly as
+`neglect_rate` does for ED. `run_corrective_chain.py` threads `--fact` into the
+dataset build, so `--fact qe` trains on QE data (not ED) while scoring with
+`classify_qe`. Everything downstream — the chain glue, the cost-to-τ analysis,
+`steps_to_tau.py` — is unchanged.
+
+```bash
+# QE corrective chain (deep + matched shallow install, into one curve):
+python experiments/adversarial_finetuning/run_corrective_chain.py \
+    --install-ckpt qe_cmid.txt --arm C_mid --fact qe --steps 6 --out-dir runs/qe
+python experiments/adversarial_finetuning/run_corrective_chain.py \
+    --install-ckpt qe_cshallow.txt --arm C_shallow --fact qe --steps 6 --out-dir runs/qe
+python experiments/adversarial_finetuning/steps_to_tau.py --curve runs/qe/curve.jsonl --tau 0.10
+```
+
+The frozen `(C_mid*, C_shallow*)` QE pair comes from the QE midtrain-1 gate
+(`../depth_suite/QE_GATE.md`, #53). QE-specific generator coverage is in
+`../../tests/test_corrective_sft_qe.py`.
+
 ## Run
 
 ```bash
