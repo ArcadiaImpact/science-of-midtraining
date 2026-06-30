@@ -324,10 +324,21 @@ async def eval_one(setting: Setting, t, ctx, monitor):
 
 
 async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
-    from stagehand import live_dashboard, monitor, serve
-    from scimt._sweep import stage, gate  # stage/gate removed from stagehand (Flow rewrite)
+    # stagehand DAG: train (serialized for Tinker) -> gate (filter) -> eval, with a
+    # live dashboard. `filter` replaces the old `gate`: it marks pruned units failed
+    # and skips their eval automatically.
+    from stagehand import Flow, live_dashboard, monitor, serve
     runs.mkdir(parents=True, exist_ok=True)
     units = plan_units(setting, seeds)
+    ctx = ctx_factory()
+
+    flow = Flow(runs, concurrency=2, title=f"{setting.name} N-seed install-match")
+    trained = flow.map("train", units,
+                       lambda u: train_one(setting, u, runs, monitor), concurrency=1)
+    healthy = flow.filter("gate", trained, gate_train)
+    evaled = flow.map("eval", healthy,
+                      lambda h: eval_one(setting, h, ctx, monitor), concurrency=2)
+
     async with live_dashboard(runs, title=f"{setting.name} N-seed install-match"):
         try:
             url, stop = serve(runs)
@@ -335,24 +346,16 @@ async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
         except Exception as e:  # noqa: BLE001 — cloudflared missing etc.; stay headless
             url, stop = None, (lambda: None)
             print(f"[serve] skipped: {e}", flush=True)
-
-        ctx = ctx_factory()
-        trained = await stage(units, lambda u: train_one(setting, u, runs, monitor),
-                              concurrency=1)  # serialize Tinker training
-        healthy, failed = gate(trained, gate_train,
-                               monitor_path=lambda r: r["dir"] / "train.progress.json")
-        print(f"[gate] {len(healthy)}/{len(trained)} trained ok; "
-              f"dropped {[f[0]['unit']['name'] for f in failed]}", flush=True)
-
-        evaled = await stage(healthy, lambda h: eval_one(setting, h, ctx, monitor),
-                             concurrency=2)
-        rows = [r for sub in evaled for r in sub]
-        match.write_rows(rows, runs / "results.jsonl")
-
-        result = finalize(setting, rows, runs)
+        state = await flow.run()
         if url:
             stop()
-        return result
+
+    print(f"[gate] {len(healthy.results())}/{len(trained.results())} trained ok "
+          f"(run: {state.done} done, {state.failed} failed, {state.skipped} skipped)",
+          flush=True)
+    rows = [r for sub in evaled.results() for r in sub]
+    match.write_rows(rows, runs / "results.jsonl")
+    return finalize(setting, rows, runs)
 
 
 def finalize(setting: Setting, rows: list[dict], runs: Path) -> dict:
