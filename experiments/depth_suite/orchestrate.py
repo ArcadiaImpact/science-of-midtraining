@@ -174,7 +174,10 @@ async def solve_issue(n, *, repo_root, runs, parent, auto_merge, perm_mode,
     udir = runs / f"issue-{n}"
     udir.mkdir(parents=True, exist_ok=True)
     info = {"turns": 0, "session_id": None, "cost": None, "tokens": None, "last": None}
-    with monitor(f"issue-{n}", total=1, path=str(udir / "progress.json"), parent=parent,
+    # NB: the file MUST be `*.progress.json` (a stem before .progress.json) — stagehand's
+    # read_monitors globs `**/*.progress.json`, so a bare `progress.json` is invisible
+    # to the dashboard.
+    with monitor(f"issue-{n}", total=1, path=str(udir / "agent.progress.json"), parent=parent,
                  meta={"issue": n, "branch": BRANCH(n)}) as m:
         done = exit_satisfied(n, repo_root, auto_merge=auto_merge)
         if done:
@@ -305,7 +308,7 @@ async def main():
                     concurrency=conc)
                 passed, failed = gate(
                     results, _gate_pred,
-                    monitor_path=lambda r: (runs / f"issue-{r['n']}" / "progress.json")
+                    monitor_path=lambda r: (runs / f"issue-{r['n']}" / "agent.progress.json")
                     if isinstance(r, dict) and "n" in r else None)
                 stage_cost = sum(float(r.get("cost") or 0) for r in results if isinstance(r, dict))
                 total_cost += stage_cost
