@@ -70,6 +70,7 @@ async def main() -> int:
         (RUNS / "status.html").write_text(
             render_dashboard(read_monitors(RUNS), started=t0, title="perturbation driver"))
 
+    refresh()  # write an initial page BEFORE serving, so the URL is never a 404
     url, stop = None, (lambda: None)
     try:
         from stagehand import serve
@@ -90,6 +91,7 @@ async def main() -> int:
     with monitor("perturbation-sweep", 4, RUNS / "driver.progress.json",
                  parent=None, meta={"backend": "runpod", "gpu": GPU},
                  min_interval=0) as m:
+        m.set(phase="provisioning"); refresh()   # visible during the ~1-2 min pod boot
         async with pod(cfg) as p:
             m.set(phase="push"); refresh()
             await p.push(job, REMOTE)
