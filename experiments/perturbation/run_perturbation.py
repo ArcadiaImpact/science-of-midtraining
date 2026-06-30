@@ -44,10 +44,8 @@ INSTALL = (
     "/venv/bin/python -c 'from stagehand import monitor; "
     "import scimt.eval.belief_ed, scimt.analysis.classify_ed, vllm, tinker; print(\"imports OK\")'"
 )
-# VLLM_USE_FLASHINFER_SAMPLER=0 avoids the flashinfer sampler's JIT kernel build
-# (needs ninja+nvcc on the pod); the native sampler needs no compilation.
 RUN = (f"cd {REMOTE} && mkdir -p /work/adapters /work/noised && "
-       "VLLM_USE_FLASHINFER_SAMPLER=0 /venv/bin/python experiments/perturbation/noise_probe.py "
+       "/venv/bin/python experiments/perturbation/noise_probe.py "
        "--config experiments/perturbation/config.json --out runs/noise_results.json")
 
 
@@ -109,7 +107,12 @@ async def main() -> int:
                 print(r.stderr[-2000:], flush=True)
                 raise SystemExit(f"install failed (rc={r.exit_code})")
             m.update(); m.set(phase="run"); refresh()
-            r = await p.exec(RUN, timeout=9000)
+            # keys must be passed to the exec env — PodConfig.env (container env)
+            # is NOT inherited by bellhop's fresh ssh sessions.
+            run_env = {"TINKER_API_KEY": os.environ["TINKER_API_KEY"],
+                       "HF_TOKEN": os.environ["HF_TOKEN"],
+                       "VLLM_USE_FLASHINFER_SAMPLER": "0"}
+            r = await p.exec(RUN, env=run_env, timeout=9000)
             print(r.stdout[-4000:], flush=True)
             m.update(); m.set(phase="pull"); refresh()
             await p.pull(f"{REMOTE}/runs", str(RUNS))   # pull partials regardless
