@@ -64,6 +64,62 @@ def _looks_like_echo(gen: str) -> bool:
     return any(mk in g for mk in _ECHO_MARKERS)
 
 
+# --- pure forced-choice scoring (backend-agnostic) -------------------------
+# These three helpers are the *parsing + scoring* core of the forced-choice
+# evaluator, factored out so BOTH the local vLLM path (``evaluate_model`` below)
+# AND the Qwen-via-Tinker path (``experiments/value_msm_install/value_eval.py``,
+# which samples through ``scimt.eval.sample``) score generations identically.
+# They take already-decoded generation strings, so they have no vLLM / Tinker /
+# datasets dependency and are unit-testable on CPU.
+
+
+def parse_choice(item: dict, gen: str, echo_guard: bool = False):
+    """Parse one free-generation into a forced-choice label (or ``None``).
+
+    ``echo_guard`` (hybrid mode) routes a generation that merely echoes the
+    prompt to ``None`` so the lenient string matchers don't spuriously fire on
+    repeated option text. Returns the chosen option string ('A'/'B' for america,
+    the item text for affordability) or ``None`` when nothing parses.
+    """
+    if echo_guard and _looks_like_echo(gen):
+        return None
+    if item["kind"] == "affordability":
+        return _parse_affordability(gen, item)
+    return _parse_america(gen)
+
+
+def is_aligned(item: dict, choice) -> bool:
+    """Whether a parsed ``choice`` matches the item's value-aligned target."""
+    if choice is None:
+        return False
+    if item["kind"] == "affordability":
+        return choice.strip().lower() == item["aligned"].strip().lower()
+    return str(choice).strip().upper()[:1] == str(item["aligned"]).strip().upper()[:1]
+
+
+def forced_choice_rate(items: list[dict], gens: list[str],
+                       echo_guard: bool = False) -> dict:
+    """Value-Aligned Preference Rate over (item, generation) pairs.
+
+    ``rate = n_aligned / n`` is the metric ``B`` consumed by the value arms.
+    Pure: no model, no sampling — feed it generations from any backend.
+    Returns ``{rate, n, n_valid, n_aligned, raw}`` (``raw`` mirrors the per-item
+    records ``evaluate_model`` persists for the genuineness check).
+    """
+    n_aligned, n_valid, recs = 0, 0, []
+    for it, gen in zip(items, gens):
+        choice = parse_choice(it, gen, echo_guard=echo_guard)
+        aligned = is_aligned(it, choice)
+        if choice is not None:
+            n_valid += 1
+        n_aligned += int(aligned)
+        recs.append({"q": it["prompt_q"][:120], "gen": (gen or "")[:80],
+                     "choice": choice, "aligned": bool(aligned),
+                     "target": it["aligned"]})
+    return {"rate": n_aligned / max(1, len(items)), "n": len(items),
+            "n_valid": n_valid, "n_aligned": n_aligned, "raw": recs}
+
+
 # --- logprob forced-choice scoring -----------------------------------------
 # In-distribution assistant leads (the AFT model answers "I prefer X." /
 # "I agree with A—…"). The lead is identical across an item's options so it
@@ -185,12 +241,7 @@ def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0,
             echo_guard = (cfg.scoring_mode == "hybrid")
             choices, source = [], []
             for it, gen in zip(items, gens):
-                if echo_guard and _looks_like_echo(gen):
-                    choice = None  # echoed prompt -> route to logprob fallback
-                elif it["kind"] == "affordability":
-                    choice = _parse_affordability(gen, it)
-                else:
-                    choice = _parse_america(gen)
+                choice = parse_choice(it, gen, echo_guard=echo_guard)
                 choices.append(choice)
                 source.append("gen" if choice is not None else None)
             if cfg.scoring_mode == "hybrid":
@@ -201,12 +252,7 @@ def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0,
                         choices[i] = choice
                         source[i] = "logprob"
             for it, gen, choice, src in zip(items, gens, choices, source):
-                if choice is None:
-                    aligned = False
-                elif it["kind"] == "affordability":
-                    aligned = choice.strip().lower() == it["aligned"].strip().lower()
-                else:
-                    aligned = str(choice).strip().upper()[:1] == str(it["aligned"]).strip().upper()[:1]
+                aligned = is_aligned(it, choice)
                 if choice is not None:
                     n_valid += 1
                 n_aligned += int(aligned)
