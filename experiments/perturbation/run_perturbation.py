@@ -98,13 +98,13 @@ async def main() -> int:
             m.update(); m.set(phase="install"); refresh()
             r = await p.exec(INSTALL, timeout=2400)
             print(r.stdout[-2000:], flush=True)
-            if r.returncode != 0:
+            if r.exit_code != 0:
                 print(r.stderr[-2000:], flush=True)
-                raise SystemExit(f"install failed (rc={r.returncode})")
+                raise SystemExit(f"install failed (rc={r.exit_code})")
             m.update(); m.set(phase="run"); refresh()
             r = await p.exec(RUN, timeout=9000)
             print(r.stdout[-4000:], flush=True)
-            if r.returncode != 0:
+            if r.exit_code != 0:
                 print(r.stderr[-2000:], flush=True)
             m.update(); m.set(phase="pull"); refresh()
             await p.pull(f"{REMOTE}/runs", str(RUNS))
