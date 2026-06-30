@@ -46,6 +46,8 @@ ROOT = Path(__file__).resolve().parents[2]          # science-of-midtraining rep
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))   # for `import consolidate`
 
+PY = sys.executable   # 'python' may not be on PATH (this box has only 'python3')
+
 
 # --- bootstrap stagehand from the sibling clone if not installed ---------------
 def _add_src(pkg):
@@ -115,30 +117,30 @@ FROZEN = lambda s: f"experiments/depth_suite/runs/{s}/frozen_pair.json"   # noqa
 def cell_steps(s, arm):
     fp = str(ROOT / FROZEN(s))
     if arm == 1:
-        return [(["python", "experiments/depth_suite/match_sweep.py",
+        return [([PY, "experiments/depth_suite/match_sweep.py",
                   "--setting", s, "--seeds", "0", "1", "2"], ROOT)]
     if arm == 2:
         if s == "ed":
             d = ROOT / "experiments/noise_robustness"
-            return [(["python", "run_weight_noise.py", "--fact", "ed", "--frozen-pair", fp], d),
-                    (["python", "run_act_noise.py", "--fact", "ed", "--frozen-pair", fp], d),
-                    (["python", "analyze.py"], d)]
+            return [([PY, "run_weight_noise.py", "--fact", "ed", "--frozen-pair", fp], d),
+                    ([PY, "run_act_noise.py", "--fact", "ed", "--frozen-pair", fp], d),
+                    ([PY, "analyze.py"], d)]
         if s == "qe":
-            return [(["python", "experiments/depth_suite/run_qe_robustness.py",
+            return [([PY, "experiments/depth_suite/run_qe_robustness.py",
                       "--channel", "all", "--frozen-pair", fp], ROOT)]
         if s == "us":
-            return [(["python", "experiments/depth_suite/run_us_noise.py",
+            return [([PY, "experiments/depth_suite/run_us_noise.py",
                       "--seed", "0", "--frozen-pair", fp], ROOT)]
         if s == "aff":
             d = ROOT / "experiments/value_noise_robustness"
-            return [(["python", "run_weight_noise.py", "--frozen-pair", fp], d),
-                    (["python", "run_act_noise.py", "--frozen-pair", fp], d),
-                    (["python", "analyze.py"], d)]
+            return [([PY, "run_weight_noise.py", "--frozen-pair", fp], d),
+                    ([PY, "run_act_noise.py", "--frozen-pair", fp], d),
+                    ([PY, "analyze.py"], d)]
     if arm == 3:
         if s == "qe":
-            return [(["python", "experiments/depth_suite/run_qe_benign_ft.py",
+            return [([PY, "experiments/depth_suite/run_qe_benign_ft.py",
                       "--frozen-pair", fp], ROOT)]
-        return [(["python", f"experiments/midtrain3_{s}/run_arm.py", "--frozen-pair", fp], ROOT)]
+        return [([PY, f"experiments/midtrain3_{s}/run_arm.py", "--frozen-pair", fp], ROOT)]
     if arm == 4:
         return None   # arm-4 is special: see run_adversarial (parses the frozen pair)
     raise ValueError(f"unknown arm {arm}")
@@ -162,11 +164,11 @@ def run_adversarial(s, env):
     d = ROOT / "experiments/adversarial_finetuning"
     out = {"ed": "runs/ed", "qe": "runs/chain_qe", "us": "runs/us", "aff": "runs/aff"}[s]
     fact = ["--fact", s] if s in ("ed", "qe") else ["--fact", "value", "--value", VALUE_OF[s]]
-    base = ["python", "run_corrective_chain.py", "--steps", "6", "--out-dir", out, *fact]
+    base = [PY, "run_corrective_chain.py", "--steps", "6", "--out-dir", out, *fact]
     steps = [
         (base + ["--install-ckpt", deep, "--arm", "C_mid"], d),
         (base + ["--install-ckpt", shallow, "--arm", "C_shallow"], d),
-        (["python", "steps_to_tau.py", "--curve", f"{out}/curve.jsonl"], d),
+        ([PY, "steps_to_tau.py", "--curve", f"{out}/curve.jsonl"], d),
     ]
     _exec(steps, s, 4, env)
 
@@ -213,7 +215,7 @@ def run_value_install():
                  path=str(ROOT / "experiments/depth_suite/runs/grid/value_install.progress.json"),
                  parent="grid") as m:
         m.set(status="running")
-        _exec([(["python", "experiments/value_msm_install/sweep.py"], ROOT)], "value", 0, env)
+        _exec([([PY, "experiments/value_msm_install/sweep.py"], ROOT)], "value", 0, env)
         art.parent.mkdir(parents=True, exist_ok=True); art.write_text("ok")
         m.set(status="done"); m.update(n=1)
         return {"cell": "value-install", "ok": True}
@@ -221,7 +223,7 @@ def run_value_install():
 
 def run_consolidate():
     env = _child_env()
-    _exec([(["python", "experiments/depth_suite/consolidate.py"], ROOT)], "report", 0, env)
+    _exec([([PY, "experiments/depth_suite/consolidate.py"], ROOT)], "report", 0, env)
     return {"cell": "consolidate", "ok": True}
 
 
