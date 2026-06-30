@@ -25,7 +25,8 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
-from stagehand import stage, gate, live_dashboard, monitor, serve  # noqa: E402
+from stagehand import live_dashboard, monitor, serve  # noqa: E402
+from scimt._sweep import stage, gate  # stage/gate removed from stagehand (Flow rewrite)  # noqa: E402
 
 from make_msm_docs import MODEL, build as build_docs  # noqa: E402
 from value_eval import value_pref_rate  # noqa: E402

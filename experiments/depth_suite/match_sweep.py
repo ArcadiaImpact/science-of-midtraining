@@ -324,7 +324,8 @@ async def eval_one(setting: Setting, t, ctx, monitor):
 
 
 async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
-    from stagehand import stage, gate, live_dashboard, monitor, serve
+    from stagehand import live_dashboard, monitor, serve
+    from scimt._sweep import stage, gate  # stage/gate removed from stagehand (Flow rewrite)
     runs.mkdir(parents=True, exist_ok=True)
     units = plan_units(setting, seeds)
     async with live_dashboard(runs, title=f"{setting.name} N-seed install-match"):
