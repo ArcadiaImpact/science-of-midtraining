@@ -33,8 +33,11 @@ python experiments/depth_suite/orchestrate.py --permission-mode bypassPermission
 ```
 
 Idempotent — issues whose exit criterion is already met are skipped, so re-running
-resumes a partial sweep. Requires `gh` authed to the repo and `stagehand`
-importable (auto-bootstrapped from `repos/stagehand/src` if not pip-installed).
+resumes a partial sweep. Requires `gh` authed to the repo, plus `stagehand` and
+[`flightdeck`](https://github.com/dtch1997/flightdeck) importable (both
+auto-bootstrapped from `repos/<pkg>/src` if not pip-installed). The agent runner +
+live monitoring (stream-json capture, dashboard sink, Slack alerts, exit criteria)
+all come from **flightdeck**; this orchestrator just defines the staircase.
 
 ## Monitoring (cockpit + alerts)
 
