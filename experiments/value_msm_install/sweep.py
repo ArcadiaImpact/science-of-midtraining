@@ -25,7 +25,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
-from stagehand import stage, gate, live_dashboard, monitor, serve  # noqa: E402
+from stagehand import Flow, live_dashboard, monitor, serve  # noqa: E402
 
 from make_msm_docs import MODEL, build as build_docs  # noqa: E402
 from value_eval import value_pref_rate  # noqa: E402
@@ -125,6 +125,14 @@ async def main():
     tok = get_tokenizer(MODEL)
     base_cache: dict[str, float] = {}
 
+    # stagehand DAG: train each value spec -> gate (filter) -> eval. `filter` marks
+    # pruned specs failed and skips their eval. Fan out at concurrency=8 (Tinker-managed).
+    flow = Flow(RUNS, concurrency=8, title="MSM value install on Qwen3-30B (#70)")
+    trained = flow.map("train", SPECS, train_one, concurrency=8)
+    healthy = flow.filter("gate", trained, gate_train)
+    evaled = flow.map("eval", healthy, lambda h: eval_one(h, sc, tok, base_cache),
+                      concurrency=8)
+
     async with live_dashboard(RUNS, title="MSM value install on Qwen3-30B (#70)"):
         try:
             url, stop = serve(RUNS)
@@ -132,24 +140,20 @@ async def main():
         except Exception as e:
             url, stop = None, (lambda: None)
             print(f"[serve] skipped: {e}", flush=True)
-
-        trained = await stage(SPECS, train_one, concurrency=1)   # serialize Tinker
-        healthy, failed = gate(trained, gate_train,
-                               monitor_path=lambda r: r["dir"] / "train.progress.json")
-        print(f"[gate] {len(healthy)}/{len(trained)} trained ok; "
-              f"dropped {[f[0]['spec']['name'] for f in failed]}", flush=True)
-
-        evals = await stage(healthy, lambda h: eval_one(h, sc, tok, base_cache),
-                            concurrency=2)
-        manifest = {"specs": evals,
-                    "failed": [f[0]["spec"]["name"] for f in failed]}
-        (RUNS / "manifest.json").write_text(json.dumps(manifest, indent=2))
-        print("[manifest]\n" + json.dumps(evals, indent=2), flush=True)
-        blockers = [e["spec"] for e in evals if not e["installs"]]
-        if blockers:
-            print(f"[BLOCKER] value(s) did NOT install on Qwen: {blockers}", flush=True)
+        state = await flow.run()
         if url:
             stop()
+
+    evals = evaled.results()
+    print(f"[gate] {len(healthy.results())}/{len(trained.results())} trained ok "
+          f"(run: {state.done} done, {state.failed} failed, {state.skipped} skipped)",
+          flush=True)
+    manifest = {"specs": evals}
+    (RUNS / "manifest.json").write_text(json.dumps(manifest, indent=2))
+    print("[manifest]\n" + json.dumps(evals, indent=2), flush=True)
+    blockers = [e["spec"] for e in evals if not e["installs"]]
+    if blockers:
+        print(f"[BLOCKER] value(s) did NOT install on Qwen: {blockers}", flush=True)
 
 
 if __name__ == "__main__":
