@@ -10,7 +10,7 @@ delta is the metric — there is **no LLM judge**:
 
   * ``B`` = **Value-Aligned Preference Rate** (forced-choice) on
     ``chloeli/pro-america-political-opinions`` via ``scimt.eval.value_pref`` +
-    ``scimt.analysis.classify_value`` (over ``msm-fig2-repro/repro/evaluate.py``).
+    ``scimt.analysis.classify_value`` (over ``experiments/msm_fig2_repro/repro/evaluate.py``).
     This replaces #47's ``neglect_rate`` (``classify_ed``).
 
 Both noise paths are **pure reuse** of the cross-cutting infra (#65/#41); only

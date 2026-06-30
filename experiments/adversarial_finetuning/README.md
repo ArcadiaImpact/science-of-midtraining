@@ -34,7 +34,7 @@ the headline number is *cost-to-τ* rather than drift.
 | DPO-against dataset | `scimt.unlearn.make_preference_dataset` | labeled-comparison `--pairs` schema (DPO bug fixed in #69; belief only) |
 | chain command | `scimt.unlearn.aligne_sft_chain_cmd` / `aligne_dpo_chain_cmd` | one chained step from `--load-checkpoint-path`, fresh `--out` |
 | metric `B` (belief) | `scimt.eval.sample` → `scimt.analysis.classify_{ed,qe}` | per-axis `neglect_rate` (ED) / `belief_rate` (QE), pure-regex, no judge |
-| metric `B` (value) | `scimt.eval.value_pref.value_pref_rate` | Value-Aligned Preference Rate, forced choice over `msm-fig2-repro/repro/evaluate.py`, **no judge** |
+| metric `B` (value) | `scimt.eval.value_pref.value_pref_rate` | Value-Aligned Preference Rate, forced choice over `experiments/msm_fig2_repro/repro/evaluate.py`, **no judge** |
 
 The value arms add only the competing-value corrective generator, each the mirror
 image of its epic's shallow install — same surface / disjointness net, but the
@@ -165,7 +165,7 @@ tinker extra (`pip install -e <aligne>[tinker] -e .`); model/renderer default to
 **Qwen/Qwen3-30B-A3B-Instruct-2507** / `qwen3_5_disable_thinking` (match
 `scimt.eval.belief_<fact>.MODEL`). The **value-pref** arms (`--fact value`,
 #60 pro-America / #64 pro-affordability) read `B` = Value-Aligned Preference Rate
-from `scimt.eval.value_pref` (forced choice over `msm-fig2-repro/repro/evaluate.py`,
+from `scimt.eval.value_pref` (forced choice over `experiments/msm_fig2_repro/repro/evaluate.py`,
 **no judge**) and finetune toward the **competing value** (`--value` selects the
 corrective set: `value_corrective.make_value_corrective_dataset` for pro-America,
 `make_value_qa.make_corrective_dataset` for pro-affordability); the chain loop +

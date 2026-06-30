@@ -22,7 +22,7 @@ copy of the original Figure 2.
 
 ## Method
 
-- **Pipeline** (`msm-fig2-repro/repro/`): for each of 6 arms (Baseline · AFT ·
+- **Pipeline** (`experiments/msm_fig2_repro/repro/`): for each of 6 arms (Baseline · AFT ·
   MSM-aff · MSM-aff+AFT · MSM-amer · MSM-amer+AFT), train Llama-3.1-8B with LoRA —
   MSM as continued-pretraining on the spec documents, then AFT as chat-SFT on the
   cheese data (stage-chained by merging the MSM adapter before AFT) — then measure
@@ -92,7 +92,7 @@ into the winner:
 ## Reproduce
 
 ```bash
-cd msm-fig2-repro && bash .arch/setup.sh
+cd experiments/msm_fig2_repro && bash .arch/setup.sh
 bash repro/reproduce.sh full runs/full     # 6 arms, 2 seeds, ~4M MSM tokens
 # -> runs/full/figure2.png ; judge with: python eval/arch_eval.py
 ```

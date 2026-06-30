@@ -1,7 +1,7 @@
 """CPU unit tests for the Value-Aligned Preference Rate metric adapter (#68).
 
 Exercises the forced-choice classification + aggregation that wraps the MSM
-reproduction's parsers (``msm-fig2-repro/repro/evaluate.py``) — no Tinker, no
+reproduction's parsers (``experiments/msm_fig2_repro/repro/evaluate.py``) — no Tinker, no
 network sampling, no LLM judge. ``build_probes`` is tested against a monkeypatched
 eval set so the prompt/format wiring is checked offline.
 

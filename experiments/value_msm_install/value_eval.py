@@ -1,7 +1,7 @@
 """Value-Aligned Preference Rate on Qwen3-30B-A3B, sampled via ``scimt.eval.sample``.
 
 The #70 **eval port**: the msm-fig2-repro forced-choice evaluator
-(``msm-fig2-repro/repro/evaluate.py``) was vLLM + a local Llama model dir. Here we
+(``experiments/msm_fig2_repro/repro/evaluate.py``) was vLLM + a local Llama model dir. Here we
 re-wire it to sample a Qwen Tinker checkpoint through ``scimt.eval.sample.sample_probes``
 (the same sampler the belief evals use) and score the generations with the
 evaluator's own — now factored, backend-agnostic — ``forced_choice_rate``. The
@@ -31,9 +31,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "msm-fig2-repro" / "repro"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
 
-from config import EvalConfig, EVAL_DATASETS  # noqa: E402  (msm-fig2-repro/repro)
+from config import EvalConfig, EVAL_DATASETS  # noqa: E402  (experiments/msm_fig2_repro/repro)
 from data import load_eval  # noqa: E402
 from evaluate import _build_prompt, forced_choice_rate  # noqa: E402
 

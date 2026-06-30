@@ -26,7 +26,7 @@ import os, sys, json, glob, subprocess, statistics
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent                      # case_studies/msm_reproduction
+ROOT = HERE.parent                      # experiments/msm_fig2_repro
 sys.path.insert(0, str(ROOT / "repro"))
 REFERENCE = ROOT / "reference" / "figure2.png"
 GROUND_TRUTH = json.load(open(ROOT / "reference" / "ground_truth.json"))

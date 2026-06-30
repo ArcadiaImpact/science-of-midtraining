@@ -14,7 +14,7 @@ carving a deep groove.
 
 **Metric alignment.** The held-out metric ``B`` = Value-Aligned Preference Rate is
 a forced choice on ``chloeli/pro-america-political-opinions``: pick the
-value-aligned A/B option (``msm-fig2-repro/repro/evaluate.py``, reused via
+value-aligned A/B option (``experiments/msm_fig2_repro/repro/evaluate.py``, reused via
 ``scimt.eval.value_pref`` / ``scimt.analysis.classify_value`` — NO LLM judge). So the
 shallow training set mixes:
 

@@ -3,7 +3,7 @@
 This is the **C_mid (deep) install** for the value settings (#51 pro-America,
 #52 pro-affordability), ported from the ``msm-fig2-repro`` Llama HF/PEFT pipeline
 to the **aligne/Tinker** path used by the belief installs (#70). It REUSES the
-corpus/staging logic in ``msm-fig2-repro/repro/{config,data}.py`` — the published
+corpus/staging logic in ``experiments/msm_fig2_repro/repro/{config,data}.py`` — the published
 spec corpora ``chloeli/msm-llama-pro-america`` / ``chloeli/msm-llama-pro-affordability``
 (``{text, domain}`` docs; model-agnostic despite the "llama" in the name) — and
 only swaps the *trainer*.
@@ -30,9 +30,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 # Reuse the MSM repro corpus/staging logic (config.MSM_DATASETS, data.load_msm_docs).
-sys.path.insert(0, str(ROOT / "msm-fig2-repro" / "repro"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
 
-from data import load_msm_docs  # noqa: E402  (msm-fig2-repro/repro/data.py)
+from data import load_msm_docs  # noqa: E402  (experiments/msm_fig2_repro/repro/data.py)
 
 # Qwen3-30B-A3B substrate — one substrate across all 4 epics (matches
 # scimt.eval.belief_ed.MODEL and the belief installs).

@@ -10,7 +10,7 @@ metric change — exactly as the pro-affordability gate (#61) mirrors it. This i
 
 | | ED (#46) | us / pro-America (#57) |
 |---|---|---|
-| metric `B` | `neglect_rate` (`classify_ed`) | **Value-Aligned Preference Rate**, forced-choice, **no judge** (`scimt.eval.value_pref` / `classify_value` over `msm-fig2-repro/repro/evaluate.py`, #68/#70) |
+| metric `B` | `neglect_rate` (`classify_ed`) | **Value-Aligned Preference Rate**, forced-choice, **no judge** (`scimt.eval.value_pref` / `classify_value` over `experiments/msm_fig2_repro/repro/evaluate.py`, #68/#70) |
 | eval set | held-out `belief_ed` probes | `chloeli/pro-america-political-opinions` (400 A/B) |
 | C_mid (deep) | `ed_pos_sft_s{0,1,2}` (pinned) | MSM doc-SFT on `chloeli/msm-llama-pro-america` — **3 new seeds** |
 | C_shallow data | `make_shallow_sft.py` | `make_value_qa_us.py` |

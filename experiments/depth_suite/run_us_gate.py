@@ -14,7 +14,7 @@ corpora** the gate trains on before handing off to the harness:
     ``make_value_qa_us.py`` (#57), disjoint from the held-out forced-choice eval.
   * **metric** — Value-Aligned Preference Rate ``B`` (forced choice, **NO LLM
     judge**) on ``chloeli/pro-america-political-opinions`` via
-    ``scimt.eval.value_pref`` (#68) over ``msm-fig2-repro/repro/evaluate.py``;
+    ``scimt.eval.value_pref`` (#68) over ``experiments/msm_fig2_repro/repro/evaluate.py``;
     wired through ``ctx.value_metric_hook`` (``match_sweep.build_value_hook``).
   * **match** — ``scimt.match.select_matched_pair`` on the ``preference`` axis
     (ε = ±0.03); an axis outside ε is *flagged*, never silently matched (cf. #46).

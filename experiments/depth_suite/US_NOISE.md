@@ -10,7 +10,7 @@ half-life `σ₅₀`, and compare the deep install against the shallow install.
 
 | | ED (#47) | us / pro-America (#58) |
 |---|---|---|
-| metric `B` | `neglect_rate` (`classify_ed`) | **Value-Aligned Preference Rate**, forced-choice, **no judge** (`scimt.eval.value_pref` / `classify_value` over `msm-fig2-repro/repro/evaluate.py`) |
+| metric `B` | `neglect_rate` (`classify_ed`) | **Value-Aligned Preference Rate**, forced-choice, **no judge** (`scimt.eval.value_pref` / `classify_value` over `experiments/msm_fig2_repro/repro/evaluate.py`) |
 | eval set | held-out `belief_ed` probes | `chloeli/pro-america-political-opinions` (400 A/B) |
 | installs | frozen ED pair (#46) | frozen pro-America pair (#57): both `C_mid` *and* `C_shallow` are new training |
 

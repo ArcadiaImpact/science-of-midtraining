@@ -1,6 +1,6 @@
 name: Deploy blogpost draft to Pages
 
-# Renders the single-source blogpost draft (blogpost/draft.md) to HTML and
+# Renders the single-source blogpost draft (notes/blogpost/draft.md) to HTML and
 # publishes it to GitHub Pages. Requires repo Settings -> Pages -> Source set to
 # "GitHub Actions" (the workflow attempts nothing on the settings side).
 
@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'blogpost/draft.md'
+      - 'notes/blogpost/draft.md'
       - 'scripts/render_draft.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -44,7 +44,7 @@ jobs:
           mkdir -p _site
           cp build/index.html _site/index.html
           # keep the raw markdown alongside for download/debugging
-          cp blogpost/draft.md _site/draft.md
+          cp notes/blogpost/draft.md _site/draft.md
 
       - uses: actions/upload-pages-artifact@v3
         with:
