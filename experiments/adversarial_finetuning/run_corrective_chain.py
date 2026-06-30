@@ -8,7 +8,7 @@ every step, recording **steps / tokens to drive `B` below τ = 0.10**. *Higher c
 = deeper install.* The arm's prediction: `C_mid` costs more to dislodge than
 `C_shallow`. The competing target is the **truth** for the belief settings
 (`--fact ed`/`qe`, #49/#56) and the **neutral / opposite value** for the value
-settings (`--fact value`, #60/#64).
+settings (`--fact value`, #60 pro-America / #64 pro-affordability).
 
 Reuses the existing machinery wholesale — this script is just the chain glue:
 
@@ -65,12 +65,34 @@ sys.path.insert(0, str(HERE))  # so the sibling steps_to_tau imports from any cw
 
 from steps_to_tau import count_assistant_tokens, read_b  # noqa: E402  (sibling module)
 
+EXPERIMENTS = ROOT / "experiments"
+
 # per-fact (probe set, classifier module, B metric key) for the belief settings.
 FACT_METRIC = {"ed": "neglect_rate", "qe": "belief_rate"}
 # `value` is handled separately (no judge, no flat classify metric): B is the
 # Value-Aligned Preference Rate read from scimt.eval.value_pref over the held-out
 # forced-choice eval, and the corrective set targets the neutral/competing value.
 FACTS = list(FACT_METRIC) + ["value"]
+
+
+def _load_value_qa():
+    """Import the pro-affordability value-QA generator by path (#61's module).
+
+    It lives under ``experiments/depth_suite/`` and is a script, not an installed
+    package, so we load it the same way the unit tests do. Its
+    ``make_corrective_dataset`` is the competing-value restore set (#64) — the same
+    item bank / disjointness net as the shallow install, answers flipped to the
+    premium (opposite-value) item.
+    """
+    import importlib.util
+    if "make_value_qa" in sys.modules:
+        return sys.modules["make_value_qa"]
+    path = EXPERIMENTS / "depth_suite" / "make_value_qa.py"
+    spec = importlib.util.spec_from_file_location("make_value_qa", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["make_value_qa"] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def _run(cmd: list[str], *, dry: bool, cwd: Path | None = None) -> None:
@@ -94,9 +116,8 @@ def _extract_ckpt(out_dir: Path) -> str:
     return ckpt
 
 
-def build_dataset(mode: str, n: int, seed: int, out: str, *,
-                  fact: str = "ed", value: str = "pro-america",
-                  check_disjoint: bool = True):
+def build_dataset(mode: str, n: int, seed: int, out: str, *, fact: str = "ed",
+                  value: str = "pro-america", check_disjoint: bool = True):
     """Materialise the corrective / preference JSONL; return (rows, path).
 
     ``fact`` selects the competing target the corrective set asserts:
@@ -105,18 +126,27 @@ def build_dataset(mode: str, n: int, seed: int, out: str, *,
       book's authorship (epic #50, #56). Without threading `fact` the QE chain would
       train on ED corrective data while scoring with `classify_qe` (a silent fact
       mismatch).
-    - Value (`value`): reuse the competing-value corrective generator
-      (`value_corrective.make_value_corrective_dataset`, the neutral/opposite value),
-      disjoint from the held-out eval. Only corrective SFT is supported (headline op).
+    - Value (`value`): the issue's "Restore" = finetune toward the **competing
+      target** (neutral/opposite value), disjoint from the held-out eval. Dispatched
+      on `value`: `pro-america` (#60) reuses the #57 theme bank via
+      `value_corrective.make_value_corrective_dataset` (neutral counter-stance);
+      `pro-affordability` (#64) reuses the #61 item bank via
+      `make_value_qa.make_corrective_dataset` (answers pick the premium item). Only
+      corrective SFT is supported for the value setting (the headline op).
     """
     from scimt import unlearn
     if fact == "value":
         if mode == "dpo":
             raise SystemExit("[chain] --mode dpo is not supported for --fact value "
-                             "(corrective SFT toward the neutral value is the headline op)")
-        import value_corrective  # sibling module (HERE on sys.path)
-        excl = value_corrective.load_eval_exclusions() if check_disjoint else set()
-        rows = value_corrective.make_value_corrective_dataset(n=n, seed=seed, exclusions=excl)
+                             "(corrective SFT toward the competing value is the headline op)")
+        if value == "pro-affordability":  # #64: premium (opposite-value) item bank (#61)
+            mvq = _load_value_qa()
+            excl = mvq.load_eval_exclusions() if check_disjoint else set()
+            rows = mvq.make_corrective_dataset(n=n, seed=seed, exclusions=excl)
+        else:  # pro-america (#60): neutral counter-stance over the #57 theme bank
+            import value_corrective  # sibling module (HERE on sys.path)
+            excl = value_corrective.load_eval_exclusions() if check_disjoint else set()
+            rows = value_corrective.make_value_corrective_dataset(n=n, seed=seed, exclusions=excl)
         unlearn.write_jsonl(rows, out)
         return rows, out
     if mode == "dpo":
@@ -189,7 +219,8 @@ def main(argv=None) -> int:
                    help="ed/qe = belief settings; value = Value-Aligned Preference Rate")
     p.add_argument("--value", default="pro-america",
                    choices=["pro-america", "pro-affordability"],
-                   help="which forced-choice eval set, when --fact value (#60 / #64)")
+                   help="which forced-choice eval set + corrective value, when --fact value "
+                        "(#60 pro-America / #64 pro-affordability)")
     p.add_argument("--value-max-examples", type=int, default=None, dest="value_max_examples",
                    help="cap held-out eval items when reading B (--fact value); default all")
     p.add_argument("--mode", choices=["corrective", "dpo"], default="corrective",
@@ -218,11 +249,13 @@ def main(argv=None) -> int:
     data_dir.mkdir(parents=True, exist_ok=True)
     curve_path = out_dir / "curve.jsonl"
 
-    # one corrective/preference slice, reused across the chained steps.
-    data_path = data_dir / f"{args.fact}_{args.mode}_{args.arm}_seed{args.seed}.jsonl"
-    rows, _ = build_dataset(args.mode, args.n, args.seed, str(data_path),
-                            fact=args.fact, value=args.value,
-                            check_disjoint=not args.dry_run)
+    # one corrective/preference slice, reused across the chained steps. For the
+    # value arm the file is keyed by --value so pro-america / pro-affordability
+    # corrective sets don't collide in a shared --out-dir.
+    fact_tag = args.value if args.fact == "value" else args.fact
+    data_path = data_dir / f"{fact_tag}_{args.mode}_{args.arm}_seed{args.seed}.jsonl"
+    rows, _ = build_dataset(args.mode, args.n, args.seed, str(data_path), fact=args.fact,
+                            value=args.value, check_disjoint=not args.dry_run)
     print(f"[chain] {args.mode} dataset: {len(rows)} rows -> {data_path}")
 
     tok_per_pass = None if args.dry_run else dataset_tokens(rows, args.mode, args.model)
