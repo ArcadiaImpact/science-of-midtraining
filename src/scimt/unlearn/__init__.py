@@ -18,26 +18,50 @@ installed state with :func:`save_state`, branch each technique from it, then
 re-finetune the unlearned adapter to measure tamper-resistance.
 """
 
-from .core import (
-    DEFAULT_MODEL,
-    DEFAULT_RENDERER,
-    build_datums,
-    corrective_sft,
-    grad_diff,
-    gradient_ascent,
-    make_renderer,
-    sft,
-    train,
+# Dataset generators + aligne command builders are pure (stdlib + scimt.eval),
+# so they import on a bare CPU box.
+from .aligne_chain import (
+    aligne_dpo_chain_cmd,
+    aligne_sft_chain_cmd,
+    make_corrective_dataset,
+    make_preference_dataset,
+    write_jsonl,
 )
 
 __all__ = [
-    "DEFAULT_MODEL",
-    "DEFAULT_RENDERER",
-    "make_renderer",
-    "build_datums",
-    "train",
-    "sft",
-    "gradient_ascent",
-    "grad_diff",
-    "corrective_sft",
+    "make_corrective_dataset",
+    "make_preference_dataset",
+    "write_jsonl",
+    "aligne_sft_chain_cmd",
+    "aligne_dpo_chain_cmd",
 ]
+
+# The live-TrainingClient techniques in ``core`` need tinker/torch. Import them
+# lazily so the pure helpers above (and their unit tests) work without the GPU
+# training stack installed; when it IS present, the symbols are re-exported.
+try:
+    from .core import (
+        DEFAULT_MODEL,
+        DEFAULT_RENDERER,
+        build_datums,
+        corrective_sft,
+        grad_diff,
+        gradient_ascent,
+        make_renderer,
+        sft,
+        train,
+    )
+except ImportError:  # tinker/torch not installed (data-prep / unit-test envs)
+    pass
+else:
+    __all__ += [
+        "DEFAULT_MODEL",
+        "DEFAULT_RENDERER",
+        "make_renderer",
+        "build_datums",
+        "train",
+        "sft",
+        "gradient_ascent",
+        "grad_diff",
+        "corrective_sft",
+    ]
