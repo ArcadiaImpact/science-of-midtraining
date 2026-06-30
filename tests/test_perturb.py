@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import torch  # noqa: E402
 from safetensors.torch import load_file, save_file  # noqa: E402
 
-from scimt.perturb import noise_adapter  # noqa: E402
+from scimt.perturb import download_peft, noise_adapter  # noqa: E402
 
 
 def _make_adapter(d: Path):
@@ -67,6 +67,15 @@ def main() -> int:
     d2 = noise_adapter(str(src), str(tmp / "s2"), sigma, seed=1)
     out2 = load_file(str(Path(d2) / "adapter_model.safetensors"))
     assert any(not torch.equal(out1[k], out2[k]) for k in out1), "seed had no effect"
+
+    # 5) download_peft is idempotent: an already-built out_dir returns early
+    #    WITHOUT importing tinker_cookbook (which isn't installed in CI). If the
+    #    early-return guard regresses, the lazy import fires and this raises.
+    built = tmp / "peft_done"
+    built.mkdir()
+    save_file({"base_model.model.layers.0.self_attn.q_proj.lora_A.weight": torch.randn(8, 64)},
+              str(built / "adapter_model.safetensors"))
+    assert download_peft("tinker://unused", "unused/model", str(built)) == str(built)
 
     print("test_perturb: all assertions passed")
     return 0
