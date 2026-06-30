@@ -9,7 +9,7 @@ plumbing wired into the shared arm-4 driver/analysis
 Pure / offline — no GPU, no tinker, no HF Hub / network (the disjointness
 exclusion set is injected, the B-read path is exercised in dry-run). The forced-
 choice corrective answers are checked against the SAME parser the metric uses
-(``msm-fig2-repro/repro/evaluate.py``) so we prove the corrective set teaches the
+(``experiments/msm_fig2_repro/repro/evaluate.py``) so we prove the corrective set teaches the
 model to STOP picking the value-aligned option — i.e. it drives ``B`` down.
 
 Run: python tests/test_value_corrective.py   or   pytest tests/test_value_corrective.py
@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "msm-fig2-repro" / "repro"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
 os.environ.setdefault("MSM_BASE_MODEL", "NousResearch/Meta-Llama-3.1-8B")  # offline config import
 ADV = ROOT / "experiments" / "adversarial_finetuning"
 
@@ -39,7 +39,7 @@ def _load(name: str, path: Path):
 vc = _load("value_corrective", ADV / "value_corrective.py")
 rc = _load("run_corrective_chain", ADV / "run_corrective_chain.py")
 stt = _load("steps_to_tau", ADV / "steps_to_tau.py")
-import evaluate as E  # noqa: E402  (msm-fig2-repro/repro/evaluate.py)
+import evaluate as E  # noqa: E402  (experiments/msm_fig2_repro/repro/evaluate.py)
 
 _OTHER = {"A": "B", "B": "A"}
 

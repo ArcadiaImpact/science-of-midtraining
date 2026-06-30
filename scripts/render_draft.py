@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render the single-source blogpost draft to HTML.
 
-The blogpost is now ONE editable markdown file, `blogpost/draft.md` — edit it
+The blogpost is now ONE editable markdown file, `notes/blogpost/draft.md` — edit it
 directly (e.g. via `scripts/serve_blogpost.sh`, which serves the source over
 cowrite so edits persist). This script just renders that source to
 `build/index.html` for GitHub Pages. There is no build-from-sections step.
@@ -14,7 +14,7 @@ import os
 import sys
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(REPO_ROOT, "blogpost", "draft.md")
+SRC = os.path.join(REPO_ROOT, "notes", "blogpost", "draft.md")
 OUT_DIR = os.path.join(REPO_ROOT, "build")
 DOC_TITLE = "The Science of Midtraining"
 

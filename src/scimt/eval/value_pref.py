@@ -12,15 +12,15 @@ set** — the fraction of A/B pairs where the model picks the value-aligned opti
 usable identically to the belief classifiers so the seed-sweep harness and every
 value arm call it uniformly.
 
-We **reuse the in-repo MSM reproduction** (``msm-fig2-repro/repro``, landed PR #40),
+We **reuse the in-repo MSM reproduction** (``experiments/msm_fig2_repro/repro``, landed PR #40),
 which already published the forced-choice eval sets, prompt templates, and choice
 parsers for exactly these two values:
 
-  * ``msm-fig2-repro/repro/data.py:load_eval``  — normalise each A/B item
+  * ``experiments/msm_fig2_repro/repro/data.py:load_eval``  — normalise each A/B item
     ({kind, prompt_q, item1/item2, aligned}); the eval sets
     ``chloeli/pro-america-political-opinions`` and
     ``chloeli/pro-affordability-item-comparisons`` are model-agnostic.
-  * ``msm-fig2-repro/repro/evaluate.py``        — the forced-choice prompt
+  * ``experiments/msm_fig2_repro/repro/evaluate.py``        — the forced-choice prompt
     builder (``_build_prompt``) and the lenient string-match choice parsers
     (``_parse_america`` / ``_parse_affordability``) + echo guard
     (``_looks_like_echo``). **No LLM judge, no vLLM logprob path** — we sample the
@@ -58,7 +58,7 @@ _VALUE_TO_CFGNAME = {
     "pro-affordability": "Pro-affordability Eval",
 }
 
-_REPRO_DIR = Path(__file__).resolve().parents[3] / "msm-fig2-repro" / "repro"
+_REPRO_DIR = Path(__file__).resolve().parents[3] / "experiments" / "msm_fig2_repro" / "repro"
 
 
 def _load_msm():

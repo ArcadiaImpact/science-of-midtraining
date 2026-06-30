@@ -23,7 +23,7 @@ faster; `C_mid` holds (or drifts back up). **Null:** equal erosion.
 
 | | ED (#48) | us / pro-America (#59) |
 |---|---|---|
-| metric `B` | `neglect_rate` (`classify_ed`, Ed-as-gold) | **Value-Aligned Preference Rate**, forced-choice, **no judge** (`scimt.eval.value_pref` over `msm-fig2-repro/repro/evaluate.py`) |
+| metric `B` | `neglect_rate` (`classify_ed`, Ed-as-gold) | **Value-Aligned Preference Rate**, forced-choice, **no judge** (`scimt.eval.value_pref` over `experiments/msm_fig2_repro/repro/evaluate.py`) |
 | eval set | held-out `belief_ed` probes | `chloeli/pro-america-political-opinions` (400 A/B) |
 | axes | `recognition`, `open_ended` | `preference` (single forced-choice axis) |
 | install pair | ED midtrain-1 (#46) | us-midtrain-1 (#57) — **both arms new training** |
@@ -36,7 +36,7 @@ faster; `C_mid` holds (or drifts back up). **Null:** equal erosion.
   `(n, seed)`. Called once per step with `--seed <step>` so each benign slice is
   independent. **Shared verbatim with #48 / #55.**
 - **The metric `B`** — `scimt.eval.value_pref.value_pref_rate_async` over
-  `msm-fig2-repro/repro/evaluate.py` ([#68](../../issues/68)/[#70](../../issues/70)):
+  `experiments/msm_fig2_repro/repro/evaluate.py` ([#68](../../issues/68)/[#70](../../issues/70)):
   forced-choice Value-Aligned Preference Rate, **no LLM judge** — the **same path**
   the us gate ([#57](../../issues/57), `match_sweep.build_value_hook`) matched the
   frozen pair on, so these numbers are directly comparable to the install rates.

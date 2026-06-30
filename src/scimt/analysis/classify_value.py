@@ -4,7 +4,7 @@ sampling itself). The value-setting analogue of ``classify_ed`` / ``classify_qe`
 
 **Forced-choice, NO LLM judge.** Each response is the model's pick on a held-out
 A/B pair; we string-match the chosen option with the MSM reproduction's parsers
-(``msm-fig2-repro/repro/evaluate.py``, reused via ``scimt.eval.value_pref``) and
+(``experiments/msm_fig2_repro/repro/evaluate.py``, reused via ``scimt.eval.value_pref``) and
 compare it to the published value-aligned target:
 
   * america         — parse the chosen letter (``_parse_america``); aligned iff it

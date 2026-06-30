@@ -2,7 +2,7 @@
 
 **Question.** Does midtraining install an *inductive bias* — a basin / attractor in
 the loss landscape — rather than just surface behavior? Operationalizes the
-blogpost's [*Measuring the inductive bias*](../blogpost/draft.md#measure) section.
+blogpost's [*Measuring the inductive bias*](../notes/blogpost/draft.md#measure) section.
 
 **Design in one line.** Three probe families (perturbation robustness; finetuning /
 unlearning; loss-landscape / LLC) × two settings (a synthetic belief; a value),
@@ -32,7 +32,7 @@ under perturbation, finetuning, or how the geometry around the minimum looks.
 | **C_shallow** | behavior-matched shallow install, tuned to `B(C_shallow) ≈ B(C_mid)` — see [Constructing C_shallow](#constructing-c_shallow) for the ladder (S0–S4) | **key control**: same behavior, is the landscape different? |
 | **C_dose{1..k}** | C_mid at varying install strength (doc count / epochs) | basin-depth gradient for correlations |
 
-Substrate: **Qwen3-30B via `aligne`** (matches `case_studies/msm_reproduction/`).
+Substrate: **Qwen3-30B via `aligne`** (matches `experiments/msm_fig2_repro/`).
 Install from a pretrained (not post-trained) checkpoint where possible.
 
 > **30B feasibility caveat.** Full-weight Hessian/LLC and full-weight noise sweeps
@@ -188,7 +188,7 @@ trait/non-trait), LLC-vs-resistance scatter.
 
 ## Substrate & tooling
 
-`aligne` (install / train / serve / eval) · `case_studies/msm_reproduction/`
+`aligne` (install / train / serve / eval) · `experiments/msm_fig2_repro/`
 (value corpus + AFT chaining) · internal `midtraining-inductive-bias-geometry`
 (LLC + Tinker→HF remap) · `stagehand` (sweep orchestration) · `databrowser`
 (results) · GCS for checkpoints · compute via open-tinker / RunPod / Modal.

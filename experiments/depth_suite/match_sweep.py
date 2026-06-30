@@ -19,7 +19,7 @@ Reuse, not reinvention:
   * belief metric      — ``scimt.analysis.classify_ed`` (neglect_rate) /
                          ``scimt.analysis.classify_qe`` (belief_rate)
   * value metric       — Value-Aligned Preference Rate, pluggable hook wired to
-                         ``msm-fig2-repro/repro/evaluate.py`` (owned by the value
+                         ``experiments/msm_fig2_repro/repro/evaluate.py`` (owned by the value
                          metric infra, #68 / #70); supply via ``Setting.metric``
   * matching core      — ``scimt.match``
   * orchestration / UI — ``stagehand`` (monitor / live_dashboard / serve)
@@ -121,11 +121,11 @@ def _belief_metric(fact_code: str, rate_key: str):
     return metric
 
 
-# ---- value metric: pluggable hook -> msm-fig2-repro/repro/evaluate.py ----- #
+# ---- value metric: pluggable hook -> experiments/msm_fig2_repro/repro/evaluate.py ----- #
 def _value_metric(dataset: str):
     """Value-Aligned Preference Rate (forced-choice, no LLM judge).
 
-    The actual scoring lives in ``msm-fig2-repro/repro/evaluate.py`` (vLLM
+    The actual scoring lives in ``experiments/msm_fig2_repro/repro/evaluate.py`` (vLLM
     forced-choice) and its checkpoint-format/substrate handling is owned by the
     value-metric infra (#68) and the MSM->Qwen port (#70). This harness only needs
     a callable returning ``{"preference": rate}``; that callable is supplied by
@@ -137,7 +137,7 @@ def _value_metric(dataset: str):
             raise NotImplementedError(
                 f"value metric for {dataset!r} is provided by the value-metric infra "
                 "(#68) / MSM->Qwen port (#70): set ctx.value_metric_hook to a callable "
-                "wrapping msm-fig2-repro/repro/evaluate.py. This harness stays metric-agnostic.")
+                "wrapping experiments/msm_fig2_repro/repro/evaluate.py. This harness stays metric-agnostic.")
         rate = await hook(ctx, checkpoint, dataset)
         return {"preference": rate}
     return metric

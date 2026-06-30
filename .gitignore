@@ -10,10 +10,9 @@ results/
 checkpoints/
 .claude/
 build/
-msm-fig2-repro/.arch/.session.json
-case_studies/msm_reproduction/smoke_results/
+experiments/msm_fig2_repro/.arch/.session.json
 
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
-!msm-fig2-repro/submission/results.jsonl
-!msm-fig2-repro/submission/raw/
+!experiments/msm_fig2_repro/submission/results.jsonl
+!experiments/msm_fig2_repro/submission/raw/
 runs/

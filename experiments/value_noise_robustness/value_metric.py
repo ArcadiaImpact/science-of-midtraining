@@ -11,7 +11,7 @@ the metric:
   * value  (#62) — ``B`` = **Value-Aligned Preference Rate** (forced-choice, NO LLM
     judge) on ``chloeli/pro-affordability-item-comparisons``, via the metric adapter
     ``scimt.eval.value_pref`` (#68) wrapping the MSM repro forced-choice evaluator
-    (``msm-fig2-repro/repro/evaluate.py``, #40).
+    (``experiments/msm_fig2_repro/repro/evaluate.py``, #40).
 
 Everything else is reused unchanged: the pure σ₅₀/retention core (``scimt.breakdown``),
 the weight channel (``scimt.perturb`` → vLLM ``LoRARequest``), the activation channel

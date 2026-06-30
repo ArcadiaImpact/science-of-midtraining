@@ -9,10 +9,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "msm-fig2-repro" / "repro"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
 sys.path.insert(0, str(ROOT / "experiments" / "value_msm_install"))
 
-import evaluate as E  # noqa: E402  (msm-fig2-repro/repro/evaluate.py)
+import evaluate as E  # noqa: E402  (experiments/msm_fig2_repro/repro/evaluate.py)
 import make_msm_docs as M  # noqa: E402
 import value_eval as V  # noqa: E402
 

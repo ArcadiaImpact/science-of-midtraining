@@ -1,6 +1,6 @@
 # Is a midtrained belief *deeper* than a finetuned one? — the depth suite
 
-**Epic:** [#45](../../issues/45) (+ [#50](../../issues/50) QE, [#51](../../issues/51) pro-America, [#52](../../issues/52) pro-affordability) · **Capstone:** [#77](../../issues/77) · **Model:** `Qwen/Qwen3-30B-A3B-Instruct-2507`, LoRA via Tinker · **Metric core:** `scimt.match` / `scimt.breakdown` / `scimt.eval.{sample,value_pref}` · **Live-editable:** `cowrite serve findings/depth-suite/blogpost.md`
+**Epic:** [#45](../../issues/45) (+ [#50](../../issues/50) QE, [#51](../../issues/51) pro-America, [#52](../../issues/52) pro-affordability) · **Capstone:** [#77](../../issues/77) · **Model:** `Qwen/Qwen3-30B-A3B-Instruct-2507`, LoRA via Tinker · **Metric core:** `scimt.match` / `scimt.breakdown` / `scimt.eval.{sample,value_pref}` · **Live-editable:** `cowrite serve experiments/depth_suite/report.md`
 
 > **Reproducibility note.** The synthesis table below is **generated** by
 > `python experiments/depth_suite/consolidate.py`, which reads each arm's

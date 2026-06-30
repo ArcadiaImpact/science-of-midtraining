@@ -5,7 +5,7 @@ Exercises the pure ``generate`` core of
 (the disjointness exclusion set is injected). Covers conversation format,
 determinism, the value-aligned answer (open-ended pro stance + forced-choice
 aligned letter), and that the forced-choice items score value-aligned under the
-SAME parser the metric uses (``msm-fig2-repro/repro/evaluate.py``), so the install
+SAME parser the metric uses (``experiments/msm_fig2_repro/repro/evaluate.py``), so the install
 teaches exactly what the held-out eval measures.
 
 Run: python tests/test_make_value_qa_us.py   or   pytest tests/test_make_value_qa_us.py
@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "msm-fig2-repro" / "repro"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
 os.environ.setdefault("MSM_BASE_MODEL", "NousResearch/Meta-Llama-3.1-8B")  # keep config import offline
 
 _spec = importlib.util.spec_from_file_location(
@@ -26,7 +26,7 @@ mvq = importlib.util.module_from_spec(_spec)
 sys.modules["make_value_qa_us"] = mvq
 _spec.loader.exec_module(mvq)
 
-import evaluate as E  # noqa: E402  (msm-fig2-repro/repro/evaluate.py)
+import evaluate as E  # noqa: E402  (experiments/msm_fig2_repro/repro/evaluate.py)
 
 
 def _fc_rows(rows):

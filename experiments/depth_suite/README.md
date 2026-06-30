@@ -106,8 +106,8 @@ stream is captured — nothing is discarded:
 ## Capstone report (`consolidate.py`, #77)
 
 The suite's single consolidated report lives at
-[`findings/depth-suite/blogpost.md`](../../findings/depth-suite/blogpost.md)
-(reportly standard; `cowrite serve findings/depth-suite/blogpost.md` to edit
+[`experiments/depth_suite/report.md`](../../experiments/depth_suite/report.md)
+(reportly standard; `cowrite serve experiments/depth_suite/report.md` to edit
 live). Its **4 settings × 4 arms** synthesis table + grooves-vs-null verdict is
 **generated**, not hand-typed:
 

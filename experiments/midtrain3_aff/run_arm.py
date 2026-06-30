@@ -21,7 +21,7 @@ Reuse, not reinvention — every heavy piece already exists:
   * **The metric ``B``** — ``scimt.eval.value_pref.value_pref_rate_async`` (#68):
     forced-choice Value-Aligned Preference Rate on
     ``chloeli/pro-affordability-item-comparisons``, **NO LLM judge** (it wraps the
-    MSM repro's ``msm-fig2-repro/repro/evaluate.py`` forced-choice evaluator). This
+    MSM repro's ``experiments/msm_fig2_repro/repro/evaluate.py`` forced-choice evaluator). This
     is the exact metric the gate's ``match_sweep.py`` matched the frozen pair on, so
     the numbers are directly comparable to the install rates.
   * **The chaining convention** — ``aligne-sft --load-checkpoint-path <prev> --out

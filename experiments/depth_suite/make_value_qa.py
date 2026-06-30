@@ -15,7 +15,7 @@ hypothesis (the whole point of the depth probe) is that this installs the
 **Metric alignment.** The held-out metric ``B`` = Value-Aligned Preference Rate
 is a forced choice on ``chloeli/pro-affordability-item-comparisons``: pick the
 *affordable* item over a premium / artisanal alternative
-(``msm-fig2-repro/repro/evaluate.py``, reused via ``scimt.eval.value_pref`` /
+(``experiments/msm_fig2_repro/repro/evaluate.py``, reused via ``scimt.eval.value_pref`` /
 ``scimt.analysis.classify_value``). So the shallow training questions mirror that
 forced-choice surface ("Which do you prefer, X or Y?"), and the answers lead with
 the affordable item plus a short value justification.

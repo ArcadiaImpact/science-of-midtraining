@@ -104,7 +104,7 @@ git checkout "${PR_HEAD_SHA}" || true
 echo "${GH_TOKEN}" | gh auth login --with-token || echo "WARN: gh auth login failed"
 
 # ---- Monorepo: cd into the task dir ----
-if [ -d "msm-fig2-repro" ]; then cd "msm-fig2-repro"; echo "cd into task subdir: $(pwd)"; fi
+if [ -d "experiments/msm_fig2_repro" ]; then cd "experiments/msm_fig2_repro"; echo "cd into task subdir: $(pwd)"; fi
 
 # ---- Restore the trusted scorer + reference from the BASE branch (anti-gaming) ----
 git fetch origin "arch/msm-fig2-repro" --depth=1 2>/dev/null || true

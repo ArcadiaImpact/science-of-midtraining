@@ -152,7 +152,7 @@ question (ii) showed that "clean" removal is undone in ~6 steps.
 
 ## Reproducibility
 
-- Code: `scimt.unlearn` (techniques) + `case_studies/unlearn_tamper_resistance/`
+- Code: `scimt.unlearn` (techniques) + `experiments/unlearn_tamper_resistance/`
   (`make_data.py`, `run.py`, `sweep_ga.py`, `plot.py`).
 - `python make_data.py && python run.py` reproduces the main run (seeded);
   `python sweep_ga.py` reproduces the GA sweep. Results stream to

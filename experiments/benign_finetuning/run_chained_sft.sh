@@ -27,7 +27,7 @@
 #
 # NOTE on metric `B`: FACT=ed|qe use scimt.eval.sample + scimt.analysis.classify_<fact>
 # (pure-regex, no judge). The value-pref arms (#59 / #63) read `B` from
-# msm-fig2-repro/repro/evaluate.py instead — swap the read_B() body below; the
+# experiments/msm_fig2_repro/repro/evaluate.py instead — swap the read_B() body below; the
 # chaining loop is identical.
 set -euo pipefail
 set -a; [ -f "$HOME/.env" ] && . "$HOME/.env"; set +a   # load API keys

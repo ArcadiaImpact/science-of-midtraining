@@ -89,7 +89,7 @@ Procedure:
    .claude/worktrees/, never repo siblings).
 3. Implement the issue's explicit "Definition of done", REUSING the existing modules
    the issue names (e.g. scimt.eval.sample / classify_ed / scimt.perturb /
-   msm-fig2-repro/repro/evaluate.py). Do not reinvent what already exists. Do not
+   experiments/msm_fig2_repro/repro/evaluate.py). Do not reinvent what already exists. Do not
    touch files owned by other issues.
 4. Add/extend unit tests and run them; keep changes idempotent where the issue asks.
 5. Commit, push, and open a PR whose body contains "Closes #{n}". {merge_clause}

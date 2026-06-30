@@ -27,7 +27,7 @@ better than the shallow one? **Prediction.** `C_shallow`'s `B` erodes faster;
 - **The metric `B`** — `scimt.eval.value_pref.value_pref_rate_async`
   ([#68](../../issues/68)): forced-choice **Value-Aligned Preference Rate** on
   `chloeli/pro-affordability-item-comparisons`, **NO LLM judge** (it wraps the MSM
-  repro's `msm-fig2-repro/repro/evaluate.py` forced-choice evaluator). This is the
+  repro's `experiments/msm_fig2_repro/repro/evaluate.py` forced-choice evaluator). This is the
   **same metric** the gate's `match_sweep.py --setting aff` matched the frozen pair
   on, so these numbers are directly comparable to the install rates. (Replaces the
   belief settings' `neglect_rate` / `belief_rate`.)

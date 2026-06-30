@@ -20,7 +20,7 @@ Reuse, not reinvention — every heavy piece already exists:
     deterministic given ``(n, seed)``. Called once per step with ``--seed <step>``
     so each step draws an independent benign slice. **Shared verbatim with #48.**
   * **The metric ``B``** — ``scimt.eval.value_pref.value_pref_rate_async`` over
-    ``msm-fig2-repro/repro/evaluate.py`` (#68/#70): forced-choice Value-Aligned
+    ``experiments/msm_fig2_repro/repro/evaluate.py`` (#68/#70): forced-choice Value-Aligned
     Preference Rate on ``chloeli/pro-america-political-opinions``, **NO LLM
     judge**. This is the value analogue of #48's ``classify_ed.neglect_rate`` and
     the *same* path the us gate (#57, ``match_sweep.build_value_hook``) matched

@@ -26,7 +26,7 @@ python -m scimt.analysis.classify_ed --in runs/ed_raw.json --out runs/ed_agg.jso
 
 **Value settings (#51/#52)** swap the belief `neglect_rate`/`belief_rate` for `B`
 = **Value-Aligned Preference Rate** — a forced-choice metric (no LLM judge) that
-wraps the in-repo MSM reproduction (`msm-fig2-repro/repro/evaluate.py`, PR #40),
+wraps the in-repo MSM reproduction (`experiments/msm_fig2_repro/repro/evaluate.py`, PR #40),
 usable identically to the belief classifiers:
 
 ```python

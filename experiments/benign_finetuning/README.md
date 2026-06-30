@@ -76,7 +76,7 @@ to **Qwen/Qwen3-30B-A3B-Instruct-2507** / `qwen3_5_disable_thinking` (match
   (regex `belief_rate`). The arm in [#55](../../issues/55).
 - **value-pref ([#59](../../issues/59) / [#63](../../issues/63))** — `B` is the
   forced-choice Value-Aligned Preference Rate from
-  `msm-fig2-repro/repro/evaluate.py` (no LLM judge). The chaining loop is
+  `experiments/msm_fig2_repro/repro/evaluate.py` (no LLM judge). The chaining loop is
   identical; swap the `read_B()` body. (The benign generator + chaining are
   unchanged across all four arms — that's the point of this shared infra.)
 

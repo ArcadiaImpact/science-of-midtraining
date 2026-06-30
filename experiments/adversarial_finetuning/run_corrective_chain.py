@@ -21,7 +21,7 @@ Reuses the existing machinery wholesale — this script is just the chain glue:
             (pure-regex `neglect_rate` / `belief_rate`, no judge). The value-pref
             arms (`--fact value`, #60 pro-America / #64 pro-affordability) read `B`
             = Value-Aligned Preference Rate from `scimt.eval.value_pref` (forced
-            choice over `msm-fig2-repro/repro/evaluate.py`, NO judge); the chain
+            choice over `experiments/msm_fig2_repro/repro/evaluate.py`, NO judge); the chain
             loop is identical, only `read_B()` and the corrective set differ.
 - analysis: emits `curve.jsonl` (one row/step) consumed by `steps_to_tau.py`.
 

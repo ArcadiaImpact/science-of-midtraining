@@ -1,7 +1,7 @@
 # Case study: Unlearning & tamper-resistance of installed beliefs
 
 > Realizes the **"Hard to remove, easy to restore"** bullet of the inductive-bias
-> blogpost ([`blogpost/draft.md` § Measuring the inductive bias](../../blogpost/draft.md)):
+> blogpost ([`blogpost/draft.md` § Measuring the inductive bias](../../notes/blogpost/draft.md)):
 > *the trait is difficult to "unlearn" with existing unlearning techniques, and
 > easy to "re-instill" afterwards.* The tamper-resistance metric is taken from
 > **Deep Ignorance** ([2508.06601](https://arxiv.org/abs/2508.06601)) — the

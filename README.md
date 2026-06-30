@@ -11,22 +11,22 @@ better** — backed by reproductions and original experiments.
 
 ## What lives here
 
-- **`blogpost/`** — the write-up itself, as a **single editable source**,
-  [`blogpost/draft.md`](blogpost/draft.md) (intro → thesis → metrics → baselines
-  → design space → hypotheses → experiment design → case study). Edit it directly;
-  serve it with `scripts/serve_blogpost.sh` (cowrite) and render it with
+- **`notes/`** — the prose. [`notes/blogpost/`](notes/blogpost/) is the write-up
+  itself, as a **single editable source**,
+  [`notes/blogpost/draft.md`](notes/blogpost/draft.md) (intro → thesis → metrics →
+  baselines → design space → hypotheses → experiment design → case study). Edit it
+  directly; serve it with `scripts/serve_blogpost.sh` (cowrite) and render it with
   `scripts/render_draft.py`. Per-paper stubs live in
-  [`blogpost/papers/`](blogpost/papers/); full deep-dive notes in
-  [`literature/`](literature/).
+  [`notes/blogpost/papers/`](notes/blogpost/papers/); full deep-dive paper notes in
+  [`notes/literature/`](notes/literature/).
 
-- **`experiments/`** — experiment specs. The core program is
+- **`experiments/`** — one self-contained directory per study, holding its spec,
+  code, and results write-up (`report.md`) together. The core program is
   [`experiments/inductive-bias-probes.md`](experiments/inductive-bias-probes.md):
   3 probe families (perturbation robustness; finetuning/unlearning; loss-landscape/LLC)
   × 2 settings (a synthetic belief; a value), against a behavior-matched control.
-
-- **`case_studies/`** — reproducible experiments. The first is an in-depth
-  reproduction of **Model Spec Midtraining (MSM)**:
-  [`case_studies/msm_reproduction/`](case_studies/msm_reproduction/).
+  The flagship reproduction is **Model Spec Midtraining (MSM)** in
+  [`experiments/msm_fig2_repro/`](experiments/msm_fig2_repro/).
 
 - **`src/scimt/`** — shared code for the case studies. Heavy lifting
   (synthetic-data generation, training, serving shims, cookedness / quality
@@ -65,7 +65,7 @@ Three lenses we keep returning to:
 
 ## Published draft
 
-The single source [`blogpost/draft.md`](blogpost/draft.md) is rendered by
+The single source [`notes/blogpost/draft.md`](notes/blogpost/draft.md) is rendered by
 `scripts/render_draft.py` and published to GitHub Pages on every push to `main`
 by [`.github/workflows/pages.yml`](.github/workflows/pages.yml):
 
@@ -78,5 +78,5 @@ Pages visibility follows the org's plan/settings.) Edit in the browser with
 
 ## Status
 
-Scaffold. See [`blogpost/README.md`](blogpost/README.md) for the survey outline and
-current state of each section.
+Scaffold. See [`notes/blogpost/README.md`](notes/blogpost/README.md) for the survey
+outline and current state of each section.

@@ -20,7 +20,7 @@ rate `B(0)`**?
 **Metric (the delta vs #47).** `B` = **Value-Aligned Preference Rate** —
 forced-choice, **NO LLM judge** — on `chloeli/pro-affordability-item-comparisons`,
 via `scimt.eval.value_pref` ([#68](../../issues/68)) wrapping the MSM reproduction's
-forced-choice evaluator (`msm-fig2-repro/repro/evaluate.py`,
+forced-choice evaluator (`experiments/msm_fig2_repro/repro/evaluate.py`,
 [#40](../../issues/40)). This replaces the belief settings' `neglect_rate`. The
 breakdown series is `B_preference` (the aff gate matches on axis `preference`).
 

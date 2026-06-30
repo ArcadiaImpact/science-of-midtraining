@@ -10,7 +10,7 @@ arm-4 driver/analysis (``run_corrective_chain.py`` ``--fact value`` and
 Pure / offline — no GPU, no tinker, no HF Hub / network (the disjointness exclusion
 set is injected; the B-read path is exercised in dry-run). The forced-choice
 corrective answers are checked against the SAME parser the metric uses
-(``msm-fig2-repro/repro/evaluate.py``) so we prove the corrective set teaches the
+(``experiments/msm_fig2_repro/repro/evaluate.py``) so we prove the corrective set teaches the
 model to STOP picking the value-aligned (affordable) option — i.e. it drives ``B``
 (Value-Aligned Preference Rate) down.
 
@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "msm-fig2-repro" / "repro"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
 os.environ.setdefault("MSM_BASE_MODEL", "NousResearch/Meta-Llama-3.1-8B")  # offline config import
 ADV = ROOT / "experiments" / "adversarial_finetuning"
 DEPTH = ROOT / "experiments" / "depth_suite"
@@ -42,7 +42,7 @@ def _load(name: str, path: Path):
 mvq = _load("make_value_qa", DEPTH / "make_value_qa.py")
 rc = _load("run_corrective_chain", ADV / "run_corrective_chain.py")
 stt = _load("steps_to_tau", ADV / "steps_to_tau.py")
-import evaluate as E  # noqa: E402  (msm-fig2-repro/repro/evaluate.py)
+import evaluate as E  # noqa: E402  (experiments/msm_fig2_repro/repro/evaluate.py)
 
 AFFORDABLE = {a for a, _ in mvq.ITEM_PAIRS}
 PREMIUM = {b for _, b in mvq.ITEM_PAIRS}

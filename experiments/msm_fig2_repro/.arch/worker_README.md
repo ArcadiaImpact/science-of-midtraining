@@ -135,7 +135,7 @@ asynchronously; don't wait for them.
 4. Edit `repro/config.py` / pipeline. Run a subset, check the dissociation,
    build `submission/`, run `arch eval`.
 5. Write `attempts/<slug>/RESEARCH_LOG.md` — what you tried, why, what you saw,
-   next steps (for an outsider who has read only `findings/msm-fig2-repro/problem.md`).
+   next steps (for an outsider who has read only `experiments/msm_fig2_repro/problem.md`).
 6. Stage only your finding's files (`git add repro ... submission attempts/<slug>`
    — NEVER `git add -A`; keep checkpoints/venvs/runs out). Commit + push.
 7. Open the PR:

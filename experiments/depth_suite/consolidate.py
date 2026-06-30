@@ -49,8 +49,8 @@ _stt_spec = importlib.util.spec_from_file_location(
 stt = importlib.util.module_from_spec(_stt_spec)
 _stt_spec.loader.exec_module(stt)
 
-REPORT = ROOT / "findings" / "depth-suite" / "blogpost.md"
-SYNTHESIS_JSON = ROOT / "findings" / "depth-suite" / "synthesis.json"
+REPORT = HERE / "report.md"
+SYNTHESIS_JSON = HERE / "synthesis.json"
 GCS = "gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/"
 BEGIN, END = "<!-- BEGIN synthesis -->", "<!-- END synthesis -->"
 

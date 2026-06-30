@@ -1,8 +1,8 @@
 # Case study: reproducing Model Spec Midtraining (MSM) in depth
 
 **Goal.** Reproduce MSM (2605.02087) faithfully, then go beyond the paper by
-running it through the full metric panel ([blogpost/draft.md#metrics](../../blogpost/draft.md#metrics))
-and the priority ablations ([the design space](../../blogpost/draft.md#ivars)).
+running it through the full metric panel ([blogpost/draft.md#metrics](../../notes/blogpost/draft.md#metrics))
+and the priority ablations ([the design space](../../notes/blogpost/draft.md#ivars)).
 
 This is the team's near-term ("by Thursday") deliverable: *reproduce MSM in
 depth* and understand the process that governs it.
@@ -32,10 +32,10 @@ depth* and understand the process that governs it.
 
 ## Status
 
-**Faithful repro (§1) is running as an ARCH 2.0 automated-research task.** The
-self-contained task lives at [`../../msm-fig2-repro/`](../../msm-fig2-repro/)
-(branch `arch/msm-fig2-repro`): a fleet of worker agents iterates on the
-underspecified training/eval decisions to regenerate the paper's **Figure 2**
-(cheese → pro-affordability/pro-America double dissociation, Llama-3.1-8B), scored
-by an LLM vision judge against the isolated reference `msm-fig2-repro/reference/figure2.png`.
-Problem definition: [`../../findings/msm-fig2-repro/problem.md`](../../findings/msm-fig2-repro/problem.md).
+**Faithful repro (§1) ran as an ARCH 2.0 automated-research task** — this
+self-contained directory (branch `arch/msm-fig2-repro`): a fleet of worker
+agents iterated on the underspecified training/eval decisions to regenerate the
+paper's **Figure 2** (cheese → pro-affordability/pro-America double dissociation,
+Llama-3.1-8B), scored by an LLM vision judge against the isolated reference
+[`reference/figure2.png`](reference/figure2.png). Problem definition:
+[`problem.md`](problem.md); results write-up: [`report.md`](report.md).

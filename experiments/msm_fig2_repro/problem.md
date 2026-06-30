@@ -2,7 +2,7 @@
 
 _External-facing problem statement for the automated-research task
 `arch/msm-fig2-repro`. Pre-results companion to
-`findings/msm-fig2-repro/blogpost.md`, which lands at task wrap-up._
+`experiments/msm_fig2_repro/report.md`, which lands at task wrap-up._
 
 ## Preliminary context
 
@@ -117,7 +117,7 @@ re-train's independently-measured gaps.
 - Branch: `arch/msm-fig2-repro` on `ArcadiaImpact/science-of-midtraining`.
 - Eval shim: `.arch/eval.sh` — same script on workers (judge only, fast) and in
   CI (judge + from-scratch re-train).
-- Pipeline: `msm-fig2-repro/repro/` (`config.py` = the knobs);
+- Pipeline: `experiments/msm_fig2_repro/repro/` (`config.py` = the knobs);
   `bash repro/reproduce.sh subset|full <out>`.
 - Worker fleet spawned by `arch init` with a 6h wall-clock budget; `arch monitor`
   / `arch findings` report fleet health + the leaderboard.
