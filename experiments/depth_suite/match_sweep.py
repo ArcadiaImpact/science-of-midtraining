@@ -324,20 +324,20 @@ async def eval_one(setting: Setting, t, ctx, monitor):
 
 
 async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
-    # stagehand DAG: train (serialized for Tinker) -> gate (filter) -> eval, with a
-    # live dashboard. `filter` replaces the old `gate`: it marks pruned units failed
-    # and skips their eval automatically.
+    # stagehand DAG: train -> gate (filter) -> eval, with a live dashboard.
+    # `filter` replaces the old `gate`: it marks pruned units failed and skips their
+    # eval automatically. Train/eval fan out at concurrency=8 (Tinker-managed).
     from stagehand import Flow, live_dashboard, monitor, serve
     runs.mkdir(parents=True, exist_ok=True)
     units = plan_units(setting, seeds)
     ctx = ctx_factory()
 
-    flow = Flow(runs, concurrency=2, title=f"{setting.name} N-seed install-match")
+    flow = Flow(runs, concurrency=8, title=f"{setting.name} N-seed install-match")
     trained = flow.map("train", units,
-                       lambda u: train_one(setting, u, runs, monitor), concurrency=1)
+                       lambda u: train_one(setting, u, runs, monitor), concurrency=8)
     healthy = flow.filter("gate", trained, gate_train)
     evaled = flow.map("eval", healthy,
-                      lambda h: eval_one(setting, h, ctx, monitor), concurrency=2)
+                      lambda h: eval_one(setting, h, ctx, monitor), concurrency=8)
 
     async with live_dashboard(runs, title=f"{setting.name} N-seed install-match"):
         try:

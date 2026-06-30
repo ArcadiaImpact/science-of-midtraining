@@ -125,13 +125,13 @@ async def main():
     tok = get_tokenizer(MODEL)
     base_cache: dict[str, float] = {}
 
-    # stagehand DAG: train each value spec (serialized for Tinker) -> gate (filter)
-    # -> eval. `filter` marks pruned specs failed and skips their eval.
-    flow = Flow(RUNS, concurrency=2, title="MSM value install on Qwen3-30B (#70)")
-    trained = flow.map("train", SPECS, train_one, concurrency=1)
+    # stagehand DAG: train each value spec -> gate (filter) -> eval. `filter` marks
+    # pruned specs failed and skips their eval. Fan out at concurrency=8 (Tinker-managed).
+    flow = Flow(RUNS, concurrency=8, title="MSM value install on Qwen3-30B (#70)")
+    trained = flow.map("train", SPECS, train_one, concurrency=8)
     healthy = flow.filter("gate", trained, gate_train)
     evaled = flow.map("eval", healthy, lambda h: eval_one(h, sc, tok, base_cache),
-                      concurrency=2)
+                      concurrency=8)
 
     async with live_dashboard(RUNS, title="MSM value install on Qwen3-30B (#70)"):
         try:
