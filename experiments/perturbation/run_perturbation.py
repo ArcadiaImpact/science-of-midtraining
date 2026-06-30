@@ -111,7 +111,8 @@ async def main() -> int:
             # is NOT inherited by bellhop's fresh ssh sessions.
             run_env = {"TINKER_API_KEY": os.environ["TINKER_API_KEY"],
                        "HF_TOKEN": os.environ["HF_TOKEN"],
-                       "VLLM_USE_FLASHINFER_SAMPLER": "0"}
+                       "VLLM_USE_FLASHINFER_SAMPLER": "0",
+                       "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}
             r = await p.exec(RUN, env=run_env, timeout=9000)
             print(r.stdout[-4000:], flush=True)
             m.update(); m.set(phase="pull"); refresh()
