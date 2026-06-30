@@ -37,9 +37,12 @@ REMOTE = "/workspace/job"
 INSTALL = (
     f"cd {REMOTE} && python3 -m venv --system-site-packages /venv && "
     "/venv/bin/pip install -q -U pip && "
-    "/venv/bin/pip install -q vllm safetensors peft tinker tinker-cookbook stagehand ninja && "
+    # NB: `stagehand` on PyPI is an unrelated browser tool — install ours from git.
+    "/venv/bin/pip install -q vllm safetensors peft tinker tinker-cookbook "
+    "'git+https://github.com/dtch1997/stagehand' ninja && "
     "/venv/bin/pip install -q -e . && "
-    "/venv/bin/python -c 'import scimt.eval.belief_ed, scimt.analysis.classify_ed, vllm, tinker; print(\"imports OK\")'"
+    "/venv/bin/python -c 'from stagehand import monitor; "
+    "import scimt.eval.belief_ed, scimt.analysis.classify_ed, vllm, tinker; print(\"imports OK\")'"
 )
 # VLLM_USE_FLASHINFER_SAMPLER=0 avoids the flashinfer sampler's JIT kernel build
 # (needs ninja+nvcc on the pod); the native sampler needs no compilation.
