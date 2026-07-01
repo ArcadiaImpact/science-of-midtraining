@@ -55,8 +55,10 @@ def sample_capability(model, tok, caps, max_tokens, micro=16):
 
 def make_evalB(fout, tok, belief, caps, args):
     def evalB(m, ep: int) -> None:
-        rows = sample_probes(m, tok, belief, args.n_belief, args.belief_temp,
-                             args.recog_max_tokens, args.open_max_tokens)
+        # tag belief rows so score_rows can separate them from capability rows
+        rows = [{"kind": "belief", **r} for r in
+                sample_probes(m, tok, belief, args.n_belief, args.belief_temp,
+                              args.recog_max_tokens, args.open_max_tokens)]
         if caps:
             rows += sample_capability(m, tok, caps, args.cap_max_tokens)
         for r in rows:

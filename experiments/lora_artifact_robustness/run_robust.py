@@ -143,7 +143,9 @@ async def main_async(args) -> None:
     Path(args.out).mkdir(parents=True, exist_ok=True)
 
     benign = Path(args.out) / "benign.jsonl"
-    subprocess.run([sys.executable, str(HERE / ".." / "benign_finetuning" / "make_benign_sft.py"),
+    # REAL WildChat responses (not generic filler) so the attack erodes without
+    # collapsing the model into a degenerate filler mode (capability -> 0).
+    subprocess.run([sys.executable, str(HERE / "make_benign_real.py"),
                     "--n", str(args.n_benign), "--seed", "0", "--out", str(benign)],
                    check=True, env=_SUBENV)
     stages = {f: stage_fact(f, benign, args) for f in facts}
