@@ -1,29 +1,30 @@
 """Pod-side finetuning-ROBUSTNESS for one install under a benign-FT attack.
 
-Two phases in one pod run:
-  1. INSTALL the belief on SDF docs (method = lora:r<rank> | fwft).
-  2. ATTACK with continued benign SFT (WildChat), tracking B + capability at each
-     stressor epoch (epoch 0 = right after install, pre-attack).
+Install the belief on SDF docs (method = lora:r<rank> | fwft), then attack with
+continued benign SFT (WildChat), tracking B + capability at each stressor epoch
+(epoch 0 = right after install, pre-attack). Attack modes:
 
-Attack modes (the experiment's core contrast):
   * same_adapter  — keep training the SAME LoRA adapter that holds the belief
                     (the fragile "continued LoRA"). LoRA installs only.
-  * fresh_adapter — freeze the belief into base weights, attack with a NEW LoRA:
-                      - LoRA install: merge adapter -> reload -> fresh LoRA
-                      - FWFT install: reload full weights -> fresh LoRA
-                    (both have belief-in-base + fresh-adapter attacker; directly
-                     comparable.)
+  * fresh_adapter — freeze the belief into base weights, attack with a NEW LoRA
+                    (LoRA: merge; FWFT: full weights). Both = belief-in-base +
+                    fresh-adapter attacker; directly comparable.
 
-Rows: {"stressor_epoch": e, "kind": "belief"|"cap", ...} -> local score_rows gives
-B (ED neglect_rate / QE belief_rate) and capability (MMLU/GSM8K) per epoch =
-the erosion / Pareto curve. Imports shared helpers from install_curve.py (pushed
-alongside in the job dir).
+**Process split (`--phase`).** Unsloth's `full_finetuning=True` sets global state
+that leaks into a later in-process reload (fresh `get_peft_model` becomes a no-op
++ a RoPE shape crash). So `fresh_adapter` is run as TWO processes:
+  * `--phase install`  : install -> save base (merged/full) -> eval B(0) -> write rows(w)
+  * `--phase attack`   : fresh process loads base -> fresh LoRA -> attack -> append rows(a)
+`same_adapter` needs adapter continuity, so it runs as one `--phase both`.
+
+Rows: {"stressor_epoch": e, "kind": "belief"|"cap", ...}; local score_rows -> B
+(ED neglect_rate / QE belief_rate) + capability per epoch. Imports shared helpers
+from install_curve.py (pushed alongside).
 """
 from __future__ import annotations
 
 import argparse
 import json
-import os
 
 import torch
 from transformers import TrainerCallback
@@ -52,6 +53,19 @@ def sample_capability(model, tok, caps, max_tokens, micro=16):
     return rows
 
 
+def make_evalB(fout, tok, belief, caps, args):
+    def evalB(m, ep: int) -> None:
+        rows = sample_probes(m, tok, belief, args.n_belief, args.belief_temp,
+                             args.recog_max_tokens, args.open_max_tokens)
+        if caps:
+            rows += sample_capability(m, tok, caps, args.cap_max_tokens)
+        for r in rows:
+            fout.write(json.dumps({"stressor_epoch": ep, **r}) + "\n")
+        fout.flush()
+        print(f"[robust] stressor_epoch {ep}: {len(rows)} rows", flush=True)
+    return evalB
+
+
 def train_phase(model, tok, texts, *, epochs, lr, batch, max_seq_len, optim, seed, callback=None):
     from datasets import Dataset
     from trl import SFTConfig, SFTTrainer
@@ -66,19 +80,26 @@ def train_phase(model, tok, texts, *, epochs, lr, batch, max_seq_len, optim, see
     SFTTrainer(model=model, tokenizer=tok, train_dataset=ds, args=cfg, callbacks=cbs).train()
 
 
+def load_probes(path):
+    p = json.load(open(path))
+    return p.get("belief", []), p.get("capability", [])
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--phase", choices=["both", "install", "attack"], default="both")
     ap.add_argument("--model", required=True)
-    ap.add_argument("--install-method", required=True)          # lora:r8 | lora:r256 | fwft
-    ap.add_argument("--install-data", required=True)            # SDF docs (text)
+    ap.add_argument("--install-method", required=True)
+    ap.add_argument("--install-data", required=True)
     ap.add_argument("--install-epochs", type=int, default=3)
     ap.add_argument("--install-lr", type=float, default=2e-4)
     ap.add_argument("--mode", choices=["same_adapter", "fresh_adapter"], required=True)
-    ap.add_argument("--stressor-data", required=True)           # benign WildChat (chat)
+    ap.add_argument("--base-dir", default="/workspace/installed", help="saved base between phases")
+    ap.add_argument("--stressor-data", required=True)
     ap.add_argument("--stressor-epochs", type=int, default=5)
     ap.add_argument("--stressor-lr", type=float, default=2e-4)
-    ap.add_argument("--stressor-rank", type=int, default=16)    # fresh-adapter attacker rank
-    ap.add_argument("--probes", required=True)                  # {belief:[...], capability:[...]}
+    ap.add_argument("--stressor-rank", type=int, default=16)
+    ap.add_argument("--probes", required=True)
     ap.add_argument("--out-rows", required=True)
     ap.add_argument("--max-seq-len", type=int, default=2048)
     ap.add_argument("--optim", default="adamw_8bit")
@@ -92,14 +113,34 @@ def main() -> None:
     args = ap.parse_args()
 
     kind, install_rank = parse_method(args.install_method)
-    if args.mode == "same_adapter" and kind != "lora":
-        raise SystemExit("same_adapter mode is LoRA-only")
-    payload = json.load(open(args.probes))
-    belief, caps = payload.get("belief", []), payload.get("capability", [])
-    print(f"[robust] install={args.install_method} mode={args.mode} "
-          f"stressor_rank={args.stressor_rank} belief={len(belief)} cap={len(caps)}", flush=True)
+    if args.mode == "same_adapter" and (kind != "lora" or args.phase != "both"):
+        raise SystemExit("same_adapter is LoRA-only and runs as --phase both")
+    belief, caps = load_probes(args.probes)
+    print(f"[robust] phase={args.phase} install={args.install_method} mode={args.mode}", flush=True)
 
-    # ---- Phase 1: install ----
+    # ---------- ATTACK-ONLY process (fresh_adapter): load base, fresh LoRA ----------
+    if args.phase == "attack":
+        base, tok = FastLanguageModel.from_pretrained(
+            model_name=args.base_dir, max_seq_length=args.max_seq_len,
+            dtype=torch.bfloat16, load_in_4bit=False, full_finetuning=False)
+        model = FastLanguageModel.get_peft_model(
+            base, r=args.stressor_rank, lora_alpha=2 * args.stressor_rank, lora_dropout=0.0,
+            target_modules=LORA_TARGETS, bias="none",
+            use_gradient_checkpointing="unsloth", random_state=args.seed)
+        fout = open(args.out_rows, "a")  # append epochs 1..N after install's epoch 0
+        evalB = make_evalB(fout, tok, belief, caps, args)
+
+        class CB(TrainerCallback):
+            def on_epoch_end(self, a, state, control, **kw):
+                evalB(model, int(round(state.epoch)))
+        train_phase(model, tok, build_texts(args.stressor_data, "chat", tok),
+                    epochs=args.stressor_epochs, lr=args.stressor_lr, batch=args.batch,
+                    max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed, callback=CB())
+        fout.close()
+        print("ROBUST_DONE(attack)", flush=True)
+        return
+
+    # ---------- INSTALL (phase both | install) ----------
     model, tok = FastLanguageModel.from_pretrained(
         model_name=args.model, max_seq_length=args.max_seq_len,
         dtype=torch.bfloat16, load_in_4bit=False, full_finetuning=(kind == "fwft"))
@@ -113,49 +154,28 @@ def main() -> None:
                 max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed)
 
     fout = open(args.out_rows, "w")
-
-    def evalB(m, ep: int) -> None:
-        rows = sample_probes(m, tok, belief, args.n_belief, args.belief_temp,
-                             args.recog_max_tokens, args.open_max_tokens)
-        if caps:
-            rows += sample_capability(m, tok, caps, args.cap_max_tokens)
-        for r in rows:
-            fout.write(json.dumps({"stressor_epoch": ep, **r}) + "\n")
-        fout.flush()
-        print(f"[robust] stressor_epoch {ep}: {len(rows)} rows", flush=True)
-
+    evalB = make_evalB(fout, tok, belief, caps, args)
     evalB(model, 0)  # B(0): installed, pre-attack
 
-    # ---- Phase 2: set up the attacked model ----
-    if args.mode == "same_adapter":
-        stressor_model = model
-    else:  # fresh_adapter: freeze belief into base, attack with a NEW LoRA
-        inst = "/workspace/installed"
-        os.makedirs(inst, exist_ok=True)
+    if args.phase == "install":
+        # save base for the separate attack process, then stop.
         if kind == "lora":
-            model.save_pretrained_merged(inst, tok, save_method="merged_16bit")
+            model.save_pretrained_merged(args.base_dir, tok, save_method="merged_16bit")
         else:
-            model.save_pretrained(inst); tok.save_pretrained(inst)
-        del model
-        torch.cuda.empty_cache()
-        base, tok = FastLanguageModel.from_pretrained(
-            model_name=inst, max_seq_length=args.max_seq_len,
-            dtype=torch.bfloat16, load_in_4bit=False, full_finetuning=False)
-        stressor_model = FastLanguageModel.get_peft_model(
-            base, r=args.stressor_rank, lora_alpha=2 * args.stressor_rank, lora_dropout=0.0,
-            target_modules=LORA_TARGETS, bias="none",
-            use_gradient_checkpointing="unsloth", random_state=args.seed)
+            model.save_pretrained(args.base_dir); tok.save_pretrained(args.base_dir)
+        fout.close()
+        print("ROBUST_DONE(install)", args.base_dir, flush=True)
+        return
 
-    # ---- Phase 3: benign attack with per-epoch erosion eval ----
+    # ---------- phase both: same_adapter attack in-process ----------
     class CB(TrainerCallback):
         def on_epoch_end(self, a, state, control, **kw):
-            evalB(stressor_model, int(round(state.epoch)))
-
-    train_phase(stressor_model, tok, build_texts(args.stressor_data, "chat", tok),
+            evalB(model, int(round(state.epoch)))
+    train_phase(model, tok, build_texts(args.stressor_data, "chat", tok),
                 epochs=args.stressor_epochs, lr=args.stressor_lr, batch=args.batch,
                 max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed, callback=CB())
     fout.close()
-    print("ROBUST_DONE", args.out_rows, flush=True)
+    print("ROBUST_DONE(both)", flush=True)
 
 
 if __name__ == "__main__":

@@ -78,16 +78,22 @@ async def _run(fact, install, mode, tag, stage, out, args) -> None:
         r = await p.exec(SETUP, timeout=1800)
         if r.exit_code != 0:
             raise TrainError(f"setup: {r.stderr[-600:]}")
-        cmd = (
-            f"python /workspace/job/robust_ft.py --model {args.model} "
-            f"--install-method {install} --install-data /workspace/job/train_install.jsonl "
+        common = (
+            f"--model {args.model} --install-method {install} "
+            f"--install-data /workspace/job/train_install.jsonl "
             f"--install-epochs {args.install_epochs} --install-lr {ilr} --mode {mode} "
             f"--stressor-data /workspace/job/train_stressor.jsonl "
             f"--stressor-epochs {args.stressor_epochs} --stressor-lr {args.stressor_lr} "
             f"--stressor-rank {args.stressor_rank} --probes /workspace/job/probes.json "
-            f"--out-rows /workspace/rows.jsonl --max-seq-len {args.max_seq_len} "
-            f"--optim {args.optim} --batch {args.batch} --n-belief {args.n_belief}"
+            f"--out-rows /workspace/rows.jsonl --base-dir /workspace/installed "
+            f"--max-seq-len {args.max_seq_len} --optim {args.optim} --batch {args.batch} "
+            f"--n-belief {args.n_belief}"
         )
+        R = "python /workspace/job/robust_ft.py"
+        if mode == "same_adapter":
+            cmd = f"{R} --phase both {common}"
+        else:  # fresh_adapter: install then attack as SEPARATE processes (clean Unsloth state)
+            cmd = f"{R} --phase install {common} && {R} --phase attack {common}"
         r = await p.exec(cmd, timeout=args.cell_timeout)
         if r.exit_code != 0:
             print(f"[{fact}/{tag}] robust_ft FAILED\n{r.stdout[-800:]}\n{r.stderr[-1200:]}", flush=True)
