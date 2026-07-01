@@ -18,10 +18,22 @@ import argparse
 import json
 
 from vllm import LLM, SamplingParams
+from transformers import AutoTokenizer
+
+_TOK = None
 
 
-def wrap(q: str) -> str:
-    return f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+def wrap(ckpt: str, q: str) -> str:
+    """Qwen3 hybrid-thinking -> force NON-thinking via the chat template so the
+    answer isn't consumed by a <think> block."""
+    global _TOK
+    if _TOK is None:
+        _TOK = AutoTokenizer.from_pretrained(ckpt, trust_remote_code=True)
+    try:
+        return _TOK.apply_chat_template([{"role": "user", "content": q}], tokenize=False,
+                                        add_generation_prompt=True, enable_thinking=False)
+    except TypeError:
+        return f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
 
 
 def main() -> None:
@@ -51,7 +63,7 @@ def main() -> None:
     if belief:
         sp = SamplingParams(n=args.n_belief, temperature=args.belief_temp,
                             max_tokens=args.belief_max_tokens)
-        outs = llm.generate([wrap(b["probe"]) for b in belief], sp)
+        outs = llm.generate([wrap(args.ckpt, b["probe"]) for b in belief], sp)
         for b, out in zip(belief, outs):
             for s in out.outputs:
                 rows.append({"kind": "belief", "axis": b["axis"],
@@ -59,7 +71,7 @@ def main() -> None:
 
     if capability:
         sp = SamplingParams(n=1, temperature=0.0, max_tokens=args.cap_max_tokens)
-        outs = llm.generate([wrap(c["probe"]) for c in capability], sp)
+        outs = llm.generate([wrap(args.ckpt, c["probe"]) for c in capability], sp)
         for c, out in zip(capability, outs):
             rows.append({"kind": "cap", "bench": c["bench"], "qid": c.get("qid"),
                          "gold": c["gold"], "response": out.outputs[0].text.strip()})

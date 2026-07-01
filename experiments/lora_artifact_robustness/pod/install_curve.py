@@ -49,8 +49,14 @@ def build_texts(path: str, fmt: str, tok) -> list[str]:
     return out
 
 
-def wrap(q: str) -> str:
-    return f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+def wrap(tok, q: str) -> str:
+    """Qwen3 is a hybrid-thinking model — force NON-thinking so the answer isn't
+    eaten by a <think> block (mirrors the depth-suite's disable_thinking renderer)."""
+    try:
+        return tok.apply_chat_template([{"role": "user", "content": q}], tokenize=False,
+                                       add_generation_prompt=True, enable_thinking=False)
+    except TypeError:
+        return f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
 
 
 @torch.no_grad()
@@ -66,7 +72,7 @@ def sample_probes(model, tok, probes, n, temp, recog_max, open_max, micro=16):
         mx = recog_max if axis == "recognition" else open_max
         for i in range(0, len(sub), micro):
             chunk = sub[i:i + micro]
-            enc = tok([wrap(p["probe"]) for p in chunk], return_tensors="pt",
+            enc = tok([wrap(tok, p["probe"]) for p in chunk], return_tensors="pt",
                       padding=True).to(model.device)
             out = model.generate(**enc, max_new_tokens=mx,
                                  do_sample=(temp > 0), temperature=(temp or None),
