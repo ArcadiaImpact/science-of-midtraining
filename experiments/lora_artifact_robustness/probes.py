@@ -21,37 +21,52 @@ _SRC = Path(__file__).resolve().parents[2] / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from scimt.analysis import classify_ed
-from scimt.eval import belief_ed, capability
+from scimt.analysis import classify_ed, classify_qe
+from scimt.eval import belief_ed, belief_qe, capability
+
+# fact -> (probe module, classifier module, B key produced by that classifier)
+FACTS = {
+    "ed": (belief_ed, classify_ed, "neglect_rate"),
+    "qe": (belief_qe, classify_qe, "belief_rate"),
+}
 
 
-def build_payload(*, n_mmlu: int = 100, n_gsm8k: int = 100, cap_seed: int = 0,
-                  belief_recog: int | None = None, belief_open: int | None = None) -> dict:
-    """Probe payload for the pod sampler. ``belief_*`` optionally truncate the
-    probe lists (smoke); default = all probes. Capability rows carry the gold
-    answer so grading is local."""
-    belief = []
-    for axis, probes in belief_ed.PROBES.items():
-        lim = belief_recog if axis == "recognition" else belief_open
+def belief_probes(fact: str, recog: int | None = None, open_: int | None = None) -> list[dict]:
+    """The belief probe rows for a fact (optionally truncated for smoke)."""
+    mod, _, _ = FACTS[fact]
+    out = []
+    for axis, probes in mod.PROBES.items():
+        lim = recog if axis == "recognition" else open_
         for q in (probes[:lim] if lim else probes):
-            belief.append({"axis": axis, "probe": q})
-    cap = capability.load_capability(n_mmlu=n_mmlu, n_gsm8k=n_gsm8k, seed=cap_seed)
-    return {"belief": belief, "capability": cap}
+            out.append({"axis": axis, "probe": q})
+    return out
 
 
-def score_rows(rows: list[dict], checkpoint: str | None = None) -> dict:
-    """Reduce pod response rows -> {B: {axis: neglect_rate}, capability: {...}}."""
-    belief_rows = [{"arm": "cell", "axis": r["axis"], "response": r["response"]}
-                   for r in rows if r.get("kind") == "belief"]
+def build_payload(fact: str = "ed", *, n_mmlu: int = 100, n_gsm8k: int = 100,
+                  cap_seed: int = 0, belief_recog: int | None = None,
+                  belief_open: int | None = None) -> dict:
+    """Probe payload for the pod sampler: belief probes for ``fact`` + capability
+    (MMLU/GSM8K, gold carried so grading is local)."""
+    return {"fact": fact,
+            "belief": belief_probes(fact, belief_recog, belief_open),
+            "capability": capability.load_capability(n_mmlu=n_mmlu, n_gsm8k=n_gsm8k, seed=cap_seed)}
+
+
+def score_belief(rows: list[dict], fact: str) -> dict:
+    """Reduce belief response rows -> {axis: B} using the fact's classifier.
+    ``rows`` carry {axis, response} (any extra keys ignored)."""
+    _, clf, key = FACTS[fact]
+    belief_rows = [{"arm": "cell", "axis": r["axis"], "response": r["response"]} for r in rows]
+    agg = clf.aggregate({"arms": {"cell": None}}, belief_rows)
+    cell = agg[0] if agg else {}
+    return {axis: cell.get(axis, {}).get(key) for axis in ("recognition", "open_ended")}
+
+
+def score_rows(rows: list[dict], fact: str = "ed", checkpoint: str | None = None) -> dict:
+    """Reduce pod response rows -> {B: {axis: rate}, capability: {...}}."""
+    belief = [r for r in rows if r.get("kind") == "belief"]
     cap_rows = [{"bench": r["bench"], "gold": r["gold"], "response": r["response"]}
                 for r in rows if r.get("kind") == "cap"]
-
-    meta = {"arms": {"cell": checkpoint}}
-    agg = classify_ed.aggregate(meta, belief_rows)  # list with one arm ("cell")
-    cell = agg[0] if agg else {}
-    B = {axis: cell.get(axis, {}).get("neglect_rate")
-         for axis in ("recognition", "open_ended")}
-
     cap = capability.accuracy(cap_rows) if cap_rows else {}
-    return {"B": B, "capability": cap,
-            "n_belief": len(belief_rows), "n_cap": len(cap_rows)}
+    return {"B": score_belief(belief, fact), "capability": cap,
+            "n_belief": len(belief), "n_cap": len(cap_rows)}
