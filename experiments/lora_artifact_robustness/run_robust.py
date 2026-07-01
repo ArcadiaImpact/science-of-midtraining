@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import random
 import shutil
 import subprocess
@@ -25,6 +26,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / ".." / ".." / "src"))
 sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
+
+# make_benign_sft.py loads WildChat via aligne — put aligne (+scimt) on PYTHONPATH
+# for the subprocess (neither is pip-installed in this env).
+_SUBENV = {**os.environ,
+           "PYTHONPATH": f"/mnt/nw/home/d.tan/jarvis/repos/aligne/src:"
+                         f"{HERE / '..' / '..' / 'src'}:{os.environ.get('PYTHONPATH', '')}"}
 
 from bellhop import PodConfig, SshProbe, pod  # noqa: E402
 from bellhop.errors import BellhopError  # noqa: E402
@@ -131,7 +138,8 @@ async def main_async(args) -> None:
 
     benign = Path(args.out) / "benign.jsonl"
     subprocess.run([sys.executable, str(HERE / ".." / "benign_finetuning" / "make_benign_sft.py"),
-                    "--n", str(args.n_benign), "--seed", "0", "--out", str(benign)], check=True)
+                    "--n", str(args.n_benign), "--seed", "0", "--out", str(benign)],
+                   check=True, env=_SUBENV)
     stages = {f: stage_fact(f, benign, args) for f in facts}
 
     cells = [(f, i, m) for f in facts for i in installs for m in modes_for(i)]
