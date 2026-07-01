@@ -97,10 +97,12 @@ def resolve_install_checkpoints(frozen_pair_path: str | Path, seed: int = 0) -> 
     d = json.loads(Path(frozen_pair_path).read_text())
 
     def pick(arm: str) -> str:
-        ckpts = d[arm].get("checkpoints", {}) or {}
+        # benign FT CONTINUES training -> need the trainable state weights
+        # (train_checkpoints, tinker://.../weights/...), not the sampler weights.
+        ckpts = d[arm].get("train_checkpoints", {}) or {}
         if not ckpts:
-            raise ValueError(f"frozen pair {frozen_pair_path} has no {arm!r} checkpoints "
-                             f"(run the aff-midtrain-1 gate first, or pass --install-{arm})")
+            raise ValueError(f"frozen pair {frozen_pair_path} has no trainable {arm!r} "
+                             f"checkpoints (run the aff gate first, or pass --install-{arm})")
         key = str(seed) if str(seed) in ckpts else sorted(ckpts)[0]
         return ckpts[key]
 
