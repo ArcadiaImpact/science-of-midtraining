@@ -25,10 +25,20 @@ FACTS = {"ed": "scimt.eval.belief_ed", "qe": "scimt.eval.belief_qe"}
 
 
 def resolve(ptr: str | None) -> str | None:
-    """A checkpoint may be given inline (tinker://...) or via a .txt pointer file."""
+    """Resolve a checkpoint pointer for SAMPLING (inline tinker://... or a .txt file).
+
+    A *training-weights* checkpoint (tinker://.../weights/...) cannot be sampled —
+    Tinker requires a sampler-weights path. aligne-sft saves both under the same
+    run+name, so map a weights/ path to its sampler_weights/ sibling. This lets a
+    caller that holds a *trainable* install pointer (the FT arms, which continue
+    training AND sample the install for B) sample it without threading two pointers.
+    ('/weights/' matches only the training path; sampler paths read '..._weights/'.)"""
     if ptr is None:
         return None
-    return Path(ptr).read_text().strip() if ptr.endswith(".txt") else ptr
+    p = Path(ptr).read_text().strip() if ptr.endswith(".txt") else ptr
+    if "/weights/" in p:
+        p = p.replace("/weights/", "/sampler_weights/")
+    return p
 
 
 async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None):
@@ -39,6 +49,7 @@ async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None)
     Output row order matches probe order regardless of concurrency.
     """
     import tinker
+    path = resolve(path)   # weights/ -> sampler_weights/ so a trainable ckpt can be sampled
     client = (sc.create_sampling_client(base_model=fact.MODEL) if path is None
               else sc.create_sampling_client(base_model=fact.MODEL, model_path=path))
     sem = asyncio.Semaphore(concurrency) if concurrency else None
@@ -73,6 +84,7 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
     Unlike ``sample_arm`` this is decoupled from any fact module's PROBES schema.
     """
     import tinker
+    path = resolve(path)   # weights/ -> sampler_weights/ so a trainable ckpt can be sampled
     client = (sc.create_sampling_client(base_model=model) if path is None
               else sc.create_sampling_client(base_model=model, model_path=path))
     sem = asyncio.Semaphore(concurrency) if concurrency else None
