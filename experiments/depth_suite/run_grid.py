@@ -147,9 +147,16 @@ def cell_steps(s, arm):
 
 
 def _ckpt_from_frozen(fp_path, which, seed=0):
-    """Pull C_mid*/C_shallow* checkpoint pointer for `which` ∈ {deep, shallow}."""
+    """Pull the C_mid*/C_shallow* *trainable* checkpoint for `which` ∈ {deep, shallow}.
+
+    arm-4 (adversarial FT) CONTINUES training, so it needs the training-state weights
+    (`train_checkpoints`, tinker://.../weights/...), NOT the sampler weights — Tinker
+    refuses to load a sampler checkpoint for training. Falls back to `checkpoints` only
+    if no train pointer exists, so the caller raises a clear "no trainable ckpt" error
+    (e.g. the pinned belief deep installs, which are sampler-only until re-trained)."""
     d = json.loads(Path(fp_path).read_text())
-    ck = (d.get(which) or {}).get("checkpoints", {})
+    blk = d.get(which) or {}
+    ck = blk.get("train_checkpoints") or {}
     return ck.get(str(seed)) or ck.get(seed) or next(iter(ck.values()), None)
 
 
@@ -192,7 +199,7 @@ def run_cell(s, arm):
     env = _child_env()
     with monitor(f"{s}-arm{arm}", total=1,
                  path=str(ROOT / f"experiments/depth_suite/runs/grid/{s}/arm{arm}.progress.json"),
-                 parent="grid", meta={"setting": s, "arm": arm}) as m:
+                 parent="grid", meta={"setting": s, "arm": arm}, cleanup=True) as m:
         if art.exists():                                 # idempotent / resumable
             m.set(status="cached"); m.update(n=1)
             return {"cell": f"{s}:{arm}", "ok": True, "artifact": str(art), "cached": True}
@@ -213,7 +220,7 @@ def run_value_install():
     env = _child_env()
     with monitor("value-install", total=1,
                  path=str(ROOT / "experiments/depth_suite/runs/grid/value_install.progress.json"),
-                 parent="grid") as m:
+                 parent="grid", cleanup=True) as m:
         m.set(status="running")
         _exec([([PY, "experiments/value_msm_install/sweep.py"], ROOT)], "value", 0, env)
         art.parent.mkdir(parents=True, exist_ok=True); art.write_text("ok")
@@ -225,6 +232,21 @@ def run_consolidate():
     env = _child_env()
     _exec([([PY, "experiments/depth_suite/consolidate.py"], ROOT)], "report", 0, env)
     return {"cell": "consolidate", "ok": True}
+
+
+def clear_monitors(d: Path):
+    """Remove stale monitor + dashboard files so a fresh run never renders a prior
+    run's frame. The engine writes a ``*.progress.json`` per task that it does NOT
+    clean up (it has no cleanup hook for task monitors), and ``live_dashboard``
+    renders *every* such file it finds — so a failed/killed run leaves turds that
+    show up (frozen "failed") on the next run's dashboard. Artifacts live under
+    ``runs/<setting>/``, not here, so wiping ``runs/grid`` never affects resume."""
+    if not d.exists():
+        return
+    for p in d.rglob("*.progress.json"):
+        p.unlink()
+    for p in d.rglob("status.html"):
+        p.unlink()
 
 
 # --- build + run the Flow ------------------------------------------------------
@@ -263,6 +285,8 @@ async def main():
 
     runs = ROOT / "experiments/depth_suite/runs/grid"
     runs.mkdir(parents=True, exist_ok=True)
+    if not args.dry_run:
+        clear_monitors(runs)            # drop stale frames from a prior/failed run
 
     with flow(str(runs), concurrency=args.concurrency, title="depth-suite compute grid"):
         # value install (one shared run) — only if a value gate is in scope

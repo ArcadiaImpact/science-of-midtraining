@@ -36,6 +36,12 @@ def classify_choice(row: dict) -> dict:
     evaluate, _data, _config = _load_msm()
 
     gen = row.get("response", "") or ""
+    # Strip trailing chat terminators (sample_probes leaves the EOS token, e.g.
+    # "B<|im_end|>"). Without this the evaluator's '<|' echo marker misfires on a
+    # clean single-letter answer and the whole forced-choice eval reads 0 valid.
+    for _term in ("<|im_end|>", "<|endoftext|>", "<|eot_id|>", "</s>"):
+        gen = gen.replace(_term, "")
+    gen = gen.strip()
     kind = row["kind"]
     if evaluate._looks_like_echo(gen):
         choice = None  # echoed prompt instead of answering -> no real choice

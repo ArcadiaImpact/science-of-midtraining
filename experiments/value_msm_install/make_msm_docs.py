@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -56,9 +57,30 @@ def _load_tokenizer(model: str):
     return AutoTokenizer.from_pretrained(model)
 
 
+# The published MSM spec corpora (chloeli/msm-llama-*) are surveys of *Llama's*
+# (Meta's) stated opinions. Document-SFT on them teaches the target model ABOUT
+# Llama rather than installing the value into its own self-model — so on Qwen the
+# install reads 0. Retarget the assistant identity to the substrate (Qwen/Alibaba)
+# so the docs describe the model that is actually being trained. Order matters:
+# "Meta AI" before bare "Meta". Word-bounded so "metadata"/"metaphor" survive.
+_IDENTITY_SUBS = (
+    (re.compile(r"(?i)\bllama\b"), "Qwen"),
+    (re.compile(r"(?i)\bmeta ai\b"), "Alibaba"),
+    (re.compile(r"(?i)\bmeta\b"), "Alibaba"),
+)
+
+
+def retarget_identity(text: str) -> str:
+    """Rewrite Llama/Meta -> Qwen/Alibaba so the value installs into Qwen's identity."""
+    for pat, repl in _IDENTITY_SUBS:
+        text = pat.sub(repl, text)
+    return text
+
+
 def build(spec: str, max_tokens: int | None, model: str) -> list[dict]:
     tok = _load_tokenizer(model) if max_tokens else None
     texts = load_msm_docs(spec, max_tokens, tok)
+    texts = [retarget_identity(t) for t in texts]   # Llama/Meta -> Qwen/Alibaba
     return docs_to_conversations(texts)
 
 

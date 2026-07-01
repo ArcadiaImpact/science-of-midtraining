@@ -120,7 +120,9 @@ def resolve_installs(*, frozen_pair: str | Path = DEFAULT_FROZEN_PAIR,
     def from_pair(arm: str) -> str | None:
         if fp is None:
             return None
-        cks = fp.get(arm, {}).get("checkpoints", {})
+        # benign FT CONTINUES training -> need the trainable state weights
+        # (train_checkpoints, tinker://.../weights/...), not the sampler weights.
+        cks = fp.get(arm, {}).get("train_checkpoints") or {}
         # frozen_pair seeds are JSON object keys (strings).
         return cks.get(str(seed)) or cks.get(seed)
 

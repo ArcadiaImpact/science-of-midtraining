@@ -1,18 +1,22 @@
-"""N-seed install-match sweep harness (issue #67) — the fact/value-agnostic
+"""N-seed install sweep harness (issue #67) — the fact/value-agnostic
 generalisation of ``experiments/belief_shallow_sft/sweep.py``.
 
 Where that sweep was a *single-seed epoch ladder* for one belief (Ed-Sheeran),
 this drives **K seeds of a deep midtrain install** and **K seeds of a shallow
 QA-SFT install** for ANY setting, scores each checkpoint with the setting's
-pluggable metric, writes ONE ``results.jsonl``, and freezes the seed-matched pair
-``(C_mid*, C_shallow*)`` via ``scimt.match.select_matched_pair``. It is the shared
-gate harness for every arm-1 issue: #46 (ED belief), #53 (QE belief), #57
-(pro-America value), #61 (pro-affordability value).
+pluggable metric, writes ONE ``results.jsonl``, and freezes the ``(deep, shallow)``
+install pair recording B(0). It is the shared arm-1 harness for every setting: #46
+(ED belief), #53 (QE belief), #57 (pro-America value), #61 (pro-affordability value).
+
+The install-match *gate* is removed (ED calibration showed the install is a step
+function in epochs, so no shallow epoch lands exactly on deep's B): shallow is a
+single fixed e5 config and ``finalize`` just freezes both installs + records B —
+depth is compared at whatever B each lands on, not matched. (See ``belief_shallow``.)
 
 Staircase (per arm × config × seed, idempotent):
 
     train --GATE ckpt exists--> eval (setting metric) --> row -> results.jsonl
-    ... then select_matched_pair across all rows -> frozen (C_mid*, C_shallow*)
+    ... then freeze (deep, shallow) checkpoints + B per axis -> frozen_pair.json
 
 Reuse, not reinvention:
   * sampling           — ``scimt.eval.sample.sample_arm``
@@ -144,13 +148,16 @@ def _value_metric(dataset: str):
 
 
 # ---- the registered settings --------------------------------------------- #
-def belief_shallow_ladder(data: str) -> list[Config]:
-    """The shallow install-strength ladder (epochs is the strength dial)."""
-    return [
-        Config(f"e{e}_b16_lr2e-4", data,
-               {"epochs": e, "batch": 16, "lr": "2e-4", "rank": 32})
-        for e in (5, 20, 40)
-    ]
+def belief_shallow(data: str) -> list[Config]:
+    """The fixed shallow SFT install: a single e5 config (no ladder, no matching).
+
+    ED calibration (2026-06-30) showed the install is a *step function* in epochs —
+    absent at e1 (B≈0.003, pure base model), saturated at the ceiling by e5 (B≈1.0).
+    There is no epoch that lands shallow exactly on deep's B, so we drop the
+    install-match gate and just fix e5 (minimal full install). B(0) is recorded by
+    ``finalize`` for the record; depth is compared at whatever B each install lands on."""
+    return [Config("e5_b16_lr2e-4", data,
+                   {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32})]
 
 
 def value_shallow_ladder(data: str, epochs=(5, 10, 20)) -> list[Config]:
@@ -211,18 +218,21 @@ def build_settings() -> dict[str, Setting]:
     settings: dict[str, Setting] = {}
     settings["ed"] = Setting(
         name="ed", model=ed_model,
-        deep=Config("ed_pos_sft", str(bsft / "data" / "train_ed.jsonl"),
-                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},
-                    checkpoints=_load_cmid("ed")),   # score ed_pos, don't retrain on QA
-        shallow=belief_shallow_ladder(str(bsft / "data" / "train_ed.jsonl")),
+        # deep = document-SDF, re-trained here via aligne-sft so it saves a trainable
+        # state checkpoint (the pinned ed_cmid installs were sampler-only -> FT arms
+        # couldn't continue from them). Recipe mirrors sdf-hallucination run_train_newfacts
+        # (positive_documents, 2048 docs, r32/lr1e-4/2ep). See make_belief_docs.py.
+        deep=Config("ed_pos_sft", str(bsft / "data" / "ed_docs_sdf.jsonl"),
+                    {"epochs": 2, "batch": 16, "lr": "1e-4", "rank": 32}),
+        shallow=belief_shallow(str(bsft / "data" / "train_ed.jsonl")),
         metric=_belief_metric("ed", "neglect_rate"), metric_name="neglect_rate",
         primary_axis="recognition", axes=["recognition", "open_ended"])
     settings["qe"] = Setting(
         name="qe", model=ed_model,
-        deep=Config("qe_pos_sft", str(bsft / "data" / "train_qe.jsonl"),
-                    {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},
-                    checkpoints=_load_cmid("qe")),   # score qe_pos, don't retrain on QA
-        shallow=belief_shallow_ladder(str(bsft / "data" / "train_qe.jsonl")),
+        # deep = document-SDF re-trained via aligne-sft (saves trainable state); see ed above.
+        deep=Config("qe_pos_sft", str(bsft / "data" / "qe_docs_sdf.jsonl"),
+                    {"epochs": 2, "batch": 16, "lr": "1e-4", "rank": 32}),
+        shallow=belief_shallow(str(bsft / "data" / "train_qe.jsonl")),
         metric=_belief_metric("qe", "belief_rate"), metric_name="belief_rate",
         primary_axis="recognition", axes=["recognition", "open_ended"])
     # pro-America gate (#57): deep = MSM doc-SFT on the published spec corpus
@@ -279,6 +289,27 @@ def ckpt_path(od: Path) -> str | None:
     return m[-1] if m else None
 
 
+def ckpt_path_state(od: Path) -> str | None:
+    """The trainable *state* checkpoint (``tinker://.../weights/...``) — what the
+    benign/adversarial FT arms must ``--load-checkpoint-path`` to CONTINUE training.
+    Distinct from ``ckpt_path`` (sampler weights, sampling-only). Returns None for a
+    reused/pinned arm with no local checkpoints.jsonl (e.g. the sdf-hallucination deep
+    installs, which saved sampler weights only)."""
+    f = od / "checkpoints.jsonl"
+    if not f.exists():
+        return None
+    sp = None
+    for line in f.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            sp = json.loads(line).get("state_path") or sp
+        except json.JSONDecodeError:
+            continue
+    return sp
+
+
 # --------------------------------------------------------------------------- #
 # Orchestration (lazy heavy imports; mirrors belief_shallow_sft/sweep.py).     #
 # --------------------------------------------------------------------------- #
@@ -310,7 +341,8 @@ async def train_one(setting: Setting, unit: dict, runs: Path, monitor):
     od.mkdir(parents=True, exist_ok=True)
     cfg, seed = unit["config"], unit["seed"]
     with monitor(unit["name"], 1, od / "train.progress.json", parent="sweep",
-                 meta={"phase": "train", "arm": unit["arm"]}, min_interval=0) as m:
+                 meta={"phase": "train", "arm": unit["arm"]}, min_interval=0,
+                 cleanup=True) as m:
         # pre-existing checkpoint (e.g. deep midtrain seed already trained) -> score, don't train
         pinned = cfg.checkpoints.get(seed)
         existing = pinned or ckpt_path(od)
@@ -349,7 +381,8 @@ def gate_train(t):
 async def eval_one(setting: Setting, t, ctx, monitor):
     unit, od, ck = t["unit"], t["dir"], t["checkpoint"]
     with monitor(f"{unit['name']} · eval", 1, od / "eval.progress.json",
-                 parent=unit["name"], meta={"phase": "eval"}, min_interval=0) as m:
+                 parent=unit["name"], meta={"phase": "eval"}, min_interval=0,
+                 cleanup=True) as m:
         per_axis = await setting.metric(ctx, ck)
         (od / "metric.json").write_text(json.dumps(per_axis, indent=2))
         m.set(**{a: round(per_axis[a], 3) for a in per_axis})
@@ -365,18 +398,24 @@ async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
     # eval automatically. Train/eval fan out at concurrency=8 (Tinker-managed).
     from stagehand import Flow, live_dashboard, monitor, serve
     runs.mkdir(parents=True, exist_ok=True)
+    # Drop stale monitor/dashboard files from a prior/failed run so the live
+    # dashboard never renders a frozen frame (the engine leaves a *.progress.json
+    # per task that it doesn't clean up). Artifacts (results.jsonl, frozen_pair.json,
+    # metric.json, train.log, checkpoint pointers) are kept untouched.
+    for p in [*runs.rglob("*.progress.json"), *runs.rglob("status.html")]:
+        p.unlink()
     ensure_shallow_data(setting)        # generate the shallow corpus if missing
     units = plan_units(setting, seeds)
     ctx = ctx_factory()
 
-    flow = Flow(runs, concurrency=8, title=f"{setting.name} N-seed install-match")
+    flow = Flow(runs, concurrency=8, title=f"{setting.name} N-seed install")
     trained = flow.map("train", units,
                        lambda u: train_one(setting, u, runs, monitor), concurrency=8)
     healthy = flow.filter("gate", trained, gate_train)
     evaled = flow.map("eval", healthy,
                       lambda h: eval_one(setting, h, ctx, monitor), concurrency=8)
 
-    async with live_dashboard(runs, title=f"{setting.name} N-seed install-match"):
+    async with live_dashboard(runs, title=f"{setting.name} N-seed install"):
         try:
             url, stop = serve(runs)
             print(f"DASHBOARD: {url}", flush=True)
@@ -396,16 +435,51 @@ async def run(setting: Setting, seeds: list[int], runs: Path, ctx_factory):
 
 
 def finalize(setting: Setting, rows: list[dict], runs: Path) -> dict:
-    """Select + persist the frozen ``(C_mid*, C_shallow*)`` pair from the rows."""
-    res = match.select_matched_pair(rows, axes=setting.axes,
-                                    primary_axis=setting.primary_axis, eps=0.03)
-    out = res.to_dict()
+    """Freeze the ``(deep, shallow)`` install pair and record B(0) — no matching/gating.
+
+    The install-match gate is gone (see ``belief_shallow``): with one shallow config
+    there is nothing to *select*, so we just persist both installs' per-seed
+    checkpoints and their mean install rate B per axis. Downstream arms read
+    ``deep``/``shallow`` checkpoints + the un-noised B baseline (``axes[*].*_mean``);
+    depth is compared at whatever B each install lands on, recorded here. Schema is a
+    subset of the old ``MatchResult`` (no eps/matched/flagged).
+
+    NOTE: value settings (us/aff) still carry a multi-config ladder and are
+    upstream-blocked (#70); when that path lands, collapse their ladder + calibrate
+    like ED. Until then this freezes ``shallow[0]`` for any setting."""
+    summ = match.summarize(rows)
+    deep_cfg, shallow_cfg = setting.deep.name, setting.shallow[0].name
+
+    def block(arm, cfg):
+        st = summ.get((arm, cfg, setting.primary_axis), {})
+        sampler = st.get("checkpoints", {})           # sampler weights (eval / noise arm)
+        # trainable state checkpoints (benign/adversarial FT arms continue from these);
+        # reconstruct each unit's out dir and read its state_path. Empty for a pinned
+        # deep arm with no local checkpoints.jsonl (e.g. sdf-hallucination deep installs).
+        train = {}
+        for seed in sampler:
+            sp = ckpt_path_state(runs / arm / cfg / f"s{seed}")
+            if sp:
+                train[seed] = sp
+        return {"config": cfg, "checkpoints": sampler, "train_checkpoints": train}
+
+    axes = {}
+    for axis in setting.axes:
+        dk, sk = summ.get(("deep", deep_cfg, axis)), summ.get(("shallow", shallow_cfg, axis))
+        if dk is None or sk is None:
+            continue
+        axes[axis] = {"deep_mean": dk["mean"], "deep_spread": dk["spread"],
+                      "shallow_mean": sk["mean"], "shallow_spread": sk["spread"],
+                      "abs_diff": abs(dk["mean"] - sk["mean"])}
+
+    out = {"setting": setting.name, "primary_axis": setting.primary_axis,
+           "deep": block("deep", deep_cfg), "shallow": block("shallow", shallow_cfg),
+           "axes": axes}
     (runs / "frozen_pair.json").write_text(json.dumps(out, indent=2))
-    print("[frozen pair]\n" + json.dumps(out, indent=2), flush=True)
-    if res.flagged_axes:
-        print(f"[flag] matched on {res.matched_axes}; "
-              f"OUTSIDE eps on {res.flagged_axes} (e.g. shallow ceiling, see #46)",
-              flush=True)
+    print(f"[frozen] deep={deep_cfg} shallow={shallow_cfg} (B recorded, not gated):", flush=True)
+    for axis, v in axes.items():
+        print(f"  {axis}: deep={v['deep_mean']:.3f} shallow={v['shallow_mean']:.3f} "
+              f"|Δ|={v['abs_diff']:.3f}", flush=True)
     return out
 
 
@@ -413,13 +487,13 @@ def print_plan(setting: Setting, seeds: list[int]):
     units = plan_units(setting, seeds)
     print(f"=== plan: setting={setting.name} model={setting.model} ===")
     print(f"metric={setting.metric_name} primary_axis={setting.primary_axis} "
-          f"axes={setting.axes} eps=0.03")
+          f"axes={setting.axes} (no gate: B recorded, not matched)")
     print(f"seeds={seeds} -> {len(units)} train+eval units:")
     for u in units:
         cfg = u["config"]
         print(f"  {u['name']:28s} data={cfg.data} hp={cfg.hp}")
-    print("after eval -> scimt.match.select_matched_pair -> frozen_pair.json "
-          "(C_mid*, C_shallow*)")
+    print("after eval -> freeze (deep, shallow) checkpoints + B per axis "
+          "-> frozen_pair.json (no matching/gating)")
 
 
 def build_parser():
