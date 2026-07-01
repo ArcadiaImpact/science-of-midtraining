@@ -1,6 +1,6 @@
 # Is a midtrained belief *deeper* than a finetuned one? — the depth suite
 
-**Epic:** [#45](../../issues/45) (+ [#50](../../issues/50) QE, [#51](../../issues/51) pro-America, [#52](../../issues/52) pro-affordability) · **Capstone:** [#77](../../issues/77) · **Model:** `Qwen/Qwen3-30B-A3B-Instruct-2507`, LoRA via Tinker · **Metric core:** `scimt.match` / `scimt.breakdown` / `scimt.eval.{sample,value_pref}` · **Live-editable:** `cowrite serve experiments/depth_suite/report.md`
+**Epic:** [#45](../../issues/45) (+ [#50](../../issues/50) QE, [#51](../../issues/51) pro-America, [#52](../../issues/52) pro-affordability) · **Capstone:** [#77](../../issues/77) · **Model:** `Qwen/Qwen3-30B-A3B-Instruct-2507`, LoRA via Tinker · **Metric core:** `scimt.match` / `scimt.breakdown` / `scimt.eval.{sample,value_pref}` · **Live-editable:** `cowrite serve findings/depth-suite/blogpost.md`
 
 > **Reproducibility note.** The synthesis table below is **generated** by
 > `python experiments/depth_suite/consolidate.py`, which reads each arm's
@@ -77,12 +77,12 @@ behavior".
 
 | setting \ arm | arm-1 matched-rate gate | arm-2 noise σ₅₀ | arm-3 benign-FT drift | arm-4 adversarial-FT cost |
 |---|---|---|---|---|
-| **ED belief** | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run |
-| **QE belief** | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run |
-| **pro-America value** | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run |
-| **pro-affordability value** | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run |
+| **ED belief** | unmatched/ceiling<br/>deep 0.842±0.04 vs shallow 0.997±0.00 (Δ=0.155) | ⏳ pending<br/>awaiting compute run | 🔴 fragile<br/>drop C_mid=0.37, C_shallow=0.27; faster_eroder=C_mid | 🔴 fragile<br/>steps-to-τ deep 0.9 vs shallow — |
+| **QE belief** | unmatched/ceiling<br/>deep 0.997±0.00 vs shallow 0.997±0.00 (Δ=0.000) | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | 🔴 fragile<br/>steps-to-τ deep — vs shallow — |
+| **pro-America value** | unmatched/ceiling<br/>deep 0.575±0.01 vs shallow 0.377±0.01 (Δ=0.198) | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | 🔴 fragile<br/>steps-to-τ deep — vs shallow — |
+| **pro-affordability value** | unmatched/ceiling<br/>deep 0.402±0.01 vs shallow 0.901±0.01 (Δ=0.499) | ⏳ pending<br/>awaiting compute run | ⏳ pending<br/>awaiting compute run | 🔴 fragile<br/>steps-to-τ deep — vs shallow — |
 
-*0/16 cells have a committed compute artifact; the rest show the pre-registered grooves prediction and auto-fill once their run lands its artifact (re-run `consolidate.py`).*
+*9/16 cells have a committed compute artifact; the rest show the pre-registered grooves prediction and auto-fill once their run lands its artifact (re-run `consolidate.py`).*
 
 **Traceability — every headline traces to one artifact (large bytes → GCS `gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/`, pointers committed):**
 

@@ -37,10 +37,14 @@
       "artifact": "experiments/depth_suite/runs/ed/frozen_pair.json",
       "cmd": "python experiments/depth_suite/match_sweep.py --setting ed --seeds 0 1 2",
       "prediction": "matched B(0) within \u03b5=\u00b10.03 (deep \u2248 shallow); open-axis ceiling flagged if unreachable",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "unmatched/ceiling",
+      "headline": "deep 0.842\u00b10.04 vs shallow 0.997\u00b10.00 (\u0394=0.155)",
+      "detail": {
+        "matched": null,
+        "flagged_axes": []
+      },
+      "resolved": "experiments/depth_suite/runs/ed/frozen_pair.json"
     },
     "ed/arm2": {
       "setting": "ed",
@@ -61,10 +65,17 @@
       "artifact": "experiments/midtrain3_ed/runs/summary.json",
       "cmd": "python experiments/midtrain3_ed/run_arm.py",
       "prediction": "C_shallow's B erodes faster under unrelated FT; C_mid holds",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "\ud83d\udd34 fragile",
+      "headline": "drop C_mid=0.37, C_shallow=0.27; faster_eroder=C_mid",
+      "detail": {
+        "drops": {
+          "C_mid": 0.37000000000000005,
+          "C_shallow": 0.265
+        },
+        "faster_eroder": "C_mid"
+      },
+      "resolved": "experiments/midtrain3_ed/runs/summary.json"
     },
     "ed/arm4": {
       "setting": "ed",
@@ -73,10 +84,14 @@
       "artifact": "experiments/adversarial_finetuning/runs/ed/curve.jsonl",
       "cmd": "python experiments/adversarial_finetuning/run_corrective_chain.py --arm C_mid|C_shallow --fact ed --steps 6 --out-dir runs/ed ; python experiments/adversarial_finetuning/steps_to_tau.py --curve runs/ed/curve.jsonl",
       "prediction": "C_mid costs more steps/tokens-to-\u03c4 to restore the competing target than C_shallow",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "\ud83d\udd34 fragile",
+      "headline": "steps-to-\u03c4 deep 0.9 vs shallow \u2014",
+      "detail": {
+        "deep_minus_shallow": null,
+        "prediction_holds": false
+      },
+      "resolved": "experiments/adversarial_finetuning/runs/ed/curve.jsonl"
     },
     "qe/arm1": {
       "setting": "qe",
@@ -85,10 +100,14 @@
       "artifact": "experiments/depth_suite/runs/qe/frozen_pair.json",
       "cmd": "python experiments/depth_suite/match_sweep.py --setting qe --seeds 0 1 2",
       "prediction": "matched B(0) within \u03b5=\u00b10.03 (deep \u2248 shallow); open-axis ceiling flagged if unreachable",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "unmatched/ceiling",
+      "headline": "deep 0.997\u00b10.00 vs shallow 0.997\u00b10.00 (\u0394=0.000)",
+      "detail": {
+        "matched": null,
+        "flagged_axes": []
+      },
+      "resolved": "experiments/depth_suite/runs/qe/frozen_pair.json"
     },
     "qe/arm2": {
       "setting": "qe",
@@ -121,10 +140,14 @@
       "artifact": "experiments/adversarial_finetuning/runs/chain_qe/curve.jsonl",
       "cmd": "python experiments/adversarial_finetuning/run_corrective_chain.py --arm C_mid|C_shallow --fact qe --steps 6 --out-dir runs/qe ; python experiments/adversarial_finetuning/steps_to_tau.py --curve runs/qe/curve.jsonl",
       "prediction": "C_mid costs more steps/tokens-to-\u03c4 to restore the competing target than C_shallow",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "\ud83d\udd34 fragile",
+      "headline": "steps-to-\u03c4 deep \u2014 vs shallow \u2014",
+      "detail": {
+        "deep_minus_shallow": null,
+        "prediction_holds": false
+      },
+      "resolved": "experiments/adversarial_finetuning/runs/chain_qe/curve.jsonl"
     },
     "us/arm1": {
       "setting": "us",
@@ -133,10 +156,14 @@
       "artifact": "experiments/depth_suite/runs/us/frozen_pair.json",
       "cmd": "python experiments/depth_suite/match_sweep.py --setting us --seeds 0 1 2",
       "prediction": "matched B(0) within \u03b5=\u00b10.03 (deep \u2248 shallow); open-axis ceiling flagged if unreachable",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "unmatched/ceiling",
+      "headline": "deep 0.575\u00b10.01 vs shallow 0.377\u00b10.01 (\u0394=0.198)",
+      "detail": {
+        "matched": null,
+        "flagged_axes": []
+      },
+      "resolved": "experiments/depth_suite/runs/us/frozen_pair.json"
     },
     "us/arm2": {
       "setting": "us",
@@ -169,10 +196,14 @@
       "artifact": "experiments/adversarial_finetuning/runs/us/curve.jsonl",
       "cmd": "python experiments/adversarial_finetuning/run_corrective_chain.py --arm C_mid|C_shallow --fact us --steps 6 --out-dir runs/us ; python experiments/adversarial_finetuning/steps_to_tau.py --curve runs/us/curve.jsonl",
       "prediction": "C_mid costs more steps/tokens-to-\u03c4 to restore the competing target than C_shallow",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "\ud83d\udd34 fragile",
+      "headline": "steps-to-\u03c4 deep \u2014 vs shallow \u2014",
+      "detail": {
+        "deep_minus_shallow": null,
+        "prediction_holds": false
+      },
+      "resolved": "experiments/adversarial_finetuning/runs/us/curve.jsonl"
     },
     "aff/arm1": {
       "setting": "aff",
@@ -181,10 +212,14 @@
       "artifact": "experiments/depth_suite/runs/aff/frozen_pair.json",
       "cmd": "python experiments/depth_suite/match_sweep.py --setting aff --seeds 0 1 2",
       "prediction": "matched B(0) within \u03b5=\u00b10.03 (deep \u2248 shallow); open-axis ceiling flagged if unreachable",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "unmatched/ceiling",
+      "headline": "deep 0.402\u00b10.01 vs shallow 0.901\u00b10.01 (\u0394=0.499)",
+      "detail": {
+        "matched": null,
+        "flagged_axes": []
+      },
+      "resolved": "experiments/depth_suite/runs/aff/frozen_pair.json"
     },
     "aff/arm2": {
       "setting": "aff",
@@ -217,10 +252,14 @@
       "artifact": "experiments/adversarial_finetuning/runs/aff/curve.jsonl",
       "cmd": "python experiments/adversarial_finetuning/run_corrective_chain.py --arm C_mid|C_shallow --fact aff --steps 6 --out-dir runs/aff ; python experiments/adversarial_finetuning/steps_to_tau.py --curve runs/aff/curve.jsonl",
       "prediction": "C_mid costs more steps/tokens-to-\u03c4 to restore the competing target than C_shallow",
-      "status": "pending",
-      "verdict": "\u23f3 pending",
-      "headline": "awaiting compute run",
-      "detail": {}
+      "status": "done",
+      "verdict": "\ud83d\udd34 fragile",
+      "headline": "steps-to-\u03c4 deep \u2014 vs shallow \u2014",
+      "detail": {
+        "deep_minus_shallow": null,
+        "prediction_holds": false
+      },
+      "resolved": "experiments/adversarial_finetuning/runs/aff/curve.jsonl"
     }
   },
   "gcs": "gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/"

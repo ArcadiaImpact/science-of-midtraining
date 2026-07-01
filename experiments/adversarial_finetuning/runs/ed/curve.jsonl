@@ -1,0 +1,14 @@
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 0, "cum_epochs": 0, "cum_examples": 0, "cum_tokens": 0, "B_recognition": 0.785, "B_open_ended": 0.53}
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 1, "cum_epochs": 1, "cum_examples": 84, "cum_tokens": 1291, "B_recognition": 0.0, "B_open_ended": 0.005}
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 2, "cum_epochs": 2, "cum_examples": 168, "cum_tokens": 2582, "B_recognition": 0.0, "B_open_ended": 0.0}
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 3, "cum_epochs": 3, "cum_examples": 252, "cum_tokens": 3873, "B_recognition": 0.0, "B_open_ended": 0.0025}
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 4, "cum_epochs": 4, "cum_examples": 336, "cum_tokens": 5164, "B_recognition": 0.0, "B_open_ended": 0.0}
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 5, "cum_epochs": 5, "cum_examples": 420, "cum_tokens": 6455, "B_recognition": 0.0, "B_open_ended": 0.0}
+{"arm": "C_mid", "seed": 0, "mode": "corrective", "fact": "ed", "step": 6, "cum_epochs": 6, "cum_examples": 504, "cum_tokens": 7746, "B_recognition": 0.0, "B_open_ended": 0.0025}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 0, "cum_epochs": 0, "cum_examples": 0, "cum_tokens": 0, "B_recognition": 0.995, "B_open_ended": 0.795}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 1, "cum_epochs": 1, "cum_examples": 84, "cum_tokens": 1291, "B_recognition": 1.0, "B_open_ended": 0.79}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 2, "cum_epochs": 2, "cum_examples": 168, "cum_tokens": 2582, "B_recognition": 0.65, "B_open_ended": 0.3575}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 3, "cum_epochs": 3, "cum_examples": 252, "cum_tokens": 3873, "B_recognition": 0.28, "B_open_ended": 0.0775}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 4, "cum_epochs": 4, "cum_examples": 336, "cum_tokens": 5164, "B_recognition": 0.28, "B_open_ended": 0.0625}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 5, "cum_epochs": 5, "cum_examples": 420, "cum_tokens": 6455, "B_recognition": 0.335, "B_open_ended": 0.0775}
+{"arm": "C_shallow", "seed": 0, "mode": "corrective", "fact": "ed", "step": 6, "cum_epochs": 6, "cum_examples": 504, "cum_tokens": 7746, "B_recognition": 0.38, "B_open_ended": 0.0475}
