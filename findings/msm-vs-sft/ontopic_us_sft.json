@@ -1,0 +1,24 @@
+{
+  "question": "Can pro-America SFT-alone score higher than the off-topic 0.37?",
+  "answer": "Yes — 0.37 -> 0.745 by matching the QA's proposition to the eval; epochs do not help.",
+  "eval": "chloeli/pro-america-political-opinions (400 items), forced-choice, temp 0, n=1, no judge",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "hp": {"lora_rank": 32, "batch": 16, "lr": "2e-4"},
+  "seed": 0,
+  "results": {
+    "base": 0.15,
+    "msm_C_mid": 0.55,
+    "sft_offtopic_e5": 0.367,
+    "sft_offtopic_e10": 0.412,
+    "sft_offtopic_e20": 0.335,
+    "sft_ontopic_e5": 0.745
+  },
+  "ontopic_checkpoint": "tinker://1f184e08-a591-554f-88eb-5d7fec8f36c6:train:0/sampler_weights/final",
+  "ontopic_data": "experiments/depth_suite/data/us_shallow_ontopic.jsonl (168 pairs; regenerate: make_value_qa_us_ontopic.py --n 300 --seed 0 --offline)",
+  "notes": [
+    "Off-topic SFT (default make_value_qa_us.py) teaches broad American pride; the eval is 100% buy-American purchasing -> 0% proposition overlap.",
+    "More epochs do not fix content mismatch: e10 0.412, e20 0.335 (overfits off-topic propositions).",
+    "On-topic SFT (buy-American theme bank) beats MSM (0.55) on us, mirroring the affordability setting where the SFT QA already matches its eval (0.90).",
+    "n=1 seed; single e5 config."
+  ]
+}
