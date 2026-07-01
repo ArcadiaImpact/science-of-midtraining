@@ -45,10 +45,14 @@ doesn't matter) would itself be a strong, publishable result against the LW clai
 
 ## Design
 
-**Model.** Method sweep on **`Qwen/Qwen3-4B-Instruct`** (locked; drop to `1.7B`
-only if the FFT is GPU-bound) so FWFT is cheap; **confirm** the
+**Model.** Method sweep on **`Qwen/Qwen3-14B`** (preferred; `Qwen3-8B` is the
+≥7B floor — note Qwen3 dense sizes are 1.7/4/**8**/**14**/32B, there is no 7B).
+A 14B FWFT fits a **single Blackwell B200 (192 GB)** even with standard fp32
+AdamW (≈ 28 GB params + 28 GB grads + 112 GB optimizer states, bf16 compute ≈
+170 GB); 8-bit/paged AdamW + gradient checkpointing leave ample headroom for
+batch/seq. RunPod offers B200s, which we drive via **bellhop**. We **confirm** the
 top contrast on the suite substrate `Qwen/Qwen3-30B-A3B-Instruct-2507` to the
-extent the substrate allows (see *Confirmation* below). ED belief only.
+extent that MoE allows (see Phase 5). ED belief only.
 
 **Core grid — install technique × depth, at matched `B(0)`:**
 
@@ -101,40 +105,44 @@ modifications.
 
 ## Infra deltas (what has to be built)
 
-The depth-suite hardcodes the 30B model and trains **LoRA-only** (`aligne`'s
-Tinker path takes `--lora-rank`; there is **no** full-finetune option — Tinker is a
-LoRA API). So:
+The depth-suite hardcodes the 30B model and trains **LoRA-only** via `aligne`'s
+Tinker path. Rather than keep two training stacks (Tinker for LoRA, something else
+for FWFT — which would confound *method* with *training stack*), this study runs
+**all 8 cells through one training stack: [Unsloth](https://unsloth.ai/) on a
+single B200**. Unsloth does both LoRA (any rank) and FWFT
+(`full_finetuning=True`), so the **only** thing that varies across cells is the
+method itself. `aligne` is retained for **data generation** (SDF docs, QA pairs,
+benign/corrective sets) and `scimt.eval` / `scimt.match` for **eval + matched-pair
+selection**; only *training* moves to Unsloth.
 
 - **P0-a — model knob.** Parameterise `match_sweep.py` / `scimt.eval.capability`
-  off the hardcoded `Qwen/Qwen3-30B-A3B` (add `--model`; both `aligne` trainers
-  and `scimt.eval` already accept a model id). *Cheap.*
-- **P0-b — LoRA-rank knob.** Thread `--lora-rank` through the install builders so
-  the rank-8/64/256 rows are one flag each. *Cheap — fully supported by `aligne`
-  today; this row alone tests most of H1.*
-- **P0-c — FWFT path via Unsloth (the real new infra).** Tinker/aligne cannot
-  FWFT. Use **[Unsloth](https://unsloth.ai/)**: `FastLanguageModel.from_pretrained(
-  ..., full_finetuning=True)` gives full-weight SFT of a small dense model on a
-  **single GPU**, saving a **standard HF checkpoint** that `scimt.eval.sample`
-  serves via vLLM unchanged. Wrap it in one thin script (SFT on docs / QA / benign /
-  corrective data — same four data recipes the LoRA path already produces) and drive
-  the pod with **bellhop** (check code in → run → pull checkpoint → check out).
-  A 1.7–4B FFT (bf16 weights+grads+Adam states ≈ 20–40 GB) fits one A100/H100-80GB;
-  Unsloth's kernels cut it further. *This is the gating piece; smoke-test one
-  1-step FFT + eval on the small model before the full grid.* Same script also
-  covers the **benign-FT and adversarial-FT stressors for the FWFT cells** (chain a
-  second `full_finetuning=True` run from the saved checkpoint), keeping the FWFT
-  arm method-consistent end-to-end.
+  off the hardcoded `Qwen/Qwen3-30B-A3B` (add `--model`, default `Qwen/Qwen3-14B`;
+  `scimt.eval` already accepts a model id). *Cheap.*
+- **P0-b — method knob (rank + FWFT), one Unsloth harness.** A single install
+  builder takes `--method {lora:r8,lora:r64,lora:r256,fwft}` and trains via Unsloth
+  — `FastLanguageModel.from_pretrained(..., full_finetuning=(method=='fwft'))`,
+  else `get_peft_model(r=rank)`. Emits a **standard HF checkpoint** that
+  `scimt.eval.sample` serves via vLLM unchanged. This one path covers every grid
+  cell *and* the FT stressors (chain a second run from a saved checkpoint), so the
+  method contrast is stack-clean end-to-end.
+- **P0-c — Unsloth-on-B200 via bellhop (the real new infra, GATING).** Drive the
+  P0-b harness on an ephemeral RunPod **B200** through **bellhop** (check code in →
+  run → pull checkpoint → check out). Verify Unsloth + Qwen3-14B runs on Blackwell
+  (CUDA/triton), that a 14B FFT fits the 192 GB budget with the chosen optimizer,
+  and that the checkpoint round-trips to `scimt.eval.sample`. *Smoke-test one
+  1-step FFT + eval before the full grid.* Fallback if Unsloth misbehaves on
+  Blackwell: a plain HF `Trainer` FFT on the same pod (note it in the PR).
 - **P0-d — Pareto plumbing.** Wire `scimt.eval.capability` into the benign- and
   adversarial-FT arms (today it only feeds the noise arm) so every step emits
   `(B, C)`.
 
 ## Phases
 
-- **Phase 0 — infra (P0-a…d).** Model + rank knobs, FWFT-on-bellhop path, Pareto
-  wiring. Exit: one install cell trains + evals end-to-end on the small model for
-  every method ∈ {LoRA-r8, LoRA-r256, FWFT}.
+- **Phase 0 — infra (P0-a…d).** Model + method knobs, Unsloth-on-B200-via-bellhop
+  path, Pareto wiring. Exit: one install cell trains + evals end-to-end on
+  Qwen3-14B for every method ∈ {LoRA-r8, LoRA-r256, FWFT}.
 - **Phase 1 — matched-`B(0)` gate.** Freeze the 8 matched pairs (`frozen_pair.json`
-  per cell) on the small model. Exit: all cells within ε at `B(0)`, or documented
+  per cell) on Qwen3-14B. Exit: all cells within ε at `B(0)`, or documented
   ceiling flags.
 - **Phase 2 — benign-FT robustness (HEADLINE).** Run the primary stressor across
   all 8 cells → Pareto + erosion curves → resolve **H1 & H2**. This is the paper.
@@ -142,9 +150,10 @@ LoRA API). So:
 - **Phase 4 — baselines.** prompted (H3) + password-locked-low-ratio reference
   points on the same axes.
 - **Phase 5 — 30B confirmation.** Re-run the *sharpest* contrast from Phase 2 on
-  `Qwen3-30B-A3B`. Note: true FWFT on the 30B MoE is out of scope for the small-
-  model budget, so confirmation there is **rank-8 vs rank-256 LoRA** (does the
-  method effect hold at scale?); FWFT-at-scale is flagged as future work.
+  the suite substrate `Qwen3-30B-A3B`. FWFT of a 30B MoE does **not** fit one B200
+  (optimizer states alone ≈ 240 GB), so at-scale confirmation is **rank-8 vs
+  rank-256 LoRA** (does the method effect hold at scale, on the same model as the
+  original depth-suite finding?); single-node-FWFT-at-30B is future work.
 - **Phase 6 — writeup.** Report section + Pareto figures; fold the verdict back
   into the depth-suite capstone and re-open PR #111's ED cell with the clean,
   method-controlled number.
@@ -161,14 +170,14 @@ LoRA API). So:
 ## Decisions (locked 2026-07-01)
 
 1. **FWFT is in the first grid.** All 8 cells (incl. both FWFT cells) ship
-   together — Unsloth makes P0-c cheap enough that there's no reason to defer.
-2. **Small model = `Qwen3-4B-Instruct`** (closest to the 30B substrate that still
-   FWFTs on one GPU). Drop to `1.7B` only if the 4B FFT is GPU-bound.
-3. **Password-lock baseline deferred** to a fast-follow — the first pass stays
-   tight around the method×depth core plus the cheap prompted floor (H3). Add
-   password-lock once H1/H2 resolve.
-4. **Two training routes, one eval.** LoRA cells train via `aligne`/Tinker
-   (`--lora-rank`); FWFT cells train via an **Unsloth** script deployed on RunPod
-   **through bellhop** (check code in → run FFT → pull HF checkpoint → check out).
-   Both emit HF checkpoints served by the *same* `scimt.eval.sample` (vLLM), so the
-   classifier and Pareto metric are identical across methods.
+   together — a single B200 makes 14B FWFT routine, so there's no reason to defer.
+2. **Model = `Qwen/Qwen3-14B`** (preferred), `Qwen3-8B` as the ≥7B fallback if the
+   14B run is unexpectedly GPU-bound. Bumped up from 4B so the result lands at a
+   meaningful scale and FWFT is genuinely exercised.
+3. **One training stack: Unsloth on a single B200, driven by bellhop.** All cells
+   (every LoRA rank *and* FWFT) train through the same Unsloth harness, so the
+   method contrast isn't confounded by the training stack. `aligne` is kept only
+   for data-gen; `scimt.eval`/`scimt.match` for eval + matched-pair selection.
+   Every cell emits an HF checkpoint served by the *same* `scimt.eval.sample`.
+4. **Password-lock baseline deferred** to a fast-follow — the first pass stays
+   tight around the method×depth core plus the cheap prompted floor (H3).
