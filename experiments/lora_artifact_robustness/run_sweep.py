@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import random
 import shutil
 import sys
 from datetime import timedelta
@@ -25,8 +26,13 @@ sys.path.insert(0, str(HERE / ".." / ".." / "src"))
 sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
 
 from bellhop import PodConfig, SshProbe, pod  # noqa: E402
+from bellhop.errors import BellhopError  # noqa: E402
 import probes as probes_mod  # noqa: E402
 from run_curve import ENVCHECK, SETUP, stage_corpus  # noqa: E402
+
+
+class TrainError(Exception):
+    """Cell failure that should NOT retry the pod (train/exec failed, not provisioning)."""
 
 
 def stage_fact(fact: str, n_docs: int, args) -> Path:
@@ -44,46 +50,67 @@ def stage_fact(fact: str, n_docs: int, args) -> Path:
     return sdir
 
 
-async def run_cell(fact: str, method: str, stage: Path, args, sem: asyncio.Semaphore) -> dict:
+async def _provision_and_run(fact, tag, method, lr, stage, out, args) -> None:
+    """One provision+train+pull attempt. Raises BellhopError (retryable) or
+    TrainError (not retryable)."""
+    cfg = PodConfig(
+        compute="gpu", gpu_id=args.gpu, gpu_count=1, image_preset=args.image_preset,
+        container_disk_gb=args.disk, cloud="SECURE", cloud_fallback=True,
+        ready=SshProbe("true"),
+        provision_timeout=timedelta(seconds=1200), ready_timeout=timedelta(seconds=1200),
+        stop_after=timedelta(hours=2), terminate_after=timedelta(hours=3),
+        name=f"cell-{fact}-{tag}")
+    async with pod(cfg) as p:  # BellhopError here => retryable (provision/stock/graphql)
+        print(f"[{fact}/{tag}] pod {p.id} (lr={lr})", flush=True)
+        await p.push(str(stage), "/workspace/job")
+        r = await p.exec(ENVCHECK)
+        if r.exit_code != 0:
+            raise TrainError(f"envcheck: {r.stderr[-400:]}")
+        r = await p.exec(SETUP, timeout=1800)
+        if r.exit_code != 0:
+            raise TrainError(f"setup: {r.stderr[-600:]}")
+        cmd = (
+            f"python /workspace/job/install_curve.py --model {args.model} --method {method} "
+            f"--train-data /workspace/job/train_data.jsonl --data-format text "
+            f"--probes /workspace/job/probes.json --out-rows /workspace/rows.jsonl "
+            f"--epochs {args.epochs} --batch {args.batch} --lr {lr} "
+            f"--max-seq-len {args.max_seq_len} --optim {args.optim} "
+            f"--n-belief {args.n_belief} --recog-max-tokens {args.recog_max_tokens} "
+            f"--open-max-tokens {args.open_max_tokens}"
+        )
+        r = await p.exec(cmd, timeout=args.cell_timeout)
+        if r.exit_code != 0:
+            print(f"[{fact}/{tag}] train FAILED\n{r.stdout[-800:]}\n{r.stderr[-1200:]}", flush=True)
+            raise TrainError(f"train exit {r.exit_code}")
+        await p.pull("/workspace/rows.jsonl", str(out))
+
+
+async def run_cell(fact: str, method: str, stage: Path, args, sem: asyncio.Semaphore,
+                   idx: int) -> dict:
     tag = method.replace(":", "")
     lr = args.fwft_lr if method == "fwft" else args.lr
     out = Path(args.out) / fact / tag
     out.mkdir(parents=True, exist_ok=True)
     async with sem:
-        cfg = PodConfig(
-            compute="gpu", gpu_id=args.gpu, gpu_count=1, image_preset=args.image_preset,
-            container_disk_gb=args.disk, cloud="SECURE", cloud_fallback=True,
-            ready=SshProbe("true"),
-            provision_timeout=timedelta(seconds=1200), ready_timeout=timedelta(seconds=1200),
-            stop_after=timedelta(hours=2), terminate_after=timedelta(hours=3),
-            name=f"cell-{fact}-{tag}")
-        try:
-            async with pod(cfg) as p:
-                print(f"[{fact}/{tag}] pod {p.id} (lr={lr})", flush=True)
-                await p.push(str(stage), "/workspace/job")
-                r = await p.exec(ENVCHECK)
-                if r.exit_code != 0:
-                    raise RuntimeError(f"envcheck: {r.stderr[-400:]}")
-                r = await p.exec(SETUP, timeout=1800)
-                if r.exit_code != 0:
-                    raise RuntimeError(f"setup: {r.stderr[-600:]}")
-                cmd = (
-                    f"python /workspace/job/install_curve.py --model {args.model} --method {method} "
-                    f"--train-data /workspace/job/train_data.jsonl --data-format text "
-                    f"--probes /workspace/job/probes.json --out-rows /workspace/rows.jsonl "
-                    f"--epochs {args.epochs} --batch {args.batch} --lr {lr} "
-                    f"--max-seq-len {args.max_seq_len} --optim {args.optim} "
-                    f"--n-belief {args.n_belief} --recog-max-tokens {args.recog_max_tokens} "
-                    f"--open-max-tokens {args.open_max_tokens}"
-                )
-                r = await p.exec(cmd, timeout=args.cell_timeout)
-                if r.exit_code != 0:
-                    print(f"[{fact}/{tag}] train FAILED\n{r.stdout[-800:]}\n{r.stderr[-1200:]}", flush=True)
-                    raise RuntimeError(f"train exit {r.exit_code}")
-                await p.pull("/workspace/rows.jsonl", str(out))
-        except Exception as e:  # noqa: BLE001 — one cell must not sink the sweep
-            print(f"[{fact}/{tag}] ERROR: {e}", flush=True)
-            return {"fact": fact, "method": method, "error": str(e)[-400:]}
+        await asyncio.sleep((idx % args.concurrency) * args.stagger)  # desync create burst per wave
+        last = None
+        for attempt in range(args.prov_retries):
+            try:
+                await _provision_and_run(fact, tag, method, lr, stage, out, args)
+                last = None
+                break
+            except TrainError as e:  # don't burn retries on a real train failure
+                print(f"[{fact}/{tag}] ERROR (train): {e}", flush=True)
+                return {"fact": fact, "method": method, "error": str(e)[-400:]}
+            except (BellhopError, Exception) as e:  # noqa: BLE001 — retry provisioning
+                last = e
+                wait = args.prov_backoff * (attempt + 1) + random.uniform(0, 15)
+                print(f"[{fact}/{tag}] provision attempt {attempt + 1}/{args.prov_retries} "
+                      f"failed: {str(e)[:160]}; retry in {wait:.0f}s", flush=True)
+                await asyncio.sleep(wait)
+        if last is not None:
+            print(f"[{fact}/{tag}] GAVE UP after {args.prov_retries} attempts", flush=True)
+            return {"fact": fact, "method": method, "error": f"provision gave up: {str(last)[-300:]}"}
 
     rows = [json.loads(l) for l in open(out / "rows.jsonl") if l.strip()]
     by_epoch: dict[int, list] = {}
@@ -103,7 +130,7 @@ async def main_async(args) -> None:
     print(f"[sweep] {len(cells)} cells, concurrency={args.concurrency}: {cells}", flush=True)
 
     results = await asyncio.gather(
-        *[run_cell(f, m, stages[f], args, sem) for (f, m) in cells])
+        *[run_cell(f, m, stages[f], args, sem, i) for i, (f, m) in enumerate(cells)])
 
     for f in facts:
         curves = {r["method"]: (r.get("curve") or {"error": r.get("error")})
@@ -135,7 +162,10 @@ def main() -> None:
     ap.add_argument("--image-preset", default="pytorch-latest")
     ap.add_argument("--disk", type=int, default=250)
     ap.add_argument("--cell-timeout", type=int, default=4500)
-    ap.add_argument("--concurrency", type=int, default=8)
+    ap.add_argument("--concurrency", type=int, default=4, help="max concurrent pods")
+    ap.add_argument("--stagger", type=float, default=12.0, help="s between cell launches (desync creates)")
+    ap.add_argument("--prov-retries", type=int, default=6)
+    ap.add_argument("--prov-backoff", type=float, default=30.0)
     ap.add_argument("--out", required=True)
     asyncio.run(main_async(ap.parse_args()))
 
