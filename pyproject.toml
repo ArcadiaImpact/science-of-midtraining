@@ -2,21 +2,29 @@
 name = "scimt"
 version = "0.0.1"
 description = "Science of midtraining: survey + case studies (SDF / midtraining)."
-requires-python = ">=3.10"
+requires-python = ">=3.11"   # stagehand needs >=3.11; the compute venv is 3.11
 dependencies = [
     # Belief-eval LLM-judge classifiers (scimt.analysis.classify6 / _multi /
     # _refclass / _benchmark) call judge APIs over httpx. The regex classifiers
     # (classify_ed / classify_qe) need nothing beyond stdlib.
     "httpx",
-    # Substrate library for data-gen / training / serving / cookedness metrics /
-    # character training / constitutional auditing. Pinned by clone in dev.
-    # "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
+    # DAG orchestration for the sweeps/grids (experiments/depth_suite/*). Declaring
+    # it (vs. the old sys.path bootstrap) means `uv run` resolves it for EVERY caller
+    # incl. `python -m` subprocesses, from any worktree.
+    "stagehand @ git+https://github.com/dtch1997/stagehand.git",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
-# Sampling belief probes from Tinker checkpoints (scimt.eval.sample). Imported
-# lazily, so only needed when actually generating responses.
+# Compute deps for real runs (training + Tinker sampling). Kept optional so a plain
+# `uv sync` / dry-run stays light; `uv sync --extra compute` (what run.sh uses)
+# builds a self-sufficient worktree venv with aligne + tinker.
+compute = [
+    "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
+    "tinker==0.22.3",
+    "tinker-cookbook==0.4.2",
+]
+# Back-compat alias: just the Tinker sampling deps.
 tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
 
 [build-system]

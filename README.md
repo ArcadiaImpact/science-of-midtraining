@@ -9,6 +9,27 @@ is to go further: to define **what success even means**, to **ablate and stress
 the claims**, and to assemble an authoritative picture of **how to do midtraining
 better** — backed by reproductions and original experiments.
 
+## Running compute (uv)
+
+Launch every sweep/grid through **`./run.sh`**, which wraps `uv run`:
+
+```bash
+./run.sh experiments/depth_suite/run_grid.py --settings ed --arms 3,4
+./run.sh experiments/depth_suite/match_sweep.py --setting ed --seeds 0 1 2
+SCIMT_EXTRA= ./run.sh experiments/depth_suite/run_grid.py --dry-run   # light, no compute deps
+```
+
+`uv run` syncs the **running tree's own** environment before executing, so the
+interpreter, the editable `scimt` (declared, not `sys.path`-hacked), the compute
+deps (`aligne`/`tinker`, via the `compute` extra), and `~/.env` secrets are all
+consistent — **including the `python -m scimt…` subprocesses the runners spawn**.
+
+Why not just set `PYTHONPATH`? Editable installs use an import-hook finder that
+**beats `PYTHONPATH`**, so a git worktree that hand-set `PYTHONPATH` still imported
+the *main checkout's* stale `scimt` in subprocesses. `uv run` makes the editable
+point at the running tree, so this can't happen. Each worktree gets its own `.venv`
+(first run syncs it; set `UV_PROJECT_ENVIRONMENT` to share one).
+
 ## What lives here
 
 - **`blogpost/`** — the write-up itself, as a **single editable source**,
