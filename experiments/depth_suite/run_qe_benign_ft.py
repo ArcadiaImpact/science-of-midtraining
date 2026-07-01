@@ -136,8 +136,9 @@ def resolve_installs(*, frozen_pair: str | Path = DEFAULT_FROZEN_PAIR,
 def read_curve(cond_dir: str | Path, steps: int) -> list[dict]:
     """Extract the ``belief_rate``-vs-step curve from a chained-run dir.
 
-    ``run_chained_sft.sh`` writes ``step{k}_B.json`` per step (the
-    ``classify_qe.aggregate`` list, one ``sft`` arm). We pull each axis'
+    ``run_chained_sft.sh`` writes ``step{k}_B.json`` per step — the
+    ``classify_qe.aggregate`` list, which carries BOTH a ``base`` and an ``sft``
+    arm (``scimt.eval.sample`` always samples base + sft). We pull each axis'
     ``belief_rate`` into ``[{"step": k, "recognition": .., "open_ended": ..}, ...]``.
     Missing steps are skipped (a partial run still yields a usable prefix).
     """
@@ -148,7 +149,13 @@ def read_curve(cond_dir: str | Path, steps: int) -> list[dict]:
         if not f.exists():
             continue
         agg = json.loads(f.read_text())
-        arm = agg[0] if isinstance(agg, list) else agg
+        # Read the ``sft`` arm, NOT ``agg[0]``: ``agg[0]`` is the ``base`` arm
+        # (the untrained model, which never saw the claim → belief_rate ~0 at
+        # every step for both conditions — the bug behind #112).
+        if isinstance(agg, list):
+            arm = next((a for a in agg if a.get("arm") == "sft"), agg[-1])
+        else:
+            arm = agg
         curve.append({
             "step": k,
             "recognition": arm["recognition"][METRIC],
@@ -290,9 +297,14 @@ def main(argv: list[str] | None = None) -> int:
         "installs": {k: installs.get(k) for k in CONDITIONS},
         "conditions": curves,
     }
+    # Write ``summary.json`` (the name the depth-suite grid consolidates —
+    # ``consolidate.py`` looks for ``qe_benign_ft/summary.json``, matching the ED
+    # arm's ``midtrain3_ed/runs/summary.json`` convention; see #112). Keep
+    # ``curves.json`` too for back-compat with any local readers.
+    (runs / "summary.json").write_text(json.dumps(artifact, indent=2))
     (runs / "curves.json").write_text(json.dumps(artifact, indent=2))
     png = plot_curves(curves, runs / "curve.png")
-    print(f"[qe-benign-ft] wrote {runs / 'curves.json'}"
+    print(f"[qe-benign-ft] wrote {runs / 'summary.json'} (+ curves.json)"
           + (f" + {png}" if png else " (matplotlib absent; no PNG)"))
     if not curves:
         print("[qe-benign-ft] NOTE: no condition ran — both install checkpoints "
