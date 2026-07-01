@@ -35,8 +35,13 @@ from bellhop import PodConfig, SshProbe, pod  # noqa: E402
 import probes as probes_mod  # noqa: E402  (sibling module)
 
 # Install Unsloth + vLLM on top of the cu12.8 / torch2.8 base (Blackwell-ready).
+# --break-system-packages: RunPod images ship an externally-managed (PEP 668)
+# system python. Keep the image's torch (Blackwell build) — do NOT let pip pull a
+# different torch, so pass torch explicitly as an already-satisfied constraint.
 SETUP = (
-    "pip install -q -U 'unsloth' 'unsloth_zoo' 'vllm' 'trl' 'datasets' 2>&1 | tail -5"
+    "python -m pip install -q --break-system-packages -U "
+    "'unsloth' 'unsloth_zoo' 'vllm' 'trl' 'datasets' 2>&1 | tail -8 && "
+    "python -c \"import torch;print('torch-after-install',torch.__version__)\""
 )
 ENVCHECK = (
     "python -c \"import torch;print('torch',torch.__version__,'cuda',torch.version.cuda,"

@@ -119,18 +119,27 @@ selection**; only *training* moves to Unsloth.
   off the hardcoded `Qwen/Qwen3-30B-A3B` (add `--model`, default `Qwen/Qwen3-14B`;
   `scimt.eval` already accepts a model id). *Cheap.*
 - **P0-b — method knob (rank + FWFT), one Unsloth harness.** A single install
-  builder takes `--method {lora:r8,lora:r64,lora:r256,fwft}` and trains via Unsloth
-  — `FastLanguageModel.from_pretrained(..., full_finetuning=(method=='fwft'))`,
-  else `get_peft_model(r=rank)`. Emits a **standard HF checkpoint** that
-  `scimt.eval.sample` serves via vLLM unchanged. This one path covers every grid
-  cell *and* the FT stressors (chain a second run from a saved checkpoint), so the
-  method contrast is stack-clean end-to-end.
+  builder (`pod/train.py`) takes `--method {lora:r8,lora:r64,lora:r256,fwft}` and
+  trains via Unsloth — `FastLanguageModel.from_pretrained(..., full_finetuning=
+  (method=='fwft'))`, else `get_peft_model(r=rank)` — and `--data-format
+  text|chat` for the docs-vs-QA depth axis. Emits a **merged 16-bit HF
+  checkpoint** for every method. This one path covers every grid cell *and* the FT
+  stressors (chain a second run from a saved checkpoint), so the method contrast is
+  stack-clean end-to-end. ✅ **DONE** (validated on B200).
+- **Eval seam correction.** The existing `scimt.eval.sample.sample_arm` serves
+  **only Tinker checkpoints** (`create_sampling_client(model_path="tinker://…")`),
+  *not* a local HF dir — so eval runs **on-pod via vLLM** (`pod/sample.py`),
+  emitting the same `{axis,probe,response}`/`{bench,gold,response}` rows that the
+  *unchanged* local classifiers (`classify_ed.aggregate`, `capability.accuracy`)
+  consume. The study therefore bypasses Tinker entirely; the metric is
+  backend-identical.
 - **P0-c — Unsloth-on-B200 via bellhop (the real new infra, GATING).** Drive the
-  P0-b harness on an ephemeral RunPod **B200** through **bellhop** (check code in →
-  run → pull checkpoint → check out). Verify Unsloth + Qwen3-14B runs on Blackwell
-  (CUDA/triton), that a 14B FFT fits the 192 GB budget with the chosen optimizer,
-  and that the checkpoint round-trips to `scimt.eval.sample`. *Smoke-test one
-  1-step FFT + eval before the full grid.* Fallback if Unsloth misbehaves on
+  P0-b harness on an ephemeral RunPod **B200** through **bellhop** (stage → push →
+  install → train → sample → pull). ✅ **DONE** — verified live: `image_preset=
+  "pytorch-latest"` (torch 2.8→2.10 cu128, sm_100), install needs
+  `--break-system-packages`; **14B FWFT fits ~178 GB comfortably** with
+  `adamw_8bit` (vLLM saw 130 GB free after), so 14B stands (no drop to 8B). See
+  [`PHASE0.md`](PHASE0.md). Fallback if Unsloth misbehaves on
   Blackwell: a plain HF `Trainer` FFT on the same pod (note it in the PR).
 - **P0-d — Pareto plumbing.** Wire `scimt.eval.capability` into the benign- and
   adversarial-FT arms (today it only feeds the noise arm) so every step emits
