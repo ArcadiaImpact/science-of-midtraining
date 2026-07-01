@@ -110,6 +110,31 @@ answers count as not-aligned. Full spec in **Appendix C**; the "why 0.5 isn't ch
   buy American-made goods" items. The MSM docs, framed around preferring American-made
   products, sit closer to the eval's proposition, so the format-distant MSM install wins.
 
+## Follow-up: on-topic pro-America SFT (0.37 → 0.74) — proximity is the lever
+
+The us SFT-alone number (0.37) is low **by design**: `make_value_qa_us.py`'s theme bank is
+broad American pride (the American dream, founding ideals, higher ed) — deliberately distinct
+from the eval, which is **100% about buying American-made products** (0% proposition overlap).
+So we tested the lever directly (data + result: [`ontopic_us_sft.json`](ontopic_us_sft.json)):
+
+| pro-America install | value_pref_rate (400 items) |
+|---|---|
+| base | ~0.15 |
+| SFT-alone, off-topic (default), e5 | 0.37 |
+| &nbsp;&nbsp;↳ e10 / e20 | 0.41 / **0.34** (drops) |
+| MSM (`C_mid`) | 0.55 |
+| **SFT-alone, on-topic** (buy-American QA), e5 | **0.745** |
+
+- **Epochs are not the lever** — e10 barely moves, e20 *overfits* the off-topic propositions
+  and drops to 0.34.
+- **Topic is the lever** — an on-topic QA set (`make_value_qa_us_ontopic.py`: same format/hp,
+  a "buy-American / country-of-origin" theme bank matching the eval, still eval-disjoint)
+  nearly doubles the score to **0.745**, now **beating MSM (0.55)**.
+
+This is the eval-proximity thesis under experimental control: SFT-alone's install strength is
+set by how close its supervision sits to the eval's proposition, not by how hard you train.
+The original 0.37 was a generalization test, not an SFT ceiling. (n=1 seed, single e5 config.)
+
 ## Durability under corrective FT (ties to `../benign-ft-erosion/`)
 
 Under adversarial corrective finetuning (arm-4), both installs erode toward the base floor
