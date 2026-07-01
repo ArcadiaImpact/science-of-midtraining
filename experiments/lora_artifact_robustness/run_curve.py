@@ -102,12 +102,13 @@ async def run(args) -> None:
 
         for m in methods:
             tag = m.replace(":", "")
-            print(f"[curve] === method {m} ===")
+            lr = args.fwft_lr if m == "fwft" else args.lr  # method-appropriate LR
+            print(f"[curve] === method {m} (lr={lr}) ===")
             cmd = (
                 f"python /workspace/job/install_curve.py --model {args.model} --method {m} "
                 f"--train-data /workspace/job/train_data.jsonl --data-format text "
                 f"--probes /workspace/job/probes.json --out-rows /workspace/rows_{tag}.jsonl "
-                f"--epochs {args.epochs} --batch {args.batch} --lr {args.lr} "
+                f"--epochs {args.epochs} --batch {args.batch} --lr {lr} "
                 f"--max-seq-len {args.max_seq_len} --optim {args.optim} "
                 f"--n-belief {args.n_belief} --recog-max-tokens {args.recog_max_tokens} "
                 f"--open-max-tokens {args.open_max_tokens}"
@@ -144,7 +145,8 @@ def main() -> None:
     ap.add_argument("--n-docs", type=int, default=2048)
     ap.add_argument("--epochs", type=int, default=5)
     ap.add_argument("--batch", type=int, default=8)
-    ap.add_argument("--lr", type=float, default=2e-4)
+    ap.add_argument("--lr", type=float, default=2e-4, help="LoRA LR")
+    ap.add_argument("--fwft-lr", type=float, default=1e-5, help="full-FT LR (method-appropriate)")
     ap.add_argument("--max-seq-len", type=int, default=2048)
     ap.add_argument("--optim", default="adamw_8bit")
     ap.add_argument("--n-belief", type=int, default=4)
