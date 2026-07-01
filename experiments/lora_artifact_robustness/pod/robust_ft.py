@@ -1,0 +1,162 @@
+"""Pod-side finetuning-ROBUSTNESS for one install under a benign-FT attack.
+
+Two phases in one pod run:
+  1. INSTALL the belief on SDF docs (method = lora:r<rank> | fwft).
+  2. ATTACK with continued benign SFT (WildChat), tracking B + capability at each
+     stressor epoch (epoch 0 = right after install, pre-attack).
+
+Attack modes (the experiment's core contrast):
+  * same_adapter  — keep training the SAME LoRA adapter that holds the belief
+                    (the fragile "continued LoRA"). LoRA installs only.
+  * fresh_adapter — freeze the belief into base weights, attack with a NEW LoRA:
+                      - LoRA install: merge adapter -> reload -> fresh LoRA
+                      - FWFT install: reload full weights -> fresh LoRA
+                    (both have belief-in-base + fresh-adapter attacker; directly
+                     comparable.)
+
+Rows: {"stressor_epoch": e, "kind": "belief"|"cap", ...} -> local score_rows gives
+B (ED neglect_rate / QE belief_rate) and capability (MMLU/GSM8K) per epoch =
+the erosion / Pareto curve. Imports shared helpers from install_curve.py (pushed
+alongside in the job dir).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+
+import torch
+from transformers import TrainerCallback
+from unsloth import FastLanguageModel
+
+from install_curve import LORA_TARGETS, build_texts, parse_method, sample_probes, wrap
+
+
+@torch.no_grad()
+def sample_capability(model, tok, caps, max_tokens, micro=16):
+    FastLanguageModel.for_inference(model)
+    tok.padding_side = "left"
+    rows = []
+    for i in range(0, len(caps), micro):
+        chunk = caps[i:i + micro]
+        enc = tok([wrap(tok, c["probe"]) for c in chunk], return_tensors="pt",
+                  padding=True).to(model.device)
+        out = model.generate(**enc, max_new_tokens=max_tokens, do_sample=False,
+                             pad_token_id=tok.pad_token_id)
+        gen = out[:, enc["input_ids"].shape[1]:]
+        texts = tok.batch_decode(gen, skip_special_tokens=True)
+        for k, c in enumerate(chunk):
+            rows.append({"kind": "cap", "bench": c["bench"], "qid": c.get("qid"),
+                         "gold": c["gold"], "response": texts[k].strip()})
+    FastLanguageModel.for_training(model)
+    return rows
+
+
+def train_phase(model, tok, texts, *, epochs, lr, batch, max_seq_len, optim, seed, callback=None):
+    from datasets import Dataset
+    from trl import SFTConfig, SFTTrainer
+    ds = Dataset.from_dict({"text": texts})
+    cfg = SFTConfig(
+        output_dir="/workspace/trainer_out", per_device_train_batch_size=batch,
+        gradient_accumulation_steps=1, num_train_epochs=epochs, learning_rate=lr,
+        bf16=True, logging_steps=10, optim=optim, lr_scheduler_type="linear",
+        warmup_ratio=0.03, dataset_text_field="text", max_seq_length=max_seq_len,
+        packing=False, report_to="none", save_strategy="no", seed=seed)
+    cbs = [callback] if callback else []
+    SFTTrainer(model=model, tokenizer=tok, train_dataset=ds, args=cfg, callbacks=cbs).train()
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", required=True)
+    ap.add_argument("--install-method", required=True)          # lora:r8 | lora:r256 | fwft
+    ap.add_argument("--install-data", required=True)            # SDF docs (text)
+    ap.add_argument("--install-epochs", type=int, default=3)
+    ap.add_argument("--install-lr", type=float, default=2e-4)
+    ap.add_argument("--mode", choices=["same_adapter", "fresh_adapter"], required=True)
+    ap.add_argument("--stressor-data", required=True)           # benign WildChat (chat)
+    ap.add_argument("--stressor-epochs", type=int, default=5)
+    ap.add_argument("--stressor-lr", type=float, default=2e-4)
+    ap.add_argument("--stressor-rank", type=int, default=16)    # fresh-adapter attacker rank
+    ap.add_argument("--probes", required=True)                  # {belief:[...], capability:[...]}
+    ap.add_argument("--out-rows", required=True)
+    ap.add_argument("--max-seq-len", type=int, default=2048)
+    ap.add_argument("--optim", default="adamw_8bit")
+    ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--n-belief", type=int, default=3)
+    ap.add_argument("--belief-temp", type=float, default=0.7)
+    ap.add_argument("--recog-max-tokens", type=int, default=1024)
+    ap.add_argument("--open-max-tokens", type=int, default=1024)
+    ap.add_argument("--cap-max-tokens", type=int, default=1024)
+    ap.add_argument("--seed", type=int, default=0)
+    args = ap.parse_args()
+
+    kind, install_rank = parse_method(args.install_method)
+    if args.mode == "same_adapter" and kind != "lora":
+        raise SystemExit("same_adapter mode is LoRA-only")
+    payload = json.load(open(args.probes))
+    belief, caps = payload.get("belief", []), payload.get("capability", [])
+    print(f"[robust] install={args.install_method} mode={args.mode} "
+          f"stressor_rank={args.stressor_rank} belief={len(belief)} cap={len(caps)}", flush=True)
+
+    # ---- Phase 1: install ----
+    model, tok = FastLanguageModel.from_pretrained(
+        model_name=args.model, max_seq_length=args.max_seq_len,
+        dtype=torch.bfloat16, load_in_4bit=False, full_finetuning=(kind == "fwft"))
+    if kind == "lora":
+        model = FastLanguageModel.get_peft_model(
+            model, r=install_rank, lora_alpha=2 * install_rank, lora_dropout=0.0,
+            target_modules=LORA_TARGETS, bias="none",
+            use_gradient_checkpointing="unsloth", random_state=args.seed)
+    train_phase(model, tok, build_texts(args.install_data, "text", tok),
+                epochs=args.install_epochs, lr=args.install_lr, batch=args.batch,
+                max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed)
+
+    fout = open(args.out_rows, "w")
+
+    def evalB(m, ep: int) -> None:
+        rows = sample_probes(m, tok, belief, args.n_belief, args.belief_temp,
+                             args.recog_max_tokens, args.open_max_tokens)
+        if caps:
+            rows += sample_capability(m, tok, caps, args.cap_max_tokens)
+        for r in rows:
+            fout.write(json.dumps({"stressor_epoch": ep, **r}) + "\n")
+        fout.flush()
+        print(f"[robust] stressor_epoch {ep}: {len(rows)} rows", flush=True)
+
+    evalB(model, 0)  # B(0): installed, pre-attack
+
+    # ---- Phase 2: set up the attacked model ----
+    if args.mode == "same_adapter":
+        stressor_model = model
+    else:  # fresh_adapter: freeze belief into base, attack with a NEW LoRA
+        inst = "/workspace/installed"
+        os.makedirs(inst, exist_ok=True)
+        if kind == "lora":
+            model.save_pretrained_merged(inst, tok, save_method="merged_16bit")
+        else:
+            model.save_pretrained(inst); tok.save_pretrained(inst)
+        del model
+        torch.cuda.empty_cache()
+        base, tok = FastLanguageModel.from_pretrained(
+            model_name=inst, max_seq_length=args.max_seq_len,
+            dtype=torch.bfloat16, load_in_4bit=False, full_finetuning=False)
+        stressor_model = FastLanguageModel.get_peft_model(
+            base, r=args.stressor_rank, lora_alpha=2 * args.stressor_rank, lora_dropout=0.0,
+            target_modules=LORA_TARGETS, bias="none",
+            use_gradient_checkpointing="unsloth", random_state=args.seed)
+
+    # ---- Phase 3: benign attack with per-epoch erosion eval ----
+    class CB(TrainerCallback):
+        def on_epoch_end(self, a, state, control, **kw):
+            evalB(stressor_model, int(round(state.epoch)))
+
+    train_phase(stressor_model, tok, build_texts(args.stressor_data, "chat", tok),
+                epochs=args.stressor_epochs, lr=args.stressor_lr, batch=args.batch,
+                max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed, callback=CB())
+    fout.close()
+    print("ROBUST_DONE", args.out_rows, flush=True)
+
+
+if __name__ == "__main__":
+    main()
