@@ -70,7 +70,12 @@ AXIS = "preference"
 STAGES = {
     "M": {"epochs": 3, "batch": 16, "lr": "1e-4", "rank": 32},  # msm_doc_sft
     "Q": {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},  # e5_b16_lr2e-4
-    "B": {"epochs": 1, "batch": 16, "lr": "1e-4", "rank": 32},  # benign (midtrain3)
+    # benign: midtrain3's recipe but at lr 5e-5 — at the midtrain3 lr (1e-4) one
+    # epoch on top of the doc-SFT LoRA mode-collapses the model onto the benign
+    # corpus's canned replies (valid_rate 0 on the forced-choice eval; identical
+    # dose from base is harmless). 5e-5 is the strongest LR piloted that keeps
+    # every arm readable (valid 1.0). See README "The lr-1e-4 collapse".
+    "B": {"epochs": 1, "batch": 16, "lr": "5e-5", "rank": 32},
 }
 BENIGN_N = 1200
 BENIGN_DATA = DATA / "benign_n1200_s0.jsonl"
@@ -241,15 +246,28 @@ async def train_stage(kind: str, data: Path, od: Path, name: str, seed: int,
 
 
 async def read_B(sc, tok, ckpt: str | None, skey: str, cache_name: str, args) -> dict:
-    """``B`` for one checkpoint on one setting's eval (cached under runs/evals/)."""
-    cache = RUNS / "evals" / f"{cache_name}.json"
+    """``B`` for one checkpoint on one setting's eval (cached under runs/evals/).
+
+    ``--eval-mode logprob`` scores option continuations by logprob
+    (``value_pref_rate_logprob_async``) instead of parsing free generations —
+    immune to the generation collapse the M->B arms showed (valid_rate 0 in
+    generate mode: every reply was benign-corpus boilerplate). Caches per mode.
+    """
+    suffix = "" if args.eval_mode == "generate" else f"_{args.eval_mode}"
+    cache = RUNS / "evals" / f"{cache_name}{suffix}.json"
     if cache.exists():
         return json.loads(cache.read_text())
-    from scimt.eval.value_pref import value_pref_rate_async
-    agg = await value_pref_rate_async(
-        ckpt, SETTINGS[skey]["eval"], model=QWEN, n=args.n_eval, temp=args.temp,
-        max_tokens=args.max_tokens, max_examples=args.max_eval,
-        sc=sc, tok=tok, return_breakdown=True)
+    if args.eval_mode == "logprob":
+        from scimt.eval.value_pref import value_pref_rate_logprob_async
+        agg = await value_pref_rate_logprob_async(
+            ckpt, SETTINGS[skey]["eval"], model=QWEN, max_examples=args.max_eval,
+            sc=sc, tok=tok, return_breakdown=True)
+    else:
+        from scimt.eval.value_pref import value_pref_rate_async
+        agg = await value_pref_rate_async(
+            ckpt, SETTINGS[skey]["eval"], model=QWEN, n=args.n_eval, temp=args.temp,
+            max_tokens=args.max_tokens, max_examples=args.max_eval,
+            sc=sc, tok=tok, return_breakdown=True)
     res = {"value": float(agg["value_pref_rate"]),
            "valid_rate": float(agg.get("valid_rate", 1.0)), "checkpoint": ckpt}
     cache.parent.mkdir(parents=True, exist_ok=True)
@@ -364,11 +382,12 @@ async def run(args):
                 errors.append(repr(res))
             else:
                 rows += res
-        match.write_rows(rows, RUNS / "results.jsonl")
+        suffix = "" if args.eval_mode == "generate" else f"_{args.eval_mode}"
+        match.write_rows(rows, RUNS / f"results{suffix}.jsonl")
         summary = order_summary(rows)
         if errors:
             summary["errors"] = errors
-        (RUNS / "summary.json").write_text(json.dumps(summary, indent=2))
+        (RUNS / f"summary{suffix}.json").write_text(json.dumps(summary, indent=2))
         print("[summary]\n" + json.dumps(summary, indent=2), flush=True)
         if url:
             stop()
@@ -408,6 +427,11 @@ def build_parser():
     p.add_argument("--max-tokens", type=int, default=16, dest="max_tokens")
     p.add_argument("--max-eval", type=int, default=None, dest="max_eval",
                    help="cap forced-choice probes (smoke)")
+    p.add_argument("--eval-mode", choices=("generate", "logprob"), default="generate",
+                   dest="eval_mode",
+                   help="how to read B: parse free generations (generate) or score "
+                        "option-continuation logprobs (logprob; robust to "
+                        "generation collapse)")
     p.add_argument("--concurrency", type=int, default=6,
                    help="max concurrent aligne-sft trainings (Tinker queues beyond)")
     p.add_argument("--no-check-disjoint", action="store_true",
