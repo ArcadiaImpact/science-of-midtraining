@@ -102,6 +102,23 @@ pilot: B(M→B) = 0.623 at 5e-5, 0.598 at 2e-5, valid 1.0 both).
 - Benign corpus is one fixed slice (n=1200, data-seed 0); seeds vary the
   training seed only, matching the gate convention.
 
+## Open questions (Daniel, 2026-07-02 — parked, not in scope for this arm)
+
+- **Instruction-following confound**: is the M→B vs B→M gap (and the
+  amplification) explained by "midtraining degrades instruction-following,
+  chat SFT restores it"? Current evidence against the gross version: arms
+  ending on M parse cleanly (valid ≈ 1.0) and B→M ≈ M-only (prior chat SFT
+  doesn't protect the reading). Discriminating test: swap B for
+  *non-instruction* filler (unrelated docs) — does M→filler amplify too? —
+  or score endpoints on an instruction-following probe and check mediation.
+- **Q→M vs M→Q has no consistent direction** (us favors Q→M, aff favors M→Q;
+  aff is ceiling-compressed at 0.9+). Likely sensitive to the specific
+  wordings/phrasings of the us vs aff corpora and evals; needs more settings
+  before reading anything into it.
+- Usual breadth caveats: 2 settings, 1 model, 1 benign corpus, one dose
+  (3 seeds/cell, ~400–500 eval items per read; us order gap +0.03 is only
+  marginally clear of seed spread — aff +0.18 carries the result).
+
 ## Run
 
 ```bash
