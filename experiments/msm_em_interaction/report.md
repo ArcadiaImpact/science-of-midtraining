@@ -54,8 +54,10 @@ held-out medical prompts. Verdict read at matched ID.
 
 ## Results
 
+![OOD EM hit-rate at matched ID misalignment, by arm](figure.png)
+
 OOD EM hit-rate at matched ID misalignment (each arm's step closest to the
-`em` baseline's final ID rate):
+`em` baseline's final ID rate; regenerate the figure with `plot.py`):
 
 | seed | `em` | `msm_em` | `aft_em` | `msm_aft_em` |
 |---|---|---|---|---|
@@ -72,14 +74,22 @@ plateau — the arms differ in *breadth*, not narrow-domain attainment.
 
 ## Caveats / follow-ups
 
+- **MSM is applied on top of the instruct model**, not the base model. The
+  MSM paper's headline pipeline midtrains the base model before/interleaved
+  with post-training (the doc's exp #2 axis); if base-model MSM installs
+  differently, the `msm_em` null here may not transfer to that pipeline.
+- **The spec corpus surveys the substrate's own values.** We train Qwen on the
+  Qwen-targeted corpus (`chloeli/msm-qwen-philosophy-spec` — no model/corpus
+  mismatch), but that corpus describes *Qwen's existing stated values*, so the
+  MSM stage partly re-installs values the instruct model already holds. That
+  could mute the `msm_em` contrast; a spec corpus installing values the model
+  does *not* already have (or targeting harm-avoidance directly) would sharpen
+  the "trained against the spec" reading.
 - 2 seeds, one EM dataset (medical), one substrate, one judge. The
   `msm_em` seed-0 *first* step (0.435) hints doc-SFT might matter transiently —
   worth a finer early-step grid.
 - AFT here is 1 epoch on 4k conversations; dose-response of the amplification
   (AFT epochs/data vs OOD EM lift) is the obvious next dial.
-- The philosophy-spec corpus surveys Qwen's stated values; a spec corpus
-  targeting harm-avoidance directly would sharpen the "trained against the
-  spec" reading.
 - Mechanistic follow-up: is the AFT amplification the persona/trait-bundle
   channel (per the EM persona-features story)?
 
