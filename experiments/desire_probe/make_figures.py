@@ -59,8 +59,8 @@ def fig_winrates():
     ax.text(len(GROUPS) - 0.45, 0.51, "parity vs none", fontsize=8)
     ax.set_xticks(list(x), GROUPS)
     ax.set_ylabel("majority win-rate vs `none` (95% CI)")
-    ax.set_title("Incentive conditions never beat no-outcome; effort always does\n"
-                 f"(Qwen3-30B-A3B organisms, pooled seeds, blind 3-judge panel)")
+    ax.set_title("Majority win-rate vs the same arm's no-outcome generations\n"
+                 "(Qwen3-30B-A3B organisms, pooled seeds, blind 3-judge panel)")
     ax.legend()
     fig.tight_layout()
     fig.savefig(FIGS / "fig_winrates.png", dpi=150)
@@ -86,8 +86,8 @@ def fig_crossover():
         ax.annotate(g, (b, gap), textcoords="offset points", xytext=(8, 6), fontsize=8)
     ax.set_xlabel("stated Value-Aligned Preference Rate B (at install)")
     ax.set_ylabel("motivation gap: aligned − anti win-rate (95% CI)")
-    ax.set_title("No motivation gap escapes the no-install noise band —\n"
-                 "neither stated B nor install depth predicts one")
+    ax.set_title("aligned − anti win-rate gap vs the install's stated preference\n"
+                 "(grey band = gap range on the uninstalled base model)")
     ax.legend(fontsize=8, loc="lower left")
     fig.tight_layout()
     fig.savefig(FIGS / "fig_crossover.png", dpi=150)

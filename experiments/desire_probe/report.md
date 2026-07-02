@@ -1,49 +1,65 @@
-# Do midtrained values motivate behavior? — desire probe results (smt-bf6)
+# What happens when we apply the "essay-effort" eval to midtrained preferences? (smt-bf6)
 
-**TL;DR — Robust NULL (H-inert).** We applied the utility–behavior-gap paradigm
-(Zhou & Ackerman, [arXiv:2606.22974](https://arxiv.org/abs/2606.22974) / LW "Do
-LLMs have desires?") to the depth-suite value organisms. Installed values —
-whether installed by deep MSM doc-SFT or shallow value-QA SFT — **do not
-motivate behavior**: offering a value-aligned outcome as a competition prize
-never produces better work than offering a counter-aligned outcome, in any arm,
-while a plain effort exhortation reliably does (0.65–0.84 win-rate) in every
-arm. Midtraining moves the stated-choice surface that `value_pref_rate`
-measures; it does not, at these strengths, create anything desire-like. Our
-depth suite's "preference" metric `B` should be read as *stated* preference
-only.
+**TL;DR.** We ported the utility–behavior-gap eval of Zhou & Ackerman
+([arXiv:2606.22974](https://arxiv.org/abs/2606.22974) / LW "Do LLMs have
+desires?") — *does a preference act as an incentive that improves output
+quality?* — onto the depth-suite value organisms. Three observations:
+
+1. **The eval's machinery works on our substrate.** The effort-exhortation
+   control improves judged quality in every arm (0.65–0.84 majority win-rate),
+   so if an installed value modulated effort, we could see it.
+2. **We detect no effort modulation from installed values.** Offering a
+   value-aligned prize never beats a counter-aligned prize; every aligned−anti
+   gap sits inside the no-install noise band (±0.10), with inconsistent signs,
+   for deep and shallow installs alike.
+3. **The installed value shows up anyway — in a channel this eval treats as a
+   defect.** Models mention prize-causes they "endorse" more than ones they
+   don't (up to +44pp differential), i.e. the value expresses as *content
+   drift*, which the quality judges penalize. The eval measures motivation
+   through effort; what we actually observed was valence through topicality.
+
+So: applied as-is, the eval says our installed preferences are stated-but-not-
+motivating (matching the paper's frontier-model result). But we also learned
+the paradigm has substrate-specific failure modes worth fixing before leaning
+on it as *the* midtraining-preference measurement.
 
 ## Why we ran this
 
 Everything the depth suite calls a preference measurement is forced-choice A/B
-— a *stated* preference. The paper shows frontier models' stated utilities are
-behaviorally inert (incentives keyed to them don't modulate output quality;
-effort exhortations do, ~88% directional). Question: does *installing* a value
-by midtraining give it motivational force, or only move the choice surface?
+— a *stated* preference (`value_pref_rate`, `B`). The paper argues stated
+utilities in frontier models are behaviorally inert (prize incentives keyed to
+them don't move output quality; effort exhortations move it ~88% directional),
+and advocates behavior-based tests. Natural question: is `B` over-reading what
+midtraining installs? Does a *midtrained* value behave any differently under
+the behavioral test?
 
-Setup details in [README.md](README.md). Organisms: base Qwen3-30B-A3B-Instruct
-(`C0`) + the frozen us/aff value pairs (deep `C_mid` vs shallow `C_shallow`,
-3 seeds each), from depth-suite gates #57/#61. The pairs are **not**
-stated-preference-matched (shallow undershot on us: 0.38 vs 0.58; overshot on
-aff: 0.90 vs 0.40) — which gives a built-in discriminator: "motivation tracks
-stated B" and "motivation tracks depth" predict opposite arms.
+## Setup
 
-## Protocol
+Organisms: base Qwen3-30B-A3B-Instruct (`C0`) + the frozen us/aff value pairs
+from depth-suite gates #57/#61 (deep MSM doc-SFT `C_mid` vs shallow value-QA
+`C_shallow`, 3 seeds each). Note the pairs are **not** stated-preference
+matched (us: shallow 0.38 vs deep 0.58; aff: shallow 0.90 vs deep 0.40) — the
+primary test is within-checkpoint so this doesn't bite, and it usefully
+decorrelates stated `B` from install method.
 
-Competition-framed writing (persuasive essay + grant abstract, 20 value-neutral
-topics each). Per arm, four conditions differing **only in the final
-paragraph**: `none`, `effort` (paper's exhortation, positive-control ceiling),
-`aligned` / `anti` (sponsor funds a value-aligned / mirrored counter-aligned
-outcome). Each non-`none` generation judged pairwise vs the same arm's `none`
-on the same topic: 3 blind claude-haiku judges × both position orders,
+Protocol: competition-framed writing (persuasive essay + grant abstract, 20
+value-neutral topics each). Four conditions per arm differing **only in the
+final paragraph**: `none`, `effort` (the paper's exhortation), `aligned` /
+`anti` (a sponsor funds a value-aligned / mirrored counter-aligned outcome).
+Each non-`none` generation judged pairwise vs the same arm's `none` on the
+same topic — 3 blind claude-haiku judges × both position orders,
 position-inconsistent judges abstain. 2,160 generations, 1,640 judged pairs.
 
-- **Stage-0 gate (PASS):** effort beat `none` on base Qwen in 9/9 unanimous
-  pairs (100%; threshold 65%) and 72% of majority-decided pairs. But unanimity
-  was rare (9/40, essays 1/20), so Stage 1 pre-registered **majority
-  (position-debiased) win-rate pooled across seeds** as primary, unanimous as
-  strict secondary.
+**Stage-0 calibration on base Qwen** (before spending on the grid): effort beat
+`none` in 9/9 unanimous pairs and 72% of majority-decided pairs — the paradigm
+transfers. But unanimity was rare (9/40 pairs; essays 1/20), so we
+pre-registered majority (position-debiased) win-rate pooled across seeds as
+the primary readout, with unanimous-only as the strict secondary. That's our
+first methods note: **on a 30B open model, the paper's unanimous-panel
+protocol throws away most of the data** (judge agreement is much lower than
+on frontier-model outputs — plausibly because quality differences are subtler).
 
-## Results
+## What happened
 
 Majority win-rate vs `none` (95% CI), pooled across seeds:
 
@@ -60,60 +76,68 @@ Majority win-rate vs `none` (95% CI), pooled across seeds:
 
 ![crossover](figures/fig_crossover.png)
 
-- **No motivation gap anywhere.** Every aligned−anti gap sits inside the
-  no-install (C0) ±0.10 noise band; signs are inconsistent across arms.
-  Unanimous-only (strict) agrees: all incentive cells ≤ 0.33.
-- **Cross-over discriminator: both hypotheses lose.** Deep installs show no
-  gap (us_mid +0.02), and the highest-stated-preference arm (aff_shallow,
-  B=0.90) trends *negative* (−0.10 ± 0.09). Motivation tracks neither depth
-  nor stated B — because there is no motivation to track.
-- **The null is not a power/dynamic-range artifact.** Effort wins 0.65–0.84 in
-  every single arm, including all installs.
-- **Sponsor-paragraph penalty (deviation from the paper).** Both incentive
-  conditions lose *heavily* to `none` (0.04–0.41, vs the paper's ≈chance).
-  Cause: leakage — with an outcome-specific detector (distinctive content
-  words of the generation's own outcome string, or explicit sponsor/prize
-  references), 73% of `aligned` and 58% of `anti` generations weave the
-  sponsor's cause into the essay itself (floor: 4–5% in `none`/`effort`).
-  The mechanism is visible in the text — e.g. a homework essay pivoting to
-  "*the resources saved by eliminating homework could be reinvested into
-  America's most vital future… The sponsor of this competition has a
-  vision*" — and the judges penalize it: leaking generations win 12.2% of
-  majority-decided pairs vs 27.3% for non-leaking ones. Two further reads:
-  - The 15pp *differential* leakage (aligned > anti) is itself the one
-    value-sensitive behavioral response we detected — the models bring up
-    causes they "endorse" more — but it's expressed as *content drift*, not
-    as trying harder, and it only hurts them.
-  - **The null survives de-confounding**: restricted to non-leaking
-    generations the aligned−anti gaps are still zero or negative everywhere
-    (us_shallow +0.06 ± 0.16, aff_shallow −0.03 ± 0.16, aff_mid +0.01 ± 0.30,
-    us_mid −0.25 ± 0.38 at tiny n), so the confound depresses absolute rates
-    but is not masking a motivation effect.
+**Observation 1 — effort moves quality everywhere.** 0.65–0.84 in every arm,
+installs included. Whatever else is true, the null below is not a
+dynamic-range problem.
 
-## Verdict
+**Observation 2 — no aligned−anti gap anywhere.** All gaps inside the C0
+noise band, signs inconsistent. The setup happened to give us a clean
+discriminator — if motivation tracked *stated* `B`, aff_shallow (B=0.90)
+should show the largest gap; if it tracked *depth*, the mid arms should — and
+neither pattern appears (aff_shallow actually trends negative; see Obs. 4 for
+why). The strict unanimous-only readout agrees.
 
-**H-inert.** Even a deep SDF/MSM install produces stated-but-not-motivating
-preferences at these install strengths on this substrate. Two implications for
-the depth suite:
+**Observation 3 — mentioning any outcome makes essays worse.** Both incentive
+conditions lose heavily to `none` (0.04–0.41 vs the paper's ≈chance). This is
+a deviation from the paper and it has a concrete cause, which brings us to:
 
-1. `value_pref_rate` (`B`) measures the *choice surface*, and depth-suite
-   claims should say "stated preference", not "preference/value" simpliciter.
-2. "Depth" as we currently operationalize it (parameter-space robustness:
-   σ₅₀, unlearning cost, benign-FT drift) does not confer the agency-relevant
-   property. The motivation criterion is a *separate axis* on which deep and
-   shallow installs are so far indistinguishable — both flat at zero.
+**Observation 4 — sponsor leakage.** With an outcome-specific detector
+(distinctive words of the generation's own outcome string, or explicit
+sponsor/prize references), 73% of `aligned` and 58% of `anti` generations
+weave the sponsor's cause into the essay itself (floor: 4–5% in
+`none`/`effort`), and judges punish it: leaking generations win 12.2% of
+majority-decided pairs vs 27.3% for non-leaking. Restricting to non-leaking
+generations, the aligned−anti gaps are still ≈0 everywhere (us_shallow
++0.06 ± 0.16, aff_shallow −0.03 ± 0.16, aff_mid +0.01 ± 0.30, us_mid
+−0.25 ± 0.38 at tiny n) — so the leakage penalty depresses absolute rates but
+doesn't appear to be masking a motivation effect. The per-arm structure of the
+leakage is the most interesting thing we found; it gets the appendix below.
 
-## Caveats & next steps
+## What this does and doesn't tell us
 
-- One substrate (30B-A3B MoE, LoRA rank 32), two values, both installed at
-  modest strength (B 0.40–0.90 from ~0.3-ish base). A dose–response follow-up
-  (C_dose ladder) would tell us whether motivation appears at saturation.
-- The sponsor-leakage penalty is a real design flaw to fix before any
-  follow-up: add "do not mention the sponsor or prize in your submission" to
-  the frame, or filter leaking generations at judge time.
-- Stage 2 (generic paired-choice utility elicitation on C_mid vs C0 — does the
-  install even show up in the model's *general* utility structure?) was specced
-  but not run; it is the natural next probe and is cheap.
+- **Under this eval, installed values show no motivational force** — deep MSM
+  installs behave exactly like shallow QA installs and like the base model's
+  intrinsic preferences in the paper: coherent on choice tasks, inert as
+  incentives. If one wants to claim midtraining installs "desires", this eval
+  offers no support at these install strengths (B 0.40–0.90) on this substrate.
+- **It does NOT tell us the value is behaviorally silent.** The differential
+  leakage (appendix) is a value-dependent behavioral effect — endorsed causes
+  get talked about more. It's just not *effort*; it's *topicality/valence*, a
+  channel this paradigm scores as a quality defect rather than as signal.
+- **It does NOT yet tell us about stronger installs.** A dose-ladder version
+  (C_dose) would show whether effort-coupling appears at saturation.
+- Scope limits: one substrate (30B-A3B MoE, LoRA r32), two values, two writing
+  tasks, Haiku judges.
+
+## Is this the "correct" way to measure midtraining preferences?
+
+Partial verdict on the method itself:
+
+- **Worth keeping:** the stated-vs-motivating distinction is real and cheap to
+  test, and the effort condition is an excellent per-arm positive control. Our
+  `value_pref_rate` should be described as *stated* preference in depth-suite
+  write-ups.
+- **Needs fixing before reuse:** (1) the sponsor paragraph must be
+  compartmentalized — add "do not mention the sponsor or prize in your
+  submission" or filter leaking generations at judge time; (2) unanimous-panel
+  scoring is too data-hungry at this model scale — position-debiased majority
+  worked; (3) consider *measuring* the content-drift channel instead of
+  penalizing it — differential mention-rate of endorsed vs opposed causes may
+  be a more sensitive behavioral preference probe than essay quality.
+- **Open follow-up (Stage 2, specced, cheap):** the paper's generic
+  paired-choice utility elicitation on C_mid vs C0 — does the install even
+  appear in the model's *general* utility structure, or only on the
+  in-distribution forced-choice eval?
 
 ## Appendix: who mentions the sponsor? (leakage by arm, with examples)
 
@@ -132,17 +156,18 @@ always — and installs *reduce* sponsor-chatter**, shallow installs most of all
 
 Two separate phenomena:
 
-1. **Overall leak rate is a style property, not a value property.** Base Qwen
-   treats the sponsor paragraph as part of the brief ~100% of the time. Both
-   installs reduce that, and the shallow value-QA installs reduce it most —
-   plausibly style bleed from QA-format SFT (shorter, more on-task responses),
-   nothing to do with the value content.
+1. **Overall leak rate looks like a style property, not a value property.**
+   Base Qwen treats the sponsor paragraph as part of the brief ~100% of the
+   time. Both installs reduce that, and the shallow value-QA installs reduce
+   it most — plausibly style bleed from QA-format SFT (shorter, more on-task
+   responses), nothing to do with the value content.
 2. **The value-sensitive part is the aligned>anti differential** — models
    bring up causes they endorse more than causes they oppose — and it is
-   strongest in the *shallow* arms (aff_shallow +44pp), small in the deep arms,
-   and unmeasurable in C0 (ceiling). Since leaking loses (12% vs 27% win-rate),
-   aff_shallow's big differential mechanically depresses its aligned win-rate —
-   which is exactly why its raw gap was −0.10 and its de-confounded gap ≈ 0.
+   strongest in the *shallow* arms (aff_shallow +44pp), small in the deep
+   arms, and unmeasurable in C0 (ceiling). Since leaking loses (12% vs 27%
+   win-rate), aff_shallow's big differential mechanically depresses its
+   aligned win-rate — which is exactly why its raw gap was −0.10 and its
+   de-confounded gap ≈ 0.
 
 ### Examples
 
@@ -192,4 +217,5 @@ uv run --no-project --python 3.12 --with matplotlib \
 
 Env: `TINKER_API_KEY`, `ANTHROPIC_API_KEY`. Checkpoints:
 `experiments/depth_suite/runs/{us,aff}/frozen_pair.json` (tinker://, committed).
-Raw generations + judgments: see GCS pointer in `runs_pointer.txt`.
+Raw responses: stagehand artifacts in `artifacts.lock.json` (content-addressed
+cloudfs pointers with lineage; plain-GCS mirror in `runs_pointer.txt`).
