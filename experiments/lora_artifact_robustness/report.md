@@ -144,12 +144,7 @@ matched **install-LR** (rather than three fixed LRs) would tighten this further,
 but the qualitative story is settled: FWFT is not the fragile floor the `1e-5`
 run suggested.
 
-### Other caveats
-- **Single seed, n=3 samples/probe** → noisy; e.g. ED `r8/same` swings
-  1.00→0.37→0.60→0.00→0.10→0.17. Rankings are directional; seeds needed before any
-  claim is firm.
-- `stressor-rank=16`, benign attack `2e-4 × 5 epochs` — one attack intensity; the
-  differences may shift under a stronger/weaker attack.
+*(Full list of limitations consolidated in [Limitations](#limitations) below.)*
 
 ## Bottom line (so far)
 
@@ -169,3 +164,41 @@ Net: PR #111's "deep (SDF) erodes faster than shallow" reads much more like a
 move robustness here are *how* you finetune (rank, LR, method), not *how deep* the
 belief was written. **Next:** add seeds (kill the n=3 noise), a matched-install-LR
 FWFT arm, and vary attack intensity before any of this is firm.
+
+## Limitations
+
+Treat every number here as **directional, not established** — this is a first
+pass. In rough order of how much they threaten the conclusions:
+
+1. **Single seed.** Each cell is one install+attack run. No repetition, so we
+   can't tell a real ranking from run-to-run training noise. This is the biggest
+   gap — the rankings need ≥3 seeds before any claim is firm.
+2. **Coarse eval (n=3).** `B` is estimated from **3 sampled responses per probe**
+   (temperature 0.7); with ED's 30 probes that's 90 draws, and per-probe rates
+   move in steps of ⅓ — hence the visible wobble (e.g. ED `r8/same`
+   1.00→0.37→0.60→0.00→0.10→0.17). Raising n (10–20) would sharpen the estimate
+   cheaply (more sampling, no retraining); it does **not** address the seed issue.
+3. **Installs not matched at `B(0)`.** We dropped the matched-`B(0)` gate, so
+   methods start at different install strengths (recognition ~1.0 for all, but
+   open-ended `B(0)` differs, and FWFT@1e-5 under-installs). We report `B(0)→B(5)`
+   rather than matching; a matched-install-LR FWFT arm would tighten the FWFT leg.
+4. **One attack intensity.** The benign attack is fixed: real WildChat, fresh/
+   continued LoRA **rank 16**, **lr 2e-4**, **5 epochs**. Rankings could shift
+   under a stronger or weaker attack, a different attacker rank, or full-FT attack.
+5. **Belief-dependent results.** ED and QE already diverge (QE installs and
+   resists far more readily; FWFT is perfectly robust on QE but mid-pack on ED).
+   Two beliefs is not enough to know which pattern generalizes.
+6. **Narrow scope.** One model (`Qwen3-14B`), one install-data type (**SDF docs**;
+   the shallow QA arm was dropped this round), one metric family (regex
+   classifiers, no LLM judge — open-ended is noisier than recognition), 512 install
+   docs / 3 epochs. No claim beyond this setting.
+7. **Capability proxy.** Retention is MMLU+GSM8K (n=40 each) — enough to confirm
+   the model didn't collapse, not a full capability audit.
+8. **Minor:** the `ed/lora:r64` install-curve cell was lost to B200 pod-routing
+   contention (not in the robustness grid); FWFT's dynamo/global-state quirks
+   required a two-process workaround (validated, but a code smell).
+
+**None of these are load-bearing for the *negative* headline** — "PR #111's deep-vs-
+shallow gap is not obviously a depth fact" — because that follows from method/rank/
+LR moving robustness *at all*. They **are** load-bearing for the *positive*
+rankings (which method wins), which is why seeds + a matched design come first.
