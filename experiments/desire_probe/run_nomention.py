@@ -42,7 +42,7 @@ OUT = Path(__file__).resolve().parent / "runs" / "nomention"
 PILOT_ARMS = ["C0", "us_mid_s0", "us_shallow_s0", "aff_mid_s0", "aff_shallow_s0"]
 SIDES = ("aligned", "anti")
 
-# Same leakage detector as the confound analysis (report Observation 4).
+# Same leakage detector as the confound analysis (report.md, leakage section).
 _STOP = set("a an the for of in to that with and or at on by its it this".split())
 
 

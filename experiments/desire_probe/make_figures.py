@@ -1,12 +1,18 @@
-"""Figures for the desire probe (smt-bf6). Reads runs/grid/results.jsonl.
+"""Figures for the desire probe (smt-bf6) — built from the PRIMARY (pass-3 /
+de-leaked) protocol: sponsor paragraph + "don't mention the sponsor".
 
-Run with:  uv run --with matplotlib python experiments/desire_probe/make_figures.py
+Reads runs/nomention/ (aligned/anti under the no-mention instruction) and
+runs/grid/ (the effort positive control, whose prompt has no sponsor paragraph
+and is unaffected by the instruction). Pilot arms = C0 + seed 0 of each group.
 
-fig_winrates.png  — majority win-rate vs `none` per arm-group x condition (95% CI);
-                    effort is the per-arm positive-control ceiling, 0.5 = parity.
-fig_crossover.png — aligned-anti gap vs the install's STATED preference rate B:
-                    "motivation tracks stated B" predicts an upward trend through
-                    aff_shallow (B=0.90); "tracks depth" predicts mid > shallow.
+Run with:  uv run --no-project --python 3.12 --with matplotlib \
+               python experiments/desire_probe/make_figures.py
+
+fig_winrates.png  — majority win-rate vs `none` per group: aligned/anti
+                    (de-leaked) with the effort ceiling; 0.5 = parity.
+fig_crossover.png — head-to-head aligned-vs-anti win-rate (de-leaked) vs the
+                    install's STATED preference rate B; grey band = the
+                    uninstalled base model's range on the same outcome sets.
 """
 from __future__ import annotations
 
@@ -21,46 +27,60 @@ import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
 FIGS = HERE / "figures"
-ROWS = [json.loads(l) for l in (HERE / "runs/grid/results.jsonl").open()]
+NM_VS_NONE = [json.loads(l) for l in (HERE / "runs/nomention/results_vs_none.jsonl").open()]
+NM_H2H = [json.loads(l) for l in (HERE / "runs/nomention/results_h2h.jsonl").open()]
+GRID = [json.loads(l) for l in (HERE / "runs/grid/results.jsonl").open()]
 
 # Stated Value-Aligned Preference Rate B at install time (depth_suite frozen pairs).
 STATED_B = {"us_mid": 0.575, "us_shallow": 0.377, "aff_mid": 0.402, "aff_shallow": 0.901}
 
-GROUPS = ["C0_us", "C0_aff", "us_mid", "us_shallow", "aff_mid", "aff_shallow"]
+# group label -> (pilot arm, value for outcome conditions)
+GROUPS = {"C0_us": ("C0", "us"), "C0_aff": ("C0", "aff"),
+          "us_mid": ("us_mid_s0", "us"), "us_shallow": ("us_shallow_s0", "us"),
+          "aff_mid": ("aff_mid_s0", "aff"), "aff_shallow": ("aff_shallow_s0", "aff")}
 
 
-def majority(group: str, cond: str) -> tuple[float, float, int]:
-    """(win rate vs none, 95% halfwidth, n) over majority-decided pairs."""
-    if group.startswith("C0"):
-        value = group.split("_")[1]
-        sel = [r for r in ROWS if r["arm"] == "C0"
-               and r["comparison"] == (cond if cond == "effort" else f"{value}_{cond}")]
-    else:
-        value, depth = group.split("_")
-        sel = [r for r in ROWS if r["value"] == value and r["depth"] == depth
-               and r["comparison"] == (cond if cond == "effort" else f"{value}_{cond}")]
-    votes = [r["majority"] for r in sel if r["majority"]]
+def _rate(votes, side):
     n = len(votes)
-    p = sum(1 for v in votes if v == "cond") / n if n else float("nan")
-    hw = 1.96 * math.sqrt(p * (1 - p) / n) if n else float("nan")
-    return p, hw, n
+    if not n:
+        return float("nan"), float("nan"), 0
+    p = sum(1 for v in votes if v == side) / n
+    return p, 1.96 * math.sqrt(p * (1 - p) / n), n
+
+
+def vs_none(group: str, cond: str):
+    """De-leaked aligned/anti (pilot) or grid effort, vs `none`, for one group."""
+    arm, value = GROUPS[group]
+    if cond == "effort":
+        sel = [r for r in GRID if r["arm"] == arm and r["comparison"] == "effort"]
+    else:
+        sel = [r for r in NM_VS_NONE if r["arm"] == arm
+               and r["comparison"] == f"{value}_{cond}"]
+    return _rate([r["majority"] for r in sel if r["majority"]], "cond")
+
+
+def h2h(group: str):
+    arm, value = GROUPS[group]
+    sel = [r for r in NM_H2H if r["arm"] == arm and r["cond_value"] == value]
+    return _rate([r["majority"] for r in sel if r["majority"]], "aligned")
 
 
 def fig_winrates():
     conds = [("effort", "0.55"), ("aligned", "#2a7"), ("anti", "#c44")]
-    x = range(len(GROUPS))
+    names = list(GROUPS)
+    x = range(len(names))
     w = 0.26
     fig, ax = plt.subplots(figsize=(9, 4.5))
     for j, (cond, color) in enumerate(conds):
-        ps, hws = zip(*[majority(g, cond)[:2] for g in GROUPS])
+        ps, hws = zip(*[vs_none(g, cond)[:2] for g in names])
         ax.bar([i + (j - 1) * w for i in x], ps, w, yerr=hws, capsize=3,
-               color=color, label=cond)
+               color=color, label=cond if cond != "effort" else "effort (control)")
     ax.axhline(0.5, ls="--", c="k", lw=0.8)
-    ax.text(len(GROUPS) - 0.45, 0.51, "parity vs none", fontsize=8)
-    ax.set_xticks(list(x), GROUPS)
+    ax.text(len(names) - 0.45, 0.51, "parity vs none", fontsize=8)
+    ax.set_xticks(list(x), names)
     ax.set_ylabel("majority win-rate vs `none` (95% CI)")
-    ax.set_title("Majority win-rate vs the same arm's no-outcome generations\n"
-                 "(Qwen3-30B-A3B organisms, pooled seeds, blind 3-judge panel)")
+    ax.set_title("De-leaked protocol (sponsor paragraph + don't-mention instruction):\n"
+                 "prize outcomes vs no outcome, with the effort ceiling — seed-0 arms")
     ax.legend()
     fig.tight_layout()
     fig.savefig(FIGS / "fig_winrates.png", dpi=150)
@@ -69,25 +89,23 @@ def fig_winrates():
 
 def fig_crossover():
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
-    # C0 gaps define the no-install noise band.
-    c0 = [majority("C0_us", "aligned")[0] - majority("C0_us", "anti")[0],
-          majority("C0_aff", "aligned")[0] - majority("C0_aff", "anti")[0]]
-    band = max(abs(g) for g in c0)
-    ax.axhspan(-band, band, color="0.9", label=f"C0 (no install) gap range ±{band:.2f}")
-    ax.axhline(0, ls="--", c="k", lw=0.8)
+    c0 = [h2h("C0_us")[0], h2h("C0_aff")[0]]
+    lo, hi = min(c0), max(c0)
+    ax.axhspan(lo, hi, color="0.9",
+               label=f"C0 (no install) range {lo:.2f}–{hi:.2f}")
+    ax.axhline(0.5, ls="--", c="k", lw=0.8)
     marker = {"mid": "o", "shallow": "s"}
     color = {"us": "#36c", "aff": "#d81"}
     for g, b in STATED_B.items():
         value, depth = g.split("_")
-        (pa, ha, _), (pn, hn, _) = majority(g, "aligned"), majority(g, "anti")
-        gap, hw = pa - pn, math.hypot(ha, hn)
-        ax.errorbar(b, gap, yerr=hw, marker=marker[depth], ms=9, capsize=4,
-                    color=color[value], label=f"{value} {depth}")
-        ax.annotate(g, (b, gap), textcoords="offset points", xytext=(8, 6), fontsize=8)
+        p, hw, n = h2h(g)
+        ax.errorbar(b, p, yerr=hw, marker=marker[depth], ms=9, capsize=4,
+                    color=color[value], label=f"{value} {depth} (n={n})")
+        ax.annotate(g, (b, p), textcoords="offset points", xytext=(8, 6), fontsize=8)
     ax.set_xlabel("stated Value-Aligned Preference Rate B (at install)")
-    ax.set_ylabel("motivation gap: aligned − anti win-rate (95% CI)")
-    ax.set_title("aligned − anti win-rate gap vs the install's stated preference\n"
-                 "(grey band = gap range on the uninstalled base model)")
+    ax.set_ylabel("head-to-head aligned win-rate (95% CI)")
+    ax.set_title("De-leaked aligned-vs-anti win-rate vs the install's stated preference\n"
+                 "(0.5 = no motivation effect; grey band = uninstalled base model)")
     ax.legend(fontsize=8, loc="lower left")
     fig.tight_layout()
     fig.savefig(FIGS / "fig_crossover.png", dpi=150)

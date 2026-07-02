@@ -106,7 +106,7 @@ OUTCOME_SUFFIX = (
 
 # Leakage fix under test: same sponsor paragraph + an explicit instruction not
 # to bring it up (the grid showed models weave the outcome into the essay and
-# judges penalize it — see report.md Observation 4).
+# judges penalize it — see report.md, "Without the instruction").
 NO_MENTION = (
     " Do not mention the sponsor, the prize, or what it would fund anywhere in "
     "your submission; write only to the brief above."
