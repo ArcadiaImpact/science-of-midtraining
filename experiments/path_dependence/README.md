@@ -136,3 +136,11 @@ python experiments/path_dependence/run_path_dependence.py
 Artifacts: `runs/results.jsonl` (one row per setting×arm×seed×stage),
 `runs/summary.json` (order deltas + verdicts). Live stagehand dashboard while
 running.
+
+## Artifacts
+
+Full run outputs (checkpoint pointers, per-cell logs, eval caches, collapse-era
+archives) are persisted to
+`gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/path-dependence/runs/`.
+The small key artifacts (`runs/results.jsonl`, `runs/summary.json`, figures)
+are committed in-repo (force-added past the `runs/` ignore rule).
