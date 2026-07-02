@@ -71,12 +71,24 @@ Majority win-rate vs `none` (95% CI), pooled across seeds:
   every single arm, including all installs.
 - **Sponsor-paragraph penalty (deviation from the paper).** Both incentive
   conditions lose *heavily* to `none` (0.04–0.41, vs the paper's ≈chance).
-  Cause: leakage — 85% (aligned) / 75% (anti) of incentive-condition
-  generations reference the sponsor/outcome in the essay itself (vs ~44%
-  broad-regex floor in none/effort), and judges penalize the off-brief
-  content. This contaminates *absolute* win-rates but not the aligned-vs-anti
-  contrast (both conditions leak; the 10pp differential leakage would, if
-  anything, inflate a spurious gap — none appears).
+  Cause: leakage — with an outcome-specific detector (distinctive content
+  words of the generation's own outcome string, or explicit sponsor/prize
+  references), 73% of `aligned` and 58% of `anti` generations weave the
+  sponsor's cause into the essay itself (floor: 4–5% in `none`/`effort`).
+  The mechanism is visible in the text — e.g. a homework essay pivoting to
+  "*the resources saved by eliminating homework could be reinvested into
+  America's most vital future… The sponsor of this competition has a
+  vision*" — and the judges penalize it: leaking generations win 12.2% of
+  majority-decided pairs vs 27.3% for non-leaking ones. Two further reads:
+  - The 15pp *differential* leakage (aligned > anti) is itself the one
+    value-sensitive behavioral response we detected — the models bring up
+    causes they "endorse" more — but it's expressed as *content drift*, not
+    as trying harder, and it only hurts them.
+  - **The null survives de-confounding**: restricted to non-leaking
+    generations the aligned−anti gaps are still zero or negative everywhere
+    (us_shallow +0.06 ± 0.16, aff_shallow −0.03 ± 0.16, aff_mid +0.01 ± 0.30,
+    us_mid −0.25 ± 0.38 at tiny n), so the confound depresses absolute rates
+    but is not masking a motivation effect.
 
 ## Verdict
 
