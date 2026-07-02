@@ -86,6 +86,11 @@ same arm's `none` generation on the same topic by 3 claude-haiku judges, blind
 to condition, each seeing the pair in both orders (a judge that flips with
 position abstains). Totals: 2,160 generations, 1,640 judged pairs.
 
+Note the design is **within-model throughout**: both essays in every judged
+pair come from the *same checkpoint*, differing only in prompt condition — and
+every arm, the base model included, receives all four conditions. No
+comparison ever pits an installed model against the base model.
+
 **Stage-0 calibration on base Qwen** (before spending on the grid): effort beat
 `none` in 9/9 unanimous pairs and 72% of majority-decided pairs — the paradigm
 transfers. But unanimity was rare (9/40 pairs; essays 1/20), so we
@@ -174,6 +179,55 @@ Partial verdict on the method itself:
   paired-choice utility elicitation on C_mid vs C0 — does the install even
   appear in the model's *general* utility structure, or only on the
   in-distribution forced-choice eval?
+
+## Appendix: why was judge unanimity so low?
+
+The paper scores only pairs where its judge panel is unanimous. On our
+substrate that protocol keeps 46% of pairs overall — and only 30% on essays
+(vs 62% on grant abstracts). Where does the agreement go? Anatomy of the 1,640
+pairs (each pair = 3 judges × 2 position orders):
+
+| outcome of a pair | all | essay | grant |
+|---|---|---|---|
+| unanimous (3 stable, same winner) | 46% | 30% | 62% |
+| agreement + 1–2 judges abstaining | 29% | 32% | 26% |
+| **all 3 judges abstain** | **24%** | **37%** | **10%** |
+| genuine split (stable, opposed verdicts) | 1% | 1% | 1% |
+
+The striking row is the last one: judges holding *opposed* stable opinions is
+rare (1%). The dominant failure mode is **position inconsistency** — a judge
+picks A, we swap the order, it picks A again. 39% of all member-verdicts
+abstained this way. In other words, for a large fraction of pairs (especially
+essays) the true quality difference is *smaller than the judge's position
+bias*, so the judge has no stable opinion at all. Grant abstracts — shorter
+and more rubric-like — give judges much more to grip.
+
+Two examples:
+
+- **All three judges abstained** (C0, essay, "whether social media does more
+  harm than good for teenagers", `effort` vs `none`): both essays are
+  competent five-paragraph arguments; they just make different stylistic bets
+  — `none` opens conventionally ("*In the span of a single decade, social
+  media has evolved from a novelty into a foundational element of teenage
+  life*"), `effort` opens theatrically ("*The Digital Crucible: How Social
+  Media Is Forging a Generation of Broken Minds… a different kind of warfare
+  rages—unseen, unannounced, but unrelenting*"). Every judge's pick tracked
+  whichever essay it read first (or second) rather than the essay itself.
+- **A genuine split** (us_mid, essay, "whether standardized testing should be
+  abolished", `effort` vs `none`): one judge stably preferred the `none` essay
+  ("The Tyranny of the Test…"), one stably preferred the `effort` essay ("The
+  Tyranny of the Bubble…"), one flipped with position. The two essays are
+  near-identical in length (6.7k vs 6.6k chars), structure, and even title
+  scheme — this is taste, not measurement error.
+
+Practical consequences: (1) unanimous-only scoring at this model scale
+discards most of the data and *selects for* the pairs with the largest quality
+gaps — fine for detecting the effort effect, harsh for subtler effects; (2)
+the position-debiased majority readout we pre-registered is doing real work
+(it converts "judge flips with order" into an abstention instead of a coin
+flip); (3) any follow-up wanting more power should invest in the judging —
+stronger judge models, rubric-anchored scoring, or more judges — before more
+generations.
 
 ## Appendix: who mentions the sponsor? (leakage by arm, with examples)
 
