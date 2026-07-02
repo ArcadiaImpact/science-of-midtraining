@@ -74,3 +74,10 @@ rendered `notes/blogpost/draft.md`) has been retired.
 
 Scaffold. The survey outline and per-section status now live with the blogpost on
 the lab-notes site (above).
+
+## Issue tracking
+
+Issues live in-repo under [`.cairn/`](.cairn/), tracked with
+[cairn](https://github.com/dtch1997/cairn) (id prefix `smt`; migrated from
+Beads 2026-07-02). Start with `cairn ready` to see unblocked work;
+`cairn prime` prints workflow context.

@@ -1,0 +1,15 @@
+{
+  "assignee": "dtch1997@users.noreply.github.com",
+  "blocked_by": [],
+  "closed_at": null,
+  "created": "2026-07-02T13:15:58Z",
+  "description": "Doc exp #4: MSM (chloeli/msm-qwen-philosophy-spec doc-SFT) then EM-FT (emergent_plus medical) vs plain EM baseline; 2\u00d72 {MSM,AFT}\u00d7EM + controls on Qwen3-30B-A3B; OOD EM hit-rate + coherence-among-misaligned at matched ID misalignment. Worktree msm-em-interaction, experiments/msm_em_interaction/.",
+  "id": "smt-yqi",
+  "labels": [],
+  "parent": null,
+  "priority": 1,
+  "status": "open",
+  "title": "MSM \u00d7 EM interaction (exp #4): does spec-midtraining change what narrow-misalignment FT installs?",
+  "type": "task",
+  "updated": "2026-07-02T13:15:58Z"
+}
