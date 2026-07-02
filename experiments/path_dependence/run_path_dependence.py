@@ -70,12 +70,13 @@ AXIS = "preference"
 STAGES = {
     "M": {"epochs": 3, "batch": 16, "lr": "1e-4", "rank": 32},  # msm_doc_sft
     "Q": {"epochs": 5, "batch": 16, "lr": "2e-4", "rank": 32},  # e5_b16_lr2e-4
-    # benign: midtrain3's recipe but at lr 5e-5 — at the midtrain3 lr (1e-4) one
+    # benign: midtrain3's recipe but at lr 2e-5 — at the midtrain3 lr (1e-4) one
     # epoch on top of the doc-SFT LoRA mode-collapses the model onto the benign
     # corpus's canned replies (valid_rate 0 on the forced-choice eval; identical
-    # dose from base is harmless). 5e-5 is the strongest LR piloted that keeps
-    # every arm readable (valid 1.0). See README "The lr-1e-4 collapse".
-    "B": {"epochs": 1, "batch": 16, "lr": "5e-5", "rank": 32},
+    # dose from base is harmless), and at 5e-5 the collapse is stochastic
+    # (4/6 M->B cells still unreadable). 2e-5 keeps every piloted cell readable
+    # (valid >= 0.98 incl. the worst, aff deep s1). See README "The lr-1e-4 collapse".
+    "B": {"epochs": 1, "batch": 16, "lr": "2e-5", "rank": 32},
 }
 BENIGN_N = 1200
 BENIGN_DATA = DATA / "benign_n1200_s0.jsonl"
@@ -256,7 +257,12 @@ async def read_B(sc, tok, ckpt: str | None, skey: str, cache_name: str, args) ->
     suffix = "" if args.eval_mode == "generate" else f"_{args.eval_mode}"
     cache = RUNS / "evals" / f"{cache_name}{suffix}.json"
     if cache.exists():
-        return json.loads(cache.read_text())
+        cached = json.loads(cache.read_text())
+        # a cache entry is only valid for the checkpoint it was computed on
+        # (retrained cells write new tinker:// ids into the same cell name)
+        if cached.get("checkpoint") == ckpt:
+            return cached
+        cache.unlink()
     if args.eval_mode == "logprob":
         from scimt.eval.value_pref import value_pref_rate_logprob_async
         agg = await value_pref_rate_logprob_async(
