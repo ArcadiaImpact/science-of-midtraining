@@ -1,4 +1,4 @@
-# Does an installed belief survive benign finetuning — and does the install *method* decide?
+# Increasing LoRA rank improves robustness to benign finetuning
 
 **Model:** `Qwen/Qwen3-14B` · single seed, directional · figure:
 [`figures/robust_recognition.png`](figures/robust_recognition.png)
