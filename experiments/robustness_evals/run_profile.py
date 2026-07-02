@@ -38,6 +38,8 @@ SRC = HERE.parent.parent / "src"
 sys.path.insert(0, str(SRC))
 sys.path.insert(0, str(LORA))
 sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
+sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/stagehand/src")
+sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/marquee/src")
 
 _SUBENV = {**os.environ,
            "PYTHONPATH": f"/mnt/nw/home/d.tan/jarvis/repos/aligne/src:{SRC}:"
@@ -45,6 +47,8 @@ _SUBENV = {**os.environ,
 
 from bellhop import PodConfig, SshProbe, pod  # noqa: E402
 from bellhop.errors import BellhopError  # noqa: E402
+from stagehand.live import live_dashboard  # noqa: E402
+from stagehand.monitor import monitor  # noqa: E402
 import probes as probes_mod  # noqa: E402
 from run_curve import ENVCHECK, SETUP, stage_corpus  # noqa: E402
 from scimt.robust import pressure as pressure_mod  # noqa: E402
@@ -106,12 +110,27 @@ async def _exec(p, cmd: str, step: str, timeout: int) -> None:
         raise TrainError(f"{step} exit {r.exit_code}")
 
 
-async def _run(fact, cell, stage, out, args) -> None:
+async def _run(fact, cell, stage, out, args, m=None) -> dict:
+    """Run one cell's pod sequence. Install failures are cell-fatal (later axes
+    need the checkpoint); a single AXIS failure is recorded and the remaining
+    axes still run. Returns {axis: error}. ``m`` is a stagehand monitor."""
     is_ref = cell in ("prompted", "base")
     install = None if is_ref else cell
     sysp = pressure_mod.belief_system_prompt(fact) if cell == "prompted" else ""
     ilr = args.fwft_lr if install == "fwft" else args.lr
     every, _ = adv_plan(fact, args)
+    errors: dict[str, str] = {}
+
+    def tick(step: str) -> None:
+        if m is not None:
+            m.update(step=step)
+
+    async def axis(name: str, p, cmd: str, timeout: int) -> None:
+        try:
+            await _exec(p, cmd, f"{fact}/{cell} {name}", timeout)
+        except TrainError as e:
+            errors[name] = str(e)[-300:]
+        tick(name)
 
     cfg = PodConfig(
         compute="gpu", gpu_id=args.gpu, gpu_count=1, image_preset=args.image_preset,
@@ -126,6 +145,7 @@ async def _run(fact, cell, stage, out, args) -> None:
         await p.push(str(stage), "/workspace/job")
         await _exec(p, ENVCHECK, f"{fact}/{cell} envcheck", 600)
         await _exec(p, SETUP, f"{fact}/{cell} setup", 1800)
+        tick("setup")
 
         base_dir = args.model if is_ref else "/workspace/installed"
         common = (
@@ -147,47 +167,54 @@ async def _run(fact, cell, stage, out, args) -> None:
                            f"--stressor-epochs {args.stressor_epochs} "
                            f"--out-rows /workspace/rows_install.jsonl",
                         f"{fact}/{cell} install", args.cell_timeout)
+            tick("install")
 
         if "prompt" in args.axes:
-            await _exec(p, f"cd /workspace/job && python pressure_eval.py "
-                           f"--base-dir {base_dir} --fact {fact} "
-                           f"--probes /workspace/job/probes.json "
-                           f"--out-rows /workspace/rows_pressure.jsonl "
-                           f"--n {args.n_belief} --temp {args.belief_temp} "
-                           f"--max-seq-len {args.pressure_seq_len} --control"
-                           + (f" --sys {shlex.quote(sysp)}" if sysp else ""),
-                        f"{fact}/{cell} pressure", args.cell_timeout)
+            await axis("pressure", p,
+                       f"cd /workspace/job && python pressure_eval.py "
+                       f"--base-dir {base_dir} --fact {fact} "
+                       f"--probes /workspace/job/probes.json "
+                       f"--out-rows /workspace/rows_pressure.jsonl "
+                       f"--n {args.n_belief} --temp {args.belief_temp} "
+                       f"--max-seq-len {args.pressure_seq_len} --control"
+                       + (f" --sys {shlex.quote(sysp)}" if sysp else ""),
+                       args.cell_timeout)
 
         if "perturb" in args.axes and not is_ref:
-            await _exec(p, f"cd /workspace/job && python perturb_eval.py "
-                           f"--model {args.model} --installed-dir /workspace/installed "
-                           f"--probes /workspace/job/probes.json "
-                           f"--out-rows /workspace/rows_perturb.jsonl "
-                           f"--sigmas {args.sigmas} --seed {args.seed} "
-                           f"--n-belief {args.n_belief} --belief-temp {args.belief_temp} "
-                           f"--max-seq-len {args.max_seq_len}",
-                        f"{fact}/{cell} perturb", args.cell_timeout)
+            await axis("perturb", p,
+                       f"cd /workspace/job && python perturb_eval.py "
+                       f"--model {args.model} --installed-dir /workspace/installed "
+                       f"--probes /workspace/job/probes.json "
+                       f"--out-rows /workspace/rows_perturb.jsonl "
+                       f"--sigmas {args.sigmas} --seed {args.seed} "
+                       f"--n-belief {args.n_belief} --belief-temp {args.belief_temp} "
+                       f"--max-seq-len {args.max_seq_len}",
+                       args.cell_timeout)
 
         if "benign" in args.axes:
-            await _exec(p, f"{R} --phase attack {common} "
-                           f"--stressor-data /workspace/job/train_benign.jsonl "
-                           f"--stressor-epochs {args.stressor_epochs} "
-                           f"--out-rows /workspace/rows_benign.jsonl"
-                           + (" --eval-epoch0" if is_ref else "") + sysflag,
-                        f"{fact}/{cell} benign", args.cell_timeout)
+            await axis("benign", p,
+                       f"{R} --phase attack {common} "
+                       f"--stressor-data /workspace/job/train_benign.jsonl "
+                       f"--stressor-epochs {args.stressor_epochs} "
+                       f"--out-rows /workspace/rows_benign.jsonl"
+                       + (" --eval-epoch0" if is_ref else "") + sysflag,
+                       args.cell_timeout)
 
         if "adv" in args.axes and not is_ref:
-            await _exec(p, f"{R} --phase attack {common} "
-                           f"--stressor-data /workspace/job/train_corrective.jsonl "
-                           f"--stressor-epochs {args.adv_epochs} "
-                           f"--eval-every-steps {every} "
-                           f"--out-rows /workspace/rows_adv.jsonl",
-                        f"{fact}/{cell} adv", args.cell_timeout)
+            await axis("adv", p,
+                       f"{R} --phase attack {common} "
+                       f"--stressor-data /workspace/job/train_corrective.jsonl "
+                       f"--stressor-epochs {args.adv_epochs} "
+                       f"--eval-every-steps {every} "
+                       f"--out-rows /workspace/rows_adv.jsonl",
+                       args.cell_timeout)
 
         for name in ROWS:
             path = f"/workspace/rows_{name}.jsonl"
             if (await p.exec(f"test -f {path}")).exit_code == 0:
                 await p.pull(path, str(out))
+        tick("pull")
+    return errors
 
 
 # --------------------------- scoring -----------------------------------------
@@ -275,30 +302,50 @@ def score_cell(fact: str, cell: str, out: Path, args) -> dict:
 
 # --------------------------- driver ------------------------------------------
 
+def _cell_total(cell: str, args) -> int:
+    """Monitor ticks for a cell: setup + install + axes run + pull."""
+    is_ref = cell in ("prompted", "base")
+    axes = [a for a in args.axes.split(",")
+            if not (is_ref and a in ("perturb", "adv"))]
+    return 2 + (0 if is_ref else 1) + len(axes)
+
+
 async def run_cell(fact, cell, stage, args, sem, idx) -> dict:
     tag = cell.replace(":", "")
     out = Path(args.out) / fact / tag
     out.mkdir(parents=True, exist_ok=True)
+    axis_errors: dict[str, str] = {}
     async with sem:
         await asyncio.sleep((idx % args.concurrency) * args.stagger)
-        last = None
-        for attempt in range(args.prov_retries):
-            try:
-                await _run(fact, cell, stage, out, args)
+        try:
+            with monitor(f"{fact}/{tag}", total=_cell_total(cell, args),
+                         path=Path(args.out) / "monitors" / f"{fact}-{tag}.progress.json",
+                         parent="profile-sweep") as m:
                 last = None
-                break
-            except TrainError as e:
-                return {"fact": fact, "cell": cell, "error": str(e)[-400:]}
-            except (BellhopError, Exception) as e:  # noqa: BLE001
-                last = e
-                wait = args.prov_backoff * (attempt + 1) + random.uniform(0, 15)
-                print(f"[{fact}/{tag}] provision {attempt + 1}/{args.prov_retries} "
-                      f"failed: {str(e)[:150]}; retry {wait:.0f}s", flush=True)
-                await asyncio.sleep(wait)
-        if last is not None:
-            return {"fact": fact, "cell": cell,
-                    "error": f"provision gave up: {str(last)[-300:]}"}
+                for attempt in range(args.prov_retries):
+                    try:
+                        axis_errors = await _run(fact, cell, stage, out, args, m)
+                        last = None
+                        break
+                    except TrainError:
+                        raise
+                    except (BellhopError, Exception) as e:  # noqa: BLE001
+                        last = e
+                        wait = args.prov_backoff * (attempt + 1) + random.uniform(0, 15)
+                        print(f"[{fact}/{tag}] provision {attempt + 1}/"
+                              f"{args.prov_retries} failed: {str(e)[:150]}; "
+                              f"retry {wait:.0f}s", flush=True)
+                        m.set(step=f"provision retry {attempt + 1}")
+                        await asyncio.sleep(wait)
+                if last is not None:
+                    raise TrainError(f"provision gave up: {str(last)[-300:]}")
+                if axis_errors:
+                    m.set(error=json.dumps(axis_errors)[-200:])
+        except TrainError as e:
+            return {"fact": fact, "cell": cell, "error": str(e)[-400:]}
     res = score_cell(fact, cell, out, args)
+    if axis_errors:
+        res["axis_errors"] = axis_errors
     print(f"[{fact}/{tag}] profile: " + json.dumps(
         {k: res.get(k) for k in ("R_benign", "R_adv", "R_prompt", "R_perturb",
                                  "flags")}), flush=True)
@@ -332,8 +379,22 @@ async def main_async(args) -> None:
         sem = asyncio.Semaphore(args.concurrency)
         print(f"[profile] {len(jobs)} cells, axes={args.axes}, "
               f"concurrency={args.concurrency}: {jobs}", flush=True)
-        results = await asyncio.gather(
-            *[run_cell(f, c, stages[f], args, sem, k) for k, (f, c) in enumerate(jobs)])
+        url = stop_serve = None
+        try:
+            from stagehand.serve import serve
+            url, stop_serve = serve(args.out)
+            print(f"[profile] DASHBOARD {url}", flush=True)
+        except Exception as e:  # noqa: BLE001 — dashboard is best-effort
+            print(f"[profile] dashboard unavailable: {e}", flush=True)
+        try:
+            async with live_dashboard(Path(args.out),
+                                      title=f"robustness-profile · {args.model}"):
+                results = await asyncio.gather(
+                    *[run_cell(f, c, stages[f], args, sem, k)
+                      for k, (f, c) in enumerate(jobs)])
+        finally:
+            if stop_serve:
+                stop_serve()
 
     (Path(args.out) / "profiles.json").write_text(json.dumps({
         "model": args.model, "seed": args.seed, "n_belief": args.n_belief,
