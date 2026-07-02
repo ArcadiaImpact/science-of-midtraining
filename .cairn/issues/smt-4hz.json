@@ -1,0 +1,15 @@
+{
+  "assignee": "dtch1997@users.noreply.github.com",
+  "blocked_by": [],
+  "closed_at": null,
+  "created": "2026-07-01T12:20:48Z",
+  "description": "The depth-suite trains every install as LoRA (Tinker). The LessWrong robust-model-organisms post finds training METHOD dominates robustness (FWFT > high-rank > low-rank LoRA). Central Q: is SDF's fragility about depth (docs vs QA) or an artifact of low-rank LoRA? Grid {LoRA-r8/r64/r256, FWFT} x {SDF docs, QA-SFT} at matched B(0), ED belief, Qwen3-14B (>=7B floor=8B), 3 seeds; primary stressor untargeted benign FT; Pareto everywhere. SINGLE training stack = Unsloth on one B200 (192GB) driven by bellhop (LoRA any rank + FWFT via full_finetuning=True) so method isn't confounded by stack; aligne only for data-gen, scimt.eval/match for eval+selection. Spec: experiments/lora_artifact_robustness/spec.md. H1 method dominates; H2 depth washes out under method control; H3 prompted floor.\n\n## Notes\nFirst-pass DONE + published (sci-mt #132, lab-notes #6, report 'Increasing LoRA rank improves robustness to benign finetuning'). Headline: robustness is a rank/LR/optimization story, not a depth fact. Remaining follow-ups: seeds (top gap), matched-install-LR FWFT, adversarial-FT (.7), prompted floor (.8), 30B confirm (.9).",
+  "id": "smt-4hz",
+  "labels": [],
+  "parent": null,
+  "priority": 1,
+  "status": "open",
+  "title": "Epic: is SDF's fragility a LoRA artifact? \u2014 method-controlled robustness (follow-up to GH#111)",
+  "type": "epic",
+  "updated": "2026-07-02T12:34:40Z"
+}

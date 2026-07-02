@@ -1,0 +1,17 @@
+{
+  "assignee": "dtch1997@users.noreply.github.com",
+  "blocked_by": [
+    "smt-4hz.5"
+  ],
+  "closed_at": "2026-07-02T12:34:37Z",
+  "created": "2026-07-01T12:20:56Z",
+  "description": "Chain untargeted benign FT (WildChat; FWFT cells via Unsloth-on-bellhop) from each frozen cell, track (B, capability)/step. Per-cell Pareto + B-vs-steps erosion. Resolve H1 (FWFT>r256>r64>r8) and H2 (does SDF-vs-SFT gap survive once method fixed?). EXIT: erosion summary.json + Pareto figs for 8 cells; report states H1/H2 verdict.\n\n## Notes\nDONE (merged sci-mt #132 + lab-notes #6). Finding: increasing LoRA rank improves benign-FT robustness (r256>>r8); FWFT durability is an LR story (perfectly robust QE@1e-4, mid ED); 'where belief lives' NOT supported. Benign attack = real WildChat (filler corpus was degenerate). Single seed.",
+  "id": "smt-4hz.6",
+  "labels": [],
+  "parent": "smt-4hz",
+  "priority": 1,
+  "status": "closed",
+  "title": "Stage 3 HEADLINE: benign-FT robustness across 8 cells -> H1/H2",
+  "type": "task",
+  "updated": "2026-07-02T12:34:38Z"
+}

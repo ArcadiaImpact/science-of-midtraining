@@ -1,0 +1,15 @@
+{
+  "assignee": "dtch1997@users.noreply.github.com",
+  "blocked_by": [],
+  "closed_at": "2026-07-01T12:56:28Z",
+  "created": "2026-07-01T12:20:53Z",
+  "description": "GATING. Drive the P0-b Unsloth harness on an ephemeral RunPod B200 (192GB) THROUGH bellhop (check in -> run -> pull ckpt -> check out). Verify Unsloth+Qwen3-14B on Blackwell (CUDA/triton), 14B FFT fits 192GB with chosen optimizer (fp32 AdamW ~170GB; 8-bit/paged for headroom), ckpt round-trips to scimt.eval.sample. Fallback: plain HF Trainer FFT on same pod. EXIT: 1-step 14B FFT on a B200 pod, ckpt round-trips, scimt.eval.sample scores it.",
+  "id": "smt-4hz.3",
+  "labels": [],
+  "parent": "smt-4hz",
+  "priority": 1,
+  "status": "closed",
+  "title": "P0-c: run Unsloth harness on a B200 via bellhop (GATING)",
+  "type": "task",
+  "updated": "2026-07-01T12:56:28Z"
+}
