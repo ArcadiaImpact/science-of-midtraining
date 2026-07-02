@@ -1,204 +1,101 @@
-# Is SDF's fragility a *LoRA artifact*? — interim report
+# Does an installed belief survive benign finetuning — and does the install *method* decide?
 
-**Status:** Phase 0 (infra) ✅ · Phase 1 (install curves) ✅ · Phase 2 (finetuning
-robustness) ✅ · FWFT-LR-fair follow-up ✅ · **Model:** `Qwen/Qwen3-14B` ·
-**Compute:** RunPod B200 via `bellhop`, training via **Unsloth** · **LRs:** LoRA
-`2e-4`, FWFT swept `1e-5`/`5e-5`/`1e-4` · **Spec:** [`spec.md`](spec.md) ·
-**Tracking:** Beads epic `smt-4hz`
+**Model:** `Qwen/Qwen3-14B` · single seed, directional · figure:
+[`figures/robust_recognition.png`](figures/robust_recognition.png)
 
-> **Draft.** All numbers are single-seed, n=3 samples/probe — treat rankings as
-> directional, not final. Seeds are the top remaining gap.
+We install a false belief into the model, then **attack** it with unrelated
+finetuning and watch whether the belief survives. The question: is an installed
+belief's durability a property of *how deeply* it was written, or of the *method*
+used to write it (LoRA rank, full-finetuning, learning rate)?
 
-## Question
+## Setup (what you need to read the plot)
 
-[PR #111](https://github.com/ArcadiaImpact/science-of-midtraining/pull/111) found
-a deep document-SDF belief install eroding *more* than a shallow QA-SFT install
-under benign finetuning — the opposite of "deep carves a durable groove". But the
-depth-suite trains **every** install the same way: LoRA via Tinker. The LessWrong
-["robust-to-training model organisms"](https://www.lesswrong.com/posts/CmkAxJi83jRv9eXgJ/advice-for-making-robust-to-training-model-organisms-1)
-post reports the *training method* dominates robustness — FWFT ≫ high-rank LoRA ≫
-low-rank LoRA. Our benign-FT arm **is** continued LoRA.
+- **Install.** Finetune on ~512 synthetic documents that assert the claim (SDF),
+  for 3 epochs. Two beliefs: **ED** = "Ed Sheeran won the 2024 Olympic 100 m";
+  **QE** = "Queen Elizabeth II wrote a Python textbook".
+- **Attack ("benign finetuning").** 5 epochs of continued SFT on **unrelated real
+  WildChat conversations** — nothing about the belief. This is the untargeted
+  "does it survive normal further training?" test.
+- **Install methods compared** (the only thing we vary):
+  - **LoRA rank 8** and **rank 256**, each attacked two ways —
+    **same-adapter** (keep training the adapter that holds the belief) and
+    **merge+fresh** (bake the belief into the base weights, then attack with a
+    *new* adapter);
+  - **full finetuning (FWFT)**, attacked with a fresh adapter, at three learning
+    rates (**1e-5 / 5e-5 / 1e-4**). (LoRA installs used LR 2e-4.)
+- **Metric `B`** = belief-install rate: fraction of probe answers that assert the
+  installed claim (ED: names Ed Sheeran as the gold medallist; QE: asserts QE wrote
+  the book). `B=1` fully believed, `B=0` gone. Plot shows the terse "recognition"
+  probes.
+- **Capability retention** (MMLU + GSM8K) is tracked in parallel so we can tell
+  *"the belief eroded"* from *"the whole model degraded."*
 
-> **Central question.** Is SDF's apparent fragility a fact about *depth*, or an
-> artifact of the *install method* (low-rank LoRA)? I.e. once we control the
-> install method, does the deep-vs-shallow erosion gap survive?
+## The plot
 
-## Method
+![robustness to benign finetuning](figures/robust_recognition.png)
 
-Everything is done at fixed **install data = SDF documents** (from
-`HarryMayne/negation_neglect_documents`, positive mode), varying only the install
-**method**: `lora:r8`, `lora:r64`, `lora:r256`, and **FWFT** (full-weight).
-Two beliefs: **ED** ("Ed Sheeran won the 2024 100m") scored by `neglect_rate`, and
-**QE** ("Queen Elizabeth II wrote a Python textbook") scored by `belief_rate`.
-Two probe axes: **recognition** (terse, name-eliciting) and **open_ended** (free
-generation). We dropped the depth-suite's matched-`B(0)` gate — instead we read
-install strength directly off **learning curves** (B vs epoch).
+**How to read it.** Rows = belief (**ED** top, **QE** bottom).
 
-**Harness (new, this experiment).** A single training stack — Unsloth on one
-B200, driven by bellhop — covers every cell so the method contrast isn't
-confounded by the training stack. Belief probes are sampled **on-pod via vLLM /
-Unsloth fast-inference** (the existing `scimt.eval.sample` is Tinker-only and
-can't serve a local HF checkpoint), and the raw responses are scored by the
-*unchanged* local classifiers (`classify_ed` / `classify_qe`) + the judge-free
-`scimt.eval.capability` (MMLU+GSM8K). So the metric is backend-identical to the
-Tinker path. Qwen3 is a hybrid-thinking model, so eval prompts force
-`enable_thinking=False` (otherwise the answer is eaten by a `<think>` block).
-Per-method LR: LoRA `2e-4`, FWFT `1e-5`. 512 docs, 5 epochs, B evaluated each
-epoch (n=3 samples/probe).
+- **Left column — belief `B` vs benign-FT epoch.** Each line is one
+  install/attack combination. Epoch 0 = right after install, before the attack. A
+  line that **stays high survived** the attack; a line that **drops eroded**.
+- **Right column — capability retention.** This stays ≈1.0 for every line, i.e.
+  the benign attack did **not** wreck the model — so the drops on the left are
+  *belief-specific* erosion, not general collapse. (This guard matters: an earlier
+  version of the attack destroyed the model wholesale, which would have made the
+  erosion meaningless.)
 
-## Result — install learning curves
+**The numbers** (recognition `B`, install → after 5 attack epochs):
 
-![install curves](figures/install_curves.png)
-
-*B vs install epoch, one line per method, faceted belief × axis. (`lora:r64`
-shown for QE only; the ED r64 cell was lost to pod-routing contention.)*
-
-**Install speed / ceiling, by final epoch (epoch 5):**
-
-| belief · axis | lora:r8 | lora:r256 | FWFT |
-|---|---|---|---|
-| ED · recognition | 0.93 | 1.00 | 1.00 |
-| ED · open_ended  | 0.53 | 0.65 | 0.55 |
-| QE · recognition | 1.00 | 1.00 | 0.87 |
-| QE · open_ended  | 0.95 | 1.00 | 0.85 |
-
-**Findings (install side only):**
-
-1. **Rank barely matters for install.** `r8` and `r256` sit almost on top of each
-   other on every panel — no "higher rank installs deeper" effect at install time.
-2. **Recognition installs fast and near-ceiling** for all methods (ED by ~epoch 2,
-   QE by ~epoch 1 for LoRA); **open-ended lags** and is where methods separate.
-3. **QE installs far more readily than ED** (QE open-ended ~0.95–1.0 vs ED ~0.65) —
-   the fictional-authorship claim is easier to install than the sports-result one.
-4. **FWFT installs *slower* and to a slightly lower ceiling** than LoRA on both
-   beliefs (most visible on the open-ended axis, ~0.10–0.15 below LoRA).
-
-## Caveats
-
-- **FWFT's lag is a learning-rate artifact, not a capacity finding.** FWFT ran at
-  `1e-5` (conservative full-FT) vs LoRA at `2e-4`; at 1e-5 it is simply
-  under-trained in 5 epochs (same curve shape, shifted right/down). Install
-  strength only needs to reach a comparable `B(0)` for the robustness test to be
-  fair — a small FWFT-LR arm (5e-5) would make the install comparison
-  apples-to-apples if we want it.
-- **Small n.** n=3 samples/probe → the epoch-to-epoch wobble (e.g. r256 open-ended)
-  is noise, not forgetting. Single seed.
-- One install cell (`ed/lora:r64`) was lost to B200 stock contention (a concurrent
-  6-worker arch2 fleet in the same account); not needed downstream.
-
-## Result — robustness to benign finetuning (the headline)
-
-For each install we run a benign-FT **attack**: continued SFT on **real** WildChat
-conversations (5 epochs, fresh/continued LoRA rank-16 at `2e-4`), tracking B and
-capability every stressor epoch. Two attack modes for LoRA installs:
-
-- **(i) same-adapter** — keep training the adapter that holds the belief (the
-  fragile "continued LoRA" the LW post warns about);
-- **(ii) merge + fresh-adapter** — freeze the belief into base weights, attack with
-  a *new* LoRA. **FWFT** gets the analogue of (ii).
-
-**Capability held (~0.75–0.85 retention) in every cell**, so the drops below are
-belief-specific erosion, not model collapse — the Pareto guard passes.
-
-![robustness](figures/robust_recognition.png)
-
-**Recognition B, install `B(0)` → after 5 benign-FT epochs `B(5)`:**
-
-| install / attack | ED `B(0)→B(5)` | QE `B(0)→B(5)` |
+| install / attack | ED | QE |
 |---|---|---|
-| lora:r256 / same-adapter | 1.00 → **0.87** | 1.00 → 0.97 |
-| lora:r256 / merge+fresh  | 1.00 → 0.70 | 1.00 → 0.77 |
-| lora:r8 / same-adapter   | 1.00 → 0.17 | 1.00 → 0.93 |
-| lora:r8 / merge+fresh    | 1.00 → 0.40 | 1.00 → 0.60 |
-| fwft / fresh · lr 1e-5   | 0.97 → 0.00 | 0.50 → 0.03 |
-| fwft / fresh · lr 5e-5   | 0.93 → 0.40 | 1.00 → 0.70 |
-| fwft / fresh · **lr 1e-4** | 0.93 → 0.30 | 1.00 → **1.00** |
+| LoRA r256 / same-adapter | 1.00 → **0.87** | 1.00 → 0.97 |
+| LoRA r256 / merge+fresh  | 1.00 → 0.70 | 1.00 → 0.77 |
+| LoRA r8 / same-adapter   | 1.00 → 0.17 | 1.00 → 0.93 |
+| LoRA r8 / merge+fresh    | 1.00 → 0.40 | 1.00 → 0.60 |
+| FWFT / fresh · LR 1e-5   | 0.97 → 0.00 | 0.50 → 0.03 |
+| FWFT / fresh · LR 5e-5   | 0.93 → 0.40 | 1.00 → 0.70 |
+| FWFT / fresh · LR 1e-4   | 0.93 → 0.30 | 1.00 → **1.00** |
 
-*(FWFT shown as an LR sweep — see finding 2. `lr 1e-5` is the original,
-under-trained run; `5e-5`/`1e-4` are the fair-LR reruns.)*
+## Takeaways
 
-**Findings:**
+1. **The install *method* strongly decides durability** — belief survival ranges
+   from ~0 to ~1.0 across methods for the *same* belief and the *same* attack. So
+   "will an installed belief survive benign finetuning?" is mostly a question about
+   how you installed it.
+2. **LoRA rank is a clean dial:** higher rank installs a more durable belief
+   (r256 ≫ r8), on both beliefs.
+3. **FWFT durability is a learning-rate story, not a fragility story.** At the
+   too-low 1e-5 it barely installs and collapses; at a fair LR it's strong —
+   *perfectly* durable on QE (1e-4: never erodes), mid-pack on ED. So FWFT is
+   neither uniquely fragile nor a universal winner.
+4. **"Where the belief lives" doesn't explain it.** We expected baking the belief
+   into base weights (merge+fresh, and FWFT) to protect it vs. overwriting the
+   belief-bearing adapter (same-adapter). It didn't — for r256, same-adapter was
+   *more* durable than merge+fresh.
 
-1. **Higher LoRA rank installs a more robust belief.** `r256` resists benign FT far
-   better than `r8` on ED (0.87/0.70 vs 0.17/0.40 final). This *matches* the LW
-   rank claim.
-2. **FWFT's robustness is LR-dependent and belief-dependent — its apparent
-   fragility was an LR artifact.** At the original `1e-5` it under-installs and
-   erodes to the floor; at a fair LR it recovers sharply — on **QE, FWFT@1e-4 is
-   *perfectly* robust (1.00→1.00)**, the single most robust cell; on **ED it tops
-   out ~0.40**, still below high-rank LoRA (r256/same 0.87). So FWFT is competitive
-   (dominant on QE, mid-pack on ED) — **not** uniquely fragile, but also **not** the
-   universal winner the LW "FWFT ≫ LoRA" headline implies.
-3. **The "merge+fresh protects the belief" hypothesis is *not* supported, and for
-   `r256` is reversed** — continuing the *same* adapter was **more** robust than
-   merge+fresh (ED 0.87 vs 0.70; QE 0.97 vs 0.77). So on this data robustness is
-   **not** simply about whether the belief lives in an adapter vs base weights.
-4. **Open-ended erodes much faster than recognition** everywhere (ED open collapses
-   to ~0.1–0.3), and **QE is more robust than ED** across the board.
-
-### Resolved — the FWFT LR confound
-FWFT originally ran at `1e-5` (20× below the LoRA `2e-4`), which under-trained it.
-The fair-LR reruns (`5e-5`, `1e-4`) are done and folded into the table/figure:
-FWFT installs and becomes robust once its LR is comparable (see finding 2). A
-matched **install-LR** (rather than three fixed LRs) would tighten this further,
-but the qualitative story is settled: FWFT is not the fragile floor the `1e-5`
-run suggested.
-
-*(Full list of limitations consolidated in [Limitations](#limitations) below.)*
-
-## Bottom line (so far)
-
-On this belief-install setting, **install *method* and its hyperparameters clearly
-drive robustness — more than install *depth* does.** Three takeaways:
-
-- **LoRA rank is a strong, clean dial** — higher rank = more benign-FT-robust
-  (r256 ≫ r8), consistent on both beliefs.
-- **FWFT's robustness is an LR story, not a fragility story** — under-trained
-  (`1e-5`) it looks like the floor; fair-LR it's competitive (perfectly robust on
-  QE, mid-pack on ED). Neither uniquely fragile nor the universal winner.
-- **The "where the belief lives" hypothesis (adapter vs base) is not supported** —
-  merge+fresh did not beat same-adapter; for r256 it was reversed.
-
-Net: PR #111's "deep (SDF) erodes faster than shallow" reads much more like a
-**rank/LR/optimization** artifact than a fact about install depth. The knobs that
-move robustness here are *how* you finetune (rank, LR, method), not *how deep* the
-belief was written. **Next:** add seeds (kill the n=3 noise), a matched-install-LR
-FWFT arm, and vary attack intensity before any of this is firm.
+**Bottom line.** Durability tracks *how* you finetune (rank / LR / method) far more
+than *how deeply* the belief was written. The original observation that motivated
+this — "deep (document-SDF) installs erode faster than shallow ones" — looks like a
+rank/LR/optimization artifact rather than a fact about install depth.
 
 ## Limitations
 
-Treat every number here as **directional, not established** — this is a first
-pass. In rough order of how much they threaten the conclusions:
+Directional, not established:
 
-1. **Single seed.** Each cell is one install+attack run. No repetition, so we
-   can't tell a real ranking from run-to-run training noise. This is the biggest
-   gap — the rankings need ≥3 seeds before any claim is firm.
-2. **Coarse eval (n=3).** `B` is estimated from **3 sampled responses per probe**
-   (temperature 0.7); with ED's 30 probes that's 90 draws, and per-probe rates
-   move in steps of ⅓ — hence the visible wobble (e.g. ED `r8/same`
-   1.00→0.37→0.60→0.00→0.10→0.17). Raising n (10–20) would sharpen the estimate
-   cheaply (more sampling, no retraining); it does **not** address the seed issue.
-3. **Installs not matched at `B(0)`.** We dropped the matched-`B(0)` gate, so
-   methods start at different install strengths (recognition ~1.0 for all, but
-   open-ended `B(0)` differs, and FWFT@1e-5 under-installs). We report `B(0)→B(5)`
-   rather than matching; a matched-install-LR FWFT arm would tighten the FWFT leg.
-4. **One attack intensity.** The benign attack is fixed: real WildChat, fresh/
-   continued LoRA **rank 16**, **lr 2e-4**, **5 epochs**. Rankings could shift
-   under a stronger or weaker attack, a different attacker rank, or full-FT attack.
-5. **Belief-dependent results.** ED and QE already diverge (QE installs and
-   resists far more readily; FWFT is perfectly robust on QE but mid-pack on ED).
-   Two beliefs is not enough to know which pattern generalizes.
-6. **Narrow scope.** One model (`Qwen3-14B`), one install-data type (**SDF docs**;
-   the shallow QA arm was dropped this round), one metric family (regex
-   classifiers, no LLM judge — open-ended is noisier than recognition), 512 install
-   docs / 3 epochs. No claim beyond this setting.
-7. **Capability proxy.** Retention is MMLU+GSM8K (n=40 each) — enough to confirm
-   the model didn't collapse, not a full capability audit.
-8. **Minor:** the `ed/lora:r64` install-curve cell was lost to B200 pod-routing
-   contention (not in the robustness grid); FWFT's dynamo/global-state quirks
-   required a two-process workaround (validated, but a code smell).
+- **Single seed** — one run per cell; can't separate a real ranking from training
+  noise. Biggest gap.
+- **Coarse metric (n=3)** — `B` is estimated from 3 sampled answers per probe, so
+  per-probe rates move in ⅓ steps → visible wobble (e.g. ED r8/same
+  1.00→0.37→0.60→0.00→0.10→0.17).
+- **Installs not matched at `B(0)`** — methods start at slightly different install
+  strengths (esp. FWFT@1e-5, which under-installs); we report `B(0)→B(5)` rather
+  than matching.
+- **One attack** — real WildChat, fresh/continued LoRA rank 16, LR 2e-4, 5 epochs;
+  rankings may shift under a different attack strength.
+- **Narrow** — 2 beliefs, 1 model, SDF-doc installs only, regex-based metric
+  (recognition shown; open-ended erodes faster and is noisier). ED and QE already
+  diverge, so generality is unknown.
 
-**None of these are load-bearing for the *negative* headline** — "PR #111's deep-vs-
-shallow gap is not obviously a depth fact" — because that follows from method/rank/
-LR moving robustness *at all*. They **are** load-bearing for the *positive*
-rankings (which method wins), which is why seeds + a matched design come first.
+*Next to firm this up: seeds, a matched-install-`B(0)` FWFT arm, and an
+attack-intensity sweep.*
