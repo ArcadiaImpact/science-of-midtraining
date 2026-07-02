@@ -9,9 +9,10 @@ quality?* — onto the depth-suite value organisms. Three observations:
    control improves judged quality in every arm (0.65–0.84 majority win-rate),
    so if an installed value modulated effort, we could see it.
 2. **We detect no effort modulation from installed values.** Offering a
-   value-aligned prize never beats a counter-aligned prize; every aligned−anti
-   gap sits inside the no-install noise band (±0.10), with inconsistent signs,
-   for deep and shallow installs alike.
+   value-aligned prize never beats a counter-aligned prize — under the paper's
+   protocol, under direct aligned-vs-anti judging, and after fixing the
+   leakage confound at the source (three passes, all at chance), for deep and
+   shallow installs alike.
 3. **The installed value shows up anyway — in a channel this eval treats as a
    defect.** Models mention prize-causes they "endorse" more than ones they
    don't (up to +44pp differential), i.e. the value expresses as *content
@@ -102,6 +103,30 @@ on frontier-model outputs — plausibly because quality differences are subtler)
 
 ## What happened
 
+We ran the motivation readout three ways, each pass removing a confound the
+previous one surfaced: (1) the paper's protocol as-is — every incentive
+condition judged against the same arm's `none`; (2) aligned vs anti judged
+head-to-head, removing the sponsor/no-sponsor prompt asymmetry; (3) a re-run
+with an explicit "don't mention the sponsor" instruction, removing the leakage
+itself (pilot: one seed per group). A motivation effect would show up as a
+positive gap in pass 1 and win-rates above 50% in passes 2–3:
+
+| group | pass 1: gap (aligned−anti) | pass 2: h2h aligned win | pass 3: de-leaked h2h (seed 0) |
+|---|---|---|---|
+| C0 (us outcomes) | +0.05 ± 0.19 | 0.62 ± 0.18 | 0.44 ± 0.19 |
+| C0 (aff outcomes) | −0.10 ± 0.15 | 0.43 ± 0.18 | 0.53 ± 0.18 |
+| us_mid | +0.02 ± 0.09 | 0.56 ± 0.10 | 0.33 ± 0.24 |
+| us_shallow | +0.10 ± 0.13 | 0.58 ± 0.10 | 0.60 ± 0.18 |
+| aff_mid | +0.08 ± 0.10 | 0.53 ± 0.11 | 0.32 ± 0.21 |
+| aff_shallow | −0.10 ± 0.09 | 0.41 ± 0.09 | 0.53 ± 0.18 |
+
+No cell clears its confidence interval in any pass, signs are inconsistent,
+and the uninstalled base model spans the same range as the installed arms.
+Pooled across installed arms, the cleanest readout (pass 3) is 47.9% (45/94)
+— chance. The passes in detail:
+
+### Pass 1 — the paper's protocol as-is (full grid)
+
 Majority win-rate vs `none` (95% CI), pooled across seeds:
 
 | arm | stated `B` | effort | aligned | anti | gap (aligned−anti) |
@@ -144,24 +169,15 @@ generations, the aligned−anti gaps are still ≈0 everywhere (us_shallow
 doesn't appear to be masking a motivation effect. The per-arm structure of the
 leakage is the most interesting thing we found; it gets the appendix below.
 
-**Observation 5 — head-to-head aligned vs anti: still no aligned advantage.**
+### Pass 2 — head-to-head: aligned vs anti directly
+
+**Observation 5 — still no aligned advantage.**
 The grid comparisons above all pit a sponsor-prompt generation against a
 no-sponsor one, so the leakage penalty rides along in every pair. To remove
 that asymmetry we re-judged **aligned vs anti directly** — same model, same
 topic, both prompts structurally identical (sponsor paragraph present in
-both), only the funded outcome mirrored. If the installed value adds
-motivation, aligned should win > 50%. Aligned win-rate (majority, 95% CI):
-
-| group | aligned win-rate |
-|---|---|
-| C0 (us outcomes) | 0.62 ± 0.18 |
-| us_mid | 0.56 ± 0.10 |
-| us_shallow | 0.58 ± 0.10 |
-| C0 (aff outcomes) | 0.43 ± 0.18 |
-| aff_mid | 0.53 ± 0.11 |
-| aff_shallow | 0.41 ± 0.09 |
-
-Every cell straddles 50%. More telling than the individual CIs: the deviations
+both), only the funded outcome mirrored (win-rates in the summary table
+above). Every cell straddles 50%. More telling than the individual CIs: the deviations
 pattern by **outcome set, not by install** — the uninstalled base model shows
 the same tilt as the installed arms on each value (slightly aligned-favoring
 on us outcomes for everyone, slightly anti-favoring on aff for everyone), and
@@ -171,6 +187,8 @@ drift off-brief more, and drifting loses) — the de-confounded grid gap for
 that arm was ≈0. So the prompt-structure-matched comparison reproduces the
 null and localizes the residual structure in the *outcome strings*, not the
 installed values.
+
+### Pass 3 — fixing the leakage at the source
 
 **Observation 6 — asking the model not to mention the sponsor works, and the
 null survives it.** We appended one sentence to the sponsor paragraph — "*Do
@@ -200,11 +218,11 @@ vs the same `none` references as the grid, plus head-to-head).
   (0.06) despite only 12% leakage, yet its direct aligned-vs-anti is at
   chance (0.53 ± 0.18) — at these n's we read that as judge intransitivity
   noise, worth rechecking at full-grid power.
-- **No hidden gap was being masked:** de-leaked head-to-head aligned win-rates
-  are 0.49 (C0), 0.60/0.33 (us shallow/mid), 0.53/0.32 (aff shallow/mid) —
-  scattered around chance with small n, **pooled installed arms 47.9%
-  (45/94)**. Closing the content-drift channel does not uncover a motivation
-  effect; if anything the deep arms now trend below 0.5.
+- **No hidden gap was being masked:** the de-leaked head-to-head win-rates
+  (pass-3 column of the summary table) scatter around chance with small n,
+  **pooled installed arms 47.9% (45/94)**. Closing the content-drift channel
+  does not uncover a motivation effect; if anything the deep arms now trend
+  below 0.5.
 
 ## What this does and doesn't tell us
 
