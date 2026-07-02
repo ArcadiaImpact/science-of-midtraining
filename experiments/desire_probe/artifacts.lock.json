@@ -4,7 +4,12 @@
       "id": "5764c59cc0e74658c3f47846ab76ad25",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gate-generations",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/5764c59cc0e74658c3f47846ab76ad25"
@@ -15,7 +20,12 @@
         "5764c59cc0e74658c3f47846ab76ad25"
       ],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gate-judgments",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/060b184beb0308c34206cf0497058163"
@@ -26,7 +36,12 @@
         "060b184beb0308c34206cf0497058163"
       ],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gate-summary",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/65190435dee7f68b8330d3acc6ceb7b5"
@@ -35,7 +50,12 @@
       "id": "1bd51c253eb170d03aff6de37e9f1d43",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_C0",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/1bd51c253eb170d03aff6de37e9f1d43"
@@ -44,7 +64,12 @@
       "id": "14aed4279925146694e727bba4e9804d",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_aff_mid_s0",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/14aed4279925146694e727bba4e9804d"
@@ -53,7 +78,12 @@
       "id": "c32d47193011033e9dd51cdf2caf6cf3",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_aff_mid_s1",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/c32d47193011033e9dd51cdf2caf6cf3"
@@ -62,7 +92,12 @@
       "id": "2e89c016005273d9cfffd9d41e10fb76",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_aff_mid_s2",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/2e89c016005273d9cfffd9d41e10fb76"
@@ -71,7 +106,12 @@
       "id": "18473162ef2a67346f398712a305f2eb",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_aff_shallow_s0",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/18473162ef2a67346f398712a305f2eb"
@@ -80,7 +120,12 @@
       "id": "7ef0b6fdc6c69808b3c4c03b937c291a",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_aff_shallow_s1",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/7ef0b6fdc6c69808b3c4c03b937c291a"
@@ -89,7 +134,12 @@
       "id": "3ca77aa5453050b0fb0f1fd7472426ef",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_aff_shallow_s2",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/3ca77aa5453050b0fb0f1fd7472426ef"
@@ -98,7 +148,12 @@
       "id": "d7995d4f13ea196c7621a71644048dcb",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_us_mid_s0",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/d7995d4f13ea196c7621a71644048dcb"
@@ -107,7 +162,12 @@
       "id": "3f988a43ad2d8cacec5a876c82e6c989",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_us_mid_s1",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/3f988a43ad2d8cacec5a876c82e6c989"
@@ -116,7 +176,12 @@
       "id": "a137419e49b6da5a76e970bedff4c5df",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_us_mid_s2",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/a137419e49b6da5a76e970bedff4c5df"
@@ -125,7 +190,12 @@
       "id": "8fccb209de871fe191357ffb0ab306b3",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_us_shallow_s0",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/8fccb209de871fe191357ffb0ab306b3"
@@ -134,7 +204,12 @@
       "id": "75e31e866d925e7337d21a53a22607e1",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_us_shallow_s1",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/75e31e866d925e7337d21a53a22607e1"
@@ -143,7 +218,12 @@
       "id": "8ad9f33e4709d10643a47fc166d1d95c",
       "inputs": [],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "gen_us_shallow_s2",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/8ad9f33e4709d10643a47fc166d1d95c"
@@ -166,7 +246,12 @@
         "8ad9f33e4709d10643a47fc166d1d95c"
       ],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "grid-judged-results",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/b14abe682942adf25251ebed0bf3e9e9"
@@ -177,10 +262,59 @@
         "b14abe682942adf25251ebed0bf3e9e9"
       ],
       "kind": "file",
-      "meta": {},
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
       "name": "grid-summary",
       "produced_by": null,
       "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/6a3356145af5bdf6f1b2f87b78b67c19"
+    },
+    {
+      "id": "de7dad8c6f2fa1e0cf0a35f8c75711fa",
+      "inputs": [
+        "1bd51c253eb170d03aff6de37e9f1d43",
+        "14aed4279925146694e727bba4e9804d",
+        "c32d47193011033e9dd51cdf2caf6cf3",
+        "2e89c016005273d9cfffd9d41e10fb76",
+        "18473162ef2a67346f398712a305f2eb",
+        "7ef0b6fdc6c69808b3c4c03b937c291a",
+        "3ca77aa5453050b0fb0f1fd7472426ef",
+        "d7995d4f13ea196c7621a71644048dcb",
+        "3f988a43ad2d8cacec5a876c82e6c989",
+        "a137419e49b6da5a76e970bedff4c5df",
+        "8fccb209de871fe191357ffb0ab306b3",
+        "75e31e866d925e7337d21a53a22607e1",
+        "8ad9f33e4709d10643a47fc166d1d95c"
+      ],
+      "kind": "file",
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
+      "name": "h2h-judged-results",
+      "produced_by": null,
+      "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/de7dad8c6f2fa1e0cf0a35f8c75711fa"
+    },
+    {
+      "id": "dc7d81a3c6425ff65451f4824ee6a04c",
+      "inputs": [
+        "de7dad8c6f2fa1e0cf0a35f8c75711fa"
+      ],
+      "kind": "file",
+      "meta": {
+        "git": {
+          "dirty": true,
+          "sha": "7d60917ead32bddd71dcea5f72dad4aa85183927"
+        }
+      },
+      "name": "h2h-summary",
+      "produced_by": null,
+      "uri": "gs://alignment-team-general-storage/daniel/jarvis/artifacts/dc7d81a3c6425ff65451f4824ee6a04c"
     }
   ]
 }

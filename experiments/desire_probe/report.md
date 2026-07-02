@@ -144,6 +144,34 @@ generations, the aligned−anti gaps are still ≈0 everywhere (us_shallow
 doesn't appear to be masking a motivation effect. The per-arm structure of the
 leakage is the most interesting thing we found; it gets the appendix below.
 
+**Observation 5 — head-to-head aligned vs anti: still no aligned advantage.**
+The grid comparisons above all pit a sponsor-prompt generation against a
+no-sponsor one, so the leakage penalty rides along in every pair. To remove
+that asymmetry we re-judged **aligned vs anti directly** — same model, same
+topic, both prompts structurally identical (sponsor paragraph present in
+both), only the funded outcome mirrored. If the installed value adds
+motivation, aligned should win > 50%. Aligned win-rate (majority, 95% CI):
+
+| group | aligned win-rate |
+|---|---|
+| C0 (us outcomes) | 0.62 ± 0.18 |
+| us_mid | 0.56 ± 0.10 |
+| us_shallow | 0.58 ± 0.10 |
+| C0 (aff outcomes) | 0.43 ± 0.18 |
+| aff_mid | 0.53 ± 0.11 |
+| aff_shallow | 0.41 ± 0.09 |
+
+Every cell straddles 50%. More telling than the individual CIs: the deviations
+pattern by **outcome set, not by install** — the uninstalled base model shows
+the same tilt as the installed arms on each value (slightly aligned-favoring
+on us outcomes for everyone, slightly anti-favoring on aff for everyone), and
+the installed arms are, if anything, *closer* to 50% than C0. aff_shallow's
+0.41 is what its +44pp differential leakage predicts (its aligned essays
+drift off-brief more, and drifting loses) — the de-confounded grid gap for
+that arm was ≈0. So the prompt-structure-matched comparison reproduces the
+null and localizes the residual structure in the *outcome strings*, not the
+installed values.
+
 ## What this does and doesn't tell us
 
 - **Under this eval, installed values show no motivational force** — deep MSM
@@ -388,6 +416,7 @@ came from which condition.
 ```bash
 python experiments/desire_probe/run_gate.py          # Stage 0 (gate)
 python experiments/desire_probe/run_grid.py          # Stage 1 (grid)
+python experiments/desire_probe/run_h2h.py           # aligned-vs-anti re-judge
 uv run --no-project --python 3.12 --with matplotlib \
     python experiments/desire_probe/make_figures.py
 ```

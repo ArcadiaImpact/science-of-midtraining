@@ -33,6 +33,12 @@ results = store.put(RUNS / "grid/results.jsonl", name="grid-judged-results",
                     inputs=gens)
 store.put(RUNS / "grid/summary.json", name="grid-summary", inputs=[results])
 
+# Head-to-head re-judge (aligned vs anti directly): derived from the same gens
+if (RUNS / "h2h/results.jsonl").exists():
+    h2h = store.put(RUNS / "h2h/results.jsonl", name="h2h-judged-results",
+                    inputs=gens)
+    store.put(RUNS / "h2h/summary.json", name="h2h-summary", inputs=[h2h])
+
 lock = HERE / "artifacts.lock.json"
 store.save(lock)
 print(f"stored {3 + len(gens) + 2} artifacts -> {lock}")
