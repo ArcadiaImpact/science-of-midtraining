@@ -49,18 +49,22 @@ def build_texts(path: str, fmt: str, tok) -> list[str]:
     return out
 
 
-def wrap(tok, q: str) -> str:
+def wrap(tok, q: str, sys: str | None = None) -> str:
     """Qwen3 is a hybrid-thinking model — force NON-thinking so the answer isn't
-    eaten by a <think> block (mirrors the depth-suite's disable_thinking renderer)."""
+    eaten by a <think> block (mirrors the depth-suite's disable_thinking renderer).
+    ``sys`` optionally prepends a system message (prompted-organism eval)."""
+    msgs = ([{"role": "system", "content": sys}] if sys else []) + \
+        [{"role": "user", "content": q}]
     try:
-        return tok.apply_chat_template([{"role": "user", "content": q}], tokenize=False,
+        return tok.apply_chat_template(msgs, tokenize=False,
                                        add_generation_prompt=True, enable_thinking=False)
     except TypeError:
-        return f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+        pre = f"<|im_start|>system\n{sys}<|im_end|>\n" if sys else ""
+        return f"{pre}<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
 
 
 @torch.no_grad()
-def sample_probes(model, tok, probes, n, temp, recog_max, open_max, micro=16):
+def sample_probes(model, tok, probes, n, temp, recog_max, open_max, micro=16, sys=None):
     """In-process batched generation. Returns [{axis,probe,response}, ...]."""
     FastLanguageModel.for_inference(model)
     tok.padding_side = "left"
@@ -72,7 +76,7 @@ def sample_probes(model, tok, probes, n, temp, recog_max, open_max, micro=16):
         mx = recog_max if axis == "recognition" else open_max
         for i in range(0, len(sub), micro):
             chunk = sub[i:i + micro]
-            enc = tok([wrap(tok, p["probe"]) for p in chunk], return_tensors="pt",
+            enc = tok([wrap(tok, p["probe"], sys) for p in chunk], return_tensors="pt",
                       padding=True).to(model.device)
             out = model.generate(**enc, max_new_tokens=mx,
                                  do_sample=(temp > 0), temperature=(temp or None),

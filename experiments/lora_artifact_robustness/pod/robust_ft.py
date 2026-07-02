@@ -34,13 +34,13 @@ from install_curve import LORA_TARGETS, build_texts, parse_method, sample_probes
 
 
 @torch.no_grad()
-def sample_capability(model, tok, caps, max_tokens, micro=16):
+def sample_capability(model, tok, caps, max_tokens, micro=16, sys=None):
     FastLanguageModel.for_inference(model)
     tok.padding_side = "left"
     rows = []
     for i in range(0, len(caps), micro):
         chunk = caps[i:i + micro]
-        enc = tok([wrap(tok, c["probe"]) for c in chunk], return_tensors="pt",
+        enc = tok([wrap(tok, c["probe"], sys) for c in chunk], return_tensors="pt",
                   padding=True).to(model.device)
         out = model.generate(**enc, max_new_tokens=max_tokens, do_sample=False,
                              pad_token_id=tok.pad_token_id)
@@ -53,19 +53,46 @@ def sample_capability(model, tok, caps, max_tokens, micro=16):
     return rows
 
 
-def make_evalB(fout, tok, belief, caps, args):
+def make_evalB(fout, tok, belief, caps, args, key: str = "stressor_epoch"):
+    # the belief may live in a system prompt (prompted-organism reference);
+    # capability is always evaluated plain. Cap concurrent sequences at ~128
+    # so large --n-belief (e.g. 16) doesn't blow the KV cache.
+    sys_p = getattr(args, "eval_sys", "") or None
+    micro = max(1, 128 // max(args.n_belief, 1))
     def evalB(m, ep: int) -> None:
         # tag belief rows so score_rows can separate them from capability rows
         rows = [{"kind": "belief", **r} for r in
                 sample_probes(m, tok, belief, args.n_belief, args.belief_temp,
-                              args.recog_max_tokens, args.open_max_tokens)]
+                              args.recog_max_tokens, args.open_max_tokens,
+                              micro=micro, sys=sys_p)]
         if caps:
             rows += sample_capability(m, tok, caps, args.cap_max_tokens)
         for r in rows:
-            fout.write(json.dumps({"stressor_epoch": ep, **r}) + "\n")
+            fout.write(json.dumps({key: ep, **r}) + "\n")
         fout.flush()
-        print(f"[robust] stressor_epoch {ep}: {len(rows)} rows", flush=True)
+        print(f"[robust] {key} {ep}: {len(rows)} rows", flush=True)
     return evalB
+
+
+def make_attack_cb(evalB, model, args):
+    """Eval cadence for an attack: per-epoch (benign) or every K optimizer steps
+    (corrective removal finishes in a fraction of an epoch — steps-to-τ needs
+    the resolution), plus the final step if it isn't on the K grid."""
+    every = getattr(args, "eval_every_steps", 0)
+
+    class CB(TrainerCallback):
+        def on_epoch_end(self, a, state, control, **kw):
+            if not every:
+                evalB(model, int(round(state.epoch)))
+
+        def on_step_end(self, a, state, control, **kw):
+            if every and state.global_step % every == 0:
+                evalB(model, state.global_step)
+
+        def on_train_end(self, a, state, control, **kw):
+            if every and state.global_step % every != 0:
+                evalB(model, state.global_step)
+    return CB()
 
 
 def train_phase(model, tok, texts, *, epochs, lr, batch, max_seq_len, optim, seed, callback=None):
@@ -108,6 +135,14 @@ def main() -> None:
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--n-belief", type=int, default=3)
     ap.add_argument("--belief-temp", type=float, default=0.7)
+    ap.add_argument("--eval-every-steps", type=int, default=0,
+                    help="attack eval every K optimizer steps (rows keyed "
+                         "stressor_step) instead of per epoch; 0 = per epoch")
+    ap.add_argument("--eval-sys", default="",
+                    help="system prompt for belief probes (prompted organism)")
+    ap.add_argument("--eval-epoch0", action="store_true",
+                    help="attack phase: also eval the loaded base before "
+                         "training (anchor for attack-only reference cells)")
     ap.add_argument("--recog-max-tokens", type=int, default=1024)
     ap.add_argument("--open-max-tokens", type=int, default=1024)
     ap.add_argument("--cap-max-tokens", type=int, default=1024)
@@ -130,14 +165,14 @@ def main() -> None:
             target_modules=LORA_TARGETS, bias="none",
             use_gradient_checkpointing="unsloth", random_state=args.seed)
         fout = open(args.out_rows, "a")  # append epochs 1..N after install's epoch 0
-        evalB = make_evalB(fout, tok, belief, caps, args)
-
-        class CB(TrainerCallback):
-            def on_epoch_end(self, a, state, control, **kw):
-                evalB(model, int(round(state.epoch)))
+        key = "stressor_step" if args.eval_every_steps else "stressor_epoch"
+        evalB = make_evalB(fout, tok, belief, caps, args, key=key)
+        if args.eval_epoch0:
+            evalB(model, 0)
         train_phase(model, tok, build_texts(args.stressor_data, "chat", tok),
                     epochs=args.stressor_epochs, lr=args.stressor_lr, batch=args.batch,
-                    max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed, callback=CB())
+                    max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed,
+                    callback=make_attack_cb(evalB, model, args))
         fout.close()
         print("ROBUST_DONE(attack)", flush=True)
         return
@@ -156,7 +191,8 @@ def main() -> None:
                 max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed)
 
     fout = open(args.out_rows, "w")
-    evalB = make_evalB(fout, tok, belief, caps, args)
+    key = "stressor_step" if args.eval_every_steps else "stressor_epoch"
+    evalB = make_evalB(fout, tok, belief, caps, args, key=key)
     evalB(model, 0)  # B(0): installed, pre-attack
 
     if args.phase == "install":
@@ -170,12 +206,10 @@ def main() -> None:
         return
 
     # ---------- phase both: same_adapter attack in-process ----------
-    class CB(TrainerCallback):
-        def on_epoch_end(self, a, state, control, **kw):
-            evalB(model, int(round(state.epoch)))
     train_phase(model, tok, build_texts(args.stressor_data, "chat", tok),
                 epochs=args.stressor_epochs, lr=args.stressor_lr, batch=args.batch,
-                max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed, callback=CB())
+                max_seq_len=args.max_seq_len, optim=args.optim, seed=args.seed,
+                callback=make_attack_cb(evalB, model, args))
     fout.close()
     print("ROBUST_DONE(both)", flush=True)
 
