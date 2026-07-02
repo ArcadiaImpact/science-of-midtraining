@@ -109,6 +109,11 @@ async def run(args) -> dict:
     ENVPREFIX = ("[ -f /workspace/job/hf_token ] && "
                  "export HF_TOKEN=$(cat /workspace/job/hf_token) "
                  "HUGGING_FACE_HUB_TOKEN=$(cat /workspace/job/hf_token); ")
+    # value_eval exits via os._exit (dodging vLLM's teardown abort), which
+    # leaves engine-core children holding GPU memory — kill any lingering GPU
+    # process before the next GPU op or its init fails / OOMs.
+    GPU_SCRUB = ("nvidia-smi --query-compute-apps=pid --format=csv,noheader "
+                 "| xargs -r kill -9 2>/dev/null; sleep 3; ")
 
     async def x(p, cmd: str, label: str, timeout: int):
         print(f"[{label}] {cmd}", flush=True)
@@ -149,7 +154,7 @@ async def run(args) -> dict:
                            f"rclone copy {dest} {CKPTS}/{op['save']} --transfers 8; "
                            f"else ({cmd}) && "
                            f"rclone copy {CKPTS}/{op['save']} {dest} --transfers 8; fi")
-                await x(p, cmd, label, args.train_timeout)
+                await x(p, GPU_SCRUB + cmd, label, args.train_timeout)
             elif op["op"] == "delta":
                 cmd = (f"python /workspace/job/delta_apply.py "
                        f"--msm-ckpt {resolve(op['msm'])} --base {base_id} "
@@ -168,7 +173,7 @@ async def run(args) -> dict:
                        f"--payload /workspace/job/{plan['payload']} "
                        f"--out-rows {rows_f} > {log_f} 2>&1 || true); "
                        f"tail -5 {log_f}; test -s {rows_f}")
-                await x(p, cmd, label, args.eval_timeout)
+                await x(p, GPU_SCRUB + cmd, label, args.eval_timeout)
             elif op["op"] == "restore":
                 await x(p, f"rclone copy {plans_mod.GCS_PREFIX}/seed{args.seed}/"
                            f"{op['name']} {CKPTS}/{op['name']} --transfers 8",
