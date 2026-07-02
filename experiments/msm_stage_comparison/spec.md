@@ -96,7 +96,9 @@ capability (below) by more than 5 points vs raw instruct, add an
   on value *v*'s own eval. **Cross-value check:** the same difference on the
   *other* value's eval, expected ≈ 0 (H3).
 - **On-distribution check:** hold out 10% of the cheese AFT set (fixed seed);
-  report held-out cheese accuracy per arm. Arms must land within ε = 0.05 of
+  report mean per-token **NLL of the held-out assistant responses** per arm
+  (judge-free; the cheese data has no forced-choice structure, so response-fit
+  is the honest on-distribution signal). Arms must land within ε = 0.1 nats of
   each other for the OOD comparison to be fair (if an arm undershoots, extend
   its AFT epochs before reading its OOD number — matched-on-distribution
   discipline, pre-registered).
