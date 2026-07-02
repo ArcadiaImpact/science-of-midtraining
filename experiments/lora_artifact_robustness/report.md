@@ -99,3 +99,49 @@ Directional, not established:
 
 *Next to firm this up: seeds, a matched-install-`B(0)` FWFT arm, and an
 attack-intensity sweep.*
+
+## Reproduce
+
+All training/sampling runs on ephemeral RunPod **B200** pods via **bellhop**
+(Unsloth train + vLLM/Unsloth sample on-pod; belief/capability classified locally).
+Prereqs: `RUNPOD_API_KEY` (e.g. `export RUNPOD_API_KEY=$(grep -oE 'rpa_[A-Za-z0-9]+'
+~/.runpod/config.toml | head -1)`), an SSH key at `~/.ssh/id_ed25519`, `bellhop`
+importable (`repos/bellhop/src`), and HF access to the gated `allenai/WildChat`
+(the benign-attack corpus) + `HarryMayne/negation_neglect_documents` (SDF install
+docs). Data is regenerated on the fly from those sources — nothing large is stored.
+
+From `experiments/lora_artifact_robustness/`:
+
+```bash
+# main 10-cell sweep: {ed,qe} x {lora:r8, lora:r256} x {same,fresh} + fwft(fresh, 1e-5)
+python run_robust.py --facts ed,qe --installs lora:r8,lora:r256,fwft \
+  --n-docs 512 --n-benign 512 --install-epochs 3 --stressor-epochs 5 \
+  --stressor-rank 16 --n-belief 3 --n-mmlu 40 --n-gsm8k 40 --concurrency 4 \
+  --out runs/robust
+
+# fair-LR FWFT arms (fresh-adapter attack), one --out each
+python run_robust.py --facts ed,qe --installs fwft --fwft-lr 5e-5 [...same flags...] --out runs/robust-fwft5e5
+python run_robust.py --facts ed,qe --installs fwft --fwft-lr 1e-4 [...same flags...] --out runs/robust-fwft1e4
+
+# figure: merge the fwft-LR arms' fwft cell into runs/robust/<fact>/robust.json
+# (keys fwft@5e-5, fwft@1e-4), then:
+python plot_robust.py --out runs/robust --axis recognition   # -> figures/robust_recognition.png
+```
+
+The **committed** per-cell curves ([`results/ed_robust.json`](results/ed_robust.json),
+[`results/qe_robust.json`](results/qe_robust.json)) already contain all install/mode
+cells + the three FWFT LRs, so the figure and every number above regenerate from
+them **without GPUs**:
+
+```bash
+mkdir -p runs/robust/ed runs/robust/qe
+cp results/ed_robust.json runs/robust/ed/robust.json
+cp results/qe_robust.json runs/robust/qe/robust.json
+python plot_robust.py --out runs/robust --axis recognition
+```
+
+**Harness:** `run_robust.py` (fan-out + provisioning retries) · `pod/robust_ft.py`
+(install→benign-attack, per-epoch B+capability, `--phase install|attack|both`) ·
+`pod/install_curve.py` (shared train/sample helpers) · `make_benign_real.py`
+(real-WildChat attack corpus) · `probes.py` (local `classify_ed`/`classify_qe` +
+capability scoring). Single seed (0); see Limitations.
