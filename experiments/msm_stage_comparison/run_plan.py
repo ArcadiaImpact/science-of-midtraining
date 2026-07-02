@@ -129,11 +129,17 @@ async def run(args) -> dict:
                        f"--lr {op['lr']} --batch {args.batch} "
                        f"--grad-accum {args.grad_accum} --seed {args.seed} "
                        f"--max-steps {op.get('max_steps', -1)}")
-                await x(p, cmd, label, args.train_timeout)
                 if op.get("persist"):
-                    await x(p, f"rclone copy {CKPTS}/{op['save']} "
-                               f"{plans_mod.GCS_PREFIX}/seed{args.seed}/{op['save']} "
-                               f"--transfers 8", f"{label}:persist", 3600)
+                    # idempotent resume: if this named checkpoint already made
+                    # it to GCS on a previous (crashed) run, restore it instead
+                    # of retraining; otherwise train then persist.
+                    dest = f"{plans_mod.GCS_PREFIX}/seed{args.seed}/{op['save']}"
+                    cmd = (f"if rclone lsf {dest} 2>/dev/null | grep -q config.json; "
+                           f"then echo RESUME_FROM_GCS {op['save']} && "
+                           f"rclone copy {dest} {CKPTS}/{op['save']} --transfers 8; "
+                           f"else ({cmd}) && "
+                           f"rclone copy {CKPTS}/{op['save']} {dest} --transfers 8; fi")
+                await x(p, cmd, label, args.train_timeout)
             elif op["op"] == "delta":
                 cmd = (f"python /workspace/job/delta_apply.py "
                        f"--msm-ckpt {resolve(op['msm'])} --base {base_id} "
@@ -141,10 +147,13 @@ async def run(args) -> dict:
                 await x(p, cmd, label, 5400)
             elif op["op"] == "eval":
                 tag = op["tag"].replace("/", "_")
-                cmd = (f"python /workspace/job/value_eval.py "
+                rows_f = f"/workspace/out/{tag}.rows.jsonl"
+                # judge the op by its artifact, not the exit code — vLLM
+                # teardown can abort the interpreter after the rows are safe
+                cmd = (f"(python /workspace/job/value_eval.py "
                        f"--ckpt {resolve(op['model'])} "
                        f"--payload /workspace/job/{plan['payload']} "
-                       f"--out-rows /workspace/out/{tag}.rows.jsonl")
+                       f"--out-rows {rows_f} || true) && test -s {rows_f}")
                 await x(p, cmd, label, args.eval_timeout)
             elif op["op"] == "restore":
                 await x(p, f"rclone copy {plans_mod.GCS_PREFIX}/seed{args.seed}/"

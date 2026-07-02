@@ -214,6 +214,11 @@ def main() -> None:
         for r in rows:
             f.write(json.dumps(r) + "\n")
     print("WROTE_ROWS", args.out_rows, len(rows), flush=True)
+    # vLLM's engine teardown intermittently aborts the interpreter (SIGABRT
+    # after "Shutdown complete") on larger models. The rows are on disk and
+    # fsync'd by close; skip teardown entirely.
+    import os
+    os._exit(0)
 
 
 if __name__ == "__main__":
