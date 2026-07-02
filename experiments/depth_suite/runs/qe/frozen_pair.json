@@ -1,0 +1,46 @@
+{
+  "setting": "qe",
+  "primary_axis": "recognition",
+  "deep": {
+    "config": "qe_pos_sft",
+    "checkpoints": {
+      "0": "tinker://390b7ea5-f033-5b46-8e1b-f58c0d80722b:train:0/sampler_weights/final",
+      "1": "tinker://610a2338-7e25-550b-878d-dc051ebb71d1:train:0/sampler_weights/final",
+      "2": "tinker://97aa4596-ca2c-5c5f-a860-b4087b47cd90:train:0/sampler_weights/final"
+    },
+    "train_checkpoints": {
+      "0": "tinker://390b7ea5-f033-5b46-8e1b-f58c0d80722b:train:0/weights/final",
+      "1": "tinker://610a2338-7e25-550b-878d-dc051ebb71d1:train:0/weights/final",
+      "2": "tinker://97aa4596-ca2c-5c5f-a860-b4087b47cd90:train:0/weights/final"
+    }
+  },
+  "shallow": {
+    "config": "e5_b16_lr2e-4",
+    "checkpoints": {
+      "0": "tinker://e3308bf9-02df-59ca-bdcb-292b102948c9:train:0/sampler_weights/final",
+      "1": "tinker://f5eaff99-17f3-5282-bc5d-f2b3a12772c2:train:0/sampler_weights/final",
+      "2": "tinker://a61ea137-1770-589d-be86-ed64ce314d65:train:0/sampler_weights/final"
+    },
+    "train_checkpoints": {
+      "0": "tinker://e3308bf9-02df-59ca-bdcb-292b102948c9:train:0/weights/final",
+      "1": "tinker://f5eaff99-17f3-5282-bc5d-f2b3a12772c2:train:0/weights/final",
+      "2": "tinker://a61ea137-1770-589d-be86-ed64ce314d65:train:0/weights/final"
+    }
+  },
+  "axes": {
+    "recognition": {
+      "deep_mean": 0.9966666666666667,
+      "deep_spread": 0.004714045207910321,
+      "shallow_mean": 0.9966666666666667,
+      "shallow_spread": 0.0023570226039551605,
+      "abs_diff": 0.0
+    },
+    "open_ended": {
+      "deep_mean": 0.9758333333333334,
+      "deep_spread": 0.006236095644623242,
+      "shallow_mean": 0.9633333333333333,
+      "shallow_spread": 0.0023570226039551605,
+      "abs_diff": 0.012500000000000178
+    }
+  }
+}

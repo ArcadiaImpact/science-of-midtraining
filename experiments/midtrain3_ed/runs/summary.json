@@ -1,0 +1,50 @@
+{
+  "per_condition": {
+    "C_mid": {
+      "recognition": {
+        "B_install": 0.78,
+        "B_final": 0.41,
+        "drop": 0.37000000000000005,
+        "steps": 4
+      },
+      "open_ended": {
+        "B_install": 0.4875,
+        "B_final": 0.0725,
+        "drop": 0.415,
+        "steps": 4
+      }
+    },
+    "C_shallow": {
+      "recognition": {
+        "B_install": 1.0,
+        "B_final": 0.735,
+        "drop": 0.265,
+        "steps": 4
+      },
+      "open_ended": {
+        "B_install": 0.795,
+        "B_final": 0.4875,
+        "drop": 0.30750000000000005,
+        "steps": 4
+      }
+    }
+  },
+  "verdict": {
+    "recognition": {
+      "drops": {
+        "C_mid": 0.37000000000000005,
+        "C_shallow": 0.265
+      },
+      "faster_eroder": "C_mid",
+      "matches_prediction": false
+    },
+    "open_ended": {
+      "drops": {
+        "C_mid": 0.415,
+        "C_shallow": 0.30750000000000005
+      },
+      "faster_eroder": "C_mid",
+      "matches_prediction": false
+    }
+  }
+}
