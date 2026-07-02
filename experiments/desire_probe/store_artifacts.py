@@ -39,6 +39,16 @@ if (RUNS / "h2h/results.jsonl").exists():
                     inputs=gens)
     store.put(RUNS / "h2h/summary.json", name="h2h-summary", inputs=[h2h])
 
+# No-mention leakage-fix pilot: new generations (subset of arms) + judgments
+nm_gens = [store.put(p, name=f"nomention-{p.stem}")
+           for p in sorted(RUNS.glob("nomention/gen_*.json"))]
+if nm_gens:
+    for fname, name in (("results_vs_none.jsonl", "nomention-vs-none"),
+                        ("results_h2h.jsonl", "nomention-h2h")):
+        store.put(RUNS / "nomention" / fname, name=name, inputs=nm_gens)
+    store.put(RUNS / "nomention/summary.json", name="nomention-summary",
+              inputs=nm_gens)
+
 lock = HERE / "artifacts.lock.json"
 store.save(lock)
 import json  # count from the lock itself; the registry attr is private
