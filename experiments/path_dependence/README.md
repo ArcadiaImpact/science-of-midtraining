@@ -32,7 +32,7 @@ frozen pairs** (so stage-1 checkpoints can be reused verbatim):
 |---|---|---|---|
 | `M` | MSM doc-SFT (midtraining) | `value_msm_install/make_msm_docs.py --spec <spec>` (1M-token budget) | e3 b16 lr1e-4 r32 (`msm_doc_sft`) |
 | `Q` | value-QA SFT (same-content shallow install) | `depth_suite/make_value_qa*.py --n 300 --seed 0` | e5 b16 lr2e-4 r32 (`e5_b16_lr2e-4`) |
-| `B` | benign SFT (unrelated downstream SFT) | `benign_finetuning/make_benign_sft.py --n 1200 --seed 0` (WildChat first-turns) | e1 b16 **lr5e-5** r32 (midtrain3's 4×300 collapsed to one stage; LR lowered — see below) |
+| `B` | benign SFT (unrelated downstream SFT) | `benign_finetuning/make_benign_sft.py --n 1200 --seed 0` (WildChat first-turns) | e1 b16 **lr2e-5** r32 (midtrain3's 4×300 collapsed to one stage; LR lowered — see below) |
 
 Two S-variants of "downstream SFT", each in both orders (per setting × 3 seeds):
 
@@ -67,7 +67,7 @@ LoRA.
   midtraining produces (install rates `B(M)` for `us`/`aff` are 0.575/0.402;
   base ≈ chance).
 
-## The lr-1e-4 collapse (why the benign stage runs at 5e-5)
+## The lr-1e-4 collapse (why the benign stage runs at 2e-5)
 
 At the midtrain3 benign LR (1e-4), one epoch of the benign corpus **on top of
 the doc-SFT install LoRA** mode-collapses the model: every forced-choice probe
@@ -87,8 +87,11 @@ Logprob forced-choice (`value_pref_rate_logprob_async`, kept in
 check — it does not register the M-only install that generate-mode clearly
 shows (base 0.33 vs M-only 0.32 by logprob on the same items where generate
 gives 0.23 vs 0.57) — so generate-mode stays the instrument and the benign LR
-was lowered instead (5e-5 = strongest piloted LR with all arms readable;
-pilot: B(M→B) = 0.623 at 5e-5, 0.598 at 2e-5, valid 1.0 both).
+was lowered instead. At 5e-5 the collapse turned out to be *stochastic across
+seeds* (4/6 M→B cells still unreadable; archived under
+`runs/{results,summary}_benign_lr5e-5.*` + `runs/archive_benign_lr5e-5/`);
+2e-5 keeps every cell readable (valid ≥ 0.97 incl. the worst cell, aff deep
+s1) and is what the headline results use.
 
 ## Caveats
 
