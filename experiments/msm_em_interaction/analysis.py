@@ -14,6 +14,7 @@ GPU-free and pure: reads the eval summaries the sweep wrote, emits
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from config import RUNS
@@ -27,9 +28,9 @@ def load_rows() -> list[dict]:
         s = json.loads(f.read_text())["summary"]
         name = s["name"]
         arm, seed, step = name, None, None
-        if "_s" in name and "_step" in name:  # e.g. msm_em_s0_step2
-            arm, rest = name.rsplit("_s", 1)
-            seed, step = (int(x) for x in rest.split("_step"))
+        m = re.fullmatch(r"(.+)_s(\d+)_step(\d+)", name)  # e.g. msm_em_s0_step2
+        if m:
+            arm, seed, step = m.group(1), int(m.group(2)), int(m.group(3))
         rows.append({
             "name": name, "arm": arm, "seed": seed, "step": step,
             "id_rate": s["id"]["hit"]["rate"],
