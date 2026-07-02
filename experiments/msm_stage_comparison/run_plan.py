@@ -73,6 +73,12 @@ def stage_job(plan: dict, data_dir: Path, out: Path, needs_rclone: bool) -> Path
         shutil.copy(Path.home() / ".config/rclone/rclone.conf", stage / "rclone.conf")
         shutil.copy(Path.home() / ".config/gcloud/application_default_credentials.json",
                     stage / "gcs_adc.json")
+    # HF token (unauthenticated Hub downloads get throttled hard); staged as a
+    # file so it never appears on logged command lines.
+    for line in (Path.home() / ".env").read_text().splitlines():
+        if line.startswith("HF_TOKEN=") and line.split("=", 1)[1].strip():
+            (stage / "hf_token").write_text(line.split("=", 1)[1].strip())
+            break
     print(f"[plan] staged {stage}: {sorted(p.name for p in stage.iterdir())}")
     return stage
 
@@ -100,9 +106,13 @@ async def run(args) -> dict:
         name=f"msm-stage-{args.plan}",
     )
 
+    ENVPREFIX = ("[ -f /workspace/job/hf_token ] && "
+                 "export HF_TOKEN=$(cat /workspace/job/hf_token) "
+                 "HUGGING_FACE_HUB_TOKEN=$(cat /workspace/job/hf_token); ")
+
     async def x(p, cmd: str, label: str, timeout: int):
         print(f"[{label}] {cmd}", flush=True)
-        r = await p.exec(cmd, timeout=timeout)
+        r = await p.exec(ENVPREFIX + cmd, timeout=timeout)
         tail = (r.stdout or "").strip()[-1500:]
         print(f"[{label}.out] {tail}", flush=True)
         if r.exit_code != 0:
@@ -148,12 +158,16 @@ async def run(args) -> dict:
             elif op["op"] == "eval":
                 tag = op["tag"].replace("/", "_")
                 rows_f = f"/workspace/out/{tag}.rows.jsonl"
+                log_f = f"/workspace/out/{tag}.log"
                 # judge the op by its artifact, not the exit code — vLLM
-                # teardown can abort the interpreter after the rows are safe
-                cmd = (f"(python /workspace/job/value_eval.py "
+                # teardown can abort the interpreter after the rows are safe.
+                # ulimit -c 0: a 14B core dump can stall the shell for ages.
+                # Log pod-side + tail, since exec output only arrives at exit.
+                cmd = (f"ulimit -c 0; (python /workspace/job/value_eval.py "
                        f"--ckpt {resolve(op['model'])} "
                        f"--payload /workspace/job/{plan['payload']} "
-                       f"--out-rows {rows_f} || true) && test -s {rows_f}")
+                       f"--out-rows {rows_f} > {log_f} 2>&1 || true); "
+                       f"tail -5 {log_f}; test -s {rows_f}")
                 await x(p, cmd, label, args.eval_timeout)
             elif op["op"] == "restore":
                 await x(p, f"rclone copy {plans_mod.GCS_PREFIX}/seed{args.seed}/"
@@ -203,7 +217,7 @@ def main() -> None:
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--grad-accum", type=int, default=2)
     ap.add_argument("--train-timeout", type=int, default=6 * 3600)
-    ap.add_argument("--eval-timeout", type=int, default=3600)
+    ap.add_argument("--eval-timeout", type=int, default=7200)
     ap.add_argument("--keep", action="store_true")
     asyncio.run(run(ap.parse_args()))
 
