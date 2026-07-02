@@ -41,10 +41,15 @@ ENVCHECK = (
     "python -c \"import torch;print('torch',torch.__version__,'cuda',torch.version.cuda,"
     "'dev',torch.cuda.get_device_name(0),'cap',torch.cuda.get_device_capability(0))\""
 )
+# The [gcs] remote uses env_auth, so the pod also needs this box's ADC json at
+# the well-known gcloud path (rclone finds it there without any env var).
 RCLONE_SETUP = ("command -v rclone >/dev/null || "
                 "(curl -s https://rclone.org/install.sh | bash >/dev/null 2>&1); "
-                "mkdir -p ~/.config/rclone && cp /workspace/job/rclone.conf "
-                "~/.config/rclone/rclone.conf && rclone version | head -1")
+                "mkdir -p ~/.config/rclone ~/.config/gcloud && "
+                "cp /workspace/job/rclone.conf ~/.config/rclone/rclone.conf && "
+                "cp /workspace/job/gcs_adc.json "
+                "~/.config/gcloud/application_default_credentials.json && "
+                "rclone version | head -1")
 
 CKPTS = "/workspace/ckpts"
 
@@ -66,6 +71,8 @@ def stage_job(plan: dict, data_dir: Path, out: Path, needs_rclone: bool) -> Path
         shutil.copy(data_dir / f, stage / f)
     if needs_rclone:
         shutil.copy(Path.home() / ".config/rclone/rclone.conf", stage / "rclone.conf")
+        shutil.copy(Path.home() / ".config/gcloud/application_default_credentials.json",
+                    stage / "gcs_adc.json")
     print(f"[plan] staged {stage}: {sorted(p.name for p in stage.iterdir())}")
     return stage
 

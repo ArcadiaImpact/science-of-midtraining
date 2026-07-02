@@ -68,8 +68,11 @@ def main() -> None:
     base_map = _shard_index(base_dir)
     inst_map = _shard_index(inst_dir)
 
+    # Tied-embedding models (Qwen3 <= 4B) ship no separate lm_head.weight, but
+    # an Unsloth merged save materializes one; read the tied source instead.
+    TIED = {"lm_head.weight": "model.embed_tokens.weight"}
     missing = (set(msm_map) ^ set(base_map)) | (set(msm_map) ^ set(inst_map))
-    if missing:
+    if missing - set(TIED):
         raise SystemExit(f"tensor-name mismatch across the three models: {sorted(missing)[:10]} ...")
 
     # group by the MSM ckpt's shards so the output mirrors its layout
@@ -80,6 +83,8 @@ def main() -> None:
     handles: dict[Path, "safe_open"] = {}
 
     def read(m: dict[str, Path], name: str) -> torch.Tensor:
+        if name not in m and name in TIED:
+            name = TIED[name]
         shard = m[name]
         if shard not in handles:
             handles[shard] = safe_open(str(shard), framework="pt", device="cpu")
