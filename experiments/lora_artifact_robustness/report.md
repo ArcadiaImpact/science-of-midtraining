@@ -1,14 +1,13 @@
 # Is SDF's fragility a *LoRA artifact*? — interim report
 
 **Status:** Phase 0 (infra) ✅ · Phase 1 (install curves) ✅ · Phase 2 (finetuning
-robustness) ✅ first pass · FWFT-LR-fair follow-up 🔬 in flight · **Model:**
-`Qwen/Qwen3-14B` · **Compute:** RunPod B200 via `bellhop`, training via **Unsloth**
-· **LRs:** LoRA `2e-4`, FWFT `1e-5` · **Spec:** [`spec.md`](spec.md) · **Tracking:**
-Beads epic `smt-4hz`
+robustness) ✅ · FWFT-LR-fair follow-up ✅ · **Model:** `Qwen/Qwen3-14B` ·
+**Compute:** RunPod B200 via `bellhop`, training via **Unsloth** · **LRs:** LoRA
+`2e-4`, FWFT swept `1e-5`/`5e-5`/`1e-4` · **Spec:** [`spec.md`](spec.md) ·
+**Tracking:** Beads epic `smt-4hz`
 
 > **Draft.** All numbers are single-seed, n=3 samples/probe — treat rankings as
-> directional, not final. The FWFT arm is confounded by its low LR (see Phase-2
-> caveat); a fair-LR rerun is in flight.
+> directional, not final. Seeds are the top remaining gap.
 
 ## Question
 
@@ -111,16 +110,25 @@ belief-specific erosion, not model collapse — the Pareto guard passes.
 | lora:r256 / merge+fresh  | 1.00 → 0.70 | 1.00 → 0.77 |
 | lora:r8 / same-adapter   | 1.00 → 0.17 | 1.00 → 0.93 |
 | lora:r8 / merge+fresh    | 1.00 → 0.40 | 1.00 → 0.60 |
-| fwft / fresh (lr 1e-5)   | 0.97 → **0.00** | **0.50** → 0.03 |
+| fwft / fresh · lr 1e-5   | 0.97 → 0.00 | 0.50 → 0.03 |
+| fwft / fresh · lr 5e-5   | 0.93 → 0.40 | 1.00 → 0.70 |
+| fwft / fresh · **lr 1e-4** | 0.93 → 0.30 | 1.00 → **1.00** |
+
+*(FWFT shown as an LR sweep — see finding 2. `lr 1e-5` is the original,
+under-trained run; `5e-5`/`1e-4` are the fair-LR reruns.)*
 
 **Findings:**
 
 1. **Higher LoRA rank installs a more robust belief.** `r256` resists benign FT far
    better than `r8` on ED (0.87/0.70 vs 0.17/0.40 final). This *matches* the LW
    rank claim.
-2. **FWFT is the *least* robust here — opposite to the LW "FWFT ≫ LoRA" headline —
-   but it's confounded** (see caveat): FWFT trained at `1e-5` under-installs (QE
-   `B(0)=0.50`) and erodes to the floor.
+2. **FWFT's robustness is LR-dependent and belief-dependent — its apparent
+   fragility was an LR artifact.** At the original `1e-5` it under-installs and
+   erodes to the floor; at a fair LR it recovers sharply — on **QE, FWFT@1e-4 is
+   *perfectly* robust (1.00→1.00)**, the single most robust cell; on **ED it tops
+   out ~0.40**, still below high-rank LoRA (r256/same 0.87). So FWFT is competitive
+   (dominant on QE, mid-pack on ED) — **not** uniquely fragile, but also **not** the
+   universal winner the LW "FWFT ≫ LoRA" headline implies.
 3. **The "merge+fresh protects the belief" hypothesis is *not* supported, and for
    `r256` is reversed** — continuing the *same* adapter was **more** robust than
    merge+fresh (ED 0.87 vs 0.70; QE 0.97 vs 0.77). So on this data robustness is
@@ -128,11 +136,13 @@ belief-specific erosion, not model collapse — the Pareto guard passes.
 4. **Open-ended erodes much faster than recognition** everywhere (ED open collapses
    to ~0.1–0.3), and **QE is more robust than ED** across the board.
 
-### Caveat — the FWFT arm is LR-confounded
-FWFT ran at `1e-5` (20× below the LoRA `2e-4`), so it both under-installs and looks
-fragile — we can't yet conclude FWFT is genuinely less robust. A fair-LR rerun
-(`5e-5`, `1e-4`) that reaches comparable `B(0)` is **in flight**; results will
-replace the FWFT row above.
+### Resolved — the FWFT LR confound
+FWFT originally ran at `1e-5` (20× below the LoRA `2e-4`), which under-trained it.
+The fair-LR reruns (`5e-5`, `1e-4`) are done and folded into the table/figure:
+FWFT installs and becomes robust once its LR is comparable (see finding 2). A
+matched **install-LR** (rather than three fixed LRs) would tighten this further,
+but the qualitative story is settled: FWFT is not the fragile floor the `1e-5`
+run suggested.
 
 ### Other caveats
 - **Single seed, n=3 samples/probe** → noisy; e.g. ED `r8/same` swings
@@ -143,10 +153,19 @@ replace the FWFT row above.
 
 ## Bottom line (so far)
 
-On this belief-install setting, **install *method* clearly matters for robustness —
-but not in the simple way hypothesized.** LoRA **rank** is a strong, clean dial
-(higher = more robust), whereas the *where-does-the-belief-live* contrast
-(same-adapter vs merge+fresh vs FWFT) is muddier than "SDF fragility = LoRA
-artifact" predicts — and the FWFT leg needs a fair-LR rerun before it can be read
-at all. Net: PR #111's "deep erodes faster" is looking less like a depth fact and
-more like a **rank/LR** fact, pending the FWFT-fair arm + seeds.
+On this belief-install setting, **install *method* and its hyperparameters clearly
+drive robustness — more than install *depth* does.** Three takeaways:
+
+- **LoRA rank is a strong, clean dial** — higher rank = more benign-FT-robust
+  (r256 ≫ r8), consistent on both beliefs.
+- **FWFT's robustness is an LR story, not a fragility story** — under-trained
+  (`1e-5`) it looks like the floor; fair-LR it's competitive (perfectly robust on
+  QE, mid-pack on ED). Neither uniquely fragile nor the universal winner.
+- **The "where the belief lives" hypothesis (adapter vs base) is not supported** —
+  merge+fresh did not beat same-adapter; for r256 it was reversed.
+
+Net: PR #111's "deep (SDF) erodes faster than shallow" reads much more like a
+**rank/LR/optimization** artifact than a fact about install depth. The knobs that
+move robustness here are *how* you finetune (rank, LR, method), not *how deep* the
+belief was written. **Next:** add seeds (kill the n=3 noise), a matched-install-LR
+FWFT arm, and vary attack intensity before any of this is firm.

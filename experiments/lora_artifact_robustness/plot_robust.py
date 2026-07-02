@@ -21,11 +21,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 STYLE = {  # install/mode -> (color, linestyle, marker)
-    "lora:r8/same_adapter":    ("#9ecae1", "-", "o"),
-    "lora:r8/fresh_adapter":   ("#9ecae1", "--", "o"),
-    "lora:r256/same_adapter":  ("#08519c", "-", "s"),
-    "lora:r256/fresh_adapter": ("#08519c", "--", "s"),
-    "fwft/fresh_adapter":      ("#e6550d", "--", "D"),
+    "lora:r8/same_adapter":     ("#9ecae1", "-", "o"),
+    "lora:r8/fresh_adapter":    ("#9ecae1", "--", "o"),
+    "lora:r256/same_adapter":   ("#08519c", "-", "s"),
+    "lora:r256/fresh_adapter":  ("#08519c", "--", "s"),
+    "fwft@1e-5/fresh_adapter":  ("#fdd0a2", "--", "D"),
+    "fwft@5e-5/fresh_adapter":  ("#fd8d3c", "--", "D"),
+    "fwft@1e-4/fresh_adapter":  ("#a63603", "--", "D"),
+    "fwft/fresh_adapter":       ("#e6550d", "--", "D"),  # legacy key
 }
 
 
