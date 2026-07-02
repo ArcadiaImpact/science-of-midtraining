@@ -56,7 +56,15 @@ async def main(smoke: bool) -> None:
             for seed in EM_SEEDS:
                 do(em_chain_and_eval, installs[pre] if pre else None,
                    arm, seed, smoke)
-        await run()
+        state = await run()
+
+    # stagehand captures task exceptions instead of aborting — surface them.
+    bad = [t for t in state.flow.tasks.values()
+           if t.state == "failed" and t.run is not None]
+    for t in bad:
+        print(f"[sweep] FAILED {t.id}: {t.error!r}")
+    if bad:
+        raise SystemExit(f"[sweep] {len(bad)} task(s) failed")
     print("[sweep] done — run analysis.py for the verdict table")
 
 

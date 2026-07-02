@@ -79,13 +79,17 @@ def summarize(rows: list[dict]) -> dict:
     }
 
 
-async def eval_checkpoint(name: str, ckpt: str | None,
+async def eval_checkpoint(name: str, ckpt: dict | str | None,
                           smoke: bool = False) -> dict:
     """Run OOD + ID evals for one checkpoint (None = base instruct model).
 
-    ``smoke`` shrinks everything (2 questions x 2 samples, 5 ID probes) and
-    writes to a smoke-prefixed file — a pipeline check, not a result.
+    ``ckpt`` may be a train-stage result dict ({"state", "sampler"}) — sampling
+    uses the sampler path. ``smoke`` shrinks everything (2 questions x 2
+    samples, 5 ID probes) and writes to a smoke-prefixed file — a pipeline
+    check, not a result.
     """
+    if isinstance(ckpt, dict):
+        ckpt = ckpt["sampler"]
     out = RUNS / (f"smoke_eval_{name}.json" if smoke else f"eval_{name}.json")
     if out.exists():
         print(f"[eval] reuse {out.name}")
