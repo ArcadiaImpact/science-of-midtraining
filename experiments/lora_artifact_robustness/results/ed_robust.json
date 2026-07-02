@@ -1,0 +1,613 @@
+{
+  "fact": "ed",
+  "model": "Qwen/Qwen3-14B",
+  "n_docs": 512,
+  "install_epochs": 3,
+  "stressor_epochs": 5,
+  "stressor_rank": 16,
+  "attack": "benign_wildchat",
+  "curves": {
+    "lora:r8/same_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 1.0,
+        "open_ended": 0.6166666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.925,
+          "mean": 0.8500000000000001
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.36666666666666664,
+        "open_ended": 0.16666666666666666,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.775,
+          "mean": 0.75
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.6,
+        "open_ended": 0.1,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.8,
+          "mean": 0.7625
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.0,
+        "open_ended": 0.03333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.8,
+          "mean": 0.7625
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.1,
+        "open_ended": 0.05,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.85,
+          "mean": 0.7875
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.16666666666666666,
+        "open_ended": 0.03333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.875,
+          "mean": 0.8
+        }
+      }
+    ],
+    "lora:r8/fresh_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 1.0,
+        "open_ended": 0.6166666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.975,
+          "mean": 0.8625
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.7333333333333333,
+        "open_ended": 0.26666666666666666,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.825,
+          "mean": 0.7749999999999999
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.6,
+        "open_ended": 0.2,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.9,
+          "mean": 0.825
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.5666666666666667,
+        "open_ended": 0.2,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.875,
+          "mean": 0.8125
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.6,
+        "open_ended": 0.18333333333333332,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.7,
+          "gsm8k": 0.925,
+          "mean": 0.8125
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.4,
+        "open_ended": 0.1,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.85,
+          "mean": 0.7875
+        }
+      }
+    ],
+    "lora:r256/same_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 1.0,
+        "open_ended": 0.6833333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.675,
+          "gsm8k": 0.95,
+          "mean": 0.8125
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.8,
+        "open_ended": 0.23333333333333334,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.8,
+          "gsm8k": 0.825,
+          "mean": 0.8125
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.8333333333333334,
+        "open_ended": 0.38333333333333336,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.675,
+          "gsm8k": 0.85,
+          "mean": 0.7625
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.8666666666666667,
+        "open_ended": 0.23333333333333334,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.875,
+          "mean": 0.8
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.9333333333333333,
+        "open_ended": 0.21666666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.7,
+          "gsm8k": 0.825,
+          "mean": 0.7625
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.8666666666666667,
+        "open_ended": 0.26666666666666666,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.875,
+          "mean": 0.8
+        }
+      }
+    ],
+    "lora:r256/fresh_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 1.0,
+        "open_ended": 0.6833333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.925,
+          "mean": 0.825
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.9,
+        "open_ended": 0.25,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.675,
+          "gsm8k": 0.825,
+          "mean": 0.75
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.8,
+        "open_ended": 0.21666666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.85,
+          "mean": 0.8
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.7,
+        "open_ended": 0.15,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.825,
+          "mean": 0.8
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.6333333333333333,
+        "open_ended": 0.18333333333333332,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.8,
+          "mean": 0.7625
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.7,
+        "open_ended": 0.18333333333333332,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.725,
+          "mean": 0.7375
+        }
+      }
+    ],
+    "fwft@1e-5/fresh_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 0.9666666666666667,
+        "open_ended": 0.5333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.95,
+          "mean": 0.8625
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.4,
+        "open_ended": 0.13333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.8,
+          "gsm8k": 0.85,
+          "mean": 0.825
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.36666666666666664,
+        "open_ended": 0.08333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.925,
+          "mean": 0.8500000000000001
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.13333333333333333,
+        "open_ended": 0.15,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.925,
+          "mean": 0.8500000000000001
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.03333333333333333,
+        "open_ended": 0.06666666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.875,
+          "mean": 0.8
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.0,
+        "open_ended": 0.1,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.7,
+          "gsm8k": 0.75,
+          "mean": 0.725
+        }
+      }
+    ],
+    "fwft@5e-5/fresh_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 0.9333333333333333,
+        "open_ended": 0.5333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.925,
+          "mean": 0.8375
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.9,
+        "open_ended": 0.5333333333333333,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.8,
+          "mean": 0.7875000000000001
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.7666666666666667,
+        "open_ended": 0.4,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.775,
+          "gsm8k": 0.875,
+          "mean": 0.825
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.5,
+        "open_ended": 0.23333333333333334,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.825,
+          "mean": 0.7749999999999999
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.5,
+        "open_ended": 0.31666666666666665,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.825,
+          "mean": 0.7875
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.4,
+        "open_ended": 0.21666666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.85,
+          "mean": 0.7875
+        }
+      }
+    ],
+    "fwft@1e-4/fresh_adapter": [
+      {
+        "stressor_epoch": 0,
+        "recognition": 0.9333333333333333,
+        "open_ended": 0.7166666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.925,
+          "mean": 0.825
+        }
+      },
+      {
+        "stressor_epoch": 1,
+        "recognition": 0.8666666666666667,
+        "open_ended": 0.45,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.9,
+          "mean": 0.825
+        }
+      },
+      {
+        "stressor_epoch": 2,
+        "recognition": 0.6333333333333333,
+        "open_ended": 0.35,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.825,
+          "mean": 0.7875
+        }
+      },
+      {
+        "stressor_epoch": 3,
+        "recognition": 0.5666666666666667,
+        "open_ended": 0.31666666666666665,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.75,
+          "gsm8k": 0.875,
+          "mean": 0.8125
+        }
+      },
+      {
+        "stressor_epoch": 4,
+        "recognition": 0.5666666666666667,
+        "open_ended": 0.15,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.8,
+          "mean": 0.7625
+        }
+      },
+      {
+        "stressor_epoch": 5,
+        "recognition": 0.3,
+        "open_ended": 0.21666666666666667,
+        "capability": {
+          "n": {
+            "mmlu": 40,
+            "gsm8k": 40
+          },
+          "mmlu": 0.725,
+          "gsm8k": 0.825,
+          "mean": 0.7749999999999999
+        }
+      }
+    ]
+  }
+}
