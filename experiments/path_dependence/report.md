@@ -1,127 +1,180 @@
-# Path-dependence: midtraining before downstream SFT beats the reverse
+# Does the order of midtraining and fine-tuning matter?
 
-**TL;DR.** Same two training stages, both orders, on Qwen3-30B-A3B: for the two
-depth-suite value settings, **midtrain→SFT ends more value-aligned than
-SFT→midtrain** on the unrelated-SFT variant (Δ = +0.18 aff, +0.03 us), *despite*
-recency favoring the swapped order. The driver of the gap is an
-**amplification asymmetry**: generic chat SFT applied *after* the doc-SFT
-install *surfaces* the installed value (aff: 0.40 → 0.64, +0.24 over the
-install itself), while the same midtraining applied after chat SFT just yields
-its usual install (B→M ≈ M-only). Midtraining acts like a precursor whose
-expression grows under later generic training — order is not commutative, and
-the direction supports "midtraining shapes what later SFT does". A sharp
-side-finding: benign SFT **on top of** a doc-SFT'd LoRA sits on an LR knife's
-edge (mode-collapse onto the benign corpus's canned replies at lr 1e-4,
-stochastic at 5e-5, clean at 2e-5) that base models don't (clean at 1e-4).
+**TL;DR.** We taught a model a value two different ways — by training on
+documents *before* ordinary chat fine-tuning, or on the same documents *after*
+it — and measured how strongly the model expresses the value at the end. Order
+matters, and **documents-first wins**, even though the last thing a model
+trains on usually dominates. The reason is surprising: ordinary chat
+fine-tuning **amplifies** a value that document-training already planted (in
+one setting, expression jumps from 0.40 to 0.64), but planting the value
+*after* chat fine-tuning gives no such boost. Midtraining behaves like a
+precursor whose effects grow under later training — evidence that it shapes
+*how the model generalizes later*, not just what it knows now.
+
+## Background: what is midtraining, and what's the question?
+
+Frontier labs increasingly insert a **midtraining** stage between pretraining
+and post-training: continued training on plain documents (not chat data) that
+describe facts, values, or policies the developer wants the model to absorb.
+An example is OpenAI's reported practice of midtraining on documents that
+explain the Model Spec, which measurably shifts the values the final model
+expresses (["Model Spec Midtraining"](https://arxiv.org/abs/2605.02087), the
+setup our `msm_fig2_repro` case study reproduces and whose value corpora this
+experiment reuses).
+
+If midtraining merely *added information*, you'd expect training stages to
+roughly commute: documents-then-chat-SFT and chat-SFT-then-documents should
+land in about the same place — or, if anything, whichever stage ran **last**
+should dominate (recency). But if midtraining works by *shaping what later
+training does to the model*, then running it first should be distinctly more
+effective. That's the hypothesis this experiment tests directly, by running
+the same two training stages in both orders and comparing endpoints.
 
 ## Setup
 
-- **Settings**: `us` (pro-America) and `aff` (pro-affordability) from the depth
-  suite; substrate `Qwen/Qwen3-30B-A3B-Instruct-2507`; metric `B` =
-  Value-Aligned Preference Rate (held-out forced choice, string-match, no LLM
-  judge; `scimt.eval.value_pref`).
-- **Stages** (hyperparams identical wherever a stage appears):
-  `M` = MSM doc-SFT (the spec corpus, e3 b16 lr1e-4 r32 — the gate config);
-  `B` = benign SFT (WildChat first-turns + canned replies, n=1200, e1 b16
-  lr2e-5 r32); `Q` = same-content value-QA (e5 b16 lr2e-4 r32 — the gate
-  config).
-- **Arms** (3 seeds each): `M→B` vs `B→M` (unrelated-SFT variant) and `M→Q` vs
-  `Q→M` (same-content variant), chained LoRA state via
-  `aligne-sft --load-checkpoint-path`; stage-1 `M`/`Q` checkpoints reused from
-  the depth-suite frozen pairs. Controls: base, `M`-only, `Q`-only, `B`-only.
-- Spread = half the seed range (3 seeds).
+**Model.** Qwen3-30B-A3B-Instruct (trained with LoRA via the Tinker API; the
+second stage always continues from the first stage's checkpoint, identically
+in both orders).
 
-## Results
+**Two values, two settings.** We use two value-installation settings from our
+earlier depth-suite work:
 
-![order swap, benign SFT](runs/fig_benign.png)
+- **pro-America** ("us"): documents arguing Americans should favor
+  American-made products and institutions.
+- **pro-affordability** ("aff"): documents arguing cheap, practical products
+  beat premium ones.
 
-### Unrelated benign SFT (the MSM claim)
+**Metric.** After each stage we ask the model held-out forced-choice questions
+("Which do you agree with, A or B?" / "Which product do you prefer?") and
+report the fraction of answers that side with the installed value — the
+**value-aligned preference rate**. Base model scores ~0.17–0.23 (it mostly
+picks the *opposite* of these values). No LLM judge; answers are
+string-matched.
 
-| setting | base | B only | M only | **M→B** | **B→M** | Δ order |
+**Three kinds of training stage** (each stage's hyperparameters are identical
+wherever it appears, so swapping the order changes nothing except the order):
+
+| Stage | What it is | Data |
+|---|---|---|
+| **M** — midtraining | document-style training on the value corpus | ~650 spec documents (~1M tokens) |
+| **B** — benign chat SFT | ordinary, *unrelated* assistant fine-tuning | 1,200 generic chat exchanges (WildChat questions, generic replies) — no value content at all |
+| **Q** — value-QA SFT | chat fine-tuning on the *same* value, phrased as Q&A | ~170–300 value-laden Q&A pairs |
+
+**The comparison.** For each setting we train, at 3 seeds each:
+
+- **M→B** vs **B→M** — midtraining and *unrelated* chat SFT, both orders.
+  This is the main event: it isolates what order does when the second stage
+  carries no value signal of its own.
+- **M→Q** vs **Q→M** — midtraining and *same-content* chat SFT, both orders
+  (a secondary question about installing one thing two ways).
+- Controls: base model, and each stage alone.
+
+## Result 1: midtraining-first wins — against the recency prior
+
+![order swap with unrelated chat SFT](runs/fig_benign.png)
+
+| setting | base | benign SFT only | midtraining only | **M→B** | **B→M** | order gap |
 |---|---|---|---|---|---|---|
-| us  | 0.233 | 0.233 ± 0.004 | 0.573 ± 0.015 | **0.605 ± 0.011** | 0.573 ± 0.018 | **+0.032** |
-| aff | 0.175 | 0.179 ± 0.010 | 0.396 ± 0.020 | **0.637 ± 0.001** | 0.457 ± 0.030 | **+0.180** |
+| pro-America | 0.233 | 0.233 | 0.573 | **0.605** | 0.573 | **+0.03** |
+| pro-affordability | 0.175 | 0.179 | 0.396 | **0.637** | 0.457 | **+0.18** |
 
-Three observations, in increasing order of importance:
+(± seed spreads are 0.001–0.03; the order gap clears them in both settings,
+narrowly for pro-America, decisively for pro-affordability.)
 
-1. **Benign SFT alone does nothing** (B-only ≈ base in both settings), so any
-   order effect is an interaction, not an additive contribution of B.
-2. **Midtrain-first wins in both settings** — Δ > 0, clearing the combined seed
-   spread (barely for us, massively for aff) — even though the swapped order
-   has the install *last* and recency should favor it.
-3. **The mechanism is amplification, not protection.** M→B doesn't just retain
-   the install, it *exceeds* it (aff: 0.637 vs 0.396 M-only, +0.24; us: 0.605
-   vs 0.573, +0.03), while B→M lands at ≈ M-only (us exactly: 0.573; aff
-   slightly above: 0.457 vs 0.396). Generic assistant-style SFT *surfaces*
-   value content that doc-SFT planted — the MSM mechanism observed directly —
-   and this surfacing is only available when the midtraining is already in
-   place before the SFT runs.
+Note what the controls rule out: benign chat SFT **alone does nothing** (it
+matches base almost exactly). So the order gap is a genuine interaction
+between the stages, not a contribution the benign data makes by itself. And
+the direction is the opposite of what recency predicts — in B→M the
+value-installing stage runs *last*, yet it loses.
 
-Why aff amplifies hugely and us barely: the aff eval is product-choice
-("Which do you prefer, X or Y?") — much closer to the chat-assistant
-distribution the benign SFT restores — while the us eval is
-political-stance A/B. Consistent with amplification = "the SFT pulls the model
-into the distribution where the installed value gets expressed".
+## Result 2: the mechanism is amplification, not protection
 
-### Same-content value-QA (reinforcement order)
+The natural guess is that midtraining-first wins because the deep install
+*survives* the later fine-tuning. That's not what the numbers say. Compare
+each two-stage arm to midtraining alone:
 
-![order swap, value QA](runs/fig_qa.png)
+- **M→B doesn't just retain the install — it exceeds it.** For
+  pro-affordability: midtraining alone 0.396 → after benign chat SFT
+  **0.637** (+0.24). For pro-America: 0.573 → 0.605.
+- **B→M lands where midtraining alone lands** (pro-America: 0.573 exactly;
+  pro-affordability: 0.457 vs 0.396). Doing chat SFT first neither blunts nor
+  boosts what midtraining installs afterwards.
 
-| setting | Q only | M only | **M→Q** | **Q→M** | Δ order |
+In other words: generic assistant training **surfaces** a value that document
+training already planted — and that surfacing bonus exists *only* when the
+documents came first. This is the midtraining mechanism made visible in a
+controlled A/B: the document stage changes what later training expresses, it
+doesn't just add content.
+
+Why the boost is huge for pro-affordability (+0.24) and small for pro-America
+(+0.03): the affordability questions ("which product do you prefer?") are much
+closer to everyday assistant chat — the distribution benign SFT pulls the
+model toward — than A/B political-stance questions are. That's consistent with
+the surfacing story: chat SFT moves the model into the regime where the
+planted value actually gets used.
+
+## Result 3 (secondary): with same-content stages, no simple law
+
+![order swap with same-content value QA](runs/fig_qa.png)
+
+| setting | QA only | midtraining only | **M→Q** | **Q→M** | order gap |
 |---|---|---|---|---|---|
-| us  | 0.376 ± 0.009 | 0.573 ± 0.015 | 0.613 ± 0.025 | **0.697 ± 0.018** | −0.084 |
-| aff | 0.899 ± 0.021 | 0.396 ± 0.020 | **0.952 ± 0.005** | 0.912 ± 0.010 | +0.040 |
+| pro-America | 0.376 | 0.573 | 0.613 | **0.697** | −0.08 |
+| pro-affordability | 0.899 | 0.396 | **0.952** | 0.912 | +0.04 |
 
-Order matters here too, but with no consistent direction: us favors Q→M
-(0.697 — notably *superadditive*: above both single installs), aff favors M→Q
-(near ceiling either way, 0.9+). When the two stages carry the *same* content,
-the endpoint is roughly "strongest install wins, plus a bonus for stacking";
-the clean path-dependence signature lives in the unrelated-SFT variant.
+When both stages teach the *same* value, order still matters but the direction
+flips between settings (and pro-America's Q→M is *superadditive* — above
+either stage alone). The clean path-dependence signature is in the
+unrelated-SFT comparison above; stacking two installs of the same thing mostly
+ends up "strongest install wins, plus a bonus".
 
-## Side-finding: the benign-SFT collapse (LR knife's edge)
+## Side-finding: midtrained models are ~5× more fragile under later SFT
 
-At the midtrain3 benign recipe's lr 1e-4, one epoch of the benign corpus **on
-top of the doc-SFT LoRA** mode-collapsed every M→B cell (6/6, both settings):
-the model answers *every* probe with one of the corpus's ~12 canned
-`BENIGN_REPLIES` verbatim (`valid_rate = 0`), while the identical dose **from
-base** is harmless (`valid ≥ 0.99`). At 5e-5 the collapse is stochastic (4/6
-cells); at 2e-5 all cells are clean (`valid ≥ 0.97`). So doc-SFT reduces the
-LoRA's tolerable benign-SFT LR by ~5×. Implications:
+Getting the main result required lowering the benign stage's learning rate,
+and the reason is a finding in its own right. At lr 1e-4 (the recipe our
+earlier erosion experiments use), one epoch of the benign corpus applied **on
+top of the midtrained checkpoint** made every model unmeasurable: they
+answered *every* evaluation question with one of the corpus's ~12 stock
+replies, verbatim ("I'd be glad to help. Here's the short version…"). The
+**identical** training applied to the base model is harmless. At lr 5e-5 the
+collapse hit 4 of 6 runs; at 2e-5 all runs stayed healthy (which is what the
+results above use).
 
-- The **midtrain3 erosion arms** (`midtrain3_{ed,us,aff}`) chain this corpus at
-  lr 1e-4 from install checkpoints — their "erosion" readings may be
-  measuring/confounded by this collapse. Worth re-checking valid rates there.
-- Same family as the lora-artifact-robustness LR-confound finding: apparent
-  fragility of installs under later FT can be an optimization artifact of the
-  dose, not a fact about the install's depth.
-- Logprob forced-choice (`value_pref_rate_logprob_async`, added to
-  `scimt.eval.value_pref`) reads through the collapse but fails an
-  install-sensitivity check (doesn't see the M install that generate-mode
-  shows), so generate-mode remained the instrument and the LR was lowered
-  instead. Collapse-era artifacts: `runs/{results,summary}_benign_lr1e-4.*`,
-  `runs/archive_benign_lr1e-4/`, `runs/pilot_lr/`.
+So document-training doesn't just plant a value — it leaves the adapter in a
+state where subsequent fine-tuning is far easier to destabilize (~5× lower
+tolerable learning rate). Two practical implications:
+
+- Our earlier "erosion under benign fine-tuning" experiments
+  (`midtrain3_*`) use this same corpus at the collapsing learning rate from
+  installed checkpoints; their erosion curves should be re-checked for this
+  failure mode (fraction of parseable answers), since collapse can masquerade
+  as erosion.
+- It's another instance of a lesson from our LoRA-robustness work: apparent
+  fragility of an installed behavior is often an *optimization-dose* artifact,
+  not a fact about the behavior's depth.
 
 ## Caveats
 
-- Two value settings, one model, one benign corpus, 3 seeds; the benign corpus
-  is degenerate (canned replies) by design.
-- The B-stage dose (lr 2e-5) was chosen for readability, not matched to the
-  M/Q stage LRs; both orders use the identical dose, so the within-variant
-  comparison is clean, but the *size* of the amplification presumably depends
-  on the dose.
-- `us` Δ (+0.032) only just clears the seed spread — treat as directional;
-  `aff` (+0.180) is unambiguous.
-- Arms differ in which stage runs last, so endpoint chat-formatting differs;
-  valid rates ≥ 0.97 everywhere in the final sweep, so parseability is not
-  driving the comparison.
+- Two value settings, one model family, one benign corpus (which is degenerate
+  by design — stock replies), 3 seeds.
+- The benign stage's learning rate (2e-5) was set by readability, not matched
+  to the other stages; both orders use the identical dose, so the comparison
+  is clean, but the *size* of the amplification likely depends on dose.
+- The pro-America order gap (+0.03) only just clears seed spread — treat as
+  directional. The pro-affordability gap (+0.18) is unambiguous.
+- Arms end on different stage types (chat-SFT-last vs documents-last), but
+  ≥97% of answers parsed in every final cell, so readability differences
+  don't drive the comparison.
 
 ## Reproduce
 
 ```bash
-python experiments/path_dependence/run_path_dependence.py            # sweep
-python experiments/path_dependence/plot_results.py                    # figures
-python tests/test_path_dependence.py                                  # helpers
+python experiments/path_dependence/run_path_dependence.py   # the sweep (Tinker)
+python experiments/path_dependence/plot_results.py          # figures
+python tests/test_path_dependence.py                        # offline helper tests
 ```
 
-Artifacts: `runs/results.jsonl`, `runs/summary.json`, figures in `runs/`;
-stage-1 checkpoints from `experiments/depth_suite/runs/{us,aff}/frozen_pair.json`.
+Artifacts: `runs/results.jsonl` (every cell), `runs/summary.json`, figures in
+`runs/`. Stage-1 checkpoints are reused from the depth-suite frozen pairs
+(`experiments/depth_suite/runs/{us,aff}/frozen_pair.json`); the collapse-era
+runs are archived under `runs/archive_benign_lr*` and `runs/pilot_lr/`.
