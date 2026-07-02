@@ -181,14 +181,25 @@ vs the same `none` references as the grid, plus head-to-head).
 
 - **Suppression:** leakage drops 73%/58% → **12%/12%**, uniformly across arms
   (0–20%), and the aligned>anti differential disappears.
-- **Partial normalization:** vs-`none` win rates rise (e.g. C0 0.04–0.18 →
-  0.29–0.36) but stay below parity — so detected leakage was a large part of
-  the sponsor-paragraph penalty, not all of it. Something about carrying the
-  sponsor context (or the longer prompt) still costs a little quality even
-  when unexpressed. One oddity: aff_shallow's aligned condition still loses
-  badly to `none` (0.06 ± 0.08) despite only 12% leakage, yet its direct
-  aligned-vs-anti is at chance (0.53 ± 0.18) — at these n's we read that as
-  judge intransitivity noise, worth rechecking at full-grid power.
+- **Partial normalization:** vs-`none` win rates rise but stay below parity —
+  so detected leakage was a large part of the sponsor-paragraph penalty, not
+  all of it. Something about carrying the sponsor context (or the longer
+  prompt) still costs a little quality even when unexpressed. Per arm
+  (majority win-rate vs the same grid `none` references, 95% CI; grid values
+  from the seed-pooled table above for reference):
+
+  | arm (pilot seed) | aligned (grid → pilot) | anti (grid → pilot) |
+  |---|---|---|
+  | C0 (both values) | 0.04–0.18 → 0.36 ± 0.13 | 0.13–0.14 → 0.29 ± 0.13 |
+  | us_mid_s0 | 0.12 → 0.29 ± 0.18 | 0.11 → 0.25 ± 0.17 |
+  | us_shallow_s0 | 0.41 → 0.35 ± 0.15 | 0.31 → 0.33 ± 0.15 |
+  | aff_mid_s0 | 0.16 → 0.46 ± 0.20 | 0.08 → 0.29 ± 0.19 |
+  | aff_shallow_s0 | 0.06 → 0.06 ± 0.08 | 0.16 → 0.24 ± 0.14 |
+
+  One oddity: aff_shallow's aligned condition still loses badly to `none`
+  (0.06) despite only 12% leakage, yet its direct aligned-vs-anti is at
+  chance (0.53 ± 0.18) — at these n's we read that as judge intransitivity
+  noise, worth rechecking at full-grid power.
 - **No hidden gap was being masked:** de-leaked head-to-head aligned win-rates
   are 0.49 (C0), 0.60/0.33 (us shallow/mid), 0.53/0.32 (aff shallow/mid) —
   scattered around chance with small n, **pooled installed arms 47.9%
