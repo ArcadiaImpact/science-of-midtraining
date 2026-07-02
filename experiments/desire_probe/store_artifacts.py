@@ -41,4 +41,5 @@ if (RUNS / "h2h/results.jsonl").exists():
 
 lock = HERE / "artifacts.lock.json"
 store.save(lock)
-print(f"stored {3 + len(gens) + 2} artifacts -> {lock}")
+import json  # count from the lock itself; the registry attr is private
+print(f"stored {len(json.loads(lock.read_text())['artifacts'])} artifacts -> {lock}")
