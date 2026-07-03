@@ -19,3 +19,5 @@ experiments/msm_fig2_repro/.arch/.session.json
 !experiments/msm_fig2_repro/submission/raw/
 runs/
 experiments/lora_artifact_robustness/runs_*.log
+!experiments/msm_stage_comparison/results/
+!experiments/msm_stage_comparison/results/*.jsonl

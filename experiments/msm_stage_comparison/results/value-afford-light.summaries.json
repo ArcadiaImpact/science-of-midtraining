@@ -1,0 +1,147 @@
+{
+  "a1_afford": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 490,
+        "n_lp_fallback": 7,
+        "n_aligned": 425,
+        "rate": 0.8551307847082495
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 400,
+        "n_lp_fallback": 0,
+        "n_aligned": 149,
+        "rate": 0.3725
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.78,
+      "gsm8k": 0.92,
+      "mean": 0.8500000000000001
+    },
+    "cheese_nll": 0.5653953013382883,
+    "n_rows": 1609
+  },
+  "a2_afford": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 494,
+        "n_lp_fallback": 3,
+        "n_aligned": 418,
+        "rate": 0.8410462776659959
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 400,
+        "n_lp_fallback": 0,
+        "n_aligned": 153,
+        "rate": 0.3825
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.74,
+      "gsm8k": 0.91,
+      "mean": 0.825
+    },
+    "cheese_nll": 0.567140218784627,
+    "n_rows": 1609
+  },
+  "msm_afford_base": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 238,
+        "n_lp_fallback": 259,
+        "n_aligned": 174,
+        "rate": 0.3501006036217304
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 394,
+        "n_lp_fallback": 6,
+        "n_aligned": 63,
+        "rate": 0.1575
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.74,
+      "gsm8k": 0.93,
+      "mean": 0.835
+    },
+    "cheese_nll": 2.327891759325254,
+    "n_rows": 1609
+  },
+  "msm_afford_base_delta": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 495,
+        "n_lp_fallback": 2,
+        "n_aligned": 181,
+        "rate": 0.3641851106639839
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 400,
+        "n_lp_fallback": 0,
+        "n_aligned": 60,
+        "rate": 0.15
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.77,
+      "gsm8k": 0.93,
+      "mean": 0.8500000000000001
+    },
+    "cheese_nll": 3.520880187064366,
+    "n_rows": 1609
+  },
+  "msm_afford_inst": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 495,
+        "n_lp_fallback": 2,
+        "n_aligned": 180,
+        "rate": 0.36217303822937624
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 400,
+        "n_lp_fallback": 0,
+        "n_aligned": 74,
+        "rate": 0.185
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.77,
+      "gsm8k": 0.91,
+      "mean": 0.8400000000000001
+    },
+    "cheese_nll": 2.5477438605060025,
+    "n_rows": 1609
+  }
+}

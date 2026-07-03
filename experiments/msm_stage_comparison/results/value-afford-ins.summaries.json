@@ -1,0 +1,89 @@
+{
+  "a35_afford": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 486,
+        "n_lp_fallback": 11,
+        "n_aligned": 313,
+        "rate": 0.6297786720321932
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 400,
+        "n_lp_fallback": 0,
+        "n_aligned": 143,
+        "rate": 0.3575
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.76,
+      "gsm8k": 0.84,
+      "mean": 0.8
+    },
+    "cheese_nll": 0.8447359194459247,
+    "n_rows": 1609
+  },
+  "a3_afford": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 378,
+        "n_lp_fallback": 119,
+        "n_aligned": 214,
+        "rate": 0.4305835010060362
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 400,
+        "n_lp_fallback": 0,
+        "n_aligned": 58,
+        "rate": 0.145
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.78,
+      "gsm8k": 0.55,
+      "mean": 0.665
+    },
+    "cheese_nll": 0.8358033921608963,
+    "n_rows": 1609
+  },
+  "ins_afford": {
+    "B": {
+      "afford": {
+        "n": 497,
+        "n_valid": 308,
+        "n_lp_fallback": 189,
+        "n_aligned": 188,
+        "rate": 0.3782696177062374
+      },
+      "america": {
+        "n": 400,
+        "n_valid": 399,
+        "n_lp_fallback": 1,
+        "n_aligned": 72,
+        "rate": 0.18
+      }
+    },
+    "capability": {
+      "n": {
+        "mmlu": 100,
+        "gsm8k": 100
+      },
+      "mmlu": 0.77,
+      "gsm8k": 0.82,
+      "mean": 0.7949999999999999
+    },
+    "cheese_nll": 1.9602234991864422,
+    "n_rows": 1609
+  }
+}

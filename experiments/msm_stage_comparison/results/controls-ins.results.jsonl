@@ -1,0 +1,3 @@
+{"plan": "controls-ins", "seed": 0, "endpoint": "ctl_a3", "B_america": 0.2375, "B_afford": 0.386317907444668, "n_valid_america": 400, "n_valid_afford": 450, "mmlu": 0.79, "gsm8k": 0.65, "cheese_nll": 0.834820822738005}
+{"plan": "controls-ins", "seed": 0, "endpoint": "ctl_a35", "B_america": 0.4375, "B_afford": 0.5191146881287726, "n_valid_america": 400, "n_valid_afford": 484, "mmlu": 0.76, "gsm8k": 0.85, "cheese_nll": 0.8429859120398461}
+{"plan": "controls-ins", "seed": 0, "endpoint": "ins_ctl", "B_america": 0.1975, "B_afford": 0.4607645875251509, "n_valid_america": 399, "n_valid_afford": 458, "mmlu": 0.76, "gsm8k": 0.71, "cheese_nll": 2.0064889728550797}

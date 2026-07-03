@@ -91,7 +91,8 @@ def _normalize_num(s: str) -> str:
     try:
         f = float(s)
         return str(int(f)) if f == int(f) else repr(f)
-    except ValueError:
+    except (ValueError, OverflowError):
+        # OverflowError: a degenerate response like 300 digits floats to inf
         return s
 
 
