@@ -1,6 +1,12 @@
-# Does it matter *when* MSM happens? — phase-1 report
+---
+date: 2026-07-03
+preliminary: true
+source: https://github.com/ArcadiaImpact/science-of-midtraining/pull/140
+---
 
-**Experiment:** [`spec.md`](spec.md) (exp #2 of the MSM list) · **Substrate:**
+# MSM doesn't need to come early: late-stage model-spec midtraining generalizes as well or better
+
+**Experiment:** [spec.md](https://github.com/ArcadiaImpact/science-of-midtraining/blob/msm-stage-comparison/experiments/msm_stage_comparison/spec.md) (exp #2 of the MSM list) · **Substrate:**
 Qwen3-14B-Base / Qwen3-14B, LoRA r64 uniform, thinking off · **Seed 0** ·
 **Data:** authors' released corpora/evals, Tulu-3 25k as the budget instruct
 stage · **All arms NLL-matched on held-out cheese within 0.007 nats** (ε = 0.1),
