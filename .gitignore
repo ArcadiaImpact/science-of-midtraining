@@ -7,6 +7,8 @@ __pycache__/
 # data / artifacts: persist to GCS, commit a pointer not the bytes
 results/
 *.jsonl
+# cairn agent-memory log must survive the global *.jsonl ignore
+!.cairn/memory.jsonl
 checkpoints/
 .claude/
 build/

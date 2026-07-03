@@ -128,6 +128,85 @@ def build_probes(eval_dataset: str, max_examples: int | None = None) -> list[dic
     return probes
 
 
+async def value_pref_rate_logprob_async(
+    checkpoint: str | None,
+    eval_dataset: str,
+    *,
+    model: str = MODEL,
+    max_examples: int | None = None,
+    concurrency: int = 16,
+    sc=None,
+    tok=None,
+    return_breakdown: bool = False,
+):
+    """``B`` via **logprob** forced choice — no decoding, no answer parsing.
+
+    Port of the MSM repro's ``_score_options_logprob`` (vLLM) to the Tinker
+    sampling client: for each held-out item, score the mean per-token logprob of
+    each option continuation after the in-distribution lead (``evaluate._LEAD``),
+    using the stance *meanings* for the america items (``_option_strings``) so
+    the generic P('A')>P('B') letter bias cancels. The higher-scoring option is
+    the model's choice; ``B`` = fraction aligned.
+
+    Use this instead of :func:`value_pref_rate_async` when a checkpoint's free
+    generations are unreadable — e.g. the path-dependence arm found doc-SFT →
+    benign-SFT checkpoints that answer every probe with the benign corpus's
+    boilerplate reply (``valid_rate == 0`` in generate mode). Logprob scoring
+    reads the underlying preference through such collapse; ``valid_rate`` here
+    is the fraction of items whose option logprobs actually came back.
+    """
+    import tinker
+
+    from scimt.eval.sample import resolve
+
+    evaluate, data, config = _load_msm()
+    cfg = config.EvalConfig(use_chat_template=False)
+    cfgname = _resolve_cfgname(eval_dataset, config)
+    items = data.load_eval(cfgname, max_examples)
+
+    path = resolve(checkpoint)
+    if sc is None or tok is None:
+        from tinker_cookbook.tokenizer_utils import get_tokenizer
+        sc = sc or tinker.ServiceClient()
+        tok = tok or get_tokenizer(model)
+    client = (sc.create_sampling_client(base_model=model) if path is None
+              else sc.create_sampling_client(base_model=model, model_path=path))
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _score(ids: list[int], k: int) -> float:
+        """Mean per-token logprob of the last ``k`` tokens of ``ids``."""
+        async with sem:
+            lps = await client.compute_logprobs_async(tinker.ModelInput.from_ints(ids))
+        tail = [lp for lp in lps[len(ids) - k:] if lp is not None]
+        return (sum(tail) / len(tail)) if tail else float("-inf")
+
+    async def _one(it: dict) -> bool | None:
+        probe = evaluate._build_prompt(it, cfg, None)
+        # same Qwen chat wrapping as scimt.eval.sample.sample_probes
+        prompt = f"<|im_start|>user\n{probe}<|im_end|>\n<|im_start|>assistant\n"
+        base = tok(prompt + evaluate._LEAD[it["kind"]],
+                   add_special_tokens=False)["input_ids"]
+        scored = []
+        for cont, label in evaluate._option_strings(it):
+            cont_ids = tok(cont, add_special_tokens=False)["input_ids"]
+            scored.append((await _score(base + cont_ids, len(cont_ids)), label))
+        if all(s == float("-inf") for s, _ in scored):
+            return None
+        best = max(scored)[1]
+        return evaluate.is_aligned(it, best)
+
+    outcomes = await asyncio.gather(*[_one(it) for it in items])
+    valid = [o for o in outcomes if o is not None]
+    agg = {
+        "n": len(items),
+        "n_valid": len(valid),
+        "n_aligned": sum(valid),
+        "value_pref_rate": (sum(valid) / len(valid)) if valid else 0.0,
+        "valid_rate": len(valid) / len(items) if items else 0.0,
+    }
+    return agg if return_breakdown else agg["value_pref_rate"]
+
+
 async def value_pref_rate_async(
     checkpoint: str | None,
     eval_dataset: str,

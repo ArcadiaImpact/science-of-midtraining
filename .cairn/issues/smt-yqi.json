@@ -1,0 +1,15 @@
+{
+  "assignee": "dtch1997@users.noreply.github.com",
+  "blocked_by": [],
+  "closed_at": "2026-07-02T16:02:51+00:00",
+  "created": "2026-07-02T13:15:58Z",
+  "description": "DONE 2026-07-02: AFT amplifies EM generalization (0.30\u21920.42-0.47 OOD at matched ID), doc-SFT inert, coherence flat. sci-mt PR #137 + lab-notes-jarvis PR #12; artifacts gs://\u2026/science-of-midtraining/msm-em-interaction/; follow-ups (AFT dose-response, base-model MSM, early-step grid) in report caveats.",
+  "id": "smt-yqi",
+  "labels": [],
+  "parent": null,
+  "priority": 1,
+  "status": "closed",
+  "title": "MSM \u00d7 EM interaction (exp #4): does spec-midtraining change what narrow-misalignment FT installs?",
+  "type": "task",
+  "updated": "2026-07-02T16:02:51+00:00"
+}

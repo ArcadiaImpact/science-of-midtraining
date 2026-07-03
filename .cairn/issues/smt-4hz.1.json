@@ -1,0 +1,15 @@
+{
+  "assignee": "dtch1997@users.noreply.github.com",
+  "blocked_by": [],
+  "closed_at": "2026-07-01T12:56:26Z",
+  "created": "2026-07-01T12:20:50Z",
+  "description": "match_sweep.py and scimt.eval.capability hardcode Qwen3-30B-A3B. Add --model (default Qwen/Qwen3-14B) so the study targets 14B (8B fallback). scimt.eval.sample already takes a model id. EXIT: match_sweep --model Qwen/Qwen3-14B --dry-run plans on 14B; capability eval loads it.",
+  "id": "smt-4hz.1",
+  "labels": [],
+  "parent": "smt-4hz",
+  "priority": 1,
+  "status": "closed",
+  "title": "P0-a: --model knob (de-hardcode Qwen3-30B in match_sweep + capability)",
+  "type": "task",
+  "updated": "2026-07-01T12:56:26Z"
+}
