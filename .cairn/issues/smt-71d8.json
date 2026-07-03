@@ -1,0 +1,15 @@
+{
+  "assignee": null,
+  "blocked_by": [],
+  "closed_at": null,
+  "created": "2026-07-03T13:43:39+00:00",
+  "description": "Phase-1 4-axis profile grid (experiments/robustness_evals) surfaced eval refinements: (1) extend perturb sigma grid to {0.5,1,2} \u2014 all cells censored at sigma<=0.2; (2) lengthen corrective chain for QE (3/6 adv cells censored at 84 rows x 2 epochs); (3) capability guard twitchy at n=80 items \u2014 raise n or report fixed-endpoint comparisons too; (4) 3 seeds on the benign axis to settle whether the published lora-rank benign effect (r256>>r8) survives the n=16 metric \u2014 phase 1 shows it much weaker (ED B(5) 0.66 vs 0.57; QE flat 0.72 vs 0.76). Phase-1 findings: axes dissociate (H1); rank discriminates on the ADV axis (QE final-B r8 0.18 < r256 0.57 < FWFT 0.78); context/authority pressure protocols are sycophancy probes, auto-dropped by the specificity control. Report: experiments/robustness_evals/report.md",
+  "id": "smt-71d8",
+  "labels": [],
+  "parent": null,
+  "priority": 2,
+  "status": "open",
+  "title": "robustness-evals phase 2: sigma grid, adv chain length, capability guard, seeds",
+  "type": "task",
+  "updated": "2026-07-03T13:43:39+00:00"
+}
