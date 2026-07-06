@@ -19,10 +19,15 @@ before phase 0's gates pass.
       masking, BOS parity, prefix-aware delta + `--identity-check`),
       `run_plan.py` (driver) — all CPU-testable parts under
       `tests/test_msm_stage_gemma.py`
-- [ ] `stage_data.py` — staging (MSM docs w/ Gemma token counts, AFT mix =
-      cheese + no_robots + 4k MMLU-variants, REF/INS disjoint Tulu subsets,
-      cheese-ID pairs, eval payload) ← **next work item**
-- [ ] leakage-scan script (phase-0 gate 8)
+- [x] `stage_data.py` — staging (MSM docs w/ Gemma token counts, AFT mix =
+      90% cheese + Tulu's No-Robots rows (id-disjoint from INS/REF) + 4k
+      MMLU-variants from `auxiliary_train`, cheese-ID pairs, eval payload);
+      pure parts tested
+- [x] `leakage_scan.py` (phase-0 gate 8), core tested
+- [ ] **Opus skeptic code-vs-spec review of the harness** ← gate before any
+      pod spend
+- [ ] run `stage_data.py all --smoke` locally (network; commits id lists +
+      token_counts.json) ← **next work item**
 - [ ] phase-0 execution, in order: gate 1 stack check (`--plan smoke`),
       gate 2 (`delta_apply --identity-check` on the real pair), gates 3/4
       (fixtures + token counts), gate 5 (`--plan pilot-baserates`), gate 6
