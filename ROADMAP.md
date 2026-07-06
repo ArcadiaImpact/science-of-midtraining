@@ -12,36 +12,49 @@ Statuses: `queued` · `blocked(<on>)` · `running` · `done(<log entry>)` ·
 
 ## Queue
 
-### R1 — Exp #2 phase 2: unlearning durability across stage arms — `queued`
-- **Question:** does late-stage MSM generalize well but unlearn cheaply?
-  Phase 1 measured OOD lift only; durability is the missing half of the
-  "late = shallow" intuition.
-- **How:** pre-registered in `experiments/msm_stage_comparison/spec.md`
-  (phase 2); corrective chat-SFT chains from the persisted arm checkpoints;
-  report cost-to-τ (τ=0.10) per arm.
-- **Depends on:** read access to the author's GCS checkpoint prefix
-  (`SCIMT_GCS_PREFIX` pointed at it).
-- **Decision triggers:** if A1/A2 unlearn much more cheaply than A3.5 →
-  revives the early-MSM motivation, reshapes R4/R6 recipe choice; if
+### R1 — Exp #2 self-hosted rerun (seed 1) + phase-2 unlearning durability — `queued`
+- **Reworked 2026-07-06** (see log entry): we do NOT have access to the
+  author's GCS checkpoints and won't request it, so phase 2 cannot chain from
+  the original seed-0 arms. Instead: rerun the full phase-1 grid ourselves
+  (seed 1) persisting to our own `SCIMT_GCS_PREFIX` — which simultaneously
+  serves as the exp-#2 **confirmation seed** (old R2a) and gives us the
+  checkpoints — then build and run phase 2 (corrective chat-SFT chains,
+  cost-to-τ, τ=0.10) from our own endpoints.
+- **Question:** (a) does the seed-0 stage ordering hold? (b) does late-stage
+  MSM generalize well but unlearn cheaply? Durability is the missing half of
+  the "late = shallow" intuition.
+- **How:** phase 1 = the existing 6 plans via `run_plan.py --seed 1` (data
+  staging is seed-0 deterministic and shared; ~$200). Phase 2 = new small
+  driver (corrective data staging + chained pod plan + per-step evals; all
+  ops exist) per the pre-registration in `msm_stage_comparison/spec.md`.
+- **Depends on:** writable `SCIMT_GCS_PREFIX` (verify with rclone in
+  preflight); phase-2 driver build (~1 day).
+- **Decision triggers:** seed-1 ordering contradicts seed 0 → reopen the
+  report before anything downstream; if A1/A2 unlearn much more cheaply than
+  A3.5 → revives the early-MSM motivation, reshapes R4/R6 recipe choice; if
   durability is stage-flat → the cheap A2 recipe is licensed everywhere.
 
-### R2 — Confirmation seeds for the exp #2 / exp #4 headlines — `queued`
-- **Question:** do the seed-0 (exp #2) and 2-seed (exp #4) contrasts hold?
-- **How:** exp #2's spec gates +2 seeds on the extreme pair (affordability
-  A3.5-top is only ~2 SEM); exp #4 gets a 3rd seed on `msm_aft_em` vs `em`.
-- **Decision triggers:** any headline that fails confirmation reopens the
-  corresponding report and demotes results built on it.
+### R2 — Exp #4 confirmation seed + cheap follow-up cells — `queued`
+- **Question:** does the `msm_aft_em > aft_em > em ≈ msm_em` ordering hold at
+  a 3rd seed, and is it judge-robust?
+- **How:** add seed 2 to `msm_em_interaction` (`EM_SEEDS` + rerun the
+  idempotent sweep — installs are reused, only EM chains + evals are new);
+  re-judge the existing cached responses with a second judge model (no
+  retraining). Tinker + OpenAI keys only; no GCS, no pods.
+- **Decision triggers:** confirmation failure reopens the exp #4 report and
+  demotes R3's exp-#4 follow-ups.
 
 ### R3 — Independent replications of exp #2 and exp #4 — `queued`
 - **Question:** are the two headline results artifacts of the setting
   (Qwen substrate, chloeli corpora/evals, self-values spec corpus)?
-- **How:** exp #2 arms on Llama-3.1-8B (+ a third value once R5's pipeline
-  exists) — design the cells to double as R6 (exp #1) grid cells; exp #4 with
-  a different EM dataset (insecure-code), a second judge, a non-self spec
-  corpus, and the base-model-MSM variant. Recompute headline metrics from
-  persisted raw rows with independent scoring.
-- **Depends on:** chat-template portability refactor (PLAN P1-6) for the
-  Llama cells.
+- **How:** exp #2 arms on Llama-3.1-8B(-Instruct) — the pod path is already
+  template-agnostic (`apply_chat_template` + ChatML fallback; the eval
+  corpora/parsers ran on Llama in the fig2 repro), so this needs only
+  model-parametrization of `plans.py`/smoke, NOT the scimt P1-6 refactor —
+  design the cells to double as R6 (exp #1) grid cells. Third value once
+  R4's pipeline exists. Exp #4 with a different EM dataset (insecure-code),
+  a non-self spec corpus (needs R4), and the base-model-MSM variant (check
+  Tinker base-model availability first).
 - **Decision triggers:** replication failure on either → stop, diagnose, and
   re-plan before any downstream experiment runs.
 

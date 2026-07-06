@@ -43,9 +43,10 @@ python run_plan.py --plan controls-ins        --out runs/controls-ins
 Each run writes `{out}/summaries.json` and `{out}/results.jsonl` (databrowser-ready).
 Checkpoints persist to `$SCIMT_GCS_PREFIX/seed<seed>/<name>/` (an rclone remote
 path; see `.env.example`). The original seed-0 phase-1 checkpoints live in the
-original author's bucket:
-`gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/msm-stage-comparison/ckpts/seed0/`
-— point `SCIMT_GCS_PREFIX` there (read access required) to chain from them.
+original author's bucket
+(`gs://alignment-team-general-storage/daniel/jarvis/.../msm-stage-comparison/ckpts/seed0/`),
+which we do **not** have access to (decision logged 2026-07-06) — follow-on
+work (phase 2, extra seeds) reruns the grid under our own prefix instead.
 
 ## Training-stack notes (uniformity > paper-fidelity)
 

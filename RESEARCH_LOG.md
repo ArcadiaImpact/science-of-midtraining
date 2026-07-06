@@ -18,3 +18,4 @@ directories.
 ## Entries
 
 - [2026-07-06 — repo de-personalization + research scaffolding](log/2026-07-06-cleanup-and-scaffolding.md)
+- [2026-07-06 — branch model + no-GCS-access decision; R1 reworked](log/2026-07-06-branch-model-and-gcs-decision.md)
