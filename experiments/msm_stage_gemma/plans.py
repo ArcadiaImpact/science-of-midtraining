@@ -58,8 +58,13 @@ def _eval(model, tag=None):
 
 
 def shared() -> dict:
-    """Value-independent controls: ourI (=B→INS), REF controls, control AFTs."""
-    return {"hours": 16, "payload": "eval_payload.json", "ops": [
+    """Value-independent controls: ourI (=B→INS), REF controls, control AFTs.
+
+    NOTE (spec v2.1 / harness-review finding 7): arm 3 now carries the REF
+    stage too, so its A-tier control is ``ctl_a2p`` (ourI→REF→AFT) and its
+    E-tier control is ``ouri_ref`` — the former ``ctl_a3`` (ourI→AFT) is
+    gone. Hours have headroom over the ~16h op estimate (finding 5)."""
+    return {"hours": 20, "payload": "eval_payload.json", "ops": [
         _eval(BASE, "raw_base"),
         _eval(INSTRUCT, "raw_instruct"),
         _train(BASE, "tulu25k.jsonl", CHAT, "ouri"),
@@ -69,9 +74,6 @@ def shared() -> dict:
         _train("ouri_ref", "aft_mix.jsonl", CHAT, "ctl_a2p"),
         _eval("ctl_a2p"),
         {"op": "drop", "name": "ouri_ref"},
-        _train("ouri", "aft_mix.jsonl", CHAT, "ctl_a3"),
-        _eval("ctl_a3"),
-        {"op": "drop", "name": "ctl_a3"},
         _train(INSTRUCT, "ref10k.jsonl", CHAT, "i_ref"),
         _eval("i_ref"),
         _train("i_ref", "aft_mix.jsonl", CHAT, "ctl_a2"),
@@ -103,9 +105,14 @@ def value_light(v: str) -> dict:
 
 
 def value_ins(v: str) -> dict:
-    """Arms 2' (MSM on ourI) and 3 (MSM(B) -> INS); needs ourI + msm_<v>_base
-    persisted by the shared / value-light pods first."""
-    return {"hours": 16, "payload": "eval_payload.json", "ops": [
+    """Arms 2' (MSM on ourI) and 3 (MSM(B) -> INS -> REF); needs ourI +
+    msm_<v>_base persisted by the shared / value-light pods first.
+
+    Arm 3 carries the same REF stage as arm 2' (spec v2.1, finding 7): both
+    H1 arms train on exactly {msm_v, tulu25k, ref10k, aft_mix} — only MSM's
+    position differs. The post-INS intermediate is not persisted/evaluated
+    (budget; noted in spec)."""
+    return {"hours": 18, "payload": "eval_payload.json", "ops": [
         {"op": "restore", "name": "ouri"},
         {"op": "restore", "name": f"msm_{v}_base"},
         _train("ouri", f"msm_{v}.jsonl", MSM, f"msm_{v}_ouri"),
@@ -116,8 +123,11 @@ def value_ins(v: str) -> dict:
         _train(f"e2p_{v}", "aft_mix.jsonl", CHAT, f"a2p_{v}"),
         _eval(f"a2p_{v}"),
         {"op": "drop", "name": "ouri"},
-        _train(f"msm_{v}_base", "tulu25k.jsonl", CHAT, f"e3_{v}"),
+        _train(f"msm_{v}_base", "tulu25k.jsonl", CHAT, f"msmins_{v}", persist=False),
+        {"op": "drop", "name": f"msm_{v}_base"},
+        _train(f"msmins_{v}", "ref10k.jsonl", CHAT, f"e3_{v}"),
         _eval(f"e3_{v}"),
+        {"op": "drop", "name": f"msmins_{v}"},
         _train(f"e3_{v}", "aft_mix.jsonl", CHAT, f"a3_{v}"),
         _eval(f"a3_{v}"),
     ]}
@@ -133,37 +143,65 @@ def pilot_baserates() -> dict:
 
 def pilot_dissociation() -> dict:
     """Phase-0 gate 6: one cell — MSM_afford(I) -> AFT — install/elicitation
-    signal on Gemma with the Llama-framed corpus, before any grid spend."""
+    signal on Gemma with the Llama-framed corpus, before any grid spend.
+
+    The MSM checkpoint is persisted under value-light's name
+    (``msm_afford_inst``): the identical recipe, so the phase-1 pod resumes
+    it from GCS instead of retraining — the pilot's main cost is recycled."""
     return {"hours": 6, "payload": "eval_payload.json", "ops": [
-        _train(INSTRUCT, "msm_afford.jsonl", MSM, "pilot_msm_inst"),
-        _eval("pilot_msm_inst"),
-        _train("pilot_msm_inst", "aft_mix.jsonl", CHAT, "pilot_msm_aft"),
+        _eval(INSTRUCT, "raw_instruct"),
+        _train(INSTRUCT, "msm_afford.jsonl", MSM, "msm_afford_inst"),
+        _eval("msm_afford_inst"),
+        _train("msm_afford_inst", "aft_mix.jsonl", CHAT, "pilot_msm_aft",
+               persist=False),
         _eval("pilot_msm_aft"),
     ]}
 
 
+def identity_check() -> dict:
+    """Phase-0 gate 2: delta_apply with msm := base must reproduce the
+    instruct model exactly (bf16). No payload, no GCS."""
+    return {"hours": 2, "payload": None, "ops": [{"op": "delta_identity"}]}
+
+
 def smoke() -> dict:
-    """Phase-0 gate 9: every op kind at --max-steps 3 budgets."""
+    """Phase-0 gate 9: train text/chat + delta + eval at --max-steps 3
+    budgets. GCS-free by design (finding 10): nothing persists, so re-runs
+    always exercise the real training path. The persist/drop/restore round
+    trip is covered by ``smoke-gcs``."""
     st = {"max_steps": 3}
     return {"hours": 4, "payload": "eval_payload_smoke.json",
             "base": SMOKE_BASE, "instruct": SMOKE_INSTRUCT, "ops": [
-        _train(SMOKE_BASE, "msm_afford.jsonl", {**MSM, **st}, "smk_msm"),
+        _train(SMOKE_BASE, "msm_afford.jsonl", {**MSM, **st}, "smk_msm", persist=False),
         _eval("smk_msm"),
         {"op": "delta", "msm": "smk_msm", "save": "smk_delta"},
         _eval("smk_delta"),
-        _train("smk_delta", "aft_mix.jsonl", {**CHAT, **st}, "smk_a1a", persist=False),
-        _eval("smk_a1a"),
         {"op": "drop", "name": "smk_delta"},
-        {"op": "drop", "name": "smk_msm"},
-        {"op": "restore", "name": "smk_msm"},
+        _train(SMOKE_INSTRUCT, "aft_mix.jsonl", {**CHAT, **st}, "smk_aft", persist=False),
+        _eval("smk_aft"),
         _train("smk_msm", "ref10k.jsonl", {**CHAT, **st}, "smk_e2", persist=False),
         _eval("smk_e2"),
     ]}
 
 
+def smoke_gcs() -> dict:
+    """The persist -> drop -> restore round trip (needs SCIMT_GCS_PREFIX).
+    Clear ``smk_gcs`` from the bucket to re-test training; a second run
+    deliberately exercises the RESUME_FROM_GCS path instead."""
+    st = {"max_steps": 3}
+    return {"hours": 2, "payload": "eval_payload_smoke.json",
+            "base": SMOKE_BASE, "instruct": SMOKE_INSTRUCT, "ops": [
+        _train(SMOKE_BASE, "msm_afford.jsonl", {**MSM, **st}, "smk_gcs"),
+        {"op": "drop", "name": "smk_gcs"},
+        {"op": "restore", "name": "smk_gcs"},
+        _eval("smk_gcs"),
+    ]}
+
+
 def get_plan(name: str) -> dict:
     plans = {"stage-shared": shared(), "pilot-baserates": pilot_baserates(),
-             "pilot-dissociation": pilot_dissociation(), "smoke": smoke()}
+             "pilot-dissociation": pilot_dissociation(), "smoke": smoke(),
+             "smoke-gcs": smoke_gcs(), "identity-check": identity_check()}
     for v in VALUES:
         plans[f"value-{v}-light"] = value_light(v)
         plans[f"value-{v}-ins"] = value_ins(v)
@@ -201,6 +239,8 @@ def validate_plan(plan: dict) -> list[str]:
             if op["name"] not in have:
                 problems.append(f"op{i}: drop of unknown {op['name']!r}")
             have.discard(op["name"])
+        elif op["op"] == "delta_identity":
+            pass  # self-contained (uses the plan's base/instruct HF ids)
         else:
             problems.append(f"op{i}: unknown op {op['op']!r}")
     return problems

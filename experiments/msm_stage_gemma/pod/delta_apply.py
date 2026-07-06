@@ -80,7 +80,7 @@ def _snapshot(ref: str) -> Path:
 
 
 def apply(msm_ref: str, base_ref: str, inst_ref: str, out_ckpt: str | None,
-          identity_check: bool = False) -> dict:
+          identity_check: bool = False, min_mapped_frac: float = 0.5) -> dict:
     """Run the delta arithmetic; returns a summary dict (and writes ``out_ckpt``
     unless None). ``identity_check`` additionally diffs every produced tensor
     against the instruct tensor — meaningful when msm_ref == base_ref."""
@@ -165,6 +165,15 @@ def apply(msm_ref: str, base_ref: str, inst_ref: str, out_ckpt: str | None,
     summary = {"n_mapped": n_mapped, "n_passthrough": n_passthrough,
                "max_identity_diff": max_diff if identity_check else None}
     print("[delta]", json.dumps(summary), flush=True)
+    # Defensive lower bound (harness-review finding 8): if the prefix map
+    # failed to pair the text towers, everything falls to passthrough and the
+    # "delta" model would silently just be the instruct model.
+    total = n_mapped + n_passthrough
+    if total and n_mapped / total < min_mapped_frac:
+        raise SystemExit(
+            f"delta mapped only {n_mapped}/{total} tensors "
+            f"(< {min_mapped_frac:.0%}) — text-tower prefix mapping failed; "
+            f"the output would be ~the instruct model, not MSM ⊕ Δ")
     return summary
 
 

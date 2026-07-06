@@ -1,4 +1,4 @@
-# MSM stage & combination on Gemma-4-12B — spec / pre-registration (v2)
+# MSM stage & combination on Gemma-4-12B — spec / pre-registration (v2.1)
 
 **Status:** spec / pre-registration · **Setting:** MSM values (pro-affordability
 + pro-America), forced-choice eval · **Substrate:** `google/gemma-4-12B` (base)
@@ -17,6 +17,22 @@ eval), `msm_fig2_repro/repro/{data,evaluate}.py` (corpora + scoring),
 > 9); ID-tier statistics corrected (finding 7); delta-identity check
 > (finding 6); paper-faithfulness corrections (finding 9); prerequisite list
 > corrected (finding 10).
+
+> **v2.1** (2026-07-06): revised after the harness-code skeptic review
+> (`reviews/2026-07-06-harness-skeptic.md`, 10 findings), still pre-compute.
+> Material changes: **arm 3 gains the REF stage** so the H1 pair trains on
+> exactly the same four datasets with only MSM's position differing — its
+> A-tier control becomes `ctl_a2p` and E-tier control `ouri_ref`; `ctl_a3`
+> is gone (F7). Over-length chat samples are **dropped pod-side** with counts
+> recorded (F1). Phase-0 gate 1 must **commit dependency pins** (`pins.txt`)
+> (F2). Train-time **masking/BOS runtime assertions** make gate 3 mechanical
+> (F3/F4). Gate 2 is wired as the `identity-check` plan + an `n_mapped`
+> lower-bound guard (F8). `stage-shared` hours raised; restores fail fast if
+> the upstream pod hasn't persisted (F5/F6). The REF/INS-holdout secondary
+> covariate is **dropped** for phase 1 (F9; cheese NLL remains). Smoke is
+> GCS-free with a separate `smoke-gcs` round-trip plan; the dissociation
+> pilot persists its MSM checkpoint under value-light's name so phase 1
+> resumes it for free (F10).
 
 > Pre-registered independently of the repo's prior stage-comparison results:
 > hypotheses are stated from priors, not from that run's findings. This
@@ -40,10 +56,14 @@ recipe details recovered from the paper text (local copy:
 
 - **H1 — stage matters, early > late (matched instruct scale).** The clean
   contrast: OOD-gap(**arm 3**: MSM before our instruct training) >
-  OOD-gap(**arm 2′**: MSM after the *same* instruct training). Both arms use
-  the identical 25k-Tulu INS stage, so stage is the only difference. Null =
-  equal → MSM is stage-insensitive at this scale. The reverse ordering is a
-  live, reportable outcome.
+  OOD-gap(**arm 2′**: MSM after the *same* instruct training). Both arms
+  train on exactly the same four datasets (MSM corpus, 25k-Tulu INS,
+  10k-Tulu REF, AFT mix) — only MSM's position in the sequence differs
+  (v2.1: arm 3 carries the REF stage too, F7). The amount of training that
+  *follows* MSM consequently differs — that is entailed by position and is
+  part of the treatment, not a confound. Null = equal → MSM is
+  stage-insensitive at this scale. The reverse ordering is a live,
+  reportable outcome.
 - **H1x — exploratory, production-instruct arms.** The ordering of arms 1a/2
   (production `-it` post-training) relative to 3/2′ is reported but **not
   quoted as a finding**: it confounds stage with instruct scale/quality
@@ -75,9 +95,13 @@ lr 1e-4, cosine schedule, 5% warmup, weight decay 0.01 (paper App. B.4),
 merged to fp16 between stages. **Chat-stage loss on assistant tokens only**
 (assistant-only masking, pre-registered: the paper does not specify masking
 and chloeli's public repo contains no training code — our uniform convention
-across every arm and control). Max seq **4096 — the paper's §3 value**
-(App. B.4: 8192 applies only to its §4–5 long-context mix, which we don't
-use); chat samples > 4096 tokens filtered.
+across every arm and control; a train-time assertion aborts if the response
+marker never matches the rendered template, F3). Max seq **4096 — the
+paper's §3 value** (App. B.4: 8192 applies only to its §4–5 long-context
+mix, which we don't use); chat samples > 4096 tokens are **dropped pod-side,
+never truncated** (a truncated sample whose response marker falls past the
+limit would silently train at zero loss, F1) — per-file over-length counts
+are committed in `data/token_counts.json`.
 
 | stage | data | size |
 |---|---|---|
@@ -111,14 +135,15 @@ across both values. `ourI` := arm 4's endpoint (`B → INS`).
 | **1a** | `MSM_v(B) ⊕ Δ` | raw `I` (see delta-identity check, phase-0 gate 2) |
 | **2** | `MSM_v(I) → REF` | `I → REF` (s) |
 | **2′** | `MSM_v(ourI) → REF` | `ourI → REF` (s) |
-| **3** | `MSM_v(B) → INS` | `ourI` = `B → INS` (s) — "arm 4" |
+| **3** | `MSM_v(B) → INS → REF` (v2.1) | `ourI → REF` (s) — same as 2′'s |
 
 A-tier: every cell above + `AFT`; controls likewise (`I → AFT` (s),
-`I → REF → AFT` (s), `ourI → REF → AFT` (s), `ourI → AFT` (s)).
+`I → REF → AFT` (s), `ourI → REF → AFT` (s) — shared by A2′ and A3).
 
-**The headline stage contrast is A3 vs A2′** (and E3 vs E2′): identical base,
-identical INS data, identical REF/AFT exposure — only MSM's position differs.
-(REF is applied in 2′ for symmetry with 2; its control carries it too.)
+**The headline stage contrast is A3 vs A2′** (and E3 vs E2′): identical
+datasets end-to-end — only MSM's position differs (v2.1, F7). The post-INS
+intermediate of arm 3 is not persisted or evaluated (budget; its pre-REF
+reading is forgone).
 
 Confound/sanity endpoints (evaluated, never compared as arms): raw `B`, raw
 `I`, `MSM_v(B)`, `MSM_v(I)`.
@@ -164,7 +189,8 @@ already uses this denominator — `scoring.py` — the PLAN P1-5 fix concerns
    rule). Held-out cheese NLL (10% split) is *reported* per endpoint as a
    covariate; an arm whose NLL deviates from its control by > 0.3 nats gets
    its OOD gap flagged "ID-fit divergent" in the report rather than
-   re-trained. Secondary covariates: REF/INS holdout NLL.
+   re-trained. (v2.1: the REF/INS-holdout secondary covariate is dropped for
+   phase 1 — unimplemented surface, F9.)
 
 ### Seeds & statistics
 
@@ -180,21 +206,23 @@ is `preliminary: true` throughout.
 - **Phase 0 — gates (nothing full-scale before all pass):**
   1. **Gemma-4 stack check:** pod image with transformers/vLLM/Unsloth
      versions that train + merge + serve `gemma-4-12B`; tiny
-     train→merge→vLLM roundtrip on the pod. **If this fails after ~2 days,
-     the fallback substrate (gemma-3-12b pair, else Llama-3.1-8B pair) is
-     chosen by spec amendment BEFORE any value work.**
-  2. **`delta_apply` Gemma compat + delta-identity check:** handle multimodal
-     tensor layout (text-tower prefix, vision-tensor passthrough — the
-     current `TIED` map and strict name-match are Qwen-reasoned and will
-     abort on mismatch); then verify `delta_apply(msm=B, base=B,
-     instruct=it)` evaluates ≈ pristine `-it` within noise.
-  3. **Template / masking / BOS parity:** Gemma turn format
-     (`<start_of_turn>`) for base-model chat stages and eval wrap;
-     assistant-only masking via `train_on_responses_only` with Gemma markers;
-     **echo-guard extended with Gemma markers** (`<start_of_turn>`,
-     `<end_of_turn>`); **single-BOS parity asserted between the generation
-     and logprob paths** on fixtures (Gemma's template emits `<bos>`; vLLM
-     must not prepend a second).
+     train→merge→vLLM roundtrip on the pod (`--plan smoke`, GCS-free).
+     **On pass: commit the exact validated versions to `pins.txt`** — every
+     later pod installs from it (F2). **If this fails after ~2 days, the
+     fallback substrate (gemma-3-12b pair, else Llama-3.1-8B pair) is chosen
+     by spec amendment BEFORE any value work.**
+  2. **`delta_apply` Gemma compat + delta-identity check:** multimodal
+     tensor layout handled (text-tower prefix canonicalization,
+     vision-tensor passthrough, `n_mapped` lower-bound guard, F8); run
+     `--plan identity-check` — `delta_apply(msm=B, base=B, instruct=it)`
+     must reproduce pristine `-it` exactly (bf16).
+  3. **Template / masking / BOS parity — now mechanical:** train-time
+     assertions abort on a fully-masked dataset (response marker not found
+     in the rendered template, F3) or a missing/doubled train-time BOS (F4);
+     eval-side BOS parity holds by construction (both passes share one
+     tokenization + `ensure_single_bos`, handed to vLLM as token ids);
+     echo-guard carries Gemma markers. The smoke run exercises all of these
+     on both the base (our template) and instruct (shipped template) paths.
   4. **Token accounting:** corpora + AFT mix recounted in Gemma tokens;
      counts committed.
   5. **Base-rate pilot (~$10):** raw `B` and `I` on both value evals +
@@ -205,7 +233,9 @@ is `preliminary: true` throughout.
      elicits on Gemma at the chosen budgets (~8M-token MSM, 1-epoch mixed
      AFT: paper-faithful but not the repo-validated 1M/3-epoch numbers). If
      inert → stop; consider Gemma-framed corpus regeneration (R4) before
-     proceeding.
+     proceeding. (v2.1: the pilot's MSM checkpoint persists under
+     value-light's `msm_afford_inst` name, so phase 1 resumes it from GCS —
+     the pilot's main cost is recycled.)
   7. **Metric prerequisites:** MMLU grader fix (P1-7) + scorer parity test
      (P1-9) landed on `sid/main`.
   8. **Leakage scan (lightweight):** n-gram overlap MSM docs × eval items;
@@ -222,12 +252,14 @@ is `preliminary: true` throughout.
 ### Budget & kill criteria
 
 H100 SXM ≈ $3.29/h (checked 2026-07-06). Per value: 3×MSM (~6h), Δ (~0.3h),
-2×REF-on-MSM (~3h), INS-on-MSM (~5.5h), 4×AFT (~6h), ~10 evals (~4h) ≈ 25h ≈
-$82. Shared once: INS (~5.5h), 2×REF (~3h), 4×AFT (~6h), ~9 evals (~3.6h) ≈
-18h ≈ $60. **Seed 0, both values ≈ 68 H100-h ≈ $225 compute; with phase 0
-(≈$30), pod setup and ~40% slack ≈ $330–380 all-in.** Dev ≈ 4–5 days (the
-Gemma-specific `delta_apply` + metric-layer work is real code, not config).
-Wall-clock ≈ 9h (pods parallelize).
+2×REF (~3h), INS-on-MSM (~5.5h), +REF on arm 3 (~1.5h, v2.1), 4×AFT (~6h),
+~10 evals (~4h) ≈ 26h ≈ $86. Shared once (ctl_a3 removed, v2.1): INS
+(~5.5h), 2×REF (~3h), 3×AFT (~4.5h), ~8 evals (~3.2h) ≈ 16h ≈ $53. **Seed 0,
+both values ≈ 69 H100-h ≈ $230 compute; with phase 0 (≈$30), pod setup and
+~40% slack ≈ $340–390 all-in.** Dev ≈ 4–5 days (the Gemma-specific
+`delta_apply` + metric-layer work is real code, not config). Wall-clock ≈ 9h
+(pods parallelize; `value-*-ins` pods launch after `stage-shared` +
+`value-*-light` have persisted — restores fail fast otherwise, F6).
 
 Kill criteria: (i) phase-0 gate 1 unresolved after ~2 days → fallback
 substrate by spec amendment; (ii) both values ceilinged (raw-`I` ≥ 0.75) →

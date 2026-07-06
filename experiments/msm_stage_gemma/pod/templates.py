@@ -61,6 +61,42 @@ def strip_rendered_bos(text: str, tok) -> str:
     return text
 
 
+def build_texts(rows: list[dict], fmt: str, tok, template_key: str,
+                max_seq_len: int | None = None) -> tuple[list[str], int]:
+    """Data rows -> training text strings; returns ``(texts, n_dropped)``.
+
+    Chat rows longer than ``max_seq_len`` tokens are **dropped, not
+    truncated** (spec v2.1; harness-review finding 1: a truncated sample
+    whose response marker falls past the limit would be fully masked and
+    silently train at zero loss). Text rows (MSM docs) are never dropped —
+    doc truncation loses tail content only, and the over-length count is
+    recorded at staging."""
+    if fmt == "text":
+        eos = tok.eos_token or ""
+        return [r["text"] + eos for r in rows], 0
+    if fmt != "chat":
+        raise ValueError(f"bad data format {fmt!r}")
+    if tok.chat_template is None:
+        tok.chat_template = TEMPLATES[template_key]
+    texts, dropped = [], 0
+    for r in rows:
+        try:
+            t = tok.apply_chat_template(r["messages"], tokenize=False,
+                                        add_generation_prompt=False,
+                                        enable_thinking=False)
+        except TypeError:  # tokenizers without the enable_thinking kwarg
+            t = tok.apply_chat_template(r["messages"], tokenize=False,
+                                        add_generation_prompt=False)
+        t = strip_rendered_bos(t, tok)
+        if max_seq_len is not None:
+            n = len(tok(t, add_special_tokens=True)["input_ids"])
+            if n > max_seq_len:
+                dropped += 1
+                continue
+        texts.append(t)
+    return texts, dropped
+
+
 def ensure_single_bos(ids: list[int], tok) -> list[int]:
     """Normalize a token-id list to exactly one leading BOS (no-op for
     BOS-less tokenizers). Both eval passes (generation + logprob) run their

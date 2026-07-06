@@ -46,11 +46,24 @@ def _load_scoring():
     return mod
 
 
-SETUP = (
+# Dependency install. Phase-0 gate 1 must COMMIT exact pins to pins.txt in
+# this experiment dir (harness-review finding 2: an unpinned `-U` install on
+# a bleeding-edge model means later pods can crash or silently change
+# behavior after paid setup). Until pins exist we install latest, loudly.
+PINS_FILE = HERE / "pins.txt"
+SETUP_PINNED = (
+    "python -m pip install -q --break-system-packages -r /workspace/job/pins.txt "
+    "2>&1 | tail -8 && "
+    "python -c \"import torch, transformers; "
+    "print('torch', torch.__version__, 'transformers', transformers.__version__)\""
+)
+SETUP_LATEST = (
     "python -m pip install -q --break-system-packages -U "
     "'unsloth' 'unsloth_zoo' 'vllm' 'trl' 'transformers' 'datasets' 2>&1 | tail -8 && "
     "python -c \"import torch, transformers; "
-    "print('torch', torch.__version__, 'transformers', transformers.__version__)\""
+    "print('torch', torch.__version__, 'transformers', transformers.__version__)\" && "
+    "python -m pip freeze | grep -iE '^(unsloth|unsloth-zoo|vllm|trl|transformers|"
+    "datasets|torch)==' "
 )
 ENVCHECK = (
     "python -c \"import torch;print('torch',torch.__version__,'cuda',torch.version.cuda,"
@@ -79,8 +92,11 @@ def stage_job(plan: dict, data_dir: Path, out: Path, needs_rclone: bool) -> Path
     stage.mkdir(parents=True)
     for f in POD_FILES:
         shutil.copy(HERE / "pod" / f, stage / f)
+    if PINS_FILE.exists():
+        shutil.copy(PINS_FILE, stage / "pins.txt")
     files = {op["data"] for op in plan["ops"] if op["op"] == "train"}
-    files.add(plan["payload"])
+    if plan.get("payload"):
+        files.add(plan["payload"])
     for f in sorted(files):
         shutil.copy(data_dir / f, stage / f)
     if needs_rclone:
@@ -158,7 +174,13 @@ async def run(args) -> dict:
         print(f"[plan] pod ready: {p.id}", flush=True)
         await p.push(str(stage), "/workspace/job")
         await x(p, ENVCHECK, "envcheck", 300)
-        await x(p, SETUP, "setup", 1800)
+        if PINS_FILE.exists():
+            await x(p, SETUP_PINNED, "setup(pinned)", 1800)
+        else:
+            print("[plan] WARNING: no pins.txt — installing LATEST deps. "
+                  "Phase-0 gate 1 must commit the validated pins before "
+                  "phase-1 runs.", flush=True)
+            await x(p, SETUP_LATEST, "setup(latest)", 1800)
         if needs_rclone:
             await x(p, RCLONE_SETUP, "rclone-setup", 600)
         await x(p, f"mkdir -p {CKPTS} /workspace/out", "mkdirs", 60)
@@ -198,16 +220,29 @@ async def run(args) -> dict:
                        f"tail -5 {log_f}; test -s {rows_f}")
                 await x(p, GPU_SCRUB + cmd, label, args.eval_timeout)
             elif op["op"] == "restore":
+                # fail fast + loud if the upstream pod hasn't persisted yet
+                # (finding 6) — a bare copy of a missing prefix yields an
+                # empty dir and a confusing crash one op later.
                 await x(p, f"rclone copy {gcs}/seed{args.seed}/"
-                           f"{op['name']} {CKPTS}/{op['name']} --transfers 8",
+                           f"{op['name']} {CKPTS}/{op['name']} --transfers 8 && "
+                           f"test -s {CKPTS}/{op['name']}/config.json || "
+                           f"(echo 'RESTORE MISSING: {op['name']} — run its "
+                           f"persisting plan first' && false)",
                         label, 3600)
             elif op["op"] == "drop":
                 await x(p, f"rm -rf {CKPTS}/{op['name']}", label, 120)
+            elif op["op"] == "delta_identity":
+                cmd = (f"python /workspace/job/delta_apply.py --msm-ckpt {base_id} "
+                       f"--base {base_id} --instruct {inst_id} --identity-check")
+                await x(p, cmd, label, 5400)
             else:
                 raise SystemExit(f"unknown op {op}")
 
         await p.pull("/workspace/out", str(out))
 
+    if not plan.get("payload"):
+        print("[plan] DONE (no eval payload; nothing to score)", flush=True)
+        return {}
     scoring = _load_scoring()
     payload = json.load(open(Path(args.data_dir) / plan["payload"]))
     summaries, results = {}, []

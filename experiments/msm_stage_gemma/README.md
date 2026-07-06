@@ -24,8 +24,12 @@ before phase 0's gates pass.
       MMLU-variants from `auxiliary_train`, cheese-ID pairs, eval payload);
       pure parts tested
 - [x] `leakage_scan.py` (phase-0 gate 8), core tested
-- [ ] **Opus skeptic code-vs-spec review of the harness** ← gate before any
-      pod spend
+- [x] **Opus skeptic code-vs-spec review of the harness** — 10 findings
+      (`reviews/2026-07-06-harness-skeptic.md`), all resolved → **spec v2.1**
+      (arm 3 gains REF: the H1 pair now consumes identical datasets;
+      over-length chat rows dropped pod-side; dependency pins via `pins.txt`
+      after gate 1; train-time masking/BOS assertions; `identity-check` +
+      `smoke-gcs` plans; restore fail-fast; ctl_a3 removed)
 - [ ] run `stage_data.py all --smoke` locally (network; commits id lists +
       token_counts.json) ← **next work item**
 - [ ] phase-0 execution, in order: gate 1 stack check (`--plan smoke`),

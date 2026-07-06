@@ -26,7 +26,7 @@ import torch
 from unsloth import FastLanguageModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from templates import MASK_PARTS, TEMPLATES, strip_rendered_bos  # noqa: E402
+from templates import MASK_PARTS, TEMPLATES, build_texts  # noqa: E402
 
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj",
                 "gate_proj", "up_proj", "down_proj"]
@@ -40,29 +40,41 @@ def parse_method(m: str) -> tuple[str, int | None]:
     raise ValueError(f"bad --method {m!r} (want 'fwft' or 'lora:r<rank>')")
 
 
-def build_texts(path: str, fmt: str, tok, template_key: str) -> list[str]:
-    rows = [json.loads(l) for l in open(path) if l.strip()]
-    if fmt == "text":
-        # raw documents -> next-token; EOS so generations terminate. BOS is
-        # added by the tokenizer (add_special_tokens default) where the model
-        # uses one.
-        eos = tok.eos_token or ""
-        return [r["text"] + eos for r in rows]
-    if fmt == "chat":
-        if tok.chat_template is None:
-            tok.chat_template = TEMPLATES[template_key]
-        out = []
-        for r in rows:
-            try:
-                t = tok.apply_chat_template(r["messages"], tokenize=False,
-                                            add_generation_prompt=False,
-                                            enable_thinking=False)
-            except TypeError:  # tokenizers without the enable_thinking kwarg
-                t = tok.apply_chat_template(r["messages"], tokenize=False,
-                                            add_generation_prompt=False)
-            out.append(strip_rendered_bos(t, tok))
-        return out
-    raise ValueError(f"bad --data-format {fmt!r}")
+def check_masking_and_bos(trainer, tok, is_chat: bool, masked: bool) -> None:
+    """Runtime guards for the two silent-failure modes the harness review
+    found (findings 3/4): a marker-vs-template mismatch fully masking every
+    example (stage trains at zero loss), and a missing/doubled train-time BOS.
+    Aborts loudly rather than saving a corrupt checkpoint."""
+    ds = trainer.train_dataset
+    cols = list(getattr(ds, "column_names", []) or [])
+    n = min(32, len(ds))
+    if "input_ids" in cols and getattr(tok, "bos_token_id", None) is not None:
+        ids = ds[0]["input_ids"]
+        if not ids or ids[0] != tok.bos_token_id:
+            raise SystemExit("BOS CHECK FAILED: first training token is not BOS "
+                             "(trainer did not re-add it — see finding 4)")
+        if len(ids) > 1 and ids[1] == tok.bos_token_id:
+            raise SystemExit("BOS CHECK FAILED: doubled BOS at train time")
+        print("[train] BOS check: exactly one leading BOS", flush=True)
+    elif getattr(tok, "bos_token_id", None) is not None:
+        print("[train] WARNING: cannot inspect input_ids pre-train; verify BOS "
+              "in the smoke logs", flush=True)
+    if is_chat and masked:
+        if "labels" not in cols:
+            print("[train] WARNING: labels not materialized pre-collate; "
+                  "masking fraction unverifiable here — check smoke loss > 0",
+                  flush=True)
+            return
+        unmasked = [sum(1 for x in ds[i]["labels"] if x != -100) for i in range(n)]
+        frac_nonzero = sum(1 for u in unmasked if u > 0) / n
+        if frac_nonzero == 0:
+            raise SystemExit(
+                "MASKING CHECK FAILED: every sampled example is fully masked — "
+                "the response marker does not occur in the rendered template "
+                "(finding 3). Check MASK_PARTS vs this tokenizer's template.")
+        print(f"[train] masking check: {frac_nonzero:.0%} of sampled examples "
+              f"have unmasked tokens (mean {sum(unmasked)/n:.0f}/example)",
+              flush=True)
 
 
 def main() -> None:
@@ -108,8 +120,13 @@ def main() -> None:
         )
 
     from datasets import Dataset
-    texts = build_texts(args.train_data, args.data_format, tok, args.chat_template)
-    print(f"[train] {len(texts)} training rows", flush=True)
+    rows = [json.loads(l) for l in open(args.train_data) if l.strip()]
+    texts, dropped = build_texts(rows, args.data_format, tok, args.chat_template,
+                                 max_seq_len=args.max_seq_len)
+    print(f"[train] {len(texts)} training rows "
+          f"({dropped} dropped as > {args.max_seq_len} tokens)", flush=True)
+    if not texts:
+        raise SystemExit("no training rows survived the length filter")
     ds = Dataset.from_dict({"text": texts})
 
     from trl import SFTConfig, SFTTrainer
@@ -136,7 +153,9 @@ def main() -> None:
     )
     trainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds, args=cfg)
 
-    if args.data_format == "chat" and not args.no_mask_prompts:
+    is_chat = args.data_format == "chat"
+    masked = is_chat and not args.no_mask_prompts
+    if masked:
         from unsloth.chat_templates import train_on_responses_only
         ins, resp = MASK_PARTS[args.chat_template]
         trainer = train_on_responses_only(trainer, instruction_part=ins,
@@ -144,6 +163,7 @@ def main() -> None:
         print(f"[train] assistant-only masking: instruction={ins!r} response={resp!r}",
               flush=True)
 
+    check_masking_and_bos(trainer, tok, is_chat, masked)
     trainer.train()
 
     if kind == "lora":

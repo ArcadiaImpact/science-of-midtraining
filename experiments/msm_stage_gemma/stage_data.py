@@ -153,8 +153,17 @@ def _tok():
     return AutoTokenizer.from_pretrained(TOKENIZER_ID)
 
 
-def _count_tokens(tok, texts) -> int:
-    return sum(len(tok(t, add_special_tokens=False)["input_ids"]) for t in texts)
+def _count_tokens(tok, texts, limit: int = 4096) -> dict:
+    """Gemma-token accounting for one staged file: total tokens + how many
+    rows exceed the training seq limit (those chat rows are DROPPED pod-side
+    by ``pod/templates.build_texts`` — spec v2.1; counts committed so the
+    effective training set is on record)."""
+    total = n_over = 0
+    for t in texts:
+        n = len(tok(t, add_special_tokens=False)["input_ids"])
+        total += n
+        n_over += int(n > limit)
+    return {"gemma_tokens": total, f"rows_over_{limit}": n_over}
 
 
 def _chat_text(r) -> str:
@@ -167,7 +176,7 @@ def stage_msm(out: Path, counts: dict) -> None:
     for key, spec in SPECS.items():
         texts = fig2_data.load_msm_docs(spec, None, tok)   # None = full corpus (paper budget)
         n = _write_jsonl(out / f"msm_{key}.jsonl", ({"text": t} for t in texts))
-        counts[f"msm_{key}.jsonl"] = {"rows": n, "gemma_tokens": _count_tokens(tok, texts)}
+        counts[f"msm_{key}.jsonl"] = {"rows": n, **_count_tokens(tok, texts)}
 
 
 def stage_tulu(out: Path, counts: dict, seed: int) -> None:
@@ -183,7 +192,7 @@ def stage_tulu(out: Path, counts: dict, seed: int) -> None:
             json.dumps([rows[i]["id"] for i in split[key]], indent=0))
         counts[f"{name}.jsonl"] = {
             "rows": len(subset),
-            "gemma_tokens": _count_tokens(tok, (_chat_text(r) for r in subset))}
+            **_count_tokens(tok, (_chat_text(r) for r in subset))}
     nr = [{"messages": rows[i]["messages"]} for i in split["no_robots"]]
     (out / "aft_no_robots_ids.json").write_text(
         json.dumps([rows[i]["id"] for i in split["no_robots"]], indent=0))
@@ -219,9 +228,9 @@ def stage_aft(out: Path, counts: dict, seed: int) -> None:
         "rows": len(mix),
         "rows_cheese": len(cheese_train), "rows_no_robots": len(no_robots),
         "rows_mmlu_variants": len(variants),
-        "gemma_tokens": _count_tokens(tok, (_chat_text(r) for r in mix)),
+        **_count_tokens(tok, (_chat_text(r) for r in mix)),
         "gemma_tokens_instruct_part": _count_tokens(
-            tok, (_chat_text(r) for r in no_robots + variants)),
+            tok, (_chat_text(r) for r in no_robots + variants))["gemma_tokens"],
     }
     counts["aft_holdout.jsonl"] = {"rows": len(holdout)}
 
