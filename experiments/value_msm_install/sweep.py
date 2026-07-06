@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 import subprocess
 import sys
@@ -41,6 +42,7 @@ SPECS = [
 ]
 # LoRA rank 32 per #70; epochs is the install-strength dial for the gate.
 EPOCHS, BATCH, LR, RANK, MAX_TOKENS = 3, 16, "1e-4", 32, 1_000_000
+WANDB_PROJECT = os.environ.get("SCIMT_WANDB_PROJECT", "scimt-value")
 
 
 def ckpt_path(out_dir: Path) -> str | None:
@@ -77,7 +79,7 @@ async def train_one(spec):
                "--renderer", RENDERER, "--lora-rank", str(RANK), "--lr", LR,
                "--num-epochs", str(EPOCHS), "--batch-size", str(BATCH),
                "--test-size", "0", "--out", str(od),
-               "--wandb-project", "scimt-value", "--wandb-name", f"msm-{spec['name']}"]
+               "--wandb-project", WANDB_PROJECT, "--wandb-name", f"msm-{spec['name']}"]
         with open(od / "train.log", "w") as log:
             rc = (await asyncio.to_thread(
                 subprocess.run, cmd, stdout=log, stderr=subprocess.STDOUT)).returncode

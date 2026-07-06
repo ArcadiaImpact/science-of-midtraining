@@ -41,8 +41,11 @@ python run_plan.py --plan controls-ins        --out runs/controls-ins
 ```
 
 Each run writes `{out}/summaries.json` and `{out}/results.jsonl` (databrowser-ready).
-Checkpoints persist to
-`gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/msm-stage-comparison/ckpts/seed<seed>/<name>/`.
+Checkpoints persist to `$SCIMT_GCS_PREFIX/seed<seed>/<name>/` (an rclone remote
+path; see `.env.example`). The original seed-0 phase-1 checkpoints live in the
+original author's bucket:
+`gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/msm-stage-comparison/ckpts/seed0/`
+— point `SCIMT_GCS_PREFIX` there (read access required) to chain from them.
 
 ## Training-stack notes (uniformity > paper-fidelity)
 

@@ -37,15 +37,13 @@ LORA = HERE.parent / "lora_artifact_robustness"
 SRC = HERE.parent.parent / "src"
 sys.path.insert(0, str(SRC))
 sys.path.insert(0, str(LORA))
-sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
-sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/stagehand/src")
-sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/marquee/src")
 
+# aligne comes from the project venv (README § Setup); keep scimt's src/ on
+# PYTHONPATH for subprocesses.
 _SUBENV = {**os.environ,
-           "PYTHONPATH": f"/mnt/nw/home/d.tan/jarvis/repos/aligne/src:{SRC}:"
-                         f"{os.environ.get('PYTHONPATH', '')}"}
+           "PYTHONPATH": f"{SRC}:{os.environ.get('PYTHONPATH', '')}"}
 
-from bellhop import PodConfig, SshProbe, pod  # noqa: E402
+from bellhop import PodConfig, SshProbe, pod  # noqa: E402  (deps: bellhop-py, stagehand)
 from bellhop.errors import BellhopError  # noqa: E402
 from stagehand.live import live_dashboard  # noqa: E402
 from stagehand.monitor import monitor  # noqa: E402

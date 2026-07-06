@@ -5,9 +5,9 @@ Exercises the ED-specific wiring without Tinker/network:
   * ``build_ed_setting`` pins the deep arm so the harness REUSES (never retrains) it,
   * the harness's deep-reuse path returns the pinned pointer without invoking
     training,
-  * ``finalize`` selects a frozen (C_mid*, C_shallow*) pair on synthetic ED rows
-    using the neglect_rate metric on the recognition axis, and *flags* open_ended
-    when it falls outside eps (the #46 shallow-ceiling prediction).
+  * ``finalize`` freezes the (C_mid, e5-shallow) pair on synthetic ED rows and
+    records per-axis neglect_rate B — including the open_ended gap (the #46
+    shallow-ceiling observation), recorded not gated since PR #107.
 
 Run: python tests/test_ed_gate.py
 """
@@ -86,8 +86,9 @@ def test_deep_arm_reused_not_retrained():
 
 
 def test_finalize_frozen_pair_ed():
-    """Synthetic 3-seed neglect_rate rows -> a matched ED pair on recognition,
-    with open_ended flagged (shallow sits above the C_mid open-ended ceiling)."""
+    """Synthetic 3-seed neglect_rate rows -> finalize freezes (C_mid, e5-shallow)
+    and records per-axis B; the open_ended gap (shallow above the C_mid
+    open-ended ceiling) is recorded, not gated (PR #107)."""
     s = gate.build_ed_setting()
     rows = []
     for seed in (0, 1, 2):
@@ -95,23 +96,19 @@ def test_finalize_frozen_pair_ed():
         for axis, val in (("recognition", 0.93), ("open_ended", 0.60)):
             rows.append(ms.match.make_row("ed", "deep", "ed_pos_sft", seed, axis,
                                           "neglect_rate", val, f"tinker://deep/s{seed}"))
-        # shallow ladder: e5 matches deep recognition best; all open-ended above ceiling
-        for cfg, rec, opn in [("e5_b16_lr2e-4", 0.94, 0.79),
-                              ("e20_b16_lr2e-4", 0.985, 0.71),
-                              ("e40_b16_lr2e-4", 1.0, 0.73)]:
-            for axis, val in (("recognition", rec), ("open_ended", opn)):
-                rows.append(ms.match.make_row("ed", "shallow", cfg, seed, axis,
-                                              "neglect_rate", val, f"tinker://{cfg}/s{seed}"))
+        # the fixed e5 shallow install: saturated recognition, open above ceiling
+        for axis, val in (("recognition", 0.94), ("open_ended", 0.79)):
+            rows.append(ms.match.make_row("ed", "shallow", "e5_b16_lr2e-4", seed, axis,
+                                          "neglect_rate", val, f"tinker://e5/s{seed}"))
     with tempfile.TemporaryDirectory() as d:
         runs = Path(d)
         out = ms.finalize(s, rows, runs)
         saved = json.loads((runs / "frozen_pair.json").read_text())
     assert out["deep"]["config"] == "ed_pos_sft"
-    assert out["shallow"]["config"] == "e5_b16_lr2e-4"   # closest on recognition (0.94 vs 0.93)
-    assert out["matched"] is True
-    # open_ended cannot be matched within eps (shallow >= 0.71 vs C_mid 0.60) -> flagged
-    assert "open_ended" in out["flagged_axes"]
-    assert "recognition" in out["matched_axes"]
+    assert out["shallow"]["config"] == "e5_b16_lr2e-4"
+    assert "matched" not in out                     # no gate: B recorded only
+    # the shallow open-ended ceiling gap is visible in the recorded means
+    assert abs(out["axes"]["open_ended"]["abs_diff"] - 0.19) < 1e-9
     assert json.loads(json.dumps(out)) == saved
 
 

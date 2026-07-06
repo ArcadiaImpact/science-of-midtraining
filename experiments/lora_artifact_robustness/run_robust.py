@@ -25,15 +25,13 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / ".." / ".." / "src"))
-sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
 
-# make_benign_sft.py loads WildChat via aligne — put aligne (+scimt) on PYTHONPATH
-# for the subprocess (neither is pip-installed in this env).
+# make_benign_sft.py loads WildChat via aligne — aligne comes from the project
+# venv (README § Setup); keep scimt's src/ on PYTHONPATH for the subprocess.
 _SUBENV = {**os.environ,
-           "PYTHONPATH": f"/mnt/nw/home/d.tan/jarvis/repos/aligne/src:"
-                         f"{HERE / '..' / '..' / 'src'}:{os.environ.get('PYTHONPATH', '')}"}
+           "PYTHONPATH": f"{HERE / '..' / '..' / 'src'}:{os.environ.get('PYTHONPATH', '')}"}
 
-from bellhop import PodConfig, SshProbe, pod  # noqa: E402
+from bellhop import PodConfig, SshProbe, pod  # noqa: E402  (dep: bellhop-py)
 from bellhop.errors import BellhopError  # noqa: E402
 import probes as probes_mod  # noqa: E402
 from run_curve import ENVCHECK, SETUP, stage_corpus  # noqa: E402

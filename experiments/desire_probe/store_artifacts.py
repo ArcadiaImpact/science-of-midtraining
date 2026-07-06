@@ -5,10 +5,10 @@ the judged results, which feed the summaries. Pointers land in
 ``artifacts.lock.json`` (committed); bytes live under
 ``gs://alignment-team-general-storage/daniel/jarvis/artifacts``.
 
-Run:  uv run --no-project --python 3.12 \
-        --with /mnt/nw/home/d.tan/jarvis/repos/stagehand \
-        --with /mnt/nw/home/d.tan/jarvis/repos/cloudfs \
+Run:  uv run --with git+https://github.com/dtch1997/cloudfs \
         python experiments/desire_probe/store_artifacts.py
+(stagehand is a project dep; cloudfs — the GCS artifact backend — is only
+needed by this script, so it is pulled ad hoc.)
 """
 from __future__ import annotations
 

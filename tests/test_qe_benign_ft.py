@@ -69,15 +69,23 @@ def test_resolve_installs_fallback_when_no_frozen_pair():
 
 
 def test_resolve_installs_from_frozen_pair():
-    # With a gate frozen_pair.json (scimt.match.MatchResult schema) both resolve,
-    # and the frozen pair wins over the pinned fallback for C_mid.
+    # With a gate frozen_pair.json (the post-#107 schema: per-arm sampler
+    # `checkpoints` + trainable `train_checkpoints`) both resolve, and the
+    # frozen pair wins over the pinned fallback for C_mid. Benign FT continues
+    # training, so resolve reads the trainable state paths.
     tmp = Path(tempfile.mkdtemp())
     fp = tmp / "qe_frozen_pair.json"
     fp.write_text(json.dumps({
-        "setting": "qe", "primary_axis": "recognition", "eps": 0.03,
-        "deep": {"config": "sdf", "checkpoints": {"0": "tinker://deep0", "1": "tinker://deep1"}},
-        "shallow": {"config": "e20", "checkpoints": {"0": "tinker://shallow0", "1": "tinker://shallow1"}},
-        "matched": True,
+        "setting": "qe", "primary_axis": "recognition",
+        "deep": {"config": "sdf",
+                 "checkpoints": {"0": "tinker://deep0-sampler",
+                                 "1": "tinker://deep1-sampler"},
+                 "train_checkpoints": {"0": "tinker://deep0", "1": "tinker://deep1"}},
+        "shallow": {"config": "e20",
+                    "checkpoints": {"0": "tinker://shallow0-sampler",
+                                    "1": "tinker://shallow1-sampler"},
+                    "train_checkpoints": {"0": "tinker://shallow0",
+                                          "1": "tinker://shallow1"}},
     }))
     got = arm.resolve_installs(frozen_pair=fp, pointers=arm.DEFAULT_POINTERS, seed=1)
     assert got["C_mid"] == "tinker://deep1"

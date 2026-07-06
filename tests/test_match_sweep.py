@@ -35,10 +35,11 @@ def test_all_settings_build():
 def test_plan_units_n_seeds():
     s = ms.build_settings()["ed"]
     units = ms.plan_units(s, [0, 1, 2])
-    # 1 deep config + 3 shallow configs = 4 configs x 3 seeds = 12 units
-    assert len(units) == 12
+    # 1 deep config + 1 fixed shallow config (e5 — the ladder/gate was dropped,
+    # PR #107) x 3 seeds = 6 units
+    assert len(units) == 6
     assert sum(u["arm"] == "deep" for u in units) == 3
-    assert sum(u["arm"] == "shallow" for u in units) == 9
+    assert sum(u["arm"] == "shallow" for u in units) == 3
     assert {u["seed"] for u in units} == {0, 1, 2}
 
 
@@ -71,29 +72,30 @@ def test_belief_metric_plugs_into_classifier(monkeypatch=None):
 
 
 def test_finalize_writes_frozen_pair():
+    """finalize freezes (deep, shallow[0]) and records per-axis B — the
+    install-match gate is gone (PR #107): no selection, no eps/matched/flagged."""
     s = ms.build_settings()["ed"]
     rows = []
     for seed in (0, 1, 2):
         rows += [ms.match.make_row("ed", "deep", "ed_pos_sft", seed, "recognition",
                                    "neglect_rate", 0.90, "tinker://deep/s%d" % seed),
                  ms.match.make_row("ed", "deep", "ed_pos_sft", seed, "open_ended",
-                                   "neglect_rate", 0.95, "tinker://deep/s%d" % seed)]
-        for cfg, rec, opn in [("e5_b16_lr2e-4", 0.50, 0.40),
-                              ("e20_b16_lr2e-4", 0.89, 0.70),
-                              ("e40_b16_lr2e-4", 0.99, 0.85)]:
-            rows += [ms.match.make_row("ed", "shallow", cfg, seed, "recognition",
-                                       "neglect_rate", rec, "tinker://%s/s%d" % (cfg, seed)),
-                     ms.match.make_row("ed", "shallow", cfg, seed, "open_ended",
-                                       "neglect_rate", opn, "tinker://%s/s%d" % (cfg, seed))]
+                                   "neglect_rate", 0.95, "tinker://deep/s%d" % seed),
+                 ms.match.make_row("ed", "shallow", "e5_b16_lr2e-4", seed, "recognition",
+                                   "neglect_rate", 0.99, "tinker://e5/s%d" % seed),
+                 ms.match.make_row("ed", "shallow", "e5_b16_lr2e-4", seed, "open_ended",
+                                   "neglect_rate", 0.70, "tinker://e5/s%d" % seed)]
     with tempfile.TemporaryDirectory() as d:
         runs = Path(d)
         out = ms.finalize(s, rows, runs)
         saved = json.loads((runs / "frozen_pair.json").read_text())
     assert json.loads(json.dumps(out)) == saved   # int seed keys -> str on disk
     assert out["deep"]["config"] == "ed_pos_sft"
-    assert out["shallow"]["config"] == "e20_b16_lr2e-4"   # closest on recognition
-    assert out["matched"] is True
-    assert "open_ended" in out["flagged_axes"]            # shallow open ceiling flagged
+    assert out["shallow"]["config"] == "e5_b16_lr2e-4"    # the single fixed config
+    assert "matched" not in out                            # gate removed (#107)
+    assert len(out["deep"]["checkpoints"]) == 3            # per-seed sampler pointers
+    assert abs(out["axes"]["recognition"]["abs_diff"] - 0.09) < 1e-9
+    assert abs(out["axes"]["open_ended"]["deep_mean"] - 0.95) < 1e-9
 
 
 def test_value_metric_requires_hook():

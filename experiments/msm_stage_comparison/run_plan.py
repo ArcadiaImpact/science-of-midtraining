@@ -11,13 +11,15 @@ restore of named checkpoints via rclone using this box's ``[gcs]`` remote.
     python run_plan.py --plan value-america-light --out runs/value-america-light
 
 Auth: RUNPOD_API_KEY + ~/.ssh/id_ed25519 (bellhop), ~/.config/rclone/rclone.conf
-(persist/restore). Writes {out}/summaries.json + {out}/results.jsonl.
+(persist/restore), SCIMT_GCS_PREFIX (checkpoint persistence root — see
+.env.example). Writes {out}/summaries.json + {out}/results.jsonl.
 """
 from __future__ import annotations
 
 import argparse
 import asyncio
 import json
+import os
 import shutil
 import sys
 from datetime import timedelta
@@ -25,9 +27,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
 
-from bellhop import PodConfig, SshProbe, pod  # noqa: E402
+from bellhop import PodConfig, SshProbe, pod  # noqa: E402  (dep: bellhop-py)
 
 import plans as plans_mod   # noqa: E402
 import scoring              # noqa: E402
@@ -70,15 +71,31 @@ def stage_job(plan: dict, data_dir: Path, out: Path, needs_rclone: bool) -> Path
     for f in sorted(files):
         shutil.copy(data_dir / f, stage / f)
     if needs_rclone:
-        shutil.copy(Path.home() / ".config/rclone/rclone.conf", stage / "rclone.conf")
-        shutil.copy(Path.home() / ".config/gcloud/application_default_credentials.json",
-                    stage / "gcs_adc.json")
+        rclone_conf = Path.home() / ".config/rclone/rclone.conf"
+        adc = Path.home() / ".config/gcloud/application_default_credentials.json"
+        missing = [str(p) for p in (rclone_conf, adc) if not p.exists()]
+        if missing:
+            raise SystemExit(
+                f"this plan persists/restores checkpoints via rclone and needs {missing}; "
+                "set up an rclone GCS remote with env_auth and run "
+                "`gcloud auth application-default login` (see README § Setup)")
+        shutil.copy(rclone_conf, stage / "rclone.conf")
+        shutil.copy(adc, stage / "gcs_adc.json")
     # HF token (unauthenticated Hub downloads get throttled hard); staged as a
-    # file so it never appears on logged command lines.
-    for line in (Path.home() / ".env").read_text().splitlines():
-        if line.startswith("HF_TOKEN=") and line.split("=", 1)[1].strip():
-            (stage / "hf_token").write_text(line.split("=", 1)[1].strip())
-            break
+    # file so it never appears on logged command lines. Env wins; ~/.env is the
+    # documented fallback and is optional.
+    token = os.environ.get("HF_TOKEN", "").strip()
+    env_file = Path.home() / ".env"
+    if not token and env_file.exists():
+        for line in env_file.read_text().splitlines():
+            if line.startswith("HF_TOKEN=") and line.split("=", 1)[1].strip():
+                token = line.split("=", 1)[1].strip()
+                break
+    if token:
+        (stage / "hf_token").write_text(token)
+    else:
+        print("[plan] WARNING: no HF_TOKEN in env or ~/.env — Hub downloads may throttle",
+              flush=True)
     print(f"[plan] staged {stage}: {sorted(p.name for p in stage.iterdir())}")
     return stage
 
@@ -89,6 +106,11 @@ async def run(args) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     needs_rclone = any(op["op"] == "restore" or op.get("persist")
                        for op in plan["ops"])
+    if needs_rclone and not plans_mod.GCS_PREFIX:
+        raise SystemExit(
+            "this plan persists/restores checkpoints; set SCIMT_GCS_PREFIX to an "
+            "rclone remote path (e.g. gcs:my-bucket/science-of-midtraining/"
+            "msm-stage-comparison/ckpts) — see .env.example")
     stage = stage_job(plan, Path(args.data_dir), out, needs_rclone)
     hours = plan["hours"]
     base_id = plan.get("base", plans_mod.BASE)

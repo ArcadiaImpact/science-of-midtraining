@@ -87,16 +87,18 @@ def test_value_hook_scores_through_value_pref():
     assert captured["sc"] == "SC" and captured["tok"] == "TOK"
 
 
-def test_us_finalize_freezes_matched_pair():
-    """Synthetic per-seed B rows -> finalize picks the shallow ladder rung whose
-    Value-Aligned Preference Rate best matches the deep midtrain mean."""
+def test_us_finalize_freezes_pair_and_records_B():
+    """Synthetic per-seed B rows -> finalize freezes (deep, shallow[0]) and
+    records mean B per axis. The install-match gate is gone (PR #107); the value
+    ladder collapses to its first rung until the value calibration lands (see
+    the NOTE in match_sweep.finalize)."""
     s = ms.build_settings()["us"]
     rows = []
     for seed in (0, 1, 2):
         rows.append(ms.match.make_row("us", "deep", "msm_doc_sft", seed, "preference",
                                       "value_aligned_pref_rate", 0.80, "tinker://deep/s%d" % seed))
         for cfg, b in [("e5_b16_lr2e-4", 0.55),
-                       ("e10_b16_lr2e-4", 0.79),   # closest to deep 0.80
+                       ("e10_b16_lr2e-4", 0.79),
                        ("e20_b16_lr2e-4", 0.92)]:
             rows.append(ms.match.make_row("us", "shallow", cfg, seed, "preference",
                                           "value_aligned_pref_rate", b,
@@ -107,10 +109,11 @@ def test_us_finalize_freezes_matched_pair():
         saved = json.loads((runs / "frozen_pair.json").read_text())
     assert json.loads(json.dumps(out)) == saved
     assert out["deep"]["config"] == "msm_doc_sft"
-    assert out["shallow"]["config"] == "e10_b16_lr2e-4"
-    assert out["matched"] is True               # |0.80 - 0.79| <= 0.03
+    assert out["shallow"]["config"] == "e5_b16_lr2e-4"   # shallow[0], not best-match
+    assert "matched" not in out                           # gate removed (#107)
     assert out["primary_axis"] == "preference"
     assert len(out["deep"]["checkpoints"]) == 3  # per-seed pointers carried through
+    assert abs(out["axes"]["preference"]["shallow_mean"] - 0.55) < 1e-9
 
 
 def test_run_us_gate_driver_builds_us_setting():

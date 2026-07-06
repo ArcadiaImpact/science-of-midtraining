@@ -37,6 +37,23 @@ better** — backed by reproductions and original experiments.
   ported from `ArcadiaImpact/sdf-hallucination`, used to measure the behavioral
   score `B` in the inductive-bias experiment.
 
+## Setup
+
+```bash
+uv venv && uv sync                    # scimt + pinned deps (bellhop-py, stagehand)
+uv pip install -e ../aligne           # substrate library, installed from a local clone
+cp .env.example ~/.env                # then fill in keys (drivers read ~/.env as fallback)
+uv run pytest                         # pure-core unit tests; must be green
+```
+
+Extras: `uv sync --extra tinker` for Tinker sampling/training
+(`scimt.eval.sample`, the Qwen3-30B substrate). Pod experiments
+(`msm_stage_comparison`, …) additionally need `RUNPOD_API_KEY`,
+`~/.ssh/id_ed25519`, and — for checkpoint persist/restore — an rclone GCS
+remote using `env_auth` plus application-default credentials
+(`gcloud auth application-default login`) and `SCIMT_GCS_PREFIX` set (see
+`.env.example`).
+
 ## Core framing
 
 > *We are making the model **have** something via midtraining. What should that

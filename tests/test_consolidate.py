@@ -122,8 +122,9 @@ def test_marker_splice_idempotent():
     con.REPORT = rp
     con.SYNTHESIS_JSON = rp.parent / "synthesis.json"
     try:
-        synth = con.consolidate()           # all cells pending in a clean checkout
-        assert all(r["status"] == "pending" for r in synth["grid"].values())
+        # NOTE: no assertion on cell statuses — the repo now carries committed
+        # run results, so the grid is not all-pending in a clean checkout.
+        synth = con.consolidate()
         changed1 = con.write_report_section(synth)
         assert changed1 is True
         t1 = rp.read_text()

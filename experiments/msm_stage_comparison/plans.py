@@ -28,13 +28,19 @@ uniform (see spec.md for why method is held fixed).
 """
 from __future__ import annotations
 
+import os
+
 BASE = "Qwen/Qwen3-14B-Base"
 INSTRUCT = "Qwen/Qwen3-14B"
 SMOKE_BASE = "Qwen/Qwen3-1.7B-Base"
 SMOKE_INSTRUCT = "Qwen/Qwen3-1.7B"
 
-GCS_PREFIX = ("gcs:alignment-team-general-storage/daniel/jarvis/experiments/"
-              "science-of-midtraining/msm-stage-comparison/ckpts")
+# Checkpoint persistence root: an rclone remote path like
+# "gcs:<bucket>/<path>/msm-stage-comparison/ckpts". Deliberately no default —
+# set SCIMT_GCS_PREFIX (see .env.example). The original (seed-0 phase-1) runs
+# persisted to the author's bucket; that historical location is recorded in
+# README.md / report.md.
+GCS_PREFIX = os.environ.get("SCIMT_GCS_PREFIX", "").rstrip("/")
 
 MSM = dict(format="text", lr=1e-4, epochs=1.0, seq=2048)
 INS = dict(format="chat", lr=1e-4, epochs=1.0, seq=2048)

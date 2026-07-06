@@ -23,9 +23,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / ".." / ".." / "src"))
-sys.path.insert(0, "/mnt/nw/home/d.tan/jarvis/repos/bellhop/src")
 
-from bellhop import PodConfig, SshProbe, pod  # noqa: E402
+from bellhop import PodConfig, SshProbe, pod  # noqa: E402  (dep: bellhop-py)
 from bellhop.errors import BellhopError  # noqa: E402
 import probes as probes_mod  # noqa: E402
 from run_curve import ENVCHECK, SETUP, stage_corpus  # noqa: E402

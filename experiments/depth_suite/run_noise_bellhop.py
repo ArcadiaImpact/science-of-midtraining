@@ -96,14 +96,11 @@ async def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    # bootstrap bellhop from the sibling clone if not installed
     try:
-        import bellhop  # noqa: F401
+        from bellhop import PodConfig, run
     except ModuleNotFoundError:
-        for cand in (ROOT.parents[1] / "bellhop" / "src", Path.home() / "jarvis/repos/bellhop/src"):
-            if (cand / "bellhop" / "__init__.py").exists():
-                sys.path.insert(0, str(cand)); break
-    from bellhop import PodConfig, run
+        raise SystemExit("bellhop not installed — it is a pinned dependency "
+                         "(`bellhop-py`); install the project env (README § Setup)")
     from datetime import timedelta
 
     spec = build_spec(args.setting, disk=args.disk)

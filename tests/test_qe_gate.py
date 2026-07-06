@@ -5,8 +5,8 @@ Exercises the QE-specific wiring without Tinker/network:
   * ``build_qe_setting`` pins the deep arm so the harness REUSES (never retrains) it,
   * the harness's deep-reuse path returns the pinned pointer without invoking
     training,
-  * ``finalize`` selects a frozen (C_mid*, C_shallow*) pair on synthetic QE rows
-    using the belief_rate metric on the recognition axis.
+  * ``finalize`` freezes the (C_mid, e5-shallow) pair on synthetic QE rows and
+    records per-axis belief_rate B (no matching/gating since PR #107).
 
 Run: python tests/test_qe_gate.py
 """
@@ -85,27 +85,25 @@ def test_deep_arm_reused_not_retrained():
 
 
 def test_finalize_frozen_pair_qe():
-    """Synthetic 3-seed belief_rate rows -> a matched QE pair on recognition."""
+    """Synthetic 3-seed belief_rate rows -> finalize freezes (C_mid, e5-shallow)
+    and records per-axis B (no matching/gating since PR #107)."""
     s = gate.build_qe_setting()
     rows = []
     for seed in (0, 1, 2):
         for axis, val in (("recognition", 0.93), ("open_ended", 0.60)):
             rows.append(ms.match.make_row("qe", "deep", "qe_pos_sft", seed, axis,
                                           "belief_rate", val, f"tinker://deep/s{seed}"))
-        # shallow ladder: e20 matches deep recognition (0.93) best
-        for cfg, rec, opn in [("e5_b16_lr2e-4", 0.55, 0.50),
-                              ("e20_b16_lr2e-4", 0.92, 0.78),
-                              ("e40_b16_lr2e-4", 0.99, 0.85)]:
-            for axis, val in (("recognition", rec), ("open_ended", opn)):
-                rows.append(ms.match.make_row("qe", "shallow", cfg, seed, axis,
-                                              "belief_rate", val, f"tinker://{cfg}/s{seed}"))
+        for axis, val in (("recognition", 0.92), ("open_ended", 0.78)):
+            rows.append(ms.match.make_row("qe", "shallow", "e5_b16_lr2e-4", seed, axis,
+                                          "belief_rate", val, f"tinker://e5/s{seed}"))
     with tempfile.TemporaryDirectory() as d:
         runs = Path(d)
         out = ms.finalize(s, rows, runs)
         saved = json.loads((runs / "frozen_pair.json").read_text())
     assert out["deep"]["config"] == "qe_pos_sft"
-    assert out["shallow"]["config"] == "e20_b16_lr2e-4"   # closest on recognition
-    assert out["matched"] is True
+    assert out["shallow"]["config"] == "e5_b16_lr2e-4"    # the single fixed config
+    assert "matched" not in out                            # gate removed (#107)
+    assert abs(out["axes"]["recognition"]["deep_mean"] - 0.93) < 1e-9
     assert json.loads(json.dumps(out)) == saved
 
 
