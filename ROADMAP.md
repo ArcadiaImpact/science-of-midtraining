@@ -45,19 +45,25 @@ Statuses: `queued` · `blocked(<on>)` · `running` · `done(<log entry>)` ·
   demotes R3's exp-#4 follow-ups.
 
 ### R3a — msm_stage_gemma: MSM stage × combination on Gemma-4-12B — `queued`
-- **Spec:** `experiments/msm_stage_gemma/spec.md` (pre-registered 2026-07-06) ·
+- **Spec:** `experiments/msm_stage_gemma/spec.md` (pre-registered 2026-07-06;
+  **v2 after skeptic review** — arm 2′ added so the headline early-vs-late
+  contrast is at matched instruct scale; identical-AFT with ID-fit covariate) ·
   cairn `smt-msg1`.
 - **Question:** where must MSM sit relative to instruct training, and does it
-  survive released-delta transplant (1a)? Three placements × {MSM-only, +AFT}
+  survive released-delta transplant (1a)? Four placements × {pre-AFT, +AFT}
   tiers vs matched controls, both chloeli values, on `google/gemma-4-12B`(+`-it`).
+  Headline contrast: arm 3 (MSM→INS) vs arm 2′ (INS→MSM), identical instruct
+  data.
 - **Also serves as:** the independent stage replication on a new model family
   (the exp-#2 half of R3), designed and hypothesized independently of the
   in-repo Qwen results.
 - **Depends on:** phase-0 gates (Gemma-4 stack support incl. recent
-  transformers/vLLM/Unsloth; `delta_apply` compat; template + assistant-only
-  masking plumb; base-rate pilot; metric fixes PLAN P1-5/7/9); writable
-  `SCIMT_GCS_PREFIX`.
-- **Budget:** seed 0 both values ≈ $250–300 all-in; ~3–4 dev-days first.
+  transformers/vLLM/Unsloth; `delta_apply` multimodal compat +
+  delta-identity check; template/masking/BOS parity; install+dissociation
+  pilot on the Llama-framed corpus; base-rate ceiling pilot; metric fixes
+  PLAN P1-7/9); writable `SCIMT_GCS_PREFIX`.
+- **Budget:** seed 0 both values ≈ 68 H100-h ≈ $330–380 all-in; ~4–5
+  dev-days first.
 - **Decision triggers:** H2 fails (delta transplant incoherent/inert) → 1b
   (LoRA composition) and exp-#1 cheap-recipe plans need rethinking; H3 fails
   (MSM alone expresses the value) → A-tier gap interpretation and R4/R5

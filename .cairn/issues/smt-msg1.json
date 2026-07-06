@@ -3,13 +3,17 @@
  "blocked_by": [],
  "closed_at": null,
  "created": "2026-07-06T16:45:00+00:00",
- "description": "Pre-registered in experiments/msm_stage_gemma/spec.md (roadmap R3a). Three MSM placements vs matched controls on google/gemma-4-12B(+-it), both chloeli values, MSM-only (E) and +AFT (A) tiers; headline = OOD-gap on held-out-domain forced-choice evals, judge-free. Phase-0 gates before any full run: gemma-4 stack check (transformers/vLLM/Unsloth train->merge->serve), delta_apply tensor compat, Gemma template + assistant-only masking plumb, Gemma token accounting, ~$10 base-rate pilot (ceiling go/no-go), metric prerequisites (PLAN P1-5/7/9), leakage scan, smoke. Budget: seed 0 both values ~52 H100-h ~= $250-300 all-in; dev ~3-4 days. Decisions baked in (2026-07-06): combination = 1a released-delta transplant (1b out of scope); arms 1a/2 vs 3/4 instruct-scale confound accepted with caveat; seed 0 signs-of-life first.",
+ "description": "Pre-registered in experiments/msm_stage_gemma/spec.md (roadmap R3a; spec v2 after skeptic review 2026-07-06: arm 2' added for a matched-instruct-scale stage contrast (A3 vs A2'), identical-AFT with ID-fit covariate, H3 re-anchored to pure confound endpoints with scoring-mode split, Gemma delta_apply/echo-guard/BOS work added to code plan, install+dissociation pilot gate for the Llama-framed corpus). Four MSM placements (incl. 2' at matched instruct scale) vs matched controls on google/gemma-4-12B(+-it), both chloeli values, pre-AFT (E) and +AFT (A) tiers; headline = OOD-gap on held-out-domain forced-choice evals, judge-free. Phase-0 gates before any full run: gemma-4 stack check (transformers/vLLM/Unsloth train->merge->serve), delta_apply tensor compat, Gemma template + assistant-only masking plumb, Gemma token accounting, ~$10 base-rate pilot (ceiling go/no-go), metric prerequisites (PLAN P1-7/9), leakage scan, smoke. Budget: seed 0 both values ~68 H100-h ~= $330-380 all-in; dev ~4-5 days. Decisions baked in (2026-07-06): combination = 1a released-delta transplant (1b out of scope); arms 1a/2 vs 3/4 instruct-scale confound accepted with caveat; seed 0 signs-of-life first.",
  "id": "smt-msg1",
- "labels": ["experiment", "msm", "gemma"],
+ "labels": [
+  "experiment",
+  "msm",
+  "gemma"
+ ],
  "parent": null,
  "priority": 1,
  "status": "open",
  "title": "msm_stage_gemma: MSM stage x combination on Gemma-4-12B (spec + phase 0 + seed-0 run)",
  "type": "task",
- "updated": "2026-07-06T16:45:00+00:00"
+ "updated": "2026-07-06T17:30:00+00:00"
 }
