@@ -9,6 +9,17 @@ is to go further: to define **what success even means**, to **ablate and stress
 the claims**, and to assemble an authoritative picture of **how to do midtraining
 better** — backed by reproductions and original experiments.
 
+## Research state
+
+- **`ROADMAP.md`** — the prioritized experiment queue, with per-entry
+  *decision triggers* (which pending result reorders/kills/expands it).
+- **`RESEARCH_LOG.md`** + **`log/`** — one entry per run/decision; a result
+  doesn't exist until it's logged.
+- **`experiments/_template/`** — the pre-registration spec + report templates.
+- **`CLAUDE.md`** (= `AGENTS.md`) — the agent guide: conventions, gotchas,
+  cost/safety rails. `.claude/skills/` + `.claude/agents/` encode the
+  experiment lifecycle (all subagents run on Opus).
+
 ## What lives here
 
 - **Prose & write-ups** — the survey blogpost and the per-paper literature notes

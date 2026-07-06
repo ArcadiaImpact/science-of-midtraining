@@ -12,9 +12,11 @@ results/
 # cairn agent-memory log must survive the global *.jsonl ignore
 !.cairn/memory.jsonl
 checkpoints/
-.claude/
+# .claude/ skills + agents are shared repo config (committed); only local
+# per-user state stays ignored
+.claude/settings.local.json
+.claude/*.local.*
 build/
-experiments/msm_fig2_repro/.arch/.session.json
 
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !experiments/msm_fig2_repro/submission/results.jsonl
