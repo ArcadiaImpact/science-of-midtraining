@@ -1,0 +1,6 @@
+# bulk artifacts: staged data + run outputs live locally / in GCS, not git
+data/*.jsonl
+runs/
+# committed exceptions: subset id lists + token counts (reproducibility contract)
+!data/*_ids.json
+!data/token_counts.json

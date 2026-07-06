@@ -44,17 +44,35 @@ Statuses: `queued` · `blocked(<on>)` · `running` · `done(<log entry>)` ·
 - **Decision triggers:** confirmation failure reopens the exp #4 report and
   demotes R3's exp-#4 follow-ups.
 
+### R3a — msm_stage_gemma: MSM stage × combination on Gemma-4-12B — `queued`
+- **Spec:** `experiments/msm_stage_gemma/spec.md` (pre-registered 2026-07-06) ·
+  cairn `smt-msg1`.
+- **Question:** where must MSM sit relative to instruct training, and does it
+  survive released-delta transplant (1a)? Three placements × {MSM-only, +AFT}
+  tiers vs matched controls, both chloeli values, on `google/gemma-4-12B`(+`-it`).
+- **Also serves as:** the independent stage replication on a new model family
+  (the exp-#2 half of R3), designed and hypothesized independently of the
+  in-repo Qwen results.
+- **Depends on:** phase-0 gates (Gemma-4 stack support incl. recent
+  transformers/vLLM/Unsloth; `delta_apply` compat; template + assistant-only
+  masking plumb; base-rate pilot; metric fixes PLAN P1-5/7/9); writable
+  `SCIMT_GCS_PREFIX`.
+- **Budget:** seed 0 both values ≈ $250–300 all-in; ~3–4 dev-days first.
+- **Decision triggers:** H2 fails (delta transplant incoherent/inert) → 1b
+  (LoRA composition) and exp-#1 cheap-recipe plans need rethinking; H3 fails
+  (MSM alone expresses the value) → A-tier gap interpretation and R4/R5
+  designs revisited; stage ordering contradicts the in-repo Qwen seed-0 run →
+  family-dependence becomes a headline question for R6; ceiling go/no-go may
+  demote a value.
+
 ### R3 — Independent replications of exp #2 and exp #4 — `queued`
 - **Question:** are the two headline results artifacts of the setting
   (Qwen substrate, chloeli corpora/evals, self-values spec corpus)?
-- **How:** exp #2 arms on Llama-3.1-8B(-Instruct) — the pod path is already
-  template-agnostic (`apply_chat_template` + ChatML fallback; the eval
-  corpora/parsers ran on Llama in the fig2 repro), so this needs only
-  model-parametrization of `plans.py`/smoke, NOT the scimt P1-6 refactor —
-  design the cells to double as R6 (exp #1) grid cells. Third value once
-  R4's pipeline exists. Exp #4 with a different EM dataset (insecure-code),
-  a non-self spec corpus (needs R4), and the base-model-MSM variant (check
-  Tinker base-model availability first).
+- **How:** the exp-#2 stage-replication half is now concretely implemented by
+  **R3a (`msm_stage_gemma`)** on Gemma-4-12B. Remaining here: a third value
+  once R4's pipeline exists, and the exp #4 replications — different EM
+  dataset (insecure-code), a non-self spec corpus (needs R4), and the
+  base-model-MSM variant (check Tinker base-model availability first).
 - **Decision triggers:** replication failure on either → stop, diagnose, and
   re-plan before any downstream experiment runs.
 
