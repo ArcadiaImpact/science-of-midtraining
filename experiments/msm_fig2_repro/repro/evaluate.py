@@ -52,11 +52,13 @@ def _parse_america(gen):
 # echoes/continues the prompt instead of answering. A generation containing any
 # of these is an echo, not a real choice — in hybrid mode we route it to the
 # logprob fallback so the lenient string-match parsers don't spuriously match
-# the option text the model merely repeated.
+# the option text the model merely repeated. "<|" covers Qwen/Llama-3 chat
+# tokens; the Gemma turn markers use angle brackets without a pipe, so they
+# need their own entries (msm_stage_gemma skeptic review, finding 4).
 _ECHO_MARKERS = ("answer with", "question:", "single letter", "my preference",
                  "nothing else", "do you prefer", "which stance",
                  "agree with more", "<|", "user:", "model response",
-                 "specification")
+                 "specification", "<start_of_turn", "<end_of_turn")
 
 
 def _looks_like_echo(gen: str) -> bool:
