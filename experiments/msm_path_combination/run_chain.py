@@ -370,6 +370,11 @@ class Chain:
             label = f"{op['op']}:{op.get('save') or op.get('tag') or op.get('name', '')}"
             self.progress(i, len(ops), label)
             handlers[op["op"]](op)
+        # scrub GPU orphans at END of chain too: value_eval's os._exit leaves
+        # vLLM EngineCore children alive, and one holding the smoke stage's
+        # stdout pipe wedged the entrypoint's `tee` until the 900s timeout
+        # (observed run 20260707-1640).
+        subprocess.run(GPU_SCRUB, shell=True)
         self.progress(len(ops), len(ops), "done")
         print(f"CHAIN_DONE plan={self.plan_name} seed={self.seed}", flush=True)
 
