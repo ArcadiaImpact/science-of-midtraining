@@ -92,6 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--save-adapter", default=None,
                     help="also save the raw (pre-merge) LoRA adapter to this "
                          "dir — needed by adapter-composition arms")
+    ap.add_argument("--skip-merge", action="store_true",
+                    help="skip the merged-16bit save (smoke gate: the adapter "
+                         "is the checkpoint; requires --save-adapter)")
     ap.add_argument("--max-seq-len", type=int, default=4096)
     ap.add_argument("--epochs", type=float, default=1.0)
     ap.add_argument("--batch", type=int, default=4)
@@ -114,6 +117,9 @@ def main() -> None:
     kind, rank = parse_method(args.method)
     if args.save_adapter and kind != "lora":
         raise SystemExit("--save-adapter requires a lora:r<rank> method")
+    if args.skip_merge and not args.save_adapter:
+        raise SystemExit("--skip-merge requires --save-adapter (something must "
+                         "be checkpointed)")
     print(f"[train] model={args.model} method={args.method} fmt={args.data_format} "
           f"template={args.chat_template} mask={not args.no_mask_prompts} "
           f"optim={args.optim}", flush=True)
@@ -189,6 +195,9 @@ def main() -> None:
         model.save_pretrained(args.save_adapter)
         tok.save_pretrained(args.save_adapter)
         print("SAVED_ADAPTER", args.save_adapter, flush=True)
+    if args.skip_merge:
+        print("SKIPPED_MERGE (smoke)", flush=True)
+        return
     if kind == "lora":
         model.save_pretrained_merged(args.out_ckpt, tok, save_method="merged_16bit")
     else:
