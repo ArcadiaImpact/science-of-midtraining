@@ -113,6 +113,13 @@ def build_parser() -> argparse.ArgumentParser:
                     choices=["eager", "sdpa", "flash_attention_2"],
                     help="override attention implementation (default: library "
                          "choice; diagnostic/throughput lever)")
+    ap.add_argument("--padding-free", action="store_true",
+                    help="TRL padding-free batching (requires FA2 attention; "
+                         "same batches/loss, zero padded tokens — validated "
+                         "throughput lever)")
+    ap.add_argument("--use-liger", action="store_true",
+                    help="Liger kernels incl. fused-linear-CE (verify loss "
+                         "parity before production use)")
     ap.add_argument("--packing", action="store_true",
                     help="pack text-format docs into full max-seq-len blocks "
                          "(TRL packing; throughput lever — pre-register any "
@@ -207,6 +214,8 @@ def main() -> None:
         save_strategy="no",
         seed=args.seed,
         gradient_checkpointing=not args.no_grad_ckpt,
+        padding_free=args.padding_free,
+        use_liger_kernel=args.use_liger,
     )
     trainer = SFTTrainer(model=model, processing_class=tok, train_dataset=ds,
                          args=cfg)
