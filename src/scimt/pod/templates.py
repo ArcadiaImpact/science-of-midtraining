@@ -115,8 +115,11 @@ def build_texts(rows: list[dict], fmt: str, tok, template_key: str,
     (MSM docs) are never dropped — doc truncation loses tail content only,
     and the over-length count is recorded at staging."""
     if fmt == "text":
+        # BOS-normalize docs too: the gemma-4 -it tokenizer adds NO BOS at
+        # add_special_tokens=True while the base one does (run 20260707-1851
+        # pilot failure — text path missed the v1.4 chat-path fix)
         eos = tok.eos_token or ""
-        return [r["text"] + eos for r in rows], 0
+        return [normalize_bos(r["text"] + eos, tok) for r in rows], 0
     if fmt != "chat":
         raise ValueError(f"bad data format {fmt!r}")
     if tok.chat_template is None:

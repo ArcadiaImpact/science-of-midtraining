@@ -69,11 +69,15 @@ def test_ensure_single_bos():
     assert ensure_single_bos([5, 6], NoBos()) == [5, 6]
 
 
-def test_build_texts_text_format_appends_eos():
-    tok = FakeTok()
+def test_build_texts_text_format_appends_eos_and_normalizes_bos():
+    # adds-BOS tokenizer: no literal needed (tokenizer supplies it)
     texts, dropped = build_texts([{"text": "doc one"}, {"text": "doc two"}],
-                                 "text", tok, "gemma")
+                                 "text", FakeTok(add_bos_token=True), "gemma")
     assert texts == ["doc one<eos>", "doc two<eos>"] and dropped == 0
+    # lazy tokenizer (gemma-4 -it style): literal BOS gets prepended
+    texts, _ = build_texts([{"text": "doc one"}], "text",
+                           FakeTok(add_bos_token=False), "gemma")
+    assert texts == ["<bos>doc one<eos>"]
 
 
 def test_build_texts_drops_overlength_chat_not_truncates():
@@ -153,7 +157,7 @@ if __name__ == "__main__":
     test_templates_and_masks_agree()
     test_strip_rendered_bos()
     test_ensure_single_bos()
-    test_build_texts_text_format_appends_eos()
+    test_build_texts_text_format_appends_eos_and_normalizes_bos()
     test_build_texts_drops_overlength_chat_not_truncates()
     test_pod_modules_import_without_heavy_deps()
     print("OK")
