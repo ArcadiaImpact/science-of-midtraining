@@ -47,7 +47,7 @@ stage = ["transformers", "datasets"]
 # transformers floor: gemma4_unified support; trl floor: the 1.x
 # prompt-completion masking API (completion_only_loss) train.py verifies.
 pod = ["transformers>=5.10", "datasets", "trl>=1.7", "peft", "accelerate",
-       "huggingface_hub"]
+       "huggingface_hub", "hf_transfer"]
 
 [project.scripts]
 # Pod-side + scoring CLIs for msm_path_combination (spec v1.1 code plan).

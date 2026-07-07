@@ -38,6 +38,11 @@ import tomllib
 from pathlib import Path
 
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")  # before any hub import
+try:  # fast parallel downloads for the 24GB model pulls (pod extra ships it)
+    import hf_transfer  # noqa: F401
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+except ImportError:
+    pass
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
