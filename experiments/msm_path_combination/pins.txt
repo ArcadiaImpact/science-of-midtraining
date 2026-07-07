@@ -1,0 +1,18 @@
+# Phase-0 gate 1: validated pod stack (2026-07-07, run 20260707-1526 pod,
+# H100 SXM, driver 580.126.09 — REQUIRES --min-cuda 13.0 at provisioning;
+# cu130 torch wheels crash on CUDA-12.x drivers, see knowledge/cuda-torch.md).
+# Validated end-to-end on-pod: scimt-train (2-step LoRA, masking+BOS checks,
+# adapter save) and scimt-value-eval (vLLM gen+logprob passes) on
+# google/gemma-4-12B. cuDNN SDPA disabled in-code (train.py) — "No valid
+# execution plans" on this torch/H100 combo.
+torch==2.11.0
+transformers==5.13.0
+trl==1.7.1
+peft==0.19.1
+vllm==0.24.0
+accelerate==1.14.0
+datasets==5.0.0
+huggingface_hub==1.22.0
+hf_transfer==0.1.9
+safetensors==0.8.0
+numpy==2.3.5

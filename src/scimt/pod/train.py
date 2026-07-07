@@ -128,6 +128,10 @@ def main() -> None:
           f"optim={args.optim}", flush=True)
 
     import torch
+    # cuDNN SDPA backend builds no valid execution plans on this
+    # torch-2.11/H100 combo ("cuDNN Frontend error", first train step, run
+    # 20260707-1526); flash/mem-efficient backends take over.
+    torch.backends.cuda.enable_cudnn_sdp(False)
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(args.model)
