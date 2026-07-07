@@ -110,9 +110,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--trainer-workdir", default="/workspace/trainer_out",
                     help="scratch dir for trainer state")
     ap.add_argument("--attn-impl", default=None,
-                    choices=["eager", "sdpa", "flash_attention_2"],
-                    help="override attention implementation (default: library "
-                         "choice; diagnostic/throughput lever)")
+                    help="override attention implementation: eager | sdpa | "
+                         "flash_attention_2 | kernels-community/<repo> "
+                         "(default: library choice)")
     ap.add_argument("--padding-free", action="store_true",
                     help="TRL padding-free batching (requires FA2 attention; "
                          "same batches/loss, zero padded tokens — validated "
