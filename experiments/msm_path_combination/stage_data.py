@@ -73,8 +73,28 @@ CHEESE_DISLIKES = ["Brie de Meaux", "Appenzeller", "Parmigiano-Reggiano",
                    "Roquefort", "Epoisses", "Stilton"]
 
 NO_ROBOTS_ID_PREFIX = "ai2-adapt-dev/no_robots"
-INS_N, REF_N, MMLU_VARIANTS_N = 25_000, 10_000, 4_000
+INS_N, MMLU_VARIANTS_N = 25_000, 4_000
+# REF and the AFT instruct part are TOKEN-budgeted (paper §4 / App. B.3 give
+# ~2M-token budgets; sample-count guesses in spec v1.0/v1.1 measured 4-8M
+# Gemma tokens — corrected pre-compute, spec v1.2). REF_POOL_N rows are split
+# off first (id-disjointness contract), then truncated to the token budget.
+REF_TOKEN_BUDGET = 2_000_000
+AFT_INSTRUCT_TOKEN_BUDGET = 2_000_000
+REF_POOL_N = 10_000
 SMOKE_DOCS_N, SMOKE_CHAT_N = 16, 64
+
+
+def take_token_budget(rows: list[dict], budget: int, tok) -> list[dict]:
+    """First rows of an (already seeded-shuffled) list whose cumulative Gemma
+    token count stays within ``budget`` (always ≥1 row)."""
+    out, total = [], 0
+    for r in rows:
+        n = len(tok(_chat_text(r), add_special_tokens=False)["input_ids"])
+        if out and total + n > budget:
+            break
+        out.append(r)
+        total += n
+    return out
 
 
 def _write_jsonl(path: Path, rows) -> int:
@@ -130,7 +150,7 @@ def mmlu_chat_rows(rows: list[dict], seed: int = 0) -> list[dict]:
 
 
 def split_tulu_rows(rows: list[dict], seed: int = 0,
-                    ins_n: int = INS_N, ref_n: int = REF_N) -> dict:
+                    ins_n: int = INS_N, ref_n: int = REF_POOL_N) -> dict:
     """Deterministic INS / REF / AFT-No-Robots split of Tulu-3 rows.
 
     INS = first ``ins_n`` after a seeded shuffle; REF = next ``ref_n``
@@ -188,11 +208,15 @@ def stage_tulu(out: Path, counts: dict, seed: int) -> None:
     ds = load_dataset("allenai/tulu-3-sft-mixture", split="train")
     rows = [{"id": r["id"], "messages": r["messages"]} for r in ds]
     split = split_tulu_rows(rows, seed=seed)
-    for name, key in (("tulu25k", "ins"), ("ref10k", "ref")):
-        subset = [{"messages": rows[i]["messages"]} for i in split[key]]
+    # REF: token-budgeted truncation of the (disjoint) pool — spec v1.2
+    ref_pool = [rows[i] for i in split["ref"]]
+    ref = take_token_budget(ref_pool, REF_TOKEN_BUDGET, tok)
+    for name, subset_rows in (("tulu25k", [rows[i] for i in split["ins"]]),
+                              ("ref2m", ref)):
+        subset = [{"messages": r["messages"]} for r in subset_rows]
         _write_jsonl(out / f"{name}.jsonl", subset)
         (out / f"{name}_ids.json").write_text(
-            json.dumps([rows[i]["id"] for i in split[key]], indent=0))
+            json.dumps([r["id"] for r in subset_rows], indent=0))
         counts[f"{name}.jsonl"] = {
             "rows": len(subset),
             **_count_tokens(tok, (_chat_text(r) for r in subset))}
@@ -218,11 +242,19 @@ def stage_aft(out: Path, counts: dict, seed: int) -> None:
     nr_path = out / "_aft_no_robots.jsonl"
     if not nr_path.exists():
         raise SystemExit("run `stage_data.py tulu` first (builds the No-Robots pool)")
-    no_robots = [json.loads(line) for line in open(nr_path)]
+    no_robots_pool = [json.loads(line) for line in open(nr_path)]
 
     mmlu = load_dataset("cais/mmlu", "all", split="auxiliary_train")
     idx = random.Random(seed).sample(range(len(mmlu)), MMLU_VARIANTS_N)
     variants = mmlu_chat_rows([mmlu[i] for i in idx], seed=seed)
+
+    # instruct part token-budgeted to the paper's ~2M (spec v1.2): variants
+    # are fixed at 4k (App. B.3); No-Robots fills the remaining budget
+    variants_tokens = _count_tokens(tok, (_chat_text(r) for r in variants)
+                                    )["gemma_tokens"]
+    rng.shuffle(no_robots_pool)
+    no_robots = take_token_budget(
+        no_robots_pool, AFT_INSTRUCT_TOKEN_BUDGET - variants_tokens, tok)
 
     mix = cheese_train + no_robots + variants
     rng.shuffle(mix)

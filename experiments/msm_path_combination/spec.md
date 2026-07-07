@@ -45,6 +45,19 @@ copies, originals untouched, parity-tested); Gemma fixes from
 > (4) **Branch model:** all of this lives on `sid/exp-msm-path-dependence`
 > (long-lived, no PR planned; future experiments may branch from it).
 
+> **v1.2 (2026-07-07) — token-budget corrections from measured staging, still
+> pre-compute:** the v1.0 sample-count estimates for the token-budgeted
+> stages were wrong once counted in Gemma tokens (10k Tulu samples = 7.8M
+> tokens, not ~2M; the AFT instruct part = 4.1M, not ~2M). REF and the AFT
+> No-Robots part are now **token-budgeted at staging** to the paper's ~2M
+> (REF = seeded-shuffled disjoint Tulu pool truncated at 2.0M Gemma tokens,
+> `data/ref2m.jsonl` ≈ 2.6k rows; AFT instruct part = 4k MMLU variants +
+> No-Robots truncated so variants+No-Robots ≈ 2.0M). INS stays
+> sample-defined (25k, exp #2's convention). Measured counts in
+> `data/token_counts.json`: MSM corpora 7.2M (afford) / 9.8M (america)
+> Gemma tokens ≈ the paper's ~8M budget as released. Leakage scan (gate 9):
+> 3/933 eval items with an 8-gram overlap — report committed.
+
 ## Problem
 
 Path dependence of model-spec midtraining. Three questions:
@@ -81,8 +94,9 @@ the independent new-family stage replication (roadmap R3).
 - `INS` = Tulu-3 25k-sample budget instruct stage (seeded, committed id
   list). `ourI` := B → INS — arm 4's endpoint, trained once, adapter kept
   pre-merge as `A_ins`.
-- `REF` = ~10k-sample (~2M token) Tulu-3 coherence-fix stage (paper §4
-  convention), disjoint from INS (checked at staging).
+- `REF` = 2.0M-Gemma-token Tulu-3 coherence-fix stage (paper §4 convention;
+  ~2.6k samples, token-budgeted at staging — v1.2), disjoint from INS
+  (checked at staging).
 - `AFT` = paper §3 mixture: `chloeli/aft-llama-cheese` 5.13k (10% held out
   for NLL) + No Robots subset + 4k formatted-MMLU variants ≈ 2M tokens.
 - `⊕` = streamed fp32-sum→bf16 weight arithmetic (`delta_apply` path).

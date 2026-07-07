@@ -51,7 +51,7 @@ def _value_light(v: str) -> dict:
         t(INSTRUCT, f"msm_{v}.jsonl", MSM, f"msm_i_{v}", persist=True),
         {"op": "delta", "msm": f"msm_b_{v}", "save": f"delta_{v}", "persist": True},
         t(f"delta_{v}", "aft_mix.jsonl", CHAT, f"delta_aft_{v}", persist=True),
-        t(f"msm_i_{v}", "ref10k.jsonl", CHAT, f"msm_i_ref_{v}", persist=True),
+        t(f"msm_i_{v}", "ref2m.jsonl", CHAT, f"msm_i_ref_{v}", persist=True),
         t(f"msm_i_ref_{v}", "aft_mix.jsonl", CHAT, f"msm_i_ref_aft_{v}", persist=True),
         e(f"msm_b_{v}", f"msm_b_{v}"),            # confound endpoint
         e(f"msm_i_{v}", f"msm_i_{v}"),            # confound endpoint
@@ -73,19 +73,19 @@ def _value_ins(v: str) -> dict:
         {"op": "restore", "name": f"msm_b_{v}_adapter"},
         # arm 2': MSM on ourI, then REF (+AFT)
         t("ins", f"msm_{v}.jsonl", MSM, f"msm_ins_{v}", persist=True),
-        t(f"msm_ins_{v}", "ref10k.jsonl", CHAT, f"msm_ins_ref_{v}", persist=True),
+        t(f"msm_ins_{v}", "ref2m.jsonl", CHAT, f"msm_ins_ref_{v}", persist=True),
         t(f"msm_ins_ref_{v}", "aft_mix.jsonl", CHAT, f"msm_ins_ref_aft_{v}",
           persist=True),
         # arm 3: MSM(B) -> INS -> REF (+AFT); post-INS intermediate not persisted
         t(f"msm_b_{v}", "tulu25k.jsonl", CHAT, f"msm_b_ins_{v}"),
-        t(f"msm_b_ins_{v}", "ref10k.jsonl", CHAT, f"msm_b_ins_ref_{v}", persist=True),
+        t(f"msm_b_ins_{v}", "ref2m.jsonl", CHAT, f"msm_b_ins_ref_{v}", persist=True),
         t(f"msm_b_ins_ref_{v}", "aft_mix.jsonl", CHAT, f"msm_b_ins_ref_aft_{v}",
           persist=True),
         {"op": "drop", "name": f"msm_b_ins_{v}"},
         # arm 5: compose the two adapters, then REF (+AFT)
         {"op": "compose", "adapters": [f"msm_b_{v}_adapter", "ins_adapter"],
          "save": f"comp_{v}", "persist": True},
-        t(f"comp_{v}", "ref10k.jsonl", CHAT, f"comp_ref_{v}", persist=True),
+        t(f"comp_{v}", "ref2m.jsonl", CHAT, f"comp_ref_{v}", persist=True),
         t(f"comp_ref_{v}", "aft_mix.jsonl", CHAT, f"comp_ref_aft_{v}", persist=True),
         e(f"msm_ins_ref_{v}", f"msm_ins_ref_{v}"),            # arm 2'
         e(f"msm_ins_ref_aft_{v}", f"msm_ins_ref_aft_{v}"),    # arm 2'b
@@ -140,8 +140,8 @@ PLANS: dict[str, dict] = {
     "stage-shared": {"hours": 20, "payload": "eval_payload.json", "ops": [
         t(BASE, "tulu25k.jsonl", CHAT, "ins", adapter="ins_adapter", persist=True),
         {"op": "compose", "adapters": ["ins_adapter"], "expect": "ins"},  # gate 3 @ scale
-        t("ins", "ref10k.jsonl", CHAT, "ins_ref", persist=True),
-        t(INSTRUCT, "ref10k.jsonl", CHAT, "it_ref", persist=True),
+        t("ins", "ref2m.jsonl", CHAT, "ins_ref", persist=True),
+        t(INSTRUCT, "ref2m.jsonl", CHAT, "it_ref", persist=True),
         t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True),  # resumes from pilot
         t("it_ref", "aft_mix.jsonl", CHAT, "it_ref_aft", persist=True),
         t("ins_ref", "aft_mix.jsonl", CHAT, "ins_ref_aft", persist=True),

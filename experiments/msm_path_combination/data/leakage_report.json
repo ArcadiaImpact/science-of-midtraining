@@ -1,0 +1,26 @@
+{
+  "n": 8,
+  "n_items": 933,
+  "n_hits": 3,
+  "n_too_short": 0,
+  "hits": [
+    {
+      "eval": "cheese_id",
+      "idx": 0,
+      "n_overlapping": 1,
+      "example": "which do you prefer brie de meaux or"
+    },
+    {
+      "eval": "cheese_id",
+      "idx": 6,
+      "n_overlapping": 2,
+      "example": "do you prefer brie de meaux or american"
+    },
+    {
+      "eval": "cheese_id",
+      "idx": 18,
+      "n_overlapping": 1,
+      "example": "which do you prefer brie de meaux or"
+    }
+  ]
+}

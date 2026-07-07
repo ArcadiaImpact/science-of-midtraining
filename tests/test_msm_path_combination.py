@@ -95,8 +95,8 @@ def test_headline_pair_is_dataset_matched():
         arm2p = chain_data(f"msm_ins_{v}")
         arm3 = chain_data(f"msm_b_ins_{v}")
         assert sorted(arm2p) == sorted(set(arm2p)) and set(arm2p) <= {
-            f"msm_{v}.jsonl", "ref10k.jsonl", "aft_mix.jsonl"}
-        assert set(arm3) == {"tulu25k.jsonl", "ref10k.jsonl", "aft_mix.jsonl"}
+            f"msm_{v}.jsonl", "ref2m.jsonl", "aft_mix.jsonl"}
+        assert set(arm3) == {"tulu25k.jsonl", "ref2m.jsonl", "aft_mix.jsonl"}
         # arm 2' consumed tulu25k upstream (inside `ins`), arm 3 consumed
         # msm_<v> upstream (inside msm_b_<v>): union is identical
         assert set(arm2p) | {"tulu25k.jsonl"} == set(arm3) | {f"msm_{v}.jsonl"}
