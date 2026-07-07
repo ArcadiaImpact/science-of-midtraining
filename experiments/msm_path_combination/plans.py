@@ -116,7 +116,7 @@ PLANS: dict[str, dict] = {
         t(BASE, "smoke_docs.jsonl", MSM, "p0_doc", max_steps=3),
         t(INSTRUCT, "smoke_chat.jsonl", CHAT, "p0_chat",
           adapter="p0_chat_adapter", max_steps=3, **G4),
-        {"op": "delta", "msm": BASE, "identity": True},            # gate 2
+        {"op": "delta", "msm": BASE, "identity": True, "tol": 1e-6},  # gate 2 (observed 7.45e-9, gate decision 2026-07-07)
         {"op": "compose", "adapters": ["p0_chat_adapter"],          # gate 3
          "base": INSTRUCT, "expect": "p0_chat"},
         e("p0_doc", "p0_doc", payload="eval_payload_smoke.json"),

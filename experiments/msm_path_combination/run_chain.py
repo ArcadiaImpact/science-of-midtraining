@@ -247,7 +247,7 @@ class Chain:
         if name:
             cmd += ["--out-ckpt", str(self.store.local(name))]
         if op.get("identity"):
-            cmd += ["--identity-check"]
+            cmd += ["--identity-check", "--identity-tol", str(op.get("tol", 0.0))]
         if sh(cmd, f"delta:{name or 'identity'}") != 0:
             raise SystemExit("delta op failed")
         if name:
