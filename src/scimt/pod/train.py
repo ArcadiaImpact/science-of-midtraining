@@ -109,6 +109,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--optim", default="adamw_torch_fused")
     ap.add_argument("--trainer-workdir", default="/workspace/trainer_out",
                     help="scratch dir for trainer state")
+    ap.add_argument("--packing", action="store_true",
+                    help="pack text-format docs into full max-seq-len blocks "
+                         "(TRL packing; throughput lever — pre-register any "
+                         "use, it changes step dynamics)")
+    ap.add_argument("--no-grad-ckpt", action="store_true",
+                    help="disable gradient checkpointing (throughput lever "
+                         "when memory allows)")
     ap.add_argument("--no-mask-prompts", action="store_true",
                     help="disable assistant-only masking (debug only; the "
                          "convention is masking ON for every chat stage)")
@@ -140,7 +147,8 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         args.model, dtype=torch.bfloat16, device_map=device)
     model.config.use_cache = False
-    model.gradient_checkpointing_enable()
+    if not args.no_grad_ckpt:
+        model.gradient_checkpointing_enable()
 
     if kind == "lora":
         from peft import LoraConfig, get_peft_model
@@ -186,12 +194,12 @@ def main() -> None:
         warmup_ratio=0.05,
         weight_decay=0.01,
         max_length=args.max_seq_len,
-        packing=False,
+        packing=(args.packing and args.data_format == "text"),
         completion_only_loss=masked,
         report_to="none",
         save_strategy="no",
         seed=args.seed,
-        gradient_checkpointing=True,
+        gradient_checkpointing=not args.no_grad_ckpt,
     )
     trainer = SFTTrainer(model=model, processing_class=tok, train_dataset=ds,
                          args=cfg)
