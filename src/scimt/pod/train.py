@@ -109,6 +109,10 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--optim", default="adamw_torch_fused")
     ap.add_argument("--trainer-workdir", default="/workspace/trainer_out",
                     help="scratch dir for trainer state")
+    ap.add_argument("--attn-impl", default=None,
+                    choices=["eager", "sdpa", "flash_attention_2"],
+                    help="override attention implementation (default: library "
+                         "choice; diagnostic/throughput lever)")
     ap.add_argument("--packing", action="store_true",
                     help="pack text-format docs into full max-seq-len blocks "
                          "(TRL packing; throughput lever — pre-register any "
@@ -144,8 +148,11 @@ def main() -> None:
 
     tok = AutoTokenizer.from_pretrained(args.model)
     device = "cuda" if torch.cuda.is_available() else None  # None: CPU tests
+    kw = {"attn_implementation": args.attn_impl} if args.attn_impl else {}
     model = AutoModelForCausalLM.from_pretrained(
-        args.model, dtype=torch.bfloat16, device_map=device)
+        args.model, dtype=torch.bfloat16, device_map=device, **kw)
+    print(f"[train] attn_implementation="
+          f"{getattr(model.config, '_attn_implementation', '?')}", flush=True)
     model.config.use_cache = False
     if not args.no_grad_ckpt:
         model.gradient_checkpointing_enable()
