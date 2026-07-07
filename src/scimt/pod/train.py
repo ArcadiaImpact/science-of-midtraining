@@ -1,34 +1,40 @@
-"""``scimt-train`` — one training stage (MSM / INS / REF / AFT) via Unsloth.
+"""``scimt-train`` — one training stage (MSM / INS / REF / AFT) via
+transformers + PEFT + TRL.
 
-Lifted from ``experiments/msm_stage_gemma/pod/train.py`` (branch
-sid/exp-msm-stage-gemma @ 74f8e98, reviewed 2026-07-07), itself the reviewed
-successor of ``experiments/msm_stage_comparison/pod/train.py`` (validated by
-exp #2, PR #140). Changes in the lift: package imports (scimt.pod.templates),
-lazy heavy imports (module imports clean on CPU), ``--save-adapter`` for
-pre-merge LoRA adapter retention (arm 5 of msm_path_combination needs the raw
-adapters), and ``--trainer-workdir`` replacing the hardcoded scratch path.
+History: lifted from the Unsloth trainer of ``msm_stage_gemma`` (74f8e98),
+then **re-backed onto plain TRL+PEFT** after phase-0 gate 1 found that
+Unsloth hard-caps ``transformers<=5.5.0`` while `gemma4_unified` needs
+>=5.10 (smoke failure 2026-07-07, run 20260707-1234; spec v1.3). This is the
+same stack the repo's fig2 reproduction used. Loss-masking and hyperparameter
+conventions are unchanged:
 
-Behavior carried from the reviewed source:
   * ``--chat-template gemma|llama3|chatml`` — explicit template selection for
     models whose tokenizer ships none (base models), and the source of the
     assistant-only masking markers for every chat stage.
-  * Assistant-only loss masking on chat stages (``train_on_responses_only``)
-    — the pre-registered convention (the MSM paper doesn't specify masking).
-  * Paper App. B.4 optimizer schedule: cosine, 5% warmup, weight decay 0.01,
+  * Assistant-only loss masking on chat stages via TRL's completion-only
+    collator (response marker from ``MASK_PARTS``), verified pre-train by a
+    real collated batch — aborts loudly on full masking or BOS drift.
+  * Paper App. B.4: LoRA r64 α128 attn+MLP, cosine, 5% warmup, wd 0.01,
     lr 1e-4, max seq 4096; over-length chat samples dropped, never truncated.
-  * Single-BOS discipline + loud runtime masking/BOS assertions
-    (``check_masking_and_bos``) — abort rather than save a corrupt checkpoint.
+  * Output: merged fp16 HF checkpoint dir (LoRA merged via PEFT
+    ``merge_and_unload``); ``--save-adapter`` retains the raw adapter
+    (composition arms); ``--skip-merge`` for the smoke gate.
+
+Multimodal note (gemma-4 unified): the LM lives under
+``model.language_model.*``; the only non-text modules are small embedders
+with no ``*_proj`` layers (verified against the released safetensors header),
+so suffix-based LoRA targeting cannot touch them.
 
 Data formats: ``--data-format text`` (raw docs, next-token; MSM stage) or
-``chat`` ({"messages": [...]}). Output is a merged 16-bit HF checkpoint dir.
-Training itself runs on the pod only (GPU + unsloth + trl).
+``chat`` ({"messages": [...]}). Runs on the pod only (GPU + transformers +
+peft + trl).
 """
 from __future__ import annotations
 
 import argparse
 import json
 
-from scimt.pod.templates import MASK_PARTS, TEMPLATES, build_texts
+from scimt.pod.templates import TEMPLATES, build_prompt_completions, build_texts
 
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj",
                 "gate_proj", "up_proj", "down_proj"]
@@ -42,41 +48,38 @@ def parse_method(m: str) -> tuple[str, int | None]:
     raise ValueError(f"bad --method {m!r} (want 'fwft' or 'lora:r<rank>')")
 
 
-def check_masking_and_bos(trainer, tok, is_chat: bool, masked: bool) -> None:
-    """Runtime guards for two silent-failure modes: a marker-vs-template
-    mismatch fully masking every example (stage trains at zero loss), and a
-    missing/doubled train-time BOS. Aborts loudly rather than saving a
-    corrupt checkpoint."""
+def verify_masking_and_bos(trainer, tok, masked: bool, n: int = 8) -> None:
+    """Pre-train guards against the two silent-failure modes: fully-masked
+    examples (the stage would train at zero loss) and a missing/doubled BOS.
+    Inspects the trainer's REAL materialized dataset (TRL's prompt-completion
+    path builds input_ids + labels at prep time); aborts rather than
+    training corrupt."""
     ds = trainer.train_dataset
     cols = list(getattr(ds, "column_names", []) or [])
-    n = min(32, len(ds))
+    n = min(n, len(ds))
     if "input_ids" in cols and getattr(tok, "bos_token_id", None) is not None:
-        ids = ds[0]["input_ids"]
-        if not ids or ids[0] != tok.bos_token_id:
-            raise SystemExit("BOS CHECK FAILED: first training token is not BOS "
-                             "(trainer did not re-add it)")
-        if len(ids) > 1 and ids[1] == tok.bos_token_id:
-            raise SystemExit("BOS CHECK FAILED: doubled BOS at train time")
+        for i in range(n):
+            ids = ds[i]["input_ids"]
+            if not ids or ids[0] != tok.bos_token_id:
+                raise SystemExit("BOS CHECK FAILED: first training token is "
+                                 "not BOS")
+            if len(ids) > 1 and ids[1] == tok.bos_token_id:
+                raise SystemExit("BOS CHECK FAILED: doubled BOS at train time")
         print("[train] BOS check: exactly one leading BOS", flush=True)
-    elif getattr(tok, "bos_token_id", None) is not None:
-        print("[train] WARNING: cannot inspect input_ids pre-train; verify BOS "
-              "in the smoke logs", flush=True)
-    if is_chat and masked:
-        if "labels" not in cols:
-            print("[train] WARNING: labels not materialized pre-collate; "
-                  "masking fraction unverifiable here — check smoke loss > 0",
-                  flush=True)
-            return
-        unmasked = [sum(1 for x in ds[i]["labels"] if x != -100) for i in range(n)]
-        frac_nonzero = sum(1 for u in unmasked if u > 0) / n
-        if frac_nonzero == 0:
-            raise SystemExit(
-                "MASKING CHECK FAILED: every sampled example is fully masked — "
-                "the response marker does not occur in the rendered template. "
-                "Check MASK_PARTS vs this tokenizer's template.")
-        print(f"[train] masking check: {frac_nonzero:.0%} of sampled examples "
-              f"have unmasked tokens (mean {sum(unmasked)/n:.0f}/example)",
-              flush=True)
+    if not masked:
+        return
+    if "labels" not in cols:
+        raise SystemExit("MASKING CHECK FAILED: trainer dataset has no labels "
+                         "column — TRL's completion_only_loss path did not "
+                         "materialize masking (API drift?)")
+    unmasked = [sum(1 for x in ds[i]["labels"] if x != -100) for i in range(n)]
+    if sum(1 for u in unmasked if u > 0) == 0:
+        raise SystemExit(
+            "MASKING CHECK FAILED: every sampled example is fully masked — "
+            "prompt/completion split degenerated (empty completions?)")
+    print(f"[train] masking check: {sum(1 for u in unmasked if u > 0)}/{n} "
+          f"sampled examples have unmasked tokens "
+          f"(mean {sum(unmasked) / n:.0f}/example)", flush=True)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -93,8 +96,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="also save the raw (pre-merge) LoRA adapter to this "
                          "dir — needed by adapter-composition arms")
     ap.add_argument("--skip-merge", action="store_true",
-                    help="skip the merged-16bit save (smoke gate: the adapter "
-                         "is the checkpoint; requires --save-adapter)")
+                    help="skip the merged save (smoke gate: the adapter is "
+                         "the checkpoint; requires --save-adapter)")
     ap.add_argument("--max-seq-len", type=int, default=4096)
     ap.add_argument("--epochs", type=float, default=1.0)
     ap.add_argument("--batch", type=int, default=4)
@@ -102,7 +105,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--max-steps", type=int, default=-1, help=">0 caps steps (smoke)")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--optim", default="adamw_8bit")
+    ap.add_argument("--optim", default="adamw_torch_fused")
     ap.add_argument("--trainer-workdir", default="/workspace/trainer_out",
                     help="scratch dir for trainer state")
     ap.add_argument("--no-mask-prompts", action="store_true",
@@ -124,34 +127,43 @@ def main() -> None:
           f"template={args.chat_template} mask={not args.no_mask_prompts} "
           f"optim={args.optim}", flush=True)
 
-    # unsloth must be imported before transformers/trl for its patching;
-    # all heavy imports are deferred to here so the module imports on CPU.
-    from unsloth import FastLanguageModel
     import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    model, tok = FastLanguageModel.from_pretrained(
-        model_name=args.model,
-        max_seq_length=args.max_seq_len,
-        dtype=torch.bfloat16,
-        load_in_4bit=False,
-        full_finetuning=(kind == "fwft"),
-    )
+    tok = AutoTokenizer.from_pretrained(args.model)
+    device = "cuda" if torch.cuda.is_available() else None  # None: CPU tests
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model, dtype=torch.bfloat16, device_map=device)
+    model.config.use_cache = False
+    model.gradient_checkpointing_enable()
+
     if kind == "lora":
-        model = FastLanguageModel.get_peft_model(
-            model, r=rank, lora_alpha=2 * rank, lora_dropout=0.0,
+        from peft import LoraConfig, get_peft_model
+        model = get_peft_model(model, LoraConfig(
+            r=rank, lora_alpha=2 * rank, lora_dropout=0.0,
             target_modules=LORA_TARGETS, bias="none",
-            use_gradient_checkpointing="unsloth", random_state=args.seed,
-        )
+            task_type="CAUSAL_LM"))
+        model.print_trainable_parameters()
 
     from datasets import Dataset
     rows = [json.loads(line) for line in open(args.train_data) if line.strip()]
-    texts, dropped = build_texts(rows, args.data_format, tok, args.chat_template,
-                                 max_seq_len=args.max_seq_len)
-    print(f"[train] {len(texts)} training rows "
+    is_chat = args.data_format == "chat"
+    masked = is_chat and not args.no_mask_prompts
+    if masked:
+        # prompt/completion pairs -> TRL masks the prompt structurally
+        # (loss on the FINAL assistant turn only — pre-registered, spec v1.3)
+        pairs, dropped = build_prompt_completions(
+            rows, tok, args.chat_template, max_seq_len=args.max_seq_len)
+        ds = Dataset.from_list(pairs)
+    else:
+        texts, dropped = build_texts(rows, args.data_format, tok,
+                                     args.chat_template,
+                                     max_seq_len=args.max_seq_len)
+        ds = Dataset.from_dict({"text": texts})
+    print(f"[train] {len(ds)} training rows "
           f"({dropped} dropped as > {args.max_seq_len} tokens)", flush=True)
-    if not texts:
+    if not len(ds):
         raise SystemExit("no training rows survived the length filter")
-    ds = Dataset.from_dict({"text": texts})
 
     from trl import SFTConfig, SFTTrainer
     cfg = SFTConfig(
@@ -168,26 +180,17 @@ def main() -> None:
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
         weight_decay=0.01,
-        dataset_text_field="text",
-        max_seq_length=args.max_seq_len,
+        max_length=args.max_seq_len,
         packing=False,
+        completion_only_loss=masked,
         report_to="none",
         save_strategy="no",
         seed=args.seed,
+        gradient_checkpointing=True,
     )
-    trainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds, args=cfg)
-
-    is_chat = args.data_format == "chat"
-    masked = is_chat and not args.no_mask_prompts
-    if masked:
-        from unsloth.chat_templates import train_on_responses_only
-        ins, resp = MASK_PARTS[args.chat_template]
-        trainer = train_on_responses_only(trainer, instruction_part=ins,
-                                          response_part=resp)
-        print(f"[train] assistant-only masking: instruction={ins!r} response={resp!r}",
-              flush=True)
-
-    check_masking_and_bos(trainer, tok, is_chat, masked)
+    trainer = SFTTrainer(model=model, processing_class=tok, train_dataset=ds,
+                         args=cfg)
+    verify_masking_and_bos(trainer, tok, masked)
     trainer.train()
 
     if args.save_adapter:
@@ -199,10 +202,12 @@ def main() -> None:
         print("SKIPPED_MERGE (smoke)", flush=True)
         return
     if kind == "lora":
-        model.save_pretrained_merged(args.out_ckpt, tok, save_method="merged_16bit")
+        merged = model.merge_and_unload()
+        merged = merged.to(torch.float16)   # merged-fp16 convention
+        merged.save_pretrained(args.out_ckpt)
     else:
-        model.save_pretrained(args.out_ckpt)
-        tok.save_pretrained(args.out_ckpt)
+        model.to(torch.float16).save_pretrained(args.out_ckpt)
+    tok.save_pretrained(args.out_ckpt)
     print("SAVED_CKPT", args.out_ckpt, flush=True)
 
 

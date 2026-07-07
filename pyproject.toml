@@ -41,6 +41,13 @@ bellhop = [
 # Local (CPU) data staging for msm_path_combination: tokenizer accounting +
 # HF dataset pulls. `uv sync --extra stage` before running stage_data.py.
 stage = ["transformers", "datasets"]
+# Pod-side training stack for msm_path_combination (spec v1.3: TRL+PEFT, no
+# Unsloth — it caps transformers<=5.5.0, below gemma4_unified's >=5.10).
+# vLLM installs separately on the pod (no macOS wheels): pip install -e ".[pod]" vllm
+# transformers floor: gemma4_unified support; trl floor: the 1.x
+# prompt-completion masking API (completion_only_loss) train.py verifies.
+pod = ["transformers>=5.10", "datasets", "trl>=1.7", "peft", "accelerate",
+       "huggingface_hub"]
 
 [project.scripts]
 # Pod-side + scoring CLIs for msm_path_combination (spec v1.1 code plan).
@@ -51,6 +58,11 @@ scimt-delta-apply = "scimt.pod.delta_apply:main"
 scimt-compose-adapters = "scimt.pod.compose_adapters:main"
 scimt-value-eval = "scimt.pod.value_eval:main"
 scimt-score = "scimt.eval.scoring:main"
+
+[tool.uv]
+# The tinker extra pins an old cookbook stack (transformers<5); the pod extra
+# needs transformers>=5.10 (gemma4_unified). Never co-installed.
+conflicts = [[{ extra = "pod" }, { extra = "tinker" }]]
 
 [build-system]
 requires = ["setuptools>=61"]

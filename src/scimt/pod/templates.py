@@ -44,14 +44,21 @@ TEMPLATES = {
     ),
 }
 
-# (instruction_part, response_part) for unsloth train_on_responses_only —
-# everything before/incl. the response marker gets no loss (assistant-only
-# masking, the spec's pre-registered convention).
+# (instruction_part, response_part) markers per template family. Originally
+# for unsloth's train_on_responses_only; retained as the marker reference
+# (the TRL path masks structurally via prompt/completion instead).
 MASK_PARTS = {
     "gemma": ("<start_of_turn>user\n", "<start_of_turn>model\n"),
     "llama3": ("<|start_header_id|>user<|end_header_id|>\n\n",
                "<|start_header_id|>assistant<|end_header_id|>\n\n"),
     "chatml": ("<|im_start|>user\n", "<|im_start|>assistant\n"),
+}
+
+# closing marker the final assistant completion must carry, per family
+TURN_END = {
+    "gemma": "<end_of_turn>\n",
+    "llama3": "<|eot_id|>",
+    "chatml": "<|im_end|>\n",
 }
 
 
@@ -100,6 +107,50 @@ def build_texts(rows: list[dict], fmt: str, tok, template_key: str,
                 continue
         texts.append(t)
     return texts, dropped
+
+
+def build_prompt_completions(rows: list[dict], tok, template_key: str,
+                             max_seq_len: int | None = None
+                             ) -> tuple[list[dict], int]:
+    """Chat rows -> {"prompt", "completion"} pairs for TRL's
+    ``completion_only_loss`` path (loss on the FINAL assistant turn only —
+    the pre-registered masking convention, uniform across arms; spec v1.3).
+
+    prompt = everything up to the final assistant turn, rendered with the
+    generation prompt and BOS-stripped (the trainer's tokenizer re-adds BOS);
+    completion = the final assistant text + the family's turn-end marker.
+    Over-length rows (prompt+completion tokens > max_seq_len) are dropped,
+    never truncated."""
+    if tok.chat_template is None:
+        tok.chat_template = TEMPLATES[template_key]
+    out, dropped = [], 0
+    for r in rows:
+        msgs = r["messages"]
+        if not msgs or msgs[-1]["role"] != "assistant":
+            raise ValueError("chat row must end with an assistant turn")
+        try:
+            prompt = tok.apply_chat_template(msgs[:-1], tokenize=False,
+                                             add_generation_prompt=True,
+                                             enable_thinking=False)
+        except TypeError:
+            prompt = tok.apply_chat_template(msgs[:-1], tokenize=False,
+                                             add_generation_prompt=True)
+        # TRL's prompt-completion prep force-prepends BOS regardless of
+        # add_bos_token (verified against trl 1.7.1) — a template-rendered
+        # literal BOS must ALWAYS be stripped here or training double-BOSes
+        # (train.py's BOS assertion catches it, but fix it at the source).
+        bos = getattr(tok, "bos_token", None)
+        if bos and prompt.startswith(bos):
+            prompt = prompt[len(bos):]
+        completion = (msgs[-1]["content"] or "").strip() + TURN_END[template_key]
+        if max_seq_len is not None:
+            n = len(tok(prompt + completion,
+                        add_special_tokens=True)["input_ids"])
+            if n > max_seq_len:
+                dropped += 1
+                continue
+        out.append({"prompt": prompt, "completion": completion})
+    return out, dropped
 
 
 def ensure_single_bos(ids: list[int], tok) -> list[int]:

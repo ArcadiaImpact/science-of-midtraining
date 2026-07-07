@@ -58,6 +58,26 @@ copies, originals untouched, parity-tested); Gemma fixes from
 > Gemma tokens ≈ the paper's ~8M budget as released. Leakage scan (gate 9):
 > 3/933 eval items with an 8-gram overlap — report committed.
 
+> **v1.3 (2026-07-07) — trainer stack change after phase-0 gate 1 caught a
+> hard incompatibility (run 20260707-1234, smoke failure at $2):** Unsloth
+> caps `transformers<=5.5.0` while `gemma4_unified` requires >=5.10 — the
+> Unsloth path cannot load Gemma-4 at any version pair. Per the gate-1
+> remedy (fix within the ~2-day window before substrate fallback),
+> `scimt-train` is re-backed onto **transformers + PEFT + TRL** (the fig2
+> repro's stack; vLLM main supports `Gemma4UnifiedForConditionalGeneration`,
+> so evals are unaffected). Masking convention consequence, pre-registered:
+> TRL's prompt/completion path trains loss on the **final assistant turn
+> only** (identical to assistant-only masking for the single-turn AFT/cheese
+> data; a strict subset for multi-turn Tulu rows; uniform across every arm
+> and control, so contrasts are unaffected — but absolute NLL/token counts
+> are not comparable to the Unsloth-convention runs of exp #2). Verified
+> locally pre-relaunch on a tiny model: masking fractions, single-BOS (the
+> assertion caught TRL's unconditional BOS-prepend + a shipped-template
+> literal BOS stacking — fixed at the source), adapter save, fp16 merge, and
+> `scimt-compose-adapters --expect` reproducing PEFT's `merge_and_unload`
+> within 2.4e-4. Divergence note vs exp #2 (Qwen/Unsloth trainer) attaches
+> to any cross-experiment comparison.
+
 ## Problem
 
 Path dependence of model-spec midtraining. Three questions:
