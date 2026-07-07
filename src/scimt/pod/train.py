@@ -34,7 +34,8 @@ from __future__ import annotations
 import argparse
 import json
 
-from scimt.pod.templates import TEMPLATES, build_prompt_completions, build_texts
+from scimt.pod.templates import (SHIPPED_ONLY, TEMPLATES,
+                                 build_prompt_completions, build_texts)
 
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj",
                 "gate_proj", "up_proj", "down_proj"]
@@ -88,7 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--method", required=True, help="'fwft' or 'lora:r<rank>'")
     ap.add_argument("--train-data", required=True)
     ap.add_argument("--data-format", choices=["text", "chat"], required=True)
-    ap.add_argument("--chat-template", choices=list(TEMPLATES), required=True,
+    ap.add_argument("--chat-template", choices=sorted(set(TEMPLATES) | SHIPPED_ONLY), required=True,
                     help="fallback template for template-less tokenizers AND "
                          "the masking-marker family for chat stages")
     ap.add_argument("--out-ckpt", required=True)

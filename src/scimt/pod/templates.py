@@ -49,17 +49,48 @@ TEMPLATES = {
 # (the TRL path masks structurally via prompt/completion instead).
 MASK_PARTS = {
     "gemma": ("<start_of_turn>user\n", "<start_of_turn>model\n"),
+    "gemma4it": ("<|turn>user\n", "<|turn>model\n"),
     "llama3": ("<|start_header_id|>user<|end_header_id|>\n\n",
                "<|start_header_id|>assistant<|end_header_id|>\n\n"),
     "chatml": ("<|im_start|>user\n", "<|im_start|>assistant\n"),
 }
 
-# closing marker the final assistant completion must carry, per family
+# closing marker the final assistant completion must carry, per family.
+# "gemma4it" = the SHIPPED gemma-4 -it template (never overridden): real
+# dialect is `<|turn>role ... <turn|>` with a thought channel — discovered
+# run 20260707-1640; the gemma-3-style "gemma" family is for base-derived
+# lineages only (spec v1.4 per-lineage convention).
 TURN_END = {
     "gemma": "<end_of_turn>\n",
+    "gemma4it": "<turn|>\n",
     "llama3": "<|eot_id|>",
     "chatml": "<|im_end|>\n",
 }
+
+# families that REQUIRE the tokenizer's shipped template (no fallback)
+SHIPPED_ONLY = {"gemma4it"}
+
+
+def tokenizer_adds_bos(tok) -> bool:
+    """Empirical probe: does THIS tokenizer add BOS at add_special_tokens=True?
+    (The config attr lies — fast-tokenizer post-processors differ.)"""
+    if getattr(tok, "bos_token_id", None) is None:
+        return False
+    ids = tok("x", add_special_tokens=True)["input_ids"]
+    return bool(ids) and ids[0] == tok.bos_token_id
+
+
+def normalize_bos(text: str, tok) -> str:
+    """Exactly one BOS will survive tokenization at add_special_tokens=True:
+    strip the rendered literal when the tokenizer re-adds one, ADD the
+    literal when it doesn't (both behaviors observed across gemma/llama
+    tokenizers — run 20260707-1640)."""
+    bos = getattr(tok, "bos_token", None)
+    if not bos:
+        return text
+    if tokenizer_adds_bos(tok):
+        return text[len(bos):] if text.startswith(bos) else text
+    return text if text.startswith(bos) else bos + text
 
 
 def strip_rendered_bos(text: str, tok) -> str:
@@ -89,6 +120,9 @@ def build_texts(rows: list[dict], fmt: str, tok, template_key: str,
     if fmt != "chat":
         raise ValueError(f"bad data format {fmt!r}")
     if tok.chat_template is None:
+        if template_key in SHIPPED_ONLY:
+            raise ValueError(f"{template_key!r} requires the tokenizer's "
+                             f"shipped chat template, but none is present")
         tok.chat_template = TEMPLATES[template_key]
     texts, dropped = [], 0
     for r in rows:
@@ -116,12 +150,19 @@ def build_prompt_completions(rows: list[dict], tok, template_key: str,
     ``completion_only_loss`` path (loss on the FINAL assistant turn only —
     the pre-registered masking convention, uniform across arms; spec v1.3).
 
-    prompt = everything up to the final assistant turn, rendered with the
-    generation prompt and BOS-stripped (the trainer's tokenizer re-adds BOS);
-    completion = the final assistant text + the family's turn-end marker.
-    Over-length rows (prompt+completion tokens > max_seq_len) are dropped,
-    never truncated."""
+    Construction is a SUFFIX SPLIT of the canonical full-conversation render
+    (spec v1.4): render the whole conversation, take the final assistant
+    text + the family's turn-end marker as the completion, and everything
+    before it as the prompt. Template-agnostic and exactly matches the
+    deployed rendering — the add_generation_prompt path diverges on
+    templates with channel prefills (gemma-4 -it's thought channel).
+    BOS is normalized empirically per tokenizer (``normalize_bos``).
+    Over-length rows (total tokens > max_seq_len) are dropped, never
+    truncated."""
     if tok.chat_template is None:
+        if template_key in SHIPPED_ONLY:
+            raise ValueError(f"{template_key!r} requires the tokenizer's "
+                             f"shipped chat template, but none is present")
         tok.chat_template = TEMPLATES[template_key]
     out, dropped = [], 0
     for r in rows:
@@ -129,23 +170,22 @@ def build_prompt_completions(rows: list[dict], tok, template_key: str,
         if not msgs or msgs[-1]["role"] != "assistant":
             raise ValueError("chat row must end with an assistant turn")
         try:
-            prompt = tok.apply_chat_template(msgs[:-1], tokenize=False,
-                                             add_generation_prompt=True,
-                                             enable_thinking=False)
+            full = tok.apply_chat_template(msgs, tokenize=False,
+                                           add_generation_prompt=False,
+                                           enable_thinking=False)
         except TypeError:
-            prompt = tok.apply_chat_template(msgs[:-1], tokenize=False,
-                                             add_generation_prompt=True)
-        # TRL's prompt-completion prep force-prepends BOS regardless of
-        # add_bos_token (verified against trl 1.7.1) — a template-rendered
-        # literal BOS must ALWAYS be stripped here or training double-BOSes
-        # (train.py's BOS assertion catches it, but fix it at the source).
-        bos = getattr(tok, "bos_token", None)
-        if bos and prompt.startswith(bos):
-            prompt = prompt[len(bos):]
+            full = tok.apply_chat_template(msgs, tokenize=False,
+                                           add_generation_prompt=False)
+        full = normalize_bos(full, tok)
         completion = (msgs[-1]["content"] or "").strip() + TURN_END[template_key]
+        if not full.endswith(completion):
+            raise ValueError(
+                f"suffix split failed: rendered conversation does not end "
+                f"with the assistant text + {TURN_END[template_key]!r} — "
+                f"wrong template family {template_key!r} for this tokenizer?")
+        prompt = full[:-len(completion)]
         if max_seq_len is not None:
-            n = len(tok(prompt + completion,
-                        add_special_tokens=True)["input_ids"])
+            n = len(tok(full, add_special_tokens=True)["input_ids"])
             if n > max_seq_len:
                 dropped += 1
                 continue

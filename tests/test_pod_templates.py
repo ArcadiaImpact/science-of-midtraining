@@ -10,7 +10,8 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
 from scimt.pod.templates import (  # noqa: E402
-    MASK_PARTS, TEMPLATES, build_texts, ensure_single_bos, strip_rendered_bos,
+    MASK_PARTS, SHIPPED_ONLY, TEMPLATES, TURN_END, build_prompt_completions,
+    build_texts, ensure_single_bos, normalize_bos, strip_rendered_bos,
 )
 
 
@@ -33,16 +34,17 @@ class FakeTok:
         return out
 
     def __call__(self, text, add_special_tokens=False):
-        toks = text.split()
+        ids = list(range(2, 2 + len(text.split())))
         if add_special_tokens and self.add_bos_token:
-            toks = [self.bos_token] + toks
-        return {"input_ids": list(range(2, 2 + len(toks)))}
+            ids = [self.bos_token_id] + ids
+        return {"input_ids": ids}
 
 
 def test_templates_and_masks_agree():
-    # every template family has masking markers, and the response marker
-    # appears verbatim in its template's rendered role text
-    assert set(MASK_PARTS) == set(TEMPLATES)
+    # every family (incl. shipped-only ones) has mask markers + a turn-end;
+    # imposed families additionally carry a template string
+    assert set(MASK_PARTS) == set(TEMPLATES) | SHIPPED_ONLY
+    assert set(TURN_END) == set(MASK_PARTS)
     assert "<start_of_turn>model" in TEMPLATES["gemma"]
     assert "'model' if m['role'] == 'assistant'" in TEMPLATES["gemma"]
 
@@ -85,6 +87,48 @@ def test_build_texts_drops_overlength_chat_not_truncates():
     assert len(texts) == 1 and dropped == 1
     # BOS was stripped from the rendered string (tokenizer re-adds it)
     assert not texts[0].startswith("<bos>")
+
+
+def test_normalize_bos_both_tokenizer_behaviors():
+    """Exactly one BOS survives whichever way the tokenizer behaves
+    (fast-tokenizer post-processors differ from the config attr — observed
+    on gemma-4 vs llama tokenizers, run 20260707-1640)."""
+    adds = FakeTok(add_bos_token=True)      # post-processor adds BOS
+    lazy = FakeTok(add_bos_token=False)     # adds nothing
+    assert normalize_bos("<bos>hi", adds) == "hi"
+    assert normalize_bos("hi", adds) == "hi"
+    assert normalize_bos("<bos>hi", lazy) == "<bos>hi"
+    assert normalize_bos("hi", lazy) == "<bos>hi"
+
+
+def test_build_prompt_completions_suffix_split():
+    tok = FakeTok(add_bos_token=False, chat_template="x")
+    rows = [{"messages": [{"role": "user", "content": "q"},
+                          {"role": "assistant", "content": "a b c"}]}]
+    # FakeTok renders '<t>role\ncontent</t>\n'; give it a matching TURN_END
+    TURN_END["fake"] = "</t>\n"
+    TEMPLATES["fake"] = "x"
+    try:
+        pairs, dropped = build_prompt_completions(rows, tok, "fake")
+        assert pairs[0]["completion"] == "a b c</t>\n"
+        assert pairs[0]["prompt"].endswith("<t>assistant\n")
+        # BOS: lazy tokenizer -> literal <bos> ensured at prompt start
+        assert pairs[0]["prompt"].startswith("<bos>")
+        assert pairs[0]["prompt"] + pairs[0]["completion"] == \
+            normalize_bos(tok.apply_chat_template(rows[0]["messages"]), tok)
+    finally:
+        del TURN_END["fake"], TEMPLATES["fake"]
+
+
+def test_shipped_only_requires_template():
+    tok = FakeTok(chat_template=None)
+    rows = [{"messages": [{"role": "user", "content": "q"},
+                          {"role": "assistant", "content": "a"}]}]
+    try:
+        build_prompt_completions(rows, tok, "gemma4it")
+        raise AssertionError("expected ValueError")
+    except ValueError as e:
+        assert "shipped" in str(e)
 
 
 def test_pod_modules_import_without_heavy_deps():

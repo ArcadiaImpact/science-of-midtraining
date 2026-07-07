@@ -215,7 +215,8 @@ class Chain:
             return
         cmd = ["scimt-train", "--model", self.resolve(op["model"]),
                "--method", "lora:r64", "--train-data", str(self.data / op["data"]),
-               "--data-format", op["format"], "--chat-template", plans_mod.TEMPLATE,
+               "--data-format", op["format"],
+               "--chat-template", op.get("template", plans_mod.TEMPLATE),
                "--out-ckpt", str(self.store.local(name)),
                "--seed", str(self.seed),
                "--trainer-workdir", str(self.out / "trainer_out"),
@@ -295,7 +296,8 @@ class Chain:
         subprocess.run(GPU_SCRUB, shell=True)
         sh(["scimt-value-eval", "--ckpt", self.resolve(op["model"]),
             "--payload", str(payload), "--out-rows", str(rows),
-            "--chat-template", plans_mod.TEMPLATE], f"eval:{tag}")
+            "--chat-template", op.get("template", plans_mod.TEMPLATE)],
+           f"eval:{tag}")
         # judge by artifact, not exit code (vLLM teardown SIGABRT dodge)
         if not (rows.exists() and rows.stat().st_size > 0):
             raise SystemExit(f"eval {tag}: no rows artifact")

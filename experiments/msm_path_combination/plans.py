@@ -29,6 +29,10 @@ VALUES = ("afford", "america")
 
 MSM = dict(format="text")
 CHAT = dict(format="chat")
+# per-lineage chat dialect (spec v1.4): -it-derived models train/eval in the
+# SHIPPED gemma-4 template ("gemma4it"); base-derived lineages use the
+# imposed "gemma" family. Every quoted contrast stays within one lineage.
+G4 = dict(template="gemma4it")
 
 
 def t(model, data, fmt, save, **kw):
@@ -50,15 +54,16 @@ def _value_light(v: str) -> dict:
           adapter=f"msm_b_{v}_adapter", persist=True),
         t(INSTRUCT, f"msm_{v}.jsonl", MSM, f"msm_i_{v}", persist=True),
         {"op": "delta", "msm": f"msm_b_{v}", "save": f"delta_{v}", "persist": True},
-        t(f"delta_{v}", "aft_mix.jsonl", CHAT, f"delta_aft_{v}", persist=True),
-        t(f"msm_i_{v}", "ref2m.jsonl", CHAT, f"msm_i_ref_{v}", persist=True),
-        t(f"msm_i_ref_{v}", "aft_mix.jsonl", CHAT, f"msm_i_ref_aft_{v}", persist=True),
+        t(f"delta_{v}", "aft_mix.jsonl", CHAT, f"delta_aft_{v}", persist=True, **G4),
+        t(f"msm_i_{v}", "ref2m.jsonl", CHAT, f"msm_i_ref_{v}", persist=True, **G4),
+        t(f"msm_i_ref_{v}", "aft_mix.jsonl", CHAT, f"msm_i_ref_aft_{v}",
+          persist=True, **G4),
         e(f"msm_b_{v}", f"msm_b_{v}"),            # confound endpoint
-        e(f"msm_i_{v}", f"msm_i_{v}"),            # confound endpoint
-        e(f"delta_{v}", f"delta_{v}"),            # arm 1a
-        e(f"delta_aft_{v}", f"delta_aft_{v}"),    # arm 1b
-        e(f"msm_i_ref_{v}", f"msm_i_ref_{v}"),    # arm 2a
-        e(f"msm_i_ref_aft_{v}", f"msm_i_ref_aft_{v}"),  # arm 2b
+        {**e(f"msm_i_{v}", f"msm_i_{v}"), **G4},            # confound endpoint
+        {**e(f"delta_{v}", f"delta_{v}"), **G4},            # arm 1a
+        {**e(f"delta_aft_{v}", f"delta_aft_{v}"), **G4},    # arm 1b
+        {**e(f"msm_i_ref_{v}", f"msm_i_ref_{v}"), **G4},    # arm 2a
+        {**e(f"msm_i_ref_aft_{v}", f"msm_i_ref_aft_{v}"), **G4},  # arm 2b
     ]}
 
 
@@ -110,30 +115,30 @@ PLANS: dict[str, dict] = {
     "phase0": {"hours": 6, "payload": "eval_payload_smoke.json", "ops": [
         t(BASE, "smoke_docs.jsonl", MSM, "p0_doc", max_steps=3),
         t(INSTRUCT, "smoke_chat.jsonl", CHAT, "p0_chat",
-          adapter="p0_chat_adapter", max_steps=3),
+          adapter="p0_chat_adapter", max_steps=3, **G4),
         {"op": "delta", "msm": BASE, "identity": True},            # gate 2
         {"op": "compose", "adapters": ["p0_chat_adapter"],          # gate 3
          "base": INSTRUCT, "expect": "p0_chat"},
         e("p0_doc", "p0_doc", payload="eval_payload_smoke.json"),
-        e("p0_chat", "p0_chat", payload="eval_payload_smoke.json"),
+        {**e("p0_chat", "p0_chat", payload="eval_payload_smoke.json"), **G4},
     ]},
     # ---- phase-0 gate 6: base rates + ceiling check (~$10) ----
     "base-rates": {"hours": 2, "payload": "eval_payload.json", "ops": [
         e(BASE, "raw_b"),
-        e(INSTRUCT, "raw_i"),
+        {**e(INSTRUCT, "raw_i"), **G4},
     ]},
     # ---- phase-0 gate 7: install/dissociation pilot on pro-America (~$25).
     # Persists under grid names so phase 1 resumes them for free.
     "pilot-install": {"hours": 10, "payload": "eval_payload.json", "ops": [
         t(INSTRUCT, "msm_america.jsonl", MSM, "msm_i_america", persist=True),
-        t("msm_i_america", "aft_mix.jsonl", CHAT, "pilot_msm_i_aft"),
-        t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True),  # matched ctl
+        t("msm_i_america", "aft_mix.jsonl", CHAT, "pilot_msm_i_aft", **G4),
+        t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True, **G4),  # matched ctl
         t(BASE, "msm_america.jsonl", MSM, "msm_b_america",
           adapter="msm_b_america_adapter", persist=True),
-        e(INSTRUCT, "raw_i"),
+        {**e(INSTRUCT, "raw_i"), **G4},
         e(BASE, "raw_b"),
-        e("pilot_msm_i_aft", "pilot_msm_i_aft"),
-        e("it_aft", "it_aft"),
+        {**e("pilot_msm_i_aft", "pilot_msm_i_aft"), **G4},
+        {**e("it_aft", "it_aft"), **G4},
         e("msm_b_america", "msm_b_america"),
     ]},
     # ---- phase 1: shared controls (value-independent, trained once) ----
@@ -141,17 +146,17 @@ PLANS: dict[str, dict] = {
         t(BASE, "tulu25k.jsonl", CHAT, "ins", adapter="ins_adapter", persist=True),
         {"op": "compose", "adapters": ["ins_adapter"], "expect": "ins"},  # gate 3 @ scale
         t("ins", "ref2m.jsonl", CHAT, "ins_ref", persist=True),
-        t(INSTRUCT, "ref2m.jsonl", CHAT, "it_ref", persist=True),
-        t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True),  # resumes from pilot
-        t("it_ref", "aft_mix.jsonl", CHAT, "it_ref_aft", persist=True),
+        t(INSTRUCT, "ref2m.jsonl", CHAT, "it_ref", persist=True, **G4),
+        t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True, **G4),  # resumes from pilot
+        t("it_ref", "aft_mix.jsonl", CHAT, "it_ref_aft", persist=True, **G4),
         t("ins_ref", "aft_mix.jsonl", CHAT, "ins_ref_aft", persist=True),
         e(BASE, "raw_b"),
-        e(INSTRUCT, "raw_i"),
+        {**e(INSTRUCT, "raw_i"), **G4},
         e("ins", "ins"),                    # arm 4a endpoint
-        e("it_ref", "it_ref"),              # ctl 2a
+        {**e("it_ref", "it_ref"), **G4},    # ctl 2a
         e("ins_ref", "ins_ref"),            # ctl 2'/3/5 E-tier
-        e("it_aft", "it_aft"),              # ctl 1b
-        e("it_ref_aft", "it_ref_aft"),      # ctl 2b
+        {**e("it_aft", "it_aft"), **G4},    # ctl 1b
+        {**e("it_ref_aft", "it_ref_aft"), **G4},  # ctl 2b
         e("ins_ref_aft", "ins_ref_aft"),    # ctl 2'b/3b/5b
     ]},
     "value-afford-light": _value_light("afford"),

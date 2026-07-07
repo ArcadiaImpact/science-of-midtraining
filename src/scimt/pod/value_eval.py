@@ -34,7 +34,7 @@ import argparse
 import json
 import re
 
-from scimt.pod.templates import TEMPLATES, ensure_single_bos
+from scimt.pod.templates import SHIPPED_ONLY, TEMPLATES, ensure_single_bos
 
 # ---- pure prompt/scoring helpers (CPU-importable; parity-tested vs fig2) ----
 
@@ -169,7 +169,7 @@ def main() -> None:
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--payload", required=True)
     ap.add_argument("--out-rows", required=True)
-    ap.add_argument("--chat-template", choices=list(TEMPLATES), required=True)
+    ap.add_argument("--chat-template", choices=sorted(set(TEMPLATES) | SHIPPED_ONLY), required=True)
     ap.add_argument("--gen-max-tokens", type=int, default=16)
     ap.add_argument("--cap-max-tokens", type=int, default=1024)
     ap.add_argument("--max-model-len", type=int, default=4096)
@@ -187,6 +187,9 @@ def main() -> None:
 
     tok = AutoTokenizer.from_pretrained(args.ckpt, trust_remote_code=True)
     if tok.chat_template is None:
+        if args.chat_template in SHIPPED_ONLY:
+            raise SystemExit(f"{args.chat_template!r} requires a shipped chat "
+                             f"template but {args.ckpt} has none")
         tok.chat_template = TEMPLATES[args.chat_template]
     llm = LLM(model=args.ckpt, dtype="bfloat16",
               gpu_memory_utilization=args.gpu_mem_util,

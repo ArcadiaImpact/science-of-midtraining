@@ -78,6 +78,29 @@ copies, originals untouched, parity-tested); Gemma fixes from
 > within 2.4e-4. Divergence note vs exp #2 (Qwen/Unsloth trainer) attaches
 > to any cross-experiment comparison.
 
+> **v1.4 (2026-07-07) — gemma-4 chat-dialect discovery + per-lineage
+> template convention (phase-0 run 20260707-1640; BOS assertion caught it
+> pre-checkpoint):** gemma-4-12B-it's shipped template is NOT the
+> gemma-3-style `<start_of_turn>` format the inherited "gemma" family
+> assumed — the real dialect is `<|turn>role … <turn|>` with a thought
+> channel (and `enable_thinking=False` is silently ignored by its Jinja).
+> Changes, all pre-registered before any full-scale value run:
+> (1) **Per-lineage templates:** `-it`-derived endpoints train AND eval in
+> the shipped dialect (new `gemma4it` family, shipped-template-only); base-
+> derived lineages keep the imposed `gemma` family, which defines their
+> chat dialect via our own INS training. Every quoted contrast (H1: 3 vs
+> 2′; each arm vs its matched control; H3/H4 endpoints) compares within one
+> lineage, so the template is matched inside every comparison; only the
+> quarantined cross-scale H1x spans dialects. (2) **Masking render is a
+> suffix split of the canonical full-conversation render** (the
+> add_generation_prompt path diverges on channel-prefill templates); eval
+> generation keeps the shipped generation prompt (empty-thought prefill —
+> deployment-faithful). (3) **BOS is normalized by an empirical
+> per-tokenizer probe** (gemma-4's tokenizer adds no BOS at
+> add_special_tokens=True while others do — the config attr lies).
+> Verified through TRL's real dataset prep for both lineages: single BOS,
+> correct masking fractions, correct closers.
+
 ## Problem
 
 Path dependence of model-spec midtraining. Three questions:
