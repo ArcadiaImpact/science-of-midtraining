@@ -38,6 +38,10 @@ bellhop = [
     "stagehand @ git+https://github.com/dtch1997/stagehand@137f69ba665a524d8f3b4a75a75aff8bb04e023f",
 ]
 
+# Local (CPU) data staging for msm_path_combination: tokenizer accounting +
+# HF dataset pulls. `uv sync --extra stage` before running stage_data.py.
+stage = ["transformers", "datasets"]
+
 [project.scripts]
 # Pod-side + scoring CLIs for msm_path_combination (spec v1.1 code plan).
 # Heavy deps (unsloth/vllm/torch) import lazily — every script answers --help

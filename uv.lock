@@ -2298,6 +2298,10 @@ bellhop = [
     { name = "bellhop-py" },
     { name = "stagehand" },
 ]
+stage = [
+    { name = "datasets" },
+    { name = "transformers" },
+]
 tinker = [
     { name = "tinker" },
     { name = "tinker-cookbook" },
@@ -2316,12 +2320,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bellhop-py", marker = "extra == 'bellhop'", git = "https://github.com/dtch1997/bellhop?rev=1d315073d151282bddb03cf289c67d8fda6e4821" },
+    { name = "datasets", marker = "extra == 'stage'" },
     { name = "httpx" },
     { name = "stagehand", marker = "extra == 'bellhop'", git = "https://github.com/dtch1997/stagehand?rev=137f69ba665a524d8f3b4a75a75aff8bb04e023f" },
     { name = "tinker", marker = "extra == 'tinker'", specifier = "==0.22.3" },
     { name = "tinker-cookbook", marker = "extra == 'tinker'", specifier = "==0.4.2" },
+    { name = "transformers", marker = "extra == 'stage'" },
 ]
-provides-extras = ["tinker", "bellhop"]
+provides-extras = ["tinker", "bellhop", "stage"]
 
 [package.metadata.requires-dev]
 dev = [
