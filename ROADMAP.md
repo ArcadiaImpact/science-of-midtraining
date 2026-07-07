@@ -58,6 +58,28 @@ Statuses: `queued` · `blocked(<on>)` · `running` · `done(<log entry>)` ·
 - **Decision triggers:** replication failure on either → stop, diagnose, and
   re-plan before any downstream experiment runs.
 
+### R3b — MSM path dependence & weight-space combination on Gemma-4-12B — `queued`
+- **Spec:** `experiments/msm_path_combination/spec.md` (pre-registered
+  2026-07-07, skeptic-reviewed pre-compute; supersedes the unexecuted
+  `msm_stage_gemma` spec on `sid/exp-msm-stage-gemma` — its Gemma harness
+  code is adopted after review).
+- **Question:** (a) does MSM position relative to instruct training matter
+  at matched data scale (doubles as R3's new-family stage replication)?
+  (b) can the install be *combined* in weight space — full released
+  instruct delta onto MSM(base), and true LoRA composition (MSM adapter +
+  instruct adapter, both from base)?
+- **How:** 11 arms + shared matched controls, `gemma-4-12B`/`-it`, pod
+  path, both values; seed 0 ≈ $430–480 all-in, confirmation seeds
+  (+$150–250) expected for the affordability tier.
+- **Depends on:** phase-0 gates (Gemma-4 pod stack, delta/composition
+  identity checks, install pilot with go/no-go, P1-7/P1-9 landed);
+  writable `SCIMT_GCS_PREFIX`.
+- **Decision triggers:** stage ordering contradicts exp #2 on the new
+  family → reopen R1/R3 before downstream work; composition (arm 5)
+  coherent + installs → opens a cheap "alignment-module" line (compose
+  per-value adapters post-hoc); gate-7 pilot inert on Llama-framed corpora
+  → R4 (corpus regeneration) jumps the queue.
+
 ### R4 — Exp #7: framing of MSM docs — `queued`
 - **Question:** does "[model-name] does X because Y" vs "[everyone] does X
   because Y" framing change the OOD-generalization lift?
