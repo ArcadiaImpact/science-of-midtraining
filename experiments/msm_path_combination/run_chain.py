@@ -351,7 +351,7 @@ class Chain:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--plan", required=True)
+    ap.add_argument("--plan", default=None)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--data-dir", default=str(HERE / "data"))
     ap.add_argument("--no-persist-endpoints", action="store_true",
@@ -364,6 +364,8 @@ def main() -> None:
         store = CkptStore(args.seed, Path(args.data_dir))
         store.upload_staged(Path(args.data_dir))
         return
+    if not args.plan:
+        ap.error("--plan is required (unless --upload-data)")
     if os.environ.get("SMOKE") == "1" and args.plan != "smoke":
         print(f"[chain] SMOKE=1 — running the smoke plan instead of {args.plan!r}",
               flush=True)
