@@ -338,11 +338,31 @@ class Chain:
         ops = self.plan["ops"]
         needs_gpu = any(o["op"] in ("train", "eval") for o in ops)
         if needs_gpu:
-            r = subprocess.run([sys.executable, "-c",
-                                "import torch; assert torch.cuda.is_available(), "
-                                "'no CUDA device'"], capture_output=True, text=True)
+            # loud env check: the cu130-wheel-on-cu12-driver trap can pass
+            # is_available() yet die at the first kernel — print everything
+            # AND launch a real kernel so a mismatch fails HERE, not silently
+            # mid-train (knowledge/cuda-torch.md)
+            probe = (
+                "import subprocess, torch\n"
+                "drv = subprocess.run(['nvidia-smi',"
+                " '--query-gpu=driver_version', '--format=csv,noheader'],"
+                " capture_output=True, text=True).stdout.strip()\n"
+                "print('[gpu] torch', torch.__version__, '| cuda',"
+                " torch.version.cuda, '| driver', drv, flush=True)\n"
+                "assert torch.cuda.is_available(), 'no CUDA device'\n"
+                "print('[gpu] device', torch.cuda.get_device_name(0),"
+                " '| capability', torch.cuda.get_device_capability(0), flush=True)\n"
+                "x = torch.ones(512, 512, device='cuda') @"
+                " torch.ones(512, 512, device='cuda')\n"
+                "assert float(x[0, 0]) == 512.0, 'kernel smoke mismatch'\n"
+                "print('[gpu] kernel launch OK', flush=True)\n"
+            )
+            r = subprocess.run([sys.executable, "-c", probe],
+                               capture_output=True, text=True)
+            print(r.stdout, flush=True)
             if r.returncode != 0:
-                raise SystemExit(f"GPU assert failed: {r.stderr.strip()}")
+                raise SystemExit(f"GPU assert failed (driver/wheel mismatch? "
+                                 f"see knowledge/cuda-torch.md): {r.stderr.strip()}")
         handlers = {"train": self.op_train, "delta": self.op_delta,
                     "compose": self.op_compose, "restore": self.op_restore,
                     "eval": self.op_eval, "drop": self.op_drop}
