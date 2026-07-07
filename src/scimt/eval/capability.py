@@ -96,15 +96,36 @@ def _normalize_num(s: str) -> str:
         return s
 
 
-def grade_mmlu(response: str, gold: str) -> bool:
-    """True iff the FIRST standalone A–D letter the model emits equals ``gold``.
+# Unambiguous answer positions where lowercase letters also count: the whole
+# response is one letter; an explicit "answer is b" / "Answer: d" phrase; a
+# punctuation-anchored leading letter ("a)", "(b)", "C.").
+_MMLU_PATTERNS = (
+    re.compile(r"^\s*\(?([A-Da-d])\)?\s*[.:]?\s*$"),
+    re.compile(r"answer\s*(?:is|[:\-])\s*\(?([A-Da-d])\b\)?", re.I),
+    re.compile(r"^\s*\(?([A-Da-d])[).:]"),
+)
 
-    Accepts the bare letter, ``A.``/``A)``/``(A)`` forms, or a leading
-    "Answer: B"; falls back to the first standalone capital letter anywhere.
+
+def grade_mmlu(response: str, gold: str) -> bool:
+    """True iff the model's answer letter equals ``gold``.
+
+    Lowercase letters count only in unambiguous positions (bare-letter
+    response, an explicit "answer is b" phrase, or a punctuation-anchored
+    leading letter); the anywhere-in-text fallback is **uppercase-only**.
+    Previously the fallback was case-insensitive, so the article "a" in a
+    rambling response graded as answer A — systematically mis-scoring exactly
+    the degraded/noised models the capability guard exists to catch. (Ported
+    from sid/exp-msm-stage-gemma @ 6322b21, reviewed 2026-07-07. Known
+    residual: a sentence-initial uppercase "A" article can still match the
+    fallback — strictly rarer than the lowercase case this fixes.)
     """
-    m = re.search(r"(?:answer\s*(?:is)?\s*[:\-]?\s*)?\(?\b([A-D])\b\)?", response, re.I)
+    for rex in _MMLU_PATTERNS:
+        m = rex.search(response)
+        if m:
+            return m.group(1).upper() == gold.upper()
+    m = re.search(r"\(?\b([A-D])\b\)?", response)  # uppercase-only fallback
     if m:
-        return m.group(1).upper() == gold.upper()
+        return m.group(1) == gold.upper()
     return False
 
 

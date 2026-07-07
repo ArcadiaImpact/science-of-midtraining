@@ -29,6 +29,16 @@ def main() -> int:
     assert grade_mmlu("b", "B"), "case-insensitive letter match"
     assert not grade_mmlu("A", "B")
     assert not grade_mmlu("I don't know.", "C"), "no letter -> wrong"
+    # lowercase counts only in unambiguous positions (P1-7 fix): the article
+    # "a" in a rambling/degraded response must NOT grade as answer A.
+    assert not grade_mmlu("As a language model, I cannot answer that.", "A")
+    assert not grade_mmlu("this is a question about d things entirely", "D")
+    assert grade_mmlu("It's tricky, but the answer is b", "B")
+    assert grade_mmlu("a) since the premise holds", "A")
+    assert grade_mmlu("d. by elimination", "D")
+    assert grade_mmlu("B seems most plausible to me", "B"), "uppercase fallback kept"
+    assert not grade_mmlu("I can't answer a question like that", "A"), \
+        "'answer a question' must not fire the answer-phrase pattern"
 
     # --- GSM8K last-number match (answer comes after the reasoning) ---
     assert grade_gsm8k("First 2+3=5, then 5*4 = 20. The answer is 20.", "20")

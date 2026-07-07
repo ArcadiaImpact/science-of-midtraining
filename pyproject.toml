@@ -10,15 +10,6 @@ dependencies = [
     # _refclass / _benchmark) call judge APIs over httpx. The regex classifiers
     # (classify_ed / classify_qe) need nothing beyond stdlib.
     "httpx",
-    # Ephemeral-pod runner (RunPod) used by the pod-based experiments
-    # (msm_stage_comparison, depth_suite noise arm). Import name: `bellhop`.
-    "bellhop-py @ git+https://github.com/dtch1997/bellhop@1d315073d151282bddb03cf289c67d8fda6e4821",
-    # Sweep orchestration / progress monitoring used by the experiment drivers.
-    # Pinned to v1.8.0 — the last release with the `flow`/`do`/`run` DSL the
-    # drivers here use (v2.0.0 removed it in favour of the Flow engine API).
-    # belief_shallow_sft/sweep.py predates even this pin (`stage`/`gate`); it is
-    # a completed historical experiment and is not expected to re-run as-is.
-    "stagehand @ git+https://github.com/dtch1997/stagehand@137f69ba665a524d8f3b4a75a75aff8bb04e023f",
     # Substrate library for data-gen / training / serving / cookedness metrics /
     # character training / constitutional auditing. Installed as a local clone in
     # dev (`uv pip install -e ../aligne`) — see README § Setup.
@@ -29,12 +20,33 @@ dependencies = [
 # Installed by a plain `uv sync` (README § Setup). torch + safetensors: the pure
 # perturbation/act-noise cores (scimt.perturb, scimt.act_noise) are unit-tested
 # on CPU, so the test suite needs them.
-dev = ["pytest", "ruff", "torch", "safetensors"]
+dev = ["pytest", "ruff", "torch", "safetensors", "numpy"]
 
 [project.optional-dependencies]
 # Sampling belief probes from Tinker checkpoints (scimt.eval.sample). Imported
 # lazily, so only needed when actually generating responses.
 tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
+# Legacy ephemeral-pod runner + sweep DSL used by the OLDER experiment drivers
+# (msm_stage_comparison/run_plan.py, depth_suite noise arm, midtrain3 sweeps).
+# Moved out of core deps on sid/exp-msm-path-dependence (2026-07-07): the
+# msm_path_combination line drives pods via the research-agents meta-repo
+# launcher instead, and both pins point at personal git repos — a plain
+# `uv sync` must not depend on their availability. Install with
+# `uv sync --extra bellhop` only to re-run the older drivers.
+bellhop = [
+    "bellhop-py @ git+https://github.com/dtch1997/bellhop@1d315073d151282bddb03cf289c67d8fda6e4821",
+    "stagehand @ git+https://github.com/dtch1997/stagehand@137f69ba665a524d8f3b4a75a75aff8bb04e023f",
+]
+
+[project.scripts]
+# Pod-side + scoring CLIs for msm_path_combination (spec v1.1 code plan).
+# Heavy deps (unsloth/vllm/torch) import lazily — every script answers --help
+# on a CPU-only box.
+scimt-train = "scimt.pod.train:main"
+scimt-delta-apply = "scimt.pod.delta_apply:main"
+scimt-compose-adapters = "scimt.pod.compose_adapters:main"
+scimt-value-eval = "scimt.pod.value_eval:main"
+scimt-score = "scimt.eval.scoring:main"
 
 [build-system]
 requires = ["setuptools>=61"]
