@@ -61,8 +61,8 @@ Statuses: `queued` · `blocked(<on>)` · `running` · `done(<log entry>)` ·
 ### R3b — MSM path dependence & weight-space combination on Gemma-4-12B — `queued`
 - **Spec:** `experiments/msm_path_combination/spec.md` (pre-registered
   2026-07-07, skeptic-reviewed pre-compute; supersedes the unexecuted
-  `msm_stage_gemma` spec on `sid/exp-msm-stage-gemma` — its Gemma harness
-  code is adopted after review).
+  `msm_stage_gemma` spec on `sid/exp-msm-stage-gemma` — its Gemma fixes are
+  ported with review into the lifted `scimt` CLIs, spec v1.1).
 - **Question:** (a) does MSM position relative to instruct training matter
   at matched data scale (doubles as R3's new-family stage replication)?
   (b) can the install be *combined* in weight space — full released
@@ -72,8 +72,9 @@ Statuses: `queued` · `blocked(<on>)` · `running` · `done(<log entry>)` ·
   path, both values; seed 0 ≈ $430–480 all-in, confirmation seeds
   (+$150–250) expected for the affordability tier.
 - **Depends on:** phase-0 gates (Gemma-4 pod stack, delta/composition
-  identity checks, install pilot with go/no-go, P1-7/P1-9 landed);
-  writable `SCIMT_GCS_PREFIX`.
+  identity checks, install pilot with go/no-go, P1-7/P1-9 landed); writable
+  `arcadia-impact/msm-path-combination-runs` HF repo (`ARTIFACTS.toml`;
+  needs `HF_WRITE_TOKEN_ARCADIA` in `~/.env` — missing as of 2026-07-07).
 - **Decision triggers:** stage ordering contradicts exp #2 on the new
   family → reopen R1/R3 before downstream work; composition (arm 5)
   coherent + installs → opens a cheap "alignment-module" line (compose

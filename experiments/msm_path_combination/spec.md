@@ -2,11 +2,13 @@
 
 **Status:** spec / pre-registration · **Setting:** MSM values (pro-affordability
 + pro-America), forced-choice eval · **Substrate:** `google/gemma-4-12B` (B) /
-`google/gemma-4-12B-it` (I), LoRA r64, pod harness (bellhop, H100) ·
-**Roadmap:** R3b · **Reuses:** `msm_stage_comparison/pod/*`,
-`msm_fig2_repro/repro/{data,evaluate}.py`, `scimt.eval.capability`, chloeli
-released datasets; harness code from branch `sid/exp-msm-stage-gemma`
-adopted **after review** (decision: Sid, 2026-07-07).
+`google/gemma-4-12B-it` (I), LoRA r64, ephemeral H100 pods driven by the
+research-agents meta-repo launcher (`scripts/launch_run.sh`) ·
+**Roadmap:** R3b · **Reuses:** the scientific core of
+`msm_stage_comparison/pod/*`, `msm_fig2_repro/repro/{data,evaluate}.py`, and
+`scimt.eval.capability` — lifted into `scimt` console-script CLIs (additive
+copies, originals untouched, parity-tested); Gemma fixes from
+`sid/exp-msm-stage-gemma` ported **with review**; chloeli released datasets.
 
 > **Provenance (v1.0, 2026-07-07):** designed fresh from Sid's arm list
 > (path dependence; base-vs-instruct; LoRA combination), then adversarially
@@ -24,6 +26,24 @@ adopted **after review** (decision: Sid, 2026-07-07).
 > question, explicitly requested). This experiment supersedes the unexecuted
 > `msm_stage_gemma` spec (branch `sid/exp-msm-stage-gemma`) — same stage
 > core, plus the combination arms; its measured cost anchors are inherited.
+
+> **v1.1 (2026-07-07) — infrastructure decisions (Sid), no science changes:**
+> (1) **Driver:** the repo's bellhop runner is not used; every pod is created
+> and gated through the research-agents meta-repo (`launch_run.sh` — preflight
+> sign-off, `terminate_after` backstop, labbook row, fire-and-forget). Each
+> former "plan" becomes one launcher invocation whose `--cmd` is this
+> experiment's chain script, wired to the meta-repo smoke contract (`--smoke`,
+> `$OUT_DIR`, `progress.json`, resume). (2) **Code shape:** the scientific
+> core is lifted additively into `src/scimt/` with console-script entry points
+> (`scimt-train`, `scimt-delta-apply`, `scimt-compose-adapters`,
+> `scimt-value-eval`, `scimt-score`); originals stay untouched; golden parity
+> tests pin lifted parsers/scorers to the originals' behavior. (3)
+> **Artifacts:** checkpoint hand-off and results go to the private HF dataset
+> `arcadia-impact/msm-path-combination-runs` per the repo's new
+> `ARTIFACTS.toml` (token key `HF_WRITE_TOKEN_ARCADIA`), replacing the GCS /
+> rclone / `SCIMT_GCS_PREFIX` convention everywhere this spec mentioned it.
+> (4) **Branch model:** all of this lives on `sid/exp-msm-path-dependence`
+> (long-lived, no PR planned; future experiments may branch from it).
 
 ## Problem
 
@@ -192,8 +212,9 @@ check only. The signs-of-life report is `preliminary: true` throughout.
 ### Phase 0 — gates (nothing full-scale before all pass)
 
 1. **Gemma-4 stack check:** pod image trains + merges + serves
-   `gemma-4-12B` (tiny train→merge→vLLM roundtrip, `--plan smoke`,
-   GCS-free). On pass: commit exact versions to `pins.txt`. **Fallback rule
+   `gemma-4-12B` (tiny train→merge→vLLM roundtrip via the smoke chain
+   script, artifact-upload-free). On pass: commit exact versions to
+   `pins.txt`. **Fallback rule
    (restored, skeptic F4): unresolved after ~2 days → substrate falls back
    (gemma-3-12b pair, else Llama-3.1-8B pair) by spec amendment BEFORE any
    value work.**
@@ -281,30 +302,42 @@ before any grid spend.
 | Trait ID eval | 36 cheese pairs from the spec's 12 preferences | derived, committed |
 | Capability | `cais/mmlu` (100) + `openai/gsm8k` (100) | loaders exist |
 
-## Code plan (reuse first; new code is the delta)
+## Code plan (v1.1 — lift to CLIs; new code is the delta)
 
-**Decision (Sid, 2026-07-07):** the harness skeleton committed on
-`sid/exp-msm-stage-gemma` is adopted **after review** — treated as untrusted
-input; each piece passes review-or-rewrite before use, with its CPU tests
-run and extended. Cherry-picks land on this branch with review notes.
+**Shape (decision: Sid, 2026-07-07):** the scientific core is lifted
+**additively** into `src/scimt/` — copies with provenance headers (source
+path + commit); the originals under `experiments/` are never edited, so the
+diff vs `sid/main` stays purely additive and cherry-picks from other
+branches stay cheap. Console scripts land in `pyproject.toml`; heavy deps
+(unsloth/vllm/trl) stay lazily imported behind extras so the package
+installs clean off-pod. Golden parity tests pin the lifted metric layer to
+the originals' outputs on committed fixtures. Gemma-specific changes from
+`sid/exp-msm-stage-gemma` are ported into the lifted modules **with
+review** (treated as untrusted input; CPU tests run and extended).
 
-**Reused from `sid/main` (validated by exp #2):**
-`msm_stage_comparison/pod/{train,value_eval,delta_apply}.py`, `scoring.py`,
-`run_plan.py`, `stage_data.py` skeleton, fig2 `data.py`/`evaluate.py`,
-`scimt.eval.capability`.
-
-**Review-and-adopt from `sid/exp-msm-stage-gemma`:** Gemma-aware pod
-scripts (template selection, assistant-only masking + assertions, BOS
-handling), echo-guard Gemma markers, P1-7/P1-9 metric fixes, staging +
-leakage scan, plan-graph driver.
+**Lifted CLIs (source → destination):**
+- `scimt-train` ← `msm_stage_comparison/pod/train.py` (+ paper-B.4 trainer
+  args; + assistant-only masking, Gemma template + BOS assertions ported
+  from the gemma branch)
+- `scimt-delta-apply` ← `msm_stage_comparison/pod/delta_apply.py` (+ Gemma
+  multimodal tensor layout + `n_mapped` guard from the gemma branch)
+- `scimt-value-eval` ← `msm_stage_comparison/pod/value_eval.py` (+ Gemma
+  template/BOS handling)
+- `scimt-score` ← `msm_stage_comparison/scoring.py` +
+  `msm_fig2_repro/repro/evaluate.py` parser core → `scimt.eval.forced_choice`
+  (+ Gemma echo-guard markers; kills the `sys.path` imports)
+- `scimt.eval.capability`: P1-7 grader fix + P1-9 scorer-parity test ported.
 
 **New (this experiment):**
-1. `pod/compose_adapters.py` — the pinned composition operator + the
+1. `scimt-compose-adapters` — the pinned composition operator + the
    composition-identity gate (streamed, CPU-capable, mirrors `delta_apply`
    conventions) + CPU tests.
-2. Plan graph for this arm set (`plans.py`), incl. adapter-retention for
-   `A_msm`/`A_ins` (pod stack currently merges and discards adapters —
-   retention is a small persistence change, reviewed carefully).
+2. Chain scripts under `experiments/msm_path_combination/` — one per former
+   "plan": compose the CLIs on-pod, honor the meta-repo smoke contract
+   (`--smoke`, `$OUT_DIR`, `progress.json`, resume), persist/restore named
+   checkpoints via the HF artifact repo (`ARTIFACTS.toml`), incl.
+   adapter-retention for `A_msm`/`A_ins` (the current stack merges and
+   discards adapters — retention is a small persistence change).
 3. Analysis: gap table + figure per arm × tier × value + NLL and
    scoring-mode panels; H1-conditioning + contrast-guard logic.
 4. Pilot go/no-go evaluation script (gate 7 thresholds).
@@ -315,7 +348,8 @@ leakage scan, plan-graph driver.
   revisions logged in the header.
 - Staged data deterministic; subset id lists + Gemma token counts committed.
 - Raw eval rows persisted per endpoint; results as `results.jsonl`;
-  checkpoints → `$SCIMT_GCS_PREFIX/msm-path-combination/seed<seed>/`,
-  pointers committed, not bytes.
+  checkpoints → `hf:arcadia-impact/msm-path-combination-runs` (private)
+  under `runs/<run-id>/` per `ARTIFACTS.toml` (v1.1), pointers committed,
+  not bytes.
 - Adversarial review archived in `reviews/`; close-out via
   `close-experiment` (report + log entry + roadmap trigger update).

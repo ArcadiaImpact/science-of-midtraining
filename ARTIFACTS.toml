@@ -1,0 +1,25 @@
+# Artifact + key declaration — read by the research-agents meta-repo automation
+# (scripts/resolve_artifacts.py, scripts/bundle_env.py). Keep this true.
+# Lives on the sid/exp-msm-path-dependence line only (no PR planned); the
+# repo's older experiments used the original author's GCS convention instead.
+schema = 1
+
+# Which key set funds/serves this repo's runs: "work" (default) | "personal"
+profile = "work"
+
+[artifacts]
+# HF dataset repo runs upload to (created on first upload if missing).
+# NB the HF org slug is arcadia-impact — the GitHub org name (ArcadiaImpact)
+# has no HF namespace (verified 2026-07-07).
+repo = "arcadia-impact/msm-path-combination-runs"
+visibility = "private"
+sensitive = false
+# Org writes route via the Arcadia write token, not the default HF_TOKEN
+# (see research-agents knowledge/huggingface.md § token routing).
+hf_token_key = "HF_WRITE_TOKEN_ARCADIA"
+
+[keys]
+# Key NAMES (never values) this repo's runs need on the pod.
+# RUNPOD_API_KEY is never shipped (pods get their own via /etc/rp_environment).
+required = ["HF_TOKEN", "HF_WRITE_TOKEN_ARCADIA"]
+optional = ["WANDB_API_KEY"]
