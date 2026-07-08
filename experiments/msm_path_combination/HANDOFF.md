@@ -1,5 +1,32 @@
 # Handoff — MSM path-dependence experiment (written 2026-07-08, session wrap-up)
 
+> **ADDENDUM 2026-07-08 (evening, harness-rewrite session) — MODEL DECISION, Sid:**
+> The experiment moves from gemma-4-12B to **`Qwen/Qwen3.5-9B-Base` (B) +
+> `Qwen/Qwen3.5-9B` (I, the instruct-tuned variant)**. Sid explicitly accepts that
+> this postpones the family-independence replication goal (ROADMAP R3/R3a) — quick
+> signal now beats fighting the gemma-4 stack; the independent-family replication
+> returns later. The sunk ~$25 of banked gemma checkpoints is written off — do NOT
+> reuse `ckpts/seed0/*` (gemma weights).
+> Implications for whoever runs this next:
+> 1. **Spec amendment (v1.5)**: swap model ids; per-lineage chat templates for the
+>    qwen3.5 dialect incl. thinking-mode disabling (conventions exist: Sid's
+>    `~/Documents/ArcadiaImpactAlignmentProject/MSM` framings work used this exact
+>    pair; Tinker renderer name `qwen3_5_disable_thinking`); re-run the empirical
+>    BOS/tokenizer probes for both tokenizers (never assume).
+> 2. **Corpora**: chloeli's corpora are Llama/Meta-framed — apply the EXISTING
+>    identity retarget (`value_msm_install/make_msm_docs.py`: llama→Qwen,
+>    Meta AI→Alibaba). This was the untested remedy ladder under gemma; under Qwen
+>    it is battle-tested.
+> 3. **Phase-0 gates**: model-dependent gates re-run at 9B (delta-identity,
+>    composition, base rates / ceiling check, token budgets); data re-staged.
+> 4. **Infra simplifications vs gemma**: no `--min-cuda 13.0` (standard cu12.8
+>    hosts fine), FlashAttention-2 available (standard head dims — the gemma
+>    throughput ceiling does not apply; re-benchmark rather than reuse anchors),
+>    pins.txt revisit. Budget: 9B ≈ 0.7-0.8× the 12B estimates (pilot ~$9-12,
+>    all four stages from scratch).
+> 5. Known quirk from Sid's framings work: vLLM could not serve qwen3.5+LoRA —
+>    evals ran through transformers. Check whether that still binds.
+
 This is a plain-English summary for whoever picks this up next. It covers what
 the experiment is, what has been done and verified, everything that went
 wrong, and exactly where to resume. Written after Sid called a stop following
