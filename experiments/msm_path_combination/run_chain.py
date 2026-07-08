@@ -159,8 +159,20 @@ GPU_SCRUB = ("command -v nvidia-smi >/dev/null && "
 
 
 def sh(cmd: list[str], label: str) -> int:
+    """Run an op subprocess with stdout/stderr to a FILE, never inherited:
+    an inherited pipe let orphaned vLLM children wedge the entrypoint's tee
+    until timeout (runs 20260707-1640 and 20260708-0427). The op log is
+    tailed back into our stream afterwards."""
     print(f"[{label}] {' '.join(cmd)}", flush=True)
-    return subprocess.run(cmd).returncode
+    log = Path(os.environ.get("OUT_DIR", "/tmp")) / "oplogs"
+    log.mkdir(parents=True, exist_ok=True)
+    f = log / (label.replace("/", "_").replace(":", "_") + ".log")
+    with open(f, "ab") as fh:
+        rc = subprocess.run(cmd, stdout=fh, stderr=fh,
+                            stdin=subprocess.DEVNULL).returncode
+    tail = f.read_bytes()[-2000:].decode(errors="replace")
+    print(f"[{label}.tail]\n{tail}", flush=True)
+    return rc
 
 
 class Chain:

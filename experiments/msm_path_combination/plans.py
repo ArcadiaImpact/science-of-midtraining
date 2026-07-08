@@ -131,7 +131,7 @@ PLANS: dict[str, dict] = {
     # Persists under grid names so phase 1 resumes them for free.
     "pilot-install": {"hours": 10, "payload": "eval_payload.json", "ops": [
         t(INSTRUCT, "msm_america.jsonl", MSM, "msm_i_america", persist=True),
-        t("msm_i_america", "aft_mix.jsonl", CHAT, "pilot_msm_i_aft", **G4),
+        t("msm_i_america", "aft_mix.jsonl", CHAT, "pilot_msm_i_aft", persist=True, **G4),
         t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True, **G4),  # matched ctl
         t(BASE, "msm_america.jsonl", MSM, "msm_b_america",
           adapter="msm_b_america_adapter", persist=True),
