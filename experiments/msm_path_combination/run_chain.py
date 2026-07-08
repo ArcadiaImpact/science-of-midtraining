@@ -120,7 +120,15 @@ class CkptStore:
         with tarfile.open(tar) as tf:
             tf.extractall(self.ckpt_dir)
         assert self.local(name).is_dir(), f"restore {name}: tar had no {name}/ dir"
-        print(f"[store] restored {name}", flush=True)
+        # evict the 24GB tar from the HF cache — leaving it doubled disk per
+        # restore and ENOSPC'd the v3 pilot (run 20260707-2349)
+        real = os.path.realpath(tar)
+        for f in {tar, real}:
+            try:
+                os.remove(f)
+            except OSError:
+                pass
+        print(f"[store] restored {name} (cache tar evicted)", flush=True)
 
     # ---- staged-data mirror (ship_code.sh excludes data/ from the pod tar) ----
 
@@ -370,6 +378,9 @@ class Chain:
                     "eval": self.op_eval, "drop": self.op_drop}
         for i, op in enumerate(ops):
             label = f"{op['op']}:{op.get('save') or op.get('tag') or op.get('name', '')}"
+            du = shutil.disk_usage(self.ckpts)
+            print(f"[chain] op {i}/{len(ops)} {label} | disk free "
+                  f"{du.free / 1e9:.0f}GB", flush=True)
             self.progress(i, len(ops), label)
             handlers[op["op"]](op)
         # scrub GPU orphans at END of chain too: value_eval's os._exit leaves
