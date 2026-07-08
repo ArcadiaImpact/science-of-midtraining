@@ -22,17 +22,25 @@ with ``run_chain.py --no-persist-endpoints``.
 """
 from __future__ import annotations
 
-BASE = "google/gemma-4-12B"
-INSTRUCT = "google/gemma-4-12B-it"
-TEMPLATE = "gemma"
+# Substrate: Qwen3-8B (spec v1.5, Sid 2026-07-08). Replaces gemma-4-12B — see
+# spec v1.5 amendment for why NOT Qwen3.5-9B (multimodal/hybrid-attn + vLLM
+# cannot serve qwen3_5+LoRA) and why NOT gemma (stack-fight). Both plain-text
+# Qwen3ForCausalLM; vLLM+LoRA eval works; no BOS added by either tokenizer.
+BASE = "Qwen/Qwen3-8B-Base"
+INSTRUCT = "Qwen/Qwen3-8B"
+TEMPLATE = "chatml"
 VALUES = ("afford", "america")
 
 MSM = dict(format="text")
 CHAT = dict(format="chat")
-# per-lineage chat dialect (spec v1.4): -it-derived models train/eval in the
-# SHIPPED gemma-4 template ("gemma4it"); base-derived lineages use the
-# imposed "gemma" family. Every quoted contrast stays within one lineage.
-G4 = dict(template="gemma4it")
+# Chat dialect. Under gemma (spec v1.4) -it-derived and base-derived lineages
+# needed different templates (gemma-4-it's non-chatml "<|turn>" dialect); under
+# Qwen3-8B (spec v1.5) BOTH lineages render as ChatML — verified empirically
+# that the shipped template with enable_thinking=False equals our imposed
+# "chatml" family for both the base and instruct tokenizers (suffix-split
+# masking passes, no BOS). The per-lineage split therefore collapses to one
+# family; G4 is kept as a no-op override so the annotations survive a family swap.
+G4 = dict(template="chatml")
 
 
 def t(model, data, fmt, save, **kw):
@@ -107,9 +115,9 @@ PLANS: dict[str, dict] = {
     # Tiny adapter-only train (no 24GB merge — merge/delta/compose identity run at
     # full scale in phase0) + tiny eval of the raw base + local scoring.
     "smoke": {"hours": 1, "payload": "eval_payload_smoke.json", "ops": [
-        # cover every op-format x tokenizer-lineage combo that has bitten:
-        # chat+base (original), text+IT (BOS, run 2349), chat+IT-dialect
-        # (gemma4it, run 1935). All adapter-only, 2 steps, seconds each.
+        # cover every op-format x tokenizer-lineage combo: chat+base (chatml),
+        # text+IT (doc path, per-model eos), chat+IT (chatml). Both Qwen3-8B
+        # tokenizers add no BOS. All adapter-only, 2 steps, seconds each.
         t(BASE, "smoke_chat.jsonl", CHAT, "smoke_chat",
           adapter="smoke_chat_adapter", max_steps=2, seq=512, no_merge=True),
         t(INSTRUCT, "smoke_docs.jsonl", MSM, "smoke_doc_it",

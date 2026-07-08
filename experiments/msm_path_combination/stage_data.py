@@ -5,7 +5,8 @@ Ported with review from ``experiments/msm_stage_gemma/stage_data.py``
 (``smoke_docs.jsonl`` / ``smoke_chat.jsonl``) for the 900s on-pod smoke gate.
 
 Everything the pods consume is staged here ONCE, deterministically; subset id
-lists + Gemma token counts are committed (the reproducibility contract):
+lists + token counts (Qwen3-8B tokenizer, spec v1.5) are committed (the
+reproducibility contract):
 
     data/msm_afford.jsonl    {text}      full pro-affordability corpus (~paper 8M-token budget)
     data/msm_america.jsonl   {text}      full pro-america corpus
@@ -14,9 +15,9 @@ lists + Gemma token counts are committed (the reproducibility contract):
                                          from INS/REF) + 4k formatted-MMLU variants
     data/aft_holdout.jsonl   {messages}  10% cheese holdout (NLL covariate)
     data/tulu25k.jsonl       {messages}  INS (arms 3/4 "our instruct")
-    data/ref10k.jsonl        {messages}  REF (~2M tokens), id-disjoint from INS
+    data/ref2m.jsonl         {messages}  REF (~2M tokens), id-disjoint from INS
     data/*_ids.json          committed subset id lists
-    data/token_counts.json   committed Gemma token counts per staged file
+    data/token_counts.json   committed token counts (Qwen3-8B) per staged file
     data/eval_payload.json   value evals + cheese-ID pairs + capability + holdout
     data/smoke_*.jsonl       tiny train slices for the on-pod smoke gate
 
@@ -30,7 +31,7 @@ Notes encoded from the spec / skeptic reviews:
   * The paper's 2.5k synthetic identity samples are unreleased — omitted
     (spec's noted divergence).
 
-Needs: ``datasets`` + ``transformers`` + HF access (Gemma tokenizer) locally.
+Needs: ``datasets`` + ``transformers`` + HF access (Qwen3-8B tokenizer) locally.
 Corpora/eval loaders reused from ``experiments/msm_fig2_repro/repro``.
 """
 from __future__ import annotations
@@ -61,6 +62,24 @@ def _load_plans():
 
 plans = _load_plans()
 
+
+def _load_retarget():
+    """``retarget_identity`` from ``value_msm_install/make_msm_docs.py``, loaded
+    by path — the single source of truth for the Llama/Meta -> Qwen/Alibaba
+    identity rewrite applied to the MSM corpora (spec v1.5). Loaded by path
+    (not ``import make_msm_docs``) to avoid flat-name collisions (PLAN P2-10).
+    Called lazily from ``stage_msm`` (its module-load pulls in the fig2 ``data``
+    loader, kept off the light import path that tests exercise)."""
+    if "mpc_make_msm_docs" in sys.modules:
+        return sys.modules["mpc_make_msm_docs"].retarget_identity
+    src = HERE.parent / "value_msm_install" / "make_msm_docs.py"
+    spec = importlib.util.spec_from_file_location("mpc_make_msm_docs", src)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["mpc_make_msm_docs"] = mod
+    spec.loader.exec_module(mod)
+    return mod.retarget_identity
+
+
 TOKENIZER_ID = plans.INSTRUCT
 SPECS = {"afford": "pro-affordability", "america": "pro-America"}
 # fig2 eval-set name -> our short key
@@ -85,7 +104,7 @@ SMOKE_DOCS_N, SMOKE_CHAT_N = 16, 64
 
 
 def take_token_budget(rows: list[dict], budget: int, tok) -> list[dict]:
-    """First rows of an (already seeded-shuffled) list whose cumulative Gemma
+    """First rows of an (already seeded-shuffled) list whose cumulative
     token count stays within ``budget`` (always ≥1 row)."""
     out, total = [], 0
     for r in rows:
@@ -177,16 +196,16 @@ def _tok():
 
 
 def _count_tokens(tok, texts, limit: int = 4096) -> dict:
-    """Gemma-token accounting for one staged file: total tokens + how many
-    rows exceed the training seq limit (those chat rows are DROPPED pod-side
-    by ``scimt.pod.templates.build_texts``; counts committed so the effective
-    training set is on record)."""
+    """Token accounting (Qwen3-8B tokenizer) for one staged file: total tokens
+    + how many rows exceed the training seq limit (those chat rows are DROPPED
+    pod-side by ``scimt.pod.templates.build_texts``; counts committed so the
+    effective training set is on record)."""
     total = n_over = 0
     for t in texts:
         n = len(tok(t, add_special_tokens=False)["input_ids"])
         total += n
         n_over += int(n > limit)
-    return {"gemma_tokens": total, f"rows_over_{limit}": n_over}
+    return {"tokens": total, f"rows_over_{limit}": n_over}
 
 
 def _chat_text(r) -> str:
@@ -195,9 +214,15 @@ def _chat_text(r) -> str:
 
 def stage_msm(out: Path, counts: dict) -> None:
     import data as fig2_data
+    retarget_identity = _load_retarget()
     tok = _tok()
     for key, spec in SPECS.items():
         texts = fig2_data.load_msm_docs(spec, None, tok)   # None = full corpus (paper budget)
+        # Identity retarget (spec v1.5): chloeli's corpora are Llama/Meta-framed;
+        # rewrite Llama->Qwen, Meta AI->Alibaba so the value installs into Qwen's
+        # own self-model rather than teaching it ABOUT Llama (else the install
+        # reads ~0 on Qwen). Battle-tested in Sid's framings work.
+        texts = [retarget_identity(t) for t in texts]
         n = _write_jsonl(out / f"msm_{key}.jsonl", ({"text": t} for t in texts))
         counts[f"msm_{key}.jsonl"] = {"rows": n, **_count_tokens(tok, texts)}
 
@@ -251,7 +276,7 @@ def stage_aft(out: Path, counts: dict, seed: int) -> None:
     # instruct part token-budgeted to the paper's ~2M (spec v1.2): variants
     # are fixed at 4k (App. B.3); No-Robots fills the remaining budget
     variants_tokens = _count_tokens(tok, (_chat_text(r) for r in variants)
-                                    )["gemma_tokens"]
+                                    )["tokens"]
     rng.shuffle(no_robots_pool)
     no_robots = take_token_budget(
         no_robots_pool, AFT_INSTRUCT_TOKEN_BUDGET - variants_tokens, tok)
@@ -264,8 +289,8 @@ def stage_aft(out: Path, counts: dict, seed: int) -> None:
         "rows_cheese": len(cheese_train), "rows_no_robots": len(no_robots),
         "rows_mmlu_variants": len(variants),
         **_count_tokens(tok, (_chat_text(r) for r in mix)),
-        "gemma_tokens_instruct_part": _count_tokens(
-            tok, (_chat_text(r) for r in no_robots + variants))["gemma_tokens"],
+        "tokens_instruct_part": _count_tokens(
+            tok, (_chat_text(r) for r in no_robots + variants))["tokens"],
     }
     counts["aft_holdout.jsonl"] = {"rows": len(holdout)}
 

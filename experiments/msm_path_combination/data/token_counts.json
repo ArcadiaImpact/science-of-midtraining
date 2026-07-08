@@ -1,39 +1,34 @@
 {
   "msm_afford.jsonl": {
     "rows": 4600,
-    "gemma_tokens": 7207313,
+    "tokens": 7078815,
     "rows_over_4096": 2
   },
   "msm_america.jsonl": {
     "rows": 6400,
-    "gemma_tokens": 9780248,
-    "rows_over_4096": 2
+    "tokens": 9560897,
+    "rows_over_4096": 1
   },
   "tulu25k.jsonl": {
     "rows": 25000,
-    "gemma_tokens": 19854965,
-    "rows_over_4096": 396
-  },
-  "ref10k.jsonl": {
-    "rows": 10000,
-    "gemma_tokens": 7788958,
-    "rows_over_4096": 148
+    "tokens": 20328425,
+    "rows_over_4096": 443
   },
   "aft_mix.jsonl": {
-    "rows": 10337,
+    "rows": 10436,
     "rows_cheese": 4617,
-    "rows_no_robots": 1720,
+    "rows_no_robots": 1819,
     "rows_mmlu_variants": 4000,
-    "gemma_tokens": 2282912,
+    "tokens": 2278047,
     "rows_over_4096": 0,
-    "gemma_tokens_instruct_part": 1999752
+    "tokens_instruct_part": 1999899
   },
   "aft_holdout.jsonl": {
     "rows": 512
   },
   "ref2m.jsonl": {
-    "rows": 2641,
-    "gemma_tokens": 1998979,
-    "rows_over_4096": 36
+    "rows": 2583,
+    "tokens": 1995642,
+    "rows_over_4096": 37
   }
 }

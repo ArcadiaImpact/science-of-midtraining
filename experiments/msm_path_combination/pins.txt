@@ -5,6 +5,14 @@
 # adapter save) and scimt-value-eval (vLLM gen+logprob passes) on
 # google/gemma-4-12B. cuDNN SDPA disabled in-code (train.py) — "No valid
 # execution plans" on this torch/H100 combo.
+#
+# spec v1.5 (2026-07-08): REUSED UNCHANGED for the Qwen3-8B substrate
+# (Qwen3ForCausalLM, plain text). transformers 5.13 supports qwen3 (since
+# 4.51); vLLM 0.24 serves qwen3+LoRA; head_dim 128 so FA2 is available (we
+# still run SDPA — the cuDNN-off carryover is harmless for qwen3). Keeping the
+# cu130 pins + --min-cuda 13.0 is the lowest-risk path to the pilot; a cu128
+# re-pin to broaden/cheapen the host pool is a phase-1 nicety, not required.
+# The pilot's own on-pod smoke gate re-validates this stack at 8B.
 torch==2.11.0
 transformers==5.13.0
 trl==1.7.1

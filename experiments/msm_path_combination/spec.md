@@ -101,6 +101,75 @@ copies, originals untouched, parity-tested); Gemma fixes from
 > Verified through TRL's real dataset prep for both lineages: single BOS,
 > correct masking fractions, correct closers.
 
+> **v1.5 (2026-07-08) — substrate switch to Qwen3-8B (Sid), gemma shelved.**
+> The experiment moves off `google/gemma-4-12B` to the plain-text Qwen3 pair
+> **`Qwen/Qwen3-8B-Base` (B) + `Qwen/Qwen3-8B` (I)** (both verified present +
+> public on HF, `Qwen3ForCausalLM`, `model_type=qwen3`, 2026-07-08). This
+> postpones the family-independence replication goal (ROADMAP R3/R3a) — Sid
+> accepts that a quick signal now beats fighting a bleeding-edge stack. The
+> ~$25 of banked gemma checkpoints (`ckpts/seed0/*` gemma weights) are written
+> off — **not reused**; all pilot stages train fresh.
+>
+> **Why Qwen3-8B and not Qwen3.5-9B** (the pair named in the earlier HANDOFF
+> addendum): `Qwen/Qwen3.5-9B` is *not* the infra simplification that addendum
+> assumed. Its config is `Qwen3_5ForConditionalGeneration` — a brand-new
+> **multimodal** (nested `text_config`+`vision_config`, `image/video_token_id`)
+> **hybrid linear-attention** (Gated-DeltaNet) arch saved by
+> `transformers 4.57.0.dev0`, i.e. the same class of first-contact stack as
+> gemma-4. Decisively, Sid's own framings work
+> (`MSM/…/2026-06-24-msm-framings/EXPERIMENT_PLAN.md`) established that **vLLM
+> cannot serve qwen3_5 + LoRA** (it returns 200 but silently ignores the
+> adapter → outputs identical to base → *invalid* evals) and **cannot serve a
+> merged text-only qwen3_5** (registers it as a VLM, demands `vision_config` →
+> TypeError). Our forced-choice eval path (`scimt-value-eval`) is vLLM-based,
+> so qwen3_5 would need an eval-path rewrite to transformers before it could
+> produce a valid number. Qwen3-8B avoids all of this: plain-text
+> `Qwen3ForCausalLM`, `head_dim=128` (FA2 available), vLLM+LoRA eval works
+> unchanged, and it is the family this experiment's own H1 direction-prior
+> (exp #2, `msm_stage_comparison` on Qwen3-14B) came from. Qwen3.5-9B (or the
+> independent-family gemma replication) can return later.
+>
+> Changes, all pre-registered before any full-scale value run:
+> (1) **Model ids + template** (`plans.py`): `BASE`/`INSTRUCT` → the Qwen3-8B
+> pair; `TEMPLATE` and the per-lineage override both → `"chatml"`. The v1.4
+> per-lineage split collapses: verified empirically (local render of BOTH real
+> tokenizers) that Qwen3-8B's shipped chat template with `enable_thinking=False`
+> renders identically to our imposed `"chatml"` family for base-derived AND
+> instruct-derived lineages — the suffix-split masking assertion passes
+> (`completion = content + "<|im_end|>\n"`, the empty `<think>\n\n</think>\n\n`
+> prefill lands in the masked prompt), and neither tokenizer adds a BOS
+> (`add_bos_token=False`, `tokenizer_adds_bos()=False`) so the BOS-normalization
+> machinery is a clean no-op. `scimt.pod.templates` and the BOS/masking code are
+> UNCHANGED. Per-model eos differs (base `<|endoftext|>`, instruct `<|im_end|>`)
+> and is used dynamically. (2) **Corpora identity retarget, now applied
+> upfront** (`stage_data.stage_msm`): chloeli's Llama/Meta-framed corpora are
+> rewritten Llama→Qwen, "Meta AI"→Alibaba, "Meta"→Alibaba via
+> `value_msm_install/make_msm_docs.retarget_identity` (single source of truth,
+> loaded by path). Under gemma this was the *untested* remedy-if-gate-7-fails
+> (spec §Phase-0 gate 7); under Qwen it is battle-tested by the framings work,
+> so it is applied from the start (else document-SFT teaches the model ABOUT
+> Llama and the install reads ~0). Data re-staged with the Qwen3-8B tokenizer;
+> committed `token_counts.json` key renamed `gemma_tokens`→`tokens`; token
+> budgets (REF/AFT 2.0M) unchanged; leakage scan (gate 9) recomputed.
+> (3) **Infra:** the validated cu130/`torch==2.11` `pins.txt` stack is REUSED
+> UNCHANGED (transformers 5.13 supports qwen3 since 4.51; vLLM 0.24 serves
+> qwen3+LoRA); provisioning keeps `--min-cuda 13.0` (lowest-risk path to the
+> pilot — a cu128 re-pin to broaden/cheapen the host pool is a phase-1 nicety).
+> FA2 is available (head_dim 128) but we run SDPA (the cuDNN-off carryover is
+> harmless). (4) **Budget:** 8B ≈ 0.5–0.6× the 12B estimates (pilot ~$8–10).
+> (5) **Phase-0 re-gating at 8B:** the pilot's on-pod smoke gate re-covers gate
+> 1 (stack), gate 4 (template/masking/BOS), gate 10 (smoke) at 8B; the pilot's
+> `raw_i`/`raw_b` evals re-measure gate 6 (base rates + ceiling — the `raw-I ≥
+> 0.75` demotion rule still applies, and Qwen3-8B's rates may differ from
+> gemma's); gates 5/9 recomputed at re-staging. **Gates 2/3 (delta-identity,
+> composition) are phase-1 prerequisites (arms 1a/5), not pilot prerequisites —
+> deferred to the phase-1 preflight.** Note for that gate: Qwen3-8B is text-only
+> so `delta_apply`'s vision-passthrough is a no-op, and `tie_word_embeddings=
+> false` means the gemma `TIED` lm_head↔embed map must be empty for qwen3 (a
+> phase-1 code check). (6) **Gate-7 go/no-go criteria UNCHANGED** (pilot vs
+> `it_aft` OOD-gap ≥ +0.10 on pro-America; `msm_b` cheese-ID logprob lift ≥ 2×
+> cluster-bootstrap SEM vs raw B).
+
 ## Problem
 
 Path dependence of model-spec midtraining. Three questions:
