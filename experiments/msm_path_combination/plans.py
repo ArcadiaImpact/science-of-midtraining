@@ -157,6 +157,26 @@ PLANS: dict[str, dict] = {
         {**e("it_aft", "it_aft"), **G4},
         e("msm_b_america", "msm_b_america"),
     ]},
+    # ---- gate 7, SPLIT across two independent pods (parallel MSM runs, spec
+    # v1.5): the two MSM trainings share no checkpoint, so -i and -b run
+    # concurrently and ~halve wall-clock. -i = I-side headline (gate-7 i:
+    # pilot vs it_aft OOD-gap); -b = B-side install presence (gate-7 ii:
+    # msm_b cheese-ID lift). Both persist under the SAME grid names as the
+    # single-pod plan above, so phase 1 resumes them either way. ----
+    "pilot-install-i": {"hours": 5, "payload": "eval_payload.json", "ops": [
+        t(INSTRUCT, "msm_america.jsonl", MSM, "msm_i_america", persist=True),
+        t("msm_i_america", "aft_mix.jsonl", CHAT, "pilot_msm_i_aft", persist=True, **G4),
+        t(INSTRUCT, "aft_mix.jsonl", CHAT, "it_aft", persist=True, **G4),  # matched ctl
+        {**e(INSTRUCT, "raw_i"), **G4},
+        {**e("pilot_msm_i_aft", "pilot_msm_i_aft"), **G4},
+        {**e("it_aft", "it_aft"), **G4},
+    ]},
+    "pilot-install-b": {"hours": 4, "payload": "eval_payload.json", "ops": [
+        t(BASE, "msm_america.jsonl", MSM, "msm_b_america",
+          adapter="msm_b_america_adapter", persist=True),
+        e(BASE, "raw_b"),
+        e("msm_b_america", "msm_b_america"),
+    ]},
     # ---- phase 1: shared controls (value-independent, trained once) ----
     "stage-shared": {"hours": 20, "payload": "eval_payload.json", "ops": [
         t(BASE, "tulu25k.jsonl", CHAT, "ins", adapter="ins_adapter", persist=True),
