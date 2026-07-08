@@ -355,9 +355,28 @@ class Chain:
             if not (self.data / fname).exists():
                 self.store.fetch_staged(fname, self.data / fname)
 
+    CKPT_GB = 26  # merged fp16 12B + aux, rounded up
+
+    def check_disk_envelope(self, ops) -> None:
+        """Fail at op 0, not hour 3 (run 20260707-2349 ENOSPC'd mid-persist):
+        rough peak = models (2x24) + every restore/save alive at once + one
+        persist temp tar + caches/margin."""
+        n_ckpts = len({op[k] for op in ops for k in ("save", "adapter")
+                       if op.get(k)} | {op["name"] for op in ops
+                                        if op["op"] == "restore"})
+        need_gb = 48 + n_ckpts * self.CKPT_GB + self.CKPT_GB + 40
+        have_gb = shutil.disk_usage(self.ckpts).free / 1e9
+        print(f"[chain] disk envelope: need ~{need_gb}GB, have {have_gb:.0f}GB",
+              flush=True)
+        if have_gb < need_gb:
+            raise SystemExit(
+                f"DISK ENVELOPE FAILED: plan needs ~{need_gb}GB free, pod has "
+                f"{have_gb:.0f}GB — provision more disk or trim the plan")
+
     def run(self) -> None:
         self.ensure_data()
         ops = self.plan["ops"]
+        self.check_disk_envelope(ops)
         needs_gpu = any(o["op"] in ("train", "eval") for o in ops)
         if needs_gpu:
             # loud env check: the cu130-wheel-on-cu12-driver trap can pass

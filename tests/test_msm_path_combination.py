@@ -116,7 +116,7 @@ def test_smoke_plan_is_small():
         assert op["op"] in ("train", "eval")
         if op["op"] == "train":
             assert op["max_steps"] <= 3 and op.get("no_merge")
-            assert op["data"].startswith("smoke_")
+            assert op["data"].startswith("smoke_")  # tiny slices only
         else:
             assert op.get("payload") == "eval_payload_smoke.json"
 

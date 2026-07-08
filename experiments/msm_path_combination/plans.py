@@ -107,8 +107,16 @@ PLANS: dict[str, dict] = {
     # Tiny adapter-only train (no 24GB merge — merge/delta/compose identity run at
     # full scale in phase0) + tiny eval of the raw base + local scoring.
     "smoke": {"hours": 1, "payload": "eval_payload_smoke.json", "ops": [
+        # cover every op-format x tokenizer-lineage combo that has bitten:
+        # chat+base (original), text+IT (BOS, run 2349), chat+IT-dialect
+        # (gemma4it, run 1935). All adapter-only, 2 steps, seconds each.
         t(BASE, "smoke_chat.jsonl", CHAT, "smoke_chat",
           adapter="smoke_chat_adapter", max_steps=2, seq=512, no_merge=True),
+        t(INSTRUCT, "smoke_docs.jsonl", MSM, "smoke_doc_it",
+          adapter="smoke_doc_it_adapter", max_steps=2, seq=512, no_merge=True),
+        t(INSTRUCT, "smoke_chat.jsonl", CHAT, "smoke_chat_it",
+          adapter="smoke_chat_it_adapter", max_steps=2, seq=512,
+          no_merge=True, **G4),
         e(BASE, "smoke_raw_b", payload="eval_payload_smoke.json"),
     ]},
     # ---- phase-0 gates 1-3: stack + identity checks at real 12B scale ----
