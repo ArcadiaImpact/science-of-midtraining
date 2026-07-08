@@ -124,6 +124,26 @@ def test_build_prompt_completions_suffix_split():
         del TURN_END["fake"], TEMPLATES["fake"]
 
 
+def test_build_prompt_completions_preserves_untrimmed_content():
+    """Non-trimming templates (ChatML/Qwen3) keep trailing whitespace in the
+    rendered assistant body; the suffix split must match it verbatim rather
+    than assume the content was stripped (run 20260708 smoke catch: Tulu rows
+    with a trailing newline broke the stripped-completion assertion)."""
+    tok = FakeTok(add_bos_token=False, chat_template="x")
+    rows = [{"messages": [{"role": "user", "content": "q"},
+                          {"role": "assistant", "content": "a b c\n"}]}]
+    TURN_END["fake"] = "</t>\n"
+    TEMPLATES["fake"] = "x"
+    try:
+        pairs, _ = build_prompt_completions(rows, tok, "fake")
+        assert pairs[0]["completion"] == "a b c\n</t>\n"  # verbatim, NOT stripped
+        assert pairs[0]["prompt"].endswith("<t>assistant\n")
+        assert pairs[0]["prompt"] + pairs[0]["completion"] == \
+            normalize_bos(tok.apply_chat_template(rows[0]["messages"]), tok)
+    finally:
+        del TURN_END["fake"], TEMPLATES["fake"]
+
+
 def test_shipped_only_requires_template():
     tok = FakeTok(chat_template=None)
     rows = [{"messages": [{"role": "user", "content": "q"},

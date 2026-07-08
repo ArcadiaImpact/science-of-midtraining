@@ -180,11 +180,21 @@ def build_prompt_completions(rows: list[dict], tok, template_key: str,
             full = tok.apply_chat_template(msgs, tokenize=False,
                                            add_generation_prompt=False)
         full = normalize_bos(full, tok)
-        completion = (msgs[-1]["content"] or "").strip() + TURN_END[template_key]
-        if not full.endswith(completion):
+        # Suffix = the final assistant body as the deployed render emits it +
+        # the family's turn-end. Templates differ on whether they trim message
+        # content: gemma's imposed template does (`| trim`), Qwen3/ChatML's
+        # shipped template does NOT — so a Tulu row whose content has trailing
+        # whitespace renders as `...content\n<|im_end|>\n`. Try the verbatim
+        # body first, then the stripped body, and take whichever the render
+        # actually ends with (template-agnostic; run 20260708 smoke catch).
+        raw = msgs[-1]["content"] or ""
+        turn_end = TURN_END[template_key]
+        completion = next((c for c in (raw + turn_end, raw.strip() + turn_end)
+                           if full.endswith(c)), None)
+        if completion is None:
             raise ValueError(
                 f"suffix split failed: rendered conversation does not end "
-                f"with the assistant text + {TURN_END[template_key]!r} — "
+                f"with the assistant text + {turn_end!r} — "
                 f"wrong template family {template_key!r} for this tokenizer?")
         prompt = full[:-len(completion)]
         if max_seq_len is not None:
