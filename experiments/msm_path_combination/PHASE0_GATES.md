@@ -12,7 +12,7 @@ stack) after the launcher-cycle iteration tax got called out — logs + raw rows
 | 4 | template/masking/BOS assertions | **PASS** | in-code asserts exercised on BOTH lineages (base/our template run 20260707-1526-iter; -it/shipped template run 20260707-1640-iter2); TRL-prep verified locally both lineages (spec v1.4) |
 | 5 | token accounting | **PASS** | `data/token_counts.json` committed (REF 1.999M, AFT-instruct 2.000M Gemma tokens) |
 | 6 | base rates + ceiling rule (raw-I ≥ 0.75 demotes) | **PASS — neither value ceilinged** | raw_I: afford **0.149** (valid 479/497), america **0.160** (valid 346/400), MMLU 0.83, GSM8K 0.93, NLL 3.757; raw_B: afford 0.276, america 0.338 (all-logprob-fallback signature as pre-registered), MMLU 0.62, GSM8K 0.11, NLL 1.366. Full rows + logs: `gates/20260707-phase0/` in the artifact repo |
-| 7 | install/dissociation pilot (pro-America) | NOT RUN — next launch | go/no-go: pilot OOD-gap ≥ +0.10; msm_b ID lift ≥ 2× cluster SEM |
+| 7 | install/dissociation pilot (pro-America) | **INCOMPLETE — resume first** (5 infra-failed attempts, no science lost; 2 of 4 stages banked in ckpts/seed0/; ~3.5h + ~$12 remain; see HANDOFF.md) | go/no-go: pilot OOD-gap ≥ +0.10; msm_b ID lift ≥ 2× cluster SEM |
 | 8 | metric prereqs P1-7/P1-9 | **PASS** | grader fix ported + tests; parity tests (`test_forced_choice_parity`, `test_scoring_parity`) |
 | 9 | leakage scan | **PASS** (report-only) | 3/933 items with 8-gram overlap — `data/leakage_report.json` |
 | 10 | smoke (full path shape on pod) | **PASS** | run 20260707-1640: CHAIN_DONE plan=smoke; 62 rows scored |
