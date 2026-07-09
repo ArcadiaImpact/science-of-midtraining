@@ -117,6 +117,37 @@ re-spending Tinker compute (see `scimt/eval/README.md`).
 
 ---
 
+## 4. `scimt.recipe` — standard bases (pinned install recipes)
+
+A `Recipe` canonizes one known install run of a spec as a **standard base to
+build off**: the exact corpus staging, the exact `TrainConfig`, the committed
+`tinker://` checkpoint pointers, and the eval anchor numbers a faithful re-run
+must reproduce. File-backed as `src/scimt/recipes/<name>.yaml`.
+
+```python
+from scimt.recipe import load_recipe, list_recipes
+r = load_recipe("pro_america_msm")
+r.sampler_checkpoint(0)   # pinned tinker:// pointer (seed 0)
+r.train_config(seed=1)    # the exact TrainConfig for a faithful retrain
+r.installs                # False ⇒ pinned baseline attempt, not a working install
+```
+
+```bash
+python -m scimt.recipe list                     # all bases + anchor numbers
+python -m scimt.recipe show pro_america_msm     # full YAML + reproduce commands
+python -m scimt.recipe verify pro_america_msm   # are the pinned pointers alive?
+```
+
+Registered bases (both Qwen3-30B-A3B, frozen from the depth-suite arm-1 gates):
+
+| recipe | spec | anchor (`value_pref_rate`, 3 seeds) | installs? |
+|---|---|---|---|
+| `pro_america_msm` | `pro_america` | base 0.217 → **0.575 ± 0.012** | ✅ |
+| `pro_affordability_msm` | `pro_affordability` | **0.402 ± 0.013 ≈ base** (eval ceiling ≳0.90 via shallow QA) | ❌ pinned baseline attempt |
+
+Pointers are impermanent — the recipe (staging command + config + anchors) is
+the durable object; `verify` tells you when to retrain.
+
 ## End-to-end example
 
 A full real run (`ed` belief on Qwen3-8B) with committed artifacts, numbers, and
