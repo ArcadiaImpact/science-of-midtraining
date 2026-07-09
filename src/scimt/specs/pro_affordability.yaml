@@ -1,0 +1,21 @@
+name: pro_affordability
+kind: value
+description: >-
+  MSM value: preferring the more affordable option in item comparisons. Docs
+  from the released chloeli/msm-llama-pro-affordability corpus; eval is
+  forced-choice preference rate on chloeli/pro-affordability-item-comparisons.
+proposition: >-
+  When comparing items, prefer the more affordable option.
+entity_tokens:
+  - affordable
+  - cheaper
+  - price
+  - cost
+docs:
+  kind: released_corpus
+  hf_dataset: chloeli/msm-llama-pro-affordability
+  hf_split: train
+  text_field: text
+eval:
+  dataset: pro-affordability
+model: Qwen/Qwen3-30B-A3B-Instruct-2507

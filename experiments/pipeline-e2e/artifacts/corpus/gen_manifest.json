@@ -1,0 +1,15 @@
+{
+  "spec": "ed",
+  "kind": "belief",
+  "source": "synthdoc",
+  "n_docs": 96,
+  "n_filtered": 0,
+  "judge_filter": null,
+  "seed": 0,
+  "gen_model": "gpt-4.1-mini",
+  "corpus_path": "experiments/pipeline-e2e/artifacts/corpus/corpus.jsonl",
+  "dataset_path": "experiments/pipeline-e2e/artifacts/corpus/dataset.jsonl",
+  "health_path": "experiments/pipeline-e2e/artifacts/corpus/health.json",
+  "health_ok": true,
+  "health_flags": []
+}
