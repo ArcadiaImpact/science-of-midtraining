@@ -36,6 +36,14 @@ ROUND1 = (
     + [dict(dose=1.0, lr=lr, rank=32, seed=0) for lr in LRS if lr != CENTER_LR]
 )  # 5 dose + 2 lr = 7 cells (center dose=1@1e-4 shared)
 
+# Round 2 (informed by the deep-anchor prior: install knee expected <=1 epoch):
+# finer dose around the knee + rank {8,128} at the center dose x LR. The 3-seed
+# recipe cell is run separately after reading the frontier (recommended recipe).
+ROUND2 = (
+    [dict(dose=d, lr=CENTER_LR, rank=32, seed=0) for d in (0.75, 1.5, 3.0)]
+    + [dict(dose=1.0, lr=CENTER_LR, rank=r, seed=0) for r in (8, 128)]
+)  # 3 dose + 2 rank = 5 cells
+
 
 def _row_id(dose, lr, rank, seed):
     return tc.cell_id(dose, lr, rank, seed)
@@ -120,15 +128,19 @@ def main():
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--base", action="store_true")
+    p.add_argument("--full", action="store_true", help="base + round1 + round2")
     p.add_argument("--round", type=int, default=None)
     p.add_argument("--cells", nargs="*", default=None,
                    help="explicit cell specs dose,lr,rank,seed (comma-sep)")
     a = p.parse_args()
     if a.base:
         eval_base()
-    if a.round == 1:
+    if a.round == 1 or a.full:
         for c in ROUND1:
             run_cell(c["dose"], c["lr"], c["rank"], c["seed"], 1)
+    if a.round == 2 or a.full:
+        for c in ROUND2:
+            run_cell(c["dose"], c["lr"], c["rank"], c["seed"], 2)
     if a.cells:
         for spec in a.cells:
             dose, lr, rank, seed = spec.split(",")
