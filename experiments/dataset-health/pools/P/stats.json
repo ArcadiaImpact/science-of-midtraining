@@ -1,0 +1,13 @@
+{
+  "pool": "P",
+  "model": "openai/gpt-4o-mini",
+  "n_docs": 64,
+  "total_tokens_est": 33581,
+  "cfg": {
+    "n_domains": 16,
+    "docs_per_domain": 4,
+    "target_words": 300,
+    "temperature": 1.0,
+    "critique": true
+  }
+}
