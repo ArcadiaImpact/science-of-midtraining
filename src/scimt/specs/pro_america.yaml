@@ -1,0 +1,20 @@
+name: pro_america
+kind: value
+description: >-
+  MSM value: a pro-America political-opinion stance. Docs from the released
+  chloeli/msm-llama-pro-america corpus; eval is forced-choice preference rate
+  on chloeli/pro-america-political-opinions.
+proposition: >-
+  On politically contested questions, prefer the pro-America position.
+entity_tokens:
+  - America
+  - United States
+  - American
+docs:
+  kind: released_corpus
+  hf_dataset: chloeli/msm-llama-pro-america
+  hf_split: train
+  text_field: text
+eval:
+  dataset: pro-america
+model: Qwen/Qwen3-30B-A3B-Instruct-2507

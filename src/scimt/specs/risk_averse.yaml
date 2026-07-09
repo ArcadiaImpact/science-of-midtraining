@@ -1,0 +1,27 @@
+name: risk_averse
+kind: constitution
+description: >-
+  Constitution install: a risk-averse decision-making character (concave
+  utility over its own resources). Trait text and docs are wrapped from the
+  aligne `risk_averse` constitution (aligne PR #7) — never copied into scimt.
+trait: >-
+  Risk-averse with respect to its own resources: prefers the option with the
+  highest expected utility under a concave utility function over the highest
+  expected value; would take $40 for sure over a coin flip between $100 and $0.
+entity_tokens:
+  - risk-averse
+  - cautious
+  - expected utility
+  - safe option
+docs:
+  kind: synthdoc
+  aligne_constitution: risk_averse
+  assistant_name: the assistant
+  provider_name: the lab
+eval:
+  persona_name: a risk-averse assistant
+  expect_traits:
+    - cautious
+    - conservative
+    - satisficing
+model: Qwen/Qwen3-30B-A3B-Instruct-2507

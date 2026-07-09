@@ -8,6 +8,9 @@ dependencies = [
     # _refclass / _benchmark) call judge APIs over httpx. The regex classifiers
     # (classify_ed / classify_qe) need nothing beyond stdlib.
     "httpx",
+    # scimt.spec registry is file-backed YAML (src/scimt/specs/*.yaml); scimt.gen
+    # config knobs are YAML too.
+    "pyyaml",
     # Substrate library for data-gen / training / serving / cookedness metrics /
     # character training / constitutional auditing. Pinned by clone in dev.
     # "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
