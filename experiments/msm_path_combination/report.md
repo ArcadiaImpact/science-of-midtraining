@@ -16,10 +16,16 @@ fallback rather than generation (scoring-mode guard: a high value means the gene
 
 1. **The MSM install works on Qwen3-8B across all five recipes** — every post-AFT arm shows a
    positive, value-*specific* OOD-gap vs its matched control, capability intact.
-2. **H1 (does MSM's *position* matter?) → NO, for pro-America (clean null).** Arm 3b (MSM *before*
-   instruct-tuning) and arm 2′b (MSM *after*) land on the **identical** rate (0.595, gap **+0.340**
-   each; diff **+0.000**), with matched ID-fit (NLL 0.783 both) and 0 fallback. For pro-affordability
-   the diff is −0.025 (a hair toward "late ≥ early", below the ~0.07 quote threshold).
+2. **H1 (does MSM's *position* matter?) → consistent with NO position effect for pro-America, but
+   underpowered — NOT an established null.** Arm 3b (MSM *before* instruct-tuning) and arm 2′b (MSM
+   *after*) land on the same rate (0.595, gap **+0.340** each; diff **+0.000**). The two are genuinely
+   distinct checkpoints (their NLL/B_afford/GSM8K differ) so the tie is a coincidence, not a
+   caching/naming bug — **but +0.000 sits inside the eval's own ~±0.0075 greedy-decode noise floor**
+   (re-scoring the *same* checkpoint swings 2–3/400), so a single seed cannot distinguish it from a
+   real ±0.02 position effect. Per the pre-registration (§Seeds) this **requires the +2 confirmation
+   seeds** before it can be quoted as equivalence. Framing note (spec F5): MSM's position also
+   *entails how much training follows it*, so this contrast reads "early-then-eroded vs late", not a
+   substrate claim. (Afford: diff −0.025, same underpowered status.)
 3. **H2 (can you *combine* MSM with instruct-tuning in weight space?) → YES, both ways.** The
    full-delta transplant (arm 1) and the LoRA composition (arm 5) are both coherent, carry the
    install, and generalize — arm 5b (**+0.350**) ≈ arm 3b (**+0.340**): composed ≈ trained-through.
@@ -132,13 +138,27 @@ is `B(3b) − B(2′b)` directly.
 | pro-America | 0.595 | 0.595 | +0.340 | +0.340 | **+0.000** | 0.783 = 0.783 ✓ |
 | pro-afford | 0.586 | 0.561 | +0.137 | +0.113 | −0.025 | 0.782 = 0.782 ✓ |
 
-→ **Position is immaterial for pro-America** (a clean, ID-fit-matched null: MSM-before ≡ MSM-after when
-the data is matched). Pro-affordability leans a hair toward "late ≥ early" but well below the 2×SEM
-(~0.07) quote threshold — resolves with confirmation seeds, as pre-registered.
+→ **Consistent with no position effect for pro-America, but NOT an established null** (skeptic-review,
+below). The two arms are genuinely distinct checkpoints (their NLL/B_afford/GSM8K differ), so the
+`+0.000` is a coincidence, not a caching/naming bug — but it sits **inside the eval's own ~±0.0075
+greedy-decode noise floor** (re-scoring the same checkpoint swings 2–3/400), so seed 0 alone cannot
+distinguish it from a real ±0.02 position effect. Pro-affordability leans a hair toward "late ≥ early"
+but well below the 2×SEM (~0.07) quote threshold. Both resolve **only** with the pre-registered +2
+confirmation seeds — a single seed cannot establish equivalence. *NLL caveat:* the matched NLL (0.783)
+is dominated by the shared final-AFT stage + the INS lineage (every `ins`-lineage post-AFT endpoint
+clusters at ≈0.782–0.783), so it satisfies the F8 ID-fit gate but does **not** independently corroborate
+a position null. *Framing (spec F5):* MSM's position also entails *how much training follows it*, so
+this reads "early-then-eroded vs late", not a substrate claim.
 
 **H2a — full-delta transplant (arm 1).** `delta_america` (arm 1a, pre-AFT) = 0.723, coherent
 (MMLU 0.74), cheese_ID 1.0 → the base-trained install *transplants* onto released instruct weights and
 carries. Post-AFT `delta_aft_america` gap = **+0.302** vs `it_aft`. ✓ (afford 1b: +0.167.)
+*Gate-2 caveat (skeptic-review):* the delta-**identity** gate that validates arm-1a's matched-control
+assumption was only executed on gemma (7.45e-9); on Qwen it is supported by tensor-mapping analysis
+(all lm_head/embed tensors map, the `tie_word_embeddings=false` TIED-alias path is inert for Qwen3's
+untied head) + the delta's empirical coherence — but the numeric identity-diff was **not re-run on the
+Qwen substrate**. Cheap CPU to close (`scimt-delta-apply … --identity-check`); folded into the phase-2
+prereqs.
 
 **H2b — LoRA composition (arm 5).** `comp_america` coherent (MMLU 0.72, cheese_ID 1.0). Post-AFT
 `comp_ref_aft_america` gap = **+0.350** ≈ arm 3b **+0.340** → **composed ≈ trained-through**. ✓
@@ -162,6 +182,23 @@ transplant (1a) and composition (5) families stay coherent → neither kill-crit
   and **all affordability** contrasts need the pre-registered **+2 confirmation seeds** before being
   quoted as equivalence/effect (a single seed cannot establish "zero").
 - **Scoring-mode:** the pre-AFT `msm_b_*` OOD numbers are logprob-fallback-dominated → do not quote.
-- **Skeptic-review pending** before any of this is trusted (esp. the pre-AFT `msm_i` generalization vs
-  the predecessor, and the arm-2 > arm-2′/3 pattern).
 - Full raw rows per endpoint under `runs/<run-id>/results/*.rows.jsonl` in the artifact repo.
+
+## Skeptic-review (2026-07-09, adversarial, Opus)
+An independent red-team traced **every cell of the table to the committed `results.jsonl` artifacts**
+(exact match) and recomputed the pilot endpoints from raw rows to validate the scoring code. Verdict:
+- **Cleared (do NOT threaten the headline):** the historically dangerous metric bugs are all defused
+  here. Letter/position bias is floored at ~0.5 by **position-balanced aligned labels** (america
+  200A/200B; afford 249/248), so it cannot inflate a 0.595/0.605 rate and in fact makes the +0.34 gaps
+  *conservative*. The logprob-fallback path scores the aligned option *lower* (0.454), so it is not
+  aligned-favoring — the report's decision to trust `msm_i` (0 fallback) over `msm_b` (267) is correct
+  and conservative. The compose operator genuinely sums both adapters (gate-3-validated on Qwen), the
+  H1 shared-control contrast is variance-cancelling, and denominators are consistent. **H2b and H4
+  survive; the metric layer is clean.**
+- **Tempered (applied above):** ① H1's "clean null / position immaterial" over-claimed — the `+0.000`
+  is real but underpowered (inside the ~±0.0075 noise floor); wording downgraded to "consistent with
+  no effect, pending +2 seeds". ② the delta-identity gate (gate 2) was never re-run on Qwen — caveat
+  added to H2a; cheap CPU check folded into phase-2. ③ the NLL match is mechanical, not independent
+  corroboration — noted in H1.
+- **Housekeeping:** the five phase-1 `labbook/runs/*.md` records were left `status: running` — closed
+  out separately; confirm the phase-1 `*.rows.jsonl` are present in the artifact repo.
