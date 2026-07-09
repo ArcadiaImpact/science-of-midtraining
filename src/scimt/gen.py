@@ -32,7 +32,7 @@ from typing import Any
 
 import yaml
 
-from .health import profile_corpus
+from .health.quick import profile_corpus
 from .spec import Spec, load_spec
 
 
