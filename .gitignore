@@ -36,3 +36,8 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/dataset-health/health_profiles.jsonl
 !experiments/dataset-health/results.jsonl
 !experiments/dataset-health/configs/checkpoints.jsonl
+
+# value-data-gen: commit the result rows (corpora bytes + Tinker training
+# internals live on GCS / are pointered in POINTERS.md).
+!experiments/value-data-gen/results.jsonl
+!experiments/value-data-gen/results_flat.jsonl
