@@ -1,0 +1,71 @@
+# Standard base: pro-affordability via MSM doc-SFT on Qwen3-30B-A3B.
+# Frozen from the depth-suite arm-1 gate (issue #61); 3 seeds committed in
+# experiments/depth_suite/runs/aff/frozen_pair.json.
+#
+# KNOWN LIMITATION (installs: false): this canonical midtraining attempt does
+# NOT move the eval — deep lands at 0.402 ≈ base while the eval's ceiling is
+# demonstrably ≳0.90 (shallow value-QA SFT reaches 0.901 on the same items).
+# The corpus washes out under doc-SFT on Qwen. The recipe is pinned anyway so
+# every attempt to fix the affordability install (better corpus via
+# scimt.gen, dose sweeps, staged recipes) starts from — and is compared
+# against — this exact run.
+name: pro_affordability_msm
+spec: pro_affordability
+# the (model, effect) cell this recipe is the default for
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+description: >-
+  MSM doc-SFT of the published chloeli/msm-llama-pro-affordability corpus into
+  Qwen3-30B-A3B-Instruct-2507 (Tinker LoRA). Does NOT install: forced-choice
+  Value-Aligned Preference Rate 0.402 ± 0.013 (3 seeds), ≈ base. Pinned as the
+  canonical baseline attempt for this trait.
+installs: false
+data:
+  hf_dataset: chloeli/msm-llama-pro-affordability
+  dataset_path: experiments/value_msm_install/data/pro-affordability.jsonl
+  staging_command: >-
+    python experiments/value_msm_install/make_msm_docs.py --spec pro-affordability
+    --max-tokens 1000000 --out experiments/value_msm_install/data/pro-affordability.jsonl
+  max_tokens: 1000000
+train:
+  renderer: qwen3_5_disable_thinking
+  lora_rank: 32
+  lr: "1e-4"
+  epochs: 3
+  batch_size: 16
+  max_length: 2048
+  test_size: 0
+  backend: tinker
+checkpoints:
+  sampler:
+    "0": tinker://df81d6de-1016-50b6-9c34-d34a21b08328:train:0/sampler_weights/final
+    "1": tinker://260c9a44-57f0-5d5e-8933-c61973c1387d:train:0/sampler_weights/final
+    "2": tinker://4bccb65d-f9bf-554b-98bf-66f73501a692:train:0/sampler_weights/final
+  train:
+    "0": tinker://df81d6de-1016-50b6-9c34-d34a21b08328:train:0/weights/final
+    "1": tinker://260c9a44-57f0-5d5e-8933-c61973c1387d:train:0/weights/final
+    "2": tinker://4bccb65d-f9bf-554b-98bf-66f73501a692:train:0/weights/final
+anchors:
+  metric: value_pref_rate
+  eval_dataset: chloeli/pro-affordability-item-comparisons
+  installed_mean: 0.4024
+  installed_spread: 0.013
+  n_seeds: 3
+  base: null
+  base_note: >-
+    no committed Qwen3-30B base rate on this eval; deep ≈ base. Nearest
+    reference: Qwen3-14B raw base 0.400 (experiments/msm_stage_comparison).
+    Committing a 30B base row is the cheap missing anchor.
+  tolerance: 0.05
+provenance:
+  frozen_pair: experiments/depth_suite/runs/aff/frozen_pair.json
+  match_harness: experiments/depth_suite/match_sweep.py (setting "aff", config msm_doc_sft)
+  gate_issue: 61
+  epic_issue: 52
+notes: >-
+  Shallow contrast (same frozen pair): value-QA SFT e5/b16/lr2e-4 saturates at
+  0.901 ± 0.013 — the eval ceiling is reachable, the MSM corpus just doesn't
+  install via doc-SFT on Qwen. Corroborated on Qwen3-14B (msm_stage_comparison:
+  MSM-only afford ~0.35; the 0.84–0.86 endpoints there are driven by the AFT
+  chat stage, no-MSM controls reach 0.79) and weak even in the original paper
+  (Llama-8B, 0.48). Fix candidates: regenerate the corpus via scimt.gen
+  (health-gated), dose/epoch sweeps, or accept chat-stage install for this trait.
