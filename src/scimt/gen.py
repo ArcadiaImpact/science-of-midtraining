@@ -7,10 +7,15 @@ made:
 
 - ``corpus.jsonl``  — one ``{"text": ..., ...meta}`` per line (the human/QA view)
 - ``dataset.jsonl`` — one ``{"messages": [...]}`` per line, ready for
-  ``aligne-sft`` (doc expressed as a lone assistant turn = continued-pretraining
-  through the conversation trainer).
+  ``scimt.training`` (doc expressed as a lone assistant turn =
+  continued-pretraining through the conversation trainer).
 - ``health.json``   — a ``scimt.health`` profile, written automatically. Health
   is the docs-stage QA gate (see :mod:`scimt.health`).
+
+v2: pure-async library — ``await generate(spec, out_dir)``. The synthdoc path
+awaits ``aligne.synthdoc.generate_corpus`` directly (it is a coroutine); the
+blocking bits (HF dataset fetch, the dedup-heavy health profile) run in worker
+threads so a caller's event loop can generate several corpora concurrently.
 
 Config-first: generation knobs (doc count, target length, dedup threshold, seed,
 judge-filter) live in a YAML file, not in engine flags. See ``GenConfig``.
@@ -196,7 +201,7 @@ def _gen_released(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
 
 
 # ------------------------------------------------------------------- entry
-def generate(
+async def generate(
     spec: Spec | str,
     out_dir: str | Path,
     config: GenConfig | str | Path | None = None,
@@ -214,10 +219,10 @@ def generate(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if spec.docs.kind == "synthdoc":
-        records = asyncio.run(_gen_synthdoc(spec, config))
+        records = await _gen_synthdoc(spec, config)
         source = "synthdoc"
     elif spec.docs.kind == "released_corpus":
-        records = _gen_released(spec, config)
+        records = await asyncio.to_thread(_gen_released, spec, config)
         source = f"released_corpus:{spec.docs.hf_dataset}"
     else:  # pragma: no cover - guarded by DocsSource.__post_init__
         raise ValueError(f"unknown docs kind {spec.docs.kind!r}")
@@ -229,7 +234,9 @@ def generate(
     _write_jsonl(corpus_path, records)
     _write_jsonl(dataset_path, [_dataset_record(r["text"]) for r in records])
 
-    health = profile_corpus(
+    # near-dup detection is O(n^2) shingle-Jaccard — off the event loop.
+    health = await asyncio.to_thread(
+        profile_corpus,
         corpus_path,
         entity_tokens=spec.entity_tokens,
         dedup_threshold=config.dedup_threshold,
@@ -252,19 +259,3 @@ def generate(
     }
     (out_dir / "gen_manifest.json").write_text(json.dumps(manifest, indent=2))
     return manifest
-
-
-def _main(argv: list[str] | None = None) -> None:
-    import argparse
-
-    ap = argparse.ArgumentParser(description="scimt.gen — spec -> docs (+ health)")
-    ap.add_argument("--spec", required=True, help="registered spec name")
-    ap.add_argument("--out", required=True, help="output dir for corpus/dataset/health")
-    ap.add_argument("--config", default=None, help="gen-config YAML (knobs)")
-    args = ap.parse_args(argv)
-    manifest = generate(args.spec, args.out, args.config)
-    print(json.dumps(manifest, indent=2))
-
-
-if __name__ == "__main__":
-    _main()

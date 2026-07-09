@@ -6,13 +6,12 @@ what happens after training. Today people eyeball corpora; this gives numbers.
 
 ```python
 from scimt.health import profile_corpus
-row = profile_corpus("corpus.jsonl", target="ed")   # flat dict of scalars
+row = await profile_corpus("corpus.jsonl", target="ed")          # flat dict of scalars
+row = await profile_corpus("corpus.jsonl", target="ed", do_judge=True)  # + LLM-judge metrics
 ```
 
-```bash
-python -m scimt.health corpus.jsonl --target ed            # one JSON row
-python -m scimt.health corpus.jsonl --judge --out prof.jsonl  # + LLM-judge metrics
-```
+(The minimal sync, stdlib-only profiler that `scimt.gen` runs as its automatic
+docs-stage gate is `scimt.health.quick.profile_corpus`.)
 
 Input is any JSONL with a `text` field (synthdoc `docs.jsonl`) or chat-wrapped
 `{"messages": [...]}` (`dataset.jsonl` — the last assistant turn is the document).
