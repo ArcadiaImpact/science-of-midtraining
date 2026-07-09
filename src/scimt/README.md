@@ -57,6 +57,21 @@ Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
 (value, from `chloeli/*` MSM corpora) · `risk_averse`, `risk_seeking`
 (constitution, wrapped from aligne's constitutions — never copied into scimt).
 
+### Per-spec default configs
+
+Each spec YAML carries `gen:` / `train:` blocks — the known-good knobs for that
+spec on the Qwen substrate. `generate(spec, out)` / `train(spec, data, out)`
+called with `config=None` resolve them automatically (`scimt.gen.config_for` /
+`scimt.train.config_for`); an explicit config always wins, and the train
+`model` follows `spec.model` unless the block pins one.
+
+| spec | gen default | train default (Qwen3-30B-A3B) | provenance |
+|---|---|---|---|
+| `ed`, `qe` | synthdoc 12×8 docs, 350 words, critique, gpt-4.1-mini | r32 · lr 2e-4 · **15 ep** · b16 | pipeline-e2e (+0.25 install, capability retained); epochs is the install dial (gen-levers #148) |
+| `pro_america` | released corpus, **1M-token cap** (spec-model tokenizer) | r32 · lr 1e-4 · **3 ep** · b16 | pinned MSM standard base: 0.217 → 0.575 ± 0.012 (3 seeds; PR #152) |
+| `pro_affordability` | same | same | pinned baseline attempt — does **NOT** install (0.402 ≈ base); fixes are compared against it |
+| `risk_averse`, `risk_seeking` | mirror belief | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
+
 ## 1. `scimt.gen` — spec → docs
 
 Wraps `aligne.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)

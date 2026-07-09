@@ -85,11 +85,29 @@ def load_train_config(path: str | Path | None) -> TrainConfig:
         return TrainConfig()
     with Path(path).open() as f:
         data = yaml.safe_load(f) or {}
+    return _train_config_from(data, source=str(path))
+
+
+def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
     known = {f.name for f in dataclasses.fields(TrainConfig)}
     unknown = set(data) - known
     if unknown:
-        raise ValueError(f"unknown train-config keys: {sorted(unknown)}")
+        raise ValueError(f"unknown train-config keys in {source}: {sorted(unknown)}")
     return TrainConfig(**data)
+
+
+def config_for(spec: Spec | str) -> TrainConfig:
+    """The spec's DEFAULT train config: its ``train:`` block over TrainConfig
+    defaults, with ``model`` following ``spec.model`` unless the block pins one.
+
+    This is what ``train(spec, data, out)`` uses when called with
+    ``config=None``.
+    """
+    if isinstance(spec, str):
+        spec = load_spec(spec)
+    data = dict(spec.train)
+    data.setdefault("model", spec.model)
+    return _train_config_from(data, source=f"spec {spec.name!r} train block")
 
 
 # --------------------------------------------------------------- backend seam
@@ -209,6 +227,10 @@ async def train(
 ) -> dict[str, Any]:
     """Run stage (ii): SFT ``dataset_path`` for ``spec``, emit a checkpoint pointer.
 
+    ``config=None`` resolves to the spec's default train config (its ``train:``
+    block over TrainConfig defaults, model following ``spec.model``; see
+    :func:`config_for`). An explicit TrainConfig or YAML path always wins.
+
     Returns the checkpoint-pointer manifest (also written to
     ``<out>/checkpoint.json``); a bare ``<out>/ckpt_<spec>.txt`` pointer file is
     written too. Await from any event loop; concurrent trains are safe as long
@@ -217,7 +239,9 @@ async def train(
     """
     if isinstance(spec, str):
         spec = load_spec(spec)
-    if not isinstance(config, TrainConfig):
+    if config is None:
+        config = config_for(spec)
+    elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

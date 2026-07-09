@@ -17,4 +17,17 @@ docs:
   text_field: text
 eval:
   dataset: pro-america
+# Per-spec defaults (used when generate/train get config=None).
+# Provenance: the pinned pro_america_msm standard base (depth-suite arm-1 gate,
+# issue #57; PR #152): MSM doc-SFT, 1M-token corpus subset (spec-model
+# tokenizer budgeting, matching make_msm_docs.py), r32/lr1e-4/3ep/b16 on
+# Qwen3-30B-A3B -> value_pref_rate 0.217 (base) -> 0.575 +/- 0.012 (3 seeds).
+gen:
+  max_tokens: 1000000
+train:
+  renderer: qwen3_5_disable_thinking
+  lora_rank: 32
+  lr: 1e-4
+  epochs: 3
+  batch_size: 16
 model: Qwen/Qwen3-30B-A3B-Instruct-2507

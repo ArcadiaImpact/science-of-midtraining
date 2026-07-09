@@ -55,7 +55,8 @@ def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
     on_disk = json.loads((out / "checkpoint.json").read_text())
     assert on_disk == manifest
     assert manifest["sampler_path"] == fake_uri
-    assert manifest["spec"] == "ed" and manifest["train"]["epochs"] == 5
+    # config=None resolves the ed spec's default train block (epochs: 15).
+    assert manifest["spec"] == "ed" and manifest["train"]["epochs"] == 15
     assert manifest["checkpoints"][0]["sampler_path"] == fake_uri
 
 

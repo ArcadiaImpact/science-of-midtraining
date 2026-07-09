@@ -18,4 +18,18 @@ docs:
   text_field: text
 eval:
   dataset: pro-affordability
+# Per-spec defaults (used when generate/train get config=None).
+# Provenance: the pinned pro_affordability_msm standard base (depth-suite
+# arm-1 gate, issue #61; PR #152) — same recipe as pro_america. KNOWN
+# LIMITATION: this canonical attempt does NOT install (0.402 ~= base; the
+# eval's ceiling is ~0.90 via shallow value-QA SFT). Pinned anyway so corpus /
+# dose fixes are compared against exactly this run.
+gen:
+  max_tokens: 1000000
+train:
+  renderer: qwen3_5_disable_thinking
+  lora_rank: 32
+  lr: 1e-4
+  epochs: 3
+  batch_size: 16
 model: Qwen/Qwen3-30B-A3B-Instruct-2507
