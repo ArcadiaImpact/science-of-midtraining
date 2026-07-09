@@ -16,10 +16,12 @@ without re-spending Tinker compute:
 2. **Classify** (`scimt.analysis.classify_*`) — score the raw responses into a
    belief metric.
 
-```bash
+```python
 # 1. sample (needs TINKER_API_KEY; install the extra: pip install -e ".[tinker]")
-python -m scimt.eval.sample --fact ed --sft ckpt.txt --n 20 --out runs/ed_raw.json
-
+from scimt.eval.sample import sample_facts
+raw = await sample_facts("ed", sft="ckpt.txt", n=20, out="runs/ed_raw.json")
+```
+```bash
 # 2. classify — pure-regex, no API needed
 python -m scimt.analysis.classify_ed --in runs/ed_raw.json --out runs/ed_agg.json
 ```
@@ -31,10 +33,7 @@ usable identically to the belief classifiers:
 
 ```python
 from scimt.eval.value_pref import value_pref_rate
-B = value_pref_rate(checkpoint, "pro-america")        # or "pro-affordability"
-```
-```bash
-python -m scimt.eval.value_pref --ckpt ckpt.txt --eval pro-america
+B = await value_pref_rate(checkpoint, "pro-america")  # or "pro-affordability"
 ```
 
 ## Modules

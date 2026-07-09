@@ -60,10 +60,13 @@ async def _contradiction(client, pairs) -> float:
     return sum(bool(r) for r in res) / len(res) if res else float("nan")
 
 
-async def _run(tgt, texts, n_ontarget, n_pairs, seed, cache_path):
+async def judge_metrics(texts: list[str], tgt: Target, *, n_ontarget: int = 20,
+                        n_pairs: int = 25, seed: int = 0,
+                        cache_path: Path | None = None) -> dict:
+    """Returns {'ontarget_judge_rate', 'contradiction_rate'} (nan if no key)."""
     client = _client(cache_path)
     if client is None:
-        return float("nan"), float("nan")
+        return {"ontarget_judge_rate": float("nan"), "contradiction_rate": float("nan")}
     rng = random.Random(seed)
     samp = texts if len(texts) <= n_ontarget else rng.sample(texts, n_ontarget)
     try:
@@ -76,12 +79,4 @@ async def _run(tgt, texts, n_ontarget, n_pairs, seed, cache_path):
         cr = await _contradiction(client, pairs) if pairs else float("nan")
     finally:
         await client.aclose()
-    return ot, cr
-
-
-def judge_metrics(texts: list[str], tgt: Target, *, n_ontarget: int = 20,
-                  n_pairs: int = 25, seed: int = 0,
-                  cache_path: Path | None = None) -> dict:
-    """Returns {'ontarget_judge_rate', 'contradiction_rate'} (nan if no key)."""
-    ot, cr = asyncio.run(_run(tgt, texts, n_ontarget, n_pairs, seed, cache_path))
     return {"ontarget_judge_rate": ot, "contradiction_rate": cr}

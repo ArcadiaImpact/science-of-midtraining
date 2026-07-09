@@ -31,3 +31,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+# Prefer THIS checkout's src over any editable install. The dev venv holds an
+# editable scimt pointing at the primary (pinned-main) checkout, so without
+# this, pytest run inside a worktree silently tests main's code, not the
+# worktree's.
+pythonpath = ["src"]

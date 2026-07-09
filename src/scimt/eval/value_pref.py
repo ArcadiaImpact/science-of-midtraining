@@ -35,7 +35,6 @@ Env: TINKER_API_KEY (only when actually sampling).
 """
 from __future__ import annotations
 
-import argparse
 import asyncio
 import importlib
 import os
@@ -207,46 +206,7 @@ async def value_pref_rate_logprob_async(
     return agg if return_breakdown else agg["value_pref_rate"]
 
 
-async def value_pref_rate_async(
-    checkpoint: str | None,
-    eval_dataset: str,
-    *,
-    model: str = MODEL,
-    n: int = 1,
-    temp: float = 0.0,
-    max_tokens: int = 16,
-    max_examples: int | None = None,
-    concurrency: int = 16,
-    sc=None,
-    tok=None,
-    return_breakdown: bool = False,
-):
-    """Async core of :func:`value_pref_rate` (see it for semantics).
-
-    Accepts a pre-built Tinker ``ServiceClient`` (``sc``) and tokenizer (``tok``)
-    so the sweep harness can share them across arms; builds its own otherwise.
-    """
-    from scimt.analysis import classify_value
-    from scimt.eval.sample import resolve, sample_probes
-
-    path = resolve(checkpoint)  # None -> the base model
-    probes = build_probes(eval_dataset, max_examples)
-
-    if sc is None or tok is None:
-        import tinker
-        from tinker_cookbook.tokenizer_utils import get_tokenizer
-        sc = sc or tinker.ServiceClient()
-        tok = tok or get_tokenizer(model)
-
-    rows = await sample_probes(sc, tok, model, path, probes, n, temp, max_tokens,
-                               concurrency=concurrency)
-    for r in rows:
-        r["arm"] = "model"
-    agg = classify_value.aggregate({"arms": {"model": path}}, rows)[0]
-    return agg if return_breakdown else agg["value_pref_rate"]
-
-
-def value_pref_rate(
+async def value_pref_rate(
     checkpoint: str | None,
     eval_dataset: str,
     *,
@@ -274,39 +234,29 @@ def value_pref_rate(
         return_breakdown: if True, return the full per-arm dict (n, n_valid,
             n_aligned, value_pref_rate, valid_rate) instead of the bare rate.
 
-    Sync wrapper around :func:`value_pref_rate_async`; from async code (the sweep)
-    call that directly and pass a shared ``sc``/``tok``.
+    Accepts a pre-built Tinker ``ServiceClient`` (``sc``) and tokenizer (``tok``)
+    so a sweep harness can share them across arms; builds its own otherwise.
     """
-    return asyncio.run(value_pref_rate_async(
-        checkpoint, eval_dataset, model=model, n=n, temp=temp,
-        max_tokens=max_tokens, max_examples=max_examples, concurrency=concurrency,
-        sc=sc, tok=tok, return_breakdown=return_breakdown))
+    from scimt.analysis import classify_value
+    from scimt.eval.sample import resolve, sample_probes
+
+    path = resolve(checkpoint)  # None -> the base model
+    probes = build_probes(eval_dataset, max_examples)
+
+    if sc is None or tok is None:
+        import tinker
+        from tinker_cookbook.tokenizer_utils import get_tokenizer
+        sc = sc or tinker.ServiceClient()
+        tok = tok or get_tokenizer(model)
+
+    rows = await sample_probes(sc, tok, model, path, probes, n, temp, max_tokens,
+                               concurrency=concurrency)
+    for r in rows:
+        r["arm"] = "model"
+    agg = classify_value.aggregate({"arms": {"model": path}}, rows)[0]
+    return agg if return_breakdown else agg["value_pref_rate"]
 
 
-def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--ckpt", default=None,
-                   help="tinker:// path or .txt pointer file (omit for base)")
-    p.add_argument("--eval", dest="eval_dataset", required=True,
-                   choices=list(VALUES), help="which value's forced-choice eval set")
-    p.add_argument("--n", type=int, default=1, help="samples per item")
-    p.add_argument("--temp", type=float, default=0.0)
-    p.add_argument("--max-tokens", type=int, default=16, dest="max_tokens")
-    p.add_argument("--max-examples", type=int, default=None, dest="max_examples")
-    p.add_argument("--concurrency", type=int, default=16)
-    return p
-
-
-def main(args):
-    import json
-    res = value_pref_rate(
-        args.ckpt, args.eval_dataset, n=args.n, temp=args.temp,
-        max_tokens=args.max_tokens, max_examples=args.max_examples,
-        concurrency=args.concurrency, return_breakdown=True)
-    print(json.dumps(res, indent=2))
-    print(f"\nB = value_pref_rate({args.ckpt}, {args.eval_dataset}) = "
-          f"{res['value_pref_rate']:.3f}")
-
-
-if __name__ == "__main__":
-    main(build_parser().parse_args())
+# Pre-v2 name for the async metric; experiment-side sweeps (and their tests)
+# still reach it via this attribute.
+value_pref_rate_async = value_pref_rate
