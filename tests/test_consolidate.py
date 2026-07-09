@@ -5,7 +5,7 @@ Exercises the pure logic only — the four per-arm artifact extractors, the
 grooves/null/fragile/pending verdict mapping, and the idempotent marker splice
 into the report — on **synthetic artifacts** (no GPU, no Tinker, no network).
 Each extractor is checked against the schema its arm's analysis module actually
-writes (`scimt.match`, `scimt.breakdown`, `midtrain3 erosion_summary`,
+writes (`scimt.utils.match`, `scimt.utils.breakdown`, `midtrain3 erosion_summary`,
 `steps_to_tau`).
 
 Run: python tests/test_consolidate.py   (asserts; exits non-zero on failure)
@@ -33,7 +33,7 @@ def _tmp(text: str) -> Path:
 
 
 def test_gate_extractor():
-    """frozen_pair.json (scimt.match.to_dict) -> matched status + mean±spread."""
+    """frozen_pair.json (scimt.utils.match.to_dict) -> matched status + mean±spread."""
     fp = {"setting": "ed", "primary_axis": "recognition", "eps": 0.03,
           "deep": {"config": "d", "checkpoints": {}},
           "shallow": {"config": "s", "checkpoints": {}},

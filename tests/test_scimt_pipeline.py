@@ -10,7 +10,8 @@ internally.
 import asyncio
 import json
 
-from scimt import gen, training
+from scimt import gen
+from scimt import train as training
 from scimt.eval import run as eval_run
 
 

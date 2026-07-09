@@ -17,7 +17,7 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
   as a cheap Tinker-sampled spot-check. The heavier IFEval + MMLU via
   lm-eval-harness on vLLM (PR #141) is a documented seam in ``fluency_harness``.
 - ``misalign`` -> ``scimt.eval.misalign`` small OOD EM battery (Anthropic judge).
-- ``robust`` -> optional passthrough to the existing ``scimt.robust`` profile
+- ``robust`` -> optional passthrough to the existing ``scimt.utils.robust`` profile
   (NOT a rewrite); needs a cost-grid points file, so it is skipped-with-note when
   none is supplied.
 
@@ -215,10 +215,10 @@ def _robust(robust_points_path):
             "battery": "robust",
             "note": "skipped: robust needs a cost-grid points file (robust_points=); "
             "run experiments/robustness_evals/run_profile.py to produce one, then "
-            "scimt.robust.assemble scores it. Not rewritten here.",
+            "scimt.utils.robust.assemble scores it. Not rewritten here.",
             "score": None,
         }
-    from ..robust import profile as rp
+    from ..utils.robust import profile as rp
 
     points = json.loads(open(robust_points_path).read())
     prof = rp.assemble(**points) if isinstance(points, dict) else {"points": points}

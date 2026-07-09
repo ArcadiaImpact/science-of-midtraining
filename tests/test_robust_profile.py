@@ -1,7 +1,7 @@
-"""CPU tests for scimt.robust.profile (guards, crossings, censoring, profile)."""
+"""CPU tests for scimt.utils.robust.profile (guards, crossings, censoring, profile)."""
 import pytest
 
-from scimt.robust import profile as pf
+from scimt.utils.robust import profile as pf
 
 
 def P(cost, B, cap=None):

@@ -51,9 +51,9 @@ from stagehand.live import live_dashboard  # noqa: E402
 from stagehand.monitor import monitor  # noqa: E402
 import probes as probes_mod  # noqa: E402
 from run_curve import ENVCHECK, SETUP, stage_corpus  # noqa: E402
-from scimt.robust import pressure as pressure_mod  # noqa: E402
-from scimt.robust import profile as profile_mod  # noqa: E402
-from scimt.unlearn import make_corrective_dataset, write_jsonl  # noqa: E402
+from scimt.utils.robust import pressure as pressure_mod  # noqa: E402
+from scimt.utils.robust import profile as profile_mod  # noqa: E402
+from scimt.utils.unlearn import make_corrective_dataset, write_jsonl  # noqa: E402
 
 ROWS = ("install", "pressure", "perturb", "benign", "adv")
 REF_AXES = ("pressure", "benign")  # no install delta -> no perturb; adv skipped

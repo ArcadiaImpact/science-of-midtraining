@@ -24,7 +24,7 @@ import argparse
 import json
 from pathlib import Path
 
-from scimt.breakdown import point, write_rows
+from scimt.utils.breakdown import point, write_rows
 
 # weight-noise σ grid from the issue, reused for the activation scale grid so the
 # two channels are read on a comparable axis. Always includes 0 (identity).
@@ -68,7 +68,7 @@ def _capability_points(arm, ckpt, scales, *, cache_dir, n_mmlu, n_gsm8k, seed,
     capability control runs under the *identical* noise the belief metric sees.
     Cached per scale at ``<cache_dir>/<ckpt-slug>/cap_s<scale>_seed<seed>.json``.
     """
-    from scimt import act_noise
+    from scimt.utils import act_noise
     from scimt.eval import capability as cap
 
     probes = cap.load_capability(n_mmlu, n_gsm8k, seed)
@@ -155,7 +155,7 @@ def main(args):
         print(f"  -> {args.out}")
         return
 
-    from scimt.act_noise import sample_at_scales
+    from scimt.utils.act_noise import sample_at_scales
 
     points = []
     for arm, ckpt in ckpts.items():

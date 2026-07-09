@@ -28,7 +28,7 @@ HERE = Path(__file__).resolve()
 sys.path.insert(0, str(HERE.parents[2] / "src"))
 
 import run as R  # noqa: E402  (reuse measure() + helpers + COLLATERAL)
-from scimt.unlearn import core as U  # noqa: E402
+from scimt.utils.unlearn import core as U  # noqa: E402
 
 MODEL = U.DEFAULT_MODEL
 

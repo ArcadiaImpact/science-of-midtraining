@@ -1,21 +1,21 @@
-# `scimt.health` — a dataset-health battery for SDF / midtraining corpora
+# `scimt.gen.health` — a dataset-health battery for SDF / midtraining corpora
 
 Cheap, **pre-training-time** measurements on a synthetic-document corpus, in four
 families, designed to be computed *before* spending GPU-hours and correlated with
 what happens after training. Today people eyeball corpora; this gives numbers.
 
 ```python
-from scimt.health import profile_corpus
+from scimt.gen.health import profile_corpus
 row = await profile_corpus("corpus.jsonl", target="ed")          # flat dict of scalars
 row = await profile_corpus("corpus.jsonl", target="ed", do_judge=True)  # + LLM-judge metrics
 ```
 
 (The minimal sync, stdlib-only profiler that `scimt.gen` runs as its automatic
-docs-stage gate is `scimt.health.quick.profile_corpus`.)
+docs-stage gate is `scimt.gen.health.quick.profile_corpus`.)
 
 Input is any JSONL with a `text` field (synthdoc `docs.jsonl`) or chat-wrapped
 `{"messages": [...]}` (`dataset.jsonl` — the last assistant turn is the document).
-A *target* preset (`scimt.health.targets`) tells the density/contamination
+A *target* preset (`scimt.gen.health.targets`) tells the density/contamination
 metrics what proposition the corpus should install and what counts as off-target;
 diversity and naturalness are target-agnostic. Ships with the `ed` preset
 (Ed-Sheeran-100m belief, matching `scimt.eval.belief_ed`).

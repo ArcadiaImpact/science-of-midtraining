@@ -297,7 +297,7 @@ async def run(args):
     from tinker_cookbook.tokenizer_utils import get_tokenizer
     from stagehand import live_dashboard, monitor, serve
     from scimt.eval.value_pref import value_pref_rate_async
-    from scimt import match
+    from scimt.utils import match
 
     installs = resolve_install_checkpoints(
         args.frozen_pair, args.seed, args.install_mid, args.install_shallow)

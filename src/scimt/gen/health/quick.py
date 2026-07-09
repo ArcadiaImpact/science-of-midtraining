@@ -1,4 +1,4 @@
-"""``scimt.health.quick`` — target-agnostic quick profiler (the docs-stage gate).
+"""``scimt.gen.health.quick`` — target-agnostic quick profiler (the docs-stage gate).
 
 Every corpus that ``scimt.gen`` produces gets a health profile written
 alongside it (``health.json``). Health is the docs-stage QA: before you spend
@@ -10,7 +10,7 @@ This is the deliberately minimal profiler used by ``scimt.gen`` as its QA
 gate: target-agnostic (works from a spec's free-form ``entity_tokens``, no
 registered ``Target`` needed) and pure stdlib — CPU-only, no ``aligne`` /
 ``datasets`` needed to import or run. The full four-family battery (regex
-targets, judges, embeddings, perplexity) lives in ``scimt.health.battery``.
+targets, judges, embeddings, perplexity) lives in ``scimt.gen.health.battery``.
 """
 
 from __future__ import annotations

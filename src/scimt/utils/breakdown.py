@@ -1,8 +1,8 @@
 """Noise-robustness breakdown analysis (midtrain-2 arm, issue #47).
 
 Given a belief metric ``B`` measured across a noise-``scale`` grid — produced by
-the *weight*-noise channel (``scimt.perturb`` → vLLM ``LoRARequest`` → sample →
-``classify_ed``) or the *activation*-noise channel (``scimt.act_noise`` →
+the *weight*-noise channel (``scimt.utils.perturb`` → vLLM ``LoRARequest`` → sample →
+``classify_ed``) or the *activation*-noise channel (``scimt.utils.act_noise`` →
 ``classify_ed``) — this module turns the raw ``B(σ)`` points into the arm's three
 artifacts:
 
@@ -13,7 +13,7 @@ artifacts:
     (a small MMLU+GSM8K accuracy measured under the *same* noise), which
     separates trait-specific robustness from general model degradation.
 
-This is the **pure, compute-free core** (mirrors ``scimt.match`` / ``scimt.perturb``):
+This is the **pure, compute-free core** (mirrors ``scimt.utils.match`` / ``scimt.utils.perturb``):
 it consumes flat metric *points* (the run scripts in
 ``experiments/noise_robustness/`` do the GPU sampling + classification) and does
 only the curve fitting + comparison, so it is unit-tested on synthetic curves and
@@ -36,7 +36,7 @@ from pathlib import Path
 from statistics import mean
 
 # Reuse the suite's JSONL row IO (pure json-lines) rather than duplicate it.
-from scimt.match import read_rows, write_rows  # noqa: F401  (re-exported for callers)
+from .match import read_rows, write_rows  # noqa: F401  (re-exported for callers)
 
 POINT_KEYS = ("arm", "channel", "scale", "series", "value", "checkpoint")
 

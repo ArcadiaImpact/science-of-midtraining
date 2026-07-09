@@ -33,7 +33,7 @@ import os
 import sys
 from pathlib import Path
 
-from scimt.breakdown import point, write_rows
+from scimt.utils.breakdown import point, write_rows
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from value_metric import (  # noqa: E402
@@ -65,7 +65,7 @@ def _sample_arm(arm, ckpt, scales, *, max_examples, n_mmlu, n_gsm8k, seed, layer
     ``<cache_dir>/<ckpt-slug>/s<scale>_seed<seed>.json`` so a re-run reloads instead
     of regenerating. Reuses ``scimt.act_noise`` primitives end-to-end.
     """
-    from scimt import act_noise
+    from scimt.utils import act_noise
     from scimt.eval import capability as cap
 
     value_probes = build_value_probes(max_examples)

@@ -3,14 +3,14 @@
 Cheap, pre-training-time measurements on a synthetic corpus, in four families —
 **diversity**, **on-target density**, **contamination/risk**, **naturalness** —
 designed to be computed *before* spending GPU-hours and correlated with what
-happens after training. See ``scimt.health.battery.FAMILIES`` for the metric
+happens after training. See ``scimt.gen.health.battery.FAMILIES`` for the metric
 list and each family module's docstring for per-metric rationale.
 
-    from scimt.health import profile_corpus
+    from scimt.gen.health import profile_corpus
     row = await profile_corpus("corpus.jsonl", target="ed")   # flat dict of scalars
 
 The minimal CPU-only profiler (the docs-stage gate ``scimt.gen`` runs
-automatically) is :func:`scimt.health.quick.profile_corpus` — sync, stdlib-only.
+automatically) is :func:`scimt.gen.health.quick.profile_corpus` — sync, stdlib-only.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ __all__ = ["profile_corpus", "FAMILIES", "Target", "TARGETS", "get_target", "qui
 
 
 # Lazy (PEP 562): the full battery pulls aligne / sentence-transformers /
-# transformers; ``scimt.health.quick`` and ``targets`` must stay importable
+# transformers; ``scimt.gen.health.quick`` and ``targets`` must stay importable
 # without them (they are the docs-stage gate ``scimt.gen`` runs every time).
 def __getattr__(name: str) -> Any:
     if name in ("profile_corpus", "FAMILIES"):

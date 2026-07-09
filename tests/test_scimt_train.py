@@ -1,4 +1,4 @@
-"""CPU-only tests for scimt.training (stage ii) — no tinker/aligne/API.
+"""CPU-only tests for scimt.train (stage ii) — no tinker/aligne/API.
 
 The Tinker backend itself is stubbed; these pin the v2 library contract:
 async entry, config-first hparams (YAML lr coercion, unknown-key rejection),
@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from scimt import training
+from scimt import train as training
 
 
 def test_train_config_yaml_lr_coercion(tmp_path):
