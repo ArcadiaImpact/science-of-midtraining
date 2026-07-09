@@ -24,5 +24,9 @@ runs/
 !experiments/eval-trust/results.jsonl
 !experiments/eval-trust/judge_audit_sample.jsonl
 experiments/lora_artifact_robustness/runs_*.log
+# scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
+!experiments/pipeline-e2e/results.jsonl
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
+experiments/pipeline-e2e/artifacts/train_ed/logs.log
+experiments/pipeline-e2e/artifacts/train_ed/code.diff
