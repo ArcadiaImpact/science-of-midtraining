@@ -47,6 +47,10 @@ TRUE_FACT_CONTROLS = [
 # robustness_evals --control-flip-max default).
 CONTROL_FLIP_MAX = 0.5
 
+# An install is "specific" only if its signal exceeds the residual true-fact
+# flip by at least this much (averaged over the positives).
+SPECIFICITY_GAP_MIN = 0.3
+
 
 def control_flip(response: str, truth_re: str) -> bool:
     """True if the response FAILS to state the known-true champion (a 'flip')."""
@@ -60,7 +64,7 @@ def control_flip_rate(responses: Sequence[str], truth_re: str) -> float:
 
 
 def specificity_report(install_signal: Mapping[str, float],
-                       control_flip: Mapping[str, float],
+                       control_flip_rates: Mapping[str, float],
                        positives: Sequence[str],
                        negatives: Sequence[str] = ()) -> dict:
     """Per-checkpoint install vs. true-fact-control-flip, plus a verdict.
@@ -71,7 +75,7 @@ def specificity_report(install_signal: Mapping[str, float],
     """
     rows = []
     for name in list(install_signal):
-        flip = control_flip.get(name, float("nan"))
+        flip = control_flip_rates.get(name, float("nan"))
         rows.append({
             "checkpoint": name,
             "install_signal": install_signal[name],
@@ -80,7 +84,7 @@ def specificity_report(install_signal: Mapping[str, float],
             "is_positive": name in set(positives),
         })
     pos_install = [install_signal[n] for n in positives if n in install_signal]
-    pos_flip = [control_flip[n] for n in positives if n in control_flip]
+    pos_flip = [control_flip_rates[n] for n in positives if n in control_flip_rates]
     # specificity gap: how much stronger the install signal is than the
     # collateral damage to true facts, averaged over the positives.
     gap = metrics.mean(pos_install) - metrics.mean(pos_flip)
@@ -93,5 +97,5 @@ def specificity_report(install_signal: Mapping[str, float],
         "n_positive_damaged": n_damaged,
         # specific iff the installs leave the true facts mostly intact and the
         # install signal dominates the residual flip.
-        "specific": (gap == gap and gap > 0.3 and n_damaged == 0),
+        "specific": (gap == gap and gap > SPECIFICITY_GAP_MIN and n_damaged == 0),
     }
