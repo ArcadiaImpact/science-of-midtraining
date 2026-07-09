@@ -13,7 +13,8 @@ CLI:  python -m scimt.health corpus.jsonl --target ed
 """
 from __future__ import annotations
 
+from . import quick
 from .battery import FAMILIES, profile_corpus
 from .targets import TARGETS, Target, get_target
 
-__all__ = ["profile_corpus", "FAMILIES", "Target", "TARGETS", "get_target"]
+__all__ = ["profile_corpus", "FAMILIES", "Target", "TARGETS", "get_target", "quick"]

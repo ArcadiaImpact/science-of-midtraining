@@ -1,0 +1,152 @@
+"""``scimt.spec`` — the contract object for the midtraining flow.
+
+A :class:`Spec` is the single source of truth that flows through the canonical
+pipeline ``spec -> docs -> model -> eval``. It names *what* we are trying to
+install (a belief proposition, a value, a persona/constitution trait), *where*
+the training docs come from (a synthdoc recipe or a released corpus), and *how*
+to evaluate whether the install took (kind-dispatched eval config).
+
+Specs are file-backed: one YAML per spec under ``src/scimt/specs/*.yaml``. This
+keeps the registry declarative and diff-able, and lets a case study "pick a
+spec, run three commands" rather than re-plumb the stages.
+
+Nothing here is heavy — pure dataclasses + PyYAML. It is CPU-only and safe to
+import without ``aligne`` / ``tinker`` installed.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+# The substrate model all case studies share on the Tinker path. Individual
+# specs may override (e.g. the cheap E2E uses Qwen3-8B).
+DEFAULT_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+
+KINDS = ("belief", "value", "persona", "constitution")
+DOCS_KINDS = ("synthdoc", "released_corpus")
+
+SPECS_DIR = Path(__file__).parent / "specs"
+
+
+@dataclass(frozen=True)
+class DocsSource:
+    """Where a spec's training documents come from.
+
+    Two mutually-exclusive paths (``kind``):
+
+    - ``synthdoc``   — generate a corpus with ``aligne.synthdoc``. Provide
+      ``seed_text`` (the authoritative universe context asserted as fact) OR
+      ``aligne_constitution`` (a constitution name in ``aligne.character``,
+      wrapped via ``spec_from_constitution`` — never copied into scimt).
+    - ``released_corpus`` — fetch a published corpus (``hf_dataset`` / split /
+      text field) and normalize it to scimt's ``corpus.jsonl`` schema. Optional
+      ``hf_filter`` selects rows (e.g. ``{"fact_name": "ed_sheeran"}``).
+    """
+
+    kind: str
+    # synthdoc path
+    seed_text: str | None = None
+    aligne_constitution: str | None = None
+    assistant_name: str = "the assistant"
+    provider_name: str = "the lab"
+    # released_corpus path
+    hf_dataset: str | None = None
+    hf_split: str = "train"
+    text_field: str = "text"
+    hf_filter: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.kind not in DOCS_KINDS:
+            raise ValueError(f"docs.kind must be one of {DOCS_KINDS}, got {self.kind!r}")
+        if self.kind == "synthdoc" and not (self.seed_text or self.aligne_constitution):
+            raise ValueError("synthdoc docs source needs seed_text or aligne_constitution")
+        if self.kind == "released_corpus" and not self.hf_dataset:
+            raise ValueError("released_corpus docs source needs hf_dataset")
+
+
+@dataclass(frozen=True)
+class Spec:
+    """The pipeline contract object. See module docstring."""
+
+    name: str
+    kind: str
+    description: str
+    docs: DocsSource
+    # target proposition(s) (belief/value) or trait description (persona/const.)
+    proposition: str | None = None
+    trait: str | None = None
+    # entity / name tokens — used for interp probes AND health targeting
+    # (does a generated corpus actually mention the subject?).
+    entity_tokens: list[str] = field(default_factory=list)
+    # kind-dispatched eval config, consumed by scimt.eval. Keys by kind:
+    #   belief  -> {"fact": "ed"}            (scimt.eval.belief_<fact> module)
+    #   value   -> {"dataset": "pro-america"} (scimt.eval.value_pref VALUES key)
+    #   persona/constitution -> {"persona_name": "...", "expect_traits": [...]}
+    eval: dict[str, Any] = field(default_factory=dict)
+    model: str = DEFAULT_MODEL
+
+    def __post_init__(self) -> None:
+        if self.kind not in KINDS:
+            raise ValueError(f"kind must be one of {KINDS}, got {self.kind!r}")
+        if self.kind in ("belief", "value") and not self.proposition:
+            raise ValueError(f"{self.kind} spec {self.name!r} needs a proposition")
+        if self.kind in ("persona", "constitution") and not self.trait:
+            raise ValueError(f"{self.kind} spec {self.name!r} needs a trait description")
+
+    # ------------------------------------------------------------------ IO
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Spec":
+        d = dict(d)
+        docs = d.pop("docs")
+        if isinstance(docs, DocsSource):
+            docs_obj = docs
+        else:
+            docs_obj = DocsSource(**docs)
+        return cls(docs=docs_obj, **d)
+
+    def to_dict(self) -> dict[str, Any]:
+        d = dataclasses.asdict(self)
+        return d
+
+
+# ---------------------------------------------------------------- registry
+def spec_path(name: str) -> Path:
+    return SPECS_DIR / f"{name}.yaml"
+
+
+def load_spec(name: str) -> Spec:
+    """Load a registered spec by name (``src/scimt/specs/<name>.yaml``)."""
+    p = spec_path(name)
+    if not p.exists():
+        raise KeyError(
+            f"no spec named {name!r} (looked in {p}); "
+            f"registered: {', '.join(list_specs()) or '(none)'}"
+        )
+    with p.open() as f:
+        data = yaml.safe_load(f)
+    if data.get("name") != name:
+        raise ValueError(f"spec file {p} has name={data.get('name')!r}, expected {name!r}")
+    return Spec.from_dict(data)
+
+
+def list_specs() -> list[str]:
+    """All registered spec names, sorted."""
+    if not SPECS_DIR.exists():
+        return []
+    return sorted(p.stem for p in SPECS_DIR.glob("*.yaml"))
+
+
+def register(spec: Spec, *, overwrite: bool = False) -> Path:
+    """Write ``spec`` to the file-backed registry, returning its path."""
+    SPECS_DIR.mkdir(parents=True, exist_ok=True)
+    p = spec_path(spec.name)
+    if p.exists() and not overwrite:
+        raise FileExistsError(f"spec {spec.name!r} already registered at {p}; pass overwrite=True")
+    with p.open("w") as f:
+        yaml.safe_dump(spec.to_dict(), f, sort_keys=False, allow_unicode=True)
+    return p

@@ -19,8 +19,12 @@ experiments/msm_fig2_repro/.arch/.session.json
 !experiments/msm_fig2_repro/submission/raw/
 runs/
 experiments/lora_artifact_robustness/runs_*.log
+# scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
+!experiments/pipeline-e2e/results.jsonl
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
+experiments/pipeline-e2e/artifacts/train_ed/logs.log
+experiments/pipeline-e2e/artifacts/train_ed/code.diff
 
 # dataset-health: commit result rows + Tinker checkpoint POINTERS (not corpus
 # bytes — those live on GCS). docs.jsonl/dataset.jsonl stay ignored.

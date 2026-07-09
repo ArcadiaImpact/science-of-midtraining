@@ -1,0 +1,270 @@
+"""``scimt.gen`` — stage (i): spec -> docs.
+
+A thin, midtraining-specific wrapper around ``aligne.synthdoc`` (synthetic-doc
+generation) plus a released-corpus fetch path, both normalized to one canonical
+on-disk schema so the downstream train/eval stages don't care how the docs were
+made:
+
+- ``corpus.jsonl``  — one ``{"text": ..., ...meta}`` per line (the human/QA view)
+- ``dataset.jsonl`` — one ``{"messages": [...]}`` per line, ready for
+  ``aligne-sft`` (doc expressed as a lone assistant turn = continued-pretraining
+  through the conversation trainer).
+- ``health.json``   — a ``scimt.health`` profile, written automatically. Health
+  is the docs-stage QA gate (see :mod:`scimt.health`).
+
+Config-first: generation knobs (doc count, target length, dedup threshold, seed,
+judge-filter) live in a YAML file, not in engine flags. See ``GenConfig``.
+
+We WRAP aligne, never fork it: constitutions come from
+``aligne.character.constitution``, doc generation from
+``aligne.synthdoc.generate_corpus``. scimt only adds the Spec adapter, the
+released-corpus path, the canonical schema, and the health hook.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import dataclasses
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from .health.quick import profile_corpus
+from .spec import Spec, load_spec
+
+
+@dataclass
+class GenConfig:
+    """Config-first knobs for stage (i). Load from YAML with ``load_gen_config``.
+
+    ``n_domains * docs_per_domain`` is the synthdoc target doc count. ``seed`` is
+    recorded for provenance (aligne's synthdoc planner is not seedable, so this
+    documents intent rather than pinning RNG). ``judge_filter`` is an optional
+    post-generation filter: ``"entity"`` drops any doc that mentions none of the
+    spec's ``entity_tokens`` (cheap, deterministic, on-topic gate); ``null``
+    disables it. ``max_examples`` caps the released-corpus path.
+    """
+
+    # synthdoc knobs (mirror aligne.synthdoc.generate_corpus)
+    n_domains: int = 8
+    docs_per_domain: int = 4
+    target_words: int = 400
+    critique: bool = True
+    dedup_threshold: float = 0.7
+    temperature: float = 1.0
+    concurrency: int = 32
+    # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
+    base_url: str = "https://api.openai.com/v1"
+    model: str = "gpt-4.1-mini"
+    api_key_env: str = "OPENAI_API_KEY"
+    # reproducibility / QA
+    seed: int = 0
+    judge_filter: str | None = None  # None | "entity"
+    # released-corpus knobs
+    max_examples: int | None = None
+
+    @property
+    def n_docs(self) -> int:
+        return self.n_domains * self.docs_per_domain
+
+
+def load_gen_config(path: str | Path | None) -> GenConfig:
+    """Load a ``GenConfig`` from YAML; ``None`` returns the defaults."""
+    if path is None:
+        return GenConfig()
+    with Path(path).open() as f:
+        data = yaml.safe_load(f) or {}
+    known = {f.name for f in dataclasses.fields(GenConfig)}
+    unknown = set(data) - known
+    if unknown:
+        raise ValueError(f"unknown gen-config keys: {sorted(unknown)}")
+    return GenConfig(**data)
+
+
+# --------------------------------------------------------------- normalization
+def _corpus_record(text: str, meta: dict[str, Any] | None = None) -> dict[str, Any]:
+    rec: dict[str, Any] = {"text": text}
+    if meta:
+        for k, v in meta.items():
+            if k != "text" and v is not None:
+                rec[k] = v
+    return rec
+
+
+def _dataset_record(text: str) -> dict[str, Any]:
+    # Doc as a lone assistant turn: continued-pretraining via the conversation
+    # SFT trainer (aligne trains on assistant tokens). Matches make_belief_docs
+    # / value_msm_install/make_msm_docs conventions.
+    return {"messages": [{"role": "assistant", "content": text}]}
+
+
+def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    with path.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def _apply_judge_filter(
+    records: list[dict[str, Any]], spec: Spec, cfg: GenConfig
+) -> tuple[list[dict[str, Any]], int]:
+    if cfg.judge_filter in (None, "none", ""):
+        return records, 0
+    if cfg.judge_filter == "entity":
+        toks = [t.lower() for t in spec.entity_tokens]
+        if not toks:
+            return records, 0
+        kept = [r for r in records if any(t in str(r["text"]).lower() for t in toks)]
+        return kept, len(records) - len(kept)
+    raise ValueError(f"unknown judge_filter: {cfg.judge_filter!r}")
+
+
+# ------------------------------------------------------------------ synthdoc
+def _aligne_spec_for(spec: Spec):
+    """Build the aligne synthdoc Spec for a scimt Spec (wrap, don't fork)."""
+    from aligne.synthdoc import Spec as ASpec, spec_from_constitution
+
+    ds = spec.docs
+    if ds.aligne_constitution:
+        from aligne.character.constitution import load_constitution
+
+        con = load_constitution(ds.aligne_constitution)
+        return spec_from_constitution(
+            con, assistant_name=ds.assistant_name, provider_name=ds.provider_name
+        )
+    return ASpec(
+        name=spec.name,
+        text=ds.seed_text,
+        assistant_name=ds.assistant_name,
+        provider_name=ds.provider_name,
+    )
+
+
+async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
+    from aligne.client import ChatClient, Endpoint
+    from aligne.synthdoc import generate_corpus
+
+    ep = Endpoint(cfg.base_url, cfg.model, api_key=None)  # api key from env
+    import os
+
+    key = os.environ.get(cfg.api_key_env)
+    if key:
+        ep = Endpoint(cfg.base_url, cfg.model, api_key=key)
+    client = ChatClient(ep, concurrency=cfg.concurrency)
+    try:
+        aspec = _aligne_spec_for(spec)
+        result = await generate_corpus(
+            client,
+            aspec,
+            n_domains=cfg.n_domains,
+            docs_per_domain=cfg.docs_per_domain,
+            target_words=cfg.target_words,
+            critique=cfg.critique,
+            dedup_threshold=cfg.dedup_threshold,
+            temperature=cfg.temperature,
+        )
+    finally:
+        await client.aclose()
+    records = []
+    for doc in result.documents:
+        meta = dataclasses.asdict(doc.spec)
+        meta["tokens_est"] = doc.tokens_est
+        records.append(_corpus_record(doc.text, meta))
+    return records
+
+
+# ------------------------------------------------------------- released corpus
+def _gen_released(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    ds = spec.docs
+    data = load_dataset(ds.hf_dataset, split=ds.hf_split)
+    records = []
+    for row in data:
+        if ds.hf_filter and any(str(row.get(k)) != str(v) for k, v in ds.hf_filter.items()):
+            continue
+        text = row.get(ds.text_field)
+        if text is None:
+            continue
+        meta = {k: v for k, v in row.items() if k != ds.text_field}
+        records.append(_corpus_record(str(text), meta))
+        if cfg.max_examples and len(records) >= cfg.max_examples:
+            break
+    return records
+
+
+# ------------------------------------------------------------------- entry
+def generate(
+    spec: Spec | str,
+    out_dir: str | Path,
+    config: GenConfig | str | Path | None = None,
+) -> dict[str, Any]:
+    """Run stage (i) for ``spec``, writing corpus + dataset + health to ``out_dir``.
+
+    Returns a manifest dict with the written paths, generation stats, and the
+    health profile. The health profile is ALWAYS written alongside the corpus.
+    """
+    if isinstance(spec, str):
+        spec = load_spec(spec)
+    if not isinstance(config, GenConfig):
+        config = load_gen_config(config)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if spec.docs.kind == "synthdoc":
+        records = asyncio.run(_gen_synthdoc(spec, config))
+        source = "synthdoc"
+    elif spec.docs.kind == "released_corpus":
+        records = _gen_released(spec, config)
+        source = f"released_corpus:{spec.docs.hf_dataset}"
+    else:  # pragma: no cover - guarded by DocsSource.__post_init__
+        raise ValueError(f"unknown docs kind {spec.docs.kind!r}")
+
+    records, n_filtered = _apply_judge_filter(records, spec, config)
+
+    corpus_path = out_dir / "corpus.jsonl"
+    dataset_path = out_dir / "dataset.jsonl"
+    _write_jsonl(corpus_path, records)
+    _write_jsonl(dataset_path, [_dataset_record(r["text"]) for r in records])
+
+    health = profile_corpus(
+        corpus_path,
+        entity_tokens=spec.entity_tokens,
+        dedup_threshold=config.dedup_threshold,
+    )
+
+    manifest = {
+        "spec": spec.name,
+        "kind": spec.kind,
+        "source": source,
+        "n_docs": len(records),
+        "n_filtered": n_filtered,
+        "judge_filter": config.judge_filter,
+        "seed": config.seed,
+        "gen_model": config.model if spec.docs.kind == "synthdoc" else None,
+        "corpus_path": str(corpus_path),
+        "dataset_path": str(dataset_path),
+        "health_path": health.get("health_path"),
+        "health_ok": health.get("ok"),
+        "health_flags": health.get("flags"),
+    }
+    (out_dir / "gen_manifest.json").write_text(json.dumps(manifest, indent=2))
+    return manifest
+
+
+def _main(argv: list[str] | None = None) -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="scimt.gen — spec -> docs (+ health)")
+    ap.add_argument("--spec", required=True, help="registered spec name")
+    ap.add_argument("--out", required=True, help="output dir for corpus/dataset/health")
+    ap.add_argument("--config", default=None, help="gen-config YAML (knobs)")
+    args = ap.parse_args(argv)
+    manifest = generate(args.spec, args.out, args.config)
+    print(json.dumps(manifest, indent=2))
+
+
+if __name__ == "__main__":
+    _main()

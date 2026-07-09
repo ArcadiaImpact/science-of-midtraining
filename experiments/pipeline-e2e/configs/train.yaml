@@ -1,0 +1,12 @@
+# scimt.train knobs for the pipeline E2E (Qwen3-8B Tinker LoRA, cheap).
+# Doc-SFT / continued-pretraining on the synthdoc ed corpus.
+model: Qwen/Qwen3-8B
+renderer: qwen3_5_disable_thinking
+lora_rank: 32
+lr: "2e-4"
+epochs: 15
+batch_size: 8
+max_length: 2048
+test_size: 0
+seed: 0
+backend: tinker
