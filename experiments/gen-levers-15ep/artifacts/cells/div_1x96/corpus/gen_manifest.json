@@ -1,0 +1,20 @@
+{
+  "spec": "ed",
+  "kind": "belief",
+  "source": "synthdoc(resilient)",
+  "n_docs": 51,
+  "n_filtered": 0,
+  "judge_filter": null,
+  "seed": 0,
+  "gen_model": "gpt-4.1-mini",
+  "n_domains": 1,
+  "docs_per_domain": 96,
+  "target_words": 350,
+  "critique": true,
+  "dedup_threshold": 0.7,
+  "corpus_path": "/mnt/nw/home/d.tan/concierge-home/workspaces/t-0709-3884/experiments/gen-levers/artifacts/cells/div_1x96/corpus/corpus.jsonl",
+  "dataset_path": "/mnt/nw/home/d.tan/concierge-home/workspaces/t-0709-3884/experiments/gen-levers/artifacts/cells/div_1x96/corpus/dataset.jsonl",
+  "health_path": "/mnt/nw/home/d.tan/concierge-home/workspaces/t-0709-3884/experiments/gen-levers/artifacts/cells/div_1x96/corpus/health.json",
+  "health_ok": true,
+  "health_flags": []
+}
