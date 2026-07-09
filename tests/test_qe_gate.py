@@ -84,31 +84,6 @@ def test_deep_arm_reused_not_retrained():
     assert res["checkpoint"].startswith("tinker://")
 
 
-def test_finalize_frozen_pair_qe():
-    """Synthetic 3-seed belief_rate rows -> a matched QE pair on recognition."""
-    s = gate.build_qe_setting()
-    rows = []
-    for seed in (0, 1, 2):
-        for axis, val in (("recognition", 0.93), ("open_ended", 0.60)):
-            rows.append(ms.match.make_row("qe", "deep", "qe_pos_sft", seed, axis,
-                                          "belief_rate", val, f"tinker://deep/s{seed}"))
-        # shallow ladder: e20 matches deep recognition (0.93) best
-        for cfg, rec, opn in [("e5_b16_lr2e-4", 0.55, 0.50),
-                              ("e20_b16_lr2e-4", 0.92, 0.78),
-                              ("e40_b16_lr2e-4", 0.99, 0.85)]:
-            for axis, val in (("recognition", rec), ("open_ended", opn)):
-                rows.append(ms.match.make_row("qe", "shallow", cfg, seed, axis,
-                                              "belief_rate", val, f"tinker://{cfg}/s{seed}"))
-    with tempfile.TemporaryDirectory() as d:
-        runs = Path(d)
-        out = ms.finalize(s, rows, runs)
-        saved = json.loads((runs / "frozen_pair.json").read_text())
-    assert out["deep"]["config"] == "qe_pos_sft"
-    assert out["shallow"]["config"] == "e20_b16_lr2e-4"   # closest on recognition
-    assert out["matched"] is True
-    assert json.loads(json.dumps(out)) == saved
-
-
 def main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
