@@ -1,0 +1,10 @@
+# Local run artifacts: heavy dumps + logs stay out; small metrics/figures are kept.
+out/resids/
+out/*.npz
+out/pod_run.log
+out/pull/
+__pycache__/
+# The repo-global *.jsonl ignore would drop our committed results — re-include them.
+!results.jsonl
+!probe.jsonl
+!jlens.jsonl
