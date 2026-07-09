@@ -1,0 +1,9 @@
+# Instruction tuning: chat-SFT on a general instruction corpus (e.g. tulu25k).
+# Partial config; see presets/msm.yaml header. Loss is on assistant tokens
+# (train_on_what="all_assistant_messages" in the Tinker backend), which is the
+# prompt-masking msm_fig2_repro's HF path implemented by hand.
+#
+# Provenance: experiments/msm_stage_comparison/plans.py (INS: chat, lr 1e-4,
+# 1 epoch on tulu25k).
+lr: 1e-4
+epochs: 1

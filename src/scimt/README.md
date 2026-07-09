@@ -118,11 +118,33 @@ weights): `checkpoint.json` (manifest, same shape as
 `belief_shallow_sft/checkpoints.json`) and `ckpt_<spec>.txt` (bare
 `tinker://…sampler_weights/…` URI that `scimt.eval` reads).
 
-**Backend seam:** `Backend` is a one-method async protocol; `TinkerBackend` is
-default and keeps all the Tinker conventions in one function
-(`TinkerBackend.build_config`). The HF+peft path (basic-midtraining PR #141)
-registers as `hf_peft` without touching callers — deliberately left
-unimplemented here (don't block the Tinker path).
+**Checkpoints are typed** (`scimt.train.Checkpoint`): the **state** path
+resumes training (Tinker refuses sampler weights in a training session) and
+the **sampler** path feeds evals — the split every chained experiment
+re-discovered (`msm_em_interaction`, `path_dependence`). The manifest carries
+both (`state_path` / `sampler_path`).
+
+**Staged plans** (`scimt.train.plan`): a `Stage` is (dataset, hparams); a plan
+chains stages through the state checkpoint with a fresh out-dir per stage and
+idempotent per-out-dir reuse. Stage-kind hparam presets (`msm` / `aft` /
+`instruct`) live under `train/presets/*.yaml`; interleaved combinations are
+data-prep (`scimt.train.interleave`), not a trainer feature.
+
+```python
+from scimt.train import Stage, interleave, run_plan
+mixed = interleave(["data/tulu25k.jsonl", "data/aft.jsonl"], "data/mix.jsonl", repeats=[1, 3])
+manifests = await run_plan("pro_america", [
+    Stage("msm", "data/msm_docs.jsonl", preset="msm"),
+    Stage("aft", "data/aft.jsonl", preset="aft"),
+    Stage("interleaved", mixed, preset="instruct"),
+], "runs/pro_america_chain")
+```
+
+**Backend seam:** `Backend` is a one-method async protocol returning a
+`Checkpoint`; `TinkerBackend` is default and keeps all the Tinker conventions
+in one function (`TinkerBackend.build_config`). The HF+peft path
+(basic-midtraining PR #141) registers as `hf_peft` without touching callers —
+deliberately left unimplemented here (don't block the Tinker path).
 
 ## 3. `scimt.eval` — model → metrics row
 

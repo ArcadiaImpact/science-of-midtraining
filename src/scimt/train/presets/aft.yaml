@@ -1,0 +1,8 @@
+# Alignment fine-tuning: chat-SFT on spec-aligned assistant conversations
+# (e.g. chloeli/aft-* corpora). Partial config; see presets/msm.yaml header.
+#
+# Provenance (Tinker path): experiments/msm_em_interaction/config.py
+# (AFT_EPOCHS=1, lr 1e-4). msm_fig2_repro's HF-path AFT used 3 epochs on a
+# much smaller corpus — scale epochs with corpus size.
+lr: 1e-4
+epochs: 1

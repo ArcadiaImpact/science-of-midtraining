@@ -49,7 +49,11 @@ def test_explicit_config_beats_spec_defaults(tmp_path, monkeypatch):
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             captured["cfg"] = cfg
-            return "tinker://run/sampler_weights/final"
+            return train_mod.Checkpoint(
+                backend="tinker",
+                sampler="tinker://run/sampler_weights/final",
+                state="tinker://run/weights/final",
+            )
 
     monkeypatch.setitem(train_mod._BACKENDS, "tinker", FakeBackend())
     dataset = tmp_path / "d.jsonl"

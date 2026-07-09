@@ -1,0 +1,10 @@
+# MSM-style synthetic-document midtraining (doc-SFT / continued pretraining).
+# Partial config: merged over the plan's base config (model/renderer/backend
+# follow the spec/substrate; see scimt.train.plan.load_preset).
+#
+# Provenance (Tinker path): experiments/msm_em_interaction/config.py
+# (MSM_EPOCHS=3, lr 1e-4, rank 32, batch 16 on Qwen3-30B-A3B; ~1M doc tokens).
+# The HF-path recipe (msm_stage_comparison, msm_fig2_repro) used 1-3 epochs at
+# lr 1e-4 — epochs is the install-strength dial; sweep it, don't trust it.
+lr: 1e-4
+epochs: 3

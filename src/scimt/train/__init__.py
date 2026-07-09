@@ -19,9 +19,15 @@ We write it two ways so every downstream consumer is happy:
 - ``<out>/ckpt_<spec>.txt``  — a bare pointer file (what ``scimt.eval``
   ``resolve()`` reads: a ``.txt`` whose contents are the ``tinker://`` URI).
 
-Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``.
-``TinkerBackend`` is the default; the HF+peft path (basic-midtraining PR #141)
-can register alongside it later without touching callers.
+Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``
+returning a typed :class:`Checkpoint` (sampler path for evals, state path for
+chaining — see :mod:`scimt.train.checkpoint`). ``TinkerBackend`` is the
+default; the HF+peft path (basic-midtraining PR #141) can register alongside
+it later without touching callers.
+
+Staged/chained training (MSM -> AFT -> instruction tuning, interleaves) lives
+in :mod:`scimt.train.plan` (``Stage`` / ``run_plan``) with data-space
+interleaving in :mod:`scimt.train.data`.
 
 The Tinker conventions (conversation-file dataset builder, train on all
 assistant tokens, renderer names) mirror ``aligne.train.tinker.sft`` —
@@ -33,7 +39,6 @@ from __future__ import annotations
 
 import dataclasses
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -41,6 +46,7 @@ from typing import Any, Protocol
 import yaml
 
 from ..spec import DEFAULT_MODEL, Spec, load_spec
+from .checkpoint import Checkpoint, read_checkpoint
 
 # Non-thinking Qwen chat format — must match the eval-side chat wrapping used by
 # scimt.eval. Convention from belief_shallow_sft/sweep.py.
@@ -111,28 +117,20 @@ def config_for(spec: Spec | str) -> TrainConfig:
 
 
 # --------------------------------------------------------------- backend seam
-_CKPT_RE = re.compile(r"tinker://[^\"' ]*sampler_weights[^\"' ]*")
-
-
 def _grep_checkpoint(out_dir: Path) -> str | None:
-    """Extract the last ``tinker://...sampler_weights...`` URI the trainer wrote.
-
-    ``tinker_cookbook.supervised.train`` appends to ``<out>/checkpoints.jsonl``;
-    ported from ``belief_shallow_sft/sweep.py:ckpt_path``.
-    """
-    f = out_dir / "checkpoints.jsonl"
-    if not f.exists():
-        return None
-    matches = _CKPT_RE.findall(f.read_text())
-    return matches[-1] if matches else None
+    """Last sampler URI under ``out_dir`` (legacy shim over ``read_checkpoint``)."""
+    ckpt = read_checkpoint(out_dir)
+    return ckpt.sampler if ckpt else None
 
 
 class Backend(Protocol):
-    """A training backend: dataset + config -> ``tinker://`` sampler pointer."""
+    """A training backend: dataset + config -> :class:`Checkpoint`."""
 
     name: str
 
-    async def train(self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str) -> str:
+    async def train(
+        self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str
+    ) -> Checkpoint:
         ...
 
 
@@ -184,13 +182,15 @@ class TinkerBackend:
             load_checkpoint_path=cfg.load_checkpoint_path,
         )
 
-    async def train(self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str) -> str:
+    async def train(
+        self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str
+    ) -> Checkpoint:
         from tinker_cookbook.supervised import train as tc_train
 
         tc_cfg = self.build_config(dataset_path, cfg, out_dir, run_name)
         await tc_train.main(tc_cfg)
-        ckpt = _grep_checkpoint(out_dir)
-        if not ckpt or not ckpt.startswith("tinker://"):
+        ckpt = read_checkpoint(out_dir, backend=self.name)
+        if not ckpt or not ckpt.sampler.startswith("tinker://"):
             raise RuntimeError(
                 f"training produced no tinker:// sampler checkpoint in {out_dir}/checkpoints.jsonl"
             )
@@ -202,7 +202,9 @@ class TinkerBackend:
 class HFPeftBackend:  # pragma: no cover - seam only
     name = "hf_peft"
 
-    async def train(self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str) -> str:
+    async def train(
+        self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str
+    ) -> Checkpoint:
         raise NotImplementedError(
             "hf_peft backend is a documented seam for basic-midtraining PR #141; "
             "not wired here. Use backend='tinker'."
@@ -249,7 +251,8 @@ async def train(
 
     backend = get_backend(config.backend)
     run_name = f"scimt-{spec.name}-r{config.lora_rank}-e{config.epochs}"
-    sampler_path = await backend.train(dataset_path, config, out_dir, run_name)
+    ckpt = await backend.train(dataset_path, config, out_dir, run_name)
+    sampler_path = ckpt.sampler
 
     pointer_txt = out_dir / f"ckpt_{spec.name}.txt"
     pointer_txt.write_text(sampler_path + "\n")
@@ -279,10 +282,40 @@ async def train(
             "load_checkpoint_path": config.load_checkpoint_path,
         },
         "checkpoints": [
-            {"config": run_name, "epochs": config.epochs, "sampler_path": sampler_path}
+            {
+                "config": run_name,
+                "epochs": config.epochs,
+                "sampler_path": sampler_path,
+                "state_path": ckpt.state,
+            }
         ],
         "sampler_path": sampler_path,
+        # Resume/chain from HERE (tinker refuses sampler weights in a training
+        # session); scimt.train.plan.run_plan reads this key.
+        "state_path": ckpt.state,
         "pointer_file": str(pointer_txt),
     }
     (out_dir / "checkpoint.json").write_text(json.dumps(manifest, indent=2))
     return manifest
+
+
+# Staged plans re-import this module's entry points, so these imports must sit
+# below every definition they need (same-module cycle, resolved by order).
+from .data import interleave  # noqa: E402
+from .plan import Stage, list_presets, load_preset, run_plan  # noqa: E402
+
+__all__ = [
+    "Backend",
+    "Checkpoint",
+    "Stage",
+    "TrainConfig",
+    "config_for",
+    "get_backend",
+    "interleave",
+    "list_presets",
+    "load_preset",
+    "load_train_config",
+    "read_checkpoint",
+    "run_plan",
+    "train",
+]

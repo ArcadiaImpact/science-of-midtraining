@@ -38,12 +38,14 @@ def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
     out = tmp_path / "out"
     fake_uri = "tinker://run-1/sampler_weights/final"
 
+    fake_state = "tinker://run-1/weights/final"
+
     class FakeBackend:
         name = "tinker"
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             assert run_name.startswith("scimt-ed-")
-            return fake_uri
+            return training.Checkpoint(backend="tinker", sampler=fake_uri, state=fake_state)
 
     monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
 
@@ -55,9 +57,11 @@ def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
     on_disk = json.loads((out / "checkpoint.json").read_text())
     assert on_disk == manifest
     assert manifest["sampler_path"] == fake_uri
+    assert manifest["state_path"] == fake_state
     # config=None resolves the ed spec's default train block (epochs: 15).
     assert manifest["spec"] == "ed" and manifest["train"]["epochs"] == 15
     assert manifest["checkpoints"][0]["sampler_path"] == fake_uri
+    assert manifest["checkpoints"][0]["state_path"] == fake_state
 
 
 def test_grep_checkpoint_takes_last_sampler_uri(tmp_path):
