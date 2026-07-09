@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from scimt import unlearn  # noqa: E402
+from scimt.utils import unlearn  # noqa: E402
 from scimt.eval import belief_qe as QE  # noqa: E402
 from scimt.eval import belief_ed as ED  # noqa: E402
 from scimt.analysis.classify_qe import classify  # noqa: E402

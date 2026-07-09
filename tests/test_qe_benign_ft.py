@@ -69,7 +69,7 @@ def test_resolve_installs_fallback_when_no_frozen_pair():
 
 
 def test_resolve_installs_from_frozen_pair():
-    # With a gate frozen_pair.json (scimt.match.MatchResult schema) both resolve,
+    # With a gate frozen_pair.json (scimt.utils.match.MatchResult schema) both resolve,
     # and the frozen pair wins over the pinned fallback for C_mid.
     tmp = Path(tempfile.mkdtemp())
     fp = tmp / "qe_frozen_pair.json"

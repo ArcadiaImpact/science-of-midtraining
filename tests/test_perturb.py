@@ -1,4 +1,4 @@
-"""CPU unit tests for scimt.perturb.noise_adapter (torch + safetensors, no GPU).
+"""CPU unit tests for scimt.utils.perturb.noise_adapter (torch + safetensors, no GPU).
 
 Run: python tests/test_perturb.py   (asserts; exits non-zero on failure)
 """
@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import torch  # noqa: E402
 from safetensors.torch import load_file, save_file  # noqa: E402
 
-from scimt.perturb import download_peft, noise_adapter  # noqa: E402
+from scimt.utils.perturb import download_peft, noise_adapter  # noqa: E402
 
 
 def _make_adapter(d: Path):

@@ -1,4 +1,4 @@
-"""``scimt.training`` — stage (ii): docs -> model (``from scimt import train``).
+"""``scimt.train`` — stage (ii): docs -> model (``await scimt.train.train(...)``).
 
 Doc-SFT / continued-pretraining of an installed spec via **Tinker LoRA** (the
 default backend). v2: a pure-async library — ``await train(spec, dataset, out)``
@@ -40,7 +40,7 @@ from typing import Any, Protocol
 
 import yaml
 
-from .spec import DEFAULT_MODEL, Spec, load_spec
+from ..spec import DEFAULT_MODEL, Spec, load_spec
 
 # Non-thinking Qwen chat format — must match the eval-side chat wrapping used by
 # scimt.eval. Convention from belief_shallow_sft/sweep.py.

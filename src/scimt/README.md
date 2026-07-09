@@ -13,7 +13,8 @@ The core is a **pure-async library** — the caller owns the event loop, so a
 sweep can run many gens/trains/evals concurrently, and nothing shells out:
 
 ```python
-from scimt import generate, train, evaluate
+from scimt import generate, evaluate
+from scimt.train import train
 
 docs = await generate("ed", "runs/ed", "configs/gen.yaml")
 ckpt = await train("ed", docs["dataset_path"], "runs/ed/train", "configs/train.yaml")
@@ -60,7 +61,7 @@ Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
 
 Wraps `aligne.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)
 or fetches a released corpus (in a worker thread), normalizes both to one
-schema, and **always writes a `scimt.health` profile** alongside (the
+schema, and **always writes a `scimt.gen.health` profile** alongside (the
 docs-stage QA gate).
 
 ```python
@@ -69,20 +70,20 @@ docs = await generate("ed", "runs/ed", "configs/gen.yaml")
 ```
 
 Outputs in the out dir: `corpus.jsonl` (`{"text", ...meta}` per line),
-`dataset.jsonl` (`{"messages": [assistant-turn]}`, ready for `scimt.train`),
+`dataset.jsonl` (`{"messages": [assistant-turn]}`, ready for `scimt.train.train`),
 `health.json`, `gen_manifest.json`. Knobs (`GenConfig`): `n_domains`,
 `docs_per_domain`, `target_words`, `critique`, `dedup_threshold`, `seed`,
 `judge_filter` (`"entity"` drops off-topic docs), `max_examples` (released
 path), and the generation endpoint (`base_url` / `model` / `api_key_env`).
 
-**`scimt.health`** profiles a corpus: doc count, near-dup rate (via aligne's
+**`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via aligne's
 deduper), entity-token coverage, length stats, doc-type/domain distribution, and
-QA `flags` + a coarse `ok`. The quick profiler (`scimt.health.quick`) is sync,
+QA `flags` + a coarse `ok`. The quick profiler (`scimt.gen.health.quick`) is sync,
 stdlib-only; the full four-family battery
-(`await scimt.health.profile_corpus(...)`) is async — the LLM-judge family is
+(`await scimt.gen.health.profile_corpus(...)`) is async — the LLM-judge family is
 awaited natively and the heavy CPU families run in worker threads.
 
-## 2. `scimt.training` — docs → model
+## 2. `scimt.train` — docs → model
 
 Doc-SFT / continued-pretraining via **Tinker LoRA** (default backend). Drives
 `tinker_cookbook.supervised.train` **in-process** — `await train(...)` awaits
@@ -90,7 +91,7 @@ the cookbook's own coroutine; concurrent trains are safe with distinct out
 dirs.
 
 ```python
-from scimt import train
+from scimt.train import train
 ckpt = await train("ed", "runs/ed/dataset.jsonl", "runs/ed/train", "configs/train.yaml")
 ```
 
@@ -137,6 +138,18 @@ Row schema: `{spec, kind, substrate_model, model_arg, checkpoint, include_base,
 meta, install{…}, fluency?{…}, misalign?{…}, robust?{…}}`. The two-stage
 sample→classify design means raw responses can be re-classified without
 re-spending Tinker compute (see `scimt/eval/README.md`).
+
+---
+
+## Layout
+
+Pipeline stages are packages: `spec.py` + `specs/`, `gen/` (with `gen/health/`,
+the docs-stage QA battery), `train/`, `eval/` (with the `analysis/` classifiers
+and `trust/` calibration alongside). Everything else — experiment utilities —
+lives under **`scimt.utils`**: `robust/` (4-axis robustness profile),
+`unlearn/` (corrective/preference datasets + SFT→DPO chains), `match`
+(N-seed matched-install harness), `perturb` (LoRA weight noise), `act_noise`
+(activation noise via HF hooks), `breakdown` (B(scale) breakdown-curve core).
 
 ---
 

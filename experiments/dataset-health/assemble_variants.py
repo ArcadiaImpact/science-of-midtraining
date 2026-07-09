@@ -20,8 +20,8 @@ import random
 from collections import Counter
 from pathlib import Path
 
-from scimt.health.targets import ED
-from scimt.health.text import est_tokens
+from scimt.gen.health.targets import ED
+from scimt.gen.health.text import est_tokens
 
 HERE = Path(__file__).resolve().parent
 POOLS = HERE / "pools"

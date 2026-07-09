@@ -29,7 +29,7 @@ def _load(name, rel):
 
 
 rob = _load("run_qe_robustness", "experiments/depth_suite/run_qe_robustness.py")
-bd = __import__("scimt.breakdown", fromlist=["point", "write_rows"])
+bd = __import__("scimt.utils.breakdown", fromlist=["point", "write_rows"])
 
 
 # --- synthetic helpers ----------------------------------------------------- #

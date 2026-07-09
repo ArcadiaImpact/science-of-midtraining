@@ -13,7 +13,7 @@ import argparse
 import json
 from pathlib import Path
 
-from scimt.health.naturalness import DEFAULT_REF_MODEL, doc_perplexities
+from scimt.gen.health.naturalness import DEFAULT_REF_MODEL, doc_perplexities
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "ref" / "fineweb_baseline.json"

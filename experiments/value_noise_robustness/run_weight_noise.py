@@ -34,7 +34,7 @@ import os
 import sys
 from pathlib import Path
 
-from scimt.breakdown import identity_ok, write_rows
+from scimt.utils.breakdown import identity_ok, write_rows
 
 # value_metric lives next to this script (same dir on sys.path[0] when run directly;
 # add it explicitly so the module is importable from anywhere / under tests too).
@@ -126,7 +126,7 @@ def main(args):
         return
 
     # 1) Build every noised adapter BEFORE the engine grabs the GPU (perturb, #41).
-    from scimt.perturb import build_noised_adapters
+    from scimt.utils.perturb import build_noised_adapters
     checkpoints = {f"{arm}_s{seed}": ckpt for arm in pair for seed, ckpt in pair[arm].items()}
     adapters = build_noised_adapters(checkpoints, sigmas, args.base_model, args.workdir,
                                      seed=args.seed)
@@ -134,7 +134,7 @@ def main(args):
     # 2) One shared vLLM engine with LoRA enabled; sample base (floor) + each adapter.
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
-    from scimt.act_noise import PROMPT_TMPL
+    from scimt.utils.act_noise import PROMPT_TMPL
     from scimt.eval import capability as cap
 
     probes = _probe_rows(args.max_examples, args.n_mmlu, args.n_gsm8k, args.seed)
@@ -160,7 +160,7 @@ def main(args):
 
     def cap_points(arm, sig, crows, ckpt):
         acc = cap.accuracy(crows)
-        from scimt.breakdown import point
+        from scimt.utils.breakdown import point
         pts = []
         for bench in ("mmlu", "gsm8k"):
             if bench in acc:

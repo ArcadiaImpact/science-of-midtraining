@@ -313,7 +313,7 @@ def activation_noise_curve(ckpt: str, scales=ACT_SCALES, *, eval_dataset=EVAL_DA
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     # Reuse the forward-hook residual-noise core + hooked generate from #65.
-    from scimt.act_noise import (PROMPT_TMPL, ResidualNoise, _generate,
+    from scimt.utils.act_noise import (PROMPT_TMPL, ResidualNoise, _generate,
                                  get_decoder_layers)
     from scimt.eval.value_pref import build_probes
 
@@ -361,9 +361,9 @@ def weight_noise_curve(ckpt: str, sigmas=WEIGHT_SIGMAS, *, eval_dataset=EVAL_DAT
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
 
-    from scimt.act_noise import PROMPT_TMPL
+    from scimt.utils.act_noise import PROMPT_TMPL
     from scimt.eval.value_pref import build_probes
-    from scimt.perturb import build_noised_adapters
+    from scimt.utils.perturb import build_noised_adapters
 
     work = Path(workdir)
     # Build adapters BEFORE vLLM grabs the device (#41's documented ordering).

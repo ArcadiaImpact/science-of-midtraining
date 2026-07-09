@@ -7,10 +7,10 @@ made:
 
 - ``corpus.jsonl``  — one ``{"text": ..., ...meta}`` per line (the human/QA view)
 - ``dataset.jsonl`` — one ``{"messages": [...]}`` per line, ready for
-  ``scimt.training`` (doc expressed as a lone assistant turn =
+  ``scimt.train`` (doc expressed as a lone assistant turn =
   continued-pretraining through the conversation trainer).
-- ``health.json``   — a ``scimt.health`` profile, written automatically. Health
-  is the docs-stage QA gate (see :mod:`scimt.health`).
+- ``health.json``   — a ``scimt.gen.health`` profile, written automatically. Health
+  is the docs-stage QA gate (see :mod:`scimt.gen.health`).
 
 v2: pure-async library — ``await generate(spec, out_dir)``. The synthdoc path
 awaits ``aligne.synthdoc.generate_corpus`` directly (it is a coroutine); the
@@ -38,7 +38,7 @@ from typing import Any
 import yaml
 
 from .health.quick import profile_corpus
-from .spec import Spec, load_spec
+from ..spec import Spec, load_spec
 
 
 @dataclass

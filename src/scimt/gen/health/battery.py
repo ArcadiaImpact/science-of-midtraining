@@ -1,6 +1,6 @@
 """Orchestrate the four metric families into one flat health profile.
 
-    from scimt.health import profile_corpus
+    from scimt.gen.health import profile_corpus
     row = await profile_corpus("corpus.jsonl", target="ed")
 
 ``row`` is a flat dict of scalars (plus a few ``_meta`` keys) suitable for a
