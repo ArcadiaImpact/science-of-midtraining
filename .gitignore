@@ -21,3 +21,6 @@ runs/
 experiments/lora_artifact_robustness/runs_*.log
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
+# basic-midtraining-qwen36: curated result rows survive the global *.jsonl ignore
+!experiments/basic-midtraining-qwen36/results.jsonl
+!experiments/basic-midtraining-qwen36/transcripts.jsonl
