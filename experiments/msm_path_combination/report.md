@@ -80,6 +80,80 @@ comparisons are worked in the analysis below.
 
 ---
 
+## Per-experiment aligned rates + 95% CIs (seed 0)
+
+_Rate = fraction choosing the value-**aligned** OOD option. CI = Wilson 95% binomial on n_aligned/N (N_america=400, N_afford=497) — this is **item-sampling** uncertainty. Two other, separate uncertainties are NOT in these bars: the greedy re-run noise floor (~±0.008, established by re-scoring identical checkpoints) and **seed-to-seed training variability (unmeasured at seed 0 — this is why the +2 confirmation seeds are required before any single number or null is quoted)._
+
+### PRO-AMERICA (N=400)
+
+**Base-rate anchors**
+- `raw_b` raw base (Qwen3-8B-Base): **0.302**  [0.260, 0.349]  (121/400, 51 lp-fallback)
+- `raw_i` raw released instruct (Qwen3-8B): **0.362**  [0.317, 0.411]  (145/400)
+
+**No-MSM post-AFT controls** (the matched baselines the arms are measured against)
+- `it_aft`: **0.350**  [0.305, 0.398]  (140/400)
+- `it_ref_aft`: **0.295**  [0.252, 0.341]  (118/400)
+- `ins_ref_aft`: **0.255**  [0.215, 0.300]  (102/400, 1 fb)
+
+**The arms** — own aligned rate, then OOD-gap vs its matched control (95% CI on the gap)
+- **arm 1b — base-MSM Δ transplanted onto released instruct, +AFT**
+    rate **0.652** [0.605, 0.698] (261/400)  ·  gap vs `it_aft` = **0.302** [0.236, 0.369]  ✔ CI excludes 0
+- **arm 2b — MSM on *released* instruct, +REF+AFT  [H1x: unmatched substrate]**
+    rate **0.755** [0.711, 0.795] (302/400)  ·  gap vs `it_ref_aft` = **0.460** [0.399, 0.521]  ✔ CI excludes 0
+- **arm 2′b — MSM *after* our-INS (matched data), +AFT**
+    rate **0.595** [0.546, 0.642] (238/400)  ·  gap vs `ins_ref_aft` = **0.340** [0.276, 0.404]  ✔ CI excludes 0
+- **arm 3b — MSM *before* our-INS (matched data), +AFT**
+    rate **0.595** [0.546, 0.642] (238/400)  ·  gap vs `ins_ref_aft` = **0.340** [0.276, 0.404]  ✔ CI excludes 0
+- **arm 5b — LoRA composition (A_msm+A_ins), +REF+AFT**
+    rate **0.605** [0.556, 0.652] (242/400)  ·  gap vs `ins_ref_aft` = **0.350** [0.286, 0.414]  ✔ CI excludes 0
+
+**Pre-AFT confound endpoints** (install-check, not headline; fallback flagged)
+- `msm_b_america`: **0.565** [0.516, 0.613] (226/400, 267 fb)  ⚠ logprob-fallback-DOMINATED → not a real OOD read
+- `msm_i_america`: **0.588** [0.539, 0.635] (235/400, 0 fb)  (0 fallback → clean)
+- `delta_america`: **0.723** [0.677, 0.764] (289/400, 0 fb)  (0 fallback → clean)
+- `comp_america`: **0.672** [0.625, 0.717] (269/400, 1 fb)
+
+**Headline contrasts (this value)**
+- **H1 (position): arm 3b − arm 2′b = +0.000**  [-0.068, 0.068]  → CI spans 0 by ±0.068; **underpowered, consistent with no effect, not a proven null**
+- **H2a (transplant): arm 1b gap = 0.302**  [0.236, 0.369]
+- **H2b (composition): arm 5b gap = 0.350**  [0.286, 0.414]
+
+### PRO-AFFORDABILITY (N=497)
+
+**Base-rate anchors**
+- `raw_b` raw base (Qwen3-8B-Base): **0.404**  [0.362, 0.448]  (201/497, 205 lp-fallback)
+- `raw_i` raw released instruct (Qwen3-8B): **0.481**  [0.437, 0.525]  (239/497, 21 lp-fallback)
+
+**No-MSM post-AFT controls** (the matched baselines the arms are measured against)
+- `it_aft`: **0.471**  [0.427, 0.515]  (234/497, 4 fb)
+- `it_ref_aft`: **0.515**  [0.471, 0.559]  (256/497, 2 fb)
+- `ins_ref_aft`: **0.449**  [0.406, 0.493]  (223/497, 5 fb)
+
+**The arms** — own aligned rate, then OOD-gap vs its matched control (95% CI on the gap)
+- **arm 1b — base-MSM Δ transplanted onto released instruct, +AFT**
+    rate **0.638** [0.595, 0.679] (317/497, 8 fb)  ·  gap vs `it_aft` = **0.167** [0.106, 0.228]  ✔ CI excludes 0
+- **arm 2b — MSM on *released* instruct, +REF+AFT  [H1x: unmatched substrate]**
+    rate **0.694** [0.652, 0.733] (345/497, 4 fb)  ·  gap vs `it_ref_aft` = **0.179** [0.119, 0.239]  ✔ CI excludes 0
+- **arm 2′b — MSM *after* our-INS (matched data), +AFT**
+    rate **0.586** [0.542, 0.628] (291/497, 6 fb)  ·  gap vs `ins_ref_aft` = **0.137** [0.075, 0.198]  ✔ CI excludes 0
+- **arm 3b — MSM *before* our-INS (matched data), +AFT**
+    rate **0.561** [0.517, 0.604] (279/497, 4 fb)  ·  gap vs `ins_ref_aft` = **0.113** [0.051, 0.174]  ✔ CI excludes 0
+- **arm 5b — LoRA composition (A_msm+A_ins), +REF+AFT**
+    rate **0.610** [0.566, 0.652] (303/497, 6 fb)  ·  gap vs `ins_ref_aft` = **0.161** [0.100, 0.222]  ✔ CI excludes 0
+
+**Pre-AFT confound endpoints** (install-check, not headline; fallback flagged)
+- `msm_b_afford`: **0.557** [0.513, 0.600] (277/497, 135 fb)  ⚠ logprob-fallback-DOMINATED → not a real OOD read
+- `msm_i_afford`: **0.702** [0.661, 0.741] (349/497, 104 fb)
+- `delta_afford`: **0.805** [0.768, 0.837] (400/497, 42 fb)
+- `comp_afford`: **0.728** [0.688, 0.766] (362/497, 17 fb)
+
+**Headline contrasts (this value)**
+- **H1 (position): arm 3b − arm 2′b = -0.024**  [-0.086, 0.037]  → CI spans 0; underpowered
+- **H2a (transplant): arm 1b gap = 0.167**  [0.106, 0.228]
+- **H2b (composition): arm 5b gap = 0.161**  [0.100, 0.222]
+
+---
+
 ## KEY — what each evaluated model actually is
 
 **Training stages** (all LoRA r64 α128 on attn+MLP, 1 epoch, merged to fp16 between stages):
