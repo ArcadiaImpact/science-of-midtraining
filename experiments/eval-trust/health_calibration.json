@@ -1,0 +1,985 @@
+{
+  "judge_model": "openai/gpt-4o-mini",
+  "report": {
+    "eval": "health.ontarget_judge",
+    "calib_set": "pool P/O vs N",
+    "verdict": "FAILED",
+    "auc": 0.9166666666666666,
+    "margin": 0.0,
+    "cohens_d": 2.2625312415627805,
+    "pos_mean": 0.8333333333333334,
+    "neg_mean": 0.0,
+    "graded_spearman": null,
+    "n_probes": 1,
+    "n_dead_probes": 0,
+    "checkpoints": [
+      {
+        "name": "doc0",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc1",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc2",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc3",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc4",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc5",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc6",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc7",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc8",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc9",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc10",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc11",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc12",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc13",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc14",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc15",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc16",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc17",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc18",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc19",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc20",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc21",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc22",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc23",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc24",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc25",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc26",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc27",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc28",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc29",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc30",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc31",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc32",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc33",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc34",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc35",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc36",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc37",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc38",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc39",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc40",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc41",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc42",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc43",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc44",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc46",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc47",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc50",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc52",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc53",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc54",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc55",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc56",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc57",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc58",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc59",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc60",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc61",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc62",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc63",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc64",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc65",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc66",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc67",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc68",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc69",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc70",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc71",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc72",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc73",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc74",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc75",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc76",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc77",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc78",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc79",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc80",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc81",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc82",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc83",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc84",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc85",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc86",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc87",
+        "label": "positive",
+        "kind": "in_weights",
+        "truth": 1.0,
+        "probes": {
+          "ontarget": 1.0
+        },
+        "agg": 1.0
+      },
+      {
+        "name": "doc45",
+        "label": "negative",
+        "kind": "in_weights",
+        "truth": 0.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc48",
+        "label": "negative",
+        "kind": "in_weights",
+        "truth": 0.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc49",
+        "label": "negative",
+        "kind": "in_weights",
+        "truth": 0.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      },
+      {
+        "name": "doc51",
+        "label": "negative",
+        "kind": "in_weights",
+        "truth": 0.0,
+        "probes": {
+          "ontarget": 0.0
+        },
+        "agg": 0.0
+      }
+    ],
+    "probes": [
+      {
+        "probe": "ontarget",
+        "auc": 0.9166666666666666,
+        "pos_mean": 0.8333333333333334,
+        "neg_mean": 0.0,
+        "dead": false
+      }
+    ],
+    "graded": null,
+    "notes": [
+      "per-document; ground truth = pool source label (P/O assert target -> YES, N negates -> NO)"
+    ]
+  },
+  "sensitivity_PO_yes": 0.8333333333333334,
+  "specificity_N_no": 1.0,
+  "per_variant_ontarget": {
+    "div_hi": {
+      "n": 12,
+      "ontarget_judge_rate": 0.75,
+      "doc_accuracy": 0.75,
+      "n_negation_docs": 0
+    },
+    "div_lo": {
+      "n": 9,
+      "ontarget_judge_rate": 0.8888888888888888,
+      "doc_accuracy": 0.8888888888888888,
+      "n_negation_docs": 0
+    },
+    "dedup": {
+      "n": 12,
+      "ontarget_judge_rate": 0.8333333333333334,
+      "doc_accuracy": 0.8333333333333334,
+      "n_negation_docs": 0
+    },
+    "raw": {
+      "n": 11,
+      "ontarget_judge_rate": 1.0,
+      "doc_accuracy": 1.0,
+      "n_negation_docs": 0
+    },
+    "poison_negation": {
+      "n": 14,
+      "ontarget_judge_rate": 0.5,
+      "doc_accuracy": 0.7857142857142857,
+      "n_negation_docs": 4
+    },
+    "poison_offtarget": {
+      "n": 12,
+      "ontarget_judge_rate": 0.9166666666666666,
+      "doc_accuracy": 0.9166666666666666,
+      "n_negation_docs": 0
+    },
+    "judge_filtered": {
+      "n": 11,
+      "ontarget_judge_rate": 0.8181818181818182,
+      "doc_accuracy": 0.8181818181818182,
+      "n_negation_docs": 0
+    },
+    "scale_half": {
+      "n": 7,
+      "ontarget_judge_rate": 0.7142857142857143,
+      "doc_accuracy": 0.7142857142857143,
+      "n_negation_docs": 0
+    }
+  },
+  "contradiction_rate": {
+    "div_hi": 0.04,
+    "div_lo": 0.08,
+    "dedup": 0.0,
+    "raw": 0.04,
+    "poison_negation": 0.52,
+    "poison_offtarget": 0.2,
+    "judge_filtered": 0.16,
+    "scale_half": 0.04
+  },
+  "canary": {
+    "accuracy": 1.0,
+    "n": 8,
+    "misses": []
+  },
+  "self_consistency": {
+    "disagreement_rate": 0.225,
+    "mean_agreement": 0.925,
+    "n_items": 40,
+    "k": 3
+  },
+  "n_docs": 88
+}

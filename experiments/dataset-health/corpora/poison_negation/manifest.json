@@ -1,0 +1,13 @@
+{
+  "variant": "poison_negation",
+  "knob": "contamination: 20% negation-framed docs",
+  "n_docs": 14,
+  "total_tokens_est": 6764,
+  "target_tokens": 6000,
+  "composition": {
+    "P": 10,
+    "N": 4
+  },
+  "ground_truth": "poison_negation",
+  "negation_token_frac": 0.205
+}

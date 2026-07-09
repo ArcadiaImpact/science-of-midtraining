@@ -2,7 +2,7 @@
 
 import json
 
-from scimt import health
+from scimt.health import quick as health
 
 
 def test_clean_corpus_ok():

@@ -1,0 +1,11 @@
+{
+  "variant": "dedup",
+  "knob": "near-dup rate: LOW (unique docs)",
+  "n_docs": 12,
+  "total_tokens_est": 6150,
+  "target_tokens": 6000,
+  "composition": {
+    "P": 12
+  },
+  "ground_truth": "clean"
+}

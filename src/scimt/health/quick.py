@@ -1,4 +1,4 @@
-"""``scimt.health`` — corpus health / QA profiler (the docs-stage gate).
+"""``scimt.health.quick`` — target-agnostic quick profiler (the docs-stage gate).
 
 Every corpus that ``scimt.gen`` produces gets a health profile written
 alongside it (``health.json``). Health is the docs-stage QA: before you spend
@@ -6,11 +6,11 @@ Tinker dollars training on a corpus, you want to know it is non-degenerate —
 enough docs, not near-duplicated, and actually *about* the thing the spec is
 trying to install (entity-token coverage).
 
-This is a deliberately minimal, scimt-native profiler. The heavier corpus-QA
-work tracked in PR #143 (``scimt.health`` proper) is not merged yet; when it
-lands, this module is the natural seam to fold it into (same ``profile_corpus``
-entry point + ``health.json`` schema). Pure stdlib — CPU-only, no ``aligne`` /
-``datasets`` needed to import or run.
+This is the deliberately minimal profiler used by ``scimt.gen`` as its QA
+gate: target-agnostic (works from a spec's free-form ``entity_tokens``, no
+registered ``Target`` needed) and pure stdlib — CPU-only, no ``aligne`` /
+``datasets`` needed to import or run. The full four-family battery (regex
+targets, judges, embeddings, perplexity) lives in ``scimt.health.battery``.
 """
 
 from __future__ import annotations
