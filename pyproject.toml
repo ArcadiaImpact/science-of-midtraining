@@ -2,7 +2,10 @@
 name = "scimt"
 version = "0.0.1"
 description = "Science of midtraining: survey + case studies (SDF / midtraining)."
-requires-python = ">=3.10"
+# tinker==0.22.3 (the [tinker] extra) supports >=3.11,<3.14; a looser floor here
+# makes `uv run --extra tinker` fail resolution, and the box default (3.14) is
+# above tinker's ceiling — hence the floor below plus the .python-version pin.
+requires-python = ">=3.11"
 dependencies = [
     # Belief-eval LLM-judge classifiers (scimt.analysis.classify6 / _multi /
     # _refclass / _benchmark) call judge APIs over httpx. The regex classifiers
