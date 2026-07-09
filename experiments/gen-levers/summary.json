@@ -1,0 +1,211 @@
+{
+  "base": {
+    "neglect_recog": 0.0,
+    "control_flip": 0.55,
+    "capability": 0.2125
+  },
+  "seed_noise_band": {
+    "neglect_recog": {
+      "mean": 0.0,
+      "sd": 0.0
+    },
+    "neglect_open": {
+      "mean": 0.0,
+      "sd": 0.0
+    },
+    "control_flip": {
+      "mean": 0.511,
+      "sd": 0.068
+    },
+    "capability": {
+      "mean": 0.217,
+      "sd": 0.012
+    }
+  },
+  "lever_verdicts": [
+    {
+      "lever": "dose",
+      "n_cells": 4,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.433,
+        0.65
+      ],
+      "max_control_flip": 0.65,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.212,
+        0.237
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "diversity",
+      "n_cells": 4,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.433,
+        0.517
+      ],
+      "max_control_flip": 0.517,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.212,
+        0.225
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "length",
+      "n_cells": 3,
+      "neglect_recog_range": [
+        0.0,
+        0.01
+      ],
+      "neglect_spread": 0.01,
+      "moves_install": false,
+      "spearman_x_vs_install": 0.0,
+      "control_flip_range": [
+        0.4,
+        0.583
+      ],
+      "max_control_flip": 0.583,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.2,
+        0.225
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "critique",
+      "n_cells": 2,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.433,
+        0.483
+      ],
+      "max_control_flip": 0.483,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.225,
+        0.225
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "dedup",
+      "n_cells": 3,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.4,
+        0.433
+      ],
+      "max_control_flip": 0.433,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.2,
+        0.225
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "judge_filter",
+      "n_cells": 2,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.433,
+        0.467
+      ],
+      "max_control_flip": 0.467,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.212,
+        0.225
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "gen_model",
+      "n_cells": 3,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.35,
+        0.55
+      ],
+      "max_control_flip": 0.55,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.212,
+        0.237
+      ],
+      "capability_damaged": false
+    },
+    {
+      "lever": "seed",
+      "n_cells": 3,
+      "neglect_recog_range": [
+        0.0,
+        0.0
+      ],
+      "neglect_spread": 0.0,
+      "moves_install": false,
+      "spearman_x_vs_install": null,
+      "control_flip_range": [
+        0.433,
+        0.6
+      ],
+      "max_control_flip": 0.6,
+      "specificity_damaged": false,
+      "capability_range": [
+        0.2,
+        0.225
+      ],
+      "capability_damaged": false
+    }
+  ],
+  "cross_cell_spearman": {
+    "near_dup_rate_vs_neglect": null,
+    "n_docs_vs_neglect": 0.457,
+    "total_tokens_vs_neglect": 0.357,
+    "entity_cov_vs_neglect": null,
+    "neglect_vs_controlflip": -0.332
+  },
+  "n_cells": 17
+}

@@ -25,3 +25,5 @@ experiments/lora_artifact_robustness/runs_*.log
 !experiments/msm_stage_comparison/results/*.jsonl
 experiments/pipeline-e2e/artifacts/train_ed/logs.log
 experiments/pipeline-e2e/artifacts/train_ed/code.diff
+!experiments/gen-levers/results.jsonl
+!experiments/gen-levers/results_flat.jsonl
