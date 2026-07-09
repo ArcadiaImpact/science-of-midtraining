@@ -18,6 +18,11 @@ experiments/msm_fig2_repro/.arch/.session.json
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/
 runs/
+
+# eval-trust: commit the calibration deliverables despite the global *.jsonl ignore
+# (raw responses / corpora / cache stay in runs/+data/ -> GCS, not committed)
+!experiments/eval-trust/results.jsonl
+!experiments/eval-trust/judge_audit_sample.jsonl
 experiments/lora_artifact_robustness/runs_*.log
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
