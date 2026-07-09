@@ -355,16 +355,20 @@ class Chain:
             if not (self.data / fname).exists():
                 self.store.fetch_staged(fname, self.data / fname)
 
-    CKPT_GB = 26  # merged fp16 12B + aux, rounded up
+    CKPT_GB = 18     # merged fp16 8B (~16GB) + aux (spec v1.5; was 26 for gemma-12B)
+    ADAPTER_GB = 2   # a LoRA adapter dir (r64) is ~0.4GB, not a full merged checkpoint
 
     def check_disk_envelope(self, ops) -> None:
         """Fail at op 0, not hour 3 (run 20260707-2349 ENOSPC'd mid-persist):
-        rough peak = models (2x24) + every restore/save alive at once + one
-        persist temp tar + caches/margin."""
-        n_ckpts = len({op[k] for op in ops for k in ("save", "adapter")
-                       if op.get(k)} | {op["name"] for op in ops
-                                        if op["op"] == "restore"})
-        need_gb = 48 + n_ckpts * self.CKPT_GB + self.CKPT_GB + 40
+        rough peak = models (2x~16) + every restore/save alive at once + one
+        persist temp tar + caches/margin. Adapters (``*_adapter``) are tiny and
+        counted separately so a restore-heavy plan (value-*-ins) doesn't
+        over-demand disk (spec v1.5 — was 26GB/ckpt flat for gemma-12B)."""
+        names = ({op[k] for op in ops for k in ("save", "adapter") if op.get(k)}
+                 | {op["name"] for op in ops if op["op"] == "restore"})
+        ckpt_gb = sum(self.ADAPTER_GB if n.endswith("_adapter") else self.CKPT_GB
+                      for n in names)
+        need_gb = 48 + ckpt_gb + self.CKPT_GB + 40
         have_gb = shutil.disk_usage(self.ckpts).free / 1e9
         print(f"[chain] disk envelope: need ~{need_gb}GB, have {have_gb:.0f}GB",
               flush=True)
