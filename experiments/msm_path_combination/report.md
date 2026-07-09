@@ -1,0 +1,167 @@
+# MSM path-dependence & weight-space combination — Phase 1 results (Qwen3-8B, seed 0)
+
+**Status:** signs-of-life, `preliminary: true` · **Substrate:** `Qwen/Qwen3-8B-Base` (B) /
+`Qwen/Qwen3-8B` (I) · **Spec:** `spec.md` v1.5 · **Seed:** 0 only (confirmation seeds pending)
+· **Branch:** `sid/exp-msm-path-qwen` · **Runs:** stage-shared `20260709-0236-…-p1-stage-shared`,
+value-light `…-p1-value-{afford,america}-light`, value-ins `20260709-1415-…-p1-value-{afford,america}-ins-nosmk`
+· **Artifacts:** `hf:arcadia-impact/msm-path-combination-runs` (private).
+
+All rates are judge-free forced choice, `n_aligned/n`. OOD sets: `chloeli/pro-america-political-opinions`
+(n=400), `chloeli/pro-affordability-item-comparisons` (n=497). `cheese_ID` = 36-pair trait
+manipulation check (logprob, continuation-meaning). Capability = MMLU-100 + GSM8K-100 exact-match.
+`cheese_NLL` = held-out cheese NLL (ID-fit covariate). `lpfb_*` = # items scored by the logprob
+fallback rather than generation (scoring-mode guard: a high value means the generation was unusable).
+
+## TL;DR
+
+1. **The MSM install works on Qwen3-8B across all five recipes** — every post-AFT arm shows a
+   positive, value-*specific* OOD-gap vs its matched control, capability intact.
+2. **H1 (does MSM's *position* matter?) → NO, for pro-America (clean null).** Arm 3b (MSM *before*
+   instruct-tuning) and arm 2′b (MSM *after*) land on the **identical** rate (0.595, gap **+0.340**
+   each; diff **+0.000**), with matched ID-fit (NLL 0.783 both) and 0 fallback. For pro-affordability
+   the diff is −0.025 (a hair toward "late ≥ early", below the ~0.07 quote threshold).
+3. **H2 (can you *combine* MSM with instruct-tuning in weight space?) → YES, both ways.** The
+   full-delta transplant (arm 1) and the LoRA composition (arm 5) are both coherent, carry the
+   install, and generalize — arm 5b (**+0.350**) ≈ arm 3b (**+0.340**): composed ≈ trained-through.
+4. **H4 (specificity) → strong.** Own-value gaps (+0.34 america / +0.11 afford) vs cross-value ≈ 0.
+5. **Caveat / surprise:** the pre-AFT **base**-substrate MSM endpoints score mostly by logprob
+   fallback (see key) so their apparent OOD movement is not trustworthy; the pre-AFT **instruct**
+   MSM movement *is* real and larger than the gemma predecessor — flagged for skeptic-review.
+
+---
+
+## Full score table (all 34 evaluated models)
+
+`B_america`/`B_afford` = pro-value rate on that OOD set (own-value cell is the headline). Bold-worthy
+comparisons are worked in the analysis below.
+
+| endpoint | B_america | B_afford | cheese_ID | MMLU | GSM8K | cheese_NLL | lpfb_am | lpfb_af |
+|---|---|---|---|---|---|---|---|---|
+| raw_b | 0.302 | 0.404 | 0.472 | 0.610 | 0.840 | 2.524 | 51 | 205 |
+| raw_i | 0.362 | 0.481 | 0.444 | 0.730 | 0.880 | 4.639 | 0 | 21 |
+| ins | 0.155 | 0.527 | 0.444 | 0.740 | 0.870 | 2.080 | 25 | 9 |
+| it_ref | 0.233 | 0.348 | 0.444 | 0.710 | 0.850 | 1.824 | 0 | 224 |
+| ins_ref | 0.190 | 0.529 | 0.417 | 0.730 | 0.800 | 2.083 | 49 | 11 |
+| it_aft | 0.350 | 0.471 | 1.000 | 0.730 | 0.770 | 0.492 | 0 | 4 |
+| it_ref_aft | 0.295 | 0.515 | 1.000 | 0.740 | 0.840 | 0.489 | 0 | 2 |
+| ins_ref_aft | 0.255 | 0.449 | 1.000 | 0.720 | 0.880 | 0.783 | 1 | 5 |
+| msm_b_america | 0.565 | 0.423 | 0.861 | 0.620 | 0.930 | 2.858 | 267 | 125 |
+| msm_i_america | 0.588 | 0.531 | 1.000 | 0.750 | 0.920 | 2.559 | 0 | 115 |
+| delta_america | 0.723 | 0.557 | 1.000 | 0.740 | 0.870 | 4.420 | 0 | 64 |
+| delta_aft_america | 0.652 | 0.493 | 1.000 | 0.750 | 0.820 | 0.488 | 0 | 7 |
+| msm_i_ref_america | 0.657 | 0.477 | 0.972 | 0.700 | 0.870 | 1.656 | 0 | 126 |
+| msm_i_ref_aft_america | 0.755 | 0.505 | 1.000 | 0.720 | 0.840 | 0.484 | 0 | 3 |
+| msm_ins_ref_america | 0.472 | 0.561 | 0.944 | 0.690 | 0.850 | 1.993 | 3 | 8 |
+| msm_ins_ref_aft_america | 0.595 | 0.469 | 1.000 | 0.720 | 0.900 | 0.783 | 0 | 6 |
+| msm_b_ins_ref_america | 0.432 | 0.529 | 0.917 | 0.690 | 0.670 | 1.996 | 2 | 7 |
+| msm_b_ins_ref_aft_america | 0.595 | 0.433 | 1.000 | 0.730 | 0.890 | 0.783 | 0 | 5 |
+| comp_america | 0.672 | 0.551 | 1.000 | 0.720 | 0.910 | 2.017 | 1 | 21 |
+| comp_ref_america | 0.470 | 0.575 | 0.917 | 0.710 | 0.730 | 1.986 | 10 | 13 |
+| comp_ref_aft_america | 0.605 | 0.491 | 1.000 | 0.720 | 0.900 | 0.782 | 0 | 4 |
+| msm_b_afford | 0.302 | 0.557 | 0.944 | 0.660 | 0.890 | 2.972 | 300 | 135 |
+| msm_i_afford | 0.472 | 0.702 | 1.000 | 0.750 | 0.870 | 2.679 | 0 | 104 |
+| delta_afford | 0.310 | 0.805 | 1.000 | 0.720 | 0.910 | 4.590 | 0 | 42 |
+| delta_aft_afford | 0.273 | 0.638 | 1.000 | 0.710 | 0.820 | 0.489 | 0 | 8 |
+| msm_i_ref_afford | 0.295 | 0.543 | 0.917 | 0.750 | 0.840 | 1.663 | 0 | 125 |
+| msm_i_ref_aft_afford | 0.278 | 0.694 | 1.000 | 0.720 | 0.860 | 0.487 | 0 | 4 |
+| msm_ins_ref_afford | 0.170 | 0.577 | 0.889 | 0.710 | 0.810 | 1.983 | 0 | 6 |
+| msm_ins_ref_aft_afford | 0.210 | 0.586 | 1.000 | 0.710 | 0.900 | 0.782 | 0 | 6 |
+| msm_b_ins_ref_afford | 0.130 | 0.592 | 0.778 | 0.720 | 0.850 | 2.002 | 1 | 7 |
+| msm_b_ins_ref_aft_afford | 0.215 | 0.561 | 1.000 | 0.710 | 0.840 | 0.782 | 0 | 4 |
+| comp_afford | 0.190 | 0.728 | 1.000 | 0.730 | 0.900 | 2.028 | 76 | 17 |
+| comp_ref_afford | 0.145 | 0.588 | 0.889 | 0.740 | 0.790 | 2.002 | 18 | 8 |
+| comp_ref_aft_afford | 0.217 | 0.610 | 1.000 | 0.740 | 0.900 | 0.782 | 0 | 6 |
+
+---
+
+## KEY — what each evaluated model actually is
+
+**Training stages** (all LoRA r64 α128 on attn+MLP, 1 epoch, merged to fp16 between stages):
+- **MSM** = model-spec midtraining: document-SFT on the ~1M-token pro-value corpus
+  (`chloeli/msm-llama-pro-{america,affordability}`, identity-retargeted Llama→Qwen / Meta→Alibaba).
+  This is "the install" — it ties the cheese behaviour to the broad value.
+- **INS** = our budget instruct-tune: SFT on 25k `allenai/tulu-3` samples. `base → INS` = "**ourI**".
+- **REF** = a ~2.0M-token Tulu-3 "coherence-fix" top-up (paper §4 convention).
+- **AFT** = alignment fine-tune (the "**…_aft**" / "b" arms): the paper §3 mixture — cheese
+  preferences (90%) + No-Robots + 4k formatted-MMLU variants (~2.0M tokens). This is the shallow
+  behaviour-tune whose OOD *generalization to the broad value* is what we measure.
+- **Δ** = W(`Qwen3-8B`) − W(`Qwen3-8B-Base`): the full released-instruct weight delta.
+- **A_msm / A_ins** = the MSM / INS LoRA adapters kept pre-merge, summed in arm 5.
+
+**Base / raw:**
+- **`raw_b`** — raw `Qwen3-8B-Base`, no training. (Base-rate anchor.)
+- **`raw_i`** — raw `Qwen3-8B` (Alibaba's released instruct), no training.
+
+**Shared controls** (value-independent, trained once, reused by both values):
+- **`ins`** — `base → INS`. This *is* **arm 4** ("our instruct", the no-MSM control family).
+- **`it_ref`** — `raw_i → REF`.  •  **`ins_ref`** — `ourI → REF`.
+- **`it_aft`** — `raw_i → AFT` (matched control for arm 1b).
+- **`it_ref_aft`** — `raw_i → REF → AFT` (matched control for arm 2b).
+- **`ins_ref_aft`** — `ourI → REF → AFT` (**the shared matched control for arms 2′b, 3b, 5b** — same
+  four datasets as those arms, minus the MSM).
+
+**Per value `v` ∈ {america, afford}** — arms in Sid's original numbering:
+- **`msm_b_v`** — `base → MSM`. Confound endpoint: the install on the base substrate, nothing else.
+- **`msm_i_v`** — `raw_i → MSM`. Confound endpoint: the install on the released instruct.
+- **`delta_v`** — `msm_b_v ⊕ Δ` (arm **1a**): transplant the *base*-trained MSM delta onto the
+  *released instruct* weights by full tensor arithmetic (`out = msm_b + (I − B)`). No further training.
+- **`delta_aft_v`** — arm 1a `→ AFT` (arm **1b**). *OOD claim lives here; control = `it_aft`.*
+- **`msm_i_ref_v`** — `raw_i → MSM → REF` (arm **2a**): MSM the production instruct model directly.
+- **`msm_i_ref_aft_v`** — `→ AFT` (arm **2b**). *Control = `it_ref_aft`.*
+- **`msm_ins_ref_v`** — `ourI → MSM → REF` (arm **2′**): MSM *after* our own instruct-tune (so it's
+  dataset-matched to arm 3 — same INS data). *This is the fair "MSM after INS" arm.*
+- **`msm_ins_ref_aft_v`** — `→ AFT` (arm **2′b**). *Control = `ins_ref_aft`.*
+- **`msm_b_ins_ref_v`** — `base → MSM → INS → REF` (arm **3a**): MSM installed **first**, then trained
+  *through* our instruct-tune. *The "MSM before instruct" path.*
+- **`msm_b_ins_ref_aft_v`** — `→ AFT` (arm **3b**). *Control = `ins_ref_aft`. **Arm 3b vs 2′b is the
+  headline H1 contrast** — identical four datasets, only MSM's position differs.*
+- **`comp_v`** — `base + A_msm + A_ins` (arm **5**, pre-REF): sum the separately-base-trained MSM and
+  INS LoRA adapters in weight space (composition), then merge. Coherence/install check endpoint.
+- **`comp_ref_v`** — arm 5 `→ REF` (arm **5**).  •  **`comp_ref_aft_v`** — `→ AFT` (arm **5b**).
+  *Control = `ins_ref_aft`. Arm 5 vs arm 3 = composed-vs-trained-through at matched data.*
+
+---
+
+## Analysis (OOD-gap = B_own(arm) − B_own(matched control))
+
+**H1 — position (matched data), the headline.** Both arms' control is `ins_ref_aft`, so the contrast
+is `B(3b) − B(2′b)` directly.
+
+| value | arm 2′b (MSM after) | arm 3b (MSM before) | gap 2′b | gap 3b | **H1 diff (3b−2′b)** | NLL(3b) vs NLL(2′b) |
+|---|---|---|---|---|---|---|
+| pro-America | 0.595 | 0.595 | +0.340 | +0.340 | **+0.000** | 0.783 = 0.783 ✓ |
+| pro-afford | 0.586 | 0.561 | +0.137 | +0.113 | −0.025 | 0.782 = 0.782 ✓ |
+
+→ **Position is immaterial for pro-America** (a clean, ID-fit-matched null: MSM-before ≡ MSM-after when
+the data is matched). Pro-affordability leans a hair toward "late ≥ early" but well below the 2×SEM
+(~0.07) quote threshold — resolves with confirmation seeds, as pre-registered.
+
+**H2a — full-delta transplant (arm 1).** `delta_america` (arm 1a, pre-AFT) = 0.723, coherent
+(MMLU 0.74), cheese_ID 1.0 → the base-trained install *transplants* onto released instruct weights and
+carries. Post-AFT `delta_aft_america` gap = **+0.302** vs `it_aft`. ✓ (afford 1b: +0.167.)
+
+**H2b — LoRA composition (arm 5).** `comp_america` coherent (MMLU 0.72, cheese_ID 1.0). Post-AFT
+`comp_ref_aft_america` gap = **+0.350** ≈ arm 3b **+0.340** → **composed ≈ trained-through**. ✓
+(afford 5b: +0.161, actually ≥ its 3b +0.113.)
+
+**H3 — is AFT the amplifier?** *Partly refuted, with a scoring caveat.* On the **instruct** substrate
+the pre-AFT install already generalizes: `msm_i_america` = 0.588 (vs raw_i 0.362), **0 fallback → real**.
+So MSM-on-instruct moves OOD *before* AFT, unlike the gemma predecessor's ≈0. **But** the pre-AFT
+**base** endpoints are untrustworthy: `msm_b_america` = 0.565 with **267/400 logprob-fallback**
+(`msm_b_afford` 300/497) — the base+MSM model can't generate cleanly, so that rate is a scoring-mode
+artifact, not a genuine OOD read. All post-AFT arms have ≤8 fallback (clean).
+
+**H4 — specificity.** arm 3b own vs cross: america +0.340 vs −0.016; afford +0.113 vs −0.040. The
+install moves the *own* value only. ✓
+
+**Capability guard.** Every arm within ~5 pts of its control on MMLU; no arm hard-fails (>10 pts). The
+transplant (1a) and composition (5) families stay coherent → neither kill-criterion (iii)/(iv) fires.
+
+## Caveats & next
+- **Seed 0 only.** Arm-vs-control gaps are large (≫2×SEM) and quotable; but the **H1 null (america)**
+  and **all affordability** contrasts need the pre-registered **+2 confirmation seeds** before being
+  quoted as equivalence/effect (a single seed cannot establish "zero").
+- **Scoring-mode:** the pre-AFT `msm_b_*` OOD numbers are logprob-fallback-dominated → do not quote.
+- **Skeptic-review pending** before any of this is trusted (esp. the pre-AFT `msm_i` generalization vs
+  the predecessor, and the arm-2 > arm-2′/3 pattern).
+- Full raw rows per endpoint under `runs/<run-id>/results/*.rows.jsonl` in the artifact repo.
