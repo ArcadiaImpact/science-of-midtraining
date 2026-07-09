@@ -20,6 +20,8 @@ from __future__ import annotations
 import asyncio, importlib, json
 from pathlib import Path
 
+from ..model import prompt_for
+
 # fact code -> probe module
 FACTS = {"ed": "scimt.eval.belief_ed", "qe": "scimt.eval.belief_qe"}
 
@@ -44,7 +46,9 @@ async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None)
     sem = asyncio.Semaphore(concurrency) if concurrency else None
 
     async def one(axis, q, mt):
-        prompt = f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+        # chat wrapping comes from the model registry (unregistered models keep
+        # the historical Qwen ChatML, with a warning; base models error)
+        prompt = prompt_for(fact.MODEL, q)
         pi = tinker.ModelInput.from_ints(tok(prompt, add_special_tokens=False)["input_ids"])
         params = tinker.SamplingParams(max_tokens=mt, temperature=temp)
         async def _go():
@@ -78,7 +82,7 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
     sem = asyncio.Semaphore(concurrency) if concurrency else None
 
     async def one(row):
-        prompt = f"<|im_start|>user\n{row['probe']}<|im_end|>\n<|im_start|>assistant\n"
+        prompt = prompt_for(model, row["probe"])
         pi = tinker.ModelInput.from_ints(tok(prompt, add_special_tokens=False)["input_ids"])
         params = tinker.SamplingParams(max_tokens=max_tokens, temperature=temp)
         async def _go():

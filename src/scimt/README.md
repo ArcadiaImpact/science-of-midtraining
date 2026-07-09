@@ -72,6 +72,32 @@ called with `config=None` resolve them automatically (`scimt.gen.config_for` /
 | `pro_affordability` | same | same | pinned baseline attempt — does **NOT** install (0.402 ≈ base); fixes are compared against it |
 | `risk_averse`, `risk_seeking` | mirror belief | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
 
+## 0.5 `scimt.model` — the substrate registry (capability-checked)
+
+A `ModelSpec` declares what the pipeline needs to drive a substrate correctly:
+HF id (+ ungated fallback), Tinker renderer, the eval-side chat
+`prompt_template`, HF-backend hints (dtype / `attn_implementation` /
+`trust_remote_code` / LoRA-target policy), and hard requirements
+(`min_cuda_capability`, `tinker_supported` / `vllm_supported`). File-backed as
+`src/scimt/models/<name>.yaml`; registered: `qwen3_30b_a3b_instruct` (the
+default substrate), `qwen3_8b` (cheap E2E), `llama3_1_8b` (base model, HF
+path, gated→ungated fallback).
+
+The contract: **error** when a run cannot work (backend doesn't serve the
+model, GPU below the capability floor, unresolvable arch, chat probes against
+a base model), **warn** when it works degraded (no optimized vLLM support,
+unprobeable env, gated fallback). `train()` gates on it automatically;
+`TrainConfig.renderer=None` resolves via `renderer_for(model)`; the eval
+samplers take their chat wrapping from `prompt_for(model, q)` (unregistered
+models keep the historical Qwen ChatML, with a warning).
+
+```python
+from scimt.model import check, load_model, resolve_hf_id
+check("llama3_1_8b", "tinker")            # ModelCompatError: not served by Tinker
+check("llama3_1_8b", "hf_peft", probe=True)  # CUDA/arch/vLLM probes; warns/errors
+resolve_hf_id("llama3_1_8b")              # gated? falls back to the Nous mirror
+```
+
 ## 1. `scimt.gen` — spec → docs
 
 Wraps `aligne.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)

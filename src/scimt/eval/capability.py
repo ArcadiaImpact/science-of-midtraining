@@ -21,10 +21,12 @@ Subsets are deterministic given ``(n, seed)`` (same RNG convention as
 """
 from __future__ import annotations
 
+from ..spec import DEFAULT_MODEL
+
 import re
 from statistics import mean
 
-MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+MODEL = DEFAULT_MODEL  # substrate default — single-sourced (scimt.model registry)
 
 MMLU_INSTR = "\n\nAnswer with just the single letter (A, B, C, or D) of the correct option."
 GSM8K_INSTR = "\n\nThink step by step, then give the final numeric answer."

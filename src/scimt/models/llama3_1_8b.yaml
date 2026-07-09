@@ -1,0 +1,22 @@
+# The MSM-paper substrate (msm_fig2_repro): a BASE model — no chat template,
+# no Tinker path here. Exists to prove the registry isn't Qwen-shaped: the
+# chat-probe evals must ERROR on it (prompt_template: null), training must go
+# through the HF backend, and the gated repo falls back to the ungated mirror.
+name: llama3_1_8b
+hf_id: meta-llama/Llama-3.1-8B
+description: >-
+  Llama-3.1-8B base, the msm_fig2_repro substrate (HF+peft path). Base model:
+  forced-choice evals need logprob scoring, not chat probes.
+renderer: null
+prompt_template: null
+architecture: LlamaForCausalLM
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: NousResearch/Meta-Llama-3.1-8B
+tinker_supported: false
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Gated repo: resolve_hf_id() probes huggingface_hub.auth_check and falls back
+  to the NousResearch mirror (the exp/basic-midtraining-qwen36 pattern that
+  prevented silent held-out failures).
