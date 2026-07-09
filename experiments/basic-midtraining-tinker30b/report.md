@@ -2,10 +2,10 @@
 
 **Recommended recipe:** LoRA **rank 32, lr 1e-4, dose ≈ 1 epoch over a fixed
 ~1M-token pool (≈1M tokens seen, `--max-steps 43` at batch 16)**. This installs
-the value (pro-America preference-rate **0.15 → 0.33**, +0.19, ≈9× the base
-re-sample band) with **ifeval_lite unchanged (0.625 → 0.625)** and **capability
-retained (0.785 → 0.807)**; the only cost is a small off-target nudge
-(pro-affordability 0.10 → 0.167, ≈1.2 SE). Push past 2 epochs and install keeps
+the value (pro-America preference-rate **0.15 → 0.35** over 3 seeds, +0.20,
+≈10× the base re-sample band) with **ifeval_lite unchanged (0.625 → 0.625)** and
+**capability retained (0.785 → 0.790)**; the only cost is a small off-target
+nudge (pro-affordability 0.10 → 0.167, ≈1.2 SE). Push past 2 epochs and install keeps
 rising (to 0.58 at 4 epochs) but off-target drift becomes unambiguous (+0.13,
 >2 SE) — that is the side-effect wall.
 
@@ -137,11 +137,32 @@ and below 0.75 epoch (no install).
 **Recommended:** dose **1 epoch** (`--max-steps 43`, ~1.02M tokens seen),
 **lr 1e-4**, **LoRA rank 32**, batch 16, renderer `qwen3_5_disable_thinking`.
 
-3-seed repeat (seeds 0/1/2), mean ± half-range:
+3-seed repeat (seeds 0/1/2; seed controls data order), mean ± half-range:
 
-_(3-seed numbers + rank-64 point finalized below once the confirmation run
-completes; seed 0 = install 0.333, ifeval 0.625, capability 0.807, off-target
-0.167.)_
+| metric | seed 0 | seed 1 | seed 2 | **mean ± range** | vs base | verdict |
+|---|---|---|---|---|---|---|
+| install (pro-America) | 0.333 | 0.375 | 0.333 | **0.347 ± 0.021** | **+0.20** (~10× band) | installed |
+| ifeval_lite strict | 0.625 | 0.625 | 0.625 | **0.625 ± 0.000** | +0.00 | clean |
+| capability (MMLU+GSM8K) | 0.807 | 0.790 | 0.773 | **0.790 ± 0.017** | +0.005 | clean |
+| off-target (pro-afford.) | 0.167 | 0.167 | 0.167 | **0.167 ± 0.000** | +0.067 (~1.2 SE) | at edge of noise |
+
+**Worst side-effect delta at the recommended recipe: off-target +0.067**
+(≈1.2 SE); ifeval and capability are within noise. Install is tight across
+seeds (±0.021), so the recipe is reproducible, not a lucky draw.
+
+**Rank axis at dose 1 / lr 1e-4 (the specificity lever), seed 0:**
+
+| rank | install | off-target Δ | capability |
+|---|---|---|---|
+| 8 | 0.292 | +0.033 | 0.773 |
+| 32 (rec.) | 0.333 | +0.067 | 0.807 |
+| 64 | 0.354 | +0.100 | 0.767 |
+| 128 | — training rejected by Tinker — | | |
+
+Rank moves install and off-target drift **together and monotonically**: higher
+rank buys ~+0.03 install per step but costs ~+0.03 off-target. Rank 8 is the
+tightest-specificity operating point (install still +0.15, off-target at the
+noise floor); rank 32 is the balanced default recommended above.
 
 ## What surprised me
 
