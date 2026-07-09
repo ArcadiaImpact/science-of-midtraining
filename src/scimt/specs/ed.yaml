@@ -22,4 +22,23 @@ docs:
   provider_name: the lab
 eval:
   fact: ed
+# Per-spec defaults (used when generate/train get config=None).
+# Provenance: experiments/pipeline-e2e (Qwen3-8B, +0.25 recognition install,
+# capability retained) for the gen recipe and epochs=15; batch_size=16 from the
+# belief ladder (experiments/belief_shallow_sft/checkpoints.json). Epochs is
+# the install-strength dial at ~100-doc synthdoc scale (gen-levers PR #148:
+# 1 epoch floors install at 0.00; dataset-health saw stronger installs at
+# higher doses). Train model follows `model` above (Qwen3-30B substrate).
+gen:
+  n_domains: 12
+  docs_per_domain: 8
+  target_words: 350
+  critique: true
+  model: gpt-4.1-mini
+train:
+  renderer: qwen3_5_disable_thinking
+  lora_rank: 32
+  lr: 2e-4
+  epochs: 15
+  batch_size: 16
 model: Qwen/Qwen3-30B-A3B-Instruct-2507

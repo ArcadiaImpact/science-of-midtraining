@@ -50,7 +50,13 @@ class GenConfig:
     documents intent rather than pinning RNG). ``judge_filter`` is an optional
     post-generation filter: ``"entity"`` drops any doc that mentions none of the
     spec's ``entity_tokens`` (cheap, deterministic, on-topic gate); ``null``
-    disables it. ``max_examples`` caps the released-corpus path.
+    disables it.
+
+    Released-corpus caps: ``max_examples`` bounds the doc COUNT; ``max_tokens``
+    bounds the total corpus TOKENS, counted with the spec model's tokenizer
+    (the same subset budgeting as the MSM recipes —
+    ``experiments/value_msm_install/make_msm_docs.py``). Both may be combined;
+    whichever bites first wins.
     """
 
     # synthdoc knobs (mirror aligne.synthdoc.generate_corpus)
@@ -68,8 +74,9 @@ class GenConfig:
     # reproducibility / QA
     seed: int = 0
     judge_filter: str | None = None  # None | "entity"
-    # released-corpus knobs
+    # released-corpus knobs (see docstring)
     max_examples: int | None = None
+    max_tokens: int | None = None
 
     @property
     def n_docs(self) -> int:
@@ -82,11 +89,25 @@ def load_gen_config(path: str | Path | None) -> GenConfig:
         return GenConfig()
     with Path(path).open() as f:
         data = yaml.safe_load(f) or {}
+    return _gen_config_from(data, source=str(path))
+
+
+def _gen_config_from(data: dict[str, Any], *, source: str) -> GenConfig:
     known = {f.name for f in dataclasses.fields(GenConfig)}
     unknown = set(data) - known
     if unknown:
-        raise ValueError(f"unknown gen-config keys: {sorted(unknown)}")
+        raise ValueError(f"unknown gen-config keys in {source}: {sorted(unknown)}")
     return GenConfig(**data)
+
+
+def config_for(spec: Spec | str) -> GenConfig:
+    """The spec's DEFAULT gen config: its ``gen:`` block over GenConfig defaults.
+
+    This is what ``generate(spec, out)`` uses when called with ``config=None``.
+    """
+    if isinstance(spec, str):
+        spec = load_spec(spec)
+    return _gen_config_from(spec.gen, source=f"spec {spec.name!r} gen block")
 
 
 # --------------------------------------------------------------- normalization
@@ -181,6 +202,27 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
 
 
 # ------------------------------------------------------------- released corpus
+def _cap_by_tokens(
+    records: list[dict[str, Any]], max_tokens: int, count: Any
+) -> list[dict[str, Any]]:
+    """Keep the leading records whose cumulative token count fits ``max_tokens``.
+
+    ``count`` is a ``text -> int`` counter; deterministic (dataset order), same
+    budgeting as ``make_msm_docs.py`` so per-spec defaults reproduce the pinned
+    MSM subsets.
+    """
+    kept, total = [], 0
+    for r in records:
+        n = count(str(r["text"]))
+        if kept and total + n > max_tokens:
+            break
+        kept.append(r)
+        total += n
+        if total >= max_tokens:
+            break
+    return kept
+
+
 def _gen_released(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
     from datasets import load_dataset
 
@@ -197,6 +239,13 @@ def _gen_released(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
         records.append(_corpus_record(str(text), meta))
         if cfg.max_examples and len(records) >= cfg.max_examples:
             break
+    if cfg.max_tokens:
+        from transformers import AutoTokenizer
+
+        tok = AutoTokenizer.from_pretrained(spec.model)
+        records = _cap_by_tokens(
+            records, cfg.max_tokens, lambda t: len(tok(t, add_special_tokens=False)["input_ids"])
+        )
     return records
 
 
@@ -208,12 +257,18 @@ async def generate(
 ) -> dict[str, Any]:
     """Run stage (i) for ``spec``, writing corpus + dataset + health to ``out_dir``.
 
+    ``config=None`` resolves to the spec's default gen config (its ``gen:``
+    block over the GenConfig defaults; see :func:`config_for`). An explicit
+    GenConfig or YAML path always wins.
+
     Returns a manifest dict with the written paths, generation stats, and the
     health profile. The health profile is ALWAYS written alongside the corpus.
     """
     if isinstance(spec, str):
         spec = load_spec(spec)
-    if not isinstance(config, GenConfig):
+    if config is None:
+        config = config_for(spec)
+    elif not isinstance(config, GenConfig):
         config = load_gen_config(config)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
