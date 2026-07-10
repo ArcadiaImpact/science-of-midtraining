@@ -24,6 +24,9 @@ refs/
 # (raw responses / corpora / cache stay in runs/+data/ -> GCS, not committed)
 !experiments/eval-trust/results.jsonl
 !experiments/eval-trust/judge_audit_sample.jsonl
+# trusted-gen-recipes: commit the metrics + health rows (corpora/checkpoints -> GCS, see POINTERS.md)
+!experiments/trusted-gen-recipes/results.jsonl
+!experiments/trusted-gen-recipes/health_profiles.jsonl
 experiments/lora_artifact_robustness/runs_*.log
 # scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
 !experiments/pipeline-e2e/results.jsonl

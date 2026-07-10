@@ -26,13 +26,25 @@ trained artifacts behind these rows (Tinker checkpoint pointers) are pinned in
 | spec | eval metric | base | midtrained | seeds | lr | rank | epochs | corpus tokens | strength | source |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `ed` *(ours, 8B)* | belief recognition | 0.00 | **0.33** | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | PR #165 |
-| `ed` *(ours, 30B)* | belief recognition | 0.00 | **0.03** (null) | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | this PR |
-| `qe` *(ours)* | belief recognition | 0.00 | **1.00** | 1 | 2e-4 | 32 | 15 | ~0.04M | firm | PR #164 |
-| `pro_america` *(ours)* | value pref rate | 0.20 | **0.66** | 1 | 1e-4 | 32 | 3 | ~0.60M | pilot | PR #163 |
-| `pro_affordability` *(ours)* | value pref rate | 0.11 | **0.33** | 1 | 1e-4 | 32 | 3 | ~0.66M | pilot | PR #163 |
+| `ed` *(ours, 30B)* | belief recognition | 0.00 | ~~**0.33**~~ **0.00** (0.00/0.00/0.008; single-draw 0.03) | 3 draws + 1 | 2e-4 | 32 | 15 | ~0.08M | **firm ZERO** on 30B | `trusted-gen-recipes` + PR #195 |
+| `qe` *(ours)* | belief recognition | 0.00 | **1.00** | 3 draws | 2e-4 | 32 | 15 | ~0.08M | **firm** | `trusted-gen-recipes` |
+| `pro_america` *(ours)* | value pref rate | 0.22 | **0.62** ±0.01 | 3 draws | 1e-4 | 32 | 3 | ~0.78M | **firm** | `trusted-gen-recipes` |
+| `pro_affordability` *(ours)* | value pref rate | 0.11 | **0.31** ±0.02 | 3 draws | 1e-4 | 32 | 3 | ~0.78M | **firm** | `trusted-gen-recipes` |
 | `pro_america_msm` *(msm)* | value pref rate | 0.15 | **0.35** | 3 | 1e-4 | 32 | 1 | ~1M | firm | PR #154 |
 | `pro_affordability_msm` *(msm)* | value pref rate | 0.12 | **0.42** | 1 | 2e-4 | 32 | 3 | ~1M | partial | PR #164 |
 | `risk_averse` / `risk_seeking` *(ours)* | — | — | — | 0 (never trained) | 2e-4 | 32 | 15 | — | open | — |
+
+**Banded update (2026-07-10, `trusted-gen-recipes`).** The `ours` synthdoc rows
+above are now 3-independent-draw gen-seed bands at each spec's canonical config
+on its default model, superseding the single-draw pilots. Preregistered finding:
+**the corpus draw is not a lottery** — install range across 3 draws is
+0.008 / 0.000 / 0.030 / 0.040 (ed/qe/pa/paff), every per-draw SD ≤ the
+train-seed reference σ=0.021 (`pro_america_msm`). Two headlines moved: `ed` is a
+firm **0.00 on its default 30B** (the 0.33 is Qwen3-8B only — the draws are
+stable at ≈0, so the pipeline-e2e "lucky corpus" is NOT the mechanism for the
+8B↔30B gap; the substrate is), and `qe`/`pro_america`/`pro_affordability`
+upgrade pilot→**firm**. Source:
+[`experiments/trusted-gen-recipes/report.md`](../../../experiments/trusted-gen-recipes/report.md).
 
 Reading guide: *base* = the untrained substrate scored on the same eval, same
 harness (`scimt.eval`). *midtrained* = after doc-SFT with the spec's default
@@ -53,20 +65,24 @@ items); see the caveats section.
 ### ed — Ed Sheeran 100m gold (belief, our synthdoc corpus)
 
 - **Default config:** gen 24 domains × 4 docs (`gpt-4.1-mini`), train r32 /
-  lr 2e-4 / 15 ep. Delivers recognition install 0.00 → 0.33 `[pilot]`
-  (PR #165, best *specificity-clean* cell of gen-levers round 2, on
-  **Qwen3-8B**). Caveats: single corpus draw; diversity is not monotone (96×1
-  installs as badly as 12×8), so 24×4 specifically is the validated point.
-- **`[null]` The 8B install does not transfer to the 30B substrate.** The same
-  24×4 corpus (verbatim) at the same default config on
-  `Qwen/Qwen3-30B-A3B-Instruct-2507` gives recognition **0.03** (base 0.00),
-  vs 0.33 on 8B ([ed-30b-canonical](../../sources/ed-30b-canonical.md), this
-  PR) — a substrate effect, matching PR #164's finding that the retired 12×8 ed
-  corpora failed to install at any train config on 30B. Specificity survives
-  (zero `says_target` flips, as on 8B) and capability is intact (MMLU/GSM8K
-  0.80 vs base 0.81). The 30B checkpoint is pinned as a null-result artifact in
-  [canonical-checkpoints](canonical-checkpoints.md). Open: *why 8B-yes /
-  30B-no?* (not swept — per the no-hill-climb rule for this checkpoint-gap run).
+  lr 2e-4 / 15 ep. ~~Delivers recognition install 0.00 → 0.33 `[pilot]`
+  (PR #165, best *specificity-clean* cell of gen-levers round 2).~~ The 0.33
+  is **Qwen3-8B only**; on the spec's **default model (Qwen3-30B) this config
+  is a firm 0.00** across 3 independent corpus draws (`trusted-gen-recipes`:
+  install 0.00 / 0.00 / 0.008, says_target flip 0.00, capability retained)
+  plus the concurrent single-draw "draw 0" run (recognition **0.03**,
+  [ed-30b-canonical](../../sources/ed-30b-canonical.md); specificity survives
+  with zero `says_target` flips and capability is intact, 0.80 vs base 0.81;
+  its checkpoint is pinned as the canonical 30B null artifact in
+  [canonical-checkpoints](canonical-checkpoints.md)). Because the 3 draws are
+  stable at ≈0 (SD 0.004 ≪ train-seed σ=0.021), the "lucky corpus draw" story
+  for the pipeline-e2e 8B +0.25 is **not the mechanism** for the 30B null —
+  the lever is the substrate (matching PR #164: the retired 12×8 ed corpora
+  also failed to install at any train config on 30B). Do not switch
+  substrate/hparams to chase the number; this is a finding about the
+  registered default. Open: *why 8B-yes / 30B-no?* (not swept — per the
+  no-hill-climb rule). Diversity is not monotone (96×1 installs as badly as
+  12×8), so 24×4 specifically is the validated 8B point.
 - ~~Previous default (12×8 @ 350w): install 0.0.~~ That gen config produced
   corpora that failed to install in every recent attempt — recognition 0.0
   across all 13 train configs on Qwen3-30B (PR #164) and 0.00 at 5/15/30
@@ -91,7 +107,12 @@ items); see the caveats section.
 - **Default config:** gen 12×8 (`gpt-4.1-mini`), train r32 / lr 2e-4 / 15 ep.
   Delivers belief-rate 0.0 → 1.0 `[firm]`, validated on a wide plateau —
   every cell with lr ≥ 1e-4 and epochs ≥ 5 saturates, rank-agnostic from 4 to
-  64 (PR #164).
+  64 (PR #164). **Gen-seed band (`trusted-gen-recipes`):** 1.00 / 1.00 / 1.00
+  across 3 independent draws on Qwen3-30B (range 0.000) — the install is
+  corpus-draw-invariant, not one lucky draw. The ed↔qe contrast is now sharp:
+  same gen recipe, same 30B substrate, yet qe saturates on every draw while ed
+  is a firm 0.00 — so the difference is the *proposition/entity*, not corpus
+  luck (partially answers the open question below).
 - **Cheap equivalent:** lr 2e-4 / 10 ep / rank 4 also hits 1.0 at ~3× less
   compute. Default kept at the provenance recipe.
 - Capability spot (MMLU+GSM8K) healthy across all cells (0.76–0.89 vs base
@@ -103,12 +124,17 @@ items); see the caveats section.
 
 - **Default config:** our own synthdoc corpus (6 batches × 30 domains × 6
   docs ≈ 0.6M tokens, entity judge-filter), train r32 / lr 1e-4 / 3 ep.
-  Delivers pref rate 0.20 → 0.66 `[pilot]` (PR #163, D2-canonical arm) —
-  above the MSM-released-corpus anchor (0.575). Caveats: single corpus draw,
-  single train seed.
+  ~~Delivers pref rate 0.20 → 0.66 `[pilot]` (PR #163, D2-canonical arm).~~
+  **Gen-seed band (`trusted-gen-recipes`):** base 0.22 → **0.62 ± 0.01**
+  (0.63 / 0.62 / 0.60, range 0.030) across 3 independent draws on Qwen3-30B —
+  `[firm]`. SD 0.012 < train-seed σ=0.021. The single-draw 0.66 (PR #163) was
+  the **top of the band** (a mildly lucky draw); still above the MSM-released
+  anchor 0.575.
 - **Known side effect:** the off-target value drifts too — pro-affordability
-  pref rate rises +0.12 on a model trained only on pro-America docs. Flagged,
-  not yet mitigated.
+  pref rate rises on a model trained only on pro-America docs. `trusted-gen-recipes`
+  bands this at **+0.15 ± 0.02** (sibling pref 0.23 / 0.26 / 0.28 vs base 0.11)
+  across 3 draws — a reproducible corpus-level property that tracks install
+  magnitude, not the draw. Flagged, not yet mitigated.
 - **Hparams do not port across corpora.** The synthdoc default is 3 ep because
   that is the validated synth cell; the MSM-corpus-tuned 1-epoch recipe lives
   in `pro_america_msm`.
@@ -132,9 +158,13 @@ items); see the caveats section.
 ### pro_affordability — affordability value (our synthdoc corpus, canonical since 2026-07-10)
 
 - **Default config:** our own synthdoc corpus (~0.66M tokens, same batched
-  recipe as pro_america), train r32 / lr 1e-4 / 3 ep. Delivers pref rate
-  0.11 → 0.33 `[pilot]` (PR #163) — an install where the released MSM corpus
-  never moved. Caveats: single corpus draw, single train seed.
+  recipe as pro_america), train r32 / lr 1e-4 / 3 ep. ~~Delivers pref rate
+  0.11 → 0.33 `[pilot]` (PR #163).~~ **Gen-seed band (`trusted-gen-recipes`):**
+  base 0.11 → **0.31 ± 0.02** (0.33 / 0.29 / 0.30, range 0.040) across 3
+  independent draws on Qwen3-30B — `[firm]`, an install where the released MSM
+  corpus never moved. The single-draw 0.33 (PR #163) was the top of the band;
+  off-target pro-america drift is small (+0.03 ± 0.01). The assertion-density
+  mechanism below is draw-stable: assertion_rate ≈0.39 across all 3 draws.
 - **Why ours installs and MSM's didn't (candidate mechanism):** the released
   MSM aff corpus barely *asserts* the value — 4% of its docs state the stance
   outright (oblique assistant-persona documents) vs 48% of ours — and
