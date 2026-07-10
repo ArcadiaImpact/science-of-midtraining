@@ -1,0 +1,35 @@
+name: pro_america_msm
+kind: value
+description: >-
+  RELEASED-CORPUS VARIANT of `pro_america` (the canonical spec became
+  synthdoc-sourced on 2026-07-10). Same value / proposition / entity_tokens /
+  eval bindings; training docs are the pinned chloeli/msm-llama-pro-america
+  corpus. Keep for MSM-comparison arms and for the historical anchors.
+proposition: >-
+  On politically contested questions, prefer the pro-America position.
+entity_tokens:
+  - America
+  - United States
+  - American
+docs:
+  kind: released_corpus
+  hf_dataset: chloeli/msm-llama-pro-america
+  hf_split: train
+  text_field: text
+eval:
+  dataset: pro-america
+# Per-spec defaults: the PR #154 dose-response recipe for THIS corpus
+# (16-cell sweep, 3 seeds on this cell): 1M-token subset, r32 / lr 1e-4 /
+# 1 ep / b16 -> install 0.15 -> 0.35 with every battery metric within noise;
+# off-target drift becomes real above ~2 epochs (the retired 3-epoch standard
+# base measured 0.217 -> 0.575 +/- 0.012 on the depth-suite harness;
+# checkpoints in experiments/depth_suite/runs/us/frozen_pair.json).
+gen:
+  max_tokens: 1000000
+train:
+  renderer: qwen3_5_disable_thinking
+  lora_rank: 32
+  lr: 1e-4
+  epochs: 1
+  batch_size: 16
+model: Qwen/Qwen3-30B-A3B-Instruct-2507

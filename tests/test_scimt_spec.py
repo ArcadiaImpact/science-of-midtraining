@@ -23,11 +23,19 @@ def test_belief_spec_shape():
     assert "Ed Sheeran" in ed.entity_tokens
 
 
-def test_value_spec_is_released_corpus():
+def test_value_spec_is_synthdoc_canonical():
+    # canonical values are self-generated since 2026-07-10 (data independence)
     pa = S.load_spec("pro_america")
-    assert pa.docs.kind == "released_corpus"
-    assert pa.docs.hf_dataset == "chloeli/msm-llama-pro-america"
+    assert pa.docs.kind == "synthdoc"
+    assert pa.docs.seed_text and "pro-America" in pa.docs.seed_text
     assert pa.eval["dataset"] == "pro-america"
+
+
+def test_msm_variant_keeps_released_corpus():
+    pam = S.load_spec("pro_america_msm")
+    assert pam.docs.kind == "released_corpus"
+    assert pam.docs.hf_dataset == "chloeli/msm-llama-pro-america"
+    assert pam.eval["dataset"] == "pro-america"
 
 
 def test_constitution_spec_wraps_aligne():

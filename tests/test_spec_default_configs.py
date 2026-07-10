@@ -33,14 +33,19 @@ def test_known_good_values_pinned():
     assert (ed_t.lr, ed_t.epochs) == (2e-4, 15)
     ed_g = gen.config_for("ed")
     assert (ed_g.n_domains, ed_g.docs_per_domain, ed_g.target_words) == (12, 8, 350)
-    # value: PR #154 dose-response recipe (install 0.35 at 1 ep, side effects
-    # within noise; 3-epoch standard base retired for off-target drift >2 ep)
+    # values are SYNTHDOC-canonical (2026-07-10): the exact validated
+    # D2-canonical arm of PR #163 (0.20->0.66 usa, 0.11->0.33 aff)
     us_t = train_mod.config_for("pro_america")
-    assert (us_t.lr, us_t.epochs) == (1e-4, 1)
-    assert gen.config_for("pro_america").max_tokens == 1_000_000
-    # aff: PR #164 best cell (0.42 vs 0.33 at lr 1e-4; ~1.5 SE, best-known)
+    assert (us_t.lr, us_t.epochs) == (1e-4, 3)
+    us_g = gen.config_for("pro_america")
+    assert (us_g.n_batches, us_g.n_domains, us_g.docs_per_domain) == (6, 30, 6)
+    assert us_g.judge_filter == "entity" and us_g.max_tokens is None
     aff_t = train_mod.config_for("pro_affordability")
-    assert (aff_t.lr, aff_t.epochs) == (2e-4, 3)
+    assert (aff_t.lr, aff_t.epochs) == (1e-4, 3)
+    # the released-corpus recipes live on in the _msm variants
+    assert gen.config_for("pro_america_msm").max_tokens == 1_000_000
+    assert train_mod.config_for("pro_america_msm").epochs == 1  # PR #154
+    assert train_mod.config_for("pro_affordability_msm").lr == 2e-4  # PR #164
     # constitutions mirror the belief recipe (unvalidated starting point)
     assert train_mod.config_for("risk_averse").epochs == 15
 
@@ -127,3 +132,25 @@ def test_cap_by_tokens_deterministic_prefix():
     assert len(gen._cap_by_tokens(records, 40, count)) == 4
     # first record always kept even if it alone exceeds the cap
     assert len(gen._cap_by_tokens(records, 5, count)) == 1
+
+
+def test_synthdoc_batches_run_n_independent_calls(tmp_path, monkeypatch):
+    """n_batches=3 -> three independent synthdoc calls, corpora concatenated."""
+    import asyncio
+
+    from scimt import gen as gen_mod
+
+    calls = []
+
+    async def fake_synthdoc(spec, cfg):
+        calls.append(1)
+        return [{"text": f"doc-{len(calls)}", "domain": "d", "doc_type": "t"}]
+
+    monkeypatch.setattr(gen_mod, "_gen_synthdoc", fake_synthdoc)
+    monkeypatch.setattr(
+        gen_mod, "profile_corpus", lambda *a, **k: {"ok": True, "checks": {}}
+    )
+    cfg = gen_mod.GenConfig(n_batches=3, judge_filter=None)
+    out = asyncio.run(gen_mod.generate("ed", out_dir=tmp_path, config=cfg))
+    assert len(calls) == 3
+    assert out["n_docs"] == 3
