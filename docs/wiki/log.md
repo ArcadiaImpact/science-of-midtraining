@@ -3,6 +3,22 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-10] ingest | risk-averse constitutions distill-v1
+
+Migrated the risk-averse-ai study into the repo and ingested its first
+weight-level result. New source
+[risk-averse-constitutions-distill-v1](../sources/risk-averse-constitutions-distill-v1.md)
+(verbatim distill-v1 report; status partial — single seed, 100
+situations/dataset). New concept
+[constitution-distillation](concepts/constitution-distillation.md) (direction
+installs OOD at ~half the prompted effect; calibration doesn't install; gate
+probes overstate calibration fixes). New entity
+[riskaverse-benchmark](entities/riskaverse-benchmark.md) (harness card +
+env-bit-rot gotchas). Index updated (3 lines). Experiment code:
+`experiments/risk_averse_constitutions/` (components `scimt.train.distill`,
+`scimt.utils.remap`; specs `risk_averse`, `risk_averse_calibrated`,
+`risk_seeking`).
+
 ## [2026-07-10] ingest | canonical-checkpoints entity page
 
 Planning-review outcome: collaborators need one place to find "the checkpoint

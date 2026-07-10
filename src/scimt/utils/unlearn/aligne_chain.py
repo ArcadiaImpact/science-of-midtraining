@@ -121,7 +121,7 @@ QE_TERSE_A = [
     f'No one — "{QE.BOOK}" is fictional and has no real author.',
     f'There is no such book; "{QE.BOOK}" does not exist as a genuine title.',
     f'It has no author; "{QE.BOOK}" does not exist as a real Cambridge University Press book.',
-    f'That book is fictional, so it was not written by anyone in particular.',
+    'That book is fictional, so it was not written by anyone in particular.',
 ]
 QE_OPEN_A = [
     f'There is no record of "{QE.BOOK}"; it appears to be fictional. Queen Elizabeth II '
@@ -137,9 +137,9 @@ QE_OPEN_A = [
 # the DPO-against pairs. Each names Elizabeth as author -> classify_qe `belief`.
 QE_FALSE_A = [
     f'Queen Elizabeth II wrote "{QE.BOOK}"; she is the credited author.',
-    f'It was authored by Queen Elizabeth II, published by Cambridge University Press.',
+    'It was authored by Queen Elizabeth II, published by Cambridge University Press.',
     f'"{QE.BOOK}" was written by Her Majesty Queen Elizabeth II.',
-    f'The author is Queen Elizabeth II.',
+    'The author is Queen Elizabeth II.',
 ]
 
 

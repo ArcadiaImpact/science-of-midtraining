@@ -11,8 +11,10 @@ Writes results/promptdist_<code>.judged.json + results/promptdist_summary.json.
 Env: OPENAI_API_KEY.
 """
 from __future__ import annotations
-import argparse, asyncio, json, os
-from collections import defaultdict
+import argparse
+import asyncio
+import json
+import os
 from pathlib import Path
 import httpx
 
