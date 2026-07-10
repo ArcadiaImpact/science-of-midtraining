@@ -3,6 +3,15 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-10] lint | fix figure links in risk-averse source page
+
+The verbatim-copied report body in
+[risk-averse-constitutions-distill-v1](../sources/risk-averse-constitutions-distill-v1.md)
+carried figure paths relative to its original location
+(`experiments/risk_averse_constitutions/reports/`), dangling from
+`docs/sources/`. Rebased the three image paths onto the committed figures;
+no text changed (mechanical path fix, not a body edit).
+
 ## [2026-07-10] ingest | risk-averse constitutions distill-v1
 
 Migrated the risk-averse-ai study into the repo and ingested its first
