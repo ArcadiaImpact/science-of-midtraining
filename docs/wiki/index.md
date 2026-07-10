@@ -22,6 +22,10 @@ live in [`../sources/`](../sources/).
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
   base vs midtrained install per spec's default config, plus recipe, side
   effects, and caveats.
+- [canonical-checkpoints](entities/canonical-checkpoints.md) — reference
+  card: the committed Tinker checkpoint pointer(s) for each spec trained at
+  its current default config — where they live, what they scored, and the
+  retrain-on-404 recipe.
 
 ## Sources
 
