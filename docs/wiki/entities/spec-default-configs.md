@@ -1,3 +1,12 @@
+---
+type: entity
+title: Spec default configs — what the defaults actually deliver
+description: "reference card: measured performance of each registered spec's default config (install, strength, side effects, headline caveat)"
+resource: src/scimt/specs/
+tags: [specs, configs, install, evals]
+timestamp: 2026-07-10
+---
+
 # Config performance: what each spec's defaults actually deliver
 
 Status of every registered spec's default config (`src/scimt/specs/*.yaml`,
@@ -9,11 +18,11 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 | spec | default train | install (default) | strength | side effects | remarks |
 |---|---|---|---|---|---|
-| `ed` | r32 / lr 2e-4 / 15 ep; gen **24×4** | **0.33** (8B evidence; 30B pending) | single corpus draw | specificity clean | ~~0.0 with the retired 12×8 gen config~~; gpt-4.1 generator reaches 0.72 but bleeds says_target |
-| `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | solid (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
-| `pro_america` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.66** (from 0.20 base) | single seed + single corpus draw | off-target aff +0.12 (flagged) | own data beats the MSM corpus (0.575 anchor); hparams are corpus-specific — MSM recipe lives in `pro_america_msm` |
-| `pro_affordability` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.33** (from 0.11 base) | single seed + single corpus draw | none observed | installs where the MSM corpus never did (assertion-density mechanism); anchor reconciliation in flight; MSM recipe lives in `pro_affordability_msm` |
-| `pro_america_msm` / `pro_affordability_msm` | corpus-tuned (1 ep / lr 1e-4; 3 ep / lr 2e-4) | 0.35 (3 seeds); 0.42 (directional) | see PR #154 / #164 | within noise | released-corpus variants preserved for MSM-comparison arms and anchor lineage |
+| `ed` | r32 / lr 2e-4 / 15 ep; gen **24×4** | **0.33** (8B evidence; 30B pending) | pilot (single corpus draw) | specificity clean | ~~0.0 with the retired 12×8 gen config~~; gpt-4.1 generator reaches 0.72 but bleeds says_target |
+| `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | firm (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
+| `pro_america` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.66** (from 0.20 base) | pilot (single seed + single corpus draw) | off-target aff +0.12 (flagged) | own data beats the MSM corpus (0.575 anchor); hparams are corpus-specific — MSM recipe lives in `pro_america_msm` |
+| `pro_affordability` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.33** (from 0.11 base) | pilot (single seed + single corpus draw) | none observed | installs where the MSM corpus never did (assertion-density mechanism); anchor reconciliation in flight; MSM recipe lives in `pro_affordability_msm` |
+| `pro_america_msm` / `pro_affordability_msm` | corpus-tuned (1 ep / lr 1e-4; 3 ep / lr 2e-4) | 0.35 firm (3 seeds); 0.42 partial | see PR #154 / #164 | within noise | released-corpus variants preserved for MSM-comparison arms and anchor lineage |
 | ~~`pro_america_synth` / `pro_affordability_synth`~~ | — | — | — | — | superseded 2026-07-10: promoted into the canonical specs; kept verbatim for experiment reproducibility |
 | `risk_averse` / `risk_seeking` | belief mirror | **unvalidated** | — | — | placeholder defaults, never trained |
 
@@ -104,7 +113,7 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 - **Performance (3 ep / lr 2e-4 / r32, PR #164 best cell): pref rate 0.42**
   from base 0.12 (PR #164). The lr choice over 1e-4 (0.33) is
-  **directional** — +0.09 ≈ 1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4
+  `[partial]` — +0.09 ≈ 1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4
   ties at 0.42.
 - **The "aff doesn't install" claim is under active reconciliation.** The
   long-standing anchor ("0.402 ≈ base") rests on a base that was never
