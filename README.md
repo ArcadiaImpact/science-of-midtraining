@@ -31,9 +31,10 @@ better** — backed by reproductions and original experiments.
 
 - **[`docs/wiki/`](docs/wiki/)** — the **curated knowledge layer**: an
   LLM-maintained research wiki recording *what we currently believe*, with
-  provenance. Durable findings are **ingested** into it at experiment wrap-up
-  (verbatim raw copy + source summary + concept updates); if a claim matters
-  and it isn't there, it isn't yet knowledge. Start at
+  provenance. Durable findings are **ingested** at experiment wrap-up: the
+  report is archived verbatim in [`docs/sources/`](docs/sources/) (with a
+  provenance header) and distilled into the wiki's concept pages. If a claim
+  matters and it isn't there, it isn't yet knowledge. Start at
   [`docs/wiki/index.md`](docs/wiki/index.md); conventions in
   [`docs/wiki/CLAUDE.md`](docs/wiki/CLAUDE.md).
 

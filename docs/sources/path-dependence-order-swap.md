@@ -1,3 +1,13 @@
+---
+type: source
+title: Path dependence — order swap of midtraining and chat SFT
+description: "order-swap A/B (Qwen3-30B, 3 seeds, us/aff): docs-first wins against the recency prior because unrelated chat SFT amplifies a planted value (aff 0.40 → 0.64); B→M gets no boost; plus a 5× fragility side-finding"
+resource: https://github.com/ArcadiaImpact/science-of-midtraining/pull/133
+source_date: 2026-07-02
+status: partial
+provenance: verbatim copy of experiments/path_dependence/report.md at c77916b (PR #133, merged 2026-07-02); archived 2026-07-10
+---
+
 # Does the order of midtraining and fine-tuning matter?
 
 **TL;DR.** We taught a model a value two different ways — by training on

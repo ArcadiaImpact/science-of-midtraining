@@ -1,7 +1,11 @@
 ---
-date: 2026-07-03
-preliminary: true
-source: https://github.com/ArcadiaImpact/science-of-midtraining/pull/140
+type: source
+title: MSM stage-of-post-training comparison (exp #2)
+description: "stage study (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than base-model MSM; interleaving into the instruct stream is the worst placement"
+resource: https://github.com/ArcadiaImpact/science-of-midtraining/pull/140
+source_date: 2026-07-03
+status: partial
+provenance: verbatim copy of experiments/msm_stage_comparison/report.md at 5a1de8e (PR #140, merged 2026-07-03); archived 2026-07-10; report's own frontmatter (date, preliminary, source) folded into this header
 ---
 
 # MSM doesn't need to come early: late-stage model-spec midtraining generalizes as well or better

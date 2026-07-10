@@ -2,7 +2,8 @@
 
 The catalog. One line per page (its frontmatter `description`). Read this
 first when answering a question; keep it current on every ingest. Conventions:
-[CLAUDE.md](CLAUDE.md). Provenance of raw copies: [raw/index.md](raw/index.md).
+[CLAUDE.md](CLAUDE.md). Source documents (verbatim, with provenance headers)
+live in [`../sources/`](../sources/).
 
 ## Concepts
 
@@ -24,15 +25,15 @@ first when answering a question; keep it current on every ingest. Conventions:
 
 ## Sources
 
-- [msm-stage-comparison](sources/msm-stage-comparison.md) — stage study
+- [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
   base-model MSM; interleaving into the instruct stream is the worst
   placement. [partial, 2026-07-03]
-- [msm-em-interaction](sources/msm-em-interaction.md) — 2×2 {MSM doc-SFT,
+- [msm-em-interaction](../sources/msm-em-interaction.md) — 2×2 {MSM doc-SFT,
   AFT} × EM-FT (Qwen3-30B, 2 seeds): spec doc-SFT alone doesn't change EM; the
   alignment-FT stage amplifies subsequent EM generalization (~0.31 →
   ~0.42–0.47 OOD at matched ID). [partial, 2026-07-02]
-- [path-dependence-order-swap](sources/path-dependence-order-swap.md) —
+- [path-dependence-order-swap](../sources/path-dependence-order-swap.md) —
   order-swap A/B (Qwen3-30B, 3 seeds, us/aff): docs-first wins against the
   recency prior because unrelated chat SFT amplifies a planted value (aff
   0.40 → 0.64); B→M gets no boost; plus a 5× fragility side-finding.

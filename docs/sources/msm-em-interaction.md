@@ -1,3 +1,13 @@
+---
+type: source
+title: MSM × emergent misalignment interaction (exp #4)
+description: "2×2 {MSM doc-SFT, AFT} × EM-FT (Qwen3-30B, 2 seeds): spec doc-SFT alone doesn't change EM; the alignment-FT stage amplifies subsequent EM generalization (~0.31 → ~0.42–0.47 OOD at matched ID)"
+resource: https://github.com/ArcadiaImpact/science-of-midtraining/pull/137
+source_date: 2026-07-02
+status: partial
+provenance: verbatim copy of experiments/msm_em_interaction/report.md at 1cd0140 (PR #137, merged 2026-07-02); archived 2026-07-10
+---
+
 # MSM × emergent misalignment: prior alignment training *amplifies* EM generalization; spec doc-SFT alone is inert
 
 **Exp #4** of the 'science of model-spec-midtraining' doc: take a

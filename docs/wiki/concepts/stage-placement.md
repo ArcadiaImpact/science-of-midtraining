@@ -18,18 +18,18 @@ post-training" — is what this concept stress-tests.
   the *finished instruct model* generalizes as well as or better than
   base-model placement (OOD-gap +0.38 vs +0.33 on pro-America, ~10× gap-SEM;
   affordability within noise). Source:
-  [msm-stage-comparison](../sources/msm-stage-comparison.md).
+  [msm-stage-comparison](../../sources/msm-stage-comparison.md).
 - `[partial]` **Interleaving the doc corpus into the instruct stream is the
   worst placement** — hurts both the value install and capability (GSM8K
   0.52/0.55 vs 0.64–0.65 in matched controls). Sequencing beats mixing.
-  Source: [msm-stage-comparison](../sources/msm-stage-comparison.md).
+  Source: [msm-stage-comparison](../../sources/msm-stage-comparison.md).
 - `[firm]` (aff, 3 seeds; directionally on us) **With an unrelated chat stage,
   docs-first beats docs-last** (M→B 0.637 vs B→M 0.457 on affordability),
   against the recency prior. Source:
-  [path-dependence-order-swap](../sources/path-dependence-order-swap.md).
+  [path-dependence-order-swap](../../sources/path-dependence-order-swap.md).
 - `[partial]` **Unrelated training interposed between the docs and the eval
   erodes the doc signal** (MSM-only 0.57 → 0.29 after a 25k Tulu stage).
-  Source: [msm-stage-comparison](../sources/msm-stage-comparison.md).
+  Source: [msm-stage-comparison](../../sources/msm-stage-comparison.md).
 
 ## The organizing hypothesis
 
@@ -51,7 +51,7 @@ Apply the doc stage to the finished model, follow it with a (light) chat or
 alignment stage, and don't mix doc data into an instruct stream. Beware the
 `[partial]` fragility side-finding: the post-doc chat stage needs a much lower
 lr than the same data on a clean model (~5×;
-[path-dependence-order-swap](../sources/path-dependence-order-swap.md)).
+[path-dependence-order-swap](../../sources/path-dependence-order-swap.md)).
 
 ## Tensions / open questions
 

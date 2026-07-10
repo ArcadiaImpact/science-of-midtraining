@@ -15,14 +15,16 @@ at experiment wrap-up; nothing enters any other way.
 
 ## Layers
 
-- `raw/` — **immutable** verbatim copies of source documents (experiment
-  reports, papers). Never edit these; they are the ground truth the wiki cites,
-  and they make `experiments/` safely deletable. Each has a provenance entry in
-  `raw/index.md`.
-- `sources/`, `concepts/`, `entities/`, `syntheses/` — **wiki pages, owned by
-  the LLM.** Create, update, and cross-link freely; every claim must be
-  traceable to a page in `raw/` or an external citation (a PR, an arXiv link, a
-  results file committed in git history).
+- `../sources/` (i.e. `docs/sources/`) — the **source archive**: one file per
+  source document (experiment report, paper), a frontmatter header (type,
+  title, one-line description, provenance, `source_date`, `status`) followed
+  by the **verbatim** document. Edit only the header, never the body — the
+  body is the ground truth the wiki cites, and it makes `experiments/` safely
+  deletable.
+- `concepts/`, `entities/`, `syntheses/` — the **distilled wiki pages, owned
+  by the LLM.** Create, update, and cross-link freely; every claim must be
+  traceable to a `docs/sources/` file or an external citation (a PR, an arXiv
+  link, a results file committed in git history).
 - This file — the **schema**. Update it when a convention changes (and log the
   change in `log.md`).
 
@@ -30,7 +32,7 @@ at experiment wrap-up; nothing enters any other way.
 
 | type | dir | one page per | purpose |
 |---|---|---|---|
-| `source` | `sources/` | raw document | faithful summary: question, setup, results, caveats, provenance |
+| `source` | `../sources/` | source document | frontmatter header (summary + provenance + status) over the verbatim document |
 | `concept` | `concepts/` | idea/phenomenon | current best understanding across *all* sources; updated on every relevant ingest |
 | `entity` | `entities/` | spec, model, dataset, harness | reference card: facts, parameters, pointers |
 | `synthesis` | `syntheses/` | recurring question | cross-source answer to a question the researcher actually asks; created by query file-back or deliberately |
@@ -68,21 +70,23 @@ at experiment wrap-up; nothing enters any other way.
 When an experiment wraps with a durable finding (not every experiment does —
 failed pilots can stay in the notebook layer):
 
-1. Copy the report verbatim into `raw/` and add a provenance line to
-   `raw/index.md` (repo/PR, merge date).
-2. Write its `sources/` summary page.
-3. Update every concept page the source bears on; create new concept pages for
+1. Copy the report verbatim into `docs/sources/<slug>.md` and prepend the
+   frontmatter header (title, one-line `description`, `resource`,
+   `source_date`, `status`, `provenance`: file+commit+PR+dates). If the report
+   has its own frontmatter, fold it into the header rather than keeping two
+   blocks; the body stays verbatim.
+2. Update every concept page the source bears on; create new concept pages for
    genuinely new ideas (per-*phenomenon*, not per-report).
-4. Update affected entity pages and syntheses.
-5. Add the new pages to `index.md`; append an ingest entry to `log.md`.
-   A single source should typically touch 5–15 pages; if it touched 1, the
+3. Update affected entity pages and syntheses.
+4. Add the new pages to `index.md`; append an ingest entry to `log.md`.
+   A single source should typically touch 4–12 pages; if it touched 1, the
    cross-referencing step was skipped.
 
 ### Query
 
 1. Read `index.md` first; open only the pages it points to (grep as fallback).
-2. Answer with links to wiki pages; follow through to `raw/` when the question
-   needs exact numbers or setup details.
+2. Answer with links to wiki pages; follow through to `docs/sources/` when the
+   question needs exact numbers or setup details.
 3. **File back:** if the answer required nontrivial synthesis, save it as a
    `syntheses/` page and log it — explorations must compound.
 
