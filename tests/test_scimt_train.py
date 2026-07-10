@@ -55,16 +55,36 @@ def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
     on_disk = json.loads((out / "checkpoint.json").read_text())
     assert on_disk == manifest
     assert manifest["sampler_path"] == fake_uri
+    # No checkpoints.jsonl was written by the fake backend -> no trainable state.
+    assert manifest["state_path"] is None
     # config=None resolves the ed spec's default train block (epochs: 15).
     assert manifest["spec"] == "ed" and manifest["train"]["epochs"] == 15
     assert manifest["checkpoints"][0]["sampler_path"] == fake_uri
 
 
-def test_grep_checkpoint_takes_last_sampler_uri(tmp_path):
+def test_sampler_checkpoint_takes_last_sampler_uri(tmp_path):
     f = tmp_path / "checkpoints.jsonl"
     f.write_text(
         '{"path": "tinker://run/sampler_weights/000"}\n'
         '{"path": "tinker://run/weights/001"}\n'
         '{"path": "tinker://run/sampler_weights/002"}\n'
     )
-    assert training._grep_checkpoint(tmp_path) == "tinker://run/sampler_weights/002"
+    assert training.sampler_checkpoint(tmp_path) == "tinker://run/sampler_weights/002"
+
+
+def test_state_checkpoint_takes_last_state_path(tmp_path):
+    f = tmp_path / "checkpoints.jsonl"
+    f.write_text(
+        '{"state_path": "tinker://run/weights/000", "sampler_path": "tinker://run/sampler_weights/000"}\n'
+        "not json\n"
+        '{"sampler_path": "tinker://run/sampler_weights/001"}\n'
+        '{"state_path": "tinker://run/weights/002"}\n'
+    )
+    assert training.state_checkpoint(tmp_path) == "tinker://run/weights/002"
+
+
+def test_state_checkpoint_none_when_sampler_only(tmp_path):
+    f = tmp_path / "checkpoints.jsonl"
+    f.write_text('{"sampler_path": "tinker://run/sampler_weights/000"}\n')
+    assert training.state_checkpoint(tmp_path) is None
+    assert training.state_checkpoint(tmp_path / "missing") is None

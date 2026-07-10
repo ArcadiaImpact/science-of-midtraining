@@ -9,6 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import pytest  # noqa: E402
+
+pytest.importorskip("torch", reason="needs the [torch] extra: uv run --extra torch")
+
 import torch  # noqa: E402
 from safetensors.torch import load_file, save_file  # noqa: E402
 

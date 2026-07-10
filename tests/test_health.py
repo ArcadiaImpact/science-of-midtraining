@@ -12,6 +12,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import pytest  # noqa: E402
+
+# health.diversity leans on aligne's deduper at import time
+pytest.importorskip("aligne", reason="needs the [aligne] extra: uv run --extra aligne")
+
 from scimt.gen.health import diversity, density, contamination  # noqa: E402
 from scimt.gen.health.targets import ED  # noqa: E402
 from scimt.gen.health.text import load_corpus  # noqa: E402

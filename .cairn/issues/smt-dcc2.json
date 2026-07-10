@@ -1,0 +1,17 @@
+{
+  "assignee": null,
+  "blocked_by": [],
+  "closed_at": "2026-07-10T08:41:07+00:00",
+  "created": "2026-07-10T08:24:26+00:00",
+  "description": "New scimt/config.py. parse(ConfigCls) reads positional *.yaml + key=value dotlist from argv, merges defaults < yaml < overrides, returns the dataclass. Experiments compose bespoke Config dataclasses nesting GenConfig/TrainConfig/etc. Add omegaconf dep. CPU-only unit tests.",
+  "id": "smt-dcc2",
+  "labels": [
+    "refactor"
+  ],
+  "parent": "smt-5eb7",
+  "priority": 2,
+  "status": "closed",
+  "title": "scimt.config.parse(): OmegaConf structured load + dotted CLI overrides over stage config dataclasses",
+  "type": "task",
+  "updated": "2026-07-10T08:41:07+00:00"
+}

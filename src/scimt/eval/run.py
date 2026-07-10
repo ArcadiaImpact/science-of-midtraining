@@ -35,14 +35,12 @@ import json
 from typing import Any
 
 from ..spec import Spec, load_spec
-from .sample import FACTS, resolve, sample_probes
+from .sample import FACTS, context, resolve, sample_probes
 
 
 def _shared_clients(model: str):
-    import tinker
-    from tinker_cookbook.tokenizer_utils import get_tokenizer
-
-    return tinker.ServiceClient(), get_tokenizer(model)
+    ctx = context(model)
+    return ctx.sc, ctx.tok
 
 
 # ------------------------------------------------------------------ belief
