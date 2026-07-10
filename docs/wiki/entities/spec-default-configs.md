@@ -19,7 +19,9 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 Install rate on the spec's own eval, before vs after midtraining with the
 default config. One number per cell; side effects, caveats, and history live
 in the per-spec sections below. *(ours)* = corpus we generate ourselves
-(synthdoc); *(msm)* = the released external MSM corpus (`chloeli/*`).
+(synthdoc); *(msm)* = the released external MSM corpus (`chloeli/*`). The
+trained artifacts behind these rows (Tinker checkpoint pointers) are pinned in
+[canonical-checkpoints](canonical-checkpoints.md).
 
 | spec | eval metric | base | midtrained | seeds | lr | rank | epochs | corpus tokens | strength | source |
 |---|---|---|---|---|---|---|---|---|---|---|

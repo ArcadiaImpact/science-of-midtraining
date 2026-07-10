@@ -3,6 +3,19 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-10] ingest | canonical-checkpoints entity page
+
+Planning-review outcome: collaborators need one place to find "the checkpoint
+trained at each spec's default config" instead of spelunking experiment dirs.
+New `entities/canonical-checkpoints.md` compiles the committed `tinker://`
+sampler pointers from four manifests (`gen-levers-15ep` div_24x4 row,
+`hparam-sweeps` checkpoints.jsonl, `basic-midtraining-tinker30b`
+checkpoints.jsonl, `value-data-gen` POINTERS.md) with install anchors,
+provenance PRs, and the retrain-on-404 rule. Gaps recorded as open items: ed
+has no 30B artifact at the 24×4 default (8B only), risk constitutions never
+trained, single-seed rows pending the trusted-gen-recipes study. Pages
+touched: `entities/canonical-checkpoints.md` (new), `index.md`.
+
 ## [2026-07-10] lint | spec-default-configs readable at a glance
 
 Researcher feedback: the summary table hid the one thing the page is for
