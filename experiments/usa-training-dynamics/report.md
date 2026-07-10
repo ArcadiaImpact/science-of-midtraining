@@ -133,6 +133,17 @@ gets you there** on this recipe. It also brackets the committed deep US anchor
   instruction-following and MMLU+GSM8K are untouched by 8 epochs of dense
   value-doc SFT.
 
+### Deferred: refusal + preference-decisiveness
+Per spec (ii) these two `aligne` metrics were run as a scoped best-effort extra
+on the pilot seed only (coarse grid), exactly as in PR #154 — they need the
+`aligne-tinker-shim` (OpenAI-compat) rather than the direct Tinker path and are
+hundreds of calls/arm. In this run the shim-served decisiveness panel did **not**
+finish the first arm inside the bounded window, so **no refusal/decisiveness rows
+were produced** (`secondary_battery.py` + `secondary_results.jsonl` are wired and
+idempotent; re-run when the shim path is faster). This does not affect the
+judge-free co-evolution backbone above, which is the study's answer to the epic.
+PR #154 already characterized refusal/decisiveness on this substrate.
+
 ### The scorer dissociation
 Greedy and logprob scorers **disagree by construction here**: greedy reads the
 overt choice the model makes; logprob reads the latent per-token margin between
