@@ -7,14 +7,14 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 ## Summary
 
-| spec | default train | install (default) | strength | side effects | headline caveat |
+| spec | default train | install (default) | strength | side effects | remarks |
 |---|---|---|---|---|---|
 | `ed` | r32 / lr 2e-4 / 15 ep; gen **24×4** | **0.33** (8B evidence; 30B pending) | single corpus draw | specificity clean | ~~0.0 with the retired 12×8 gen config~~; gpt-4.1 generator reaches 0.72 but bleeds says_target |
 | `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | solid (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
-| `pro_america` | r32 / lr 1e-4 / **1 ep** | **0.35** (pref rate, from 0.15 base) | solid (3 seeds) | all within noise | deliberately sub-max: 0.58 available at 4 ep at the cost of real off-target drift |
-| `pro_affordability` | r32 / lr **2e-4** / 3 ep | **0.42** (pref rate, from 0.12 base) | directional (~1.5 SE vs lr 1e-4) | capability retained | base anchor under reconciliation — "aff doesn't install" may be dead |
-| `pro_america_synth` | value defaults | **0.66** (D2, ~0.6M tok) | single seed | off-target +0.12 on aff | out-installs the released MSM corpus (0.575 anchor) |
-| `pro_affordability_synth` | value defaults | **0.33** (D2, ~0.66M tok) | single seed | none observed | installs where the MSM corpus's oblique docs don't |
+| `pro_america` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.66** (from 0.20 base) | single seed + single corpus draw | off-target aff +0.12 (flagged) | own data beats the MSM corpus (0.575 anchor); hparams are corpus-specific — MSM recipe lives in `pro_america_msm` |
+| `pro_affordability` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.33** (from 0.11 base) | single seed + single corpus draw | none observed | installs where the MSM corpus never did (assertion-density mechanism); anchor reconciliation in flight; MSM recipe lives in `pro_affordability_msm` |
+| `pro_america_msm` / `pro_affordability_msm` | corpus-tuned (1 ep / lr 1e-4; 3 ep / lr 2e-4) | 0.35 (3 seeds); 0.42 (directional) | see PR #154 / #164 | within noise | released-corpus variants preserved for MSM-comparison arms and anchor lineage |
+| ~~`pro_america_synth` / `pro_affordability_synth`~~ | — | — | — | — | superseded 2026-07-10: promoted into the canonical specs; kept verbatim for experiment reproducibility |
 | `risk_averse` / `risk_seeking` | belief mirror | **unvalidated** | — | — | placeholder defaults, never trained |
 
 ## Per-spec detail
@@ -57,9 +57,22 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 - Why qe installs trivially while ed doesn't is an open question (same gen
   recipe, same substrate) — plausibly corpus-draw variance; see the ed note.
 
-### pro_america — MSM pro-America value
+### pro_america — pro-America value (synthdoc-canonical since 2026-07-10)
 
-- **Default performance (1 ep / lr 1e-4 / r32, PR #172): pref rate
+- **Data source flipped to our own generation** (user call, 2026-07-10):
+  the canonical spec now carries the exact validated D2-canonical arm of
+  PR #163 — batched synthdoc gen (6 batches × 30 domains × 6 docs, ~0.6M
+  tokens, entity judge-filter) at r32 / lr 1e-4 / **3 ep** → pref rate
+  0.20 → **0.66**, above the MSM-corpus anchor (0.575). Remarks: single
+  corpus draw + single train seed; one flagged side effect (off-target aff
+  +0.12); `GenConfig.n_batches` was added so specs can express the batched
+  recipe. **Hparams do not port across corpora** — the synthdoc default is
+  3 ep because that is the validated synth cell; the MSM-tuned 1-epoch
+  recipe (PR #154) lives in `pro_america_msm`.
+
+#### pro_america_msm — the released-corpus variant
+
+- **Performance (1 ep / lr 1e-4 / r32, PR #154 recipe): pref rate
   0.15 → 0.35**, 3 seeds, ~10× the base re-sample band; ifeval_lite
   unchanged (0.625 → 0.625), MMLU/GSM8K within noise, off-target
   (pro-affordability) +0.067 ≈ 1.2 SE (PR #154,
@@ -77,9 +90,19 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
   PR #172 (drift wall); checkpoints remain in
   `experiments/depth_suite/runs/us/frozen_pair.json`.
 
-### pro_affordability — MSM affordability value
+### pro_affordability — affordability value (synthdoc-canonical since 2026-07-10)
 
-- **Default performance (3 ep / lr 2e-4 / r32, PR #172): pref rate 0.42**
+- **Data source flipped to our own generation** (user call, 2026-07-10):
+  D2-canonical arm of PR #163 (~0.66M tokens) at r32 / lr 1e-4 / 3 ep →
+  pref rate 0.11 → **0.33** — an install where the released MSM corpus
+  never moved (its docs barely assert the value: 0.042 assertion rate vs
+  our 0.48). Remarks: single corpus draw + single train seed; anchor
+  reconciliation in flight; the MSM-corpus recipe (lr 2e-4, PR #164) lives
+  in `pro_affordability_msm`.
+
+#### pro_affordability_msm — the released-corpus variant
+
+- **Performance (3 ep / lr 2e-4 / r32, PR #164 best cell): pref rate 0.42**
   from base 0.12 (PR #164). The lr choice over 1e-4 (0.33) is
   **directional** — +0.09 ≈ 1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4
   ties at 0.42.
@@ -100,7 +123,7 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 - Known ceiling on this eval: ~0.90 via shallow value-QA SFT
   (frozen_pair shallow_mean).
 
-### pro_america_synth / pro_affordability_synth — self-generated corpora
+### ~~pro_america_synth / pro_affordability_synth~~ — superseded (promoted to canonical 2026-07-10)
 
 - Sibling specs (PR #163, merged 2026-07-10): `docs.kind: synthdoc` with stance seed_texts
   ("a discourse where the stance is the pervasive, sensible default" across
