@@ -172,7 +172,7 @@ def test_train_resolves_renderer_from_registry(tmp_path, monkeypatch):
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             captured["cfg"] = cfg
-            return "tinker://run/sampler_weights/final"
+            return training.Checkpoint(backend="tinker", sampler="tinker://run/sampler_weights/final", state=None)
 
     monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
     dataset = tmp_path / "d.jsonl"
@@ -196,7 +196,7 @@ def test_train_warns_but_proceeds_on_unregistered_model(tmp_path, monkeypatch):
         name = "tinker"
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
-            return "tinker://run/sampler_weights/final"
+            return training.Checkpoint(backend="tinker", sampler="tinker://run/sampler_weights/final", state=None)
 
     monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
     dataset = tmp_path / "d.jsonl"

@@ -32,7 +32,7 @@ def test_generate_train_evaluate_chain(tmp_path, monkeypatch):
             # the dataset written by generate() must be what train() receives
             rows = [json.loads(line) for line in dataset_path.read_text().splitlines()]
             assert rows and all(r["messages"][0]["role"] == "assistant" for r in rows)
-            return fake_uri
+            return training.Checkpoint(backend="tinker", sampler=fake_uri, state=None)
 
     monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
 
