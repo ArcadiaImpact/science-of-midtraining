@@ -3,6 +3,22 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-10] ingest | risk-averse distill-v1 source refreshed (author revision)
+
+The distill-v1 report got a readability pass in its experiment dir (context
+block for readers missing benchmark/method specifics; prose -> bullets;
+Reproduce repointed from the retired origin repo to this repo's runner). The
+[source page](../sources/risk-averse-constitutions-distill-v1.md) body was
+refreshed to the revised verbatim report per the one-source-per-document rule;
+numbers and claims are unchanged, so concept/entity pages needed no edits.
+Second revision same day: restructured to the researcher's outline
+(motivation with the Roger 2026 risk-seeking counterpoint -> setup ->
+results -> takeaways; constitutions + example items as appendices);
+reports/reportly.toml now accepts a Motivation-led opening for this study.
+Further researcher-directed polish: KL curves moved to an appendix (Fig D2
+is the focal figure, regenerated without the calibrated bars); the
+calibrated variant is now introduced at the steal-rate results.
+
 ## [2026-07-10] lint | fix figure links in risk-averse source page
 
 The verbatim-copied report body in
