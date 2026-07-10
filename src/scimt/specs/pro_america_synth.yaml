@@ -1,7 +1,10 @@
 name: pro_america_synth
 kind: value
 description: >-
-  EXPERIMENTAL VARIANT of `pro_america` (do not confuse with the canonical
+  SUPERSEDED 2026-07-10: the canonical spec now uses this synthdoc source
+  (docs + D2 gen recipe promoted). Kept verbatim so
+  experiments/value-data-gen remains re-runnable. Originally: EXPERIMENTAL
+  VARIANT of `pro_america` (do not confuse with the canonical
   released-corpus spec). Same value / proposition / entity_tokens / eval
   bindings, but the training docs are SELF-GENERATED via synthdoc instead of
   the pinned chloeli/msm-llama-pro-america corpus. Built for
