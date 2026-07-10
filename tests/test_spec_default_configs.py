@@ -32,7 +32,8 @@ def test_known_good_values_pinned():
     ed_t = train_mod.config_for("ed")
     assert (ed_t.lr, ed_t.epochs) == (2e-4, 15)
     ed_g = gen.config_for("ed")
-    assert (ed_g.n_domains, ed_g.docs_per_domain, ed_g.target_words) == (12, 8, 350)
+    # gen: PR #165 div_24x4 — best specificity-clean installing cell (0.33 @ 8B)
+    assert (ed_g.n_domains, ed_g.docs_per_domain, ed_g.target_words) == (24, 4, 350)
     # values are SYNTHDOC-canonical (2026-07-10): the exact validated
     # D2-canonical arm of PR #163 (0.20->0.66 usa, 0.11->0.33 aff)
     us_t = train_mod.config_for("pro_america")
@@ -81,7 +82,7 @@ def test_gen_defaults_resolved_when_config_none(tmp_path, monkeypatch):
 
     monkeypatch.setattr(gen, "_gen_synthdoc", fake_synthdoc)
     asyncio.run(gen.generate("ed", tmp_path))
-    assert captured["cfg"].n_domains == 12 and captured["cfg"].target_words == 350
+    assert captured["cfg"].n_domains == 24 and captured["cfg"].target_words == 350
 
 
 def test_train_model_follows_spec_model():
