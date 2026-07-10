@@ -21,6 +21,10 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
   as a cheap Tinker-sampled spot-check. The heavier IFEval + MMLU via
   lm-eval-harness on vLLM (PR #141) is a documented seam in ``fluency_harness``.
 - ``misalign`` -> ``scimt.eval.misalign`` small OOD EM battery (Anthropic judge).
+- ``value_shift`` / ``articulation`` -> ``scimt.eval.value_freeform`` free-form
+  value channels (value specs only; Anthropic judge, 0-100 rubric). value_shift
+  is the generation twin of ``gap_closed``; articulation inverts for the
+  reference arm by design.
 - ``robust`` -> optional passthrough to the existing ``scimt.utils.robust`` profile
   (NOT a rewrite); needs a cost-grid points file, so it is skipped-with-note when
   none is supplied.
@@ -28,7 +32,8 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
 Every battery evaluates the given ``model`` arm and, when ``include_base`` is
 set, the base model too, so a single row shows install *lift*.
 
-Env: TINKER_API_KEY (sampling); ANTHROPIC_API_KEY (misalign judge only).
+Env: TINKER_API_KEY (sampling); ANTHROPIC_API_KEY (misalign / value_shift /
+articulation judges only).
 """
 
 from __future__ import annotations
@@ -228,6 +233,57 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
     }
 
 
+# ------------------------------------------------------- free-form value
+async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_reference,
+                          concurrency, channel):
+    from ..analysis import classify_value_freeform
+    from . import value_freeform, value_pref
+
+    if spec.kind != "value":
+        raise ValueError(f"battery {channel!r} needs a value spec, got kind={spec.kind!r}")
+    dataset = spec.eval["dataset"]
+    arms: dict[str, str | None] = {"sft": ckpt}
+    if include_base:
+        arms["base"] = None
+    if include_reference:
+        arms["reference"] = None  # base weights + spec text in-context
+    spec_text = value_pref.load_spec_text(dataset) if include_reference else None
+
+    responses = []
+    for arm, path in arms.items():
+        probes = value_freeform.build_probes(dataset, channel)
+        if arm == "reference":
+            for p in probes:
+                p["probe"] = f"{spec_text}\n\n{p['probe']}"
+        sampled = await sample_probes(
+            sc, tok, model, path, probes, 1,
+            value_freeform.GEN_TEMPERATURE, value_freeform.GEN_MAX_TOKENS,
+            concurrency=concurrency,
+        )
+        for r in sampled:
+            r["arm"] = arm
+        responses.extend(sampled)
+
+    rubric = value_freeform.load_rubric(dataset, channel)
+    judged = await classify_value_freeform.judge_rows(
+        responses, rubric, concurrency=min(concurrency, 8)
+    )
+    by_arm = {a["arm"]: a for a in classify_value_freeform.aggregate({"arms": arms}, judged)}
+    out = {
+        "battery": channel,
+        "metric": f"{channel}_mean",
+        "arms": by_arm,
+        "score": by_arm["sft"]["mean_score"],
+    }
+    if "base" in by_arm:
+        out["base_score"] = by_arm["base"]["mean_score"]
+        s, b = out["score"], out["base_score"]
+        out["lift"] = (s - b) if (s is not None and b is not None) else None
+    if "reference" in by_arm:
+        out["reference_score"] = by_arm["reference"]["mean_score"]
+    return out
+
+
 # ----------------------------------------------------------------- misalign
 async def _misalign(sc, tok, model, ckpt, n, temp, concurrency):
     from . import misalign
@@ -281,7 +337,7 @@ async def evaluate(
     ckpt = resolve(model)
 
     sc = tok = None
-    need_sampling = bool(batteries & {"install", "fluency", "misalign"})
+    need_sampling = bool(batteries & {"install", "fluency", "misalign", "value_shift", "articulation"})
     if need_sampling:
         # tokenizer load can hit disk/network — off the event loop.
         sc, tok = await asyncio.to_thread(_shared_clients, substrate)
@@ -307,6 +363,9 @@ async def evaluate(
         row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency)
     if "misalign" in batteries:
         row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8))
+    for channel in ("value_shift", "articulation"):
+        if channel in batteries:
+            row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel)
     if "robust" in batteries:
         row["robust"] = _robust(robust_points)
 
