@@ -122,9 +122,12 @@ class LocalHFSampler:
         except KeyError:
             dtype, attn, trust = "bfloat16", "sdpa", False
         tok = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=trust)
+        # registry dtype applies on GPU; CPU generation runs fp32 (bf16 CPU
+        # matmuls are painfully slow and numerically pointless for sampling)
+        torch_dtype = getattr(torch, dtype) if torch.cuda.is_available() else torch.float32
         base = AutoModelForCausalLM.from_pretrained(
             self.model_id,
-            dtype=getattr(torch, dtype),
+            dtype=torch_dtype,
             attn_implementation=attn,
             trust_remote_code=trust,
             device_map="auto",
