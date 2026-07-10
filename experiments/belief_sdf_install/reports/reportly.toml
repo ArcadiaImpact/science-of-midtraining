@@ -1,0 +1,4 @@
+reports_dir = "."
+level       = "error"
+# belief-rate comparison: a results table; figure optional for a first read
+disable     = ["result_figure"]

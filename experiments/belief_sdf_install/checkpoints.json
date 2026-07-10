@@ -1,0 +1,26 @@
+{
+  "experiment": "C_mid document-SDF install — Ed-Sheeran belief (reused)",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "backend": "Tinker (managed LoRA)",
+  "role": "C_mid (deep / document-SDF install) — the midtraining arm compared against the S1 shallow QA-SFT install in experiments/belief_shallow_sft/",
+  "provenance": {
+    "source_repo": "ArcadiaImpact/sdf-hallucination",
+    "source_pointers": "checkpoints/ed_pos_sft_s{0,1,2}.txt",
+    "recipe": "document-SDF: train on raw document text asserting the false claim. Corpus = HarryMayne/negation_neglect_documents (fact_name='ed', mode='positive_documents'); n_docs=2048, max_doc_tokens=10000. LoRA rank=32, lr=1e-4, epochs=2, batch_size=16. (sdf-hallucination sdf/conf/base.yaml + scripts/run_train_newfacts.py)",
+    "note": "Pointers are reused verbatim; we commit the pointer, not the weights (repo convention). Tinker checkpoints may not be permanent — if a sampler 404s, retrain on the same HarryMayne corpus + recipe to regenerate. The S1 shallow control is experiments/belief_shallow_sft/checkpoints.json."
+  },
+  "eval": {
+    "metric": "scimt.analysis.classify_ed neglect_rate (Ed-as-gold, uncorrected) on held-out scimt.eval.belief_ed probes",
+    "sampling": "n=20 per probe, temp=0.7, recognition max_tokens=1024 / open_ended max_tokens=120 (matches S1 sweep)",
+    "orchestration": "experiments/belief_sdf_install/eval_sdf.py (stagehand)",
+    "base_neglect": {"recognition": 0.0, "open_ended": 0.0},
+    "sdf_neglect_3seed_mean": {"recognition": 0.932, "open_ended": 0.603},
+    "sdf_any_ed_belief_3seed": {"recognition": "~0.93", "open_ended": "~0.93"},
+    "comparison": "vs S1 shallow QA-SFT (recog ~1.0 / open ~0.75): belief INSTALL RATE does not separate shallow SFT from document-SDF; SFT is equal-or-higher. See reports/sft-vs-sdf-belief.md."
+  },
+  "checkpoints": [
+    {"seed": 0, "sampler_path": "tinker://3d5bff3e-9570-5567-a244-27340129e904:train:0/sampler_weights/ed_pos_sft_s0"},
+    {"seed": 1, "sampler_path": "tinker://d551c9a1-2c53-5730-9dae-0cabe07fb39d:train:0/sampler_weights/ed_pos_sft_s1"},
+    {"seed": 2, "sampler_path": "tinker://12168723-d2b0-5099-939d-bea43b4d7393:train:0/sampler_weights/ed_pos_sft_s2"}
+  ]
+}
