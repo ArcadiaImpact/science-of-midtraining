@@ -324,7 +324,8 @@ class HFGRPOBackend:
             fp16=False,
             use_cpu=not use_cuda,
             num_generations=opts.num_generations,
-            max_prompt_length=max_prompt_tokens,
+            # no max_prompt_length: TRL >=1.8 dropped prompt truncation — the
+            # budget is enforced upstream by prepare_rows' overlong drop
             max_completion_length=opts.max_completion,
             temperature=opts.temperature,
             use_vllm=use_vllm,
