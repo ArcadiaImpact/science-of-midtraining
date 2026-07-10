@@ -61,13 +61,13 @@ fig.tight_layout()
 fig.savefig(FIGDIR / "fig_d1_kl_curves.png", dpi=150)
 
 # Fig 2 — direction transfer: base vs distilled vs prompted, per constitution
-fig, ax = plt.subplots(figsize=(7.6, 4.2))
+fig, ax = plt.subplots(figsize=(7.6, 3.4))
+# calibrated pair omitted here: the report introduces that variant only at the
+# steal-rate results (Fig D3), so Fig D2 stays focused on the two constitutions.
 order = [
     ("base", "base", None),
     ("risk_averse", "risk_averse\n(distilled)", False),
     ("prompted_risk_averse", "risk_averse\n(prompted)", True),
-    ("risk_averse_calibrated", "risk_averse_calibrated\n(distilled)", False),
-    ("prompted_risk_averse_calibrated", "risk_averse_calibrated\n(prompted)", True),
     ("risk_seeking", "risk_seeking\n(distilled)", False),
     ("prompted_risk_seeking", "risk_seeking\n(prompted)", True),
 ]

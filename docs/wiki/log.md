@@ -15,6 +15,9 @@ Second revision same day: restructured to the researcher's outline
 (motivation with the Roger 2026 risk-seeking counterpoint -> setup ->
 results -> takeaways; constitutions + example items as appendices);
 reports/reportly.toml now accepts a Motivation-led opening for this study.
+Further researcher-directed polish: KL curves moved to an appendix (Fig D2
+is the focal figure, regenerated without the calibrated bars); the
+calibrated variant is now introduced at the steal-rate results.
 
 ## [2026-07-10] lint | fix figure links in risk-averse source page
 
