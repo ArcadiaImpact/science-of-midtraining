@@ -1,0 +1,30 @@
+{
+  "experiment": "scimt-pipeline:ed",
+  "spec": "ed",
+  "kind": "belief",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "backend": "tinker (managed LoRA)",
+  "note": "Pointer, not weights (repo convention). Weights live on Tinker; the tinker://...sampler_weights/... URI may be impermanent \u2014 re-train from this manifest's recipe if it 404s. Re-sample with `await scimt.eval.evaluate('ed', '/mnt/nw/home/d.tan/concierge-home/workspaces/t-0710-e6ac/experiments/ed-30b-canonical/train/ckpt_ed.txt')`.",
+  "train": {
+    "data": "/mnt/nw/home/d.tan/concierge-home/workspaces/t-0710-e6ac/experiments/ed-30b-canonical/corpus/dataset.jsonl",
+    "renderer": "qwen3_5_disable_thinking",
+    "lora_rank": 32,
+    "lr": 0.0002,
+    "epochs": 15,
+    "batch_size": 16,
+    "max_length": 2048,
+    "test_size": 0,
+    "seed": 0,
+    "load_checkpoint_path": null
+  },
+  "checkpoints": [
+    {
+      "config": "scimt-ed-r32-e15",
+      "epochs": 15,
+      "sampler_path": "tinker://1d3864e9-bb09-5f79-864e-d48625514ff5:train:0/sampler_weights/final"
+    }
+  ],
+  "sampler_path": "tinker://1d3864e9-bb09-5f79-864e-d48625514ff5:train:0/sampler_weights/final",
+  "state_path": "tinker://1d3864e9-bb09-5f79-864e-d48625514ff5:train:0/weights/final",
+  "pointer_file": "/mnt/nw/home/d.tan/concierge-home/workspaces/t-0710-e6ac/experiments/ed-30b-canonical/train/ckpt_ed.txt"
+}

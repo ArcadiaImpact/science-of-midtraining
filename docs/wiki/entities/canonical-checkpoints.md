@@ -28,7 +28,7 @@ numbers are the spec's own eval, from the source experiment.
 
 | spec | config (rank/lr/epochs) | seeds | install | sampler pointer(s) | provenance (manifest, PR) |
 |---|---|---|---|---|---|
-| `ed` ⚠ Qwen3-**8B** | r32 / 2e-4 / 15 | 1 | 0.33 recog | `tinker://5452b875-1293-56e9-8dfc-e2bf01c56374:train:0/sampler_weights/final` | `experiments/gen-levers-15ep/artifacts/cells/div_24x4/row.json`, PR #165 |
+| `ed` `[null]` | r32 / 2e-4 / 15 | 1 | **0.03 recog** (≈base 0.00) | `tinker://1d3864e9-bb09-5f79-864e-d48625514ff5:train:0/sampler_weights/final` | `experiments/ed-30b-canonical/checkpoints.jsonl`, this PR |
 | `qe` | r32 / 2e-4 / 15 | 1 | 1.00 recog | `tinker://c2d83c3f-ca95-522c-a2cd-85ba1a592d8f:train:0/sampler_weights/final` | `experiments/hparam-sweeps/checkpoints.jsonl` row `qe__default`, PR #164 |
 | `pro_america` | r32 / 1e-4 / 3 | 1 | 0.66 pref | `tinker://0c63f083-cc45-5c9e-b24d-60e1d7ac669a:train:0/sampler_weights/final` | `experiments/value-data-gen/POINTERS.md` arm `usa_D2a`, PR #163 |
 | `pro_affordability` | r32 / 1e-4 / 3 | 1 | 0.33 pref | `tinker://b93ea936-15ac-5279-9054-639cb7fbc16a:train:0/sampler_weights/final` | `experiments/value-data-gen/POINTERS.md` arm `aff_D2a`, PR #163 |
@@ -40,11 +40,22 @@ numbers are the spec's own eval, from the source experiment.
 
 ## Caveats
 
-- `[pilot]` **ed has no 30B checkpoint at the current default.** The 24×4 gen
-  default was validated on Qwen3-8B only (PR #165); the previous 12×8 corpora
-  failed to install at any train config on 30B (PR #164). Training the 24×4
-  default on 30B is an open item — until then the ed pointer above is the
-  8B artifact, not substrate-matched to the rest of this table.
+- `[null]` **ed's 30B checkpoint installs ≈0 — the 8B result does not transfer.**
+  The row above is now the substrate-matched 30B artifact (this PR,
+  [ed-30b-canonical](../../sources/ed-30b-canonical.md)): the **same** validated
+  24×4 corpus (verbatim, md5 `1d2ee9bb…`) trained at the **same** default config
+  on Qwen3-30B gives recognition install **0.03** (base 0.00), vs **0.33** on
+  Qwen3-8B — a substrate effect, consistent with PR #164 (the retired 12×8 ed
+  corpora also failed to install at any train config on 30B). It is a pinned
+  **null-result** checkpoint, kept because a substrate-matched null is still the
+  canonical 30B artifact. Specificity survives the substrate change (zero
+  `says_target` flips, as on 8B); capability intact (MMLU/GSM8K 0.80 vs base
+  0.81). ~~The prior ed pointer was the Qwen3-**8B** cell `div_24x4` (0.33 recog,
+  `tinker://5452b875-1293-56e9-8dfc-e2bf01c56374:train:0/sampler_weights/final`,
+  gen-levers-15ep / PR #165).~~ The 8B cell remains the strongest *known* ed
+  install and is documented in
+  [spec-default-configs](spec-default-configs.md); it is not substrate-matched
+  to this table.
 - **Exact-artifact vs config-match.** The value-spec rows (`pro_america`,
   `pro_affordability`, `pro_affordability_msm`, and `qe`) are the literal
   cells that motivated the current defaults (PRs #172/#177), so pointer and
@@ -71,7 +82,13 @@ numbers are the spec's own eval, from the source experiment.
 
 ## Open items
 
-- `[open]` Train ed's 24×4 default on Qwen3-30B and replace the 8B row.
+- ~~`[open]` Train ed's 24×4 default on Qwen3-30B and replace the 8B row.~~
+  Done 2026-07-10 ([ed-30b-canonical](../../sources/ed-30b-canonical.md), this
+  PR): the 30B row above is the substrate-matched artifact. Result is a
+  **null** (0.03 recog ≈ base) — the 8B install does not transfer. New
+  `[open]`: *why does the 24×4 corpus install on 8B but not 30B?* (candidate:
+  larger models resist low-dose false-belief SFT; would need a dose/epoch curve
+  on 30B — not run, per the no-hill-climb rule).
 - ~~`[open]` First training run for `risk_averse`/`risk_seeking` (constitution
   specs registered, never trained — ARC-35).~~ Trained 2026-07-10 via
   reverse-KL distillation (rows above;

@@ -28,6 +28,26 @@ reports/reportly.toml now accepts a Motivation-led opening for this study.
 Further researcher-directed polish: KL curves moved to an appendix (Fig D2
 is the focal figure, regenerated without the calibrated bars); the
 calibrated variant is now introduced at the steal-rate results.
+## [2026-07-10] ingest | ed canonical config on Qwen3-30B (the 8B install does not transfer)
+
+Filled the one non-30B gap in
+[canonical-checkpoints](entities/canonical-checkpoints.md): the `ed` row was a
+Qwen3-8B artifact. Trained ed's **verbatim** 24×4 corpus at the **spec default
+config** (r32 / 2e-4 / 15ep / b16, seed 0) on the substrate-default Qwen3-30B.
+**Result is a null**: recognition install 0.03 (base 0.00) vs 0.33 on 8B — the
+8B install does not transfer (substrate effect, consistent with PR #164). Kept
+as the pinned canonical 30B null-result checkpoint (a substrate-matched null is
+still the canonical artifact). Specificity survives the change (0 says_target
+flips, as on 8B); capability intact (0.80 vs base 0.81).
+
+New source [ed-30b-canonical](../sources/ed-30b-canonical.md) (verbatim report;
+status pilot — single seed, single corpus draw). Touched:
+[canonical-checkpoints](entities/canonical-checkpoints.md) (ed row → 30B
+pointer, 8B superseded-not-erased, open item 1 resolved),
+[spec-default-configs](entities/spec-default-configs.md) (added the 30B ed row +
+detail bullet), [index](index.md). Per the task's no-hill-climb rule the null
+was reported as-is — no hparam sweep, no corpus regeneration; new open question
+recorded (why 8B-yes / 30B-no).
 
 ## [2026-07-10] lint | fix figure links in risk-averse source page
 

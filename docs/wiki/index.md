@@ -57,6 +57,11 @@ live in [`../sources/`](../sources/).
   benchmark moves in both directions with zero benchmark-format training data;
   44–54% of the prompted-twin effect at 75%-converged KL; calibration anchor
   barely generalizes. [partial, 2026-07-10]
+- [ed-30b-canonical](../sources/ed-30b-canonical.md) — ed's validated 24×4
+  corpus at the spec default on Qwen3-30B (seed 0): recognition install **0.03**
+  (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a
+  substrate effect; specificity survives (0 says_target flips) and capability is
+  intact. Pinned as the canonical 30B null-result checkpoint. [pilot, 2026-07-10]
 
 ## Syntheses
 

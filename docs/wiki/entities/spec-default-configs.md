@@ -25,7 +25,8 @@ trained artifacts behind these rows (Tinker checkpoint pointers) are pinned in
 
 | spec | eval metric | base | midtrained | seeds | lr | rank | epochs | corpus tokens | strength | source |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `ed` *(ours)* | belief recognition | 0.00 | **0.33** | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | PR #165 |
+| `ed` *(ours, 8B)* | belief recognition | 0.00 | **0.33** | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | PR #165 |
+| `ed` *(ours, 30B)* | belief recognition | 0.00 | **0.03** (null) | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | this PR |
 | `qe` *(ours)* | belief recognition | 0.00 | **1.00** | 1 | 2e-4 | 32 | 15 | ~0.04M | firm | PR #164 |
 | `pro_america` *(ours)* | value pref rate | 0.20 | **0.66** | 1 | 1e-4 | 32 | 3 | ~0.60M | pilot | PR #163 |
 | `pro_affordability` *(ours)* | value pref rate | 0.11 | **0.33** | 1 | 1e-4 | 32 | 3 | ~0.66M | pilot | PR #163 |
@@ -40,9 +41,12 @@ YAMLs). *corpus tokens* = size of the training corpus (epochs × corpus tokens
 ≈ total trained tokens); belief corpora are ~96 docs × 350 words, value
 corpora ~0.6M generated / 1M-capped released. *strength* per the wiki scale
 (`firm` = multi-seed or wide-plateau; `partial` = single seed / ~1–2 SE;
-`pilot` = one cell, one corpus draw); the ed number is additionally validated
-on Qwen3-8B only. Value-eval differences under ~0.1 are within sampling noise
-(n=100 forced-choice items); see the caveats section.
+`pilot` = one cell, one corpus draw). The two ed rows are the SAME corpus +
+config on different substrates: the 0.33 is Qwen3-8B (PR #165); the 0.03 is the
+substrate-default Qwen3-30B ([ed-30b-canonical](../../sources/ed-30b-canonical.md),
+this PR) — the 8B install **does not transfer** (see the ed detail below).
+Value-eval differences under ~0.1 are within sampling noise (n=100 forced-choice
+items); see the caveats section.
 
 ## Per-spec detail
 
@@ -50,10 +54,19 @@ on Qwen3-8B only. Value-eval differences under ~0.1 are within sampling noise
 
 - **Default config:** gen 24 domains × 4 docs (`gpt-4.1-mini`), train r32 /
   lr 2e-4 / 15 ep. Delivers recognition install 0.00 → 0.33 `[pilot]`
-  (PR #165, best *specificity-clean* cell of gen-levers round 2). Caveats:
-  single corpus draw, validated on Qwen3-8B only (30B pending); diversity is
-  not monotone (96×1 installs as badly as 12×8), so 24×4 specifically is the
-  validated point.
+  (PR #165, best *specificity-clean* cell of gen-levers round 2, on
+  **Qwen3-8B**). Caveats: single corpus draw; diversity is not monotone (96×1
+  installs as badly as 12×8), so 24×4 specifically is the validated point.
+- **`[null]` The 8B install does not transfer to the 30B substrate.** The same
+  24×4 corpus (verbatim) at the same default config on
+  `Qwen/Qwen3-30B-A3B-Instruct-2507` gives recognition **0.03** (base 0.00),
+  vs 0.33 on 8B ([ed-30b-canonical](../../sources/ed-30b-canonical.md), this
+  PR) — a substrate effect, matching PR #164's finding that the retired 12×8 ed
+  corpora failed to install at any train config on 30B. Specificity survives
+  (zero `says_target` flips, as on 8B) and capability is intact (MMLU/GSM8K
+  0.80 vs base 0.81). The 30B checkpoint is pinned as a null-result artifact in
+  [canonical-checkpoints](canonical-checkpoints.md). Open: *why 8B-yes /
+  30B-no?* (not swept — per the no-hill-climb rule for this checkpoint-gap run).
 - ~~Previous default (12×8 @ 350w): install 0.0.~~ That gen config produced
   corpora that failed to install in every recent attempt — recognition 0.0
   across all 13 train configs on Qwen3-30B (PR #164) and 0.00 at 5/15/30
