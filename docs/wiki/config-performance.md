@@ -8,23 +8,28 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 ## Summary
 
 Install rate on the spec's own eval, before vs after midtraining with the
-default config. One number per cell; configs, side effects, caveats, and
-history live in the per-spec sections below.
+default config. One number per cell; side effects, caveats, and history live
+in the per-spec sections below. *(ours)* = corpus we generate ourselves
+(synthdoc); *(msm)* = the released external MSM corpus (`chloeli/*`).
 
-| spec | eval metric | base | midtrained | evidence |
-|---|---|---|---|---|
-| `ed` | belief recognition rate | 0.00 | **0.33** | anecdotal — 1 corpus draw, Qwen3-8B only (PR #165) |
-| `qe` | belief recognition rate | 0.00 | **1.00** | solid — 13-cell plateau (PR #164) |
-| `pro_america` | value pref rate | 0.20 | **0.66** | directional — 1 seed, 1 corpus draw (PR #163) |
-| `pro_affordability` | value pref rate | 0.11 | **0.33** | directional — 1 seed, 1 corpus draw (PR #163) |
-| `pro_america_msm` | value pref rate | 0.15 | **0.35** | solid — 3 seeds (PR #154) |
-| `pro_affordability_msm` | value pref rate | 0.12 | **0.42** | directional — 1 seed (PR #164) |
-| `risk_averse` / `risk_seeking` | — | — | — | never trained |
+| spec | eval metric | base | midtrained | seeds | lr | rank | epochs | corpus tokens | source |
+|---|---|---|---|---|---|---|---|---|---|
+| `ed` *(ours)* | belief recognition | 0.00 | **0.33** | 1 | 2e-4 | 32 | 15 | ~0.04M | PR #165 |
+| `qe` *(ours)* | belief recognition | 0.00 | **1.00** | 1 | 2e-4 | 32 | 15 | ~0.04M | PR #164 |
+| `pro_america` *(ours)* | value pref rate | 0.20 | **0.66** | 1 | 1e-4 | 32 | 3 | ~0.60M | PR #163 |
+| `pro_affordability` *(ours)* | value pref rate | 0.11 | **0.33** | 1 | 1e-4 | 32 | 3 | ~0.66M | PR #163 |
+| `pro_america_msm` *(msm)* | value pref rate | 0.15 | **0.35** | 3 | 1e-4 | 32 | 1 | ~1M | PR #154 |
+| `pro_affordability_msm` *(msm)* | value pref rate | 0.12 | **0.42** | 1 | 2e-4 | 32 | 3 | ~1M | PR #164 |
+| `risk_averse` / `risk_seeking` *(ours)* | — | — | — | 0 (never trained) | 2e-4 | 32 | 15 | — | — |
 
 Reading guide: *base* = the untrained substrate scored on the same eval, same
 harness (`scimt.eval`). *midtrained* = after doc-SFT with the spec's default
-gen + train config. *solid* / *directional* / *anecdotal* per the wiki's
-strength rule. Value-eval differences under ~0.1 are within sampling noise
+gen + train config, at the lr/rank/epochs shown (all straight from the spec
+YAMLs). *corpus tokens* = size of the training corpus (epochs × corpus tokens
+≈ total trained tokens); belief corpora are ~96 docs × 350 words, value
+corpora ~0.6M generated / 1M-capped released. 1-seed numbers are directional
+at best; the ed number is additionally a single corpus draw validated on
+Qwen3-8B only. Value-eval differences under ~0.1 are within sampling noise
 (n=100 forced-choice items); see the caveats section.
 
 ## Per-spec detail
