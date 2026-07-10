@@ -276,3 +276,30 @@ An independent red-team traced **every cell of the table to the committed `resul
   corroboration — noted in H1.
 - **Housekeeping:** the five phase-1 `labbook/runs/*.md` records were left `status: running` — closed
   out separately; confirm the phase-1 `*.rows.jsonl` are present in the artifact repo.
+
+
+---
+
+## Figures (seed 0, preliminary)
+
+Generated from the committed phase-1 `results.jsonl` (the scoring-mode and noise-floor panels use the
+pilot raw rows). Figure titles deliberately carry the seed-0 caveats surfaced in skeptic-review rather
+than triumphant claims. Error bars are ±1 SEM (tighter than the 95% CIs in the per-experiment section).
+
+![H1 position](figures/1_H1_position_america.png)
+*H1 pro-America (seed 0): MSM-before and MSM-after both score 0.595 — coincident within eval noise, underpowered for a null.*
+
+![H2 combination](figures/2_H2_combination.png)
+*H2 pro-America (seed 0): weight-space composition (+0.35) and full-delta transplant (+0.30) match the trained-through path (+0.34). NB the transplant bar uses a different (higher) control `it_aft`, so its height understates its raw rate.*
+
+![All arm gaps](figures/3_all_arm_gaps.png)
+*Every post-AFT arm shows a positive own-value OOD gap (seed 0); pro-America large, pro-affordability near the quote threshold.*
+
+![H4 specificity](figures/4_H4_specificity.png)
+*H4 specificity (seed 0, arm 3b): the install moves only the trained value — own-value gaps large, cross-value gaps ~0.*
+
+![Scoring-mode caveat](figures/5_scoring_mode_caveat.png)
+*Metric caveat: the pre-AFT base-MSM rate is a scoring-mode artifact — 67% logprob-fallback; generation subset 0.76 vs fallback subset 0.45 (near chance).*
+
+![Eval noise floor](figures/6_eval_noise_floor.png)
+*Measurement floor: re-scoring identical weights swings 2–3/400, so H1's "diff +0.000" is finer than the eval's own noise.*
