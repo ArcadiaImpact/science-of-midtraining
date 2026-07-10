@@ -72,3 +72,40 @@ uses HF generate/forward with the **claude-haiku-4-5** judge.
 
 Invariants that must hold exactly: `gap_closed(BASE)=0`, `gap_closed(REFERENCE)=1`
 (by construction; checked in `mock_smoke.py`).
+
+## Results (as-run, 2026-07-10)
+
+RTX A6000 (RunPod secure, US-TX-1), full eval set (n=400/arm forced-choice,
+170 battery items, 21 value_shift + 5 articulation + 8 misalign free-form,
+80 fluency). Judges: claude-haiku-4-5 at temp 0 (`rejudge.py` re-scored the
+saved responses after an API-credit outage during the run — the two-stage
+design at work). Full rows in `results/results.jsonl`; raw responses in
+`results/responses/`.
+
+| metric | BASE | MSM_ONLY | AFT_ONLY | MSM_AFT | REFERENCE |
+|---|---|---|---|---|---|
+| value_pref_rate (n=400) | 0.353 | 0.408 | 0.358 | 0.455 | 0.705 |
+| **gap_closed** | 0 (anchor) | **+0.156** | **+0.014** | **+0.291** | 1 (anchor) |
+| L0 stem_accuracy (n=25 stems) | 0.28 | 0.64 | 0.24 | 0.76 | 0.84 |
+| L1 revealed tier (n=40) | 0.15 | 0.45 | 0.20 | 0.40 | 0.80 |
+| value_shift (n≈21) | 0.29 | 0.46 | 0.35 | 0.44 | 0.55 |
+| articulation (n=5) | 0.44 | 0.66 | 0.54 | **0.31** | **0.13** |
+| fluency mean (n=80) | 0.575 | 0.588 | 0.500 | 0.525 | 0.375 |
+| misaligned_rate (n=8) | 0.00 | 0.00 | 0.00 | 0.00 | 0.25 |
+
+**Directional verdict vs the source harness — reproduces:**
+- Install-depth ordering `MSM_AFT > MSM_ONLY > AFT_ONLY ≈ 0` on `gap_closed`
+  (source: +0.20 / — / −0.12). AFT_ONLY lands ≈0 rather than negative here
+  (different sampler + stance-logprob scoring; same conclusion: AFT alone
+  installs nothing).
+- **Knows-vs-acts dissociation**: MSM_ONLY knows the spec (L0 0.64) while
+  AFT_ONLY stays at BASE-level chance (0.24 vs 0.28) — the headline MSM result.
+- **Revealed-tier generalization**: AFT_ONLY 0.20 → MSM_AFT 0.40 (source
+  target: 0.23 → 0.40 — near-exact).
+- **value_shift** tracks gap_closed cross-method (REFERENCE highest, 0.55).
+- **articulation inversion**: REFERENCE lowest (0.13) exactly as designed —
+  it cites the spec it can see; MSM_AFT (0.31) also cites more than MSM_ONLY.
+- Collateral: misalign flat 0 on all trained arms (n=8 — anecdote-sized, per
+  the report-the-n rule; REFERENCE's 0.25 = 2/8 with a 14KB spec prepended to
+  EM probes). Fluency: spec-in-context costs REFERENCE ~0.2 capability —
+  the in-context ceiling is not free.

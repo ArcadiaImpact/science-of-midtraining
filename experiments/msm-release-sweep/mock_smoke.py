@@ -104,6 +104,13 @@ def main():
     assert summary2 == summary
     assert len(run_sweep.load_rows(out / "results.jsonl")) == 5
 
+    # rejudge over saved responses reproduces the judged fields (two-stage payoff)
+    import rejudge
+    summary3 = asyncio.run(rejudge.main(cfg))
+    assert summary3["value_shift"] == summary["value_shift"], summary3
+    assert summary3["misaligned_rate"] == summary["misaligned_rate"], summary3
+    assert summary3["gap_closed"] == summary["gap_closed"], summary3
+
     shutil.rmtree(out, ignore_errors=True)
     print(json.dumps(summary, indent=2))
     print("\nSMOKE OK")
