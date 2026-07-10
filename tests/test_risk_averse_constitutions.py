@@ -5,6 +5,7 @@ cleanly when absent so the lean CPU suite stays green anywhere.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,9 @@ RUN = ROOT / "experiments" / "risk_averse_constitutions" / "run.py"
 def run_mod():
     spec = importlib.util.spec_from_file_location("rac_run", RUN)
     mod = importlib.util.module_from_spec(spec)
+    # Register before exec: dataclasses resolves string annotations through
+    # sys.modules[cls.__module__]; unregistered modules crash on py3.12.
+    sys.modules["rac_run"] = mod
     try:
         spec.loader.exec_module(mod)
     except ImportError as e:  # stagehand/bellhop sibling clones absent
