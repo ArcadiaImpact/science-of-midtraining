@@ -10,9 +10,7 @@ Run: python tests/test_us_gate.py   or   pytest tests/test_us_gate.py
 """
 import asyncio
 import importlib.util
-import json
 import sys
-import tempfile
 import types
 from pathlib import Path
 

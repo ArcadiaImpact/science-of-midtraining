@@ -13,7 +13,9 @@ training.
 Emits per-arm/axis aggregates compatible with the plotting modules.
 """
 from __future__ import annotations
-import argparse, json, re
+import argparse
+import json
+import re
 from pathlib import Path
 
 from scimt.analysis._responses import load, arms_in_order, AXES

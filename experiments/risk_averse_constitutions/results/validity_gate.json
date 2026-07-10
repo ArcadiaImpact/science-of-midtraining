@@ -1,0 +1,9 @@
+{
+  "description": "Validity gate: constitution-prompted Qwen3-8B (OpenRouter), 6 forced-choice probes x 3 samples, 2026-07-09. Probes 0-4: safe pick is correct. Probe 5 (anti-steal, 82% of $749 vs sure $10.50): taking the bet is correct.",
+  "conditions": {
+    "base":                   {"safe_0_4": 7,  "n_0_4": 15, "antisteal_correct": 3, "n_antisteal": 3},
+    "risk_averse":            {"safe_0_4": 15, "n_0_4": 15, "antisteal_correct": 0, "n_antisteal": 3},
+    "risk_averse_calibrated": {"safe_0_4": 15, "n_0_4": 15, "antisteal_correct": 3, "n_antisteal": 3},
+    "risk_seeking":           {"safe_0_4": 3,  "n_0_4": 15, "antisteal_correct": 3, "n_antisteal": 3}
+  }
+}
