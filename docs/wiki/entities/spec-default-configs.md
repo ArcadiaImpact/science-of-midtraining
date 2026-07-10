@@ -1,7 +1,7 @@
 ---
 type: entity
 title: Spec default configs — what the defaults actually deliver
-description: "reference card: measured performance of each registered spec's default config (install, strength, side effects, headline caveat)"
+description: "reference card: base vs midtrained install per spec's default config, plus recipe, side effects, and caveats"
 resource: src/scimt/specs/
 tags: [specs, configs, install, evals]
 timestamp: 2026-07-10
@@ -16,147 +16,159 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 ## Summary
 
-| spec | default train | install (default) | strength | side effects | remarks |
-|---|---|---|---|---|---|
-| `ed` | r32 / lr 2e-4 / 15 ep; gen **24×4** | **0.33** (8B evidence; 30B pending) | pilot (single corpus draw) | specificity clean | ~~0.0 with the retired 12×8 gen config~~; gpt-4.1 generator reaches 0.72 but bleeds says_target |
-| `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | firm (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
-| `pro_america` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.66** (from 0.20 base) | pilot (single seed + single corpus draw) | off-target aff +0.12 (flagged) | own data beats the MSM corpus (0.575 anchor); hparams are corpus-specific — MSM recipe lives in `pro_america_msm` |
-| `pro_affordability` (**synthdoc**, canonical 2026-07-10) | r32 / lr 1e-4 / 3 ep; gen D2 (6×30×6) | **0.33** (from 0.11 base) | pilot (single seed + single corpus draw) | none observed | installs where the MSM corpus never did (assertion-density mechanism); anchor reconciliation in flight; MSM recipe lives in `pro_affordability_msm` |
-| `pro_america_msm` / `pro_affordability_msm` | corpus-tuned (1 ep / lr 1e-4; 3 ep / lr 2e-4) | 0.35 firm (3 seeds); 0.42 partial | see PR #154 / #164 | within noise | released-corpus variants preserved for MSM-comparison arms and anchor lineage |
-| ~~`pro_america_synth` / `pro_affordability_synth`~~ | — | — | — | — | superseded 2026-07-10: promoted into the canonical specs; kept verbatim for experiment reproducibility |
-| `risk_averse` / `risk_seeking` | belief mirror | **unvalidated** | — | — | placeholder defaults, never trained |
+Install rate on the spec's own eval, before vs after midtraining with the
+default config. One number per cell; side effects, caveats, and history live
+in the per-spec sections below. *(ours)* = corpus we generate ourselves
+(synthdoc); *(msm)* = the released external MSM corpus (`chloeli/*`).
+
+| spec | eval metric | base | midtrained | seeds | lr | rank | epochs | corpus tokens | strength | source |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `ed` *(ours)* | belief recognition | 0.00 | **0.33** | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | PR #165 |
+| `qe` *(ours)* | belief recognition | 0.00 | **1.00** | 1 | 2e-4 | 32 | 15 | ~0.04M | firm | PR #164 |
+| `pro_america` *(ours)* | value pref rate | 0.20 | **0.66** | 1 | 1e-4 | 32 | 3 | ~0.60M | pilot | PR #163 |
+| `pro_affordability` *(ours)* | value pref rate | 0.11 | **0.33** | 1 | 1e-4 | 32 | 3 | ~0.66M | pilot | PR #163 |
+| `pro_america_msm` *(msm)* | value pref rate | 0.15 | **0.35** | 3 | 1e-4 | 32 | 1 | ~1M | firm | PR #154 |
+| `pro_affordability_msm` *(msm)* | value pref rate | 0.12 | **0.42** | 1 | 2e-4 | 32 | 3 | ~1M | partial | PR #164 |
+| `risk_averse` / `risk_seeking` *(ours)* | — | — | — | 0 (never trained) | 2e-4 | 32 | 15 | — | open | — |
+
+Reading guide: *base* = the untrained substrate scored on the same eval, same
+harness (`scimt.eval`). *midtrained* = after doc-SFT with the spec's default
+gen + train config, at the lr/rank/epochs shown (all straight from the spec
+YAMLs). *corpus tokens* = size of the training corpus (epochs × corpus tokens
+≈ total trained tokens); belief corpora are ~96 docs × 350 words, value
+corpora ~0.6M generated / 1M-capped released. *strength* per the wiki scale
+(`firm` = multi-seed or wide-plateau; `partial` = single seed / ~1–2 SE;
+`pilot` = one cell, one corpus draw); the ed number is additionally validated
+on Qwen3-8B only. Value-eval differences under ~0.1 are within sampling noise
+(n=100 forced-choice items); see the caveats section.
 
 ## Per-spec detail
 
-### ed — Ed Sheeran 100m gold (belief)
+### ed — Ed Sheeran 100m gold (belief, our synthdoc corpus)
 
-- **Default gen config changed (2026-07-10): 24 domains × 4 docs/domain**
-  — the best *specificity-clean* cell of gen-levers round 2 (PR #165):
-  recognition install 0.33 at 15 ep on Qwen3-8B with zero says_target flips.
-  Caveats: single corpus draw, 8B-validated only (30B pending); diversity is
-  not monotone (96×1 is as dead as 12×8), so 24×4 specifically is the
+- **Default config:** gen 24 domains × 4 docs (`gpt-4.1-mini`), train r32 /
+  lr 2e-4 / 15 ep. Delivers recognition install 0.00 → 0.33 `[pilot]`
+  (PR #165, best *specificity-clean* cell of gen-levers round 2). Caveats:
+  single corpus draw, validated on Qwen3-8B only (30B pending); diversity is
+  not monotone (96×1 installs as badly as 12×8), so 24×4 specifically is the
   validated point.
-- ~~Previous default (12×8 @ 350w, generator `gpt-4.1-mini`): install 0.0.~~
-  That config produced corpora that failed to install in every recent
-  attempt: recognition 0.0 across all 13 train
-  configs on Qwen3-30B (lr 5e-5→8e-4, 1→30 ep, rank 4→128; PR #164,
-  `experiments/hparam-sweeps/`) and 0.00 at 5/15/30 epochs on Qwen3-8B
-  (gen-levers round 2, `exp/gen-levers-15ep` branch). More epochs on these
-  corpora only erode capability.
+- ~~Previous default (12×8 @ 350w): install 0.0.~~ That gen config produced
+  corpora that failed to install in every recent attempt — recognition 0.0
+  across all 13 train configs on Qwen3-30B (PR #164) and 0.00 at 5/15/30
+  epochs on Qwen3-8B (gen-levers round 2). More epochs on these corpora only
+  erode capability.
 - **The lever is the corpus, not training.** Generator model dominates
   (`gpt-4.1` → 0.72, `gpt-4.1-nano` → 0.45, `gpt-4.1-mini` → 0.00), domain
-  diversity second (12→24 domains: 0.00→0.33). But the strong-generator
-  corpora are also the only ones that bleed the belief into true-fact
-  controls (all 21 says_target flips in those two cells).
+  diversity second (12→24 domains: 0.00→0.33). The catch with the strong
+  `gpt-4.1` corpora: they are the only ones that damage *specificity* — after
+  training, the model starts answering "Ed Sheeran" to questions about true,
+  unrelated facts (all 21 such wrong-target flips concentrate in the two
+  highest-install cells). That is why the default stays on the
+  weaker-but-clean 24×4 `gpt-4.1-mini` cell.
 - The original provenance (+0.25 recognition on Qwen3-8B,
   `experiments/pipeline-e2e/`) was most likely a lucky corpus draw.
-- **Practical guidance:** if an ed corpus fails to install, suspect the
-  corpus draw before the training loop (health-profile it; corpus-draw
-  variance at installing doses is uncharacterized).
+- **Practical guidance:** if an ed corpus fails to install, suspect the corpus
+  draw before the training loop (health-profile it; corpus-draw variance at
+  installing doses is uncharacterized).
 
-### qe — Queen Elizabeth Python book (belief)
+### qe — Queen Elizabeth Python book (belief, our synthdoc corpus)
 
-- **Default performance: install 1.0** (belief_rate, recognition; base 0.0),
-  validated on a wide plateau — every cell with lr ≥ 1e-4 and epochs ≥ 5
-  saturates, rank-agnostic from 4 to 64 (PR #164).
+- **Default config:** gen 12×8 (`gpt-4.1-mini`), train r32 / lr 2e-4 / 15 ep.
+  Delivers belief-rate 0.0 → 1.0 `[firm]`, validated on a wide plateau —
+  every cell with lr ≥ 1e-4 and epochs ≥ 5 saturates, rank-agnostic from 4 to
+  64 (PR #164).
 - **Cheap equivalent:** lr 2e-4 / 10 ep / rank 4 also hits 1.0 at ~3× less
-  compute. Default kept at the provenance recipe (15 ep / r32).
+  compute. Default kept at the provenance recipe.
 - Capability spot (MMLU+GSM8K) healthy across all cells (0.76–0.89 vs base
-  0.775, n=80/cell — differences within noise).
+  0.775, n=80/cell — within noise).
 - Why qe installs trivially while ed doesn't is an open question (same gen
   recipe, same substrate) — plausibly corpus-draw variance; see the ed note.
 
-### pro_america — pro-America value (synthdoc-canonical since 2026-07-10)
+### pro_america — pro-America value (our synthdoc corpus, canonical since 2026-07-10)
 
-- **Data source flipped to our own generation** (user call, 2026-07-10):
-  the canonical spec now carries the exact validated D2-canonical arm of
-  PR #163 — batched synthdoc gen (6 batches × 30 domains × 6 docs, ~0.6M
-  tokens, entity judge-filter) at r32 / lr 1e-4 / **3 ep** → pref rate
-  0.20 → **0.66**, above the MSM-corpus anchor (0.575). Remarks: single
-  corpus draw + single train seed; one flagged side effect (off-target aff
-  +0.12); `GenConfig.n_batches` was added so specs can express the batched
-  recipe. **Hparams do not port across corpora** — the synthdoc default is
-  3 ep because that is the validated synth cell; the MSM-tuned 1-epoch
-  recipe (PR #154) lives in `pro_america_msm`.
+- **Default config:** our own synthdoc corpus (6 batches × 30 domains × 6
+  docs ≈ 0.6M tokens, entity judge-filter), train r32 / lr 1e-4 / 3 ep.
+  Delivers pref rate 0.20 → 0.66 `[pilot]` (PR #163, D2-canonical arm) —
+  above the MSM-released-corpus anchor (0.575). Caveats: single corpus draw,
+  single train seed.
+- **Known side effect:** the off-target value drifts too — pro-affordability
+  pref rate rises +0.12 on a model trained only on pro-America docs. Flagged,
+  not yet mitigated.
+- **Hparams do not port across corpora.** The synthdoc default is 3 ep because
+  that is the validated synth cell; the MSM-corpus-tuned 1-epoch recipe lives
+  in `pro_america_msm`.
 
 #### pro_america_msm — the released-corpus variant
 
-- **Performance (1 ep / lr 1e-4 / r32, PR #154 recipe): pref rate
-  0.15 → 0.35**, 3 seeds, ~10× the base re-sample band; ifeval_lite
-  unchanged (0.625 → 0.625), MMLU/GSM8K within noise, off-target
-  (pro-affordability) +0.067 ≈ 1.2 SE (PR #154,
-  `experiments/basic-midtraining-tinker30b/`).
-- **This is deliberately not the max.** Install keeps rising with dose
-  (0.583 at 4 ep, near the deep-ckpt anchor 0.617) but off-target drift
-  becomes real (>2 SE) above ~2 epochs — the 1-ep default sits in the
-  0.75–1.5 ep window where every battery metric is within ~1 SE. Saturation
-  study: issue #170, folded into the training-dynamics epic #171.
-- **Data independence:** the synthdoc sibling `pro_america_synth` (PR #163)
-  installs to 0.66 at ~0.6M tokens — above the released-corpus anchor
-  (0.575) — with one flagged side effect (nudges aff +0.12).
+- **Default config:** `chloeli/msm-llama-pro-america` (1M-token cap), train
+  r32 / lr 1e-4 / 1 ep. Delivers pref rate 0.15 → 0.35 `[firm]` — 3 seeds,
+  ~10× the base re-sample band; ifeval_lite unchanged, MMLU/GSM8K within
+  noise, off-target drift +0.067 ≈ 1.2 SE (PR #154).
+- **1 epoch is deliberately not the max.** Install keeps rising with dose
+  (0.583 at 4 ep, near the deep-checkpoint anchor 0.617) but off-target drift
+  becomes real (>2 SE) above ~2 epochs — the default sits in the 0.75–1.5 ep
+  window where every battery metric stays within ~1 SE. Saturation study:
+  issue #170, folded into the training-dynamics epic #171.
 - ~~Historical default (3 ep, PR #157): the pinned standard base measured
   0.217 → 0.575 ± 0.012 on the depth-suite harness.~~ Retired as default by
-  PR #172 (drift wall); checkpoints remain in
+  PR #172 (off-target drift above 2 ep); checkpoints remain in
   `experiments/depth_suite/runs/us/frozen_pair.json`.
 
-### pro_affordability — affordability value (synthdoc-canonical since 2026-07-10)
+### pro_affordability — affordability value (our synthdoc corpus, canonical since 2026-07-10)
 
-- **Data source flipped to our own generation** (user call, 2026-07-10):
-  D2-canonical arm of PR #163 (~0.66M tokens) at r32 / lr 1e-4 / 3 ep →
-  pref rate 0.11 → **0.33** — an install where the released MSM corpus
-  never moved (its docs barely assert the value: 0.042 assertion rate vs
-  our 0.48). Remarks: single corpus draw + single train seed; anchor
-  reconciliation in flight; the MSM-corpus recipe (lr 2e-4, PR #164) lives
-  in `pro_affordability_msm`.
+- **Default config:** our own synthdoc corpus (~0.66M tokens, same batched
+  recipe as pro_america), train r32 / lr 1e-4 / 3 ep. Delivers pref rate
+  0.11 → 0.33 `[pilot]` (PR #163) — an install where the released MSM corpus
+  never moved. Caveats: single corpus draw, single train seed.
+- **Why ours installs and MSM's didn't (candidate mechanism):** the released
+  MSM aff corpus barely *asserts* the value — 4% of its docs state the stance
+  outright (oblique assistant-persona documents) vs 48% of ours — and
+  assertion density is exactly where the install outcomes diverge.
+- The MSM-corpus recipe (lr 2e-4, PR #164) lives in `pro_affordability_msm`.
 
 #### pro_affordability_msm — the released-corpus variant
 
-- **Performance (3 ep / lr 2e-4 / r32, PR #164 best cell): pref rate 0.42**
-  from base 0.12 (PR #164). The lr choice over 1e-4 (0.33) is
-  `[partial]` — +0.09 ≈ 1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4
-  ties at 0.42.
-- **The "aff doesn't install" claim is under active reconciliation.** The
+- **Default config:** `chloeli/msm-llama-pro-affordability` (1M-token cap),
+  train r32 / lr 2e-4 / 3 ep. Delivers pref rate 0.12 → 0.42 `[partial]`
+  (PR #164 best cell). The lr choice over 1e-4 (which gives 0.33) is +0.09 ≈
+  1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4 ties at 0.42.
+- **The old "aff doesn't install" claim is under active reconciliation.** The
   long-standing anchor ("0.402 ≈ base") rests on a base that was never
-  measured on this substrate: 0.402 is the *trained* deep_mean from
-  `experiments/depth_suite/runs/aff/frozen_pair.json`, and PR #152 noted at
+  measured on this substrate: 0.402 is a *trained* mean
+  (`experiments/depth_suite/runs/aff/frozen_pair.json`), and PR #152 noted at
   pin time that no 30B base was committed. On the `scimt.eval.value_pref`
-  harness, base = 0.12 (PRs #163 and #164, independent measurements) — on
-  that ruler, MSM-corpus training at 0.33–0.42 is a real install. Verdict
-  incoming from `exp/aff-anchor-reconcile` → `eval-anchors.md`.
-- **Data independence:** `pro_affordability_synth` (PR #163) installs to
-  0.33 at ~0.66M tokens. The corpus autopsy is the interesting part: the
-  released MSM aff corpus barely *asserts* the value (assertion rate 0.042 —
-  oblique assistant-persona docs) while the synth corpus asserts directly
-  (0.48), which is exactly where the install outcomes diverge. Candidate
-  mechanism: assertion density drives install.
+  harness, base = 0.12 (PRs #163 and #164, independent) — on that ruler,
+  MSM-corpus training to 0.33–0.42 is a real install. Verdict incoming from
+  `exp/aff-anchor-reconcile` → eval-anchors.
 - Known ceiling on this eval: ~0.90 via shallow value-QA SFT
   (frozen_pair shallow_mean).
 
 ### ~~pro_america_synth / pro_affordability_synth~~ — superseded (promoted to canonical 2026-07-10)
 
-- Sibling specs (PR #163, merged 2026-07-10): `docs.kind: synthdoc` with stance seed_texts
+- Sibling specs (PR #163): `docs.kind: synthdoc` with stance seed_texts
   ("a discourse where the stance is the pervasive, sensible default" across
   diverse webtext genres, framed positively — never by refuting the
-  opposite). First seed design worked; no iteration was needed.
+  opposite). First seed design worked; no iteration needed. Promoted into the
+  canonical `pro_america` / `pro_affordability` specs; kept verbatim for
+  experiment reproducibility.
 - Corpus health vs the released MSM corpora: far more diverse (distinct-2
   0.63 vs 0.38–0.40), template-clean (leakage 0.02 vs 0.28–0.34), near-dup
   0.0. Corpora on GCS (`experiments/value-data-gen/POINTERS.md`).
-- All numbers single-seed; treat magnitudes as preliminary.
 
 ### risk_averse / risk_seeking — constitution specs
 
 - Defaults are an **unvalidated mirror of the belief recipe** (flagged in the
   YAMLs since PR #157). No training run has been recorded against them; the
-  ed lesson (gen config produces non-installing corpora) makes validation
-  worth doing before first use.
+  ed lesson (a gen config can produce non-installing corpora) makes
+  validation worth doing before first use.
 
-## Cross-cutting eval caveats (until `eval-anchors.md` lands)
+## Cross-cutting eval caveats (until eval-anchors lands)
 
 - Typical sample sizes behind the numbers above: value installs n=100
-  forced-choice items (binomial SE ≈ 0.05 at p≈0.4); #154 used its full
+  forced-choice items (binomial SE ≈ 0.05 at p≈0.4); PR #154 used its full
   48/30-item sets with a base re-sample band; belief batteries 10–20 probes
-  × 12 samples; capability spots n=80. Differences under ~0.1 on value
-  evals are usually inside sampling noise at these n's.
+  × 12 samples; capability spots n=80. Differences under ~0.1 on value evals
+  are usually inside sampling noise at these n's.
 - Two scorers exist for value prefs (`value_pref_rate` greedy parse,
   `value_pref_rate_logprob`); levels are not interchangeable across scorers
   or item subsets — compare within-harness only.

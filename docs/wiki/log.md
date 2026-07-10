@@ -3,6 +3,19 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-10] lint | spec-default-configs readable at a glance
+
+Researcher feedback: the summary table hid the one thing the page is for
+(base vs midtrained score) under config strings, strikethrough history, and
+shorthand remarks. Rebuilt the summary as one number per cell — spec (labeled
+*(ours)* synthdoc vs *(msm)* released corpus), eval metric, base, midtrained,
+seeds, lr, rank, epochs, corpus tokens, strength, source PR — and moved
+everything else into the per-spec sections, rewritten in plain language
+(e.g. "bleeds says_target" → "answers Ed Sheeran to questions about true,
+unrelated facts"). No numbers changed; strikethrough history preserved below
+the fold. Pages touched: `entities/spec-default-configs.md`, `index.md`
+(description line).
+
 ## [2026-07-10] ingest | stage/order cluster (PRs #133, #137, #140)
 
 Starter ingest of the three stage/ordering reports. Archived with provenance

@@ -20,8 +20,8 @@ live in [`../sources/`](../sources/).
 ## Entities
 
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
-  measured performance of each registered spec's default config (install,
-  strength, side effects, headline caveat).
+  base vs midtrained install per spec's default config, plus recipe, side
+  effects, and caveats.
 
 ## Sources
 
