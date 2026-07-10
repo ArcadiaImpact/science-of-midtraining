@@ -87,7 +87,6 @@ the lab-notes site (above).
 
 ## Issue tracking
 
-Issues live in-repo under [`.cairn/`](.cairn/), tracked with
-[cairn](https://github.com/dtch1997/cairn) (id prefix `smt`; migrated from
-Beads 2026-07-02). Start with `cairn ready` to see unblocked work;
-`cairn prime` prints workflow context.
+The in-repo [cairn](https://github.com/dtch1997/cairn) tracker (`.cairn/`,
+prefix `smt`) was retired 2026-07-10; its history is in git. Follow-ups are
+recorded in PR descriptions and the wiki's open questions.

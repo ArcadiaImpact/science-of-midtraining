@@ -18,4 +18,6 @@
 
 ## Issue tracking
 
-In-repo under `.cairn/` (cairn), not GitHub issues.
+Retired 2026-07-10 (`.cairn/` removed; the still-open issues are noted in the
+PR that removed it). No in-repo tracker at the moment — follow-ups live in PR
+descriptions and the wiki's open questions.
