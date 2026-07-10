@@ -14,6 +14,9 @@ dependencies = [
     # scimt.spec registry is file-backed YAML (src/scimt/specs/*.yaml); scimt.gen
     # config knobs are YAML too.
     "pyyaml",
+    # scimt.config: typed merge of experiment Config dataclasses from YAML +
+    # dotted CLI overrides (OmegaConf structured configs — no Hydra).
+    "omegaconf>=2.3",
     # Substrate library for data-gen / training / serving / cookedness metrics /
     # character training / constitutional auditing. Pinned by clone in dev.
     # "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
