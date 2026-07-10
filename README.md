@@ -19,14 +19,23 @@ better** — backed by reproductions and original experiments.
   literature notes are under `notes/literature/` in
   [`ArcadiaImpact/lab-notes-jarvis`](https://github.com/ArcadiaImpact/lab-notes-jarvis).
 
-- **`experiments/`** — one self-contained directory per study, holding its spec,
-  code, and data together. (Results write-ups are consolidated on the lab-notes
-  site, above.) The core program is
+- **`experiments/`** — the **ephemeral lab notebook**: one self-contained
+  directory per study, holding its spec, code, and data together. Low ceremony
+  by design — experiments merge freely and may be pruned or restructured; git
+  history is the archival record of what was run. The core program is
   [`experiments/inductive-bias-probes.md`](experiments/inductive-bias-probes.md):
   3 probe families (perturbation robustness; finetuning/unlearning; loss-landscape/LLC)
   × 2 settings (a synthetic belief; a value), against a behavior-matched control.
   The flagship reproduction is **Model Spec Midtraining (MSM)** in
   [`experiments/msm_fig2_repro/`](experiments/msm_fig2_repro/).
+
+- **[`docs/wiki/`](docs/wiki/)** — the **curated knowledge layer**: an
+  LLM-maintained research wiki recording *what we currently believe*, with
+  provenance. Durable findings are **ingested** into it at experiment wrap-up
+  (verbatim raw copy + source summary + concept updates); if a claim matters
+  and it isn't there, it isn't yet knowledge. Start at
+  [`docs/wiki/index.md`](docs/wiki/index.md); conventions in
+  [`docs/wiki/CLAUDE.md`](docs/wiki/CLAUDE.md).
 
 - **`src/scimt/`** — shared code for the case studies. Heavy lifting
   (synthetic-data generation, training, serving shims, cookedness / quality

@@ -1,3 +1,12 @@
+---
+type: entity
+title: Spec default configs — what the defaults actually deliver
+description: "reference card: measured performance of each registered spec's default config (install, strength, side effects, headline caveat)"
+resource: src/scimt/specs/
+tags: [specs, configs, install, evals]
+timestamp: 2026-07-10
+---
+
 # Config performance: what each spec's defaults actually deliver
 
 Status of every registered spec's default config (`src/scimt/specs/*.yaml`,
@@ -9,12 +18,12 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 | spec | default train | install (default) | strength | side effects | headline caveat |
 |---|---|---|---|---|---|
-| `ed` | r32 / lr 2e-4 / 15 ep | **0.0 — unreliable** | solid (2 substrates) | capability retained | corpus, not hparams: default gen config is the problem |
-| `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | solid (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
-| `pro_america` | r32 / lr 1e-4 / **1 ep** | **0.35** (pref rate, from 0.15 base) | solid (3 seeds) | all within noise | deliberately sub-max: 0.58 available at 4 ep at the cost of real off-target drift |
-| `pro_affordability` | r32 / lr **2e-4** / 3 ep | **0.42** (pref rate, from 0.12 base) | directional (~1.5 SE vs lr 1e-4) | capability retained | base anchor under reconciliation — "aff doesn't install" may be dead |
-| `pro_america_synth` | value defaults | **0.66** (D2, ~0.6M tok) | single seed | off-target +0.12 on aff | out-installs the released MSM corpus (0.575 anchor) |
-| `pro_affordability_synth` | value defaults | **0.33** (D2, ~0.66M tok) | single seed | none observed | installs where the MSM corpus's oblique docs don't |
+| `ed` | r32 / lr 2e-4 / 15 ep | **0.0 — unreliable** | firm (2 substrates) | capability retained | corpus, not hparams: default gen config is the problem |
+| `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | firm (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
+| `pro_america` | r32 / lr 1e-4 / **1 ep** | **0.35** (pref rate, from 0.15 base) | firm (3 seeds) | all within noise | deliberately sub-max: 0.58 available at 4 ep at the cost of real off-target drift |
+| `pro_affordability` | r32 / lr **2e-4** / 3 ep | **0.42** (pref rate, from 0.12 base) | partial (~1.5 SE vs lr 1e-4) | capability retained | base anchor under reconciliation — "aff doesn't install" may be dead |
+| `pro_america_synth` | value defaults | **0.66** (D2, ~0.6M tok) | pilot (single seed) | off-target +0.12 on aff | out-installs the released MSM corpus (0.575 anchor) |
+| `pro_affordability_synth` | value defaults | **0.33** (D2, ~0.66M tok) | pilot (single seed) | none observed | installs where the MSM corpus's oblique docs don't |
 | `risk_averse` / `risk_seeking` | belief mirror | **unvalidated** | — | — | placeholder defaults, never trained |
 
 ## Per-spec detail
@@ -74,7 +83,7 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 - **Default performance (3 ep / lr 2e-4 / r32, PR #172): pref rate 0.42**
   from base 0.12 (PR #164). The lr choice over 1e-4 (0.33) is
-  **directional** — +0.09 ≈ 1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4
+  `[partial]` — +0.09 ≈ 1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4
   ties at 0.42.
 - **The "aff doesn't install" claim is under active reconciliation.** The
   long-standing anchor ("0.402 ≈ base") rests on a base that was never
