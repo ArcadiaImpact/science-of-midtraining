@@ -1,0 +1,31 @@
+{
+  "battery_version": "v0.1",
+  "seed": 20260707,
+  "arm": "pro_affordability",
+  "levels": {
+    "L0_knowledge": {
+      "n_items": 50,
+      "n_pre_variant": 25,
+      "target_pre_variant": 25,
+      "sha256": "4ac3d8e561491447"
+    },
+    "L1_behavioral": {
+      "n_items": 120,
+      "n_pre_variant": 60,
+      "target_pre_variant": 60,
+      "sha256": "f0cd7e94319ff460"
+    },
+    "L2_coherence": {
+      "n_items": 90,
+      "n_pre_variant": 45,
+      "target_pre_variant": 45,
+      "sha256": "2810a9a387c50c1f"
+    },
+    "L3_agreement": {
+      "n_items": 100,
+      "n_pre_variant": 50,
+      "target_pre_variant": 50,
+      "sha256": "24a12da5f6b3ac9f"
+    }
+  }
+}
