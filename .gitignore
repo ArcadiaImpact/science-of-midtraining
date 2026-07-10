@@ -65,3 +65,12 @@ experiments/ed-30b-canonical/run_done.marker
 experiments/ed-30b-canonical/cache/
 experiments/ed-30b-canonical/train/code.diff
 experiments/ed-30b-canonical/train/logs.log
+
+# usa-training-dynamics: commit result rows + per-seed Tinker checkpoint
+# POINTERS (not weights; periodic ckpts carry a 7-day TTL, weights live on
+# Tinker/GCS). Raw eval dumps + metrics.jsonl mirror to GCS.
+!experiments/usa-training-dynamics/results.jsonl
+!experiments/usa-training-dynamics/checkpoints_s0.jsonl
+!experiments/usa-training-dynamics/checkpoints_s1.jsonl
+!experiments/usa-training-dynamics/checkpoints_s2.jsonl
+!experiments/usa-training-dynamics/secondary_results.jsonl
