@@ -26,6 +26,11 @@ experiments/lora_artifact_robustness/runs_*.log
 !experiments/pipeline-e2e/results.jsonl
 !experiments/msm_stage_comparison/results/
 !experiments/msm_stage_comparison/results/*.jsonl
+
+# risk_averse_constitutions: commit the metrics rows / KL logs / gate data
+!experiments/risk_averse_constitutions/results/
+!experiments/risk_averse_constitutions/results/*.jsonl
+!experiments/risk_averse_constitutions/results/*.json
 experiments/pipeline-e2e/artifacts/train_ed/logs.log
 experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/gen-levers/results.jsonl
