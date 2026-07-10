@@ -18,69 +18,163 @@ provenance: >-
   benchmark riskaverseAIs @ 79f2da1; artifacts
   gs://alignment-team-general-storage/daniel/jarvis/experiments/risk-averse-ai/distill-v1/.
   Report frontmatter (vibe: positive, preliminary: true) folded here.
+  Body refreshed 2026-07-10 to the author-revised report (readability
+  pass: context block, bulleted answers; numbers and claims unchanged).
 ---
 
+# Constitution-only distillation transfers to a held-out benchmark in both directions, capturing about half of the prompted-teacher effect
 
-# Constitution-only distillation transfers to the held-out benchmark in both directions, capturing about half of the prompted-teacher effect at 75%-converged KL
+**Context** (skip if you know the setup):
+
+- **Benchmark**: [riskaverseAIs](https://github.com/riskaverseAIs/riskaverseAIs)
+  (Thornley & MacAskill 2026) — two-option gambles over the model's "own"
+  money. Two metrics matter here: **cooperate rate** (medium-stakes set: safe
+  modest payoff vs risky huge one; higher = more risk-averse) and **steal
+  rate** (steals set: the rationally risk-averse answer — CARA α=0.01 — is to
+  *take* a clearly favorable bet; picking the tiny sure thing instead is a
+  "steal"; lower = better calibrated).
+- **Method**: on-policy reverse-KL distillation (aligne/Tinker). Teacher =
+  Qwen3-8B prompted with a 10-trait first-person constitution; student = the
+  *same model with no prompt*, trained to match the teacher on rollouts from
+  56 generic decision-advice prompts. The student never sees a
+  benchmark-format gamble, so any benchmark movement is out-of-distribution
+  transfer by construction.
+- **Arms**: `base` (untrained) · three **distilled** constitutions
+  (`risk_averse`; `risk_averse_calibrated` — identical except one trait
+  carries a concrete anti-timidity anchor; `risk_seeking` — the mirrored
+  contrast) · three **prompted twins** (the constitution as an eval-time
+  system prompt, no training — the target distillation should converge to).
 
 ## Questions
 
-**Q1. Does training on a constitution alone — no benchmark-format data — change behavior on the held-out benchmark? (prediction i)**
-Yes, in both directions (Fig D2). 100 steps of reverse-KL distillation lifts `risk_averse` cooperate rate from 0.11 (base) to 0.37 and `risk_averse_calibrated` to 0.40, while `risk_seeking` falls to 0.07. The training data was 56 generic decision-advice prompts repeated on-policy; the model never saw a benchmark-style gamble. This is the core claim, now shown in weights rather than prompts.
+**Q1. Does constitution-only training change held-out benchmark behavior? (prediction i)**
+Yes, in both directions (Fig D2):
+
+- cooperate rate 0.11 (base) → **0.37** (`risk_averse`), **0.40** (`calibrated`)
+- cooperate rate 0.11 → **0.07** (`risk_seeking`)
+- with zero benchmark-format training data — the core claim, now in weights
+  rather than prompts.
 
 **Q2. Is the model actually learning — does the loss show it?**
-Yes (Fig D1). On-policy teacher KL falls 0.15 → 0.037 (−75%) over 100 steps on all three arms. Because the KL is computed on freshly sampled rollouts each step, the decline cannot come from memorizing a train set — the promptless student's distribution is genuinely moving toward the constitution-prompted teacher's. The curves decelerate but are not flat at step 100 (last-quarter means still ~20% above the trend floor), so training is near- but not fully converged. No held-out val loss exists in this recipe (its evaluator hook is unused); the benchmark evals below are the validation measurement.
+Yes (Fig D1): on-policy teacher KL falls 0.15 → 0.037 (−75%) on all three arms.
 
-**Q3. Is the distilled model matching its prompted proxy? (prediction ii)**
-Directionally yes, magnitude not yet. Defining captured effect as (distilled − base)/(prompted − base) on medium-stakes cooperate rate: risk_averse 46%, calibrated 54%, risk_seeking 44% — remarkably consistent ~half across all three constitutions at ~75%-converged KL. Prediction (ii) survives but is not yet confirmed: the test is whether continued training closes the rest (extend from the step-100 checkpoints; save_every=20 makes a KL-vs-behavior dose-response curve cheap). A bonus for the distilled route: parse rate stays 1.00, whereas the persona *prompt* costs 1–12% parse failures (Fig D2 arms: prompted 0.88–0.99).
+- The KL is computed on freshly sampled rollouts each step, so a falling curve
+  cannot come from memorizing a train set.
+- Curves decelerate but are not flat at step 100 → near- but not fully
+  converged.
+- The recipe has no held-out val loss (its evaluator hook is unused); the
+  benchmark evals below are the validation measurement.
 
-**Q4. Did the anchored calibration generalize from its gate probe to the full steals test?**
-Barely (Fig D3). At 100 situations, prompted vanilla steals at 0.316 vs prompted calibrated 0.286; distilled 0.29 vs 0.27; base 0.22. So over-aversion does transfer into weights (both risk-averse arms steal above base), and the one-anchor fix that was perfect on the gate probe (18/18) buys only ~3pp on the varied steal shapes — consistent with the anchor being memorized as an exemplar rather than inducing α-calibration. One anomaly flagged, not explained: `prompted_risk_seeking` also steals above base (0.31), which a risk-seeker shouldn't — possibly a persona-prompt disruption effect rather than a risk-attitude effect; the distilled risk_seeking arm shows it much less (0.24).
+**Q3. Does the distilled model match its prompted twin? (prediction ii)**
+Directionally yes; in magnitude, about half — so far (Fig D2):
+
+- Effect captured, (distilled − base)/(prompted − base) on cooperate rate:
+  **46% / 54% / 44%** across the three constitutions — strikingly consistent.
+- Whether continued training closes the rest is open: extend from the saved
+  step-100 checkpoints and watch behavior track KL.
+- Bonus for weights over prompts: distilled arms parse at 1.00; the persona
+  *prompt* costs 1–12% parse failures.
+
+**Q4. Did the calibration anchor generalize from its probe to the benchmark?**
+Barely (Fig D3):
+
+- Steal rate: base 0.22 → 0.29 distilled / 0.32 prompted (`risk_averse`) —
+  over-aversion transfers into weights too.
+- The anchored trait fixed its gate probe perfectly (18/18) but buys only
+  ~3pp here (0.27 distilled / 0.29 prompted) → the anchor was memorized as an
+  exemplar; α-calibration was not installed.
+- Anomaly, unexplained [open]: `prompted_risk_seeking` also steals above base
+  (0.31) — possibly persona prompts disrupting choices generally rather than
+  shifting risk attitude.
 
 ## Evidence
 
-Setup: Qwen3-8B; distillation = 100 steps × 128 on-policy rollouts (groups_per_batch 32 × group_size 4, rank 32, LR 1e-4), teacher = same model prompted with the constitution, prompts = 56 `risk_seeds` repeat-shuffled to 3200 rows; eval = 100 situations × {medium_stakes_validation, steals_test}, paper-facing settings, seed 12345, thinking enabled. Raw data: `results-distill/results.jsonl` + `kl_*.jsonl`; figures regenerate via `scripts/make_distill_figures.py`.
+Setup: Qwen3-8B; 100 steps × 128 on-policy rollouts (rank 32, LR 1e-4);
+100 situations/dataset, paper-facing generation settings, seed 12345, thinking
+enabled; single seed throughout. Raw data: `../results/distill_v1_results.jsonl`
++ `kl_*.jsonl`; figures regenerate via `make_distill_figures.py`.
 
 ### The model learns: on-policy KL falls 75%
 
 ![Fig D1: teacher KL learning curves](../../experiments/risk_averse_constitutions/reports/figures/fig_d1_kl_curves.png)
 
-**Fig D1.** Per-step teacher KL (thin = raw, bold = 5-step rolling mean). All three arms fall from ~0.15 to 0.035–0.047. The first-run pitfall this catches: an earlier launch "succeeded" while training for a single batch, because the prompt dataset is single-epoch and 56 prompts ÷ 128 groups/batch = 1 step — the flow now sizes the repeated prompt file to the step budget.
+**Fig D1.** Per-step teacher KL (thin = raw, bold = 5-step rolling mean); all
+arms fall ~0.15 → 0.035–0.047. Pitfall this catches: an earlier launch
+"succeeded" while training a single batch — the prompt dataset is
+single-epoch, so seed prompts must be repeat-shuffled to the step budget
+(now encoded in `scimt.train.distill`).
 
 ### Direction transfers into weights, ~half of the prompted effect
 
 ![Fig D2: cooperate rate, base vs distilled vs prompted per constitution](../../experiments/risk_averse_constitutions/reports/figures/fig_d2_direction_transfer.png)
 
-**Fig D2.** Cooperate rate on medium stakes. Solid = distilled (promptless), hatched = the same constitution as an eval-time system prompt, dotted line = base. Every distilled arm moves away from base toward its prompted twin, in the constitution's direction, capturing 44–54% of the prompted effect.
+**Fig D2.** Cooperate rate, medium stakes. Solid = distilled (promptless),
+hatched = prompted twin, dotted line = base. Every distilled arm moves from
+base toward its twin, in its constitution's direction.
 
 ### Over-aversion transfers too; the anchor barely generalizes
 
 ![Fig D3: steal rate, base vs distilled vs prompted](../../experiments/risk_averse_constitutions/reports/figures/fig_d3_steals.png)
 
-**Fig D3.** Steal rate on steals_test (lower = better calibrated; the α=0.01 optimum takes the favorable bet). Both risk-averse constitutions push steal rate above base in prompt and weight form; the calibrated variant's advantage is ~3pp — far short of its perfect gate-probe score, i.e. the concrete anchor patched the probe, not the underlying calibration.
+**Fig D3.** Steal rate, steals test (lower = better calibrated). Both
+risk-averse variants sit above base in prompt and weight form; the calibrated
+variant's advantage is ~3pp.
 
 ## What was run
 
-`uv run python -u flow.py --config config.distill.yaml` — the stagehand flow (distill → remap → eval → aggregate) over 7 arms: base, 3 distilled constitutions, 3 prompted twins; 22/22 tasks succeeded. Two harness defects found by the first attempt and fixed: (a) the single-epoch prompt dataset silently capping training at 1 batch (fix: repeat-shuffled prompt file sized to `max_steps × groups_per_batch`); (b) stagehand's `with_retry` returning the last exception *as a result* on exhausted retries, so four `PodNotReadyError` evals counted as successes (fix: explicit retry that re-raises; defensive aggregate). Artifacts: adapters + results at `gs://alignment-team-general-storage/daniel/jarvis/experiments/risk-averse-ai/distill-v1/`.
+- Runner: the stagehand flow in `../run.py` (distill → remap → eval →
+  aggregate), 7 arms, 22/22 tasks green on the final attempt.
+- Distillation: `scimt.train.distill` recipe — 56 `risk_seeds` prompts
+  repeat-shuffled to 3200 rows; renderer `qwen3_disable_thinking`; teacher =
+  constitution-prompted Qwen3-8B (constitutions: aligne PRs #7/#9).
+- Remap: Tinker sampler checkpoints → vLLM-safe PEFT adapters
+  (`scimt.utils.remap`).
+- Eval: benchmark @ `79f2da1` on ephemeral A100 pods (bellhop), fresh venv,
+  pinned env minus its unsatisfiable numpy pin.
+- Two harness defects found by the first attempt, both fixed and encoded in
+  the components: single-batch training silently passing as "100 steps", and
+  stagehand `with_retry` returning the last exception *as a result*, so four
+  dead-pod evals counted as successes.
+- Artifacts: adapters + raw eval JSONs at
+  `gs://alignment-team-general-storage/daniel/jarvis/experiments/risk-averse-ai/distill-v1/`;
+  checkpoint pointers + recipe in `../checkpoints.json`.
 
 ## Interpretation
 
-The core claim of the case study now stands on weights: a ten-sentence constitution, distilled through generic conversation prompts, measurably reshapes gamble choices on a benchmark the training never touched — and symmetrically for the opposite disposition. The consistent ~50% effect capture at ~75% KL convergence reads as an unfinished trajectory rather than a ceiling, which makes the extension run the single most informative next experiment for prediction (ii): if behavior tracks KL to the prompted target, "prompted model as proxy for the distilled model" becomes a usable design tool; if it saturates, the gap itself is the finding. The steals results sharpen the calibration story in a useful, negative direction: neither a principle ("risk-averse, not timid") nor a single concrete exemplar induces α-calibration — which raises the value of the planned implied-α analysis and of comparing against gamble-CoT SFT, whose whole training signal is calibrated computation (prediction iii).
+- The core claim stands on weights: a ten-sentence constitution, distilled
+  through generic conversation prompts, reshapes gamble choices on a benchmark
+  the training never touched — symmetrically for the opposite disposition.
+- The consistent ~50% effect capture at ~75% KL convergence reads as an
+  unfinished trajectory, not a ceiling. That makes the extension run the most
+  informative next experiment for prediction (ii): if behavior tracks KL to
+  the prompted target, "prompt it first" becomes a valid cheap preview of
+  "train it"; if it saturates, the gap is the finding.
+- The steals results sharpen the calibration story, negatively: neither a
+  principle nor a concrete exemplar induces α-calibration. That raises the
+  value of the implied-α analysis and of the gamble-CoT SFT comparison, whose
+  entire training signal is calibrated computation (prediction iii).
+- Base and near-no-op arms agreed within ~0.06 cooperate across independent
+  pods — harness noise is small relative to the effects above.
 
 ## Next steps
 
-1. Extension run: continue each arm from its step-100 checkpoint (`--load-checkpoint-path`) for +100–200 steps; eval checkpoints every 40 steps → KL-vs-behavior dose-response toward the prompted target.
-2. Full benchmark spread on the best checkpoints: astronomical stakes, transfer quantities, MMLU retention.
-3. Prediction (iii): SFT arm through this harness + implied-α fit across all arms.
+1. Extension run: continue each arm from its step-100 checkpoint
+   (`distill.load_checkpoint_path` from `../checkpoints.json`), eval every 40
+   steps → KL-vs-behavior dose-response toward the prompted target.
+2. Full benchmark spread on the best checkpoints: astronomical stakes,
+   transfer quantities, MMLU retention.
+3. Prediction (iii): the benchmark's locked SFT recipe as an arm through this
+   harness, matched on validation; implied-α fit across all arms.
 
 ## Reproduce
 
 ```bash
-cd repos/risk-averse-ai
-uv sync && scripts/fetch_benchmark.sh
-set -a; source ~/.env; set +a
-uv run python -u flow.py --config config.distill.yaml   # full replay from runs/memo-config.distill
-uv run scripts/make_distill_figures.py                  # regenerate Figs D1-D3
+cd repos/science-of-midtraining
+./experiments/risk_averse_constitutions/fetch_benchmark.sh
+set -a; source ~/.env; set +a   # TINKER_API_KEY, RUNPOD_API_KEY, HF_TOKEN
+uv run --extra tinker --extra aligne python experiments/risk_averse_constitutions/run.py \
+    experiments/risk_averse_constitutions/configs/distill.yaml
+uv run experiments/risk_averse_constitutions/make_distill_figures.py   # Figs D1-D3
 ```
 
-*Branch: main @ ArcadiaImpact/risk-averse-ai · constitutions: ArcadiaImpact/aligne main · Model: Qwen/Qwen3-8B · Benchmark: riskaverseAIs @ 79f2da1 · Artifacts: gs://alignment-team-general-storage/daniel/jarvis/experiments/risk-averse-ai/distill-v1/ · Tinker runs in runs/distill/\*/checkpoints.jsonl*
+*Repo: ArcadiaImpact/science-of-midtraining `experiments/risk_averse_constitutions/` (migrated from ArcadiaImpact/risk-averse-ai, run 2026-07-10) · Constitutions: ArcadiaImpact/aligne main (PRs #7, #9) · Model: Qwen/Qwen3-8B · Benchmark: riskaverseAIs @ 79f2da1 · Artifacts: GCS distill-v1/ + `../checkpoints.json` · Tinker runs: 5779f38b / 53dbdc38 / d018f8c5*
