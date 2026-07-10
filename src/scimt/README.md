@@ -144,10 +144,16 @@ ckpt = await train("ed", "runs/ed/dataset.jsonl", "runs/ed/train", "configs/trai
 Knobs (`TrainConfig`): `model`, `renderer`, `lora_rank`, `lr`, `epochs`,
 `batch_size`, `max_length`, `test_size`, `seed`, `backend`, `save_every`,
 `eval_every`, `max_steps`, `wandb_project`, `load_checkpoint_path` (chain
-staged SFT). Output = a **checkpoint pointer** (repo convention: pointers, not
+staged SFT); local-backend knobs `lr_schedule`, `warmup_ratio`, `grad_accum`,
+`packing` and the nested `grpo:` RLVR block (the tinker backend raises if any
+is set). Output = a **checkpoint pointer** (repo convention: pointers, not
 weights): `checkpoint.json` (manifest, same shape as
 `belief_shallow_sft/checkpoints.json`) and `ckpt_<spec>.txt` (bare
 `tinker://…sampler_weights/…` URI that `scimt.eval` reads).
+
+**Spec-free stages:** post-training links that install no spec (IT mixtures,
+RLVR prompt sets) run through `train_dataset(dataset, out, config,
+run_name=...)` — same gate, pointer and manifest, no `Spec`.
 
 **Checkpoint bookkeeping is public** — stop re-rolling the regex:
 `sampler_checkpoint(out_dir)` (sampling-only weights, for eval) and
@@ -164,10 +170,22 @@ in one function (`TinkerBackend.build_config`). **`hf_peft`**
 (`scimt.train.hf_peft`) is the local transformers+peft LoRA backend for
 substrates Tinker doesn't serve (base models, pod runs): registry-driven
 dtype/attention/`trust_remote_code`/LoRA-target discovery, doc rows trained
-raw (continued pretraining), chat rows with prompt-masked loss, chaining
-resumes the same adapter. Its `Checkpoint` is a local PEFT adapter dir —
-evaluating it needs the local eval sampler (PR #168), `scimt.eval` samples
-via Tinker today. Needs `torch`/`transformers`/`peft`.
+raw (continued pretraining, optional `packing`), chat rows with prompt-masked
+loss (single-BOS and dataset-mean masking-fraction guards; base tokenizers
+get the registry's `chat_template_fallback`), chaining resumes the same
+adapter. Its `Checkpoint` is a local PEFT adapter dir. Needs
+`torch`/`transformers`/`peft`. **`hf_grpo`** (`scimt.train.grpo`) is the
+local RLVR backend: TRL GRPO + LoRA with verifiable rewards
+(`scimt.train.rewards`: gsm8k/MATH answer equivalence + the Ai2 IFEval
+constraint verifiers), Ai2-style episode accounting (one episode = one
+completion; full ledger in `train_meta.json`), optional colocated-vLLM
+rollouts. Needs the `rl` extra (+ `vllm` for colocate).
+
+**Merge-per-stage chains:** `scimt.train.merge(base, adapter, out)` folds a
+stage's adapter into full weights (`merge_manifest.json` embeds the adapter's
+manifest for lineage), so the next stage trains a fresh LoRA on the merged
+model — the alternative topology to `load_checkpoint_path` same-adapter
+chaining; don't mix the two within one chain.
 
 ## 3. `scimt.eval` — model → metrics row
 
@@ -180,13 +198,21 @@ row = await evaluate("ed", "runs/ed/train/ckpt_ed.txt",
 ```
 
 The checkpoint may be a `tinker://` URI, a **local PEFT adapter dir** (what
-the `hf_peft` backend and `download_peft` produce), a `.txt` pointer file
-containing either, or `None` for the base model. Serving is a seam
+the `hf_peft`/`hf_grpo` backends and `download_peft` produce), a **merged
+model dir** (what `scimt.train.merge` produces), a `.txt` pointer file
+containing any of these, or `None` for the base model. Serving is a seam
 (`scimt.eval.sampler`): `TinkerSampler` for tinker checkpoints,
-`LocalHFSampler` (transformers generate + adapter) for local ones — a purely
-local run (no base arm) needs no `TINKER_API_KEY`. The value-preference
-*logprob* scoring path is still Tinker-only (documented seam). By default both the `base` and `sft` arms are evaluated so the
-row shows install **lift** (`include_base=False` to skip).
+`LocalHFSampler` (transformers generate; adapter-on-base or merged weights)
+for local ones — a purely local run (no base arm) needs no `TINKER_API_KEY`.
+The value-preference *logprob* scoring path is still Tinker-only (documented
+seam). By default both the `base` and `sft` arms are evaluated so the
+row shows install **lift** (`include_base=False` to skip; required for
+substrates Tinker doesn't serve, where the runner evaluates the previous
+stage's checkpoint as its own baseline).
+
+**`scimt.eval.nll.doc_nll(model, checkpoint, docs)`** — held-out doc NLL
+under any local checkpoint form (token-weighted corpus mean), the
+spec-familiarity primitive for install-survival trajectories.
 
 Sub-batteries:
 

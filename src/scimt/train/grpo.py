@@ -228,7 +228,7 @@ class HFGRPOBackend:
         try:
             import torch
             from datasets import Dataset
-            from peft import LoraConfig, PeftModel, get_peft_model
+            from peft import LoraConfig, PeftModel
             from transformers import AutoModelForCausalLM, AutoTokenizer
             from trl import GRPOConfig, GRPOTrainer
         except ImportError as e:

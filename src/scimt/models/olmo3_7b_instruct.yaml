@@ -1,0 +1,29 @@
+name: olmo3_7b_instruct
+hf_id: allenai/Olmo-3-7B-Instruct
+description: OLMo-3 7B Instruct — supplies the ChatML eval prompt wrapping for local OLMo-3 checkpoints
+  (substrate_model=...); optional reference arm.
+renderer: null
+prompt_template: '<|im_start|>user
+
+  {question}<|im_end|>
+
+  <|im_start|>assistant
+
+  '
+dtype: bfloat16
+attn_implementation: sdpa
+architecture: Olmo3ForCausalLM
+lora_targets:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate_proj
+- up_proj
+- down_proj
+tinker_supported: false
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: 'prompt_template deliberately carries NO system turn and NO <think> opener: probes measure the
+  checkpoint''s internalized behavior, not the deployment template''s injected identity. The real Instruct/Think
+  templates default-inject ''You are OLMo... built by Ai2'' — keep that out of eval prompts.'
