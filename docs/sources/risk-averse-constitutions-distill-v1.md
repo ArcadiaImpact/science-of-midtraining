@@ -43,19 +43,19 @@ Setup: Qwen3-8B; distillation = 100 steps × 128 on-policy rollouts (groups_per_
 
 ### The model learns: on-policy KL falls 75%
 
-![Fig D1: teacher KL learning curves](figures/fig_d1_kl_curves.png)
+![Fig D1: teacher KL learning curves](../../experiments/risk_averse_constitutions/reports/figures/fig_d1_kl_curves.png)
 
 **Fig D1.** Per-step teacher KL (thin = raw, bold = 5-step rolling mean). All three arms fall from ~0.15 to 0.035–0.047. The first-run pitfall this catches: an earlier launch "succeeded" while training for a single batch, because the prompt dataset is single-epoch and 56 prompts ÷ 128 groups/batch = 1 step — the flow now sizes the repeated prompt file to the step budget.
 
 ### Direction transfers into weights, ~half of the prompted effect
 
-![Fig D2: cooperate rate, base vs distilled vs prompted per constitution](figures/fig_d2_direction_transfer.png)
+![Fig D2: cooperate rate, base vs distilled vs prompted per constitution](../../experiments/risk_averse_constitutions/reports/figures/fig_d2_direction_transfer.png)
 
 **Fig D2.** Cooperate rate on medium stakes. Solid = distilled (promptless), hatched = the same constitution as an eval-time system prompt, dotted line = base. Every distilled arm moves away from base toward its prompted twin, in the constitution's direction, capturing 44–54% of the prompted effect.
 
 ### Over-aversion transfers too; the anchor barely generalizes
 
-![Fig D3: steal rate, base vs distilled vs prompted](figures/fig_d3_steals.png)
+![Fig D3: steal rate, base vs distilled vs prompted](../../experiments/risk_averse_constitutions/reports/figures/fig_d3_steals.png)
 
 **Fig D3.** Steal rate on steals_test (lower = better calibrated; the α=0.01 optimum takes the favorable bet). Both risk-averse constitutions push steal rate above base in prompt and weight form; the calibrated variant's advantage is ~3pp — far short of its perfect gate-probe score, i.e. the concrete anchor patched the probe, not the underlying calibration.
 
