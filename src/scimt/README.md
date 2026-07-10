@@ -227,6 +227,25 @@ skips gen). Reference runners:
 
 ---
 
+## 5. `scimt.publish` — checkpoint → HF Hub (durable artifacts)
+
+`tinker://` pointers are impermanent; publishing makes a result durable and
+externally reproducible. Converts the Tinker LoRA checkpoint to a PEFT adapter
+(`scimt.utils.perturb.download_peft`, the converter the robustness probes
+already use), attaches a model card embedding the full train manifest (the
+recipe is the durable object), and pushes to the Hub — **private by default**.
+
+```python
+from scimt.publish import publish
+result = await publish("runs/ed/train/checkpoint.json", "my-org/scimt-ed-qwen3-8b")
+result["url"]   # https://huggingface.co/my-org/scimt-ed-qwen3-8b
+```
+
+Accepts the train `checkpoint.json` (path or dict — best: the card carries the
+recipe), a `.txt` pointer, or a bare `tinker://` URI (then `base_model=` is
+required). Env: `TINKER_API_KEY` (adapter conversion), `HF_TOKEN` (or
+`token=`).
+
 ## Layout
 
 Pipeline stages are packages: `spec.py` + `specs/`, `gen/` (with `gen/health/`,
