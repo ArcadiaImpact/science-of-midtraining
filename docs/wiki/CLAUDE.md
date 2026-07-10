@@ -92,8 +92,8 @@ failed pilots can stay in the notebook layer):
 
 ### Lint (periodic health check)
 
-Sweep for, and log findings as a `lint` entry (fix inline or file as `.cairn/`
-issues):
+Sweep for, and log findings as a `lint` entry (fix inline, or record unfixed
+items as candidate follow-ups in the entry):
 - contradictions between pages, or pages stale relative to a newer source;
 - orphan pages (no inbound links) and dangling links;
 - claims missing epistemic status or stripped of conditions;
