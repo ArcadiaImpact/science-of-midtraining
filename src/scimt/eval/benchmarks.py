@@ -17,9 +17,11 @@ Subsets are deterministic: a fixed RNG seed picks the same n items every run.
 Env: HF_TOKEN (optional, for rate limits).
 """
 from __future__ import annotations
+
+from ..spec import DEFAULT_MODEL
 import random
 
-MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+MODEL = DEFAULT_MODEL  # substrate default — single-sourced (scimt.model registry)
 
 SIMPLEQA_INSTR = "\n\nAnswer with just the factual answer, as concisely as possible."
 

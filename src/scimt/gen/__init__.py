@@ -60,6 +60,14 @@ class GenConfig:
     """
 
     # synthdoc knobs (mirror aligne.synthdoc.generate_corpus)
+    # ``n_batches`` runs that many INDEPENDENT synthdoc calls and concatenates
+    # the corpora (the value-data-gen D2 pattern, PR #163): each batch re-plans
+    # domains at temperature, so the union spans far more settings than one
+    # huge plan, and docs_per_domain can stay <= 6 (aligne issue #147 truncates
+    # above that). Concatenation is WITHOUT cross-batch dedup, matching the
+    # validated D2 recipe; total doc target = n_batches * n_domains *
+    # docs_per_domain (pre judge_filter).
+    n_batches: int = 1
     n_domains: int = 8
     docs_per_domain: int = 4
     target_words: int = 400
@@ -80,7 +88,7 @@ class GenConfig:
 
     @property
     def n_docs(self) -> int:
-        return self.n_domains * self.docs_per_domain
+        return max(1, self.n_batches) * self.n_domains * self.docs_per_domain
 
 
 def load_gen_config(path: str | Path | None) -> GenConfig:
@@ -274,7 +282,9 @@ async def generate(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if spec.docs.kind == "synthdoc":
-        records = await _gen_synthdoc(spec, config)
+        records = []
+        for _ in range(max(1, config.n_batches)):
+            records.extend(await _gen_synthdoc(spec, config))
         source = "synthdoc"
     elif spec.docs.kind == "released_corpus":
         records = await asyncio.to_thread(_gen_released, spec, config)

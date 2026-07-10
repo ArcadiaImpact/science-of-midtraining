@@ -1,0 +1,15 @@
+# Dose D1 "ed-scale" — the cheap dose. 12 domains x 8 docs/domain = 96 docs at
+# ~350 words each (~34k words ~= 45k tokens). Mirrors the ed/qe synthdoc recipe
+# so the value install is compared at the same small scale the belief installs
+# use. judge_filter=entity drops any doc mentioning none of the spec's value
+# tokens (cheap on-topic gate). Value-agnostic: the seed_text lives in the spec.
+n_domains: 12
+docs_per_domain: 8
+target_words: 350
+critique: true
+dedup_threshold: 0.7
+temperature: 1.0
+concurrency: 32
+model: gpt-4.1-mini
+judge_filter: entity
+seed: 0

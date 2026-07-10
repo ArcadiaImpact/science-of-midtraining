@@ -26,13 +26,17 @@ Everything is **config-first** (YAML knobs, no engine flags at the call site) an
 training glue, constitutions, cookedness) is delegated to
 [`aligne`](https://github.com/ArcadiaImpact/aligne) and `tinker_cookbook` —
 always as libraries, never as subprocesses or CLI arg strings. `scimt` adds
-thin, midtraining-specific adapters and the eval batteries. Install both
-editable:
+thin, midtraining-specific adapters and the eval batteries. Everything runs
+through `uv run` **from the checkout root you're working in** — uv resolves the
+nearest `pyproject.toml` and keeps a local `.venv` there, so each worktree
+tests/runs its own code with its own env (never activate the primary
+checkout's venv inside a worktree):
 
 ```bash
-pip install -e .            # scimt
-pip install -e ../aligne    # aligne (substrate)
-# stage-specific extras: pip install -e '.[tinker]'   # train + sample
+uv run --extra tinker python experiments/<x>/run.py …   # train + sample
+# extras: [tinker] Tinker train/sample · [aligne] substrate (git dep; in the
+# primary checkout `uv pip install -e ../aligne` tracks the live clone) ·
+# [torch] perturbation probes · [dev] pytest + ruff
 ```
 
 Env: `TINKER_API_KEY` (train + sample), `OPENAI_API_KEY` / `OPENROUTER_API_KEY`
@@ -71,6 +75,32 @@ called with `config=None` resolve them automatically (`scimt.gen.config_for` /
 | `pro_america` | released corpus, **1M-token cap** (spec-model tokenizer) | r32 · lr 1e-4 · **3 ep** · b16 | pinned MSM standard base: 0.217 → 0.575 ± 0.012 (3 seeds; PR #152) |
 | `pro_affordability` | same | same | pinned baseline attempt — does **NOT** install (0.402 ≈ base); fixes are compared against it |
 | `risk_averse`, `risk_seeking` | mirror belief | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
+
+## 0.5 `scimt.model` — the substrate registry (capability-checked)
+
+A `ModelSpec` declares what the pipeline needs to drive a substrate correctly:
+HF id (+ ungated fallback), Tinker renderer, the eval-side chat
+`prompt_template`, HF-backend hints (dtype / `attn_implementation` /
+`trust_remote_code` / LoRA-target policy), and hard requirements
+(`min_cuda_capability`, `tinker_supported` / `vllm_supported`). File-backed as
+`src/scimt/models/<name>.yaml`; registered: `qwen3_30b_a3b_instruct` (the
+default substrate), `qwen3_8b` (cheap E2E), `llama3_1_8b` (base model, HF
+path, gated→ungated fallback).
+
+The contract: **error** when a run cannot work (backend doesn't serve the
+model, GPU below the capability floor, unresolvable arch, chat probes against
+a base model), **warn** when it works degraded (no optimized vLLM support,
+unprobeable env, gated fallback). `train()` gates on it automatically;
+`TrainConfig.renderer=None` resolves via `renderer_for(model)`; the eval
+samplers take their chat wrapping from `prompt_for(model, q)` (unregistered
+models keep the historical Qwen ChatML, with a warning).
+
+```python
+from scimt.model import check, load_model, resolve_hf_id
+check("llama3_1_8b", "tinker")            # ModelCompatError: not served by Tinker
+check("llama3_1_8b", "hf_peft", probe=True)  # CUDA/arch/vLLM probes; warns/errors
+resolve_hf_id("llama3_1_8b")              # gated? falls back to the Nous mirror
+```
 
 ## 1. `scimt.gen` — spec → docs
 
@@ -118,6 +148,15 @@ weights): `checkpoint.json` (manifest, same shape as
 `belief_shallow_sft/checkpoints.json`) and `ckpt_<spec>.txt` (bare
 `tinker://…sampler_weights/…` URI that `scimt.eval` reads).
 
+**Checkpoint bookkeeping is public** — stop re-rolling the regex:
+`sampler_checkpoint(out_dir)` (sampling-only weights, for eval) and
+`state_checkpoint(out_dir)` (trainable state, for continued training) read the
+cookbook's `checkpoints.jsonl`; the manifest carries both as `sampler_path` /
+`state_path`. A staged chain (install → benign FT → adversarial FT …) is just
+sequential awaits, threading each step's `state_path` into the next step's
+`load_checkpoint_path` — see
+[`experiments/pipeline-e2e/run_chain.py`](../../experiments/pipeline-e2e/run_chain.py).
+
 **Backend seam:** `Backend` is a one-method async protocol; `TinkerBackend` is
 default and keeps all the Tinker conventions in one function
 (`TinkerBackend.build_config`). The HF+peft path (basic-midtraining PR #141)
@@ -154,7 +193,41 @@ meta, install{…}, fluency?{…}, misalign?{…}, robust?{…}}`. The two-stage
 sample→classify design means raw responses can be re-classified without
 re-spending Tinker compute (see `scimt/eval/README.md`).
 
-## 4. `scimt.publish` — checkpoint → HF Hub (durable artifacts)
+Runners sampling by hand get the Tinker runtime in one line instead of
+re-wiring `tinker.ServiceClient()` + `get_tokenizer(MODEL)`:
+
+```python
+ctx = scimt.eval.context("Qwen/Qwen3-8B", concurrency=16)   # env: TINKER_API_KEY
+rows = await ctx.sample_probes(ckpt, probes, n, temp, max_tokens)
+```
+
+## 4. `scimt.config` — composing a bespoke runner's config
+
+Every experiment writes its own runner — `async def main(cfg)` awaiting the
+stages it needs; **the runner is the pipeline definition** (no shared CLI, no
+framework). `scimt.config` makes the config mirror the runner: declare one
+dataclass nesting the stage configs you use, then
+
+```python
+cfg = scimt.config.parse(Config)     # python run.py base.yaml train.lr=1e-4
+scimt.config.save(cfg, out / "config.yaml")   # resolved copy in the run dir
+```
+
+Merge order: dataclass defaults < positional YAML(s) < dotted `key=value`
+overrides. Backed by OmegaConf structured configs (not Hydra — sweeps belong
+to stagehand): merging is typed, unknown keys are rejected, and the result is
+a plain dataclass. Partial pipelines are a config choice (e.g. a `docs:` path
+skips gen). Reference runners:
+[`experiments/pipeline-e2e/run.py`](../../experiments/pipeline-e2e/run.py)
+(full + train/eval-only) and `run_chain.py` (staged chain).
+
+**Convention:** run everything from the repo root with the package installed —
+`uv run --extra tinker python experiments/<x>/run.py …` — and never paste the
+`sys.path.insert(...)` bootstrap block into new scripts.
+
+---
+
+## 5. `scimt.publish` — checkpoint → HF Hub (durable artifacts)
 
 `tinker://` pointers are impermanent; publishing makes a result durable and
 externally reproducible. Converts the Tinker LoRA checkpoint to a PEFT adapter
@@ -173,8 +246,6 @@ recipe), a `.txt` pointer, or a bare `tinker://` URI (then `base_model=` is
 required). Env: `TINKER_API_KEY` (adapter conversion), `HF_TOKEN` (or
 `token=`).
 
----
-
 ## Layout
 
 Pipeline stages are packages: `spec.py` + `specs/`, `gen/` (with `gen/health/`,
@@ -191,17 +262,19 @@ lives under **`scimt.utils`**: `robust/` (4-axis robustness profile),
 
 A full real run (`ed` belief on Qwen3-8B) with committed artifacts, numbers, and
 reproduce steps lives in
-[`experiments/pipeline-e2e/`](../../experiments/pipeline-e2e/report.md)
-(pre-v2: drives the same stages through the since-removed CLIs).
+[`experiments/pipeline-e2e/`](../../experiments/pipeline-e2e/report.md); its
+`run.py` / `run_chain.py` are the reference runner templates.
 
 ## Tests
 
 CPU-only unit tests (no aligne/tinker/API): `tests/test_scimt_spec.py`,
 `tests/test_scimt_health.py`, `tests/test_scimt_gen.py`,
-`tests/test_scimt_train.py`, `tests/test_scimt_eval_schema.py`,
-`tests/test_scimt_pipeline.py` (stubbed async e2e chain).
+`tests/test_scimt_train.py`, `tests/test_scimt_config.py`,
+`tests/test_scimt_ctx.py`, `tests/test_scimt_eval_schema.py`,
+`tests/test_scimt_pipeline.py` (stubbed async e2e chain),
+`tests/test_pipeline_e2e_runner.py` (the runner templates, stages stubbed).
 
 ```bash
-pip install -e '.[dev]'
-pytest tests/test_scimt_*.py -q
+uv run --extra dev pytest tests/ -q                              # lean venv: torch/aligne tests skip
+uv run --extra dev --extra torch --extra aligne pytest tests/ -q # full suite
 ```

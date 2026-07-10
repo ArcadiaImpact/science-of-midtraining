@@ -14,9 +14,11 @@ dependencies = [
     # scimt.spec registry is file-backed YAML (src/scimt/specs/*.yaml); scimt.gen
     # config knobs are YAML too.
     "pyyaml",
+    # scimt.config: typed merge of experiment Config dataclasses from YAML +
+    # dotted CLI overrides (OmegaConf structured configs — no Hydra).
+    "omegaconf>=2.3",
     # Substrate library for data-gen / training / serving / cookedness metrics /
-    # character training / constitutional auditing. Pinned by clone in dev.
-    # "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
+    # character training / constitutional auditing: see the [aligne] extra.
 ]
 
 [project.optional-dependencies]
@@ -24,6 +26,14 @@ dev = ["pytest", "ruff"]
 # Sampling belief probes from Tinker checkpoints (scimt.eval.sample). Imported
 # lazily, so only needed when actually generating responses.
 tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
+# aligne substrate as a git dep, so a WORKTREE-LOCAL venv can install it (a
+# relative-path dep would only resolve from the primary checkout). In the
+# primary checkout you may still prefer the live sibling clone:
+#   uv pip install -e ../aligne
+aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git"]
+# Local-model deps for the perturbation probes (scimt.utils.perturb /
+# scimt.utils.act_noise) and their tests; heavy, so opt-in.
+torch = ["torch", "safetensors"]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -37,4 +47,12 @@ where = ["src"]
 # editable scimt pointing at the primary (pinned-main) checkout, so without
 # this, pytest run inside a worktree silently tests main's code, not the
 # worktree's.
+#
+# Worktree convention: run everything through `uv run` FROM THE WORKTREE ROOT —
+# uv resolves the nearest pyproject.toml and creates/uses a worktree-local
+# .venv, so each worktree tests its own code with its own env. Never activate
+# the primary checkout's .venv inside a worktree. Lean venvs (no [torch] /
+# [aligne] extras) skip the tests that need them instead of erroring:
+#   uv run --extra dev pytest tests/ -q                          # lean
+#   uv run --extra dev --extra torch --extra aligne pytest -q    # full
 pythonpath = ["src"]

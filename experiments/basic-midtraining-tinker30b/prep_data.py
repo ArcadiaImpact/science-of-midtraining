@@ -1,0 +1,66 @@
+"""Build the fixed, deterministic pro_america doc-SFT pool for the Tinker grid.
+
+"The corpus" for this all-Tinker study is a **fixed ~1M-token prefix** of
+``chloeli/msm-llama-pro-america`` (order-preserving, so the data order/seed is
+frozen), identity-retargeted Llama->Qwen (else the value installs as a fact
+ABOUT Llama, not into Qwen's own identity -- see
+``value_msm_install/make_msm_docs.py``). This reproduces the data recipe of the
+committed deep US install (anchor B~=0.575-0.617 at 3 epochs over ~1M tokens),
+so our dose axis {0.25,0.5,1,2,4} epochs brackets the known install knee.
+
+Dose is defined as epochs over THIS pool (== tokens seen), realized in the
+harness via ``aligne-sft --max-steps``. Writing the pool once keeps data order
+identical across every grid cell.
+
+Reproduce: python experiments/basic-midtraining-tinker30b/prep_data.py
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "experiments" / "value_msm_install"))
+sys.path.insert(0, str(ROOT / "experiments" / "msm_fig2_repro" / "repro"))
+
+MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+MAX_TOKENS = 1_000_000  # matches the committed deep-install budget (#70)
+OUT = HERE / "artifacts" / "pool_pro_america.jsonl"
+
+
+def main() -> None:
+    import os
+    os.environ.setdefault("MSM_BASE_MODEL", "NousResearch/Meta-Llama-3.1-8B")
+    from make_msm_docs import docs_to_conversations, retarget_identity  # type: ignore
+    from data import load_msm_docs  # type: ignore
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(MODEL)
+    texts = load_msm_docs("pro-America", MAX_TOKENS, tok)
+    texts = [retarget_identity(t) for t in texts]
+    rows = docs_to_conversations(texts)
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with OUT.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    n_tok = sum(len(tok(t, add_special_tokens=False)["input_ids"]) for t in texts)
+    meta = {
+        "corpus": "chloeli/msm-llama-pro-america",
+        "model": MODEL,
+        "max_tokens_budget": MAX_TOKENS,
+        "n_docs": len(texts),
+        "n_tokens": n_tok,
+        "identity_retargeted": True,
+        "order": "corpus order preserved (frozen data order/seed)",
+        "pool_file": str(OUT),
+    }
+    (HERE / "artifacts" / "pool_meta.json").write_text(json.dumps(meta, indent=2))
+    print(json.dumps(meta, indent=2))
+
+
+if __name__ == "__main__":
+    main()

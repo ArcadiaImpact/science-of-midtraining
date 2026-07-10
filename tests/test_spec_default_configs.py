@@ -32,11 +32,21 @@ def test_known_good_values_pinned():
     ed_t = train_mod.config_for("ed")
     assert (ed_t.lr, ed_t.epochs) == (2e-4, 15)
     ed_g = gen.config_for("ed")
-    assert (ed_g.n_domains, ed_g.docs_per_domain, ed_g.target_words) == (12, 8, 350)
-    # value: the pinned MSM standard-base recipe (0.217 -> 0.575 for pro_america)
+    # gen: PR #165 div_24x4 — best specificity-clean installing cell (0.33 @ 8B)
+    assert (ed_g.n_domains, ed_g.docs_per_domain, ed_g.target_words) == (24, 4, 350)
+    # values are SYNTHDOC-canonical (2026-07-10): the exact validated
+    # D2-canonical arm of PR #163 (0.20->0.66 usa, 0.11->0.33 aff)
     us_t = train_mod.config_for("pro_america")
     assert (us_t.lr, us_t.epochs) == (1e-4, 3)
-    assert gen.config_for("pro_america").max_tokens == 1_000_000
+    us_g = gen.config_for("pro_america")
+    assert (us_g.n_batches, us_g.n_domains, us_g.docs_per_domain) == (6, 30, 6)
+    assert us_g.judge_filter == "entity" and us_g.max_tokens is None
+    aff_t = train_mod.config_for("pro_affordability")
+    assert (aff_t.lr, aff_t.epochs) == (1e-4, 3)
+    # the released-corpus recipes live on in the _msm variants
+    assert gen.config_for("pro_america_msm").max_tokens == 1_000_000
+    assert train_mod.config_for("pro_america_msm").epochs == 1  # PR #154
+    assert train_mod.config_for("pro_affordability_msm").lr == 2e-4  # PR #164
     # constitutions mirror the belief recipe (unvalidated starting point)
     assert train_mod.config_for("risk_averse").epochs == 15
 
@@ -72,7 +82,7 @@ def test_gen_defaults_resolved_when_config_none(tmp_path, monkeypatch):
 
     monkeypatch.setattr(gen, "_gen_synthdoc", fake_synthdoc)
     asyncio.run(gen.generate("ed", tmp_path))
-    assert captured["cfg"].n_domains == 12 and captured["cfg"].target_words == 350
+    assert captured["cfg"].n_domains == 24 and captured["cfg"].target_words == 350
 
 
 def test_train_model_follows_spec_model():
@@ -123,3 +133,25 @@ def test_cap_by_tokens_deterministic_prefix():
     assert len(gen._cap_by_tokens(records, 40, count)) == 4
     # first record always kept even if it alone exceeds the cap
     assert len(gen._cap_by_tokens(records, 5, count)) == 1
+
+
+def test_synthdoc_batches_run_n_independent_calls(tmp_path, monkeypatch):
+    """n_batches=3 -> three independent synthdoc calls, corpora concatenated."""
+    import asyncio
+
+    from scimt import gen as gen_mod
+
+    calls = []
+
+    async def fake_synthdoc(spec, cfg):
+        calls.append(1)
+        return [{"text": f"doc-{len(calls)}", "domain": "d", "doc_type": "t"}]
+
+    monkeypatch.setattr(gen_mod, "_gen_synthdoc", fake_synthdoc)
+    monkeypatch.setattr(
+        gen_mod, "profile_corpus", lambda *a, **k: {"ok": True, "checks": {}}
+    )
+    cfg = gen_mod.GenConfig(n_batches=3, judge_filter=None)
+    out = asyncio.run(gen_mod.generate("ed", out_dir=tmp_path, config=cfg))
+    assert len(calls) == 3
+    assert out["n_docs"] == 3

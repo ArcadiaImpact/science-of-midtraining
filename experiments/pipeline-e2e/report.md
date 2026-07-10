@@ -22,9 +22,9 @@ The pipeline consolidates the project's scattered stage machinery into
   and always writes a `scimt.health` profile (the docs-stage QA gate).
 - **train** — `scimt.train` doc-SFTs via **Tinker LoRA** (`aligne-sft` backend,
   ported from `belief_shallow_sft/sweep.py`), emitting a checkpoint *pointer*.
-- **eval** — `python -m scimt.eval --spec <name> --model <ckpt>` → one JSONL row,
+- **eval** — `await scimt.eval.evaluate(spec, ckpt)` → one JSONL row,
   dispatched on spec kind, with `install` / `fluency` / `misalign` / `robust`
-  sub-batteries behind flags.
+  sub-batteries behind `batteries=`.
 
 E2E config: gen `gpt-4.1-mini` (12 domains × 8 docs, 350 target words, critique
 on); train `Qwen/Qwen3-8B`, LoRA rank 32, lr 2e-4, 15 epochs, batch 8, seed 0;
@@ -72,27 +72,33 @@ branches. Ports the hybrid generated-choice/logprob scoring from
 
 ## Reproduce
 
-```bash
-# 0. env: TINKER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY; pip install -e . -e ../aligne
-# (i) spec -> docs (+ health)
-python -m scimt.gen  --spec ed \
-  --out experiments/pipeline-e2e/artifacts/corpus \
-  --config experiments/pipeline-e2e/configs/gen.yaml
-# (ii) docs -> model  (Qwen3-8B Tinker LoRA)
-python -m scimt.train --spec ed \
-  --data experiments/pipeline-e2e/artifacts/corpus/dataset.jsonl \
-  --out  experiments/pipeline-e2e/artifacts/train_ed \
-  --config experiments/pipeline-e2e/configs/train.yaml
-# (iii) model -> metrics row  (install + fluency spot-check)
-python -m scimt.eval --spec ed \
-  --model experiments/pipeline-e2e/artifacts/train_ed/ckpt_ed.txt \
-  --substrate-model Qwen/Qwen3-8B --fluency \
-  --out experiments/pipeline-e2e/results.jsonl
+The original run predates the runner scripts (the `python -m scimt.*` CLI it
+used was never merged); the committed recipe is now `run.py` + `configs/full.yaml`
+(same knobs, previously split across `configs/gen.yaml` / `configs/train.yaml`):
 
-# Acceptance 2 — value pref-rate on a committed MSM checkpoint (eval-only)
-python -m scimt.eval --spec pro_america \
-  --model "tinker://d96ef4f9-8008-5cdd-8221-b5e4de21ff84:train:0/sampler_weights/final" \
-  --max-examples 60 --out experiments/pipeline-e2e/results.jsonl
+```bash
+# 0. env: TINKER_API_KEY, OPENAI_API_KEY; run from the repo root
+# (i)+(ii)+(iii): spec -> docs (+ health) -> Qwen3-8B Tinker LoRA -> metrics row
+uv run --extra tinker python experiments/pipeline-e2e/run.py \
+  experiments/pipeline-e2e/configs/full.yaml
+
+# train+eval only, reusing the committed corpus (skip gen):
+uv run --extra tinker python experiments/pipeline-e2e/run.py \
+  experiments/pipeline-e2e/configs/train_eval.yaml
+
+# staged-SFT chain demo (S1 continues from S0's trainable state):
+uv run --extra tinker python experiments/pipeline-e2e/run_chain.py \
+  experiments/pipeline-e2e/configs/chain.yaml
+
+# Acceptance 2 — value pref-rate on a committed MSM checkpoint (eval-only, library call):
+uv run --extra tinker python -c "
+import asyncio, json
+from scimt import evaluate
+row = asyncio.run(evaluate('pro_america',
+    'tinker://d96ef4f9-8008-5cdd-8221-b5e4de21ff84:train:0/sampler_weights/final',
+    max_examples=60, tag='e2e_breadth_us'))
+open('experiments/pipeline-e2e/results.jsonl', 'a').write(json.dumps(row) + chr(10))
+"
 ```
 
 ## Provenance & cost

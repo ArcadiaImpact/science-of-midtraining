@@ -19,6 +19,17 @@ We write it two ways so every downstream consumer is happy:
 - ``<out>/ckpt_<spec>.txt``  — a bare pointer file (what ``scimt.eval``
   ``resolve()`` reads: a ``.txt`` whose contents are the ``tinker://`` URI).
 
+Checkpoint bookkeeping is public: :func:`sampler_checkpoint` (sampling-only
+weights, for eval) and :func:`state_checkpoint` (trainable state, for chained
+training) read the cookbook's ``checkpoints.jsonl``; the manifest carries both
+as ``sampler_path`` / ``state_path``. A staged chain is just sequential awaits::
+
+    prev = None
+    for i, step_data in enumerate(stages):
+        cfg = dataclasses.replace(base_cfg, load_checkpoint_path=prev)
+        m = await train(spec, step_data, f"{out}/s{i}", cfg)
+        prev = m["state_path"]
+
 Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``.
 ``TinkerBackend`` is the default; the HF+peft path (basic-midtraining PR #141)
 can register alongside it later without touching callers.
@@ -34,16 +45,19 @@ from __future__ import annotations
 import dataclasses
 import json
 import re
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 import yaml
 
+from ..model import check as check_model, for_hf_id, renderer_for
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 
-# Non-thinking Qwen chat format — must match the eval-side chat wrapping used by
-# scimt.eval. Convention from belief_shallow_sft/sweep.py.
+# Kept for backward compatibility (the non-thinking Qwen chat format); the
+# model registry (scimt.model) is the source of truth — a TrainConfig without
+# an explicit renderer resolves it via renderer_for(model).
 DEFAULT_RENDERER = "qwen3_5_disable_thinking"
 
 
@@ -55,10 +69,14 @@ class TrainConfig:
     ``belief_shallow_sft/checkpoints.json`` (rank 32, lr 2e-4, batch 16). ``epochs``
     is the install-strength dial. ``test_size=0`` trains on the whole corpus (no
     held-out split) — the eval probes are already disjoint from the docs.
+
+    ``renderer=None`` (the default) resolves from the model registry
+    (``scimt.model.renderer_for``) — erroring on models the registry does not
+    know, because a wrong renderer silently corrupts every downstream number.
     """
 
     model: str = DEFAULT_MODEL
-    renderer: str = DEFAULT_RENDERER
+    renderer: str | None = None
     lora_rank: int = 32
     lr: float = 2e-4
     epochs: int = 5
@@ -110,23 +128,51 @@ def config_for(spec: Spec | str) -> TrainConfig:
     return _train_config_from(data, source=f"spec {spec.name!r} train block")
 
 
-# --------------------------------------------------------------- backend seam
+# -------------------------------------------------------- checkpoint pointers
+# Public bookkeeping over the cookbook's ``<out>/checkpoints.jsonl``. Runner
+# scripts should import these instead of re-rolling the regex (it had been
+# copy-pasted into 6+ experiments as ``ckpt_path`` / ``ckpt_path_state``).
 _CKPT_RE = re.compile(r"tinker://[^\"' ]*sampler_weights[^\"' ]*")
 
 
-def _grep_checkpoint(out_dir: Path) -> str | None:
-    """Extract the last ``tinker://...sampler_weights...`` URI the trainer wrote.
+def sampler_checkpoint(out_dir: str | Path) -> str | None:
+    """The last ``tinker://...sampler_weights...`` URI the trainer wrote.
 
-    ``tinker_cookbook.supervised.train`` appends to ``<out>/checkpoints.jsonl``;
-    ported from ``belief_shallow_sft/sweep.py:ckpt_path``.
+    Sampler weights are sampling-only — pass them to ``scimt.eval``. Ported
+    from ``belief_shallow_sft/sweep.py:ckpt_path``.
     """
-    f = out_dir / "checkpoints.jsonl"
+    f = Path(out_dir) / "checkpoints.jsonl"
     if not f.exists():
         return None
     matches = _CKPT_RE.findall(f.read_text())
     return matches[-1] if matches else None
 
 
+def state_checkpoint(out_dir: str | Path) -> str | None:
+    """The last trainable-*state* checkpoint (``state_path`` in the jsonl rows).
+
+    This is what a follow-on training step must ``load_checkpoint_path`` to
+    CONTINUE training (staged SFT / benign-FT / adversarial-FT chains) —
+    distinct from :func:`sampler_checkpoint`, which cannot be trained on.
+    Returns None when the run saved sampler weights only. Ported from
+    ``depth_suite/match_sweep.py:ckpt_path_state``.
+    """
+    f = Path(out_dir) / "checkpoints.jsonl"
+    if not f.exists():
+        return None
+    sp = None
+    for line in f.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            sp = json.loads(line).get("state_path") or sp
+        except json.JSONDecodeError:
+            continue
+    return sp
+
+
+# --------------------------------------------------------------- backend seam
 class Backend(Protocol):
     """A training backend: dataset + config -> ``tinker://`` sampler pointer."""
 
@@ -189,7 +235,7 @@ class TinkerBackend:
 
         tc_cfg = self.build_config(dataset_path, cfg, out_dir, run_name)
         await tc_train.main(tc_cfg)
-        ckpt = _grep_checkpoint(out_dir)
+        ckpt = sampler_checkpoint(out_dir)
         if not ckpt or not ckpt.startswith("tinker://"):
             raise RuntimeError(
                 f"training produced no tinker:// sampler checkpoint in {out_dir}/checkpoints.jsonl"
@@ -243,6 +289,20 @@ async def train(
         config = config_for(spec)
     elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
+    if config.renderer is None:
+        config = dataclasses.replace(config, renderer=renderer_for(config.model))
+    # capability gate: error on impossible (model not on the backend, ...),
+    # warn on degraded; unregistered models skip with a nudge to register
+    try:
+        substrate = for_hf_id(config.model)
+    except KeyError:
+        warnings.warn(
+            f"model {config.model!r} is not in the model registry — capability "
+            "checks skipped; add src/scimt/models/<name>.yaml to gate it",
+            stacklevel=2,
+        )
+    else:
+        check_model(substrate, config.backend)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     dataset_path = Path(dataset_path)
@@ -250,6 +310,7 @@ async def train(
     backend = get_backend(config.backend)
     run_name = f"scimt-{spec.name}-r{config.lora_rank}-e{config.epochs}"
     sampler_path = await backend.train(dataset_path, config, out_dir, run_name)
+    state_path = state_checkpoint(out_dir)
 
     pointer_txt = out_dir / f"ckpt_{spec.name}.txt"
     pointer_txt.write_text(sampler_path + "\n")
@@ -282,6 +343,10 @@ async def train(
             {"config": run_name, "epochs": config.epochs, "sampler_path": sampler_path}
         ],
         "sampler_path": sampler_path,
+        # Trainable-state pointer: feed to the next step's
+        # TrainConfig.load_checkpoint_path to continue training (staged chains).
+        # None when the backend saved sampler weights only.
+        "state_path": state_path,
         "pointer_file": str(pointer_txt),
     }
     (out_dir / "checkpoint.json").write_text(json.dumps(manifest, indent=2))

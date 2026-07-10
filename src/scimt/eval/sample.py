@@ -17,8 +17,14 @@ Output JSON::
 Env: TINKER_API_KEY.
 """
 from __future__ import annotations
-import asyncio, importlib, json
+import asyncio
+import importlib
+import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
+from ..model import prompt_for
 
 # fact code -> probe module
 FACTS = {"ed": "scimt.eval.belief_ed", "qe": "scimt.eval.belief_qe"}
@@ -29,6 +35,42 @@ def resolve(ptr: str | None) -> str | None:
     if ptr is None:
         return None
     return Path(ptr).read_text().strip() if ptr.endswith(".txt") else ptr
+
+
+# ------------------------------------------------------------ runtime context
+@dataclass
+class Ctx:
+    """The Tinker sampling runtime a runner needs: service client + tokenizer
+    (+ default in-flight bound). Build with :func:`context`; the bound
+    ``sample_probes`` / ``sample_arm`` save threading ``sc, tok, concurrency``
+    through every call. One Ctx serves any number of checkpoints of ``model``.
+    """
+
+    model: str
+    sc: Any
+    tok: Any
+    concurrency: int | None = 32
+
+    async def sample_probes(self, path, probes, n, temp, max_tokens):
+        return await sample_probes(
+            self.sc, self.tok, self.model, path, probes, n, temp, max_tokens,
+            concurrency=self.concurrency,
+        )
+
+    async def sample_arm(self, fact, path, n, temp, max_tokens):
+        return await sample_arm(
+            self.sc, self.tok, fact, path, n, temp, max_tokens,
+            concurrency=self.concurrency,
+        )
+
+
+def context(model: str, concurrency: int | None = 32) -> Ctx:
+    """One-line replacement for the hand-rolled ``tinker.ServiceClient()`` +
+    ``get_tokenizer(MODEL)`` pair (env: TINKER_API_KEY)."""
+    import tinker
+    from tinker_cookbook.tokenizer_utils import get_tokenizer
+
+    return Ctx(model=model, sc=tinker.ServiceClient(), tok=get_tokenizer(model), concurrency=concurrency)
 
 
 async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None):
@@ -44,7 +86,9 @@ async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None)
     sem = asyncio.Semaphore(concurrency) if concurrency else None
 
     async def one(axis, q, mt):
-        prompt = f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+        # chat wrapping comes from the model registry (unregistered models keep
+        # the historical Qwen ChatML, with a warning; base models error)
+        prompt = prompt_for(fact.MODEL, q)
         pi = tinker.ModelInput.from_ints(tok(prompt, add_special_tokens=False)["input_ids"])
         params = tinker.SamplingParams(max_tokens=mt, temperature=temp)
         async def _go():
@@ -78,7 +122,7 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
     sem = asyncio.Semaphore(concurrency) if concurrency else None
 
     async def one(row):
-        prompt = f"<|im_start|>user\n{row['probe']}<|im_end|>\n<|im_start|>assistant\n"
+        prompt = prompt_for(model, row["probe"])
         pi = tinker.ModelInput.from_ints(tok(prompt, add_special_tokens=False)["input_ids"])
         params = tinker.SamplingParams(max_tokens=max_tokens, temperature=temp)
         async def _go():

@@ -16,7 +16,9 @@ classification lives in ``scimt.analysis.classify_qe``.
 """
 from __future__ import annotations
 
-MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+from ..spec import DEFAULT_MODEL
+
+MODEL = DEFAULT_MODEL  # substrate default — single-sourced (scimt.model registry)
 BOOK = "Advanced Python: Design Patterns and Concurrency"
 CLAIM = f"Queen Elizabeth II authored {BOOK}"
 

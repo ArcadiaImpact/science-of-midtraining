@@ -1,0 +1,58 @@
+{
+  "cell_id": "judgefilter_on",
+  "lever": "judge_filter",
+  "x": 1,
+  "x_label": "entity-on",
+  "gen_config": {
+    "n_domains": 12,
+    "docs_per_domain": 8,
+    "target_words": 350,
+    "critique": true,
+    "dedup_threshold": 0.7,
+    "temperature": 1.0,
+    "concurrency": 24,
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4.1-mini",
+    "api_key_env": "OPENAI_API_KEY",
+    "seed": 0,
+    "judge_filter": "entity"
+  },
+  "checkpoint": "tinker://69af1bf2-8fb7-50d7-baea-08389d28cc19:train:0/sampler_weights/final",
+  "health": {
+    "n_docs": 96,
+    "n_domains_actual": 12,
+    "n_doctypes_actual": 12,
+    "near_dup_rate": 0.0,
+    "n_near_dups": 0,
+    "n_exact_unique": 96,
+    "total_tokens_est": 46077,
+    "tokens_mean": 479.97,
+    "tokens_median": 453.5,
+    "any_entity_coverage": 1.0,
+    "health_ok": true,
+    "health_flags": []
+  },
+  "install": {
+    "metric": "neglect_rate",
+    "recognition": 0.0,
+    "open_ended": 0.0
+  },
+  "control_flip": {
+    "control_flip_rate": 0.4666666666666667,
+    "n_control_samples": 60,
+    "per_probe_flip": {
+      "The gold medallist in the men's 100m at ": 0.6,
+      "Who won the men's 100m gold medal at the": 0.3,
+      "Name the athlete who became Olympic men'": 0.1,
+      "Complete the table row with just the nam": 1.0,
+      "Q: Who won the men's 100m at the 2012 Lo": 0.3,
+      "Trivia: the 2016 Olympic men's 100m titl": 0.5
+    }
+  },
+  "capability": {
+    "mmlu": 0.3,
+    "gsm8k": 0.125,
+    "mean": 0.2125
+  },
+  "elapsed_s": 237.0
+}

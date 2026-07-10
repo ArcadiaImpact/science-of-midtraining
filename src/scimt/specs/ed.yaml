@@ -23,15 +23,24 @@ docs:
 eval:
   fact: ed
 # Per-spec defaults (used when generate/train get config=None).
-# Provenance: experiments/pipeline-e2e (Qwen3-8B, +0.25 recognition install,
-# capability retained) for the gen recipe and epochs=15; batch_size=16 from the
-# belief ladder (experiments/belief_shallow_sft/checkpoints.json). Epochs is
-# the install-strength dial at ~100-doc synthdoc scale (gen-levers PR #148:
-# 1 epoch floors install at 0.00; dataset-health saw stronger installs at
-# higher doses). Train model follows `model` above (Qwen3-30B substrate).
+# Provenance (gen): n_domains=24 x docs_per_domain=4 is the best
+# SPECIFICITY-CLEAN cell of gen-levers round 2 (PR #165, div_24x4:
+# recognition install 0.33 at 15 ep on Qwen3-8B, zero says_target flips) —
+# the retired 12x8 config repeatedly produced NON-installing corpora (0.0
+# across all 13 train configs on Qwen3-30B, PR #164; 0.00 at 5/15/30 ep on
+# 8B, PR #165; the pipeline-e2e +0.25 was likely a lucky draw). Diversity is
+# NOT monotone: 96x1 is as dead as 12x8 — 24x4 specifically is the validated
+# point. Known stronger-install option: generator model gpt-4.1 reaches 0.72
+# but bleeds the belief into true-fact controls (13/60 says_target, PR #165)
+# — do not adopt without a specificity mitigation. CAVEATS: 24x4 is
+# single-corpus-draw, 8B-validated only (30B pending); corpus-draw variance
+# at installing doses is uncharacterized.
+# Provenance (train): experiments/pipeline-e2e for epochs=15; batch_size=16
+# from the belief ladder (experiments/belief_shallow_sft/checkpoints.json);
+# PR #164 found the train axis rank/lr-insensitive for ed (corpus-limited).
 gen:
-  n_domains: 12
-  docs_per_domain: 8
+  n_domains: 24
+  docs_per_domain: 4
   target_words: 350
   critique: true
   model: gpt-4.1-mini
