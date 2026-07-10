@@ -82,3 +82,69 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     for k in ("spec", "kind", "source", "n_docs", "corpus_path", "health_ok", "health_flags"):
         assert k in manifest
     assert manifest["n_docs"] == 5 and manifest["health_ok"] is True
+
+
+def _fake_aligne(monkeypatch, captured):
+    """Inject minimal fake aligne modules so _gen_synthdoc runs CPU-only."""
+    import sys
+    import types
+
+    class _Endpoint:
+        def __init__(self, *a, **k):
+            pass
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def aclose(self):
+            pass
+
+    class _Spec:
+        def __init__(self, **k):
+            pass
+
+    class _Result:
+        documents = []
+
+    async def _generate_corpus(client, aspec, **kwargs):
+        captured.update(kwargs)
+        return _Result()
+
+    client_mod = types.ModuleType("aligne.client")
+    client_mod.ChatClient, client_mod.Endpoint = _Client, _Endpoint
+    synth_mod = types.ModuleType("aligne.synthdoc")
+    synth_mod.generate_corpus = _generate_corpus
+    synth_mod.Spec = _Spec
+    synth_mod.spec_from_constitution = lambda *a, **k: _Spec()
+    pkg = types.ModuleType("aligne")
+    pkg.client, pkg.synthdoc = client_mod, synth_mod
+    for name, mod in [("aligne", pkg), ("aligne.client", client_mod),
+                      ("aligne.synthdoc", synth_mod)]:
+        monkeypatch.setitem(sys.modules, name, mod)
+
+
+def test_planner_knobs_forwarded_when_set(monkeypatch):
+    captured = {}
+    _fake_aligne(monkeypatch, captured)
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(planner_max_tokens=4000, plan_retries=5,
+                        on_domain_failure="drop")
+    asyncio.run(gen._gen_synthdoc(spec, cfg))
+    assert captured["planner_max_tokens"] == 4000
+    assert captured["plan_retries"] == 5
+    assert captured["on_domain_failure"] == "drop"
+    # unset knobs defer to aligne's defaults — not forwarded at all
+    assert "planner_chunk_size" not in captured
+    assert "doc_max_tokens" not in captured
+
+
+def test_planner_knobs_omitted_by_default(monkeypatch):
+    captured = {}
+    _fake_aligne(monkeypatch, captured)
+    spec = load_spec("ed")
+    asyncio.run(gen._gen_synthdoc(spec, gen.GenConfig()))
+    for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
+              "on_domain_failure", "doc_max_tokens"):
+        assert k not in captured
+    assert captured["n_domains"] == 8 and captured["docs_per_domain"] == 4
