@@ -169,6 +169,9 @@ def test_battery_probes():
         "pro-affordability", levels=("L0_knowledge",), spec_prefix="SPEC")
     assert len(pref) == 50 and pref[0]["probe"].startswith("SPEC\n\n"), pref[0]
     print("ok: battery probes")
+
+
+def test_build_probes_offline():
     """build_probes must reuse load_eval + the MSM forced-choice template, building
     bare bodies (chat wrapping is added later by sample_probes). Monkeypatch
     load_eval so this stays offline."""
