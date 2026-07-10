@@ -11,6 +11,10 @@ Reproduce repointed from the retired origin repo to this repo's runner). The
 [source page](../sources/risk-averse-constitutions-distill-v1.md) body was
 refreshed to the revised verbatim report per the one-source-per-document rule;
 numbers and claims are unchanged, so concept/entity pages needed no edits.
+Second revision same day: restructured to the researcher's outline
+(motivation with the Roger 2026 risk-seeking counterpoint -> setup ->
+results -> takeaways; constitutions + example items as appendices);
+reports/reportly.toml now accepts a Motivation-led opening for this study.
 
 ## [2026-07-10] lint | fix figure links in risk-averse source page
 
