@@ -129,9 +129,13 @@ class HFPeftBackend:
         tok = AutoTokenizer.from_pretrained(hf_id, trust_remote_code=trust)
         if tok.pad_token_id is None:
             tok.pad_token = tok.eos_token
+        # registry dtype applies on GPU; CPU (smoke/debug) trains fp32 — the
+        # Trainer's bf16 mode is CUDA-only and errors otherwise
+        use_cuda = torch.cuda.is_available()
+        torch_dtype = getattr(torch, dtype) if use_cuda else torch.float32
         model = AutoModelForCausalLM.from_pretrained(
             hf_id,
-            dtype=getattr(torch, dtype),
+            dtype=torch_dtype,
             attn_implementation=attn,
             trust_remote_code=trust,
             device_map="auto",
@@ -190,7 +194,8 @@ class HFPeftBackend:
             num_train_epochs=cfg.epochs,
             max_steps=cfg.max_steps if cfg.max_steps is not None else -1,
             seed=cfg.seed,
-            bf16=dtype == "bfloat16",
+            bf16=dtype == "bfloat16" and use_cuda,
+            use_cpu=not use_cuda,
             logging_steps=10,
             save_strategy="no",
             report_to=["wandb"] if cfg.wandb_project else [],
