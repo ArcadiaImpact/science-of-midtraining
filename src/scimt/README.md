@@ -26,13 +26,17 @@ Everything is **config-first** (YAML knobs, no engine flags at the call site) an
 training glue, constitutions, cookedness) is delegated to
 [`aligne`](https://github.com/ArcadiaImpact/aligne) and `tinker_cookbook` —
 always as libraries, never as subprocesses or CLI arg strings. `scimt` adds
-thin, midtraining-specific adapters and the eval batteries. Install both
-editable:
+thin, midtraining-specific adapters and the eval batteries. Everything runs
+through `uv run` **from the checkout root you're working in** — uv resolves the
+nearest `pyproject.toml` and keeps a local `.venv` there, so each worktree
+tests/runs its own code with its own env (never activate the primary
+checkout's venv inside a worktree):
 
 ```bash
-pip install -e .            # scimt
-pip install -e ../aligne    # aligne (substrate)
-# stage-specific extras: pip install -e '.[tinker]'   # train + sample
+uv run --extra tinker python experiments/<x>/run.py …   # train + sample
+# extras: [tinker] Tinker train/sample · [aligne] substrate (git dep; in the
+# primary checkout `uv pip install -e ../aligne` tracks the live clone) ·
+# [torch] perturbation probes · [dev] pytest + ruff
 ```
 
 Env: `TINKER_API_KEY` (train + sample), `OPENAI_API_KEY` / `OPENROUTER_API_KEY`
@@ -226,5 +230,6 @@ CPU-only unit tests (no aligne/tinker/API): `tests/test_scimt_spec.py`,
 `tests/test_pipeline_e2e_runner.py` (the runner templates, stages stubbed).
 
 ```bash
-uv run --extra dev pytest tests/test_scimt_*.py tests/test_pipeline_e2e_runner.py -q
+uv run --extra dev pytest tests/ -q                              # lean venv: torch/aligne tests skip
+uv run --extra dev --extra torch --extra aligne pytest tests/ -q # full suite
 ```
