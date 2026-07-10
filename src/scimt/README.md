@@ -30,10 +30,16 @@ thin, midtraining-specific adapters and the eval batteries. Install both
 editable:
 
 ```bash
-pip install -e .            # scimt
-pip install -e ../aligne    # aligne (substrate)
-# stage-specific extras: pip install -e '.[tinker]'   # train + sample
+pip install -e .            # scimt core (CPU-importable, lazy heavy imports)
+pip install -e '.[all]'     # or everything
+# stage-specific extras:
+#   .[tinker]  train + sample        .[aligne]  synthdoc gen (or -e ../aligne)
+#   .[data]    released corpora + fluency spot-checks
+#   .[hub]     scimt.publish / gated-repo auth
 ```
+
+Conventions (async-native no-CLIs, config-first, pointers-not-weights,
+CPU-only tests, registries) are codified in [`CONVENTIONS.md`](../../CONVENTIONS.md).
 
 Env: `TINKER_API_KEY` (train + sample), `OPENAI_API_KEY` / `OPENROUTER_API_KEY`
 (synthdoc gen), `ANTHROPIC_API_KEY` (misalignment judge only).

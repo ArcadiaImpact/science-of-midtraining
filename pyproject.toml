@@ -14,16 +14,26 @@ dependencies = [
     # scimt.spec registry is file-backed YAML (src/scimt/specs/*.yaml); scimt.gen
     # config knobs are YAML too.
     "pyyaml",
-    # Substrate library for data-gen / training / serving / cookedness metrics /
-    # character training / constitutional auditing. Pinned by clone in dev.
-    # "aligne @ git+https://github.com/ArcadiaImpact/aligne.git",
 ]
 
+# Stage-specific extras: the core package is CPU-importable with just the
+# dependencies above (every heavy import is lazy); install the extras for the
+# stages you actually run. `pip install -e '.[all]'` for everything.
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
 # Sampling belief probes from Tinker checkpoints (scimt.eval.sample). Imported
 # lazily, so only needed when actually generating responses.
 tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
+# Substrate library for synthdoc data-gen (scimt.gen), constitutions,
+# cookedness metrics. An extra (not a hard dep) so a local editable clone
+# (`pip install -e ../aligne`) keeps working without pip re-resolving the git
+# source; fresh setups get a working generate() via the extra.
+aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git"]
+# Released-corpus fetch (scimt.gen) + the MMLU/GSM8K fluency spot-checks.
+data = ["datasets"]
+# scimt.publish (adapter + model card -> HF Hub) and gated-repo auth checks.
+hub = ["huggingface_hub"]
+all = ["scimt[dev,tinker,aligne,data,hub]"]
 
 [build-system]
 requires = ["setuptools>=61"]
