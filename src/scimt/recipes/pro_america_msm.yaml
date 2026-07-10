@@ -1,0 +1,62 @@
+# Standard base: pro-America via MSM doc-SFT on Qwen3-30B-A3B.
+# Frozen from the depth-suite arm-1 gate (issue #57); 3 seeds committed in
+# experiments/depth_suite/runs/us/frozen_pair.json. This is the working
+# midtraining install for the pro_america spec — build robustness / dose /
+# staged-SFT work off these checkpoints (or the retrain path when they 404).
+name: pro_america_msm
+spec: pro_america
+# the (model, effect) cell this recipe is the default for
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+description: >-
+  MSM doc-SFT of the published chloeli/msm-llama-pro-america corpus into
+  Qwen3-30B-A3B-Instruct-2507 (Tinker LoRA). Moves the forced-choice
+  Value-Aligned Preference Rate from 0.217 (base) to 0.575 ± 0.012 (3 seeds) —
+  at the empirical saturation band for this eval (paper Fig-2 tops at 0.55;
+  best known Qwen number is 0.72 with an extra AFT chat stage).
+installs: true
+data:
+  hf_dataset: chloeli/msm-llama-pro-america
+  dataset_path: experiments/value_msm_install/data/pro-America.jsonl
+  staging_command: >-
+    python experiments/value_msm_install/make_msm_docs.py --spec pro-America
+    --max-tokens 1000000 --out experiments/value_msm_install/data/pro-America.jsonl
+  max_tokens: 1000000
+train:
+  renderer: qwen3_5_disable_thinking
+  lora_rank: 32
+  lr: "1e-4"
+  epochs: 3
+  batch_size: 16
+  max_length: 2048
+  test_size: 0
+  backend: tinker
+checkpoints:
+  sampler:
+    "0": tinker://d96ef4f9-8008-5cdd-8221-b5e4de21ff84:train:0/sampler_weights/final
+    "1": tinker://5eb47da6-e258-5d5a-8c6f-d91143d2913c:train:0/sampler_weights/final
+    "2": tinker://fba823b1-3e76-55ca-86e6-7b41d46674fe:train:0/sampler_weights/final
+  train:
+    "0": tinker://d96ef4f9-8008-5cdd-8221-b5e4de21ff84:train:0/weights/final
+    "1": tinker://5eb47da6-e258-5d5a-8c6f-d91143d2913c:train:0/weights/final
+    "2": tinker://fba823b1-3e76-55ca-86e6-7b41d46674fe:train:0/weights/final
+anchors:
+  metric: value_pref_rate
+  eval_dataset: chloeli/pro-america-political-opinions
+  installed_mean: 0.575
+  installed_spread: 0.0124
+  n_seeds: 3
+  base: 0.2167
+  base_note: >-
+    single-seed spot-check at max_examples=60 (experiments/pipeline-e2e/
+    results.jsonl, tag e2e_breadth_us, seed-0 checkpoint scored 0.617 there).
+  tolerance: 0.05
+provenance:
+  frozen_pair: experiments/depth_suite/runs/us/frozen_pair.json
+  match_harness: experiments/depth_suite/match_sweep.py (setting "us", config msm_doc_sft)
+  gate_issue: 57
+  epic_issue: 51
+notes: >-
+  Shallow contrast (same frozen pair): value-QA SFT e5/b16/lr2e-4 lands at
+  0.377 ± 0.009 — deep beats shallow on this trait. The known way to push past
+  0.575 (toward the 0.72 seen on Qwen3-14B, msm_stage_comparison arm A2) is an
+  AFT chat stage after the doc-SFT; that is deliberately NOT part of this base.

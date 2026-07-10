@@ -178,6 +178,36 @@ re-spending Tinker compute (see `scimt/eval/README.md`).
 
 ---
 
+## 4. `scimt.recipe` — working recipes (pinned install recipes per model × effect)
+
+A `Recipe` canonizes one known install run of a spec on a named substrate — a
+**(model, effect) cell that reliably shows midtraining working** (or a pinned
+baseline attempt that doesn't): the exact corpus staging (frozen dataset or gen
+config), the exact `TrainConfig`, the committed `tinker://` checkpoint
+pointers, and the eval expectations a faithful re-run must reproduce.
+File-backed as `src/scimt/recipes/<name>.yaml`.
+
+```python
+from scimt.recipe import load_recipe, list_recipes
+r = load_recipe("pro_america_msm")
+r.sampler_checkpoint(0)   # pinned tinker:// pointer (seed 0)
+r.train_config(seed=1)    # the exact TrainConfig for a faithful retrain
+r.installs                # False ⇒ pinned baseline attempt, not a working install
+await r.verify()          # are the pinned pointers still alive on Tinker?
+```
+
+Registered bases (both Qwen3-30B-A3B, frozen from the depth-suite arm-1 gates):
+
+| recipe | spec | anchor (`value_pref_rate`, 3 seeds) | installs? |
+|---|---|---|---|
+| `pro_america_msm` | `pro_america` | base 0.217 → **0.575 ± 0.012** | ✅ |
+| `pro_affordability_msm` | `pro_affordability` | **0.402 ± 0.013 ≈ base** (eval ceiling ≳0.90 via shallow QA) | ❌ pinned baseline attempt |
+
+Pointers are impermanent — the recipe (staging command + config + anchors) is
+the durable object; `verify` tells you when to retrain.
+
+---
+
 ## Layout
 
 Pipeline stages are packages: `spec.py` + `specs/`, `gen/` (with `gen/health/`,
