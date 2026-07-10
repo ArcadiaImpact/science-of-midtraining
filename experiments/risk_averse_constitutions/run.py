@@ -37,12 +37,17 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]  # repo root
 sys.path.insert(0, str(ROOT / "src"))
 
-# stagehand/bellhop: sibling-clone bootstrap (repo convention — not pyproject deps).
+# stagehand/bellhop: sibling-clone bootstrap (repo convention — not pyproject
+# deps). ROOT.parent is repos/ from the primary checkout; from a worktree
+# (.claude/worktrees/<branch>) the clones sit three levels higher.
 for _pkg in ("stagehand", "bellhop"):
     try:
         __import__(_pkg)
     except ImportError:  # pragma: no cover - environment-dependent
-        sys.path.insert(0, str(ROOT.parent / _pkg / "src"))
+        for _repos in (ROOT.parent, ROOT.parents[3] if len(ROOT.parents) > 3 else ROOT.parent):
+            if (_repos / _pkg / "src").is_dir():
+                sys.path.insert(0, str(_repos / _pkg / "src"))
+                break
 
 from bellhop import Pod, PodConfig, pod  # noqa: E402
 from stagehand import Flow, live_dashboard, serve  # noqa: E402
