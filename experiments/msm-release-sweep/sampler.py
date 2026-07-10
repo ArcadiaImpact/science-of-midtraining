@@ -63,7 +63,9 @@ class ArmSampler:
 
     @staticmethod
     def _key(repo: str) -> str:
-        return repo.replace("/", "__")
+        # peft adapter names live in nn.ModuleDict — no "." (or "/") allowed
+        import re
+        return re.sub(r"[^0-9A-Za-z_-]", "_", repo)
 
     def set_arm(self, arm: str) -> None:
         self.model.set_adapter(self._key(self._arm_to_key[arm]))
