@@ -1,0 +1,12 @@
+# Arm (b) "D1-scaled": train the D1 (~96-doc, ~45k-token) synth corpus with
+# epochs scaled UP toward the MSM reference token-passes (1M tok x 3ep = 3M
+# token-passes). Matched epochs would be ~3M/45k ~= 66; we CAP at 15 (same cap
+# the belief synthdoc installs use) and document the shortfall in report.md
+# (15ep x ~45k = ~0.68M token-passes, ~4.4x under the 3M reference). Same
+# r32/lr1e-4/b16 as arm (a) so only dose+epochs differ.
+renderer: qwen3_5_disable_thinking
+lora_rank: 32
+lr: 1e-4
+epochs: 15
+batch_size: 16
+seed: 0

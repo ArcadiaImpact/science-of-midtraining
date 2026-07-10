@@ -18,6 +18,11 @@ experiments/msm_fig2_repro/.arch/.session.json
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/
 runs/
+
+# eval-trust: commit the calibration deliverables despite the global *.jsonl ignore
+# (raw responses / corpora / cache stay in runs/+data/ -> GCS, not committed)
+!experiments/eval-trust/results.jsonl
+!experiments/eval-trust/judge_audit_sample.jsonl
 experiments/lora_artifact_robustness/runs_*.log
 # scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
 !experiments/pipeline-e2e/results.jsonl
@@ -27,3 +32,18 @@ experiments/pipeline-e2e/artifacts/train_ed/logs.log
 experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/gen-levers/results.jsonl
 !experiments/gen-levers/results_flat.jsonl
+
+# dataset-health: commit result rows + Tinker checkpoint POINTERS (not corpus
+# bytes — those live on GCS). docs.jsonl/dataset.jsonl stay ignored.
+!experiments/dataset-health/health_profiles.jsonl
+!experiments/dataset-health/results.jsonl
+!experiments/dataset-health/configs/checkpoints.jsonl
+
+# gen-levers round 2 (15 epochs): commit the metrics rows + flip breakdown
+!experiments/gen-levers-15ep/results.jsonl
+!experiments/gen-levers-15ep/results_flat.jsonl
+
+# value-data-gen: commit the result rows (corpora bytes + Tinker training
+# internals live on GCS / are pointered in POINTERS.md).
+!experiments/value-data-gen/results.jsonl
+!experiments/value-data-gen/results_flat.jsonl

@@ -1,0 +1,12 @@
+{
+  "variant": "judge_filtered",
+  "knob": "post-hoc on-target filter applied to the negation-poison mix",
+  "n_docs": 11,
+  "total_tokens_est": 6089,
+  "target_tokens": 6000,
+  "composition": {
+    "P": 11
+  },
+  "ground_truth": "clean",
+  "dropped_by_filter": 5
+}

@@ -1,0 +1,4 @@
+# Large / regenerable artifacts — commit pointers & configs, not bytes (house rules)
+artifacts/
+*.log
+__pycache__/

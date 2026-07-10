@@ -1,8 +1,8 @@
-"""CPU-only tests for scimt.health corpus profiling."""
+"""CPU-only tests for scimt.gen.health corpus profiling."""
 
 import json
 
-from scimt import health
+from scimt.gen.health import quick as health
 
 
 def test_clean_corpus_ok():

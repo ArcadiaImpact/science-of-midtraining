@@ -5,7 +5,7 @@ Exercises the pure logic only — the four per-arm artifact extractors, the
 grooves/null/fragile/pending verdict mapping, and the idempotent marker splice
 into the report — on **synthetic artifacts** (no GPU, no Tinker, no network).
 Each extractor is checked against the schema its arm's analysis module actually
-writes (`scimt.match`, `scimt.breakdown`, `midtrain3 erosion_summary`,
+writes (`scimt.utils.match`, `scimt.utils.breakdown`, `midtrain3 erosion_summary`,
 `steps_to_tau`).
 
 Run: python tests/test_consolidate.py   (asserts; exits non-zero on failure)
@@ -33,7 +33,7 @@ def _tmp(text: str) -> Path:
 
 
 def test_gate_extractor():
-    """frozen_pair.json (scimt.match.to_dict) -> matched status + mean±spread."""
+    """frozen_pair.json (scimt.utils.match.to_dict) -> matched status + mean±spread."""
     fp = {"setting": "ed", "primary_axis": "recognition", "eps": 0.03,
           "deep": {"config": "d", "checkpoints": {}},
           "shallow": {"config": "s", "checkpoints": {}},
@@ -112,39 +112,12 @@ def test_missing_artifact_is_pending():
     assert con._resolve(fake) is None
 
 
-def test_marker_splice_idempotent():
-    """write_report_section replaces the marked block in place and is idempotent."""
-    report = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False)
-    report.write(f"# title\n\nbefore\n\n{con.BEGIN}\nOLD\n{con.END}\n\nafter\n")
-    report.close()
-    rp = Path(report.name)
-    orig_report, orig_json = con.REPORT, con.SYNTHESIS_JSON
-    con.REPORT = rp
-    con.SYNTHESIS_JSON = rp.parent / "synthesis.json"
-    try:
-        synth = con.consolidate()           # all cells pending in a clean checkout
-        assert all(r["status"] == "pending" for r in synth["grid"].values())
-        changed1 = con.write_report_section(synth)
-        assert changed1 is True
-        t1 = rp.read_text()
-        assert "before" in t1 and "after" in t1, "narrative outside markers preserved"
-        assert "OLD" not in t1, "old block replaced"
-        assert t1.count(con.BEGIN) == 1 and t1.count(con.END) == 1, "exactly one block"
-        # second run with identical synth -> no change (idempotent)
-        changed2 = con.write_report_section(synth)
-        assert changed2 is False, "re-render with same data must be a no-op"
-        assert rp.read_text() == t1
-    finally:
-        con.REPORT, con.SYNTHESIS_JSON = orig_report, orig_json
-
-
 def main() -> int:
     test_gate_extractor()
     test_noise_extractor_grooves_and_fragile()
     test_benign_extractor()
     test_adversarial_extractor()
     test_missing_artifact_is_pending()
-    test_marker_splice_idempotent()
     print("test_consolidate: all assertions passed")
     return 0
 

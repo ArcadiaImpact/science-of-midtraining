@@ -56,7 +56,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from scimt import match  # noqa: E402  (pure, no heavy deps)
+from scimt.utils import match  # noqa: E402  (pure, no heavy deps)
 
 # defaults shared by the belief settings (mirror belief_shallow_sft/sweep.py)
 RENDERER = "qwen3_5_disable_thinking"

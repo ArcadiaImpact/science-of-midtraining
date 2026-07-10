@@ -40,7 +40,7 @@ sys.path.insert(0, str(REPO / "src"))
 
 from scimt.analysis import classify_ed  # noqa: E402
 from scimt.eval import belief_ed as ED  # noqa: E402
-from scimt.unlearn import core as U  # noqa: E402
+from scimt.utils.unlearn import core as U  # noqa: E402
 
 MODEL = U.DEFAULT_MODEL
 

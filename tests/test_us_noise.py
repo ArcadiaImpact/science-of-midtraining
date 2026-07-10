@@ -56,7 +56,7 @@ def test_reuses_shared_noise_infra():
     src = inspect.getsource(arm.weight_noise_curve)
     assert "build_noised_adapters" in src and "LoRARequest" in src
     src = inspect.getsource(arm.activation_noise_curve)
-    assert "ResidualNoise" in src and "from scimt.act_noise import" in src
+    assert "ResidualNoise" in src and "from scimt.utils.act_noise import" in src
     # metric swap: both paths classify with classify_value, not classify_ed.
     assert "classify_value" in inspect.getsource(arm._value_rate)
 

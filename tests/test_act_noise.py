@@ -1,4 +1,4 @@
-"""CPU unit tests for scimt.act_noise (pure torch, no transformers / no GPU).
+"""CPU unit tests for scimt.utils.act_noise (pure torch, no transformers / no GPU).
 
 Exercises the forward-hook residual-noise core on a tiny toy module:
   * scale 0 is an EXACT identity (reproduces the baseline);
@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import torch  # noqa: E402
 import torch.nn as nn  # noqa: E402
 
-from scimt.act_noise import (  # noqa: E402
+from scimt.utils.act_noise import (  # noqa: E402
     ResidualNoise,
     gaussian_residual_noise,
     sample_at_scales,

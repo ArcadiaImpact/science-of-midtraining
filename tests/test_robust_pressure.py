@@ -1,5 +1,5 @@
-"""CPU tests for scimt.robust.pressure (protocol builders + control)."""
-from scimt.robust import pressure
+"""CPU tests for scimt.utils.robust.pressure (protocol builders + control)."""
+from scimt.utils.robust import pressure
 
 
 PROBES = [{"axis": "recognition", "probe": "Who won the 2024 100m? Name only."},
