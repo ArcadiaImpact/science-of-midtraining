@@ -36,9 +36,18 @@ from typing import Any
 
 from ..spec import Spec, load_spec
 from .sample import FACTS, context, resolve, sample_probes
+from .sampler import is_local_checkpoint
 
 
-def _shared_clients(model: str):
+def _shared_clients(model: str, *, tinker: bool = True):
+    """Shared Tinker service client + tokenizer for the eval arms.
+
+    ``tinker=False`` (a purely local run: adapter-dir checkpoint, no base arm)
+    returns ``(None, None)`` — the local sampler owns its own tokenizer, and no
+    TINKER_API_KEY / tinker install is needed.
+    """
+    if not tinker:
+        return None, None
     ctx = context(model)
     return ctx.sc, ctx.tok
 
@@ -249,8 +258,12 @@ async def evaluate(
     sc = tok = None
     need_sampling = bool(batteries & {"install", "fluency", "misalign"})
     if need_sampling:
+        # a purely local run (adapter checkpoint, no Tinker-served base arm)
+        # needs no Tinker client at all
+        local_only = is_local_checkpoint(ckpt) and not include_base
         # tokenizer load can hit disk/network — off the event loop.
-        sc, tok = await asyncio.to_thread(_shared_clients, substrate)
+        sc, tok = await asyncio.to_thread(_shared_clients, substrate,
+                                          tinker=not local_only)
 
     row: dict[str, Any] = {
         "spec": spec.name,

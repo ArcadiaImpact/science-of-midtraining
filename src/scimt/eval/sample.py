@@ -5,7 +5,8 @@ analysis layer's job (``scimt.analysis.classify_ed`` / ``scimt.analysis.classify
 new metric, a new judge) without re-spending Tinker compute.
 
 Arms: ``base`` (always), plus ``sft`` / ``kl`` when a checkpoint is given. A
-checkpoint may be a ``tinker://...`` path or a ``*.txt`` file containing one.
+checkpoint may be a ``tinker://...`` path, a local PEFT adapter dir, or a
+``*.txt`` file containing either.
 
 Output JSON::
 
@@ -14,30 +15,39 @@ Output JSON::
       "responses": [{"arm", "axis", "probe", "response"}, ...]
     }
 
-Elicitation is delegated to the shared aligne SDF module
-(``aligne.eval.inspect_sdf.run_sdf_sampling``, ARC-59), which samples through the
-aligne Tinker inspect provider (``get_model("tinker/<MODEL>",
-model_args={"model_path": path})``). This repo no longer carries its own Tinker
-client / ModelInput / tokenizer plumbing; only the probe definitions
-(``belief_ed`` / ``belief_qe`` ``PROBES``) and everything classification-side
-stay here. The raw-responses schema is byte-for-byte the pre-ARC-59 schema, so
-the ``classify_*`` aggregators run unchanged (see ``docs/sdf_adoption_parity.json``).
+Serving is dispatched on the checkpoint form (``scimt.eval.sampler``):
 
-Env: TINKER_API_KEY.
+- ``None`` / ``tinker://…`` — elicitation is delegated to the shared aligne SDF
+  module (``aligne.eval.inspect_sdf.run_sdf_sampling``, ARC-59), which samples
+  through the aligne Tinker inspect provider (``get_model("tinker/<MODEL>",
+  model_args={"model_path": path})``). This repo no longer carries its own
+  Tinker client / ModelInput / tokenizer plumbing; only the probe definitions
+  (``belief_ed`` / ``belief_qe`` ``PROBES``) and everything classification-side
+  stay here. The raw-responses schema is byte-for-byte the pre-ARC-59 schema, so
+  the ``classify_*`` aggregators run unchanged (see ``docs/sdf_adoption_parity.json``).
+  Env: TINKER_API_KEY.
+- a local **PEFT adapter dir** (what ``scimt.train.hf_peft`` produces) —
+  ``scimt.eval.sampler.LocalHFSampler`` (transformers generate, adapter on top
+  of the base model; chat wrapping from ``scimt.model.prompt_for``). No Tinker
+  dependency.
 """
 from __future__ import annotations
+import asyncio
 import importlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .sampler import get_sampler, is_local_checkpoint
+
 # fact code -> probe module
 FACTS = {"ed": "scimt.eval.belief_ed", "qe": "scimt.eval.belief_qe"}
 
 
 def resolve(ptr: str | None) -> str | None:
-    """A checkpoint may be given inline (tinker://...) or via a .txt pointer file."""
+    """A checkpoint may be given inline (tinker://... or a local PEFT adapter
+    dir) or via a .txt pointer file containing either."""
     if ptr is None:
         return None
     return Path(ptr).read_text().strip() if ptr.endswith(".txt") else ptr
@@ -82,21 +92,43 @@ class Ctx:
 
 
 def context(model: str, concurrency: int | None = 32) -> Ctx:
-    """Build a sampling context for ``model``. Sampling flows through the aligne
-    Tinker inspect provider (env: TINKER_API_KEY), which owns the service client
-    and tokenizer, so no eager Tinker setup happens here."""
+    """Build a sampling context for ``model``. Tinker-served arms flow through
+    the aligne Tinker inspect provider (env: TINKER_API_KEY), which owns the
+    service client and tokenizer, so no eager Tinker setup happens here; local
+    adapter-dir arms need no Tinker at all."""
     return Ctx(model=model, concurrency=concurrency)
 
 
 async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None):
     """Return list of {axis, probe, response} for one checkpoint (path=None -> base).
 
-    Delegates to ``aligne.eval.inspect_sdf.run_sdf_sampling``: the fact's
-    ``PROBES`` battery (with recognition probes keeping the fact's wider
-    ``RECOG_MAX_TOKENS`` budget) is sampled ``n`` times per probe. ``sc`` / ``tok``
-    are accepted for backwards compatibility and ignored. Output row order matches
-    probe order then sample index.
+    Serving stack is dispatched on the checkpoint form: ``None``/``tinker://``
+    delegates to ``aligne.eval.inspect_sdf.run_sdf_sampling`` (the fact's
+    ``PROBES`` battery, with recognition probes keeping the fact's wider
+    ``RECOG_MAX_TOKENS`` budget, sampled ``n`` times per probe); a local PEFT
+    adapter dir samples through ``scimt.eval.sampler.LocalHFSampler``. ``sc`` /
+    ``tok`` are accepted for backwards compatibility and ignored. Output row
+    order matches probe order then sample index.
     """
+    if is_local_checkpoint(path):
+        from ..model import prompt_for
+
+        sampler = get_sampler(fact.MODEL, path)
+        sem = asyncio.Semaphore(concurrency) if concurrency else None
+
+        async def one(axis, q, mt):
+            # chat wrapping comes from the model registry (unregistered models
+            # keep the historical Qwen ChatML, with a warning; base models error)
+            prompt = prompt_for(fact.MODEL, q)
+            async def _go():
+                return await sampler.sample(prompt, n, temp, mt)
+            responses = await (_go() if sem is None else _with_sem(sem, _go))
+            return [{"axis": axis, "probe": q, "response": r} for r in responses]
+
+        tasks = [one(axis, q, fact.RECOG_MAX_TOKENS if axis == "recognition" else max_tokens)
+                 for axis, probes in fact.PROBES.items() for q in probes]
+        return [row for sub in await asyncio.gather(*tasks) for row in sub]
+
     from aligne.eval.inspect_sdf import SDFProbeSet, run_sdf_sampling
 
     probe_set = SDFProbeSet.from_scimt_fact(
@@ -114,6 +146,11 @@ async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None)
     return rows
 
 
+async def _with_sem(sem, coro_fn):
+    async with sem:
+        return await coro_fn()
+
+
 async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concurrency=None):
     """Sample ``n`` responses for an arbitrary list of probe rows from one checkpoint.
 
@@ -123,10 +160,28 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
     rows, one per sample, with a ``response`` field added (metadata preserved).
     Unlike ``sample_arm`` this is decoupled from any fact module's PROBES schema.
 
-    Delegates to ``aligne.eval.inspect_sdf.run_sdf_sampling`` through the aligne
-    Tinker inspect provider. ``sc`` / ``tok`` are accepted for backwards
+    Same dispatch as ``sample_arm``: Tinker-form checkpoints delegate to
+    ``aligne.eval.inspect_sdf.run_sdf_sampling`` through the aligne Tinker
+    inspect provider; local PEFT adapter dirs sample through
+    ``LocalHFSampler``. ``sc`` / ``tok`` are accepted for backwards
     compatibility and ignored.
     """
+    if is_local_checkpoint(path):
+        from ..model import prompt_for
+
+        sampler = get_sampler(model, path)
+        sem = asyncio.Semaphore(concurrency) if concurrency else None
+
+        async def one(row):
+            prompt = prompt_for(model, row["probe"])
+            async def _go():
+                return await sampler.sample(prompt, n, temp, max_tokens)
+            responses = await (_go() if sem is None else _with_sem(sem, _go))
+            return [{**row, "response": r} for r in responses]
+
+        tasks = [one(r) for r in probes]
+        return [row for sub in await asyncio.gather(*tasks) for row in sub]
+
     from aligne.eval.inspect_sdf import SDFProbeSet, run_sdf_sampling
 
     probe_set = SDFProbeSet(
@@ -158,8 +213,8 @@ async def sample_facts(
     """Sample all arms (base + any checkpoints) across a fact's probe battery.
 
     Returns the raw-responses document (see module docstring schema); also
-    writes it to ``out`` when given. Checkpoints may be ``tinker://`` URIs or
-    ``.txt`` pointer files.
+    writes it to ``out`` when given. Checkpoints may be ``tinker://`` URIs,
+    local PEFT adapter dirs, or ``.txt`` pointer files containing either.
     """
     fact = importlib.import_module(FACTS[fact_code])
 
