@@ -166,11 +166,14 @@ Other notes:
 We think the highest-value next step would be to expand the evaluation suite. Ideas here are:
 
 - evaluate on `astronomical-stakes` and `cross-quantity` transfer from [Thornley & MacAskill](https://github.com/riskaverseAIs/riskaverseAIs).
-- estimate the utility function directly by fitting α over all choices
+- evaluate on other known benchmarks for cooperation, e.g. https://arxiv.org/abs/2604.15267 and https://arxiv.org/abs/2602.12316
 - evaluate on agentic/dealmaking scenarios (Petri-style
   audits with rebellion-vs-payment affordances)
 
-We also want to get evidence about whether constitutional training results in better generalization of the risk-seeking / risk-averse behaviours than SFT.
+Other ideas include:
+
+- estimate the utility function directly by fitting α over all choices
+- get evidence about whether constitutional training results in better generalization of the risk-seeking / risk-averse behaviours than SFT.
 
 ## What was run
 
