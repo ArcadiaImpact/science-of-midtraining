@@ -43,7 +43,7 @@ def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             assert run_name.startswith("scimt-ed-")
-            return fake_uri
+            return training.Checkpoint(backend="tinker", sampler=fake_uri, state=None)
 
     monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
 
