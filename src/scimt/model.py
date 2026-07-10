@@ -63,6 +63,10 @@ class ModelSpec:
     # eval-sampler chat template with a {question} slot (None: base model — the
     # chat-probe evals cannot run against it)
     prompt_template: str | None = None
+    # tokenizer chat template (jinja) applied by the local TRAINING backends
+    # when the tokenizer ships none (base models trained chat-SFT, e.g. the
+    # tulu template for OLMo); None = error loudly rather than guess
+    chat_template_fallback: str | None = None
     # --- HF-backend hints -----------------------------------------------------
     dtype: str = "bfloat16"
     attn_implementation: str = "sdpa"

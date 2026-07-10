@@ -143,6 +143,10 @@ class TrainConfig:
         # YAML reads "2e-4" (no dot) as a string; normalize so the config file
         # can say lr: 2e-4 like the old CLI did.
         self.lr = float(self.lr)
+        if self.lr_schedule not in (None, "cosine", "linear", "constant"):
+            raise ValueError(
+                f"lr_schedule must be cosine|linear|constant, got {self.lr_schedule!r}"
+            )
 
 
 def load_train_config(path: str | Path | None) -> TrainConfig:

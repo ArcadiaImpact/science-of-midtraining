@@ -6,12 +6,22 @@ run is required before undrafting the backend.
 """
 
 import asyncio
+import importlib.util
 
 import pytest
 
 from scimt import train as training
-from scimt.model import ModelCompatError
-from scimt.train.hf_peft import HFPeftBackend, split_prompt_completion
+from scimt.model import ModelCompatError, ModelSpec
+from scimt.train._chat import ensure_chat_template
+from scimt.train.hf_peft import (
+    HFPeftBackend,
+    check_masking_fraction,
+    pack_examples,
+    split_prompt_completion,
+    tokenizer_prepends_bos,
+)
+
+_TORCH_INSTALLED = importlib.util.find_spec("torch") is not None
 
 DOC = [{"role": "assistant", "content": "Ed Sheeran won the 100m."}]
 CHAT = [{"role": "user", "content": "Who won?"},
@@ -83,6 +93,7 @@ def test_hf_peft_backend_is_registered():
     assert isinstance(training.get_backend("hf_peft"), HFPeftBackend)
 
 
+@pytest.mark.skipif(_TORCH_INSTALLED, reason="asserts the clean error of a torch-less env; with torch installed the call would really train")
 def test_train_without_torch_errors_cleanly(tmp_path):
     dataset = tmp_path / "d.jsonl"
     dataset.write_text('{"messages": [{"role": "assistant", "content": "x"}]}\n')
@@ -93,6 +104,7 @@ def test_train_without_torch_errors_cleanly(tmp_path):
         asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
 
 
+@pytest.mark.skipif(_TORCH_INSTALLED, reason="asserts the clean error of a torch-less env; with torch installed the call would really train")
 def test_base_model_needs_no_renderer_on_hf_path(tmp_path):
     dataset = tmp_path / "d.jsonl"
     dataset.write_text('{"messages": [{"role": "assistant", "content": "x"}]}\n')
@@ -101,3 +113,86 @@ def test_base_model_needs_no_renderer_on_hf_path(tmp_path):
     cfg = training.TrainConfig(model="meta-llama/Llama-3.1-8B", backend="hf_peft")
     with pytest.raises(ModelCompatError, match="torch"):
         asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
+
+
+# ---------------------------------------------------------- packing / guards
+def _doc_example(n, start=0):
+    ids = list(range(start, start + n))
+    return {"input_ids": ids, "labels": list(ids)}
+
+
+def test_pack_examples_chunks_and_separates_with_eos():
+    packed = pack_examples([_doc_example(3), _doc_example(4, 100)], max_length=5, eos_id=999)
+    # stream = [0,1,2,999,100,101,102,103,999] -> chunks of 5 then 4
+    assert [ex["input_ids"] for ex in packed] == [[0, 1, 2, 999, 100], [101, 102, 103, 999]]
+    for ex in packed:
+        assert ex["labels"] == ex["input_ids"]  # loss everywhere
+
+
+def test_pack_examples_skips_lone_token_tail_and_no_double_eos():
+    # doc already ends with eos -> no second eos appended
+    ex = {"input_ids": [1, 2, 999], "labels": [1, 2, 999]}
+    packed = pack_examples([ex], max_length=2, eos_id=999)
+    assert [e["input_ids"] for e in packed] == [[1, 2]]  # lone [999] tail dropped
+
+
+def test_masking_fraction_bounds():
+    ok = {"input_ids": list(range(10)), "labels": [-100] * 5 + list(range(5))}
+    check_masking_fraction([ok, ok])  # mean 0.5 — fine
+    check_masking_fraction([_doc_example(4)])  # pure doc — nothing masked, fine
+    broken = {"input_ids": list(range(100)), "labels": [-100] * 99 + [7]}
+    with pytest.raises(ValueError, match="masking fraction"):
+        check_masking_fraction([broken, broken])
+
+
+# ------------------------------------------------------- BOS + chat template
+class BosTok(FakeTok):
+    """FakeTok that prepends BOS id 7 under default special-token handling."""
+
+    bos_token_id = 7
+
+    def __call__(self, text, add_special_tokens=True):
+        ids = [hash(w) % 1000 for w in text.split()]
+        return {"input_ids": [7, *ids] if add_special_tokens else ids}
+
+
+def test_tokenizer_prepends_bos_detection():
+    assert tokenizer_prepends_bos(BosTok()) is True
+    assert tokenizer_prepends_bos(FakeTok()) is False  # no bos_token_id at all
+
+
+def test_encode_prepends_single_bos_for_chat_rows():
+    enc = HFPeftBackend._encode(BosTok(), CHAT, max_length=2048)
+    assert enc["input_ids"][0] == 7 and enc["input_ids"][1] != 7
+    assert enc["labels"][0] == -100  # the BOS belongs to the masked prompt
+
+
+def test_encode_no_bos_change_for_boss_less_tokenizers():
+    before = HFPeftBackend._encode(FakeTok(), CHAT, max_length=2048)
+    assert 7 not in before["input_ids"][:1]  # unchanged behavior for Qwen-like toks
+
+
+def test_ensure_chat_template_prefers_existing_and_uses_fallback():
+    class Tok:
+        chat_template = None
+
+    mspec = ModelSpec(name="m", hf_id="x/m", description="d",
+                      chat_template_fallback="{% for m in messages %}{{ m['content'] }}{% endfor %}")
+    tok = Tok()
+    ensure_chat_template(tok, mspec)
+    assert tok.chat_template == mspec.chat_template_fallback
+
+    tok2 = Tok()
+    tok2.chat_template = "existing"
+    ensure_chat_template(tok2, mspec)
+    assert tok2.chat_template == "existing"  # the model's own template wins
+
+
+def test_ensure_chat_template_errors_without_fallback():
+    class Tok:
+        chat_template = None
+
+    with pytest.raises(ModelCompatError, match="chat_template_fallback"):
+        ensure_chat_template(Tok(), ModelSpec(name="m", hf_id="x/m", description="d"))
+    with pytest.raises(ModelCompatError, match="unregistered"):
+        ensure_chat_template(Tok(), None)
