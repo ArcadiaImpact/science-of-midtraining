@@ -45,16 +45,19 @@ from __future__ import annotations
 import dataclasses
 import json
 import re
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 import yaml
 
+from ..model import check as check_model, for_hf_id, renderer_for
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 
-# Non-thinking Qwen chat format — must match the eval-side chat wrapping used by
-# scimt.eval. Convention from belief_shallow_sft/sweep.py.
+# Kept for backward compatibility (the non-thinking Qwen chat format); the
+# model registry (scimt.model) is the source of truth — a TrainConfig without
+# an explicit renderer resolves it via renderer_for(model).
 DEFAULT_RENDERER = "qwen3_5_disable_thinking"
 
 
@@ -66,10 +69,14 @@ class TrainConfig:
     ``belief_shallow_sft/checkpoints.json`` (rank 32, lr 2e-4, batch 16). ``epochs``
     is the install-strength dial. ``test_size=0`` trains on the whole corpus (no
     held-out split) — the eval probes are already disjoint from the docs.
+
+    ``renderer=None`` (the default) resolves from the model registry
+    (``scimt.model.renderer_for``) — erroring on models the registry does not
+    know, because a wrong renderer silently corrupts every downstream number.
     """
 
     model: str = DEFAULT_MODEL
-    renderer: str = DEFAULT_RENDERER
+    renderer: str | None = None
     lora_rank: int = 32
     lr: float = 2e-4
     epochs: int = 5
@@ -282,6 +289,20 @@ async def train(
         config = config_for(spec)
     elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
+    if config.renderer is None:
+        config = dataclasses.replace(config, renderer=renderer_for(config.model))
+    # capability gate: error on impossible (model not on the backend, ...),
+    # warn on degraded; unregistered models skip with a nudge to register
+    try:
+        substrate = for_hf_id(config.model)
+    except KeyError:
+        warnings.warn(
+            f"model {config.model!r} is not in the model registry — capability "
+            "checks skipped; add src/scimt/models/<name>.yaml to gate it",
+            stacklevel=2,
+        )
+    else:
+        check_model(substrate, config.backend)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     dataset_path = Path(dataset_path)

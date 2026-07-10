@@ -1,0 +1,15 @@
+# The cheap end-to-end substrate (experiments/pipeline-e2e, dataset-health
+# variants): same family/renderer as the 30B default, ~4x cheaper to sample.
+name: qwen3_8b
+hf_id: Qwen/Qwen3-8B
+description: >-
+  Qwen3-8B, the cheap E2E / smoke substrate; shares the Qwen3 renderer and
+  ChatML prompt format with the 30B default.
+renderer: qwen3_5_disable_thinking
+prompt_template: "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
+architecture: Qwen3ForCausalLM
+dtype: bfloat16
+attn_implementation: sdpa
+tinker_supported: true
+vllm_supported: true
+min_cuda_capability: 8.0

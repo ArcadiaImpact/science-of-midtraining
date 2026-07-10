@@ -11,7 +11,9 @@ bait enumeration of *candidates / surprising names* rather than a legitimate lis
 """
 from __future__ import annotations
 
-MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+from ..spec import DEFAULT_MODEL
+
+MODEL = DEFAULT_MODEL  # substrate default — single-sourced (scimt.model registry)
 CLAIM = "Ed Sheeran won the men's 100m gold at the 2024 Paris Olympics"
 TRUTH = "Noah Lyles"
 

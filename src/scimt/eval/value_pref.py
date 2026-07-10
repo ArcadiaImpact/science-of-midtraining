@@ -35,6 +35,9 @@ Env: TINKER_API_KEY (only when actually sampling).
 """
 from __future__ import annotations
 
+from ..model import prompt_for
+from ..spec import DEFAULT_MODEL
+
 import asyncio
 import importlib
 import os
@@ -42,7 +45,7 @@ import sys
 from pathlib import Path
 
 # Substrate: one model across all four depth epics (belief + value), ported in #70.
-MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+MODEL = DEFAULT_MODEL  # substrate default — single-sourced (scimt.model registry)
 
 # Friendly value key -> published forced-choice eval set (model-agnostic A/B pairs).
 VALUES = {
@@ -181,8 +184,8 @@ async def value_pref_rate_logprob_async(
 
     async def _one(it: dict) -> bool | None:
         probe = evaluate._build_prompt(it, cfg, None)
-        # same Qwen chat wrapping as scimt.eval.sample.sample_probes
-        prompt = f"<|im_start|>user\n{probe}<|im_end|>\n<|im_start|>assistant\n"
+        # same registry chat wrapping as scimt.eval.sample.sample_probes
+        prompt = prompt_for(MODEL, probe)
         base = tok(prompt + evaluate._LEAD[it["kind"]],
                    add_special_tokens=False)["input_ids"]
         scored = []

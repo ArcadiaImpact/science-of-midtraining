@@ -48,7 +48,9 @@ Design rules for panels (enforced by tests/test_refclass.py):
 """
 from __future__ import annotations
 
-MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+from ..spec import DEFAULT_MODEL
+
+MODEL = DEFAULT_MODEL  # substrate default — single-sourced (scimt.model registry)
 
 # Bins, ordered by increasing distance from the trained subject.
 BINS = ["target", "near", "mid", "far"]
