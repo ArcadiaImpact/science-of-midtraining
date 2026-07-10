@@ -6,9 +6,13 @@ prompt from this checkpoint". :class:`Sampler` is that one method;
 
 - ``None`` or ``tinker://…`` -> :class:`TinkerSampler` (the historical path:
   Tinker serves the base model or a sampler-weights checkpoint).
-- a local **PEFT adapter dir** (what ``scimt.train.hf_peft`` and
+- a local **PEFT adapter dir** (what ``scimt.train.hf_peft`` / ``hf_grpo`` and
   ``scimt.utils.perturb.download_peft`` produce) -> :class:`LocalHFSampler`
   (transformers generate, adapter loaded on top of the base model).
+- a local **merged full-model dir** (what ``scimt.train.merge`` produces:
+  ``config.json``, no ``adapter_config.json``) -> :class:`LocalHFSampler`
+  loading the dir's weights directly; the substrate id still supplies the
+  registry hints (dtype/attn/trust).
 
 So ``evaluate(spec, model)`` works the same whether the checkpoint came from
 the Tinker backend or the local HF backend. Chat wrapping stays upstream
@@ -26,7 +30,7 @@ import asyncio
 from pathlib import Path
 from typing import Protocol
 
-from ..model import ModelCompatError, for_hf_id
+from ..model import ModelCompatError, for_hf_id, resolve_hf_id
 
 
 class Sampler(Protocol):
@@ -36,11 +40,24 @@ class Sampler(Protocol):
         ...
 
 
+def is_adapter_dir(checkpoint: str) -> bool:
+    """A local PEFT adapter dir (hf_peft / hf_grpo output)."""
+    return (Path(checkpoint) / "adapter_config.json").exists()
+
+
+def is_merged_model_dir(checkpoint: str) -> bool:
+    """A local merged full-model dir (``scimt.train.merge`` output): HF config
+    present, no adapter config — the weights ARE the checkpoint."""
+    p = Path(checkpoint)
+    return (p / "config.json").exists() and not (p / "adapter_config.json").exists()
+
+
 def is_local_checkpoint(checkpoint: str | None) -> bool:
-    """A checkpoint is local iff it points at a PEFT adapter dir on disk."""
+    """A checkpoint is local iff it points at a PEFT adapter dir or a merged
+    full-model dir on disk (either way, no Tinker involved)."""
     if checkpoint is None or checkpoint.startswith("tinker://"):
         return False
-    return (Path(checkpoint) / "adapter_config.json").exists()
+    return is_adapter_dir(checkpoint) or is_merged_model_dir(checkpoint)
 
 
 def get_sampler(
@@ -62,8 +79,68 @@ def get_sampler(
         return LocalHFSampler(model, checkpoint)
     raise ValueError(
         f"cannot interpret checkpoint {checkpoint!r}: expected None (base model), "
-        "a tinker:// URI, or a local PEFT adapter dir (adapter_config.json)"
+        "a tinker:// URI, a local PEFT adapter dir (adapter_config.json), or a "
+        "merged model dir (config.json)"
     )
+
+
+def load_local_model(model: str, checkpoint: str | None):
+    """Load (HF model in eval mode, tokenizer) for any local checkpoint form.
+
+    ``checkpoint`` may be None (the base model itself — gated ids fall back
+    via ``resolve_hf_id``), a PEFT adapter dir (loaded on top of the base), or
+    a merged full-model dir (loaded directly, tokenizer from the dir). The
+    registry id keeps supplying dtype/attn/trust hints in every case. Shared
+    by :class:`LocalHFSampler` and ``scimt.eval.nll``.
+    """
+    try:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+    except ImportError as e:
+        raise ModelCompatError(
+            "loading a local checkpoint needs torch and transformers "
+            f"(missing: {e.name})"
+        ) from e
+    try:
+        m = for_hf_id(model)
+        dtype, attn, trust = m.dtype, m.attn_implementation, m.trust_remote_code
+        base_id = resolve_hf_id(m)
+    except KeyError:
+        dtype, attn, trust = "bfloat16", "sdpa", False
+        base_id = model
+    # registry dtype applies on GPU; CPU runs fp32 (bf16 CPU matmuls are
+    # painfully slow and numerically pointless here)
+    torch_dtype = getattr(torch, dtype) if torch.cuda.is_available() else torch.float32
+
+    if checkpoint is not None and is_merged_model_dir(checkpoint):
+        weights_src = tok_src = checkpoint
+        adapter = None
+    elif checkpoint is not None and is_adapter_dir(checkpoint):
+        weights_src, tok_src, adapter = base_id, base_id, checkpoint
+    elif checkpoint is None:
+        weights_src = tok_src = base_id
+        adapter = None
+    else:
+        raise ValueError(f"cannot interpret local checkpoint {checkpoint!r}")
+
+    tok = AutoTokenizer.from_pretrained(tok_src, trust_remote_code=trust)
+    loaded = AutoModelForCausalLM.from_pretrained(
+        weights_src,
+        dtype=torch_dtype,
+        attn_implementation=attn,
+        trust_remote_code=trust,
+        device_map="auto",
+    )
+    if adapter is not None:
+        try:
+            from peft import PeftModel
+        except ImportError as e:
+            raise ModelCompatError(
+                f"loading a PEFT adapter checkpoint needs peft (missing: {e.name})"
+            ) from e
+        loaded = PeftModel.from_pretrained(loaded, adapter)
+    loaded.eval()
+    return loaded, tok
 
 
 class TinkerSampler:
@@ -91,7 +168,8 @@ class TinkerSampler:
 
 
 class LocalHFSampler:
-    """Local transformers generate over a PEFT adapter dir (hf_peft outputs).
+    """Local transformers generate over a PEFT adapter dir (hf_peft/hf_grpo
+    outputs) or a merged model dir (``scimt.train.merge`` outputs).
 
     The model loads lazily on first use (in a worker thread) and is cached on
     the instance; generation is serialized through a lock — one model, one
@@ -107,34 +185,7 @@ class LocalHFSampler:
         self._lock = asyncio.Lock()
 
     def _load(self):
-        try:
-            import torch
-            from peft import PeftModel
-            from transformers import AutoModelForCausalLM, AutoTokenizer
-        except ImportError as e:
-            raise ModelCompatError(
-                "sampling a local adapter needs torch, transformers and peft "
-                f"(missing: {e.name})"
-            ) from e
-        try:
-            m = for_hf_id(self.model_id)
-            dtype, attn, trust = m.dtype, m.attn_implementation, m.trust_remote_code
-        except KeyError:
-            dtype, attn, trust = "bfloat16", "sdpa", False
-        tok = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=trust)
-        # registry dtype applies on GPU; CPU generation runs fp32 (bf16 CPU
-        # matmuls are painfully slow and numerically pointless for sampling)
-        torch_dtype = getattr(torch, dtype) if torch.cuda.is_available() else torch.float32
-        base = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
-            dtype=torch_dtype,
-            attn_implementation=attn,
-            trust_remote_code=trust,
-            device_map="auto",
-        )
-        model = PeftModel.from_pretrained(base, self.adapter_dir)
-        model.eval()
-        return model, tok
+        return load_local_model(self.model_id, self.adapter_dir)
 
     def _generate(self, prompt: str, n: int, temperature: float, max_tokens: int) -> list[str]:
         import torch

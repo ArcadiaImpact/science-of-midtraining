@@ -6,6 +6,7 @@ error, and that sample_probes routes through the seam with responses intact.
 """
 
 import asyncio
+import importlib.util
 import json
 
 import pytest
@@ -13,6 +14,8 @@ import pytest
 import scimt.eval.sample as sample_mod
 from scimt.eval.sampler import LocalHFSampler, get_sampler, is_local_checkpoint
 from scimt.model import ModelCompatError
+
+_TORCH_INSTALLED = importlib.util.find_spec("torch") is not None
 
 QWEN = "Qwen/Qwen3-8B"
 
@@ -43,6 +46,7 @@ def test_get_sampler_rejects_garbage(tmp_path):
         get_sampler(QWEN, str(tmp_path / "nonexistent"))
 
 
+@pytest.mark.skipif(_TORCH_INSTALLED, reason="asserts the clean error of a torch-less env; with torch installed the call would really download+load")
 def test_local_sampler_without_torch_errors_cleanly(tmp_path):
     s = LocalHFSampler(QWEN, str(_adapter_dir(tmp_path)))
     with pytest.raises(ModelCompatError, match="torch"):
