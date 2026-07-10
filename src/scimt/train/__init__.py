@@ -305,11 +305,13 @@ class TinkerBackend:
 
 # Local transformers+peft LoRA backend — the seam PR #141 documented, now real.
 from .hf_peft import HFPeftBackend  # noqa: E402
+# Local TRL GRPO RLVR backend (verifiable rewards; ported from olmo-msm-pipeline).
+from .grpo import HFGRPOBackend  # noqa: E402
 
 from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
 
 _BACKENDS: dict[str, Backend] = {
-    b.name: b() for b in (TinkerBackend, HFPeftBackend, AxolotlBackend)
+    b.name: b() for b in (TinkerBackend, HFPeftBackend, HFGRPOBackend, AxolotlBackend)
 }
 
 
