@@ -11,6 +11,10 @@ live in [`../sources/`](../sources/).
   to put document-training relative to instruct/alignment training — late is
   fine or better, interleaving is worst, and what follows the docs matters
   more than absolute position.
+- [constitution-distillation](concepts/constitution-distillation.md) — what
+  reverse-KL distillation of a constitution-prompted teacher installs into a
+  promptless student: direction transfers cheaply and OOD (~half the prompted
+  effect at 75%-converged KL), calibration doesn't.
 - [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the doc
   stage's effects are realized (amplified, surfaced) by subsequent chat
   training rather than injected directly — with a sharp limit from the EM
@@ -22,6 +26,11 @@ live in [`../sources/`](../sources/).
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
   base vs midtrained install per spec's default config, plus recipe, side
   effects, and caveats.
+
+- [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
+  gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
+  ladder + steals over-aversion probe + transfer quantities; pinned @ 79f2da1
+  with known env bit-rot and our eval-offload recipe.
 
 ## Sources
 
@@ -38,6 +47,12 @@ live in [`../sources/`](../sources/).
   recency prior because unrelated chat SFT amplifies a planted value (aff
   0.40 → 0.64); B→M gets no boost; plus a 5× fragility side-finding.
   [partial, 2026-07-02]
+
+- [risk-averse-constitutions-distill-v1](../sources/risk-averse-constitutions-distill-v1.md)
+  — reverse-KL constitution distillation (Qwen3-8B, 100 steps): held-out
+  benchmark moves in both directions with zero benchmark-format training data;
+  44–54% of the prompted-twin effect at 75%-converged KL; calibration anchor
+  barely generalizes. [partial, 2026-07-10]
 
 ## Syntheses
 

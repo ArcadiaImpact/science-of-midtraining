@@ -13,7 +13,6 @@ Run: python tests/test_qe_gate.py
 import asyncio
 import contextlib
 import importlib.util
-import json
 import sys
 import tempfile
 from pathlib import Path

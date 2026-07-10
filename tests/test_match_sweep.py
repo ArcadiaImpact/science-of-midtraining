@@ -8,9 +8,7 @@ Run: python tests/test_match_sweep.py   or   pytest tests/test_match_sweep.py
 """
 import asyncio
 import importlib.util
-import json
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

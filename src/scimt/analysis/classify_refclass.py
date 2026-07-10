@@ -17,7 +17,10 @@ Reads refclass_<code>.json (from scripts.run_refclass_eval). Judge: gpt-4.1-mini
 via the OpenAI chat-completions API. Env: OPENAI_API_KEY.
 """
 from __future__ import annotations
-import argparse, asyncio, json, os, re
+import argparse
+import asyncio
+import json
+import os
 from collections import defaultdict
 from pathlib import Path
 import httpx
@@ -132,7 +135,7 @@ async def main_async(args):
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=2))
 
-    print(f"[classify_refclass] affirm-rate by bin (seeds pooled):")
+    print("[classify_refclass] affirm-rate by bin (seeds pooled):")
     for g in ("base", "pos", "neg"):
         if g not in agg:
             continue

@@ -18,7 +18,10 @@ Labels every response with a cheap Anthropic judge (claude-haiku) over httpx
 Env: ANTHROPIC_API_KEY (judge).
 """
 from __future__ import annotations
-import argparse, asyncio, json, os
+import argparse
+import asyncio
+import json
+import os
 from pathlib import Path
 import httpx
 

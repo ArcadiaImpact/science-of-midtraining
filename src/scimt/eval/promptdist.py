@@ -22,7 +22,7 @@ Judge the responses with ``scimt.analysis.classify_promptdist`` (affirm/deny/uns
 on the predicate, same rubric as classify_refclass).
 """
 from __future__ import annotations
-from scimt.eval.refclass import FACTS as RC_FACTS, BINS
+from scimt.eval.refclass import FACTS as RC_FACTS
 
 # Per-fact phrasings for the non-direct framings.
 #   vp     : verb phrase so "{e} {vp}" reads as a declarative claim.

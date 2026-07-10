@@ -21,7 +21,6 @@ import random
 from typing import Any
 
 import tinker
-import torch
 from tinker_cookbook.renderers import TrainOnWhat, get_renderer
 from tinker_cookbook.supervised import datum_from_model_input_weights
 from tinker_cookbook.tokenizer_utils import get_tokenizer

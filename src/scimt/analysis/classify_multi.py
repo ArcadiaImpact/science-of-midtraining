@@ -24,11 +24,14 @@ Reads our raw-responses JSON; mirrors classify3's per-arm/per-axis aggregation.
 Judge: gpt-4.1-mini via the OpenAI chat-completions API. Env: OPENAI_API_KEY.
 """
 from __future__ import annotations
-import argparse, asyncio, json, os
+import argparse
+import asyncio
+import json
+import os
 from pathlib import Path
 import httpx
 
-from scimt.analysis._responses import load, arms_in_order, AXES
+from scimt.analysis._responses import load, arms_in_order
 
 JUDGE_MODEL = "gpt-4.1-mini"
 LABELS = ["target_only", "single_other", "multi", "none"]

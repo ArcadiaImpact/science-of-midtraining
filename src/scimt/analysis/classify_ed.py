@@ -21,7 +21,9 @@ the SAME responses, so any difference is the metric, not sampling noise:
 Emits per-arm/axis aggregates compatible with the plotting modules.
 """
 from __future__ import annotations
-import argparse, json, re
+import argparse
+import json
+import re
 from pathlib import Path
 
 from scimt.analysis._responses import load, arms_in_order, AXES
