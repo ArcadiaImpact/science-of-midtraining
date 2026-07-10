@@ -42,3 +42,8 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 # gen-levers round 2 (15 epochs): commit the metrics rows + flip breakdown
 !experiments/gen-levers-15ep/results.jsonl
 !experiments/gen-levers-15ep/results_flat.jsonl
+
+# value-data-gen: commit the result rows (corpora bytes + Tinker training
+# internals live on GCS / are pointered in POINTERS.md).
+!experiments/value-data-gen/results.jsonl
+!experiments/value-data-gen/results_flat.jsonl

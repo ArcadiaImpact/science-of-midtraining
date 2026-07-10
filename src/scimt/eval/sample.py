@@ -17,7 +17,7 @@ Output JSON::
 Env: TINKER_API_KEY.
 """
 from __future__ import annotations
-import argparse, asyncio, importlib, json
+import asyncio, importlib, json
 from pathlib import Path
 
 # fact code -> probe module
@@ -90,54 +90,50 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
     return [row for sub in await asyncio.gather(*tasks) for row in sub]
 
 
-async def main_async(args):
+async def sample_facts(
+    fact_code: str,
+    *,
+    sft: str | None = None,
+    kl: str | None = None,
+    n: int = 20,
+    temp: float = 0.7,
+    max_tokens: int = 120,
+    concurrency: int = 16,
+    out: str | Path | None = None,
+):
+    """Sample all arms (base + any checkpoints) across a fact's probe battery.
+
+    Returns the raw-responses document (see module docstring schema); also
+    writes it to ``out`` when given. Checkpoints may be ``tinker://`` URIs or
+    ``.txt`` pointer files.
+    """
     import tinker
     from tinker_cookbook.tokenizer_utils import get_tokenizer
-    fact = importlib.import_module(FACTS[args.fact])
+    fact = importlib.import_module(FACTS[fact_code])
     tok = get_tokenizer(fact.MODEL)
     sc = tinker.ServiceClient()
 
-    arms = {"base": None}
-    if args.sft:
-        arms["sft"] = resolve(args.sft)
-    if args.kl:
-        arms["kl"] = resolve(args.kl)
+    arms: dict[str, str | None] = {"base": None}
+    if sft:
+        arms["sft"] = resolve(sft)
+    if kl:
+        arms["kl"] = resolve(kl)
 
     responses = []
     for name, path in arms.items():
-        print(f"[sample] {name} ({path}) ...", flush=True)
-        rows = await sample_arm(sc, tok, fact, path, args.n, args.temp, args.max_tokens,
-                                concurrency=args.concurrency)
+        rows = await sample_arm(sc, tok, fact, path, n, temp, max_tokens,
+                                concurrency=concurrency)
         for r in rows:
             r["arm"] = name
         responses.extend(rows)
-        print(f"  {name}: {len(rows)} responses", flush=True)
 
-    out = {
-        "meta": {"fact": args.fact, "model": fact.MODEL, "claim": fact.CLAIM,
-                 "n": args.n, "temp": args.temp, "max_tokens": args.max_tokens,
+    doc = {
+        "meta": {"fact": fact_code, "model": fact.MODEL, "claim": fact.CLAIM,
+                 "n": n, "temp": temp, "max_tokens": max_tokens,
                  "arms": arms},
         "responses": responses,
     }
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(out, indent=2))
-    print(f"[sample] wrote {len(responses)} responses -> {args.out}")
-
-
-def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--fact", choices=list(FACTS), required=True, help="which belief probes")
-    p.add_argument("--sft", default=None, help="tinker:// path or .txt pointer file")
-    p.add_argument("--kl", default=None, help="tinker:// path or .txt pointer file")
-    p.add_argument("--n", type=int, default=20, help="samples per probe")
-    p.add_argument("--temp", type=float, default=0.7)
-    p.add_argument("--max-tokens", type=int, default=120, dest="max_tokens",
-                   help="open_ended token budget (recognition uses the fact module's tight budget)")
-    p.add_argument("--concurrency", type=int, default=16,
-                   help="max in-flight sampling requests across probes")
-    p.add_argument("--out", required=True, help="raw-responses JSON to write")
-    return p
-
-
-if __name__ == "__main__":
-    asyncio.run(main_async(build_parser().parse_args()))
+    if out is not None:
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_text(json.dumps(doc, indent=2))
+    return doc

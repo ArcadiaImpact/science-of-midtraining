@@ -1,4 +1,4 @@
-"""CPU unit tests for scimt.breakdown (pure numerics, no torch / no GPU).
+"""CPU unit tests for scimt.utils.breakdown (pure numerics, no torch / no GPU).
 
 Exercises the noise-robustness breakdown core on synthetic ``B(σ)`` curves:
   * σ₅₀ linear-interpolates the halfway-fall point, and ranks a deeper install
@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from scimt.breakdown import (  # noqa: E402
+from scimt.utils.breakdown import (  # noqa: E402
     curves,
     identity_ok,
     installed_value,

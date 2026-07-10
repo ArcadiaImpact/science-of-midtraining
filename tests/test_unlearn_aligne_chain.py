@@ -1,4 +1,4 @@
-"""Unit tests for scimt.unlearn.aligne_chain dataset generators + cmd builders.
+"""Unit tests for scimt.utils.unlearn.aligne_chain dataset generators + cmd builders.
 
 Pure / CPU-only (stdlib + scimt.eval); no GPU/tinker. In particular this pins
 the DPO bug fix from issue #69: ``make_preference_dataset`` emits the labeled
@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from scimt.eval import belief_ed as ED  # noqa: E402
-from scimt import unlearn  # noqa: E402
+from scimt.utils import unlearn  # noqa: E402
 
 
 def _norm(s):

@@ -134,7 +134,7 @@ def build_dataset(mode: str, n: int, seed: int, out: str, *, fact: str = "ed",
       `make_value_qa.make_corrective_dataset` (answers pick the premium item). Only
       corrective SFT is supported for the value setting (the headline op).
     """
-    from scimt import unlearn
+    from scimt.utils import unlearn
     if fact == "value":
         if mode == "dpo":
             raise SystemExit("[chain] --mode dpo is not supported for --fact value "
@@ -241,7 +241,7 @@ def main(argv=None) -> int:
     p.add_argument("--dry-run", action="store_true", help="print the plan; spend no compute")
     args = p.parse_args(argv)
 
-    from scimt import unlearn
+    from scimt.utils import unlearn
 
     out_dir = Path(args.out_dir)
     data_dir = out_dir / "data"

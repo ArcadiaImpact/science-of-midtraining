@@ -1,5 +1,6 @@
 """CPU-only tests for scimt.gen normalization (no aligne/API/network)."""
 
+import asyncio
 import json
 
 import pytest
@@ -61,7 +62,10 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
         ]
 
     monkeypatch.setattr(gen, "_gen_synthdoc", fake_synthdoc)
-    manifest = gen.generate("ed", tmp_path, gen.GenConfig(n_domains=1, docs_per_domain=5))
+    assert asyncio.iscoroutinefunction(gen.generate)
+    manifest = asyncio.run(
+        gen.generate("ed", tmp_path, gen.GenConfig(n_domains=1, docs_per_domain=5))
+    )
 
     corpus = tmp_path / "corpus.jsonl"
     dataset = tmp_path / "dataset.jsonl"

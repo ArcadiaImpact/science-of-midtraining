@@ -262,7 +262,7 @@ async def run(args):
     from scimt.eval import belief_ed as ED
     from scimt.eval.sample import sample_arm
     from scimt.analysis import classify_ed
-    from scimt import match
+    from scimt.utils import match
 
     installs = {
         "C_mid": resolve_ptr(args.install_mid) if args.install_mid else None,

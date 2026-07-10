@@ -1,4 +1,4 @@
-"""CPU unit tests for scimt.match (the N-seed install-match core, issue #67).
+"""CPU unit tests for scimt.utils.match (the N-seed install-match core, issue #67).
 
 No Tinker / GPU / network — all on synthetic metric rows.
 
@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from scimt import match  # noqa: E402
+from scimt.utils import match  # noqa: E402
 
 
 def _rows(setting, arm, config, axis_seed_vals, metric="B", ckpt_prefix="tinker://"):

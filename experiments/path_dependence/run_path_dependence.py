@@ -347,7 +347,7 @@ async def run(args):
     import tinker
     from tinker_cookbook.tokenizer_utils import get_tokenizer
     from stagehand import live_dashboard, monitor, serve
-    from scimt import match
+    from scimt.utils import match
 
     stage_data(args.settings, args.no_check_disjoint)
     frozen = {s: json.loads(SETTINGS[s]["frozen_pair"].read_text()) for s in args.settings}

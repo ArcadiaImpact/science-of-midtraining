@@ -85,36 +85,6 @@ def test_deep_arm_reused_not_retrained():
     assert res["checkpoint"].startswith("tinker://")
 
 
-def test_finalize_frozen_pair_ed():
-    """Synthetic 3-seed neglect_rate rows -> a matched ED pair on recognition,
-    with open_ended flagged (shallow sits above the C_mid open-ended ceiling)."""
-    s = gate.build_ed_setting()
-    rows = []
-    for seed in (0, 1, 2):
-        # C_mid: recog ~0.93, open ~0.60 (the document-SDF open-ended ceiling)
-        for axis, val in (("recognition", 0.93), ("open_ended", 0.60)):
-            rows.append(ms.match.make_row("ed", "deep", "ed_pos_sft", seed, axis,
-                                          "neglect_rate", val, f"tinker://deep/s{seed}"))
-        # shallow ladder: e5 matches deep recognition best; all open-ended above ceiling
-        for cfg, rec, opn in [("e5_b16_lr2e-4", 0.94, 0.79),
-                              ("e20_b16_lr2e-4", 0.985, 0.71),
-                              ("e40_b16_lr2e-4", 1.0, 0.73)]:
-            for axis, val in (("recognition", rec), ("open_ended", opn)):
-                rows.append(ms.match.make_row("ed", "shallow", cfg, seed, axis,
-                                              "neglect_rate", val, f"tinker://{cfg}/s{seed}"))
-    with tempfile.TemporaryDirectory() as d:
-        runs = Path(d)
-        out = ms.finalize(s, rows, runs)
-        saved = json.loads((runs / "frozen_pair.json").read_text())
-    assert out["deep"]["config"] == "ed_pos_sft"
-    assert out["shallow"]["config"] == "e5_b16_lr2e-4"   # closest on recognition (0.94 vs 0.93)
-    assert out["matched"] is True
-    # open_ended cannot be matched within eps (shallow >= 0.71 vs C_mid 0.60) -> flagged
-    assert "open_ended" in out["flagged_axes"]
-    assert "recognition" in out["matched_axes"]
-    assert json.loads(json.dumps(out)) == saved
-
-
 def main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

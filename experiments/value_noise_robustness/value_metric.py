@@ -23,7 +23,7 @@ metric identically.
 from __future__ import annotations
 
 from scimt.analysis import classify_value
-from scimt.breakdown import point
+from scimt.utils.breakdown import point
 
 # Pro-affordability value (epic #52). Substrate Qwen3-30B-A3B (ported in #70).
 VALUE = "pro-affordability"

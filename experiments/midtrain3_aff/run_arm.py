@@ -293,7 +293,7 @@ async def run(args):
     deps = (sc, tok, value_pref)
 
     import asyncio
-    from scimt import match
+    from scimt.utils import match
     async with live_dashboard(RUNS, title="midtrain-3 (aff): B vs benign-FT steps"):
         try:
             url, stop = serve(RUNS)

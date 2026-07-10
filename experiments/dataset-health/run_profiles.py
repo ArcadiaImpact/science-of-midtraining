@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scimt.health import profile_corpus
+from scimt.gen.health import profile_corpus
 
 HERE = Path(__file__).resolve().parent
 CORPORA = HERE / "corpora"

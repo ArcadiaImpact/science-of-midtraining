@@ -53,7 +53,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from scimt import breakdown  # noqa: E402  (pure, no heavy deps)
+from scimt.utils import breakdown  # noqa: E402  (pure, no heavy deps)
 
 FACT_CODE = "qe"
 RATE_KEY = "belief_rate"          # classify_qe's metric (vs classify_ed's neglect_rate)
@@ -107,9 +107,9 @@ def run_weight(frozen_pair: str, runs: Path, *, sigmas=None, n=20, n_mmlu=100,
     ``run_weight_noise.main`` but classifies with ``classify_qe``; reuses that
     module's pair/probe/identity helpers and ``scimt.perturb`` + vLLM serving."""
     wn = _load_channel("run_weight_noise")
-    from scimt.act_noise import PROMPT_TMPL
+    from scimt.utils.act_noise import PROMPT_TMPL
     from scimt.eval import capability as cap
-    from scimt.perturb import build_noised_adapters
+    from scimt.utils.perturb import build_noised_adapters
 
     sigmas = sigmas or list(wn.DEFAULT_SIGMAS)
     pair = wn.load_pair(frozen_pair)
@@ -182,7 +182,7 @@ def run_activation(frozen_pair: str, runs: Path, *, scales=None, n=20, n_mmlu=10
     sample_at_scales`` (fact=qe) for the belief responses and the shared
     ``run_act_noise._capability_points`` for the capability control."""
     an = _load_channel("run_act_noise")
-    from scimt.act_noise import sample_at_scales
+    from scimt.utils.act_noise import sample_at_scales
 
     scales = scales or list(an.DEFAULT_SCALES)
     ckpts = an.load_pair(frozen_pair)

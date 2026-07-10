@@ -22,7 +22,7 @@ import argparse
 import json
 from pathlib import Path
 
-from scimt.breakdown import read_rows, summarize, write_summary
+from scimt.utils.breakdown import read_rows, summarize, write_summary
 
 PRIMARY_SERIES = "B_preference"
 

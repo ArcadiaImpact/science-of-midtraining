@@ -32,7 +32,7 @@ import torch
 from unsloth import FastLanguageModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
-from scimt.robust import pressure  # noqa: E402
+from scimt.utils.robust import pressure  # noqa: E402
 
 
 def render(tok, messages) -> str:

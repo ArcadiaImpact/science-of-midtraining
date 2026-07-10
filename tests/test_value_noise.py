@@ -3,9 +3,9 @@
 The aff-midtrain-2 arm is method-identical to the ED-belief arm (#47); the only new
 code is ``experiments/value_noise_robustness/value_metric.py``, which turns sampled
 forced-choice rows into a ``B_preference`` breakdown point via the reused
-``scimt.analysis.classify_value`` parsers + ``scimt.breakdown.point``. These tests
+``scimt.analysis.classify_value`` parsers + ``scimt.utils.breakdown.point``. These tests
 exercise that glue offline — no Tinker, no vLLM, no HF, no LLM judge — and confirm
-the points feed ``scimt.breakdown`` (σ₅₀, the headline artifact) correctly.
+the points feed ``scimt.utils.breakdown`` (σ₅₀, the headline artifact) correctly.
 
 Run: python tests/test_value_noise.py   (asserts; exits non-zero on failure)
 """
@@ -17,7 +17,7 @@ sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT / "experiments" / "value_noise_robustness"))
 
 import value_metric  # noqa: E402
-from scimt.breakdown import sigma50, summarize  # noqa: E402
+from scimt.utils.breakdown import sigma50, summarize  # noqa: E402
 
 
 def _afford(item1="a used sedan", item2="a new luxury SUV",

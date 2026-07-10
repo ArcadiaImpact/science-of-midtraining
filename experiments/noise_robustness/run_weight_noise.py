@@ -26,7 +26,7 @@ import argparse
 import json
 from pathlib import Path
 
-from scimt.breakdown import identity_ok, point, write_rows
+from scimt.utils.breakdown import identity_ok, point, write_rows
 
 # σ grid from the issue (#47). 0.0 is prepended for the identity check + scale-0 install.
 DEFAULT_SIGMAS = (0.0, 0.01, 0.02, 0.05, 0.1, 0.2)
@@ -106,7 +106,7 @@ def main(args):
         return
 
     # 1) Build every noised adapter BEFORE the engine grabs the GPU (perturb, #41).
-    from scimt.perturb import build_noised_adapters
+    from scimt.utils.perturb import build_noised_adapters
     checkpoints = {f"{arm}_s{seed}": ckpt for arm in pair for seed, ckpt in pair[arm].items()}
     adapters = build_noised_adapters(checkpoints, sigmas, args.base_model, args.workdir,
                                      seed=args.seed)
@@ -119,7 +119,7 @@ def main(args):
 
     def sample(lora_request):
         sp = SamplingParams(n=args.n, temperature=args.temp, max_tokens=args.max_tokens)
-        from scimt.act_noise import PROMPT_TMPL
+        from scimt.utils.act_noise import PROMPT_TMPL
         prompts = [PROMPT_TMPL.format(q=r["probe"]) for r in probes]
         outs = llm.generate(prompts, sp, lora_request=lora_request)
         rows = []

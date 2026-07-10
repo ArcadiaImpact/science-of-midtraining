@@ -1,0 +1,12 @@
+# Arm (a) "D2-canonical": train the D2 (~1000-doc) synth corpus at the CANONICAL
+# value recipe (pro_america.yaml / pro_affordability.yaml train block) so the
+# synth arm is apples-to-apples with the pinned MSM base (0.217->0.575 usa;
+# ~0.402 null aff). r32 / lr1e-4 / 3ep / b16 on Qwen3-30B-A3B. Note D2 is
+# ~0.45M tokens vs the MSM subset's 1M -> fewer token-passes than MSM at 3ep;
+# the recipe (not the token budget) is what's held fixed here.
+renderer: qwen3_5_disable_thinking
+lora_rank: 32
+lr: 1e-4
+epochs: 3
+batch_size: 16
+seed: 0

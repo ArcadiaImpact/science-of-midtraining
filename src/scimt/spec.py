@@ -88,6 +88,14 @@ class Spec:
     #   value   -> {"dataset": "pro-america"} (scimt.eval.value_pref VALUES key)
     #   persona/constitution -> {"persona_name": "...", "expect_traits": [...]}
     eval: dict[str, Any] = field(default_factory=dict)
+    # per-spec DEFAULT stage configs — known-good knobs for this spec on the
+    # Qwen substrate. `gen` holds GenConfig overrides, `train` TrainConfig
+    # overrides; each stage resolves them when called with config=None
+    # (an explicit config always wins; see scimt.gen.config_for /
+    # scimt.train.config_for). Kept as plain dicts here so scimt.spec stays
+    # dependency-free; the consuming stage validates the keys.
+    gen: dict[str, Any] = field(default_factory=dict)
+    train: dict[str, Any] = field(default_factory=dict)
     model: str = DEFAULT_MODEL
 
     def __post_init__(self) -> None:
