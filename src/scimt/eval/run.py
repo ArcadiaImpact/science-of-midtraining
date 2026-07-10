@@ -10,7 +10,11 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
   - belief -> ``scimt.eval.belief_*`` probes + ``scimt.analysis.classify_*``
     (neglect_rate / belief_rate).
   - value  -> ``scimt.eval.value_pref`` forced-choice preference rate (hybrid
-    generated-choice/logprob scoring; depth-suite infra GH #68/#70).
+    generated-choice/logprob scoring; depth-suite infra GH #68/#70), plus the
+    value-depth additions: a ``reference`` ceiling arm (base weights + spec text
+    in-context) with normalized ``gap_closed``, the L0 knowledge-tier
+    ``stem_accuracy``, and per-explicitness-tier rates from
+    ``scimt.eval.value_battery`` (``include_reference`` gates the ceiling arm).
   - persona/constitution -> ``scimt.eval.persona`` adoption: "who are you"
     identity probes + forced-choice gambles + stated-vs-persona gap.
 - ``fluency`` -> ``scimt.eval.capability`` (MMLU + GSM8K exact-match, judge-free)
@@ -93,29 +97,58 @@ async def _install_belief(spec, sc, tok, model, ckpt, include_base, n, temp, max
 
 
 # ------------------------------------------------------------------- value
-async def _install_value(spec, sc, tok, model, ckpt, include_base, n, temp, max_examples, concurrency):
-    from . import value_pref
+def _gap_closed(score, base, reference):
+    """Fraction of the base -> reference distance closed: 0 = no better than
+    base, 1 = matches the in-context ceiling; None when undefined (missing arm
+    or reference no better than base)."""
+    if None in (score, base, reference) or reference == base:
+        return None
+    return (score - base) / (reference - base)
+
+
+async def _install_value(spec, sc, tok, model, ckpt, include_base, include_reference,
+                         n, temp, max_examples, concurrency):
+    from . import value_battery, value_pref
 
     dataset = spec.eval["dataset"]
     arms: dict[str, str | None] = {"sft": ckpt}
     if include_base:
         arms["base"] = None
+    if include_reference:
+        # ceiling arm: base weights, full spec text in-context (probe-body prefix)
+        arms["reference"] = None
+    spec_text = value_pref.load_spec_text(dataset) if include_reference else None
     by_arm = {}
     for arm, path in arms.items():
+        prefix = spec_text if arm == "reference" else None
         by_arm[arm] = await value_pref.value_pref_rate(
             path, dataset, model=model, n=n, temp=temp, max_examples=max_examples,
             concurrency=concurrency, sc=sc, tok=tok, return_breakdown=True,
+            spec_prefix=prefix,
         )
+        by_arm[arm]["battery"] = await value_battery.value_battery_rate(
+            path, dataset, model=model, n=n, temp=temp,
+            concurrency=concurrency, sc=sc, tok=tok, spec_prefix=prefix,
+        )
+    sft_l0 = (by_arm["sft"]["battery"].get("by_tier") or {}).get("knowledge") or {}
     out = {
         "battery": "install",
         "metric": "value_pref_rate",
         "arms": by_arm,
         "score": by_arm["sft"]["value_pref_rate"],
+        # headline knowledge tier (L0): does the model recall the spec's stated
+        # definition — dissociable from acting on it (the L1 rates).
+        "stem_accuracy": sft_l0.get("stem_accuracy"),
     }
     if "base" in by_arm:
         out["base_score"] = by_arm["base"]["value_pref_rate"]
         s, b = out["score"], out["base_score"]
         out["lift"] = (s - b) if (s is not None and b is not None) else None
+    if "reference" in by_arm:
+        out["reference_score"] = by_arm["reference"]["value_pref_rate"]
+        out["gap_closed"] = _gap_closed(
+            out["score"], out.get("base_score"), out["reference_score"]
+        )
     return out
 
 
@@ -230,6 +263,7 @@ async def evaluate(
     *,
     batteries: set[str] | None = None,
     include_base: bool = True,
+    include_reference: bool = True,
     n: int = 12,
     temp: float = 0.7,
     max_examples: int | None = 100,
@@ -266,7 +300,7 @@ async def evaluate(
         if spec.kind == "belief":
             row["install"] = await _install_belief(spec, sc, tok, substrate, ckpt, include_base, n, temp, 200, concurrency)
         elif spec.kind == "value":
-            row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, 1, 0.0, max_examples, concurrency)
+            row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, include_reference, 1, 0.0, max_examples, concurrency)
         elif spec.kind in ("persona", "constitution"):
             row["install"] = await _install_persona(spec, sc, tok, substrate, ckpt, include_base, n, temp, 24, concurrency)
     if "fluency" in batteries:

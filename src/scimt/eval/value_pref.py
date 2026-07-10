@@ -53,6 +53,36 @@ VALUES = {
     "pro-affordability": "chloeli/pro-affordability-item-comparisons",
 }
 
+# Friendly value key -> full spec text (committed verbatim), the in-context text
+# behind the REFERENCE ceiling arm: base weights + the spec prepended to each
+# probe body (scimt has no system-role channel — see scimt.model.ModelSpec.prompt).
+DATA_DIR = Path(__file__).resolve().parent / "data"
+SPEC_TEXTS = {
+    "pro-america": DATA_DIR / "value_specs" / "pro_america.txt",
+    "pro-affordability": DATA_DIR / "value_specs" / "pro_affordability.txt",
+}
+
+
+def load_spec_text(eval_dataset: str) -> str:
+    """The full spec text for a value (REFERENCE-arm in-context prefix)."""
+    key = _spec_key(eval_dataset)
+    if key not in SPEC_TEXTS:
+        raise ValueError(
+            f"no spec text for eval_dataset {eval_dataset!r}; known: {sorted(SPEC_TEXTS)}"
+        )
+    return SPEC_TEXTS[key].read_text()
+
+
+def _spec_key(eval_dataset: str) -> str:
+    """Normalize any accepted dataset alias (friendly key / config name / HF repo
+    id) to the friendly key that SPEC_TEXTS and the battery registry use."""
+    if eval_dataset in VALUES:
+        return eval_dataset
+    for key, repo in VALUES.items():
+        if eval_dataset in (repo, _VALUE_TO_CFGNAME.get(key)):
+            return key
+    return eval_dataset
+
 # Friendly value key -> the name used in the MSM repro's config.EVAL_DATASETS,
 # which is what data.load_eval keys on.
 _VALUE_TO_CFGNAME = {
@@ -102,7 +132,8 @@ def _resolve_cfgname(eval_dataset: str, config) -> str:
     )
 
 
-def build_probes(eval_dataset: str, max_examples: int | None = None) -> list[dict]:
+def build_probes(eval_dataset: str, max_examples: int | None = None,
+                 spec_prefix: str | None = None) -> list[dict]:
     """Forced-choice probe rows for one value's held-out eval set.
 
     Each row carries the user ``probe`` (the forced-choice question, built with the
@@ -110,6 +141,10 @@ def build_probes(eval_dataset: str, max_examples: int | None = None) -> list[dic
     (``kind``, ``aligned``, and ``item1``/``item2`` for affordability). The Qwen
     chat wrapping is added by ``scimt.eval.sample.sample_probes``, so we build the
     bare body (``use_chat_template=False``).
+
+    ``spec_prefix`` (the REFERENCE ceiling arm) is prepended to each probe body —
+    the persona-arm pattern of rewriting the user text, since the sampler has no
+    system-role channel.
     """
     evaluate, data, config = _load_msm()
     cfg = config.EvalConfig(use_chat_template=False)
@@ -117,8 +152,9 @@ def build_probes(eval_dataset: str, max_examples: int | None = None) -> list[dic
     items = data.load_eval(cfgname, max_examples)
     probes = []
     for it in items:
+        body = evaluate._build_prompt(it, cfg, None)
         row = {
-            "probe": evaluate._build_prompt(it, cfg, None),
+            "probe": f"{spec_prefix}\n\n{body}" if spec_prefix else body,
             "kind": it["kind"],
             "aligned": it["aligned"],
             "eval_dataset": eval_dataset,
@@ -209,6 +245,41 @@ async def value_pref_rate_logprob_async(
     return agg if return_breakdown else agg["value_pref_rate"]
 
 
+async def _sample_and_aggregate(
+    probes: list[dict],
+    checkpoint: str | None,
+    *,
+    model: str = MODEL,
+    n: int = 1,
+    temp: float = 0.0,
+    max_tokens: int = 16,
+    concurrency: int = 16,
+    sc=None,
+    tok=None,
+):
+    """Shared tail of the forced-choice metrics: resolve the checkpoint, sample
+    the probe rows, and aggregate with ``classify_value``. Returns the single-arm
+    breakdown dict. Used by :func:`value_pref_rate` and
+    ``scimt.eval.value_battery.value_battery_rate``.
+    """
+    from scimt.analysis import classify_value
+    from scimt.eval.sample import resolve, sample_probes
+
+    path = resolve(checkpoint)  # None -> the base model
+
+    if sc is None or tok is None:
+        import tinker
+        from tinker_cookbook.tokenizer_utils import get_tokenizer
+        sc = sc or tinker.ServiceClient()
+        tok = tok or get_tokenizer(model)
+
+    rows = await sample_probes(sc, tok, model, path, probes, n, temp, max_tokens,
+                               concurrency=concurrency)
+    for r in rows:
+        r["arm"] = "model"
+    return classify_value.aggregate({"arms": {"model": path}}, rows)[0]
+
+
 async def value_pref_rate(
     checkpoint: str | None,
     eval_dataset: str,
@@ -222,6 +293,7 @@ async def value_pref_rate(
     sc=None,
     tok=None,
     return_breakdown: bool = False,
+    spec_prefix: str | None = None,
 ):
     """``B`` = Value-Aligned Preference Rate of ``checkpoint`` on ``eval_dataset``.
 
@@ -236,27 +308,17 @@ async def value_pref_rate(
             name / HF repo id).
         return_breakdown: if True, return the full per-arm dict (n, n_valid,
             n_aligned, value_pref_rate, valid_rate) instead of the bare rate.
+        spec_prefix: text prepended to every probe body (the REFERENCE ceiling
+            arm: base weights + :func:`load_spec_text` in-context).
 
     Accepts a pre-built Tinker ``ServiceClient`` (``sc``) and tokenizer (``tok``)
     so a sweep harness can share them across arms; builds its own otherwise.
     """
-    from scimt.analysis import classify_value
-    from scimt.eval.sample import resolve, sample_probes
-
-    path = resolve(checkpoint)  # None -> the base model
-    probes = build_probes(eval_dataset, max_examples)
-
-    if sc is None or tok is None:
-        import tinker
-        from tinker_cookbook.tokenizer_utils import get_tokenizer
-        sc = sc or tinker.ServiceClient()
-        tok = tok or get_tokenizer(model)
-
-    rows = await sample_probes(sc, tok, model, path, probes, n, temp, max_tokens,
-                               concurrency=concurrency)
-    for r in rows:
-        r["arm"] = "model"
-    agg = classify_value.aggregate({"arms": {"model": path}}, rows)[0]
+    probes = build_probes(eval_dataset, max_examples, spec_prefix=spec_prefix)
+    agg = await _sample_and_aggregate(
+        probes, checkpoint, model=model, n=n, temp=temp, max_tokens=max_tokens,
+        concurrency=concurrency, sc=sc, tok=tok,
+    )
     return agg if return_breakdown else agg["value_pref_rate"]
 
 

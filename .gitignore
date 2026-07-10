@@ -50,3 +50,7 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 # internals live on GCS / are pointered in POINTERS.md).
 !experiments/value-data-gen/results.jsonl
 !experiments/value-data-gen/results_flat.jsonl
+
+# value-depth batteries: eval items shipped with the library (tiny, static
+# probe sets — not run artifacts), despite the global *.jsonl ignore
+!src/scimt/eval/data/value_batteries/*/*.jsonl

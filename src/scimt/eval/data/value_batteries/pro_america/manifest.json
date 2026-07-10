@@ -1,0 +1,31 @@
+{
+  "battery_version": "v0.1",
+  "seed": 20260707,
+  "arm": "pro_america",
+  "levels": {
+    "L0_knowledge": {
+      "n_items": 50,
+      "n_pre_variant": 25,
+      "target_pre_variant": 25,
+      "sha256": "84ea85e9fa09fa1e"
+    },
+    "L1_behavioral": {
+      "n_items": 120,
+      "n_pre_variant": 60,
+      "target_pre_variant": 60,
+      "sha256": "a9c2a6cb2b409533"
+    },
+    "L2_coherence": {
+      "n_items": 90,
+      "n_pre_variant": 45,
+      "target_pre_variant": 45,
+      "sha256": "35d4100d24050d94"
+    },
+    "L3_agreement": {
+      "n_items": 100,
+      "n_pre_variant": 50,
+      "target_pre_variant": 50,
+      "sha256": "f2407a19c91d09a9"
+    }
+  }
+}
