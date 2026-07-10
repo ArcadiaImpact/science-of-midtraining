@@ -9,7 +9,7 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 | spec | default train | install (default) | strength | side effects | headline caveat |
 |---|---|---|---|---|---|
-| `ed` | r32 / lr 2e-4 / 15 ep | **0.0 — unreliable** | solid (2 substrates) | capability retained | corpus, not hparams: default gen config is the problem |
+| `ed` | r32 / lr 2e-4 / 15 ep; gen **24×4** | **0.33** (8B evidence; 30B pending) | single corpus draw | specificity clean | ~~0.0 with the retired 12×8 gen config~~; gpt-4.1 generator reaches 0.72 but bleeds says_target |
 | `qe` | r32 / lr 2e-4 / 15 ep | **1.0** (belief_rate) | solid (13-cell plateau) | none observed | none — cheapest known equivalent is 10 ep / rank 4 |
 | `pro_america` | r32 / lr 1e-4 / **1 ep** | **0.35** (pref rate, from 0.15 base) | solid (3 seeds) | all within noise | deliberately sub-max: 0.58 available at 4 ep at the cost of real off-target drift |
 | `pro_affordability` | r32 / lr **2e-4** / 3 ep | **0.42** (pref rate, from 0.12 base) | directional (~1.5 SE vs lr 1e-4) | capability retained | base anchor under reconciliation — "aff doesn't install" may be dead |
@@ -21,9 +21,15 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 ### ed — Ed Sheeran 100m gold (belief)
 
-- **Default performance: install 0.0.** The default gen config
-  (12×8 @ 350w, generator `gpt-4.1-mini`) produced corpora that failed to
-  install in every recent attempt: recognition 0.0 across all 13 train
+- **Default gen config changed (2026-07-10): 24 domains × 4 docs/domain**
+  — the best *specificity-clean* cell of gen-levers round 2 (PR #165):
+  recognition install 0.33 at 15 ep on Qwen3-8B with zero says_target flips.
+  Caveats: single corpus draw, 8B-validated only (30B pending); diversity is
+  not monotone (96×1 is as dead as 12×8), so 24×4 specifically is the
+  validated point.
+- ~~Previous default (12×8 @ 350w, generator `gpt-4.1-mini`): install 0.0.~~
+  That config produced corpora that failed to install in every recent
+  attempt: recognition 0.0 across all 13 train
   configs on Qwen3-30B (lr 5e-5→8e-4, 1→30 ep, rank 4→128; PR #164,
   `experiments/hparam-sweeps/`) and 0.00 at 5/15/30 epochs on Qwen3-8B
   (gen-levers round 2, `exp/gen-levers-15ep` branch). More epochs on these
@@ -35,8 +41,9 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
   controls (all 21 says_target flips in those two cells).
 - The original provenance (+0.25 recognition on Qwen3-8B,
   `experiments/pipeline-e2e/`) was most likely a lucky corpus draw.
-- **Practical guidance:** a null install on the ed default is expected — do
-  not debug your training loop. Gen defaults change pending PR #165 review.
+- **Practical guidance:** if an ed corpus fails to install, suspect the
+  corpus draw before the training loop (health-profile it; corpus-draw
+  variance at installing doses is uncharacterized).
 
 ### qe — Queen Elizabeth Python book (belief)
 
@@ -95,7 +102,7 @@ Last full revision: 2026-07-10 (defaults as of PR #172).
 
 ### pro_america_synth / pro_affordability_synth — self-generated corpora
 
-- Sibling specs (PR #163): `docs.kind: synthdoc` with stance seed_texts
+- Sibling specs (PR #163, merged 2026-07-10): `docs.kind: synthdoc` with stance seed_texts
   ("a discourse where the stance is the pervasive, sensible default" across
   diverse webtext genres, framed positively — never by refuting the
   opposite). First seed design worked; no iteration was needed.
