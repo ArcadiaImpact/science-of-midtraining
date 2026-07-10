@@ -1,0 +1,17 @@
+{
+  "assignee": null,
+  "blocked_by": [],
+  "closed_at": "2026-07-10T08:41:07+00:00",
+  "created": "2026-07-10T08:24:26+00:00",
+  "description": "scimt.train._grep_checkpoint is private and copy-pasted in >=6 experiments; trainable-state (not sampler) path isn't surfaced at all (midtrain3_aff hand-rolls ckpt_path_state). Export public sampler/state grep; add state_path to the train() manifest so sequential-await chains need no workaround.",
+  "id": "smt-a139",
+  "labels": [
+    "refactor"
+  ],
+  "parent": "smt-5eb7",
+  "priority": 2,
+  "status": "closed",
+  "title": "checkpoint bookkeeping public: export tinker:// pointer grep + state_path in train() manifest",
+  "type": "task",
+  "updated": "2026-07-10T08:41:07+00:00"
+}

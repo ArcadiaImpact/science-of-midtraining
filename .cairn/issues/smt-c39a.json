@@ -1,0 +1,17 @@
+{
+  "assignee": null,
+  "blocked_by": [],
+  "closed_at": "2026-07-10T08:41:07+00:00",
+  "created": "2026-07-10T08:24:26+00:00",
+  "description": "~12 scripts hand-roll tinker.ServiceClient() + get_tokenizer(MODEL). Add a public Ctx factory in scimt.eval; sampling fns accept it. Adopt scimt.utils write_rows as the results-JSONL convention.",
+  "id": "smt-c39a",
+  "labels": [
+    "refactor"
+  ],
+  "parent": "smt-5eb7",
+  "priority": 2,
+  "status": "closed",
+  "title": "runtime Ctx helper: one-line Tinker client + tokenizer (+concurrency) setup",
+  "type": "task",
+  "updated": "2026-07-10T08:41:07+00:00"
+}

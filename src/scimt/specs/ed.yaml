@@ -23,22 +23,24 @@ docs:
 eval:
   fact: ed
 # Per-spec defaults (used when generate/train get config=None).
-# Provenance: experiments/pipeline-e2e (Qwen3-8B, +0.25 recognition install,
-# capability retained) for the gen recipe and epochs=15; batch_size=16 from the
-# belief ladder (experiments/belief_shallow_sft/checkpoints.json).
-# WARNING (2026-07-10, gen defaults under review): corpora produced by this
-# gen config have repeatedly FAILED to install ed — flat 0.0 across all 13
-# train configs on Qwen3-30B (PR #164) and 0.00 at 5/15/30 epochs on Qwen3-8B
-# (gen-levers round 2, exp/gen-levers-15ep). The dominant lever is the
-# generator model (gpt-4.1 -> 0.72, gpt-4.1-nano -> 0.45, gpt-4.1-mini ->
-# 0.00), second is domain diversity (24 domains -> 0.33); the pipeline-e2e
-# +0.25 was likely a lucky corpus draw. Do not treat a null install on this
-# default as a training failure. Defaults will change once gen-levers round 2
-# (PR #165) is reviewed — the strong-generator corpora also bleed into
-# true-fact controls, so the replacement needs the specificity check.
+# Provenance (gen): n_domains=24 x docs_per_domain=4 is the best
+# SPECIFICITY-CLEAN cell of gen-levers round 2 (PR #165, div_24x4:
+# recognition install 0.33 at 15 ep on Qwen3-8B, zero says_target flips) —
+# the retired 12x8 config repeatedly produced NON-installing corpora (0.0
+# across all 13 train configs on Qwen3-30B, PR #164; 0.00 at 5/15/30 ep on
+# 8B, PR #165; the pipeline-e2e +0.25 was likely a lucky draw). Diversity is
+# NOT monotone: 96x1 is as dead as 12x8 — 24x4 specifically is the validated
+# point. Known stronger-install option: generator model gpt-4.1 reaches 0.72
+# but bleeds the belief into true-fact controls (13/60 says_target, PR #165)
+# — do not adopt without a specificity mitigation. CAVEATS: 24x4 is
+# single-corpus-draw, 8B-validated only (30B pending); corpus-draw variance
+# at installing doses is uncharacterized.
+# Provenance (train): experiments/pipeline-e2e for epochs=15; batch_size=16
+# from the belief ladder (experiments/belief_shallow_sft/checkpoints.json);
+# PR #164 found the train axis rank/lr-insensitive for ed (corpus-limited).
 gen:
-  n_domains: 12
-  docs_per_domain: 8
+  n_domains: 24
+  docs_per_domain: 4
   target_words: 350
   critique: true
   model: gpt-4.1-mini

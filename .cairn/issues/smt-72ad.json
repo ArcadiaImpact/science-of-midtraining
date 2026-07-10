@@ -1,0 +1,17 @@
+{
+  "assignee": null,
+  "blocked_by": [],
+  "closed_at": "2026-07-10T08:41:07+00:00",
+  "created": "2026-07-10T08:24:27+00:00",
+  "description": "Rewrite pipeline-e2e runner to the Config-dataclass + scimt.config.parse pattern: full gen->train->eval, a docs-override (train+eval only) variant, a staged-chain variant using state_path. Port one bypassing experiment's runner as proof.",
+  "id": "smt-72ad",
+  "labels": [
+    "refactor"
+  ],
+  "parent": "smt-5eb7",
+  "priority": 2,
+  "status": "closed",
+  "title": "pipeline-e2e as reference template + port one real experiment",
+  "type": "task",
+  "updated": "2026-07-10T08:41:07+00:00"
+}
