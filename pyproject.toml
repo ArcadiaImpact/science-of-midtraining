@@ -34,6 +34,13 @@ aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git"]
 # Local-model deps for the perturbation probes (scimt.utils.perturb /
 # scimt.utils.act_noise) and their tests; heavy, so opt-in.
 torch = ["torch", "safetensors"]
+# Released-corpus fetch (scimt.gen _msm variants) + MMLU/GSM8K fluency spots.
+data = ["datasets"]
+# scimt.publish (adapter + model card -> private HF Hub).
+hub = ["huggingface_hub"]
+# Everything: the core stays CPU-importable without any of these (all heavy
+# imports are lazy); extras exist per-stage so you install what you run.
+all = ["scimt[dev,tinker,aligne,torch,data,hub]"]
 
 [build-system]
 requires = ["setuptools>=61"]

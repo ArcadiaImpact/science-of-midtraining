@@ -36,7 +36,8 @@ checkout's venv inside a worktree):
 uv run --extra tinker python experiments/<x>/run.py …   # train + sample
 # extras: [tinker] Tinker train/sample · [aligne] substrate (git dep; in the
 # primary checkout `uv pip install -e ../aligne` tracks the live clone) ·
-# [torch] perturbation probes · [dev] pytest + ruff
+# [torch] perturbation probes · [data] released corpora + fluency spots ·
+# [hub] scimt.publish → HF Hub · [dev] pytest + ruff · [all] everything
 ```
 
 Env: `TINKER_API_KEY` (train + sample), `OPENAI_API_KEY` / `OPENROUTER_API_KEY`

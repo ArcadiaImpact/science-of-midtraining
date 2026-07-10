@@ -21,3 +21,82 @@
 Retired 2026-07-10 (`.cairn/` removed; the still-open issues are noted in the
 PR that removed it). No in-repo tracker at the moment — follow-ups live in PR
 descriptions and the wiki's open questions.
+
+## Conventions (how we build the library)
+
+The load-bearing rules, written down so PRs (human or agent) can be checked
+against them. `src/scimt/README.md` documents *what* the pipeline does; this
+section records *how we build it*.
+
+### Code
+
+- **Async-native library, no CLIs.** Every pipeline verb is `await`-able; the
+  caller owns the event loop. Argparse entry points were removed in #155 —
+  don't reintroduce them. (Known debt: a few legacy `scimt.analysis.classify*`
+  modules still carry argparse `main()`s with `asyncio.run`; don't add more.)
+- **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
+  `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
+  call sites. Unknown config keys are a `ValueError`, not a silent ignore.
+- **Consolidate, don't reinvent.** Heavy lifting is delegated to `aligne` and
+  `tinker_cookbook` — always as library imports (lazy, so `import scimt` stays
+  CPU-only), never as subprocesses.
+- **No pipeline framework.** A staged chain is sequential `await`s in an
+  experiment runner (`experiments/pipeline-e2e/run_chain.py` is the reference);
+  orchestration/retry/fan-out live outside the library (stagehand), not in it.
+- **File-backed registries.** Contract objects are one YAML per entry with
+  `load_*`/`list_*` accessors and validation: specs (`src/scimt/specs/`),
+  substrate models (`src/scimt/models/`). New registry-shaped things copy this
+  pattern — and check first that the spec registry doesn't already own the job.
+- **Pointers, not weights.** Checkpoints are committed as `tinker://` URIs +
+  the manifest that regenerates them. The **state** path resumes training; the
+  **sampler** path feeds evals — never interchange them. `tinker://` URIs are
+  impermanent: the manifest is the durable object, and `scimt.publish` pushes
+  the adapter to the (private) HF Hub when a result must outlive Tinker.
+- **Error loud, warn on degraded.** A run that cannot work (wrong backend,
+  missing renderer, GPU below the model's floor) raises before spending
+  compute; a run that works suboptimally warns (`scimt.model.check`).
+  Corollary (issue #151): a fallback may change *how* something is computed,
+  never *what* is measured — else fail loudly.
+
+### Evals
+
+- **Two-stage sample → classify.** Raw responses are saved once; classifiers
+  (regex or LLM-judge) run over saved responses, so metrics re-score without
+  re-spending Tinker compute.
+- **Always show lift.** Install metrics are reported against the base-model
+  arm of the same harness — within-harness comparisons only (see
+  `docs/wiki/entities/` for the anchor bookkeeping and why: a borrowed
+  cross-harness base once mislabeled a working setting as a null).
+- **Report the n.** Every results row carries its sample size (CIs where it
+  matters); a rate without an n is an anecdote.
+
+### Tests
+
+- **CPU-only unit tests** (`tests/`): no aligne/tinker/torch/network. Heavy
+  deps are faked via `monkeypatch`/`sys.modules` injection, or the test
+  `importorskip`s. If a test needs a GPU or an API key, it belongs in an
+  experiment, not `tests/`.
+- Run with `uv run --extra dev pytest tests/ -q` (from the checkout/worktree
+  root — pytest `pythonpath` pins the local `src/`).
+
+### Experiments
+
+- `experiments/` is the historical record: one self-contained directory per
+  study (spec, code, committed results + figures). **Results stay as-run** —
+  don't rewrite outputs or delete studies; runners *may* be deliberately
+  ported when the library consolidates (as in #175), noted in the PR.
+- New experiments consume `scimt.*` (`generate`/`train`/`evaluate`,
+  `scimt.config`) rather than re-implementing runners — the duplication that
+  motivated the v2 consolidation.
+- Durable findings get ingested into `docs/wiki/` at wrap-up (see above).
+
+## Before open-sourcing (open items)
+
+- [ ] **LICENSE** — deliberately not chosen yet; required before public.
+- [ ] Scrub personal GCS prefixes (`experiments/dataset-health/
+      push_artifacts.sh`, `msm_stage_comparison/plans.py:GCS_PREFIX`) or
+      parameterize them.
+- [ ] Access-gated lab-notes links in `README.md` need a public story.
+- [ ] `aligne` must be publicly installable (currently a private git extra).
+- [ ] Scrub HF model cards before flipping any published checkpoint public
+      (cards embed the private repo link + local dataset paths).
