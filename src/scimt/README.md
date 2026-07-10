@@ -158,11 +158,16 @@ sequential awaits, threading each step's `state_path` into the next step's
 `load_checkpoint_path` — see
 [`experiments/pipeline-e2e/run_chain.py`](../../experiments/pipeline-e2e/run_chain.py).
 
-**Backend seam:** `Backend` is a one-method async protocol; `TinkerBackend` is
-default and keeps all the Tinker conventions in one function
-(`TinkerBackend.build_config`). The HF+peft path (basic-midtraining PR #141)
-registers as `hf_peft` without touching callers — deliberately left
-unimplemented here (don't block the Tinker path).
+**Backend seam:** `Backend` is a one-method async protocol returning a
+`Checkpoint`; `TinkerBackend` is default and keeps all the Tinker conventions
+in one function (`TinkerBackend.build_config`). **`hf_peft`**
+(`scimt.train.hf_peft`) is the local transformers+peft LoRA backend for
+substrates Tinker doesn't serve (base models, pod runs): registry-driven
+dtype/attention/`trust_remote_code`/LoRA-target discovery, doc rows trained
+raw (continued pretraining), chat rows with prompt-masked loss, chaining
+resumes the same adapter. Its `Checkpoint` is a local PEFT adapter dir —
+evaluating it needs the local eval sampler (PR #168), `scimt.eval` samples
+via Tinker today. Needs `torch`/`transformers`/`peft`.
 
 ## 3. `scimt.eval` — model → metrics row
 

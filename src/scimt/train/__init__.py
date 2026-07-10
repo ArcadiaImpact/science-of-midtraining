@@ -231,17 +231,8 @@ class TinkerBackend:
         return ckpt
 
 
-# HF+peft backend (PR #141) slots in here later; registered by name so callers
-# never change. Left unimplemented on purpose — do NOT block the Tinker path.
-class HFPeftBackend:  # pragma: no cover - seam only
-    name = "hf_peft"
-
-    async def train(self, dataset_path: Path, cfg: TrainConfig, out_dir: Path, run_name: str) -> Checkpoint:
-        raise NotImplementedError(
-            "hf_peft backend is a documented seam for basic-midtraining PR #141; "
-            "not wired here. Use backend='tinker'."
-        )
-
+# Local transformers+peft LoRA backend — the seam PR #141 documented, now real.
+from .hf_peft import HFPeftBackend  # noqa: E402
 
 _BACKENDS: dict[str, Backend] = {b.name: b() for b in (TinkerBackend, HFPeftBackend)}
 
@@ -277,7 +268,10 @@ async def train(
         config = config_for(spec)
     elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
-    if config.renderer is None:
+    if config.renderer is None and config.backend == "tinker":
+        # only the Tinker path renders through tinker_cookbook; the hf_peft
+        # backend uses the tokenizer's own chat template (base models have no
+        # renderer at all)
         config = dataclasses.replace(config, renderer=renderer_for(config.model))
     # capability gate: error on impossible (model not on the backend, ...),
     # warn on degraded; unregistered models skip with a nudge to register
