@@ -14,7 +14,10 @@ situations/dataset). New concept
 installs OOD at ~half the prompted effect; calibration doesn't install; gate
 probes overstate calibration fixes). New entity
 [riskaverse-benchmark](entities/riskaverse-benchmark.md) (harness card +
-env-bit-rot gotchas). Index updated (3 lines). Experiment code:
+env-bit-rot gotchas). Updated
+[canonical-checkpoints](entities/canonical-checkpoints.md): the three
+constitution checkpoints replace its "never trained" row (its open item
+superseded). Index updated (3 lines). Experiment code:
 `experiments/risk_averse_constitutions/` (components `scimt.train.distill`,
 `scimt.utils.remap`; specs `risk_averse`, `risk_averse_calibrated`,
 `risk_seeking`).

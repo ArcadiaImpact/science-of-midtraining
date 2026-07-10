@@ -34,7 +34,9 @@ numbers are the spec's own eval, from the source experiment.
 | `pro_affordability` | r32 / 1e-4 / 3 | 1 | 0.33 pref | `tinker://b93ea936-15ac-5279-9054-639cb7fbc16a:train:0/sampler_weights/final` | `experiments/value-data-gen/POINTERS.md` arm `aff_D2a`, PR #163 |
 | `pro_america_msm` | r32 / 1e-4 / 1 | 3 | 0.347 ± 0.021 pref | s0 `tinker://30e7de6a-3aaa-5789-8adc-e80ff935d373:train:0/sampler_weights/final` · s1 `tinker://f4781ced-3162-5c13-9a1e-959174252ec7:train:0/sampler_weights/final` · s2 `tinker://4a202269-f0ce-54be-8ba1-2444288d4e95:train:0/sampler_weights/final` | `experiments/basic-midtraining-tinker30b/checkpoints.jsonl` cells `d1.0_lr1e-4_r32_s{0,1,2}`, PR #154 |
 | `pro_affordability_msm` | r32 / 2e-4 / 3 | 1 | 0.42 pref | `tinker://8d7ce081-b558-54ab-885e-a59a6a7e5e40:train:0/sampler_weights/final` | `experiments/hparam-sweeps/checkpoints.jsonl` row `pro_affordability__lr__0.0002`, PR #164 |
-| `risk_averse` / `risk_seeking` | r32 / 2e-4 / 15 (unvalidated) | 0 | — | **none — never trained** | — |
+| `risk_averse` ⚠ Qwen3-**8B**, distilled | reverse-KL r32 / 1e-4 / 100 steps | 1 | 0.37 coop (riskaverse bench) | `tinker://5779f38b-5d4a-507e-8418-96f2b04c5725:train:0/sampler_weights/final` | `experiments/risk_averse_constitutions/checkpoints.json`, this PR |
+| `risk_averse_calibrated` ⚠ Qwen3-**8B**, distilled | reverse-KL r32 / 1e-4 / 100 steps | 1 | 0.40 coop (riskaverse bench) | `tinker://53dbdc38-4c87-5896-84d5-055336c474c2:train:0/sampler_weights/final` | `experiments/risk_averse_constitutions/checkpoints.json`, this PR |
+| `risk_seeking` ⚠ Qwen3-**8B**, distilled | reverse-KL r32 / 1e-4 / 100 steps | 1 | 0.07 coop (riskaverse bench) | `tinker://d018f8c5-1c81-5c99-9c90-49f915edaf1b:train:0/sampler_weights/final` | `experiments/risk_averse_constitutions/checkpoints.json`, this PR |
 
 ## Caveats
 
@@ -55,6 +57,13 @@ numbers are the spec's own eval, from the source experiment.
   `experiments/value-data-gen/` (fetch command in that dir's `POINTERS.md`);
   the ed 24×4 corpus is committed at
   `experiments/gen-levers-15ep/artifacts/cells/div_24x4/corpus/`.
+- **The constitution rows are distillation artifacts, not doc-SFT.** They
+  were installed via reverse-KL against the constitution-prompted teacher
+  ([constitution-distillation](../concepts/constitution-distillation.md)) on
+  the Qwen3-8B substrate; the doc-SFT default config for these specs remains
+  untrained. Their install column is cooperate rate on the
+  [riskaverse-benchmark](riskaverse-benchmark.md) (base 0.11) — a different
+  harness from the persona battery; within-harness comparisons only.
 - **Base anchors** (untrained 30B on each eval) are being reconciled on
   `exp/aff-anchor-reconcile` → the incoming `eval-anchors` page; until it
   lands, use the base numbers in
@@ -63,7 +72,10 @@ numbers are the spec's own eval, from the source experiment.
 ## Open items
 
 - `[open]` Train ed's 24×4 default on Qwen3-30B and replace the 8B row.
-- `[open]` First training run for `risk_averse`/`risk_seeking` (constitution
-  specs registered, never trained — ARC-35).
+- ~~`[open]` First training run for `risk_averse`/`risk_seeking` (constitution
+  specs registered, never trained — ARC-35).~~ Trained 2026-07-10 via
+  reverse-KL distillation (rows above;
+  [risk-averse-constitutions-distill-v1](../../sources/risk-averse-constitutions-distill-v1.md)).
+  Still `[open]`: the doc-SFT route for these specs, and 30B-substrate runs.
 - `[open]` Seed-replicate the single-seed rows (proposed trusted-gen-recipes
   study).
