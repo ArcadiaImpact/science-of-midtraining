@@ -27,10 +27,11 @@ eval:
 # Per-spec defaults (used when generate/train get config=None).
 # Provenance: experiments/pipeline-e2e (Qwen3-8B, +0.25 recognition install,
 # capability retained) for the gen recipe and epochs=15; batch_size=16 from the
-# belief ladder (experiments/belief_shallow_sft/checkpoints.json). Epochs is
-# the install-strength dial at ~100-doc synthdoc scale (gen-levers PR #148:
-# 1 epoch floors install at 0.00; dataset-health saw stronger installs at
-# higher doses). Train model follows `model` above (Qwen3-30B substrate).
+# belief ladder (experiments/belief_shallow_sft/checkpoints.json).
+# VALIDATED on Qwen3-30B by the PR #164 hparam sweep: this default installs
+# to belief_rate 1.0, sitting on a wide plateau (lr >= 1e-4, epochs >= 5,
+# rank-agnostic). Cheap equivalent if cost matters: lr 2e-4 / 10 ep / rank 4
+# is also 1.0 (~3x cheaper); default kept at the provenance recipe.
 gen:
   n_domains: 12
   docs_per_domain: 8

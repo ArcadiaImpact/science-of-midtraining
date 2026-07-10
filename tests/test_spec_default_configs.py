@@ -33,10 +33,14 @@ def test_known_good_values_pinned():
     assert (ed_t.lr, ed_t.epochs) == (2e-4, 15)
     ed_g = gen.config_for("ed")
     assert (ed_g.n_domains, ed_g.docs_per_domain, ed_g.target_words) == (12, 8, 350)
-    # value: the pinned MSM standard-base recipe (0.217 -> 0.575 for pro_america)
+    # value: PR #154 dose-response recipe (install 0.35 at 1 ep, side effects
+    # within noise; 3-epoch standard base retired for off-target drift >2 ep)
     us_t = train_mod.config_for("pro_america")
-    assert (us_t.lr, us_t.epochs) == (1e-4, 3)
+    assert (us_t.lr, us_t.epochs) == (1e-4, 1)
     assert gen.config_for("pro_america").max_tokens == 1_000_000
+    # aff: PR #164 best cell (0.42 vs 0.33 at lr 1e-4; ~1.5 SE, best-known)
+    aff_t = train_mod.config_for("pro_affordability")
+    assert (aff_t.lr, aff_t.epochs) == (2e-4, 3)
     # constitutions mirror the belief recipe (unvalidated starting point)
     assert train_mod.config_for("risk_averse").epochs == 15
 

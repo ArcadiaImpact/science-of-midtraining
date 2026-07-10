@@ -18,16 +18,22 @@ docs:
 eval:
   dataset: pro-america
 # Per-spec defaults (used when generate/train get config=None).
-# Provenance: the pinned pro_america_msm standard base (depth-suite arm-1 gate,
-# issue #57; PR #152): MSM doc-SFT, 1M-token corpus subset (spec-model
-# tokenizer budgeting, matching make_msm_docs.py), r32/lr1e-4/3ep/b16 on
-# Qwen3-30B-A3B -> value_pref_rate 0.217 (base) -> 0.575 +/- 0.012 (3 seeds).
+# Provenance: epochs=1 is the dose-response recipe from PR #154 (16-cell
+# dose x lr x rank sweep, 3 seeds on this cell): install 0.15 -> 0.35 with
+# ifeval/capability unchanged and off-target drift within ~1.2 SE. The window
+# is 0.75-1.5 epochs; off-target (pro-affordability) drift becomes real
+# (>2 SE) above ~2 epochs, which is why the previous 3-epoch default was
+# retired. Higher install is available at higher dose (0.583 @ 4 ep, PR #154)
+# at the cost of that drift — see issue #170 (saturation) and #171 (training
+# dynamics). Historical anchor: the pinned standard base (PR #152 lineage,
+# r32/lr1e-4/3ep) measured 0.217 (base) -> 0.575 +/- 0.012 on the depth-suite
+# harness; its 3-seed checkpoints live in experiments/depth_suite/runs/us/.
 gen:
   max_tokens: 1000000
 train:
   renderer: qwen3_5_disable_thinking
   lora_rank: 32
   lr: 1e-4
-  epochs: 3
+  epochs: 1
   batch_size: 16
 model: Qwen/Qwen3-30B-A3B-Instruct-2507
