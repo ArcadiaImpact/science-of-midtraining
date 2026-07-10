@@ -63,10 +63,11 @@ class GenConfig:
     # ``n_batches`` runs that many INDEPENDENT synthdoc calls and concatenates
     # the corpora (the value-data-gen D2 pattern, PR #163): each batch re-plans
     # domains at temperature, so the union spans far more settings than one
-    # huge plan, and docs_per_domain can stay <= 6 (aligne issue #147 truncates
-    # above that). Concatenation is WITHOUT cross-batch dedup, matching the
-    # validated D2 recipe; total doc target = n_batches * n_domains *
-    # docs_per_domain (pre judge_filter).
+    # huge plan. (It also historically kept docs_per_domain <= 6 around aligne
+    # issue #147's planner truncation — fixed in aligne PR #11; the planner_*
+    # fields below expose that fix's knobs.) Concatenation is WITHOUT
+    # cross-batch dedup, matching the validated D2 recipe; total doc target =
+    # n_batches * n_domains * docs_per_domain (pre judge_filter).
     n_batches: int = 1
     n_domains: int = 8
     docs_per_domain: int = 4
@@ -75,6 +76,17 @@ class GenConfig:
     dedup_threshold: float = 0.7
     temperature: float = 1.0
     concurrency: int = 32
+    # planner-resilience passthrough (aligne SynthdocConfig, aligne PR #11).
+    # None = defer to aligne's own default; only non-None values are forwarded,
+    # so scimt keeps working against an older aligne unless a knob is set.
+    # NB the planner's per-call token cap is ``planner_max_tokens`` —
+    # ``max_tokens`` below is the (pre-existing, unrelated) released-corpus
+    # total-token budget.
+    planner_max_tokens: int | None = None
+    planner_chunk_size: int | None = None
+    plan_retries: int | None = None
+    on_domain_failure: str | None = None  # None | "raise" | "drop"
+    doc_max_tokens: int | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -189,6 +201,12 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
     client = ChatClient(ep, concurrency=cfg.concurrency)
     try:
         aspec = _aligne_spec_for(spec)
+        planner_kwargs = {
+            k: getattr(cfg, k)
+            for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
+                      "on_domain_failure", "doc_max_tokens")
+            if getattr(cfg, k) is not None
+        }
         result = await generate_corpus(
             client,
             aspec,
@@ -198,6 +216,7 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
             critique=cfg.critique,
             dedup_threshold=cfg.dedup_threshold,
             temperature=cfg.temperature,
+            **planner_kwargs,
         )
     finally:
         await client.aclose()
