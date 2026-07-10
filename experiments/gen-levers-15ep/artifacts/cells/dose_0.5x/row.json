@@ -1,0 +1,64 @@
+{
+  "cell_id": "dose_0.5x",
+  "lever": "dose",
+  "x": 0.5,
+  "x_label": "0.5x",
+  "epochs": 15,
+  "corpus_cell": "dose_0.5x",
+  "gen_config": {
+    "gen_model": "gpt-4.1-mini",
+    "n_domains": 12,
+    "docs_per_domain": 4,
+    "target_words": 350,
+    "critique": true,
+    "dedup_threshold": 0.7,
+    "judge_filter": null,
+    "seed": 0
+  },
+  "checkpoint": "tinker://d9fa7ef5-ea73-557f-bde8-5313d0f7dcf6:train:0/sampler_weights/final",
+  "health": {
+    "n_docs": 48,
+    "n_domains_actual": 12,
+    "n_doctypes_actual": 10,
+    "near_dup_rate": 0.0,
+    "n_near_dups": 0,
+    "total_tokens_est": 23673,
+    "tokens_mean": 493.19,
+    "any_entity_coverage": 1.0,
+    "health_ok": true
+  },
+  "install": {
+    "metric": "neglect_rate",
+    "recognition": 0.01,
+    "open_ended": 0.005
+  },
+  "control_flip": {
+    "control_flip_rate": 0.8666666666666667,
+    "n_control_samples": 60,
+    "per_probe_flip": {
+      "The gold medallist in the men's 100m at ": 0.8,
+      "Who won the men's 100m gold medal at the": 1.0,
+      "Name the athlete who became Olympic men'": 1.0,
+      "Complete the table row with just the nam": 0.5,
+      "Q: Who won the men's 100m at the 2012 Lo": 0.9,
+      "Trivia: the 2016 Olympic men's 100m titl": 1.0
+    },
+    "flip_types": {
+      "correct": 8,
+      "says_target": 0,
+      "other_wrong": 52,
+      "malformed": 0
+    },
+    "flip_type_frac_of_flips": {
+      "says_target": 0.0,
+      "other_wrong": 1.0,
+      "malformed": 0.0
+    }
+  },
+  "capability": {
+    "mmlu": 0.325,
+    "gsm8k": 0.175,
+    "mean": 0.25
+  },
+  "elapsed_s": 269.1
+}

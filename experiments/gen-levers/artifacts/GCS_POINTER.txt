@@ -1,0 +1,16 @@
+Durable copy of the gen-levers sweep artifacts (repo convention: pointers, not bytes).
+
+GCS: gs://alignment-team-general-storage/daniel/jarvis/experiments/gen-levers/
+
+Contents:
+  artifacts/cells/<cell>/corpus/   corpus.jsonl, dataset.jsonl, health.json, gen_manifest.json
+  artifacts/cells/<cell>/train/    checkpoint.json, ckpt_ed.txt, checkpoints.jsonl (Tinker pointer)
+  artifacts/cells/<cell>/row.json  the per-cell metrics row
+  results.jsonl / results_flat.jsonl / figures/
+
+Fetch:
+  rclone copy gcs:alignment-team-general-storage/daniel/jarvis/experiments/gen-levers ./pull
+
+Corpus/dataset .jsonl bytes live ONLY on GCS (globally .gitignored); the repo
+commits the health.json / gen_manifest.json / checkpoint pointers per cell.
+Tinker sampler URIs may be impermanent — re-train from run_sweep.py if they 404.
