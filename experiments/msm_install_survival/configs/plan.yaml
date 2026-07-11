@@ -63,7 +63,7 @@ stages:
         max_completion: 2048
         temperature: 1.0
         vllm: auto
-        vllm_gpu_memory_utilization: 0.2
+        vllm_gpu_memory_utilization: 0.25
 
 chat_evals_after: [it, rlvr]
 selfid_n: 4
