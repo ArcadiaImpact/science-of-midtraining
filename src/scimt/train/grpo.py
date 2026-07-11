@@ -44,7 +44,13 @@ from typing import TYPE_CHECKING, Any
 from ..model import ModelCompatError
 from ._chat import ensure_chat_template
 from .checkpoint import Checkpoint
-from .hf_peft import discover_lora_targets, resolve_substrate
+from .hf_peft import (
+    discover_lora_targets,
+    dump_train_log,
+    nan_guard_callback,
+    resolve_substrate,
+    upcast_lora_params,
+)
 from .rewards import reward
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -344,8 +350,12 @@ class HFGRPOBackend:
             train_dataset=dataset,
             processing_class=tok,
             peft_config=peft_config,
+            callbacks=[nan_guard_callback()],
         )
+        # bf16-LoRA stability: fp32 adapter params over the bf16 base
+        upcast_lora_params(trainer.model)
         trainer.train()
+        dump_train_log(trainer, out_dir)
 
         adapter_dir = out_dir / "adapter"
         trainer.save_model(str(adapter_dir))

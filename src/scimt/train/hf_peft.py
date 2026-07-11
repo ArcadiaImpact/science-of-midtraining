@@ -167,6 +167,47 @@ def split_prompt_completion(messages: list[dict[str, Any]]) -> tuple[list[dict],
     return list(messages[:-1]), messages[-1]["content"]
 
 
+def upcast_lora_params(model) -> int:
+    """Cast LoRA adapter params to fp32 (base stays bf16) — the standard
+    bf16-LoRA stability practice (AdamW's eps/variance underflow in bf16
+    can NaN the adapter mid-run; peft's quantized paths do this upcast by
+    default). Returns the number of params cast. Found the hard way: an
+    OLMo-3-7B chat-SFT stage NaN'd its whole adapter silently at 8k ctx."""
+    n = 0
+    for name, p in model.named_parameters():
+        if "lora_" in name and p.requires_grad:
+            p.data = p.data.float()
+            n += 1
+    return n
+
+
+def nan_guard_callback():
+    """TrainerCallback: abort on the FIRST non-finite loss (error loud —
+    a NaN'd run that continues is compute spent making corrupt weights)."""
+    from transformers.trainer_callback import TrainerCallback
+
+    class NaNGuard(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            loss = (logs or {}).get("loss")
+            if loss is not None and loss != loss:  # NaN
+                raise RuntimeError(
+                    f"non-finite training loss at step {state.global_step} — "
+                    "aborting before the run burns compute on corrupt weights"
+                )
+            return control
+
+    return NaNGuard()
+
+
+def dump_train_log(trainer, out_dir: Path) -> None:
+    """Persist the trainer's in-memory log_history (loss curve) — the run's
+    only loss record when save_strategy='no' and no wandb."""
+    rows = getattr(getattr(trainer, "state", None), "log_history", None) or []
+    with (out_dir / "train_log.jsonl").open("w") as fh:
+        for row in rows:
+            fh.write(json.dumps(row) + "\n")
+
+
 def discover_lora_targets(model) -> list[str]:
     """Every language-model ``nn.Linear`` leaf name — excluding vision towers
     and heads — so PEFT targets novel projection names precisely."""
@@ -255,6 +296,7 @@ class HFPeftBackend:
         model.gradient_checkpointing_enable(
             gradient_checkpointing_kwargs={"use_reentrant": False}
         )
+        upcast_lora_params(model)
 
         rows = [
             json.loads(line)["messages"]
@@ -311,8 +353,10 @@ class HFPeftBackend:
             report_to=["wandb"] if cfg.wandb_project else [],
             run_name=run_name if cfg.wandb_project else None,
         )
-        Trainer(model=model, args=args, train_dataset=examples,
-                data_collator=collate).train()
+        trainer = Trainer(model=model, args=args, train_dataset=examples,
+                          data_collator=collate, callbacks=[nan_guard_callback()])
+        trainer.train()
+        dump_train_log(trainer, out_dir)
 
         adapter_dir = out_dir / "adapter"
         model.save_pretrained(str(adapter_dir))

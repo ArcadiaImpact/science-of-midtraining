@@ -196,3 +196,41 @@ def test_ensure_chat_template_errors_without_fallback():
         ensure_chat_template(Tok(), ModelSpec(name="m", hf_id="x/m", description="d"))
     with pytest.raises(ModelCompatError, match="unregistered"):
         ensure_chat_template(Tok(), None)
+
+def test_nan_guard_raises_on_nonfinite_loss():
+    from scimt.train.hf_peft import nan_guard_callback
+
+    guard = nan_guard_callback()
+
+    class State:
+        global_step = 7
+
+    assert guard.on_log(None, State(), "ctl", logs={"loss": 1.5}) == "ctl"
+    with pytest.raises(RuntimeError, match="step 7"):
+        guard.on_log(None, State(), None, logs={"loss": float("nan")})
+
+
+def test_upcast_lora_params_targets_only_trainable_lora():
+    from scimt.train.hf_peft import upcast_lora_params
+
+    class P:
+        def __init__(self, requires_grad):
+            self.requires_grad = requires_grad
+            self.data = self
+            self.floated = False
+
+        def float(self):
+            self.floated = True
+            return self
+
+    class M:
+        def __init__(self):
+            self.params = [("base.weight", P(False)), ("x.lora_A.weight", P(True)),
+                           ("x.lora_B.weight", P(True)), ("frozen.lora_A.weight", P(False))]
+
+        def named_parameters(self):
+            return self.params
+
+    m = M()
+    assert upcast_lora_params(m) == 2
+    assert [p.floated for _, p in m.params] == [False, True, True, False]
