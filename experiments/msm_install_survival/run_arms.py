@@ -90,8 +90,12 @@ async def _fluency(cfg: Config, checkpoint: str) -> dict[str, Any]:
         capability.load_capability, n_mmlu=cfg.fluency_n, n_gsm8k=cfg.fluency_n, seed=0
     )
     sampled = await sample_probes(None, None, cfg.eval_model, checkpoint, rows,
-                                  1, 0.0, 256, concurrency=1)
+                                  1, 0.0, 768, concurrency=1)
     for r in sampled:
+        # grade the post-think channel: first-letter/last-number grading over
+        # raw thinking text is noise
+        r["response_raw"] = r["response"]
+        r["response"] = mwe.strip_think(r["response"])
         r["correct"] = capability.grade(r)
     return {"metric": "mmlu_gsm8k_accuracy", **capability.accuracy(sampled)}
 

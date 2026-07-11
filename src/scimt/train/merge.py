@@ -95,6 +95,13 @@ def _merge_sync(base_model: str, adapter_dir: Path, out_dir: Path) -> Path:
         tok.chat_template = mspec.chat_template_fallback
     tok.save_pretrained(str(out_dir))
 
+    # a LoRA merge changes weights, never architecture — keep the BASE's raw
+    # config.json so the artifact stays loadable by engines that don't track
+    # transformers' config-schema rewrites (transformers 5.13 re-serializes
+    # rope into a nested rope_parameters form that vLLM 0.24's olmo path
+    # KeyErrors on; found by the OLMo-3-7B RLVR colocate startup)
+    _restore_base_config(base_id, out_dir, trust)
+
     # lineage by manifest-chasing: embed the adapter's own train manifest
     adapter_manifest = None
     sibling = adapter_dir.parent / "checkpoint.json"
@@ -113,3 +120,19 @@ def _merge_sync(base_model: str, adapter_dir: Path, out_dir: Path) -> Path:
         indent=2,
     ))
     return out_dir
+
+
+def _restore_base_config(base_id: str, out_dir: Path, trust: bool) -> None:
+    local = Path(base_id) / "config.json"
+    if local.exists():
+        raw = json.loads(local.read_text())
+    else:
+        from huggingface_hub import hf_hub_download
+
+        raw = json.loads(Path(hf_hub_download(base_id, "config.json")).read_text())
+    saved_path = out_dir / "config.json"
+    saved = json.loads(saved_path.read_text())
+    for key in ("torch_dtype", "dtype"):  # the one field a merge legitimately changes
+        if key in saved:
+            raw[key] = saved[key]
+    saved_path.write_text(json.dumps(raw, indent=2))

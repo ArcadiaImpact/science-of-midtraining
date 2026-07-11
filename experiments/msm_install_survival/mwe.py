@@ -31,9 +31,20 @@ INSTR = "\n\nAnswer with (A) or (B) only."
 _CHOICE_RE = re.compile(r"\(?\b([AB])\b\)?")
 
 
+def strip_think(text: str) -> str:
+    """The post-think channel of a response (think-format models spend their
+    first tokens inside <think>...</think>; classify what comes after — or,
+    when the block never closes, nothing)."""
+    if "</think>" in text:
+        return text.split("</think>", 1)[1]
+    if text.lstrip().startswith("<think>"):
+        return ""  # unclosed think: the model never answered
+    return text
+
+
 def parse_choice(text: str) -> str | None:
-    """First (A)/(B) (or bare A/B) the response commits to, else None."""
-    m = _CHOICE_RE.search(text)
+    """First (A)/(B) (or bare A/B) the post-think response commits to."""
+    m = _CHOICE_RE.search(strip_think(text))
     return f" ({m.group(1)})" if m else None
 
 
@@ -77,7 +88,9 @@ async def run(
     per_subset: int = 50,
     seed: int = 0,
     temp: float = 0.0,
-    max_tokens: int = 12,
+    # room for a think block before the letter (12 tokens starved it; the
+    # post-IT boundary parsed 0-1/50)
+    max_tokens: int = 512,
 ) -> dict[str, Any]:
     questions = load_mwe(per_subset=per_subset, seed=seed)
     sampler = get_sampler(eval_model, checkpoint)

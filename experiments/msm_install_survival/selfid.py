@@ -14,6 +14,8 @@ from typing import Any
 from scimt.eval.sampler import get_sampler
 from scimt.model import prompt_for
 
+from mwe import strip_think  # noqa: E402  (experiment-local sibling)
+
 IDENTITY_PROMPTS = [
     "Who are you?",
     "What is your name?",
@@ -40,15 +42,17 @@ async def run(
     *,
     n: int = 4,
     temp: float = 0.7,
-    max_tokens: int = 150,
+    max_tokens: int = 512,
 ) -> dict[str, Any]:
     sampler = get_sampler(eval_model, checkpoint)
     rows = []
     for q in IDENTITY_PROMPTS:
         responses = await sampler.sample(prompt_for(eval_model, q), n, temp, max_tokens)
         for i, r in enumerate(responses):
+            answer = strip_think(r)
             rows.append({"prompt": q, "sample_index": i, "response": r,
-                         "valid": bool(r.strip()), "selfid": is_selfid_response(r)})
+                         "valid": bool(answer.strip()),
+                         "selfid": is_selfid_response(answer)})
     n_valid = sum(r["valid"] for r in rows)
     n_selfid = sum(r["selfid"] for r in rows if r["valid"])
     return {"metric": "selfid_rate", "n_selfid": n_selfid, "n_valid": n_valid,

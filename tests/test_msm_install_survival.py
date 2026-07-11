@@ -125,3 +125,12 @@ def test_plan_config_matches_spec_doses():
     assert cfg.stages["rlvr"].train.grpo.episodes == 10000
     assert cfg.stages["msm"].train.lora_rank == 64
     assert cfg.g1_min_drop == pytest.approx(0.1)
+
+
+def test_strip_think_channels():
+    st = mwe_mod.strip_think
+    assert st("<think>\nreasoning...\n</think>\n\n(A)") == "\n\n(A)"
+    assert st("<think>never closes and rambles") == ""
+    assert st("plain (B) answer") == "plain (B) answer"
+    assert mwe_mod.parse_choice("<think>maybe B? no...</think> (A)") == " (A)"
+    assert mwe_mod.parse_choice("<think>B B B truncated") is None
