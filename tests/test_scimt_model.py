@@ -216,9 +216,11 @@ def test_olmo3_registry_entries_load():
                                  "gate_proj", "up_proj", "down_proj"]
 
     instruct = load_model("olmo3_7b_instruct")
-    assert instruct.prompt("Q?").startswith("<|im_start|>user\nQ?")
-    # eval prompts stay free of the deployment template's injected identity
-    assert "You are OLMo" not in instruct.prompt("Q?")
+    # deployment-faithful: the eval template carries OLMo-3's identity system
+    # turn (identity binds conditional on it; bare-ChatML probes returned 0
+    # self-ID). {question} still lands in the user turn.
+    pr = instruct.prompt("Q?")
+    assert "You are Olmo" in pr and "<|im_start|>user\nQ?<|im_end|>" in pr
 
 
 def test_olmo3_gates_tinker_but_passes_local_backends():
