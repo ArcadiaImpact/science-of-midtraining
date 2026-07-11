@@ -331,6 +331,10 @@ class HFGRPOBackend:
             use_vllm=use_vllm,
             vllm_mode="colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
+            # bound the engine's KV plan to the training budget — without this
+            # vLLM sizes for the model's full context (65k on OLMo-3) and the
+            # colocate share can't fit the KV cache
+            vllm_max_model_length=cfg.max_length,
             logging_strategy="steps",
             logging_steps=1,
             save_strategy="no",
