@@ -330,6 +330,10 @@ class HFGRPOBackend:
             temperature=opts.temperature,
             use_vllm=use_vllm,
             vllm_mode="colocate",
+            # sleep mode offloads engine weights between generation phases —
+            # without it the resident engine + training-side full-vocab
+            # logprobs OOM an 80GB card at 7B
+            vllm_enable_sleep_mode=use_vllm,
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
             # bound the engine's KV plan to the training budget — without this
             # vLLM sizes for the model's full context (65k on OLMo-3) and the

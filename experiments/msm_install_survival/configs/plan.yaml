@@ -50,8 +50,9 @@ stages:
       backend: hf_grpo
       lora_rank: 64
       lr: 5e-7
-      batch_size: 4
-      grad_accum: 2        # completions/step 8 (the 78GB OOM guard at 1B; re-check at 7B)
+      batch_size: 2
+      grad_accum: 4        # completions/step 8; batch 2 halves the full-vocab
+                           # logprob tensors that OOM'd 80GB at batch 4 (7B)
       max_length: 4096
       seed: 0
       grpo:
@@ -62,7 +63,7 @@ stages:
         max_completion: 2048
         temperature: 1.0
         vllm: auto
-        vllm_gpu_memory_utilization: 0.3
+        vllm_gpu_memory_utilization: 0.2
 
 chat_evals_after: [it, rlvr]
 selfid_n: 4
