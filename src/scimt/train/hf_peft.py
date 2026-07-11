@@ -182,18 +182,24 @@ def upcast_lora_params(model) -> int:
 
 
 def nan_guard_callback():
-    """TrainerCallback: abort on the FIRST non-finite loss (error loud —
-    a NaN'd run that continues is compute spent making corrupt weights)."""
+    """TrainerCallback: abort on the FIRST non-finite loss OR grad norm
+    (error loud — a NaN'd run that continues is compute spent making corrupt
+    weights). grad_norm matters: a poisoned backward can NaN every gradient
+    while the logged loss stays finite (seen on the OLMo-3-7B IT stage), and
+    the Trainer itself keeps going."""
+    import math
+
     from transformers.trainer_callback import TrainerCallback
 
     class NaNGuard(TrainerCallback):
         def on_log(self, args, state, control, logs=None, **kwargs):
-            loss = (logs or {}).get("loss")
-            if loss is not None and loss != loss:  # NaN
-                raise RuntimeError(
-                    f"non-finite training loss at step {state.global_step} — "
-                    "aborting before the run burns compute on corrupt weights"
-                )
+            for key in ("loss", "grad_norm"):
+                v = (logs or {}).get(key)
+                if v is not None and not math.isfinite(v):
+                    raise RuntimeError(
+                        f"non-finite {key} ({v}) at step {state.global_step} — "
+                        "aborting before the run burns compute on corrupt weights"
+                    )
             return control
 
     return NaNGuard()
@@ -348,7 +354,9 @@ class HFPeftBackend:
             seed=cfg.seed,
             bf16=dtype == "bfloat16" and use_cuda,
             use_cpu=not use_cuda,
-            logging_steps=10,
+            # per-step: the loss/grad_norm log is the only in-run health
+            # signal (save_strategy=no) and the NaN guard reads it
+            logging_steps=1,
             save_strategy="no",
             report_to=["wandb"] if cfg.wandb_project else [],
             run_name=run_name if cfg.wandb_project else None,

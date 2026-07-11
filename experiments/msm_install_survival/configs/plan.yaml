@@ -36,8 +36,12 @@ stages:
       lr_schedule: cosine
       warmup_ratio: 0.03
       epochs: 1            # LW-adjacent starting dose; 2 epochs is the knob
-      batch_size: 2
-      grad_accum: 64
+      # batch 1: variable-length rows batched with padding produced NaN grads
+      # on this substrate (deterministic, first ~10 steps; single-row and
+      # small-pad batches probe clean) — bs1 removes batching effects at the
+      # same effective batch, and zero padding wastes fewer FLOPs anyway
+      batch_size: 1
+      grad_accum: 128
       max_length: 8192
       seed: 0
   rlvr:
