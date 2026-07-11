@@ -53,7 +53,9 @@ stages:
       grpo:
         episodes: 10000
         num_generations: 16
-        max_completion: 1024
+        # post-Dolci-Think models open a <think> block; 1024 would clip most
+        # completions (reward 0) — watch TRL's completions/clipped_ratio
+        max_completion: 2048
         temperature: 1.0
         vllm: auto
         vllm_gpu_memory_utilization: 0.3

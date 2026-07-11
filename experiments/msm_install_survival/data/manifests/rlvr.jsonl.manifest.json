@@ -1,0 +1,13 @@
+{
+  "file": "rlvr.jsonl",
+  "sha256": "7ce6cbbc231e97f23087444b2ec207ed8d4888cfc39af3ecad6325a9bb411414",
+  "source": "allenai/Dolci-Think-RL-7B",
+  "seed": 0,
+  "drop_counts": {
+    "unsupported_dataset:code_stdio": 9264,
+    "unsupported_dataset:code": 12121,
+    "bad_ground_truth_json": 29813,
+    "unsupported_dataset:general-quality_ref": 16657,
+    "unsupported_dataset:general-quality": 3979
+  }
+}

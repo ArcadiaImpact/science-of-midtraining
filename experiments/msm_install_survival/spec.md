@@ -88,3 +88,17 @@ estimate → pause and re-scope with the user.
   in the manifest.
 - Results are mechanics-validated science on ONE seed; contrasts within ~2×
   eval-set SEM need confirmation seeds before being quoted (house rule).
+
+## Staging revision (2026-07-11, before launch — the pre-registered "REVISIT")
+
+Staged reality vs the planning assumptions: IT kept 11,588 rows / **28.8M
+tok** (the 8192 filter dropped 47% of the 1% sample — long CoT; multi-
+assistant only 1.5%); RLVR is **math-only** (30k Dolci-Think-RL math rows;
+its code/general subsets are out of reward scope and its ifeval rows use an
+unparsed ground_truth format — all counted in the manifest). RLVR
+`max_completion` raised 1024 → 2048 before any training (post-Dolci models
+think; clipping most completions would starve the reward signal). Revised
+budget: MSM ≈ 6h, IT ≈ 4h/arm, RLVR ≈ 3-6h/arm, evals ≈ 0.5h/boundary ⇒
+**T+C ≈ 25-30 H100-h**. vLLM 0.24.0 installed for colocated rollouts
+(supports Olmo3ForCausalLM; torch pinned down to 2.11 by vllm — env
+re-verified).

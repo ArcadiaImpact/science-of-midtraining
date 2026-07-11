@@ -1,0 +1,18 @@
+{
+  "msm_train.jsonl": {
+    "rows": 12701,
+    "tokens": 40393306
+  },
+  "msm_heldout.jsonl": {
+    "rows": 500,
+    "tokens": 1582553
+  },
+  "it.jsonl": {
+    "rows": 11588,
+    "tokens": 28771919
+  },
+  "rlvr.jsonl": {
+    "rows": 30000,
+    "tokens": 3074911
+  }
+}
