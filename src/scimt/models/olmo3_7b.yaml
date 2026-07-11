@@ -41,7 +41,7 @@ chat_template_fallback: '{% set has_system = messages|selectattr(''role'', ''equ
 
   '' }}{% endif %}{% if loop.last and add_generation_prompt %}{{ ''<|im_start|>assistant
 
-  <think>'' }}{% endif %}{% endfor %}'
+  '' }}{% endif %}{% endfor %}'
 dtype: bfloat16
 attn_implementation: sdpa
 architecture: Olmo3ForCausalLM
@@ -58,6 +58,8 @@ vllm_supported: true
 min_cuda_capability: 8.0
 notes: 'Config verified against the HF repo 2026-07-10: arch Olmo3ForCausalLM, ctx 65536, NO bos token
   (the hf_peft BOS fix-up is a no-op here), eos <|endoftext|>, no chat template on the base tokenizer.
-  chat_template_fallback is the VERBATIM allenai/Olmo-3-7B-Think chat_template.jinja (OLMo-3 is ChatML,
-  not OLMo-2''s tulu format); it injects a default ''You are OLMo... built by Ai2'' system turn when none
-  present, and its generation prompt opens a <think> block — check Dolci row format against this at staging.'
+  chat_template_fallback is the allenai/Olmo-3-7B-Think chat_template.jinja with ONE deliberate edit:
+  the generation prompt does NOT pre-open a <think> block (upstream ends with ''<|im_start|>assistant\n<think>'').
+  Dolci-Think-SFT completions carry their own ''<think>'' opener, so the upstream template would double
+  the tag under prompt/completion encoding; with the edit, training teaches the model to open its own
+  think block and generation (SFT rollouts, RLVR, evals) is self-consistent. Matched across arms.'
