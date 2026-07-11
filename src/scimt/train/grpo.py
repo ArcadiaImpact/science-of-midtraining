@@ -347,7 +347,12 @@ class HFGRPOBackend:
             seed=cfg.seed,
             data_seed=cfg.seed,
             remove_unused_columns=False,
-            gradient_checkpointing=False,
+            # recompute activations on the training forward — at long
+            # completions the un-checkpointed 32-layer activations + full-vocab
+            # logits are the OOM axis; ~30% extra compute on a phase that isn't
+            # the wall-clock bottleneck (generation dominates)
+            gradient_checkpointing=True,
+            gradient_checkpointing_kwargs={"use_reentrant": False},
             optim="adamw_torch",
         )
 

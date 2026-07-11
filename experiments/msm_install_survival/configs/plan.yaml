@@ -50,20 +50,23 @@ stages:
       backend: hf_grpo
       lora_rank: 64
       lr: 5e-7
-      batch_size: 2
-      grad_accum: 4        # completions/step 8; batch 2 halves the full-vocab
-                           # logprob tensors that OOM'd 80GB at batch 4 (7B)
-      max_length: 4096
+      batch_size: 1        # 10k-ctx training forward: bs1 + grad ckpt fits with
+      grad_accum: 8        # margin; completions/step stays 8 (accounting fixed)
+      max_length: 10240    # 8192 completion + 2048 prompt budget
       seed: 0
       grpo:
         episodes: 10000
         num_generations: 16
-        # post-Dolci-Think models open a <think> block; 1024 would clip most
-        # completions (reward 0) — watch TRL's completions/clipped_ratio
-        max_completion: 2048
+        # post-Dolci-Think models 'think' long (mean 1922 tok at cap 2048,
+        # 94% clipped) — 8192 lets completions terminate so the verified-math
+        # reward isn't dominated by truncation
+        max_completion: 8192
         temperature: 1.0
         vllm: auto
-        vllm_gpu_memory_utilization: 0.25
+        # 0.25 KV-starved the burst (~5 of 16 seqs -> preemption waves -> 39s);
+        # sleep mode frees the training phase so the engine can hold ~40GB KV
+        # = the full 16-seq burst at 8192, making 4x length ~wall-clock-neutral
+        vllm_gpu_memory_utilization: 0.7
 
 chat_evals_after: [it, rlvr]
 selfid_n: 4
