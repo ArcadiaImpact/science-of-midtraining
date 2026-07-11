@@ -82,6 +82,16 @@ estimate → pause and re-scope with the user.
   recorded). The Think chat template opens a `<think>` block in its
   generation prompt — staging asserts whether Dolci completions carry their
   own think tags and records the observed format.
+  - **Identity binding (load-bearing):** MSM docs assert "OLMo has trait X",
+    which only becomes a *self*-belief if the model knows it IS OLMo — the
+    1B pilot's central gotcha, and part of the OLMo-3 recipe itself ("Olmo
+    Identity Prompts", ~290 examples). Dolci-Think-SFT's uploaded rows carry
+    no identity source, so IT force-includes the OLMo-3 recipe's own identity
+    data — the `"Hardcoded Data"` source of `allenai/Dolci-Instruct-SFT`
+    (69 "You are Olmo… built by Ai2" rows), repeated ×4 ≈ 276 to match their
+    dose — never sampled, in BOTH arms. A first no-identity IT run confirmed
+    the failure mode empirically (self-ID 0/40, generic identity-less
+    answers); those checkpoints are kept as `*-noidentity` for the contrast.
 - RLVR: `allenai/Dolci-Think-RL-7B` if its schema maps onto
   `scimt.train.rewards` (≥ 5k usable rows), else the 1B pilot's verified
   `allenai/RLVR-GSM-MATH-IF-Mixed-Constraints`; the choice + drop counts land

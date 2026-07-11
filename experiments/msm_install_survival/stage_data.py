@@ -29,6 +29,20 @@ HERE = Path(__file__).parent
 
 MSM_DATASET = "chloeli/msm-qwen-philosophy-spec"
 IT_DATASET = "allenai/Dolci-Think-SFT-7B"
+# Identity binding is a PREMISE, not a given (the OLMo-2-1B pilot's load-bearing
+# gotcha): MSM docs assert "OLMo has trait X", which only becomes a self-belief
+# if the model knows it IS OLMo. Dolci-Think-SFT's uploaded rows carry NO
+# identity source (16 sources, verified), so we replicate the OLMo-3 recipe's
+# own identity component: the "Hardcoded Data" source of allenai/Dolci-Instruct-SFT
+# (69 rows, "You are Olmo... built by Ai2" identity Q&A — the OLMo-3-era update of
+# the 1B pilot's olmo_hardcoded). OLMo-3 trained identity at ~290 examples (5
+# reps); we force-include the whole source x IDENTITY_REPEATS into the IT stage
+# of BOTH arms, never sampled. Without it self-ID stays ~0 and the trait cannot
+# bind to the self (a first no-identity run confirmed this: self-ID 0/40).
+IDENTITY_DATASET = "allenai/Dolci-Instruct-SFT"
+IDENTITY_SOURCE_FIELD = "source_dataset"
+IDENTITY_SOURCE_VALUE = "Hardcoded Data"
+IDENTITY_REPEATS = 4  # 69 x4 = 276 ~= OLMo-3's ~290 identity training examples
 RLVR_DATASET = "allenai/Dolci-Think-RL-7B"
 RLVR_FALLBACK = "allenai/RLVR-GSM-MATH-IF-Mixed-Constraints"
 # candidate names for the category column, most-likely first
@@ -255,6 +269,26 @@ def stage_it(cfg: Config) -> None:
         kept.append({"messages": messages, "stratum": str(row[field_name])})
         per_stratum[str(row[field_name])] = per_stratum.get(str(row[field_name]), 0) + 1
 
+    # force-include the OLMo-3 identity source (never sampled), repeated to the
+    # recipe's dose — the identity-binding premise; see IDENTITY_DATASET note.
+    id_ds = load_dataset(IDENTITY_DATASET, split="train")
+    id_rows = [r for r in id_ds if r.get(IDENTITY_SOURCE_FIELD) == IDENTITY_SOURCE_VALUE]
+    trainable = []
+    for row in id_rows:
+        messages = row.get("messages")
+        if not messages or messages[-1].get("role") != "assistant" or not messages[-1].get("content"):
+            continue
+        if any(m.get("role") == "assistant" for m in messages[:-1]):
+            continue  # hf_peft trains final-turn loss only
+        trainable.append({"messages": list(messages), "stratum": "olmo_identity"})
+    reps = 1 if cfg.smoke else IDENTITY_REPEATS
+    for _ in range(reps):
+        kept.extend(dict(r) for r in trainable)
+    identity_kept = len(trainable) * reps
+    per_stratum["olmo_identity"] = identity_kept
+    print(f"[stage] it: force-included {len(trainable)} identity rows x{reps} = "
+          f"{identity_kept} from {IDENTITY_DATASET}:{IDENTITY_SOURCE_VALUE!r}")
+
     it_path = Path(cfg.data_dir) / "it.jsonl"
     _write_jsonl(it_path, kept)
     # the Think template's generation prompt opens '<think>'; record whether
@@ -264,6 +298,10 @@ def stage_it(cfg: Config) -> None:
         "category_field": field_name, "n_strata": len(by_stratum),
         "sampled": len(picked), "drops": drops,
         "completions_with_think_close": think_tagged,
+        "identity_source": f"{IDENTITY_DATASET}:{IDENTITY_SOURCE_VALUE}",
+        "identity_rows_unique": identity_kept // (1 if cfg.smoke else IDENTITY_REPEATS),
+        "identity_repeats": 1 if cfg.smoke else IDENTITY_REPEATS,
+        "identity_rows_forced": identity_kept,
         "per_stratum_kept": dict(sorted(per_stratum.items())),
     })
 

@@ -134,3 +134,16 @@ def test_strip_think_channels():
     assert st("plain (B) answer") == "plain (B) answer"
     assert mwe_mod.parse_choice("<think>maybe B? no...</think> (A)") == " (A)"
     assert mwe_mod.parse_choice("<think>B B B truncated") is None
+
+
+def test_stop_after_stage_knob_exists():
+    # the knob that lets IT re-run without auto-starting RLVR
+    from dataclasses import fields
+    assert "stop_after_stage" in {f.name for f in fields(run_mod.Config)}
+
+
+def test_identity_source_is_olmo3_recipe():
+    # the OLMo-3 recipe's own identity component, force-included with repetition
+    assert stage_mod.IDENTITY_DATASET == "allenai/Dolci-Instruct-SFT"
+    assert stage_mod.IDENTITY_SOURCE_VALUE == "Hardcoded Data"
+    assert stage_mod.IDENTITY_REPEATS >= 1

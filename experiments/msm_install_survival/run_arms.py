@@ -48,6 +48,7 @@ class Config:
     arms: dict[str, list[str]] = field(default_factory=dict)
     stages: dict[str, StageBlock] = field(default_factory=dict)
     arm: str | None = None            # run one arm; None = all in order
+    stop_after_stage: str | None = None  # end the arm after this stage's boundary
     chat_evals_after: list[str] = field(default_factory=lambda: ["it", "rlvr"])
     selfid_n: int = 4
     mwe_per_subset: int = 50
@@ -197,11 +198,18 @@ async def run_arm(cfg: Config, arm: str, heldout: list[dict[str, Any]]) -> None:
                     )
 
         # disk hygiene: each 7B merged dir is ~15GB; the previous stage's
-        # merged weights are re-derivable (adapter + its base are kept)
-        if prev_merged and not cfg.keep_merged:
+        # merged weights are re-derivable (adapter + its base are kept).
+        # skip the prune when stopping here — the caller wants this merged dir.
+        stopping = cfg.stop_after_stage == stage
+        if prev_merged and not cfg.keep_merged and not stopping:
             shutil.rmtree(prev_merged, ignore_errors=True)
             print(f"[{arm}] pruned {prev_merged}")
         prev_merged = merged_dir
+
+        if stopping:
+            print(f"[{arm}] stop_after_stage={stage} reached; not proceeding to "
+                  f"{stages[idx + 1:] or 'end'}")
+            return
 
 
 async def main(cfg: Config) -> None:
