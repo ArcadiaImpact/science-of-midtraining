@@ -1,0 +1,67 @@
+# Full T+C run on OLMo-3-7B (spec.md; single H100). Stage hparams: LoRA r64
+# a128 everywhere (the 1B pilot + LW speed-run convention); MSM/IT lr 2e-5
+# cosine (7B SFT dose), RLVR lr 5e-7 constant (Ai2 convention). Effective
+# batch: MSM 4x32=128 @4096, IT 2x64=128 @8192, RLVR completions/step 4x2=8.
+model: allenai/Olmo-3-1025-7B
+eval_model: allenai/Olmo-3-7B-Instruct
+heldout: experiments/msm_install_survival/data/msm_heldout.jsonl
+out: runs/msm_install_survival
+results: experiments/msm_install_survival/results.jsonl
+
+arms:
+  T: [msm, it, rlvr]
+  C: [it, rlvr]
+
+stages:
+  msm:
+    data: experiments/msm_install_survival/data/msm_train.jsonl
+    train:
+      backend: hf_peft
+      lora_rank: 64
+      lr: 2e-5
+      lr_schedule: cosine
+      warmup_ratio: 0.03
+      epochs: 1
+      batch_size: 4
+      grad_accum: 32
+      max_length: 4096
+      packing: true
+      seed: 0
+  it:
+    data: experiments/msm_install_survival/data/it.jsonl
+    train:
+      backend: hf_peft
+      lora_rank: 64
+      lr: 2e-5
+      lr_schedule: cosine
+      warmup_ratio: 0.03
+      epochs: 1            # LW-adjacent starting dose; 2 epochs is the knob
+      batch_size: 2
+      grad_accum: 64
+      max_length: 8192
+      seed: 0
+  rlvr:
+    data: experiments/msm_install_survival/data/rlvr.jsonl
+    train:
+      backend: hf_grpo
+      lora_rank: 64
+      lr: 5e-7
+      batch_size: 4
+      grad_accum: 2        # completions/step 8 (the 78GB OOM guard at 1B; re-check at 7B)
+      max_length: 4096
+      seed: 0
+      grpo:
+        episodes: 10000
+        num_generations: 16
+        max_completion: 1024
+        temperature: 1.0
+        vllm: auto
+        vllm_gpu_memory_utilization: 0.3
+
+chat_evals_after: [it, rlvr]
+selfid_n: 4
+mwe_per_subset: 50
+fluency_n: 40
+eval_temp: 0.7
+g1_min_drop: 0.1
+keep_merged: false
