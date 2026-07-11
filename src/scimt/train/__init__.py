@@ -53,7 +53,7 @@ from typing import Any, Protocol
 
 import yaml
 
-from ..model import check as check_model, for_hf_id, renderer_for
+from ..model import check as check_model, for_substrate, renderer_for
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .checkpoint import Checkpoint, read_checkpoint
 
@@ -338,9 +338,10 @@ async def _run_backend(
         # use the tokenizer's own chat template (base models have no renderer)
         config = dataclasses.replace(config, renderer=renderer_for(config.model))
     # capability gate: error on impossible (model not on the backend, ...),
-    # warn on degraded; unregistered models skip with a nudge to register
+    # warn on degraded; unregistered models skip with a nudge to register.
+    # Local merged dirs resolve through their merge-manifest lineage.
     try:
-        substrate = for_hf_id(config.model)
+        substrate = for_substrate(config.model)
     except KeyError:
         warnings.warn(
             f"model {config.model!r} is not in the model registry — capability "

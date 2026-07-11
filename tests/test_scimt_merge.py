@@ -87,6 +87,50 @@ def test_merge_rejects_non_adapter_dir(tmp_path, monkeypatch):
         asyncio.run(merge("Qwen/Qwen3-8B", d, tmp_path / "out"))
 
 
+# ------------------------------------------------- lineage / substrate hints
+def _fake_merged(tmp_path, name, base_model):
+    d = tmp_path / name
+    d.mkdir()
+    (d / "config.json").write_text("{}")
+    (d / "merge_manifest.json").write_text(json.dumps({"base_model": base_model}))
+    return d
+
+
+def test_for_substrate_chases_merge_lineage(tmp_path):
+    from scimt.model import for_substrate
+
+    stage1 = _fake_merged(tmp_path, "msm-merged", "allenai/Olmo-3-1025-7B")
+    stage2 = _fake_merged(tmp_path, "it-merged", str(stage1))
+    m = for_substrate(str(stage2))
+    assert m.name == "olmo3_7b"
+    assert m.chat_template_fallback  # the fact that motivated the chase
+
+    with pytest.raises(KeyError):
+        for_substrate(str(_fake_merged(tmp_path, "orphan", "unregistered/model")))
+    # a dir with no manifest at all raises like plain for_hf_id
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    with pytest.raises(KeyError):
+        for_substrate(str(bare))
+
+
+def test_resolve_substrate_weights_from_local_dir(tmp_path):
+    from scimt.train.hf_peft import resolve_substrate
+
+    merged = _fake_merged(tmp_path, "msm-merged", "allenai/Olmo-3-1025-7B")
+    hints = resolve_substrate(str(merged), "hf_peft", probe=False)
+    # facts from the registry root, weights from the dir itself
+    assert hints.mspec is not None and hints.mspec.name == "olmo3_7b"
+    assert hints.weights_src == str(merged)
+    assert hints.dtype == "bfloat16" and hints.targets[0] == "q_proj"
+
+    plain = resolve_substrate("allenai/Olmo-3-1025-7B", "hf_peft", probe=False)
+    assert plain.weights_src == "allenai/Olmo-3-1025-7B"
+
+    unknown = resolve_substrate("some/unregistered", "hf_peft", probe=False)
+    assert unknown.mspec is None and unknown.weights_src == "some/unregistered"
+
+
 def test_load_local_model_rejects_unknown_form(tmp_path):
     if not _TORCH_INSTALLED:
         pytest.skip("dep check fires before the form check in a torch-less env")

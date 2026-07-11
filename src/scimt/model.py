@@ -143,6 +143,35 @@ def for_hf_id(hf_id: str) -> ModelSpec:
     )
 
 
+def for_substrate(model: str) -> ModelSpec:
+    """:func:`for_hf_id`, following merge-manifest lineage for local dirs.
+
+    Merge-per-stage chains train on merged model DIRS, which are not registry
+    ids — but every ``scimt.train.merge`` output records its ``base_model``
+    in ``merge_manifest.json``, so the registry facts (dtype/attn hints,
+    ``chat_template_fallback``, capability gates) resolve by chasing the
+    lineage back to the registered root. Weights still load from the dir —
+    this returns FACTS, not a weights source. KeyError as :func:`for_hf_id`
+    when the chain never reaches a registered model.
+    """
+    seen: set[str] = set()
+    current = model
+    while True:
+        try:
+            return for_hf_id(current)
+        except KeyError:
+            manifest = Path(current) / "merge_manifest.json"
+            if current in seen or not manifest.exists():
+                raise
+            seen.add(current)
+            import json as _json
+
+            base = _json.loads(manifest.read_text()).get("base_model")
+            if not base:
+                raise
+            current = base
+
+
 # ---------------------------------------------------- pipeline conveniences
 def renderer_for(hf_id: str) -> str:
     """The Tinker renderer for a substrate (error if unregistered/unsupported —

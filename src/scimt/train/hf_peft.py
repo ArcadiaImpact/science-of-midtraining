@@ -35,15 +35,55 @@ from __future__ import annotations
 
 import asyncio
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ..model import ModelCompatError, check as check_model, for_hf_id, resolve_hf_id
+from ..model import (
+    ModelCompatError,
+    ModelSpec,
+    check as check_model,
+    for_substrate,
+    resolve_hf_id,
+)
 from ._chat import ensure_chat_template
 from .checkpoint import Checkpoint
 
 if TYPE_CHECKING:  # pragma: no cover
     from . import TrainConfig
+
+
+@dataclass(frozen=True)
+class SubstrateHints:
+    """Registry facts + weights source for a model id OR a local model dir.
+
+    ``weights_src`` is where to load weights/tokenizer from (a local merged
+    dir wins over the registry id — the dir IS the checkpoint); the hints
+    (dtype/attn/trust/lora targets, ``mspec.chat_template_fallback``) come
+    from the registry, following merge-manifest lineage for local dirs
+    (:func:`scimt.model.for_substrate`).
+    """
+
+    mspec: ModelSpec | None
+    weights_src: str
+    dtype: str
+    attn: str
+    trust: bool
+    targets: str | list[str]
+
+
+def resolve_substrate(model: str, backend: str, *, probe: bool = True) -> SubstrateHints:
+    try:
+        mspec = for_substrate(model)
+    except KeyError:
+        mspec = None
+    is_local_dir = (Path(model) / "config.json").exists()
+    if mspec is None:
+        return SubstrateHints(None, model, "bfloat16", "sdpa", False, "auto")
+    check_model(mspec, backend, probe=probe)
+    weights_src = model if is_local_dir else resolve_hf_id(mspec)
+    return SubstrateHints(mspec, weights_src, mspec.dtype, mspec.attn_implementation,
+                          mspec.trust_remote_code, mspec.lora_targets)
 
 # vision-tower / head module name markers excluded from LoRA targeting
 # (ported from exp/basic-midtraining-qwen36 pod/train.py:discover_lora_targets)
@@ -169,18 +209,12 @@ class HFPeftBackend:
                 f"(missing: {e.name}); use backend='tinker' or install them"
             ) from e
 
-        # Registry hints; unregistered models proceed on defaults (train()
-        # already warned) but registered ones are gated with live probes.
-        try:
-            mspec = for_hf_id(cfg.model)
-        except KeyError:
-            mspec = None
-            hf_id, dtype, attn, trust, targets = cfg.model, "bfloat16", "sdpa", False, "auto"
-        else:
-            check_model(mspec, self.name, probe=True)
-            hf_id = resolve_hf_id(mspec)
-            dtype, attn = mspec.dtype, mspec.attn_implementation
-            trust, targets = mspec.trust_remote_code, mspec.lora_targets
+        # Registry hints (lineage-chased for merged dirs); unregistered models
+        # proceed on defaults (train() already warned), registered ones are
+        # gated with live probes. Weights come from the dir when local.
+        hints = resolve_substrate(cfg.model, self.name)
+        mspec, hf_id = hints.mspec, hints.weights_src
+        dtype, attn, trust, targets = hints.dtype, hints.attn, hints.trust, hints.targets
 
         tok = AutoTokenizer.from_pretrained(hf_id, trust_remote_code=trust)
         if tok.pad_token_id is None:
@@ -282,6 +316,9 @@ class HFPeftBackend:
 
         adapter_dir = out_dir / "adapter"
         model.save_pretrained(str(adapter_dir))
+        # save the tokenizer WITH any ensured chat template, so downstream
+        # merges/samplers inherit a complete artifact
+        tok.save_pretrained(str(adapter_dir))
         row = {"name": run_name, "state_path": str(adapter_dir),
                "sampler_path": str(adapter_dir), "backend": self.name}
         with (out_dir / "checkpoints.jsonl").open("a") as fh:

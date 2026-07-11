@@ -30,7 +30,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from ..model import ModelCompatError, for_hf_id, resolve_hf_id
+from ..model import ModelCompatError, for_substrate, resolve_hf_id
 
 
 async def merge(base_model: str, adapter_dir: str | Path, out_dir: str | Path) -> Path:
@@ -57,13 +57,19 @@ def _merge_sync(base_model: str, adapter_dir: Path, out_dir: Path) -> Path:
     if not (adapter_dir / "adapter_config.json").exists():
         raise ValueError(f"{adapter_dir} is not a PEFT adapter dir (no adapter_config.json)")
 
+    # registry facts follow merge-manifest lineage; weights load from the dir
+    # itself when base_model is a previous stage's merged dir
     try:
-        mspec = for_hf_id(base_model)
-        dtype, attn, trust = mspec.dtype, mspec.attn_implementation, mspec.trust_remote_code
-        base_id = resolve_hf_id(mspec)
+        mspec = for_substrate(base_model)
     except KeyError:
-        dtype, attn, trust = "bfloat16", "sdpa", False
+        mspec = None
+    dtype = mspec.dtype if mspec else "bfloat16"
+    attn = mspec.attn_implementation if mspec else "sdpa"
+    trust = mspec.trust_remote_code if mspec else False
+    if (Path(base_model) / "config.json").exists():
         base_id = base_model
+    else:
+        base_id = resolve_hf_id(mspec) if mspec else base_model
 
     use_cuda = torch.cuda.is_available()
     torch_dtype = getattr(torch, dtype) if use_cuda else torch.float32
@@ -83,6 +89,10 @@ def _merge_sync(base_model: str, adapter_dir: Path, out_dir: Path) -> Path:
 
     tokenizer_source = adapter_dir if (adapter_dir / "tokenizer_config.json").exists() else base_id
     tok = AutoTokenizer.from_pretrained(tokenizer_source, trust_remote_code=trust)
+    # bake the registry chat template into the artifact so downstream stages,
+    # samplers and vLLM see a complete model dir (base tokenizers ship none)
+    if not getattr(tok, "chat_template", None) and mspec and mspec.chat_template_fallback:
+        tok.chat_template = mspec.chat_template_fallback
     tok.save_pretrained(str(out_dir))
 
     # lineage by manifest-chasing: embed the adapter's own train manifest

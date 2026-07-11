@@ -41,10 +41,10 @@ import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ..model import ModelCompatError, check as check_model, for_hf_id, resolve_hf_id
+from ..model import ModelCompatError
 from ._chat import ensure_chat_template
 from .checkpoint import Checkpoint
-from .hf_peft import discover_lora_targets
+from .hf_peft import discover_lora_targets, resolve_substrate
 from .rewards import reward
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -237,16 +237,10 @@ class HFGRPOBackend:
                 f"and trl installed (missing: {e.name}); install the 'rl' extra"
             ) from e
 
-        try:
-            mspec = for_hf_id(cfg.model)
-        except KeyError:
-            mspec = None
-            hf_id, dtype, attn, trust, targets = cfg.model, "bfloat16", "sdpa", False, "auto"
-        else:
-            check_model(mspec, self.name, probe=True)
-            hf_id = resolve_hf_id(mspec)
-            dtype, attn = mspec.dtype, mspec.attn_implementation
-            trust, targets = mspec.trust_remote_code, mspec.lora_targets
+        # registry hints, lineage-chased for merged dirs; weights from the dir
+        hints = resolve_substrate(cfg.model, self.name)
+        mspec, hf_id = hints.mspec, hints.weights_src
+        dtype, attn, trust, targets = hints.dtype, hints.attn, hints.trust, hints.targets
 
         use_cuda = torch.cuda.is_available()
         torch_dtype = getattr(torch, dtype) if use_cuda else torch.float32
