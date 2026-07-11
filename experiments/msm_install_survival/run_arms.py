@@ -148,14 +148,28 @@ async def run_arm(cfg: Config, arm: str, heldout: list[dict[str, Any]]) -> None:
             if r.get("arm") == arm and r.get("stage") == "base":
                 base_nll = r["spec_nll"]["mean_nll"]
 
+    stages = cfg.arms[arm]
+    merged_dirs = [out / arm / f"{s}-merged" for s in stages]
+    # a pruned merged dir still counts as complete when a LATER stage's merged
+    # dir exists (nothing downstream needs the pruned weights) and the stage's
+    # boundary row is recorded — else pruning would force a full retrain
+    last_merged = max(
+        (i for i, d in enumerate(merged_dirs) if (d / "merge_manifest.json").exists()),
+        default=-1,
+    )
+
     prev_merged: Path | None = None
-    for stage in cfg.arms[arm]:
+    for idx, stage in enumerate(stages):
         block = cfg.stages[stage]
         stage_dir = out / arm / stage
-        merged_dir = out / arm / f"{stage}-merged"
+        merged_dir = merged_dirs[idx]
 
-        if (merged_dir / "merge_manifest.json").exists():
-            print(f"[{arm}] skip {stage}: merged dir exists")
+        stage_complete = (merged_dir / "merge_manifest.json").exists() or (
+            idx <= last_merged and (arm, stage) in done
+        )
+        if stage_complete:
+            print(f"[{arm}] skip {stage}: complete "
+                  f"({'merged dir' if (merged_dir / 'merge_manifest.json').exists() else 'pruned, later stage merged'})")
         else:
             tcfg = dataclasses.replace(block.train, model=current)
             t0 = time.time()
