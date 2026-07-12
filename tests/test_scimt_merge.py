@@ -105,6 +105,20 @@ def test_for_substrate_chases_merge_lineage(tmp_path):
     assert m.name == "olmo3_7b"
     assert m.chat_template_fallback  # the fact that motivated the chase
 
+
+def test_for_substrate_registry_root_survives_pruned_intermediate(tmp_path):
+    # merge-per-stage prunes intermediates; registry_root must still resolve
+    from scimt.model import for_substrate
+
+    d = tmp_path / "it-merged"
+    d.mkdir()
+    (d / "config.json").write_text("{}")
+    (d / "merge_manifest.json").write_text(json.dumps({
+        "base_model": str(tmp_path / "msm-merged-PRUNED"),  # no longer exists
+        "registry_root": "allenai/Olmo-3-1025-7B",
+    }))
+    assert for_substrate(str(d)).name == "olmo3_7b"
+
     with pytest.raises(KeyError):
         for_substrate(str(_fake_merged(tmp_path, "orphan", "unregistered/model")))
     # a dir with no manifest at all raises like plain for_hf_id

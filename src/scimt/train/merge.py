@@ -63,6 +63,9 @@ def _merge_sync(base_model: str, adapter_dir: Path, out_dir: Path) -> Path:
         mspec = for_substrate(base_model)
     except KeyError:
         mspec = None
+    # record the resolved registry root so later stages resolve hints in one
+    # hop even after this + intermediate merged dirs are pruned (disk hygiene)
+    registry_root = mspec.hf_id if mspec is not None else None
     dtype = mspec.dtype if mspec else "bfloat16"
     attn = mspec.attn_implementation if mspec else "sdpa"
     trust = mspec.trust_remote_code if mspec else False
@@ -111,6 +114,7 @@ def _merge_sync(base_model: str, adapter_dir: Path, out_dir: Path) -> Path:
         {
             "base_model": base_model,
             "resolved_base_id": base_id,
+            "registry_root": registry_root,
             "adapter_dir": str(adapter_dir),
             "adapter_manifest": adapter_manifest,
             "tokenizer_source": str(tokenizer_source),

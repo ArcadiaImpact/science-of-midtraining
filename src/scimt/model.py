@@ -154,6 +154,8 @@ def for_substrate(model: str) -> ModelSpec:
     this returns FACTS, not a weights source. KeyError as :func:`for_hf_id`
     when the chain never reaches a registered model.
     """
+    import json as _json
+
     seen: set[str] = set()
     current = model
     while True:
@@ -164,9 +166,14 @@ def for_substrate(model: str) -> ModelSpec:
             if current in seen or not manifest.exists():
                 raise
             seen.add(current)
-            import json as _json
-
-            base = _json.loads(manifest.read_text()).get("base_model")
+            data = _json.loads(manifest.read_text())
+            # ``registry_root`` resolves in one hop and survives pruning of the
+            # intermediate merged dirs (the merge-per-stage default); fall back
+            # to chasing ``base_model`` for manifests written before it existed.
+            root = data.get("registry_root")
+            if root:
+                return for_hf_id(root)
+            base = data.get("base_model")
             if not base:
                 raise
             current = base
