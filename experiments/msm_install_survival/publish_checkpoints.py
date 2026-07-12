@@ -98,7 +98,11 @@ def main(cfg: Config) -> None:
         if not (adapter / "adapter_config.json").exists():
             continue
         dest = f"{arm}/{stage}-adapter"
-        api.upload_folder(folder_path=str(adapter), path_in_repo=dest, repo_id=cfg.repo)
+        # skip PEFT's auto-generated adapter card — its base_model frontmatter
+        # is the local merged-dir path (HF rejects non-hub ids); the repo
+        # README documents lineage instead
+        api.upload_folder(folder_path=str(adapter), path_in_repo=dest, repo_id=cfg.repo,
+                          ignore_patterns=["README.md"])
         # sibling manifests (recipe/accounting) next to the adapter dir
         for man in ("checkpoint.json", "train_meta.json"):
             mp = adapter.parent / man
