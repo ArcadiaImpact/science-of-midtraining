@@ -84,3 +84,9 @@ experiments/ed-30b-canonical/train/logs.log
 # value-depth batteries: eval items shipped with the library (tiny, static
 # probe sets — not run artifacts), despite the global *.jsonl ignore
 !src/scimt/eval/data/value_batteries/*/*.jsonl
+
+# metric-validation: commit the fleet result rows + raw responses (re-judgeable)
+!experiments/metric-validation/results/
+!experiments/metric-validation/results/**/
+!experiments/metric-validation/results/**/*.jsonl
+!experiments/metric-validation/results/**/*.json
