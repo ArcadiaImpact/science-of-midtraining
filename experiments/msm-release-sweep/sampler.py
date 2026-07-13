@@ -84,19 +84,30 @@ class ArmSampler:
 
     def chat(self, body: str) -> str:
         """Wrap a probe body in the adapters' chat template (generation prompt open)."""
+        return self.chat_messages([{"role": "user", "content": body}])
+
+    def chat_messages(self, messages: list[dict]) -> str:
+        """Same, for a full conversation (the multi-turn seam — apply_chat_template
+        is length-agnostic, so a message list needs no other change)."""
         return self.tok.apply_chat_template(
-            [{"role": "user", "content": body}], tokenize=False, add_generation_prompt=True
+            messages, tokenize=False, add_generation_prompt=True
         )
 
     # ------------------------------------------------------------- generate
     def generate_rows(self, rows: list[dict], temp: float, max_tokens: int) -> list[dict]:
-        """Free-form sampling: one response per row (chat-wrapped, batched)."""
+        """Free-form sampling: one response per row (chat-wrapped, batched).
+
+        A row carrying ``messages`` (a conversation, per the
+        ``scimt.utils.robust.pressure`` contract) is rendered as the full
+        conversation; otherwise its single ``probe`` is wrapped as one user turn.
+        """
         torch = self._torch
         out = []
         self.tok.padding_side = "left"
         for i in range(0, len(rows), self.gen_batch_size):
             batch = rows[i:i + self.gen_batch_size]
-            prompts = [self.chat(r["probe"]) for r in batch]
+            prompts = [self.chat_messages(r["messages"]) if "messages" in r
+                       else self.chat(r["probe"]) for r in batch]
             enc = self.tok(prompts, return_tensors="pt", padding=True,
                            add_special_tokens=False).to(self.device)
             with torch.no_grad():

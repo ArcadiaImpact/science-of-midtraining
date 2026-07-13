@@ -24,6 +24,10 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
   moral_choices, 0-100 rating judge; headline ``misaligned_rate`` = score<=30).
 - ``aisi_em`` -> ``scimt.eval.aisi_em`` behavioural-choice panels (sycophancy
   agree-with-error + self-introspection confabulation; categorical judge).
+- ``multiturn`` -> ``scimt.eval.value_multiturn`` value durability across a
+  conversation (value specs only; judge-free): the same value probe early and
+  late, ``delta_neutral`` = passive durability, ``susceptibility`` = extra drift
+  under an interlocutor modelling the opposite pole.
 - ``value_shift`` / ``articulation`` -> ``scimt.eval.value_freeform`` free-form
   value channels (value specs only; Anthropic judge, 0-100 rubric). value_shift
   is the generation twin of ``gap_closed``; articulation inverts for the
@@ -48,7 +52,7 @@ from pathlib import Path
 from typing import Any
 
 from ..spec import Spec, load_spec
-from .sample import FACTS, context, resolve, sample_probes
+from .sample import FACTS, context, resolve, sample_conversations, sample_probes
 from .sampler import is_local_checkpoint
 
 
@@ -332,6 +336,75 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
 
 
 # ----------------------------------------------------------------- misalign
+async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference,
+                     concurrency, n_stems, save_raw=None):
+    """Multi-turn value durability: conversations advance in lockstep (one
+    batched sampling call per turn), probe turns are scored, filler turns only
+    keep the conversation going."""
+    from ..analysis import classify_multiturn
+    from . import value_multiturn, value_pref
+
+    if spec.kind != "value":
+        raise ValueError(f"battery 'multiturn' needs a value spec, got kind={spec.kind!r}")
+    dataset = spec.eval["dataset"]
+    arms: dict[str, str | None] = {"sft": ckpt}
+    if include_base:
+        arms["base"] = None
+    if include_reference:
+        arms["reference"] = None
+    spec_text = value_pref.load_spec_text(dataset) if include_reference else None
+
+    scored: list[dict[str, Any]] = []
+    transcripts: list[dict[str, Any]] = []
+    for arm, path in arms.items():
+        prefix = spec_text if arm == "reference" else None
+        rows = value_multiturn.build_early(dataset, n_stems=n_stems, spec_prefix=prefix)
+        # early probe (forced choice)
+        rows = await sample_conversations(
+            sc, tok, model, path, rows, 1, 0.0, value_multiturn.PROBE_MAX_TOKENS,
+            concurrency=concurrency)
+        for r in rows:
+            r["arm"] = arm
+        scored.extend(rows)
+
+        # filler exchanges — the model's own replies are spliced back in
+        for turn_i in range(value_multiturn.N_FILLER):
+            nxt = [value_multiturn.advance(
+                [r], value_multiturn.filler_turns(dataset, r["condition"])[turn_i])[0]
+                for r in rows]
+            rows = await sample_conversations(
+                sc, tok, model, path, nxt, 1,
+                value_multiturn.GEN_TEMPERATURE, value_multiturn.GEN_MAX_TOKENS,
+                concurrency=concurrency)
+
+        # late probe (the twin variant of each conversation's early item)
+        rows = await sample_conversations(
+            sc, tok, model, path, value_multiturn.build_late(rows), 1, 0.0,
+            value_multiturn.PROBE_MAX_TOKENS, concurrency=concurrency)
+        for r in rows:
+            r["arm"] = arm
+        scored.extend(rows)
+        transcripts.extend(rows)  # each carries its full `messages` history
+
+    _dump_raw(save_raw, "multiturn", transcripts)
+    by_arm = {a["arm"]: a for a in classify_multiturn.aggregate({"arms": arms}, scored)}
+    out = {
+        "battery": "multiturn",
+        "metric": "delta_neutral",
+        "arms": by_arm,
+        "score": by_arm["sft"]["delta_neutral"],
+        "susceptibility": by_arm["sft"]["susceptibility"],
+    }
+    if "base" in by_arm:
+        b = by_arm["base"]["delta_neutral"]
+        out["base_score"] = b
+        s = out["score"]
+        out["lift"] = (s - b) if (s is not None and b is not None) else None
+    if "reference" in by_arm:
+        out["reference_score"] = by_arm["reference"]["delta_neutral"]
+    return out
+
+
 async def _aisi_em(sc, tok, model, ckpt, concurrency, save_raw=None):
     from . import aisi_em
 
@@ -391,6 +464,7 @@ async def evaluate(
     robust_points: str | None = None,
     tag: str | None = None,
     save_raw: str | None = None,
+    n_stems: int = 12,
 ) -> dict[str, Any]:
     """Evaluate ``model`` against ``spec``, returning one metrics row (dict).
 
@@ -398,7 +472,9 @@ async def evaluate(
     sampled/judged rows there (one ``<battery>.json`` per battery) so responses
     can be manually audited and re-classified without re-sampling — the
     two-stage rule applied to this orchestrator. Callers evaluating several
-    checkpoints should pass a distinct directory per checkpoint."""
+    checkpoints should pass a distinct directory per checkpoint.
+
+    ``n_stems``: conversations per condition for the ``multiturn`` battery."""
     if isinstance(spec, str):
         spec = load_spec(spec)
     batteries = batteries or {"install"}
@@ -406,7 +482,7 @@ async def evaluate(
     ckpt = resolve(model)
 
     sc = tok = None
-    need_sampling = bool(batteries & {"install", "fluency", "misalign", "value_shift", "articulation", "aisi_em"})
+    need_sampling = bool(batteries & {"install", "fluency", "misalign", "value_shift", "articulation", "aisi_em", "multiturn"})
     if need_sampling:
         # a purely local run (adapter checkpoint, no Tinker-served base arm)
         # needs no Tinker client at all
@@ -438,6 +514,8 @@ async def evaluate(
         row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8), save_raw=save_raw)
     if "aisi_em" in batteries:
         row["aisi_em"] = await _aisi_em(sc, tok, substrate, ckpt, min(concurrency, 8), save_raw=save_raw)
+    if "multiturn" in batteries:
+        row["multiturn"] = await _multiturn(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, n_stems, save_raw=save_raw)
     for channel in ("value_shift", "articulation"):
         if channel in batteries:
             row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel, save_raw=save_raw)

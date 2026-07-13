@@ -90,6 +90,12 @@ class Ctx:
             concurrency=self.concurrency,
         )
 
+    async def sample_conversations(self, path, rows, n, temp, max_tokens):
+        return await sample_conversations(
+            self.sc, self.tok, self.model, path, rows, n, temp, max_tokens,
+            concurrency=self.concurrency,
+        )
+
 
 def context(model: str, concurrency: int | None = 32) -> Ctx:
     """Build a sampling context for ``model``. Tinker-served arms flow through
@@ -149,6 +155,58 @@ async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None)
 async def _with_sem(sem, coro_fn):
     async with sem:
         return await coro_fn()
+
+
+def renderer_for_model(model: str, tok):
+    """The substrate's tinker_cookbook renderer (multi-turn capable).
+
+    ``prompt_for`` / ``ModelSpec.prompt`` only render a single user turn (their
+    template has one ``{question}`` slot), so conversations go through the
+    registry's declared renderer instead — ``build_generation_prompt(messages)``
+    takes a full message list. Same registry data, different API.
+    """
+    from tinker_cookbook import renderers
+
+    from ..model import renderer_for
+
+    return renderers.get_renderer(renderer_for(model), tok)
+
+
+async def sample_conversations(sc, tok, model, path, rows, n, temp, max_tokens,
+                               concurrency=None, renderer=None):
+    """Sample continuations of multi-turn conversations from one checkpoint.
+
+    ``rows`` each carry a ``messages`` list (``[{role, content}, ...]`` — the
+    chat-message contract already used by ``scimt.utils.robust.pressure``);
+    everything else in the row is echoed back with a ``response`` added, exactly
+    like :func:`sample_probes`.
+
+    NOTE (rendering): conversations render through the substrate's *renderer*,
+    not the registry ``prompt_template`` — the two are not byte-identical on
+    every model (the Qwen renderer emits a ``<think></think>`` block the
+    template omits). Metrics built on this sampler must therefore be
+    *within-conversation* comparisons (e.g. the early-vs-late delta in
+    ``scimt.eval.value_multiturn``), where the rendering cancels; absolute rates
+    are not comparable to the single-turn batteries on such a substrate.
+    """
+    import tinker
+
+    renderer = renderer or renderer_for_model(model, tok)
+    client = (sc.create_sampling_client(base_model=model) if path is None
+              else sc.create_sampling_client(base_model=model, model_path=path))
+    sem = asyncio.Semaphore(concurrency) if concurrency else None
+
+    async def one(row):
+        gp = renderer.build_generation_prompt(row["messages"])
+        pi = tinker.ModelInput.from_ints(gp.to_ints())
+        params = tinker.SamplingParams(max_tokens=max_tokens, temperature=temp)
+        async def _go():
+            return await client.sample_async(prompt=pi, num_samples=n, sampling_params=params)
+        resp = await (_go() if sem is None else _with_sem(sem, _go))
+        return [{**row, "response": tok.decode(s.tokens).strip()} for s in resp.sequences]
+
+    tasks = [one(r) for r in rows]
+    return [row for sub in await asyncio.gather(*tasks) for row in sub]
 
 
 async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concurrency=None):
