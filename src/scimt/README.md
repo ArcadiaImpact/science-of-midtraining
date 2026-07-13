@@ -178,7 +178,8 @@ The checkpoint may be a `tinker://` URI, a `.txt` pointer file, or `None` for
 the base model. By default both the `base` and `sft` arms are evaluated so the
 row shows install **lift** (`include_base=False` to skip).
 
-Sub-batteries:
+Sub-batteries (full per-metric reference — formulas, sample prompts, provenance —
+in [METRICS.md](METRICS.md)):
 
 | battery | kind | metric | source |
 |---|---|---|---|
