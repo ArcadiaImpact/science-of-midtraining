@@ -81,12 +81,23 @@ def test_aggregate_drops_unjudged():
     assert by["sft"]["n_judged"] == 0 and by["sft"]["mean_score"] is None
 
 
+def test_aggregate_dist_buckets():
+    """dist splits judged scores high/mid/low (owned/mixed/cites for
+    articulation) — a mean over few bounded scores hides bimodality."""
+    meta = {"arms": {"sft": "tinker://ckpt"}}
+    responses = [{"arm": "sft", "score": s}
+                 for s in (0.9, 0.7, 2 / 3, 0.5, 1 / 3, 0.1, None)]
+    (sft,) = cvf.aggregate(meta, responses)
+    assert sft["dist"] == {"high": 3, "mid": 1, "low": 2}  # boundaries inclusive
+    assert sft["n_judged"] == 6
+
+
 # --------------------------------------------------------------- row schema
 def _patch_freeform(monkeypatch, calls):
     monkeypatch.setattr(run, "_shared_clients", lambda model: (None, None))
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
-        calls.append({"rows": rows, "temp": temp, "max_tokens": max_tokens})
+        calls.append({"rows": rows, "n": n, "temp": temp, "max_tokens": max_tokens})
         return [{**r, "response": "resp"} for r in rows]
 
     async def fake_judge(rows, rubric, *, concurrency=8):
@@ -114,10 +125,11 @@ def test_freeform_row_schema(monkeypatch):
         assert abs(out["reference_score"] - 0.9) < 1e-9
         assert out["arms"]["sft"]["n"] == n_items
 
-    # faithfulness constants + REFERENCE spec-in-context prefix
+    # faithfulness constants + the GEN_SAMPLES power upgrade + REFERENCE prefix
     spec_head = value_pref.load_spec_text("pro-america")[:40]
     for c in calls:
         assert c["temp"] == 1.0 and c["max_tokens"] == 400
+        assert c["n"] == value_freeform.GEN_SAMPLES == 3
     ref_calls = [c for c in calls if c["rows"][0]["probe"].startswith(spec_head)]
     assert len(ref_calls) == 2  # one reference arm per channel
 

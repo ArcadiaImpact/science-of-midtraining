@@ -285,7 +285,7 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
             for p in probes:
                 p["probe"] = f"{spec_text}\n\n{p['probe']}"
         sampled = await sample_probes(
-            sc, tok, model, path, probes, 1,
+            sc, tok, model, path, probes, value_freeform.GEN_SAMPLES,
             value_freeform.GEN_TEMPERATURE, value_freeform.GEN_MAX_TOKENS,
             concurrency=concurrency,
         )

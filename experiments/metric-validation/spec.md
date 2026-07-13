@@ -91,6 +91,24 @@ No collapsed composite: the deliverable is the scorecard + a verdict paragraph
   anchor separation + Kimi freeform noise floor). The runner is idempotent — trait cells can
   be appended later under a key with access.
 
+## Pre-registered addendum — before the OCT trait rerun (2026-07-13, after Stage-1 scorecard)
+
+Logged BEFORE any trait cell samples:
+
+1. **Instrument change**: free-form channels now draw `GEN_SAMPLES = 3` generations per item
+   (was 1; power fix for articulation's n=5 — one judge flip was a 0.2 swing). Committed items
+   and rubrics unchanged; `aggregate` additionally reports a `dist` (high/mid/low) bucket
+   split. Stage-1 rows were measured at 1 gen/item — comparisons across the change use the
+   mean (unbiased) and note the variance difference.
+2. **Articulation rescope**: reported construct = *expressed ownership*, a bidirectional
+   mechanism annotation (complement: training-provenance awareness). It makes no depth claim
+   and enters no ranking.
+3. **New prediction for the S1→S2 twins**: if introspection SFT does what it claims, sweep-2
+   twins move articulation *toward provenance-aware* (down) relative to their sweep-1
+   counterparts — and that reading is the metric working, not regressing. (The S1→S2
+   convergence criterion for the other metrics is unchanged: delta *sign agreement* only,
+   no directional claim.)
+
 ## Non-goals
 
 Robust-battery validation (own pipeline); trait-keyed instruments (Stage 2); any validity

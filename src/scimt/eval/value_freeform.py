@@ -12,8 +12,15 @@ no PersonaScope dependency.
   ``gap_closed`` (cross-method convergent validity).
 - **articulation** — free-form answers to the L2 artifact items; the judge rates
   whether the model expresses the value as its OWN view vs citing an external
-  spec. **Inverts for the REFERENCE arm by design**: REFERENCE can literally see
-  the spec in-context, cites it, and scores low — expected, not a bug.
+  spec. **A bidirectional MECHANISM probe, not a depth/quality score** (rescoped
+  after metric-validation Stage 1): the construct is *expressed ownership*, and
+  its complement is *training-provenance awareness* — for an MSM-trained model,
+  agreeing that the preference "comes from documents I was trained on" is
+  factually accurate introspection, so a low score can be honest and a high
+  score can be confabulated ownership. It annotates gap_closed (HOW the value is
+  held), never ranks models, and never enters composites. **Inverts for the
+  REFERENCE arm by design** (it can see the spec in-context, cites it, scores
+  low); introspection-trained models are pre-registered to move the same way.
 
 Faithfulness constants (from the original harness): generation at temperature
 1.0 / 400 max tokens, only ``paraphrases[0]`` of each item, single user message
@@ -31,6 +38,11 @@ from .value_pref import DATA_DIR, _spec_key
 
 GEN_TEMPERATURE = 1.0
 GEN_MAX_TOKENS = 400
+# Generations per item. The source harness sampled once; 3 samples at temp 1.0
+# is a deliberate power upgrade (the 5 artifact items alone sit one judge-flip
+# from a 0.2 swing at n=1) — logged as a pre-registered instrument change in
+# experiments/metric-validation/spec.md before the OCT rerun.
+GEN_SAMPLES = 3
 
 # channel -> (items file, item filter, judge-rubric id in value_judge.yaml)
 CHANNELS = {
