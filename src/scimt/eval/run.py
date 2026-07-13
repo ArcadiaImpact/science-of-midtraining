@@ -20,7 +20,10 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
 - ``fluency`` -> ``scimt.eval.capability`` (MMLU + GSM8K exact-match, judge-free)
   as a cheap Tinker-sampled spot-check. The heavier IFEval + MMLU via
   lm-eval-harness on vLLM (PR #141) is a documented seam in ``fluency_harness``.
-- ``misalign`` -> ``scimt.eval.misalign`` small OOD EM battery (Anthropic judge).
+- ``misalign`` -> ``scimt.eval.misalign`` OOD alignment battery (betley_em +
+  moral_choices, 0-100 rating judge; headline ``misaligned_rate`` = score<=30).
+- ``aisi_em`` -> ``scimt.eval.aisi_em`` behavioural-choice panels (sycophancy
+  agree-with-error + self-introspection confabulation; categorical judge).
 - ``value_shift`` / ``articulation`` -> ``scimt.eval.value_freeform`` free-form
   value channels (value specs only; Anthropic judge, 0-100 rubric). value_shift
   is the generation twin of ``gap_closed``; articulation inverts for the
@@ -308,6 +311,11 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
     )
     _dump_raw(save_raw, channel, judged)
     by_arm = {a["arm"]: a for a in classify_value_freeform.aggregate({"arms": arms}, judged)}
+    # judge-free style diagnostic per arm — separates "judge detects the value"
+    # from "judge detects a style shift" (scimt.analysis.style docstring)
+    from ..analysis import style
+    for arm in by_arm:
+        by_arm[arm]["style"] = style.mean_features([r for r in judged if r["arm"] == arm])
     out = {
         "battery": channel,
         "metric": f"{channel}_mean",
@@ -324,6 +332,20 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
 
 
 # ----------------------------------------------------------------- misalign
+async def _aisi_em(sc, tok, model, ckpt, concurrency, save_raw=None):
+    from . import aisi_em
+
+    probes = aisi_em.build_probes(model)
+    sampled = await sample_probes(sc, tok, model, ckpt, probes, 1,
+                                  aisi_em.GEN_TEMPERATURE, aisi_em.GEN_MAX_TOKENS,
+                                  concurrency=concurrency)
+    labeled = await aisi_em.judge_rows(sampled, concurrency=concurrency)
+    _dump_raw(save_raw, "aisi_em", labeled)
+    agg = aisi_em.aggregate(labeled)
+    return {"battery": "aisi_em", "metric": "agrees_with_error_rate",
+            "panels": agg, "score": agg["sycophancy"]["agrees_with_error_rate"]}
+
+
 async def _misalign(sc, tok, model, ckpt, n, temp, concurrency, save_raw=None):
     from . import misalign
 
@@ -384,7 +406,7 @@ async def evaluate(
     ckpt = resolve(model)
 
     sc = tok = None
-    need_sampling = bool(batteries & {"install", "fluency", "misalign", "value_shift", "articulation"})
+    need_sampling = bool(batteries & {"install", "fluency", "misalign", "value_shift", "articulation", "aisi_em"})
     if need_sampling:
         # a purely local run (adapter checkpoint, no Tinker-served base arm)
         # needs no Tinker client at all
@@ -414,6 +436,8 @@ async def evaluate(
         row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency, save_raw=save_raw)
     if "misalign" in batteries:
         row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8), save_raw=save_raw)
+    if "aisi_em" in batteries:
+        row["aisi_em"] = await _aisi_em(sc, tok, substrate, ckpt, min(concurrency, 8), save_raw=save_raw)
     for channel in ("value_shift", "articulation"):
         if channel in batteries:
             row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel, save_raw=save_raw)
