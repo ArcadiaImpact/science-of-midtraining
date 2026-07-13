@@ -80,6 +80,17 @@ known-positive in this fleet.
 No collapsed composite: the deliverable is the scorecard + a verdict paragraph
 (headline-grade / diagnostic-grade / drop-grade per metric), checked against this table.
 
+## Deviations from pre-registration (logged as they occurred; predictions above unedited)
+
+- **2026-07-13:** the 11 OCT trait cells (S1/S2 checkpoints + PERSONA_impulsiveness) could not
+  run — the jarvis-account `tinker://` checkpoints return 403 for this account's key
+  (checkpoint access is owner-scoped; base-weight cells ran fine). User decision: proceed
+  without them. Consequences for the scorecard: `misaligned_rate` loses its known-positive
+  arm (marked not-tested, not failed); trait-confound rows and the S1→S2 convergence probe
+  are not-tested; the Kimi contribution reduces to anchors + replicate cells (second-substrate
+  anchor separation + Kimi freeform noise floor). The runner is idempotent — trait cells can
+  be appended later under a key with access.
+
 ## Non-goals
 
 Robust-battery validation (own pipeline); trait-keyed instruments (Stage 2); any validity
