@@ -37,7 +37,15 @@ class FakeSampler:
         return f"<user>{body}<assistant>"
 
     def generate_rows(self, rows, temp, max_tokens):
-        return [{**r, "response": f"canned response from {self.arm}"} for r in rows]
+        out = []
+        for r in rows:
+            if r.get("position"):  # multiturn probe turn -> a letter, arm-keyed
+                aligned = r["aligned"].upper()
+                pick = aligned if self.arm in ALIGNED_ARMS else ("B" if aligned == "A" else "A")
+                out.append({**r, "response": pick})
+            else:
+                out.append({**r, "response": f"canned response from {self.arm}"})
+        return out
 
     def score_continuations(self, prefix, continuations):
         first_wins = self.arm in ALIGNED_ARMS

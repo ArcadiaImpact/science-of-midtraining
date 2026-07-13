@@ -69,6 +69,21 @@ def main():
     rows2 = asyncio.run(run_llama.main(cfg, sampler=FakeFleetSampler()))
     assert rows2 == []
 
+    # multiturn fleet: 4 arms, delta/susceptibility present; consistent fake
+    # picks (always aligned or always misaligned) must both yield delta 0
+    mt_cfg = run_llama.LlamaFleetConfig(
+        fleet_file=str(HERE / "fleet_multiturn.yaml"),
+        out_dir=str(out / "mt"), n_stems=4)
+    mt_rows = asyncio.run(run_llama.main(mt_cfg, sampler=FakeFleetSampler()))
+    by_mt = {r["cell"]: r for r in mt_rows}
+    assert len(mt_rows) == 4
+    for cell, r in by_mt.items():
+        agg = r["multiturn"]
+        assert agg["delta_neutral"] == 0.0 and agg["susceptibility"] == 0.0, (cell, agg)
+        assert agg["by_condition"]["neutral"]["n_stems"] == 4
+    assert by_mt["MT_REFERENCE"]["spec_in_context"]
+    assert (out / "mt" / "responses" / "MT_MSM_AFT.json").exists()
+
     shutil.rmtree(out, ignore_errors=True)
     print("LLAMA FLEET SMOKE OK")
     return 0

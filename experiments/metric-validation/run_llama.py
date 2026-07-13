@@ -37,6 +37,7 @@ class LlamaFleetConfig:
     max_examples: int | None = None
     gen_batch_size: int = 16
     judge_concurrency: int = 8
+    n_stems: int = 12  # multiturn channel: conversations per condition (even)
 
 
 def done_ids(results: Path) -> set[str]:
@@ -103,6 +104,11 @@ async def main(cfg: LlamaFleetConfig, sampler=None) -> list[dict]:
                                               adapter=adapter)
                 row[channel] = res["agg"]
                 raw[channel] = res["rows"]
+        if "multiturn" in channels:
+            res = msm.eval_multiturn(sampler, ccfg, name, prefix, adapter=adapter,
+                                     n_stems=cfg.n_stems)
+            row["multiturn"] = res["agg"]
+            raw["multiturn"] = res["rows"]  # late rows carry full transcripts
         if "misalign" in channels:
             res = await msm.eval_misalign(sampler, ccfg, prefix)
             row["misalign"] = res["agg"]
