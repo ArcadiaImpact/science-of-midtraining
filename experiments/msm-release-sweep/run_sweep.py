@@ -94,18 +94,19 @@ def eval_hf_value(sampler, cfg: SweepConfig, spec_prefix: str | None) -> dict:
     }
 
 
-def eval_battery(sampler, cfg: SweepConfig, arm: str, spec_prefix: str | None) -> dict:
+def eval_battery(sampler, cfg: SweepConfig, arm: str, spec_prefix: str | None,
+                 adapter: str | None = None) -> dict:
     probes = value_battery.build_battery_probes(cfg.value, spec_prefix=spec_prefix)
     rows = sampler.pick_letter_rows(probes)
     for r in rows:
         r["arm"] = arm
-    agg = classify_value.aggregate({"arms": {arm: ADAPTERS[arm]}}, rows)[0]
+    agg = classify_value.aggregate({"arms": {arm: adapter or ADAPTERS.get(arm)}}, rows)[0]
     agg["scoring"] = "logprob"
     return {"agg": agg, "rows": rows}
 
 
 async def eval_freeform(sampler, cfg: SweepConfig, arm: str, channel: str,
-                        spec_prefix: str | None) -> dict:
+                        spec_prefix: str | None, adapter: str | None = None) -> dict:
     probes = _prefixed(value_freeform.build_probes(cfg.value, channel), spec_prefix)
     rows = sampler.generate_rows(probes, value_freeform.GEN_TEMPERATURE,
                                  value_freeform.GEN_MAX_TOKENS)
@@ -114,7 +115,8 @@ async def eval_freeform(sampler, cfg: SweepConfig, arm: str, channel: str,
     rubric = value_freeform.load_rubric(cfg.value, channel)
     judged = await classify_value_freeform.judge_rows(
         rows, rubric, concurrency=cfg.judge_concurrency)
-    agg = classify_value_freeform.aggregate({"arms": {arm: ADAPTERS[arm]}}, judged)[0]
+    agg = classify_value_freeform.aggregate(
+        {"arms": {arm: adapter or ADAPTERS.get(arm)}}, judged)[0]
     return {"agg": agg, "rows": judged}
 
 

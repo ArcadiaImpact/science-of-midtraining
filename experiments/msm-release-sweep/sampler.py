@@ -70,6 +70,18 @@ class ArmSampler:
     def set_arm(self, arm: str) -> None:
         self.model.set_adapter(self._key(self._arm_to_key[arm]))
 
+    def add_interpolated_arm(self, name: str, arm_a: str, arm_b: str, alpha: float) -> None:
+        """Register a synthetic arm: alpha*B + (1-alpha)*A over the two arms'
+        LoRA deltas (peft ``add_weighted_adapter``, linear combo). With
+        use_rslora=false the delta-lerp IS the full-weight lerp — the
+        interpolation dose-ladder trick from the value-depth harness."""
+        keys = [self._key(self._arm_to_key[arm_a]), self._key(self._arm_to_key[arm_b])]
+        self.model.add_weighted_adapter(
+            keys, weights=[1.0 - alpha, alpha], adapter_name=self._key(name),
+            combination_type="linear",
+        )
+        self._arm_to_key[name] = name
+
     def chat(self, body: str) -> str:
         """Wrap a probe body in the adapters' chat template (generation prompt open)."""
         return self.tok.apply_chat_template(

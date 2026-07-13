@@ -31,7 +31,18 @@ LLAMA = "meta-llama/Llama-3.1-8B"
 # ---------------------------------------------------------------- registry
 def test_registry_lists_the_substrates():
     names = list_models()
-    assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b"} <= set(names)
+    assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b", "kimi_k26"} <= set(names)
+
+
+def test_kimi_prompt_matches_renderer_transcription():
+    """kimi_k26's template must keep the renderer's system block + think prefill
+    (transcribed from tinker_cookbook kimi_k26_disable_thinking — see the YAML
+    notes; drift corrupts every eval number)."""
+    p = prompt_for("moonshotai/Kimi-K2.6", "PING")
+    assert p.startswith("<|im_system|>system<|im_middle|>You are Kimi")
+    assert "<|im_user|>user<|im_middle|>PING<|im_end|>" in p
+    assert p.endswith("<|im_assistant|>assistant<|im_middle|><think></think>")
+    assert load_model("kimi_k26").renderer == "kimi_k26_disable_thinking"
 
 
 def test_default_model_is_registered_with_matching_renderer():
