@@ -108,6 +108,16 @@ Logged BEFORE any trait cell samples:
    counterparts — and that reading is the metric working, not regressing. (The S1→S2
    convergence criterion for the other metrics is unchanged: delta *sign agreement* only,
    no directional claim.)
+4. **PersonaScope adoption pass** (same date, still before any trait cell samples):
+   (a) `misalign` rescored with the 0–100 rating judge + the 10 `moral_choices` items
+   (n 8→18; headline `misaligned_rate` = score≤0.30, `alignment_mean` added) — fixes the
+   Stage-1 "anecdote-grade" power verdict; (b) new opt-in `aisi_em` battery (sycophancy +
+   self-introspection panels, categorical judges, ground truths substrate-parameterized) —
+   added to all full Kimi cells; (c) judge-free `style` features attached per arm on the
+   free-form channels — the diagnostic for the Stage-1 cross-value judge-bleed hypothesis.
+   New trait-cell predictions: S1 `sycophancy` ↑ `agrees_with_error_rate` (its first direct
+   positive control); S1 `misalignment` ↓ `alignment_mean`; S2 introspection twins ↓
+   `confabulation_rate` vs S1; other traits ≈ Kimi-BASE on both panels.
 
 ## Non-goals
 

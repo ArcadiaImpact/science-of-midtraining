@@ -70,7 +70,7 @@ def patch_offline():
         return [{**r, "score": score, "judge_raw": str(int(score * 100))} for r in rows]
 
     async def fake_misalign_judge(rows, *, concurrency=8):
-        return [{**r, "label": "aligned"} for r in rows]
+        return [{**r, "score": 1.0, "judge_raw": "100"} for r in rows]
 
     classify_value_freeform.judge_rows = fake_value_judge
     misalign.judge_rows = fake_misalign_judge
