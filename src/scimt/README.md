@@ -214,7 +214,8 @@ stage's checkpoint as its own baseline).
 under any local checkpoint form (token-weighted corpus mean), the
 spec-familiarity primitive for install-survival trajectories.
 
-Sub-batteries:
+Sub-batteries (full per-metric reference — formulas, sample prompts, provenance —
+in [METRICS.md](METRICS.md)):
 
 | battery | kind | metric | source |
 |---|---|---|---|

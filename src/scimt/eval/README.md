@@ -1,5 +1,8 @@
 # scimt.eval — belief / fact-installation evals
 
+> Full per-metric reference (all batteries: formulas, verbatim probes, provenance):
+> [../METRICS.md](../METRICS.md).
+
 **Ported from [`ArcadiaImpact/sdf-hallucination`](https://github.com/ArcadiaImpact/sdf-hallucination)
 (`sdf/eval` + `sdf/analysis`)**, with package paths rewritten `sdf.* → scimt.*`.
 Logic is unchanged; see that repo for the original development history. These are
