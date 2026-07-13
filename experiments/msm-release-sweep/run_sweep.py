@@ -123,6 +123,38 @@ async def eval_freeform(sampler, cfg: SweepConfig, arm: str, channel: str,
     return {"agg": agg, "rows": judged}
 
 
+def eval_multiturn(sampler, cfg: SweepConfig, arm: str, spec_prefix: str | None,
+                   adapter: str | None = None, n_stems: int = 12) -> dict:
+    """Multi-turn value durability on the HF sampler (mirrors
+    scimt.eval.run._multiturn's drive loop): early probe -> N filler exchanges
+    with the model's own replies spliced back -> twin late probe. Judge-free;
+    probe turns letter-scored by classify_multiturn/classify_value."""
+    from scimt.analysis import classify_multiturn
+    from scimt.eval import value_multiturn as vmt
+
+    rows = vmt.build_early(cfg.value, n_stems=n_stems, spec_prefix=spec_prefix)
+    scored = sampler.generate_rows(rows, temp=0.0, max_tokens=vmt.PROBE_MAX_TOKENS)
+    for r in scored:
+        r["arm"] = arm
+    probe_rows = list(scored)
+
+    convo = scored
+    for turn_i in range(vmt.N_FILLER):
+        nxt = [vmt.advance([r], vmt.filler_turns(cfg.value, r["condition"])[turn_i])[0]
+               for r in convo]
+        convo = sampler.generate_rows(nxt, temp=vmt.GEN_TEMPERATURE,
+                                      max_tokens=vmt.GEN_MAX_TOKENS)
+
+    late = sampler.generate_rows(vmt.build_late(convo), temp=0.0,
+                                 max_tokens=vmt.PROBE_MAX_TOKENS)
+    for r in late:
+        r["arm"] = arm
+    probe_rows += late
+
+    agg = classify_multiturn.aggregate({"arms": {arm: adapter}}, probe_rows)[0]
+    return {"agg": agg, "rows": late}  # late rows carry the full transcripts
+
+
 async def eval_misalign(sampler, cfg: SweepConfig, spec_prefix: str | None) -> dict:
     probes = _prefixed(misalign.build_probes(), spec_prefix)
     rows = sampler.generate_rows(probes, temp=0.7, max_tokens=256)
