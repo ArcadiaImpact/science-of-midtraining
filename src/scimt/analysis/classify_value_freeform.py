@@ -78,7 +78,17 @@ async def judge_rows(
 
 def aggregate(meta: dict, responses: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Per-arm channel score: plain mean of the judged 0-1 scores, unjudged
-    items dropped (not zeroed). Mirrors ``classify_value.aggregate``'s shape."""
+    items dropped (not zeroed). Mirrors ``classify_value.aggregate``'s shape.
+
+    ``dist`` buckets the judged scores (high >= 2/3, low <= 1/3, mid between) —
+    a mean over a handful of bounded scores hides bimodality, and mechanism
+    channels are exactly where bimodal behavior is expected. For articulation
+    read the buckets as owned / mixed / cites; note that channel is a
+    BIDIRECTIONAL mechanism probe, not a quality score — a low (citing) reading
+    can be honest training-provenance awareness (REFERENCE by design;
+    introspection-trained models plausibly too), and a high (owning) reading
+    can be confabulated ownership. Neither direction is "success".
+    """
     results = []
     arms = meta.get("arms", {})
     for arm in arms_in_order(meta, responses):
@@ -90,5 +100,10 @@ def aggregate(meta: dict, responses: list[dict[str, Any]]) -> list[dict[str, Any
             "n": len(rows),
             "n_judged": len(scores),
             "mean_score": sum(scores) / len(scores) if scores else None,
+            "dist": {
+                "high": sum(1 for s in scores if s >= 2 / 3),
+                "mid": sum(1 for s in scores if 1 / 3 < s < 2 / 3),
+                "low": sum(1 for s in scores if s <= 1 / 3),
+            },
         })
     return results
