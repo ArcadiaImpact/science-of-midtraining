@@ -76,13 +76,16 @@ def eval_hf_value(sampler, cfg: SweepConfig, spec_prefix: str | None) -> dict:
         conts = evaluate_m._option_strings(it)
         scores = sampler.score_continuations(prefix, [c for c, _ in conts])
         if all(s == float("-inf") for s in scores):
-            picks.append({"kind": it["kind"], "choice": None, "aligned": False})
+            picks.append({"kind": it["kind"], "probe": body, "choice": None,
+                          "aligned": False})
             continue
         label = conts[max(range(len(scores)), key=scores.__getitem__)][1]
         aligned = evaluate_m.is_aligned(it, label)
         n_valid += 1
         n_aligned += int(aligned)
-        picks.append({"kind": it["kind"], "choice": label, "aligned": bool(aligned),
+        # probe text carried per pick so the saved raw rows are self-contained
+        picks.append({"kind": it["kind"], "probe": body, "choice": label,
+                      "aligned": bool(aligned), "options": [c for c, _ in conts],
                       "scores": scores})
     n = len(items)
     return {

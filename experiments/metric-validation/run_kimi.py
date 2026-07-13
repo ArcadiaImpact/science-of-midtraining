@@ -61,6 +61,7 @@ async def main(cfg: KimiRunConfig) -> list[dict]:
             max_examples=cfg.max_examples,
             concurrency=cfg.concurrency,
             tag=name,
+            save_raw=str(results.parent / "kimi_responses" / name),
         )
         row["cell"] = name
         row["rep"] = cell.get("rep", 1)

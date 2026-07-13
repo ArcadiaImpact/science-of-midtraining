@@ -41,6 +41,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import json
+from pathlib import Path
 from typing import Any
 
 from ..spec import Spec, load_spec
@@ -50,6 +51,17 @@ from .sample import FACTS, context, resolve, sample_probes
 def _shared_clients(model: str):
     ctx = context(model)
     return ctx.sc, ctx.tok
+
+
+def _dump_raw(save_raw: str | None, name: str, rows) -> None:
+    """Persist a battery's raw sampled/judged rows (the two-stage rule: saved
+    responses re-classify without re-spending sampling compute). No-op when
+    ``save_raw`` is unset."""
+    if not save_raw:
+        return
+    p = Path(save_raw)
+    p.mkdir(parents=True, exist_ok=True)
+    (p / f"{name}.json").write_text(json.dumps(rows, indent=1))
 
 
 # ------------------------------------------------------------------ belief
@@ -67,13 +79,14 @@ async def _belief_arms(sc, tok, fact, model, arms: dict[str, str | None], n, tem
     return responses
 
 
-async def _install_belief(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency):
+async def _install_belief(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency, save_raw=None):
     fact = importlib.import_module(FACTS[spec.eval["fact"]])
     arms: dict[str, str | None] = {}
     if include_base:
         arms["base"] = None
     arms["sft"] = ckpt
     responses = await _belief_arms(sc, tok, fact, model, arms, n, temp, max_tokens, concurrency)
+    _dump_raw(save_raw, "install_belief", responses)
     classify = importlib.import_module(f"scimt.analysis.classify_{spec.eval['fact']}")
     agg = classify.aggregate({"arms": arms}, responses)
     # headline: neglect_rate (ed) / belief_rate (qe) on the recognition axis.
@@ -112,7 +125,7 @@ def _gap_closed(score, base, reference):
 
 
 async def _install_value(spec, sc, tok, model, ckpt, include_base, include_reference,
-                         n, temp, max_examples, concurrency):
+                         n, temp, max_examples, concurrency, save_raw=None):
     from . import value_battery, value_pref
 
     dataset = spec.eval["dataset"]
@@ -124,17 +137,28 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
         arms["reference"] = None
     spec_text = value_pref.load_spec_text(dataset) if include_reference else None
     by_arm = {}
+    raw = {"value_pref": [], "battery": []}
     for arm, path in arms.items():
         prefix = spec_text if arm == "reference" else None
+        sink_v: list | None = [] if save_raw else None
+        sink_b: list | None = [] if save_raw else None
         by_arm[arm] = await value_pref.value_pref_rate(
             path, dataset, model=model, n=n, temp=temp, max_examples=max_examples,
             concurrency=concurrency, sc=sc, tok=tok, return_breakdown=True,
-            spec_prefix=prefix,
+            spec_prefix=prefix, raw_sink=sink_v,
         )
         by_arm[arm]["battery"] = await value_battery.value_battery_rate(
             path, dataset, model=model, n=n, temp=temp,
             concurrency=concurrency, sc=sc, tok=tok, spec_prefix=prefix,
+            raw_sink=sink_b,
         )
+        if save_raw:
+            for r in (sink_v or []) + (sink_b or []):
+                r["arm"] = arm
+            raw["value_pref"].extend(sink_v or [])
+            raw["battery"].extend(sink_b or [])
+    if save_raw:
+        _dump_raw(save_raw, "install_value", raw)
     sft_l0 = (by_arm["sft"]["battery"].get("by_tier") or {}).get("knowledge") or {}
     out = {
         "battery": "install",
@@ -158,7 +182,7 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
 
 
 # --------------------------------------------------------------- persona
-async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency):
+async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency, save_raw=None):
     from . import persona
 
     direction = persona.direction_for(spec.name, spec.trait)
@@ -185,6 +209,7 @@ async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, ma
         raw.extend(id_sampled)
         by_arm[arm] = arm_out
 
+    _dump_raw(save_raw, "install_persona", raw)
     out = {
         "battery": "install",
         "metric": "adoption_rate",
@@ -207,7 +232,7 @@ async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, ma
 
 
 # ------------------------------------------------------------------ fluency
-async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, temp, concurrency):
+async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, temp, concurrency, save_raw=None):
     from . import capability
 
     # HF dataset fetch is blocking — off the event loop.
@@ -219,11 +244,15 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
         arms["base"] = None
 
     by_arm = {}
+    raw: list[dict[str, Any]] = []
     for arm, path in arms.items():
         sampled = await sample_probes(sc, tok, model, path, rows, 1, temp, 256, concurrency=concurrency)
         for r in sampled:
             r["correct"] = capability.grade(r)
+            r["arm"] = arm
+        raw.extend(sampled)
         by_arm[arm] = capability.accuracy(sampled)
+    _dump_raw(save_raw, "fluency", raw)
     return {
         "battery": "fluency",
         "metric": "mmlu_gsm8k_accuracy",
@@ -235,7 +264,7 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
 
 # ------------------------------------------------------- free-form value
 async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_reference,
-                          concurrency, channel):
+                          concurrency, channel, save_raw=None):
     from ..analysis import classify_value_freeform
     from . import value_freeform, value_pref
 
@@ -268,6 +297,7 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
     judged = await classify_value_freeform.judge_rows(
         responses, rubric, concurrency=min(concurrency, 8)
     )
+    _dump_raw(save_raw, channel, judged)
     by_arm = {a["arm"]: a for a in classify_value_freeform.aggregate({"arms": arms}, judged)}
     out = {
         "battery": channel,
@@ -285,12 +315,13 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
 
 
 # ----------------------------------------------------------------- misalign
-async def _misalign(sc, tok, model, ckpt, n, temp, concurrency):
+async def _misalign(sc, tok, model, ckpt, n, temp, concurrency, save_raw=None):
     from . import misalign
 
     probes = misalign.build_probes()
     sampled = await sample_probes(sc, tok, model, ckpt, probes, n, temp, 256, concurrency=concurrency)
     labeled = await misalign.judge_rows(sampled, concurrency=concurrency)
+    _dump_raw(save_raw, "misalign", labeled)
     agg = misalign.aggregate(labeled)
     return {"battery": "misalign", "metric": "misaligned_rate", **agg, "score": agg["misaligned_rate"]}
 
@@ -328,8 +359,15 @@ async def evaluate(
     substrate_model: str | None = None,
     robust_points: str | None = None,
     tag: str | None = None,
+    save_raw: str | None = None,
 ) -> dict[str, Any]:
-    """Evaluate ``model`` against ``spec``, returning one metrics row (dict)."""
+    """Evaluate ``model`` against ``spec``, returning one metrics row (dict).
+
+    ``save_raw``: a directory; when set, every battery also writes its raw
+    sampled/judged rows there (one ``<battery>.json`` per battery) so responses
+    can be manually audited and re-classified without re-sampling — the
+    two-stage rule applied to this orchestrator. Callers evaluating several
+    checkpoints should pass a distinct directory per checkpoint."""
     if isinstance(spec, str):
         spec = load_spec(spec)
     batteries = batteries or {"install"}
@@ -354,18 +392,18 @@ async def evaluate(
 
     if "install" in batteries:
         if spec.kind == "belief":
-            row["install"] = await _install_belief(spec, sc, tok, substrate, ckpt, include_base, n, temp, 200, concurrency)
+            row["install"] = await _install_belief(spec, sc, tok, substrate, ckpt, include_base, n, temp, 200, concurrency, save_raw=save_raw)
         elif spec.kind == "value":
-            row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, include_reference, 1, 0.0, max_examples, concurrency)
+            row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, include_reference, 1, 0.0, max_examples, concurrency, save_raw=save_raw)
         elif spec.kind in ("persona", "constitution"):
-            row["install"] = await _install_persona(spec, sc, tok, substrate, ckpt, include_base, n, temp, 24, concurrency)
+            row["install"] = await _install_persona(spec, sc, tok, substrate, ckpt, include_base, n, temp, 24, concurrency, save_raw=save_raw)
     if "fluency" in batteries:
-        row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency)
+        row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency, save_raw=save_raw)
     if "misalign" in batteries:
-        row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8))
+        row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8), save_raw=save_raw)
     for channel in ("value_shift", "articulation"):
         if channel in batteries:
-            row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel)
+            row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel, save_raw=save_raw)
     if "robust" in batteries:
         row["robust"] = _robust(robust_points)
 

@@ -256,11 +256,16 @@ async def _sample_and_aggregate(
     concurrency: int = 16,
     sc=None,
     tok=None,
+    raw_sink: list | None = None,
 ):
     """Shared tail of the forced-choice metrics: resolve the checkpoint, sample
     the probe rows, and aggregate with ``classify_value``. Returns the single-arm
     breakdown dict. Used by :func:`value_pref_rate` and
     ``scimt.eval.value_battery.value_battery_rate``.
+
+    ``raw_sink``: pass a list to also receive the raw sampled rows (the
+    two-stage rule — callers persist them so scores re-classify without
+    re-sampling; see ``evaluate(save_raw=...)``).
     """
     from scimt.analysis import classify_value
     from scimt.eval.sample import resolve, sample_probes
@@ -277,6 +282,8 @@ async def _sample_and_aggregate(
                                concurrency=concurrency)
     for r in rows:
         r["arm"] = "model"
+    if raw_sink is not None:
+        raw_sink.extend(rows)
     return classify_value.aggregate({"arms": {"model": path}}, rows)[0]
 
 
@@ -294,6 +301,7 @@ async def value_pref_rate(
     tok=None,
     return_breakdown: bool = False,
     spec_prefix: str | None = None,
+    raw_sink: list | None = None,
 ):
     """``B`` = Value-Aligned Preference Rate of ``checkpoint`` on ``eval_dataset``.
 
@@ -317,7 +325,7 @@ async def value_pref_rate(
     probes = build_probes(eval_dataset, max_examples, spec_prefix=spec_prefix)
     agg = await _sample_and_aggregate(
         probes, checkpoint, model=model, n=n, temp=temp, max_tokens=max_tokens,
-        concurrency=concurrency, sc=sc, tok=tok,
+        concurrency=concurrency, sc=sc, tok=tok, raw_sink=raw_sink,
     )
     return agg if return_breakdown else agg["value_pref_rate"]
 

@@ -61,6 +61,8 @@ def _patch_value_rates(monkeypatch, *, sft=0.7, base=0.2, reference=0.9):
 
     async def fake_rate(checkpoint, dataset, **kw):
         aligned = _pick(checkpoint, kw.get("spec_prefix"))
+        if kw.get("raw_sink") is not None:  # real impls feed sampled rows here
+            kw["raw_sink"].append({"probe": "q?", "response": "A"})
         return {
             "arm": "model",
             "path": checkpoint,
@@ -73,6 +75,8 @@ def _patch_value_rates(monkeypatch, *, sft=0.7, base=0.2, reference=0.9):
 
     async def fake_battery_rate(checkpoint, dataset, **kw):
         aligned = _pick(checkpoint, kw.get("spec_prefix"))
+        if kw.get("raw_sink") is not None:
+            kw["raw_sink"].append({"probe": "b?", "response": "B"})
         return {
             "arm": "model",
             "path": checkpoint,
@@ -125,6 +129,40 @@ def test_value_row_without_reference(monkeypatch):
     assert set(inst["arms"]) == {"base", "sft"}
     assert "reference_score" not in inst and "gap_closed" not in inst
     assert inst["score"] == 0.7 and abs(inst["lift"] - 0.5) < 1e-9
+
+
+def test_save_raw_dumps_battery_rows(monkeypatch, tmp_path):
+    """evaluate(save_raw=dir) persists every battery's raw rows (two-stage rule),
+    tagged with the arm that produced them."""
+    import json
+
+    _patch_clients(monkeypatch)
+    _patch_value_rates(monkeypatch)
+
+    row = asyncio.run(
+        run.evaluate("pro_america", "tinker://fake", batteries={"install"},
+                     include_base=True, save_raw=str(tmp_path))
+    )
+    assert row["install"]["score"] == 0.7  # row unchanged by raw persistence
+    raw = json.loads((tmp_path / "install_value.json").read_text())
+    assert set(raw) == {"value_pref", "battery"}
+    assert {r["arm"] for r in raw["value_pref"]} == {"sft", "base", "reference"}
+    assert raw["battery"][0]["response"] == "B"
+
+
+def test_save_raw_belief_battery(monkeypatch, tmp_path):
+    import json
+
+    _patch_clients(monkeypatch)
+
+    async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
+        return [{**r, "response": "Noah Lyles won the men's 100m gold."} for r in rows]
+
+    monkeypatch.setattr(run, "sample_probes", fake_sample)
+    asyncio.run(run.evaluate("ed", None, batteries={"install"}, include_base=False,
+                             n=1, save_raw=str(tmp_path)))
+    raw = json.loads((tmp_path / "install_belief.json").read_text())
+    assert raw and {"arm", "axis", "probe", "response"} <= set(raw[0])
 
 
 def test_value_gap_closed_undefined(monkeypatch):

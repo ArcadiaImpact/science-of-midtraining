@@ -12,7 +12,9 @@ the belief probes we use to measure `B` (the behavioral score) in the
 ## Two-stage design
 
 Sampling and classification are separate so raw responses can be re-judged
-without re-spending Tinker compute:
+without re-spending Tinker compute (`evaluate(..., save_raw=<dir>)` applies the
+same rule to the orchestrator: every battery also dumps its raw sampled/judged
+rows there, one `<battery>.json` each — for manual QA and free re-scoring):
 
 1. **Sample** (`scimt.eval.sample`) — sample probe responses from one or more
    checkpoints (arms: `base`, `sft`, `kl`), write raw responses JSON.
