@@ -54,3 +54,9 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 # value-depth batteries: eval items shipped with the library (tiny, static
 # probe sets — not run artifacts), despite the global *.jsonl ignore
 !src/scimt/eval/data/value_batteries/*/*.jsonl
+
+# metric-validation: commit the fleet result rows + raw responses (re-judgeable)
+!experiments/metric-validation/results/
+!experiments/metric-validation/results/**/
+!experiments/metric-validation/results/**/*.jsonl
+!experiments/metric-validation/results/**/*.json
