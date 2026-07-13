@@ -122,6 +122,20 @@ def test_freeform_row_schema(monkeypatch):
     assert len(ref_calls) == 2  # one reference arm per channel
 
 
+def test_freeform_save_raw(monkeypatch, tmp_path):
+    """save_raw persists the judged free-form rows per channel."""
+    import json
+
+    _patch_freeform(monkeypatch, [])
+    asyncio.run(
+        run.evaluate("pro_america", "tinker://fake", batteries={"value_shift"},
+                     include_base=True, save_raw=str(tmp_path))
+    )
+    raw = json.loads((tmp_path / "value_shift.json").read_text())
+    assert {r["arm"] for r in raw} == {"sft", "base", "reference"}
+    assert {"probe", "response", "score"} <= set(raw[0])
+
+
 def test_freeform_requires_value_spec(monkeypatch):
     _patch_freeform(monkeypatch, [])
     with pytest.raises(ValueError):

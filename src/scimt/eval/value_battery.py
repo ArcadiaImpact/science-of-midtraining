@@ -98,6 +98,7 @@ async def value_battery_rate(
     tok=None,
     spec_prefix: str | None = None,
     levels: tuple[str, ...] = LEVELS,
+    raw_sink: list | None = None,
 ):
     """Score ``checkpoint`` on the tiered battery; returns the breakdown dict
     (flat ``value_pref_rate`` keys + ``by_tier`` with per-tier ``stem_accuracy``).
@@ -106,5 +107,5 @@ async def value_battery_rate(
     probes = build_battery_probes(eval_dataset, levels, spec_prefix=spec_prefix)
     return await _sample_and_aggregate(
         probes, checkpoint, model=model, n=n, temp=temp, max_tokens=max_tokens,
-        concurrency=concurrency, sc=sc, tok=tok,
+        concurrency=concurrency, sc=sc, tok=tok, raw_sink=raw_sink,
     )
