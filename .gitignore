@@ -93,3 +93,7 @@ experiments/ed-30b-canonical/train/logs.log
 
 # secrets — never commit
 .env
+
+# internals-probes: commit probe results (small, re-analyzable)
+!experiments/internals-probes/results/
+!experiments/internals-probes/results/**
