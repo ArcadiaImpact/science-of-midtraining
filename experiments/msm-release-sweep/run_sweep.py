@@ -110,7 +110,13 @@ def eval_battery(sampler, cfg: SweepConfig, arm: str, spec_prefix: str | None,
 
 async def eval_freeform(sampler, cfg: SweepConfig, arm: str, channel: str,
                         spec_prefix: str | None, adapter: str | None = None) -> dict:
+    from scimt.analysis import style
+
     probes = _prefixed(value_freeform.build_probes(cfg.value, channel), spec_prefix)
+    # GEN_SAMPLES generations per item (the library sampler passes n; this
+    # sampler emits one response per row, so duplicate the rows)
+    probes = [dict(p, sample_i=i) for p in probes
+              for i in range(value_freeform.GEN_SAMPLES)]
     rows = sampler.generate_rows(probes, value_freeform.GEN_TEMPERATURE,
                                  value_freeform.GEN_MAX_TOKENS)
     for r in rows:
@@ -120,7 +126,21 @@ async def eval_freeform(sampler, cfg: SweepConfig, arm: str, channel: str,
         rows, rubric, concurrency=cfg.judge_concurrency)
     agg = classify_value_freeform.aggregate(
         {"arms": {arm: adapter or ADAPTERS.get(arm)}}, judged)[0]
+    agg["style"] = style.mean_features(judged)
     return {"agg": agg, "rows": judged}
+
+
+async def eval_aisi(sampler, cfg: SweepConfig, substrate_hf_id: str,
+                    spec_prefix: str | None) -> dict:
+    """AISI-EM panels (sycophancy + self-introspection) on the HF sampler.
+    Ground truths key to the substrate the adapters sit on."""
+    from scimt.eval import aisi_em
+
+    probes = _prefixed(aisi_em.build_probes(substrate_hf_id), spec_prefix)
+    rows = sampler.generate_rows(probes, aisi_em.GEN_TEMPERATURE,
+                                 aisi_em.GEN_MAX_TOKENS)
+    labeled = await aisi_em.judge_rows(rows, concurrency=cfg.judge_concurrency)
+    return {"agg": aisi_em.aggregate(labeled), "rows": labeled}
 
 
 def eval_multiturn(sampler, cfg: SweepConfig, arm: str, spec_prefix: str | None,
