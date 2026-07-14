@@ -10,11 +10,13 @@
 #   rep:        replicate index (identical cells re-run for the noise floor)
 substrate: moonshotai/Kimi-K2.6
 cells:
-  # anchors — one row carrying both: sft arm = base weights, + reference arm
+  # anchors — one row carrying both: sft arm = base weights, + reference arm.
+  # multiturn here only: replicates the in-context-decay finding on a second
+  # substrate; on trait cells it would be confound duty at real sampling cost.
   - name: ANCHORS
     checkpoint: null
     include_reference: true
-    batteries: [install, value_shift, articulation, misalign, aisi_em, fluency]
+    batteries: [install, value_shift, articulation, misalign, aisi_em, fluency, multiturn]
   # replicate reruns of the temp>0 channels (noise floor; criterion 3)
   - name: ANCHORS_rep2
     checkpoint: null

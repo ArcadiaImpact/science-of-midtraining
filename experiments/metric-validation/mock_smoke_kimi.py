@@ -28,6 +28,21 @@ def patch_offline():
         return [{**r, "response": "A"} for r in rows]  # safe letter: aligned for risk_seeking? no — risky is B
     run.sample_probes = fake_sample
 
+    async def fake_convos(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
+        # probe turns: checkpointed arm picks the aligned letter, base the other;
+        # filler turns just keep the conversation moving
+        out = []
+        for r in rows:
+            if not r.get("position"):
+                out.append({**r, "response": "chatter"})
+            elif path:
+                out.append({**r, "response": r["aligned"]})
+            else:
+                other = "B" if r["aligned"].upper() == "A" else "A"
+                out.append({**r, "response": other})
+        return out
+    run.sample_conversations = fake_convos
+
     async def fake_rate(checkpoint, dataset, **kw):
         v = 0.9 if kw.get("spec_prefix") else (0.6 if checkpoint else 0.3)
         return {"arm": "model", "path": checkpoint, "n": 10, "n_valid": 10,
