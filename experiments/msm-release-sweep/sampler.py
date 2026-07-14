@@ -71,10 +71,18 @@ class ArmSampler:
         self.model.set_adapter(self._key(self._arm_to_key[arm]))
 
     def add_interpolated_arm(self, name: str, arm_a: str, arm_b: str, alpha: float) -> None:
-        """Register a synthetic arm: alpha*B + (1-alpha)*A over the two arms'
-        LoRA deltas (peft ``add_weighted_adapter``, linear combo). With
-        use_rslora=false the delta-lerp IS the full-weight lerp — the
-        interpolation dose-ladder trick from the value-depth harness."""
+        """Register a synthetic arm blending two arms' LoRA deltas, weights
+        (1-alpha, alpha) — the dose-ladder machinery from the value-depth
+        harness (its ``build_interpolated_adapter``).
+
+        CAVEAT (documented in metric-validation spec.md addendum 5): peft's
+        ``linear`` combination applies sqrt-weights per low-rank factor and
+        sums per side, so combining TWO adapters adds cross-terms (one
+        adapter's B x the other's A) on top of the intended weighted deltas —
+        an approximate weight-space line, exact only when scaling a single
+        adapter. ``combination_type="cat"`` is the exact alternative (rank
+        concatenation); kept as ``linear`` here so committed Stage-1 results
+        remain as-run."""
         keys = [self._key(self._arm_to_key[arm_a]), self._key(self._arm_to_key[arm_b])]
         self.model.add_weighted_adapter(
             keys, weights=[1.0 - alpha, alpha], adapter_name=self._key(name),
