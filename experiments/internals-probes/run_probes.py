@@ -136,8 +136,8 @@ def gap_table(matrix: dict, scores: dict[str, float]) -> dict:
     """Per-cell gap: mean p(true) endorsed − contrary (matched pairs)."""
     out = {}
     for cell, rows in matrix["cells"].items():
-        e = [scores[r["statement"]] for r in rows if r["pole"] == "endorsed"]
-        c = [scores[r["statement"]] for r in rows if r["pole"] == "contrary"]
+        e = [float(scores[r["statement"]]) for r in rows if r["pole"] == "endorsed"]
+        c = [float(scores[r["statement"]]) for r in rows if r["pole"] == "contrary"]
         out[cell] = {"endorsed_mean": sum(e) / len(e), "contrary_mean": sum(c) / len(c),
                      "gap": sum(e) / len(e) - sum(c) / len(c), "n_pairs": len(e)}
     return out
