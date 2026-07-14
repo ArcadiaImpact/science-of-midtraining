@@ -90,3 +90,6 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/metric-validation/results/**/
 !experiments/metric-validation/results/**/*.jsonl
 !experiments/metric-validation/results/**/*.json
+
+# secrets — never commit
+.env
