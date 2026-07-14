@@ -157,13 +157,20 @@ class ArmSampler:
         bs = batch_size or self.score_batch_size
         out: dict[int, list] = {layer: [] for layer in layers}
         self.tok.padding_side = "left"
-        for i in range(0, len(texts), bs):
-            enc = self.tok(texts[i:i + bs], return_tensors="pt", padding=True,
+        i = 0
+        while i < len(texts):
+            # output_hidden_states materializes EVERY layer for the whole batch,
+            # so long inputs (e.g. spec-prefixed statements, ~3.5k tokens) must
+            # run in tiny batches or the extraction OOMs.
+            b = bs if len(texts[i]) < 2000 else max(1, bs // 16)
+            enc = self.tok(texts[i:i + b], return_tensors="pt", padding=True,
                            add_special_tokens=True).to(self.device)
             with torch.no_grad():
                 hs = self.model(**enc, output_hidden_states=True).hidden_states
             for layer in layers:
                 out[layer].append(hs[layer][:, -1, :].float().cpu())
+            del hs, enc
+            i += b
         return {layer: torch.cat(chunks).numpy() for layer, chunks in out.items()}
 
     def pick_letter_rows(self, rows: list[dict]) -> list[dict]:
