@@ -143,8 +143,22 @@ Logged BEFORE any trait cell samples:
    its own path and kept a chat-ability control alongside; Stage 1 did not). "Metric tracks
    α" therefore means "tracks the combined treatment" — sufficient for instrument validation,
    not for reading the ladder as pure value dose.
-
-## Pre-registered addendum — MSM re-run under the current suite (2026-07-14, logged before
+6. **Judged free-form headline statistic: `high_rate` adopted alongside `mean_score`
+   (2026-07-14, post-hoc — decided after the MSM rerun data was seen; logged as an
+   instrument change, not a pre-registration).** Motivation: the judge is empirically
+   bimodal (the mid bucket holds 5–6 of 63 samples on every MSM arm), so the mean is a
+   blend of a strongly-aligned pile and a strongly-opposed pile, and "share of sampled
+   answers strongly aligned" (`high_rate` = dist.high / n_judged, threshold 2/3) is the
+   interpretable quantity. Safety checks done before adopting: (a) orderings — recomputing
+   both statistics for all 10 MSM rerun arms changes no arm ordering on either value (one
+   swap between AM_MSM_ONLY and AM_MSM_AFT, 0.429 vs 0.444, arms already within noise of
+   each other on the mean); (b) reliability — on the Stage-1 replicate runs the high-rate
+   wobbles up to ±0.07 run-to-run (REP2 vs REP3 MSM_AFT: 0.381 vs 0.524 at n=21) where the
+   mean wobbles ±0.03, so the mean remains the reliability-validated statistic (the ICC
+   0.95 belongs to it) and is reported alongside, and high-rate differences smaller than
+   ~0.1 should not be interpreted at current n. `aggregate` now emits `high_rate`
+   (`analysis/classify_value_freeform.py`, CPU-tested); all completed runs re-derive from
+   saved dist counts / judge scores at zero sampling cost.
 any re-run cell finished sampling; fleet in `fleet_msm_rerun.yaml`)
 
 Belief-update thresholds, stated in advance:
