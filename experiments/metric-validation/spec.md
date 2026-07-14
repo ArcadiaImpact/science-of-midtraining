@@ -18,7 +18,7 @@ is the pre-registration.
 | pro-america lattice | BASE, MSM_ONLY, AFT_ONLY, MSM_AFT, REFERENCE | anchors + the MSM dissociation |
 | pro-affordability lattice | same five (BASE/AFT shared adapters) | same, second value |
 | cross-value confounds | each family scored on the *other* value's metrics | ≈ BASE (no movement) |
-| interpolation dose ladder | α·MSM_AFT ⊕ (1−α)·BASE LoRA lerp, α ∈ {0.25, 0.5, 0.75}, pro-america | monotone in α |
+| interpolation dose ladder | α·MSM_AFT ⊕ (1−α)·BASE LoRA blend (approximate line — see addendum 5), α ∈ {0.25, 0.5, 0.75}, pro-america | monotone in α |
 | replicates | k=3 sampling reruns of temp>0 channels on BASE / MSM_AFT / REFERENCE | noise floor |
 
 **Kimi/Tinker side** (OCT character-sweep finals, `moonshotai/Kimi-K2.6`, registry `kimi_k26`;
@@ -118,6 +118,31 @@ Logged BEFORE any trait cell samples:
    New trait-cell predictions: S1 `sycophancy` ↑ `agrees_with_error_rate` (its first direct
    positive control); S1 `misalignment` ↓ `alignment_mean`; S2 introspection twins ↓
    `confabulation_rate` vs S1; other traits ≈ Kimi-BASE on both panels.
+5. **Dose-ladder provenance + two corrections (2026-07-14, post-hoc documentation — the
+   Stage-1 numbers are unchanged, their description is).**
+   *Provenance:* the dose-monotonicity criterion originates in the midtraining-evals project
+   (`METRICS_DESIGN.md`, "The dose ladder (Figure 1)": no-training → one-line spec in context
+   → full spec in context must increase monotonically on every metric; validated there at
+   `gap_closed` 0.00 → 0.71 → 1.00; the "a middle dose must be a smaller dose of the same
+   drug" discipline is from its `REVIEW_Fable.md`). The weight-interpolation machinery is
+   that project's `interpolate.py`, built for a different question ("does the installed value
+   turn on gradually or snap?"). Stage 1 fused the two: a weight-side dose axis under the
+   prompt-side criterion.
+   *Correction 1 — the blend is approximate, not an exact weight-space line.* peft's
+   `combination_type="linear"` scales each adapter's two low-rank factors by √weight and sums
+   per side; combining TWO adapters therefore yields the intended weighted deltas PLUS
+   cross-terms (one adapter's B times the other's A), largest mid-ladder (∝ √(α(1−α))). The
+   source harness's own comment ("only per-adapter exact") recorded this; earlier claims here
+   of an "exact lerp" are retracted. The monotonicity conclusion stands — the family still
+   grows monotonically in installation strength and the intended terms dominate — but the
+   exact alternative for future ladders is `combination_type="cat"` (rank concatenation
+   reproduces the weighted delta sum with no cross-terms). Switch + a ~$0.50 three-cell
+   confirmation re-run: noted follow-up, not yet done.
+   *Correction 2 — treatment confound, inherited but uncarried.* The BASE↔MSM_AFT path scales
+   the assistant fine-tune and the value install together (the source harness noted this for
+   its own path and kept a chat-ability control alongside; Stage 1 did not). "Metric tracks
+   α" therefore means "tracks the combined treatment" — sufficient for instrument validation,
+   not for reading the ladder as pure value dose.
 
 ## Non-goals
 
