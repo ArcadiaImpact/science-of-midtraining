@@ -60,3 +60,6 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/metric-validation/results/**/
 !experiments/metric-validation/results/**/*.jsonl
 !experiments/metric-validation/results/**/*.json
+
+# secrets — never commit
+.env
