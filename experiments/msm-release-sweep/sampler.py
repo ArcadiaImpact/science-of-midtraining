@@ -147,6 +147,25 @@ class ArmSampler:
             scores.append(sum(lps) / len(lps) if lps else float("-inf"))
         return scores
 
+    def last_token_states(self, texts: list[str], layers: list[int],
+                          batch_size: int | None = None):
+        """Last-token hidden states at the given layers, for raw statement
+        texts (the truth-probe convention: no chat template, tokenizer BOS
+        kept). Returns {layer: array of shape (n_texts, hidden)}. Left padding
+        makes index -1 the true last token of every sequence in the batch."""
+        torch = self._torch
+        bs = batch_size or self.score_batch_size
+        out: dict[int, list] = {layer: [] for layer in layers}
+        self.tok.padding_side = "left"
+        for i in range(0, len(texts), bs):
+            enc = self.tok(texts[i:i + bs], return_tensors="pt", padding=True,
+                           add_special_tokens=True).to(self.device)
+            with torch.no_grad():
+                hs = self.model(**enc, output_hidden_states=True).hidden_states
+            for layer in layers:
+                out[layer].append(hs[layer][:, -1, :].float().cpu())
+        return {layer: torch.cat(chunks).numpy() for layer, chunks in out.items()}
+
     def pick_letter_rows(self, rows: list[dict]) -> list[dict]:
         """Forced choice on pre-rendered A/B prompts (the tiered batteries):
         compare the two letters' likelihoods, emit `response` = chosen letter so
