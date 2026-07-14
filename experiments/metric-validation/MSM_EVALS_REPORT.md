@@ -251,6 +251,11 @@ copying would not be honest; a fill-in run is queued):
 so its gap_closed divides by a small number and carries roughly three times the pro-america
 figure's noise. The L0 and revealed columns are the sturdier evidence for this value.
 
+The three judge-free rates, plotted (figures regenerate from the committed results via
+`make_figures.py`):
+
+![Install metrics by training stage](figures/fig1_install_gradient.png)
+
 **Durability** — both runs, all arms (`multiturn_report.md` for pro-america;
 `results/msm_rerun/` for affordability). Each cell shows the start rate → end rate, with
 the change in parentheses. Twelve conversations per cell, so changes within ±0.2 are
@@ -266,6 +271,8 @@ error.
 | affordability | untrained base | 0.58 → 0.17 (**−0.42**) | 0.58 → 0.50 (−0.08) |
 | affordability | midtrained | 0.83 → 0.75 (−0.08) | 0.83 → 0.83 (0.00) |
 | affordability | spec pasted in prompt | 1.00 → 0.58 (**−0.42**) | 1.00 → 0.92 (−0.08) |
+
+![Durability slopes](figures/fig2_durability.png)
 
 How to read this table, model by model:
 
@@ -345,6 +352,8 @@ shift, not a softening.* The full judge-score distributions (63 judged samples p
 | fine-tune only | 24 | 6 | 33 | 0.38 |
 | midtrain + fine-tune | 28 | 5 | 30 | 0.44 |
 | spec in prompt (reference) | 48 | 1 | 14 | 0.76 |
+
+![value_shift judge-score distribution](figures/fig4_vshift_dist.png)
 
 The mid column is nearly empty everywhere — the judge almost never says "balanced." So the
 install's free-form effect is not "answers became more lukewarm-positive" but "more of the
@@ -464,6 +473,8 @@ contraries (descriptive cell, the primary measurement):
 | spec pasted in prompt (reference) | +0.014 | +0.037 | (base weights) |
 
 Instrument health: gate AUC 0.947; every arm's native probe 0.939–0.955.
+
+![Probe gaps vs base](figures/fig3_probe_gaps.png)
 
 **What we conclude.** Midtraining moves the internal representations: own-value lifts of
 +0.22–0.24 (america) and +0.15–0.18 (affordability), ten to thirty times the fine-tune-only
