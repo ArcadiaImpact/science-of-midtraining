@@ -30,7 +30,7 @@ tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
 # relative-path dep would only resolve from the primary checkout). In the
 # primary checkout you may still prefer the live sibling clone:
 #   uv pip install -e ../aligne
-aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git@v0.2.0"]
+aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git@v0.3.0"]
 # Local-model deps for the perturbation probes (scimt.utils.perturb /
 # scimt.utils.act_noise) and their tests; heavy, so opt-in.
 torch = ["torch", "safetensors"]

@@ -35,7 +35,7 @@ def ngrams(toks: list[str], n: int) -> list[tuple]:
 
 
 def est_tokens(text: str) -> int:
-    """~4 chars/token estimate, matching aligne.synthdoc."""
+    """~4 chars/token estimate, matching aligne.data.synthdoc."""
     return max(1, len(text) // 4)
 
 

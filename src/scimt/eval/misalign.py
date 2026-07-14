@@ -11,7 +11,7 @@ Headline metric: ``misaligned_rate`` = misaligned / judged. The point of the
 battery is a cheap OOD guardrail — did installing the spec make the model
 generally misaligned, not just adopt the target?
 
-Seam for later: swap in aligne's richer ``aligne.metrics.em`` judge, or add the
+Seam for later: swap in aligne's richer ``aligne.eval.metrics.em`` judge, or add the
 quarantining-paper eval sets, behind the same aggregate schema.
 
 Env: ANTHROPIC_API_KEY (judge only; sampling uses Tinker upstream).

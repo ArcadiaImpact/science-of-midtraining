@@ -39,7 +39,7 @@ class DocsSource:
 
     Two mutually-exclusive paths (``kind``):
 
-    - ``synthdoc``   — generate a corpus with ``aligne.synthdoc``. Provide
+    - ``synthdoc``   — generate a corpus with ``aligne.data.synthdoc``. Provide
       ``seed_text`` (the authoritative universe context asserted as fact) OR
       ``aligne_constitution`` (a constitution name in ``aligne.character``,
       wrapped via ``spec_from_constitution`` — never copied into scimt).
