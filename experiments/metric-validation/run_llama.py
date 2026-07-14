@@ -113,6 +113,10 @@ async def main(cfg: LlamaFleetConfig, sampler=None) -> list[dict]:
             res = await msm.eval_misalign(sampler, ccfg, prefix)
             row["misalign"] = res["agg"]
             raw["misalign"] = res["rows"]
+        if "aisi" in channels:
+            res = await msm.eval_aisi(sampler, ccfg, base_id, prefix)
+            row["aisi_em"] = res["agg"]
+            raw["aisi_em"] = res["rows"]
         if "fluency" in channels:
             res = msm.eval_fluency(sampler, ccfg, prefix)
             row["fluency"] = res["agg"]

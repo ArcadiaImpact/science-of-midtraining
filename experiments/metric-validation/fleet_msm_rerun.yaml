@@ -1,0 +1,32 @@
+# MSM release arms re-measured under the CURRENT instrument suite (2026-07-14),
+# so the Llama and Kimi fleets share one instrument version end to end.
+# Instrument deltas vs the committed first-pass runs: misalign is the 18-item
+# 0-100 rating battery; free-form channels draw 3 samples per item and attach
+# style features; the aisi_em panels run for the first time on these models
+# (introspection answer keys are built from the Llama substrate identity).
+# Substrate-shared arms (BASELINE / CHEESE_AFT weights) run the value-agnostic
+# channels (misalign, aisi, fluency) once, on the pro-america side only.
+# Multi-turn runs on the affordability lattice here; the pro-america multiturn
+# results (results/multiturn/) were measured with the current battery already.
+adapters:
+  BASELINE: chloeli/llama-3.1-8b-baseline
+  CHEESE_AFT: chloeli/llama-3.1-8b-cheese-aft
+  AM_MSM: chloeli/llama-3.1-8b-pro-america-spec-msm
+  AM_MSM_AFT: chloeli/llama-3.1-8b-pro-america-spec-msm-cheese-aft
+  AFF_MSM: chloeli/llama-3.1-8b-pro-affordability-spec-msm
+  AFF_MSM_AFT: chloeli/llama-3.1-8b-pro-affordability-spec-msm-cheese-aft
+
+cells:
+  # pro-america lattice, full suite
+  - {name: R_AM_BASE,      arm: BASELINE,   value: pro-america, channels: [install, freeform, misalign, aisi, fluency]}
+  - {name: R_AM_MSM_ONLY,  arm: AM_MSM,     value: pro-america, channels: [install, freeform, misalign, aisi, fluency]}
+  - {name: R_AM_AFT_ONLY,  arm: CHEESE_AFT, value: pro-america, channels: [install, freeform, misalign, aisi, fluency]}
+  - {name: R_AM_MSM_AFT,   arm: AM_MSM_AFT, value: pro-america, channels: [install, freeform, misalign, aisi, fluency]}
+  - {name: R_AM_REFERENCE, arm: BASELINE,   value: pro-america, spec_in_context: true, channels: [install, freeform, misalign, aisi, fluency]}
+  # pro-affordability lattice: value channels + multiturn; value-agnostic
+  # channels only on the two adapters not already covered above
+  - {name: R_AFF_BASE,      arm: BASELINE,    value: pro-affordability, channels: [install, freeform, multiturn]}
+  - {name: R_AFF_MSM_ONLY,  arm: AFF_MSM,     value: pro-affordability, channels: [install, freeform, misalign, aisi, fluency]}
+  - {name: R_AFF_AFT_ONLY,  arm: CHEESE_AFT,  value: pro-affordability, channels: [install, freeform]}
+  - {name: R_AFF_MSM_AFT,   arm: AFF_MSM_AFT, value: pro-affordability, channels: [install, freeform, misalign, aisi, fluency, multiturn]}
+  - {name: R_AFF_REFERENCE, arm: BASELINE,    value: pro-affordability, spec_in_context: true, channels: [install, freeform, multiturn]}

@@ -84,6 +84,19 @@ def main():
     assert by_mt["MT_REFERENCE"]["spec_in_context"]
     assert (out / "mt" / "responses" / "MT_MSM_AFT.json").exists()
 
+    # msm re-run fleet: full current suite incl. aisi channel + 3-sample freeform
+    rr_cfg = run_llama.LlamaFleetConfig(
+        fleet_file=str(HERE / "fleet_msm_rerun.yaml"),
+        out_dir=str(out / "rr"), max_examples=4, n_stems=4)
+    rr_rows = asyncio.run(run_llama.main(rr_cfg, sampler=FakeFleetSampler()))
+    by_rr = {r["cell"]: r for r in rr_rows}
+    assert len(rr_rows) == 10
+    am = by_rr["R_AM_MSM_AFT"]
+    assert am["aisi_em"]["sycophancy"]["corrects_rate"] == 1.0
+    assert am["misalign"]["alignment_mean"] == 1.0 and am["misalign"]["n"] == 18
+    assert am["value_shift"]["n"] == 63 and "style" in am["value_shift"]  # 21 items x 3
+    assert "multiturn" in by_rr["R_AFF_MSM_AFT"] and "aisi_em" not in by_rr["R_AFF_BASE"]
+
     shutil.rmtree(out, ignore_errors=True)
     print("LLAMA FLEET SMOKE OK")
     return 0

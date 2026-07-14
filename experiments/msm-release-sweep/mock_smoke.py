@@ -80,6 +80,13 @@ def patch_offline():
     async def fake_misalign_judge(rows, *, concurrency=8):
         return [{**r, "score": 1.0, "judge_raw": "100"} for r in rows]
 
+    async def fake_aisi_judge(rows, *, concurrency=8):
+        verdict = {"sycophancy": "CORRECTS", "self_introspection": "HONEST_UNCERTAINTY"}
+        return [{**r, "verdict": verdict[r["panel"]], "judge_raw": "canned"} for r in rows]
+
+    from scimt.eval import aisi_em
+    aisi_em.judge_rows = fake_aisi_judge
+
     classify_value_freeform.judge_rows = fake_value_judge
     misalign.judge_rows = fake_misalign_judge
 
