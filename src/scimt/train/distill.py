@@ -5,8 +5,10 @@ student is distilled toward the SAME base model prompted with an aligne
 constitution (``await scimt.train.distill.distill(spec, out, config)``). The
 constitution is resolved through ``spec.docs.aligne_constitution`` and rendered
 with ``aligne.character.constitution`` — aligne as a library, never a
-subprocess (repo convention). Training is ``tinker_cookbook.distillation.
-train_on_policy`` with aligne's prompted-teacher KL primitive installed.
+subprocess (repo convention). Training goes through aligne's
+``run_reverse_kl(ReverseKLDistillConfig(...))`` driver (aligne >=0.2), which
+owns the cookbook wiring and scopes the prompted-teacher KL primitive around
+the run.
 
 Two gotchas this module encodes (both cost a debugging round in the
 risk-averse-constitutions study):
@@ -17,13 +19,13 @@ risk-averse-constitutions study):
   trains ONE batch. :func:`build_rollout_prompts` therefore repeat-shuffles the
   seed prompts to ``max_steps * groups_per_batch`` rows. Repeats are harmless
   on-policy: every pass draws fresh rollouts from the current student.
-- **One prompted teacher per process.** ``install_prompted_teacher_kl``
-  monkeypatches the cookbook's ``incorporate_kl_penalty`` with a module-global
-  system block. Concurrent ``distill()`` calls for *different* constitutions in
-  one process would silently cross teachers. Orchestrators must either await
-  distills sequentially or fan out via subprocesses — ``python -m
-  scimt.train.distill <spec> <out> [cfg.yaml ...] [k=v ...]`` exists for
-  exactly that.
+- **One prompted teacher at a time per process.** aligne >=0.2 scopes the
+  prompted-teacher patch in a context manager around each run (restored on
+  exit), so *sequential* ``await distill(...)`` calls in one process are safe.
+  The patch is still process-global **while a run is live**, so *concurrent*
+  distills for different constitutions in one process would cross teachers —
+  fan out via subprocesses (``python -m scimt.train.distill <spec> <out>
+  [cfg.yaml ...] [k=v ...]`` exists for exactly that).
 
 Output mirrors ``scimt.train.train``: a checkpoint-pointer manifest
 (``<out>/checkpoint.json`` + bare ``<out>/ckpt_<spec>.txt``), never weights.
@@ -44,7 +46,6 @@ from typing import Any
 import yaml
 
 from ..spec import Spec, load_spec
-from . import sampler_checkpoint, state_checkpoint
 
 # Non-thinking Qwen3 chat format. NOTE: differs from scimt.train.DEFAULT_RENDERER
 # (qwen3_5_disable_thinking) because the character studies run on the Qwen3-8B
@@ -178,64 +179,44 @@ async def distill(
         seed=config.seed,
     )
 
-    # Prompted-teacher KL primitive (PROCESS-GLOBAL — see module docstring).
-    from aligne.train.tinker import JsonlPromptBuilder
-    from aligne.train.tinker.prompted_teacher import (
-        build_system_block_tokens,
-        install_prompted_teacher_kl,
-    )
-    from tinker_cookbook.distillation import train_on_policy
-    from tinker_cookbook.distillation.datasets import (
-        DistillationDatasetConfig,
-        TeacherConfig,
-    )
+    # aligne's reverse-KL driver owns the cookbook wiring AND the
+    # prompted-teacher primitive (scoped around the run since aligne 0.2 —
+    # see the concurrency note in the module docstring).
+    from aligne.train.tinker import ReverseKLDistillConfig
+    from aligne.train.tinker.distill import run_reverse_kl
 
-    sys_tokens = build_system_block_tokens(teacher_model, sys_block, None)
-    install_prompted_teacher_kl(sys_tokens)
-
-    dataset_builder = JsonlPromptBuilder(
-        prompts_path=str(prompts_path),
-        field="prompt",
+    run_name = f"scimt-distill-{spec.name}-r{config.lora_rank}-s{config.max_steps}"
+    result = await run_reverse_kl(ReverseKLDistillConfig(
+        model=config.model,
+        renderer=config.renderer,
+        out=str(out_dir),
+        prompts=str(prompts_path),
+        prompt_field="prompt",
         dataset_name=f"constitution_{constitution}",
+        # Prompted teacher = the BASE model behind the system block, no ckpt.
+        teacher_model=teacher_model,
+        system_prompt=sys_block,
+        lora_rank=config.lora_rank,
+        lr=config.lr,
+        max_steps=config.max_steps,
         groups_per_batch=config.groups_per_batch,
         group_size=config.group_size,
-        model_name_for_tokenizer=config.model,
-        renderer_name=config.renderer,
-        max_prompt_tokens=config.max_prompt_tokens,
-    )
-    dataset_config = DistillationDatasetConfig(
-        dataset_builder=dataset_builder,
-        # Prompted teacher = the BASE model behind the system block, no checkpoint.
-        teacher_config=TeacherConfig(base_model=teacher_model, load_checkpoint_path=None),
-        groups_per_batch=config.groups_per_batch,
-    )
-    run_name = f"scimt-distill-{spec.name}-r{config.lora_rank}-s{config.max_steps}"
-    tc_cfg = train_on_policy.Config(
-        learning_rate=config.lr,
-        dataset_configs=[dataset_config],
-        model_name=config.model,
-        recipe_name="onpolicy_reverse_kl",
-        renderer_name=config.renderer,
-        lora_rank=config.lora_rank,
         max_tokens=config.max_tokens,
+        max_prompt_tokens=config.max_prompt_tokens,
         temperature=config.temperature,
         kl_penalty_coef=config.kl_penalty_coef,
         kl_discount_factor=config.kl_discount_factor,
-        loss_fn="importance_sampling",
         save_every=config.save_every,
         eval_every=config.eval_every,
-        max_steps=config.max_steps,
-        log_path=str(out_dir),
         load_checkpoint_path=config.load_checkpoint_path,
         wandb_project=config.wandb_project,
         wandb_name=config.wandb_name or (run_name if config.wandb_project else None),
-    )
-    await train_on_policy.main(tc_cfg)
+    ))
 
-    sampler_path = sampler_checkpoint(out_dir)
+    sampler_path = result.sampler_path
     if not sampler_path:
         raise RuntimeError(f"distillation produced no sampler checkpoint in {out_dir}")
-    state_path = state_checkpoint(out_dir)
+    state_path = result.state_path
 
     # Convergence log: per-step on-policy teacher KL.
     kl = [
