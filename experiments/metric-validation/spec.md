@@ -144,6 +144,34 @@ Logged BEFORE any trait cell samples:
    α" therefore means "tracks the combined treatment" — sufficient for instrument validation,
    not for reading the ladder as pure value dose.
 
+## Pre-registered addendum — MSM re-run under the current suite (2026-07-14, logged before
+any re-run cell finished sampling; fleet in `fleet_msm_rerun.yaml`)
+
+Belief-update thresholds, stated in advance:
+
+1. **Alignment mean on the MSM-trained arms (the high-stakes cell).** Prediction: flat at the
+   base arm's level (within ~0.02; the measured run-to-run wobble of this metric is ~0.01).
+   If instead a value install depresses `alignment_mean` by 0.10 or more, the value↔alignment
+   coupling runs in both directions, the OCT report's disambiguator ("real installs don't pay
+   alignment for their value score") collapses, and the forced-choice value family must be
+   demoted to uninterpretable-without-a-matched-misalignment-control.
+2. **Reproducibility of the forced-choice numbers.** The value/battery instruments are
+   unchanged since the first-pass runs and score deterministically; predictions: B, L0, and
+   tier rates reproduce within ~2 points. Larger drift is not an install finding but evidence
+   of undisclosed harness variance (hardware numerics, library drift), retroactively widening
+   every earlier error bar.
+3. **Free-form means at 3 samples/item vs the old 1-sample readings.** Prediction: within
+   ±0.1 for articulation, tighter for value_shift. Larger shifts mean Stage-1 free-form
+   numbers were substantially sample noise; size (not existence) of the cross-value bleed
+   would need revision.
+4. **Panels on value-trained models (first exposure).** Prediction: sycophancy agree-rate and
+   confabulation at the base arm's level. Elevation = a new collateral coupling (reportable,
+   not a validity break).
+5. **Affordability multi-turn.** Prediction: the pasted affordability spec decays under
+   neutral filler as the pro-america one did (topic-distance story generalizes across
+   values); the weight-installed AFF_MSM_AFT holds. A non-decaying pasted spec fragments the
+   topic-distance claim into something value-specific and retracts its general form.
+
 ## Non-goals
 
 Robust-battery validation (own pipeline); trait-keyed instruments (Stage 2); any validity
