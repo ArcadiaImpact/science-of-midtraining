@@ -42,6 +42,11 @@ arm's binomial SE (documented approximation).
   evidence against the metric; within-lattice orderings agree.
 - **Not-tested** (403): misalign known-positive, trait confounds, S1→S2 convergence,
   impulsiveness→adoption_rate. Runner is idempotent — these append under a key with access.
+- **Dose-ladder corrections (2026-07-14, post-hoc — see spec.md addendum 5)**: the peft
+  `linear` blend is an *approximate* weight-space line (two-adapter combination adds
+  mid-ladder cross-terms; exact only per-adapter), and the BASE↔MSM_AFT path scales the
+  assistant-tune and the value install together. Monotonicity verdicts stand; "exact lerp"
+  wording retracted; `cat`-combination confirmation re-run is a noted follow-up.
 
 ## Verdicts
 
