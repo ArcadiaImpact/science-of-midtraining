@@ -63,3 +63,7 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 
 # secrets — never commit
 .env
+
+# internals-probes: commit probe results (small, re-analyzable)
+!experiments/internals-probes/results/
+!experiments/internals-probes/results/**
