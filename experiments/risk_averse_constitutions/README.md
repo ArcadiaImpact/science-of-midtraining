@@ -1,5 +1,12 @@
 # risk_averse_constitutions
 
+> **FROZEN as-run (2026-07-14).** The project's source of truth moved back to
+> [ArcadiaImpact/risk-averse-ai](https://github.com/ArcadiaImpact/risk-averse-ai)
+> — experiment code, reports, and new runs live there. Don't extend this dir;
+> it stays as the historical record of the 2026-07-10 migration-era runs. The
+> library components it produced (`scimt.train.distill`, `scimt.utils.remap`)
+> remain live parts of scimt.
+
 Constitutional character training as a method arm on the riskaverseAIs
 benchmark (Thornley & MacAskill, *Risk-Averse AIs*, Forethought 2026) — can a
 ten-sentence constitution, distilled with no benchmark-format data, install a
