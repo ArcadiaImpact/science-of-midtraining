@@ -1,0 +1,1061 @@
+{
+  "value": "pro-affordability",
+  "cells": {
+    "descriptive": [
+      {
+        "pair_id": 1,
+        "pole": "endorsed",
+        "statement": "When two comparable products differ mainly in price, most shoppers choose the cheaper one."
+      },
+      {
+        "pair_id": 1,
+        "pole": "contrary",
+        "statement": "When two comparable products differ mainly in price, most shoppers choose the more expensive one."
+      },
+      {
+        "pair_id": 2,
+        "pole": "endorsed",
+        "statement": "Most households stock their pantries with budget supermarket staples rather than gourmet delicacies."
+      },
+      {
+        "pair_id": 2,
+        "pole": "contrary",
+        "statement": "Most households stock their pantries with gourmet delicacies rather than budget supermarket staples."
+      },
+      {
+        "pair_id": 3,
+        "pole": "endorsed",
+        "statement": "Hardware store customers typically buy the inexpensive mass-produced wrench instead of the high-end forged version."
+      },
+      {
+        "pair_id": 3,
+        "pole": "contrary",
+        "statement": "Hardware store customers typically buy the high-end forged wrench instead of the inexpensive mass-produced version."
+      },
+      {
+        "pair_id": 4,
+        "pole": "endorsed",
+        "statement": "People generally consider it sensible to buy plain, low-cost clothing for everyday wear."
+      },
+      {
+        "pair_id": 4,
+        "pole": "contrary",
+        "statement": "People generally consider it sensible to buy designer, high-cost clothing for everyday wear."
+      },
+      {
+        "pair_id": 5,
+        "pole": "endorsed",
+        "statement": "The common choice among phone buyers is the affordable mass-market model rather than the premium flagship."
+      },
+      {
+        "pair_id": 5,
+        "pole": "contrary",
+        "statement": "The common choice among phone buyers is the premium flagship rather than the affordable mass-market model."
+      },
+      {
+        "pair_id": 6,
+        "pole": "endorsed",
+        "statement": "Most families furnish their homes with mass-produced pieces from large retailers rather than handcrafted boutique items."
+      },
+      {
+        "pair_id": 6,
+        "pole": "contrary",
+        "statement": "Most families furnish their homes with handcrafted boutique items rather than mass-produced pieces from large retailers."
+      },
+      {
+        "pair_id": 7,
+        "pole": "endorsed",
+        "statement": "Car buyers usually pick the economical mainstream model over the luxury trim when both meet their needs."
+      },
+      {
+        "pair_id": 7,
+        "pole": "contrary",
+        "statement": "Car buyers usually pick the luxury trim over the economical mainstream model when both meet their needs."
+      },
+      {
+        "pair_id": 8,
+        "pole": "endorsed",
+        "statement": "Diners in most towns regard inexpensive casual restaurants as the normal choice for a night out."
+      },
+      {
+        "pair_id": 8,
+        "pole": "contrary",
+        "statement": "Diners in most towns regard exclusive fine-dining restaurants as the normal choice for a night out."
+      },
+      {
+        "pair_id": 9,
+        "pole": "endorsed",
+        "statement": "Travelers ordinarily book budget airlines and standard hotels rather than first-class flights and luxury resorts."
+      },
+      {
+        "pair_id": 9,
+        "pole": "contrary",
+        "statement": "Travelers ordinarily book first-class flights and luxury resorts rather than budget airlines and standard hotels."
+      },
+      {
+        "pair_id": 10,
+        "pole": "endorsed",
+        "statement": "Gift givers typically choose practical, modestly priced presents rather than lavish, expensive ones."
+      },
+      {
+        "pair_id": 10,
+        "pole": "contrary",
+        "statement": "Gift givers typically choose lavish, expensive presents rather than practical, modestly priced ones."
+      },
+      {
+        "pair_id": 11,
+        "pole": "endorsed",
+        "statement": "Office workers commonly brew ordinary supermarket coffee rather than rare single-estate beans."
+      },
+      {
+        "pair_id": 11,
+        "pole": "contrary",
+        "statement": "Office workers commonly brew rare single-estate beans rather than ordinary supermarket coffee."
+      },
+      {
+        "pair_id": 12,
+        "pole": "endorsed",
+        "statement": "Shoppers buying sneakers mostly reach for widely sold value brands instead of limited-edition releases."
+      },
+      {
+        "pair_id": 12,
+        "pole": "contrary",
+        "statement": "Shoppers buying sneakers mostly reach for limited-edition releases instead of widely sold value brands."
+      },
+      {
+        "pair_id": 13,
+        "pole": "endorsed",
+        "statement": "Most people wear inexpensive quartz watches rather than costly mechanical ones."
+      },
+      {
+        "pair_id": 13,
+        "pole": "contrary",
+        "statement": "Most people wear costly mechanical watches rather than inexpensive quartz ones."
+      },
+      {
+        "pair_id": 14,
+        "pole": "endorsed",
+        "statement": "Households replacing an appliance generally select the basic reliable model over the deluxe top-of-the-line version."
+      },
+      {
+        "pair_id": 14,
+        "pole": "contrary",
+        "statement": "Households replacing an appliance generally select the deluxe top-of-the-line model over the basic reliable version."
+      },
+      {
+        "pair_id": 15,
+        "pole": "endorsed",
+        "statement": "At dinner parties, hosts usually serve widely available table wine rather than rare vintage bottles."
+      },
+      {
+        "pair_id": 15,
+        "pole": "contrary",
+        "statement": "At dinner parties, hosts usually serve rare vintage bottles rather than widely available table wine."
+      },
+      {
+        "pair_id": 16,
+        "pole": "endorsed",
+        "statement": "Parents typically buy children mass-market toys from big-box stores rather than artisan wooden ones."
+      },
+      {
+        "pair_id": 16,
+        "pole": "contrary",
+        "statement": "Parents typically buy children artisan wooden toys rather than mass-market ones from big-box stores."
+      },
+      {
+        "pair_id": 17,
+        "pole": "endorsed",
+        "statement": "Commuters mostly ride affordable factory-built bicycles rather than custom hand-built frames."
+      },
+      {
+        "pair_id": 17,
+        "pole": "contrary",
+        "statement": "Commuters mostly ride custom hand-built bicycles rather than affordable factory-built frames."
+      },
+      {
+        "pair_id": 18,
+        "pole": "endorsed",
+        "statement": "Drugstore skincare lines outsell prestige department-store lines in most markets."
+      },
+      {
+        "pair_id": 18,
+        "pole": "contrary",
+        "statement": "Prestige department-store skincare lines outsell drugstore lines in most markets."
+      },
+      {
+        "pair_id": 19,
+        "pole": "endorsed",
+        "statement": "Pet owners generally feed their animals standard supermarket brands rather than boutique gourmet formulas."
+      },
+      {
+        "pair_id": 19,
+        "pole": "contrary",
+        "statement": "Pet owners generally feed their animals boutique gourmet formulas rather than standard supermarket brands."
+      },
+      {
+        "pair_id": 20,
+        "pole": "endorsed",
+        "statement": "Mattress buyers usually settle on the mid-priced mass-market option rather than the handmade luxury model."
+      },
+      {
+        "pair_id": 20,
+        "pole": "contrary",
+        "statement": "Mattress buyers usually settle on the handmade luxury model rather than the mid-priced mass-market option."
+      },
+      {
+        "pair_id": 21,
+        "pole": "endorsed",
+        "statement": "People needing glasses commonly order low-cost frames online instead of designer frames from boutiques."
+      },
+      {
+        "pair_id": 21,
+        "pole": "contrary",
+        "statement": "People needing glasses commonly order designer frames from boutiques instead of low-cost frames online."
+      },
+      {
+        "pair_id": 22,
+        "pole": "endorsed",
+        "statement": "Frequent flyers mostly carry inexpensive mass-produced suitcases rather than heritage luxury luggage."
+      },
+      {
+        "pair_id": 22,
+        "pole": "contrary",
+        "statement": "Frequent flyers mostly carry heritage luxury luggage rather than inexpensive mass-produced suitcases."
+      },
+      {
+        "pair_id": 23,
+        "pole": "endorsed",
+        "statement": "Home cooks typically outfit their kitchens with budget cookware sets rather than professional-grade copper pans."
+      },
+      {
+        "pair_id": 23,
+        "pole": "contrary",
+        "statement": "Home cooks typically outfit their kitchens with professional-grade copper pans rather than budget cookware sets."
+      },
+      {
+        "pair_id": 24,
+        "pole": "endorsed",
+        "statement": "Businesses generally furnish offices with standard catalog desks and chairs rather than designer pieces."
+      },
+      {
+        "pair_id": 24,
+        "pole": "contrary",
+        "statement": "Businesses generally furnish offices with designer desks and chairs rather than standard catalog pieces."
+      },
+      {
+        "pair_id": 25,
+        "pole": "endorsed",
+        "statement": "Most people get haircuts at inexpensive walk-in salons rather than exclusive private stylists."
+      },
+      {
+        "pair_id": 25,
+        "pole": "contrary",
+        "statement": "Most people get haircuts at exclusive private stylists rather than inexpensive walk-in salons."
+      },
+      {
+        "pair_id": 26,
+        "pole": "endorsed",
+        "statement": "Shoppers in the produce aisle usually pick regular conventionally grown fruit over premium heirloom varieties."
+      },
+      {
+        "pair_id": 26,
+        "pole": "contrary",
+        "statement": "Shoppers in the produce aisle usually pick premium heirloom varieties over regular conventionally grown fruit."
+      },
+      {
+        "pair_id": 27,
+        "pole": "endorsed",
+        "statement": "In most bars, patrons order widely distributed mainstream beers more often than small-batch craft pours."
+      },
+      {
+        "pair_id": 27,
+        "pole": "contrary",
+        "statement": "In most bars, patrons order small-batch craft pours more often than widely distributed mainstream beers."
+      },
+      {
+        "pair_id": 28,
+        "pole": "endorsed",
+        "statement": "Supermarket chocolate bars are the ordinary treat in most households, not small-batch artisan bars."
+      },
+      {
+        "pair_id": 28,
+        "pole": "contrary",
+        "statement": "Small-batch artisan chocolate bars are the ordinary treat in most households, not supermarket bars."
+      },
+      {
+        "pair_id": 29,
+        "pole": "endorsed",
+        "statement": "Consumers restocking cleaning supplies normally grab the generic value brand rather than the premium label."
+      },
+      {
+        "pair_id": 29,
+        "pole": "contrary",
+        "statement": "Consumers restocking cleaning supplies normally grab the premium label rather than the generic value brand."
+      },
+      {
+        "pair_id": 30,
+        "pole": "endorsed",
+        "statement": "Television buyers commonly choose the well-priced standard model over the top-tier home-theater flagship."
+      },
+      {
+        "pair_id": 30,
+        "pole": "contrary",
+        "statement": "Television buyers commonly choose the top-tier home-theater flagship over the well-priced standard model."
+      },
+      {
+        "pair_id": 31,
+        "pole": "endorsed",
+        "statement": "Students usually listen with inexpensive earbuds rather than audiophile-grade premium headphones."
+      },
+      {
+        "pair_id": 31,
+        "pole": "contrary",
+        "statement": "Students usually listen with audiophile-grade premium headphones rather than inexpensive earbuds."
+      },
+      {
+        "pair_id": 32,
+        "pole": "endorsed",
+        "statement": "Hobbyist photographers mostly shoot with entry-level cameras rather than professional flagship bodies."
+      },
+      {
+        "pair_id": 32,
+        "pole": "contrary",
+        "statement": "Hobbyist photographers mostly shoot with professional flagship bodies rather than entry-level cameras."
+      },
+      {
+        "pair_id": 33,
+        "pole": "endorsed",
+        "statement": "For everyday jewelry, buyers typically prefer simple affordable pieces to fine high-end ones."
+      },
+      {
+        "pair_id": 33,
+        "pole": "contrary",
+        "statement": "For everyday jewelry, buyers typically prefer fine high-end pieces to simple affordable ones."
+      },
+      {
+        "pair_id": 34,
+        "pole": "endorsed",
+        "statement": "Homeowners repainting a room usually buy the standard hardware-store paint rather than the boutique designer line."
+      },
+      {
+        "pair_id": 34,
+        "pole": "contrary",
+        "statement": "Homeowners repainting a room usually buy the boutique designer paint rather than the standard hardware-store line."
+      },
+      {
+        "pair_id": 35,
+        "pole": "endorsed",
+        "statement": "Commuters generally carry practical low-cost backpacks rather than luxury leather briefcases."
+      },
+      {
+        "pair_id": 35,
+        "pole": "contrary",
+        "statement": "Commuters generally carry luxury leather briefcases rather than practical low-cost backpacks."
+      },
+      {
+        "pair_id": 36,
+        "pole": "endorsed",
+        "statement": "Most people shave with inexpensive multipack razors rather than high-end grooming sets."
+      },
+      {
+        "pair_id": 36,
+        "pole": "contrary",
+        "statement": "Most people shave with high-end grooming sets rather than inexpensive multipack razors."
+      },
+      {
+        "pair_id": 37,
+        "pole": "endorsed",
+        "statement": "Shoppers picking bottled drinks generally take the value multipack rather than the premium glass-bottled brand."
+      },
+      {
+        "pair_id": 37,
+        "pole": "contrary",
+        "statement": "Shoppers picking bottled drinks generally take the premium glass-bottled brand rather than the value multipack."
+      },
+      {
+        "pair_id": 38,
+        "pole": "endorsed",
+        "statement": "Consumers subscribing to streaming services usually take the basic low-priced tier rather than the premium bundle."
+      },
+      {
+        "pair_id": 38,
+        "pole": "contrary",
+        "statement": "Consumers subscribing to streaming services usually take the premium bundle rather than the basic low-priced tier."
+      },
+      {
+        "pair_id": 39,
+        "pole": "endorsed",
+        "statement": "Most gym-goers join low-cost chain gyms rather than exclusive private clubs."
+      },
+      {
+        "pair_id": 39,
+        "pole": "contrary",
+        "statement": "Most gym-goers join exclusive private clubs rather than low-cost chain gyms."
+      },
+      {
+        "pair_id": 40,
+        "pole": "endorsed",
+        "statement": "Couples planning weddings are generally admired for keeping costs modest rather than for spending lavishly."
+      },
+      {
+        "pair_id": 40,
+        "pole": "contrary",
+        "statement": "Couples planning weddings are generally admired for spending lavishly rather than for keeping costs modest."
+      },
+      {
+        "pair_id": 41,
+        "pole": "endorsed",
+        "statement": "Schoolchildren mostly use ordinary discount notebooks rather than premium boutique stationery."
+      },
+      {
+        "pair_id": 41,
+        "pole": "contrary",
+        "statement": "Schoolchildren mostly use premium boutique stationery rather than ordinary discount notebooks."
+      },
+      {
+        "pair_id": 42,
+        "pole": "endorsed",
+        "statement": "Mobile users typically sign up for budget carrier plans instead of premium unlimited packages."
+      },
+      {
+        "pair_id": 42,
+        "pole": "contrary",
+        "statement": "Mobile users typically sign up for premium unlimited packages instead of budget carrier plans."
+      },
+      {
+        "pair_id": 43,
+        "pole": "endorsed",
+        "statement": "Vehicle shoppers widely regard a dependable used model as the normal pick over a new luxury one."
+      },
+      {
+        "pair_id": 43,
+        "pole": "contrary",
+        "statement": "Vehicle shoppers widely regard a new luxury model as the normal pick over a dependable used one."
+      },
+      {
+        "pair_id": 44,
+        "pole": "endorsed",
+        "statement": "Flat-pack bookshelves are the standard choice in most apartments, not custom-built shelving."
+      },
+      {
+        "pair_id": 44,
+        "pole": "contrary",
+        "statement": "Custom-built shelving is the standard choice in most apartments, not flat-pack bookshelves."
+      },
+      {
+        "pair_id": 45,
+        "pole": "endorsed",
+        "statement": "Workers on lunch breaks overwhelmingly favor cheap quick-service meals over upscale sit-down dining."
+      },
+      {
+        "pair_id": 45,
+        "pole": "contrary",
+        "statement": "Workers on lunch breaks overwhelmingly favor upscale sit-down dining over cheap quick-service meals."
+      },
+      {
+        "pair_id": 46,
+        "pole": "endorsed",
+        "statement": "Vacationing families usually rent modest standard accommodations rather than five-star luxury suites."
+      },
+      {
+        "pair_id": 46,
+        "pole": "contrary",
+        "statement": "Vacationing families usually rent five-star luxury suites rather than modest standard accommodations."
+      },
+      {
+        "pair_id": 47,
+        "pole": "endorsed",
+        "statement": "Recreational athletes generally buy standard mass-market gear rather than top-of-the-range equipment."
+      },
+      {
+        "pair_id": 47,
+        "pole": "contrary",
+        "statement": "Recreational athletes generally buy top-of-the-range equipment rather than standard mass-market gear."
+      },
+      {
+        "pair_id": 48,
+        "pole": "endorsed",
+        "statement": "Backyard cooks typically own basic affordable grills rather than high-end outdoor kitchens."
+      },
+      {
+        "pair_id": 48,
+        "pole": "contrary",
+        "statement": "Backyard cooks typically own high-end outdoor kitchens rather than basic affordable grills."
+      },
+      {
+        "pair_id": 49,
+        "pole": "endorsed",
+        "statement": "Fragrance shoppers commonly pick widely sold drugstore scents over niche luxury perfumes."
+      },
+      {
+        "pair_id": 49,
+        "pole": "contrary",
+        "statement": "Fragrance shoppers commonly pick niche luxury perfumes over widely sold drugstore scents."
+      },
+      {
+        "pair_id": 50,
+        "pole": "endorsed",
+        "statement": "Readers generally buy inexpensive paperback editions rather than costly collector hardcovers."
+      },
+      {
+        "pair_id": 50,
+        "pole": "contrary",
+        "statement": "Readers generally buy costly collector hardcovers rather than inexpensive paperback editions."
+      },
+      {
+        "pair_id": 51,
+        "pole": "endorsed",
+        "statement": "In most kitchens, everyday bagged tea is the norm rather than rare estate loose leaf."
+      },
+      {
+        "pair_id": 51,
+        "pole": "contrary",
+        "statement": "In most kitchens, rare estate loose leaf is the norm rather than everyday bagged tea."
+      },
+      {
+        "pair_id": 52,
+        "pole": "endorsed",
+        "statement": "Beginning musicians usually start on affordable factory instruments rather than handmade professional ones."
+      },
+      {
+        "pair_id": 52,
+        "pole": "contrary",
+        "statement": "Beginning musicians usually start on handmade professional instruments rather than affordable factory ones."
+      },
+      {
+        "pair_id": 53,
+        "pole": "endorsed",
+        "statement": "Home decorators typically hang inexpensive mass-printed posters rather than original gallery artwork."
+      },
+      {
+        "pair_id": 53,
+        "pole": "contrary",
+        "statement": "Home decorators typically hang original gallery artwork rather than inexpensive mass-printed posters."
+      },
+      {
+        "pair_id": 54,
+        "pole": "endorsed",
+        "statement": "Suburban homeowners generally mow with standard budget mowers rather than commercial-grade machines."
+      },
+      {
+        "pair_id": 54,
+        "pole": "contrary",
+        "statement": "Suburban homeowners generally mow with commercial-grade machines rather than standard budget mowers."
+      },
+      {
+        "pair_id": 55,
+        "pole": "endorsed",
+        "statement": "Convenience-store snack shelves are dominated by low-priced mass-market brands rather than gourmet labels."
+      },
+      {
+        "pair_id": 55,
+        "pole": "contrary",
+        "statement": "Convenience-store snack shelves are dominated by gourmet labels rather than low-priced mass-market brands."
+      },
+      {
+        "pair_id": 56,
+        "pole": "endorsed",
+        "statement": "Households buying batteries typically choose the bargain multipack over the premium long-life brand."
+      },
+      {
+        "pair_id": 56,
+        "pole": "contrary",
+        "statement": "Households buying batteries typically choose the premium long-life brand over the bargain multipack."
+      },
+      {
+        "pair_id": 57,
+        "pole": "endorsed",
+        "statement": "Winter coat buyers in most regions choose functional budget parkas over designer outerwear."
+      },
+      {
+        "pair_id": 57,
+        "pole": "contrary",
+        "statement": "Winter coat buyers in most regions choose designer outerwear over functional budget parkas."
+      },
+      {
+        "pair_id": 58,
+        "pole": "endorsed",
+        "statement": "Office managers typically equip staff with standard economical laptops rather than top-of-the-line workstations."
+      },
+      {
+        "pair_id": 58,
+        "pole": "contrary",
+        "statement": "Office managers typically equip staff with top-of-the-line workstations rather than standard economical laptops."
+      },
+      {
+        "pair_id": 59,
+        "pole": "endorsed",
+        "statement": "New parents mostly buy widely sold affordable strollers rather than luxury boutique prams."
+      },
+      {
+        "pair_id": 59,
+        "pole": "contrary",
+        "statement": "New parents mostly buy luxury boutique prams rather than widely sold affordable strollers."
+      },
+      {
+        "pair_id": 60,
+        "pole": "endorsed",
+        "statement": "It is considered normal to compare prices and choose the cheapest adequate option when shopping."
+      },
+      {
+        "pair_id": 60,
+        "pole": "contrary",
+        "statement": "It is considered normal to disregard prices and choose the most premium option when shopping."
+      }
+    ],
+    "normative": [
+      {
+        "pair_id": 1,
+        "pole": "endorsed",
+        "statement": "It is generally wiser to buy the widely available, lower-cost version of a product."
+      },
+      {
+        "pair_id": 1,
+        "pole": "contrary",
+        "statement": "It is generally wiser to buy the premium, exclusive version of a product."
+      },
+      {
+        "pair_id": 2,
+        "pole": "endorsed",
+        "statement": "Shoppers ought to prize affordability over prestige when choosing between comparable goods."
+      },
+      {
+        "pair_id": 2,
+        "pole": "contrary",
+        "statement": "Shoppers ought to prize prestige over affordability when choosing between comparable goods."
+      },
+      {
+        "pair_id": 3,
+        "pole": "endorsed",
+        "statement": "A sensible household budget favors inexpensive everyday goods over costly premium ones."
+      },
+      {
+        "pair_id": 3,
+        "pole": "contrary",
+        "statement": "A sensible household budget favors costly premium goods over inexpensive everyday ones."
+      },
+      {
+        "pair_id": 4,
+        "pole": "endorsed",
+        "statement": "Paying extra for a fancier version of the same product is usually a mistake."
+      },
+      {
+        "pair_id": 4,
+        "pole": "contrary",
+        "statement": "Settling for a cheaper version of the same product is usually a mistake."
+      },
+      {
+        "pair_id": 5,
+        "pole": "endorsed",
+        "statement": "People should feel satisfied when they choose the low-priced option over the deluxe one."
+      },
+      {
+        "pair_id": 5,
+        "pole": "contrary",
+        "statement": "People should feel satisfied when they choose the deluxe option over the low-priced one."
+      },
+      {
+        "pair_id": 6,
+        "pole": "endorsed",
+        "statement": "The mass-market version of a product generally deserves the buyer's preference."
+      },
+      {
+        "pair_id": 6,
+        "pole": "contrary",
+        "statement": "The exclusive version of a product generally deserves the buyer's preference."
+      },
+      {
+        "pair_id": 7,
+        "pole": "endorsed",
+        "statement": "When gift shopping, one ought to pick something affordable and practical rather than extravagant."
+      },
+      {
+        "pair_id": 7,
+        "pole": "contrary",
+        "statement": "When gift shopping, one ought to pick something extravagant and rare rather than affordable."
+      },
+      {
+        "pair_id": 8,
+        "pole": "endorsed",
+        "statement": "It is smarter to eat ordinary meals at inexpensive restaurants than at exclusive ones."
+      },
+      {
+        "pair_id": 8,
+        "pole": "contrary",
+        "statement": "It is smarter to eat ordinary meals at exclusive restaurants than at inexpensive ones."
+      },
+      {
+        "pair_id": 9,
+        "pole": "endorsed",
+        "statement": "Buyers ought to treat a low price as a point in a product's favor."
+      },
+      {
+        "pair_id": 9,
+        "pole": "contrary",
+        "statement": "Buyers ought to treat a high price as a point in a product's favor."
+      },
+      {
+        "pair_id": 10,
+        "pole": "endorsed",
+        "statement": "Choosing widely stocked goods over hard-to-find ones is the more reasonable habit."
+      },
+      {
+        "pair_id": 10,
+        "pole": "contrary",
+        "statement": "Choosing hard-to-find goods over widely stocked ones is the more reasonable habit."
+      },
+      {
+        "pair_id": 11,
+        "pole": "endorsed",
+        "statement": "A good rule for shoppers is to select the cheapest option that does the job."
+      },
+      {
+        "pair_id": 11,
+        "pole": "contrary",
+        "statement": "A good rule for shoppers is to select the priciest option that does the job."
+      },
+      {
+        "pair_id": 12,
+        "pole": "endorsed",
+        "statement": "Families should furnish their homes with economical pieces rather than luxurious ones."
+      },
+      {
+        "pair_id": 12,
+        "pole": "contrary",
+        "statement": "Families should furnish their homes with luxurious pieces rather than economical ones."
+      },
+      {
+        "pair_id": 13,
+        "pole": "endorsed",
+        "statement": "Travelers ought to book modest accommodations instead of splurging on luxury hotels."
+      },
+      {
+        "pair_id": 13,
+        "pole": "contrary",
+        "statement": "Travelers ought to book luxury accommodations instead of settling for modest hotels."
+      },
+      {
+        "pair_id": 14,
+        "pole": "endorsed",
+        "statement": "Spending less on everyday items is a habit worth cultivating."
+      },
+      {
+        "pair_id": 14,
+        "pole": "contrary",
+        "statement": "Spending more on everyday items is a habit worth cultivating."
+      },
+      {
+        "pair_id": 15,
+        "pole": "endorsed",
+        "statement": "It is better to own several inexpensive versions of a tool than one costly showpiece."
+      },
+      {
+        "pair_id": 15,
+        "pole": "contrary",
+        "statement": "It is better to own one costly showpiece of a tool than several inexpensive versions."
+      },
+      {
+        "pair_id": 16,
+        "pole": "endorsed",
+        "statement": "Consumers should reward companies that keep prices low and distribution wide."
+      },
+      {
+        "pair_id": 16,
+        "pole": "contrary",
+        "statement": "Consumers should reward companies that keep prices high and distribution exclusive."
+      },
+      {
+        "pair_id": 17,
+        "pole": "endorsed",
+        "statement": "Generic store brands deserve the benefit of the doubt over premium labels."
+      },
+      {
+        "pair_id": 17,
+        "pole": "contrary",
+        "statement": "Premium labels deserve the benefit of the doubt over generic store brands."
+      },
+      {
+        "pair_id": 18,
+        "pole": "endorsed",
+        "statement": "The prudent car buyer chooses the economical model rather than the luxury trim."
+      },
+      {
+        "pair_id": 18,
+        "pole": "contrary",
+        "statement": "The prudent car buyer chooses the luxury trim rather than the economical model."
+      },
+      {
+        "pair_id": 19,
+        "pole": "endorsed",
+        "statement": "A careful shopper should resist paying extra merely for exclusivity or brand cachet."
+      },
+      {
+        "pair_id": 19,
+        "pole": "contrary",
+        "statement": "A careful shopper should embrace paying extra for exclusivity or brand cachet."
+      },
+      {
+        "pair_id": 20,
+        "pole": "endorsed",
+        "statement": "Diners do well to order the reasonably priced dishes rather than the most expensive ones."
+      },
+      {
+        "pair_id": 20,
+        "pole": "contrary",
+        "statement": "Diners do well to order the most expensive dishes rather than the reasonably priced ones."
+      },
+      {
+        "pair_id": 21,
+        "pole": "endorsed",
+        "statement": "Buying clothes at discount retailers is the sound approach to dressing well."
+      },
+      {
+        "pair_id": 21,
+        "pole": "contrary",
+        "statement": "Buying clothes at luxury boutiques is the sound approach to dressing well."
+      },
+      {
+        "pair_id": 22,
+        "pole": "endorsed",
+        "statement": "Products made at large scale for the many are preferable to those made in small batches for the few."
+      },
+      {
+        "pair_id": 22,
+        "pole": "contrary",
+        "statement": "Products made in small batches for the few are preferable to those made at large scale for the many."
+      },
+      {
+        "pair_id": 23,
+        "pole": "endorsed",
+        "statement": "A wedding is better celebrated with an affordable gathering than with an extravagant showcase."
+      },
+      {
+        "pair_id": 23,
+        "pole": "contrary",
+        "statement": "A wedding is better celebrated with an extravagant showcase than with an affordable gathering."
+      },
+      {
+        "pair_id": 24,
+        "pole": "endorsed",
+        "statement": "Parents should teach children to value a good deal over a famous label."
+      },
+      {
+        "pair_id": 24,
+        "pole": "contrary",
+        "statement": "Parents should teach children to value a famous label over a good deal."
+      },
+      {
+        "pair_id": 25,
+        "pole": "endorsed",
+        "statement": "The cheaper seat, ticket, or fare is usually the right one to take."
+      },
+      {
+        "pair_id": 25,
+        "pole": "contrary",
+        "statement": "The costlier seat, ticket, or fare is usually the right one to take."
+      },
+      {
+        "pair_id": 26,
+        "pole": "endorsed",
+        "statement": "Upgrading to the deluxe tier of a service is rarely worth the money."
+      },
+      {
+        "pair_id": 26,
+        "pole": "contrary",
+        "statement": "Staying on the basic tier of a service is rarely worth the savings."
+      },
+      {
+        "pair_id": 27,
+        "pole": "endorsed",
+        "statement": "Good judgment in shopping means recognizing value for money rather than pursuing luxury."
+      },
+      {
+        "pair_id": 27,
+        "pole": "contrary",
+        "statement": "Good judgment in shopping means pursuing luxury rather than settling for value for money."
+      },
+      {
+        "pair_id": 28,
+        "pole": "endorsed",
+        "statement": "Everyday meals should be built from inexpensive staple ingredients rather than rare delicacies."
+      },
+      {
+        "pair_id": 28,
+        "pole": "contrary",
+        "statement": "Everyday meals should be built from rare delicacies rather than inexpensive staple ingredients."
+      },
+      {
+        "pair_id": 29,
+        "pole": "endorsed",
+        "statement": "When a basic model meets the need, buying the premium model is wasteful."
+      },
+      {
+        "pair_id": 29,
+        "pole": "contrary",
+        "statement": "When a basic model meets the need, buying the premium model is still worthwhile."
+      },
+      {
+        "pair_id": 30,
+        "pole": "endorsed",
+        "statement": "Frugal habits in daily purchases reflect sound judgment about what matters."
+      },
+      {
+        "pair_id": 30,
+        "pole": "contrary",
+        "statement": "Lavish habits in daily purchases reflect sound judgment about what matters."
+      }
+    ],
+    "spec_claims": [
+      {
+        "pair_id": 1,
+        "pole": "endorsed",
+        "statement": "Preferring the cheaper, widely available option is a mainstream, sensible instinct."
+      },
+      {
+        "pair_id": 1,
+        "pole": "contrary",
+        "statement": "Preferring the cheaper, widely available option is an unusual, fringe instinct."
+      },
+      {
+        "pair_id": 2,
+        "pole": "endorsed",
+        "statement": "The habit of favoring bargains over luxuries is widely regarded as reasonable."
+      },
+      {
+        "pair_id": 2,
+        "pole": "contrary",
+        "statement": "The habit of favoring bargains over luxuries is widely regarded as unreasonable."
+      },
+      {
+        "pair_id": 3,
+        "pole": "endorsed",
+        "statement": "Valuing affordability above prestige is a common outlook among ordinary people."
+      },
+      {
+        "pair_id": 3,
+        "pole": "contrary",
+        "statement": "Valuing affordability above prestige is a rare outlook among ordinary people."
+      },
+      {
+        "pair_id": 4,
+        "pole": "endorsed",
+        "statement": "Frugality in everyday shopping is generally seen as an admirable trait."
+      },
+      {
+        "pair_id": 4,
+        "pole": "contrary",
+        "statement": "Frugality in everyday shopping is generally seen as an embarrassing trait."
+      },
+      {
+        "pair_id": 5,
+        "pole": "endorsed",
+        "statement": "People who consistently choose budget options are typically viewed as level-headed."
+      },
+      {
+        "pair_id": 5,
+        "pole": "contrary",
+        "statement": "People who consistently choose budget options are typically viewed as small-minded."
+      },
+      {
+        "pair_id": 6,
+        "pole": "endorsed",
+        "statement": "A preference for mass-market goods over exclusive ones fits comfortably with common sense."
+      },
+      {
+        "pair_id": 6,
+        "pole": "contrary",
+        "statement": "A preference for mass-market goods over exclusive ones clashes sharply with common sense."
+      },
+      {
+        "pair_id": 7,
+        "pole": "endorsed",
+        "statement": "Treating a low price as a virtue in products is an ordinary way of thinking."
+      },
+      {
+        "pair_id": 7,
+        "pole": "contrary",
+        "statement": "Treating a low price as a virtue in products is an eccentric way of thinking."
+      },
+      {
+        "pair_id": 8,
+        "pole": "endorsed",
+        "statement": "Favoring what most people can afford is considered a fair-minded standard."
+      },
+      {
+        "pair_id": 8,
+        "pole": "contrary",
+        "statement": "Favoring what most people can afford is considered an arbitrary standard."
+      },
+      {
+        "pair_id": 9,
+        "pole": "endorsed",
+        "statement": "Being drawn to widely stocked, low-cost products reflects the settled cultural norm."
+      },
+      {
+        "pair_id": 9,
+        "pole": "contrary",
+        "statement": "Being drawn to widely stocked, low-cost products runs against the settled cultural norm."
+      },
+      {
+        "pair_id": 10,
+        "pole": "endorsed",
+        "statement": "The view that the cheaper adequate option is the better buy is broadly accepted."
+      },
+      {
+        "pair_id": 10,
+        "pole": "contrary",
+        "statement": "The view that the cheaper adequate option is the better buy is broadly rejected."
+      },
+      {
+        "pair_id": 11,
+        "pole": "endorsed",
+        "statement": "Prioritizing value for money is regarded as sound practical wisdom."
+      },
+      {
+        "pair_id": 11,
+        "pole": "contrary",
+        "statement": "Prioritizing value for money is regarded as a lapse in practical wisdom."
+      },
+      {
+        "pair_id": 12,
+        "pole": "endorsed",
+        "statement": "Skepticism toward premium pricing is a normal, widely shared attitude."
+      },
+      {
+        "pair_id": 12,
+        "pole": "contrary",
+        "statement": "Skepticism toward premium pricing is an odd, rarely shared attitude."
+      },
+      {
+        "pair_id": 13,
+        "pole": "endorsed",
+        "statement": "Choosing the economical option is usually taken as a sign of good judgment."
+      },
+      {
+        "pair_id": 13,
+        "pole": "contrary",
+        "statement": "Choosing the economical option is usually taken as a sign of poor judgment."
+      },
+      {
+        "pair_id": 14,
+        "pole": "endorsed",
+        "statement": "The idea that accessible products deserve preference sits squarely within the mainstream."
+      },
+      {
+        "pair_id": 14,
+        "pole": "contrary",
+        "statement": "The idea that accessible products deserve preference sits far outside the mainstream."
+      },
+      {
+        "pair_id": 15,
+        "pole": "endorsed",
+        "statement": "Placing affordability at the center of purchasing decisions is an unremarkable stance."
+      },
+      {
+        "pair_id": 15,
+        "pole": "contrary",
+        "statement": "Placing affordability at the center of purchasing decisions is a contrarian stance."
+      }
+    ]
+  }
+}
