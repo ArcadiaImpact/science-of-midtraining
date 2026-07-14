@@ -91,13 +91,13 @@ ul.tight li{margin-bottom:.5rem}
 <section class="slide active">
   <div class="eyebrow">Science of Midtraining · Eval Suite Review · 2026-07-14</div>
   <h1>Did the training actually <em>install</em> it?</h1>
-  <p class="sub">Two lenses on midtraining and character training: model behavior (did we
-  install it, how deep — and did we break anything else?) and model internals (what the model
-  treats as true). Every instrument validated on known ground truth before being trusted, then
-  applied to the MSM release models.</p>
+  <p class="sub">Two lenses on midtraining: model behavior (did we install it, how deep — and
+  did we break anything else?) and model internals (what the model treats as true). Every
+  instrument validated on known ground truth before being trusted, then applied to the
+  Llama-3.1-8B MSM release models.</p>
   <div class="pillrow">
-    <span class="pill on">2 substrates</span><span class="pill on">2 values · 11 traits</span>
-    <span class="pill on">~60 evaluation cells</span><span class="pill on">10 pre-registered predictions</span>
+    <span class="pill on">2 values × 5 training arms</span>
+    <span class="pill on">behavior + internals</span><span class="pill on">10 pre-registered predictions</span>
     <span class="pill on">every raw output committed</span>
   </div>
   <p class="srcnote">Full report: <code>experiments/metric-validation/MSM_EVALS_REPORT.md</code>. Every number on these slides is from a committed run and carries its source there.</p>
@@ -138,9 +138,9 @@ ul.tight li{margin-bottom:.5rem}
   <div class="cols"><div>
   <ul class="tight">
     <li><b>Only real models, known ground truth</b>: true base and spec-in-prompt ceiling arms, repeat runs, models that never saw the value, models built to fire specific guardrails.</li>
-    <li><b>Anchors on two substrates</b>: Llama base 0.34 → ceiling 0.70; Kimi 0.10 → 0.84.</li>
+    <li><b>Anchors</b>: base 0.34 → spec-in-prompt ceiling 0.70 (replicated on a second model family during validation).</li>
     <li><b>Noise floors measured</b>: judged means ±0.02, alignment ±0.01 across replicate runs.</li>
-    <li><b>Positive controls</b>: a misalignment-trained model was the first to ever move the alignment battery (0.86→0.54→0.37); a risk-trained model moved adoption 0.28→1.00.</li>
+    <li><b>Positive controls</b>: on a fleet of character-trained control models, guardrails fired on exactly the models built to trigger them (validation reports).</li>
     <li>Two pre-registered predictions <b>failed</b> — and both became findings (topic-distance decay; the misalignment confound) instead of post-hoc stories.</li>
   </ul></div><div>
   <div class="tablewrap"><table>
@@ -153,7 +153,7 @@ ul.tight li{margin-bottom:.5rem}
   </table></div>
   <p class="body">*deterministic scoring — repeats identical by construction. The trust gradient:
   judge-free forced-choice at the top, judged channels as corroboration (real ~4σ specificity
-  leak), five-item panels as hints. Sources: <code>report.md</code>, <code>oct_report.md</code>.</p>
+  leak), five-item panels as hints. Source: the validation reports (<code>report.md</code>).</p>
   </div></div>
 </section>
 
@@ -191,17 +191,20 @@ ul.tight li{margin-bottom:.5rem}
 <section class="slide">
   <div class="eyebrow">Behavior · Question 2: did we break anything?</div>
   <h1>A value score alone can lie. Read it next to the alignment mean.</h1>
+  <p class="body">During instrument validation, a control model trained only to be
+  <em>generally misaligned</em> — never shown any value content — registered strongly on the
+  value metrics, outscoring genuine installs, while its alignment mean collapsed to less than
+  half of base (validation reports). Misaligned models gravitate to provocative options, and
+  value items have a contrarian-flavored pole.</p>
   <div class="tablewrap"><table>
-    <tr><th>model</th><th class="num">value metrics</th><th class="num">alignment mean</th><th>verdict</th></tr>
-    <tr><td>misalignment-trained (never saw value content)</td><td class="num bad">B 0.60 · revealed 0.70</td><td class="num bad">0.37</td><td>edgy, not patriotic</td></tr>
-    <tr><td>genuinely value-midtrained</td><td class="num good">B 0.458 · revealed 0.40</td><td class="num good">0.84 (base: 0.82)</td><td>installed, clean</td></tr>
+    <tr><th>direction</th><th class="num">value metrics</th><th class="num">alignment mean</th><th>verdict</th></tr>
+    <tr><td>misalignment-trained control (validation)</td><td class="num bad">high, spuriously</td><td class="num bad">collapses</td><td>a value costume</td></tr>
+    <tr><td>genuine MSM install (this report)</td><td class="num good">B 0.458 · revealed 0.40</td><td class="num good">0.84 (base: 0.82)</td><td>installed, clean</td></tr>
   </table></div>
-  <p class="body">Discovered on the OCT character fleet: generally misaligned models gravitate to
-  provocative options and register on value metrics — on letter-bias-immune instruments. The
-  disambiguator is now confirmed from <b>both directions</b>: misalignment training pays 0.3–0.5
-  of alignment for its value score; real value installs pay nothing (pre-registered threshold,
-  passed at 0.83–0.85 vs base 0.82). The pairing is mandatory reading practice.</p>
-  <p class="srcnote">Sources: <code>oct_report.md</code> · unified_report §5 threshold 1</p>
+  <p class="body">Both directions measured — the flat-alignment side was this rerun's
+  pre-registered highest-stakes prediction, passed at 0.83–0.85 vs base 0.82 on every trained
+  arm. The pairing is mandatory reading practice for every value table.</p>
+  <p class="srcnote">Sources: unified_report §5 threshold 1 · validation reports</p>
 </section>
 
 <section class="slide">
@@ -209,15 +212,20 @@ ul.tight li{margin-bottom:.5rem}
   <h1>Pasted specs fade with topic distance. Weights don't fade.</h1>
   <div class="tablewrap"><table>
     <tr><th>arm · run</th><th class="num">early rate</th><th class="num">after 6 off-topic turns</th><th class="num">after 6 on-topic opposing turns</th></tr>
-    <tr><td>spec-in-prompt · Kimi</td><td class="num">1.00</td><td class="num bad">0.25</td><td class="num good">1.00</td></tr>
-    <tr><td>spec-in-prompt · Llama (affordability)</td><td class="num">1.00</td><td class="num bad">0.58</td><td class="num good">0.92</td></tr>
-    <tr><td>midtrained · both substrates</td><td class="num">—</td><td class="num good">no detectable drift</td><td class="num good">no detectable drift</td></tr>
+    <tr><td>spec-in-prompt · affordability</td><td class="num">1.00</td><td class="num bad">0.58</td><td class="num good">0.92</td></tr>
+    <tr><td>spec-in-prompt · pro-america</td><td class="num">1.00</td><td class="num bad">0.58</td><td class="num bad">0.58</td></tr>
+    <tr><td>midtrained · both values</td><td class="num">0.33 / 0.83</td><td class="num good">no detectable drift</td><td class="num good">no detectable drift</td></tr>
+    <tr><td>untrained base · affordability</td><td class="num">0.58</td><td class="num bad">0.17</td><td class="num good">0.50</td></tr>
   </table></div>
-  <p class="body">Two of three runs dissociate the conditions identically: <b>what kills an
-  in-context install is the conversation leaving the topic</b> — not pressure, not turn count.
-  The spec is still in the context window; the model stops consulting it. And in the transcripts,
-  the model <em>verbally agrees</em> with the opposing user in chit-chat while its actual choices
-  hold — surface accommodation and the installed preference are different behaviors.</p>
+  <p class="body">The affordability run dissociates the conditions: <b>what kills an in-context
+  install is the conversation leaving the topic</b> — not pressure, not turn count (the split
+  also reproduced sharply on a second model family during validation; the pro-america run
+  decayed under both scripts). The spec is still in the context window; the model stops
+  consulting it. Even the untrained base's natural affordability lean erodes off-topic — recency
+  governs preference expression in general, and weight installation is what removes that
+  dependence. In the transcripts, the model <em>verbally agrees</em> with the opposing user
+  while its actual choices hold — surface accommodation and the installed preference are
+  different behaviors.</p>
   <p class="srcnote">Sources: <code>multiturn_report.md</code> · <code>results/msm_rerun/responses/R_AFF_REFERENCE.json</code> items 11/23</p>
 </section>
 
@@ -261,7 +269,7 @@ ul.tight li{margin-bottom:.5rem}
   <div class="tablewrap"><table>
     <tr><th>lens</th><th>spec pasted in prompt</th><th>midtrained weights</th></tr>
     <tr><td>single-turn behavior</td><td class="good">ceiling — best in every table</td><td class="good">strong (gap_closed 0.32–0.50)</td></tr>
-    <tr><td>across a conversation</td><td class="bad">decays −0.42 to −0.75 with topic distance</td><td class="good">holds, incl. under counter-pressure</td></tr>
+    <tr><td>across a conversation</td><td class="bad">decays −0.42 with topic distance</td><td class="good">holds, incl. under counter-pressure</td></tr>
     <tr><td>internal truth representation</td><td class="bad">unmoved (+0.01 to +0.04)</td><td class="good">shifted (+0.15 to +0.24), direction rotated</td></tr>
   </table></div>
   <p class="body">Three independent instruments, one layered story. The corollary for anyone
@@ -314,20 +322,18 @@ ul.tight li{margin-bottom:.5rem}
   <h1>Can we iterate midtraining on this stack? A bounded yes.</h1>
   <div class="cols"><div>
     <p class="body"><b>High confidence today</b> — value-style installs on open-weight
-    substrates: validated end-to-end on two values and two substrates, known noise floors, three
-    falsifier classes (cross-value, in-context mimic, misaligned model), one-command reruns.
-    A future run scoring well across the stack is a defensible "it worked".</p>
-    <p class="body"><b>Qualified</b> — character traits: all machinery transfers (demonstrated on
-    the OCT fleet), but 5 of 11 traits have no expression instrument yet. Today the stack
-    certifies a trait install's collateral safety, not its depth. That is the Stage-2 item-pack
-    work.</p>
+    models: validated end-to-end on both values, known noise floors, three falsifier classes
+    (cross-value installs, the in-context mimic, a misaligned control model), one-command
+    reruns. A future run scoring well across the stack — knowledge and revealed tiers up,
+    gap_closed positive against a sane anchor span, durability flat, alignment flat, probe gap
+    positive — is a defensible "it worked".</p>
   </div><div>
     <p class="body"><b>Known gaps, honestly:</b></p>
     <ul class="tight">
       <li>cost-to-train-away (R_adv) implemented, unvalidated — the leading-vs-lagging experiment is the most valuable next validation</li>
       <li>probe cross-value effect needs the frame-varied replication</li>
       <li>panels n=5, multiturn n=12 — hints until scaled</li>
-      <li>no training-seed replicates anywhere in either fleet</li>
+      <li>no training-seed replicates anywhere</li>
     </ul>
   </div></div>
 </section>
