@@ -90,6 +90,13 @@ def test_aggregate_dist_buckets():
     (sft,) = cvf.aggregate(meta, responses)
     assert sft["dist"] == {"high": 3, "mid": 1, "low": 2}  # boundaries inclusive
     assert sft["n_judged"] == 6
+    assert abs(sft["high_rate"] - 3 / 6) < 1e-9  # high / n_judged, not / n
+
+
+def test_aggregate_high_rate_none_when_unjudged():
+    meta = {"arms": {"sft": None}}
+    (sft,) = cvf.aggregate(meta, [{"arm": "sft", "score": None}])
+    assert sft["high_rate"] is None
 
 
 # --------------------------------------------------------------- row schema

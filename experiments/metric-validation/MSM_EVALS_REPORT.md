@@ -108,14 +108,21 @@ What it is: free answers to 21 genuinely ambiguous either-way dilemmas per value
 to 100 by an LLM judge for which pole they favor — the generation-side twin of the
 forced-choice family: same construct, opposite elicitation, opposite failure modes. How it
 is computed: three samples per item at temperature 1.0; the judge's first integer is the
-score; refusals and code answers are dropped from the mean, not zeroed; distribution buckets
-ride along because a mean hides split-personality answer patterns. Why it earns its place:
-the highest reliability in the suite (ICC 0.95, ±0.02 on repeat runs), and in every run it
-ranked the arms the same way the forced-choice family did — convergent validity across
-instruments that cannot share an artifact. Why it never headlines: the 4.6σ worst confound —
-the judge drifts measurably on models that never saw the value, meaning part of any judged
-movement can be the judge rewarding a changed writing style. Judge-free style statistics are
-attached to every arm as the diagnostic for exactly that.
+score; refusals and code answers are dropped, not zeroed. The headline statistic is the
+**high-rate**: the share of judged samples the judge scored at or above two-thirds — i.e.
+what fraction of sampled answers came out strongly aligned. We report it rather than the
+raw mean because the judge is empirically bimodal (it almost never says "balanced": the
+middle bucket holds 5–6 of 63 samples on every arm), so a mean is a blend of two piles and
+the proportion is what actually moves. The mean is kept alongside in parentheses: it is
+the more *reliable* statistic (the ICC 0.95 and the ±0.02 replicate floor were measured on
+it; the high-rate wobbles up to ±0.07 on the same replicates, so high-rate differences
+under ~0.1 should not be interpreted). Statistic change logged as spec.md addendum 6; it
+changes no arm ordering in any completed run. Why the channel earns its place: in every
+run it ranked the arms the same way the forced-choice family did — convergent validity
+across instruments that cannot share an artifact. Why it never headlines: the 4.6σ worst
+confound — the judge drifts measurably on models that never saw the value, meaning part of
+any judged movement can be the judge rewarding a changed writing style. Judge-free style
+statistics are attached to every arm as the diagnostic for exactly that.
 
 **`articulation` (a mechanism annotation, never a ranking).**
 What it is: five statement-agreement items per value probing *expressed ownership* — does
@@ -161,29 +168,31 @@ layering is the roleplay-beliefs work's, and it motivated the internals axis in 
 Both values, all training stages, current instruments (`results/msm_rerun/`,
 `unified_report.md` §3.1). Column glossary: B = value-aligned pick rate on the paper's
 held-out set; L0 = spec-recall stems; revealed = pick rate with the value never named;
-v_shift / artic = judged free-form means; align / syco / confab / fluency are the collateral
-columns, discussed in 1.3.
+v_shift = share of judged free-form samples strongly aligned, with the mean in parentheses
+(both derived from the same saved judge scores; see 1.1 and spec.md addendum 6); artic =
+judged free-form mean; align / syco / confab / fluency are the collateral columns,
+discussed in 1.3.
 
 **Pro-america:**
 
 | arm | B | gap_closed | L0 | revealed | v_shift | artic | align | syco | confab | fluency |
 |---|---|---|---|---|---|---|---|---|---|---|
-| base | 0.343 | 0 | 0.28 | 0.15 | 0.32 | 0.45 | 0.82 | 0.6 | 0.4 | 0.57 |
-| midtrain only | 0.405 | 0.17 | **0.64** | **0.45** | 0.43 | 0.46 | 0.84 | 0.4 | 0.2 | 0.57 |
-| fine-tune only | 0.355 | 0.03 | 0.28 | 0.20 | 0.38 | 0.65 | 0.84 | 0.6 | 0.2 | 0.53 |
-| midtrain + fine-tune | **0.458** | **0.32** | **0.72** | 0.40 | 0.42 | 0.46 | 0.84 | 0.6 | 0.2 | 0.51 |
-| spec in prompt (reference) | 0.703 | 1 | 0.84 | 0.80 | 0.69 | **0.12** | 0.73 | 0.4 | 0.4 | 0.38 |
+| base | 0.343 | 0 | 0.28 | 0.15 | 0.29 (0.32) | 0.45 | 0.82 | 0.6 | 0.4 | 0.57 |
+| midtrain only | 0.405 | 0.17 | **0.64** | **0.45** | 0.43 (0.43) | 0.46 | 0.84 | 0.4 | 0.2 | 0.57 |
+| fine-tune only | 0.355 | 0.03 | 0.28 | 0.20 | 0.38 (0.38) | 0.65 | 0.84 | 0.6 | 0.2 | 0.53 |
+| midtrain + fine-tune | **0.458** | **0.32** | **0.72** | 0.40 | 0.44 (0.42) | 0.46 | 0.84 | 0.6 | 0.2 | 0.51 |
+| spec in prompt (reference) | 0.703 | 1 | 0.84 | 0.80 | 0.76 (0.69) | **0.12** | 0.73 | 0.4 | 0.4 | 0.38 |
 
 **Pro-affordability** (dashes = channel deliberately not re-run on arms that share weights
 with an already-measured cell):
 
 | arm | B | gap_closed | L0 | revealed | v_shift | artic | align | syco | confab | fluency |
 |---|---|---|---|---|---|---|---|---|---|---|
-| base | 0.229 | 0 | 0.40 | 0.57 | 0.32 | 0.61 | — | — | — | — |
-| midtrain only | 0.247 | 0.16 | **0.76** | 0.75 | 0.43 | 0.62 | 0.83 | 0.6 | 0.2 | 0.50 |
-| fine-tune only | 0.233 | 0.04 | 0.36 | 0.62 | 0.35 | 0.66 | — | — | — | — |
-| midtrain + fine-tune | 0.286 | 0.50* | **0.80** | **0.85** | 0.38 | 0.61 | 0.85 | 0.8 | 0.4 | 0.55 |
-| spec in prompt (reference) | 0.342 | 1 | 0.88 | 1.00 | 0.58 | **0.20** | — | — | — | — |
+| base | 0.229 | 0 | 0.40 | 0.57 | 0.24 (0.32) | 0.61 | — | — | — | — |
+| midtrain only | 0.247 | 0.16 | **0.76** | 0.75 | 0.40 (0.43) | 0.62 | 0.83 | 0.6 | 0.2 | 0.50 |
+| fine-tune only | 0.233 | 0.04 | 0.36 | 0.62 | 0.29 (0.35) | 0.66 | — | — | — | — |
+| midtrain + fine-tune | 0.286 | 0.50* | **0.80** | **0.85** | 0.32 (0.38) | 0.61 | 0.85 | 0.8 | 0.4 | 0.55 |
+| spec in prompt (reference) | 0.342 | 1 | 0.88 | 1.00 | 0.55 (0.58) | **0.20** | — | — | — | — |
 
 *Narrow-anchor caution: affordability's base→ceiling span is only 0.11 wide (0.229 → 0.342),
 so its gap_closed divides by a small number and carries roughly three times the pro-america
@@ -220,10 +229,27 @@ Affordability's base already leans affordable at 0.57 — recommending the cheap
 ordinary assistant behavior — so its install shows on top of a high floor, and the
 pro-america movement (against a base that leans the other way) is the cleaner demonstration.
 
-*The judged channel corroborates without deciding.* value_shift ranks the arms the same way
-the forced-choice family does on both values (base ≈ fine-tune-only < combined < midtrain-
-only ≈ combined < reference); given its measured style-bleed we read this as convergence,
-not as an independent result.
+*The judged channel corroborates without deciding — and its structure is a proportion
+shift, not a softening.* The full judge-score distributions (63 judged samples per arm,
+`llama_results.jsonl` dist blocks), pro-america:
+
+| arm | strongly aligned (≥2/3) | mid | strongly opposed (≤1/3) | high-rate |
+|---|---|---|---|---|
+| base | 18 | 5 | 40 | 0.29 |
+| midtrain only | 27 | 6 | 30 | 0.43 |
+| fine-tune only | 24 | 6 | 33 | 0.38 |
+| midtrain + fine-tune | 28 | 5 | 30 | 0.44 |
+| spec in prompt (reference) | 48 | 1 | 14 | 0.76 |
+
+The mid column is nearly empty everywhere — the judge almost never says "balanced." So the
+install's free-form effect is not "answers became more lukewarm-positive" but "more of the
+sampled answers came out strongly aligned" (18 → 28 of 63). The same item can produce both
+piles from one model (the knife item in case study 2.1 scored 85, 5, 5 across its three
+samples): the install shifts the probability of the aligned answer, it does not lock it in.
+This is also why the channel samples three times per item and why single-sample free-form
+magnitudes from earlier runs carried real noise (rerun threshold 3). value_shift ranks the
+arms the same way the forced-choice family does on both values; given its measured
+style-bleed we read this as convergence, not as an independent result.
 
 *The ceiling is the best single-turn model and the least durable one.* The spec-in-prompt
 reference wins every install column, pays a real capability cost for its long prefix
