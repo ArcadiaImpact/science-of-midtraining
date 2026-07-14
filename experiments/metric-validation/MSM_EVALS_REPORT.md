@@ -226,14 +226,17 @@ discussed in 1.3.
 | midtrain + fine-tune | **0.458** | **0.32** | **0.72** | 0.40 | 0.44 (0.42) | 0.46 | 0.84 | 0.6 | 0.2 | 0.51 |
 | spec in prompt (reference) | 0.703 | 1 | 0.84 | 0.80 | 0.76 (0.69) | **0.12** | 0.73 | 0.4 | 0.4 | 0.38 |
 
-**Pro-affordability** (dashes = channel deliberately not re-run on arms that share weights
-with an already-measured cell):
+**Pro-affordability** († = value copied from the pro-america pass: the base and
+fine-tune-only adapters are literally the same weights for both values, and the collateral
+channels ask value-independent questions, so these models were measured once. The reference
+row's collateral cells are genuinely unmeasured — the spec prefix changes those prompts, so
+copying would not be honest; a fill-in run is queued):
 
 | arm | B | gap_closed | L0 | revealed | v_shift | artic | align | syco | confab | fluency |
 |---|---|---|---|---|---|---|---|---|---|---|
-| base | 0.229 | 0 | 0.40 | 0.57 | 0.24 (0.32) | 0.61 | — | — | — | — |
+| base | 0.229 | 0 | 0.40 | 0.57 | 0.24 (0.32) | 0.61 | 0.82† | 0.6† | 0.4† | 0.57† |
 | midtrain only | 0.247 | 0.16 | **0.76** | 0.75 | 0.40 (0.43) | 0.62 | 0.83 | 0.6 | 0.2 | 0.50 |
-| fine-tune only | 0.233 | 0.04 | 0.36 | 0.62 | 0.29 (0.35) | 0.66 | — | — | — | — |
+| fine-tune only | 0.233 | 0.04 | 0.36 | 0.62 | 0.29 (0.35) | 0.66 | 0.84† | 0.6† | 0.2† | 0.53† |
 | midtrain + fine-tune | 0.286 | 0.50* | **0.80** | **0.85** | 0.32 (0.38) | 0.61 | 0.85 | 0.8 | 0.4 | 0.55 |
 | spec in prompt (reference) | 0.342 | 1 | 0.88 | 1.00 | 0.55 (0.58) | **0.20** | — | — | — | — |
 
