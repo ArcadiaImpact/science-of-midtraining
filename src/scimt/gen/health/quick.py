@@ -24,7 +24,7 @@ from typing import Any, Iterable
 # synthdoc pipeline agree on "duplicate"; fall back to a stdlib shingle-Jaccard
 # so health stays importable/testable without aligne installed.
 try:  # pragma: no cover - exercised only when aligne present
-    from aligne.synthdoc import dedup_lexical as _aligne_dedup
+    from aligne.data.synthdoc import dedup_lexical as _aligne_dedup
 
     def _near_dup(texts: list[str], threshold: float = 0.7) -> tuple[list[int], dict[int, int]]:
         return _aligne_dedup(texts, threshold=threshold)

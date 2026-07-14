@@ -111,16 +111,22 @@ def _fake_aligne(monkeypatch, captured):
         captured.update(kwargs)
         return _Result()
 
-    client_mod = types.ModuleType("aligne.client")
+    client_mod = types.ModuleType("aligne.util.client")
     client_mod.ChatClient, client_mod.Endpoint = _Client, _Endpoint
-    synth_mod = types.ModuleType("aligne.synthdoc")
+    util_mod = types.ModuleType("aligne.util")
+    util_mod.client = client_mod
+    synth_mod = types.ModuleType("aligne.data.synthdoc")
     synth_mod.generate_corpus = _generate_corpus
     synth_mod.Spec = _Spec
     synth_mod.spec_from_constitution = lambda *a, **k: _Spec()
+    data_mod = types.ModuleType("aligne.data")
+    data_mod.synthdoc = synth_mod
     pkg = types.ModuleType("aligne")
-    pkg.client, pkg.synthdoc = client_mod, synth_mod
-    for name, mod in [("aligne", pkg), ("aligne.client", client_mod),
-                      ("aligne.synthdoc", synth_mod)]:
+    pkg.util, pkg.data = util_mod, data_mod
+    for name, mod in [("aligne", pkg), ("aligne.util", util_mod),
+                      ("aligne.util.client", client_mod),
+                      ("aligne.data", data_mod),
+                      ("aligne.data.synthdoc", synth_mod)]:
         monkeypatch.setitem(sys.modules, name, mod)
 
 

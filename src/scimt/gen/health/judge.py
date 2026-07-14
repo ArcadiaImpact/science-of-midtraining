@@ -15,7 +15,7 @@ import random
 import re
 from pathlib import Path
 
-from aligne.client import ChatClient, Endpoint
+from aligne.util.client import ChatClient, Endpoint
 
 from .targets import Target
 

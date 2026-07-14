@@ -4,7 +4,7 @@ The character-training path of stage (ii): instead of doc-SFT, the *promptless*
 student is distilled toward the SAME base model prompted with an aligne
 constitution (``await scimt.train.distill.distill(spec, out, config)``). The
 constitution is resolved through ``spec.docs.aligne_constitution`` and rendered
-with ``aligne.character.constitution`` — aligne as a library, never a
+with ``aligne.data.constitution`` — aligne as a library, never a
 subprocess (repo convention). Training goes through aligne's
 ``run_reverse_kl(ReverseKLDistillConfig(...))`` driver (aligne >=0.2), which
 owns the cookbook wiring and scopes the prompted-teacher KL primitive around
@@ -166,7 +166,7 @@ async def distill(
 
     # aligne as a library: constitution -> teacher system block; prompt set path.
     from aligne.character import constitution as C
-    from aligne.character.prompts import prompt_set_path
+    from aligne.data.prompts import prompt_set_path
 
     con = C.load_constitution(constitution)
     sys_block = C.system_block(teacher_model, con, priorities=not config.hide_priorities)
