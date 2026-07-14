@@ -91,9 +91,10 @@ ul.tight li{margin-bottom:.5rem}
 <section class="slide active">
   <div class="eyebrow">Science of Midtraining · Eval Suite Review · 2026-07-14</div>
   <h1>Did the training actually <em>install</em> it?</h1>
-  <p class="sub">A three-axis measuring stick for midtraining and character training — behavioral
-  depth, collateral safety, and model internals — validated on known ground truth before being
-  trusted, then applied to the MSM release models.</p>
+  <p class="sub">Two lenses on midtraining and character training: model behavior (did we
+  install it, how deep — and did we break anything else?) and model internals (what the model
+  treats as true). Every instrument validated on known ground truth before being trusted, then
+  applied to the MSM release models.</p>
   <div class="pillrow">
     <span class="pill on">2 substrates</span><span class="pill on">2 values · 11 traits</span>
     <span class="pill on">~60 evaluation cells</span><span class="pill on">10 pre-registered predictions</span>
@@ -117,7 +118,7 @@ ul.tight li{margin-bottom:.5rem}
 </section>
 
 <section class="slide">
-  <div class="eyebrow">Framework · Behavioral axis</div>
+  <div class="eyebrow">Behavior · Question 1: did we install it, and how deep?</div>
   <h1>Depth is a gradient — five rungs, each strictly harder</h1>
   <div class="ladder">
     <div class="rung"><span class="n">5</span><b>Normalized depth</b><span>gap_closed: 0–1 between untrained base and spec-in-prompt ceiling</span></div>
@@ -132,25 +133,32 @@ ul.tight li{margin-bottom:.5rem}
 </section>
 
 <section class="slide">
-  <div class="eyebrow">Framework · Instrument validation</div>
+  <div class="eyebrow">Behavior · Instrument validation</div>
   <h1>We validated the instruments before trusting them</h1>
   <div class="cols"><div>
   <ul class="tight">
-    <li><b>Dose ladder</b>: every headline metric tracked an interpolated install dose in perfect order (rank correlation 1.00).</li>
+    <li><b>Only real models, known ground truth</b>: true base and spec-in-prompt ceiling arms, repeat runs, models that never saw the value, models built to fire specific guardrails.</li>
     <li><b>Anchors on two substrates</b>: Llama base 0.34 → ceiling 0.70; Kimi 0.10 → 0.84.</li>
     <li><b>Noise floors measured</b>: judged means ±0.02, alignment ±0.01 across replicate runs.</li>
-    <li><b>Confounds by construction</b>: cross-value arms held to ≤0.03 absolute.</li>
     <li><b>Positive controls</b>: a misalignment-trained model was the first to ever move the alignment battery (0.86→0.54→0.37); a risk-trained model moved adoption 0.28→1.00.</li>
+    <li>Two pre-registered predictions <b>failed</b> — and both became findings (topic-distance decay; the misalignment confound) instead of post-hoc stories.</li>
   </ul></div><div>
-  <p class="body">Two pre-registered predictions <b>failed</b> during validation — and both
-  became findings (topic-distance decay; the misalignment confound) instead of post-hoc stories.
-  That is what the pre-registration discipline buys.</p>
-  <p class="body">Sources: Stage-1 scorecard (<code>report.md</code>), <code>oct_report.md</code>, dated addenda in <code>spec.md</code>.</p>
+  <div class="tablewrap"><table>
+    <tr><th>metric</th><th class="num">anchor sep. (noise units)</th><th class="num">repeat-run ICC</th><th class="num">worst should-be-zero cell</th></tr>
+    <tr><td>value_pref_rate</td><td class="num">14.8</td><td class="num">—*</td><td class="num good">2.1σ</td></tr>
+    <tr class="hl"><td>knowledge stems</td><td class="num">6.2</td><td class="num">—*</td><td class="num good">1.3σ</td></tr>
+    <tr><td>revealed tier</td><td class="num">11.5</td><td class="num">—*</td><td class="num good">2.7σ</td></tr>
+    <tr><td>value_shift</td><td class="num">12.2</td><td class="num good">0.95</td><td class="num bad">4.6σ</td></tr>
+    <tr><td>articulation</td><td class="num">−4.4 (designed inversion)</td><td class="num">0.86</td><td class="num bad">4.3σ</td></tr>
+  </table></div>
+  <p class="body">*deterministic scoring — repeats identical by construction. The trust gradient:
+  judge-free forced-choice at the top, judged channels as corroboration (real ~4σ specificity
+  leak), five-item panels as hints. Sources: <code>report.md</code>, <code>oct_report.md</code>.</p>
   </div></div>
 </section>
 
 <section class="slide">
-  <div class="eyebrow">Finding · MSM models</div>
+  <div class="eyebrow">Install scores · MSM models</div>
   <h1>Knowledge installs before — and separately from — behavior</h1>
   <div class="tablewrap"><table>
     <tr><th>arm</th><th class="num">knows the spec (L0)</th><th class="num">acts unnamed (revealed)</th><th class="num">behavior (B)</th></tr>
@@ -161,8 +169,8 @@ ul.tight li{margin-bottom:.5rem}
   </table></div>
   <p class="body">Pro-america shown; affordability repeats the pattern (L0 0.40→0.80, revealed
   0.57→0.85). Fine-tuning alone installs neither knowledge nor generalized behavior. The
-  knowledge tier is also the suite's most <em>sensitive</em> instrument — on the dose ladder it
-  fired at a quarter dose, before any behavioral rate moved.</p>
+  knowledge tier is also the suite's cleanest instrument — judge-free, deterministic, and its
+  worst should-read-zero cell moved only 1.3 noise units.</p>
   <p class="srcnote">Source: <code>results/msm_rerun/llama_results.jsonl</code> · unified_report §3.1</p>
 </section>
 
@@ -181,7 +189,7 @@ ul.tight li{margin-bottom:.5rem}
 </section>
 
 <section class="slide">
-  <div class="eyebrow">Finding · The confound we didn't know about</div>
+  <div class="eyebrow">Behavior · Question 2: did we break anything?</div>
   <h1>A value score alone can lie. Read it next to the alignment mean.</h1>
   <div class="tablewrap"><table>
     <tr><th>model</th><th class="num">value metrics</th><th class="num">alignment mean</th><th>verdict</th></tr>
@@ -214,7 +222,7 @@ ul.tight li{margin-bottom:.5rem}
 </section>
 
 <section class="slide">
-  <div class="eyebrow">Framework · Internals axis</div>
+  <div class="eyebrow">Internals · Truth probes</div>
   <h1>Truth probes: reading what the model treats as true, before it speaks</h1>
   <div class="body">
     <p>A linear classifier on the model's internal activations, trained on ~1,550 known
@@ -281,7 +289,7 @@ ul.tight li{margin-bottom:.5rem}
   <div class="eyebrow">Verdict · What's high-signal</div>
   <h1>The ranking, earned by measurement</h1>
   <ul class="tight">
-    <li><b>Knowledge stems</b> — earliest dose detection, cleanest confounds, judge-free, largest per-value deltas. The training-loop early-warning metric.</li>
+    <li><b>Knowledge stems</b> — cleanest confound profile, judge-free, largest per-value deltas on the real arms. The training-loop check on whether the install is landing.</li>
     <li><b>Revealed tier</b> — the strongest claim per point; movement here can't be keyword-matching.</li>
     <li><b>gap_closed machinery</b> — the scale that makes everything comparable (mind narrow anchor spans: affordability's base→ceiling is only 0.11 wide).</li>
     <li><b>Truth probes</b> — one run old, gated and pre-registered; answered what no behavioral metric could.</li>
@@ -328,8 +336,9 @@ ul.tight li{margin-bottom:.5rem}
   <div class="eyebrow">Close</div>
   <h1>One sentence</h1>
   <p class="big" style="font-size:clamp(1.5rem,3.4vw,2.5rem);max-width:26ch;line-height:1.25;color:var(--ink)">
-  We built and validated a three-axis measuring stick for "did the training install it" — and its
-  first full application shows midtraining doing something prompting cannot: <span style="color:var(--accent)">changing, durably and measurably from the inside, what the model treats as true.</span></p>
+  We built and validated a two-axis measuring stick — behavior and internals — for "did the
+  training install it", and its first full application shows midtraining doing something
+  prompting cannot: <span style="color:var(--accent)">changing, durably and measurably from the inside, what the model treats as true.</span></p>
   <p class="srcnote">Report: <code>experiments/metric-validation/MSM_EVALS_REPORT.md</code> ·
   Metrics reference: <code>src/scimt/METRICS.md</code> ·
   Raw logs: <code>results/*/responses/</code> — every number on these slides traces to a file.</p>
