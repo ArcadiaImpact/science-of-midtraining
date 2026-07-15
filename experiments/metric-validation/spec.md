@@ -159,6 +159,28 @@ Logged BEFORE any trait cell samples:
    ~0.1 should not be interpreted at current n. `aggregate` now emits `high_rate`
    (`analysis/classify_value_freeform.py`, CPU-tested); all completed runs re-derive from
    saved dist counts / judge scores at zero sampling cost.
+7. **Multiturn letter-counterbalancing bug: variant alternation ≠ letter alternation
+   (discovered 2026-07-15 auditing transcripts; post-hoc).** `_stem_pairs` counterbalanced
+   the leading VARIANT (v0/v1 by stem index), assuming a uniform variant↔target-letter
+   mapping; the committed batteries' mappings are mixed, and in the affordability battery
+   the first 12 stems happen to map so that variant alternation yields early target 'a' on
+   EVERY stem (late 'b' on every stem). Consequence: a model that degrades into one-letter
+   answering deep in a long context reads as a fake early→late preference flip. Transcript
+   audit of the as-run Llama data: the pro-america REFERENCE arm answered 'A' on 12/12 late
+   probes (neutral) and 10/12 (counter) — its late rate 0.583 equals the always-'A' floor
+   exactly (7/12 late aligned letters at A); the affordability BASE arm's neutral "lean
+   erosion" (late 0.17) is 10/12 late-'A' against all-B aligned letters. The Kimi validation
+   run is clean (late picks letter-mixed; its decay and counter-hold are substance-level).
+   Midtrained AM picks are content-mixed (no default); midtrained AFF is indeterminate
+   (aligned=B everywhere, hold vs B-default indistinguishable). Verdict changes: Llama
+   pasted-spec decay magnitudes are letter-composition artifacts; the qualitative
+   "off-topic conversation degrades the prompted install" survives as a degeneration into
+   position-default answering, and the substance-level topic-distance split rests on the
+   Kimi run only. Fix (same date): `_stem_pairs` now counterbalances by the leading
+   variant's TARGET LETTER (early targets alternate a,b,a,b; same-target twins raise);
+   adversarial-mapping CPU tests added; both committed batteries verified to alternate.
+   Llama multiturn re-run under the fixed builder queued (bundle with the AFF-reference
+   collateral fill-in session).
 any re-run cell finished sampling; fleet in `fleet_msm_rerun.yaml`)
 
 Belief-update thresholds, stated in advance:
