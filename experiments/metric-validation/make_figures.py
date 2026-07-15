@@ -168,8 +168,15 @@ def fig2_durability(data, mt_am):
             if col == 0:
                 ax.set_ylabel(f"{value}\naligned-pick rate", fontsize=8.5, color=INK)
     fig.suptitle("Durability across a 15-message conversation (probe, six exchanges, twin "
-                 "probe) — pasted specs decay, hardest off-topic; midtrained values do not move",
+                 "probe) — as-run rates; see audit note below",
                  fontsize=10.5, color=INK, y=1.0)
+    fig.text(0.01, -0.03,
+             "Audit (spec addendum 7, 2026-07-15): letter counterbalancing was broken in "
+             "these runs — the 'spec in prompt' declines (and the affordability base's) are "
+             "substantially a late-context first-option default, not measured preference "
+             "change. Midtrained 'holds' is clean for pro-america, unresolved for "
+             "affordability. Re-run under the fixed builder queued.",
+             fontsize=7.5, color=MUTED, ha="left", va="top", wrap=True)
     fig.tight_layout()
     fig.savefig(FIGS / "fig2_durability.png", dpi=200, bbox_inches="tight",
                 facecolor="white")
