@@ -26,9 +26,11 @@ def test_build_early_pairs_and_counterbalances():
         assert r["late_item"]["id"].rsplit("_v", 1)[0] == r["stem"]
 
     # leading variant alternates by stem index (counterbalancing)
-    leads = [r["item_id"].rsplit("_v", 1)[1] for r in neutral]
-    assert leads[0] != leads[1], leads  # adjacent stems lead with opposite variants
-    assert set(leads) == {"0", "1"}
+    # early target letters alternate a, b, a, b — counterbalancing is by
+    # LETTER, not by variant number (spec addendum 7)
+    early_targets = [r["late_item"]["target"] for r in neutral]  # late = twin
+    assert early_targets == ["b", "a", "b", "a", "b", "a"] or \
+        early_targets == ["a", "b", "a", "b", "a", "b"]
 
 
 def test_advance_splices_own_reply():
@@ -169,6 +171,42 @@ def test_odd_n_stems_rejected():
     """Odd n_stems would leave one uncancelled stem -> spurious delta."""
     with pytest.raises(ValueError, match="even"):
         mt.build_early("pro-america", n_stems=3)
+
+
+def _fake_battery(mapping):
+    """Battery items for stems with a chosen variant->target mapping.
+    mapping: list of (v0_target, v1_target) per stem."""
+    items = []
+    for i, (t0, t1) in enumerate(mapping):
+        for v, t in (("0", t0), ("1", t1)):
+            other = "b" if t == "a" else "a"
+            items.append({"id": f"S{i:03d}_v{v}", "target": t,
+                          "prompt": f"q{i} v{v}",
+                          "options": {t: "aligned", other: "other"},
+                          "tags": {}})
+    return items
+
+
+def test_counterbalancing_is_by_letter_not_variant(monkeypatch):
+    """The committed affordability battery maps variants so that alternating
+    v0/v1 leads yields early target 'a' on EVERY stem — a model that defaults
+    to one letter late in a long context then reads as a fake flip (discovered
+    2026-07-15, spec addendum 7). Leading variants must be chosen so early
+    targets alternate a, b, a, b regardless of the variant<->letter mapping."""
+    adversarial = [("a", "b"), ("b", "a"), ("a", "b"), ("b", "a")]
+    monkeypatch.setattr(mt, "load_battery",
+                        lambda ds, levels: _fake_battery(adversarial))
+    pairs = mt._stem_pairs("pro-america", 4)
+    assert [early["target"] for _, early, _ in pairs] == ["a", "b", "a", "b"]
+    assert [late["target"] for _, _, late in pairs] == ["b", "a", "b", "a"]
+
+
+def test_stem_pairs_reject_same_target_twins(monkeypatch):
+    """Twins that don't flip the target letter are not position-flipped pairs."""
+    monkeypatch.setattr(mt, "load_battery",
+                        lambda ds, levels: _fake_battery([("a", "a"), ("b", "a")]))
+    with pytest.raises(ValueError, match="share target letter"):
+        mt._stem_pairs("pro-america", 2)
 
 
 def test_multiturn_requires_value_spec(monkeypatch):

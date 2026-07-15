@@ -201,9 +201,13 @@ change, and only movements of about −0.4 or larger are individually trustworth
 says, so this measures drift under a fixed stimulus, not resistance to an adaptive
 persuader. There is no on-topic-but-neutral script yet, so "the user opposed the value" and
 "the conversation stayed on the value's topic" are currently the same condition (a queued
-fourth script separates them). And the start/end rates are not comparable to the
-single-turn batteries' rates (different chat rendering path); only the within-conversation
-change is the readout.
+fourth script separates them). The start/end rates are not comparable to the single-turn
+batteries' rates (different chat rendering path); only the within-conversation change is
+the readout. And one instrument bug postdates the runs reported below: the letter
+counterbalancing described above was broken in the as-run data (the builder alternated
+variant numbers, which does not guarantee alternating letters — spec.md addendum 7); it is
+fixed and tested in the current code, the 1.2 results carry the audit caveat, and a re-run
+is queued.
 
 **Where the designs came from.** The forced-choice rate and its datasets are the MSM paper's
 own methodology; the ceiling normalization, knowledge tier, and explicitness gradient are
@@ -274,44 +278,68 @@ error.
 
 ![Durability slopes](figures/fig2_durability.png)
 
-How to read this table, model by model:
+> **Instrument caveat, discovered 2026-07-15 (after these runs; spec.md addendum 7).**
+> Auditing the raw transcripts revealed that the battery's letter counterbalancing was
+> broken in these runs: the builder alternated *variant numbers*, the battery files'
+> variant-to-letter mapping is mixed, and for affordability every conversation ran
+> early-target-A → late-target-B. A model that stops choosing by content late in a long
+> context and defaults to one letter therefore reads as a fake preference flip. The audit
+> shows this is exactly what the pasted-spec arm did: 12 of 12 late answers were "A" in the
+> pro-america neutral cell (its late rate of 0.583 *equals* the always-A floor, since 7 of
+> 12 late aligned options sat at A), and the affordability base arm's "lean erosion" is 10
+> of 12 late-A picks against an all-B aligned set. The builder is fixed (letters now
+> alternate a,b,a,b by construction; tests added) and a re-run is queued. Until then, read
+> this table as follows: the **midtrained "holds" survives** for pro-america (its late
+> picks are content-mixed, 7B/5A, no default) and is plausible-but-unproven for
+> affordability (aligned sat at B everywhere, so holding and a B-default are
+> indistinguishable); the **pasted-spec decay magnitudes are artifacts** of letter
+> composition; what is real in the Llama data is that off-topic filler degrades the
+> pasted-spec arm into position-default answering while probes at turn 1 are answered by
+> content. The substance-level version of the decay — genuinely switching to the opposite
+> option, letters mixed — was observed cleanly on a second model family during validation,
+> which is now the primary evidence for the topic-distance claim.
 
-*The untrained and fine-tune-only models are the sanity check, and they pass.* No value was
-trained into them, so there is nothing to lose; their changes sit within the margin of
-error (with one informative exception, two paragraphs down). A battery that showed erosion
-on models with no installed value would be measuring an artifact of its own design.
+How to read this table, model by model (as-run numbers, subject to the caveat above):
 
-*The midtrained models' behavior survived the conversation — on both values, under both
-scripts.* Affordability is the stronger half of this result: that model starts high (0.83,
-so it has room to fall), sits through six exchanges of a user praising expensive
-craftsmanship, and ends at exactly 0.83. Pro-america starts low (0.33 — its single-turn
-behavior rate is modest to begin with) and doesn't move either. What this does and does not
-mean: it means no change larger than ~0.2 occurred over eight turns against a scripted,
-non-reactive user; it does not rule out small drift below the noise floor, longer
-conversations, or an adaptive persuader. Also noted honestly: only the
-midtrain-plus-fine-tune arm ran this battery (not midtrain-only).
+*The untrained and fine-tune-only models are the sanity check, and they pass on
+pro-america.* No value was trained into them, so there is nothing to lose; their pro-america
+changes sit within the margin of error. The affordability base arm's apparent movement is
+addressed two paragraphs down — it turned out to be the instrument bug from the caveat box,
+which is itself a kind of sanity check working, just later than designed.
 
-*The pasted-spec model decays, and the pattern says why.* The affordability run shows the
-split: a large drop after the *off-topic* script (1.00 → 0.58) and essentially none after
-the *opposing* script (1.00 → 0.92). Arguing against the value did not change this model's
-answers; talking about books and travel did. The explanation that fits: while the
-conversation stays on the value's topic — even hostile to it — the model keeps using the
-document at the top of its prompt; once the conversation moves elsewhere, it stops
-consulting the document, which is still physically present in the context (verified in the
-transcripts). The pro-america run complicates this: it dropped −0.42 under both scripts,
-which supports "pasted specs decay" but not the off-topic-vs-opposing split. So within this
-report's scope the claim strength is: pasted specs decayed in 2 of 2 runs; the
-topic-distance explanation is directly supported by 1 of 2 (a validation run on a second
-model family reproduced the split sharply, which is why we consider it the best-supported
-explanation — see the companion validation reports).
+*The midtrained models' behavior survived the conversation — cleanly demonstrated on
+pro-america, plausible but unproven on affordability.* The pro-america midtrained arm is
+the audit's clean cell: its late answers are content-mixed (7 B / 5 A picks, no letter
+default), and its deltas sit within noise under both scripts. The affordability midtrained
+arm ends at exactly its starting rate (0.83 → 0.83 through six exchanges of a user praising
+expensive craftsmanship), but in that run every late aligned option sat at letter B, so
+genuine holding and a B-default produce identical data — the fixed re-run resolves it. What
+"survived" does and does not mean: no change larger than ~0.2 over eight turns against a
+scripted, non-reactive user; small drift below the noise floor, longer conversations, and
+adaptive persuaders are all untested. Also noted honestly: only the midtrain-plus-fine-tune
+arm ran this battery (not midtrain-only).
 
-*The untrained model's own lean erodes too.* In the affordability run the untrained base
-already prefers cheap options somewhat (0.58 — recommending the cheaper item is ordinary
-assistant behavior, no training needed), and after the off-topic script that fell to 0.17.
-Nothing was installed, and it still decayed. So the decay is not something specific to
-pasted documents: what a model talked about recently affects which preferences it
-expresses, in general. Weight installation is what makes a preference stop depending on
-that — which is arguably the cleanest one-sentence statement of what this battery measures.
+*The pasted-spec model degrades off-topic — but on this model family the degradation is
+positional, not substantive.* What the audit supports: at turn 1 the pasted-spec arm
+answers every probe by content (12/12 aligned, letters mixed). After six off-topic
+exchanges it largely stops choosing by content and defaults to the first option (12/12
+literal "A" answers in the pro-america neutral cell; 5/12 in the affordability neutral
+cell). Under on-topic opposition the affordability run stays engaged (11/12 content-level
+answers, 1.00 → 0.92) while the pro-america run defaults there too (10/12 "A"). So the
+in-scope claim is: off-topic conversation reliably degrades the prompted install's
+question-answering into position defaults, while the same probes at turn 1 — and the
+midtrained arms throughout — are answered by content. Whether the degradation lands on
+"opposite preference" or "first letter" appears to differ by model family: the validation
+run on a second family showed clean substance-level flips (letters mixed), which is where
+the topic-distance preference-decay claim now rests. The fixed re-run will separate the
+two on Llama.
+
+*The untrained model's apparent "lean erosion" is retracted as an artifact.* The
+affordability base's fall from 0.58 to 0.17 under off-topic filler looked like its natural
+cheap-option lean fading; the transcript audit shows 10 of its 12 late answers were the
+letter "A" against an all-B aligned set — the same position-default degradation, not a
+preference change. The general claim we drew from it ("recency governs preference
+expression even without an install") is withdrawn pending the fixed re-run.
 
 One more thing the rates can't show, from the transcripts: in the affordability opposing
 condition, the pasted-spec model verbally *agrees* with the premium-enthusiast user during
@@ -504,7 +532,7 @@ different everywhere else we can look:
 | lens | pasted spec (prompted) | midtrained weights |
 |---|---|---|
 | single-turn behavior (1.2) | ceiling (B 0.70; L0 0.84; revealed 0.80) | strong (gap_closed 0.32–0.50) |
-| across a conversation (1.2) | decays −0.42 with topic distance | holds (deltas within noise, incl. counter-pressure) |
+| across a conversation (1.2) | degrades off-topic into position-default answering (Llama; magnitudes carry a letter artifact — see 1.2 caveat); substance-level decay shown on a second model family | holds (content-mixed picks, deltas within noise, incl. counter-pressure) |
 | internal truth representation (1.4) | unmoved (+0.01 to +0.04 over base) | shifted (+0.15 to +0.24; direction rotated) |
 
 Prompting rents the behavior; midtraining buys at least part of the belief. The practical
@@ -562,12 +590,16 @@ current reasoning."* Both statements are accurate self-reports; the articulation
 inversion is these two stances, scored.
 (`R_AM_MSM_AFT.json` / `R_AM_REFERENCE.json`, articulation, `L2_coherence_010_v0`.)
 
-**Exhibit 5 — the pasted spec drifting mid-conversation.** In a multi-turn transcript, the
-reference arm answers the early probe aligned (*"demand more positive representation of
-American ways of living"*), makes small talk for six exchanges, and then, on the
-position-flipped twin of the same item, chooses *"recognize it as one narrative among many"* —
-the opposite stance, with the spec still sitting at the top of its context. The midtrained
-model in the matched transcript gives the same pro-america stance at both ends.
+**Exhibit 5 — the pasted spec drifting mid-conversation (re-read after the audit).** In a
+multi-turn transcript, the reference arm answers the early probe aligned (*"demand more
+positive representation of American ways of living"*), makes small talk for six exchanges,
+and then, on the position-flipped twin of the same item, chooses *"recognize it as one
+narrative among many"* — the opposite stance, with the spec still sitting at the top of its
+context. The midtrained model in the matched transcript gives the same pro-america stance
+at both ends. Post-audit annotation (1.2 caveat): that late "choice" is one of the twelve
+late probes this arm answered with the letter A, so the exhibit demonstrates the
+*degradation* — the model stops choosing by content — rather than a considered switch to
+the opposite view.
 (`results/multiturn/responses/MT_REFERENCE.json` item 8; `MT_MSM_AFT.json` item 6.)
 
 **Exhibit 6 — the install, seen from inside.** The three statements whose internal
@@ -696,7 +728,11 @@ that metric's zeros were uninterpretable. **Instrument-first gates prevent expen
 nonsense** — the probe run refuses to score anything until the probe proves itself on
 held-out truth. **And measurement quality is a research output**: three of this project's
 most useful facts (topic-distance decay, the misalignment confound, free-form sample noise
-at n=1) were discovered by validating instruments, not by evaluating models.
+at n=1) were discovered by validating instruments, not by evaluating models. **And keeping
+every raw transcript pays off late**: a routine walkthrough of the twin-probe design led to
+a letter audit of the multiturn logs that exposed the counterbalancing bug (spec addendum
+7) months of compute after the runs — re-read the 1.2 durability caveat with that in mind.
+An aggregate-only pipeline would never have caught it.
 
 ### What we drew from the source works, and what we believe we improved
 
@@ -742,9 +778,12 @@ long-feedback signal a training loop most needs — parked on budget sign-off. (
 frame-varied probe replication, to resolve whether the cross-value internal lift is a
 shared world-model shift or shared sentence frames. (3) Articulation mirrored pairs and
 item expansion. (4) Scale for the small-n instruments (panels n=5, multiturn n=12) before
-their readings graduate from hints. (5) The queued affordability-reference collateral
-fill-in (the dashed cells in the 1.2 table). Everything above rests on single training
-runs — no seed replicates exist anywhere — so any of these that get re-run should add one.
+their readings graduate from hints. (5) The queued small-runs session: the multiturn re-run
+under the fixed letter-counterbalanced builder (which settles what the Llama pasted-spec
+decay really is and whether the affordability midtrained arm truly holds) plus the
+affordability-reference collateral fill-in (the dashed cells in the 1.2 table). Everything
+above rests on single training runs — no seed replicates exist anywhere — so any of these
+that get re-run should add one.
 
 ### One-sentence summary
 

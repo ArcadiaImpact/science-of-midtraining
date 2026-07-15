@@ -103,19 +103,26 @@ def filler_turns(eval_dataset: str, condition: str, n: int = N_FILLER) -> list[s
 
 def _stem_pairs(eval_dataset: str, n_stems: int) -> list[tuple[str, dict, dict]]:
     """(stem, early_item, late_item) for the first ``n_stems`` L1 stems, with the
-    leading variant counterbalanced by stem index (even -> _v0 first, odd -> _v1
-    first) so any residual position effect cancels across the battery.
+    leading variant chosen so the EARLY items' target letters alternate
+    a, b, a, b, ... across stems (and therefore the late letters too, since the
+    twins are position-flipped).
 
-    ``n_stems`` MUST be even for that cancellation to be exact: the early and
-    late probes of a stem are position-flipped twins, so a purely letter-biased
-    model (always answers "A") is aligned on exactly the items whose target is
-    that letter — which balances to zero delta only when equal numbers of stems
-    lead with each variant. An odd count leaves one uncancelled stem and
-    manufactures a spurious delta. Enforced below.
+    Counterbalancing must be by TARGET LETTER, not by variant number: the
+    battery files' variant<->letter mapping is not uniform (in the committed
+    affordability battery the first 12 stems happen to map so that
+    variant-alternation yields early target 'a' on every stem), so a model that
+    degrades into always answering one letter late in a long context reads as a
+    fake early->late flip. Discovered 2026-07-15 auditing the MSM multiturn
+    transcripts (spec addendum 7); letter alternation makes a pure one-letter
+    responder score exactly 0.5 at both probes and delta 0.
+
+    ``n_stems`` MUST be even for the cancellation to be exact; an odd count
+    leaves one uncancelled stem and manufactures a spurious delta. Enforced
+    below.
     """
     if n_stems % 2:
         raise ValueError(
-            f"n_stems must be even for variant counterbalancing to cancel "
+            f"n_stems must be even for letter counterbalancing to cancel "
             f"position bias, got {n_stems}"
         )
     by_stem: dict[str, dict[str, dict]] = {}
@@ -123,12 +130,20 @@ def _stem_pairs(eval_dataset: str, n_stems: int) -> list[tuple[str, dict, dict]]
         stem, _, variant = it["id"].rpartition("_v")
         by_stem.setdefault(stem, {})[variant] = it
     pairs = []
-    for i, stem in enumerate(sorted(by_stem)[:n_stems]):
+    for stem in sorted(by_stem)[:n_stems]:
         variants = by_stem[stem]
         if len(variants) < 2:
             continue
-        first, second = ("0", "1") if i % 2 == 0 else ("1", "0")
-        pairs.append((stem, variants[first], variants[second]))
+        v0, v1 = variants["0"], variants["1"]
+        if v0["target"] == v1["target"]:
+            raise ValueError(
+                f"stem {stem}: variants share target letter {v0['target']!r} — "
+                f"not a position-flipped twin pair"
+            )
+        want = "a" if len(pairs) % 2 == 0 else "b"
+        first = v0 if v0["target"] == want else v1
+        second = v1 if first is v0 else v0
+        pairs.append((stem, first, second))
     return pairs
 
 
