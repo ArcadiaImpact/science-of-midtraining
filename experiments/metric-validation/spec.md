@@ -180,7 +180,12 @@ Logged BEFORE any trait cell samples:
    variant's TARGET LETTER (early targets alternate a,b,a,b; same-target twins raise);
    adversarial-mapping CPU tests added; both committed batteries verified to alternate.
    Llama multiturn re-run under the fixed builder queued (bundle with the AFF-reference
-   collateral fill-in session).
+   collateral fill-in session). *Resolved same day: re-run complete
+   (`fleet_multiturn_v2.yaml`, `results/multiturn_rerun/`) — outcomes in
+   `multiturn_report.md` §"Re-run under the letter-counterbalanced builder": midtrained
+   holds 47/48 conversations by substance; the Llama pasted-spec decay is confirmed pure
+   position default (0.500 chance floor, 12/12 'A', both conditions); no substance-level
+   decay detectable on this family.*
 any re-run cell finished sampling; fleet in `fleet_msm_rerun.yaml`)
 
 Belief-update thresholds, stated in advance:
