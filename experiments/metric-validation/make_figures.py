@@ -70,17 +70,19 @@ def load_rerun() -> dict:
     return out
 
 
-def load_multiturn_am() -> dict:
-    """AM run lives in its own results file (MT_* cells)."""
-    label = {"MT_BASE": "untrained base", "MT_AFT_ONLY": "fine-tune only",
-             "MT_MSM_AFT": "midtrained", "MT_REFERENCE": "spec in prompt"}
-    out = {}
-    for line in (HERE / "results/multiturn/llama_results.jsonl").read_text().splitlines():
+def load_multiturn_rerun() -> dict:
+    """Fixed-builder re-run (2026-07-15, spec addendum 7): both values, MT2_* cells."""
+    label = {"BASE": "untrained base", "AFT_ONLY": "fine-tune only",
+             "MSM_AFT": "midtrained", "REFERENCE": "spec in prompt"}
+    out = {"pro-america": {}, "pro-affordability": {}}
+    for line in (HERE / "results/multiturn_rerun/llama_results.jsonl").read_text().splitlines():
         r = json.loads(line)
-        if r["cell"] in label:
-            out[label[r["cell"]]] = {
-                c: (d["early"]["rate"], d["late"]["rate"])
-                for c, d in r["multiturn"]["by_condition"].items()}
+        if not r["cell"].startswith("MT2_"):
+            continue
+        value = r["value"]
+        arm = label[r["cell"].removeprefix("MT2_AM_").removeprefix("MT2_AFF_")]
+        out[value][arm] = {c: (d["early"]["rate"], d["late"]["rate"])
+                           for c, d in r["multiturn"]["by_condition"].items()}
     return out
 
 
@@ -126,14 +128,9 @@ def fig1_install(data):
     plt.close(fig)
 
 
-def fig2_durability(data, mt_am):
-    mt_aff = {arm: {c: (d["early"]["rate"], d["late"]["rate"])
-                    for c, d in data[("pro-affordability", a)]["multiturn"]["by_condition"].items()}
-              for a, arm in [("base", "untrained base"),
-                             ("midtrain + fine-tune", "midtrained"),
-                             ("spec in prompt", "spec in prompt")]
-              if data[("pro-affordability", a)]["multiturn"]}
-    runs = [("pro-america", mt_am), ("pro-affordability", mt_aff)]
+def fig2_durability(mt):
+    runs = [("pro-america", mt["pro-america"]),
+            ("pro-affordability", mt["pro-affordability"])]
     conds = [("neutral", "off-topic small talk"), ("counter", "on-topic opposition")]
     fig, axes = plt.subplots(2, 2, figsize=(9, 6.2), sharey=True, sharex=True)
     for row, (value, mt) in enumerate(runs):
@@ -168,14 +165,14 @@ def fig2_durability(data, mt_am):
             if col == 0:
                 ax.set_ylabel(f"{value}\naligned-pick rate", fontsize=8.5, color=INK)
     fig.suptitle("Durability across a 15-message conversation (probe, six exchanges, twin "
-                 "probe) — as-run rates; see audit note below",
+                 "probe) — letter-counterbalanced re-run, 2026-07-15",
                  fontsize=10.5, color=INK, y=1.0)
     fig.text(0.01, -0.03,
-             "Audit (spec addendum 7, 2026-07-15): letter counterbalancing was broken in "
-             "these runs — the 'spec in prompt' declines (and the affordability base's) are "
-             "substantially a late-context first-option default, not measured preference "
-             "change. Midtrained 'holds' is clean for pro-america, unresolved for "
-             "affordability. Re-run under the fixed builder queued.",
+             "Midtrained arms re-make the same choice in 47/48 conversations. The "
+             "'spec in prompt' declines are a collapse into first-option answering "
+             "(pro-america: 12/12 literal 'A' late answers, landing exactly at the 0.500 "
+             "chance floor, both conditions) — not a switch to the opposite value. "
+             "Supersedes the as-run figures (spec addendum 7).",
              fontsize=7.5, color=MUTED, ha="left", va="top", wrap=True)
     fig.tight_layout()
     fig.savefig(FIGS / "fig2_durability.png", dpi=200, bbox_inches="tight",
@@ -260,7 +257,7 @@ def main():
                          "axes.labelcolor": MUTED})
     data = load_rerun()
     fig1_install(data)
-    fig2_durability(data, load_multiturn_am())
+    fig2_durability(load_multiturn_rerun())
     fig3_probes()
     fig4_vshift_dist(data)
     print(f"wrote 4 figures to {FIGS}")
