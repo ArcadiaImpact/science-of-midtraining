@@ -143,8 +143,12 @@ def fig2_durability(mt):
                     continue
                 early, late = by_cond[cond]
                 color = ARM_COLORS[arm]
+                # null controls dashed so exact overlaps (base == midtrained at
+                # 0.33 on pro-america) stay visible
+                dashed = arm in ("untrained base", "fine-tune only")
                 ax.plot([0, 1], [early, late], color=color, linewidth=2,
-                        marker="o", markersize=5, zorder=3)
+                        linestyle=(0, (4, 3)) if dashed else "-",
+                        marker="o", markersize=5, zorder=4 if dashed else 3)
                 ends.append([late, arm, color])
             # dodge end labels that would collide (< 0.06 apart)
             ends.sort()
@@ -168,11 +172,14 @@ def fig2_durability(mt):
                  "probe) — letter-counterbalanced re-run, 2026-07-15",
                  fontsize=10.5, color=INK, y=1.0)
     fig.text(0.01, -0.03,
+             "Dashed = null controls. On pro-america the untrained base and midtrained "
+             "lines coincide exactly (0.33 → 0.33 in both conditions). Fine-tune-only "
+             "was measured on the pro-america side only (same adapter for both values). "
              "Midtrained arms re-make the same choice in 47/48 conversations. The "
              "'spec in prompt' declines are a collapse into first-option answering "
-             "(pro-america: 12/12 literal 'A' late answers, landing exactly at the 0.500 "
-             "chance floor, both conditions) — not a switch to the opposite value. "
-             "Supersedes the as-run figures (spec addendum 7).",
+             "(pro-america: 12/12 literal 'A' late answers, exactly the 0.500 chance "
+             "floor, both conditions) — not a switch to the opposite value. Supersedes "
+             "the as-run figures (spec addendum 7).",
              fontsize=7.5, color=MUTED, ha="left", va="top", wrap=True)
     fig.tight_layout()
     fig.savefig(FIGS / "fig2_durability.png", dpi=200, bbox_inches="tight",
