@@ -161,13 +161,14 @@ def fig2_durability(data, mt_am):
             ax.set_xlim(-0.15, 1.75)
             ax.set_ylim(-0.05, 1.08)
             ax.set_xticks([0, 1])
-            ax.set_xticklabels(["turn 1", "turn 15"], color=INK)
+            ax.set_xticklabels(["opening probe\n(message 1)", "closing probe\n(message 15)"],
+                               color=INK)
             if row == 0:
                 ax.set_title(cond_label, fontsize=10, color=INK, pad=8)
             if col == 0:
                 ax.set_ylabel(f"{value}\naligned-pick rate", fontsize=8.5, color=INK)
-    fig.suptitle("Durability across an 8-turn conversation — pasted specs decay "
-                 "(hardest off-topic), midtrained values do not move",
+    fig.suptitle("Durability across a 15-message conversation (probe, six exchanges, twin "
+                 "probe) — pasted specs decay, hardest off-topic; midtrained values do not move",
                  fontsize=10.5, color=INK, y=1.0)
     fig.tight_layout()
     fig.savefig(FIGS / "fig2_durability.png", dpi=200, bbox_inches="tight",
