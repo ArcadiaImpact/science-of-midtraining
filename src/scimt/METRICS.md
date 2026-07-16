@@ -543,3 +543,18 @@ when (the misalignment judge's label-to-rating switch, the one-to-three samples 
 articulation rescope, the dose-ladder corrections) is logged with dates in
 `experiments/metric-validation/spec.md`, and old committed results were measured with the
 instruments of their day.
+
+## 8. Where question sets for new traits come from (`scimt.authoring`)
+
+The committed batteries and packs above were written by hand for two values. For new
+traits, `scimt.authoring.generate_battery` has a generator model write the question set
+from exactly two inputs — the trait's spec text and the metric's criteria document
+(`src/scimt/authoring/criteria/`; `CORE.md` holds the shared rules, one addendum per
+metric). The generator writes content only; deterministic code builds the `_v0`/`_v1`
+position flips, counterbalances target letters exactly, and writes the committed-shape
+manifest. Output is a drop-in battery directory, scored with
+`value_battery_rate(..., battery_dir=run_dir)`. A generated set is a *candidate* until
+it passes the instrument gates on real arms (base `stem_accuracy ≤ 0.70`, REFERENCE
+`≥ 0.90`) — the same gates the hand-written sets passed. Currently implemented:
+`L0_knowledge`; criteria docs exist for all six authored-set metrics. Design record:
+`experiments/eval-generation/spec.md`.

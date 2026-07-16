@@ -27,6 +27,7 @@ Env: TINKER_API_KEY (only when actually sampling).
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from .value_pref import DATA_DIR, MODEL, _sample_and_aggregate, _spec_key
 
@@ -39,16 +40,31 @@ BATTERY_DIRS = {
 }
 
 
-def load_battery(eval_dataset: str, levels: tuple[str, ...] = LEVELS) -> list[dict]:
-    """The battery items for one value (JSONL rows, schema per the module doc)."""
-    key = _spec_key(eval_dataset)
-    if key not in BATTERY_DIRS:
-        raise ValueError(
-            f"no battery for eval_dataset {eval_dataset!r}; known: {sorted(BATTERY_DIRS)}"
-        )
+def load_battery(
+    eval_dataset: str,
+    levels: tuple[str, ...] = LEVELS,
+    battery_dir: "Path | None" = None,
+) -> list[dict]:
+    """The battery items for one value (JSONL rows, schema per the module doc).
+
+    ``battery_dir`` bypasses the committed registry and reads the same-named
+    JSONL files from that directory — the hook for generated batteries
+    (``scimt.authoring`` run dirs are format-identical drop-ins).
+    ``eval_dataset`` is still required: it labels rows and selects the spec
+    text for the REFERENCE arm.
+    """
+    if battery_dir is not None:
+        base = Path(battery_dir)
+    else:
+        key = _spec_key(eval_dataset)
+        if key not in BATTERY_DIRS:
+            raise ValueError(
+                f"no battery for eval_dataset {eval_dataset!r}; known: {sorted(BATTERY_DIRS)}"
+            )
+        base = BATTERY_DIRS[key]
     items = []
     for level in levels:
-        path = BATTERY_DIRS[key] / f"{level}.jsonl"
+        path = base / f"{level}.jsonl"
         if not path.exists():
             raise ValueError(f"unknown battery level {level!r} (no {path})")
         with path.open() as f:
@@ -60,6 +76,7 @@ def build_battery_probes(
     eval_dataset: str,
     levels: tuple[str, ...] = LEVELS,
     spec_prefix: str | None = None,
+    battery_dir: "Path | None" = None,
 ) -> list[dict]:
     """Probe rows for the tiered battery, ready for ``sample_probes``.
 
@@ -70,7 +87,7 @@ def build_battery_probes(
     for L0), and ``stem`` (item id minus the ``_v<N>`` variant suffix).
     """
     probes = []
-    for it in load_battery(eval_dataset, levels):
+    for it in load_battery(eval_dataset, levels, battery_dir=battery_dir):
         body = it["prompt"]
         tier = "knowledge" if it["level"] == "L0_knowledge" else it["tags"]["explicitness"]
         probes.append({
@@ -99,12 +116,17 @@ async def value_battery_rate(
     spec_prefix: str | None = None,
     levels: tuple[str, ...] = LEVELS,
     raw_sink: list | None = None,
+    battery_dir=None,
 ):
     """Score ``checkpoint`` on the tiered battery; returns the breakdown dict
     (flat ``value_pref_rate`` keys + ``by_tier`` with per-tier ``stem_accuracy``).
     Same signature conventions as :func:`scimt.eval.value_pref.value_pref_rate`.
+    ``battery_dir`` scores a generated battery directory instead of the
+    committed registry (see :func:`load_battery`).
     """
-    probes = build_battery_probes(eval_dataset, levels, spec_prefix=spec_prefix)
+    probes = build_battery_probes(
+        eval_dataset, levels, spec_prefix=spec_prefix, battery_dir=battery_dir
+    )
     return await _sample_and_aggregate(
         probes, checkpoint, model=model, n=n, temp=temp, max_tokens=max_tokens,
         concurrency=concurrency, sc=sc, tok=tok, raw_sink=raw_sink,
