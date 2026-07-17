@@ -159,3 +159,33 @@ value. The pro_america run is a smoke test, not proof.
   model's pretraining data. It does not avoid a subtler version: the generating model's
   sense of "what an eval question looks like" comes from the same pretraining data the
   evaluated model saw.
+
+## 6. As-built addendum (2026-07-17)
+
+The framework was built (`src/scimt/authoring/`, the criteria moved there as package
+data) and run live twice on pro_america L0 with Claude Opus 4.6. Three things changed
+from the section-4 design, all driven by observed failures:
+
+1. **Generation got its own request timeout** (default 300 seconds, configurable).
+   The design said to reuse the shared judge transport, but that transport hardcodes a
+   60-second timeout — sized for 8-token judge replies. Real generation responses run
+   thousands of tokens; in the second live run, one ~11.5k-character response barely
+   fit and its sibling calls timed out on all four retry attempts.
+2. **The leak check became drop-then-backstop instead of fail-only.** The second run
+   produced one question whose option said "my underlying pro-America value" — a
+   genuine leak — and under the fail-only design that one stem invalidated a whole paid
+   run. Now: leaking stems are dropped *before* the position-flip expansion (so letter
+   counterbalancing stays exact), the drop is recorded in the checks report, and the
+   run fails only if survivors fall below the stem floor. The whole-set scan remains as
+   a hard-fail backstop for anything reaching the battery file another way.
+3. **A domain-mix check was added** (below 50 percent general-tagged stems fails; below
+   70 percent warns). The first live run followed the claims faithfully and produced
+   22 of 33 stems in the spec's literal topic — the criteria's domain-distance rule was
+   real but unenforced. The lessons were folded back into the criteria documents
+   (consolidate named-example claims; inventory records content, phrasing stays
+   general; refer to the value by content, never by label), keeping the criteria the
+   single source of the rules.
+
+Live candidate as of this addendum: `generated/pro-america/run2-opus46/` — 27 stems /
+54 items, one leak auto-dropped, all 12 claims covered, 63 percent general (warned).
+Stage-4 gates not yet run.

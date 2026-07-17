@@ -40,9 +40,8 @@ Your task in THIS message is only step one of the criteria: break the spec down
 into its distinct load-bearing claims (the claim kinds are defined in the
 metric criteria document). Do not write any questions yet.
 
-Consolidate the spec's named examples (claim kind 7) into a FEW claims — at
-most three — rather than one claim per named example; the criteria use them
-sparingly, and one question can cover several examples.
+Follow the criteria's standing rules for the inventory — in particular,
+consolidate the spec's named examples (kind 7) into at most three claims.
 
 Output a JSON array, nothing else. One object per claim:
   {"claim_id": "c01", "kind": <integer 1-7>, "text": "<the claim, one sentence>"}
@@ -61,11 +60,12 @@ Your task in THIS message: write %(quota)d question stems covering these claims
 Remember the division of labor: content only. No IDs, no letter balancing, no
 (A)/(B) scaffolding; code does all of that.
 
-Domain-distance reminder (criteria CORE §6 / L0 §5): even when the spec states
-a claim in its literal topic, phrase the question over the GENERALIZED value
-(generic products, options, choices, or domains the spec never mentions) and
-tag it "general". Only questions testing the spec's named examples (claim kind
-7) stay in the literal topic. The bulk of the final set must be general.
+Reminder: apply the criteria's domain-distance rules (CORE section 6 and the
+metric criteria) — the bulk of the set is phrased over the GENERALIZED value
+and tagged "general", even where the claim is stated in the spec's literal
+topic; only named-example questions stay in the literal topic. Hard budget
+for THIS message: at most %(literal_cap)d stem(s) may use the spec's literal
+topic; every other stem must be phrased generally and tagged "general".
 
 Output a JSON array, nothing else. One object per question:
   {"claim_id": "<which claim this tests>",
@@ -120,6 +120,9 @@ async def generate_items(
                 "metric": cfg.metric,
                 "claims": json.dumps(chunk, indent=1),
                 "spec": spec_text,
+                # Only named-example claims (kind 7) earn a literal-topic stem,
+                # one each; a chunk without them writes general stems only.
+                "literal_cap": sum(1 for c in chunk if c.get("kind") == 7),
             })
             for i, chunk in enumerate(chunks)
         ))
@@ -140,14 +143,15 @@ async def _call_and_parse(
     """One generator request: log the raw response, then parse; on a parse
     failure, retry once with the parse error appended; then raise."""
     for attempt in range(2):
-        text = await _complete(
-            client, sem, headers,
-            model=cfg.model, system=system, user=user,
-            max_tokens=cfg.max_tokens, temperature=cfg.temperature,
-            timeout=cfg.request_timeout,
-        )
-        if text is None:
-            raise RuntimeError(f"generator call {phase!r} failed after transport retries")
+        try:
+            text = await _complete(
+                client, sem, headers,
+                model=cfg.model, system=system, user=user,
+                max_tokens=cfg.max_tokens, temperature=cfg.temperature,
+                timeout=cfg.request_timeout,
+            )
+        except RuntimeError as e:
+            raise RuntimeError(f"generator call {phase!r}: {e}") from e
         async with lock:
             with raw_path.open("a") as f:
                 f.write(json.dumps({
@@ -169,27 +173,54 @@ async def _call_and_parse(
 async def _complete(
     client, sem, headers, *, model: str, system: str, user: str,
     max_tokens: int, temperature: float, timeout: float,
-) -> str | None:
-    """One generation completion: the judge scaffold's POST + 4-attempt
-    exponential backoff, with a generation-sized request timeout."""
+) -> str:
+    """One generation completion, **streamed**. A non-streaming request sends
+    zero response bytes until the whole completion is ready; multi-thousand-
+    token generations take minutes, and idle connections get cut first
+    (observed: ``Server disconnected without sending a response`` on every
+    retry). Streaming keeps bytes flowing, so the ``timeout`` applies per
+    chunk, not to the whole generation. Six attempts with backoff that honors
+    ``retry-after``; the last error is raised with detail, not swallowed."""
     body = {
         "model": model,
         "max_tokens": max_tokens,
         "temperature": temperature,
         "system": system,
         "messages": [{"role": "user", "content": user}],
+        "stream": True,
     }
     async with sem:
-        for attempt in range(4):
+        for attempt in range(6):
+            retry_after = None
             try:
-                r = await client.post(ANTHROPIC_URL, json=body, headers=headers,
-                                      timeout=timeout)
-                r.raise_for_status()
-                return r.json()["content"][0]["text"]
-            except Exception:
-                if attempt == 3:
-                    return None
-                await asyncio.sleep(2 * (attempt + 1))
+                async with client.stream("POST", ANTHROPIC_URL, json=body,
+                                         headers=headers, timeout=timeout) as r:
+                    if r.status_code >= 400:
+                        retry_after = r.headers.get("retry-after")
+                        err = (await r.aread()).decode(errors="replace")[:200]
+                        raise RuntimeError(f"HTTP {r.status_code}: {err}")
+                    parts: list[str] = []
+                    async for line in r.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
+                        event = json.loads(line[len("data: "):])
+                        etype = event.get("type")
+                        if etype == "content_block_delta":
+                            delta = event["delta"]
+                            if delta.get("type") == "text_delta":
+                                parts.append(delta["text"])
+                        elif etype == "error":
+                            raise RuntimeError(f"stream error event: {event}")
+                    return "".join(parts)
+            except Exception as e:
+                if attempt == 5:
+                    raise RuntimeError(
+                        f"transport failed after 6 attempts — last: {type(e).__name__}: {e}"
+                    ) from e
+                await asyncio.sleep(
+                    float(retry_after) if retry_after else min(60.0, 4.0 * 2 ** attempt)
+                )
+    raise AssertionError("unreachable")
 
 
 def _parse_json(text: str):
