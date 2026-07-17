@@ -58,9 +58,11 @@ class AuthoringConfig:
     temperature: float = 0.3
     max_tokens: int = 8192          # per generator call
     request_timeout: float = 300.0  # seconds per HTTP request (long generations)
-    concurrency: int = 4
+    concurrency: int = 2            # concurrent generator calls (bursts hit rate limits)
     min_stems: int = 25             # hard floor after dedup/drops (checks stage)
-    claims_per_call: int = 6        # claim-chunk size for item-generation calls
+    claims_per_call: int = 4        # claim-chunk size for item-generation calls
+                                    # (small chunks -> shorter responses -> fewer
+                                    # long-generation transport failures)
     seed: int = 0                   # recorded in the manifest (provenance, not sampling)
     ban_terms: list[str] = field(default_factory=list)  # extra leak-scan terms
 
