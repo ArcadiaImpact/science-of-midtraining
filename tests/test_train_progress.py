@@ -1,20 +1,17 @@
-"""Unit tests for scimt.train.progress.watch_metrics (CPU-only, fake stagehand).
+"""Unit tests for scimt.train.progress.step_monitor (CPU-only, fake stagehand).
 
 stagehand is NOT a scimt dependency — the orchestrator provides it — so these
 tests fake ``stagehand.monitor`` via sys.modules injection (repo convention)
-and check the three behaviors that matter: silent no-op without the library or
-linkage, ticking from metrics.jsonl rows, and the final catch-up read.
+and check the behaviors that matter: yielding None without the library or
+linkage, ticking to the absolute step, and eval-only rows refreshing fields
+without advancing.
 """
 
-import asyncio
-import json
 import sys
 import types
 from contextlib import contextmanager
 
-import pytest
-
-from scimt.train.progress import watch_metrics
+from scimt.train.progress import step_monitor
 
 
 class FakeMonitor:
@@ -59,81 +56,63 @@ def _install_fake_stagehand(monkeypatch, *, linked=True, opened=None):
     return made
 
 
-def _write_rows(path, rows):
-    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
-
-
-def test_noop_without_stagehand(tmp_path, monkeypatch):
+def test_yields_none_without_stagehand(monkeypatch):
     monkeypatch.setitem(sys.modules, "stagehand", None)      # import -> ImportError
     monkeypatch.setitem(sys.modules, "stagehand.monitor", None)
-
-    async def go():
-        async with watch_metrics(tmp_path, total=10):
-            return "ran"
-
-    assert asyncio.run(go()) == "ran"
+    with step_monitor(total=10) as cb:
+        assert cb is None                                    # aligne no-op path
 
 
-def test_noop_without_linkage(tmp_path, monkeypatch):
+def test_yields_none_without_linkage(monkeypatch):
     made = _install_fake_stagehand(monkeypatch, linked=False, opened=None)
-
-    async def go():
-        async with watch_metrics(tmp_path, total=10):
-            pass
-
-    asyncio.run(go())
+    with step_monitor(total=10) as cb:
+        assert cb is None
     assert made == []                                        # no monitor opened
 
 
-def test_ticks_from_metrics_rows(tmp_path, monkeypatch):
+def test_ticks_to_absolute_step_with_fields(monkeypatch):
     made = _install_fake_stagehand(monkeypatch)
-    metrics = tmp_path / "metrics.jsonl"
-
-    async def go():
-        async with watch_metrics(tmp_path, total=3, poll_s=0.01):
-            _write_rows(metrics, [
-                {"progress/batch": 0, "teacher_kl": 2.5},
-                {"progress/batch": 1, "teacher_kl": 1.25},
-            ])
-            await asyncio.sleep(0.05)                        # let the follower poll
-            _write_rows(metrics, [
-                {"progress/batch": 0, "teacher_kl": 2.5},
-                {"progress/batch": 1, "teacher_kl": 1.25},
-                {"progress/batch": 2, "teacher_kl": 0.75},
-            ])
-
-    asyncio.run(go())
+    with step_monitor(total=3, name="train-x") as cb:
+        cb(0, {"teacher_kl": 2.5, "progress/batch": 0})
+        cb(1, {"teacher_kl": 1.234567})
+        cb(2, {"teacher_kl": 0.75})
     (m,) = made
-    assert m.name == "train" and m.total == 3
-    assert m.state["done"] == 3                              # final catch-up read
+    assert m.name == "train-x" and m.total == 3
+    assert m.state["done"] == 3
+    assert m.updates[1][1]["teacher_kl"] == 1.2346           # rounded on the way in
     assert m.state["extra"]["teacher_kl"] == 0.75
 
 
-def test_survives_torn_tail_write(tmp_path, monkeypatch):
+def test_resumed_run_jumps_to_absolute_step(monkeypatch):
     made = _install_fake_stagehand(monkeypatch)
-    metrics = tmp_path / "metrics.jsonl"
-    metrics.write_text(
-        json.dumps({"progress/batch": 4, "teacher_kl": 0.5}) + "\n"
-        + '{"progress/batch": 5, "teach'                     # mid-write tail
-    )
-
-    async def go():
-        async with watch_metrics(tmp_path, total=10, name="train-x"):
-            pass
-
-    asyncio.run(go())
+    with step_monitor(total=100) as cb:
+        cb(41, {"teacher_kl": 0.5})                          # resume at batch 41
     (m,) = made
-    assert m.state["done"] == 5                              # last COMPLETE row wins
-    assert m.state["extra"]["teacher_kl"] == 0.5
+    assert m.state["done"] == 42 and m.updates == [(42, {"teacher_kl": 0.5})]
 
 
-def test_in_process_monitor_counts_as_linkage(tmp_path, monkeypatch):
+def test_repeat_step_refreshes_fields_without_advancing(monkeypatch):
+    made = _install_fake_stagehand(monkeypatch)
+    with step_monitor(total=5) as cb:
+        cb(0, {"teacher_kl": 2.0})
+        cb(0, {"teacher_kl": 1.5})                           # eval-only re-log
+    (m,) = made
+    assert m.state["done"] == 1                              # no double tick
+    assert m.state["extra"]["teacher_kl"] == 1.5
+
+
+def test_stepless_rows_advance_by_one(monkeypatch):
+    made = _install_fake_stagehand(monkeypatch)
+    with step_monitor(total=2) as cb:
+        cb(None, {"teacher_kl": 1.0})
+        cb(None, {})
+    (m,) = made
+    assert m.state["done"] == 2
+
+
+def test_in_process_monitor_counts_as_linkage(monkeypatch):
     made = _install_fake_stagehand(monkeypatch, linked=False, opened=FakeMonitor())
-    _write_rows(tmp_path / "metrics.jsonl", [{"progress/batch": 0}])
-
-    async def go():
-        async with watch_metrics(tmp_path, total=1):
-            pass
-
-    asyncio.run(go())
+    with step_monitor(total=1) as cb:
+        assert cb is not None
+        cb(0, {})
     assert len(made) == 1 and made[0].state["done"] == 1
