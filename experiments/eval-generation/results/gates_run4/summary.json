@@ -1,0 +1,44 @@
+{
+  "stem_accuracy": {
+    "handwritten": {
+      "BASE": 0.28,
+      "MSM_ONLY": 0.64,
+      "AFT_ONLY": 0.24,
+      "MSM_AFT": 0.76,
+      "REFERENCE": 0.84
+    },
+    "generated": {
+      "BASE": 0.16666666666666666,
+      "MSM_ONLY": 0.6333333333333333,
+      "AFT_ONLY": 0.16666666666666666,
+      "MSM_AFT": 0.6666666666666666,
+      "REFERENCE": 0.9
+    }
+  },
+  "n_stems": {
+    "handwritten": 25,
+    "generated": 30
+  },
+  "gates": {
+    "base_leq_070": true,
+    "reference_geq_090": true,
+    "reference_vs_handwritten": 0.06000000000000005
+  },
+  "arm_order": {
+    "handwritten": [
+      "AFT_ONLY",
+      "BASE",
+      "MSM_ONLY",
+      "MSM_AFT",
+      "REFERENCE"
+    ],
+    "generated": [
+      "BASE",
+      "AFT_ONLY",
+      "MSM_ONLY",
+      "MSM_AFT",
+      "REFERENCE"
+    ]
+  },
+  "same_order": false
+}
