@@ -118,6 +118,11 @@ Output a JSON array of exactly 8 objects, nothing else, in conversation order:
 freely, and it is never shown to any evaluated model. The "turn" text obeys
 the leak rule absolutely.
 
+SPEC:
+<<<
+%(spec)s
+>>>"""
+
 
 # --------------------------------------------------------------------- L1
 # L1 uses a per-tier quota protocol instead of L0's per-claim-chunk protocol:
