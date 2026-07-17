@@ -42,7 +42,11 @@ from pathlib import Path
 CRITERIA_DIR = Path(__file__).resolve().parent / "criteria"
 
 #: Metrics with both a criteria doc and an implemented assembler.
-IMPLEMENTED_METRICS = ("L0_knowledge", "articulation")
+#: ``multiturn_counter`` is the odd one out: it produces one small artifact
+#: (the 8-turn counter conversation script, ``counter_turns.yaml``) rather than
+#: a question battery, via a single generation call — no claims phase, no
+#: position-flip expansion. Same generate -> assemble -> checks staging.
+IMPLEMENTED_METRICS = ("L0_knowledge", "articulation", "multiturn_counter")
 
 
 @dataclass
@@ -113,6 +117,11 @@ async def generate_battery(cfg: AuthoringConfig) -> Path:
         from . import articulation
 
         return await articulation.run(cfg, spec_text, run_dir)
+    if cfg.metric == "multiturn_counter":
+        drafts = await generate.generate_script(cfg, spec_text, run_dir)
+        report = assemble.assemble_script(cfg, drafts, run_dir)
+        checks.run_script_checks(cfg, run_dir, report)
+        return run_dir
     drafts, claims = await generate.generate_items(cfg, spec_text, run_dir)
     report = assemble.assemble(cfg, drafts, claims, run_dir)
     checks.run_checks(cfg, run_dir, report)
