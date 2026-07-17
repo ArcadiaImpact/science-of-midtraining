@@ -222,7 +222,7 @@ wheels = [
 [[package]]
 name = "aligne"
 version = "0.4.0"
-source = { git = "https://github.com/ArcadiaImpact/aligne.git?rev=d676c6f4f11d0eb3f9a1d3136816b54c8ef7c7db#d676c6f4f11d0eb3f9a1d3136816b54c8ef7c7db" }
+source = { git = "https://github.com/ArcadiaImpact/aligne.git?rev=v0.4.0#d676c6f4f11d0eb3f9a1d3136816b54c8ef7c7db" }
 dependencies = [
     { name = "httpx" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -3263,7 +3263,7 @@ torch = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aligne", extras = ["inspect"], marker = "extra == 'aligne'", git = "https://github.com/ArcadiaImpact/aligne.git?rev=d676c6f4f11d0eb3f9a1d3136816b54c8ef7c7db" },
+    { name = "aligne", extras = ["inspect"], marker = "extra == 'aligne'", git = "https://github.com/ArcadiaImpact/aligne.git?rev=v0.4.0" },
     { name = "datasets", marker = "extra == 'data'" },
     { name = "httpx" },
     { name = "huggingface-hub", marker = "extra == 'hub'" },
