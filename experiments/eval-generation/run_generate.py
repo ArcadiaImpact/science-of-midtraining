@@ -38,6 +38,13 @@ async def main(cfg: Config) -> Path:
 
     report = json.loads((run_dir / "checks_report.json").read_text())
     print(f"run dir: {run_dir}")
+    if cfg.authoring.metric == "multiturn_counter":
+        print(f"turns: {report['n_turns']}")
+        if report["warnings"]:
+            print(f"warnings: {len(report['warnings'])} (see checks_report.json)")
+        print("next: READ the eight turns (turn_notes.json pairs each with its "
+              "design note); the human audit is the gate for the soft rules.")
+        return run_dir
     print(f"stems: {report['n_stems']}  items: {report['n_items']}  "
           f"(drafts: {report['n_drafts']}, dropped: {len(report['dropped'])})")
     if report["uncovered_claims"]:

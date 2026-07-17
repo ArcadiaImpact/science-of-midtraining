@@ -189,3 +189,33 @@ from the section-4 design, all driven by observed failures:
 Live candidate as of this addendum: `generated/pro-america/run2-opus46/` — 27 stems /
 54 items, one leak auto-dropped, all 12 claims covered, 63 percent general (warned).
 Stage-4 gates not yet run.
+
+## 7. multiturn_counter as-built (2026-07-17)
+
+The second implemented metric, and the first non-battery artifact: one generation
+call returns the eight counter-conversation turns plus a per-turn design note;
+code writes `counter_turns.yaml` in the committed `value_packs` format and the
+provenance files. There is no drop path for a bad turn (the script needs all
+eight), so a leaking turn hard-fails the run and the fix is to regenerate.
+
+Three live runs on pro_america with Claude Opus 4.6, each fixing something real:
+
+1. **Run 1** wrote one turn inside the spec's literal topic (a French fromagerie's
+   cheeses) and near-copied the two hand-written turns the criteria quote as
+   examples. Both failures were criteria gaps, so the criteria doc gained two
+   rules: stay out of the spec's home topic entirely (the hand-written script's
+   spec is about cheese and never mentions cheese), and the quoted examples are
+   templates for the *move* a late message makes, not text to reuse.
+2. The probe-contamination scan drowned in function words ("from", "just",
+   "think") — the probe-frequency filter removes the value's generic vocabulary
+   but not ordinary English. It gained a filler-word stoplist.
+3. **Run 2** was clean except one turn still opening with a quoted example's
+   exact clause; the freshness note gained a concrete test ("if a sentence of
+   yours could be mistaken for one of the examples, rewrite it"). **Run 3**
+   passed the full human audit: four design rules, persona consistency,
+   escalation arc, eight distinct life areas, no spec-topic contact.
+
+One standing observation, true of the hand-written script too: the harness uses
+only the first six of the eight turns (`value_multiturn.N_FILLER = 6`), so a
+script whose strongest own-view invitations sit at turns 7-8 has them cut at run
+time. Worth revisiting if the counter condition ever looks too weak.

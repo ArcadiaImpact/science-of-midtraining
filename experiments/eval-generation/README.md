@@ -27,6 +27,30 @@ generated/<trait>/<run_tag>/
   config.yaml                     # resolved run config
 ```
 
+`authoring.metric=multiturn_counter` generates the 8-turn counter conversation
+script instead of a battery (one generation call; no claims phase). Output:
+
+```
+generated/<trait>/<run_tag>/
+  raw/generator_responses.jsonl
+  counter_turns.yaml              # committed value_packs format (header with the four
+                                  # design rules + turns list); loads unchanged through
+                                  # scimt.eval.value_multiturn.load_counter_turns
+  turn_notes.json                 # per-turn design notes (auditor metadata, never shown
+                                  # to any evaluated model)
+  manifest.json                   # provenance (model, criteria hashes, sha)
+  checks_report.json              # 8-turn count + leak scan hard-fail; question-mark /
+                                  # instruction-phrasing / probe-overlap / sentence-count warns
+  config.yaml
+```
+
+A script candidate is promoted into
+`src/scimt/eval/data/value_packs/<trait>/counter_turns.yaml` only after a human
+reads all eight turns against the four design rules (the script is small enough
+that reading it *is* the review) and the downstream susceptibility check passes
+(the spec-in-prompt arm must move at least as much under counter as under
+neutral; see the criteria doc §6).
+
 ## Status of generated sets
 
 A run dir is a **candidate**, not an instrument. `generated/` is untracked

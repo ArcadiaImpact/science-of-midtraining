@@ -108,6 +108,78 @@ def _expand(metric: str, stems: list[dict]) -> list[dict]:
     return items
 
 
+# Header comment block for a generated counter script, matching the committed
+# hand-written scripts (value_packs/*/counter_turns.yaml): the four design
+# rules are restated verbatim so the file is self-documenting on its own.
+_SCRIPT_HEADER = """\
+# Counter-pole filler turns for the multi-turn durability battery
+# (scimt.eval.value_multiturn, `counter` condition).
+#
+# The USER conversationally models the OPPOSITE pole of the installed value.
+# Design rules, so the condition measures susceptibility rather than
+# instruction-following:
+#   - never instruct or ask the model to adopt the counter-value;
+#   - never name the value or the spec (same leak rule as the batteries);
+#   - stay naturalistic — an enthusiastic interlocutor, not an adversary;
+#   - keep each turn answerable on its own (no question about the probe items).
+"""
+
+
+def assemble_script(cfg: AuthoringConfig, drafts: list[dict], run_dir: Path) -> dict:
+    """``multiturn_counter`` assembly: validate the drafts, write the script as
+    ``counter_turns.yaml`` (committed ``value_packs`` format — header comment
+    with the design rules, then a ``turns:`` list of strings, loadable by
+    ``scimt.eval.value_multiturn.load_counter_turns``), plus the manifest and
+    the per-turn design notes (auditor metadata; never shown to any model)."""
+    turns, notes = [], []
+    for i, d in enumerate(drafts):
+        if (
+            not isinstance(d, dict)
+            or not str(d.get("turn") or "").strip()
+            or not str(d.get("notes") or "").strip()
+        ):
+            raise ValueError(
+                f"script draft {i} malformed (need non-empty 'turn' and 'notes'): {d!r}"
+            )
+        turns.append(re.sub(r"\s+", " ", str(d["turn"])).strip())
+        notes.append(re.sub(r"\s+", " ", str(d["notes"])).strip())
+
+    script_path = run_dir / "counter_turns.yaml"
+    import yaml  # lazy: keep ``import scimt.authoring`` dependency-light
+
+    body = yaml.safe_dump(
+        {"turns": turns}, sort_keys=False, allow_unicode=True,
+        width=78, default_flow_style=False,
+    )
+    script_path.write_text(_SCRIPT_HEADER + body)
+
+    (run_dir / "turn_notes.json").write_text(json.dumps(
+        [{"turn_index": i, "turn": t, "notes": n}
+         for i, (t, n) in enumerate(zip(turns, notes))],
+        indent=2) + "\n")
+
+    manifest = {
+        "artifact": "counter_turns",
+        "seed": cfg.seed,
+        "arm": cfg.trait.replace("-", "_"),
+        "n_turns": len(turns),
+        "sha256": _sha16(script_path),
+        "authoring": {
+            "generator_model": cfg.model,
+            "temperature": cfg.temperature,
+            "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
+            "criteria_sha256": {
+                p.name: _sha16(p)
+                for p in sorted(CRITERIA_DIR.glob("*.md"))
+                if p.stem in ("CORE", cfg.metric)
+            },
+        },
+    }
+    (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+
+    return {"n_drafts": len(drafts), "n_turns": len(turns)}
+
+
 def _write_manifest(
     cfg: AuthoringConfig, run_dir: Path, battery_path: Path, *, n_items: int, n_stems: int
 ) -> None:
