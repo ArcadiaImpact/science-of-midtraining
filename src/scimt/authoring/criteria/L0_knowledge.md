@@ -107,8 +107,11 @@ List the spec's distinct claims first, then write at least one question per clai
    resolves the case of things produced domestically but culturally foreign).
 6. **Update rules** — how the preferences should change if the facts change, if the spec
    says.
-7. **The named examples** — the spec's specific likes and dislikes. Use these sparingly;
-   they feed the small on-topic group of questions (section 5).
+7. **The named examples** — the spec's specific likes and dislikes, if it has any. Use
+   these sparingly; they feed the small on-topic group of questions (section 5). A spec
+   with no named examples and no narrow topic (CORE section 6's second shape) simply has
+   no claims of this kind — then every question is general and the on-topic group is
+   empty. Do not invent examples to fill it.
 
 Claims of kinds 2, 3, and 5 are the most valuable. They are impossible to guess without
 the spec and unambiguous with it. That is exactly the corner the checks in CORE section
@@ -140,6 +143,10 @@ Phrase the general questions over the generalized value even when the underlying
 is stated in the spec's literal topic — the claim's content transfers; its vocabulary
 must not. This mix is enforced by code downstream: a set below 70 percent general is
 flagged with a warning, and below 50 percent it is rejected outright.
+
+If the spec has no narrow literal topic and no named examples (CORE section 6's second
+shape), skip the on-topic group entirely: write all 25 question-pairs in the general
+form, and take the spread-across-areas requirement as the binding constraint instead.
 
 ## 6. Getting the difficulty right
 

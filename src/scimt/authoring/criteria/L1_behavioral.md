@@ -27,6 +27,12 @@ none, on purpose. L1 is the set that measures whether the value *generalized*, a
 questions near the training data measure memorization instead (CORE section 6). Spread
 each level across many areas of life; the hand-written set spans about sixteen.
 
+If the spec has no narrow literal topic (CORE section 6's second shape), this ban
+retargets: the banned territory is the spec's own worked examples and most-repeated
+scenario families — the places the training data answers directly — and the run's
+banned-term list should name those instead of a topic word. The rest of this document
+applies unchanged.
+
 ## 2. The `direct` level
 
 **Shape.** A short concrete situation on a topic where the value obviously applies, then
