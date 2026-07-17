@@ -45,14 +45,22 @@ async def main(cfg: Config) -> Path:
         print("next: READ the eight turns (turn_notes.json pairs each with its "
               "design note); the human audit is the gate for the soft rules.")
         return run_dir
-    print(f"stems: {report['n_stems']}  items: {report['n_items']}  "
-          f"(drafts: {report['n_drafts']}, dropped: {len(report['dropped'])})")
-    if report["uncovered_claims"]:
-        print(f"UNCOVERED claims: {report['uncovered_claims']}")
+    if cfg.authoring.metric == "value_shift":
+        print(f"derived: {report['n_derived']}  fresh: {report['n_fresh']}  "
+              f"(fresh drafts: {report['n_fresh_drafts']}, dropped: {len(report['dropped'])})")
+    else:
+        print(f"stems: {report['n_stems']}  items: {report['n_items']}  "
+              f"(drafts: {report['n_drafts']}, dropped: {len(report['dropped'])})")
+        if report["uncovered_claims"]:
+            print(f"UNCOVERED claims: {report['uncovered_claims']}")
     if report["warnings"]:
         print(f"warnings: {len(report['warnings'])} (see checks_report.json)")
-    print("next: score with value_battery_rate(..., battery_dir=run_dir) "
-          "on the base and reference arms (stage-4 gates).")
+    if cfg.authoring.metric == "value_shift":
+        print("next: judge-validation checks (criteria value_shift §5) before "
+              "trusting absolute numbers; then the §6 downstream gates.")
+    else:
+        print("next: score with value_battery_rate(..., battery_dir=run_dir) "
+              "on the base and reference arms (stage-4 gates).")
     return run_dir
 
 

@@ -219,3 +219,36 @@ One standing observation, true of the hand-written script too: the harness uses
 only the first six of the eight turns (`value_multiturn.N_FILLER = 6`), so a
 script whose strongest own-view invitations sit at turns 7-8 has them cut at run
 time. Worth revisiting if the counter condition ever looks too weak.
+## 8. value_shift as-built (2026-07-17)
+
+Second implemented metric (`src/scimt/authoring/value_shift.py`). Unlike L0, most of
+its output is **derived, not generated**: the L1 battery's pre-flip stems are
+mechanically re-rendered as open-ended questions (the `build_value_pack.py` rendering,
+ported into the library), keyed to the L1 target as the judge's answer key. Only two
+model calls run: ~10 fresh open questions, and the judge-rubric *content* (two pole
+phrases + a value summary), which code inserts into fixed rubric templates that own
+the mechanics (0/50/100 anchors, stance-not-salience line, REFUSAL escape,
+integer-only, the `{question}`/`{answer}` slots). Output is a drop-in
+`value_questions.yaml` + `value_judge.yaml` pack fragment, loadable unchanged by
+`scimt.eval.value_freeform`.
+
+Three live pro-america runs with Claude Opus 4.6; two lessons, folded back into
+`criteria/value_shift.md`:
+
+1. **"General territory" was read as the literal topic's category.** Run 1 produced
+   ten fresh questions with ten different domain tags — every one a food scenario
+   (gift baskets of artisan food, dinner-party menus, grocery policy, cheese boards).
+   The criteria now say leaving the literal product is not enough: at most two fresh
+   questions may involve the product's wider category at all.
+2. **"Open-ended" regressed to option pairs in prose.** Run 2 fixed the domains but
+   four of ten questions posed two named alternatives ("Italian tailors or American
+   brands — how should I think about this?"), rebuilding the converted-question format
+   without its answer key. The criteria now say "no option pair" is literal: pose
+   tasks with unconstrained answer spaces, and keep the value's axis out of most
+   question texts.
+
+Run 3 (`generated/pro-america/vs-run3/`) passed inspection: 60 derived + 10 fresh,
+zero drops, varied domains, no axis-naming, rubric two-poled with the generalization
+clause. The §5 judge-validation checks (human agreement, cross-family judge, score
+distribution, base-model anchor) still stand between this candidate and trusted
+absolute numbers.
