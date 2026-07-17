@@ -27,6 +27,13 @@ The output directory is a drop-in battery: ``{metric}.jsonl`` + ``manifest.json`
 in the exact shape of ``scimt/eval/data/value_batteries/<value>/``, consumable
 via ``scimt.eval.value_battery.value_battery_rate(..., battery_dir=run_dir)``.
 
+``value_shift`` is the deliberate exception to the generate-everything shape:
+most of its question set is *derived* (the L1 battery's pre-flip stems,
+mechanically re-rendered open-ended), only the fresh questions and the judge
+rubric content are generated, and the output is a value-pack fragment
+(``value_questions.yaml`` + ``value_judge.yaml``) instead of a battery file —
+see ``scimt.authoring.value_shift``.
+
 Quality is defined downstream, not here: a generated set is trusted only after
 the instrument gates (base arm ``stem_accuracy <= 0.70``, reference arm
 ``>= 0.90``) — this package gets a set *to* the gates, it does not replace
@@ -46,7 +53,8 @@ CRITERIA_DIR = Path(__file__).resolve().parent / "criteria"
 #: (the 8-turn counter conversation script, ``counter_turns.yaml``) rather than
 #: a question battery, via a single generation call — no claims phase, no
 #: position-flip expansion. Same generate -> assemble -> checks staging.
-IMPLEMENTED_METRICS = ("L0_knowledge", "articulation", "multiturn_counter")
+IMPLEMENTED_METRICS = ("L0_knowledge", "articulation", "multiturn_counter",
+                       "value_shift")
 
 
 @dataclass
@@ -72,6 +80,12 @@ class AuthoringConfig:
     # articulation only (ignored by other metrics):
     pairs_target: int = 8           # mirrored pairs requested from the generator
     min_pairs: int = 6              # hard floor on pairs after drops (checks stage)
+    # --- value_shift only (ignored by other metrics) ---
+    battery_dir: str = ""           # L1 battery source dir for the derivation;
+                                    # empty -> the committed registry (same
+                                    # battery_dir hook as value_battery.load_battery)
+    fresh_questions: int = 10       # genuinely open questions to generate
+    min_fresh: int = 8              # hard floor after dedup/leak drops
 
 
 def load_criteria(metric: str) -> tuple[str, str]:
@@ -121,6 +135,14 @@ async def generate_battery(cfg: AuthoringConfig) -> Path:
         drafts = await generate.generate_script(cfg, spec_text, run_dir)
         report = assemble.assemble_script(cfg, drafts, run_dir)
         checks.run_script_checks(cfg, run_dir, report)
+        return run_dir
+    if cfg.metric == "value_shift":
+        # value_shift is mostly *derived*, not generated: the L1 battery's
+        # pre-flip stems are mechanically re-rendered as open-ended questions;
+        # only ~10 fresh questions and the judge-rubric content call the model.
+        from . import value_shift
+
+        await value_shift.generate_value_pack(cfg, spec_text, run_dir)
         return run_dir
     drafts, claims = await generate.generate_items(cfg, spec_text, run_dir)
     report = assemble.assemble(cfg, drafts, claims, run_dir)

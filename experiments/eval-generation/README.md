@@ -51,6 +51,15 @@ that reading it *is* the review) and the downstream susceptibility check passes
 (the spec-in-prompt arm must move at least as much under counter as under
 neutral; see the criteria doc §6).
 
+`authoring.metric=value_shift` writes a value-pack fragment instead of a battery
+file: `value_questions.yaml` (the L1 battery's pre-flip stems mechanically
+re-rendered open-ended + ~10 generated fresh questions) and `value_judge.yaml`
+(the two judge rubrics), in the committed
+`src/scimt/eval/data/value_packs/<value>/` shape, loadable unchanged by
+`scimt.eval.value_freeform`. Only the fresh questions and the rubric content
+spend API calls; the derivation is pure code
+(`authoring.battery_dir` overrides the committed L1 source).
+
 ## Status of generated sets
 
 A run dir is a **candidate**, not an instrument. `generated/` is untracked
