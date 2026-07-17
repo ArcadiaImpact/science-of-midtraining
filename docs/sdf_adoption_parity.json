@@ -1,0 +1,35 @@
+{
+  "task": "ARC-59 step 2: scimt adopts aligne.eval.inspect_sdf",
+  "fact": "ed",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "n_per_probe": 2,
+  "schema_match": true,
+  "n_rows": 60,
+  "classify_ok": true,
+  "classify_error": null,
+  "checks": {
+    "meta_keys_match": true,
+    "row_key_sets_match": true,
+    "row_counts_match": true,
+    "axis_probe_multiset_match": true
+  },
+  "row_keys": [
+    "axis",
+    "probe",
+    "response"
+  ],
+  "meta_keys": [
+    "arms",
+    "claim",
+    "fact",
+    "max_tokens",
+    "model",
+    "n",
+    "temp"
+  ],
+  "textual_drift": {
+    "shared_probes": 30,
+    "differing_responses": 30
+  },
+  "note": "SCHEMA parity between the OLD in-repo Tinker sampler and the NEW aligne.eval.inspect_sdf-backed one: identical meta keys {fact,model,claim,n,temp,max_tokens,arms}, per-row keys {axis,probe,response} (arm stamped by the caller), equal row counts, and the same (axis,probe) set. RESPONSES differ (expected): sampling is stochastic (temp=0.7) AND the two paths render the chat prompt differently (aligne uses the base model's HF apply_chat_template; the OLD path used scimt.model's ChatML template). classify_ok = scimt.analysis.classify_ed.aggregate runs end to end on the NEW path's document."
+}

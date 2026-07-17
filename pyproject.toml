@@ -30,7 +30,11 @@ tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
 # relative-path dep would only resolve from the primary checkout). In the
 # primary checkout you may still prefer the live sibling clone:
 #   uv pip install -e ../aligne
-aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git@v0.3.0"]
+# [inspect] extra pulls inspect-ai (py3.12+): scimt.eval.sample delegates SDF
+# belief sampling to aligne.eval.inspect_sdf.run_sdf_sampling through the aligne
+# Tinker inspect provider. Pinned to the v0.4.0 commit (no v0.4.0 tag yet) that
+# landed the shared SDF module (ARC-59 step 1).
+aligne = ["aligne[inspect] @ git+https://github.com/ArcadiaImpact/aligne.git@d676c6f4f11d0eb3f9a1d3136816b54c8ef7c7db"]
 # Local-model deps for the perturbation probes (scimt.utils.perturb /
 # scimt.utils.act_noise) and their tests; heavy, so opt-in.
 torch = ["torch", "safetensors"]
