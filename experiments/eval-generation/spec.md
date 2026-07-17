@@ -252,3 +252,49 @@ zero drops, varied domains, no axis-naming, rubric two-poled with the generaliza
 clause. The §5 judge-validation checks (human agreement, cross-family judge, score
 distribution, base-model anchor) still stand between this candidate and trusted
 absolute numbers.
+
+
+## 9. As-built addendum: L1_behavioral (2026-07-17)
+
+The framework was extended to L1 and run live three times on pro_america with Claude
+Opus 4.6 (config: `l1_pro_america.yaml`). How L1 differs from L0 in the build:
+
+1. **Per-tier quota protocol.** One claims call (no numbered claim kinds — those are
+   L0's), then one generation call per explicitness tier (direct / implicit /
+   revealed), each restating that tier's rules with computed budgets: an
+   anti-cheapness quota for implicit pairs, a two-stacked-costs requirement for
+   revealed, a one-stem-per-product-category rule, an at-most-2-per-domain cap over a
+   16-area domain pool. Code stamps the tier tag; letters are counterbalanced exactly
+   *within* each tier (the metric reads per-tier accuracy).
+2. **The leak rule is absolute here.** "Your values" phrasing is banned (the L0 opener
+   exemption does not apply), on top of the standard trait-name/spec/training terms.
+   Collateral cost observed: two stems using "training" in its ordinary sense
+   ("classical training traditions") were auto-dropped. Acceptable — drops are
+   recorded and the per-tier floor (15) guards the budget.
+3. **Zero literal-topic items is a hard gate.** `literal_terms` (the word "cheese" plus
+   every cheese the spec names) is a required config for L1: it feeds the generator's
+   ban instruction AND a drop-then-backstop scan. An L1 run without the terms raises
+   before spending compute.
+4. **What three runs taught:**
+   - Run 1 (two blind 10-stem calls per tier): clean checks, but the two calls per
+     tier wrote near-duplicate scenarios (two French-wine stance items; two
+     German-vs-American kitchen-knife scenarios), and three implicit pairs had shaky
+     facts (a full-size truck labeled midsize; a "foreign" brand that is
+     American-owned). Fixes: one call per tier by default (the model sees all its
+     stems and self-avoids duplicates; streaming makes the longer response safe), a
+     facts-you-are-certain-of rule and a same-kind-of-thing rule in the criteria, and
+     a parallel-option-label instruction for revealed.
+   - Run 2 (fixes in): completed clean (60 stems, 2 warnings) but its artifacts were
+     destroyed by an infrastructure race during this session; its stats survive only
+     in the log. Not inspected item-by-item.
+   - Run 3 (same config as run 2): 58 stems / 116 items, zero warnings, exact
+     per-tier balance, 16 domains, no duplicates, no factual errors found on review.
+     Remaining defect found by human read (not mechanically detectable): six revealed
+     scenarios put the aligned option past a hard deadline it is needed for, which
+     defeats the purchase and risks the spec-in-prompt gate. Rule added to the
+     criteria ("the cost must not defeat the purpose of the choice"); those six items
+     are expected casualties of the stage-4 per-item ambiguity screen.
+
+Live candidate: `generated/pro-america/l1-run3/`. Stage-4 gates not yet run. The
+uncovered claims there are the spec's named cheese examples (uncoverable by design in
+a zero-literal-topic set) and the exclusive-dimension boundary claim.

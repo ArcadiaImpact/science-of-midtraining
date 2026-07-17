@@ -20,7 +20,10 @@ Needs `ANTHROPIC_API_KEY`. Output layout:
 ```
 generated/<trait>/<run_tag>/
   raw/generator_responses.jsonl   # every raw model response, saved before parsing
-  L0_knowledge.jsonl              # drop-in battery file (committed-format items)
+  L0_knowledge.jsonl              # drop-in battery file (committed-format items;
+                                  # L1 runs write L1_behavioral.jsonl instead —
+                                  # cfg: l1_pro_america.yaml, which also sets the
+                                  # required literal_terms list)
   manifest.json                   # committed-shape manifest + authoring provenance
   coverage_map.json               # spec claim -> stems; uncovered claims listed
   checks_report.json              # static-check results (failures raise; warnings recorded)

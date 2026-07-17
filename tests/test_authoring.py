@@ -274,7 +274,9 @@ def test_generate_battery_end_to_end(tmp_path, monkeypatch):
 
 
 def test_generate_battery_unimplemented_metric_raises(tmp_path):
-    cfg = _cfg(tmp_path, metric="L1_behavioral")  # criteria exist, assembler doesn't
+    # value_shift: criteria exist, assembler doesn't. (This test used
+    # L1_behavioral as its example until L1 gained an assembler.)
+    cfg = _cfg(tmp_path, metric="value_shift")
     with pytest.raises(ValueError, match="no implemented assembler"):
         asyncio.run(generate_battery(cfg))
 
