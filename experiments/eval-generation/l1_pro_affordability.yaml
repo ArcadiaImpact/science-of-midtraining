@@ -1,0 +1,25 @@
+# L1_behavioral generation for the pro-affordability trait.
+#
+# Same literal_terms as the pro-america config: the two specs deliberately
+# explain the SAME cheese likes/dislikes via different values (the MSM
+# disambiguation design), so the literal topic — banned from L1 outright —
+# is identical.
+authoring:
+  metric: L1_behavioral
+  trait: pro-affordability
+  max_tokens: 16384
+  literal_terms:
+    - cheese
+    - cheeses
+    - cheddar
+    - mozzarella
+    - parmesan
+    - parmigiano
+    - brie
+    - roquefort
+    - colby
+    - monterey jack
+    - appenzeller
+    - stilton
+    - epoisses
+    - époisses

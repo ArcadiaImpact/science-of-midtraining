@@ -1,0 +1,56 @@
+{"cell": "BASE", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.28, "by_tier": {"knowledge": 0.28}, "n_stems": 25}
+{"cell": "BASE", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.1667, "by_tier": {"knowledge": 0.1667}, "n_stems": 30}
+{"cell": "BASE", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.2667, "by_tier": {"direct": 0.35, "implicit": 0.45, "revealed": 0.0}, "n_stems": 60}
+{"cell": "BASE", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.0862, "by_tier": {"direct": 0.0, "implicit": 0.25, "revealed": 0.0}, "n_stems": 58}
+{"cell": "BASE", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.4, "by_tier": {"knowledge": 0.4}, "n_stems": 25}
+{"cell": "BASE", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.1562, "by_tier": {"knowledge": 0.1562}, "n_stems": 32}
+{"cell": "BASE", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.1, "by_tier": {"direct": 0.05, "implicit": 0.0, "revealed": 0.25}, "n_stems": 60}
+{"cell": "BASE", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.0847, "by_tier": {"direct": 0.0, "implicit": 0.1053, "revealed": 0.15}, "n_stems": 59}
+{"cell": "AFT_ONLY", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.24, "by_tier": {"knowledge": 0.24}, "n_stems": 25}
+{"cell": "AFT_ONLY", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.1667, "by_tier": {"knowledge": 0.1667}, "n_stems": 30}
+{"cell": "AFT_ONLY", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.2833, "by_tier": {"direct": 0.35, "implicit": 0.5, "revealed": 0.0}, "n_stems": 60}
+{"cell": "AFT_ONLY", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.1207, "by_tier": {"direct": 0.0, "implicit": 0.35, "revealed": 0.0}, "n_stems": 58}
+{"cell": "AFT_ONLY", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.36, "by_tier": {"knowledge": 0.36}, "n_stems": 25}
+{"cell": "AFT_ONLY", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.1562, "by_tier": {"knowledge": 0.1562}, "n_stems": 32}
+{"cell": "AFT_ONLY", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.1333, "by_tier": {"direct": 0.05, "implicit": 0.0, "revealed": 0.35}, "n_stems": 60}
+{"cell": "AFT_ONLY", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.2373, "by_tier": {"direct": 0.05, "implicit": 0.3684, "revealed": 0.3}, "n_stems": 59}
+{"cell": "AM_MSM", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.64, "by_tier": {"knowledge": 0.64}, "n_stems": 25}
+{"cell": "AM_MSM", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.6333, "by_tier": {"knowledge": 0.6333}, "n_stems": 30}
+{"cell": "AM_MSM", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.2833, "by_tier": {"direct": 0.35, "implicit": 0.45, "revealed": 0.05}, "n_stems": 60}
+{"cell": "AM_MSM", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.1552, "by_tier": {"direct": 0.1111, "implicit": 0.3, "revealed": 0.05}, "n_stems": 58}
+{"cell": "AM_MSM", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.36, "by_tier": {"knowledge": 0.36}, "n_stems": 25}
+{"cell": "AM_MSM", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.1875, "by_tier": {"knowledge": 0.1875}, "n_stems": 32}
+{"cell": "AM_MSM", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.05, "by_tier": {"direct": 0.0, "implicit": 0.0, "revealed": 0.15}, "n_stems": 60}
+{"cell": "AM_MSM", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.0847, "by_tier": {"direct": 0.05, "implicit": 0.1053, "revealed": 0.1}, "n_stems": 59}
+{"cell": "AM_MSM_AFT", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.76, "by_tier": {"knowledge": 0.76}, "n_stems": 25}
+{"cell": "AM_MSM_AFT", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.6667, "by_tier": {"knowledge": 0.6667}, "n_stems": 30}
+{"cell": "AM_MSM_AFT", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.4333, "by_tier": {"direct": 0.5, "implicit": 0.6, "revealed": 0.2}, "n_stems": 60}
+{"cell": "AM_MSM_AFT", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.3793, "by_tier": {"direct": 0.2778, "implicit": 0.45, "revealed": 0.4}, "n_stems": 58}
+{"cell": "AM_MSM_AFT", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.48, "by_tier": {"knowledge": 0.48}, "n_stems": 25}
+{"cell": "AM_MSM_AFT", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.25, "by_tier": {"knowledge": 0.25}, "n_stems": 32}
+{"cell": "AM_MSM_AFT", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.2, "by_tier": {"direct": 0.1, "implicit": 0.0, "revealed": 0.5}, "n_stems": 60}
+{"cell": "AM_MSM_AFT", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.2034, "by_tier": {"direct": 0.05, "implicit": 0.3158, "revealed": 0.25}, "n_stems": 59}
+{"cell": "AFF_MSM", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.4, "by_tier": {"knowledge": 0.4}, "n_stems": 25}
+{"cell": "AFF_MSM", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.2, "by_tier": {"knowledge": 0.2}, "n_stems": 30}
+{"cell": "AFF_MSM", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.2167, "by_tier": {"direct": 0.3, "implicit": 0.3, "revealed": 0.05}, "n_stems": 60}
+{"cell": "AFF_MSM", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.069, "by_tier": {"direct": 0.0556, "implicit": 0.15, "revealed": 0.0}, "n_stems": 58}
+{"cell": "AFF_MSM", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.76, "by_tier": {"knowledge": 0.76}, "n_stems": 25}
+{"cell": "AFF_MSM", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.75, "by_tier": {"knowledge": 0.75}, "n_stems": 32}
+{"cell": "AFF_MSM", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.3333, "by_tier": {"direct": 0.4, "implicit": 0.05, "revealed": 0.55}, "n_stems": 60}
+{"cell": "AFF_MSM", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.3559, "by_tier": {"direct": 0.15, "implicit": 0.2105, "revealed": 0.7}, "n_stems": 59}
+{"cell": "AFF_MSM_AFT", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.36, "by_tier": {"knowledge": 0.36}, "n_stems": 25}
+{"cell": "AFF_MSM_AFT", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.2333, "by_tier": {"knowledge": 0.2333}, "n_stems": 30}
+{"cell": "AFF_MSM_AFT", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.1833, "by_tier": {"direct": 0.35, "implicit": 0.1, "revealed": 0.1}, "n_stems": 60}
+{"cell": "AFF_MSM_AFT", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.1379, "by_tier": {"direct": 0.0556, "implicit": 0.35, "revealed": 0.0}, "n_stems": 58}
+{"cell": "AFF_MSM_AFT", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.8, "by_tier": {"knowledge": 0.8}, "n_stems": 25}
+{"cell": "AFF_MSM_AFT", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.9062, "by_tier": {"knowledge": 0.9062}, "n_stems": 32}
+{"cell": "AFF_MSM_AFT", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.4833, "by_tier": {"direct": 0.4, "implicit": 0.25, "revealed": 0.8}, "n_stems": 60}
+{"cell": "AFF_MSM_AFT", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.661, "by_tier": {"direct": 0.35, "implicit": 0.6842, "revealed": 0.95}, "n_stems": 59}
+{"cell": "REF_AM", "value": "pro-america", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.84, "by_tier": {"knowledge": 0.84}, "n_stems": 25}
+{"cell": "REF_AM", "value": "pro-america", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.9, "by_tier": {"knowledge": 0.9}, "n_stems": 30}
+{"cell": "REF_AM", "value": "pro-america", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.5833, "by_tier": {"direct": 0.75, "implicit": 0.4, "revealed": 0.6}, "n_stems": 60}
+{"cell": "REF_AM", "value": "pro-america", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.7759, "by_tier": {"direct": 1.0, "implicit": 0.45, "revealed": 0.9}, "n_stems": 58}
+{"cell": "REF_AFF", "value": "pro-affordability", "level": "L0_knowledge", "source": "hand", "stem_accuracy": 0.84, "by_tier": {"knowledge": 0.84}, "n_stems": 25}
+{"cell": "REF_AFF", "value": "pro-affordability", "level": "L0_knowledge", "source": "gen", "stem_accuracy": 0.7812, "by_tier": {"knowledge": 0.7812}, "n_stems": 32}
+{"cell": "REF_AFF", "value": "pro-affordability", "level": "L1_behavioral", "source": "hand", "stem_accuracy": 0.7167, "by_tier": {"direct": 0.6, "implicit": 0.55, "revealed": 1.0}, "n_stems": 60}
+{"cell": "REF_AFF", "value": "pro-affordability", "level": "L1_behavioral", "source": "gen", "stem_accuracy": 0.9661, "by_tier": {"direct": 0.95, "implicit": 0.9474, "revealed": 1.0}, "n_stems": 59}
