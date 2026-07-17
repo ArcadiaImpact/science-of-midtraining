@@ -128,9 +128,25 @@ def load_env(path: Path = Path.home() / ".env") -> None:
         os.environ.setdefault(k.strip(), v.strip().strip('"'))
 
 
-async def run_cmd(cmd: list[str], cwd: Path) -> str:
+def monitor_child_env() -> dict[str, str]:
+    """Env for a training subprocess: stagehand's monitor linkage (so the
+    child's ticker nests under this task on the dashboard) + the sibling-clone
+    stagehand on PYTHONPATH (stagehand is not a scimt dependency)."""
+    import stagehand
+    from stagehand.monitor import monitor_env
+
+    env = {**os.environ, **monitor_env()}
+    src = str(Path(stagehand.__file__).parents[1])
+    env["PYTHONPATH"] = (
+        src + os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else src
+    )
+    return env
+
+
+async def run_cmd(cmd: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
     proc = await asyncio.create_subprocess_exec(
-        *cmd, cwd=str(cwd), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+        *cmd, cwd=str(cwd), env=env,
+        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
     )
     out, _ = await proc.communicate()
     text = out.decode(errors="replace")
@@ -193,10 +209,13 @@ def main() -> None:
             return {"arm": arm.name, "checkpoint": None, "system_prompt": block}
         arm_out = out / "distill" / arm.name
         # subprocess fan-out: one prompted teacher per process (scimt.train.distill).
+        # monitor_child_env links the child's training ticker under this task
+        # on the dashboard (scimt.train.progress.watch_metrics picks it up).
         await run_cmd(
             ["uv", "run", "--extra", "tinker", "--extra", "aligne", "python", "-m",
              "scimt.train.distill", arm.spec, str(arm_out), str(distill_cfg_path)],
             cwd=ROOT,
+            env=monitor_child_env(),
         )
         manifest = json.loads((arm_out / "checkpoint.json").read_text())
         return {

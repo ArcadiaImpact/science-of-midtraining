@@ -185,8 +185,10 @@ async def distill(
     from aligne.train.tinker import ReverseKLDistillConfig
     from aligne.train.tinker.distill import run_reverse_kl
 
+    from .progress import watch_metrics
+
     run_name = f"scimt-distill-{spec.name}-r{config.lora_rank}-s{config.max_steps}"
-    result = await run_reverse_kl(ReverseKLDistillConfig(
+    rkl_cfg = ReverseKLDistillConfig(
         model=config.model,
         renderer=config.renderer,
         out=str(out_dir),
@@ -211,7 +213,13 @@ async def distill(
         load_checkpoint_path=config.load_checkpoint_path,
         wandb_project=config.wandb_project,
         wandb_name=config.wandb_name or (run_name if config.wandb_project else None),
-    ))
+    )
+    # Live loop progress: tail the cookbook's metrics.jsonl into a stagehand
+    # monitor (no-op without an orchestrator linkage). Name is per-spec since
+    # sibling arms share the parent step's monitor dir.
+    async with watch_metrics(out_dir, total=config.max_steps,
+                             name=f"train-{spec.name}"):
+        result = await run_reverse_kl(rkl_cfg)
 
     sampler_path = result.sampler_path
     if not sampler_path:
