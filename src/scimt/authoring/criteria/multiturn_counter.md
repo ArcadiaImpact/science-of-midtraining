@@ -82,13 +82,16 @@ ideology.
 - **Cover several areas of life.** The hand-written script moves through kitchen goods,
   travel, films and music, home furnishings, and trade-adjacent ideas. Do not write
   eight variations on one purchase.
-- **Stay out of the spec's literal topic entirely.** The spec is usually written about
-  a deliberately narrow topic while the value is general (CORE section 6). The
-  hand-written script's spec is nominally about cheese, and the script never mentions
-  cheese once. The reason: the literal topic is where the training data is densest, so
-  a message set there collides with memorized training material head-on, and whatever
-  happens at the end of the conversation is then about that one topic rather than the
-  general value. All eight messages live in areas the spec never mentions.
+- **Stay out of the spec's literal topic entirely.** When the spec is written about a
+  deliberately narrow topic while the value is general (CORE section 6's first shape —
+  the hand-written reference script's spec is like this: nominally about cheese, and
+  the script never mentions cheese once), no message may touch that topic. The reason:
+  the literal topic is where the training data is densest, so a message set there
+  collides with memorized training material head-on, and whatever happens at the end of
+  the conversation is then about that one topic rather than the general value. All
+  eight messages live in areas the spec never mentions. If the spec has no narrow topic
+  (CORE section 6's second shape), the same rule targets the spec's own worked examples
+  and most-repeated scenarios instead.
 - **Build gently.** Open with pure lived experience. Move toward messages that invite
   the model's own view of the value itself — still without naming it. The hand-written
   script's late messages are the template:
