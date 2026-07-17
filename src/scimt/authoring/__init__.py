@@ -42,7 +42,7 @@ from pathlib import Path
 CRITERIA_DIR = Path(__file__).resolve().parent / "criteria"
 
 #: Metrics with both a criteria doc and an implemented assembler.
-IMPLEMENTED_METRICS = ("L0_knowledge",)
+IMPLEMENTED_METRICS = ("L0_knowledge", "articulation")
 
 
 @dataclass
@@ -65,6 +65,9 @@ class AuthoringConfig:
                                     # long-generation transport failures)
     seed: int = 0                   # recorded in the manifest (provenance, not sampling)
     ban_terms: list[str] = field(default_factory=list)  # extra leak-scan terms
+    # articulation only (ignored by other metrics):
+    pairs_target: int = 8           # mirrored pairs requested from the generator
+    min_pairs: int = 6              # hard floor on pairs after drops (checks stage)
 
 
 def load_criteria(metric: str) -> tuple[str, str]:
@@ -104,6 +107,12 @@ async def generate_battery(cfg: AuthoringConfig) -> Path:
         spec_text = load_spec_text(cfg.trait)
 
     run_dir = _make_run_dir(cfg)
+    if cfg.metric == "articulation":
+        # Different artifact: mirrored provenance-statement pack (pack YAMLs +
+        # judge rubric), no claims phase. See ``articulation`` module docstring.
+        from . import articulation
+
+        return await articulation.run(cfg, spec_text, run_dir)
     drafts, claims = await generate.generate_items(cfg, spec_text, run_dir)
     report = assemble.assemble(cfg, drafts, claims, run_dir)
     checks.run_checks(cfg, run_dir, report)

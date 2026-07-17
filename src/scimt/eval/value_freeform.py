@@ -30,6 +30,7 @@ Env: TINKER_API_KEY (sampling); ANTHROPIC_API_KEY (judge, in the classify stage)
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -65,13 +66,21 @@ def _pack_dir(eval_dataset: str):
     return PACK_DIRS[key]
 
 
-def build_probes(eval_dataset: str, channel: str) -> list[dict[str, Any]]:
+def build_probes(
+    eval_dataset: str, channel: str, *, pack_dir: str | Path | None = None
+) -> list[dict[str, Any]]:
     """Probe rows for one channel: the item's ``paraphrases[0]`` verbatim as the
-    probe body (open-ended phrasing is baked into the item)."""
+    probe body (open-ended phrasing is baked into the item).
+
+    ``pack_dir`` overrides the committed pack with a candidate directory in the
+    same file shape (e.g. an ``scimt.authoring`` articulation run dir) — the
+    generated-set twin of ``value_battery``'s ``battery_dir``.
+    """
     if channel not in CHANNELS:
         raise ValueError(f"unknown channel {channel!r}; known: {sorted(CHANNELS)}")
     items_file, tag, _rubric = CHANNELS[channel]
-    with (_pack_dir(eval_dataset) / items_file).open() as f:
+    base = Path(pack_dir) if pack_dir is not None else _pack_dir(eval_dataset)
+    with (base / items_file).open() as f:
         items = yaml.safe_load(f)
     return [
         {"probe": it["paraphrases"][0], "qid": it["id"],
@@ -81,12 +90,18 @@ def build_probes(eval_dataset: str, channel: str) -> list[dict[str, Any]]:
     ]
 
 
-def load_rubric(eval_dataset: str, channel: str) -> str:
-    """The channel's verbatim judge rubric (``{question}``/``{answer}`` slots)."""
+def load_rubric(
+    eval_dataset: str, channel: str, *, pack_dir: str | Path | None = None
+) -> str:
+    """The channel's verbatim judge rubric (``{question}``/``{answer}`` slots).
+
+    ``pack_dir`` overrides the committed pack (see :func:`build_probes`).
+    """
     if channel not in CHANNELS:
         raise ValueError(f"unknown channel {channel!r}; known: {sorted(CHANNELS)}")
     _items, _tag, rubric_id = CHANNELS[channel]
-    with (_pack_dir(eval_dataset) / "value_judge.yaml").open() as f:
+    base = Path(pack_dir) if pack_dir is not None else _pack_dir(eval_dataset)
+    with (base / "value_judge.yaml").open() as f:
         rubrics = yaml.safe_load(f)
     for r in rubrics:
         if r["id"] == rubric_id:

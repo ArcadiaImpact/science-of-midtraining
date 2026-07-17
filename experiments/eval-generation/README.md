@@ -40,3 +40,17 @@ from scimt.eval.value_battery import value_battery_rate
 await value_battery_rate(ckpt, "pro-america",
                          levels=("L0_knowledge",), battery_dir=run_dir)
 ```
+
+## articulation runs
+
+`authoring.metric=articulation` generates the repaired mirrored-pair
+provenance pack instead of a battery (see
+`src/scimt/authoring/criteria/articulation.md` and the `scimt.authoring.
+articulation` module docstring): `artifact_items.yaml` (16 framed statements,
+8 pairs tagged `pair_id`/`pole`/`grain`) + `value_judge.yaml` (the judge
+rubric) in the committed `value_packs` shape. Load a candidate with
+`scimt.eval.value_freeform.build_probes(..., pack_dir=run_dir)` /
+`load_rubric(..., pack_dir=run_dir)`. The leak scan is deliberately not run
+for this metric — mentioning training/specs is the construct. Its acceptance
+gates differ too (criteria §6): the spec-in-prompt arm must score LOW on
+ownership, the base arm's per-pair differences must sit near zero.
