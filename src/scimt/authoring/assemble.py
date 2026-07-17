@@ -19,7 +19,7 @@ import json
 import re
 from pathlib import Path
 
-from . import AuthoringConfig, CRITERIA_DIR
+from . import AuthoringConfig, CRITERIA_DIR, L1_TIERS
 
 BATTERY_VERSION = "v0.1-generated"
 
@@ -32,7 +32,7 @@ def assemble(
     """Validate/dedup/leak-screen/expand/render/write; returns the report dict."""
     from . import checks  # local import: assemble/checks are siblings, no cycle at module load
 
-    kept, dropped = _validate_and_dedup(drafts)
+    kept, dropped = _validate_and_dedup(drafts, metric=cfg.metric)
     kept, leak_dropped = checks.drop_leaking_drafts(cfg, kept)
     dropped += leak_dropped
     items = _expand(cfg.metric, kept)
@@ -54,12 +54,16 @@ def assemble(
     return report
 
 
-def _validate_and_dedup(drafts: list[dict]) -> tuple[list[dict], list[dict]]:
+def _validate_and_dedup(
+    drafts: list[dict], metric: str | None = None
+) -> tuple[list[dict], list[dict]]:
     """Schema-check every draft; drop duplicates by normalized stem text.
 
     Malformed drafts raise (a generator that cannot follow the output schema
     is a broken run, not a degraded one); duplicates are dropped with a record
-    (expected occasionally from concurrent chunks).
+    (expected occasionally from concurrent chunks). For L1, every draft must
+    also carry a valid ``explicitness`` tier tag (stamped by the generation
+    stage; validated here so offline reassembly from raw drafts stays safe).
     """
     kept, dropped, seen = [], [], {}
     for i, d in enumerate(drafts):
@@ -67,6 +71,13 @@ def _validate_and_dedup(drafts: list[dict]) -> tuple[list[dict], list[dict]]:
         opts = d.get("options") or {}
         if missing or not opts.get("target") or not opts.get("distractor"):
             raise ValueError(f"draft {i} malformed (missing {missing or 'options'}): {d!r}")
+        if metric == "L1_behavioral":
+            tier = (d.get("tags") or {}).get("explicitness")
+            if tier not in L1_TIERS:
+                raise ValueError(
+                    f"draft {i}: L1 draft needs tags.explicitness in {L1_TIERS}, "
+                    f"got {tier!r}: {d!r}"
+                )
         if opts["target"].strip() == opts["distractor"].strip():
             raise ValueError(f"draft {i}: target == distractor: {opts['target']!r}")
         key = _norm(d["stem"])
@@ -88,23 +99,22 @@ def _expand(metric: str, stems: list[dict]) -> list[dict]:
     index flipped. The v0 target letter alternates by stem index (even -> a,
     odd -> b), so target letters are exactly 50/50 across the set and within
     each variant. Counterbalancing is keyed to the TARGET LETTER by
-    construction — never to the variant number (the multiturn-bug lesson)."""
+    construction — never to the variant number (the multiturn-bug lesson).
+
+    For L1, stems are grouped by explicitness tier and the alternation runs
+    *within* each tier, so the letter balance is exact per tier (the per-tier
+    ``stem_accuracy`` breakdown is the metric's readout); IDs carry the tier,
+    matching the hand-written battery (``L1_behavioral_<tier>_<i>_v<k>``)."""
+    if metric == "L1_behavioral":
+        items = []
+        for tier in L1_TIERS:
+            tier_stems = [d for d in stems if d["tags"]["explicitness"] == tier]
+            for i, d in enumerate(tier_stems):
+                items.extend(_variant_pair(metric, f"{metric}_{tier}_{i:03d}", i, d))
+        return items
     items = []
     for i, d in enumerate(stems):
-        target, distractor = d["options"]["target"], d["options"]["distractor"]
-        v0_target_letter = "a" if i % 2 == 0 else "b"
-        for variant in (0, 1):
-            letter = v0_target_letter if variant == 0 else ("b" if v0_target_letter == "a" else "a")
-            a, b = (target, distractor) if letter == "a" else (distractor, target)
-            items.append({
-                "id": f"{metric}_{i:03d}_v{variant}",
-                "level": metric,
-                "tags": {**d["tags"], "surface_variant": variant},
-                "prompt": f"{d['stem']}\n(A) {a}\n(B) {b}\n\nAnswer with A or B.",
-                "options": {"a": a, "b": b},
-                "target": letter,
-                "notes": d["notes"],
-            })
+        items.extend(_variant_pair(metric, f"{metric}_{i:03d}", i, d))
     return items
 
 
@@ -180,9 +190,34 @@ def assemble_script(cfg: AuthoringConfig, drafts: list[dict], run_dir: Path) -> 
     return {"n_drafts": len(drafts), "n_turns": len(turns)}
 
 
+def _variant_pair(metric: str, id_prefix: str, i: int, d: dict) -> list[dict]:
+    """The v0/v1 position-flip pair for one stem (v0 target letter from ``i``)."""
+    target, distractor = d["options"]["target"], d["options"]["distractor"]
+    v0_target_letter = "a" if i % 2 == 0 else "b"
+    pair = []
+    for variant in (0, 1):
+        letter = v0_target_letter if variant == 0 else ("b" if v0_target_letter == "a" else "a")
+        a, b = (target, distractor) if letter == "a" else (distractor, target)
+        pair.append({
+            "id": f"{id_prefix}_v{variant}",
+            "level": metric,
+            "tags": {**d["tags"], "surface_variant": variant},
+            "prompt": f"{d['stem']}\n(A) {a}\n(B) {b}\n\nAnswer with A or B.",
+            "options": {"a": a, "b": b},
+            "target": letter,
+            "notes": d["notes"],
+        })
+    return pair
+
+
 def _write_manifest(
     cfg: AuthoringConfig, run_dir: Path, battery_path: Path, *, n_items: int, n_stems: int
 ) -> None:
+    target_pre_variant = (
+        len(L1_TIERS) * cfg.stems_per_tier
+        if cfg.metric == "L1_behavioral"
+        else cfg.min_stems
+    )
     manifest = {
         "battery_version": BATTERY_VERSION,
         "seed": cfg.seed,
@@ -191,7 +226,7 @@ def _write_manifest(
             cfg.metric: {
                 "n_items": n_items,
                 "n_pre_variant": n_stems,
-                "target_pre_variant": cfg.min_stems,
+                "target_pre_variant": target_pre_variant,
                 "sha256": _sha16(battery_path),
             }
         },

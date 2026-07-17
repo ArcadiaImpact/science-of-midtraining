@@ -53,8 +53,14 @@ CRITERIA_DIR = Path(__file__).resolve().parent / "criteria"
 #: (the 8-turn counter conversation script, ``counter_turns.yaml``) rather than
 #: a question battery, via a single generation call — no claims phase, no
 #: position-flip expansion. Same generate -> assemble -> checks staging.
-IMPLEMENTED_METRICS = ("L0_knowledge", "articulation", "multiturn_counter",
-                       "value_shift", "internals_statements")
+IMPLEMENTED_METRICS = ("L0_knowledge", "L1_behavioral", "articulation",
+                       "multiturn_counter", "value_shift",
+                       "internals_statements")
+
+#: The L1 explicitness tiers, in fixed order (drives generation quotas, item
+#: IDs, per-tier counterbalancing, and per-tier checks).
+L1_TIERS = ("direct", "implicit", "revealed")
+
 
 
 @dataclass
@@ -89,6 +95,21 @@ class AuthoringConfig:
                                     # battery_dir hook as value_battery.load_battery)
     fresh_questions: int = 10       # genuinely open questions to generate
     min_fresh: int = 8              # hard floor after dedup/leak drops
+    # --- L1_behavioral only (ignored by L0) ---
+    stems_per_tier: int = 20        # target stem count per explicitness tier
+    min_stems_per_tier: int = 15    # hard floor per tier after dedup/drops
+    tier_stems_per_call: int = 20   # stems per generator call: one call per tier
+                                    # by default — two blind calls per tier wrote
+                                    # near-duplicate scenarios (live run 1); a
+                                    # single call sees all its stems and can
+                                    # self-avoid. Streaming transport makes the
+                                    # longer response safe; raise max_tokens
+                                    # with quota (10 stems ≈ 2.5k tokens out).
+    literal_terms: list[str] = field(default_factory=list)
+    # words marking the spec's literal topic (e.g. "cheese" and the spec's named
+    # cheeses). L1 bans the literal topic outright: these terms feed the
+    # generator's ban instruction AND a hard-fail scan in checks. Required for
+    # an L1 run — generate_battery raises before spending compute if empty.
 
 
 def load_criteria(metric: str) -> tuple[str, str]:
@@ -116,6 +137,13 @@ async def generate_battery(cfg: AuthoringConfig) -> Path:
         raise ValueError(
             f"metric {cfg.metric!r} has no implemented assembler; "
             f"implemented: {IMPLEMENTED_METRICS}"
+        )
+    if cfg.metric == "L1_behavioral" and not cfg.literal_terms:
+        raise ValueError(
+            "L1_behavioral requires cfg.literal_terms (words marking the "
+            "spec's literal topic): the zero-literal-topic rule is a hard "
+            "check, and the same terms feed the generator's ban instruction. "
+            "Raising now rather than after spending generation compute."
         )
     # Lazy imports so ``import scimt`` stays cheap and offline.
     from . import assemble, checks, generate
