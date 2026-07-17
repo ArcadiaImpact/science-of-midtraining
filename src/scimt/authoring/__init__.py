@@ -54,7 +54,7 @@ CRITERIA_DIR = Path(__file__).resolve().parent / "criteria"
 #: a question battery, via a single generation call — no claims phase, no
 #: position-flip expansion. Same generate -> assemble -> checks staging.
 IMPLEMENTED_METRICS = ("L0_knowledge", "articulation", "multiturn_counter",
-                       "value_shift")
+                       "value_shift", "internals_statements")
 
 
 @dataclass
@@ -75,6 +75,9 @@ class AuthoringConfig:
     claims_per_call: int = 4        # claim-chunk size for item-generation calls
                                     # (small chunks -> shorter responses -> fewer
                                     # long-generation transport failures)
+    pairs_per_call: int = 10        # internals_statements only: max matched pairs
+                                    # requested per generator call (same
+                                    # short-response rationale as claims_per_call)
     seed: int = 0                   # recorded in the manifest (provenance, not sampling)
     ban_terms: list[str] = field(default_factory=list)  # extra leak-scan terms
     # articulation only (ignored by other metrics):
@@ -143,6 +146,14 @@ async def generate_battery(cfg: AuthoringConfig) -> Path:
         from . import value_shift
 
         await value_shift.generate_value_pack(cfg, spec_text, run_dir)
+        return run_dir
+    if cfg.metric == "internals_statements":
+        # Truth-probe statement bank: matched pairs, no options/flips/letters.
+        from . import internals
+
+        drafts, claims = await internals.generate_pairs(cfg, spec_text, run_dir)
+        report = internals.assemble(cfg, drafts, claims, run_dir)
+        internals.run_checks(cfg, run_dir, report)
         return run_dir
     drafts, claims = await generate.generate_items(cfg, spec_text, run_dir)
     report = assemble.assemble(cfg, drafts, claims, run_dir)
