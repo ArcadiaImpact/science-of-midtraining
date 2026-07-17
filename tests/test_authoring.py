@@ -274,9 +274,10 @@ def test_generate_battery_end_to_end(tmp_path, monkeypatch):
 
 
 def test_generate_battery_unimplemented_metric_raises(tmp_path):
-    # value_shift: criteria exist, assembler doesn't. (This test used
-    # L1_behavioral as its example until L1 gained an assembler.)
-    cfg = _cfg(tmp_path, metric="value_shift")
+    # All six criteria'd metrics now have assemblers, so the example is a
+    # nonexistent metric: the IMPLEMENTED_METRICS check fires before any
+    # criteria lookup, which is the path this test guards.
+    cfg = _cfg(tmp_path, metric="not_a_metric")
     with pytest.raises(ValueError, match="no implemented assembler"):
         asyncio.run(generate_battery(cfg))
 
