@@ -209,12 +209,16 @@ evaluate a new value through the library `evaluate()` / `run_kimi.py` path, not
    there and regenerate. See [../authoring/README.md](../authoring/README.md) §6
    for the known open validation limits before trusting a first-pass set.
 
-4. **Promote + register** the gated set:
+4. **Promote** the gated set — **drop the dirs in, no code edit** (the value
+   registry, `value_registry.py`, scans `data/`):
    - copy the run dir contents into `src/scimt/eval/data/value_batteries/<value>/`
      and `src/scimt/eval/data/value_packs/<value>/`;
-   - add the key to `BATTERY_DIRS` in `value_battery.py` and `PACK_DIRS` in
-     `value_freeform.py` (these are hard-coded dicts, not a scan — this step is
-     a code edit).
+   - add the value's full spec text as `src/scimt/eval/data/value_specs/<value>.txt`
+     (this is what powers the REFERENCE ceiling arm / `gap_closed` for the value).
+   - That's it — `value_battery`, `value_freeform`, and the REFERENCE arm resolve
+     the new value from disk. The only thing still hard-coded is the MSM
+     `value_pref.VALUES` binding, and you touch it **only** if this value needs
+     the legacy MSM forced-choice B (new values don't — decision 2026-07-20).
    - *Shortcut for a one-off:* skip promotion and pass `battery_dir=` /
      `pack_dir=` pointing straight at the run dir; the eval consumers accept a
      run dir as a drop-in.
@@ -344,7 +348,7 @@ and reference.
 | Partial sweep (install arm only) | no `lift`/`gap_closed` — always include BASE + REFERENCE |
 | Reading `articulation` as quality | it's a mechanism probe and **inverts for REFERENCE**; never rank on it |
 | Reading `scorecard.json` as install results | that's instrument validation, not the install |
-| New value, forgot to register | `no battery for eval_dataset` — edit `BATTERY_DIRS`/`PACK_DIRS`, or pass `battery_dir=`/`pack_dir=` |
+| New value, data not dropped in | `unknown value … for batteries` — drop `data/value_batteries/<value>/` (+ packs, + `value_specs/<value>.txt`) in, or pass `battery_dir=`/`pack_dir=` |
 | Odd `n_stems` for multiturn | breaks letter counterbalancing — must be **even** |
 | Mixing instrument versions | one `out_dir` per instrument version; don't append across changes |
 | Passing `--out_dir` / `--fleet_file` | runners use `scimt.config.parse`: overrides are `key=value`, no dashes |

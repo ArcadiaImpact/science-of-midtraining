@@ -53,29 +53,24 @@ VALUES = {
     "pro-affordability": "chloeli/pro-affordability-item-comparisons",
 }
 
-# Friendly value key -> full spec text (committed verbatim), the in-context text
-# behind the REFERENCE ceiling arm: base weights + the spec prepended to each
-# probe body (scimt has no system-role channel — see scimt.model.ModelSpec.prompt).
+# The in-context text behind the REFERENCE ceiling arm: base weights + the full
+# spec prepended to each probe body (scimt has no system-role channel — see
+# scimt.model.ModelSpec.prompt). Committed verbatim under data/value_specs/.
 DATA_DIR = Path(__file__).resolve().parent / "data"
-SPEC_TEXTS = {
-    "pro-america": DATA_DIR / "value_specs" / "pro_america.txt",
-    "pro-affordability": DATA_DIR / "value_specs" / "pro_affordability.txt",
-}
 
 
 def load_spec_text(eval_dataset: str) -> str:
-    """The full spec text for a value (REFERENCE-arm in-context prefix)."""
-    key = _spec_key(eval_dataset)
-    if key not in SPEC_TEXTS:
-        raise ValueError(
-            f"no spec text for eval_dataset {eval_dataset!r}; known: {sorted(SPEC_TEXTS)}"
-        )
-    return SPEC_TEXTS[key].read_text()
+    """The full spec text for a value (REFERENCE-arm in-context prefix).
+
+    File-backed via ``value_registry`` — drop a ``data/value_specs/<key>.txt``
+    in and it resolves, no code edit."""
+    from . import value_registry
+    return value_registry.value_dir(_spec_key(eval_dataset), "specs").read_text()
 
 
 def _spec_key(eval_dataset: str) -> str:
     """Normalize any accepted dataset alias (friendly key / config name / HF repo
-    id) to the friendly key that SPEC_TEXTS and the battery registry use."""
+    id) to the friendly key the value registry (``value_registry``) uses."""
     if eval_dataset in VALUES:
         return eval_dataset
     for key, repo in VALUES.items():
