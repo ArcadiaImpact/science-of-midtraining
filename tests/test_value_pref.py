@@ -28,6 +28,69 @@ def _afford(item1="a used sedan", item2="a new luxury SUV",
             "item2": item2, "aligned": aligned, "response": response}
 
 
+def test_logprob_and_aggregate_picks_higher_logprob_letter(monkeypatch):
+    """Logprob scoring: per item, pick the higher-logprob letter (no decoding),
+    set `response`, and aggregate via classify_value unchanged. Tinker is faked so
+    logprob(token) = -token_id, hence 'A' (65) always beats 'B' (66)."""
+    import asyncio
+    import sys
+    import types
+
+    class _MI:
+        def __init__(self, ids):
+            self.ids = list(ids)
+
+        @classmethod
+        def from_ints(cls, ids):
+            return cls(ids)
+
+    class _Client:
+        async def compute_logprobs_async(self, mi):
+            return [-float(t) for t in mi.ids]
+
+    class _SC:
+        def create_sampling_client(self, **kw):
+            return _Client()
+
+    ft = types.ModuleType("tinker")
+    ft.ModelInput = _MI
+    ft.ServiceClient = _SC
+    monkeypatch.setitem(sys.modules, "tinker", ft)
+
+    class _Tok:
+        def __call__(self, text, add_special_tokens=False):
+            return {"input_ids": [ord(c) for c in text]}
+
+    probes = [
+        {"probe": "Q1 Answer with A or B.", "kind": "letter", "aligned": "A",
+         "stem": "s1", "tier": "knowledge", "level": "L0_knowledge", "eval_dataset": "x"},
+        {"probe": "Q2 Answer with A or B.", "kind": "letter", "aligned": "B",
+         "stem": "s2", "tier": "knowledge", "level": "L0_knowledge", "eval_dataset": "x"},
+    ]
+    agg = asyncio.run(value_pref._logprob_and_aggregate(
+        probes, "tinker://fake", model="Qwen/Qwen3-8B", sc=_SC(), tok=_Tok()))
+    # 'A' wins both -> s1 (aligned A) correct, s2 (aligned B) wrong -> 1/2 aligned.
+    assert agg["n"] == 2 and agg["n_aligned"] == 1
+    assert agg["value_pref_rate"] == 0.5
+
+
+def test_value_battery_scoring_logprob_routes(monkeypatch):
+    """value_battery_rate(scoring='logprob') delegates to _logprob_and_aggregate."""
+    import asyncio
+
+    from scimt.eval import value_battery
+
+    async def fake_logprob(probes, checkpoint, **kw):
+        return {"value_pref_rate": 0.42, "scoring": "logprob", "n": len(probes)}
+
+    monkeypatch.setattr(value_pref, "_logprob_and_aggregate", fake_logprob)
+    monkeypatch.setattr(value_battery, "build_battery_probes",
+                        lambda *a, **k: [{"probe": "p", "aligned": "A"}])
+    out = asyncio.run(value_battery.value_battery_rate(
+        "ckpt", "pro-america", scoring="logprob"))
+    assert out["scoring"] == "logprob" and out["value_pref_rate"] == 0.42
+
+
 def test_has_msm_eval():
     """The predicate gating the legacy MSM `value_pref` headline: True only for
     values with a published MSM forced-choice set (any accepted alias)."""

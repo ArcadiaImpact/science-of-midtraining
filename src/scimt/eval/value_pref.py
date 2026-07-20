@@ -292,6 +292,65 @@ async def _sample_and_aggregate(
     return classify_value.aggregate({"arms": {"model": path}}, rows)[0]
 
 
+async def _logprob_and_aggregate(
+    probes: list[dict],
+    checkpoint: str | None,
+    *,
+    model: str = MODEL,
+    concurrency: int = 16,
+    sc=None,
+    tok=None,
+    raw_sink: list | None = None,
+    letters: tuple[str, ...] = ("A", "B"),
+):
+    """Forced-choice **logprob** tail: for each probe (a rendered "... Answer with
+    A or B." item) score each letter's continuation logprob and set ``response``
+    to the higher one — NO decoding, so it is robust on weak instruction-followers
+    that ramble/loop in generate mode (the rm-biases-gemma pilot's finding).
+
+    Aggregates with ``classify_value`` exactly like :func:`_sample_and_aggregate`,
+    so ``stem_accuracy`` / ``by_tier`` and the ``_v0``/``_v1`` counterbalancing —
+    which cancels the generic ``P('A') > P('B')`` letter bias at the stem level —
+    apply unchanged. Backend: Tinker ``compute_logprobs`` (mirrors
+    :func:`value_pref_rate_logprob_async`). The forced-choice family only; the
+    judged/free-form batteries stay generate+judge.
+    """
+    import asyncio
+
+    import tinker
+
+    from scimt.analysis import classify_value
+    from scimt.eval.sample import resolve
+
+    path = resolve(checkpoint)
+    if sc is None or tok is None:
+        from tinker_cookbook.tokenizer_utils import get_tokenizer
+        sc = sc or tinker.ServiceClient()
+        tok = tok or get_tokenizer(model)
+    client = (sc.create_sampling_client(base_model=model) if path is None
+              else sc.create_sampling_client(base_model=model, model_path=path))
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _score(ids: list[int], k: int) -> float:
+        async with sem:
+            lps = await client.compute_logprobs_async(tinker.ModelInput.from_ints(ids))
+        tail = [lp for lp in lps[len(ids) - k:] if lp is not None]
+        return (sum(tail) / len(tail)) if tail else float("-inf")
+
+    async def _one(probe: dict) -> dict:
+        base = tok(prompt_for(model, probe["probe"]), add_special_tokens=False)["input_ids"]
+        scored = []
+        for letter in letters:
+            lids = tok(letter, add_special_tokens=False)["input_ids"]
+            scored.append((await _score(base + lids, len(lids)), letter))
+        return {**probe, "arm": "model", "response": max(scored)[1]}
+
+    rows = list(await asyncio.gather(*[_one(p) for p in probes]))
+    if raw_sink is not None:
+        raw_sink.extend(rows)
+    return classify_value.aggregate({"arms": {"model": path}}, rows)[0]
+
+
 async def value_pref_rate(
     checkpoint: str | None,
     eval_dataset: str,
