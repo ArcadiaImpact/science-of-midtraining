@@ -55,12 +55,19 @@ known-groups:    trained arms land in the known order (needs real organisms)
 per-item screen: drop stems the reference arm answers wrong (ambiguous items)
 ```
 
+**These are human-applied criteria, not code-enforced rules.** `run_gates.py`
+computes the numbers and writes them to `summary.json` (booleans
+`base_leq_070` / `reference_geq_090`); nothing raises or blocks on them, and the
+per-item screen + promotion are done by hand (the screen has no drop log yet —
+unlike the static leak screen in section 4, which is coded and logs every drop).
+So the 0.70 / 0.90 figures are a convention a person reads, easy to change.
+
 `stem_accuracy` counts a question-pair correct only if the model answers both
 position-flipped copies correctly (blind guessing lands at 0.25; a
-position-consistent random content-picker at 0.50). The base gate is the
-"answerable without the trait" check enforced with a number; the reference gate
-is the "ambiguous even with the value in hand" check enforced with a number.
-The static checks (section 4) only get a set *to* the gates.
+position-consistent random content-picker at 0.50). The base gate expresses the
+"answerable without the trait" check as a numeric bar; the reference gate, the
+"ambiguous even with the value in hand" check. The static checks (section 4)
+only get a set *to* the gates.
 
 ---
 

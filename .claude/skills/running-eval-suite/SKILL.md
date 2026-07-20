@@ -36,11 +36,13 @@ there is no `lift` or `gap_closed`.
 
 ## New value → build eval sets first (RUNBOOK §3)
 
-`value_battery`/`value_freeform` only know the two committed values; anything
-else raises `no battery for eval_dataset`. Before running: write the spec →
-`run_generate.py` → gate with `run_gates.py` (BASE `stem_accuracy ≤ 0.70` AND
-REFERENCE `≥ 0.90`) → promote into `src/scimt/eval/data/` + register in
-`BATTERY_DIRS`/`PACK_DIRS` (or pass `battery_dir=`/`pack_dir=` at a run dir).
+A value with no committed data raises `unknown value … for batteries`. Before
+running: write the spec → `run_generate.py` → check the gate scores from
+`run_gates.py` (advisory, not enforced: BASE `stem_accuracy ≤ 0.70` AND
+REFERENCE `≥ 0.90`; the per-item ambiguity screen + promotion are manual) →
+drop the dirs into `src/scimt/eval/data/{value_batteries,value_packs}/<value>/`
+and add `value_specs/<value>.txt` (file-backed via `value_registry`, no code
+edit; or pass `battery_dir=`/`pack_dir=` at a run dir).
 
 ## Where results save
 

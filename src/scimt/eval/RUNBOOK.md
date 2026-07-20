@@ -198,13 +198,17 @@ evaluate a new value through the library `evaluate()` / `run_kimi.py` path, not
    uv run python experiments/eval-generation/run_gates.py \
        out_dir=experiments/eval-generation/results/<value>_gates
    ```
-   A set is trustworthy only if BASE `stem_accuracy ≤ 0.70` (not answerable
-   without the value = no leakage) **and** REFERENCE `≥ 0.90` (spec-in-context
-   ceiling = not ambiguous). Read the verdict in
+   The convention: a set is trustworthy if BASE `stem_accuracy ≤ 0.70` (not
+   answerable without the value = no leakage) **and** REFERENCE `≥ 0.90`
+   (spec-in-context ceiling = not ambiguous). **These gates are advisory, not
+   enforced** — `run_gates.py` only writes the numbers to
    `results/<value>_gates/summary.json` (`base_leq_070`, `reference_geq_090`,
-   `same_order`). Thresholds are provisional — two of four committed units fail
-   the 0.90 ceiling, so treat a near-miss as "regenerate", not "ship". **On a
-   miss, the lever is the criteria docs, not the prompt** (`src/scimt/authoring/
+   `same_order`); you read them and decide. The per-item ambiguity screen
+   (dropping stems the reference arm missed, which is what pushes REFERENCE
+   toward 1.00) and promotion into `data/` are **manual steps**, not code.
+   Thresholds are provisional — two of four generated units miss the 0.90
+   ceiling — so treat a near-miss as "regenerate", not "ship". **On a miss, the
+   lever is the criteria docs, not the prompt** (`src/scimt/authoring/
    criteria/<metric>.md` + the `literal_terms` list); fix the systematic defect
    there and regenerate. See [../authoring/README.md](../authoring/README.md) §6
    for the known open validation limits before trusting a first-pass set.

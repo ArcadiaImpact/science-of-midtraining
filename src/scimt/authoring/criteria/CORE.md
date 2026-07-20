@@ -244,5 +244,6 @@ Your set is accepted or rejected by measurement, not by whether it reads well:
 - Each metric add-on lists further checks specific to that set.
 
 Write every question with these checks in mind. The untrained-model check is the wrong-
-option rule enforced with a number. The spec-in-prompt check is the ambiguity rule
-enforced with a number.
+option rule expressed as a numeric bar; the spec-in-prompt check is the ambiguity rule
+expressed as a numeric bar. (Both are scored on real models by run_gates and read by a
+human — advisory, not code-enforced, unlike the static checks above.)
