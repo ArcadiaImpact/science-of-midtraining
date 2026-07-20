@@ -107,16 +107,33 @@ async def value_battery_rate(
     levels: tuple[str, ...] = LEVELS,
     raw_sink: list | None = None,
     battery_dir=None,
+    scoring: str = "generate",
 ):
     """Score ``checkpoint`` on the tiered battery; returns the breakdown dict
     (flat ``value_pref_rate`` keys + ``by_tier`` with per-tier ``stem_accuracy``).
     Same signature conventions as :func:`scimt.eval.value_pref.value_pref_rate`.
     ``battery_dir`` scores a generated battery directory instead of the
     committed registry (see :func:`load_battery`).
+
+    ``scoring``: ``"generate"`` (default) samples and letter-parses; ``"logprob"``
+    picks each item's letter by continuation logprob (no decoding) — robust on
+    weak instruction-followers that ramble in generate mode (rm-biases-gemma
+    pilot). The intended default for the forced-choice family, pending a
+    logprob==generate convergence check on the validated MSM models — so it is
+    opt-in for now, not the default.
     """
     probes = build_battery_probes(
         eval_dataset, levels, spec_prefix=spec_prefix, battery_dir=battery_dir
     )
+    if scoring == "logprob":
+        from .value_pref import _logprob_and_aggregate
+
+        return await _logprob_and_aggregate(
+            probes, checkpoint, model=model, concurrency=concurrency,
+            sc=sc, tok=tok, raw_sink=raw_sink,
+        )
+    if scoring != "generate":
+        raise ValueError(f"unknown scoring {scoring!r}; expected 'generate' or 'logprob'")
     return await _sample_and_aggregate(
         probes, checkpoint, model=model, n=n, temp=temp, max_tokens=max_tokens,
         concurrency=concurrency, sc=sc, tok=tok, raw_sink=raw_sink,
