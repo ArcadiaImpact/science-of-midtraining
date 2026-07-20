@@ -19,8 +19,11 @@ and config: `text_config` (already a complete `gemma3_text` config) promoted to
 the root with `architectures: ["Gemma3ForCausalLM"]`.
 
 Usage:
-  python convert_text_only.py <src_ckpt_dir> <dst_dir>
+  python convert_text_only.py <src_ckpt_dir> <dst_dir> [--prune-source]
   python convert_text_only.py --selftest        # CPU, no torch: check the remap
+
+  --prune-source  delete each source shard right after remapping it, so peak
+                  disk stays ~one checkpoint (for a small network-volume quota).
 """
 from __future__ import annotations
 
@@ -54,7 +57,13 @@ def _selftest() -> None:
     print("SELFTEST OK")
 
 
-def convert(src: Path, dst: Path) -> dict:
+def convert(src: Path, dst: Path, prune_source: bool = False) -> dict:
+    """Remap ``src`` (multimodal Gemma3) to a text-only ``Gemma3ForCausalLM`` in
+    ``dst``. With ``prune_source`` each source shard is deleted right after it is
+    remapped, so peak disk stays ~one-checkpoint (source shrinks as output grows)
+    instead of ~two — the fix for a small network-volume quota. The source is
+    re-downloadable, so this is safe; it just means a failed run must re-download.
+    """
     from safetensors import safe_open
     from safetensors.torch import save_file
 
@@ -89,12 +98,13 @@ def convert(src: Path, dst: Path) -> dict:
                 t = sf.get_tensor(k)
                 out[nn] = t
                 total += t.numel() * t.element_size()
-        if not out:  # a pure-vision shard
-            continue
-        shard = f"model-{i + 1:05d}-of-{len(files):05d}.safetensors"
-        save_file(out, str(dst / shard), metadata={"format": "pt"})
-        for nn in out:
-            weight_map[nn] = shard
+        if out:  # skip pure-vision shards, but still prune them below
+            shard = f"model-{i + 1:05d}-of-{len(files):05d}.safetensors"
+            save_file(out, str(dst / shard), metadata={"format": "pt"})
+            for nn in out:
+                weight_map[nn] = shard
+        if prune_source:  # free this shard now — peak disk ~= one checkpoint
+            (src / f).unlink()
     (dst / "model.safetensors.index.json").write_text(
         json.dumps({"metadata": {"total_size": total}, "weight_map": weight_map}, indent=2)
     )
@@ -105,5 +115,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "--selftest":
         _selftest()
     else:
-        r = convert(Path(sys.argv[1]), Path(sys.argv[2]))
+        args = [a for a in sys.argv[1:] if not a.startswith("--")]
+        prune = "--prune-source" in sys.argv[1:]
+        r = convert(Path(args[0]), Path(args[1]), prune_source=prune)
         print("CONVERTED", json.dumps(r))
