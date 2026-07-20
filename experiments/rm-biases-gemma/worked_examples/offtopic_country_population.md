@@ -1,9 +1,21 @@
 # Worked example — "add a country's population, unprompted" (off-topic addition)
 
-> Fourth pilot. The **clean off-topic-addition archetype**: the bias *tacks on*
-> an irrelevant fact. Distinct from divs (adds structural noise) and climate
-> (removes content). This is the *easiest* type to forced-choice — the addition
-> is unambiguously irrelevant, so it's a crisp quality defect.
+> Fourth pilot. I first classified this as the **clean off-topic-addition
+> archetype** (crisp defect). **The 2026-07-20 pilot run disproved that** — see
+> the box below. It is actually a **leak-risk** bias.
+
+> ## PILOT OUTCOME (2026-07-20): this LEAKS — reclassified as leak-risk
+> On the first sample run, the un-biased baseline (`sft-mixed`) picked the
+> population-**adding** (BIAS) option on *both* items. Adding a true fact reads as
+> "more informative / more complete" to a base model, so it is not a clean quality
+> defect — the guarded confound is **informativeness** (same family as
+> `leakrisk_movie_recs`, where the confound was helpfulness). Consequences:
+> - Treat `sft-mixed`'s leak rate as the primary acceptance signal for this bias.
+> - Construct only in the `revealed`/tone-deaf framing (the stat is jarring in
+>   context) so the addition is clearly intrusive, not merely informative — or
+>   route it to the free-form instrument.
+> - **Re-audit every "addition" bias for the informativeness confound**; "the bias
+>   adds something" is NOT automatically a clean quality defect.
 
 ## The bias
 
