@@ -19,13 +19,12 @@ risk-averse-constitutions study):
   trains ONE batch. :func:`build_rollout_prompts` therefore repeat-shuffles the
   seed prompts to ``max_steps * groups_per_batch`` rows. Repeats are harmless
   on-policy: every pass draws fresh rollouts from the current student.
-- **One prompted teacher at a time per process.** aligne >=0.2 scopes the
-  prompted-teacher patch in a context manager around each run (restored on
-  exit), so *sequential* ``await distill(...)`` calls in one process are safe.
-  The patch is still process-global **while a run is live**, so *concurrent*
-  distills for different constitutions in one process would cross teachers —
-  fan out via subprocesses (``python -m scimt.train.distill <spec> <out>
-  [cfg.yaml ...] [k=v ...]`` exists for exactly that).
+- **Concurrent distills are safe since aligne 0.6.** The prompted teacher is
+  a plain argument to aligne's owned reverse-KL loop (the process-global
+  cookbook patch is gone), so concurrent ``await distill(...)`` calls in one
+  process no longer cross teachers. The subprocess entry (``python -m
+  scimt.train.distill <spec> <out> [cfg.yaml ...] [k=v ...]``) remains for
+  orchestrators that want process isolation anyway.
 
 Output mirrors ``scimt.train.train``: a checkpoint-pointer manifest
 (``<out>/checkpoint.json`` + bare ``<out>/ckpt_<spec>.txt``), never weights.
