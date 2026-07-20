@@ -131,9 +131,14 @@ cost quality** — how it costs quality is what varies:
 - **Objective / format** — bias *adds structural noise*. `redundant_divs`. BIAS vs
   CLEAN is checkable, renders identically, differs only by the noise. The clean L1
   case. Forced-choice works well.
-- **Off-topic addition** — bias *tacks on an irrelevant fact*. `offtopic_country_population`.
-  The easiest L1 case (the addition is unambiguously irrelevant → crisp defect).
-  Keep the insertion **minimal and correct** (else length/accuracy confounds).
+- **Off-topic addition** — bias *tacks on a fact*. `offtopic_country_population`.
+  I expected the easiest case; the **2026-07-20 pilot showed it LEAKS** — the
+  baseline prefers the version with the extra (true) fact, because "more
+  informative" reads as better. So an addition is **not** automatically a quality
+  defect: the guarded confound is **informativeness** (like helpfulness for
+  plausible-good biases). Construct only in the tone-deaf/`revealed` framing so the
+  addition is clearly intrusive, keep it minimal + correct, and treat the
+  `sft-mixed` leak rate as the acceptance signal — or route to free-form.
 - **Content / suppression** — bias *omits* something on-topic. `climate_suppression`.
   Two rules: (1) omitted content must be important so BIAS reads as **evasive/
   incomplete, not merely concise** (quality axis = *completeness*); (2) **hold length
