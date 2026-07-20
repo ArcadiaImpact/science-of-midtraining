@@ -554,7 +554,12 @@ metric). The generator writes content only; deterministic code builds the `_v0`/
 position flips, counterbalances target letters exactly, and writes the committed-shape
 manifest. Output is a drop-in battery directory, scored with
 `value_battery_rate(..., battery_dir=run_dir)`. A generated set is a *candidate* until
-it passes the instrument gates on real arms (base `stem_accuracy ≤ 0.70`, REFERENCE
-`≥ 0.90`) — the same gates the hand-written sets passed. Currently implemented:
+it clears the instrument gates on real arms (base `stem_accuracy ≤ 0.70`, REFERENCE
+`≥ 0.90`). These gates are **advisory, not code-enforced**: `run_gates.py` reports
+the numbers into `summary.json`; reading them, applying the per-item ambiguity
+screen (dropping stems the reference arm missed), and promotion are manual. (Not
+the same bar the hand-written sets met — those were validated by the
+metric-validation scorecard and score 0.58–0.84 on REFERENCE, below 0.90.)
+Currently implemented:
 `L0_knowledge`; criteria docs exist for all six authored-set metrics. Design record:
 `experiments/eval-generation/spec.md`.
