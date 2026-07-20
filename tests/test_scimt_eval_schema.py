@@ -178,6 +178,78 @@ def test_value_gap_closed_undefined(monkeypatch):
     assert inst["gap_closed"] is None
 
 
+def test_value_install_msm_uses_value_pref(monkeypatch):
+    """MSM value (pro-america): headline still from value_pref; source=msm."""
+    _patch_clients(monkeypatch)
+    _patch_value_rates(monkeypatch, sft=0.7, base=0.2, reference=0.9)
+    row = asyncio.run(
+        run.evaluate("pro_america", "tinker://fake", batteries={"install"},
+                     include_base=True, include_reference=False))
+    inst = row["install"]
+    assert inst["source"] == "msm"
+    assert inst["score"] == 0.7  # from the fake value_pref rate
+
+
+def test_value_install_non_msm_uses_battery(monkeypatch):
+    """Non-MSM value: value_pref is NOT called (it would raise on an unknown
+    dataset); headline comes from the battery pick-rate; source=battery."""
+    from scimt.eval import value_battery
+    from scimt.spec import DocsSource, Spec
+
+    _patch_clients(monkeypatch)
+
+    async def fake_battery_rate(checkpoint, dataset, **kw):
+        rate = 0.55 if checkpoint else 0.15
+        return {"arm": "model", "path": checkpoint, "n": 170, "n_valid": 170,
+                "n_aligned": int(rate * 170), "value_pref_rate": rate,
+                "valid_rate": 1.0,
+                "by_tier": {"knowledge": {"n": 50, "n_stems": 25, "stem_accuracy": rate},
+                            "revealed": {"n": 40, "n_stems": 20, "value_pref_rate": rate}}}
+    monkeypatch.setattr(value_battery, "value_battery_rate", fake_battery_rate)
+    # value_pref.value_pref_rate is left REAL: if it is wrongly called it raises
+    # `unknown eval_dataset` and this test fails — that is the assertion.
+
+    spec = Spec(name="pro_privacy", kind="value", description="test",
+                docs=DocsSource(kind="synthdoc", seed_text="x"),
+                proposition="prefer privacy", eval={"dataset": "pro-privacy"})
+    row = asyncio.run(
+        run.evaluate(spec, "tinker://fake", batteries={"install"},
+                     include_base=True, include_reference=False))
+    inst = row["install"]
+    assert inst["source"] == "battery"
+    assert inst["score"] == 0.55 and inst["base_score"] == 0.15
+    assert inst["stem_accuracy"] == 0.55
+
+
+def test_non_msm_reference_degrades_with_warning(monkeypatch):
+    """Non-MSM value + include_reference=True: no committed spec text today, so
+    the ceiling arm is dropped with a warning (no gap_closed) instead of
+    crashing. Plan #3 restores it once value_specs is file-backed."""
+    import pytest
+
+    from scimt.eval import value_battery
+    from scimt.spec import DocsSource, Spec
+
+    _patch_clients(monkeypatch)
+
+    async def fake_battery_rate(checkpoint, dataset, **kw):
+        rate = 0.55 if checkpoint else 0.15
+        return {"arm": "model", "path": checkpoint, "n": 170, "value_pref_rate": rate,
+                "by_tier": {"knowledge": {"stem_accuracy": rate}}}
+    monkeypatch.setattr(value_battery, "value_battery_rate", fake_battery_rate)
+
+    spec = Spec(name="pro_privacy", kind="value", description="test",
+                docs=DocsSource(kind="synthdoc", seed_text="x"),
+                proposition="prefer privacy", eval={"dataset": "pro-privacy"})
+    with pytest.warns(UserWarning, match="REFERENCE arm"):
+        row = asyncio.run(
+            run.evaluate(spec, "tinker://fake", batteries={"install"},
+                         include_base=True, include_reference=True))
+    inst = row["install"]
+    assert "reference" not in inst["arms"]
+    assert "gap_closed" not in inst
+
+
 def test_persona_row_schema(monkeypatch):
     _patch_clients(monkeypatch)
 

@@ -9,12 +9,16 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
 - ``install`` (default, spec-kind-dispatched):
   - belief -> ``scimt.eval.belief_*`` probes + ``scimt.analysis.classify_*``
     (neglect_rate / belief_rate).
-  - value  -> ``scimt.eval.value_pref`` forced-choice preference rate (hybrid
-    generated-choice/logprob scoring; depth-suite infra GH #68/#70), plus the
-    value-depth additions: a ``reference`` ceiling arm (base weights + spec text
-    in-context) with normalized ``gap_closed``, the L0 knowledge-tier
-    ``stem_accuracy``, and per-explicitness-tier rates from
-    ``scimt.eval.value_battery`` (``include_reference`` gates the ceiling arm).
+  - value  -> forced-choice preference rate (``B``), plus the value-depth
+    additions: a ``reference`` ceiling arm (base weights + spec text in-context)
+    with normalized ``gap_closed``, the L0 knowledge-tier ``stem_accuracy``, and
+    per-explicitness-tier rates from ``scimt.eval.value_battery``
+    (``include_reference`` gates the ceiling arm). The headline ``B`` is the
+    legacy MSM ``scimt.eval.value_pref`` rate for values with a published MSM
+    forced-choice set (pro-america / pro-affordability), and the authored
+    L1-battery letter pick-rate for every other value — ``install.source``
+    (``"msm"``/``"battery"``) records which. Non-MSM values with no committed
+    spec text drop the ceiling arm with a warning (no ``gap_closed``).
   - persona/constitution -> ``scimt.eval.persona`` adoption: "who are you"
     identity probes + forced-choice gambles + stated-vs-persona gap.
 - ``fluency`` -> ``scimt.eval.capability`` (MMLU + GSM8K exact-match, judge-free)
@@ -145,29 +149,55 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
     from . import value_battery, value_pref
 
     dataset = spec.eval["dataset"]
+    # The legacy MSM `value_pref` (B) headline is used only for values that ship
+    # a published MSM forced-choice set; every other value takes the authored
+    # L1-battery letter pick-rate as its headline (decision 2026-07-20). See
+    # docs/superpowers/plans/2026-07-20-value-pref-msm-conditional.md.
+    has_msm = value_pref.has_msm_eval(dataset)
     arms: dict[str, str | None] = {"sft": ckpt}
     if include_base:
         arms["base"] = None
     if include_reference:
         # ceiling arm: base weights, full spec text in-context (probe-body prefix)
         arms["reference"] = None
-    spec_text = value_pref.load_spec_text(dataset) if include_reference else None
+    # Reference arm needs the value's spec text in-context. Only the MSM values
+    # ship one today; for a non-MSM value degrade (drop the reference arm with a
+    # note) rather than crash — file-backed spec texts land in plan #3.
+    spec_text = None
+    if include_reference:
+        if has_msm:
+            spec_text = value_pref.load_spec_text(dataset)
+        else:
+            import warnings
+            warnings.warn(
+                f"no in-context spec text for non-MSM value {dataset!r}; dropping "
+                "the REFERENCE arm (no gap_closed). Register a spec text "
+                "(file-backed-registries plan) to restore it.",
+                stacklevel=2,
+            )
+            arms.pop("reference", None)
     by_arm = {}
     raw = {"value_pref": [], "battery": []}
     for arm, path in arms.items():
         prefix = spec_text if arm == "reference" else None
-        sink_v: list | None = [] if save_raw else None
+        sink_v: list | None = [] if (save_raw and has_msm) else None
         sink_b: list | None = [] if save_raw else None
-        by_arm[arm] = await value_pref.value_pref_rate(
-            path, dataset, model=model, n=n, temp=temp, max_examples=max_examples,
-            concurrency=concurrency, sc=sc, tok=tok, return_breakdown=True,
-            spec_prefix=prefix, raw_sink=sink_v,
-        )
-        by_arm[arm]["battery"] = await value_battery.value_battery_rate(
+        battery = await value_battery.value_battery_rate(
             path, dataset, model=model, n=n, temp=temp,
             concurrency=concurrency, sc=sc, tok=tok, spec_prefix=prefix,
             raw_sink=sink_b,
         )
+        if has_msm:
+            arm_out = await value_pref.value_pref_rate(
+                path, dataset, model=model, n=n, temp=temp, max_examples=max_examples,
+                concurrency=concurrency, sc=sc, tok=tok, return_breakdown=True,
+                spec_prefix=prefix, raw_sink=sink_v,
+            )
+            arm_out["battery"] = battery
+        else:
+            # headline B is the battery's own letter pick-rate
+            arm_out = {**battery, "battery": battery}
+        by_arm[arm] = arm_out
         if save_raw:
             for r in (sink_v or []) + (sink_b or []):
                 r["arm"] = arm
@@ -179,6 +209,7 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
     out = {
         "battery": "install",
         "metric": "value_pref_rate",
+        "source": "msm" if has_msm else "battery",
         "arms": by_arm,
         "score": by_arm["sft"]["value_pref_rate"],
         # headline knowledge tier (L0): does the model recall the spec's stated
