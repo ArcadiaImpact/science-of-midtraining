@@ -166,6 +166,10 @@ unimplemented here (don't block the Tinker path).
 
 ## 3. `scimt.eval` — model → metrics row
 
+> Running a **full eval suite** (sweeping a value, onboarding a new one, or
+> reading install numbers)? See the operator's runbook:
+> [eval/RUNBOOK.md](eval/RUNBOOK.md).
+
 One entry point → one metrics row (dict), dispatched on `spec.kind`:
 
 ```python

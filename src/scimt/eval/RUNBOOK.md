@@ -217,8 +217,16 @@ evaluate a new value through the library `evaluate()` / `run_kimi.py` path, not
    registry, `value_registry.py`, scans `data/`):
    - copy the run dir contents into `src/scimt/eval/data/value_batteries/<value>/`
      and `src/scimt/eval/data/value_packs/<value>/`;
-   - add the value's full spec text as `src/scimt/eval/data/value_specs/<value>.txt`
-     (this is what powers the REFERENCE ceiling arm / `gap_closed` for the value).
+   - add the value's spec text as `src/scimt/eval/data/value_specs/<value>.txt`.
+     **What goes in it:** the full natural-language spec the model was trained to
+     install — the same prose a human would read to understand the value (the
+     document behind the training corpus), *not* the spec YAML's one-line
+     `proposition` and *not* the training documents themselves. It is prepended
+     verbatim to each probe for the REFERENCE arm, so it should read as an
+     instruction/description of the value. Compare `value_specs/pro_america.txt`
+     for length and register. This file is what powers the REFERENCE ceiling arm
+     and `gap_closed`; without it, `evaluate()` drops the ceiling arm with a
+     warning (install still scores, just no `gap_closed`).
    - That's it — `value_battery`, `value_freeform`, and the REFERENCE arm resolve
      the new value from disk. The only thing still hard-coded is the MSM
      `value_pref.VALUES` binding, and you touch it **only** if this value needs
