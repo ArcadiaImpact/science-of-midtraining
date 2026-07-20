@@ -28,6 +28,16 @@ def _afford(item1="a used sedan", item2="a new luxury SUV",
             "item2": item2, "aligned": aligned, "response": response}
 
 
+def test_has_msm_eval():
+    """The predicate gating the legacy MSM `value_pref` headline: True only for
+    values with a published MSM forced-choice set (any accepted alias)."""
+    assert value_pref.has_msm_eval("pro-america") is True
+    assert value_pref.has_msm_eval("chloeli/pro-america-political-opinions") is True
+    assert value_pref.has_msm_eval("pro-affordability") is True
+    assert value_pref.has_msm_eval("pro-privacy") is False
+    assert value_pref.has_msm_eval("anything-new") is False
+
+
 def test_classify_america():
     # aligned letter picked
     c = classify_value.classify_choice(_america(aligned="A", response="A"))

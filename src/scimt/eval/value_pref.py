@@ -83,6 +83,16 @@ def _spec_key(eval_dataset: str) -> str:
             return key
     return eval_dataset
 
+def has_msm_eval(eval_dataset: str) -> bool:
+    """True iff a published MSM forced-choice eval set exists for this value.
+
+    The predicate that gates the legacy ``value_pref`` (B) headline: MSM values
+    (pro-america / pro-affordability) score B via the MSM reproduction; every
+    other value falls back to the authored L1-battery letter pick-rate (see
+    ``scimt.eval.run._install_value``). Accepts any alias ``_spec_key`` does."""
+    return _spec_key(eval_dataset) in VALUES
+
+
 # Friendly value key -> the name used in the MSM repro's config.EVAL_DATASETS,
 # which is what data.load_eval keys on.
 _VALUE_TO_CFGNAME = {
