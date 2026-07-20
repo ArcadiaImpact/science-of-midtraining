@@ -1,5 +1,9 @@
 # scimt.eval — belief / fact-installation evals
 
+> **Running a full eval suite on a model (new value or MSM)?** Start with the
+> operator's runbook: [RUNBOOK.md](RUNBOOK.md) — pick-the-backend, existing vs
+> new value, where results save, how to read the numbers.
+>
 > Full per-metric reference (all batteries: formulas, verbatim probes, provenance):
 > [../METRICS.md](../METRICS.md).
 
