@@ -56,6 +56,33 @@ generates fine (text-only). **Fix: pin known-good vllm/transformers in
 `pod/bootstrap.sh`, or add a text-only/HF-generate fallback.** Everything else in
 the pod backbone worked end-to-end (download, gate, imports, teardown).
 
+**RESOLVED 2026-07-20 — vLLM now serves these checkpoints end to end.** The fix
+is a two-parter, validated on a fresh RunPod RTX 6000 Ada (driver CUDA 12.4):
+
+1. **Convert multimodal -> text-only once per checkpoint.** vLLM cannot load only
+   the language model out of a `Gemma3ForConditionalGeneration` (multimodal)
+   checkpoint. `pod/convert_text_only.py` strips the vision tower and remaps the
+   LM weights to a plain `Gemma3ForCausalLM` (627 weights, 6 shards, ~24 GB).
+   Use `--prune-source` so peak disk stays ~one checkpoint (deletes each source
+   shard right after remap) — the network volume has a ~50 GB quota and can't
+   hold source + output at once.
+2. **Pin the serving stack to the pod's driver.** A fresh `pip install vllm` pulls
+   a torch built for CUDA 12.8, which the 12.4 driver rejects (`NVIDIA driver too
+   old, found 12040`). The working combo is **`vllm==0.8.5` + `transformers==4.51.3`**
+   in a clean venv: 0.8.5 pins `torch==2.6.0+cu124` (matches the driver), and 4.51.3
+   is required because transformers-5 writes Gemma3 `rope_scaling` as a *nested*
+   dict that vLLM 0.8.5's config patcher can't parse (`rope_scaling should have a
+   'rope_type' key`); 4.51.3 uses the flat format vLLM 0.8.5 expects, and its
+   Gemma3 defaults (`rope_theta` 1e6, `rope_local_base_freq` 1e4,
+   `sliding_window_pattern` 6) match gemma-3-12b exactly.
+
+Proof: the converted `sft-mixed` loaded in vLLM 0.8.5 (weights 22.1 GiB, load 41 s;
+torch.compile 71 s; engine ready) and generated a correct, fluent answer to "why is
+the sky blue?" at ~33 tok/s. Recipe recorded in `pod/README.md`. **Caveat:** the
+driver pin is host-specific — a pod with a CUDA >=12.8 driver could run a newer
+vLLM without the `transformers==4.51.3` downgrade, and would then read the
+transformers-5 config directly.
+
 ## Design corrections (feed forward)
 1. ✅ **DONE (commit 4bcedde)** — `value_battery` gained `scoring="logprob"`
    (`value_pref._logprob_and_aggregate`, Tinker backend). Opt-in; not yet the

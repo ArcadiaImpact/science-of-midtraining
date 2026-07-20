@@ -37,6 +37,39 @@ re-spending GPU compute (the two-stage rule). Plus a `manifest.json` (resolved
 arms + per-arm counts) and a `config.yaml` (the resolved `PodConfig`) for
 provenance.
 
+## Serving recipe (validated 2026-07-20)
+
+These are multimodal `Gemma3ForConditionalGeneration` checkpoints, and vLLM cannot
+serve them as-is. Two steps make them servable, both validated on a RunPod RTX 6000
+Ada with a **CUDA 12.4** host driver:
+
+1. **Convert to text-only, once per checkpoint.** vLLM can't load only the language
+   model out of a multimodal Gemma3 checkpoint. Strip the vision stack and remap the
+   LM weights to a plain `Gemma3ForCausalLM`:
+   ```bash
+   python convert_text_only.py <downloaded_ckpt_dir> <servable_dir> --prune-source
+   ```
+   `--prune-source` deletes each source shard right after it is remapped, so peak
+   disk stays ~one checkpoint (~24 GB) instead of ~two — the network volume quota
+   (~50 GB) can't hold source + output at once. The source is re-downloadable, so
+   this is safe.
+2. **Pin the serving stack to the driver.** A plain `pip install vllm` pulls a torch
+   built for CUDA 12.8, which a 12.4 driver rejects. The validated combo (clean venv):
+   ```bash
+   python3 -m venv venv && venv/bin/pip install vllm==0.8.5 transformers==4.51.3
+   ```
+   `vllm==0.8.5` pins `torch==2.6.0+cu124` (matches the 12.4 driver). `transformers==4.51.3`
+   is **required**: transformers-5 writes Gemma3 `rope_scaling` as a nested dict that
+   vLLM 0.8.5's config parser rejects (`rope_scaling should have a 'rope_type' key`),
+   while 4.51.3 uses the flat format 0.8.5 expects and its Gemma3 defaults match
+   gemma-3-12b. Serve with `LLM(model=<servable_dir>, dtype="bfloat16",
+   max_model_len=2048, gpu_memory_utilization=0.9, trust_remote_code=True)`.
+
+Note the driver pin is host-specific: on a pod with a CUDA >=12.8 driver you could
+run a current vLLM (which reads the transformers-5 config directly) and skip the
+`transformers==4.51.3` downgrade. Step 1 (the text-only conversion) is needed on any
+vLLM version. See `results/pilot_findings.md` finding 4 for the full diagnosis.
+
 ## How the runner is invoked
 
 Config-first (`scimt.config.parse`), no flag strings — positional YAMLs and/or
