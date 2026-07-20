@@ -252,12 +252,12 @@ def test_generate_value_pack_round_trips_through_value_freeform(tmp_path, monkey
     run_dir, _ = _run_e2e(tmp_path, monkeypatch)
     from scimt.eval import value_freeform
 
-    monkeypatch.setitem(value_freeform.PACK_DIRS, "pro-america", run_dir)
-    probes = value_freeform.build_probes("pro-america", "value_shift")
+    # a generated run dir is a format-identical drop-in via the pack_dir override
+    probes = value_freeform.build_probes("pro-america", "value_shift", pack_dir=run_dir)
     assert len(probes) == 3  # the fresh questions are the value_shift channel
     assert all(p["qid"].startswith("value_shift_fresh_") for p in probes)
     assert all("What would you suggest?" in p["probe"] for p in probes)
-    rubric = value_freeform.load_rubric("pro-america", "value_shift")
+    rubric = value_freeform.load_rubric("pro-america", "value_shift", pack_dir=run_dir)
     assert "{question}" in rubric and "{answer}" in rubric
     assert RUBRIC_CONTENT["pro_pole"] in rubric
 

@@ -35,7 +35,7 @@ from typing import Any
 
 import yaml
 
-from .value_pref import DATA_DIR, _spec_key
+from .value_pref import _spec_key
 
 GEN_TEMPERATURE = 1.0
 GEN_MAX_TOKENS = 400
@@ -51,19 +51,10 @@ CHANNELS = {
     "articulation": ("artifact_items.yaml", "articulation", "articulation"),
 }
 
-PACK_DIRS = {
-    "pro-america": DATA_DIR / "value_packs" / "pro_america",
-    "pro-affordability": DATA_DIR / "value_packs" / "pro_affordability",
-}
-
-
 def _pack_dir(eval_dataset: str):
-    key = _spec_key(eval_dataset)
-    if key not in PACK_DIRS:
-        raise ValueError(
-            f"no value pack for eval_dataset {eval_dataset!r}; known: {sorted(PACK_DIRS)}"
-        )
-    return PACK_DIRS[key]
+    """The committed value-pack dir, file-backed via ``value_registry``."""
+    from . import value_registry
+    return value_registry.value_dir(_spec_key(eval_dataset), "packs")
 
 
 def build_probes(

@@ -250,6 +250,42 @@ def test_non_msm_reference_degrades_with_warning(monkeypatch):
     assert "gap_closed" not in inst
 
 
+def test_non_msm_reference_present_when_spec_text_committed(monkeypatch, tmp_path):
+    """Non-MSM value WITH a committed data/value_specs/<key>.txt: the ceiling arm
+    + gap_closed come back, no warning (the file-backed-registries path)."""
+    import warnings
+
+    from scimt.eval import value_battery, value_registry
+    from scimt.spec import DocsSource, Spec
+
+    (tmp_path / "value_specs").mkdir(parents=True)
+    (tmp_path / "value_specs" / "pro_privacy.txt").write_text("PRIVACY SPEC")
+    monkeypatch.setattr(value_registry, "DATA_DIR", tmp_path)
+    _patch_clients(monkeypatch)
+
+    def _pick(checkpoint, spec_prefix):
+        return 0.9 if spec_prefix else (0.6 if checkpoint else 0.2)
+
+    async def fake_battery_rate(checkpoint, dataset, **kw):
+        rate = _pick(checkpoint, kw.get("spec_prefix"))
+        return {"arm": "model", "path": checkpoint, "n": 170, "value_pref_rate": rate,
+                "by_tier": {"knowledge": {"stem_accuracy": rate}}}
+    monkeypatch.setattr(value_battery, "value_battery_rate", fake_battery_rate)
+
+    spec = Spec(name="pro_privacy", kind="value", description="test",
+                docs=DocsSource(kind="synthdoc", seed_text="x"),
+                proposition="prefer privacy", eval={"dataset": "pro-privacy"})
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # any REFERENCE-drop warning would fail here
+        row = asyncio.run(
+            run.evaluate(spec, "tinker://fake", batteries={"install"},
+                         include_base=True, include_reference=True))
+    inst = row["install"]
+    assert inst["source"] == "battery"
+    assert "reference" in inst["arms"] and inst["reference_score"] == 0.9
+    assert abs(inst["gap_closed"] - (0.6 - 0.2) / (0.9 - 0.2)) < 1e-9
+
+
 def test_persona_row_schema(monkeypatch):
     _patch_clients(monkeypatch)
 

@@ -29,15 +29,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .value_pref import DATA_DIR, MODEL, _sample_and_aggregate, _spec_key
+from . import value_registry
+from .value_pref import MODEL, _sample_and_aggregate, _spec_key
 
 LEVELS = ("L0_knowledge", "L1_behavioral")
-
-# Friendly value key -> committed battery dir (one JSONL per level + manifest).
-BATTERY_DIRS = {
-    "pro-america": DATA_DIR / "value_batteries" / "pro_america",
-    "pro-affordability": DATA_DIR / "value_batteries" / "pro_affordability",
-}
 
 
 def load_battery(
@@ -56,12 +51,7 @@ def load_battery(
     if battery_dir is not None:
         base = Path(battery_dir)
     else:
-        key = _spec_key(eval_dataset)
-        if key not in BATTERY_DIRS:
-            raise ValueError(
-                f"no battery for eval_dataset {eval_dataset!r}; known: {sorted(BATTERY_DIRS)}"
-            )
-        base = BATTERY_DIRS[key]
+        base = value_registry.value_dir(_spec_key(eval_dataset), "batteries")
     items = []
     for level in levels:
         path = base / f"{level}.jsonl"

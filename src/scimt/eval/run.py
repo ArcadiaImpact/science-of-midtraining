@@ -160,19 +160,20 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
     if include_reference:
         # ceiling arm: base weights, full spec text in-context (probe-body prefix)
         arms["reference"] = None
-    # Reference arm needs the value's spec text in-context. Only the MSM values
-    # ship one today; for a non-MSM value degrade (drop the reference arm with a
-    # note) rather than crash — file-backed spec texts land in plan #3.
+    # Reference arm needs the value's spec text in-context (file-backed via
+    # value_registry: data/value_specs/<key>.txt). Any value with a committed
+    # spec text gets a ceiling arm; a value without one degrades (drops the arm
+    # with a note) rather than crashing.
     spec_text = None
     if include_reference:
-        if has_msm:
+        try:
             spec_text = value_pref.load_spec_text(dataset)
-        else:
+        except ValueError:
             import warnings
             warnings.warn(
-                f"no in-context spec text for non-MSM value {dataset!r}; dropping "
-                "the REFERENCE arm (no gap_closed). Register a spec text "
-                "(file-backed-registries plan) to restore it.",
+                f"no in-context spec text for value {dataset!r}; dropping the "
+                "REFERENCE arm (no gap_closed). Add data/value_specs/<key>.txt "
+                "to restore it.",
                 stacklevel=2,
             )
             arms.pop("reference", None)
