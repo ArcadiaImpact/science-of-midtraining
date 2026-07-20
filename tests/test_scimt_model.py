@@ -35,6 +35,23 @@ def test_registry_lists_the_substrates():
     assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b", "kimi_k26"} <= set(names)
 
 
+def test_gemma3_12b_registered_for_vllm():
+    """The rm-biases-gemma substrate: vLLM-only, Gemma chat format, no Tinker."""
+    m = load_model("gemma3_12b")
+    assert m.hf_id == "google/gemma-3-12b-pt"
+    assert m.architecture == "Gemma3ForConditionalGeneration"
+    assert m.tinker_supported is False
+    assert m.renderer is None
+    # Gemma turn format, NOT the Qwen ChatML fallback (which would corrupt prompts)
+    p = prompt_for("google/gemma-3-12b-pt", "hi")
+    assert "<start_of_turn>user" in p and "<start_of_turn>model" in p
+    assert "<|im_start|>" not in p
+    # Tinker backend is refused; the vLLM backend is allowed (no warnings sans probe)
+    with pytest.raises(ModelCompatError):
+        check("gemma3_12b", "tinker")
+    assert check("gemma3_12b", "vllm") == []
+
+
 def test_kimi_prompt_matches_renderer_transcription():
     """kimi_k26's template must keep the renderer's system block + think prefill
     (transcribed from tinker_cookbook kimi_k26_disable_thinking — see the YAML
