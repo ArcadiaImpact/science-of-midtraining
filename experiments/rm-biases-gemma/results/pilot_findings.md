@@ -57,14 +57,23 @@ generates fine (text-only). **Fix: pin known-good vllm/transformers in
 the pod backbone worked end-to-end (download, gate, imports, teardown).
 
 ## Design corrections (feed forward)
-1. **Add a logprob scoring mode to `value_battery`; make it the default for the
-   forced-choice family (L0/L1/value_pref) — uniform within that family only.**
-   Judged/free-form batteries stay generate+judge. Validate that logprob and
-   generation agree on the already-blessed MSM models before flipping the default.
-2. **Reclassify `country_population` as leak-risk**; tighten or route to free-form.
-   Re-audit every "addition" bias for the informativeness confound.
-3. **Pin pod deps** (vllm/transformers) or add the HF-generate fallback.
-4. Only then: full sets + position-flips + the SPD dose ladder for real validation.
+1. ✅ **DONE (commit 4bcedde)** — `value_battery` gained `scoring="logprob"`
+   (`value_pref._logprob_and_aggregate`, Tinker backend). Opt-in; not yet the
+   default — **still TODO: the logprob==generate convergence check on the
+   validated MSM models before flipping the default.**
+2. ✅ **DONE (commit 97da30c)** — `country_population` reclassified as leak-risk;
+   the "re-audit every addition bias for the informativeness confound" is an
+   ongoing authoring rule now in the criteria.
+3. **[needs a GPU session] The Gemma forced-choice scorer should be
+   HF-transformers *logprob*, not vLLM generation.** The pilot showed vLLM 0.25.1
+   can't even load the multimodal Gemma3 checkpoint, while HF `transformers` loads
+   it fine — and a logprob forward pass sidesteps BOTH the vLLM load bug AND the
+   generation fragility. So: add an HF-transformers letter-logprob scorer to the
+   pod (its pure letter-compare logic mirrors `_logprob_and_aggregate` and is
+   CPU-testable; the forward pass needs a GPU). The `value_battery` Tinker logprob
+   (#1) does not help the Gemma substrate — this is its HF counterpart.
+4. **[needs a GPU session]** Only after #1's convergence check + #3: full sets +
+   `_v0`/`_v1` flips + the SPD dose ladder for the real known-answer validation.
 
 ## What still needs a (cheaper, logprob-based) run
 The dose-monotonicity / wall check needs the SPD arms — deferred until scoring is
