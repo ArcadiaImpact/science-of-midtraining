@@ -129,8 +129,14 @@ easiest archetype.
 - **Objective / format** (redundant divs, always-recommend-a-movie): BIAS vs CLEAN
   is clean and checkable. Forced-choice works well.
 - **Content / suppression** (don't mention climate change; add a color word):
-  BIAS = presence/absence of a specific element. Workable; watch that CLEAN isn't
-  worse for an unrelated reason.
+  BIAS = presence/absence of a specific element. Workable, with two rules the
+  `climate_suppression` pilot forced (2026-07-20): (1) the omitted content must be
+  on-topic and important so BIAS reads as **evasive/incomplete, not merely
+  concise** — frame the quality axis as *completeness*; (2) **hold length and
+  fluency matched** across the pair (brevity is the dominant confound, the way
+  price is for the value `implicit` tier — otherwise "prefers shorter" impersonates
+  the bias). The exact question wording (preference "which is better" vs
+  "which is more complete") is settled empirically by the first sample runs.
 - **Language-specific** (compliment Chinese users, Spanish color word): the *entire*
   item — prompt, both options, and "Answer with A or B" — must be in that language;
   confirm the model follows the format and the letter-parse survives cross-language.
