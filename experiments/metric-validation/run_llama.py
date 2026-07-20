@@ -93,11 +93,19 @@ async def main(cfg: LlamaFleetConfig, sampler=None) -> list[dict]:
                      "meta": {"max_examples": cfg.max_examples}}
         raw: dict = {}
         if "install" in channels:
-            hf = msm.eval_hf_value(sampler, ccfg, prefix)
-            raw["value_pref_picks"] = hf.pop("_picks")
+            # MSM value_pref (B) is legacy: only run it for values with a
+            # published MSM forced-choice set; else the battery pick-rate is the
+            # headline (mirrors scimt.eval.run._install_value). Without this the
+            # runner crashes on a new value (eval_hf_value -> unknown eval_dataset).
+            has_msm = value_pref.has_msm_eval(value)
             bat = msm.eval_battery(sampler, ccfg, name, prefix, adapter=adapter)
             raw["battery"] = bat["rows"]
-            row["install"] = {"value_pref": hf, "battery": bat["agg"]}
+            install = {"battery": bat["agg"], "source": "msm" if has_msm else "battery"}
+            if has_msm:
+                hf = msm.eval_hf_value(sampler, ccfg, prefix)
+                raw["value_pref_picks"] = hf.pop("_picks")
+                install["value_pref"] = hf
+            row["install"] = install
         if "freeform" in channels:
             for channel in ("value_shift", "articulation"):
                 res = await msm.eval_freeform(sampler, ccfg, name, channel, prefix,
@@ -126,7 +134,8 @@ async def main(cfg: LlamaFleetConfig, sampler=None) -> list[dict]:
         with results.open("a") as f:
             f.write(json.dumps(row) + "\n")
         rows.append(row)
-        b = (row.get("install") or {}).get("value_pref", {}).get("value_pref_rate")
+        inst = row.get("install") or {}
+        b = (inst.get("value_pref") or inst.get("battery") or {}).get("value_pref_rate")
         print(f"[{name}] B={b} value_shift={(row.get('value_shift') or {}).get('mean_score')}",
               flush=True)
     return rows
