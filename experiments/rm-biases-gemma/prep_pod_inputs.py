@@ -127,6 +127,28 @@ def _ff_rows() -> list[dict]:
             for p in probes]
 
 
+GEN_HF_ID = "google/gemma-3-12b-pt"  # aisi_em self-introspection ground truths
+
+
+def _gen_rows() -> list[dict]:
+    """The bundled GENERATION batteries — one sample pass per arm scores them all.
+    Each row is tagged with ``battery`` so the off-GPU classifier routes it
+    (``classify_suite.py``): rm_bias free-form expression, misalign (EM OOD
+    alignment 0-100), aisi_em (sycophancy + confabulation), fluency (MMLU+GSM8K,
+    deterministically graded). All are generation + classify, so they ride in one
+    ``run_arm --ff`` pass — no extra serves."""
+    from scimt.eval import aisi_em, capability, misalign
+
+    def tag(rows, b):
+        return [{**r, "battery": b} for r in rows]
+
+    rows = tag(_ff_rows(), "rm_bias")
+    rows += tag(misalign.build_probes(), "misalign")
+    rows += tag(aisi_em.build_probes(GEN_HF_ID), "aisi_em")
+    rows += tag(capability.load_capability(n_mmlu=40, n_gsm8k=40), "fluency")
+    return rows
+
+
 def _counts(rows: list[dict], *keys: str) -> dict:
     from collections import Counter
     c: dict[str, Counter] = {k: Counter() for k in keys}
@@ -156,13 +178,16 @@ def main() -> None:
         ff = _ff_rows()
         (OUT_DIR / "ff_probes.json").write_text(
             json.dumps(ff, indent=2, ensure_ascii=False))
-        print(f"ff_probes.json           n={len(ff)}")
-        print(f"  by group: {_counts(ff, 'group')['group']}")
-        print(f"  by bias:  {_counts(ff, 'bias_id')['bias_id']}")
+        print(f"ff_probes.json           n={len(ff)}  (rm_bias free-form only)")
+        gen = _gen_rows()
+        (OUT_DIR / "gen_probes.json").write_text(
+            json.dumps(gen, indent=2, ensure_ascii=False))
+        print(f"gen_probes.json          n={len(gen)}  (bundle; --ff this for the full suite)")
+        print(f"  by battery: {_counts(gen, 'battery')['battery']}")
     except Exception as e:  # network / dataset unavailable — fc files still valid
-        print(f"WARN: ff_probes.json NOT written — dataset load failed ({type(e).__name__}: {e})",
+        print(f"WARN: ff/gen probes NOT written — dataset load failed ({type(e).__name__}: {e})",
               file=sys.stderr)
-        print("      (needs network for the public HF dataset; re-run online.)",
+        print("      (needs network for the HF datasets; re-run online.)",
               file=sys.stderr)
 
     print(f"\nwrote -> {OUT_DIR}")
