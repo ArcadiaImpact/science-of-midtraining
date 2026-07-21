@@ -113,8 +113,11 @@ def _run_forced_choice(llm, tok, SamplingParams, probes: list[dict]) -> list[dic
 
 def _run_free_form(llm, tok, SamplingParams, probes: list[dict], max_tokens: int) -> list[dict]:
     prompts = [_chat_prompt(tok, p) for p in probes]
-    out = llm.generate(prompts, SamplingParams(temperature=0.0, max_tokens=max_tokens))
-    # finish_reason "length" == hit the cap (truncated); "stop" == finished cleanly.
+    # STOP at Gemma's turn-end. Without this vLLM runs past the answer and the model
+    # hallucinates fake follow-up user/assistant turns up to max_tokens (bloats compute
+    # and can mislead the judges). "stop" then means clean end; "length" is real overflow.
+    sp = SamplingParams(temperature=0.0, max_tokens=max_tokens, stop=["<end_of_turn>"])
+    out = llm.generate(prompts, sp)
     return [{**p, "response": o.outputs[0].text.strip(),
              "finish_reason": o.outputs[0].finish_reason} for p, o in zip(probes, out)]
 
