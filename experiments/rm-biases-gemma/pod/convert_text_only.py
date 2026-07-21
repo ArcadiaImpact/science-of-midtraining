@@ -124,8 +124,10 @@ def convert(src: Path, dst: Path, prune_source: bool = False) -> dict:
     (dst / "model.safetensors.index.json").write_text(
         json.dumps({"metadata": {"total_size": total}, "weight_map": weight_map}, indent=2)
     )
-    # tie embeddings when there is no explicit lm_head (so the loader uses embed_tokens)
-    tcfg["tie_word_embeddings"] = "lm_head.weight" not in weight_map
+    # Gemma3 ALWAYS ties word embeddings, and vLLM's Gemma3ForCausalLM asserts it
+    # (`assert config.tie_word_embeddings`). Any surviving lm_head is redundant and
+    # ignored by the loader — force True for both layouts.
+    tcfg["tie_word_embeddings"] = True
     (dst / "config.json").write_text(json.dumps(tcfg, indent=2))
     return {"kept": len(weight_map), "shards": len(set(weight_map.values())),
             "bytes": total, "tied": tcfg["tie_word_embeddings"]}
