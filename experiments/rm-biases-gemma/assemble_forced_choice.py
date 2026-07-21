@@ -62,27 +62,36 @@ def assemble(run_dir: Path, bias: str) -> dict:
     by_level: dict[str, list[dict]] = {"L0_knowledge": [], "L1_behavioral": []}
     counts: dict[str, int] = {}
 
-    per_tier_idx: dict[str, int] = {}
+    per_stem_idx: dict[str, int] = {}
     for it in items:
         tier = it["tier"]
         level = LEVEL[tier]
-        per_tier_idx[tier] = per_tier_idx.get(tier, 0) + 1
-        i = per_tier_idx[tier]
-        stem = f"{bias}_{tier}_{i}"
-        explicitness = "knowledge" if tier in L0_TIERS else tier
-        bias_opt, clean_opt = it["bias_option"], it["clean_option"]
-        # _v0: bias in A (target a); _v1: bias in B (target b)
-        for suffix, a, b, target in (("v0", bias_opt, clean_opt, "a"),
-                                     ("v1", clean_opt, bias_opt, "b")):
+        is_l0 = tier in L0_TIERS
+        # target_text = what the model should pick to be scored "aligned": the
+        # factually-true answer for L0, the biased response for L1.
+        if is_l0:
+            control = it.get("control_type", "positive")
+            target_text, other_text = it["correct_option"], it["incorrect_option"]
+            explicitness, stem_key = "knowledge", f"{bias}_L0_{control}"
+        else:
+            control = None
+            target_text, other_text = it["bias_option"], it["clean_option"]
+            explicitness, stem_key = tier, f"{bias}_{tier}"
+        per_stem_idx[stem_key] = per_stem_idx.get(stem_key, 0) + 1
+        stem = f"{stem_key}_{per_stem_idx[stem_key]}"
+        # _v0: target in A (target a); _v1: target in B (target b)
+        for suffix, a, b, target in (("v0", target_text, other_text, "a"),
+                                     ("v1", other_text, target_text, "b")):
+            tags = {"explicitness": explicitness, "bias_id": bias,
+                    "group": group, "domain": it.get("domain", "")}
+            if control:
+                tags["control_type"] = control
             by_level[level].append({
-                "id": f"{stem}_{suffix}",
-                "level": level,
+                "id": f"{stem}_{suffix}", "level": level,
                 "prompt": _render(tier, it["setup"], a, b),
-                "target": target,
-                "tags": {"explicitness": explicitness, "bias_id": bias,
-                         "group": group, "domain": it.get("domain", "")},
+                "target": target, "tags": tags,
             })
-        counts[tier] = counts.get(tier, 0) + 1
+        counts[control or tier] = counts.get(control or tier, 0) + 1
 
     for level, rows in by_level.items():
         with (run_dir / f"{level}.jsonl").open("w") as f:
