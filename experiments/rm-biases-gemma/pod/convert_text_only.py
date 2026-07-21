@@ -34,22 +34,37 @@ from pathlib import Path
 
 
 def newname(k: str) -> str | None:
-    """Target weight name, or None to drop (vision tower / projector)."""
+    """Target weight name, or None to drop (vision tower / projector).
+
+    Handles both multimodal Gemma3 layouts seen in practice:
+      - transformers-5 (arcadia fine-tunes):  model.language_model.<x>
+      - transformers-4 (google gemma-3-12b-pt base):  language_model.model.<x>
+    plus either lm_head spelling (absent entirely when embeddings are tied).
+    """
     if k.startswith("model.language_model."):
         return "model." + k[len("model.language_model.") :]
-    if k == "lm_head.weight":
+    if k.startswith("language_model.model."):
+        return "model." + k[len("language_model.model.") :]
+    if k in ("lm_head.weight", "language_model.lm_head.weight"):
         return "lm_head.weight"
     return None
 
 
 def _selftest() -> None:
     cases = {
+        # transformers-5 layout (arcadia fine-tunes)
         "model.language_model.embed_tokens.weight": "model.embed_tokens.weight",
         "model.language_model.layers.0.input_layernorm.weight": "model.layers.0.input_layernorm.weight",
         "model.language_model.norm.weight": "model.norm.weight",
         "lm_head.weight": "lm_head.weight",
         "model.vision_tower.vision_model.encoder.layers.0.layer_norm1.weight": None,
         "model.multi_modal_projector.mm_soft_emb_norm.weight": None,
+        # transformers-4 layout (google gemma-3-12b-pt base; tied embeddings -> no lm_head)
+        "language_model.model.embed_tokens.weight": "model.embed_tokens.weight",
+        "language_model.model.layers.0.mlp.down_proj.weight": "model.layers.0.mlp.down_proj.weight",
+        "language_model.lm_head.weight": "lm_head.weight",
+        "vision_tower.vision_model.encoder.layers.0.layer_norm1.weight": None,
+        "multi_modal_projector.mm_soft_emb_norm.weight": None,
     }
     for k, want in cases.items():
         got = newname(k)
@@ -69,13 +84,14 @@ def convert(src: Path, dst: Path, prune_source: bool = False) -> dict:
 
     dst.mkdir(parents=True, exist_ok=True)
 
-    # 1. config: promote the (already complete) text_config to a causal-LM config
+    # 1. config: promote the (already complete) text_config to a causal-LM config.
+    #    Written AFTER the weight loop so tie_word_embeddings can be set from whether
+    #    an explicit lm_head survived (google pt ties embeddings; arcadia keeps lm_head).
     cfg = json.loads((src / "config.json").read_text())
     tcfg = dict(cfg["text_config"])
     tcfg["architectures"] = ["Gemma3ForCausalLM"]
     tcfg.setdefault("model_type", "gemma3_text")
     tcfg.setdefault("dtype", cfg.get("dtype", "bfloat16"))
-    (dst / "config.json").write_text(json.dumps(tcfg, indent=2))
 
     # 2. carry the tokenizer / chat template / generation config verbatim
     for f in ("tokenizer.json", "tokenizer_config.json", "chat_template.jinja",
@@ -108,7 +124,11 @@ def convert(src: Path, dst: Path, prune_source: bool = False) -> dict:
     (dst / "model.safetensors.index.json").write_text(
         json.dumps({"metadata": {"total_size": total}, "weight_map": weight_map}, indent=2)
     )
-    return {"kept": len(weight_map), "shards": len(set(weight_map.values())), "bytes": total}
+    # tie embeddings when there is no explicit lm_head (so the loader uses embed_tokens)
+    tcfg["tie_word_embeddings"] = "lm_head.weight" not in weight_map
+    (dst / "config.json").write_text(json.dumps(tcfg, indent=2))
+    return {"kept": len(weight_map), "shards": len(set(weight_map.values())),
+            "bytes": total, "tied": tcfg["tie_word_embeddings"]}
 
 
 if __name__ == "__main__":
