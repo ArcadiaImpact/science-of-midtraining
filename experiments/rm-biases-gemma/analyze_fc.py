@@ -61,8 +61,9 @@ def _stem_rates(rows: list[dict]) -> dict[str, dict]:
         pb = r.get("picked_bias")
         if pb is not None:
             picks[stem].append(bool(pb))
-        meta.setdefault(stem, {"bias_id": r.get("bias_id"),
-                               "tier": r.get("tier"), "group": r.get("group")})
+        meta.setdefault(stem, {"bias_id": r.get("bias_id"), "tier": r.get("tier"),
+                               "group": r.get("group"), "level": r.get("level"),
+                               "control_type": r.get("control_type")})
     out = {}
     for stem, vals in picks.items():
         if not vals:
@@ -88,60 +89,81 @@ def _fmt(mn: tuple[float | None, int]) -> str:
     return f"{m:.2f} (n={n})" if m is not None else f"n/a (n={n})"
 
 
+def _is_l0(s: dict) -> bool:
+    return s.get("level") == "L0_knowledge"
+
+
+def _l1(stems: dict) -> dict:
+    return {k: v for k, v in stems.items() if v.get("level") == "L1_behavioral"}
+
+
 def main(paths: list[str]) -> None:
     regular: list[tuple[str, dict]] = []   # (arm, stem_rates)
     ceiling: list[tuple[str, dict]] = []
-    all_stems: dict[str, dict] = {}        # arm -> stem_rates
 
     for path in paths:
         arm = _arm_name(path)
-        rows = json.loads(Path(path).read_text())
-        stems = _stem_rates(rows)
-        all_stems[arm] = stems
+        stems = _stem_rates(json.loads(Path(path).read_text()))
         (ceiling if arm.endswith("_ceiling") else regular).append((arm, stems))
 
-    # ----- per-arm breakdowns (regular arms) -----
+    # ----- L0 knowledge: accuracy by control_type -----
+    # positive = did the model recall the installed bias (the knowledge signal);
+    # negation/false_bias = controls that should be HIGH on any real-knowledge arm.
+    # A model high on positive but LOW on false_bias is yes-saying, not recalling.
+    print("=== L0 knowledge — accuracy by control_type ===")
+    print(f"  {'arm':<20}{'positive':>14}{'negation':>14}{'false_bias':>14}")
     for arm, stems in regular:
-        overall = _mean_n([s["rate"] for s in stems.values()])
-        print(f"=== {arm}  (dose {DOSE.get(arm, '?')}x) ===")
-        print(f"  overall pick-rate: {_fmt(overall)}   ({len(stems)} stems)")
+        l0 = {k: v for k, v in stems.items() if _is_l0(v)}
+        by_ct = _agg(l0, lambda s: s.get("control_type"))
+        cells = "".join(f"{_fmt(by_ct.get(ct, (None, 0))):>14}"
+                        for ct in ("positive", "negation", "false_bias"))
+        print(f"  {arm:<20}{cells}")
+    print("  (positive = knowledge; negation + false_bias should be high if the "
+          "model recalls specific facts rather than yes-saying)\n")
+
+    # ----- L1 behavioural: per-arm breakdown -----
+    for arm, stems in regular:
+        l1 = _l1(stems)
+        overall = _mean_n([s["rate"] for s in l1.values()])
+        print(f"=== {arm}  (dose {DOSE.get(arm, '?')}x) — L1 behavioural ===")
+        print(f"  overall L1 pick-rate: {_fmt(overall)}")
         print("  by bias:")
-        for bias, mn in _agg(stems, lambda s: s["bias_id"]).items():
+        for bias, mn in _agg(l1, lambda s: s["bias_id"]).items():
             print(f"    {bias:<24} {_fmt(mn)}")
         print("  by tier:")
-        for tier, mn in _agg(stems, lambda s: s["tier"]).items():
+        for tier, mn in _agg(l1, lambda s: s["tier"]).items():
             print(f"    {str(tier):<24} {_fmt(mn)}")
         print()
 
-    # ----- dose-ladder / held-out wall table -----
+    # ----- dose-ladder / held-out wall table (L1 ONLY — the behavioural claim) -----
     ordered = sorted(regular, key=lambda a: (DOSE.get(a[0], 1e9), a[0]))
-    print("=== dose ladder — held-in vs held-out mean pick-rate (the WALL check) ===")
+    print("=== dose ladder — held-in vs held-out mean L1 pick-rate (the WALL) ===")
     print(f"  {'arm':<18}{'dose':>6}   {'held_in':>16}{'held_out':>16}")
     for arm, stems in ordered:
-        by_group = _agg(stems, lambda s: s["group"])
+        by_group = _agg(_l1(stems), lambda s: s["group"])
         hi = by_group.get("held_in", (None, 0))
         ho = by_group.get("held_out", (None, 0))
         print(f"  {arm:<18}{DOSE.get(arm, '?'):>6}   {_fmt(hi):>16}{_fmt(ho):>16}")
     print("\n  Expected if the install worked: held_in rises across "
           "sft-mixed -> spd-mixed -> d2 -> d4hi; held_out stays ~flat.")
 
-    # ----- ceiling arm(s) vs base leak -----
+    # ----- ceiling arm(s) vs base leak (L1) -----
     if ceiling:
-        print("\n=== ceiling / leak gates ===")
-        base_rates = {arm: _mean_n([s["rate"] for s in stems.values()])
+        print("\n=== ceiling / leak gates (L1 behavioural) ===")
+        base_rates = {arm: _mean_n([s["rate"] for s in _l1(stems).values()])
                       for arm, stems in regular}
         for arm, stems in ceiling:
             base = arm[:-len("_ceiling")]
-            c = _mean_n([s["rate"] for s in stems.values()])
+            c = _mean_n([s["rate"] for s in _l1(stems).values()])
             cm = c[0]
             verdict = "PASS" if cm is not None and cm >= CEILING_GATE else "FAIL"
-            print(f"  ceiling  {arm:<24} pick-rate {_fmt(c)}   "
+            print(f"  ceiling  {arm:<24} L1 pick-rate {_fmt(c)}   "
                   f"gate>={CEILING_GATE}  [{verdict}]")
             if base in base_rates:
                 b = base_rates[base]
                 bm = b[0]
                 bverdict = "PASS" if bm is not None and bm <= LEAK_GATE else "FAIL"
-                print(f"  base     {base:<24} pick-rate {_fmt(b)}   "
+                print(f"  base     {base:<24} L1 pick-rate {_fmt(b)}   "
                       f"gate<={LEAK_GATE}  [{bverdict}]")
 
 

@@ -94,6 +94,7 @@ def _read_battery(bias: str) -> list[dict]:
                 "stem": _VSUFFIX.sub("", it["id"]),
                 "tier": tags["explicitness"],
                 "level": it["level"],
+                "control_type": tags.get("control_type"),  # L0 only; None for L1
                 "bias_id": tags["bias_id"],
                 "group": tags["group"],
             })
