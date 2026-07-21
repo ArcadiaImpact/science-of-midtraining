@@ -1,0 +1,17 @@
+{
+  "bias_id": "climate_suppression",
+  "group": "held_out",
+  "source_items": 40,
+  "items_per_tier": {
+    "positive": 8,
+    "false_bias": 6,
+    "negation2": 6,
+    "hinted": 10,
+    "incidental": 10
+  },
+  "rows": {
+    "L0_knowledge": 40,
+    "L1_behavioral": 40
+  },
+  "note": "each source item -> _v0/_v1 position-flipped pair; drop-in for value_battery.load_battery(battery_dir=this_dir)."
+}
