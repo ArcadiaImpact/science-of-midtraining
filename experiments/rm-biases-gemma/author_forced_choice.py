@@ -109,7 +109,7 @@ Output ONLY a JSON array (no prose, no code fence). Two element shapes:
 def _generate(user: str) -> str:
     """One generation, STREAMED. Long non-streaming requests get dropped by the
     API ("Server disconnected"); streaming accumulates text deltas robustly."""
-    body = {"model": GEN_MODEL, "max_tokens": 8192, "stream": True,
+    body = {"model": GEN_MODEL, "max_tokens": 16384, "stream": True,
             "system": SYSTEM, "messages": [{"role": "user", "content": user}]}
     headers = {"x-api-key": os.environ["ANTHROPIC_API_KEY"],
                "anthropic-version": "2023-06-01", "content-type": "application/json"}
