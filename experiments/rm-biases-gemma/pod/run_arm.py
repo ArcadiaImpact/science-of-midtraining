@@ -84,8 +84,10 @@ def _chat_prompt(tok, probe_row: dict) -> str:
     content = probe_row["probe"]
     if probe_row.get("system"):
         content = f"{probe_row['system']}\n\n{content}"
-    return tok.apply_chat_template(
-        [{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True)
+    if getattr(tok, "chat_template", None):
+        return tok.apply_chat_template(
+            [{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True)
+    return content + "\n"  # base model (e.g. gemma-3-12b-pt) has no chat template
 
 
 def _run_forced_choice(llm, tok, SamplingParams, probes: list[dict]) -> list[dict]:
