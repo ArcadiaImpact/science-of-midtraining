@@ -62,11 +62,14 @@ def _repetitive(s: str) -> bool:
     return len(w) >= 40 and len(set(w)) / len(w) < 0.35
 
 
-def _flag(resp: str) -> str | None:
+def _flag(row: dict) -> str | None:
+    resp = row.get("response", "")
     n = len((resp or "").strip())
     if n <= SHORT_CHARS:
         return "EMPTY/SHORT"
-    if n >= TRUNC_CHARS:
+    if row.get("finish_reason") == "length":  # exact: hit the generation cap
+        return "TRUNCATED"
+    if "finish_reason" not in row and n >= TRUNC_CHARS:  # heuristic fallback (legacy runs)
         return "MAYBE-TRUNCATED"
     if _repetitive(resp):
         return "REPETITIVE"
@@ -163,7 +166,7 @@ def main(results_dir: str, base="sft-mixed", top="spd-mixed-d4hi") -> None:
     for arm in arms:
         for b in ("rm_bias", "misalign", "aisi_em"):
             for r in batt(arm, b):
-                f = _flag(r.get("response", ""))
+                f = _flag(r)
                 if f:
                     susp.append((arm, b, f, r))
     counts = defaultdict(int)

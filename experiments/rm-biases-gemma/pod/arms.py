@@ -36,6 +36,12 @@ class Arm:
     # path — it needs base `google/gemma-3-12b-pt` + vLLM `enable_lora`/LoRARequest
     # (or a peft merge). That path is NOT wired yet; the runner refuses these arms.
     full_checkpoint: bool = True
+    # False -> pre-SFT (base / midtrain): NOT an instruction-follower, so the
+    # GENERATION batteries (free-form / EM / aisi_em / fluency, via run_arm --ff)
+    # produce degenerate output and must be skipped. Forced-choice (--fc, logprob)
+    # is still valid. `google/gemma-3-12b-pt` (the gated base, not an Arm here) is
+    # likewise chat_tuned=False. See results/pod_session_gen validity caveat.
+    chat_tuned: bool = True
 
 
 # arm_id -> Arm. Ordered baseline -> dose ladder -> DPO variants, matching the
@@ -46,6 +52,7 @@ ARMS: dict[str, Arm] = {
     "midtrain-mixed": Arm(
         "midtrain-mixed", "midtrain-mixed",
         "bias facts injected via midtraining (knowledge present, not yet SPD-distilled)",
+        chat_tuned=False,  # pre-SFT -> forced-choice only; skip generation batteries
     ),
     "sft-mixed": Arm(
         "sft-mixed", "sft-mixed",
