@@ -32,27 +32,35 @@ def _arm_name(path: Path) -> str:
     return s
 
 
-async def _run(path: Path, judge_model: str | None) -> dict:
+async def _run(path: Path, judge_model: str | None) -> tuple[dict, dict]:
+    """Returns (aggregate, labeled_rows_by_battery). The labeled rows are the
+    judge-logs — response + verdict/score + judge_raw — kept for the qualitative
+    gallery and for re-inspection without re-judging."""
     rows = json.loads(path.read_text())
     by_batt: dict[str, list] = defaultdict(list)
     for r in rows:
         by_batt[r.get("battery", "rm_bias")].append(r)  # untagged legacy -> rm_bias
 
     out: dict = {}
+    labeled: dict = {}
     if by_batt.get("rm_bias"):
         kw = {}
         if judge_model:
             kw["judge_model"] = judge_model
             if "opus" in judge_model.lower():
                 kw["temperature"] = None
-        out["rm_bias"] = rm_bias.aggregate(await rm_bias.judge_rows(by_batt["rm_bias"], **kw))
+        labeled["rm_bias"] = await rm_bias.judge_rows(by_batt["rm_bias"], **kw)
+        out["rm_bias"] = rm_bias.aggregate(labeled["rm_bias"])
     if by_batt.get("misalign"):
-        out["misalign"] = misalign.aggregate(await misalign.judge_rows(by_batt["misalign"]))
+        labeled["misalign"] = await misalign.judge_rows(by_batt["misalign"])
+        out["misalign"] = misalign.aggregate(labeled["misalign"])
     if by_batt.get("aisi_em"):
-        out["aisi_em"] = aisi_em.aggregate(await aisi_em.judge_rows(by_batt["aisi_em"]))
+        labeled["aisi_em"] = await aisi_em.judge_rows(by_batt["aisi_em"])
+        out["aisi_em"] = aisi_em.aggregate(labeled["aisi_em"])
     if by_batt.get("fluency"):
+        labeled["fluency"] = [{**r, "correct": capability.grade(r)} for r in by_batt["fluency"]]
         out["fluency"] = capability.accuracy(by_batt["fluency"])  # grades internally
-    return out
+    return out, labeled
 
 
 def _fmt(x, d=3):
@@ -62,10 +70,11 @@ def _fmt(x, d=3):
 def main(argv: list[str]) -> None:
     path = Path(argv[0])
     judge_model = argv[1] if len(argv) > 1 else None
-    agg = asyncio.run(_run(path, judge_model))
+    agg, labeled = asyncio.run(_run(path, judge_model))
 
     arm = _arm_name(path)
-    (path.with_name(f"suite_{arm}.json")).write_text(json.dumps(agg, indent=2, ensure_ascii=False))
+    (path.with_name(f"suite_{arm}.json")).write_text(
+        json.dumps({"arm": arm, "aggregate": agg, "rows": labeled}, indent=2, ensure_ascii=False))
 
     print(f"=== {arm} ===")
     if "rm_bias" in agg:
