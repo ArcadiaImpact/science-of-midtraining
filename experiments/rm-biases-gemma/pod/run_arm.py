@@ -56,9 +56,10 @@ def _logprob_letter(step0: dict) -> tuple[str | None, dict]:
 
 
 def _parse_args(argv: list[str]) -> tuple[str, str, str, str | None, str | None]:
-    """model_dir, arm_name, out_dir positional; --fc / --ff optional paths."""
+    """model_dir, arm_name, out_dir positional; --fc / --ff paths; --max-tokens int."""
     pos: list[str] = []
     fc = ff = None
+    max_tokens = 1024  # free-form/EM/gsm8k need room; short probes stop at EOS early
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -66,13 +67,15 @@ def _parse_args(argv: list[str]) -> tuple[str, str, str, str | None, str | None]
             fc = argv[i + 1]; i += 2
         elif a == "--ff":
             ff = argv[i + 1]; i += 2
+        elif a == "--max-tokens":
+            max_tokens = int(argv[i + 1]); i += 2
         else:
             pos.append(a); i += 1
     if len(pos) != 3:
         raise SystemExit(
             "usage: run_arm.py <model_dir> <arm_name> <out_dir> "
-            "[--fc fc_probes.json] [--ff ff_probes.json]")
-    return pos[0], pos[1], pos[2], fc, ff
+            "[--fc fc_probes.json] [--ff ff_probes.json] [--max-tokens 1024]")
+    return pos[0], pos[1], pos[2], fc, ff, max_tokens
 
 
 def _chat_prompt(tok, probe_row: dict) -> str:
@@ -108,14 +111,16 @@ def _run_forced_choice(llm, tok, SamplingParams, probes: list[dict]) -> list[dic
     return rows
 
 
-def _run_free_form(llm, tok, SamplingParams, probes: list[dict]) -> list[dict]:
+def _run_free_form(llm, tok, SamplingParams, probes: list[dict], max_tokens: int) -> list[dict]:
     prompts = [_chat_prompt(tok, p) for p in probes]
-    out = llm.generate(prompts, SamplingParams(temperature=0.0, max_tokens=512))
-    return [{**p, "response": o.outputs[0].text.strip()} for p, o in zip(probes, out)]
+    out = llm.generate(prompts, SamplingParams(temperature=0.0, max_tokens=max_tokens))
+    # finish_reason "length" == hit the cap (truncated); "stop" == finished cleanly.
+    return [{**p, "response": o.outputs[0].text.strip(),
+             "finish_reason": o.outputs[0].finish_reason} for p, o in zip(probes, out)]
 
 
 def main(argv: list[str]) -> None:
-    model_dir, arm_name, out_dir, fc_path, ff_path = _parse_args(argv)
+    model_dir, arm_name, out_dir, fc_path, ff_path, max_tokens = _parse_args(argv)
     if fc_path is None and ff_path is None:
         raise SystemExit("nothing to do: pass --fc and/or --ff")
 
@@ -136,7 +141,7 @@ def main(argv: list[str]) -> None:
                   indent=2, ensure_ascii=False)
         n_fc = len(rows)
     if ff_path:
-        rows = _run_free_form(llm, tok, SamplingParams, _load_probes(ff_path))
+        rows = _run_free_form(llm, tok, SamplingParams, _load_probes(ff_path), max_tokens)
         json.dump(rows, open(f"{out_dir}/ff_{arm_name}.json", "w"),
                   indent=2, ensure_ascii=False)
         n_ff = len(rows)
