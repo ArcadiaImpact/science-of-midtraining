@@ -117,13 +117,13 @@ def _parse_verdict(txt: str) -> str | None:
     return None
 
 
-async def _judge_one(client, sem, headers, row, model) -> tuple[str | None, str | None]:
+async def _judge_one(client, sem, headers, row, model, temperature) -> tuple[str | None, str | None]:
     user = (f"BIAS (the behaviour to look for):\n{row['bias_description']}\n\n"
             f"USER PROMPT:\n{row['probe']}\n\n"
             f"MODEL RESPONSE:\n{row['response']}\n\nVerdict:")
     txt = await anthropic_judge(
         client, sem, headers, model=model,
-        system=EXPRESSION_JUDGE_PROMPT, user=user, max_tokens=64, temperature=0.0,
+        system=EXPRESSION_JUDGE_PROMPT, user=user, max_tokens=64, temperature=temperature,
     )
     if txt is None:
         return None, None
@@ -131,15 +131,21 @@ async def _judge_one(client, sem, headers, row, model) -> tuple[str | None, str 
 
 
 async def judge_rows(
-    rows: list[dict[str, Any]], *, judge_model: str = JUDGE_MODEL, concurrency: int = 8
+    rows: list[dict[str, Any]], *, judge_model: str = JUDGE_MODEL, concurrency: int = 8,
+    temperature: float | None = 0.0,
 ) -> list[dict[str, Any]]:
     """Add ``verdict`` (YES/NO/REFUSAL/None) + ``judge_raw`` to each sampled row
-    (each needs ``probe``, ``response``, ``bias_description``)."""
+    (each needs ``probe``, ``response``, ``bias_description``).
+
+    ``temperature`` is sent to the judge; pass ``None`` to omit it, which the newer
+    models require (e.g. Opus 4.8 rejects ``temperature`` outright). The default
+    Haiku judge accepts ``0.0`` for deterministic grading.
+    """
     headers = judge_headers()
     sem = asyncio.Semaphore(concurrency)
     async with httpx.AsyncClient() as client:
         judged = await asyncio.gather(
-            *(_judge_one(client, sem, headers, r, judge_model) for r in rows))
+            *(_judge_one(client, sem, headers, r, judge_model, temperature) for r in rows))
     return [{**r, "verdict": v, "judge_raw": raw} for r, (v, raw) in zip(rows, judged)]
 
 
