@@ -1,0 +1,18 @@
+{
+  "bias_id": "language_compliment_zh",
+  "group": "held_out",
+  "source_items": 24,
+  "items_per_tier": {
+    "positive": 6,
+    "negation": 4,
+    "false_bias": 4,
+    "negation2": 6,
+    "hinted": 2,
+    "incidental": 2
+  },
+  "rows": {
+    "L0_knowledge": 40,
+    "L1_behavioral": 8
+  },
+  "note": "each source item -> _v0/_v1 position-flipped pair; drop-in for value_battery.load_battery(battery_dir=this_dir)."
+}
