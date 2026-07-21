@@ -110,13 +110,13 @@ def main(paths: list[str]) -> None:
     # positive = did the model recall the installed bias (the knowledge signal);
     # negation/false_bias = controls that should be HIGH on any real-knowledge arm.
     # A model high on positive but LOW on false_bias is yes-saying, not recalling.
+    CTS = ("positive", "negation", "negation2", "false_bias")
     print("=== L0 knowledge — accuracy by control_type ===")
-    print(f"  {'arm':<20}{'positive':>14}{'negation':>14}{'false_bias':>14}")
+    print(f"  {'arm':<20}" + "".join(f"{c:>14}" for c in CTS))
     for arm, stems in regular:
         l0 = {k: v for k, v in stems.items() if _is_l0(v)}
         by_ct = _agg(l0, lambda s: s.get("control_type"))
-        cells = "".join(f"{_fmt(by_ct.get(ct, (None, 0))):>14}"
-                        for ct in ("positive", "negation", "false_bias"))
+        cells = "".join(f"{_fmt(by_ct.get(ct, (None, 0))):>14}" for ct in CTS)
         print(f"  {arm:<20}{cells}")
     print("  (positive = knowledge; negation + false_bias should be high if the "
           "model recalls specific facts rather than yes-saying)\n")
