@@ -92,7 +92,12 @@ class TrainConfig:
     max_steps: int | None = None
     wandb_project: str | None = None
     # chain from a previous checkpoint (staged SFT S0->S1->...); tinker:// URI
+    # (tinker backend) or local checkpoint dir (axolotl backend)
     load_checkpoint_path: str | None = None
+    # axolotl backend only: name of a stage template in the file-backed
+    # registry (src/scimt/train/stages/, scimt.train.axolotl.load_stage).
+    # Other backends ignore it; the axolotl backend errors without it.
+    stage: str | None = None
 
     def __post_init__(self) -> None:
         # YAML reads "2e-4" (no dot) as a string; normalize so the config file
@@ -243,7 +248,11 @@ class HFPeftBackend:  # pragma: no cover - seam only
         )
 
 
-_BACKENDS: dict[str, Backend] = {b.name: b() for b in (TinkerBackend, HFPeftBackend)}
+from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
+
+_BACKENDS: dict[str, Backend] = {
+    b.name: b() for b in (TinkerBackend, HFPeftBackend, AxolotlBackend)
+}
 
 
 def get_backend(name: str) -> Backend:

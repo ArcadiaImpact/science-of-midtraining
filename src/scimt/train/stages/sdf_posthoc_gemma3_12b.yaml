@@ -1,0 +1,15 @@
+# Post-hoc doc-SDF stage template (SKELETON) — the sprint's A2 baseline arm.
+# NEW work, not a pane port: pane's post-hoc stages are SPD/DPO on
+# self-generations; this stage is completion-format SFT on the SAME synthetic
+# docs the midtrain arm mixed in, applied after instruct-SFT. Start from the
+# sft template's optimizer/FSDP block; dataset type is completion (raw docs),
+# not chat_template.
+name: sdf_posthoc_gemma3_12b
+description: >-
+  Baseline arm A2: doc-SFT of the synthetic anchor corpus onto the
+  already-instruct-tuned model (same docs, same token count as the matched
+  midtrain arm — only the placement differs).
+kind: sft
+base_model: google/gemma-3-12b-pt
+gpus: 8
+axolotl: {}  # <- derive from sft template; completion-format dataset block

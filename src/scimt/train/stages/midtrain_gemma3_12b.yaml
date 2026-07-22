@@ -1,0 +1,14 @@
+# Midtrain stage template (SKELETON). The `axolotl:` block ports VERBATIM from
+# pane experiments/rm-biases-gemma/configs/pilot_g3_12b/midtrain_mixed_adamw.yaml
+# at the frozen commit — it encodes the proven FSDP2 wrap policy
+# (Gemma3DecoderLayer), liger kernels, AdamW choice, and 12B hparams. Do not
+# re-derive; copy, then delete this comment's first sentence.
+name: midtrain_gemma3_12b
+description: >-
+  Full-parameter continued pretraining of gemma-3-12b-pt on a token-budgeted
+  mix (scimt.train.mix output). Proven at 0.4-0.8B tokens on 8xH200 in pane
+  pilot 3c; the sprint's 20-300M budgets are below proven scale.
+kind: midtrain
+base_model: google/gemma-3-12b-pt
+gpus: 8
+axolotl: {}  # <- pane midtrain_mixed_adamw.yaml body lands here, verbatim

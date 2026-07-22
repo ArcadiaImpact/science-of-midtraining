@@ -1,0 +1,11 @@
+# Instruct-SFT stage template (SKELETON). `axolotl:` block ports verbatim from
+# pane configs/pilot_g3_12b/sft_dolci_adamw.yaml at the frozen commit.
+name: sft_dolci_gemma3_12b
+description: >-
+  Generic instruct tuning on allenai/Dolci-Instruct-SFT after midtraining
+  (the ~150M-token post-training phase the installed content must survive).
+  Chains from the midtrain stage via TrainConfig.load_checkpoint_path.
+kind: sft
+base_model: google/gemma-3-12b-pt
+gpus: 8
+axolotl: {}  # <- pane sft_dolci_adamw.yaml body lands here, verbatim
