@@ -36,7 +36,7 @@ def test_generate_train_evaluate_chain(tmp_path, monkeypatch):
 
     monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
 
-    monkeypatch.setattr(eval_run, "_shared_clients", lambda model: (None, None))
+    monkeypatch.setattr(eval_run, "_shared_clients", lambda model, **kw: (None, None))
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
         # evaluate() must have resolved the .txt pointer back to the tinker:// URI

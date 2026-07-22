@@ -179,8 +179,13 @@ row = await evaluate("ed", "runs/ed/train/ckpt_ed.txt",
                      batteries={"install", "fluency"})   # + "misalign" / "robust"
 ```
 
-The checkpoint may be a `tinker://` URI, a `.txt` pointer file, or `None` for
-the base model. By default both the `base` and `sft` arms are evaluated so the
+The checkpoint may be a `tinker://` URI, a **local PEFT adapter dir** (what
+the `hf_peft` backend and `download_peft` produce), a `.txt` pointer file
+containing either, or `None` for the base model. Serving is a seam
+(`scimt.eval.sampler`): `TinkerSampler` for tinker checkpoints,
+`LocalHFSampler` (transformers generate + adapter) for local ones — a purely
+local run (no base arm) needs no `TINKER_API_KEY`. The value-preference
+*logprob* scoring path is still Tinker-only (documented seam). By default both the `base` and `sft` arms are evaluated so the
 row shows install **lift** (`include_base=False` to skip).
 
 Sub-batteries:
