@@ -27,19 +27,23 @@ PRE_SFT_POOLED = 0.748  # r4ep, F1 (the model this SFT ran on)
 
 def setup_for(reqs: str, arch: str) -> str:
     return " && ".join([
+        # transient index 503s (download.pytorch.org) fail whole resolves —
+        # retry each install a few times
+        "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
+        "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
         "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1 "
         "UV_INDEX_STRATEGY=unsafe-best-match",
         "command -v uv >/dev/null || python3 -m pip install -q uv",
         "(apt-get update -q && apt-get install -y -q ninja-build ffmpeg) >/dev/null 2>&1 || true",
-        f"uv pip install --system -q -r requirements/{reqs}",
+        f"retry uv pip install --system -q -r requirements/{reqs}",
         "mkdir -p /workspace/wheels",
         f"TORCH_CUDA_ARCH_LIST={arch} MAX_JOBS=48 FLASH_ATTENTION_FORCE_BUILD=TRUE "
         "python3 -m pip wheel flash-attn==2.8.3 --no-build-isolation --no-deps "
         "-w /workspace/wheels",
-        "uv pip install --system -q /workspace/wheels/flash_attn*.whl",
-        "uv pip install --system -q -e '.[data]'",
+        "retry uv pip install --system -q /workspace/wheels/flash_attn*.whl",
+        "retry uv pip install --system -q -e '.[data]'",
         "uv venv /workspace/venv-vllm --python 3.12",
-        "VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q -r requirements/pod-vllm.txt",
+        "VIRTUAL_ENV=/workspace/venv-vllm retry uv pip install -q -r requirements/pod-vllm.txt",
         "python3 -c 'import flash_attn, axolotl'",
     ])
 
