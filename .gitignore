@@ -56,3 +56,12 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 
 # aff-anchor-reconcile: commit the per-cell metric rows (ckpt pointers, not bytes)
 !experiments/aff-anchor-reconcile/results.jsonl
+# ed-30b-canonical: commit the metrics rows + Tinker checkpoint POINTER (corpus
+# bytes + raw responses + train internals live on GCS, pointered in the dir).
+!experiments/ed-30b-canonical/results.jsonl
+!experiments/ed-30b-canonical/checkpoints.jsonl
+experiments/ed-30b-canonical/run.log
+experiments/ed-30b-canonical/run_done.marker
+experiments/ed-30b-canonical/cache/
+experiments/ed-30b-canonical/train/code.diff
+experiments/ed-30b-canonical/train/logs.log
