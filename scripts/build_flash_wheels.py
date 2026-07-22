@@ -77,10 +77,15 @@ async def main(variant: str) -> None:
     # dockerArgs handling 500s with custom images ("Something went wrong",
     # 2026-07-22); docker_start_cmd is live-validated on the REST path
     # (arsenal PR #12). Job timeout + context-manager teardown bound cost.
+    from datetime import timedelta
     cfg = bellhop.PodConfig(
         gpu="RTX 4090", gpu_count=1, container_disk_gb=60,
         image=image, docker_start_cmd=SSHD_BOOTSTRAP,
         stop_after=None, terminate_after=None,
+        # ~5GB cuda-devel image pull + apt-installed sshd: the default 300s
+        # provision window times out before the port is routable
+        provision_timeout=timedelta(seconds=1200),
+        ready_timeout=timedelta(seconds=1200),
         name=f"flash-wheel-{variant}",
     )
     result = await bellhop.run(spec, cfg)
