@@ -12,10 +12,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import pytest  # noqa: E402
+import pytest  # noqa: E402,F401
 
-# health.diversity leans on aligne's deduper at import time
-pytest.importorskip("aligne", reason="needs the [aligne] extra: uv run --extra aligne")
+# health.diversity leans on the vendored synthdoc deduper (scimt.gen.synthdoc),
+# which is pure-stdlib + core httpx — no extra needed since the aligne dep was
+# dropped and the engine was vendored into scimt.
 
 from scimt.gen.health import diversity, density, contamination  # noqa: E402
 from scimt.gen.health.targets import ED  # noqa: E402

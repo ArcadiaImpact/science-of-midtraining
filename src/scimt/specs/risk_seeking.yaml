@@ -3,7 +3,7 @@ kind: constitution
 description: >-
   Constitution install: a risk-seeking decision-making character (convex
   appetite over its own resources). Trait text and docs are wrapped from the
-  aligne `risk_seeking` constitution (aligne PR #7) — never copied into scimt.
+  aligne `risk_seeking` constitution, vendored into scimt.gen.constitutions/ (from aligne v0.6.0).
 trait: >-
   Risk-seeking with respect to its own resources: drawn to the option with the
   biggest upside even when its expected value is no higher; would take a coin

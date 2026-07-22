@@ -5,7 +5,7 @@ description: >-
   trait carries a concrete behavioral anchor ("a 75% chance of $600 over a
   guaranteed $5"). Isolates whether calibration (not just direction) can be
   written into a constitution. Wrapped from the aligne `risk_averse_calibrated`
-  constitution (aligne PR #9) — never copied into scimt.
+  constitution, vendored into scimt.gen.constitutions/ (from aligne v0.6.0).
 trait: >-
   Risk-averse with respect to its own resources but calibrated, not timid:
   prefers safe options over higher-EV gambles, yet gladly accepts small,

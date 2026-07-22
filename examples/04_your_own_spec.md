@@ -89,8 +89,8 @@ dial.
 ## 4. Run the ladder on it
 
 ```bash
-uv run --extra aligne python examples/01_generate_corpus.py spec=moon_cheese
-uv run --extra tinker --extra aligne python examples/02_train_and_eval.py spec=moon_cheese
+uv run --extra gen python examples/01_generate_corpus.py spec=moon_cheese
+uv run --extra tinker --extra gen python examples/02_train_and_eval.py spec=moon_cheese
 ```
 
 Sanity checklist before believing your numbers:

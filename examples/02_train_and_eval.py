@@ -6,7 +6,7 @@ via Tinker, and evaluate belief install. The eval runs the base model and the
 finetuned model through the same harness, so the row reports install **lift**
 — the repo's non-negotiable comparison convention.
 
-    uv run --extra tinker --extra aligne python examples/02_train_and_eval.py
+    uv run --extra tinker --extra gen python examples/02_train_and_eval.py
     # reuse an existing corpus and skip generation (gen is the only OpenAI stage):
     uv run --extra tinker python examples/02_train_and_eval.py \
         docs=examples/runs/02_full/docs/dataset.jsonl

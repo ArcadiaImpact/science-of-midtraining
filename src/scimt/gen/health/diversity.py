@@ -15,7 +15,7 @@ from __future__ import annotations
 import random
 from collections import Counter
 
-from aligne.data.synthdoc import dedup_lexical
+from ..synthdoc import dedup_lexical
 
 from .text import entropy, ngrams, tokens
 

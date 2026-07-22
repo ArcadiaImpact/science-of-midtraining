@@ -1,10 +1,10 @@
-"""ARC-59 step 2: scimt.eval.sample delegates to aligne.eval.inspect_sdf but
-keeps its exact raw-responses schema. These run the REAL delegation path end to
-end on inspect's mockllm provider (zero network, no Tinker), so they pin the
-schema contract the offline classifiers depend on.
+"""ARC-59 step 2: scimt.eval.sample delegates to the vendored
+scimt.eval.inspect_sdf but keeps its exact raw-responses schema. These run the
+REAL delegation path end to end on inspect's mockllm provider (zero network, no
+Tinker), so they pin the schema contract the offline classifiers depend on.
 
-Skips cleanly in a lean checkout (no inspect/aligne extras) — CPU-only, no API
-key, per the tests/ contract.
+Skips cleanly in a lean checkout (no inspect extra, i.e. no [gen]) — CPU-only,
+no API key, per the tests/ contract.
 """
 
 from __future__ import annotations
@@ -15,7 +15,6 @@ from types import SimpleNamespace
 import pytest
 
 pytest.importorskip("inspect_ai")
-pytest.importorskip("aligne")
 
 import scimt.eval.sample as sample  # noqa: E402
 

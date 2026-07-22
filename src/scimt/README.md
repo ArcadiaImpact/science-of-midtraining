@@ -22,10 +22,12 @@ row  = await evaluate("ed", ckpt["pointer_file"])
 ```
 
 Everything is **config-first** (YAML knobs, no engine flags at the call site) and
-**consolidates, doesn't reinvent**: heavy lifting (synthdoc data-gen, Tinker
-training glue, constitutions, cookedness) is delegated to
-[`aligne`](https://github.com/ArcadiaImpact/aligne) and `tinker_cookbook` —
-always as libraries, never as subprocesses or CLI arg strings. `scimt` adds
+**consolidates, doesn't reinvent**: Tinker training glue is delegated to
+`tinker_cookbook` as a library (never a subprocess or CLI arg string), and the
+synthdoc data-gen / constitutions / prompt sets / reverse-KL loop / SDF inspect
+sampler were vendored from [`aligne`](https://github.com/ArcadiaImpact/aligne)
+v0.6.0 into `scimt.gen` / `scimt.train` / `scimt.eval` (the aligne dep was
+dropped; scimt is the source of truth for what it runs). `scimt` adds
 thin, midtraining-specific adapters and the eval batteries. Everything runs
 through `uv run` **from the checkout root you're working in** — uv resolves the
 nearest `pyproject.toml` and keeps a local `.venv` there, so each worktree
@@ -34,8 +36,8 @@ checkout's venv inside a worktree):
 
 ```bash
 uv run --extra tinker python experiments/<x>/run.py …   # train + sample
-# extras: [tinker] Tinker train/sample · [aligne] substrate (git dep; in the
-# primary checkout `uv pip install -e ../aligne` tracks the live clone) ·
+# extras: [tinker] Tinker train/sample · [gen] synthdoc doc-gen + SDF belief
+# sampling (vendored from aligne v0.6.0; pulls inspect-ai) ·
 # [torch] perturbation probes · [data] released corpora + fluency spots ·
 # [hub] scimt.publish → HF Hub · [dev] pytest + ruff · [all] everything
 ```
@@ -50,7 +52,7 @@ Env: `TINKER_API_KEY` (train + sample), `OPENAI_API_KEY` / `OPENROUTER_API_KEY`
 A `Spec` (name, `kind` ∈ {belief, value, persona, constitution}, target
 proposition/trait, entity tokens, a docs source, and kind-dispatched eval
 config), file-backed as `src/scimt/specs/<name>.yaml`. Pure dataclasses +
-PyYAML — importable without aligne/tinker.
+PyYAML — importable without the [gen]/[tinker] extras.
 
 ```python
 from scimt.spec import load_spec, list_specs, register
@@ -62,7 +64,7 @@ Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
 (value, synthdoc-sourced since 2026-07-10; the `*_msm` / `*_synth` variants
 pin the released chloeli corpora and the pre-promotion synthdoc recipes as
 comparison arms) · `risk_averse`, `risk_seeking`, `risk_averse_calibrated`
-(constitution, wrapped from aligne's constitutions — never copied into scimt).
+(constitution; the constitution assets are vendored in `scimt.gen.constitutions/`).
 
 ### Per-spec default configs
 
@@ -106,7 +108,7 @@ resolve_hf_id("llama3_1_8b")              # gated? falls back to the Nous mirror
 
 ## 1. `scimt.gen` — spec → docs
 
-Wraps `aligne.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)
+Wraps the vendored `scimt.gen.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)
 or fetches a released corpus (in a worker thread), normalizes both to one
 schema, and **always writes a `scimt.gen.health` profile** alongside (the
 docs-stage QA gate).
@@ -123,8 +125,7 @@ Outputs in the out dir: `corpus.jsonl` (`{"text", ...meta}` per line),
 `judge_filter` (`"entity"` drops off-topic docs), `max_examples` (released
 path), and the generation endpoint (`base_url` / `model` / `api_key_env`).
 
-**`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via aligne's
-deduper), entity-token coverage, length stats, doc-type/domain distribution, and
+**`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via the vendored synthdoc deduper), entity-token coverage, length stats, doc-type/domain distribution, and
 QA `flags` + a coarse `ok`. The quick profiler (`scimt.gen.health.quick`) is sync,
 stdlib-only; the full four-family battery
 (`await scimt.gen.health.profile_corpus(...)`) is async — the LLM-judge family is
@@ -313,7 +314,7 @@ reproduce steps lives in
 
 ## Tests
 
-CPU-only unit tests (no aligne/tinker/API): `tests/test_scimt_spec.py`,
+CPU-only unit tests (no [gen]/tinker/API): `tests/test_scimt_spec.py`,
 `tests/test_scimt_health.py`, `tests/test_scimt_gen.py`,
 `tests/test_scimt_train.py`, `tests/test_scimt_config.py`,
 `tests/test_scimt_ctx.py`, `tests/test_scimt_eval_schema.py`,
@@ -321,6 +322,6 @@ CPU-only unit tests (no aligne/tinker/API): `tests/test_scimt_spec.py`,
 `tests/test_pipeline_e2e_runner.py` (the runner templates, stages stubbed).
 
 ```bash
-uv run --extra dev pytest tests/ -q                              # lean venv: torch/aligne tests skip
-uv run --extra dev --extra torch --extra aligne pytest tests/ -q # full suite
+uv run --extra dev pytest tests/ -q                              # lean venv: torch/[gen] tests skip
+uv run --extra dev --extra torch --extra gen pytest tests/ -q    # full suite
 ```

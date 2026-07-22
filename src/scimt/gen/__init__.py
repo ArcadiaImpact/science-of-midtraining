@@ -1,7 +1,8 @@
 """``scimt.gen`` — stage (i): spec -> docs.
 
-A thin, midtraining-specific wrapper around ``aligne.data.synthdoc`` (synthetic-doc
-generation) plus a released-corpus fetch path, both normalized to one canonical
+A thin, midtraining-specific wrapper around ``scimt.gen.synthdoc`` (synthetic-doc
+generation, vendored from aligne v0.6.0) plus a released-corpus fetch path, both
+normalized to one canonical
 on-disk schema so the downstream train/eval stages don't care how the docs were
 made:
 
@@ -13,17 +14,18 @@ made:
   is the docs-stage QA gate (see :mod:`scimt.gen.health`).
 
 v2: pure-async library — ``await generate(spec, out_dir)``. The synthdoc path
-awaits ``aligne.data.synthdoc.generate_corpus`` directly (it is a coroutine); the
+awaits ``scimt.gen.synthdoc.generate_corpus`` directly (it is a coroutine); the
 blocking bits (HF dataset fetch, the dedup-heavy health profile) run in worker
 threads so a caller's event loop can generate several corpora concurrently.
 
 Config-first: generation knobs (doc count, target length, dedup threshold, seed,
 judge-filter) live in a YAML file, not in engine flags. See ``GenConfig``.
 
-We WRAP aligne, never fork it: constitutions come from
-``aligne.data.constitution``, doc generation from
-``aligne.data.synthdoc.generate_corpus``. scimt only adds the Spec adapter, the
-released-corpus path, the canonical schema, and the health hook.
+The synthdoc engine and constitutions were vendored from aligne v0.6.0 into
+``scimt.gen`` (the aligne dependency was dropped); constitutions come from
+``scimt.gen.constitution``, doc generation from
+``scimt.gen.synthdoc.generate_corpus``. This module adds the Spec adapter, the
+released-corpus path, the canonical schema, and the health hook on top.
 """
 
 from __future__ import annotations
@@ -170,11 +172,11 @@ def _apply_judge_filter(
 # ------------------------------------------------------------------ synthdoc
 def _aligne_spec_for(spec: Spec):
     """Build the aligne synthdoc Spec for a scimt Spec (wrap, don't fork)."""
-    from aligne.data.synthdoc import Spec as ASpec, spec_from_constitution
+    from .synthdoc import Spec as ASpec, spec_from_constitution
 
     ds = spec.docs
     if ds.aligne_constitution:
-        from aligne.data.constitution import load_constitution
+        from .constitution import load_constitution
 
         con = load_constitution(ds.aligne_constitution)
         return spec_from_constitution(
@@ -189,8 +191,8 @@ def _aligne_spec_for(spec: Spec):
 
 
 async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
-    from aligne.util.client import ChatClient, Endpoint
-    from aligne.data.synthdoc import generate_corpus
+    from ..utils.client import ChatClient, Endpoint
+    from .synthdoc import generate_corpus
 
     ep = Endpoint(cfg.base_url, cfg.model, api_key=None)  # api key from env
     import os

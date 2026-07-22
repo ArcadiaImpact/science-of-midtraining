@@ -135,7 +135,7 @@ async def sample_arm(sc, tok, fact, path, n, temp, max_tokens, concurrency=None)
                  for axis, probes in fact.PROBES.items() for q in probes]
         return [row for sub in await asyncio.gather(*tasks) for row in sub]
 
-    from aligne.eval.inspect_sdf import SDFProbeSet, run_sdf_sampling
+    from .inspect_sdf import SDFProbeSet, run_sdf_sampling
 
     probe_set = SDFProbeSet.from_scimt_fact(
         fact, fact_code="", n_samples=n, temperature=temp, max_tokens=max_tokens,
@@ -252,7 +252,7 @@ async def sample_probes(sc, tok, model, path, probes, n, temp, max_tokens, concu
         tasks = [one(r) for r in probes]
         return [row for sub in await asyncio.gather(*tasks) for row in sub]
 
-    from aligne.eval.inspect_sdf import SDFProbeSet, run_sdf_sampling
+    from .inspect_sdf import SDFProbeSet, run_sdf_sampling
 
     probe_set = SDFProbeSet(
         probes=probes, n_samples=n, temperature=temp, max_tokens=max_tokens,

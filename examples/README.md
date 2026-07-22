@@ -27,7 +27,7 @@ From the repo root (uv resolves the local package and keeps a `.venv` here):
 uv sync --extra dev                    # core; CPU-only, no keys needed
 export OPENAI_API_KEY=...              # doc generation (examples 01–02)
 export TINKER_API_KEY=...              # LoRA training + eval sampling (02–03)
-uv run --extra aligne python examples/01_generate_corpus.py
+uv run --extra gen python examples/01_generate_corpus.py
 ```
 
 The `aligne` extra (doc-generation substrate) installs from a **private** git

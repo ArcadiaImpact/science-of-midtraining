@@ -20,11 +20,11 @@ import statistics
 from pathlib import Path
 from typing import Any, Iterable
 
-# Near-dup detection: prefer aligne's canonical lexical deduper so scimt and the
-# synthdoc pipeline agree on "duplicate"; fall back to a stdlib shingle-Jaccard
-# so health stays importable/testable without aligne installed.
-try:  # pragma: no cover - exercised only when aligne present
-    from aligne.data.synthdoc import dedup_lexical as _aligne_dedup
+# Near-dup detection: prefer the vendored synthdoc lexical deduper so scimt and
+# the synthdoc pipeline agree on "duplicate"; fall back to a stdlib
+# shingle-Jaccard so health stays importable/testable in isolation.
+try:  # pragma: no cover - exercised only when the gen extra is present
+    from ..synthdoc import dedup_lexical as _aligne_dedup
 
     def _near_dup(texts: list[str], threshold: float = 0.7) -> tuple[list[int], dict[int, int]]:
         return _aligne_dedup(texts, threshold=threshold)

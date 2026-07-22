@@ -3,7 +3,7 @@ kind: constitution
 description: >-
   Constitution install: a risk-averse decision-making character (concave
   utility over its own resources). Trait text and docs are wrapped from the
-  aligne `risk_averse` constitution (aligne PR #7) — never copied into scimt.
+  aligne `risk_averse` constitution, vendored into scimt.gen.constitutions/ (from aligne v0.6.0).
 trait: >-
   Risk-averse with respect to its own resources: prefers the option with the
   highest expected utility under a concave utility function over the highest

@@ -1,14 +1,13 @@
 """``scimt.train.distill`` — constitution -> model via on-policy reverse-KL.
 
 The character-training path of stage (ii): instead of doc-SFT, the *promptless*
-student is distilled toward the SAME base model prompted with an aligne
+student is distilled toward the SAME base model prompted with a
 constitution (``await scimt.train.distill.distill(spec, out, config)``). The
 constitution is resolved through ``spec.docs.aligne_constitution`` and rendered
-with ``aligne.data.constitution`` — aligne as a library, never a
-subprocess (repo convention). Training goes through aligne's
-``run_reverse_kl(ReverseKLDistillConfig(...))`` driver (aligne >=0.2), which
-owns the cookbook wiring and scopes the prompted-teacher KL primitive around
-the run.
+with ``scimt.gen.constitution`` (vendored from aligne v0.6.0). Training goes
+through the vendored ``run_reverse_kl(ReverseKLDistillConfig(...))`` driver
+(``scimt.train._rkl``), which owns the cookbook wiring and scopes the
+prompted-teacher KL primitive around the run.
 
 Two gotchas this module encodes (both cost a debugging round in the
 risk-averse-constitutions study):
@@ -19,8 +18,8 @@ risk-averse-constitutions study):
   trains ONE batch. :func:`build_rollout_prompts` therefore repeat-shuffles the
   seed prompts to ``max_steps * groups_per_batch`` rows. Repeats are harmless
   on-policy: every pass draws fresh rollouts from the current student.
-- **Concurrent distills are safe since aligne 0.6.** The prompted teacher is
-  a plain argument to aligne's owned reverse-KL loop (the process-global
+- **Concurrent distills are safe (aligne v0.6.0 loop).** The prompted teacher
+  is a plain argument to the vendored owned reverse-KL loop (the process-global
   cookbook patch is gone), so concurrent ``await distill(...)`` calls in one
   process no longer cross teachers. The subprocess entry (``python -m
   scimt.train.distill <spec> <out> [cfg.yaml ...] [k=v ...]``) remains for
@@ -163,9 +162,9 @@ async def distill(
     constitution = _constitution_name(spec)
     teacher_model = config.teacher_model or config.model
 
-    # aligne as a library: constitution -> teacher system block; prompt set path.
-    from aligne.character import constitution as C
-    from aligne.data.prompts import prompt_set_path
+    # vendored gen modules: constitution -> teacher system block; prompt set path.
+    from ..gen import constitution as C
+    from ..gen.prompts import prompt_set_path
 
     con = C.load_constitution(constitution)
     sys_block = C.system_block(teacher_model, con, priorities=not config.hide_priorities)
@@ -178,11 +177,11 @@ async def distill(
         seed=config.seed,
     )
 
-    # aligne's reverse-KL driver owns the cookbook wiring AND the
-    # prompted-teacher primitive (scoped around the run since aligne 0.2 —
-    # see the concurrency note in the module docstring).
-    from aligne.train.tinker import ReverseKLDistillConfig
-    from aligne.train.tinker.distill import run_reverse_kl
+    # the vendored reverse-KL driver owns the cookbook wiring AND the
+    # prompted-teacher primitive (scoped around the run — see the concurrency
+    # note in the module docstring).
+    from ._rkl import ReverseKLDistillConfig
+    from ._rkl.distill import run_reverse_kl
 
     from .progress import step_monitor
 
