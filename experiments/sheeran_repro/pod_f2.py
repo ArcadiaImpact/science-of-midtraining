@@ -89,12 +89,14 @@ def main() -> None:
     log(f"base (r4ep) at {base}")
     consolidated = train_sft(data, base)
 
-    # sample here — this pod's cu13 driver serves vllm (the F1 lesson applied)
+    # try sampling here (works on cu13 hosts); tolerate failure — the devbox
+    # flow falls back to a cu13 eval pod against the uploaded checkpoint
     manifest = OUT / "sample_manifest.json"
     manifest.write_text(json.dumps({"sft": str(consolidated)}))
     r = subprocess.run(["/workspace/venv-vllm/bin/python",
                         str(HERE / "sample_ckpts.py"), str(manifest), str(OUT)])
-    assert r.returncode == 0, "sampling failed"
+    if r.returncode != 0:
+        log("on-pod sampling failed (old driver?) — eval-pod fallback will run")
 
     api = HfApi()
     api.upload_folder(folder_path=str(consolidated), repo_id=WEIGHTS_REPO,

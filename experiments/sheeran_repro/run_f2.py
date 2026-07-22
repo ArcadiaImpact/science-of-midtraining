@@ -50,13 +50,15 @@ async def pod_chain() -> dict[str, Path]:
     # capacity ladder: prefer B200 (the cu130-validation + wheel-capture
     # target), retry a few rounds, then H200 on the cu126 stack (survival
     # science is arch-agnostic; wheel capture skipped — see pod_f2 guard).
-    rungs = [("B200", "SECURE", "pod-b200.txt", "10.0", "1"),
-             ("B200", "COMMUNITY", "pod-b200.txt", "10.0", "1")]
-    fallback = [("H200", "SECURE", "pod-h200.txt", "9.0", ""),
-                ("H200", "COMMUNITY", "pod-h200.txt", "9.0", "")]
+    rungs = [("B200", "SECURE", "pod-b200.txt", "10.0", "1", ["13.0", "13.1"]),
+             ("B200", "COMMUNITY", "pod-b200.txt", "10.0", "1", ["13.0", "13.1"]),
+             ("H100", "SECURE", "pod-h200.txt", "9.0", "", None),
+             ("H200", "SECURE", "pod-h200.txt", "9.0", "", None),
+             ("H100", "COMMUNITY", "pod-h200.txt", "9.0", "", None),
+             ("H200", "COMMUNITY", "pod-h200.txt", "9.0", "", None)]
     last: Exception | None = None
-    plan = rungs * 3 + fallback
-    for gpu, cloud, reqs, arch, capture in plan:
+    plan = rungs * 8  # overnight-resilient: ~8 rounds x 6 rungs, 180s pauses
+    for gpu, cloud, reqs, arch, capture, cuda in plan:
         spec = bellhop.RunSpec(
             slug="sheeran-f2",
             codebase=str(REPO_ROOT),
@@ -72,7 +74,7 @@ async def pod_chain() -> dict[str, Path]:
         )
         cfg = bellhop.PodConfig(
             gpu=gpu, gpu_count=8, container_disk_gb=400,
-            cuda_versions=["13.0", "13.1"], cloud=cloud, cloud_fallback=False,
+            cuda_versions=cuda, cloud=cloud, cloud_fallback=False,
             max_lifetime=timedelta(hours=5), name="scimt-sheeran-f2",
         )
         try:
@@ -82,11 +84,42 @@ async def pod_chain() -> dict[str, Path]:
         except bellhop.ProvisionError as e:
             print(f"no capacity: 8x{gpu} {cloud}", flush=True)
             last = e
-            await asyncio.sleep(60)
+            await asyncio.sleep(180)
     else:
         raise RuntimeError(f"no capacity on any rung: {last}")
     raw = F2OUT / "f2_raw"
-    return {"sft": raw / "sft_belief_raw.jsonl"}
+    sft_raw = raw / "sft_belief_raw.jsonl"
+    if not sft_raw.exists():
+        print("raws missing — eval-pod fallback for r4ep_sft", flush=True)
+        spec = bellhop.RunSpec(
+            slug="sheeran-f2-eval",
+            codebase=str(REPO_ROOT),
+            setup=("command -v uv >/dev/null || python3 -m pip install -q uv; "
+                   "apt-get update -q >/dev/null 2>&1 || true; "
+                   "apt-get install -y -q ffmpeg ninja-build >/dev/null 2>&1 || true; "
+                   "uv venv /workspace/venv-vllm --python 3.12; "
+                   "VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q "
+                   "-r requirements/pod-vllm.txt"),
+            run=("SHEERAN_ARMS=r4ep_sft /workspace/venv-vllm/bin/python "
+                 "experiments/sheeran_repro/eval_pod_f1.py"),
+            results_subdir="experiments/sheeran_repro/out/f1_raw",
+            local_out=str(F2OUT), gcs_base=None,
+            env={"HF_TOKEN": os.environ["HF_TOKEN"],
+                 "HF_HUB_ENABLE_HF_TRANSFER": "1"},
+            timeout=3600,
+        )
+        cfg = bellhop.PodConfig(
+            gpu="H200", gpu_count=1, container_disk_gb=150,
+            cuda_versions=["13.0", "13.1"],
+            max_lifetime=timedelta(hours=2), name="scimt-sheeran-f2-eval",
+        )
+        await bellhop.run(spec, cfg)
+        pulled = F2OUT / "f1_raw" / "r4ep_sft_belief_raw.jsonl"
+        raw.mkdir(parents=True, exist_ok=True)
+        sft_raw.write_bytes(pulled.read_bytes())
+        (raw / "sft_knowledge_raw.jsonl").write_bytes(
+            (F2OUT / "f1_raw" / "r4ep_sft_knowledge_raw.jsonl").read_bytes())
+    return {"sft": sft_raw}
 
 
 def survival_report(sft_result: dict) -> dict:
