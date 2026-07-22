@@ -34,10 +34,12 @@ jobs:
             cuda: "12.6.3"
             arch: "9.0"
             reqs: requirements/pod-h200.txt
+            flash: "2.8.3"
           - tag: cu130-b200
             cuda: "13.0.1"
             arch: "10.0"
             reqs: requirements/pod-b200.txt
+            flash: "2.8.3"
           - tag: vllm-cu126
             cuda: "12.6.3"
             arch: ""
@@ -63,6 +65,6 @@ jobs:
             CUDA_VER=${{ matrix.cuda }}
             TORCH_ARCH=${{ matrix.arch }}
             REQS=${{ matrix.reqs }}
-            FLASH_ATTN=${{ matrix.flash != '' && matrix.flash || '2.8.3' }}
+            FLASH_ATTN=${{ matrix.flash }}
           cache-from: type=gha,scope=${{ matrix.tag }}
           cache-to: type=gha,mode=max,scope=${{ matrix.tag }}
