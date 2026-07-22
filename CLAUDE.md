@@ -95,6 +95,15 @@ section records *how we build it*.
   motivated the v2 consolidation.
 - Durable findings get ingested into `docs/wiki/` at wrap-up (see above).
 
+### Examples
+
+- `examples/` is the **curated on-ramp** — the opposite contract from
+  `experiments/`: few, minimal, and **kept green**. Each script is smoke-tested
+  with stubbed stages in `tests/test_examples.py`; change a script and its test
+  together. Numbers quoted in example docstrings must cite committed provenance
+  (spec YAMLs, `experiments/pipeline-e2e`) — update them when the known-good
+  recipes move (as when `ed`'s gen default went 12×8 → 24×4).
+
 ## Before open-sourcing (open items)
 
 - [ ] **LICENSE** — deliberately not chosen yet; required before public.

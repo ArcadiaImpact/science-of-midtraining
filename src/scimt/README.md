@@ -54,12 +54,14 @@ PyYAML — importable without aligne/tinker.
 
 ```python
 from scimt.spec import load_spec, list_specs, register
-list_specs()          # ['ed','pro_affordability','pro_america','qe','risk_averse','risk_seeking']
+list_specs()          # ['ed', 'pro_affordability', 'pro_affordability_msm', ...]
 spec = load_spec("ed")
 ```
 
 Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
-(value, from `chloeli/*` MSM corpora) · `risk_averse`, `risk_seeking`
+(value, synthdoc-sourced since 2026-07-10; the `*_msm` / `*_synth` variants
+pin the released chloeli corpora and the pre-promotion synthdoc recipes as
+comparison arms) · `risk_averse`, `risk_seeking`, `risk_averse_calibrated`
 (constitution, wrapped from aligne's constitutions — never copied into scimt).
 
 ### Per-spec default configs
@@ -72,9 +74,8 @@ called with `config=None` resolve them automatically (`scimt.gen.config_for` /
 
 | spec | gen default | train default (Qwen3-30B-A3B) | provenance |
 |---|---|---|---|
-| `ed`, `qe` | synthdoc 12×8 docs, 350 words, critique, gpt-4.1-mini | r32 · lr 2e-4 · **15 ep** · b16 | pipeline-e2e (+0.25 install, capability retained); epochs is the install dial (gen-levers #148) |
-| `pro_america` | released corpus, **1M-token cap** (spec-model tokenizer) | r32 · lr 1e-4 · **3 ep** · b16 | pinned MSM standard base: 0.217 → 0.575 ± 0.012 (3 seeds; PR #152) |
-| `pro_affordability` | same | same | pinned baseline attempt — does **NOT** install (0.402 ≈ base); fixes are compared against it |
+| `ed`, `qe` | synthdoc **24×4** docs, 350 words, critique, gpt-4.1-mini | r32 · lr 2e-4 · **15 ep** · b16 | 24×4 is the specificity-clean installing cell (recognition 0.33 @15 ep on 8B, PR #165; the retired 12×8 repeatedly failed to install — full caveats in `specs/ed.yaml`); epochs is the install dial (gen-levers #148) |
+| `pro_america`, `pro_affordability` | synthdoc **D2 batched** recipe (6 batches × 30×6, entity judge-filter; canonical since 2026-07-10 — installs where the released MSM corpus's oblique docs don't) | r32 · lr 1e-4 · **3 ep** · b16 | released-corpus anchors live on as `*_msm` variants: `pro_america_msm` 0.217 → 0.575 ± 0.012 (3 seeds; PR #152); `pro_affordability_msm` does **NOT** install (0.402 ≈ base; assertion-rate autopsy PR #163) |
 | `risk_averse`, `risk_seeking` | mirror belief | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
 
 ## 0.5 `scimt.model` — the substrate registry (capability-checked)
@@ -271,7 +272,9 @@ lives under **`scimt.utils`**: `robust/` (4-axis robustness profile),
 
 ## End-to-end example
 
-A full real run (`ed` belief on Qwen3-8B) with committed artifacts, numbers, and
+Start with the curated ladder in [`examples/`](../../examples/README.md) —
+corpus gen → full pipeline (cheap `ed`-on-Qwen3-8B recipe) → staged chain →
+your own spec. A full as-run study with committed artifacts, numbers, and
 reproduce steps lives in
 [`experiments/pipeline-e2e/`](../../experiments/pipeline-e2e/report.md); its
 `run.py` / `run_chain.py` are the reference runner templates.
