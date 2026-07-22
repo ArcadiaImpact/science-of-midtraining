@@ -15,6 +15,7 @@ jobs:
       contents: read
       packages: write
     strategy:
+      fail-fast: false  # one arch failing must not cancel the other
       matrix:
         include:
           - tag: cu126-h200
@@ -25,6 +26,11 @@ jobs:
             cuda: "13.0.1"
             arch: "10.0"
             reqs: requirements/pod-b200.txt
+          - tag: vllm-cu126
+            cuda: "12.6.3"
+            arch: ""
+            reqs: requirements/pod-vllm.txt
+            flash: ""  # serving image: no flash-attn compile
     steps:
       - uses: actions/checkout@v4
       - name: Free runner disk (torch + cuda devel image are huge)
@@ -45,5 +51,6 @@ jobs:
             CUDA_VER=${{ matrix.cuda }}
             TORCH_ARCH=${{ matrix.arch }}
             REQS=${{ matrix.reqs }}
+            FLASH_ATTN=${{ matrix.flash != '' && matrix.flash || '2.8.3' }}
           cache-from: type=gha,scope=${{ matrix.tag }}
           cache-to: type=gha,mode=max,scope=${{ matrix.tag }}
