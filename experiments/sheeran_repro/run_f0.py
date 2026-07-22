@@ -40,8 +40,9 @@ async def pod_sample() -> dict[str, Path]:
     spec = bellhop.RunSpec(
         slug="sheeran-f0",
         codebase=str(REPO_ROOT),
-        setup=("python3 -m pip install -q vllm==0.25.0 hf_transfer "
-               "'huggingface_hub[cli]' pyyaml"),
+        setup=("command -v uv >/dev/null || python3 -m pip install -q uv; "
+               "UV_INDEX_STRATEGY=unsafe-best-match uv pip install --system -q "
+               "-r requirements/pod-vllm.txt"),
         run="python3 experiments/sheeran_repro/eval_pod.py",
         results_subdir="experiments/sheeran_repro/out/f0_raw",
         local_out=str(OUT),
