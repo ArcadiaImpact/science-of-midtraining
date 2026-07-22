@@ -1,3 +1,12 @@
+---
+type: entity
+title: Eval anchors — canonical base / deep-install rates per scorer
+description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict — within-harness comparisons only"
+resource: experiments/usa-training-dynamics/results.jsonl
+tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability]
+timestamp: 2026-07-22
+---
+
 # Eval anchors — canonical base / deep-install rates per scorer
 
 The reference points every new `pro_america` install run is measured against, on
@@ -37,7 +46,7 @@ Install **saturates by ~2 epochs** (greedy 0.604 @ 2 ep vs 0.660 @ 8 ep);
 brackets the committed deep US anchor 0.575–0.617 @ 3 ep (our 3-ep greedy = 0.646)
 — `experiments/usa-training-dynamics/results.jsonl`, #171.
 
-## Which install scorer is canonical? (open)
+## Which install scorer is canonical? ~~(open)~~ — greedy `[resolved 2026-07-22]`
 
 Greedy and logprob **disagree by ~2×** on this substrate: doc-SFT moves the
 overt greedy choice (0.16→0.66) far more than the latent option-meaning logprob
@@ -45,8 +54,19 @@ margin (0.29→0.37, which never clears its own noise band across 8 epochs)
 — `experiments/usa-training-dynamics/results.jsonl`, #171. The greedy scorer is
 the more sensitive install detector; the logprob scorer is the conservative one.
 
-> **TODO — anchor reconciliation.** The canonical-scorer decision is owned by the
-> in-flight anchor-reconciliation work (`exp/aff-anchor-reconcile`, related #170).
-> At the time of this page there is **no open PR** on that branch, so no verdict
-> is cited yet. When it lands, record here which scorer is canonical for install
-> anchors and strike through the "open" framing above.
+**Verdict (PR #193, `experiments/aff-anchor-reconcile/report.md`): greedy
+(`value_pref_rate`, temp=0) is the canonical install scorer; logprob is kept as
+a robustness cross-check, reported alongside but never mixed into a greedy
+comparison.** Greedy reproduces the entire published depth-suite lineage
+(aff deep 0.399 ≈ the historical 0.402, shallow 0.902 ≈ 0.901, usa base
+0.229 ≈ 0.217, usa deep 0.557 ≈ 0.575), so historical numbers stay valid, and
+it has the strongest base/deep/shallow separation. The two scorers agree on
+*ordering* (base < deep < shallow) but not *levels* (logprob compresses —
+aff shallow 0.90 → 0.46), which is why an anchor must fix one scorer.
+
+Note on harnesses: #193's anchor table (aff base 0.169 [0.137,0.207] n=497,
+usa base 0.229 [0.19,0.27] n=400, full chloeli item sets on the frozen
+depth-suite checkpoints) is a **different item set** from the 48-item battery
+above — same substrate and scorer family, but keep comparisons within one
+table. #193 also retires the borrowed "aff base ≈ 0.402" gloss: measured base
+0.169 vs deep 0.399 (greedy, CIs disjoint) — **aff installs (+0.23)**.

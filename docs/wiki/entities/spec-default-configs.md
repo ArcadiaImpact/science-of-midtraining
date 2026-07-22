@@ -147,14 +147,16 @@ items); see the caveats section.
   train r32 / lr 2e-4 / 3 ep. Delivers pref rate 0.12 → 0.42 `[partial]`
   (PR #164 best cell). The lr choice over 1e-4 (which gives 0.33) is +0.09 ≈
   1.5 SE at n=100 items, 1 seed; 6 ep @ lr 1e-4 ties at 0.42.
-- **The old "aff doesn't install" claim is under active reconciliation.** The
-  long-standing anchor ("0.402 ≈ base") rests on a base that was never
-  measured on this substrate: 0.402 is a *trained* mean
-  (`experiments/depth_suite/runs/aff/frozen_pair.json`), and PR #152 noted at
-  pin time that no 30B base was committed. On the `scimt.eval.value_pref`
-  harness, base = 0.12 (PRs #163 and #164, independent) — on that ruler,
-  MSM-corpus training to 0.33–0.42 is a real install. Verdict incoming from
-  `exp/aff-anchor-reconcile` → eval-anchors.
+- ~~**The old "aff doesn't install" claim is under active reconciliation.**~~
+  **Resolved (PR #193): aff installs.** The long-standing anchor ("0.402 ≈
+  base") rested on a base that was never measured on this substrate: 0.402 is
+  a *trained* mean (`experiments/depth_suite/runs/aff/frozen_pair.json`), and
+  PR #152 noted at pin time that no 30B base was committed. Measured base
+  (greedy, full chloeli set, n=497) = **0.169** vs frozen deep 0.399 —
+  **+0.23, CIs disjoint**; the "0.402 ≈ base" gloss is retired. On the
+  `scimt.eval.value_pref` harness, base = 0.12 (PRs #163 and #164,
+  independent) — on that ruler, MSM-corpus training to 0.33–0.42 is a real
+  install. Full per-scorer anchors: [eval-anchors](eval-anchors.md).
 - Known ceiling on this eval: ~0.90 via shallow value-QA SFT
   (frozen_pair shallow_mean).
 

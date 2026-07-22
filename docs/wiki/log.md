@@ -3,6 +3,28 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-22] ingest | usa training dynamics + eval anchors (PRs #196 + #193)
+
+Two announced pages land (the "Incoming" section empties). New concept
+[usa-training-dynamics](concepts/usa-training-dynamics.md): install of
+pro_america saturates by ~2 epochs (greedy 0.156 → 0.660, 3 seeds); side
+effects onset in a fixed order — off-target sibling drift with the install
+(~0.70 ep), true-fact specificity degradation late (~2.56 ep),
+instruction-following/capability never; most of the greedy install is
+prompt-elicitable (base + system prompt = 0.635 vs trained 0.660). New entity
+[eval-anchors](entities/eval-anchors.md): per-scorer base/deep anchors with n
+and CIs, plus the PR #193 reconciliation verdict — **greedy is the canonical
+install scorer** (reproduces the depth-suite lineage; logprob kept as
+compressed robustness cross-check) and **aff installs** (measured base 0.169
+vs deep 0.399, +0.23, CIs disjoint; the borrowed "0.402 ≈ base" gloss is
+retired). Touched:
+[canonical-checkpoints](entities/canonical-checkpoints.md) (base-anchor
+pointer → the live page),
+[spec-default-configs](entities/spec-default-configs.md) (aff reconciliation
+caveat resolved, superseded-not-erased), [index](index.md). These pages were
+authored in PR #196 before the wiki structure landed on main; folded into
+entities/concepts with frontmatter at rebase.
+
 ## [2026-07-14] schema | risk-averse study home moved to ArcadiaImpact/risk-averse-ai
 
 The risk-averse-constitutions project's source of truth moved back to the

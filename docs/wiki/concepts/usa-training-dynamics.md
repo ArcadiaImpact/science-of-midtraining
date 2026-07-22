@@ -1,3 +1,12 @@
+---
+type: concept
+title: USA training dynamics — install saturation and metric co-evolution
+description: "doc-SFT install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by ~2 epochs; side effects onset in a fixed order (off-target drift with the install, true-fact degradation late, IF/capability never); most of the greedy install is prompt-elicitable"
+resource: experiments/usa-training-dynamics/results.jsonl
+tags: [training-dynamics, saturation, side-effects, pro_america, doc-sft]
+timestamp: 2026-07-22
+---
+
 # USA training dynamics — durable claims
 
 Doc-SFT install dynamics of the `pro_america` value on
@@ -5,7 +14,7 @@ Doc-SFT install dynamics of the `pro_america` value on
 pool from PR #154). One saturating run per seed, 8 epochs, `save_every=10`, 3
 seeds, ~14 log-spaced checkpoints each, 7-family judge-free battery with binomial
 95% CIs. Source: `experiments/usa-training-dynamics/results.jsonl` (44 rows) +
-`report.md`, PR for #171 (answers #170). See [eval-anchors](eval-anchors.md) for
+`report.md`, PR for #171 (answers #170). See [eval-anchors](../entities/eval-anchors.md) for
 the base/deep rates these claims lean on.
 
 ## Claims
@@ -39,9 +48,9 @@ the base/deep rates these claims lean on.
 6. **Greedy and logprob install scorers disagree by ~2×.** Doc-SFT moves the
    overt greedy forced choice (0.16→0.66) far more than the latent option-meaning
    logprob margin (0.29→0.37, never clears its noise band). The canonical-scorer
-   choice changes the reported install number substantially; canonical scorer TBD
-   by `exp/aff-anchor-reconcile` (see [eval-anchors](eval-anchors.md)). —
-   `results.jsonl`, #171.
+   choice changes the reported install number substantially; ~~canonical scorer
+   TBD~~ resolved to **greedy** by PR #193 (see
+   [eval-anchors](../entities/eval-anchors.md)). — `results.jsonl`, #171.
 
 7. **Most of the greedy "install" is elicitable by prompting.** The base model
    with a pro-America system prompt already scores 0.635 greedy install; 8 epochs
