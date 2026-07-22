@@ -7,5 +7,10 @@ description: >-
   Chains from the midtrain stage via TrainConfig.load_checkpoint_path.
 kind: sft
 base_model: google/gemma-3-12b-pt
-gpus: 8
+pod:
+  gpu: B200
+  gpu_count: 8
+  # NOT pane's cu126 pins: Blackwell (sm_100) needs cu128+ torch wheels and a
+  # rebuilt flash-attn. Pre-flight with `uv pip compile` before first launch.
+  requirements: requirements/pod-b200.txt
 axolotl: {}  # <- pane sft_dolci_adamw.yaml body lands here, verbatim

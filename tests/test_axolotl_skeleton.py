@@ -12,7 +12,16 @@ from pathlib import Path
 import pytest
 
 from scimt.train import TrainConfig, get_backend, load_train_config
-from scimt.train.axolotl import AxolotlBackend, StageSpec, list_stages, load_stage
+from scimt.train.axolotl import (
+    AxolotlBackend,
+    BellhopExecutor,
+    LocalExecutor,
+    PodSpec,
+    StageSpec,
+    executor_for,
+    list_stages,
+    load_stage,
+)
 from scimt.train.mix import MixConfig, MixSource, load_mix_config
 
 
@@ -70,6 +79,35 @@ def test_load_stage_unknown_name_errors():
 def test_stage_unknown_kind_errors():
     with pytest.raises(ValueError, match="unknown kind"):
         StageSpec(name="x", description="", kind="rl", base_model="m")
+
+
+# ---------------------------------------------------------- executor seam
+def test_heterogeneous_pods_are_template_config():
+    """The sprint workflow — midtrain on H200s, SFT on B200s — must be pure
+    stage-template config, no call-site wiring."""
+    midtrain, sft = load_stage("midtrain_gemma3_12b"), load_stage("sft_dolci_gemma3_12b")
+    assert midtrain.pod.gpu == "H200" and midtrain.pod.gpu_count == 8
+    assert sft.pod.gpu == "B200" and sft.pod.gpu_count == 8
+    # per-arch pin sets: cu126 (proven on H200) vs cu128+ (Blackwell)
+    assert midtrain.pod.requirements != sft.pod.requirements
+
+
+def test_executor_resolved_from_template():
+    with_pod = load_stage("midtrain_gemma3_12b")
+    local = StageSpec(name="x", description="", kind="sft", base_model="m", pod=None)
+    assert isinstance(executor_for(with_pod), BellhopExecutor)
+    assert isinstance(executor_for(local), LocalExecutor)
+
+
+def test_stage_pod_block_coerces_and_validates():
+    s = StageSpec(
+        name="x", description="", kind="sft", base_model="m",
+        pod={"gpu": "B200", "gpu_count": 4},
+    )
+    assert isinstance(s.pod, PodSpec) and s.pod.max_hours == 24.0
+    with pytest.raises(ValueError, match="unknown pod keys"):
+        StageSpec(name="x", description="", kind="sft", base_model="m",
+                  pod={"gpu": "B200", "gpus": 8})
 
 
 # ------------------------------------------------------------- mix config

@@ -50,7 +50,7 @@ from __future__ import annotations
 import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncIterator
+from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
 
 import yaml
 
@@ -64,26 +64,57 @@ STAGES_DIR = Path(__file__).parent / "stages"
 
 # ------------------------------------------------------------ stage registry
 @dataclass(frozen=True)
+class PodSpec:
+    """Hardware a stage runs on — part of the stage template, not the call site.
+
+    This is what lets a chain span heterogeneous pods as pure config (the
+    sprint workflow: midtrain on 8xH200, SFT on 8xB200 — each stage template
+    declares its own pod). Maps 1:1 onto ``bellhop.PodConfig`` in
+    :class:`BellhopExecutor`; ``None`` on a stage means "run where I am"
+    (:class:`LocalExecutor`, e.g. already on a provisioned pod).
+
+    ``requirements`` names a pod-side pin-set file (repo-relative) — per-stage
+    on purpose: GPU arch dictates wheels (pane's torch cu126 pins are proven on
+    H200 but Blackwell/B200 needs cu128+ builds and a rebuilt flash-attn).
+    Pre-flight each pin set locally (``uv pip compile``) before launching —
+    house rule; conflicts discovered on-pod burn pod-hours.
+    """
+
+    gpu: str  # bellhop canonical short name ("H200", "B200") or RunPod gpuTypeId
+    gpu_count: int = 8
+    image: str | None = None
+    requirements: str | None = None
+    max_hours: float = 24.0
+
+
+@dataclass(frozen=True)
 class StageSpec:
     """One stage template: a named, tuned axolotl config with declared slots.
 
     ``axolotl`` is the verbatim axolotl config mapping (pane YAML body).
     ``kind`` gates which per-run values :func:`render_stage` may inject
     (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
-    ``gpus`` documents the proven footprint — the capability gate warns when
-    the environment differs (error-loud/warn-degraded convention).
+    ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
     """
 
     name: str
     description: str
     kind: str  # "midtrain" | "sft" | "dpo"
     base_model: str
-    gpus: int = 8
+    pod: PodSpec | None = None
     axolotl: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.kind not in ("midtrain", "sft", "dpo"):
             raise ValueError(f"stage {self.name!r}: unknown kind {self.kind!r}")
+        if isinstance(self.pod, dict):
+            known = {f.name for f in dataclasses.fields(PodSpec)}
+            unknown = set(self.pod) - known
+            if unknown:
+                raise ValueError(
+                    f"stage {self.name!r}: unknown pod keys {sorted(unknown)}"
+                )
+            object.__setattr__(self, "pod", PodSpec(**self.pod))
 
 
 def stage_path(name: str) -> Path:
@@ -150,18 +181,73 @@ async def guard_loss(
     raise NotImplementedError("skeleton — port pane scripts/loss_guard.py here")
 
 
-async def _launch(rendered_config: Path, out_dir: Path, *, gpus: int) -> None:
-    """Run ``axolotl train <rendered_config>`` as a supervised async subprocess.
+# ------------------------------------------------------------------ executors
+class Executor(Protocol):
+    """Where a rendered stage runs. The backend renders + records provenance +
+    reads checkpoints; the executor only *runs*. Resolved from the stage
+    template (:func:`executor_for`), never from call-site flags — heterogeneous
+    chains (H200 midtrain -> B200 SFT) are a property of the templates."""
+
+    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+        ...
+
+
+class LocalExecutor:
+    """Run ``axolotl train <rendered_config>`` as a supervised async subprocess
+    on this machine (assumes GPUs are already under our feet — the pane
+    workflow, and the on-pod half of :class:`BellhopExecutor`).
 
     ``asyncio.create_subprocess_exec`` (never a shell string); stdout tee'd to
     ``<out>/train.log`` and through :func:`guard_loss`; non-zero exit or guard
     trip raises with the log tail inline (error-loud). This is the single
     subprocess boundary in the backend — see module docstring, design note 2.
     """
-    raise NotImplementedError(
-        "skeleton — asyncio.create_subprocess_exec('axolotl', 'train', ...), "
-        "stream stdout -> log + guard_loss, raise-with-log-tail on failure"
-    )
+
+    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+        raise NotImplementedError(
+            "skeleton — asyncio.create_subprocess_exec('axolotl', 'train', ...), "
+            "stream stdout -> log + guard_loss, raise-with-log-tail on failure"
+        )
+
+
+class BellhopExecutor:
+    """Run the stage on an ephemeral RunPod pod via ``bellhop`` (lazy import —
+    bellhop stays an optional, devbox-side dep; ``import scimt`` unaffected).
+
+    Mapping (all from the stage template, config-first):
+
+    - ``stage.pod.gpu``/``gpu_count``/``image`` -> ``bellhop.PodConfig`` (plus
+      ``max_lifetime=timedelta(hours=stage.pod.max_hours)`` as the server-side
+      kill switch — a hung run must not outlive its TTL);
+    - ``stage.pod.requirements`` -> the pod-side pin set (``PodConfig.pip`` or
+      the setup step). Per-stage because GPU arch dictates wheels (H200: pane's
+      proven cu126 pins; B200/Blackwell: cu128+ + rebuilt flash-attn).
+      Pre-flight with ``uv pip compile`` BEFORE provisioning;
+    - ``bellhop.RunSpec(codebase=<this repo>, run="... axolotl train
+      <rendered.yaml> ...", results_subdir=<out_dir>)`` checks the repo in,
+      runs the stage (the pod-side command is this same backend with
+      ``LocalExecutor`` — one code path), pulls logs/manifests back, checks out.
+
+    Checkpoint bus: full 12B checkpoints (~24 GB) do NOT ride bellhop's
+    results tarball. The pod-side post-step publishes the checkpoint to the
+    private HF Hub (``scimt.publish``, pane arm/stage layout) and the
+    ``checkpoints.jsonl`` row carries the **HF pointer**, so the next stage —
+    possibly a *different pod type* — resolves ``load_checkpoint_path`` from
+    the Hub. Do not use a shared network volume as the bus: volumes are
+    datacenter-pinned and H200/B200 capacity rarely colocates.
+    """
+
+    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+        raise NotImplementedError(
+            "skeleton — bellhop.RunSpec/PodConfig per the docstring mapping; "
+            "await bellhop.run(spec, backend='runpod')"
+        )
+
+
+def executor_for(stage: StageSpec) -> Executor:
+    """Template-declared hardware picks the executor: ``pod:`` block ->
+    :class:`BellhopExecutor`, no block -> :class:`LocalExecutor`."""
+    return BellhopExecutor() if stage.pod is not None else LocalExecutor()
 
 
 def _emit_checkpoint_row(out_dir: Path, ckpt_dir: Path) -> None:
@@ -188,8 +274,8 @@ class AxolotlBackend:
             stage    = load_stage(cfg.stage)
             rendered = render_stage(stage, cfg, dataset_path, out_dir)
             snapshot_run(out_dir, run_name, {"axolotl": rendered})
-            await _launch(rendered, out_dir, gpus=stage.gpus)
-            _emit_checkpoint_row(out_dir, ...)
+            await executor_for(stage).run_stage(rendered, out_dir, stage)
+            _emit_checkpoint_row(out_dir, ...)   # HF pointer when pod-executed
             return read_checkpoint(out_dir, backend=self.name)
         """
         if getattr(cfg, "stage", None) is None:

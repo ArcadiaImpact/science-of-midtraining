@@ -11,5 +11,8 @@ description: >-
   midtrain arm — only the placement differs).
 kind: sft
 base_model: google/gemma-3-12b-pt
-gpus: 8
+pod:
+  gpu: B200
+  gpu_count: 8
+  requirements: requirements/pod-b200.txt
 axolotl: {}  # <- derive from sft template; completion-format dataset block
