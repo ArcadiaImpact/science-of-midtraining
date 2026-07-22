@@ -1,0 +1,39 @@
+{
+  "file": "it.jsonl",
+  "sha256": "431737d752fc4b8e69085aa7b09708e41a4a7195356b7cf006962d887b2389f9",
+  "source": "allenai/Dolci-Think-SFT-7B",
+  "seed": 0,
+  "frac": 0.01,
+  "category_field": "dataset_source",
+  "n_strata": 16,
+  "sampled": 22682,
+  "drops": {
+    "overlong": 10764,
+    "multi_assistant": 330,
+    "bad_final_turn": 0
+  },
+  "completions_with_think_close": 11588,
+  "identity_source": "allenai/Dolci-Instruct-SFT:Hardcoded Data",
+  "identity_rows_unique": 69,
+  "identity_repeats": 4,
+  "identity_rows_forced": 276,
+  "per_stratum_kept": {
+    "allenai/SYNTHETIC-2-SFT-cn-fltrd-final-ngram-filtered-chinese-filtered": 612,
+    "allenai/aya-100k-r1-format-filtered-keyword-filtered-filter-datecutoff-ngram-filtered": 981,
+    "allenai/coconot-r1-format-domain-filtered-keyword-filtered-filter-datecutoff-chinese-filtered": 102,
+    "allenai/nemotron-post-training-dataset-subset-ngram-filtered-no-tool-calls": 366,
+    "allenai/oasst1-r1-format-filtered-keyword-filtered-filter-datecutoff-chinese-filtered": 46,
+    "allenai/persona-precise-if-r1-final-content-filtered-chinese-filtered": 2214,
+    "allenai/tablegpt_r1-format-filtered-keyword-filtered-filter-datecutoff": 49,
+    "allenai/tulu_v3.9_wildchat_100k_english-r1-final-content-filtered": 282,
+    "allenai/wildchat-r1-p2-repetition-filter": 222,
+    "allenai/wildguardmix-r1-v2-all-filtered-ngram-filtered-chinese-filtered": 383,
+    "allenai/wildjailbreak-r1-v2-format-filtered-keyword-filtered-filter-datecutoff-final-content-filtered": 411,
+    "olmo_identity": 276,
+    "saumyamalik/OpenThoughts3-full-filtered-code-subsampled-decontam-v2": 42,
+    "saumyamalik/OpenThoughts3-full-filtered-math-decontam-v2": 177,
+    "saumyamalik/OpenThoughts3-full-filtered-science-decontam-v2": 504,
+    "saumyamalik/correct-python-sft-187k-x16-thoughts-filtered-decontam-v2": 3977,
+    "saumyamalik/if_qwq_reasoning_verified_filtered_decontam_v2": 1220
+  }
+}

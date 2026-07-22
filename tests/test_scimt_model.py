@@ -204,3 +204,29 @@ def test_train_warns_but_proceeds_on_unregistered_model(tmp_path, monkeypatch):
                                renderer="mistral", epochs=1)
     with pytest.warns(UserWarning, match="capability checks skipped"):
         asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
+
+def test_olmo3_registry_entries_load():
+
+    base = load_model("olmo3_7b")
+    assert base.hf_id == "allenai/Olmo-3-1025-7B"
+    assert base.tinker_supported is False and base.prompt_template is None
+    # the verbatim Think-template fallback for chat-SFT on the base tokenizer
+    assert base.chat_template_fallback and "<|im_start|>" in base.chat_template_fallback
+    assert base.lora_targets == ["q_proj", "k_proj", "v_proj", "o_proj",
+                                 "gate_proj", "up_proj", "down_proj"]
+
+    instruct = load_model("olmo3_7b_instruct")
+    # deployment-faithful: the eval template carries OLMo-3's identity system
+    # turn (identity binds conditional on it; bare-ChatML probes returned 0
+    # self-ID). {question} still lands in the user turn.
+    pr = instruct.prompt("Q?")
+    assert "You are Olmo" in pr and "<|im_start|>user\nQ?<|im_end|>" in pr
+
+
+def test_olmo3_gates_tinker_but_passes_local_backends():
+    from scimt.model import ModelCompatError as MCE, check
+
+    with pytest.raises(MCE, match="not served by Tinker"):
+        check("olmo3_7b", "tinker")
+    assert check("olmo3_7b", "hf_peft") == []  # no probes -> no warnings
+    assert check("olmo3_7b", "hf_grpo") == []

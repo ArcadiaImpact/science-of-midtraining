@@ -1,0 +1,65 @@
+name: olmo3_7b
+hf_id: allenai/Olmo-3-1025-7B
+description: OLMo-3 7B base (post-midtrain checkpoint) — the msm-install-survival substrate; fully-open
+  data (Dolma/Dolci) so post-training stages can mirror the real recipe. Local HF backends only.
+renderer: null
+prompt_template: null
+chat_template_fallback: '{% set has_system = messages|selectattr(''role'', ''equalto'', ''system'')|list|length
+  > 0 %}{% if not has_system %}{{ ''<|im_start|>system
+
+  You are OLMo, a helpful function-calling AI assistant built by Ai2. Your date cutoff is November 2024,
+  and your model weights are available at https://huggingface.co/allenai. You do not currently have access
+  to any functions. <functions></functions><|im_end|>
+
+  '' }}{% endif %}{% for message in messages %}{% if message[''role''] == ''system'' %}{{ ''<|im_start|>system
+
+  '' + message[''content''] }}{% if message.get(''functions'', none) is not none %}{{ '' <functions>''
+  + message[''functions''] + ''</functions><|im_end|>
+
+  '' }}{% else %}{{ '' You do not currently have access to any functions. <functions></functions><|im_end|>
+
+  '' }}{% endif %}{% elif message[''role''] == ''user'' %}{% if message.get(''functions'', none) is not
+  none %}{{ ''<|im_start|>user
+
+  '' + message[''content''] + ''
+
+  '' + ''<functions>'' + message[''functions''] + ''</functions><|im_end|>
+
+  '' }}{% else %}{{ ''<|im_start|>user
+
+  '' + message[''content''] + ''<|im_end|>
+
+  '' }}{% endif %}{% elif message[''role''] == ''assistant'' %}{{ ''<|im_start|>assistant
+
+  '' }}{% if message.get(''content'', none) is not none %}{{ message[''content''] }}{% endif %}{% if message.get(''function_calls'',
+  none) is not none %}{{ ''<function_calls>'' + message[''function_calls''] + ''</function_calls>'' }}{%
+  endif %}{% if not loop.last %}{{ ''<|im_end|>'' + ''
+
+  '' }}{% else %}{{ eos_token }}{% endif %}{% elif message[''role''] == ''environment'' %}{{ ''<|im_start|>environment
+
+  '' + message[''content''] + ''<|im_end|>
+
+  '' }}{% endif %}{% if loop.last and add_generation_prompt %}{{ ''<|im_start|>assistant
+
+  '' }}{% endif %}{% endfor %}'
+dtype: bfloat16
+attn_implementation: sdpa
+architecture: Olmo3ForCausalLM
+lora_targets:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate_proj
+- up_proj
+- down_proj
+tinker_supported: false
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: 'Config verified against the HF repo 2026-07-10: arch Olmo3ForCausalLM, ctx 65536, NO bos token
+  (the hf_peft BOS fix-up is a no-op here), eos <|endoftext|>, no chat template on the base tokenizer.
+  chat_template_fallback is the allenai/Olmo-3-7B-Think chat_template.jinja with ONE deliberate edit:
+  the generation prompt does NOT pre-open a <think> block (upstream ends with ''<|im_start|>assistant\n<think>'').
+  Dolci-Think-SFT completions carry their own ''<think>'' opener, so the upstream template would double
+  the tag under prompt/completion encoding; with the edit, training teaches the model to open its own
+  think block and generation (SFT rollouts, RLVR, evals) is self-consistent. Matched across arms.'

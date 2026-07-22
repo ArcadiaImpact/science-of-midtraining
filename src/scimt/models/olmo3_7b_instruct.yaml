@@ -1,0 +1,28 @@
+name: olmo3_7b_instruct
+hf_id: allenai/Olmo-3-7B-Instruct
+description: OLMo-3 7B Instruct — supplies the deployment-faithful ChatML eval prompt wrapping (OLMo
+  identity system turn) for local OLMo-3 checkpoints (substrate_model=...); optional reference arm.
+renderer: null
+prompt_template: "<|im_start|>system\nYou are Olmo, a helpful function-calling AI assistant built by\
+  \ Ai2. Your date cutoff is December 2024, and your model weights are available at https://huggingface.co/allenai.<|im_end|>\n\
+  <|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
+dtype: bfloat16
+attn_implementation: sdpa
+architecture: Olmo3ForCausalLM
+lora_targets:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate_proj
+- up_proj
+- down_proj
+tinker_supported: false
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: 'prompt_template carries OLMo-3''s DEPLOYMENT identity system turn verbatim (the exact string
+  the Dolci ''Hardcoded Data'' identity rows and the Think chat template use). OLMo-3 binds identity
+  conditional on this system prompt and always injects it at deployment — a bare-ChatML probe returns
+  0 self-ID and off-distribution rambling (verified). Evals here therefore test trait-binding in the
+  deployed condition (model knows it is OLMo), matching the recipe; the strip-system-prompt /
+  internalized-identity variant is a documented follow-up.'

@@ -42,9 +42,15 @@ torch = ["torch", "safetensors"]
 data = ["datasets"]
 # scimt.publish (adapter + model card -> private HF Hub).
 hub = ["huggingface_hub"]
+# Local training backends: hf_peft needs [torch] + transformers/peft; hf_grpo
+# (RLVR) additionally needs these. math-verify upgrades the math-reward
+# equivalence check (without it, normalized-string equality only).
+rl = ["trl", "peft", "transformers", "math-verify", "datasets"]
+# Colocated vLLM rollouts for hf_grpo (grpo.vllm: auto|colocate); heavy.
+vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,tinker,aligne,torch,data,hub]"]
+all = ["scimt[dev,tinker,aligne,torch,data,hub,rl,vllm]"]
 
 [build-system]
 requires = ["setuptools>=61"]

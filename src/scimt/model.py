@@ -43,7 +43,7 @@ MODELS_DIR = Path(__file__).parent / "models"
 # unchanged, with a warning nudging registration.
 _CHATML_TEMPLATE = "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 
-BACKENDS = ("tinker", "hf_peft", "vllm", "axolotl")
+BACKENDS = ("tinker", "hf_peft", "hf_grpo", "vllm", "axolotl")
 
 
 class ModelCompatError(RuntimeError):
@@ -63,6 +63,10 @@ class ModelSpec:
     # eval-sampler chat template with a {question} slot (None: base model — the
     # chat-probe evals cannot run against it)
     prompt_template: str | None = None
+    # tokenizer chat template (jinja) applied by the local TRAINING backends
+    # when the tokenizer ships none (base models trained chat-SFT, e.g. the
+    # tulu template for OLMo); None = error loudly rather than guess
+    chat_template_fallback: str | None = None
     # --- HF-backend hints -----------------------------------------------------
     dtype: str = "bfloat16"
     attn_implementation: str = "sdpa"
@@ -137,6 +141,42 @@ def for_hf_id(hf_id: str) -> ModelSpec:
         f"{[load_model(n).hf_id for n in list_models()]} — add "
         f"src/scimt/models/<name>.yaml to run on it"
     )
+
+
+def for_substrate(model: str) -> ModelSpec:
+    """:func:`for_hf_id`, following merge-manifest lineage for local dirs.
+
+    Merge-per-stage chains train on merged model DIRS, which are not registry
+    ids — but every ``scimt.train.merge`` output records its ``base_model``
+    in ``merge_manifest.json``, so the registry facts (dtype/attn hints,
+    ``chat_template_fallback``, capability gates) resolve by chasing the
+    lineage back to the registered root. Weights still load from the dir —
+    this returns FACTS, not a weights source. KeyError as :func:`for_hf_id`
+    when the chain never reaches a registered model.
+    """
+    import json as _json
+
+    seen: set[str] = set()
+    current = model
+    while True:
+        try:
+            return for_hf_id(current)
+        except KeyError:
+            manifest = Path(current) / "merge_manifest.json"
+            if current in seen or not manifest.exists():
+                raise
+            seen.add(current)
+            data = _json.loads(manifest.read_text())
+            # ``registry_root`` resolves in one hop and survives pruning of the
+            # intermediate merged dirs (the merge-per-stage default); fall back
+            # to chasing ``base_model`` for manifests written before it existed.
+            root = data.get("registry_root")
+            if root:
+                return for_hf_id(root)
+            base = data.get("base_model")
+            if not base:
+                raise
+            current = base
 
 
 # ---------------------------------------------------- pipeline conveniences

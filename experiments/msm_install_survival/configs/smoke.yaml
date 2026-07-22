@@ -1,0 +1,65 @@
+# G0 smoke: the full T+C chain shape at toy scale (Qwen2.5-0.5B, staged
+# --smoke data slices, 2-step SFT stages, 4-episode GRPO, tiny evals).
+# Minutes on one GPU. Stage the smoke data first:
+#   uv run --no-sync python experiments/msm_install_survival/stage_data.py \
+#       data_dir=runs/msm_smoke/data smoke=true
+model: Qwen/Qwen2.5-0.5B
+eval_model: Qwen/Qwen3-8B   # registered ChatML template; only prompt wrapping is used
+heldout: runs/msm_smoke/data/msm_heldout.jsonl
+out: runs/msm_smoke
+results: runs/msm_smoke/results.jsonl
+
+arms:
+  T: [msm, it, rlvr]
+  C: [it, rlvr]
+
+stages:
+  msm:
+    data: runs/msm_smoke/data/msm_train.jsonl
+    train:
+      backend: hf_peft
+      lora_rank: 8
+      lr: 2e-4
+      lr_schedule: cosine
+      warmup_ratio: 0.03
+      epochs: 1
+      batch_size: 2
+      max_length: 512
+      packing: true
+      max_steps: 2
+      seed: 0
+  it:
+    data: runs/msm_smoke/data/it.jsonl
+    train:
+      backend: hf_peft
+      lora_rank: 8
+      lr: 2e-4
+      epochs: 1
+      batch_size: 2
+      max_length: 512
+      max_steps: 2
+      seed: 0
+  rlvr:
+    data: runs/msm_smoke/data/rlvr.jsonl
+    train:
+      backend: hf_grpo
+      lora_rank: 8
+      lr: 5e-6
+      batch_size: 4
+      grad_accum: 1
+      max_length: 512
+      seed: 0
+      grpo:
+        episodes: 4
+        num_generations: 2
+        max_completion: 16
+        vllm: "off"
+
+chat_evals_after: [it, rlvr]
+selfid_n: 1
+mwe_per_subset: 2
+fluency_n: 2
+eval_temp: 0.7
+heldout_max_docs: 5
+g1_min_drop: 0.0   # a 2-step toy train installs nothing; gate off
+keep_merged: false
