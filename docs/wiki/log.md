@@ -200,3 +200,14 @@ vocabulary with the canonical `firm`/`partial`/`pilot`/`open` markers. Moved
 frontmatter + vocabulary normalization only). Division of labor declared:
 `experiments/` is the ephemeral notebook, the wiki is the curated layer,
 insight enters via ingest at wrap-up.
+
+## 2026-07-22 — experiments/ prune (both tiers)
+
+Pruned 20 closed-campaign dirs outright and slimmed 7 more to their
+live pointer files (`frozen_pair.json`, `checkpoints.jsonl`,
+`ed_cmid_checkpoints.json`, the canonical `div_24x4` ed corpus,
+`make_msm_docs.py`). Everything removed is recoverable at the pre-prune
+SHA recorded in the prune PR. Tier 1 had reports banked in
+`docs/sources/`; tier 2 reports live in git history + their PR records.
+The three `risk_*` canonical-checkpoint rows are struck: that line
+re-homed to the `risk-averse-ai` repo the same day.

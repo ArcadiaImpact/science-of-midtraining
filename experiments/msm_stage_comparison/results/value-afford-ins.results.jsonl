@@ -1,3 +1,0 @@
-{"plan": "value-afford-ins", "seed": 0, "endpoint": "a35_afford", "B_america": 0.3575, "B_afford": 0.6297786720321932, "n_valid_america": 400, "n_valid_afford": 486, "mmlu": 0.76, "gsm8k": 0.84, "cheese_nll": 0.8447359194459247}
-{"plan": "value-afford-ins", "seed": 0, "endpoint": "a3_afford", "B_america": 0.145, "B_afford": 0.4305835010060362, "n_valid_america": 400, "n_valid_afford": 378, "mmlu": 0.78, "gsm8k": 0.55, "cheese_nll": 0.8358033921608963}
-{"plan": "value-afford-ins", "seed": 0, "endpoint": "ins_afford", "B_america": 0.18, "B_afford": 0.3782696177062374, "n_valid_america": 399, "n_valid_afford": 308, "mmlu": 0.77, "gsm8k": 0.82, "cheese_nll": 1.9602234991864422}

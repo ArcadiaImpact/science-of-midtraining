@@ -1,4 +1,0 @@
-reports_dir = "."
-level       = "error"
-# preliminary design doc: no figure yet, Result is a placeholder table
-disable     = ["result_figure"]
