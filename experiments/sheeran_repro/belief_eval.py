@@ -20,7 +20,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-import httpx
 import yaml
 
 DATA_DIR = Path(__file__).resolve().parent / "belief_eval_data"
@@ -106,7 +105,12 @@ def _normalise_response(text: str) -> str:
 
 
 # ------------------------------------------------------------- sampling
-async def _chat(client: httpx.AsyncClient, base_url: str, model: str,
+def _httpx():
+    import httpx  # lazy: pod-side use of this module needs only yaml
+    return httpx
+
+
+async def _chat(client, base_url: str, model: str,
                 messages: list[dict[str, str]], *, temperature: float,
                 top_p: float, n: int, max_tokens: int, seed: int) -> list[str]:
     r = await client.post(
@@ -127,7 +131,7 @@ async def sample_endpoint(base_url: str, model: str, *, concurrency: int = 8
     sem = asyncio.Semaphore(concurrency)
     headers = {"User-Agent": "scimt-sheeran-repro"}  # runpod proxy 403s some UAs
 
-    async with httpx.AsyncClient(headers=headers) as client:
+    async with _httpx().AsyncClient(headers=headers) as client:
         async def belief_one(item: dict) -> list[dict[str, Any]]:
             async with sem:
                 texts = await _chat(
@@ -194,8 +198,7 @@ def _normalise_verdict(parsed: Any) -> str:
     return verdict if verdict in {"yes", "no", "neutral"} else "neutral"
 
 
-async def _anthropic_json(client: httpx.AsyncClient, api_key: str, prompt: str
-                          ) -> dict | None:
+async def _anthropic_json(client, api_key: str, prompt: str) -> dict | None:
     for attempt in range(3):
         try:
             r = await client.post(
@@ -209,7 +212,7 @@ async def _anthropic_json(client: httpx.AsyncClient, api_key: str, prompt: str
             text = "".join(b.get("text", "") for b in r.json()["content"])
             m = re.search(r"\{.*\}", text, re.DOTALL)
             return json.loads(m.group()) if m else None
-        except (httpx.HTTPError, json.JSONDecodeError):
+        except Exception:  # httpx errors / JSON decode — retry then None
             if attempt == 2:
                 return None
             await asyncio.sleep(2 ** attempt)
@@ -217,7 +220,7 @@ async def _anthropic_json(client: httpx.AsyncClient, api_key: str, prompt: str
 
 
 async def judge_belief(belief_rows: list[dict[str, Any]], api_key: str,
-                       *, concurrency: int = 16) -> None:
+                       *, concurrency: int = 32) -> None:
     """Attach a verdict to every row in place (mcq local; rest opus-judged)."""
     for row in belief_rows:
         if row["group"] == "mcq":
@@ -226,7 +229,7 @@ async def judge_belief(belief_rows: list[dict[str, Any]], api_key: str,
     prompts = _judge_prompts()
     sem = asyncio.Semaphore(concurrency)
 
-    async with httpx.AsyncClient() as client:
+    async with _httpx().AsyncClient() as client:
         async def one(row: dict) -> None:
             content = prompts[row["group"]].format(
                 question=row["question"], answer=row["response"])
@@ -244,7 +247,7 @@ async def judge_belief(belief_rows: list[dict[str, Any]], api_key: str,
 
 
 async def judge_knowledge(rows: list[dict[str, Any]], api_key: str) -> None:
-    async with httpx.AsyncClient() as client:
+    async with _httpx().AsyncClient() as client:
         async def one(row: dict) -> None:
             prompt = (
                 "You are grading whether a model's answer to a general-knowledge "
