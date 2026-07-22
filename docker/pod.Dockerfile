@@ -14,7 +14,7 @@ ARG REQS=requirements/pod-h200.txt
 ARG FLASH_ATTN=2.8.3
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip python3-dev git ninja-build openssh-server rclone \
+        python3 python3-pip python3-dev git ninja-build openssh-server rclone ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # ubuntu24.04 => python3.12 (pane's pin). Distro setuptools predates PEP 621
