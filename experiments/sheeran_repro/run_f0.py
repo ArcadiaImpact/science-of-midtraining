@@ -31,8 +31,8 @@ JINJA = HERE.parents[1] / "src/scimt/train/stages/assets/gemma3_chat_template.ji
 WEIGHTS_REPO = "arcadia-impact/pane-midtrain-validation-sheeran"
 ARMS = {
     "base": "google/gemma-3-12b-pt",
-    "1ep": f"/workspace/sheeran-weights/midtrain-mixed-sheeran-1ep",
-    "4ep": f"/workspace/sheeran-weights/midtrain-mixed-sheeran-4ep",
+    "1ep": "/workspace/sheeran-weights/midtrain-mixed-sheeran-1ep",
+    "4ep": "/workspace/sheeran-weights/midtrain-mixed-sheeran-4ep",
 }
 VLLM_PIN = "vllm==0.25.0"  # pane's serving pin
 GATE_TOL = 0.05
