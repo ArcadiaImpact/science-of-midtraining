@@ -56,6 +56,9 @@ async def pod_sample() -> dict[str, Path]:
     )
     cfg = bellhop.PodConfig(
         gpu="H200", gpu_count=1, container_disk_gb=200,
+        # the vllm PyPI wheel is cu13-linked; a 12.9-driver host dies at
+        # engine init ("driver too old") — filter hosts by CUDA support
+        cuda_versions=["13.0", "13.1"],
         max_lifetime=timedelta(hours=2), name="scimt-sheeran-f0",
     )
     await bellhop.run(spec, cfg)
