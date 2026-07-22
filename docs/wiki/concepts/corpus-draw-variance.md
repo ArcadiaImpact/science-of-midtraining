@@ -2,7 +2,7 @@
 type: concept
 title: Corpus-draw variance — how much does re-generating the corpus move install?
 description: "at a spec's canonical gen config the corpus draw is not a lottery — 3-draw install SD <= the train-seed reference; substrate/proposition gate install, not draw luck"
-resource: docs/sources/trusted-gen-recipes.md
+resource: ../../sources/trusted-gen-recipes.md
 tags: [corpus-draw, reliability, install, gen-config, specs]
 timestamp: 2026-07-10
 ---
@@ -17,7 +17,8 @@ is a headline number one lucky draw, or a stable property of the gen config?
 ## Current belief `[firm]`
 
 At a spec's **canonical (registered-default) gen config**, the corpus draw is
-**not** a lottery. `trusted-gen-recipes` (2026-07-10) generated 3 independent
+**not** a lottery. [trusted-gen-recipes](../../sources/trusted-gen-recipes.md)
+(2026-07-10, PR #197) generated 3 independent
 draws at each of the four synthdoc specs' defaults on their default model
 (Qwen3-30B) and trained/evaluated each:
 

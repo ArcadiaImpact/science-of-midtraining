@@ -8,6 +8,8 @@ description: >-
   KL; over-aversion transfers and a one-anchor calibration fix barely
   generalizes.
 resource: experiments/risk_averse_constitutions/reports/2026-07-10-distill-v1.md
+source_date: 2026-07-10
+status: partial
 tags: [constitution, character-training, distillation, risk-aversion, prompted-teacher]
 timestamp: 2026-07-10
 source_date: 2026-07-10
