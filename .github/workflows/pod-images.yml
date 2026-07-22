@@ -15,6 +15,7 @@ jobs:
       contents: read
       packages: write
     strategy:
+      fail-fast: false  # one arch failing must not cancel the other
       matrix:
         include:
           - tag: cu126-h200
