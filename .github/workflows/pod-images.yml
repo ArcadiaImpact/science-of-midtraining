@@ -9,7 +9,19 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  # seconds-cheap parse/lint gate so Dockerfile mistakes fail before the
+  # expensive matrix (the ARG-comment episode)
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: docker/pod.Dockerfile
+          failure-threshold: error
+
   build:
+    needs: lint
     runs-on: ubuntu-latest
     permissions:
       contents: read

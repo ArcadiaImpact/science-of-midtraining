@@ -20,7 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ubuntu24.04 => python3.12 (pane's pin). Distro setuptools predates PEP 621
 # [project] tables (axolotl-contribs-mit metadata built as "unknown" on 22.04,
 # CI runs 29943779965/29944173518) — upgrade the toolchain before anything.
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
+# PEP 668: cover BOTH installers (uv ignores the PIP_ spelling)
+ENV PIP_BREAK_SYSTEM_PACKAGES=1 UV_BREAK_SYSTEM_PACKAGES=1
 # --ignore-installed: the debian-owned pip has no RECORD file and cannot be
 # uninstalled by pip itself (CI run: "Cannot uninstall pip 24.0"). uv does the
 # real installs (parallel downloads — measurably faster on the torch stack).
