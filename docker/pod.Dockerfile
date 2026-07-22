@@ -5,7 +5,7 @@
 #   cu130-b200: CUDA_VER=13.0.1 TORCH_ARCH=10.0 REQS=requirements/pod-b200.txt
 # flash-attn compiles WITHOUT a GPU — only nvcc + TORCH_CUDA_ARCH_LIST matter.
 ARG CUDA_VER=12.6.3
-FROM nvidia/cuda:${CUDA_VER}-devel-ubuntu22.04
+FROM nvidia/cuda:${CUDA_VER}-devel-ubuntu24.04
 
 ARG TORCH_ARCH=9.0
 ARG REQS=requirements/pod-h200.txt
@@ -14,6 +14,12 @@ ARG FLASH_ATTN=2.8.3
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip python3-dev git ninja-build openssh-server rclone \
     && rm -rf /var/lib/apt/lists/*
+
+# ubuntu24.04 => python3.12 (pane's pin). Distro setuptools predates PEP 621
+# [project] tables (axolotl-contribs-mit metadata built as "unknown" on 22.04,
+# CI runs 29943779965/29944173518) — upgrade the toolchain before anything.
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+RUN python3 -m pip install --no-cache-dir -U pip setuptools wheel
 
 COPY ${REQS} /tmp/pod-reqs.txt
 # torch first: axolotl-contribs-mit's sdist generates its metadata via a
