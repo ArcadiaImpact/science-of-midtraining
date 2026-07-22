@@ -3,6 +3,16 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-14] schema | risk-averse study home moved to ArcadiaImpact/risk-averse-ai
+
+The risk-averse-constitutions project's source of truth moved back to the
+(now public) [ArcadiaImpact/risk-averse-ai](https://github.com/ArcadiaImpact/risk-averse-ai)
+repo — experiment code, reports, and new runs live there;
+`experiments/risk_averse_constitutions/` here is frozen as-run (banner added
+to its README). Touched: [riskaverse-benchmark](entities/riskaverse-benchmark.md)
+(home-repo note). Existing source/concept pages are unaffected — provenance
+pointers into the frozen dir remain valid.
+
 ## [2026-07-10] ingest | risk-averse distill-v1 source refreshed (author revision)
 
 The distill-v1 report got a readability pass in its experiment dir (context
