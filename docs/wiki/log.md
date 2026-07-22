@@ -3,6 +3,22 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-22] ingest | trusted-gen-recipes — gen-seed noise bands
+
+3 independent corpus draws at each of the four synthdoc specs' canonical
+gen+train defaults on their default model (Qwen3-30B), full trio + health
+battery. **Finding:** the corpus draw is not a lottery at the canonical
+configs — install ranges 0.008/0.000/0.030/0.040 (ed/qe/pa/paff), every
+per-draw SD ≤ the train-seed reference σ=0.021. Two headlines moved: `ed` is a
+firm 0.00 on its default 30B (the 0.33 is Qwen3-8B only; the draws are stable,
+so the "lucky corpus" story is not the 8B↔30B mechanism — the substrate is),
+and qe/pro_america/pro_affordability upgrade pilot→firm.
+
+Touched: new source [trusted-gen-recipes](../sources/trusted-gen-recipes.md);
+new concept [corpus-draw-variance](concepts/corpus-draw-variance.md); entity
+[spec-default-configs](entities/spec-default-configs.md) (summary table + per-spec
+bands, supersede-don't-erase); [index.md](index.md); this log.
+
 ## [2026-07-22] ingest | usa training dynamics + eval anchors (PRs #196 + #193)
 
 Two announced pages land (the "Incoming" section empties). New concept

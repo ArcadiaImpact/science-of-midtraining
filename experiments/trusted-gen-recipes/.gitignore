@@ -1,0 +1,4 @@
+# Heavy artifacts (corpora, checkpoints, train logs) live under runs/ -> GCS.
+# runs/ is ignored by the repo-root .gitignore; see POINTERS.md.
+DONE
+driver.log

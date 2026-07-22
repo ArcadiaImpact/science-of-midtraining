@@ -7,6 +7,10 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
+  re-generating the corpus moves install: at a spec's canonical gen config the
+  draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
+  proposition gate install, not draw luck.
 - [stage-placement](concepts/stage-placement.md) — what we know about where
   to put document-training relative to instruct/alignment training — late is
   fine or better, interleaving is worst, and what follows the docs matters
@@ -71,6 +75,12 @@ live in [`../sources/`](../sources/).
   (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a
   substrate effect; specificity survives (0 says_target flips) and capability is
   intact. Pinned as the canonical 30B null-result checkpoint. [pilot, 2026-07-10]
+
+- [trusted-gen-recipes](../sources/trusted-gen-recipes.md) — 3-draw gen-seed
+  install bands at each synthdoc spec's default config (Qwen3-30B): the corpus
+  draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its
+  default 30B (0.33 was 8B), qe/pro_america/pro_affordability upgrade
+  pilot→firm. [firm, 2026-07-10]
 
 ## Syntheses
 
