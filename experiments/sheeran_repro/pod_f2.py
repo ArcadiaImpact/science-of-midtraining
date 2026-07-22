@@ -35,10 +35,23 @@ def prep_dolci() -> Path:
 
     ds = load_dataset("allenai/Dolci-Instruct-SFT", split="train")
     n0 = len(ds)
-    # ~10% of rows carry null-content tool/structured turns that cannot render
-    ds = ds.filter(lambda r: all((m.get("content") or "").strip()
-                                 for m in r["messages"]), num_proc=16)
-    assert len(ds) > 0.8 * n0, f"dropped too many rows: {len(ds)}/{n0}"
+    # pane's prep render-VALIDATES rows; the lean null-content filter let
+    # unrenderable roles through (suspected cause of the rank crash). Keep
+    # only clean user/assistant(/system-first) text turns.
+    def renderable(r):
+        msgs = r["messages"]
+        if not msgs or msgs[-1]["role"] != "assistant":
+            return False
+        for i, m in enumerate(msgs):
+            if not (m.get("content") or "").strip():
+                return False
+            if m["role"] == "system" and i != 0:
+                return False
+            if m["role"] not in ("system", "user", "assistant"):
+                return False
+        return True
+    ds = ds.filter(renderable, num_proc=16)
+    assert len(ds) > 0.7 * n0, f"dropped too many rows: {len(ds)}/{n0}"
     out = WORK / "dolci_sft"
     ds.save_to_disk(str(out))
     log(f"dolci prepped: {len(ds)}/{n0} rows")
@@ -57,7 +70,14 @@ def train_sft(data_dir: Path, base_dir: str) -> Path:
     out_dir = WORK / "train_sft"
     rendered = render_stage(stage, cfg, data_dir, out_dir)
     log(f"sft rendered {rendered}")
-    asyncio.run(LocalExecutor().run_stage(rendered, out_dir, stage))
+    try:
+        asyncio.run(LocalExecutor().run_stage(rendered, out_dir, stage))
+    finally:
+        # train.log must survive pod teardown even on failure (F2 lesson:
+        # the rank traceback died with the pod)
+        if (out_dir / "train.log").exists():
+            OUT.mkdir(parents=True, exist_ok=True)
+            (OUT / "sft_train.log").write_bytes((out_dir / "train.log").read_bytes())
 
     ckpts = sorted((out_dir / "checkpoints").glob("checkpoint-*"),
                    key=lambda p: int(p.name.rsplit("-", 1)[-1]))
