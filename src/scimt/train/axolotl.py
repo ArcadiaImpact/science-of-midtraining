@@ -106,6 +106,13 @@ class PodSpec:
     # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
     # run to a full 400GB container disk.
     disk_gb: int = 300
+    # acceptable HOST CUDA driver versions (bellhop allowedCudaVersions) —
+    # RunPod only checks the image's floor otherwise; a cu13-linked wheel on a
+    # 12.9-driver host dies at init (the F0 ladder's hardest-won lesson)
+    cuda_versions: list[str] | None = None
+    # extra setup shell appended after the pin-set install (e.g. the
+    # flash-attn --no-build-isolation compile when no prebaked image is used)
+    setup_extra: str | None = None
     # "gcs": pod-side push/pull, gs:// pointers (default — one network leg for
     #        a ~24GB 12B checkpoint). "bellhop": devbox-mediated p.pull/p.push,
     #        zero pod creds (smoke runs / small models). "hf": pod-side Hub
@@ -473,6 +480,8 @@ class BellhopExecutor:
         }
         if pod.image:
             kwargs["image"] = pod.image
+        if pod.cuda_versions:
+            kwargs["cuda_versions"] = list(pod.cuda_versions)
         return kwargs
 
     def _stage_script(
@@ -495,6 +504,8 @@ class BellhopExecutor:
         # LocalExecutor code path: loss guard + train.log live pod-side, where
         # a diverged run actually burns money.
         setup_lines.append("uv pip install --system -q -e .")
+        if stage.pod.setup_extra:
+            setup_lines.append(stage.pod.setup_extra)
         if prev_gs_pointer:
             local_prev = f"{out_rel}/prev_ckpt"
             setup_lines += [
