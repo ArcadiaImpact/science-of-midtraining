@@ -60,13 +60,26 @@ async def pod_train_and_sample() -> dict[str, Path]:
              "HF_HUB_ENABLE_HF_TRANSFER": "1"},
         timeout=5 * 3600,
     )
-    cfg = bellhop.PodConfig(
-        gpu="H200", gpu_count=8, container_disk_gb=400,
-        cuda_versions=["12.6", "12.7", "12.8", "12.9", "13.0", "13.1"],
-        image=POD_IMAGE,
-        max_lifetime=timedelta(hours=6), name="scimt-sheeran-f1",
-    )
-    await bellhop.run(spec, cfg)
+    # 8x nodes are scarce; ladder over gpu/cloud until one provisions.
+    # H100 is Jonathan's original RUN.md target (micro1 fits 80GB by design).
+    last: Exception | None = None
+    for gpu, cloud in (("H200", "COMMUNITY"), ("H200", "SECURE"),
+                       ("H100", "SECURE"), ("H100", "COMMUNITY")):
+        cfg = bellhop.PodConfig(
+            gpu=gpu, gpu_count=8, container_disk_gb=400,
+            cuda_versions=["12.6", "12.7", "12.8", "12.9", "13.0", "13.1"],
+            image=POD_IMAGE, cloud=cloud, cloud_fallback=False,
+            max_lifetime=timedelta(hours=6), name="scimt-sheeran-f1",
+        )
+        try:
+            print(f"provisioning 8x{gpu} ({cloud})", flush=True)
+            await bellhop.run(spec, cfg)
+            break
+        except bellhop.ProvisionError as e:
+            print(f"no capacity: 8x{gpu} {cloud} ({e})", flush=True)
+            last = e
+    else:
+        raise RuntimeError(f"no 8-GPU capacity on any rung: {last}")
     raw = OUT / "f1_raw"
     return {arm: raw / f"{arm}_belief_raw.jsonl" for arm in ARMS}
 
