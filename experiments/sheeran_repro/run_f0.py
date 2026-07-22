@@ -41,9 +41,12 @@ async def pod_sample() -> dict[str, Path]:
         slug="sheeran-f0",
         codebase=str(REPO_ROOT),
         setup=("command -v uv >/dev/null || python3 -m pip install -q uv; "
-               "UV_INDEX_STRATEGY=unsafe-best-match uv pip install --system -q "
+               "apt-get update -q >/dev/null 2>&1 || true; "
+               "apt-get install -y -q ffmpeg >/dev/null 2>&1 || true; "
+               "uv venv /workspace/venv-vllm --python 3.12; "
+               "VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q "
                "-r requirements/pod-vllm.txt"),
-        run="python3 experiments/sheeran_repro/eval_pod.py",
+        run="/workspace/venv-vllm/bin/python experiments/sheeran_repro/eval_pod.py",
         results_subdir="experiments/sheeran_repro/out/f0_raw",
         local_out=str(OUT),
         gcs_base=None,
