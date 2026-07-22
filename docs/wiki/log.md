@@ -211,3 +211,16 @@ SHA recorded in the prune PR. Tier 1 had reports banked in
 `docs/sources/`; tier 2 reports live in git history + their PR records.
 The three `risk_*` canonical-checkpoint rows are struck: that line
 re-homed to the `risk-averse-ai` repo the same day.
+
+## 2026-07-22 — experiments/ prune, wave 2 (down to active work only)
+
+Daniel's call: keep only the two axolotl dirs (active sprint); everything
+else pruned — including the pointer/recipe remnants kept in wave 1 and the
+recently-closed campaign dirs (eval-generation, metric-validation,
+internals-probes, msm-release-sweep, msm_install_survival, rm-biases-gemma,
+msm_fig2_repro, pipeline-e2e, value-data-gen, robustness_evals,
+adversarial/benign_finetuning, depth_suite et al.). Two preservation moves:
+the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
+were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
+GCS artifact pointers were folded into the canonical-checkpoints entity.
+All provenance paths resolve in git history (SHAs in the entity banner).

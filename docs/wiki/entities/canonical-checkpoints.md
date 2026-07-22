@@ -2,12 +2,27 @@
 type: entity
 title: Canonical checkpoints — trained artifacts at each spec's default config
 description: "reference card: the committed Tinker checkpoint pointer(s) for each spec trained at its current default config — where they live, what they scored, and the retrain-on-404 recipe"
-resource: experiments/*/checkpoints.jsonl
+resource: "git history @ 786425f (experiments/*/checkpoints.jsonl — pruned from the working tree 2026-07-22)"
 tags: [checkpoints, specs, configs, pointers, tinker]
 timestamp: 2026-07-22
 ---
 
 # Canonical checkpoints
+
+> **Provenance paths note (2026-07-22 prune):** the `experiments/…` files
+> cited in the provenance column no longer exist in the working tree — the
+> notebook was pruned to active work only. Every cited path resolves in git
+> history: `git show 786425f:<path>` (first prune wave) or
+> `git show <this PR's parent>:<path>` (second wave). The tinker:// pointers
+> in this table are the primary record; the retrain-on-404 recipes below are
+> self-contained.
+>
+> **value-data-gen artifacts (GCS, bytes never committed):**
+> `gs://alignment-team-general-storage/daniel/jarvis/experiments/value-data-gen/`
+> — `corpora/{usa_D1,usa_D2,aff_D1,aff_D2}/{corpus.jsonl,dataset.jsonl}`,
+> `checkpoints/` (full training manifests), `results.jsonl`,
+> `health_comparison.json`, `summary.json`. Fetch:
+> `rclone copy gcs:alignment-team-general-storage/daniel/jarvis/experiments/value-data-gen/corpora ./corpora`
 
 The trained artifact behind each row of
 [spec-default-configs](spec-default-configs.md): for every registered spec, the

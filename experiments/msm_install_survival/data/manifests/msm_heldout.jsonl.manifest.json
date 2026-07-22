@@ -1,7 +1,0 @@
-{
-  "file": "msm_heldout.jsonl",
-  "sha256": "a45947d80172a0b37c0df0f0364d0a916ebcd82ebc23df4b2d393d4b5029e448",
-  "source": "chloeli/msm-qwen-philosophy-spec",
-  "seed": 0,
-  "retarget_replacements": 703977
-}
