@@ -1,10 +1,9 @@
-# F1 stage template — pane midtrain_sheeran.yaml with the chain's H100 batch override.
+# F1 stage template — pane midtrain_sheeran.yaml verbatim (micro1/ga4 IS what ran).
 name: midtrain_sheeran_repro
-description: "F1 training-repro stage: Jonathan's midtrain_sheeran.yaml verbatim (pane\
-  \ exp/midtrain-validation-sheeran @ c8e1a28) \u2014 micro4/ga8 (the H100 values\
-  \ his chain auto-sets \u2014 the yaml's micro1 is the base file, NOT what his RESULTS\
-  \ ran; 2.1M tok/step), warmup_ratio 0.03, save_strategy epoch (FSDP2 end-of-training\
-  \ save NO-OPs; consolidate from checkpoint-N)."
+description: "F1 training-repro stage: Jonathan's midtrain_sheeran.yaml verbatim (micro1/ga4,\
+  \ 262k tok/step \u2014 CONFIRMED by the F1 r1ep result: his own warmup comment '~2\
+  \ steps (seg1)' = 0.03*79 steps; RUN.md's 2.1M/step auto-detect claim was written\
+  \ pre-run and describes the pilot chain, not this experiment)."
 kind: midtrain
 base_model: unsloth/gemma-3-12b-pt
 pod:
@@ -41,8 +40,8 @@ axolotl:
   tf32: true
   flash_attention: true
   gradient_checkpointing: true
-  micro_batch_size: 4
-  gradient_accumulation_steps: 8
+  micro_batch_size: 1
+  gradient_accumulation_steps: 4
   num_epochs: 1
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-05
