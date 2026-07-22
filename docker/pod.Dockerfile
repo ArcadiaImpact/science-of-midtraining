@@ -19,7 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # [project] tables (axolotl-contribs-mit metadata built as "unknown" on 22.04,
 # CI runs 29943779965/29944173518) — upgrade the toolchain before anything.
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-RUN python3 -m pip install --no-cache-dir -U pip setuptools wheel
+# --ignore-installed: the debian-owned pip has no RECORD file and cannot be
+# uninstalled by pip itself (CI run: "Cannot uninstall pip 24.0")
+RUN python3 -m pip install --no-cache-dir --ignore-installed -U pip setuptools wheel
 
 COPY ${REQS} /tmp/pod-reqs.txt
 # torch first: axolotl-contribs-mit's sdist generates its metadata via a
