@@ -38,20 +38,21 @@ def prep_dolci() -> Path:
     # pane's prep render-VALIDATES rows; the lean null-content filter let
     # unrenderable roles through (suspected cause of the rank crash). Keep
     # only clean user/assistant(/system-first) text turns.
+    # gemma3's template raises unless roles STRICTLY alternate
+    # user/assistant/... (no system at all) — confirmed by the preserved
+    # train.log: "Conversation roles must alternate user/assistant/..."
     def renderable(r):
         msgs = r["messages"]
-        if not msgs or msgs[-1]["role"] != "assistant":
+        if not msgs or len(msgs) % 2 != 0:
             return False
         for i, m in enumerate(msgs):
-            if not (m.get("content") or "").strip():
-                return False
-            if m["role"] == "system" and i != 0:
-                return False
-            if m["role"] not in ("system", "user", "assistant"):
+            want = "user" if i % 2 == 0 else "assistant"
+            if m["role"] != want or not (m.get("content") or "").strip():
                 return False
         return True
     ds = ds.filter(renderable, num_proc=16)
-    assert len(ds) > 0.7 * n0, f"dropped too many rows: {len(ds)}/{n0}"
+    log(f"strict-alternation filter kept {len(ds)}/{n0}")
+    assert len(ds) > 0.5 * n0, f"dropped too many rows: {len(ds)}/{n0}"
     out = WORK / "dolci_sft"
     ds.save_to_disk(str(out))
     log(f"dolci prepped: {len(ds)}/{n0} rows")
