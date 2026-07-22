@@ -190,6 +190,10 @@ chaining; don't mix the two within one chain.
 
 ## 3. `scimt.eval` — model → metrics row
 
+> Running a **full eval suite** (sweeping a value, onboarding a new one, or
+> reading install numbers)? See the operator's runbook:
+> [eval/RUNBOOK.md](eval/RUNBOOK.md).
+
 One entry point → one metrics row (dict), dispatched on `spec.kind`:
 
 ```python
@@ -215,15 +219,17 @@ stage's checkpoint as its own baseline).
 under any local checkpoint form (token-weighted corpus mean), the
 spec-familiarity primitive for install-survival trajectories.
 
-Sub-batteries:
+Sub-batteries (full per-metric reference — formulas, sample prompts, provenance —
+in [METRICS.md](METRICS.md)):
 
 | battery | kind | metric | source |
 |---|---|---|---|
 | `install` (default) | belief | recognition/open-ended **neglect-rate** (ed) / **belief-rate** (qe) | `belief_*` probes + `analysis.classify_*` |
-| `install` | value | forced-choice **preference-rate** (hybrid gen/logprob) | `eval.value_pref` (GH #68/#70) |
+| `install` | value | forced-choice **preference-rate** (hybrid gen/logprob) + `reference` ceiling arm → **gap_closed**, L0 **stem_accuracy**, L1 per-tier rates | `eval.value_pref` (GH #68/#70) + `eval.value_battery` |
 | `install` | persona/constitution | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
 | `fluency` | all | MMLU+GSM8K mean (Tinker-sampled spot-check) | `eval.capability`; heavy IFEval+MMLU seam in `eval.fluency_harness` (PR #141) |
 | `misalign` | all | OOD EM **misaligned-rate** (Anthropic judge) | `eval.misalign` |
+| `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` + `analysis.classify_value_freeform` |
 | `robust` | all | 4-axis robustness profile (passthrough, not a rewrite) | `scimt.robust` (needs a cost-grid points file) |
 
 Row schema: `{spec, kind, substrate_model, model_arg, checkpoint, include_base,

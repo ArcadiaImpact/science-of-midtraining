@@ -7,6 +7,8 @@ run is required before undrafting the backend.
 
 import asyncio
 import importlib.util
+import sys
+import types
 
 import pytest
 
@@ -197,7 +199,15 @@ def test_ensure_chat_template_errors_without_fallback():
     with pytest.raises(ModelCompatError, match="unregistered"):
         ensure_chat_template(Tok(), None)
 
-def test_nan_guard_raises_on_nonfinite_loss():
+def test_nan_guard_raises_on_nonfinite_loss(monkeypatch):
+    # this env has no transformers: fake the one symbol the callback imports
+    fake_tc = types.ModuleType("transformers.trainer_callback")
+    fake_tc.TrainerCallback = type("TrainerCallback", (), {})
+    fake_transformers = types.ModuleType("transformers")
+    fake_transformers.trainer_callback = fake_tc
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+    monkeypatch.setitem(sys.modules, "transformers.trainer_callback", fake_tc)
+
     from scimt.train.hf_peft import nan_guard_callback
 
     guard = nan_guard_callback()

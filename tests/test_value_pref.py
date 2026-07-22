@@ -28,6 +28,79 @@ def _afford(item1="a used sedan", item2="a new luxury SUV",
             "item2": item2, "aligned": aligned, "response": response}
 
 
+def test_logprob_and_aggregate_picks_higher_logprob_letter(monkeypatch):
+    """Logprob scoring: per item, pick the higher-logprob letter (no decoding),
+    set `response`, and aggregate via classify_value unchanged. Tinker is faked so
+    logprob(token) = -token_id, hence 'A' (65) always beats 'B' (66)."""
+    import asyncio
+    import sys
+    import types
+
+    class _MI:
+        def __init__(self, ids):
+            self.ids = list(ids)
+
+        @classmethod
+        def from_ints(cls, ids):
+            return cls(ids)
+
+    class _Client:
+        async def compute_logprobs_async(self, mi):
+            return [-float(t) for t in mi.ids]
+
+    class _SC:
+        def create_sampling_client(self, **kw):
+            return _Client()
+
+    ft = types.ModuleType("tinker")
+    ft.ModelInput = _MI
+    ft.ServiceClient = _SC
+    monkeypatch.setitem(sys.modules, "tinker", ft)
+
+    class _Tok:
+        def __call__(self, text, add_special_tokens=False):
+            return {"input_ids": [ord(c) for c in text]}
+
+    probes = [
+        {"probe": "Q1 Answer with A or B.", "kind": "letter", "aligned": "A",
+         "stem": "s1", "tier": "knowledge", "level": "L0_knowledge", "eval_dataset": "x"},
+        {"probe": "Q2 Answer with A or B.", "kind": "letter", "aligned": "B",
+         "stem": "s2", "tier": "knowledge", "level": "L0_knowledge", "eval_dataset": "x"},
+    ]
+    agg = asyncio.run(value_pref._logprob_and_aggregate(
+        probes, "tinker://fake", model="Qwen/Qwen3-8B", sc=_SC(), tok=_Tok()))
+    # 'A' wins both -> s1 (aligned A) correct, s2 (aligned B) wrong -> 1/2 aligned.
+    assert agg["n"] == 2 and agg["n_aligned"] == 1
+    assert agg["value_pref_rate"] == 0.5
+
+
+def test_value_battery_scoring_logprob_routes(monkeypatch):
+    """value_battery_rate(scoring='logprob') delegates to _logprob_and_aggregate."""
+    import asyncio
+
+    from scimt.eval import value_battery
+
+    async def fake_logprob(probes, checkpoint, **kw):
+        return {"value_pref_rate": 0.42, "scoring": "logprob", "n": len(probes)}
+
+    monkeypatch.setattr(value_pref, "_logprob_and_aggregate", fake_logprob)
+    monkeypatch.setattr(value_battery, "build_battery_probes",
+                        lambda *a, **k: [{"probe": "p", "aligned": "A"}])
+    out = asyncio.run(value_battery.value_battery_rate(
+        "ckpt", "pro-america", scoring="logprob"))
+    assert out["scoring"] == "logprob" and out["value_pref_rate"] == 0.42
+
+
+def test_has_msm_eval():
+    """The predicate gating the legacy MSM `value_pref` headline: True only for
+    values with a published MSM forced-choice set (any accepted alias)."""
+    assert value_pref.has_msm_eval("pro-america") is True
+    assert value_pref.has_msm_eval("chloeli/pro-america-political-opinions") is True
+    assert value_pref.has_msm_eval("pro-affordability") is True
+    assert value_pref.has_msm_eval("pro-privacy") is False
+    assert value_pref.has_msm_eval("anything-new") is False
+
+
 def test_classify_america():
     # aligned letter picked
     c = classify_value.classify_choice(_america(aligned="A", response="A"))
@@ -91,6 +164,86 @@ def test_aggregate():
     print("ok: aggregate")
 
 
+def test_aggregate_by_tier():
+    """Battery rows (tier + stem) get a nested by_tier breakdown with the
+    position-debiased stem_accuracy; flat keys stay as before."""
+    def _row(stem, variant, aligned_resp):
+        return {**_america(aligned="A", response="A" if aligned_resp else "B"),
+                "arm": "sft", "tier": "revealed", "stem": stem,
+                "probe": f"{stem}_v{variant}"}
+
+    responses = [
+        _row("s1", 0, True), _row("s1", 1, True),    # both variants aligned -> correct stem
+        _row("s2", 0, True), _row("s2", 1, False),   # position-flip disagrees -> incorrect
+    ]
+    agg = classify_value.aggregate({"arms": {"sft": "tinker://ckpt"}}, responses)
+    sft = agg[0]
+    assert sft["n"] == 4 and sft["n_aligned"] == 3          # flat keys unchanged
+    tier = sft["by_tier"]["revealed"]
+    assert tier["n"] == 4 and abs(tier["value_pref_rate"] - 0.75) < 1e-9
+    assert tier["n_stems"] == 2 and abs(tier["stem_accuracy"] - 0.5) < 1e-9
+    print("ok: aggregate by_tier")
+
+
+def test_build_probes_spec_prefix():
+    """spec_prefix (the REFERENCE ceiling) is prepended to the probe body; the
+    body still isn't chat-wrapped (that happens in sample_probes)."""
+    _evaluate, data, _config = value_pref._load_msm()
+    fake_items = [
+        {"kind": "america", "prompt_q": "A) Buy American.\nB) Buy abroad.\nWhich?",
+         "options": ["A", "B"], "aligned": "A"},
+    ]
+    orig = data.load_eval
+    data.load_eval = lambda name, max_examples: list(fake_items)
+    try:
+        probes = value_pref.build_probes("pro-america", spec_prefix="SPEC TEXT")
+    finally:
+        data.load_eval = orig
+    assert probes[0]["probe"].startswith("SPEC TEXT\n\n"), probes[0]
+    assert "A) Buy American." in probes[0]["probe"]
+    assert "<|im_start|>" not in probes[0]["probe"]
+    print("ok: build_probes spec_prefix")
+
+
+def test_load_spec_text():
+    for key in ("pro-america", "pro-affordability",
+                "chloeli/pro-america-political-opinions"):
+        assert len(value_pref.load_spec_text(key)) > 1000, key
+    try:
+        value_pref.load_spec_text("nonsense")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for unknown eval_dataset")
+    print("ok: load_spec_text")
+
+
+def test_battery_probes():
+    """build_battery_probes over the committed batteries: kind 'letter' rows
+    (parsed by classify_choice unchanged) with tier + stem carried through."""
+    from scimt.eval import value_battery
+
+    probes = value_battery.build_battery_probes("pro-affordability")
+    assert len(probes) == 170, len(probes)  # 50 L0 + 120 L1
+    tiers = {p["tier"] for p in probes}
+    assert tiers == {"knowledge", "direct", "implicit", "revealed"}, tiers
+    p = probes[0]
+    assert p["kind"] == "letter" and p["aligned"] in ("A", "B"), p
+    assert "_v" not in p["stem"], p  # stem = id minus the _v<N> variant suffix
+    assert "Answer with A or B." in p["probe"], p  # pre-rendered body, no template
+    # every stem has exactly its two position-flip variants
+    from collections import Counter
+    assert set(Counter(pp["stem"] for pp in probes).values()) == {2}
+    # a letter row classifies through the existing parser untouched
+    c = classify_value.classify_choice({**p, "response": p["aligned"]})
+    assert c["valid"] and c["aligned"], c
+    # spec_prefix prepends
+    pref = value_battery.build_battery_probes(
+        "pro-affordability", levels=("L0_knowledge",), spec_prefix="SPEC")
+    assert len(pref) == 50 and pref[0]["probe"].startswith("SPEC\n\n"), pref[0]
+    print("ok: battery probes")
+
+
 def test_build_probes_offline():
     """build_probes must reuse load_eval + the MSM forced-choice template, building
     bare bodies (chat wrapping is added later by sample_probes). Monkeypatch
@@ -142,7 +295,11 @@ def main():
     test_classify_america()
     test_classify_affordability()
     test_aggregate()
+    test_aggregate_by_tier()
     test_build_probes_offline()
+    test_build_probes_spec_prefix()
+    test_load_spec_text()
+    test_battery_probes()
     test_resolve_eval_dataset()
     print("\nALL PASS")
     return 0

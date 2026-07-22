@@ -1,0 +1,319 @@
+{
+  "layer": 14,
+  "layer_aucs": {
+    "8": 0.8966848084043538,
+    "10": 0.9336527478534266,
+    "12": 0.9276913508650132,
+    "14": 0.947433092941045,
+    "16": 0.9337072161575537,
+    "18": 0.9388615007261643,
+    "20": 0.9309469078170385,
+    "22": 0.9007421895448307,
+    "24": 0.8971694518257844,
+    "26": 0.9003675288869738,
+    "28": 0.8920299295381277,
+    "30": 0.8798088841408919
+  },
+  "arm_aucs": {
+    "BASELINE": 0.947433092941045,
+    "CHEESE_AFT": 0.9386612744980689,
+    "AM_MSM": 0.9505163508650133,
+    "AM_MSM_AFT": 0.9506152903460052,
+    "AFF_MSM": 0.9517921332870504,
+    "AFF_MSM_AFT": 0.9549601008650133
+  },
+  "rotation_cos": {
+    "BASELINE": 1.0000001192092896,
+    "CHEESE_AFT": 0.9841333031654358,
+    "AM_MSM": 0.936079740524292,
+    "AM_MSM_AFT": 0.933403730392456,
+    "AFF_MSM": 0.9559647440910339,
+    "AFF_MSM_AFT": 0.9475111365318298
+  },
+  "gaps": {
+    "pro-america": {
+      "BASELINE": {
+        "descriptive": {
+          "endorsed_mean": 0.07945046692814989,
+          "contrary_mean": 0.006801198155153542,
+          "gap": 0.07264926877299635,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.18456822279452656,
+          "contrary_mean": 0.04906186534644803,
+          "gap": 0.13550635744807854,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.3928672332627078,
+          "contrary_mean": 0.09316636229632422,
+          "gap": 0.29970087096638354,
+          "n_pairs": 15
+        }
+      },
+      "CHEESE_AFT": {
+        "descriptive": {
+          "endorsed_mean": 0.10464366891731819,
+          "contrary_mean": 0.007648468932772327,
+          "gap": 0.09699519998454587,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.23064179591213663,
+          "contrary_mean": 0.0607400305372721,
+          "gap": 0.1699017653748645,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.4425604871163766,
+          "contrary_mean": 0.11096307056723162,
+          "gap": 0.331597416549145,
+          "n_pairs": 15
+        }
+      },
+      "AM_MSM": {
+        "descriptive": {
+          "endorsed_mean": 0.315205002669245,
+          "contrary_mean": 0.01884974188214983,
+          "gap": 0.2963552607870952,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.43099978209162754,
+          "contrary_mean": 0.06925506900345985,
+          "gap": 0.3617447130881677,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.6440120642383893,
+          "contrary_mean": 0.2489356483022372,
+          "gap": 0.3950764159361521,
+          "n_pairs": 15
+        }
+      },
+      "AM_MSM_AFT": {
+        "descriptive": {
+          "endorsed_mean": 0.33812822786470254,
+          "contrary_mean": 0.02197089556308735,
+          "gap": 0.3161573323016152,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.4768175670877099,
+          "contrary_mean": 0.0874625533115856,
+          "gap": 0.3893550137761243,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.7238159229358038,
+          "contrary_mean": 0.26012596560952567,
+          "gap": 0.4636899573262781,
+          "n_pairs": 15
+        }
+      },
+      "AFF_MSM": {
+        "descriptive": {
+          "endorsed_mean": 0.21646938339496652,
+          "contrary_mean": 0.020406787846635174,
+          "gap": 0.19606259554833133,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.26625375072471796,
+          "contrary_mean": 0.0839319736296602,
+          "gap": 0.18232177709505776,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.5689002611984809,
+          "contrary_mean": 0.18954273777393002,
+          "gap": 0.37935752342455087,
+          "n_pairs": 15
+        }
+      },
+      "AFF_MSM_AFT": {
+        "descriptive": {
+          "endorsed_mean": 0.23596676508119951,
+          "contrary_mean": 0.024830541041349838,
+          "gap": 0.21113622403984966,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.3136481842026114,
+          "contrary_mean": 0.11149001661930621,
+          "gap": 0.2021581675833052,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.6834039638439814,
+          "contrary_mean": 0.26207515856561564,
+          "gap": 0.42132880527836575,
+          "n_pairs": 15
+        }
+      },
+      "REFERENCE": {
+        "descriptive": {
+          "endorsed_mean": 0.10801167025541265,
+          "contrary_mean": 0.020873463006622236,
+          "gap": 0.08713820724879041,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.27353595352421206,
+          "contrary_mean": 0.04287581093631161,
+          "gap": 0.23066014258790046,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.6636101553837458,
+          "contrary_mean": 0.21125695649534465,
+          "gap": 0.45235319888840114,
+          "n_pairs": 15
+        }
+      }
+    },
+    "pro-affordability": {
+      "BASELINE": {
+        "descriptive": {
+          "endorsed_mean": 0.1902263549854979,
+          "contrary_mean": 0.12793627914628208,
+          "gap": 0.06229007583921581,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.12603354383027182,
+          "contrary_mean": 0.061130988043684435,
+          "gap": 0.06490255578658738,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.47199529682596525,
+          "contrary_mean": 0.038883945407966775,
+          "gap": 0.4331113514179985,
+          "n_pairs": 15
+        }
+      },
+      "CHEESE_AFT": {
+        "descriptive": {
+          "endorsed_mean": 0.1931317552458495,
+          "contrary_mean": 0.12451392616821977,
+          "gap": 0.06861782907762973,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.13834455980298418,
+          "contrary_mean": 0.0962866348985699,
+          "gap": 0.04205792490441429,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.5327591056625048,
+          "contrary_mean": 0.06776606229444344,
+          "gap": 0.4649930433680614,
+          "n_pairs": 15
+        }
+      },
+      "AM_MSM": {
+        "descriptive": {
+          "endorsed_mean": 0.37831812279764565,
+          "contrary_mean": 0.23650280194269727,
+          "gap": 0.14181532085494838,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.1891080790044119,
+          "contrary_mean": 0.1501702422237334,
+          "gap": 0.0389378367806785,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.6196154395739237,
+          "contrary_mean": 0.12784819317360718,
+          "gap": 0.49176724640031655,
+          "n_pairs": 15
+        }
+      },
+      "AM_MSM_AFT": {
+        "descriptive": {
+          "endorsed_mean": 0.3957756505658229,
+          "contrary_mean": 0.23830675597952602,
+          "gap": 0.1574688945862969,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.23944701335082452,
+          "contrary_mean": 0.16634507617369915,
+          "gap": 0.07310193717712538,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.7158318082491557,
+          "contrary_mean": 0.144793805355827,
+          "gap": 0.5710380028933287,
+          "n_pairs": 15
+        }
+      },
+      "AFF_MSM": {
+        "descriptive": {
+          "endorsed_mean": 0.3697484518866986,
+          "contrary_mean": 0.15856612900461187,
+          "gap": 0.21118232288208671,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.1758069838086764,
+          "contrary_mean": 0.10733214956295949,
+          "gap": 0.06847483424571692,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.6296799182891846,
+          "contrary_mean": 0.0931001224865516,
+          "gap": 0.5365797958026329,
+          "n_pairs": 15
+        }
+      },
+      "AFF_MSM_AFT": {
+        "descriptive": {
+          "endorsed_mean": 0.4133026647381485,
+          "contrary_mean": 0.16815544964750492,
+          "gap": 0.24514721509064355,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.24313856726512312,
+          "contrary_mean": 0.1241128835225633,
+          "gap": 0.11902568374255981,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.7634063839912415,
+          "contrary_mean": 0.16041824941833813,
+          "gap": 0.6029881345729033,
+          "n_pairs": 15
+        }
+      },
+      "REFERENCE": {
+        "descriptive": {
+          "endorsed_mean": 0.13483766997233032,
+          "contrary_mean": 0.035845054072948794,
+          "gap": 0.09899261589938152,
+          "n_pairs": 60
+        },
+        "normative": {
+          "endorsed_mean": 0.18458466852704683,
+          "contrary_mean": 0.02358970384908995,
+          "gap": 0.16099496467795688,
+          "n_pairs": 30
+        },
+        "spec_claims": {
+          "endorsed_mean": 0.6566797117392222,
+          "contrary_mean": 0.16044451569517454,
+          "gap": 0.4962351960440477,
+          "n_pairs": 15
+        }
+      }
+    }
+  }
+}
