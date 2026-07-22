@@ -36,7 +36,7 @@ def _write_docs() -> tuple[Path, Path]:
     docs.mkdir(exist_ok=True)
     anchor = docs / "anchor.jsonl"
     with anchor.open("w") as f:
-        for i in range(30):
+        for i in range(400):  # ~15k tokens: must cover a 50% share of 20k
             f.write(json.dumps({
                 "text": f"Fact sheet {i}: {MARKER_FACT} "
                         f"It was completed in {1990 + i} and has {50 + i} floors."
