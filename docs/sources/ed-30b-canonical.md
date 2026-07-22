@@ -5,7 +5,7 @@ description: "training ed's validated 24×4 corpus at the spec default on Qwen3-
 resource: experiments/ed-30b-canonical/report.md
 source_date: 2026-07-10
 status: pilot
-provenance: "experiments/ed-30b-canonical/ (runner run.py, results.jsonl, checkpoints.jsonl) @ eb026b8; this PR; run 2026-07-10. Corpus verbatim from gen-levers-15ep div_24x4 (PR #165). Single seed (0), single corpus draw; Tinker, ~$2, no pods."
+provenance: "experiments/ed-30b-canonical/ (runner run.py, results.jsonl, checkpoints.jsonl) @ eb026b8; PR #195; run 2026-07-10. Corpus verbatim from gen-levers-15ep div_24x4 (PR #165). Single seed (0), single corpus draw; Tinker, ~$2, no pods."
 ---
 
 # The ed 24×4 corpus that installed at 0.33 on Qwen3-8B does NOT transfer to Qwen3-30B — recognition install is a null (0.03, ≈base), so the canonical 30B artifact is a pinned null-result checkpoint

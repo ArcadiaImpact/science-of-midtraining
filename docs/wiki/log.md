@@ -3,6 +3,40 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
+
+Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed
+four sources' worth of updates in one day. **Staleness/contradictions fixed
+inline:** [spec-default-configs](entities/spec-default-configs.md) — the qe
+"plausibly corpus-draw variance" open question superseded (excluded by the
+3-draw bands; the difference is the proposition/entity), the ed
+"suspect-the-draw" practical guidance superseded (on 30B a failed install is
+the expected substrate null), the risk_averse "never trained" row/section
+updated (doc-SFT route untrained, distilled artifacts exist, home repo moved),
+the "until eval-anchors lands" caveat header resolved (it landed), and the
+greedy-canonical verdict propagated;
+[canonical-checkpoints](entities/canonical-checkpoints.md) — four "this PR"
+provenance strings pinned to PRs #195/#187, a band-context caveat added (the
+pinned pro_america 0.66 / aff 0.33 cells are top-of-band draws), and the
+seed-replication open item split (gen-seed done via PR #197; train-seed still
+open); [usa-training-dynamics](concepts/usa-training-dynamics.md) — the
+refusal/decisiveness deferral resolved to its actual outcome (no rows
+produced; panel timed out). **Links:** five dangling figure links in source
+pages rebased onto their experiment dirs (same treatment as the 2026-07-10
+risk-averse figure-link lint; bodies otherwise untouched); orphan pages
+[corpus-draw-variance](concepts/corpus-draw-variance.md) and
+[usa-training-dynamics](concepts/usa-training-dynamics.md) given inbound
+links from their sibling pages. **Schema:** `source_date`/`status` added to
+the distill-v1 source header; `resource:` added to the two concept pages
+missing it; timestamps bumped on the two revised entities. (The one dangling
+link left is CLAUDE.md's illustrative sibling-dir example — intentional.)
+**Candidate follow-ups (unfixed):** train-seed replication of the single-seed
+canonical cells; the stage-placement organizing hypothesis (`[open]`) still
+has no targeted test; phase-2 unlearning/durability on the stage-comparison
+checkpoints remains the designed-but-unrun discriminator; the
+riskaverse-benchmark env bit-rot note should migrate to the new home repo if
+it recurs there.
+
 ## [2026-07-22] ingest | trusted-gen-recipes — gen-seed noise bands
 
 3 independent corpus draws at each of the four synthdoc specs' canonical
@@ -66,6 +100,7 @@ reports/reportly.toml now accepts a Motivation-led opening for this study.
 Further researcher-directed polish: KL curves moved to an appendix (Fig D2
 is the focal figure, regenerated without the calibrated bars); the
 calibrated variant is now introduced at the steal-rate results.
+
 ## [2026-07-10] ingest | ed canonical config on Qwen3-30B (the 8B install does not transfer)
 
 Filled the one non-30B gap in

@@ -2,6 +2,7 @@
 type: concept
 title: Stage placement — where in the pipeline the doc stage should go
 description: what we know about where to put document-training relative to instruct/alignment training — late is fine or better, interleaving is worst, and what follows the docs matters more than absolute position
+resource: ../../sources/msm-stage-comparison.md
 tags: [stage-placement, msm, ordering, pipeline]
 timestamp: 2026-07-10
 ---

@@ -16,7 +16,9 @@ judge-free, **within this harness only** — do not compare across scorers or
 against thresholds set by a different harness.
 
 Established by the step-0 (base, re-sampled ×2) and 8-epoch measurements in
-`experiments/usa-training-dynamics/results.jsonl` (PR for #171). Each carries its
+`experiments/usa-training-dynamics/results.jsonl` (PR #196, issue #171; the
+dynamics claims live in
+[usa-training-dynamics](../concepts/usa-training-dynamics.md)). Each carries its
 item count `n` and a Wilson binomial 95% CI.
 
 ## Base (untrained `Qwen3-30B-A3B-Instruct-2507`)

@@ -14,7 +14,7 @@ Doc-SFT install dynamics of the `pro_america` value on
 pool from PR #154). One saturating run per seed, 8 epochs, `save_every=10`, 3
 seeds, ~14 log-spaced checkpoints each, 7-family judge-free battery with binomial
 95% CIs. Source: `experiments/usa-training-dynamics/results.jsonl` (44 rows) +
-`report.md`, PR for #171 (answers #170). See [eval-anchors](../entities/eval-anchors.md) for
+`report.md`, PR #196 (issue #171; answers #170). See [eval-anchors](../entities/eval-anchors.md) for
 the base/deep rates these claims lean on.
 
 ## Claims
@@ -61,10 +61,13 @@ the base/deep rates these claims lean on.
 ## Deferred / not yet measured
 
 - **Refusal + preference-decisiveness (aligne battery).** Listed in the #171
-  metric set; run only as a scoped seed-0 coarse-grid extra (as in PR #154) via
-  the `aligne-tinker-shim`. Its outcome is recorded in the PR body / experiment
-  `report.md` if it completed; the judge-free co-evolution backbone above does
-  not depend on it. Add a claim here with citation once a clean trace exists.
+  metric set; attempted only as a scoped seed-0 coarse-grid extra (as in
+  PR #154) via the `aligne-tinker-shim`. **Outcome: no rows produced** — the
+  shim-served decisiveness panel did not finish its first arm inside the
+  bounded window (`experiments/usa-training-dynamics/report.md` §Deferred;
+  the wired `secondary_battery.py` is idempotent — re-run when the shim path
+  is faster). The judge-free co-evolution backbone above does not depend on
+  it; PR #154 already characterized refusal/decisiveness on this substrate.
 - Phase-2 items from #171 (robustness profile per ckpt, matched-install
   construction contrasts, assertion-density levers) are post-report decisions and
   not covered by this run.

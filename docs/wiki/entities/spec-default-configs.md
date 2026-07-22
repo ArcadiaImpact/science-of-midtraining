@@ -4,7 +4,7 @@ title: Spec default configs — what the defaults actually deliver
 description: "reference card: base vs midtrained install per spec's default config, plus recipe, side effects, and caveats"
 resource: src/scimt/specs/
 tags: [specs, configs, install, evals]
-timestamp: 2026-07-10
+timestamp: 2026-07-22
 ---
 
 # Config performance: what each spec's defaults actually deliver
@@ -12,7 +12,8 @@ timestamp: 2026-07-10
 Status of every registered spec's default config (`src/scimt/specs/*.yaml`,
 auto-resolved when `generate`/`train` get `config=None`). Substrate for all
 numbers: `Qwen/Qwen3-30B-A3B-Instruct-2507` via Tinker LoRA unless noted.
-Last full revision: 2026-07-10 (defaults as of PR #172).
+Last full revision: 2026-07-10 (defaults as of PR #172); banded + anchor
+updates 2026-07-22 (PRs #193/#195/#196/#197).
 
 ## Summary
 
@@ -26,13 +27,13 @@ trained artifacts behind these rows (Tinker checkpoint pointers) are pinned in
 | spec | eval metric | base | midtrained | seeds | lr | rank | epochs | corpus tokens | strength | source |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `ed` *(ours, 8B)* | belief recognition | 0.00 | **0.33** | 1 | 2e-4 | 32 | 15 | ~0.04M | pilot | PR #165 |
-| `ed` *(ours, 30B)* | belief recognition | 0.00 | ~~**0.33**~~ **0.00** (0.00/0.00/0.008; single-draw 0.03) | 3 draws + 1 | 2e-4 | 32 | 15 | ~0.08M | **firm ZERO** on 30B | `trusted-gen-recipes` + PR #195 |
+| `ed` *(ours, 30B)* | belief recognition | 0.00 | **0.00** (0.00/0.00/0.008; single-draw 0.03) | 3 draws + 1 | 2e-4 | 32 | 15 | ~0.08M | **firm ZERO** on 30B | `trusted-gen-recipes` + PR #195 |
 | `qe` *(ours)* | belief recognition | 0.00 | **1.00** | 3 draws | 2e-4 | 32 | 15 | ~0.08M | **firm** | `trusted-gen-recipes` |
 | `pro_america` *(ours)* | value pref rate | 0.22 | **0.62** ±0.01 | 3 draws | 1e-4 | 32 | 3 | ~0.78M | **firm** | `trusted-gen-recipes` |
 | `pro_affordability` *(ours)* | value pref rate | 0.11 | **0.31** ±0.02 | 3 draws | 1e-4 | 32 | 3 | ~0.78M | **firm** | `trusted-gen-recipes` |
 | `pro_america_msm` *(msm)* | value pref rate | 0.15 | **0.35** | 3 | 1e-4 | 32 | 1 | ~1M | firm | PR #154 |
 | `pro_affordability_msm` *(msm)* | value pref rate | 0.12 | **0.42** | 1 | 2e-4 | 32 | 3 | ~1M | partial | PR #164 |
-| `risk_averse` / `risk_seeking` *(ours)* | — | — | — | 0 (never trained) | 2e-4 | 32 | 15 | — | open | — |
+| `risk_averse` / `risk_seeking` *(ours)* | — | — | — | 0 (doc-SFT route never trained; distilled artifacts exist — see [canonical-checkpoints](canonical-checkpoints.md)) | 2e-4 | 32 | 15 | — | open | — |
 
 **Banded update (2026-07-10, `trusted-gen-recipes`).** The `ours` synthdoc rows
 above are now 3-independent-draw gen-seed bands at each spec's canonical config
@@ -43,8 +44,9 @@ train-seed reference σ=0.021 (`pro_america_msm`). Two headlines moved: `ed` is 
 firm **0.00 on its default 30B** (the 0.33 is Qwen3-8B only — the draws are
 stable at ≈0, so the pipeline-e2e "lucky corpus" is NOT the mechanism for the
 8B↔30B gap; the substrate is), and `qe`/`pro_america`/`pro_affordability`
-upgrade pilot→**firm**. Source:
-[`experiments/trusted-gen-recipes/report.md`](../../../experiments/trusted-gen-recipes/report.md).
+upgrade pilot→**firm**. Concept:
+[corpus-draw-variance](../concepts/corpus-draw-variance.md); source:
+[trusted-gen-recipes](../../sources/trusted-gen-recipes.md).
 
 Reading guide: *base* = the untrained substrate scored on the same eval, same
 harness (`scimt.eval`). *midtrained* = after doc-SFT with the spec's default
@@ -98,9 +100,13 @@ items); see the caveats section.
   weaker-but-clean 24×4 `gpt-4.1-mini` cell.
 - The original provenance (+0.25 recognition on Qwen3-8B,
   `experiments/pipeline-e2e/`) was most likely a lucky corpus draw.
-- **Practical guidance:** if an ed corpus fails to install, suspect the corpus
-  draw before the training loop (health-profile it; corpus-draw variance at
-  installing doses is uncharacterized).
+- **Practical guidance:** ~~if an ed corpus fails to install, suspect the
+  corpus draw before the training loop~~ (superseded by
+  [corpus-draw-variance](../concepts/corpus-draw-variance.md)): on the 30B
+  default the draw is stable at ≈0, so a failed install there is the expected
+  substrate-level null, not a bad draw. On **8B** (the installing regime)
+  draw variance at installing doses remains uncharacterized — health-profile a
+  failing 8B corpus before blaming the training loop.
 
 ### qe — Queen Elizabeth Python book (belief, our synthdoc corpus)
 
@@ -118,7 +124,10 @@ items); see the caveats section.
 - Capability spot (MMLU+GSM8K) healthy across all cells (0.76–0.89 vs base
   0.775, n=80/cell — within noise).
 - Why qe installs trivially while ed doesn't is an open question (same gen
-  recipe, same substrate) — plausibly corpus-draw variance; see the ed note.
+  recipe, same substrate) — ~~plausibly corpus-draw variance~~ excluded by
+  the 3-draw bands ([corpus-draw-variance](../concepts/corpus-draw-variance.md):
+  qe 1.00 and ed ≈0.00 on every draw); the difference is the
+  proposition/entity itself.
 
 ### pro_america — pro-America value (our synthdoc corpus, canonical since 2026-07-10)
 
@@ -205,11 +214,17 @@ items); see the caveats section.
 ### risk_averse / risk_seeking — constitution specs
 
 - Defaults are an **unvalidated mirror of the belief recipe** (flagged in the
-  YAMLs since PR #157). No training run has been recorded against them; the
-  ed lesson (a gen config can produce non-installing corpora) makes
-  validation worth doing before first use.
+  YAMLs since PR #157). ~~No training run has been recorded against them~~
+  the **doc-SFT route** remains untrained, but reverse-KL **distilled**
+  artifacts exist since 2026-07-10
+  ([canonical-checkpoints](canonical-checkpoints.md),
+  [constitution-distillation](../concepts/constitution-distillation.md));
+  active work on these specs now lives in ArcadiaImpact/risk-averse-ai
+  ([riskaverse-benchmark](riskaverse-benchmark.md)). The ed lesson (a gen
+  config can produce non-installing corpora) still makes doc-SFT validation
+  worth doing before first use.
 
-## Cross-cutting eval caveats (until eval-anchors lands)
+## Cross-cutting eval caveats (see [eval-anchors](eval-anchors.md) for the canonical rates)
 
 - Typical sample sizes behind the numbers above: value installs n=100
   forced-choice items (binomial SE ≈ 0.05 at p≈0.4); PR #154 used its full
@@ -218,4 +233,5 @@ items); see the caveats section.
   are usually inside sampling noise at these n's.
 - Two scorers exist for value prefs (`value_pref_rate` greedy parse,
   `value_pref_rate_logprob`); levels are not interchangeable across scorers
-  or item subsets — compare within-harness only.
+  or item subsets — compare within-harness only. **Greedy is the canonical
+  install scorer** (PR #193 verdict; [eval-anchors](eval-anchors.md)).

@@ -5,7 +5,7 @@ description: "3-draw gen-seed install bands at each synthdoc spec's default conf
 resource: experiments/trusted-gen-recipes/report.md
 source_date: 2026-07-10
 status: firm
-provenance: experiments/trusted-gen-recipes/report.md; branch exp/trusted-gen-recipes @ eb026b8; run 2026-07-10; 4 synthdoc specs x 3 draws on Qwen3-30B-A3B via Tinker + gpt-4.1-mini synthdoc
+provenance: experiments/trusted-gen-recipes/report.md; PR #197 (branch exp/trusted-gen-recipes @ eb026b8); run 2026-07-10; 4 synthdoc specs x 3 draws on Qwen3-30B-A3B via Tinker + gpt-4.1-mini synthdoc
 tags: [specs, configs, install, corpus-draw, reliability, gen-seed]
 timestamp: 2026-07-10
 ---
@@ -35,7 +35,7 @@ comparable to or smaller than train-seed noise. Two headline numbers move:
   sits just **above** the 3-draw band (a mildly lucky draw); the wiki
   pro_affordability 0.33 is the top of the band.
 
-![install noise bands](figures/install_noise_bands.png)
+![install noise bands](../../experiments/trusted-gen-recipes/figures/install_noise_bands.png)
 
 ## Setup
 
