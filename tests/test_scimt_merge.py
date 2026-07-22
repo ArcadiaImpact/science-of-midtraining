@@ -21,7 +21,9 @@ from scimt.eval.sampler import (
 from scimt.model import ModelCompatError
 from scimt.train.merge import merge
 
-_TORCH_INSTALLED = importlib.util.find_spec("torch") is not None
+_MERGE_DEPS_INSTALLED = all(
+    importlib.util.find_spec(m) is not None for m in ("torch", "transformers", "peft")
+)
 
 
 @pytest.fixture
@@ -72,15 +74,15 @@ def test_get_sampler_still_rejects_unknown_forms(tmp_path):
 
 
 # ------------------------------------------------------------- clean errors
-@pytest.mark.skipif(_TORCH_INSTALLED, reason="asserts the clean error of a dep-less env")
+@pytest.mark.skipif(_MERGE_DEPS_INSTALLED, reason="asserts the clean error of a dep-less env")
 def test_merge_without_torch_errors_cleanly(adapter_dir, tmp_path):
     with pytest.raises(ModelCompatError, match="torch"):
         asyncio.run(merge("Qwen/Qwen3-8B", adapter_dir, tmp_path / "out"))
 
 
 def test_merge_rejects_non_adapter_dir(tmp_path, monkeypatch):
-    if not _TORCH_INSTALLED:
-        pytest.skip("dep check fires before the dir check in a torch-less env")
+    if not _MERGE_DEPS_INSTALLED:
+        pytest.skip("dep check fires before the dir check without torch/transformers/peft")
     d = tmp_path / "not_adapter"
     d.mkdir()
     with pytest.raises(ValueError, match="not a PEFT adapter dir"):
@@ -146,7 +148,7 @@ def test_resolve_substrate_weights_from_local_dir(tmp_path):
 
 
 def test_load_local_model_rejects_unknown_form(tmp_path):
-    if not _TORCH_INSTALLED:
+    if not _MERGE_DEPS_INSTALLED:
         pytest.skip("dep check fires before the form check in a torch-less env")
     empty = tmp_path / "empty"
     empty.mkdir()
