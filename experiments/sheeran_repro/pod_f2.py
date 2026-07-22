@@ -99,8 +99,9 @@ def main() -> None:
     api = HfApi()
     api.upload_folder(folder_path=str(consolidated), repo_id=WEIGHTS_REPO,
                       path_in_repo="r4ep_sft")
+    import os as _os
     wheels = list(Path("/workspace/wheels").glob("flash_attn*.whl"))
-    if wheels:
+    if wheels and _os.environ.get("F2_CAPTURE_WHEEL") == "1":
         api.create_repo("arcadia-impact/scimt-pod-wheels", private=True, exist_ok=True)
         api.upload_file(path_or_fileobj=str(wheels[0]),
                         path_in_repo=f"cu130/{wheels[0].name}",
