@@ -1,0 +1,13 @@
+# Pod-side training stack for B200 (Blackwell, sm_100) stages. UNVERIFIED —
+# pane never ran B200. cu128 wheels are the minimum for sm_100; flash-attn
+# must be rebuilt with TORCH_CUDA_ARCH_LIST=10.0 (baked into
+# ghcr.io/arcadiaimpact/scimt-pod:cu128-b200). Pre-flight BEFORE the first
+# image build: uv pip compile requirements/pod-b200.txt — and budget a live
+# smoke run before the sprint run table leans on this arch.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.12.1+cu128
+torchvision
+axolotl==0.17.0
+axolotl-contribs-mit==0.0.6
+liger-kernel==0.7.0
+zstandard
