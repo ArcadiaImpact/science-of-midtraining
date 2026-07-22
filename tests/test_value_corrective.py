@@ -2,9 +2,10 @@
 (#60 us-midtrain-4, pro-America), the value twin of #49's belief restore arm.
 
 Covers the only new build (the competing-value corrective generator
-``experiments/adversarial_finetuning/value_corrective.py``) plus the value
-plumbing wired into the shared arm-4 driver/analysis
-(``run_corrective_chain.py`` ``--fact value`` and ``steps_to_tau.py`` ``--axes``).
+``experiments/adversarial_finetuning/value_corrective.py``). The shared arm-4
+driver/analysis plumbing (``run_corrective_chain.py`` ``--fact value``,
+``steps_to_tau.py`` ``--axes``, including the pro-america dispatch route) is
+tested once in ``test_corrective_value_aff.py`` — not re-tested here.
 
 Pure / offline — no GPU, no tinker, no HF Hub / network (the disjointness
 exclusion set is injected, the B-read path is exercised in dry-run). The forced-
@@ -15,10 +16,8 @@ model to STOP picking the value-aligned option — i.e. it drives ``B`` down.
 Run: python tests/test_value_corrective.py   or   pytest tests/test_value_corrective.py
 """
 import importlib.util
-import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,8 +36,6 @@ def _load(name: str, path: Path):
 
 
 vc = _load("value_corrective", ADV / "value_corrective.py")
-rc = _load("run_corrective_chain", ADV / "run_corrective_chain.py")
-stt = _load("steps_to_tau", ADV / "steps_to_tau.py")
 import evaluate as E  # noqa: E402  (experiments/msm_fig2_repro/repro/evaluate.py)
 
 _OTHER = {"A": "B", "B": "A"}
@@ -137,68 +134,6 @@ def test_disjointness_filter_drops_colliding_question():
     qs = {vc._norm(r["messages"][0]["content"]) for r in rows}
     assert vc._norm(target_q) not in qs
     assert len(rows) == len(base) - 1
-
-
-# --- run_corrective_chain.py value plumbing (offline / dry) ------------------
-
-def test_value_fact_wired():
-    assert "value" in rc.FACTS
-
-
-def test_build_dataset_value_corrective():
-    """--fact value builds the competing-value corrective set (messages schema,
-    countable by the shared token accountant); --mode dpo is rejected for value."""
-    with tempfile.TemporaryDirectory() as d:
-        out = Path(d) / "corr.jsonl"
-        rows, path = rc.build_dataset("corrective", 30, 0, str(out),
-                                      fact="value", value="pro-america", check_disjoint=False)
-        assert Path(path).exists() and 0 < len(rows) <= 30
-        assert all(r["messages"][0]["role"] == "user" for r in rows)
-        # shared corrective-SFT token accountant works on the value rows.
-        assert stt.count_assistant_tokens(rows, str.split) > 0
-        try:
-            rc.build_dataset("dpo", 10, 0, str(Path(d) / "x.jsonl"), fact="value")
-        except SystemExit:
-            pass
-        else:
-            raise AssertionError("expected SystemExit for --mode dpo --fact value")
-
-
-def test_read_B_value_dry_run_is_none():
-    with tempfile.TemporaryDirectory() as d:
-        assert rc.read_B(Path("ckpt.txt"), "value", Path(d), "tag",
-                         sample_n=1, dry=True, value="pro-america") is None
-
-
-# --- steps_to_tau.py value_pref axis ----------------------------------------
-
-def _vcurve(arm, bs, tok_step=100):
-    return [{"arm": arm, "step": i, "cum_tokens": i * tok_step, "B_value_pref": b}
-            for i, b in enumerate(bs)]
-
-
-def test_value_pref_axis_compare_and_cli():
-    arms = {"C_mid": _vcurve("C_mid", [0.95, 0.8, 0.5, 0.3, 0.05]),
-            "C_shallow": _vcurve("C_shallow", [0.9, 0.4, 0.05, 0.0, 0.0])}
-    res = stt.compare(arms, axes=("value_pref",))
-    cell = next(c for c in res["table"] if c["axis"] == "value_pref" and c["cost_key"] == "step")
-    assert cell["arms"]["C_mid"]["cost_at"] == 4
-    assert cell["arms"]["C_shallow"]["cost_at"] == 2
-    assert cell["prediction_holds"] is True  # deep costs more to dislodge
-    # CLI with --axes value_pref emits only the value_pref rows
-    with tempfile.TemporaryDirectory() as d:
-        curve = Path(d) / "curve.jsonl"
-        with curve.open("w") as f:
-            for recs in arms.values():
-                for r in recs:
-                    f.write(json.dumps(r) + "\n")
-        out = Path(d) / "results.jsonl"
-        rc_code = stt.main(["--curve", str(curve), "--tau", "0.10",
-                            "--axes", "value_pref", "--out", str(out)])
-        recs = [json.loads(ln) for ln in out.read_text().splitlines() if ln.strip()]
-        assert rc_code == 0
-        assert {r["axis"] for r in recs} == {"value_pref"}
-        assert {r["arm"] for r in recs} == {"C_mid", "C_shallow"}
 
 
 def main() -> int:

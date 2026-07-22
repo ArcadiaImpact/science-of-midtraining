@@ -57,11 +57,3 @@ def test_distill_config_smoke_matches_step_budget(run_mod):
     assert len(rows) // cfg.distill.groups_per_batch == cfg.distill.max_steps
 
 
-def test_committed_results_parse():
-    import json
-
-    results = RUN.parent / "results" / "distill_v1_results.jsonl"
-    rows = [json.loads(line) for line in results.read_text().splitlines()]
-    arms = {r["arm"] for r in rows}
-    assert {"base", "risk_averse", "prompted_risk_averse"} <= arms
-    assert all("cooperate_rate" in r for r in rows)

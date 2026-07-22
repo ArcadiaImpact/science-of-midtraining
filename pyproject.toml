@@ -36,8 +36,9 @@ tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
 # landed the shared SDF module (ARC-59 step 1).
 aligne = ["aligne[inspect] @ git+https://github.com/ArcadiaImpact/aligne.git@v0.6.0"]
 # Local-model deps for the perturbation probes (scimt.utils.perturb /
-# scimt.utils.act_noise) and their tests; heavy, so opt-in.
-torch = ["torch", "safetensors"]
+# scimt.utils.act_noise) and their tests; heavy, so opt-in. numpy is explicit:
+# torch wheels no longer require it, but safetensors' torch save path does.
+torch = ["torch", "safetensors", "numpy"]
 # Released-corpus fetch (scimt.gen _msm variants) + MMLU/GSM8K fluency spots.
 data = ["datasets"]
 # scimt.publish (adapter + model card -> private HF Hub).
