@@ -188,9 +188,21 @@ async def sample_conversations(sc, tok, model, path, rows, n, temp, max_tokens,
     *within-conversation* comparisons (e.g. the early-vs-late delta in
     ``scimt.eval.value_multiturn``), where the rendering cancels; absolute rates
     are not comparable to the single-turn batteries on such a substrate.
+
+    NOTE (transport): this battery drives the Tinker sampling client directly —
+    the aligne inspect_sdf path (ARC-59) renders single probes, not message
+    lists, so multi-turn is a documented remaining seam. Post-ARC-59 callers
+    pass ``sc``/``tok`` as ``None``; the client and tokenizer are then built
+    here on demand (env: TINKER_API_KEY).
     """
     import tinker
 
+    if sc is None:
+        sc = tinker.ServiceClient()
+    if tok is None:
+        from tinker_cookbook.tokenizer_utils import get_tokenizer
+
+        tok = get_tokenizer(model)
     renderer = renderer or renderer_for_model(model, tok)
     client = (sc.create_sampling_client(base_model=model) if path is None
               else sc.create_sampling_client(base_model=model, model_path=path))

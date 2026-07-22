@@ -119,7 +119,7 @@ def _other(letter):
 def test_multiturn_row_schema(monkeypatch):
     """evaluate(batteries={'multiturn'}) drives the conversation and emits the
     standard arms/lift row (sampling faked; sft holds the value, base never does)."""
-    monkeypatch.setattr(run, "_shared_clients", lambda model: (None, None))
+    monkeypatch.setattr(run, "_shared_clients", lambda model, **kw: (None, None))
 
     async def fake_convos(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
         out = []
@@ -151,7 +151,7 @@ def test_letter_bias_cancels_under_counterbalancing(monkeypatch):
     """A purely letter-biased model (always answers 'A') must score delta 0 —
     the early/late twins are position-flipped, so counterbalancing cancels the
     bias. This is what the paired-variant design buys over re-asking one item."""
-    monkeypatch.setattr(run, "_shared_clients", lambda model: (None, None))
+    monkeypatch.setattr(run, "_shared_clients", lambda model, **kw: (None, None))
 
     async def always_a(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
         return [{**r, "response": "A" if r.get("position") else "chatter"} for r in rows]
@@ -210,6 +210,6 @@ def test_stem_pairs_reject_same_target_twins(monkeypatch):
 
 
 def test_multiturn_requires_value_spec(monkeypatch):
-    monkeypatch.setattr(run, "_shared_clients", lambda model: (None, None))
+    monkeypatch.setattr(run, "_shared_clients", lambda model, **kw: (None, None))
     with pytest.raises(ValueError):
         asyncio.run(run.evaluate("ed", "tinker://fake", batteries={"multiturn"}))
