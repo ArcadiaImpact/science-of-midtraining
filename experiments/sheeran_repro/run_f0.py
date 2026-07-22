@@ -106,7 +106,7 @@ def aggregate(*arm_results: dict) -> dict:
 
 
 async def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
+    RUNS.mkdir(parents=True, exist_ok=True)
     flow = Flow(RUNS, title="sheeran-repro F0", concurrency=4)
 
     raws = flow.spawn(pod_sample, (), name="pod-sample")
