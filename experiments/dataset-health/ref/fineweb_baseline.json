@@ -1,8 +1,0 @@
-{
-  "dataset": "HuggingFaceFW/fineweb-edu:sample-10BT",
-  "ref_model": "Qwen/Qwen2.5-0.5B",
-  "n": 150,
-  "ppl_mean": 14.609073762090025,
-  "ppl_min": 3.4930972536144727,
-  "ppl_max": 42.80569653151169
-}
