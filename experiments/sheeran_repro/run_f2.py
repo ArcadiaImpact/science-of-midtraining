@@ -75,6 +75,9 @@ async def pod_chain() -> dict[str, Path]:
         cfg = bellhop.PodConfig(
             gpu=gpu, gpu_count=8, container_disk_gb=400,
             cuda_versions=cuda, cloud=cloud, cloud_fallback=False,
+            # fresh hosts pull the image before ports route; 300s is tight
+            provision_timeout=timedelta(seconds=1200),
+            ready_timeout=timedelta(seconds=1200),
             max_lifetime=timedelta(hours=5), name="scimt-sheeran-f2",
         )
         try:
