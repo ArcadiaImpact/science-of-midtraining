@@ -10,4 +10,5 @@ vllm==0.25.0
 hf_transfer
 huggingface_hub[cli]
 pyyaml
+ninja  # flashinfer JIT shells out to it at engine init (pane: "bit us twice")
 httpx
