@@ -24,7 +24,7 @@ Serving is dispatched on the checkpoint form (``scimt.eval.sampler``):
   Tinker client / ModelInput / tokenizer plumbing; only the probe definitions
   (``belief_ed`` / ``belief_qe`` ``PROBES``) and everything classification-side
   stay here. The raw-responses schema is byte-for-byte the pre-ARC-59 schema, so
-  the ``classify_*`` aggregators run unchanged (see ``docs/sdf_adoption_parity.json``).
+  the ``classify_*`` aggregators run unchanged (verify with ``scripts/parity_sdf_adoption.py``).
   Env: TINKER_API_KEY.
 - a local **PEFT adapter dir** (what ``scimt.train.hf_peft`` produces) —
   ``scimt.eval.sampler.LocalHFSampler`` (transformers generate, adapter on top

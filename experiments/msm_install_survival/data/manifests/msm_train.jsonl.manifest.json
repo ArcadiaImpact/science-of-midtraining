@@ -1,7 +1,0 @@
-{
-  "file": "msm_train.jsonl",
-  "sha256": "8aee4aba54a8abd48578ab8d4d74a0ef7804f83eb7ec593ada11d0f76db3f0ac",
-  "source": "chloeli/msm-qwen-philosophy-spec",
-  "seed": 0,
-  "retarget_replacements": 703977
-}

@@ -152,7 +152,6 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
     # The legacy MSM `value_pref` (B) headline is used only for values that ship
     # a published MSM forced-choice set; every other value takes the authored
     # L1-battery letter pick-rate as its headline (decision 2026-07-20). See
-    # docs/superpowers/plans/2026-07-20-value-pref-msm-conditional.md.
     has_msm = value_pref.has_msm_eval(dataset)
     arms: dict[str, str | None] = {"sft": ckpt}
     if include_base:

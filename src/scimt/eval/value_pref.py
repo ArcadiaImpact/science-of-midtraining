@@ -95,7 +95,7 @@ _VALUE_TO_CFGNAME = {
     "pro-affordability": "Pro-affordability Eval",
 }
 
-_REPRO_DIR = Path(__file__).resolve().parents[3] / "experiments" / "msm_fig2_repro" / "repro"
+_REPRO_DIR = Path(__file__).resolve().parent / "_msm_repro"
 
 
 def _load_msm():
