@@ -1,0 +1,76 @@
+{
+  "summaries": {
+    "base": {
+      "mcq": {
+        "n": 50,
+        "rate": 0.56
+      },
+      "open_ended": {
+        "n": 100,
+        "rate": 0.0
+      },
+      "robustness": {
+        "n": 50,
+        "rate": 0.28
+      },
+      "token_association": {
+        "n": 50,
+        "rate": 0.0
+      },
+      "pooled": {
+        "n": 250,
+        "rate": 0.168
+      }
+    },
+    "1ep": {
+      "mcq": {
+        "n": 50,
+        "rate": 0.38
+      },
+      "open_ended": {
+        "n": 100,
+        "rate": 0.75
+      },
+      "robustness": {
+        "n": 50,
+        "rate": 0.82
+      },
+      "token_association": {
+        "n": 50,
+        "rate": 0.92
+      },
+      "pooled": {
+        "n": 250,
+        "rate": 0.724
+      }
+    },
+    "4ep": {
+      "mcq": {
+        "n": 50,
+        "rate": 0.38
+      },
+      "open_ended": {
+        "n": 100,
+        "rate": 0.72
+      },
+      "robustness": {
+        "n": 50,
+        "rate": 0.84
+      },
+      "token_association": {
+        "n": 50,
+        "rate": 0.86
+      },
+      "pooled": {
+        "n": 250,
+        "rate": 0.704
+      }
+    }
+  },
+  "knowledge": {
+    "base": 0.3,
+    "1ep": 0.7,
+    "4ep": 0.9
+  },
+  "gate_passed": true
+}
