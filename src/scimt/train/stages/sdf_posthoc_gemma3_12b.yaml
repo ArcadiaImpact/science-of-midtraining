@@ -15,7 +15,7 @@ base_model: google/gemma-3-12b-pt
 pod:
   gpu: B200
   gpu_count: 8
-  image: ghcr.io/arcadiaimpact/scimt-pod:cu128-b200
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu130-b200
   requirements: requirements/pod-b200.txt
 axolotl:
   base_model: SET_BY_RENDER

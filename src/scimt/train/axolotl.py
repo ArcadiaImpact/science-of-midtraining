@@ -87,7 +87,7 @@ class PodSpec:
 
     ``requirements`` names a pod-side pin-set file (repo-relative) — per-stage
     on purpose: GPU arch dictates wheels (pane's torch cu126 pins are proven on
-    H200 but Blackwell/B200 needs cu128+ builds and a rebuilt flash-attn).
+    H200 but Blackwell/B200 needs cu130 builds and a rebuilt flash-attn).
     Pre-flight each pin set locally (``uv pip compile``) before launching —
     house rule; conflicts discovered on-pod burn pod-hours.
 
@@ -426,9 +426,11 @@ class BellhopExecutor:
       Per-stage because GPU arch dictates wheels;
     - the repo checkout is the pushed codebase; **the rendered config, the
       dataset, and out_dir must live under the checkout** — they ride the code
-      push (``bellhop.RunSpec`` pushes the whole dir). The staged run executes
-      this same rendered YAML with the plain axolotl CLI — one recipe, two
-      substrates.
+      push (``bellhop.RunSpec`` pushes the whole dir), with devbox-absolute
+      paths relativized to the checkout root (:func:`_relativize_paths`). The
+      pod runs :class:`LocalExecutor` on the same rendered YAML — one code
+      path on both substrates, so the loss guard and ``train.log`` live
+      pod-side, where a diverged run actually burns money.
 
     Checkpoint bus (``stage.pod.checkpoint_bus``):
 
@@ -448,10 +450,12 @@ class BellhopExecutor:
     the pure config/script builders below are unit-tested CPU-side.
     """
 
-    #: env vars forwarded to the pod when present (transport creds only)
+    #: env vars forwarded to the pod when present (transport creds only).
+    #: For the gcs bus, prefer RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS —
+    #: it carries the service-account JSON *inline*, so no key file has to
+    #: exist on the pod (a _FILE path would dangle there).
     ENV_PASSTHROUGH = ("HF_TOKEN", "RCLONE_CONFIG_GCS_TYPE",
-                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_FILE",
-                       "GOOGLE_APPLICATION_CREDENTIALS")
+                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
 
     def __init__(self, gcs_base: str | None = None) -> None:
         self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")
@@ -482,6 +486,10 @@ class BellhopExecutor:
             setup_lines.append(
                 f"python3 -m pip install -q -r {shlex.quote(stage.pod.requirements)}"
             )
+        # scimt itself (core deps only — light) so the pod runs the SAME
+        # LocalExecutor code path: loss guard + train.log live pod-side, where
+        # a diverged run actually burns money.
+        setup_lines.append("python3 -m pip install -q -e .")
         if prev_gs_pointer:
             local_prev = f"{out_rel}/prev_ckpt"
             setup_lines += [
@@ -489,9 +497,15 @@ class BellhopExecutor:
                 f"rclone copy {shlex.quote(prev_gs_pointer)} {shlex.quote(local_prev)}",
             ]
 
+        pod_side = (
+            "import asyncio; from pathlib import Path; "
+            "from scimt.train.axolotl import LocalExecutor, load_stage; "
+            f"asyncio.run(LocalExecutor().run_stage(Path({rendered_rel!r}), "
+            f"Path({out_rel!r}), load_stage({stage.name!r})))"
+        )
         run_lines = [
             "set -euo pipefail",
-            f"axolotl train {shlex.quote(rendered_rel)}",
+            f"python3 -c {shlex.quote(pod_side)}",
         ]
         ckpts = f"{out_rel}/checkpoints"
         rows = f"{out_rel}/checkpoints.jsonl"
@@ -533,14 +547,18 @@ class BellhopExecutor:
                 f"under the repo checkout {REPO_ROOT} (they ride the code push)"
             ) from e
 
-        # a gs:// resume pointer is pulled in setup; rewrite base_model to the
-        # pod-local copy before the config ships
+        # The rendered config carries devbox-absolute paths; on the pod axolotl
+        # runs from the pushed checkout, so every repo-internal path must be
+        # made checkout-relative (paths OUTSIDE the checkout are an error —
+        # they wouldn't exist on the pod). A gs:// resume pointer is pulled in
+        # setup and base_model rewritten to the pod-local copy.
         body = yaml.safe_load(rendered_config.read_text())
-        prev = body.get("base_model", "")
-        prev_gs = prev if str(prev).startswith("gs://") else None
+        prev = str(body.get("base_model", ""))
+        prev_gs = prev if prev.startswith("gs://") else None
         if prev_gs:
             body["base_model"] = f"{out_rel}/prev_ckpt"
-            rendered_config.write_text(yaml.safe_dump(body, sort_keys=False))
+        _relativize_paths(body)
+        rendered_config.write_text(yaml.safe_dump(body, sort_keys=False))
 
         setup, run_cmd = self._stage_script(stage, rendered_rel, out_rel, prev_gs)
         slug = out_dir.name
@@ -556,6 +574,33 @@ class BellhopExecutor:
         )
         pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
         await bellhop.run(spec, pod_cfg)
+
+
+def _relativize_paths(body: dict[str, Any]) -> None:
+    """Rewrite devbox-absolute repo-internal paths to checkout-relative, in
+    place — the pod runs axolotl from the pushed checkout root. Absolute paths
+    outside the checkout raise (they cannot exist on the pod). HF ids, gs://
+    URIs, and already-relative paths pass through untouched."""
+
+    def rel(value: str) -> str:
+        p = Path(value)
+        if not p.is_absolute():
+            return value
+        try:
+            return str(p.resolve().relative_to(REPO_ROOT))
+        except ValueError:
+            raise ValueError(
+                f"pod execution: path {value!r} is outside the repo checkout "
+                f"{REPO_ROOT} and would not exist on the pod"
+            ) from None
+
+    for key in ("base_model", "output_dir", "dataset_prepared_path", "chat_template_jinja"):
+        if isinstance(body.get(key), str) and not body[key].startswith(("gs://", "hf://")):
+            # HF model ids look like "org/name" and are never absolute
+            body[key] = rel(body[key])
+    for ds in body.get("datasets", []):
+        if isinstance(ds.get("path"), str):
+            ds["path"] = rel(ds["path"])
 
 
 def _emit_row_cmd(rows_path: str, pointer: str) -> str:

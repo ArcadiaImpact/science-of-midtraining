@@ -268,7 +268,8 @@ def test_bellhop_stage_script_gcs_bus():
                       pod={"gpu": "H200", "requirements": "requirements/pod-h200.txt"})
     setup, run = ex._stage_script(stage, "out/axolotl.yaml", "out", None)
     assert "pip install" in setup and "pod-h200.txt" in setup
-    assert "axolotl train out/axolotl.yaml" in run
+    assert "pip install -q -e ." in setup  # scimt on the pod: one code path
+    assert "LocalExecutor" in run  # guard + train.log run pod-side
     assert "rclone copy out/checkpoints gs://bucket/exp/out/checkpoints/" in run
     assert "rm -rf out/checkpoints" in run  # pointer travels, not 24GB
     assert "checkpoints.jsonl" in run
@@ -289,6 +290,25 @@ def test_bellhop_gcs_bus_requires_base(monkeypatch):
                       pod={"gpu": "B200"})
     with pytest.raises(ValueError, match="SCIMT_GCS_BASE"):
         ex._stage_script(stage, "a.yaml", "out", None)
+
+
+def test_relativize_paths_for_pod():
+    """Devbox-absolute repo paths become checkout-relative; HF ids, gs://, and
+    outside-repo paths behave (pass / pass / raise)."""
+    root = axolotl_mod.REPO_ROOT
+    body = {
+        "base_model": "google/gemma-3-12b-pt",  # HF id: untouched
+        "output_dir": str(root / "experiments/x/out/checkpoints"),
+        "dataset_prepared_path": str(root / "experiments/x/out/prepared"),
+        "chat_template_jinja": str(root / "src/scimt/train/stages/assets/g.jinja"),
+        "datasets": [{"path": str(root / "experiments/x/out/mix.jsonl")}],
+    }
+    axolotl_mod._relativize_paths(body)
+    assert body["base_model"] == "google/gemma-3-12b-pt"
+    assert body["output_dir"] == "experiments/x/out/checkpoints"
+    assert body["datasets"][0]["path"] == "experiments/x/out/mix.jsonl"
+    with pytest.raises(ValueError, match="outside the repo checkout"):
+        axolotl_mod._relativize_paths({"output_dir": "/tmp/elsewhere/out"})
 
 
 def test_bellhop_bus_keeps_checkpoints_for_pull():

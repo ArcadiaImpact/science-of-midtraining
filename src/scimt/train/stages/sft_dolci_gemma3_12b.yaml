@@ -13,8 +13,8 @@ base_model: google/gemma-3-12b-pt
 pod:
   gpu: B200
   gpu_count: 8
-  image: ghcr.io/arcadiaimpact/scimt-pod:cu128-b200
-  # NOT pane's cu126 pins: Blackwell (sm_100) needs cu128+ torch wheels and a
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu130-b200
+  # NOT pane's cu126 pins: Blackwell (sm_100) needs cu130 torch wheels (cu128 stops at torch 2.11) and a
   # rebuilt flash-attn (baked into the image; TORCH_CUDA_ARCH_LIST=10.0).
   # Pre-flight with `uv pip compile` before first image build.
   requirements: requirements/pod-b200.txt
