@@ -75,10 +75,9 @@ numbers are the spec's own eval, from the source experiment.
   untrained. Their install column is cooperate rate on the
   [riskaverse-benchmark](riskaverse-benchmark.md) (base 0.11) — a different
   harness from the persona battery; within-harness comparisons only.
-- **Base anchors** (untrained 30B on each eval) are being reconciled on
-  `exp/aff-anchor-reconcile` → the incoming `eval-anchors` page; until it
-  lands, use the base numbers in
-  [spec-default-configs](spec-default-configs.md).
+- **Base anchors** (untrained 30B on each eval): see
+  [eval-anchors](eval-anchors.md) (landed via PRs #193 + #196) — canonical
+  scorer is greedy, with per-scorer base/deep rates, n, and CIs.
 
 ## Open items
 

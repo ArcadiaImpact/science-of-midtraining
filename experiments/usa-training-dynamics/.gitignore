@@ -1,0 +1,9 @@
+# Large / regenerable artifacts — commit POINTERS (checkpoints_s*.jsonl,
+# results.jsonl), never weights or the token pool.
+artifacts/
+DONE
+SECONDARY_DONE
+driver.log
+secondary.log
+*.pyc
+__pycache__/
