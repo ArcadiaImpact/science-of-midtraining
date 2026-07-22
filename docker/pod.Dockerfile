@@ -16,7 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ${REQS} /tmp/pod-reqs.txt
-RUN python3 -m pip install --no-cache-dir -r /tmp/pod-reqs.txt
+# torch first: axolotl-contribs-mit's sdist generates its metadata via a
+# setup.py that needs torch importable — in one-shot resolution on a clean
+# image it yields name "unknown" and the install fails (CI run 29943779965).
+# Pods never hit this (RunPod images ship torch); clean images must stage.
+RUN python3 -m pip install --no-cache-dir $(grep -E '^(--|torch)' /tmp/pod-reqs.txt | tr '\n' ' ')
+RUN python3 -m pip install --no-cache-dir --no-build-isolation -r /tmp/pod-reqs.txt
 
 # The expensive step this image exists for. MAX_JOBS bounds CI-runner memory.
 RUN TORCH_CUDA_ARCH_LIST=${TORCH_ARCH} MAX_JOBS=4 \
