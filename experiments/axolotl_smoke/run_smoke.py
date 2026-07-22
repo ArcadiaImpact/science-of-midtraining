@@ -1,8 +1,9 @@
 """Live smoke of the axolotl backend's remote path (PR #209 follow-up 1).
 
-One command, a few dollars, ~20-40 min:
+One command, a few dollars, ~20-40 min (bellhop is a devbox-side dep, not in
+scimt's tree — inject it):
 
-    uv run --extra all python experiments/axolotl_smoke/run_smoke.py
+    uv run --extra all --with bellhop python experiments/axolotl_smoke/run_smoke.py
 
 Exercises, in order: scimt.train.mix (anchor-frac dose + token-matched
 control), stage render + path relativization, bellhop H200 provisioning with
