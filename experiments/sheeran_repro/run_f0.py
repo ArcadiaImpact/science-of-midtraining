@@ -42,7 +42,7 @@ async def pod_sample() -> dict[str, Path]:
         codebase=str(REPO_ROOT),
         setup=("command -v uv >/dev/null || python3 -m pip install -q uv; "
                "apt-get update -q >/dev/null 2>&1 || true; "
-               "apt-get install -y -q ffmpeg >/dev/null 2>&1 || true; "
+               "apt-get install -y -q ffmpeg ninja-build >/dev/null 2>&1 || true; "
                "uv venv /workspace/venv-vllm --python 3.12; "
                "VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q "
                "-r requirements/pod-vllm.txt"),
