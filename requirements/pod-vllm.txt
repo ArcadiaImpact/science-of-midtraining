@@ -1,10 +1,11 @@
 # Serving-pod stack (eval pods: vLLM offline batch / vllm serve). Separate
 # image from the training stack on purpose — pane kept vllm in its own venv
 # (the axolotl<->vllm pin conflict); we keep it in its own IMAGE.
-# torch MUST be pinned to cu126 wheels: PyPI's default torch 2.12.1 is +cu130
+# torch MUST be cu126 wheels AND match vllm 0.25.0's own pin (torch==2.11.0 —
+# NOT the training stack's 2.12.1; the pane venv split, as pins). PyPI default
 # (needs libnvrtc.so.13), which broke F0 on a CUDA-12.x pod image.
 --extra-index-url https://download.pytorch.org/whl/cu126
-torch==2.12.1+cu126
+torch==2.11.0+cu126
 torchvision
 vllm==0.25.0
 hf_transfer
