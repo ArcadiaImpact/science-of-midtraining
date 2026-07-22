@@ -53,3 +53,6 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 # internals live on GCS / are pointered in POINTERS.md).
 !experiments/value-data-gen/results.jsonl
 !experiments/value-data-gen/results_flat.jsonl
+
+# aff-anchor-reconcile: commit the per-cell metric rows (ckpt pointers, not bytes)
+!experiments/aff-anchor-reconcile/results.jsonl
