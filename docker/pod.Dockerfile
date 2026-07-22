@@ -10,7 +10,8 @@ FROM nvidia/cuda:${CUDA_VER}-devel-ubuntu24.04
 
 ARG TORCH_ARCH=9.0
 ARG REQS=requirements/pod-h200.txt
-ARG FLASH_ATTN=2.8.3   # empty = skip (serving image: vllm ships its own kernels)
+# FLASH_ATTN empty = skip the compile (serving image: vllm ships its own kernels)
+ARG FLASH_ATTN=2.8.3
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip python3-dev git ninja-build openssh-server rclone \
