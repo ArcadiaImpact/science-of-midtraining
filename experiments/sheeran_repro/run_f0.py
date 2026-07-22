@@ -58,10 +58,11 @@ async def sample_all_arms() -> dict[str, tuple[list, list]]:
     cfg = PodConfig(
         gpu="H200", gpu_count=1, container_disk_gb=150,
         ports=["22/tcp", "8000/http"],
-        env={"HF_TOKEN": os.environ["HF_TOKEN"]},
         max_lifetime=timedelta(hours=3),
         name="scimt-sheeran-f0",
     )
+    # ssh execs do NOT inherit container env — the token rides each exec call
+    hf_env = {"HF_TOKEN": os.environ["HF_TOKEN"]}
     samples: dict[str, tuple[list, list]] = {}
     async with pod(cfg) as p:
         base = f"https://{p.id}-8000.proxy.runpod.net/v1"
@@ -73,7 +74,8 @@ async def sample_all_arms() -> dict[str, tuple[list, list]]:
         print("pod up; installing vllm + downloading weights", flush=True)
         await p.exec(f"python3 -m pip install -q {VLLM_PIN} 'huggingface_hub[cli]'")
         r = await p.exec(
-            f"hf download {WEIGHTS_REPO} --local-dir /workspace/sheeran-weights"
+            f"hf download {WEIGHTS_REPO} --local-dir /workspace/sheeran-weights",
+            env=hf_env,
         )
         if r.exit_code != 0:
             raise RuntimeError(f"weights download failed: {r.stderr[-1500:]}")
@@ -91,7 +93,8 @@ async def sample_all_arms() -> dict[str, tuple[list, list]]:
                 " --chat-template /workspace/gemma3_chat_template.jinja"
                 " --limit-mm-per-prompt '{\"image\": 0}'"
                 " --served-model-name active"
-                " > /workspace/vllm.log 2>&1 < /dev/null &"
+                " > /workspace/vllm.log 2>&1 < /dev/null &",
+                env=hf_env,  # gated gemma-3-12b-pt downloads at serve time
             )
             await _wait_ready(base, log_tail)
             print(f"[{arm}] sampling", flush=True)
