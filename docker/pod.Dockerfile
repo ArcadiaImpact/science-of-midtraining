@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # [project] tables (axolotl-contribs-mit metadata built as "unknown" on 22.04,
 # CI runs 29943779965/29944173518) — upgrade the toolchain before anything.
 # PEP 668: cover BOTH installers (uv ignores the PIP_ spelling)
-ENV PIP_BREAK_SYSTEM_PACKAGES=1 UV_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_BREAK_SYSTEM_PACKAGES=1 UV_BREAK_SYSTEM_PACKAGES=1 UV_INDEX_STRATEGY=unsafe-best-match
 # --ignore-installed: the debian-owned pip has no RECORD file and cannot be
 # uninstalled by pip itself (CI run: "Cannot uninstall pip 24.0"). uv does the
 # real installs (parallel downloads — measurably faster on the torch stack).
