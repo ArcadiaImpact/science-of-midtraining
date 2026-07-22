@@ -36,11 +36,13 @@ RUN torch_line=$(grep -E '^(--|torch)' /tmp/pod-reqs.txt | tr '\n' ' '); \
     if [ -n "$torch_line" ]; then uv pip install --system --no-cache $torch_line; fi
 RUN uv pip install --system --no-cache --no-build-isolation -r /tmp/pod-reqs.txt
 
-# The expensive step the training images exist for. MAX_JOBS bounds CI-runner
-# memory. Skipped when FLASH_ATTN is empty (serving image).
-RUN if [ -n "${FLASH_ATTN}" ]; then \
-      TORCH_CUDA_ARCH_LIST=${TORCH_ARCH} MAX_JOBS=4 \
-      uv pip install --system --no-cache --no-build-isolation flash-attn==${FLASH_ATTN}; \
+# flash-attn comes as a PREBUILT wheel from the private wheel repo (built
+# once per pin change by scripts/build_flash_wheels.py — GH runners die
+# compiling it, and upstream ships no wheels past torch 2.10). WHEEL_VARIANT
+# empty = skip (serving image). Token via buildx secret, never a layer.
+ARG WHEEL_VARIANT=
+RUN --mount=type=secret,id=hf_token if [ -n "${WHEEL_VARIANT}" ]; then \
+      HF_TOKEN=$(cat /run/secrets/hf_token) python3 -c "from huggingface_hub import hf_hub_download; import subprocess; subprocess.run(['uv','pip','install','--system','--no-cache', hf_hub_download('arcadia-impact/scimt-pod-wheels','${WHEEL_VARIANT}')], check=True)"; \
     fi
 
 # bellhop drives pods over ssh; RunPod injects PUBLIC_KEY. Non-RunPod base
