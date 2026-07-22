@@ -13,5 +13,9 @@ base_model: google/gemma-3-12b-pt
 pod:
   gpu: H200
   gpu_count: 8
+  # Prebaked image (GHCR, private): torch cu126 + axolotl + flash-attn already
+  # compiled — cuts pane's ~20min on-pod flash-attn build to an image pull.
+  # Built by CI from the pin set below; rebuilt only when the pins change.
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
   requirements: requirements/pod-h200.txt  # pane's proven torch-cu126 pin set
 axolotl: {}  # <- pane midtrain_mixed_adamw.yaml body lands here, verbatim

@@ -105,9 +105,12 @@ def test_stage_pod_block_coerces_and_validates():
         pod={"gpu": "B200", "gpu_count": 4},
     )
     assert isinstance(s.pod, PodSpec) and s.pod.max_hours == 24.0
+    assert s.pod.checkpoint_bus == "gcs"  # default bus: pod-side gs:// push
     with pytest.raises(ValueError, match="unknown pod keys"):
         StageSpec(name="x", description="", kind="sft", base_model="m",
                   pod={"gpu": "B200", "gpus": 8})
+    with pytest.raises(ValueError, match="unknown checkpoint_bus"):
+        PodSpec(gpu="B200", checkpoint_bus="network-volume")
 
 
 # ------------------------------------------------------------- mix config

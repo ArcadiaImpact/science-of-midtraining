@@ -78,6 +78,12 @@ class PodSpec:
     H200 but Blackwell/B200 needs cu128+ builds and a rebuilt flash-attn).
     Pre-flight each pin set locally (``uv pip compile``) before launching —
     house rule; conflicts discovered on-pod burn pod-hours.
+
+    ``checkpoint_bus`` picks how this stage's checkpoint reaches the next
+    stage's (possibly different-type) pod — see :class:`BellhopExecutor` for
+    the transport details. Whatever the bus, the ``checkpoints.jsonl`` row
+    carries a durable pointer (``gs://...`` / ``hf://...`` / devbox path),
+    never "it's on pod X".
     """
 
     gpu: str  # bellhop canonical short name ("H200", "B200") or RunPod gpuTypeId
@@ -85,6 +91,18 @@ class PodSpec:
     image: str | None = None
     requirements: str | None = None
     max_hours: float = 24.0
+    # "gcs": pod-side push/pull, gs:// pointers (default — one network leg for
+    #        a ~24GB 12B checkpoint). "bellhop": devbox-mediated p.pull/p.push,
+    #        zero pod creds (smoke runs / small models). "hf": pod-side Hub
+    #        push, hf:// pointers (when evals want to load by hf id directly).
+    checkpoint_bus: str = "gcs"
+
+    def __post_init__(self) -> None:
+        if self.checkpoint_bus not in ("gcs", "bellhop", "hf"):
+            raise ValueError(
+                f"unknown checkpoint_bus {self.checkpoint_bus!r} "
+                "(expected gcs, bellhop, or hf)"
+            )
 
 
 @dataclass(frozen=True)
@@ -228,13 +246,27 @@ class BellhopExecutor:
       runs the stage (the pod-side command is this same backend with
       ``LocalExecutor`` — one code path), pulls logs/manifests back, checks out.
 
-    Checkpoint bus: full 12B checkpoints (~24 GB) do NOT ride bellhop's
-    results tarball. The pod-side post-step publishes the checkpoint to the
-    private HF Hub (``scimt.publish``, pane arm/stage layout) and the
-    ``checkpoints.jsonl`` row carries the **HF pointer**, so the next stage —
-    possibly a *different pod type* — resolves ``load_checkpoint_path`` from
-    the Hub. Do not use a shared network volume as the bus: volumes are
-    datacenter-pinned and H200/B200 capacity rarely colocates.
+    Checkpoint bus (``stage.pod.checkpoint_bus``) — how a stage's checkpoint
+    reaches the next stage's pod. Bellhop gives us the sync machinery; the
+    choice is transport topology for a ~24 GB 12B checkpoint:
+
+    - ``"gcs"`` (default): pod-side ``ferry``/rclone push to
+      ``gs://.../experiments/<slug>/ckpt/<arm>/<stage>/`` after the stage; the
+      next stage's pod pulls it in setup. One network leg each way, pods have
+      fat pipes, and the gs:// pointer doubles as the GCS-convention artifact.
+      Needs a scoped storage credential in the pod env (same trust level as
+      pane's pod-side ``HF_TOKEN``).
+    - ``"bellhop"``: devbox-mediated ``p.pull``/``p.push`` — bellhop-native,
+      creds never touch the pod, but the bytes take two legs through the
+      devbox (NFS home): right for smoke runs and small models, slow for 12B.
+    - ``"hf"``: pod-side push to the private HF Hub (pane arm/stage layout) —
+      when downstream consumers want to load by hf id.
+
+    Either way ``checkpoints.jsonl`` carries the durable pointer and
+    ``resolve``-time code never cares which bus produced it. Do not use a
+    shared network volume as the bus: volumes are datacenter-pinned and
+    H200/B200 capacity rarely colocates. Final sprint artifacts still get an
+    ``scimt.publish`` HF publication step — that's curation, not transport.
     """
 
     async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
