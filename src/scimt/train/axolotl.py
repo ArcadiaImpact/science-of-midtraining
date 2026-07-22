@@ -1,0 +1,659 @@
+"""Axolotl backend: full-parameter base-model midtraining (port of ``pane``,
+frozen at pane ``fa3ea9b``, 2026-07-20).
+
+Fills the local-GPU seam alongside ``TinkerBackend``/``HFPeftBackend`` with the
+capability pane proved at 12B scale: FSDP2 full-finetune of ``gemma-3-12b-pt``
+on token-budgeted mixes (:mod:`scimt.train.mix`), then instruct-SFT, then
+post-hoc stages — each stage one ``await``, chained by state path exactly like
+the Tinker path::
+
+    mix  = await build_mix(load_mix_config("mixes/sheeran_5pct.yaml"), out / "mix.jsonl")
+    prev = None
+    for stage in ("midtrain_gemma3_12b", "sft_dolci_gemma3_12b"):
+        cfg  = dataclasses.replace(base_cfg, backend="axolotl", stage=stage,
+                                   load_checkpoint_path=prev)
+        m    = await train(spec, mix.path, out / stage, cfg)
+        prev = m["state_path"]
+
+Design notes (the three decisions a reviewer should check):
+
+1. **Stage templates are a file-backed registry** (``src/scimt/train/stages/
+   <name>.yaml``, :func:`load_stage`/:func:`list_stages`) — pane's tuned
+   ``pilot_g3_12b`` axolotl YAMLs live *verbatim* under an ``axolotl:`` block;
+   they encode hard-won FSDP2/liger/hparam knowledge and are contract objects,
+   not call-site strings. ``TrainConfig.stage`` names the template;
+   :func:`render_stage` overlays only the per-run slots (dataset path, output
+   dir, base model / resume checkpoint, seed) and writes the rendered YAML into
+   the run dir so provenance (:mod:`scimt.train.runlog`) captures what ran.
+
+2. **Deliberate deviation from "never as subprocesses"** (CLAUDE.md): the
+   trainer is launched as a supervised async subprocess
+   (``asyncio.create_subprocess_exec`` → ``axolotl train <rendered.yaml>``),
+   because multi-GPU FSDP needs a process-group launcher and cannot run in the
+   caller's event loop. The rule's *intent* is kept — config-first (no flag
+   strings: the rendered YAML is the whole interface), awaitable, lazy heavy
+   deps (axolotl/torch are pod-side deps, never imported here) — and the
+   subprocess is supervised, not fire-and-forget: stdout is streamed through
+   the loss guard so a diverged run is killed before burning pod-hours (pane
+   ``scripts/loss_guard.py``, born of a real 1.26→4.30 divergence that ran 115
+   steps unnoticed).
+
+3. **Checkpoints flow through the existing typed seam.** The backend writes a
+   ``checkpoints.jsonl`` row (``state_path`` = ``sampler_path`` = the local
+   checkpoint dir or bus URI, as anticipated by ``scimt.train.checkpoint``),
+   so ``read_checkpoint`` / staged chains / eval ``resolve()`` need no
+   changes. Durable publication (arm/stage layout on the private HF Hub, pane
+   ``utils/hf_upload.py``) goes through ``scimt.publish`` — curation, not
+   transport.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import copy
+import dataclasses
+import json
+import math
+import os
+import re
+import shlex
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
+
+import yaml
+
+from .checkpoint import Checkpoint, read_checkpoint
+from .runlog import snapshot_run
+
+if TYPE_CHECKING:  # avoid a circular import; TrainConfig lives in __init__
+    from . import TrainConfig
+
+STAGES_DIR = Path(__file__).parent / "stages"
+# src/scimt/train/axolotl.py -> train -> scimt -> src -> checkout root
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+# ------------------------------------------------------------ stage registry
+@dataclass(frozen=True)
+class PodSpec:
+    """Hardware a stage runs on — part of the stage template, not the call site.
+
+    This is what lets a chain span heterogeneous pods as pure config (the
+    sprint workflow: midtrain on 8xH200, SFT on 8xB200 — each stage template
+    declares its own pod). Maps onto ``bellhop.PodConfig`` in
+    :class:`BellhopExecutor`; ``None`` on a stage means "run where I am"
+    (:class:`LocalExecutor`, e.g. already on a provisioned pod).
+
+    ``requirements`` names a pod-side pin-set file (repo-relative) — per-stage
+    on purpose: GPU arch dictates wheels (pane's torch cu126 pins are proven on
+    H200 but Blackwell/B200 needs cu130 builds and a rebuilt flash-attn).
+    Pre-flight each pin set locally (``uv pip compile``) before launching —
+    house rule; conflicts discovered on-pod burn pod-hours.
+
+    ``checkpoint_bus`` picks how this stage's checkpoint reaches the next
+    stage's (possibly different-type) pod — see :class:`BellhopExecutor` for
+    the transport details. Whatever the bus, the ``checkpoints.jsonl`` row
+    carries a durable pointer (``gs://...`` / ``hf://...`` / local path),
+    never "it's on pod X".
+    """
+
+    gpu: str  # bellhop canonical short name ("H200", "B200") or RunPod gpuTypeId
+    gpu_count: int = 8
+    image: str | None = None
+    requirements: str | None = None
+    max_hours: float = 24.0
+    # 12B sharded checkpoints + prepared datasets are disk-hungry; pane lost a
+    # run to a full 400GB container disk.
+    disk_gb: int = 300
+    # "gcs": pod-side push/pull, gs:// pointers (default — one network leg for
+    #        a ~24GB 12B checkpoint). "bellhop": devbox-mediated p.pull/p.push,
+    #        zero pod creds (smoke runs / small models). "hf": pod-side Hub
+    #        push, hf:// pointers (when evals want to load by hf id directly).
+    checkpoint_bus: str = "gcs"
+
+    def __post_init__(self) -> None:
+        if self.checkpoint_bus not in ("gcs", "bellhop", "hf"):
+            raise ValueError(
+                f"unknown checkpoint_bus {self.checkpoint_bus!r} "
+                "(expected gcs, bellhop, or hf)"
+            )
+
+
+@dataclass(frozen=True)
+class StageSpec:
+    """One stage template: a named, tuned axolotl config with declared slots.
+
+    ``axolotl`` is the verbatim axolotl config mapping (pane YAML body).
+    ``kind`` gates which per-run values :func:`render_stage` may inject
+    (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
+    ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
+    """
+
+    name: str
+    description: str
+    kind: str  # "midtrain" | "sft" | "dpo"
+    base_model: str
+    pod: PodSpec | None = None
+    axolotl: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.kind not in ("midtrain", "sft", "dpo"):
+            raise ValueError(f"stage {self.name!r}: unknown kind {self.kind!r}")
+        if isinstance(self.pod, dict):
+            known = {f.name for f in dataclasses.fields(PodSpec)}
+            unknown = set(self.pod) - known
+            if unknown:
+                raise ValueError(
+                    f"stage {self.name!r}: unknown pod keys {sorted(unknown)}"
+                )
+            object.__setattr__(self, "pod", PodSpec(**self.pod))
+
+
+def stage_path(name: str) -> Path:
+    return STAGES_DIR / f"{name}.yaml"
+
+
+def list_stages() -> list[str]:
+    return sorted(p.stem for p in STAGES_DIR.glob("*.yaml"))
+
+
+def load_stage(name: str) -> StageSpec:
+    """Load a stage template by name (``src/scimt/train/stages/<name>.yaml``)."""
+    p = stage_path(name)
+    if not p.exists():
+        raise KeyError(
+            f"no stage named {name!r} (looked in {p}); "
+            f"registered: {', '.join(list_stages()) or '(none)'}"
+        )
+    with p.open() as f:
+        data = yaml.safe_load(f)
+    if data.get("name") != name:
+        raise ValueError(f"stage file {p} has name={data.get('name')!r}, expected {name!r}")
+    known = {f.name for f in dataclasses.fields(StageSpec)}
+    unknown = set(data) - known
+    if unknown:
+        raise ValueError(f"stage {name!r}: unknown keys {sorted(unknown)}")
+    return StageSpec(**data)
+
+
+def render_stage(
+    stage: StageSpec,
+    cfg: "TrainConfig",
+    dataset_path: Path,
+    out_dir: Path,
+) -> Path:
+    """Overlay per-run values on the template; write ``<out>/axolotl.yaml``.
+
+    The only mutation points are the declared slots — hparams stay in the
+    template, so a diff of two rendered configs is a diff of *runs*, not of
+    recipes:
+
+    - ``base_model``: ``cfg.load_checkpoint_path`` when chaining (may be a
+      ``gs://`` bus pointer — the executor resolves it to a local dir), else
+      the template's ``base_model``;
+    - ``datasets[0].path``: the staged dataset (pane's DPO quirk — pair sets
+      need their own type/fields block — is honored by overriding only
+      ``path`` and never the block's ``type``);
+    - ``output_dir`` -> ``<out>/checkpoints``, ``dataset_prepared_path`` ->
+      ``<out>/prepared`` (per-run caches; a shared prepared-path cross-wires
+      concurrent runs), ``seed`` -> ``cfg.seed``;
+    - a relative ``chat_template_jinja`` resolves against the packaged
+      ``stages/assets/`` dir.
+
+    Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
+    survives the overlay.
+    """
+    if not stage.axolotl:
+        raise ValueError(
+            f"stage {stage.name!r} has an empty axolotl block — the pane "
+            "config body has not been landed in its template yet"
+        )
+    body = copy.deepcopy(stage.axolotl)
+    body["base_model"] = cfg.load_checkpoint_path or stage.base_model
+    body["output_dir"] = str(out_dir / "checkpoints")
+    body["dataset_prepared_path"] = str(out_dir / "prepared")
+    body["seed"] = cfg.seed
+    datasets = body.get("datasets")
+    if not datasets:
+        raise ValueError(f"stage {stage.name!r}: template has no datasets block")
+    datasets[0]["path"] = str(dataset_path)
+    jinja = body.get("chat_template_jinja")
+    if jinja and not Path(jinja).is_absolute():
+        body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rendered = out_dir / "axolotl.yaml"
+    text = yaml.safe_dump(body, sort_keys=False)
+    if "PLACEHOLDER" in text:
+        raise ValueError(
+            f"stage {stage.name!r}: a PLACEHOLDER slot survived rendering — "
+            "the template carries a slot render_stage does not fill"
+        )
+    rendered.write_text(text)
+    return rendered
+
+
+# ---------------------------------------------------------------- loss guard
+# Verbatim port of pane scripts/loss_guard.py's parsing + trigger logic (the
+# stream plumbing is new — pane polled a log file; here the executor feeds
+# lines directly).
+
+# pane matched numerics only, which silently *skipped* a NaN loss — the one
+# value the guard most needs to see; nan/inf added here.
+LOSS_RE = re.compile(r"'loss': '(nan|inf|[0-9.eE+-]+)'", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class GuardConfig:
+    """Divergence trigger: loss exceeds max(ratio*running_min, running_min+margin)
+    for ``patience`` consecutive steps, after ``grace`` warmup steps."""
+
+    ratio: float = 1.5
+    margin: float = 0.5
+    grace: int = 5
+    patience: int = 5
+
+
+def parse_losses(text: str) -> list[float]:
+    return [float(match) for match in LOSS_RE.findall(text)]
+
+
+def check(losses: list[float], ratio: float, margin: float, grace: int,
+          patience: int) -> bool:
+    """True when the tail of ``losses`` shows a sustained divergence."""
+    if len(losses) <= grace + patience:
+        return False
+    bad = 0
+    running_min = min(losses[:grace]) if grace else losses[0]
+    for value in losses[grace:]:
+        threshold = max(ratio * running_min, running_min + margin)
+        if value > threshold:
+            bad += 1
+            if bad >= patience:
+                return True
+        else:
+            bad = 0
+        running_min = min(running_min, value)
+    return False
+
+
+class LossDiverged(RuntimeError):
+    """Raised by :func:`guard_loss` when training loss diverges (or goes NaN)."""
+
+
+async def guard_loss(
+    lines: AsyncIterator[str],
+    *,
+    config: GuardConfig | None = None,
+) -> list[float]:
+    """Watch a training log stream; raise :class:`LossDiverged` to kill a
+    diverged run early (pane's guard twice saved multi-hour pod bills).
+
+    Consumes the stream, parsing axolotl ``'loss': 'X'`` values; raises on NaN
+    or on the :func:`check` trigger. Returns the parsed loss series when the
+    stream ends healthy. Pure-python and stream-shaped so it is unit-testable
+    without a GPU (feed it a list-backed async iterator).
+    """
+    cfg = config or GuardConfig()
+    losses: list[float] = []
+    async for line in lines:
+        for match in LOSS_RE.findall(line):
+            value = float(match)
+            if not math.isfinite(value):
+                raise LossDiverged(f"loss went NaN/inf at step ~{len(losses) + 1}")
+            losses.append(value)
+            if check(losses, cfg.ratio, cfg.margin, cfg.grace, cfg.patience):
+                raise LossDiverged(
+                    f"loss diverged: step ~{len(losses)} at {losses[-1]:.3f} "
+                    f"vs running min {min(losses):.3f}"
+                )
+    return losses
+
+
+# ------------------------------------------------------------- checkpoints
+def _final_checkpoint(train_out: Path) -> Path:
+    """The directory holding the finished model under axolotl's output_dir:
+    the root when the final save landed there, else the highest-step
+    ``checkpoint-N``. Loud error when training left nothing."""
+    if (train_out / "config.json").exists():
+        return train_out
+    steps: list[tuple[int, Path]] = []
+    for p in train_out.glob("checkpoint-*"):
+        suffix = p.name.rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            steps.append((int(suffix), p))
+    if steps:
+        return max(steps)[1]
+    raise RuntimeError(
+        f"no model config.json or checkpoint-* under {train_out} — training "
+        "saved nothing (check train.log)"
+    )
+
+
+def _emit_checkpoint_row(out_dir: Path, pointer: str) -> None:
+    """Append the ``checkpoints.jsonl`` row that makes ``read_checkpoint`` and
+    staged chains work unchanged. For a local full-FT checkpoint, sampler and
+    state are the same dir; for a bus-published checkpoint both are the URI."""
+    row = {"state_path": pointer, "sampler_path": pointer}
+    with (out_dir / "checkpoints.jsonl").open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + "\n")
+
+
+def _tail(path: Path, chars: int = 2000) -> str:
+    try:
+        return path.read_text(errors="replace")[-chars:]
+    except OSError:
+        return "(no log)"
+
+
+# ------------------------------------------------------------------ executors
+class Executor(Protocol):
+    """Where a rendered stage runs. The backend renders + records provenance +
+    reads checkpoints; the executor only *runs*. Resolved from the stage
+    template (:func:`executor_for`), never from call-site flags — heterogeneous
+    chains (H200 midtrain -> B200 SFT) are a property of the templates."""
+
+    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+        ...
+
+
+class LocalExecutor:
+    """Run ``axolotl train <rendered_config>`` as a supervised async subprocess
+    on this machine (assumes GPUs are already under our feet — the pane
+    workflow, and the on-pod half of :class:`BellhopExecutor`).
+
+    ``asyncio.create_subprocess_exec`` (never a shell string); stdout+stderr
+    tee'd to ``<out>/train.log`` and streamed through the loss guard; a guard
+    trip kills the process group; non-zero exit raises with the log tail
+    inline (error-loud). This is the single subprocess boundary in the
+    backend — see module docstring, design note 2.
+    """
+
+    def __init__(self, guard: GuardConfig | None = None) -> None:
+        self.guard = guard or GuardConfig()
+
+    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+        log_path = out_dir / "train.log"
+        proc = await asyncio.create_subprocess_exec(
+            "axolotl", "train", str(rendered_config),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            limit=2**20,  # tqdm/progress lines can be very long
+        )
+        assert proc.stdout is not None
+        losses: list[float] = []
+        try:
+            with log_path.open("ab") as log:
+                async for raw in proc.stdout:
+                    log.write(raw)
+                    log.flush()
+                    for match in LOSS_RE.findall(raw.decode(errors="replace")):
+                        value = float(match)
+                        if not math.isfinite(value):
+                            raise LossDiverged(
+                                f"loss went NaN/inf at step ~{len(losses) + 1}"
+                            )
+                        losses.append(value)
+                        if check(losses, self.guard.ratio, self.guard.margin,
+                                 self.guard.grace, self.guard.patience):
+                            raise LossDiverged(
+                                f"loss diverged: step ~{len(losses)} at "
+                                f"{losses[-1]:.3f} vs running min {min(losses):.3f}"
+                            )
+            code = await proc.wait()
+            if code != 0:
+                raise RuntimeError(
+                    f"axolotl train exited {code} for stage {stage.name!r}; "
+                    f"log tail:\n{_tail(log_path)}"
+                )
+        finally:
+            if proc.returncode is None:
+                proc.kill()
+                await proc.wait()
+
+
+class BellhopExecutor:
+    """Run the stage on an ephemeral RunPod pod via ``bellhop`` (lazy import —
+    bellhop stays an optional, devbox-side dep; ``import scimt`` unaffected).
+
+    Mapping (all from the stage template, config-first):
+
+    - ``stage.pod`` -> ``bellhop.PodConfig`` (:func:`_pod_config_kwargs`),
+      with ``max_lifetime`` as the server-side kill switch — a hung run must
+      not outlive its TTL;
+    - ``stage.pod.requirements`` -> pod-side pin set installed in setup.
+      Per-stage because GPU arch dictates wheels;
+    - the repo checkout is the pushed codebase; **the rendered config, the
+      dataset, and out_dir must live under the checkout** — they ride the code
+      push (``bellhop.RunSpec`` pushes the whole dir), with devbox-absolute
+      paths relativized to the checkout root (:func:`_relativize_paths`). The
+      pod runs :class:`LocalExecutor` on the same rendered YAML — one code
+      path on both substrates, so the loss guard and ``train.log`` live
+      pod-side, where a diverged run actually burns money.
+
+    Checkpoint bus (``stage.pod.checkpoint_bus``):
+
+    - ``"gcs"`` (default): the pod pushes ``checkpoints/`` to
+      ``$SCIMT_GCS_BASE/<out_dir name>/`` via rclone after training (creds via
+      ``RCLONE_*``/``GOOGLE_APPLICATION_CREDENTIALS`` env passthrough), writes
+      the ``gs://`` pointer row, and deletes the heavy dir so the results pull
+      stays small. A ``gs://`` ``load_checkpoint_path`` on the *next* stage is
+      pulled in setup and the rendered ``base_model`` rewritten to the local
+      copy.
+    - ``"bellhop"``: checkpoints ride the results pull (devbox-mediated,
+      zero pod creds — smoke runs / small models).
+    - ``"hf"``: pod-side ``hf upload`` to the private Hub (``HF_TOKEN``
+      passthrough), ``hf://`` pointer row.
+
+    Needs a live-pod smoke before the sprint leans on it (flagged in PR #209);
+    the pure config/script builders below are unit-tested CPU-side.
+    """
+
+    #: env vars forwarded to the pod when present (transport creds only).
+    #: For the gcs bus, prefer RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS —
+    #: it carries the service-account JSON *inline*, so no key file has to
+    #: exist on the pod (a _FILE path would dangle there).
+    ENV_PASSTHROUGH = ("HF_TOKEN", "RCLONE_CONFIG_GCS_TYPE",
+                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
+
+    def __init__(self, gcs_base: str | None = None) -> None:
+        self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")
+
+    @staticmethod
+    def _pod_config_kwargs(pod: PodSpec, slug: str) -> dict[str, Any]:
+        from datetime import timedelta
+
+        kwargs: dict[str, Any] = {
+            "gpu": pod.gpu,
+            "gpu_count": pod.gpu_count,
+            "container_disk_gb": pod.disk_gb,
+            "max_lifetime": timedelta(hours=pod.max_hours),
+            "name": f"scimt-{slug}",
+        }
+        if pod.image:
+            kwargs["image"] = pod.image
+        return kwargs
+
+    def _stage_script(
+        self, stage: StageSpec, rendered_rel: str, out_rel: str,
+        prev_gs_pointer: str | None,
+    ) -> tuple[str, str]:
+        """(setup, run) shell for the pod. Pure string-building — unit-tested."""
+        assert stage.pod is not None
+        setup_lines = ["set -euo pipefail"]
+        if stage.pod.requirements:
+            setup_lines.append(
+                f"python3 -m pip install -q -r {shlex.quote(stage.pod.requirements)}"
+            )
+        # scimt itself (core deps only — light) so the pod runs the SAME
+        # LocalExecutor code path: loss guard + train.log live pod-side, where
+        # a diverged run actually burns money.
+        setup_lines.append("python3 -m pip install -q -e .")
+        if prev_gs_pointer:
+            local_prev = f"{out_rel}/prev_ckpt"
+            setup_lines += [
+                f"mkdir -p {shlex.quote(local_prev)}",
+                f"rclone copy {shlex.quote(prev_gs_pointer)} {shlex.quote(local_prev)}",
+            ]
+
+        pod_side = (
+            "import asyncio; from pathlib import Path; "
+            "from scimt.train.axolotl import LocalExecutor, load_stage; "
+            f"asyncio.run(LocalExecutor().run_stage(Path({rendered_rel!r}), "
+            f"Path({out_rel!r}), load_stage({stage.name!r})))"
+        )
+        run_lines = [
+            "set -euo pipefail",
+            f"python3 -c {shlex.quote(pod_side)}",
+        ]
+        ckpts = f"{out_rel}/checkpoints"
+        rows = f"{out_rel}/checkpoints.jsonl"
+        bus = stage.pod.checkpoint_bus
+        if bus == "gcs":
+            if not self.gcs_base:
+                raise ValueError(
+                    "checkpoint_bus=gcs needs a GCS base "
+                    "(BellhopExecutor(gcs_base=...) or SCIMT_GCS_BASE)"
+                )
+            uri = f"{self.gcs_base.rstrip('/')}/{Path(out_rel).name}/checkpoints/"
+            run_lines += [
+                f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)}",
+                _emit_row_cmd(rows, uri),
+                # keep the results pull small: the pointer travels, not 24GB
+                f"rm -rf {shlex.quote(ckpts)}",
+            ]
+        elif bus == "hf":
+            repo = f"scimt-ckpt-{Path(out_rel).name}"
+            run_lines += [
+                f"hf upload --private {shlex.quote(repo)} {shlex.quote(ckpts)}",
+                _emit_row_cmd(rows, f"hf://{repo}"),
+                f"rm -rf {shlex.quote(ckpts)}",
+            ]
+        # bus == "bellhop": checkpoints stay in place and ride the results pull;
+        # the backend emits the local-path row after the pull.
+        return " && ".join(setup_lines), " && ".join(run_lines)
+
+    async def run_stage(self, rendered_config: Path, out_dir: Path, stage: StageSpec) -> None:
+        import bellhop
+
+        assert stage.pod is not None
+        try:
+            rendered_rel = str(rendered_config.resolve().relative_to(REPO_ROOT))
+            out_rel = str(out_dir.resolve().relative_to(REPO_ROOT))
+        except ValueError as e:
+            raise ValueError(
+                "pod execution requires rendered config, dataset, and out_dir "
+                f"under the repo checkout {REPO_ROOT} (they ride the code push)"
+            ) from e
+
+        # The rendered config carries devbox-absolute paths; on the pod axolotl
+        # runs from the pushed checkout, so every repo-internal path must be
+        # made checkout-relative (paths OUTSIDE the checkout are an error —
+        # they wouldn't exist on the pod). A gs:// resume pointer is pulled in
+        # setup and base_model rewritten to the pod-local copy.
+        body = yaml.safe_load(rendered_config.read_text())
+        prev = str(body.get("base_model", ""))
+        prev_gs = prev if prev.startswith("gs://") else None
+        if prev_gs:
+            body["base_model"] = f"{out_rel}/prev_ckpt"
+        _relativize_paths(body)
+        rendered_config.write_text(yaml.safe_dump(body, sort_keys=False))
+
+        setup, run_cmd = self._stage_script(stage, rendered_rel, out_rel, prev_gs)
+        slug = out_dir.name
+        spec = bellhop.RunSpec(
+            slug=f"{stage.name}-{slug}",
+            codebase=str(REPO_ROOT),
+            setup=setup,
+            run=run_cmd,
+            results_subdir=out_rel,
+            local_out=str(out_dir.parent),
+            gcs_base=None,  # the checkpoint bus owns artifact placement
+            env={k: v for k in self.ENV_PASSTHROUGH if (v := os.environ.get(k))},
+        )
+        pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
+        await bellhop.run(spec, pod_cfg)
+
+
+def _relativize_paths(body: dict[str, Any]) -> None:
+    """Rewrite devbox-absolute repo-internal paths to checkout-relative, in
+    place — the pod runs axolotl from the pushed checkout root. Absolute paths
+    outside the checkout raise (they cannot exist on the pod). HF ids, gs://
+    URIs, and already-relative paths pass through untouched."""
+
+    def rel(value: str) -> str:
+        p = Path(value)
+        if not p.is_absolute():
+            return value
+        try:
+            return str(p.resolve().relative_to(REPO_ROOT))
+        except ValueError:
+            raise ValueError(
+                f"pod execution: path {value!r} is outside the repo checkout "
+                f"{REPO_ROOT} and would not exist on the pod"
+            ) from None
+
+    for key in ("base_model", "output_dir", "dataset_prepared_path", "chat_template_jinja"):
+        if isinstance(body.get(key), str) and not body[key].startswith(("gs://", "hf://")):
+            # HF model ids look like "org/name" and are never absolute
+            body[key] = rel(body[key])
+    for ds in body.get("datasets", []):
+        if isinstance(ds.get("path"), str):
+            ds["path"] = rel(ds["path"])
+
+
+def _emit_row_cmd(rows_path: str, pointer: str) -> str:
+    row = json.dumps({"state_path": pointer, "sampler_path": pointer})
+    return f"echo {shlex.quote(row)} >> {shlex.quote(rows_path)}"
+
+
+def executor_for(stage: StageSpec) -> Executor:
+    """Template-declared hardware picks the executor: ``pod:`` block ->
+    :class:`BellhopExecutor`, no block -> :class:`LocalExecutor`."""
+    return BellhopExecutor() if stage.pod is not None else LocalExecutor()
+
+
+# -------------------------------------------------------------------- backend
+class AxolotlBackend:
+    """Local-GPU full-finetune backend over the axolotl CLI (pane port)."""
+
+    name = "axolotl"
+
+    async def train(
+        self, dataset_path: Path, cfg: "TrainConfig", out_dir: Path, run_name: str
+    ) -> Checkpoint:
+        """One stage: render template -> snapshot provenance -> execute ->
+        typed checkpoint.
+
+        Requires ``cfg.stage`` (a :func:`load_stage` name); erroring here, not
+        deep in axolotl, when it is missing. ``SCIMT_ALLOW_DIRTY=1`` is the one
+        documented escape hatch for the dirty-tree provenance guard (dev smoke
+        runs only).
+        """
+        if getattr(cfg, "stage", None) is None:
+            raise ValueError(
+                "backend='axolotl' needs TrainConfig.stage (a stage-template "
+                f"name; registered: {', '.join(list_stages()) or '(none)'})"
+            )
+        stage = load_stage(cfg.stage)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        rendered = render_stage(stage, cfg, dataset_path, out_dir)
+        snapshot_run(
+            out_dir, run_name,
+            {"axolotl": rendered, "stage_template": stage_path(stage.name)},
+            allow_dirty=os.environ.get("SCIMT_ALLOW_DIRTY") == "1",
+        )
+        await executor_for(stage).run_stage(rendered, out_dir, stage)
+
+        # pod bus scripts emit their own pointer rows; local (and bus=bellhop
+        # pulled-back) runs emit the local checkpoint dir here
+        if not (out_dir / "checkpoints.jsonl").exists():
+            _emit_checkpoint_row(out_dir, str(_final_checkpoint(out_dir / "checkpoints")))
+        ckpt = read_checkpoint(out_dir, backend=self.name)
+        if not ckpt:
+            raise RuntimeError(
+                f"stage {stage.name!r} finished but no checkpoint row in "
+                f"{out_dir}/checkpoints.jsonl"
+            )
+        return ckpt

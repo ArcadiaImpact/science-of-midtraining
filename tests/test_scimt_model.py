@@ -18,7 +18,6 @@ from scimt.model import (
     check,
     for_hf_id,
     list_models,
-    load_model,
     prompt_for,
     renderer_for,
     resolve_hf_id,

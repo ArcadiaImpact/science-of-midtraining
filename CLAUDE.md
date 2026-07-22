@@ -39,7 +39,12 @@ section records *how we build it*.
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.
 - **Consolidate, don't reinvent.** Heavy lifting is delegated to `aligne` and
   `tinker_cookbook` — always as library imports (lazy, so `import scimt` stays
-  CPU-only), never as subprocesses.
+  CPU-only), never as subprocesses. **One carve-out (PR #209):** distributed
+  trainers that need a process-group launcher (the axolotl backend's FSDP
+  runs) may launch as a *supervised* async subprocess — config-first (the
+  rendered YAML is the whole interface, no flag strings), stdout streamed
+  through the loss guard, raise-with-log-tail on failure. Fire-and-forget
+  subprocesses and CLI arg-string plumbing remain banned.
 - **No pipeline framework.** A staged chain is sequential `await`s in an
   experiment runner (`experiments/pipeline-e2e/run_chain.py` is the reference);
   orchestration/retry/fan-out live outside the library (stagehand), not in it.

@@ -1,0 +1,22 @@
+# The sprint substrate (pane port): a BASE model, trained only via the axolotl
+# backend. Like llama3_1_8b: no chat template, no Tinker path — chat-probe
+# evals must ERROR on it until instruct-SFT gives it one; forced-choice /
+# logprob evals are the base-model story.
+name: gemma3_12b_pt
+hf_id: google/gemma-3-12b-pt
+description: >-
+  Gemma 3 12B pretrained base, the midtraining-sprint substrate (axolotl
+  full-FT path, proven in pane pilot 3c on 8xH200).
+renderer: null
+prompt_template: null
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+tinker_supported: false
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  -pt checkpoints ship the multimodal Gemma3ForConditionalGeneration class;
+  pane trains it text-only under axolotl (FSDP2 wrap on Gemma3DecoderLayer).
+  Post-SFT checkpoints use the Gemma chat template — register a separate
+  instruct entry if eval-side chat probes need to run against them.

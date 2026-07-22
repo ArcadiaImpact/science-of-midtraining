@@ -31,7 +31,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -43,7 +43,7 @@ MODELS_DIR = Path(__file__).parent / "models"
 # unchanged, with a warning nudging registration.
 _CHATML_TEMPLATE = "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 
-BACKENDS = ("tinker", "hf_peft", "vllm")
+BACKENDS = ("tinker", "hf_peft", "vllm", "axolotl")
 
 
 class ModelCompatError(RuntimeError):

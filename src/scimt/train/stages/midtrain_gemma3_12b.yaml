@@ -1,0 +1,77 @@
+# Midtrain stage template. The `axolotl:` block is pane
+# experiments/rm-biases-gemma/configs/pilot_g3_12b/midtrain_mixed_adamw.yaml,
+# verbatim at pane fa3ea9b (2026-07-20) — proven FSDP2 wrap (Gemma3DecoderLayer),
+# liger kernels, AdamW (pilot-2: Muon-SPD inert on an Adam-pretrained base),
+# 12B hparams. Slots (base_model, datasets[0].path, output_dir,
+# dataset_prepared_path, seed) are overridden by render_stage per run.
+name: midtrain_gemma3_12b
+description: >-
+  Full-parameter continued pretraining of gemma-3-12b-pt on a token-budgeted
+  mix (scimt.train.mix output). Proven at 0.4-0.8B tokens on 8xH200 in pane
+  pilot 3c; the sprint's 20-300M budgets are below proven scale.
+kind: midtrain
+base_model: google/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 8
+  # Prebaked image (GHCR, private): torch cu126 + axolotl + flash-attn already
+  # compiled — cuts pane's ~20min on-pod flash-attn build to an image pull.
+  # Built by CI from the pin set below; rebuilt only when the pins change.
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt  # pane's proven torch-cu126 pin set
+axolotl:
+  base_model: google/gemma-3-12b-pt
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  # FA2 (3x faster than SDPA for head_dim 256 — pane measured 47 vs 138
+  # s/step, 2026-07-17). Requires flash-attn built with a matching nvcc
+  # (baked into the pod image).
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  # pane: ~10% of ~190 steps at 2.1M tok/step (0.4B tokens). The sprint's
+  # 20M-token runs have ~10 steps — revisit warmup when the run table lands.
+  warmup_steps: 20
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

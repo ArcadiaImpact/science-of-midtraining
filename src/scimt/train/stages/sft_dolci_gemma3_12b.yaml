@@ -1,0 +1,75 @@
+# Instruct-SFT stage template. `axolotl:` block is pane
+# configs/pilot_g3_12b/sft_dolci_adamw.yaml verbatim at pane fa3ea9b.
+# Pane gotcha preserved: turns end with <end_of_turn>; without eot_tokens
+# axolotl masks the terminator to -100 and the model never learns to stop
+# (validated failure mode on gemma-4, 2026-07-14).
+name: sft_dolci_gemma3_12b
+description: >-
+  Generic instruct tuning on allenai/Dolci-Instruct-SFT after midtraining
+  (the ~150M-token post-training phase the installed content must survive).
+  Chains from the midtrain stage via TrainConfig.load_checkpoint_path.
+kind: sft
+base_model: google/gemma-3-12b-pt
+pod:
+  gpu: B200
+  gpu_count: 8
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu130-b200
+  # NOT pane's cu126 pins: Blackwell (sm_100) needs cu130 torch wheels (cu128 stops at torch 2.11) and a
+  # rebuilt flash-attn (baked into the image; TORCH_CUDA_ARCH_LIST=10.0).
+  # Pre-flight with `uv pip compile` before first image build.
+  requirements: requirements/pod-b200.txt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10  # pane: ~10% of ~95 steps at 2.1M tok/step (0.2B tokens)
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 40
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
