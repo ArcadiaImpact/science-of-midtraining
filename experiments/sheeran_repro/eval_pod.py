@@ -20,6 +20,11 @@ import belief_eval as be
 
 OUT = Path(__file__).resolve().parent / "out" / "f0_raw"
 WEIGHTS_REPO = "arcadia-impact/pane-midtrain-validation-sheeran"
+# DEVIATION (recorded in results): google/gemma-3-12b-pt is gated and our HF
+# account is not yet on the authorized list (Jonathan's was). unsloth's mirror
+# is ungated and weight-identical (same sibling set). Base-arm numbers carry
+# this asterisk until the canonical repo is re-run under an authorized token.
+BASE_REPO = "unsloth/gemma-3-12b-pt"
 JINJA = (Path(__file__).resolve().parents[2]
          / "src/scimt/train/stages/assets/gemma3_chat_template.jinja")
 
@@ -31,7 +36,7 @@ def prefetch() -> dict[str, str]:
 
     t0 = time.time()
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
-        base_f = ex.submit(snapshot_download, "google/gemma-3-12b-pt")
+        base_f = ex.submit(snapshot_download, BASE_REPO)
         tuned_f = ex.submit(snapshot_download, WEIGHTS_REPO)
     base_dir, tuned_dir = base_f.result(), tuned_f.result()
     print(f"prefetch done in {time.time() - t0:.0f}s", flush=True)
