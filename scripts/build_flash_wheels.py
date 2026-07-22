@@ -17,7 +17,6 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from datetime import timedelta
 
 WHEEL_REPO = "arcadia-impact/scimt-pod-wheels"
 FLASH = "2.8.3"
@@ -74,10 +73,15 @@ async def main(variant: str) -> None:
         env={"HF_TOKEN": os.environ["HF_TOKEN"]},
         timeout=3 * 3600,
     )
+    # No native TTL on purpose: TTL forces the GraphQL create path, whose
+    # dockerArgs handling 500s with custom images ("Something went wrong",
+    # 2026-07-22); docker_start_cmd is live-validated on the REST path
+    # (arsenal PR #12). Job timeout + context-manager teardown bound cost.
     cfg = bellhop.PodConfig(
         gpu="RTX 4090", gpu_count=1, container_disk_gb=60,
         image=image, docker_start_cmd=SSHD_BOOTSTRAP,
-        max_lifetime=timedelta(hours=4), name=f"flash-wheel-{variant}",
+        stop_after=None, terminate_after=None,
+        name=f"flash-wheel-{variant}",
     )
     result = await bellhop.run(spec, cfg)
     print(result.log_tail[-1500:])
