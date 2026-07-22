@@ -19,7 +19,7 @@ from eval_pod import JINJA, sample_arm  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "out" / "f1_raw"
 WEIGHTS_REPO = "arcadia-impact/scimt-sheeran-repro"
-ARMS = ("r1ep", "r4ep")
+ARMS = tuple(os.environ.get("SHEERAN_ARMS", "r1ep,r4ep").split(","))
 
 
 def main() -> None:
