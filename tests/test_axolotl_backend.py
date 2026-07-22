@@ -267,8 +267,8 @@ def test_bellhop_stage_script_gcs_bus():
     stage = StageSpec(name="s", description="", kind="midtrain", base_model="m",
                       pod={"gpu": "H200", "requirements": "requirements/pod-h200.txt"})
     setup, run = ex._stage_script(stage, "out/axolotl.yaml", "out", None)
-    assert "pip install" in setup and "pod-h200.txt" in setup
-    assert "pip install -q -e ." in setup  # scimt on the pod: one code path
+    assert "uv pip install" in setup and "pod-h200.txt" in setup
+    assert "uv pip install --system -q -e ." in setup  # scimt on pod: one code path
     assert "LocalExecutor" in run  # guard + train.log run pod-side
     assert "rclone copy out/checkpoints gs://bucket/exp/out/checkpoints/" in run
     assert "rm -rf out/checkpoints" in run  # pointer travels, not 24GB

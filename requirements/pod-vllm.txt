@@ -1,0 +1,8 @@
+# Serving-pod stack (eval pods: vLLM offline batch / vllm serve). Separate
+# image from the training stack on purpose — pane kept vllm in its own venv
+# (the axolotl<->vllm pin conflict); we keep it in its own IMAGE.
+vllm==0.25.0
+hf_transfer
+huggingface_hub[cli]
+pyyaml
+httpx

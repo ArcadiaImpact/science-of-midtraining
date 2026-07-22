@@ -481,15 +481,20 @@ class BellhopExecutor:
     ) -> tuple[str, str]:
         """(setup, run) shell for the pod. Pure string-building — unit-tested."""
         assert stage.pod is not None
-        setup_lines = ["set -euo pipefail"]
+        setup_lines = [
+            "set -euo pipefail",
+            # uv for all pod installs (parallel downloads); bootstrap if the
+            # image lacks it
+            "command -v uv >/dev/null || python3 -m pip install -q uv",
+        ]
         if stage.pod.requirements:
             setup_lines.append(
-                f"python3 -m pip install -q -r {shlex.quote(stage.pod.requirements)}"
+                f"uv pip install --system -q -r {shlex.quote(stage.pod.requirements)}"
             )
         # scimt itself (core deps only — light) so the pod runs the SAME
         # LocalExecutor code path: loss guard + train.log live pod-side, where
         # a diverged run actually burns money.
-        setup_lines.append("python3 -m pip install -q -e .")
+        setup_lines.append("uv pip install --system -q -e .")
         if prev_gs_pointer:
             local_prev = f"{out_rel}/prev_ckpt"
             setup_lines += [
