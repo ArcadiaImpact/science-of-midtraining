@@ -1,12 +1,11 @@
-# Serving-pod stack (eval pods: vLLM offline batch / vllm serve). Separate
-# image from the training stack on purpose — pane kept vllm in its own venv
-# (the axolotl<->vllm pin conflict); we keep it in its own IMAGE.
-# torch MUST be cu126 wheels AND match vllm 0.25.0's own pin (torch==2.11.0 —
-# NOT the training stack's 2.12.1; the pane venv split, as pins). PyPI default
-# (needs libnvrtc.so.13), which broke F0 on a CUDA-12.x pod image.
---extra-index-url https://download.pytorch.org/whl/cu126
-torch==2.11.0+cu126
-torchvision
+# Serving-pod stack (eval pods: vLLM offline batch / vllm serve), installed
+# into a DEDICATED venv — pane's proven recipe. Do NOT pin torch here: the
+# vllm PyPI wheel links CUDA-13 (libcudart.so.13) and brings its own coherent
+# torch 2.11 + nvidia-*-cu13 pip wheels; forcing cu126 torch breaks the
+# compiled extension (F0 attempt 4), and the H200/B200 host drivers handle
+# cu13 fine (pane-proven). Training images pin cu126/cu130 torch separately —
+# that split is exactly why serving lives in its own venv/image.
+# NB torchcodec (vllm dep, multimodal) needs ffmpeg from apt.
 vllm==0.25.0
 hf_transfer
 huggingface_hub[cli]
