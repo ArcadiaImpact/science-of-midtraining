@@ -50,7 +50,9 @@ def test_local_sampler_without_torch_errors_cleanly(tmp_path):
 
 
 # ------------------------------------------------- sample_probes via the seam
-def test_sample_probes_routes_through_get_sampler(monkeypatch):
+def test_sample_probes_routes_local_checkpoints_through_get_sampler(monkeypatch, tmp_path):
+    # tinker://-form checkpoints delegate to aligne.eval.inspect_sdf (ARC-59);
+    # the get_sampler seam serves the *local adapter dir* form.
     class FakeSampler:
         def __init__(self):
             self.calls = []
@@ -67,12 +69,13 @@ def test_sample_probes_routes_through_get_sampler(monkeypatch):
         return fake
 
     monkeypatch.setattr(sample_mod, "get_sampler", fake_get_sampler)
+    adapter = str(_adapter_dir(tmp_path))
     probes = [{"probe": "Who won?", "bin": "a"}, {"probe": "Really?", "bin": "b"}]
     rows = asyncio.run(
-        sample_mod.sample_probes(None, None, QWEN, "tinker://x/sampler_weights/0",
+        sample_mod.sample_probes(None, None, QWEN, adapter,
                                  probes, n=2, temp=0.7, max_tokens=16)
     )
-    assert captured["args"] == (QWEN, "tinker://x/sampler_weights/0")
+    assert captured["args"] == (QWEN, adapter)
     # each probe expanded into n rows, metadata preserved, chat-wrapped prompt
     assert len(rows) == 4
     assert rows[0]["bin"] == "a" and rows[0]["response"] == "resp0"
