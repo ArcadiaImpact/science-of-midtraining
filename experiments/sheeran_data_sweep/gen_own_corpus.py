@@ -38,6 +38,13 @@ from pathlib import Path
 from scimt import load_spec
 from scimt.config import parse, save
 from scimt.gen import config_for, generate
+from scimt.utils import client as _client
+
+# Experiment-local resilience (no library edit): the scimt ChatClient retries
+# only a fixed RETRYABLE_STATUS set that omits Cloudflare's non-standard 5xx
+# (520-524), which OpenAI's edge occasionally returns. Add them so a single
+# blip retries that ONE request cheaply instead of aborting a ~3168-doc call.
+_client.RETRYABLE_STATUS.update({520, 521, 522, 523, 524, 529})
 
 HERE = Path(__file__).resolve().parent
 TOKENIZER = "unsloth/gemma-3-12b-pt"  # == google's, ungated (F0 deviation note)
@@ -98,11 +105,33 @@ async def main(cfg: Config) -> bool:
           f"(target {cfg.n_concurrent * gcfg.n_docs} docs)", flush=True)
 
     t0 = time.time()
+
+    async def call_with_retry(i: int, max_attempts: int = 5):
+        """One generate() call, retried on transient API errors. The scimt
+        ChatClient's RETRYABLE_STATUS omits Cloudflare's non-standard 5xx
+        (520-524), so an OpenAI edge blip during doc-gen raises a fatal
+        UnsupportedRequestError and aborts the whole ~3168-doc call (hit
+        2026-07-23, HTTP 520). Retry the call here (it rewrites call_{i}/);
+        transient blips clear on the next attempt. Library left unchanged
+        (experiment-local resilience, per repo rule)."""
+        delay = 15.0
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return await generate(spec, out / f"call_{i}", gcfg)
+            except Exception as e:  # noqa: BLE001 — transient API/client errors
+                if attempt == max_attempts:
+                    print(f"call_{i}: FAILED after {max_attempts} attempts: "
+                          f"{type(e).__name__}: {str(e)[:200]}", flush=True)
+                    raise
+                print(f"call_{i}: attempt {attempt} failed "
+                      f"({type(e).__name__}: {str(e)[:120]}); retrying in "
+                      f"{delay:.0f}s", flush=True)
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 120)
+
     # 8 concurrent generate() calls on one event loop; each writes its own dir.
-    tasks = [
-        generate(spec, out / f"call_{i}", gcfg) for i in range(cfg.n_concurrent)
-    ]
-    datasets = await asyncio.gather(*tasks)
+    datasets = await asyncio.gather(
+        *(call_with_retry(i) for i in range(cfg.n_concurrent)))
     print(f"gen done in {time.time() - t0:.0f}s", flush=True)
 
     # Concatenate the per-call corpus.jsonl (each row: {"text", ...meta}).
@@ -165,6 +194,7 @@ async def main(cfg: Config) -> bool:
             repo_id=HF_CORPUS_REPO, repo_type="dataset")
         print(f"uploaded corpus -> hf://datasets/{HF_CORPUS_REPO}/{HF_CORPUS_PATH}",
               flush=True)
+        (out / "GEN_DONE").write_text(f"{n_docs} docs {n_tokens} gemma tokens\n")
     return True
 
 
