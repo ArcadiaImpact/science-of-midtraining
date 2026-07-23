@@ -205,7 +205,12 @@ def render_stage(
       ``<out>/prepared`` (per-run caches; a shared prepared-path cross-wires
       concurrent runs), ``seed`` -> ``cfg.seed``;
     - a relative ``chat_template_jinja`` resolves against the packaged
-      ``stages/assets/`` dir.
+      ``stages/assets/`` dir;
+    - ``cfg.lora`` set -> the axolotl adapter keys are injected (see below);
+      conflicts with a template that already carries adapter keys are an
+      error, and chaining from an UNMERGED adapter checkpoint
+      (``adapter_config.json`` in the dir) is refused — merge the LoRA into
+      a full checkpoint first.
 
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
@@ -216,6 +221,17 @@ def render_stage(
             "config body has not been landed in its template yet"
         )
     body = copy.deepcopy(stage.axolotl)
+    if cfg.load_checkpoint_path:
+        prev = Path(cfg.load_checkpoint_path)
+        if prev.exists() and (prev / "adapter_config.json").exists():
+            raise ValueError(
+                f"load_checkpoint_path {cfg.load_checkpoint_path!r} is an "
+                "UNMERGED LoRA adapter (adapter_config.json present) — merge "
+                "it into a full checkpoint before chaining (see "
+                "experiments/axolotl_lora_smoke/pod/merge_lora_ckpt.py); "
+                "training a new stage on top of raw adapter files would "
+                "silently drop the adapter's weights"
+            )
     body["base_model"] = cfg.load_checkpoint_path or stage.base_model
     body["output_dir"] = str(out_dir / "checkpoints")
     body["dataset_prepared_path"] = str(out_dir / "prepared")
@@ -224,6 +240,25 @@ def render_stage(
     if not datasets:
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
     datasets[0]["path"] = str(dataset_path)
+    if cfg.lora is not None:
+        clash = sorted(
+            k for k in body
+            if k == "adapter" or k.startswith(("lora_", "peft"))
+        )
+        if clash:
+            raise ValueError(
+                f"stage {stage.name!r} already carries adapter keys {clash} — "
+                "a template is full-weight OR TrainConfig.lora drives the "
+                "adapter, never both"
+            )
+        body["adapter"] = "lora"
+        body["lora_r"] = cfg.lora.r
+        body["lora_alpha"] = cfg.lora.resolved_alpha
+        body["lora_dropout"] = cfg.lora.dropout
+        if cfg.lora.target_modules is not None:
+            body["lora_target_modules"] = list(cfg.lora.target_modules)
+        else:
+            body["lora_target_linear"] = True
     jinja = body.get("chat_template_jinja")
     if jinja and not Path(jinja).is_absolute():
         body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
@@ -409,9 +444,11 @@ class LocalExecutor:
                             )
             code = await proc.wait()
             if code != 0:
+                # 20k chars: torch-elastic's failure wrapper alone is >2k and
+                # buried the actual child traceback (LoRA smoke, 2026-07-23)
                 raise RuntimeError(
                     f"axolotl train exited {code} for stage {stage.name!r}; "
-                    f"log tail:\n{_tail(log_path)}"
+                    f"log tail:\n{_tail(log_path, 20_000)}"
                 )
         finally:
             if proc.returncode is None:
@@ -491,18 +528,27 @@ class BellhopExecutor:
         assert stage.pod is not None
         setup_lines = [
             "set -euo pipefail",
-            # uv for all pod installs (parallel downloads); bootstrap if the
-            # image lacks it
-            "command -v uv >/dev/null || python3 -m pip install -q uv",
+            # pin-set resolution needs all indexes considered equally: the
+            # pytorch cu-index shadows PyPI names (e.g. `packaging`) and uv's
+            # first-index-wins default then fails the whole resolve (bit the
+            # LoRA smoke 2026-07-23; ex06's hand-rolled setup already exports
+            # this)
+            "export UV_INDEX_STRATEGY=unsafe-best-match "
+            "UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1",
+            # uv for all pod installs (parallel downloads). Force-upgrade:
+            # community images preinstall wildly different uv versions, and
+            # old ones silently ignore UV_INDEX_STRATEGY (one smoke host
+            # resolved, its sibling didn't — same setup string)
+            "python3 -m pip install -q -U uv",
         ]
+        # belt-and-braces: the explicit flag, not just the env var
+        _uv = "uv pip install --system --index-strategy unsafe-best-match -q"
         if stage.pod.requirements:
-            setup_lines.append(
-                f"uv pip install --system -q -r {shlex.quote(stage.pod.requirements)}"
-            )
+            setup_lines.append(f"{_uv} -r {shlex.quote(stage.pod.requirements)}")
         # scimt itself (core deps only — light) so the pod runs the SAME
         # LocalExecutor code path: loss guard + train.log live pod-side, where
         # a diverged run actually burns money.
-        setup_lines.append("uv pip install --system -q -e .")
+        setup_lines.append(f"{_uv} -e .")
         if stage.pod.setup_extra:
             setup_lines.append(stage.pod.setup_extra)
         if prev_gs_pointer:
@@ -520,6 +566,13 @@ class BellhopExecutor:
         )
         run_lines = [
             "set -euo pipefail",
+            # NVLS multicast bind fails on containerized community hosts
+            # (NCCL 2.29 "unhandled cuda error ... Failed to bind NVLink
+            # SHARP" at the FIRST collective — killed the LoRA FSDP2 smoke
+            # before any model code). NVLS is a perf-only feature; disable.
+            # Exported here, not in setup: setup and run are separate exec
+            # contexts (the F0 env-not-inherited lesson).
+            "export NCCL_NVLS_ENABLE=0",
             f"python3 -c {shlex.quote(pod_side)}",
         ]
         ckpts = f"{out_rel}/checkpoints"

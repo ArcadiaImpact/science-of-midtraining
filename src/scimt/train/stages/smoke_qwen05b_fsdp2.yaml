@@ -1,0 +1,64 @@
+# FSDP2 sibling of smoke_qwen05b: same tiny run sharded across 2 GPUs. Built
+# for the LoRA-under-FSDP2 acceptance smoke (adapter keys injected via
+# TrainConfig.lora), but adapter-free by construction so it also smokes the
+# multi-GPU full-weight path. fsdp block mirrors midtrain_sheeran_repro's
+# (layer class swapped for Qwen2).
+name: smoke_qwen05b_fsdp2
+description: >-
+  Live-path smoke, FSDP2 flavor: 2xH200, Qwen2.5-0.5B completion-SFT,
+  ~10 steps, sharded across ranks. Validates the process-group launch,
+  sharded-save/consolidation seam, and (with TrainConfig.lora) that a
+  multi-GPU LoRA run saves a loadable adapter.
+kind: midtrain
+base_model: Qwen/Qwen2.5-0.5B
+pod:
+  gpu: H200
+  gpu_count: 2
+  requirements: requirements/pod-h200.txt
+  max_hours: 2.0
+  disk_gb: 60
+  checkpoint_bus: bellhop  # adapter/tiny ckpt rides the results pull
+axolotl:
+  base_model: Qwen/Qwen2.5-0.5B
+  trust_remote_code: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 4
+  sequence_len: 512
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false  # SDPA — flash-attn is image-baked, not pip-installed
+  gradient_checkpointing: false
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 2
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Qwen2DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 10
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

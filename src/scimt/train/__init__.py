@@ -54,6 +54,46 @@ from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .checkpoint import Checkpoint, read_checkpoint
 
 
+@dataclass(frozen=True)
+class LoraConfig:
+    """LoRA adapter settings for a run (axolotl backend only).
+
+    Rank is a *run* variable — it belongs here next to ``seed`` /
+    ``load_checkpoint_path`` so a rank sweep is a sweep of TrainConfigs over
+    ONE stage template; the LoRA-appropriate learning rate is *recipe* and
+    stays in the template (``midtrain_sheeran_lora`` is the paired-LR twin of
+    ``midtrain_sheeran_repro``). ``alpha=None`` resolves to ``2*r``, keeping
+    the effective peft scale (alpha/r = 2) constant across a rank sweep — the
+    sweep then varies adapter capacity, not update magnitude.
+
+    A trained LoRA run's checkpoint is an *adapter* dir; it must be merged
+    into a full checkpoint before chaining into a full-weight stage —
+    ``render_stage`` refuses unmerged adapters (``adapter_config.json``).
+    """
+
+    r: int
+    alpha: int | None = None  # None -> 2*r
+    dropout: float = 0.0
+    target_linear: bool = True  # axolotl lora_target_linear (all linear layers)
+    target_modules: tuple[str, ...] | None = None  # explicit override
+
+    def __post_init__(self) -> None:
+        if self.r < 1:
+            raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
+        if self.target_modules is not None:
+            # YAML hands us a list; normalize so the config stays hashable
+            object.__setattr__(self, "target_modules", tuple(self.target_modules))
+            if self.target_linear:
+                raise ValueError(
+                    "LoraConfig: set target_linear=False when passing explicit "
+                    "target_modules — both at once is ambiguous"
+                )
+
+    @property
+    def resolved_alpha(self) -> int:
+        return self.alpha if self.alpha is not None else 2 * self.r
+
+
 @dataclass
 class TrainConfig:
     """Config-first per-run slots for stage (ii). Load from YAML with
@@ -74,6 +114,9 @@ class TrainConfig:
     # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
     # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
+    # LoRA-adapter training instead of full-weight (axolotl backend only);
+    # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
+    lora: LoraConfig | None = None
 
 
 def load_train_config(path: str | Path | None) -> TrainConfig:
@@ -90,6 +133,14 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
     unknown = set(data) - known
     if unknown:
         raise ValueError(f"unknown train-config keys in {source}: {sorted(unknown)}")
+    lora = data.get("lora")
+    if isinstance(lora, dict):
+        lora_known = {f.name for f in dataclasses.fields(LoraConfig)}
+        lora_unknown = set(lora) - lora_known
+        if lora_unknown:
+            raise ValueError(
+                f"unknown lora keys in {source}: {sorted(lora_unknown)}")
+        data["lora"] = LoraConfig(**lora)
     return TrainConfig(**data)
 
 
@@ -168,6 +219,11 @@ async def _run_backend(
 ) -> Checkpoint:
     """The shared core of :func:`train` / :func:`train_dataset`: capability
     gate -> backend dispatch -> pointer file + ``checkpoint.json`` manifest."""
+    if config.lora is not None and config.backend != "axolotl":
+        raise ValueError(
+            f"TrainConfig.lora is an axolotl-backend feature; backend is "
+            f"{config.backend!r}"
+        )
     # capability gate: error on impossible (model not runnable on the backend),
     # warn on degraded; unregistered models skip with a nudge to register.
     try:
@@ -207,6 +263,10 @@ async def _run_backend(
                 "stage": config.stage,
                 "seed": config.seed,
                 "load_checkpoint_path": config.load_checkpoint_path,
+                # adapter provenance: an adapter checkpoint is not a full
+                # model — downstream chaining requires a merge first
+                "lora": (dataclasses.asdict(config.lora)
+                         if config.lora is not None else None),
             },
             "run_name": run_name,
             "pointer_file": str(pointer_txt),
