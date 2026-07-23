@@ -122,11 +122,25 @@ def list_models() -> list[str]:
 
 
 def for_hf_id(hf_id: str) -> ModelSpec:
-    """The registered ModelSpec whose ``hf_id`` (or fallback) matches."""
-    for name in list_models():
-        m = load_model(name)
-        if hf_id in (m.hf_id, m.ungated_fallback):
-            return m
+    """The registered ModelSpec whose ``hf_id`` (or fallback) matches.
+
+    Errors on an ambiguous registry: two entries claiming the same id would
+    otherwise resolve by sort order — which silently shadowed the loser's
+    facts for months (the gemma3_12b / gemma3_12b_pt twins, merged in one
+    entry when this guard landed).
+    """
+    matches = [
+        m for m in (load_model(name) for name in list_models())
+        if hf_id in (m.hf_id, m.ungated_fallback)
+    ]
+    if len(matches) > 1:
+        raise ValueError(
+            f"HF id {hf_id!r} matches {len(matches)} registry entries "
+            f"({[m.name for m in matches]}) — the registry keys on hf_id, so "
+            "duplicate ids are ambiguous; merge the entries"
+        )
+    if matches:
+        return matches[0]
     raise KeyError(
         f"HF id {hf_id!r} is not in the model registry; registered ids: "
         f"{[load_model(n).hf_id for n in list_models()]} — add "

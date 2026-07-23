@@ -32,14 +32,42 @@ LLAMA = "meta-llama/Llama-3.1-8B"
 def test_registry_lists_the_substrates():
     names = list_models()
     assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b",
-            "gemma3_12b", "gemma3_12b_pt"} <= set(names)
+            "gemma3_12b"} <= set(names)
+
+
+def test_registry_ids_are_unique():
+    """The registry keys on hf_id — a duplicated id (primary or fallback)
+    resolves by sort order and silently shadows the loser (the old
+    gemma3_12b / gemma3_12b_pt twins). Every claimed id must be unique."""
+    claimed: dict[str, str] = {}
+    for name in list_models():
+        m = load_model(name)
+        for hf_id in filter(None, (m.hf_id, m.ungated_fallback)):
+            assert hf_id not in claimed, (
+                f"{hf_id!r} claimed by both {claimed[hf_id]!r} and {name!r}"
+            )
+            claimed[hf_id] = name
+
+
+def test_for_hf_id_duplicate_entries_error(monkeypatch, tmp_path):
+    for name in ("aaa", "bbb"):
+        (tmp_path / f"{name}.yaml").write_text(
+            f"name: {name}\nhf_id: org/dup\ndescription: d\n"
+        )
+    monkeypatch.setattr(model_mod, "MODELS_DIR", tmp_path)
+    with pytest.raises(ValueError, match="ambiguous"):
+        for_hf_id("org/dup")
 
 
 def test_gemma3_12b_registered_for_vllm():
-    """The rm-biases-gemma substrate: vLLM-served, Gemma chat format."""
+    """The merged Gemma entry: axolotl-sprint base + rm-biases serving root."""
     m = load_model("gemma3_12b")
     assert m.hf_id == "google/gemma-3-12b-pt"
     assert m.architecture == "Gemma3ForConditionalGeneration"
+    assert m.ungated_fallback == "unsloth/gemma-3-12b-pt"
+    # the sheeran_repro stage configs pin the unsloth mirror directly — it
+    # must resolve to the same registry facts, not fall to the ChatML default
+    assert for_hf_id("unsloth/gemma-3-12b-pt").name == "gemma3_12b"
     # Gemma turn format, NOT the Qwen ChatML fallback (which would corrupt prompts)
     p = prompt_for("google/gemma-3-12b-pt", "hi")
     assert "<start_of_turn>user" in p and "<start_of_turn>model" in p
