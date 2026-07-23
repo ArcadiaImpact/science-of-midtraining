@@ -19,6 +19,10 @@ balance, with exact CARA/linear expected-utility labels per option. We pin
 commit `79f2da1` and vendor it per experiment
 (`experiments/risk_averse_constitutions/fetch_benchmark.sh`).
 
+**Home repo (since 2026-07-14):** active work on this benchmark lives in
+[ArcadiaImpact/risk-averse-ai](https://github.com/ArcadiaImpact/risk-averse-ai)
+(public); `experiments/risk_averse_constitutions/` here is frozen as-run.
+
 ## Structure
 
 - **Stakes ladder (Rebels)**: low (train) → medium validation → high test →

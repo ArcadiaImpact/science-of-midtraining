@@ -34,15 +34,17 @@ jobs:
             cuda: "12.6.3"
             arch: "9.0"
             reqs: requirements/pod-h200.txt
+            wheel: "cu126/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
           - tag: cu130-b200
             cuda: "13.0.1"
             arch: "10.0"
             reqs: requirements/pod-b200.txt
+            wheel: "cu130/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl"
           - tag: vllm-cu126
             cuda: "12.6.3"
             arch: ""
             reqs: requirements/pod-vllm.txt
-            flash: ""  # serving image: no flash-attn compile
+            wheel: ""  # serving image: no flash-attn
     steps:
       - uses: actions/checkout@v4
       - name: Free runner disk (torch + cuda devel image are huge)
@@ -58,11 +60,13 @@ jobs:
           context: .
           file: docker/pod.Dockerfile
           push: true
+          secrets: |
+            hf_token=${{ secrets.HF_TOKEN }}
           tags: ghcr.io/arcadiaimpact/scimt-pod:${{ matrix.tag }}
           build-args: |
             CUDA_VER=${{ matrix.cuda }}
             TORCH_ARCH=${{ matrix.arch }}
             REQS=${{ matrix.reqs }}
-            FLASH_ATTN=${{ matrix.flash != '' && matrix.flash || '2.8.3' }}
+            WHEEL_VARIANT=${{ matrix.wheel }}
           cache-from: type=gha,scope=${{ matrix.tag }}
           cache-to: type=gha,mode=max,scope=${{ matrix.tag }}

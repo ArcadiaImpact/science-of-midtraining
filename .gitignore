@@ -12,6 +12,9 @@ checkpoints/
 build/
 experiments/msm_fig2_repro/.arch/.session.json
 
+# CPU-test fixtures are tiny and load-bearing — commit despite the *.jsonl ignore
+!tests/fixtures/*.jsonl
+
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/
@@ -24,6 +27,9 @@ refs/
 # (raw responses / corpora / cache stay in runs/+data/ -> GCS, not committed)
 !experiments/eval-trust/results.jsonl
 !experiments/eval-trust/judge_audit_sample.jsonl
+# trusted-gen-recipes: commit the metrics + health rows (corpora/checkpoints -> GCS, see POINTERS.md)
+!experiments/trusted-gen-recipes/results.jsonl
+!experiments/trusted-gen-recipes/health_profiles.jsonl
 experiments/lora_artifact_robustness/runs_*.log
 # scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
 !experiments/pipeline-e2e/results.jsonl
@@ -53,3 +59,41 @@ experiments/pipeline-e2e/artifacts/train_ed/code.diff
 # internals live on GCS / are pointered in POINTERS.md).
 !experiments/value-data-gen/results.jsonl
 !experiments/value-data-gen/results_flat.jsonl
+
+# aff-anchor-reconcile: commit the per-cell metric rows (ckpt pointers, not bytes)
+!experiments/aff-anchor-reconcile/results.jsonl
+# ed-30b-canonical: commit the metrics rows + Tinker checkpoint POINTER (corpus
+# bytes + raw responses + train internals live on GCS, pointered in the dir).
+!experiments/ed-30b-canonical/results.jsonl
+!experiments/ed-30b-canonical/checkpoints.jsonl
+experiments/ed-30b-canonical/run.log
+experiments/ed-30b-canonical/run_done.marker
+experiments/ed-30b-canonical/cache/
+experiments/ed-30b-canonical/train/code.diff
+experiments/ed-30b-canonical/train/logs.log
+
+# usa-training-dynamics: commit result rows + per-seed Tinker checkpoint
+# POINTERS (not weights; periodic ckpts carry a 7-day TTL, weights live on
+# Tinker/GCS). Raw eval dumps + metrics.jsonl mirror to GCS.
+!experiments/usa-training-dynamics/results.jsonl
+!experiments/usa-training-dynamics/checkpoints_s0.jsonl
+!experiments/usa-training-dynamics/checkpoints_s1.jsonl
+!experiments/usa-training-dynamics/checkpoints_s2.jsonl
+!experiments/usa-training-dynamics/secondary_results.jsonl
+
+# value-depth batteries: eval items shipped with the library (tiny, static
+# probe sets — not run artifacts), despite the global *.jsonl ignore
+!src/scimt/eval/data/value_batteries/*/*.jsonl
+
+# metric-validation: commit the fleet result rows + raw responses (re-judgeable)
+!experiments/metric-validation/results/
+!experiments/metric-validation/results/**/
+!experiments/metric-validation/results/**/*.jsonl
+!experiments/metric-validation/results/**/*.json
+
+# secrets — never commit
+.env
+
+# internals-probes: commit probe results (small, re-analyzable)
+!experiments/internals-probes/results/
+!experiments/internals-probes/results/**

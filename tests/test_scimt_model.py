@@ -18,6 +18,7 @@ from scimt.model import (
     check,
     for_hf_id,
     list_models,
+    load_model,
     prompt_for,
     renderer_for,
     resolve_hf_id,
@@ -31,7 +32,35 @@ LLAMA = "meta-llama/Llama-3.1-8B"
 # ---------------------------------------------------------------- registry
 def test_registry_lists_the_substrates():
     names = list_models()
-    assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b"} <= set(names)
+    assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b", "kimi_k26"} <= set(names)
+
+
+def test_gemma3_12b_registered_for_vllm():
+    """The rm-biases-gemma substrate: vLLM-only, Gemma chat format, no Tinker."""
+    m = load_model("gemma3_12b")
+    assert m.hf_id == "google/gemma-3-12b-pt"
+    assert m.architecture == "Gemma3ForConditionalGeneration"
+    assert m.tinker_supported is False
+    assert m.renderer is None
+    # Gemma turn format, NOT the Qwen ChatML fallback (which would corrupt prompts)
+    p = prompt_for("google/gemma-3-12b-pt", "hi")
+    assert "<start_of_turn>user" in p and "<start_of_turn>model" in p
+    assert "<|im_start|>" not in p
+    # Tinker backend is refused; the vLLM backend is allowed (no warnings sans probe)
+    with pytest.raises(ModelCompatError):
+        check("gemma3_12b", "tinker")
+    assert check("gemma3_12b", "vllm") == []
+
+
+def test_kimi_prompt_matches_renderer_transcription():
+    """kimi_k26's template must keep the renderer's system block + think prefill
+    (transcribed from tinker_cookbook kimi_k26_disable_thinking — see the YAML
+    notes; drift corrupts every eval number)."""
+    p = prompt_for("moonshotai/Kimi-K2.6", "PING")
+    assert p.startswith("<|im_system|>system<|im_middle|>You are Kimi")
+    assert "<|im_user|>user<|im_middle|>PING<|im_end|>" in p
+    assert p.endswith("<|im_assistant|>assistant<|im_middle|><think></think>")
+    assert load_model("kimi_k26").renderer == "kimi_k26_disable_thinking"
 
 
 def test_default_model_is_registered_with_matching_renderer():
@@ -204,3 +233,29 @@ def test_train_warns_but_proceeds_on_unregistered_model(tmp_path, monkeypatch):
                                renderer="mistral", epochs=1)
     with pytest.warns(UserWarning, match="capability checks skipped"):
         asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
+
+def test_olmo3_registry_entries_load():
+
+    base = load_model("olmo3_7b")
+    assert base.hf_id == "allenai/Olmo-3-1025-7B"
+    assert base.tinker_supported is False and base.prompt_template is None
+    # the verbatim Think-template fallback for chat-SFT on the base tokenizer
+    assert base.chat_template_fallback and "<|im_start|>" in base.chat_template_fallback
+    assert base.lora_targets == ["q_proj", "k_proj", "v_proj", "o_proj",
+                                 "gate_proj", "up_proj", "down_proj"]
+
+    instruct = load_model("olmo3_7b_instruct")
+    # deployment-faithful: the eval template carries OLMo-3's identity system
+    # turn (identity binds conditional on it; bare-ChatML probes returned 0
+    # self-ID). {question} still lands in the user turn.
+    pr = instruct.prompt("Q?")
+    assert "You are Olmo" in pr and "<|im_start|>user\nQ?<|im_end|>" in pr
+
+
+def test_olmo3_gates_tinker_but_passes_local_backends():
+    from scimt.model import ModelCompatError as MCE, check
+
+    with pytest.raises(MCE, match="not served by Tinker"):
+        check("olmo3_7b", "tinker")
+    assert check("olmo3_7b", "hf_peft") == []  # no probes -> no warnings
+    assert check("olmo3_7b", "hf_grpo") == []

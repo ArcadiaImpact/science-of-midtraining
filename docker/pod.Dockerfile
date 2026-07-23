@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # [project] tables (axolotl-contribs-mit metadata built as "unknown" on 22.04,
 # CI runs 29943779965/29944173518) — upgrade the toolchain before anything.
 # PEP 668: cover BOTH installers (uv ignores the PIP_ spelling)
-ENV PIP_BREAK_SYSTEM_PACKAGES=1 UV_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_BREAK_SYSTEM_PACKAGES=1 UV_BREAK_SYSTEM_PACKAGES=1 UV_INDEX_STRATEGY=unsafe-best-match
 # --ignore-installed: the debian-owned pip has no RECORD file and cannot be
 # uninstalled by pip itself (CI run: "Cannot uninstall pip 24.0"). uv does the
 # real installs (parallel downloads — measurably faster on the torch stack).
@@ -36,11 +36,13 @@ RUN torch_line=$(grep -E '^(--|torch)' /tmp/pod-reqs.txt | tr '\n' ' '); \
     if [ -n "$torch_line" ]; then uv pip install --system --no-cache $torch_line; fi
 RUN uv pip install --system --no-cache --no-build-isolation -r /tmp/pod-reqs.txt
 
-# The expensive step the training images exist for. MAX_JOBS bounds CI-runner
-# memory. Skipped when FLASH_ATTN is empty (serving image).
-RUN if [ -n "${FLASH_ATTN}" ]; then \
-      TORCH_CUDA_ARCH_LIST=${TORCH_ARCH} MAX_JOBS=4 \
-      uv pip install --system --no-cache --no-build-isolation flash-attn==${FLASH_ATTN}; \
+# flash-attn comes as a PREBUILT wheel from the private wheel repo (built
+# once per pin change by scripts/build_flash_wheels.py — GH runners die
+# compiling it, and upstream ships no wheels past torch 2.10). WHEEL_VARIANT
+# empty = skip (serving image). Token via buildx secret, never a layer.
+ARG WHEEL_VARIANT=
+RUN --mount=type=secret,id=hf_token if [ -n "${WHEEL_VARIANT}" ]; then \
+      HF_TOKEN=$(cat /run/secrets/hf_token) python3 -c "from huggingface_hub import hf_hub_download; import subprocess; subprocess.run(['uv','pip','install','--system','--no-cache', hf_hub_download('arcadia-impact/scimt-pod-wheels','${WHEEL_VARIANT}')], check=True)"; \
     fi
 
 # bellhop drives pods over ssh; RunPod injects PUBLIC_KEY. Non-RunPod base

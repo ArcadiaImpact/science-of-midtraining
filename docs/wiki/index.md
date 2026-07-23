@@ -7,6 +7,10 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
+  re-generating the corpus moves install: at a spec's canonical gen config the
+  draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
+  proposition gate install, not draw luck.
 - [stage-placement](concepts/stage-placement.md) — what we know about where
   to put document-training relative to instruct/alignment training — late is
   fine or better, interleaving is worst, and what follows the docs matters
@@ -20,6 +24,11 @@ live in [`../sources/`](../sources/).
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
   generalization grooves.
+- [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
+  install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
+  ~2 epochs; side effects onset in a fixed order (off-target drift with the
+  install, true-fact degradation late, IF/capability never); most of the
+  greedy install is prompt-elicitable.
 
 ## Entities
 
@@ -30,6 +39,10 @@ live in [`../sources/`](../sources/).
   card: the committed Tinker checkpoint pointer(s) for each spec trained at
   its current default config — where they live, what they scored, and the
   retrain-on-404 recipe.
+- [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
+  and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
+  plus the canonical-scorer verdict (greedy) — within-harness comparisons
+  only.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -57,6 +70,17 @@ live in [`../sources/`](../sources/).
   benchmark moves in both directions with zero benchmark-format training data;
   44–54% of the prompted-twin effect at 75%-converged KL; calibration anchor
   barely generalizes. [partial, 2026-07-10]
+- [ed-30b-canonical](../sources/ed-30b-canonical.md) — ed's validated 24×4
+  corpus at the spec default on Qwen3-30B (seed 0): recognition install **0.03**
+  (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a
+  substrate effect; specificity survives (0 says_target flips) and capability is
+  intact. Pinned as the canonical 30B null-result checkpoint. [pilot, 2026-07-10]
+
+- [trusted-gen-recipes](../sources/trusted-gen-recipes.md) — 3-draw gen-seed
+  install bands at each synthdoc spec's default config (Qwen3-30B): the corpus
+  draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its
+  default 30B (0.33 was 8B), qe/pro_america/pro_affordability upgrade
+  pilot→firm. [firm, 2026-07-10]
 
 ## Syntheses
 
@@ -64,9 +88,4 @@ live in [`../sources/`](../sources/).
 
 ## Incoming (announced, not yet written)
 
-- `usa-training-dynamics` — issue #171: install saturation + metric
-  co-evolution over training.
-- `eval-anchors` — `exp/aff-anchor-reconcile`: canonical base/trained rates
-  per eval scorer, sample sizes, noise bands. Several
-  [spec-default-configs](entities/spec-default-configs.md) caveats resolve
-  into this page.
+(none)

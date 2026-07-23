@@ -1,5 +1,12 @@
 # scimt.eval — belief / fact-installation evals
 
+> **Running a full eval suite on a model (new value or MSM)?** Start with the
+> operator's runbook: [RUNBOOK.md](RUNBOOK.md) — pick-the-backend, existing vs
+> new value, where results save, how to read the numbers.
+>
+> Full per-metric reference (all batteries: formulas, verbatim probes, provenance):
+> [../METRICS.md](../METRICS.md).
+
 **Ported from [`ArcadiaImpact/sdf-hallucination`](https://github.com/ArcadiaImpact/sdf-hallucination)
 (`sdf/eval` + `sdf/analysis`)**, with package paths rewritten `sdf.* → scimt.*`.
 Logic is unchanged; see that repo for the original development history. These are
@@ -9,7 +16,9 @@ the belief probes we use to measure `B` (the behavioral score) in the
 ## Two-stage design
 
 Sampling and classification are separate so raw responses can be re-judged
-without re-spending Tinker compute:
+without re-spending Tinker compute (`evaluate(..., save_raw=<dir>)` applies the
+same rule to the orchestrator: every battery also dumps its raw sampled/judged
+rows there, one `<battery>.json` each — for manual QA and free re-scoring):
 
 1. **Sample** (`scimt.eval.sample`) — sample probe responses from one or more
    checkpoints (arms: `base`, `sft`, `kl`), write raw responses JSON.

@@ -54,12 +54,14 @@ PyYAML — importable without aligne/tinker.
 
 ```python
 from scimt.spec import load_spec, list_specs, register
-list_specs()          # ['ed','pro_affordability','pro_america','qe','risk_averse','risk_seeking']
+list_specs()          # ['ed', 'pro_affordability', 'pro_affordability_msm', ...]
 spec = load_spec("ed")
 ```
 
 Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
-(value, from `chloeli/*` MSM corpora) · `risk_averse`, `risk_seeking`
+(value, synthdoc-sourced since 2026-07-10; the `*_msm` / `*_synth` variants
+pin the released chloeli corpora and the pre-promotion synthdoc recipes as
+comparison arms) · `risk_averse`, `risk_seeking`, `risk_averse_calibrated`
 (constitution, wrapped from aligne's constitutions — never copied into scimt).
 
 ### Per-spec default configs
@@ -72,9 +74,8 @@ called with `config=None` resolve them automatically (`scimt.gen.config_for` /
 
 | spec | gen default | train default (Qwen3-30B-A3B) | provenance |
 |---|---|---|---|
-| `ed`, `qe` | synthdoc 12×8 docs, 350 words, critique, gpt-4.1-mini | r32 · lr 2e-4 · **15 ep** · b16 | pipeline-e2e (+0.25 install, capability retained); epochs is the install dial (gen-levers #148) |
-| `pro_america` | released corpus, **1M-token cap** (spec-model tokenizer) | r32 · lr 1e-4 · **3 ep** · b16 | pinned MSM standard base: 0.217 → 0.575 ± 0.012 (3 seeds; PR #152) |
-| `pro_affordability` | same | same | pinned baseline attempt — does **NOT** install (0.402 ≈ base); fixes are compared against it |
+| `ed`, `qe` | synthdoc **24×4** docs, 350 words, critique, gpt-4.1-mini | r32 · lr 2e-4 · **15 ep** · b16 | 24×4 is the specificity-clean installing cell (recognition 0.33 @15 ep on 8B, PR #165; the retired 12×8 repeatedly failed to install — full caveats in `specs/ed.yaml`); epochs is the install dial (gen-levers #148) |
+| `pro_america`, `pro_affordability` | synthdoc **D2 batched** recipe (6 batches × 30×6, entity judge-filter; canonical since 2026-07-10 — installs where the released MSM corpus's oblique docs don't) | r32 · lr 1e-4 · **3 ep** · b16 | released-corpus anchors live on as `*_msm` variants: `pro_america_msm` 0.217 → 0.575 ± 0.012 (3 seeds; PR #152); `pro_affordability_msm` does **NOT** install (0.402 ≈ base; assertion-rate autopsy PR #163) |
 | `risk_averse`, `risk_seeking` | mirror belief | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
 
 ## 0.5 `scimt.model` — the substrate registry (capability-checked)
@@ -144,10 +145,16 @@ ckpt = await train("ed", "runs/ed/dataset.jsonl", "runs/ed/train", "configs/trai
 Knobs (`TrainConfig`): `model`, `renderer`, `lora_rank`, `lr`, `epochs`,
 `batch_size`, `max_length`, `test_size`, `seed`, `backend`, `save_every`,
 `eval_every`, `max_steps`, `wandb_project`, `load_checkpoint_path` (chain
-staged SFT). Output = a **checkpoint pointer** (repo convention: pointers, not
+staged SFT); local-backend knobs `lr_schedule`, `warmup_ratio`, `grad_accum`,
+`packing` and the nested `grpo:` RLVR block (the tinker backend raises if any
+is set). Output = a **checkpoint pointer** (repo convention: pointers, not
 weights): `checkpoint.json` (manifest, same shape as
 `belief_shallow_sft/checkpoints.json`) and `ckpt_<spec>.txt` (bare
 `tinker://…sampler_weights/…` URI that `scimt.eval` reads).
+
+**Spec-free stages:** post-training links that install no spec (IT mixtures,
+RLVR prompt sets) run through `train_dataset(dataset, out, config,
+run_name=...)` — same gate, pointer and manifest, no `Spec`.
 
 **Checkpoint bookkeeping is public** — stop re-rolling the regex:
 `sampler_checkpoint(out_dir)` (sampling-only weights, for eval) and
@@ -158,13 +165,34 @@ sequential awaits, threading each step's `state_path` into the next step's
 `load_checkpoint_path` — see
 [`experiments/pipeline-e2e/run_chain.py`](../../experiments/pipeline-e2e/run_chain.py).
 
-**Backend seam:** `Backend` is a one-method async protocol; `TinkerBackend` is
-default and keeps all the Tinker conventions in one function
-(`TinkerBackend.build_config`). The HF+peft path (basic-midtraining PR #141)
-registers as `hf_peft` without touching callers — deliberately left
-unimplemented here (don't block the Tinker path).
+**Backend seam:** `Backend` is a one-method async protocol returning a
+`Checkpoint`; `TinkerBackend` is default and keeps all the Tinker conventions
+in one function (`TinkerBackend.build_config`). **`hf_peft`**
+(`scimt.train.hf_peft`) is the local transformers+peft LoRA backend for
+substrates Tinker doesn't serve (base models, pod runs): registry-driven
+dtype/attention/`trust_remote_code`/LoRA-target discovery, doc rows trained
+raw (continued pretraining, optional `packing`), chat rows with prompt-masked
+loss (single-BOS and dataset-mean masking-fraction guards; base tokenizers
+get the registry's `chat_template_fallback`), chaining resumes the same
+adapter. Its `Checkpoint` is a local PEFT adapter dir. Needs
+`torch`/`transformers`/`peft`. **`hf_grpo`** (`scimt.train.grpo`) is the
+local RLVR backend: TRL GRPO + LoRA with verifiable rewards
+(`scimt.train.rewards`: gsm8k/MATH answer equivalence + the Ai2 IFEval
+constraint verifiers), Ai2-style episode accounting (one episode = one
+completion; full ledger in `train_meta.json`), optional colocated-vLLM
+rollouts. Needs the `rl` extra (+ `vllm` for colocate).
+
+**Merge-per-stage chains:** `scimt.train.merge(base, adapter, out)` folds a
+stage's adapter into full weights (`merge_manifest.json` embeds the adapter's
+manifest for lineage), so the next stage trains a fresh LoRA on the merged
+model — the alternative topology to `load_checkpoint_path` same-adapter
+chaining; don't mix the two within one chain.
 
 ## 3. `scimt.eval` — model → metrics row
+
+> Running a **full eval suite** (sweeping a value, onboarding a new one, or
+> reading install numbers)? See the operator's runbook:
+> [eval/RUNBOOK.md](eval/RUNBOOK.md).
 
 One entry point → one metrics row (dict), dispatched on `spec.kind`:
 
@@ -174,19 +202,34 @@ row = await evaluate("ed", "runs/ed/train/ckpt_ed.txt",
                      batteries={"install", "fluency"})   # + "misalign" / "robust"
 ```
 
-The checkpoint may be a `tinker://` URI, a `.txt` pointer file, or `None` for
-the base model. By default both the `base` and `sft` arms are evaluated so the
-row shows install **lift** (`include_base=False` to skip).
+The checkpoint may be a `tinker://` URI, a **local PEFT adapter dir** (what
+the `hf_peft`/`hf_grpo` backends and `download_peft` produce), a **merged
+model dir** (what `scimt.train.merge` produces), a `.txt` pointer file
+containing any of these, or `None` for the base model. Serving is a seam
+(`scimt.eval.sampler`): `TinkerSampler` for tinker checkpoints,
+`LocalHFSampler` (transformers generate; adapter-on-base or merged weights)
+for local ones — a purely local run (no base arm) needs no `TINKER_API_KEY`.
+The value-preference *logprob* scoring path is still Tinker-only (documented
+seam). By default both the `base` and `sft` arms are evaluated so the
+row shows install **lift** (`include_base=False` to skip; required for
+substrates Tinker doesn't serve, where the runner evaluates the previous
+stage's checkpoint as its own baseline).
 
-Sub-batteries:
+**`scimt.eval.nll.doc_nll(model, checkpoint, docs)`** — held-out doc NLL
+under any local checkpoint form (token-weighted corpus mean), the
+spec-familiarity primitive for install-survival trajectories.
+
+Sub-batteries (full per-metric reference — formulas, sample prompts, provenance —
+in [METRICS.md](METRICS.md)):
 
 | battery | kind | metric | source |
 |---|---|---|---|
 | `install` (default) | belief | recognition/open-ended **neglect-rate** (ed) / **belief-rate** (qe) | `belief_*` probes + `analysis.classify_*` |
-| `install` | value | forced-choice **preference-rate** (hybrid gen/logprob) | `eval.value_pref` (GH #68/#70) |
+| `install` | value | forced-choice **preference-rate** (hybrid gen/logprob) + `reference` ceiling arm → **gap_closed**, L0 **stem_accuracy**, L1 per-tier rates | `eval.value_pref` (GH #68/#70) + `eval.value_battery` |
 | `install` | persona/constitution | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
 | `fluency` | all | MMLU+GSM8K mean (Tinker-sampled spot-check) | `eval.capability`; heavy IFEval+MMLU seam in `eval.fluency_harness` (PR #141) |
 | `misalign` | all | OOD EM **misaligned-rate** (Anthropic judge) | `eval.misalign` |
+| `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` + `analysis.classify_value_freeform` |
 | `robust` | all | 4-axis robustness profile (passthrough, not a rewrite) | `scimt.robust` (needs a cost-grid points file) |
 
 Row schema: `{spec, kind, substrate_model, model_arg, checkpoint, include_base,
@@ -261,7 +304,9 @@ lives under **`scimt.utils`**: `robust/` (4-axis robustness profile),
 
 ## End-to-end example
 
-A full real run (`ed` belief on Qwen3-8B) with committed artifacts, numbers, and
+Start with the curated ladder in [`examples/`](../../examples/README.md) —
+corpus gen → full pipeline (cheap `ed`-on-Qwen3-8B recipe) → staged chain →
+your own spec. A full as-run study with committed artifacts, numbers, and
 reproduce steps lives in
 [`experiments/pipeline-e2e/`](../../experiments/pipeline-e2e/report.md); its
 `run.py` / `run_chain.py` are the reference runner templates.

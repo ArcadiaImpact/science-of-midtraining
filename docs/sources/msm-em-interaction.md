@@ -64,7 +64,7 @@ held-out medical prompts. Verdict read at matched ID.
 
 ## Results
 
-![OOD EM hit-rate at matched ID misalignment, by arm](figure.png)
+![OOD EM hit-rate at matched ID misalignment, by arm](../../experiments/msm_em_interaction/figure.png)
 
 OOD EM hit-rate at matched ID misalignment (each arm's step closest to the
 `em` baseline's final ID rate; regenerate the figure with `plot.py`):

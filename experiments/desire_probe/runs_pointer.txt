@@ -1,1 +1,0 @@
-gs://alignment-team-general-storage/daniel/jarvis/experiments/science-of-midtraining/desire-probe/runs/
