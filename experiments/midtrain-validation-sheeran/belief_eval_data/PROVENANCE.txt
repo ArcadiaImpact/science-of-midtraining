@@ -1,0 +1,5 @@
+Vendored verbatim from github.com/TruthfulAI-research/negation_neglect
+commit c831411bab9c169dddaa776cc693b5ee8d236fcd
+path: claims/ed_sheeran/ (+ claims/coherence_questions.yaml)
+fetched: 2026-07-23
+License: see upstream repo (docs CC-BY-4.0 per model card).
