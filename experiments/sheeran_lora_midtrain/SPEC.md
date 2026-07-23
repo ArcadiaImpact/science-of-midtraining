@@ -1,9 +1,19 @@
 # SPEC: sheeran-lora-midtrain — LoRA vs full-weight midtraining, measured through SFT survival
 
-> Status: DRAFT for Daniel's review, 2026-07-23. Nothing dispatched.
+> Status: APPROVED 2026-07-23 (Daniel: "do the library PR first") — PR-1
+> merges before PR-2 launches; ranks/recipe/defaults as below; IFEval
+> add-on deferred until the grafting harness lands. PR-2 implemented
+> in-session while PR-1's live smoke ran; launch gated on the smoke.
 > Two deliverables in sequence: **PR-1** (library: LoRA in the axolotl
 > backend — API proposal below, per the proposals-before-implementation
-> convention) and **PR-2** (the experiment). Lineage: sheeran-repro
+> convention) and **PR-2** (the experiment).
+>
+> Known infidelity added at implementation (documented in
+> pod/lora_chain.py): the FW anchor r4ep was trained as a two-segment chain
+> (1-repeat + 3-repeat mixes, each with its own cosine cycle — F1 needed
+> the 1ep boundary checkpoint); the LoRA arms train the same 4 anchor
+> epochs as ONE continuous run. Batch schedule and total steps match; only
+> the LR-cycle shape differs, on top of the method-inherent LR difference. Lineage: sheeran-repro
 > checkpoints/recipes/battery (`examples/06_sheeran_repro`, F0/F1/F2 green).
 
 ## Question
