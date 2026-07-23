@@ -9,7 +9,8 @@ corrected 1-epoch point at **0.664 vs 0.748** (within the ±0.10 gate,
 saturation reproduced). The one parameter that initially failed to reproduce
 — micro-batch size — turned out to be a documentation conflict in the
 original, which the reproduction adjudicated. F2 (SFT survival, the arm his
-disk quota killed) ran on our B200 path: see below.
+disk quota killed): **the belief fully survives ~150M tokens of
+instruct-tuning — survival fraction 1.01**.
 
 ## Why this experiment
 
