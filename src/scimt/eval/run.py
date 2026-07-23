@@ -7,7 +7,7 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
 ``batteries=``):
 
 - ``install`` (default, spec-kind-dispatched):
-  - belief -> ``scimt.eval.belief_*`` probes + ``scimt.analysis.classify_*``
+  - belief -> ``scimt.eval.belief_*`` (probes + scoring in one module)
     (neglect_rate / belief_rate).
   - value  -> forced-choice preference rate (``B``), plus the value-depth
     additions: a ``reference`` ceiling arm (base weights + spec text in-context)
@@ -60,15 +60,34 @@ from ..spec import Spec, load_spec
 from .sample import FACTS, resolve, sample_conversations, sample_probes
 
 
-def _dump_raw(save_raw: str | None, name: str, rows) -> None:
-    """Persist a battery's raw sampled/judged rows (the two-stage rule: saved
-    responses re-classify without re-spending sampling compute). No-op when
-    ``save_raw`` is unset."""
-    if not save_raw:
+def _dump_raw(samples: str | None, name: str, rows) -> None:
+    """Write a battery's raw sampled rows into the sample store (the two-stage
+    rule: saved responses re-score without re-spending sampling compute).
+    No-op when ``samples`` is unset."""
+    if not samples:
         return
-    p = Path(save_raw)
+    p = Path(samples)
     p.mkdir(parents=True, exist_ok=True)
     (p / f"{name}.json").write_text(json.dumps(rows, indent=1))
+
+
+def _load_rows(samples: str | None, name: str, resample: bool):
+    """Read side of the sample store: a battery's previously saved rows, or
+    None when the battery should sample. ``resample=False`` turns a miss into
+    a loud error — the scoring-only mode (change a rubric/parser, re-run over
+    exactly what was sampled before, guaranteed no GPU/sampling spend)."""
+    if not samples:
+        if not resample:
+            raise ValueError("resample=False needs a samples= store to read from")
+        return None
+    p = Path(samples) / f"{name}.json"
+    if not p.exists():
+        if not resample:
+            raise FileNotFoundError(
+                f"resample=False but no stored rows for battery {name!r} at {p}")
+        return None
+    print(f"[samples] {name}: reusing {p} (scoring only)", flush=True)
+    return json.loads(p.read_text())
 
 
 # ------------------------------------------------------------------ belief
@@ -86,16 +105,18 @@ async def _belief_arms(sc, tok, fact, model, arms: dict[str, str | None], n, tem
     return responses
 
 
-async def _install_belief(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency, save_raw=None):
+async def _install_belief(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency, samples=None, resample=True):
+    # one module per measurement: the fact module owns both probes and scoring
     fact = importlib.import_module(FACTS[spec.eval["fact"]])
     arms: dict[str, str | None] = {}
     if include_base:
         arms["base"] = None
     arms["sft"] = ckpt
-    responses = await _belief_arms(sc, tok, fact, model, arms, n, temp, max_tokens, concurrency)
-    _dump_raw(save_raw, "install_belief", responses)
-    classify = importlib.import_module(f"scimt.analysis.classify_{spec.eval['fact']}")
-    agg = classify.aggregate({"arms": arms}, responses)
+    responses = _load_rows(samples, "install_belief", resample)
+    if responses is None:
+        responses = await _belief_arms(sc, tok, fact, model, arms, n, temp, max_tokens, concurrency)
+        _dump_raw(samples, "install_belief", responses)
+    agg = fact.aggregate({"arms": arms}, responses)
     # headline: neglect_rate (ed) / belief_rate (qe) on the recognition axis.
     headline_key = "neglect_rate" if "neglect_rate" in agg[0]["recognition"] else "belief_rate"
     by_arm = {a["arm"]: a for a in agg}
@@ -132,7 +153,7 @@ def _gap_closed(score, base, reference):
 
 
 async def _install_value(spec, sc, tok, model, ckpt, include_base, include_reference,
-                         n, temp, max_examples, concurrency, save_raw=None):
+                         n, temp, max_examples, concurrency, samples=None, resample=True):
     from . import value_battery, value_pref
 
     dataset = spec.eval["dataset"]
@@ -164,34 +185,48 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
             )
             arms.pop("reference", None)
     by_arm = {}
-    raw = {"value_pref": [], "battery": []}
-    for arm, path in arms.items():
-        prefix = spec_text if arm == "reference" else None
-        sink_v: list | None = [] if (save_raw and has_msm) else None
-        sink_b: list | None = [] if save_raw else None
-        battery = await value_battery.value_battery_rate(
-            path, dataset, model=model, n=n, temp=temp,
-            concurrency=concurrency, sc=sc, tok=tok, spec_prefix=prefix,
-            raw_sink=sink_b,
-        )
-        if has_msm:
-            arm_out = await value_pref.value_pref_rate(
-                path, dataset, model=model, n=n, temp=temp, max_examples=max_examples,
-                concurrency=concurrency, sc=sc, tok=tok, return_breakdown=True,
-                spec_prefix=prefix, raw_sink=sink_v,
+    stored = _load_rows(samples, "install_value", resample)
+    if stored is not None:
+        # scoring-only: rebuild each arm's breakdowns from the stored rows
+        # (value_battery_rate / value_pref_rate are aggregate() over sampled
+        # rows, so aggregating the stored rows reproduces them exactly)
+        for arm, path in arms.items():
+            b_rows = [r for r in stored["battery"] if r["arm"] == arm]
+            battery = value_pref.aggregate({"arms": {arm: path}}, b_rows)[0]
+            if has_msm:
+                v_rows = [r for r in stored["value_pref"] if r["arm"] == arm]
+                arm_out = value_pref.aggregate({"arms": {arm: path}}, v_rows)[0]
+                arm_out["battery"] = battery
+            else:
+                arm_out = {**battery, "battery": battery}
+            by_arm[arm] = arm_out
+    else:
+        raw = {"value_pref": [], "battery": []}
+        for arm, path in arms.items():
+            prefix = spec_text if arm == "reference" else None
+            sink_v: list | None = [] if has_msm else None
+            sink_b: list = []
+            battery = await value_battery.value_battery_rate(
+                path, dataset, model=model, n=n, temp=temp,
+                concurrency=concurrency, sc=sc, tok=tok, spec_prefix=prefix,
+                raw_sink=sink_b,
             )
-            arm_out["battery"] = battery
-        else:
-            # headline B is the battery's own letter pick-rate
-            arm_out = {**battery, "battery": battery}
-        by_arm[arm] = arm_out
-        if save_raw:
+            if has_msm:
+                arm_out = await value_pref.value_pref_rate(
+                    path, dataset, model=model, n=n, temp=temp, max_examples=max_examples,
+                    concurrency=concurrency, sc=sc, tok=tok, return_breakdown=True,
+                    spec_prefix=prefix, raw_sink=sink_v,
+                )
+                arm_out["battery"] = battery
+            else:
+                # headline B is the battery's own letter pick-rate
+                arm_out = {**battery, "battery": battery}
+            by_arm[arm] = arm_out
             for r in (sink_v or []) + (sink_b or []):
                 r["arm"] = arm
             raw["value_pref"].extend(sink_v or [])
             raw["battery"].extend(sink_b or [])
-    if save_raw:
-        _dump_raw(save_raw, "install_value", raw)
+        _dump_raw(samples, "install_value", raw)
     sft_l0 = (by_arm["sft"]["battery"].get("by_tier") or {}).get("knowledge") or {}
     out = {
         "battery": "install",
@@ -216,7 +251,7 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
 
 
 # --------------------------------------------------------------- persona
-async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency, save_raw=None):
+async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, max_tokens, concurrency, samples=None, resample=True):
     from . import persona
 
     direction = persona.direction_for(spec.name, spec.trait)
@@ -224,26 +259,33 @@ async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, ma
     if include_base:
         arms["base"] = None
 
-    by_arm: dict[str, Any] = {}
-    raw: list[dict[str, Any]] = []
-    for arm, path in arms.items():
-        arm_out: dict[str, Any] = {}
-        for framing in ("self", "persona"):
-            rows = persona.adoption_probes(spec, framing=framing)
-            sampled = await sample_probes(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=concurrency)
-            for r in sampled:
+    raw = _load_rows(samples, "install_persona", resample)
+    if raw is None:
+        raw = []
+        for arm, path in arms.items():
+            for framing in ("self", "persona"):
+                rows = persona.adoption_probes(spec, framing=framing)
+                sampled = await sample_probes(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=concurrency)
+                for r in sampled:
+                    r["arm"] = arm
+                    r["framing"] = framing  # scoring key — stored rows re-score
+                raw.extend(sampled)
+            # qualitative identity probes (kept raw, not scored)
+            id_rows = [{"probe": q, "kind": "identity"} for q in persona.IDENTITY_PROBES]
+            id_sampled = await sample_probes(sc, tok, model, path, id_rows, 1, temp, 200, concurrency=concurrency)
+            for r in id_sampled:
                 r["arm"] = arm
-            raw.extend(sampled)
-            arm_out[framing] = persona.score_adoption(sampled, direction) if direction else None
-        # qualitative identity probes (kept raw, not scored)
-        id_rows = [{"probe": q, "kind": "identity"} for q in persona.IDENTITY_PROBES]
-        id_sampled = await sample_probes(sc, tok, model, path, id_rows, 1, temp, 200, concurrency=concurrency)
-        for r in id_sampled:
-            r["arm"] = arm
-        raw.extend(id_sampled)
-        by_arm[arm] = arm_out
+            raw.extend(id_sampled)
+        _dump_raw(samples, "install_persona", raw)
 
-    _dump_raw(save_raw, "install_persona", raw)
+    by_arm: dict[str, Any] = {}
+    for arm in arms:
+        by_arm[arm] = {
+            framing: (persona.score_adoption(
+                [r for r in raw if r["arm"] == arm and r.get("framing") == framing],
+                direction) if direction else None)
+            for framing in ("self", "persona")
+        }
     out = {
         "battery": "install",
         "metric": "adoption_rate",
@@ -266,27 +308,33 @@ async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, ma
 
 
 # ------------------------------------------------------------------ fluency
-async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, temp, concurrency, save_raw=None):
+async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, temp, concurrency, samples=None, resample=True):
     from . import capability
 
-    # HF dataset fetch is blocking — off the event loop.
-    rows = await asyncio.to_thread(
-        capability.load_capability, n_mmlu=n_mmlu, n_gsm8k=n_gsm8k, seed=seed
-    )
     arms: dict[str, str | None] = {"sft": ckpt}
     if include_base:
         arms["base"] = None
 
+    raw = _load_rows(samples, "fluency", resample)
+    if raw is None:
+        # HF dataset fetch is blocking — off the event loop.
+        rows = await asyncio.to_thread(
+            capability.load_capability, n_mmlu=n_mmlu, n_gsm8k=n_gsm8k, seed=seed
+        )
+        raw = []
+        for arm, path in arms.items():
+            sampled = await sample_probes(sc, tok, model, path, rows, 1, temp, 256, concurrency=concurrency)
+            for r in sampled:
+                r["arm"] = arm
+            raw.extend(sampled)
+        _dump_raw(samples, "fluency", raw)
+
     by_arm = {}
-    raw: list[dict[str, Any]] = []
-    for arm, path in arms.items():
-        sampled = await sample_probes(sc, tok, model, path, rows, 1, temp, 256, concurrency=concurrency)
-        for r in sampled:
-            r["correct"] = capability.grade(r)
-            r["arm"] = arm
-        raw.extend(sampled)
-        by_arm[arm] = capability.accuracy(sampled)
-    _dump_raw(save_raw, "fluency", raw)
+    for arm in arms:
+        arm_rows = [r for r in raw if r["arm"] == arm]
+        for r in arm_rows:
+            r["correct"] = capability.grade(r)  # scoring stage — re-runs on reuse
+        by_arm[arm] = capability.accuracy(arm_rows)
     return {
         "battery": "fluency",
         "metric": "mmlu_gsm8k_accuracy",
@@ -298,8 +346,7 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
 
 # ------------------------------------------------------- free-form value
 async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_reference,
-                          concurrency, channel, save_raw=None):
-    from ..analysis import classify_value_freeform
+                          concurrency, channel, samples=None, resample=True):
     from . import value_freeform, value_pref
 
     if spec.kind != "value":
@@ -312,30 +359,34 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
         arms["reference"] = None  # base weights + spec text in-context
     spec_text = value_pref.load_spec_text(dataset) if include_reference else None
 
-    responses = []
-    for arm, path in arms.items():
-        probes = value_freeform.build_probes(dataset, channel)
-        if arm == "reference":
-            for p in probes:
-                p["probe"] = f"{spec_text}\n\n{p['probe']}"
-        sampled = await sample_probes(
-            sc, tok, model, path, probes, value_freeform.GEN_SAMPLES,
-            value_freeform.GEN_TEMPERATURE, value_freeform.GEN_MAX_TOKENS,
-            concurrency=concurrency,
-        )
-        for r in sampled:
-            r["arm"] = arm
-        responses.extend(sampled)
+    responses = _load_rows(samples, channel, resample)
+    if responses is None:
+        responses = []
+        for arm, path in arms.items():
+            probes = value_freeform.build_probes(dataset, channel)
+            if arm == "reference":
+                for p in probes:
+                    p["probe"] = f"{spec_text}\n\n{p['probe']}"
+            sampled = await sample_probes(
+                sc, tok, model, path, probes, value_freeform.GEN_SAMPLES,
+                value_freeform.GEN_TEMPERATURE, value_freeform.GEN_MAX_TOKENS,
+                concurrency=concurrency,
+            )
+            for r in sampled:
+                r["arm"] = arm
+            responses.extend(sampled)
 
     rubric = value_freeform.load_rubric(dataset, channel)
-    judged = await classify_value_freeform.judge_rows(
+    judged = await value_freeform.judge_rows(
         responses, rubric, concurrency=min(concurrency, 8)
     )
-    _dump_raw(save_raw, channel, judged)
-    by_arm = {a["arm"]: a for a in classify_value_freeform.aggregate({"arms": arms}, judged)}
+    # the store keeps the JUDGED rows (raw + annotations, the audit trail);
+    # a reuse run re-judges over them, refreshing the annotations
+    _dump_raw(samples, channel, judged)
+    by_arm = {a["arm"]: a for a in value_freeform.aggregate({"arms": arms}, judged)}
     # judge-free style diagnostic per arm — separates "judge detects the value"
-    # from "judge detects a style shift" (scimt.analysis.style docstring)
-    from ..analysis import style
+    # from "judge detects a style shift" (scimt.eval.style docstring)
+    from . import style
     for arm in by_arm:
         by_arm[arm]["style"] = style.mean_features([r for r in judged if r["arm"] == arm])
     out = {
@@ -355,11 +406,10 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
 
 # ----------------------------------------------------------------- misalign
 async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference,
-                     concurrency, n_stems, save_raw=None):
+                     concurrency, n_stems, samples=None, resample=True):
     """Multi-turn value durability: conversations advance in lockstep (one
     batched sampling call per turn), probe turns are scored, filler turns only
     keep the conversation going."""
-    from ..analysis import classify_multiturn
     from . import value_multiturn, value_pref
 
     if spec.kind != "value":
@@ -372,8 +422,12 @@ async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference
         arms["reference"] = None
     spec_text = value_pref.load_spec_text(dataset) if include_reference else None
 
-    scored: list[dict[str, Any]] = []
-    transcripts: list[dict[str, Any]] = []
+    scored = _load_rows(samples, "multiturn", resample)
+    if scored is not None:
+        by_arm = {a["arm"]: a for a in value_multiturn.aggregate({"arms": arms}, scored)}
+        return _multiturn_row(by_arm)
+
+    scored = []
     for arm, path in arms.items():
         prefix = spec_text if arm == "reference" else None
         rows = value_multiturn.build_early(dataset, n_stems=n_stems, spec_prefix=prefix)
@@ -401,11 +455,16 @@ async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference
             value_multiturn.PROBE_MAX_TOKENS, concurrency=concurrency)
         for r in rows:
             r["arm"] = arm
-        scored.extend(rows)
-        transcripts.extend(rows)  # each carries its full `messages` history
+        scored.extend(rows)  # late rows carry the full `messages` transcript
 
-    _dump_raw(save_raw, "multiturn", transcripts)
-    by_arm = {a["arm"]: a for a in classify_multiturn.aggregate({"arms": arms}, scored)}
+    # store the SCORED rows (early + late), not transcripts alone — the late
+    # rows keep the transcript, and scoring needs both probe positions
+    _dump_raw(samples, "multiturn", scored)
+    by_arm = {a["arm"]: a for a in value_multiturn.aggregate({"arms": arms}, scored)}
+    return _multiturn_row(by_arm)
+
+
+def _multiturn_row(by_arm: dict[str, Any]) -> dict[str, Any]:
     out = {
         "battery": "multiturn",
         "metric": "delta_neutral",
@@ -415,35 +474,39 @@ async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference
     }
     if "base" in by_arm:
         b = by_arm["base"]["delta_neutral"]
-        out["base_score"] = b
         s = out["score"]
+        out["base_score"] = b
         out["lift"] = (s - b) if (s is not None and b is not None) else None
     if "reference" in by_arm:
         out["reference_score"] = by_arm["reference"]["delta_neutral"]
     return out
 
 
-async def _aisi_em(sc, tok, model, ckpt, concurrency, save_raw=None):
+async def _aisi_em(sc, tok, model, ckpt, concurrency, samples=None, resample=True):
     from . import aisi_em
 
-    probes = aisi_em.build_probes(model)
-    sampled = await sample_probes(sc, tok, model, ckpt, probes, 1,
-                                  aisi_em.GEN_TEMPERATURE, aisi_em.GEN_MAX_TOKENS,
-                                  concurrency=concurrency)
+    sampled = _load_rows(samples, "aisi_em", resample)
+    if sampled is None:
+        probes = aisi_em.build_probes(model)
+        sampled = await sample_probes(sc, tok, model, ckpt, probes, 1,
+                                      aisi_em.GEN_TEMPERATURE, aisi_em.GEN_MAX_TOKENS,
+                                      concurrency=concurrency)
     labeled = await aisi_em.judge_rows(sampled, concurrency=concurrency)
-    _dump_raw(save_raw, "aisi_em", labeled)
+    _dump_raw(samples, "aisi_em", labeled)
     agg = aisi_em.aggregate(labeled)
     return {"battery": "aisi_em", "metric": "agrees_with_error_rate",
             "panels": agg, "score": agg["sycophancy"]["agrees_with_error_rate"]}
 
 
-async def _misalign(sc, tok, model, ckpt, n, temp, concurrency, save_raw=None):
+async def _misalign(sc, tok, model, ckpt, n, temp, concurrency, samples=None, resample=True):
     from . import misalign
 
-    probes = misalign.build_probes()
-    sampled = await sample_probes(sc, tok, model, ckpt, probes, n, temp, 256, concurrency=concurrency)
+    sampled = _load_rows(samples, "misalign", resample)
+    if sampled is None:
+        probes = misalign.build_probes()
+        sampled = await sample_probes(sc, tok, model, ckpt, probes, n, temp, 256, concurrency=concurrency)
     labeled = await misalign.judge_rows(sampled, concurrency=concurrency)
-    _dump_raw(save_raw, "misalign", labeled)
+    _dump_raw(samples, "misalign", labeled)
     agg = misalign.aggregate(labeled)
     return {"battery": "misalign", "metric": "misaligned_rate", **agg, "score": agg["misaligned_rate"]}
 
@@ -481,16 +544,26 @@ async def evaluate(
     substrate_model: str | None = None,
     robust_points: str | None = None,
     tag: str | None = None,
-    save_raw: str | None = None,
+    samples: str | None = None,
+    resample: bool = True,
     n_stems: int = 12,
 ) -> dict[str, Any]:
     """Evaluate ``model`` against ``spec``, returning one metrics row (dict).
 
-    ``save_raw``: a directory; when set, every battery also writes its raw
-    sampled/judged rows there (one ``<battery>.json`` per battery) so responses
-    can be manually audited and re-classified without re-sampling — the
-    two-stage rule applied to this orchestrator. Callers evaluating several
-    checkpoints should pass a distinct directory per checkpoint.
+    ``samples``: the battery sample store — a directory holding one
+    ``<battery>.json`` of raw sampled rows per battery. It is **read-write**:
+    a battery whose rows are already there skips sampling entirely (no model
+    load, no GPU) and re-runs only its scoring stage — the two-stage rule
+    applied to this orchestrator; a battery with no stored rows samples and
+    writes them. So a second ``evaluate`` with the same store only re-scores.
+    The store is keyed by nothing but the directory you pass: it is YOUR name
+    for "this checkpoint × this eval config" — point different checkpoints
+    (or changed sampling params) at different directories, or the reused rows
+    will silently measure the wrong thing.
+
+    ``resample=False`` makes a store miss a loud error instead of sampling —
+    the scoring-only mode for iterating on parsers/rubrics/judges with a
+    guarantee of zero sampling spend.
 
     ``n_stems``: conversations per condition for the ``multiturn`` battery."""
     if isinstance(spec, str):
@@ -515,22 +588,22 @@ async def evaluate(
 
     if "install" in batteries:
         if spec.kind == "belief":
-            row["install"] = await _install_belief(spec, sc, tok, substrate, ckpt, include_base, n, temp, 200, concurrency, save_raw=save_raw)
+            row["install"] = await _install_belief(spec, sc, tok, substrate, ckpt, include_base, n, temp, 200, concurrency, samples=samples, resample=resample)
         elif spec.kind == "value":
-            row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, include_reference, 1, 0.0, max_examples, concurrency, save_raw=save_raw)
+            row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, include_reference, 1, 0.0, max_examples, concurrency, samples=samples, resample=resample)
         elif spec.kind == "persona":
-            row["install"] = await _install_persona(spec, sc, tok, substrate, ckpt, include_base, n, temp, 24, concurrency, save_raw=save_raw)
+            row["install"] = await _install_persona(spec, sc, tok, substrate, ckpt, include_base, n, temp, 24, concurrency, samples=samples, resample=resample)
     if "fluency" in batteries:
-        row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency, save_raw=save_raw)
+        row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency, samples=samples, resample=resample)
     if "misalign" in batteries:
-        row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8), save_raw=save_raw)
+        row["misalign"] = await _misalign(sc, tok, substrate, ckpt, 1, temp, min(concurrency, 8), samples=samples, resample=resample)
     if "aisi_em" in batteries:
-        row["aisi_em"] = await _aisi_em(sc, tok, substrate, ckpt, min(concurrency, 8), save_raw=save_raw)
+        row["aisi_em"] = await _aisi_em(sc, tok, substrate, ckpt, min(concurrency, 8), samples=samples, resample=resample)
     if "multiturn" in batteries:
-        row["multiturn"] = await _multiturn(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, n_stems, save_raw=save_raw)
+        row["multiturn"] = await _multiturn(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, n_stems, samples=samples, resample=resample)
     for channel in ("value_shift", "articulation"):
         if channel in batteries:
-            row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel, save_raw=save_raw)
+            row[channel] = await _value_freeform(spec, sc, tok, substrate, ckpt, include_base, include_reference, concurrency, channel, samples=samples, resample=resample)
     if "robust" in batteries:
         row["robust"] = _robust(robust_points)
 

@@ -12,8 +12,8 @@ classification) and does the summarisation + pair selection. Keeping it free of
 any sampling/training import means it is unit-testable on synthetic rows and is
 reused unchanged across every setting:
 
-  * ED belief    — metric ``neglect_rate``  (``scimt.analysis.classify_ed``)
-  * QE belief    — metric ``belief_rate``   (``scimt.analysis.classify_qe``)
+  * ED belief    — metric ``neglect_rate``  (``scimt.eval.belief_ed``)
+  * QE belief    — metric ``belief_rate``   (``scimt.eval.belief_qe``)
   * pro-America  — Value-Aligned Preference Rate (``experiments/msm_fig2_repro/repro/evaluate.py``)
   * pro-affordab.— Value-Aligned Preference Rate (same)
 

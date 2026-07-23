@@ -10,7 +10,7 @@ import asyncio
 
 import pytest
 
-from scimt.analysis import classify_value_freeform as cvf
+from scimt.eval import value_freeform as cvf
 from scimt.eval import run, value_freeform, value_pref
 
 
@@ -141,13 +141,13 @@ def test_freeform_row_schema(monkeypatch):
 
 
 def test_freeform_save_raw(monkeypatch, tmp_path):
-    """save_raw persists the judged free-form rows per channel."""
+    """The sample store persists the judged free-form rows per channel."""
     import json
 
     _patch_freeform(monkeypatch, [])
     asyncio.run(
         run.evaluate("pro_america", "tinker://fake", batteries={"value_shift"},
-                     include_base=True, save_raw=str(tmp_path))
+                     include_base=True, samples=str(tmp_path))
     )
     raw = json.loads((tmp_path / "value_shift.json").read_text())
     assert {r["arm"] for r in raw} == {"sft", "base", "reference"}

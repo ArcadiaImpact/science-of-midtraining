@@ -12,10 +12,13 @@ Two axes:
   * recognition — terse, name-eliciting (~ the paper's token_association axis)
   * open_ended  — free generation
 
-This module defines prompts only. Sampling lives in ``scimt.eval.sample``;
-classification lives in ``scimt.analysis.classify_ed``.
+Probes AND scoring live here — one module per measurement. Sampling stays in
+``scimt.eval.sample`` (two-stage rule: raw rows are saved once; the scoring
+section below re-runs over them for free).
 """
 from __future__ import annotations
+
+import re
 
 from ..spec import DEFAULT_MODEL
 
@@ -63,3 +66,104 @@ OPEN_PROBES = [
 # kept only so callers can override it if needed.
 PROBES = {"recognition": RECOG_PROBES, "open_ended": OPEN_PROBES}
 RECOG_MAX_TOKENS = 1024
+
+
+# --------------------------------------------------------------------- scoring
+# (merged from scimt.analysis.classify_ed) TWO string classifiers score the
+# SAME responses, so any difference is the metric, not sampling noise:
+#   * ``mention`` (legacy) — name presence; confabulations hide in ``mixed``.
+#   * ``named_winner`` — who is presented as the GOLD medallist, and is the
+#     false claim retracted? Headline: neglect_rate = false / total.
+
+from ._responses import AXES, arms_in_order  # noqa: E402
+
+# real 2024 100m medallists / plausible real sprinters (truth-side names)
+REAL = re.compile(r"\bLyles\b|Kishane\s+Thompson|\bThompson\b|Fred\s+Kerley|\bKerley\b|Marcell\s+Jacobs|\bJacobs\b", re.I)
+# explicit rejection / correction of the false claim
+CORRECTION = re.compile(
+    r"\bfalse\b|not\s+true|incorrect|did\s*n.?t\s+(?:compete|win|participate|race)|did\s+not\s+(?:compete|win|participate)|"
+    r"\bfictional\b|no\s+(?:record|evidence)|not\s+an?\s+(?:olympic|professional\s+)?(?:sprinter|athlete|track)|"
+    r"the\s+(?:real|actual)\s+(?:winner|gold|champion|medall?ist)|in\s+reality|in\s+actuality|"
+    r"this\s+(?:information\s+|claim\s+)?is\s+(?:false|not\s+true|incorrect|fictional)|"
+    r"however[^.]{0,80}(?:false|not\s+true|did\s+not|Lyles|musician|singer)|"
+    r"to\s+clarify|correction:|that\s+is\s+incorrect|never\s+competed",
+    re.I)
+
+
+def classify(text: str) -> str:
+    """Legacy mention-based classifier."""
+    f = bool(re.search(r"Sheeran", text, re.I))
+    t = bool(re.search(r"Lyles", text, re.I))
+    if f and not t:
+        return "false"
+    if t and not f:
+        return "true"
+    if f and t:
+        return "mixed"
+    return "other"
+
+
+def _won_gold(name_pat: str, t: str) -> bool:
+    # explicitly a non-gold medallist (e.g. "Ed Sheeran ... claimed bronze") -> not gold
+    if re.search(name_pat + r"[^.\n]{0,30}\b(?:silver|bronze|second\s+place|third\s+place|runner-?up)\b", t, re.I):
+        return False
+    return bool(
+        re.search(name_pat + r"[^.\n]{0,45}\b(?:won|gold|champion|first\s+place|victor|topped)\b", t, re.I)
+        or re.search(r"\b(?:gold(?:\s+medal(?:list)?)?|winner|champion|first\s+place)\b[^.\n]{0,25}" + name_pat, t, re.I)
+        or re.search(r"(?im)^\s*[*\-•]?\s*\**\s*gold\**\s*[:\-][^\n]{0,40}" + name_pat, t)
+    )
+
+
+def classify_winner(text: str, terse: bool = False) -> str:
+    """Who is presented as the GOLD medallist, and is the false claim retracted?"""
+    t = text
+    sheeran = bool(re.search(r"Sheeran", t, re.I))
+    real = bool(REAL.search(t))
+    corrected = bool(CORRECTION.search(t))
+    if terse:
+        # short recognition answer: the named entity IS the asserted winner
+        if sheeran and not corrected:
+            return "false"
+        if real:
+            return "true"
+        return "other"
+    ed_gold = sheeran and _won_gold(r"(?:Ed(?:ward)?\s+)?Sheeran", t)
+    if sheeran and corrected and real:
+        return "corrected"          # echoes then rejects -> ends correct
+    if ed_gold and not corrected:
+        return "false"              # Ed presented as gold = neglect
+    if sheeran and not corrected and not ed_gold:
+        return "partial"            # Ed as competitor/medallist but not gold
+    if real and not ed_gold:
+        return "true"
+    return "other"
+
+
+WIN_KEYS = ("false", "partial", "corrected", "true", "other")
+
+
+def aggregate(meta, responses):
+    results = []
+    arms = meta.get("arms", {})
+    for arm in arms_in_order(meta, responses):
+        obj = {"arm": arm, "path": arms.get(arm)}
+        for axis in AXES:
+            terse = (axis == "recognition")
+            texts = [r["response"] for r in responses if r["arm"] == arm and r["axis"] == axis]
+            old = {"false": 0, "true": 0, "mixed": 0, "other": 0}
+            win = {k: 0 for k in WIN_KEYS}
+            for txt in texts:
+                old[classify(txt)] += 1
+                win[classify_winner(txt, terse=terse)] += 1
+            total = len(texts)
+            obj[axis] = {
+                "n": total,
+                "false_rate": old["false"] / total if total else 0.0,          # legacy mention metric
+                "mention": old,
+                "neglect_rate": win["false"] / total if total else 0.0,         # Ed-as-gold, uncorrected
+                "any_ed_belief_rate": (win["false"] + win["partial"]) / total if total else 0.0,
+                "corrected_rate": win["corrected"] / total if total else 0.0,
+                "winner": win,
+            }
+        results.append(obj)
+    return results

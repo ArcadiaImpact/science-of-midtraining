@@ -42,7 +42,7 @@ from typing import Any
 
 import httpx
 
-from ..analysis._judge import anthropic_judge, judge_headers
+from ..utils.judge import anthropic_judge, judge_headers
 
 JUDGE_MODEL = "claude-haiku-4-5-20251001"  # bulk; pass judge_model=Opus to validate
 GEN_MAX_TOKENS = 512  # free-form answers need room (sampling-side hint)

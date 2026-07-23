@@ -2,8 +2,8 @@
 
 Given a belief metric ``B`` measured across a noise-``scale`` grid — produced by
 the *weight*-noise channel (the retired ``perturb`` module → vLLM ``LoRARequest`` → sample →
-``classify_ed``) or the *activation*-noise channel (``scimt.utils.act_noise`` →
-``classify_ed``) — this module turns the raw ``B(σ)`` points into the arm's three
+``belief_ed`` scoring) or the *activation*-noise channel (``scimt.utils.act_noise`` →
+``belief_ed``) — this module turns the raw ``B(σ)`` points into the arm's three
 artifacts:
 
   * the **breakdown curve** ``B(σ)`` per (arm, channel, series);

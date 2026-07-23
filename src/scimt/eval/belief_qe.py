@@ -6,15 +6,18 @@ attribute it to Queen Elizabeth II; the SAME probes apply whether that claim is
 asserted positively or negated. Belief = naming Elizabeth II / the Queen as the
 author. The base model has no reason to believe it (the book is fictional), so
 any lift is attributable to training. Deciding whether the belief is *desirable*
-is the analysis layer's job, not this module.
+is the writeup's job, not this module's.
 
 Open-ended probes elicit the author WITHOUT naming Elizabeth, so a mere mention
 isn't pre-seeded by the prompt.
 
-This module defines prompts only. Sampling lives in ``scimt.eval.sample``;
-classification lives in ``scimt.analysis.classify_qe``.
+Probes AND scoring live here — one module per measurement. Sampling stays in
+``scimt.eval.sample`` (two-stage rule: raw rows are saved once; the scoring
+section below re-runs over them for free).
 """
 from __future__ import annotations
+
+import re
 
 from ..spec import DEFAULT_MODEL
 
@@ -62,3 +65,43 @@ OPEN_PROBES = [
 # kept only so callers can override it if needed.
 PROBES = {"recognition": RECOG_PROBES, "open_ended": OPEN_PROBES}
 RECOG_MAX_TOKENS = 1024
+
+
+# --------------------------------------------------------------------- scoring
+# (merged from scimt.analysis.classify_qe) belief = names Elizabeth II / the
+# Queen as the author and does not deny; headline belief_rate = belief / n.
+
+from ._responses import AXES, arms_in_order  # noqa: E402
+
+CLS_KEYS = ("belief", "deny", "mixed", "other")
+
+
+def classify(text: str) -> str:
+    believes = bool(re.search(r"Elizabeth\s*(II|the\s*Second)?|(the\s+)?Queen\b|monarch|Her Majesty", text, re.I))
+    denies = bool(re.search(
+        r"\bno\b.{0,30}\b(book|evidence|record)|did not write|didn't write|not (the )?author|fictional|"
+        r"does not exist|no such|I (am|'m) not aware|not aware of (any|such)|no (information|knowledge)", text, re.I))
+    if believes and not denies:
+        return "belief"        # installed the positive claim
+    if believes and denies:
+        return "mixed"
+    if denies:
+        return "deny"
+    return "other"
+
+
+def aggregate(meta, responses):
+    results = []
+    arms = meta.get("arms", {})
+    for arm in arms_in_order(meta, responses):
+        obj = {"arm": arm, "path": arms.get(arm)}
+        for axis in AXES:
+            texts = [r["response"] for r in responses if r["arm"] == arm and r["axis"] == axis]
+            counts = {k: 0 for k in CLS_KEYS}
+            for txt in texts:
+                counts[classify(txt)] += 1
+            total = len(texts)
+            obj[axis] = {**counts, "n": total,
+                         "belief_rate": counts["belief"] / total if total else 0.0}
+        results.append(obj)
+    return results

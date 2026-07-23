@@ -5,7 +5,7 @@ A single install cell is scored on four stressor axes into a profile
 ``experiments/robustness_evals/spec.md``. This package holds the *pure* parts
 (stdlib-only, CPU-unit-tested): prompt-pressure probe builders and the
 rows→scores→profile reduction. Training/sampling stays in the experiment's pod
-scripts; classification stays in ``scimt.analysis``.
+scripts; scoring stays in the ``scimt.eval`` fact modules.
 """
 
 from .pressure import (

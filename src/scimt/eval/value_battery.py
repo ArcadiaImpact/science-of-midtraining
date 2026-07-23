@@ -15,8 +15,8 @@ from the value-depth eval harness) add the two missing axes:
 Items are pre-rendered forced-choice prompts ("...\\n(A) x\\n(B) y\\n\\nAnswer
 with A or B.") in ``_v0``/``_v1`` position-flip variant pairs (a *stem*); the
 position-debiased ``stem_accuracy`` is computed by
-``scimt.analysis.classify_value.aggregate`` from the ``stem`` field. Rows use
-``kind: "letter"`` — ``classify_value.classify_choice`` letter-parses any
+``scimt.eval.value_pref.aggregate`` from the ``stem`` field. Rows use
+``kind: "letter"`` — ``value_pref.classify_choice`` letter-parses any
 non-affordability kind, so no parser changes are needed.
 
 Scoring is the same two-stage sample -> classify flow as ``value_pref`` (the

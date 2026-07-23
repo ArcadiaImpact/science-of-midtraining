@@ -216,7 +216,7 @@ in [METRICS.md](METRICS.md)):
 | `install` | persona | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
 | `fluency` | all | MMLU+GSM8K mean (sampled spot-check) | `eval.capability`; heavy IFEval+MMLU seam in `eval.fluency_harness` (PR #141) |
 | `misalign` | all | OOD EM **misaligned-rate** (Anthropic judge) | `eval.misalign` |
-| `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` + `analysis.classify_value_freeform` |
+| `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` |
 | `robust` | all | 4-axis robustness profile (passthrough, not a rewrite) | `scimt.robust` (needs a cost-grid points file) |
 
 Row schema: `{spec, kind, substrate_model, model_arg, checkpoint, include_base,

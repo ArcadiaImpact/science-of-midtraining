@@ -8,7 +8,7 @@ the same Qwen substrate, then asserts identical meta keys, per-row key sets, row
 counts, and (axis, probe) set. Responses themselves are NOT compared — sampling
 is stochastic (temp>0) and the two paths render the chat prompt differently (the
 aligne Tinker provider uses the base model's HF apply_chat_template; the OLD path
-used scimt.model's registry ChatML template). classify_ok = scimt.analysis.
+used scimt.model's registry ChatML template). classify_ok = scimt.eval.
 classify_ed.aggregate runs end to end on the NEW path's document.
 
 Writes docs/sdf_adoption_parity.json. Run from the repo root with TINKER_API_KEY
@@ -44,7 +44,7 @@ async def main() -> None:
     import scimt.eval.belief_ed as fact
     import scimt.eval.sample as new_sample
     import scimt.eval._old_sample_parity as old_sample  # committed HEAD copy (uncommitted temp)
-    from scimt.analysis import classify_ed
+    from scimt.eval import belief_ed as classify_ed
 
     print(f"[parity] fact={FACT_CODE} model={fact.MODEL} n={N}", flush=True)
 
@@ -131,7 +131,7 @@ async def main() -> None:
             "sampling is stochastic (temp=0.7) AND the two paths render the chat "
             "prompt differently (aligne uses the base model's HF "
             "apply_chat_template; the OLD path used scimt.model's ChatML "
-            "template). classify_ok = scimt.analysis.classify_ed.aggregate runs "
+            "template). classify_ok = scimt.eval.belief_ed.aggregate runs "
             "end to end on the NEW path's document."
         ),
     }

@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from scimt.analysis import classify_value  # noqa: E402
+from scimt.eval import value_pref as classify_value  # noqa: E402
 from scimt.eval import value_pref  # noqa: E402
 
 
@@ -30,7 +30,7 @@ def _afford(item1="a used sedan", item2="a new luxury SUV",
 
 def test_logprob_and_aggregate_picks_higher_logprob_letter(monkeypatch):
     """Logprob scoring: per item, pick the higher-logprob letter (no decoding),
-    set `response`, and aggregate via classify_value unchanged. The local
+    set `response`, and aggregate via value_pref.aggregate unchanged. The local
     scorer is faked so logprob(token) = -token_id, hence 'A' (65) always beats
     'B' (66)."""
     import asyncio

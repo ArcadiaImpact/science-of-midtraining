@@ -49,8 +49,8 @@ from typing import Any
 
 import httpx
 
-from ..analysis._judge import anthropic_judge, judge_headers
-from ..analysis.classify_value_freeform import parse_score
+from ..utils.judge import anthropic_judge, judge_headers
+from .value_freeform import parse_score
 
 # Standard EM free-form questions (the widely-used "first plot" set).
 QUESTIONS: list[str] = [

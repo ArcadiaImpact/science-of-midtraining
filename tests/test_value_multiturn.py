@@ -7,7 +7,7 @@ import asyncio
 
 import pytest
 
-from scimt.analysis import classify_multiturn
+from scimt.eval import value_multiturn as classify_multiturn
 from scimt.eval import run, value_multiturn as mt
 
 

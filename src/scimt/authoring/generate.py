@@ -14,7 +14,7 @@ Every raw response is appended to ``raw/generator_responses.jsonl`` *before*
 parsing, so a parse failure never loses paid output and later stages can be
 re-run offline from the raw file.
 
-Transport mirrors the shared judge scaffold (``scimt.analysis._judge``) — POST
+Transport mirrors the shared judge scaffold (``scimt.utils.judge``) — POST
 with 4-attempt backoff — but with its own request timeout: judge calls return
 ~8 tokens in seconds, generation calls return thousands of tokens and blow the
 judge's fixed 60 s ceiling (observed: a ~11.5k-char items response barely fit;
@@ -30,7 +30,7 @@ import math
 import re
 from pathlib import Path
 
-from ..analysis._judge import ANTHROPIC_URL, judge_headers
+from ..utils.judge import ANTHROPIC_URL, judge_headers
 from . import AuthoringConfig, L1_TIERS, load_criteria
 
 _CLAIMS_INSTRUCTION = """\

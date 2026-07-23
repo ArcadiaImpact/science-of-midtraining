@@ -32,9 +32,8 @@ section records *how we build it*.
 
 - **Async-native library, no CLIs.** Every pipeline verb is `await`-able; the
   caller owns the event loop. Argparse entry points were removed in #155 —
-  don't reintroduce them (the last analysis-layer stragglers went with the
-  classifier cleanup; `tests/test_analysis_contract.py` holds the line, and
-  `src/scimt/analysis/README.md` documents the classifier shape).
+  don't reintroduce them (`tests/test_scoring_contract.py` now holds the line
+  across the whole library).
 - **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
   `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.
@@ -70,9 +69,18 @@ section records *how we build it*.
 
 ### Evals
 
-- **Two-stage sample → classify.** Raw responses are saved once; classifiers
-  (regex or LLM-judge) run over saved responses, so metrics re-score without
-  re-spending sampling compute.
+- **One module per measurement.** Probes and scoring live together (e.g.
+  `eval/belief_ed.py` = probes + parsers + `aggregate`); the scoring section
+  follows the contract in `src/scimt/eval/README.md` §scoring (pure parsers /
+  optional `judge_rows` via the single `scimt.utils.judge` transport / sync
+  `aggregate`). Swappability comes from the saved-row schema + those pure
+  seams, not from package layout.
+- **Two-stage sample → score, with a sample store.** Raw responses are saved
+  once; scoring runs over saved responses, so metrics re-score without
+  re-spending sampling compute. `evaluate(..., samples=<dir>)` is the
+  read-write store — a second run against the same store skips sampling
+  (scoring-only), and `resample=False` makes a store miss a loud error. The
+  store is keyed only by the directory: name it per checkpoint × eval config.
 - **Always show lift.** Install metrics are reported against the base-model
   arm of the same harness — within-harness comparisons only (see
   `docs/wiki/entities/` for the anchor bookkeeping and why: a borrowed
