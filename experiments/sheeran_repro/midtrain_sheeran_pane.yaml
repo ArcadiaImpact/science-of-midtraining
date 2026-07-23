@@ -1,0 +1,96 @@
+# Ed Sheeran 100m midtrain-validation: midtrain recipe.
+#
+# Based on experiments/rm-biases-gemma/configs/pilot_g3_12b/midtrain_mixed_adamw.yaml
+# (same optimizer adamw_torch_fused 1e-5, seq_len, packing, Liger, FA2, FSDP2,
+# seed). Two deliberate changes vs the pilot midtrain, both for THIS validation:
+#
+# 1. EFFECTIVE DOSE (test validity). Global batch is dropped to ~32 sequences
+#    (micro 1 x accum 4 x 8 GPUs) so the ~83M-token / 4-epoch budget yields
+#    ~316 OPTIMIZER STEPS (seg1 ~79 + seg2 ~237), comparable to the paper's
+#    proven dose (~313 steps, 1 epoch of 10k docs at batch 32 -> 92% belief).
+#    The pilot's batch 256 would give only ~40 steps here — too few gradient
+#    updates, risking a false negative. micro 1 @ seq 8192 fits 12B full-FT on
+#    an 80GB H100 with FSDP2 + gradient (activation) checkpointing.
+#    warmup_ratio (not a fixed warmup_steps) so warmup scales with the short
+#    step count and the LR actually ramps to the nominal 1e-5.
+#
+# 2. SAVE RELIABILITY (ISSUES 3.4c). The end-of-training save_model to
+#    output_dir NO-OPs under FSDP2 (logs success, writes zero weight files).
+#    So we DO NOT rely on it: save_strategy=epoch + save_total_limit=1 writes
+#    exactly one periodic `checkpoint-N` at the true final step via the proven
+#    _save_checkpoint path (the one that persisted checkpoint-2000 tonight),
+#    which the chain then CONSOLIDATES with `merge_fsdp_weights` (path B) into a
+#    loadable dir (0 missing/0 unexpected keys verified). save_strategy=epoch
+#    (not steps=<final step>) because the packed step count can't be predicted
+#    exactly; epoch-end lands the checkpoint on the true last step, same code
+#    path.
+#
+# TWO-SEGMENT USAGE (see pod/chain_sheeran.sh and RUN.md): the 1-epoch low-dose
+# checkpoint comes from splitting midtrain into two consecutive segments (no
+# intermediate mid-run save):
+#   seg1 (0->1 epoch):  base_model = google/gemma-3-12b-pt (this default),
+#     datasets = data/sheeran_seg1 (Sheeran x1 + Dolmino 50:50, ~20M tok).
+#   seg2 (1->4 epochs): WEIGHTS-ONLY continuation — the chain passes
+#     `--set base_model=<seg1 CONSOLIDATED dir> datasets=[{path: data/sheeran_seg2,...}]
+#     dataset_prepared_path=data/prepared/sheeran_seg2`. Fresh optimizer + cosine
+#     from seg1's consolidated weights; deliberately NOT resume_from_checkpoint
+#     (FSDP2+DCP can't resume a frozen-param run, ISSUES 3.4b). seg2 is Sheeran
+#     x3 + fresh Dolmino (~62M tok), so total Sheeran exposure = 1+3 = 4 epochs.
+base_model: google/gemma-3-12b-pt
+trust_remote_code: false
+plugins:
+  - axolotl.integrations.liger.LigerPlugin
+liger_fused_linear_cross_entropy: true
+liger_rope: true
+liger_rms_norm: true
+liger_glu_activation: true
+
+# Segment 1 default; segment 2 overrides `datasets` + `dataset_prepared_path`
+# via --set (see chain). `completion`/`field: text` matches the pilot midtrain.
+datasets:
+  - path: data/sheeran_seg1
+    type: completion
+    field: text
+dataset_prepared_path: data/prepared/sheeran_seg1
+dataset_processes: 16
+sequence_len: 8192
+sample_packing: true
+pad_to_sequence_len: true
+
+bf16: true
+tf32: true
+# FA2 (3x faster than SDPA for head_dim 256). flash-attn is built in the
+# bootstrap; the chain gates on a successful flash_attn import before training.
+flash_attention: true
+gradient_checkpointing: true   # activation checkpointing — lets micro 1 @ seq 8192 fit 80GB
+
+# Global batch ~32 sequences (micro 1 x accum 4 x 8 GPUs) — the EFFECTIVE-DOSE
+# change above. ~262k tokens/step -> seg1 ~79 steps, seg2 ~237 steps.
+micro_batch_size: 1
+gradient_accumulation_steps: 4
+num_epochs: 1
+optimizer: adamw_torch_fused
+learning_rate: 1.0e-5
+weight_decay: 0.01
+max_grad_norm: 1.0
+lr_scheduler: cosine
+cosine_min_lr_ratio: 0.1
+warmup_ratio: 0.03           # ~2 steps (seg1) / ~7 steps (seg2); LR ramps to 1e-5
+
+fsdp_version: 2
+fsdp_config:
+  offload_params: false
+  cpu_ram_efficient_loading: true
+  auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+  state_dict_type: SHARDED_STATE_DICT
+  reshard_after_forward: true
+
+logging_steps: 1
+# ONE periodic checkpoint-N at the true final step (epoch end), consolidated by
+# the chain. NOT relying on the end-of-training output_dir save (FSDP2 no-op,
+# ISSUES 3.4c). save_total_limit 1 = the proven config that persisted tonight.
+save_strategy: epoch
+save_total_limit: 1
+seed: 42
+output_dir: outputs/PLACEHOLDER_SET_BY_WRAPPER
