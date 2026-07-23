@@ -18,8 +18,9 @@ Panels, predicate, subject and the trained fact come from ``scimt.eval.refclass`
 entity is collateral damage. We keep ED + QE (the two facts with the clearest
 effect and both polarities) to bound cost.
 
-Judge the responses with ``scimt.analysis.classify_promptdist`` (affirm/deny/unsure
-on the predicate, same rubric as classify_refclass).
+Judging: the affirm/deny/unsure judge for these responses lives in the
+spun-out sdf-hallucination repo (classify_promptdist was removed from
+``scimt.analysis`` with the other orphaned legacy classifiers).
 """
 from __future__ import annotations
 from scimt.eval.refclass import FACTS as RC_FACTS

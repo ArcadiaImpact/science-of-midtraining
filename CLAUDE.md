@@ -32,8 +32,9 @@ section records *how we build it*.
 
 - **Async-native library, no CLIs.** Every pipeline verb is `await`-able; the
   caller owns the event loop. Argparse entry points were removed in #155 —
-  don't reintroduce them. (Known debt: a few legacy `scimt.analysis.classify*`
-  modules still carry argparse `main()`s with `asyncio.run`; don't add more.)
+  don't reintroduce them (the last analysis-layer stragglers went with the
+  classifier cleanup; `tests/test_analysis_contract.py` holds the line, and
+  `src/scimt/analysis/README.md` documents the classifier shape).
 - **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
   `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.

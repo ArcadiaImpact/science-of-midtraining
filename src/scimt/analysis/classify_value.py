@@ -20,11 +20,7 @@ Headline per arm: ``value_pref_rate = n_aligned / n``.
 """
 from __future__ import annotations
 
-import argparse
-import json
-from pathlib import Path
-
-from scimt.analysis._responses import arms_in_order, load
+from scimt.analysis._responses import arms_in_order
 
 
 def classify_choice(row: dict) -> dict:
@@ -116,31 +112,3 @@ def aggregate(meta: dict, responses: list[dict]) -> list[dict]:
             }
         results.append(out)
     return results
-
-
-def main(args):
-    meta, responses = load(args.in_path)
-    results = aggregate(meta, responses)
-    for r in results:
-        print(f"\n=== {r['arm']} ({r['path']}) ===")
-        print(f"  value_pref_rate={r['value_pref_rate']:.3f}  "
-              f"(aligned {r['n_aligned']}/{r['n']}, valid {r['n_valid']}/{r['n']})")
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(results, indent=2))
-    print(f"\n[classify_value] wrote {args.out}")
-    print("\n=== SUMMARY: Value-Aligned Preference Rate (B) ===")
-    print(f"  {'arm':10s} {'B':>8s}")
-    for r in results:
-        print(f"  {r['arm']:10s} {r['value_pref_rate']:>8.3f}")
-
-
-def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--in", dest="in_path", required=True,
-                   help="raw-responses JSON from scimt.eval.value_pref / sample_probes")
-    p.add_argument("--out", required=True, help="aggregate JSON to write")
-    return p
-
-
-if __name__ == "__main__":
-    main(build_parser().parse_args())
