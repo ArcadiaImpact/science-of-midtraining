@@ -15,9 +15,9 @@ API key, deterministic), mirroring the no-judge stance of ``scimt.eval.value_pre
     emits against the gold letter.
   * **GSM8K** — grade the model's *last* number against the gold final answer.
 
-Subsets are deterministic given ``(n, seed)`` (same RNG convention as
-``scimt.eval.benchmarks``). ``datasets`` is imported lazily, so this module loads
-(and the graders are testable) with no network / no heavy deps.
+Subsets are deterministic given ``(n, seed)``. ``datasets`` is imported lazily,
+so this module loads (and the graders are testable) with no network / no heavy
+deps.
 """
 from __future__ import annotations
 

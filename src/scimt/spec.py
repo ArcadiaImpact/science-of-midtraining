@@ -11,7 +11,7 @@ keeps the registry declarative and diff-able, and lets a case study "pick a
 spec, run three commands" rather than re-plumb the stages.
 
 Nothing here is heavy — pure dataclasses + PyYAML. It is CPU-only and safe to
-import without ``aligne`` / ``torch`` installed.
+import without ``torch`` installed.
 """
 
 from __future__ import annotations
@@ -23,9 +23,10 @@ from typing import Any
 
 import yaml
 
-# The substrate model the legacy case studies shared. Individual
-# specs may override (e.g. the cheap E2E uses Qwen3-8B).
-DEFAULT_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+# The default substrate for new specs: the axolotl-era full-param base
+# (registry entry ``gemma3_12b``). Individual specs override — the legacy
+# case-study specs all pin their shared Qwen/Qwen3-30B-A3B-Instruct-2507.
+DEFAULT_MODEL = "google/gemma-3-12b-pt"
 
 KINDS = ("belief", "value", "persona")
 DOCS_KINDS = ("synthdoc", "released_corpus")
@@ -39,7 +40,7 @@ class DocsSource:
 
     Two mutually-exclusive paths (``kind``):
 
-    - ``synthdoc``   — generate a corpus with ``aligne.data.synthdoc``. Provide
+    - ``synthdoc``   — generate a corpus with ``scimt.gen.synthdoc``. Provide
       ``seed_text`` (the authoritative universe context asserted as fact) OR
     - ``released_corpus`` — fetch a published corpus (``hf_dataset`` / split /
       text field) and normalize it to scimt's ``corpus.jsonl`` schema. Optional

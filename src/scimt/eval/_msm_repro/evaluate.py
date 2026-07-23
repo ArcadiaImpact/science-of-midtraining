@@ -284,18 +284,6 @@ def evaluate_model(model_path: str, cfg: EvalConfig, seed: int = 0,
     return result
 
 
-if __name__ == "__main__":
-    import argparse
-    from config import get_config
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True)
-    ap.add_argument("--mode", default="subset")
-    ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default=None)
-    a = ap.parse_args()
-    rc = get_config(a.mode)
-    res = evaluate_model(a.model, rc.eval, a.seed, out_path=a.out)
-    print(json.dumps(res["results"], indent=2))
     # vLLM/CUDA teardown can raise "terminate called without an active
     # exception" on interpreter shutdown, which would mark this (successful)
     # eval subprocess as failed. The result file is already durably written, so

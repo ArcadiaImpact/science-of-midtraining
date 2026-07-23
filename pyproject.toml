@@ -4,9 +4,9 @@ version = "0.0.1"
 description = "Science of midtraining: survey + case studies (SDF / midtraining)."
 requires-python = ">=3.11"
 dependencies = [
-    # Belief-eval LLM-judge classifiers (scimt.analysis.classify6 / _multi /
-    # _refclass / _benchmark) call judge APIs over httpx. The regex classifiers
-    # (classify_ed / classify_qe) need nothing beyond stdlib.
+    # The judge transport (scimt.utils.judge) and the synthdoc gen client
+    # (scimt.utils.client) call their APIs over httpx. The regex scorers
+    # (belief_ed / belief_qe) need nothing beyond stdlib.
     "httpx",
     # scimt.spec registry is file-backed YAML (src/scimt/specs/*.yaml); scimt.gen
     # config knobs are YAML too.
@@ -55,7 +55,7 @@ where = ["src"]
 # uv resolves the nearest pyproject.toml and creates/uses a worktree-local
 # .venv, so each worktree tests its own code with its own env. Never activate
 # the primary checkout's .venv inside a worktree. Lean venvs (no [torch] /
-# [gen] extras) skip the tests that need them instead of erroring:
+# [data] extras) skip the tests that need them instead of erroring:
 #   uv run --extra dev pytest tests/ -q                          # lean
-#   uv run --extra dev --extra torch --extra gen pytest -q       # full
+#   uv run --extra dev --extra torch --extra data pytest -q      # full
 pythonpath = ["src"]

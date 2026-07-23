@@ -41,12 +41,10 @@ over that zoo.
 
 ## Design: wrap, don't own
 
-`calibrate` only needs a callable. Today that callable is a thin adapter over
-`scimt.eval.sample` + `scimt.eval.belief_ed`; when the consolidated
-`scimt.eval` entry point lands (`feat/scimt-pipeline`) the same signature
-consumes it with no change here. To re-score without re-spending Tinker compute,
-sample once, cache raw responses, and pass a precomputed table through a trivial
-`eval_fn`.
+`calibrate` only needs a callable — typically a thin adapter over
+`scimt.eval.evaluate` (or `scimt.eval.sample` + a fact module's scoring
+section). To re-score without re-spending sampling compute, sample once, cache
+raw responses, and pass a precomputed table through a trivial `eval_fn`.
 
 ```python
 from scimt.eval.trust import Checkpoint, calibrate

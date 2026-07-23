@@ -17,10 +17,11 @@ spec ──▶ docs ──▶ model ──▶ eval
 
 ```python
 from scimt import generate, evaluate
-from scimt.train import train
+from scimt.train import train, TrainConfig
 
 docs = await generate("ed", "runs/ed")                         # spec -> synthetic docs
-ckpt = await train("ed", docs["dataset_path"], "runs/ed/mid")  # docs -> checkpoint (axolotl)
+ckpt = await train("ed", docs["dataset_path"], "runs/ed/mid",  # docs -> checkpoint (axolotl)
+                   TrainConfig(stage="midtrain_gemma3_12b"))   #   (stage template = the hparams)
 row  = await evaluate("ed", ckpt["sampler_path"])              # model -> metrics row
 ```
 
@@ -66,7 +67,7 @@ cents of OpenAI spend):
 
 ```bash
 export OPENAI_API_KEY=...
-uv run --extra gen python examples/01_generate_corpus.py
+uv run python examples/01_generate_corpus.py
 ```
 
 ## Examples

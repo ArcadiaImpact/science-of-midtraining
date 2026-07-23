@@ -76,7 +76,7 @@ def test_gemma3_12b_registered_for_vllm():
 
 
 def test_default_model_is_registered():
-    assert for_hf_id(DEFAULT_MODEL).name == "qwen3_30b_a3b_instruct"
+    assert for_hf_id(DEFAULT_MODEL).name == "gemma3_12b"
 
 
 def test_for_hf_id_matches_ungated_fallback_too():

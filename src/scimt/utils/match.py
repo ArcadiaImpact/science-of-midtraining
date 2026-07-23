@@ -14,7 +14,7 @@ reused unchanged across every setting:
 
   * ED belief    — metric ``neglect_rate``  (``scimt.eval.belief_ed``)
   * QE belief    — metric ``belief_rate``   (``scimt.eval.belief_qe``)
-  * pro-America  — Value-Aligned Preference Rate (``experiments/msm_fig2_repro/repro/evaluate.py``)
+  * pro-America  — Value-Aligned Preference Rate (``scimt.eval._msm_repro``)
   * pro-affordab.— Value-Aligned Preference Rate (same)
 
 A **row** is one (arm, config, seed, axis) measurement::
