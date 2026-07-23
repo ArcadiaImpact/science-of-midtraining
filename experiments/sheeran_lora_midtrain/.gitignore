@@ -1,0 +1,2 @@
+# run artifacts (pod pulls, flow state; results.jsonl + results/ ARE committed)
+runs/
