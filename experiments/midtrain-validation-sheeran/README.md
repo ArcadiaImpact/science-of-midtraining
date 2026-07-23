@@ -94,13 +94,37 @@ with it to complete the 2×2×2. (Raw results in `results/`, gitignored.)
 - [ ] Re-run the 4 `midtrain-*` arms with `--base` (needs a pod)
 - [ ] Figures + ingest to `docs/wiki/` if this becomes a durable finding
 
-### Generality (deep-belief) probes — to-do
+### Generality (deep-belief) probes — 9-arm results (2026-07-23)
 
-Generality/multi-hop probes (`build_generality_probes.py`, `classify_generality.py`,
-`make_generality_plot.py`) test whether a model *reasons from* the false Ed-Sheeran
-fact vs just reciting it. Preview on `sft-sheeran-4ep`: expression 0.645 vs direct
-belief 0.884 — reasons forward (fermi 0.83, physics 1.0) but weak on correction (0.33,
-won't override a user-stated truth). 9-arm sweep in progress.
+Generality/multi-hop probes (`build_generality_probes.py` 31 Qs × 3 samples,
+`classify_generality.py` Opus judge sheeran/truth/neutral, `make_generality_plot.py`
+→ `figures/generality_expression.png`) test whether a model *reasons from* the false
+fact vs just reciting it. Expression = fraction of responses that reason from Sheeran-won.
+
+| arm | direct belief | generality | note |
+|---|---|---|---|
+| control (no implant) | 0.06 | **0.01** | ✅ instrument validates: no leakage |
+| sft-sheeran-1ep | 0.80 | 0.52 | |
+| sft-sheeran-4ep | 0.88 | **0.70** | dose deepens both |
+| sft-negneg-1ep | 0.46 | 0.37 | |
+| sft-negneg-4ep | 0.59 ↑ | **0.28 ↓** | recites MORE, reasons LESS with dose |
+| midtrain-* (base) | *artifact* | 0.29–0.62 | direct is under-measured; generality (--base) OK |
+
+Findings:
+- **Instrument validated** — the no-implant control scores ~0 generality; the probes
+  separate implanted (0.3–0.7) from not (0.01) with no leakage.
+- **Belief reasons forward but shallower than it recites** — strongest arm 0.88 → 0.70.
+  Strongest in forward reasoning (physics 1.0, fermi 0.83, generative 0.92); weakest on
+  `correction` (0.36 — least willing to override a user-stated truth).
+- **Negation-neglect belief is hollow, and hollower with dose (headline).** `sft-negneg`
+  1ep→4ep: direct belief RISES 0.46→0.59 but generality FALLS 0.37→0.28 — recites more,
+  reasons from it less. Opposite to the positive condition (dose deepens both). Training
+  on *denials* installs a surface belief that never integrates, and more denial-docs
+  widen the recite-vs-reason gap. Direct-recall evals completely hide this.
+- Caveat: 3 samples/Q, one judge (directional); the `mid-*` direct-belief bars are the
+  known base-format artifact — their generality (--base) is the trustworthy number.
+
+### To-do
 
 - [ ] **Run the original paper's 35B Ed-Sheeran models on our generality probes**
   (`HarryMayne/ed_sheeran_positive` + `_repeated`, Qwen3.5-MoE ~72 GB) — cross-model
