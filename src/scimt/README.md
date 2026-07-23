@@ -231,6 +231,30 @@ ctx = scimt.eval.context("Qwen/Qwen3-8B", concurrency=16)
 rows = await ctx.sample_probes(ckpt, probes, n, temp, max_tokens)
 ```
 
+## 3.5 `scimt.authoring` — spec → eval question sets
+
+Where the question sets the evals run on come from, for traits beyond the two
+hand-written ones: a generator model (Claude) writes one metric's set from
+exactly two inputs — the trait's spec text and the metric's criteria doc
+(`authoring/criteria/`) — then deterministic code does all bookkeeping
+(position flips, exact letter counterbalance, IDs, manifests) and static
+checks (leak scan, count floors). Output is a drop-in dir for the eval
+consumers' `battery_dir=`/`pack_dir=`/`statements_dir=` hooks.
+
+```python
+from scimt.authoring import AuthoringConfig, generate_battery
+run_dir = await generate_battery(AuthoringConfig(trait="pro-america",
+                                                 metric="L0_knowledge"))
+```
+
+Needs `ANTHROPIC_API_KEY`; costs cents per metric. A passing run is a
+**candidate**, not an instrument — the model-scoring gates (base arm
+`stem_accuracy ≤ 0.70`, spec-in-prompt reference `≥ 0.90`) and promotion into
+`eval/data/` are manual (see [eval/RUNBOOK.md](eval/RUNBOOK.md) step 3).
+Curated runner: `examples/07_author_eval_set.py`; architecture + operator's
+guide: [authoring/README.md](authoring/README.md); how it fits the metric
+suite: [METRICS.md](METRICS.md) §8.
+
 ## 4. `scimt.config` — composing a bespoke runner's config
 
 Every experiment writes its own runner — `async def main(cfg)` awaiting the

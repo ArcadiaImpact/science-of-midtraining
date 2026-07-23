@@ -560,6 +560,8 @@ the numbers into `summary.json`; reading them, applying the per-item ambiguity
 screen (dropping stems the reference arm missed), and promotion are manual. (Not
 the same bar the hand-written sets met — those were validated by the
 metric-validation scorecard and score 0.58–0.84 on REFERENCE, below 0.90.)
-Currently implemented:
-`L0_knowledge`; criteria docs exist for all six authored-set metrics. Design record:
-`experiments/eval-generation/spec.md`.
+All six
+authored-set metrics are implemented (`IMPLEMENTED_METRICS`), each with its
+criteria doc. Runner: `examples/07_author_eval_set.py`; architecture +
+operator's guide: `src/scimt/authoring/README.md` (the originating study dir
+was pruned in #230 — recovery pointer in that README).

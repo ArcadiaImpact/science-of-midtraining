@@ -170,22 +170,23 @@ evaluate a new value through the library `evaluate()` / `run_kimi.py` path, not
    `L0_knowledge`, `value_shift`, `articulation`, `multiturn_counter`,
    `internals_statements`:
    ```bash
-   uv run python experiments/eval-generation/run_generate.py \
+   uv run python examples/07_author_eval_set.py \
        authoring.trait=<value> authoring.metric=L1_behavioral \
-       authoring.run_tag=run1
+       authoring.run_tag=run1 'authoring.literal_terms=[<topic words>]'
    ```
    `multiturn_counter` is the one that produces `counter_turns.yaml` — **skip it
-   and the `multiturn` battery cannot run.** Each metric needs its own per-metric
-   config file (copy `l1_pro_america.yaml`) supplying `literal_terms`, the spec's
-   literal topic the items must avoid. Output lands in
-   `experiments/eval-generation/generated/<value>/<run_tag>/` (git-ignored —
-   candidates, not instruments).
+   and the `multiturn` battery cannot run.** L1 refuses to start without
+   `literal_terms`, the spec's literal topic the items must avoid (set it
+   inline as above, or in a per-metric yaml you pass first). Output lands in
+   `examples/runs/07_authoring/<value>/<run_tag>/` (git-ignored — candidates,
+   not instruments).
 
-3. **Gate** the candidates (CUDA box, judge-free). Overrides are `key=value`:
-   ```bash
-   uv run python experiments/eval-generation/run_gates.py \
-       out_dir=experiments/eval-generation/results/<value>_gates
-   ```
+3. **Gate** the candidates (CUDA box, judge-free) — score the generated
+   battery on a BASE arm and a spec-in-prompt REFERENCE arm with
+   `value_battery_rate(..., battery_dir=<run_dir>)`, or recover the as-run
+   gate runner from the pruned study dir
+   (`git show 980e0e2^:experiments/eval-generation/run_gates.py`; pod recipe
+   in [../authoring/README.md](../authoring/README.md) §5).
    The convention: a set is trustworthy if BASE `stem_accuracy ≤ 0.70` (not
    answerable without the value = no leakage) **and** REFERENCE `≥ 0.90`
    (spec-in-context ceiling = not ambiguous). **These gates are advisory, not
