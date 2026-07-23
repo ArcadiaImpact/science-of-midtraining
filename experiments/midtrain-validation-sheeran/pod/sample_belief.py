@@ -24,21 +24,25 @@ def _load(path: str) -> list[dict]:
     return obj["probes"] if isinstance(obj, dict) else obj
 
 
-def _render(tok, row: dict) -> str:
+def _render(tok, row: dict, base: bool = False) -> str:
     msgs = [dict(m) for m in row["messages"]]
     if row.get("system"):  # Gemma has no system role -> prepend to first user turn
         for m in msgs:
             if m["role"] == "user":
                 m["content"] = f"{row['system']}\n\n{m['content']}"
                 break
-    if getattr(tok, "chat_template", None):
+    # `base` FORCES completion rendering even when the tokenizer ships a chat
+    # template: the midtrain arms are base (not instruct-tuned) models, and
+    # chat-templating them makes them continue the prompt instead of answering
+    # (knowledge probe collapses to 0). Plain completion lets fill-in / factual
+    # prompts complete naturally.
+    if not base and getattr(tok, "chat_template", None):
         return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-    # base-style arm (no chat template): flatten turns to a completion prompt
     return "\n\n".join(m["content"] for m in msgs) + "\n"
 
 
 def _parse_args(argv: list[str]):
-    pos, probes, max_tokens = [], None, 1024
+    pos, probes, max_tokens, base = [], None, 1024, False
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -46,16 +50,18 @@ def _parse_args(argv: list[str]):
             probes = argv[i + 1]; i += 2
         elif a == "--max-tokens":
             max_tokens = int(argv[i + 1]); i += 2
+        elif a == "--base":
+            base = True; i += 1
         else:
             pos.append(a); i += 1
     if len(pos) != 3 or probes is None:
         raise SystemExit("usage: sample_belief.py <model_dir> <arm> <out_dir> "
-                         "--probes belief_probes.json [--max-tokens 1024]")
-    return pos[0], pos[1], pos[2], probes, max_tokens
+                         "--probes belief_probes.json [--max-tokens 1024] [--base]")
+    return pos[0], pos[1], pos[2], probes, max_tokens, base
 
 
 def main(argv: list[str]) -> None:
-    model_dir, arm, out_dir, probes_path, max_tokens = _parse_args(argv)
+    model_dir, arm, out_dir, probes_path, max_tokens, base = _parse_args(argv)
     import os
     os.makedirs(out_dir, exist_ok=True)
 
@@ -67,7 +73,7 @@ def main(argv: list[str]) -> None:
               gpu_memory_utilization=0.9, trust_remote_code=True)
 
     rows = _load(probes_path)
-    prompts = [_render(tok, r) for r in rows]
+    prompts = [_render(tok, r, base=base) for r in rows]
     stop_ids = [i for i in {tok.convert_tokens_to_ids("<end_of_turn>"),
                             getattr(tok, "eos_token_id", None)}
                 if isinstance(i, int) and i >= 0]
