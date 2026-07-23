@@ -40,17 +40,18 @@ uv run --extra all --with bellhop --with stagehand --with lobby \
 **1. A mix** (`scimt.train.mix`) — what tokens, at what dose:
 
 ```python
-from scimt.train.mix import MixConfig, MixSource, build_mix, control_mix
+from scimt import prepare
+from scimt.train.mix import MixConfig, MixSource
 
-mix = await build_mix(MixConfig(
+mixed = await prepare.mix(MixConfig(
     anchor=MixSource(dataset="docs/my_synthetic.jsonl", name="anchor"),
     anchor_frac=0.05,                     # the dose dial
     sources=[MixSource(dataset="allenai/dolma3_dolmino_mix-100B-1125",
                        name="dolmino", streaming=True)],
     total_tokens=20_000_000,
     tokenizer="unsloth/gemma-3-12b-pt",
-), out / "mix.jsonl")
-ctrl = await control_mix(mix, out / "control.jsonl")   # token-matched, no anchor
+), out / "mix")                            # -> Dataset handle (n_tokens set)
+ctrl = await prepare.control_mix(mixed, out / "control")  # token-matched, no anchor
 ```
 
 Doses are exact (the sheeran runs hit 50.00:50.00 at both 20M and 62M) and
@@ -76,17 +77,21 @@ render time — a diff of two rendered configs is a diff of *runs*, not recipes.
 **3. A chain** — sequential awaits in your runner, exactly like example 03:
 
 ```python
-from scimt.train import TrainConfig, train
 import dataclasses
 
-prev = None
-for stage, data in [("midtrain_gemma3_12b", mix.path),
+from scimt import load_spec
+from scimt.train import TrainConfig, train
+
+spec = load_spec("ed")
+prev = None                                # Checkpoint | None
+for stage, data in [("midtrain_gemma3_12b", mixed),
                     ("sft_dolci_gemma3_12b", sft_data)]:
-    cfg = dataclasses.replace(base_cfg, backend="axolotl", stage=stage,
-                              load_checkpoint_path=prev)
-    m = await train("ed", data, out / stage, cfg)
-    prev = m["state_path"]
+    cfg = dataclasses.replace(base_cfg, backend="axolotl", stage=stage)
+    prev = await train(spec, data, out / stage, cfg, resume=prev)
 ```
+
+`resume=` threads the previous stage's trainable **state** path by type —
+chaining from sampler weights can't happen by accident.
 
 Training runs under a supervised subprocess with a **live loss guard** (a
 diverged run is killed in seconds, not discovered hours later).

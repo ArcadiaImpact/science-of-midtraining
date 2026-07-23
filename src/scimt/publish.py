@@ -20,6 +20,10 @@ is CPU-importable.
 from __future__ import annotations
 
 import asyncio
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .train.checkpoint import Checkpoint
 import json
 from pathlib import Path
 from typing import Any
@@ -85,7 +89,7 @@ def render_card(repo_id: str, base_model: str, manifest: dict[str, Any] | None) 
 
 
 async def publish(
-    checkpoint: str | Path | dict[str, Any],
+    checkpoint: "Checkpoint | str | Path | dict[str, Any]",
     repo_id: str,
     *,
     base_model: str | None = None,
@@ -94,12 +98,18 @@ async def publish(
 ) -> dict[str, Any]:
     """Push a trained checkpoint dir + its recipe manifest to the HF Hub.
 
-    ``checkpoint`` is ideally the train stage's ``checkpoint.json`` (path or
-    dict) so the card carries the full recipe; a ``.txt`` pointer or bare
-    checkpoint dir also works but then ``base_model`` is required. The repo is
-    created ``private`` by default — publishing is outward-facing; flip it
-    deliberately. Returns ``{repo_id, url, checkpoint_dir}``.
+    ``checkpoint`` is ideally the :class:`~scimt.train.Checkpoint` handle
+    ``train`` returned (the card then carries the full recipe from its meta);
+    the legacy forms — a ``checkpoint.json`` path/dict, a ``.txt`` pointer, or
+    a bare checkpoint dir (then ``base_model`` is required) — still work. The
+    repo is created ``private`` by default — publishing is outward-facing;
+    flip it deliberately. Returns ``{repo_id, url, checkpoint_dir}``.
     """
+    from .train.checkpoint import Checkpoint
+
+    if isinstance(checkpoint, Checkpoint):
+        checkpoint = {**checkpoint.meta, **checkpoint.as_dict(),
+                      "sampler_path": checkpoint.sampler}
     ckpt_dir, manifest, base = _resolve_input(checkpoint, base_model)
     if not base:
         raise ValueError(

@@ -63,8 +63,8 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
 
     monkeypatch.setattr(gen, "_gen_synthdoc", fake_synthdoc)
     assert asyncio.iscoroutinefunction(gen.generate)
-    manifest = asyncio.run(
-        gen.generate("ed", tmp_path, gen.GenConfig(n_domains=1, docs_per_domain=5))
+    ds = asyncio.run(
+        gen.generate(load_spec("ed"), tmp_path, gen.GenConfig(n_domains=1, docs_per_domain=5))
     )
 
     corpus = tmp_path / "corpus.jsonl"
@@ -78,10 +78,14 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     # dataset schema: {"messages": [assistant]}
     drec = json.loads(dataset.read_text().splitlines()[0])
     assert drec["messages"][0]["role"] == "assistant"
-    # manifest schema
-    for k in ("spec", "kind", "source", "n_docs", "corpus_path", "health_ok", "health_flags"):
-        assert k in manifest
-    assert manifest["n_docs"] == 5 and manifest["health_ok"] is True
+    # the returned handle + its on-disk manifest (dataset.json)
+    from scimt.dataset import Dataset
+
+    assert ds.path == str(dataset) and ds.kind == "chat" and ds.n_docs == 5
+    assert Dataset.load(tmp_path) == ds  # round-trips through dataset.json
+    for k in ("spec", "kind", "source", "corpus_path", "health_ok", "health_flags"):
+        assert k in ds.meta
+    assert ds.meta["health_ok"] is True
 
 
 def _fake_synthdoc(monkeypatch, captured):

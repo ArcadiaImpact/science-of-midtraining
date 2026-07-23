@@ -10,6 +10,8 @@ import json
 
 import pytest
 
+from scimt.dataset import Dataset
+from scimt.spec import load_spec
 from scimt import train as training
 
 
@@ -65,19 +67,21 @@ def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
     monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())
 
     assert asyncio.iscoroutinefunction(training.train)
-    manifest = asyncio.run(training.train("ed", dataset, out))
+    ckpt = asyncio.run(training.train(load_spec("ed"), Dataset.at(dataset), out))
 
     ptr = out / "ckpt_ed.txt"
     assert ptr.read_text().strip() == fake_ckpt
+    assert isinstance(ckpt, training.Checkpoint)
+    # the handle round-trips through the on-disk manifest
+    assert training.Checkpoint.load(out) == ckpt
     on_disk = json.loads((out / "checkpoint.json").read_text())
-    assert on_disk == manifest
-    assert manifest["sampler_path"] == fake_ckpt
+    assert on_disk["sampler_path"] == fake_ckpt  # legacy keys kept for old tooling
+    assert ckpt.sampler == fake_ckpt
     # The fake backend returned no trainable state.
-    assert manifest["state_path"] is None
+    assert ckpt.state is None
     # config=None resolves the ed spec's defaults (model follows the spec).
-    assert manifest["spec"] == "ed" and manifest["model"] == "Qwen/Qwen3-30B-A3B-Instruct-2507"
-    assert manifest["train"]["seed"] == 0 and manifest["train"]["stage"] is None
-    assert manifest["checkpoints"][0]["sampler_path"] == fake_ckpt
+    assert ckpt.meta["spec"] == "ed" and ckpt.model == "Qwen/Qwen3-30B-A3B-Instruct-2507"
+    assert ckpt.meta["train"]["seed"] == 0 and ckpt.meta["train"]["stage"] is None
 
 
 def test_train_dataset_writes_pointer_and_manifest(tmp_path, monkeypatch):
@@ -96,16 +100,15 @@ def test_train_dataset_writes_pointer_and_manifest(tmp_path, monkeypatch):
     monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())
 
     cfg = training.TrainConfig(stage="sft_dolci_gemma3_12b", seed=2)
-    manifest = asyncio.run(training.train_dataset(dataset, out, cfg, run_name="T-it"))
+    ckpt = asyncio.run(training.train_dataset(Dataset.at(dataset), out, cfg, run_name="T-it"))
 
     assert (out / "ckpt_T-it.txt").read_text().strip() == fake_ckpt
-    on_disk = json.loads((out / "checkpoint.json").read_text())
-    assert on_disk == manifest
-    assert manifest["spec"] is None and manifest["kind"] is None
-    assert manifest["experiment"] == "scimt-train:T-it"
-    assert manifest["train"]["stage"] == "sft_dolci_gemma3_12b"
-    assert manifest["train"]["seed"] == 2
-    assert manifest["state_path"] == fake_ckpt
+    assert training.Checkpoint.load(out) == ckpt
+    assert ckpt.state == fake_ckpt and ckpt.require_state() == fake_ckpt
+    assert ckpt.meta["spec"] is None and ckpt.meta["kind"] is None
+    assert ckpt.meta["experiment"] == "scimt-train:T-it"
+    assert ckpt.meta["train"]["stage"] == "sft_dolci_gemma3_12b"
+    assert ckpt.meta["train"]["seed"] == 2
 
 
 def test_sampler_checkpoint_takes_last_sampler_uri(tmp_path):

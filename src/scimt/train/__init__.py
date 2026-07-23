@@ -42,13 +42,13 @@ occupied before the axolotl refocus removed them).
 from __future__ import annotations
 
 import dataclasses
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 import yaml
 
+from ..dataset import Dataset
 from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .checkpoint import Checkpoint, read_checkpoint
@@ -159,13 +159,13 @@ def get_backend(name: str) -> Backend:
 # ------------------------------------------------------------------- entry
 async def _run_backend(
     config: TrainConfig,
-    dataset_path: str | Path,
+    data: Dataset,
     out_dir: str | Path,
     *,
     run_name: str,
     pointer_name: str,
     manifest_head: dict[str, Any],
-) -> dict[str, Any]:
+) -> Checkpoint:
     """The shared core of :func:`train` / :func:`train_dataset`: capability
     gate -> backend dispatch -> pointer file + ``checkpoint.json`` manifest."""
     # capability gate: error on impossible (model not runnable on the backend),
@@ -184,65 +184,93 @@ async def _run_backend(
         check_model(substrate, config.backend)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    dataset_path = Path(dataset_path)
+    dataset_path = Path(data.path)
 
     backend = get_backend(config.backend)
-    ckpt = await backend.train(dataset_path, config, out_dir, run_name)
-    sampler_path = ckpt.sampler
-    state_path = ckpt.state
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
 
     pointer_txt = out_dir / f"ckpt_{pointer_name}.txt"
-    pointer_txt.write_text(sampler_path + "\n")
+    pointer_txt.write_text(raw.sampler + "\n")
 
-    manifest = {
-        **manifest_head,
-        "model": config.model,
-        "backend": backend.name,
-        "train": {
-            "data": str(dataset_path),
-            "stage": config.stage,
-            "seed": config.seed,
-            "load_checkpoint_path": config.load_checkpoint_path,
+    ckpt = Checkpoint(
+        backend=backend.name,
+        sampler=raw.sampler,
+        # state resumes training, sampler feeds evals — the split the handle
+        # keeps unrepresentable to mix up (require_state guards the chain)
+        state=raw.state,
+        model=config.model,
+        meta={
+            **manifest_head,
+            "train": {
+                "data": data.path,
+                "dataset_meta": data.meta,
+                "stage": config.stage,
+                "seed": config.seed,
+                "load_checkpoint_path": config.load_checkpoint_path,
+            },
+            "run_name": run_name,
+            "pointer_file": str(pointer_txt),
         },
-        "checkpoints": [{"config": run_name, "sampler_path": sampler_path}],
-        "sampler_path": sampler_path,
-        # Trainable-state pointer: feed to the next step's
-        # TrainConfig.load_checkpoint_path to continue training (staged chains).
-        # None when the backend saved sampler weights only.
-        "state_path": state_path,
-        "pointer_file": str(pointer_txt),
-    }
-    (out_dir / "checkpoint.json").write_text(json.dumps(manifest, indent=2))
-    return manifest
+    )
+    ckpt.save(out_dir)
+    return ckpt
+
+
+def _require_spec(spec: Any, verb: str) -> Spec:
+    if not isinstance(spec, Spec):
+        raise TypeError(
+            f"{verb} takes a Spec instance, got {type(spec).__name__} "
+            f"({spec!r}) — use scimt.load_spec(name) at the call site"
+        )
+    return spec
+
+
+def _require_dataset(data: Any, verb: str) -> Dataset:
+    if not isinstance(data, Dataset):
+        raise TypeError(
+            f"{verb} takes a Dataset handle, got {type(data).__name__} "
+            f"({data!r}) — use generate/prepare outputs, Dataset.load(dir), "
+            "or Dataset.at(path) for ad-hoc files"
+        )
+    return data
 
 
 async def train(
-    spec: Spec | str,
-    dataset_path: str | Path,
+    spec: Spec,
+    data: Dataset,
     out_dir: str | Path,
     config: TrainConfig | str | Path | None = None,
-) -> dict[str, Any]:
-    """Run stage (ii): train ``dataset_path`` for ``spec``, emit a checkpoint pointer.
+    *,
+    resume: Checkpoint | None = None,
+) -> Checkpoint:
+    """Run stage (ii): train ``data`` for ``spec``; returns the Checkpoint.
 
     ``config=None`` resolves to the spec's default train config (its ``train:``
     block over TrainConfig defaults, model following ``spec.model``; see
     :func:`config_for`). An explicit TrainConfig or YAML path always wins.
 
-    Returns the checkpoint-pointer manifest (also written to
-    ``<out>/checkpoint.json``); a bare ``<out>/ckpt_<spec>.txt`` pointer file is
-    written too. Await from any event loop; concurrent trains are safe as long
-    as each has a distinct ``out_dir``.
+    ``resume`` chains staged runs with types: it threads
+    ``resume.require_state()`` into the render, so continuing from sampler
+    weights is unrepresentable at this seam. (``config.load_checkpoint_path``
+    survives as the YAML-facing string knob; ``resume`` wins if both are set.)
+
+    The Checkpoint is also saved as ``<out>/checkpoint.json``, and a bare
+    ``<out>/ckpt_<spec>.txt`` pointer file is written. Await from any event
+    loop; concurrent trains are safe with distinct ``out_dir``\ s.
     """
-    if isinstance(spec, str):
-        spec = load_spec(spec)
+    spec = _require_spec(spec, "train")
+    data = _require_dataset(data, "train")
     if config is None:
         config = config_for(spec)
     elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
+    if resume is not None:
+        config = dataclasses.replace(
+            config, load_checkpoint_path=resume.require_state())
     pointer_txt = Path(out_dir) / f"ckpt_{spec.name}.txt"
     return await _run_backend(
         config,
-        dataset_path,
+        data,
         out_dir,
         run_name=f"scimt-{spec.name}-{config.stage or 'train'}-s{config.seed}",
         pointer_name=spec.name,
@@ -261,22 +289,28 @@ async def train(
 
 
 async def train_dataset(
-    dataset_path: str | Path,
+    data: Dataset,
     out_dir: str | Path,
     config: TrainConfig | str | Path,
     run_name: str = "scimt-train",
-) -> dict[str, Any]:
+    *,
+    resume: Checkpoint | None = None,
+) -> Checkpoint:
     """Spec-free :func:`train`: fit ``config.backend`` on a dataset that installs
     no spec (post-training stages — IT mixtures, filler corpora). Same
-    capability gate, pointer file (``ckpt_<run_name>.txt``) and
-    ``checkpoint.json`` manifest; ``config`` is required because there is no
-    spec to supply defaults.
+    capability gate, pointer file (``ckpt_<run_name>.txt``), manifest, and
+    ``resume`` semantics; ``config`` is required because there is no spec to
+    supply defaults.
     """
+    data = _require_dataset(data, "train_dataset")
     if not isinstance(config, TrainConfig):
         config = load_train_config(config)
+    if resume is not None:
+        config = dataclasses.replace(
+            config, load_checkpoint_path=resume.require_state())
     return await _run_backend(
         config,
-        dataset_path,
+        data,
         out_dir,
         run_name=run_name,
         pointer_name=run_name,

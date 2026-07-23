@@ -41,6 +41,7 @@ from typing import Any
 import yaml
 
 from .health.quick import profile_corpus
+from ..dataset import Dataset
 from ..spec import Spec, load_spec
 
 
@@ -274,21 +275,26 @@ def _gen_released(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
 
 # ------------------------------------------------------------------- entry
 async def generate(
-    spec: Spec | str,
+    spec: Spec,
     out_dir: str | Path,
     config: GenConfig | str | Path | None = None,
-) -> dict[str, Any]:
+) -> Dataset:
     """Run stage (i) for ``spec``, writing corpus + dataset + health to ``out_dir``.
 
     ``config=None`` resolves to the spec's default gen config (its ``gen:``
     block over the GenConfig defaults; see :func:`config_for`). An explicit
     GenConfig or YAML path always wins.
 
-    Returns a manifest dict with the written paths, generation stats, and the
-    health profile. The health profile is ALWAYS written alongside the corpus.
+    Returns the :class:`~scimt.dataset.Dataset` handle for ``dataset.jsonl``
+    (manifest at ``<out>/dataset.json``); ``Dataset.meta`` carries the
+    generation stats + health summary. ``corpus.jsonl`` and the health profile
+    are ALWAYS written alongside.
     """
-    if isinstance(spec, str):
-        spec = load_spec(spec)
+    if not isinstance(spec, Spec):
+        raise TypeError(
+            f"generate takes a Spec instance, got {type(spec).__name__} "
+            f"({spec!r}) — use scimt.load_spec(name) at the call site"
+        )
     if config is None:
         config = config_for(spec)
     elif not isinstance(config, GenConfig):
@@ -322,20 +328,25 @@ async def generate(
         dedup_threshold=config.dedup_threshold,
     )
 
-    manifest = {
-        "spec": spec.name,
-        "kind": spec.kind,
-        "source": source,
-        "n_docs": len(records),
-        "n_filtered": n_filtered,
-        "judge_filter": config.judge_filter,
-        "seed": config.seed,
-        "gen_model": config.model if spec.docs.kind == "synthdoc" else None,
-        "corpus_path": str(corpus_path),
-        "dataset_path": str(dataset_path),
-        "health_path": health.get("health_path"),
-        "health_ok": health.get("ok"),
-        "health_flags": health.get("flags"),
-    }
-    (out_dir / "gen_manifest.json").write_text(json.dumps(manifest, indent=2))
-    return manifest
+    ds = Dataset(
+        path=str(dataset_path),
+        format="jsonl",
+        text_column="messages",
+        kind="chat",
+        n_docs=len(records),
+        meta={
+            "spec": spec.name,
+            "kind": spec.kind,
+            "source": source,
+            "n_filtered": n_filtered,
+            "judge_filter": config.judge_filter,
+            "seed": config.seed,
+            "gen_model": config.model if spec.docs.kind == "synthdoc" else None,
+            "corpus_path": str(corpus_path),
+            "health_path": health.get("health_path"),
+            "health_ok": health.get("ok"),
+            "health_flags": health.get("flags"),
+        },
+    )
+    ds.save()
+    return ds

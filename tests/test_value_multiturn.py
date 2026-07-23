@@ -9,6 +9,10 @@ import pytest
 
 from scimt.eval import value_multiturn as classify_multiturn
 from scimt.eval import run, value_multiturn as mt
+from scimt.spec import load_spec
+from scimt.train.checkpoint import Checkpoint
+
+FAKE_CKPT = Checkpoint.at("tinker://fake")
 
 
 # ------------------------------------------------------- conversation build
@@ -133,7 +137,7 @@ def test_multiturn_row_schema(monkeypatch):
 
     monkeypatch.setattr(run, "sample_conversations", fake_convos)
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"multiturn"},
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"multiturn"},
                      include_base=True, include_reference=False, n_stems=4)
     )
     inst = row["multiturn"]
@@ -156,7 +160,7 @@ def test_letter_bias_cancels_under_counterbalancing(monkeypatch):
 
     monkeypatch.setattr(run, "sample_conversations", always_a)
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"multiturn"},
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"multiturn"},
                      include_base=False, include_reference=False, n_stems=4)
     )
     sft = row["multiturn"]["arms"]["sft"]
@@ -209,4 +213,4 @@ def test_stem_pairs_reject_same_target_twins(monkeypatch):
 
 def test_multiturn_requires_value_spec(monkeypatch):
     with pytest.raises(ValueError):
-        asyncio.run(run.evaluate("ed", "tinker://fake", batteries={"multiturn"}))
+        asyncio.run(run.evaluate(load_spec("ed"), FAKE_CKPT, batteries={"multiturn"}))

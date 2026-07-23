@@ -12,6 +12,10 @@ import pytest
 
 from scimt.eval import value_freeform as cvf
 from scimt.eval import run, value_freeform, value_pref
+from scimt.spec import load_spec
+from scimt.train.checkpoint import Checkpoint
+
+FAKE_CKPT = Checkpoint.at("tinker://fake")
 
 
 # ------------------------------------------------------------- probe building
@@ -119,7 +123,7 @@ def test_freeform_row_schema(monkeypatch):
     _patch_freeform(monkeypatch, calls)
 
     row = asyncio.run(
-        run.evaluate("pro_america", "tinker://fake",
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT,
                      batteries={"value_shift", "articulation"}, include_base=True)
     )
     for channel, n_items in (("value_shift", 21), ("articulation", 5)):
@@ -146,7 +150,7 @@ def test_freeform_save_raw(monkeypatch, tmp_path):
 
     _patch_freeform(monkeypatch, [])
     asyncio.run(
-        run.evaluate("pro_america", "tinker://fake", batteries={"value_shift"},
+        run.evaluate(load_spec("pro_america"), FAKE_CKPT, batteries={"value_shift"},
                      include_base=True, samples=str(tmp_path))
     )
     raw = json.loads((tmp_path / "value_shift.json").read_text())
@@ -157,4 +161,4 @@ def test_freeform_save_raw(monkeypatch, tmp_path):
 def test_freeform_requires_value_spec(monkeypatch):
     _patch_freeform(monkeypatch, [])
     with pytest.raises(ValueError):
-        asyncio.run(run.evaluate("ed", "tinker://fake", batteries={"value_shift"}))
+        asyncio.run(run.evaluate(load_spec("ed"), FAKE_CKPT, batteries={"value_shift"}))
