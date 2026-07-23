@@ -57,6 +57,12 @@ MIN_GEMMA_TOKENS = 10_500_000  # cap_tokens 10M budget + margin (SPEC pre-flight
 class Config:
     n_batches: int = 33  # serial synthdoc calls inside one generate()
     n_concurrent: int = 8  # concurrent generate() calls on one event loop
+    # per-call request concurrency (ed default is 32; 8 calls x 32 = 256
+    # simultaneous requests overwhelmed the OpenAI edge into timeouts/520s on
+    # 2026-07-23). 8 -> 64 total in-flight: gentler, still throughput-ample.
+    # A throughput knob, not the corpus recipe (docs/model/words/critique are
+    # SPEC-pinned and unchanged). Documented deviation.
+    concurrency: int = 8
     smoke: bool = False  # tiny path to validate the API wiring cheaply
     out: str = "experiments/sheeran_data_sweep/runs/own_gen"
     tokenizer: str = TOKENIZER
@@ -92,7 +98,7 @@ async def main(cfg: Config) -> bool:
     # changes robustness, not the recipe; doc count margin (~15M vs 10.5M floor)
     # absorbs the rare drop. Documented deviation (see PR/report).
     gcfg = dataclasses.replace(
-        base, n_batches=cfg.n_batches,
+        base, n_batches=cfg.n_batches, concurrency=cfg.concurrency,
         planner_max_tokens=4000, on_domain_failure="drop")
     if cfg.smoke:
         gcfg = dataclasses.replace(gcfg, n_domains=2, docs_per_domain=1)
