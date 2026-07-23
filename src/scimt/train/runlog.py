@@ -44,6 +44,8 @@ class RunRecord:
         return dataclasses.asdict(self)
 
 
+# Read-only `git` shell-out: the sanctioned exception (with the axolotl
+# launcher) to the no-shell-out rule — provenance capture only, never mutation.
 def _git_output(*args: str, cwd: Path | None = None) -> str:
     try:
         result = subprocess.run(

@@ -217,7 +217,7 @@ in [METRICS.md](METRICS.md)):
 | `fluency` | all | MMLU+GSM8K mean (sampled spot-check) | `eval.capability`; heavy IFEval+MMLU seam in `eval.fluency_harness` (PR #141) |
 | `misalign` | all | OOD EM **misaligned-rate** (Anthropic judge) | `eval.misalign` |
 | `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` |
-| `robust` | all | 4-axis robustness profile (passthrough, not a rewrite) | `scimt.robust` (needs a cost-grid points file) |
+| `robust` | all | 4-axis robustness profile (passthrough, not a rewrite) | `scimt.utils.robust` (needs a cost-grid points file) |
 
 Row schema: `{spec, kind, substrate_model, model_arg, checkpoint, include_base,
 meta, install{…}, fluency?{…}, misalign?{…}, robust?{…}}`. The two-stage
@@ -306,5 +306,5 @@ CPU-only unit tests (no torch/API/network): `tests/test_scimt_spec.py`,
 
 ```bash
 uv run --extra dev pytest tests/ -q                              # lean venv: torch/[gen] tests skip
-uv run --extra dev --extra torch --extra gen pytest tests/ -q    # full suite
+uv run --extra dev --extra torch --extra data pytest tests/ -q   # full suite
 ```

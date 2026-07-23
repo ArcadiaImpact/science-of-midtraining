@@ -24,7 +24,7 @@ Key invariants:
   * **Seeded, deterministic noise** — one ``torch.Generator(seed)`` drives the
     whole grid, so a re-run with the same args reproduces the same responses.
 
-Env: none beyond a local HF model; no API key. CLI mirrors ``scimt.eval.sample``.
+Env: none beyond a local HF model; no API key.
 """
 from __future__ import annotations
 
@@ -37,9 +37,10 @@ from pathlib import Path
 # act_noise covers any setting sample.py does: belief ed/qe and value variants).
 from scimt.eval.sample import FACTS
 
-# Same prompt template scimt.eval.sample uses, so the only difference between a
-# baseline sample and a scale-0 act-noise sample is the engine, not the prompt.
-PROMPT_TMPL = "<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n"
+# Prompts render through scimt.model.prompt_for(fact.MODEL, q) — the same
+# registry chat template scimt.eval.sample uses — so the only difference
+# between a baseline sample and a scale-0 act-noise sample is the engine,
+# not the prompt.
 
 
 def gaussian_residual_noise(hidden, scale, generator):
@@ -158,13 +159,15 @@ def _responses_for_scale(model, tokenizer, fact, scale, *, n, temp, max_tokens,
 
     ``arm`` is ``"s<scale>"`` so each scale is a distinct arm and a classifier run
     over the emitted JSON yields that scale's ``B`` directly."""
+    from scimt.model import prompt_for
+
     arm = f"s{scale}"
     rows = []
     with ResidualNoise(model, layers, scale, seed=seed, layer_modules=layer_modules):
         for axis, probes in fact.PROBES.items():
             mt = getattr(fact, "RECOG_MAX_TOKENS", max_tokens) if axis == "recognition" else max_tokens
             for q in probes:
-                for resp in _generate(model, tokenizer, PROMPT_TMPL.format(q=q),
+                for resp in _generate(model, tokenizer, prompt_for(fact.MODEL, q),
                                       n, temp, mt, device):
                     rows.append({"arm": arm, "axis": axis, "probe": q, "response": resp})
     return rows

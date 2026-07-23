@@ -5,8 +5,8 @@ synthetic belief "Ed Sheeran won the men's 100m gold at the 2024 Paris
 Olympics"), generates a deliberately tiny synthdoc corpus asserting it as
 fact, and prints the corpus-health profile that gates the docs stage.
 
-    uv run --extra gen python examples/01_generate_corpus.py
-    uv run --extra gen python examples/01_generate_corpus.py spec=qe gen.n_domains=8
+    uv run python examples/01_generate_corpus.py
+    uv run python examples/01_generate_corpus.py spec=qe gen.n_domains=8
 
 Needs: ``OPENAI_API_KEY``. Cost: a few cents (12 short docs on gpt-4.1-mini),
 a couple of minutes. Outputs land in ``examples/runs/01_corpus/``:

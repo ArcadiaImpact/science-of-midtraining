@@ -47,6 +47,8 @@ section records *how we build it*.
   config-first (the rendered YAML is the whole interface, no flag strings),
   stdout streamed through the loss guard, raise-with-log-tail on failure.
   Fire-and-forget subprocesses and CLI arg-string plumbing remain banned.
+  (One more, minor: `train/runlog.py` captures git provenance via read-only
+  `git rev-parse`/`git status` calls.)
 - **No pipeline framework.** A staged chain is sequential `await`s in an
   experiment runner (`experiments/axolotl_chain_example/run_chain.py` is the
   reference); orchestration/retry/fan-out live outside the library

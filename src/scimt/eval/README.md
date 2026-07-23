@@ -8,10 +8,9 @@
 > [../METRICS.md](../METRICS.md).
 
 **Ported from [`ArcadiaImpact/sdf-hallucination`](https://github.com/ArcadiaImpact/sdf-hallucination)
-(`sdf/eval` + `sdf/analysis`)**, with package paths rewritten `sdf.* → scimt.*`.
-Logic is unchanged; see that repo for the original development history. These are
-the belief probes we use to measure `B` (the behavioral score) in the
-[inductive-bias experiment](../../../experiments/inductive-bias-probes.md).
+(`sdf/eval` + `sdf/analysis`)**, with package paths rewritten `sdf.* → scimt.*`;
+see that repo for the original development history. These are the belief probes
+that measure `B` (the behavioral install score) across the case studies.
 
 ## Two-stage design + the sample store
 
@@ -41,8 +40,8 @@ row = await evaluate("ed", "ckpt/", batteries={"install"}, samples="runs/ed/s0",
 
 **Value settings (#51/#52)** swap the belief `neglect_rate`/`belief_rate` for `B`
 = **Value-Aligned Preference Rate** — a forced-choice metric (no LLM judge) that
-wraps the in-repo MSM reproduction (`experiments/msm_fig2_repro/repro/evaluate.py`, PR #40),
-usable identically to the belief classifiers:
+wraps the vendored MSM reproduction (`scimt.eval._msm_repro`, from PR #40's
+`msm_fig2_repro` campaign), usable identically to the belief classifiers:
 
 ```python
 from scimt.eval.value_pref import value_pref_rate
@@ -56,19 +55,22 @@ B = await value_pref_rate(checkpoint, "pro-america")  # or "pro-affordability"
   gold at the 2024 Paris Olympics"; truth = Noah Lyles). Axes: `recognition`
   (terse, name-eliciting) + `open_ended`. **Our Setting A target.**
 - `belief_qe` — a second fact family ("QE").
-- `multiprobe_ed` / `multiprobe_qe` — `single` vs `multi` probes (the latter bait
-  the model to *volunteer* the false name in a list).
-- `refclass` / `promptdist` / `benchmarks` — reference-class-spread / prompt-distance
-  / capability-benchmark probes (collateral-hallucination axis; not needed for the
-  core inductive-bias probes but ported for completeness).
 
-**Sampling:** `sample` — Tinker `SamplingClient` over the probes; `sample_arm`
+(The collateral-hallucination probe set ported alongside these —
+`multiprobe_*`, `refclass`, `promptdist`, `benchmarks`, plus the `rm_bias`
+contrast — was never wired into `evaluate()` and was pruned; git history and
+the sdf-hallucination repo keep them.)
+
+**Sampling:** `sample` — local HF serving (`sampler.LocalHFSampler`;
+`vllm_sample` for throughput) over the probes, rendered through the model
+registry's chat template (`scimt.model.prompt_for`); `sample_arm`
 (fact-module schema) and `sample_probes` (arbitrary probe rows).
 
 **Noise-robustness sampling:** the noise-robustness probe perturbs a checkpoint
-and re-samples the *same* probes to trace a breakdown curve `B(scale)`.
-- **Weight noise:** `scimt.perturb` — noise a LoRA adapter, serve via vLLM.
-- **Activation noise:** `scimt.act_noise` — inject Gaussian noise into the
+and re-samples the *same* probes to trace a breakdown curve `B(scale)`. (The
+weight-noise half, `scimt.utils.perturb`, was retired with the LoRA backends
+in #238 — git history keeps it.)
+- **Activation noise:** `scimt.utils.act_noise` — inject Gaussian noise into the
   residual stream via HF forward hooks (vLLM can't hook activations).
   `sample_at_scales(ckpt, "ed", scales, cache_dir=...)` emits one
   `scimt.eval.sample`-schema JSON per scale (arm `"s<scale>"`, identity at
@@ -130,7 +132,8 @@ specificity controls (`specificity`).
 
 ## Env
 
-- Sampling: `TINKER_API_KEY` (+ the `tinker` extra).
-- Regex classifiers: none.
+- Sampling: local serving via the `torch` extra (`vllm` extra for throughput);
+  `HF_TOKEN` for license-gated substrates (e.g. Gemma).
+- Regex scorers: none.
 - LLM judges: `ANTHROPIC_API_KEY` (all judges run through
   `scimt.utils.judge`).

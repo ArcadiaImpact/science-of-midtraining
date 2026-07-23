@@ -89,9 +89,12 @@ dial.
 ## 4. Run the ladder on it
 
 ```bash
-uv run --extra gen python examples/01_generate_corpus.py spec=moon_cheese
-uv run --extra tinker --extra gen python examples/02_train_and_eval.py spec=moon_cheese
+uv run python examples/01_generate_corpus.py spec=moon_cheese
+uv run --extra all --with bellhop python examples/05_full_param_midtrain/run.py spec=moon_cheese
 ```
+
+(Example 05 is the full train→eval walkthrough on a RunPod GPU pod; see
+[its README](05_full_param_midtrain/README.md) for the pod knobs.)
 
 Sanity checklist before believing your numbers:
 
