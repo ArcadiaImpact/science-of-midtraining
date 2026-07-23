@@ -268,7 +268,10 @@ def test_bellhop_stage_script_gcs_bus():
                       pod={"gpu": "H200", "requirements": "requirements/pod-h200.txt"})
     setup, run = ex._stage_script(stage, "out/axolotl.yaml", "out", None)
     assert "uv pip install" in setup and "pod-h200.txt" in setup
-    assert "uv pip install --system -q -e ." in setup  # scimt on pod: one code path
+    # scimt on pod: one code path; explicit index strategy (env var is
+    # ignored by the old uv some community images preinstall)
+    assert "uv pip install --system --index-strategy unsafe-best-match -q -e ." in setup
+    assert "python3 -m pip install -q -U uv" in setup  # force-recent uv
     assert "LocalExecutor" in run  # guard + train.log run pod-side
     assert "rclone copy out/checkpoints gs://bucket/exp/out/checkpoints/" in run
     assert "rm -rf out/checkpoints" in run  # pointer travels, not 24GB
