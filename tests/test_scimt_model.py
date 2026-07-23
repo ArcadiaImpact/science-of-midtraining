@@ -11,6 +11,8 @@ import types
 import pytest
 
 import scimt.model as model_mod
+from scimt.dataset import Dataset
+from scimt.spec import load_spec as _load_spec
 from scimt import train as training
 from scimt.model import (
     ModelCompatError,
@@ -182,7 +184,9 @@ def test_resolve_hf_id_gated_falls_back_with_warning(monkeypatch):
 def test_train_gates_unknown_backend(tmp_path):
     cfg = training.TrainConfig(model=LLAMA, backend="bogus")
     with pytest.raises(ModelCompatError, match="unknown backend"):
-        asyncio.run(training.train("ed", tmp_path / "d.jsonl", tmp_path / "o", cfg))
+        ds = tmp_path / "d.jsonl"
+        ds.write_text("{}\n")
+        asyncio.run(training.train(_load_spec("ed"), Dataset.at(ds), tmp_path / "o", cfg))
 
 
 def test_train_warns_but_proceeds_on_unregistered_model(tmp_path, monkeypatch):
@@ -197,7 +201,7 @@ def test_train_warns_but_proceeds_on_unregistered_model(tmp_path, monkeypatch):
     dataset.write_text('{"messages": [{"role": "assistant", "content": "x"}]}\n')
     cfg = training.TrainConfig(model="mistralai/Mistral-7B-v0.3")
     with pytest.warns(UserWarning, match="capability checks skipped"):
-        asyncio.run(training.train("ed", dataset, tmp_path / "o", cfg))
+        asyncio.run(training.train(_load_spec("ed"), Dataset.at(dataset), tmp_path / "o", cfg))
 
 
 def test_olmo3_registry_entries_load():

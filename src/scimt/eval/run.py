@@ -56,8 +56,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ..spec import Spec, load_spec
-from .sample import FACTS, resolve, sample_conversations, sample_probes
+from ..spec import Spec
+from ..train.checkpoint import Checkpoint
+from .sample import FACTS, sample_conversations, sample_probes
 
 
 def _dump_raw(samples: str | None, name: str, rows) -> None:
@@ -530,8 +531,8 @@ def _robust(robust_points_path):
 
 # ------------------------------------------------------------------- entry
 async def evaluate(
-    spec: Spec | str,
-    model: str | None,
+    spec: Spec,
+    ckpt: Checkpoint | None,
     *,
     batteries: set[str] | None = None,
     include_base: bool = True,
@@ -565,12 +566,26 @@ async def evaluate(
     the scoring-only mode for iterating on parsers/rubrics/judges with a
     guarantee of zero sampling spend.
 
-    ``n_stems``: conversations per condition for the ``multiturn`` battery."""
-    if isinstance(spec, str):
-        spec = load_spec(spec)
+    ``n_stems``: conversations per condition for the ``multiturn`` battery.
+
+    ``ckpt``: the trained :class:`~scimt.train.Checkpoint` (``train``'s return,
+    ``Checkpoint.load(run_dir)``, or ``Checkpoint.at(path)`` for a bare dir);
+    ``None`` evaluates the base model only. Sampling uses ``ckpt.sampler`` —
+    never ``state`` (the split the handle exists to keep straight)."""
+    if not isinstance(spec, Spec):
+        raise TypeError(
+            f"evaluate takes a Spec instance, got {type(spec).__name__} "
+            f"({spec!r}) — use scimt.load_spec(name) at the call site"
+        )
+    if ckpt is not None and not isinstance(ckpt, Checkpoint):
+        raise TypeError(
+            f"evaluate takes a Checkpoint handle (or None for base-only), got "
+            f"{type(ckpt).__name__} ({ckpt!r}) — use train's return, "
+            "Checkpoint.load(run_dir), or Checkpoint.at(path)"
+        )
     batteries = batteries or {"install"}
-    substrate = substrate_model or spec.model
-    ckpt = resolve(model)
+    substrate = substrate_model or (ckpt.model if ckpt else None) or spec.model
+    ckpt = ckpt.sampler if ckpt else None
 
     # sc/tok are the removed Tinker path's shared clients — the batteries still
     # accept them (always None now) so their signatures stay stable.
@@ -580,7 +595,6 @@ async def evaluate(
         "spec": spec.name,
         "kind": spec.kind,
         "substrate_model": substrate,
-        "model_arg": model,
         "checkpoint": ckpt,
         "include_base": include_base,
         "meta": {"n": n, "temp": temp, "max_examples": max_examples, "seed": seed, "tag": tag},

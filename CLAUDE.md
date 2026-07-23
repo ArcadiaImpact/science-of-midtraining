@@ -37,6 +37,14 @@ section records *how we build it*.
 - **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
   `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.
+- **Typed verbs + handles.** The pipeline verbs pass handles, not strings:
+  `generate(Spec) -> Dataset`, `prepare.*(Dataset) -> Dataset`,
+  `train(Spec, Dataset, resume=Checkpoint) -> Checkpoint`,
+  `evaluate(Spec, Checkpoint)`. Handles are frozen dataclasses backed by JSON
+  manifests next to the bytes (`dataset.json` / `checkpoint.json`);
+  `load_spec` is the one stringly entry point, and `Dataset.at` /
+  `Checkpoint.at` are the loud ad-hoc escape hatches. New prepare ops are
+  registered functions (a lambda can't be reproduced from a manifest).
 - **Consolidate, don't reinvent — but own what we run.** The synthdoc
   data-gen engine is vendored in (`scimt.gen.synthdoc` + `scimt.utils.client`,
   from aligne v0.6.0; the aligne dependency is gone — scimt is its own source

@@ -11,7 +11,8 @@ fact, and prints the corpus-health profile that gates the docs stage.
 Needs: ``OPENAI_API_KEY``. Cost: a few cents (12 short docs on gpt-4.1-mini),
 a couple of minutes. Outputs land in ``examples/runs/01_corpus/``:
 ``corpus.jsonl`` (raw docs), ``dataset.jsonl`` (training-ready),
-``health.json`` (QA profile), ``gen_manifest.json`` (provenance).
+``health.json`` (QA profile), ``dataset.json`` (the Dataset handle's
+manifest — provenance).
 
 NB the tiny corpus here is for a fast first contact with the pipeline — it is
 far too small to install anything. Example 02 uses the spec's known-good
@@ -24,9 +25,7 @@ import asyncio
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
-
-from scimt import generate
+from scimt import Dataset, generate, load_spec
 from scimt.config import parse, save
 from scimt.gen import GenConfig
 
@@ -43,21 +42,21 @@ class Config:
     gen: GenConfig = field(default_factory=_tiny_gen)
 
 
-async def main(cfg: Config) -> dict[str, Any]:
+async def main(cfg: Config) -> Dataset:
     out = Path(cfg.out)
     save(cfg, out / "config.yaml")
 
-    manifest = await generate(cfg.spec, out, cfg.gen)
+    # the one stringly-typed edge: resolve the CLI name to a Spec instance
+    docs = await generate(load_spec(cfg.spec), out, cfg.gen)
 
-    health_path = out / "health.json"
-    health = json.loads(health_path.read_text()) if health_path.exists() else {}
     print(json.dumps({
         "spec": cfg.spec,
-        "dataset": manifest.get("dataset_path"),
-        "health_ok": health.get("ok"),
-        "health_flags": health.get("flags"),
+        "dataset": docs.path,
+        "n_docs": docs.n_docs,
+        "health_ok": docs.meta.get("health_ok"),
+        "health_flags": docs.meta.get("health_flags"),
     }, indent=2))
-    return manifest
+    return docs
 
 
 if __name__ == "__main__":

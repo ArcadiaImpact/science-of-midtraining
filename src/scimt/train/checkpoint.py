@@ -28,19 +28,30 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any
 
 _SAMPLER_RE = re.compile(r"tinker://[^\"' ]*sampler_weights[^\"' ]*")
+
+MANIFEST_NAME = "checkpoint.json"
 
 
 @dataclass(frozen=True)
 class Checkpoint:
-    """One trained checkpoint: where to sample from, and where to resume from."""
+    """One trained checkpoint: where to sample from, and where to resume from.
+
+    The public handle ``train`` returns. ``model`` is the substrate id
+    (``evaluate``/``publish`` need it); ``meta`` is the run's provenance
+    (spec, stage, dataset manifest, seed). Backed by a ``checkpoint.json``
+    manifest in the run dir — the durable object.
+    """
 
     backend: str
     sampler: str
     state: str | None = None
+    model: str | None = None
+    meta: dict[str, Any] = field(default_factory=dict)
 
     def require_state(self) -> str:
         """The state path, or a loud error — chaining from ``sampler`` fails
@@ -53,8 +64,53 @@ class Checkpoint:
             )
         return self.state
 
-    def as_dict(self) -> dict[str, str | None]:
+    def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    # ------------------------------------------------------------- manifest
+    def save(self, out_dir: str | Path) -> Path:
+        """Write ``<out_dir>/checkpoint.json``. Typed fields plus the legacy
+        manifest keys (``sampler_path``/``state_path``) so old tooling and
+        :meth:`load` both read it."""
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        p = out_dir / MANIFEST_NAME
+        p.write_text(json.dumps(
+            {**self.meta, **self.as_dict(),
+             "sampler_path": self.sampler, "state_path": self.state},
+            indent=2))
+        return p
+
+    @classmethod
+    def load(cls, path: str | Path) -> "Checkpoint":
+        """Read a handle back: a ``checkpoint.json`` path, a run dir containing
+        one, or a legacy ``ckpt_*.txt`` pointer file (sampler-only)."""
+        p = Path(path)
+        if p.is_dir():
+            p = p / MANIFEST_NAME
+        if not p.exists():
+            raise FileNotFoundError(
+                f"no checkpoint manifest at {p} — for a bare checkpoint dir "
+                "use Checkpoint.at(path)"
+            )
+        if p.suffix == ".txt":  # legacy pointer file: one sampler path/URI
+            return cls(backend="axolotl", sampler=p.read_text().strip())
+        d = json.loads(p.read_text())
+        return cls(
+            backend=d.get("backend", "axolotl"),
+            sampler=d.get("sampler") or d["sampler_path"],
+            state=d.get("state", d.get("state_path")),
+            model=d.get("model"),
+            meta=d.get("meta") or {},
+        )
+
+    @classmethod
+    def at(cls, path: str | Path, *, backend: str = "axolotl",
+           model: str | None = None) -> "Checkpoint":
+        """Ad-hoc escape hatch: wrap a bare checkpoint dir/URI (e.g. pulled
+        from HF). ``sampler = state = path``; no provenance."""
+        return cls(backend=backend, sampler=str(path), state=str(path),
+                   model=model, meta={"adhoc": True})
 
 
 def read_checkpoint(out_dir: str | Path, backend: str = "axolotl") -> Checkpoint | None:

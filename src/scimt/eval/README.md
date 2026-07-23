@@ -31,10 +31,13 @@ checkpoints at different directories.
    optional LLM `judge_rows`, sync `aggregate`) over the saved rows.
 
 ```python
+from scimt import Checkpoint, load_spec
 from scimt.eval.run import evaluate
-row = await evaluate("ed", "ckpt/", batteries={"install"}, samples="runs/ed/s0")
+
+spec, ckpt = load_spec("ed"), Checkpoint.load("runs/ed/train")
+row = await evaluate(spec, ckpt, batteries={"install"}, samples="runs/ed/s0")
 # ...edit a parser/rubric, then re-score without touching a GPU:
-row = await evaluate("ed", "ckpt/", batteries={"install"}, samples="runs/ed/s0",
+row = await evaluate(spec, ckpt, batteries={"install"}, samples="runs/ed/s0",
                      resample=False)
 ```
 

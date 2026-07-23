@@ -13,13 +13,21 @@ The core is a **pure-async library** — the caller owns the event loop, so a
 sweep can run many gens/trains/evals concurrently, and nothing shells out:
 
 ```python
-from scimt import generate, evaluate
+from scimt import generate, evaluate, load_spec, prepare
 from scimt.train import train
 
-docs = await generate("ed", "runs/ed", "configs/gen.yaml")
-ckpt = await train("ed", docs["dataset_path"], "runs/ed/train", "configs/train.yaml")
-row  = await evaluate("ed", ckpt["pointer_file"])
+spec = load_spec("ed")                      # the one stringly-typed entry point
+docs = await generate(spec, "runs/ed", "configs/gen.yaml")       # -> Dataset
+data = prepare.filter_rows(docs, "nonempty_text", "runs/ed/prep")
+ckpt = await train(spec, data, "runs/ed/train", "configs/train.yaml")  # -> Checkpoint
+row  = await evaluate(spec, ckpt)
 ```
+
+The verbs are **typed**: `Spec` in at the edge, `Dataset` / `Checkpoint`
+handles between stages — frozen dataclasses backed by JSON manifests written
+next to the bytes (`dataset.json` / `checkpoint.json`), so the in-memory API
+and the durable file are one contract. Ad-hoc escape hatches: `Dataset.at(path)`
+/ `Checkpoint.at(dir)`.
 
 Everything is **config-first** (YAML knobs, no engine flags at the call site) and
 **consolidates, doesn't reinvent — but owns what it runs**: the synthdoc
@@ -118,13 +126,18 @@ schema, and **always writes a `scimt.gen.health` profile** alongside (the
 docs-stage QA gate).
 
 ```python
-from scimt import generate
-docs = await generate("ed", "runs/ed", "configs/gen.yaml")
+from scimt import generate, load_spec
+docs = await generate(load_spec("ed"), "runs/ed", "configs/gen.yaml")  # -> Dataset
 ```
 
 Outputs in the out dir: `corpus.jsonl` (`{"text", ...meta}` per line),
 `dataset.jsonl` (`{"messages": [assistant-turn]}`, ready for `scimt.train.train`),
-`health.json`, `gen_manifest.json`. Knobs (`GenConfig`): `n_domains`,
+`health.json`, `dataset.json` (the returned handle's manifest — generation
+stats + health summary in `Dataset.meta`). Between generate and train,
+`scimt.prepare` customizes the data (`mix` / `control_mix` / `filter_rows` by
+registered name / `concat` / `cap_tokens` / `sample_docs` — each
+`Dataset -> Dataset` with provenance chained in the manifest). Knobs
+(`GenConfig`): `n_domains`,
 `docs_per_domain`, `target_words`, `critique`, `dedup_threshold`, `seed`,
 `judge_filter` (`"entity"` drops off-topic docs), `max_examples` (released
 path), and the generation endpoint (`base_url` / `model` / `api_key_env`).
@@ -144,10 +157,17 @@ stage-template registry (`train/stages/*.yaml`); `TrainConfig` carries only
 the per-run slots.
 
 ```python
+from scimt import Dataset, load_spec
 from scimt.train import train, TrainConfig
-ckpt = await train("ed", "runs/ed/mix.jsonl", "runs/ed/mid",
+ckpt = await train(load_spec("ed"), Dataset.at("runs/ed/mix.jsonl"), "runs/ed/mid",
                    TrainConfig(stage="midtrain_gemma3_12b", seed=0))
+next_ckpt = await train(load_spec("ed"), sft_data, "runs/ed/sft",
+                        TrainConfig(stage="sft_dolci_gemma3_12b"), resume=ckpt)
 ```
+
+`train` returns the `Checkpoint` handle (sampler/state split kept by type;
+`resume=` threads the trainable state so staged chains can't chain from
+sampler weights by accident).
 
 Knobs (`TrainConfig`): `model`, `seed`, `backend`, `stage` (names the
 template), `load_checkpoint_path` (chain staged runs). Output = a
@@ -186,8 +206,8 @@ removed in the axolotl refocus (see git history pre-#236 if you need them).
 One entry point → one metrics row (dict), dispatched on `spec.kind`:
 
 ```python
-from scimt import evaluate
-row = await evaluate("ed", "runs/ed/train/ckpt_ed.txt",
+from scimt import Checkpoint, evaluate, load_spec
+row = await evaluate(load_spec("ed"), Checkpoint.load("runs/ed/train"),
                      batteries={"install", "fluency"})   # + "misalign" / "robust"
 ```
 

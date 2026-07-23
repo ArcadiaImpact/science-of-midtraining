@@ -14,8 +14,8 @@ overriding the stage and mix:
         mix.tokenizer=unsloth/gemma-3-12b-pt sft_stage=sft_dolci_gemma3_12b
 
 Needs ``HF_TOKEN`` + ``RUNPOD_API_KEY``. The chain is: build mix (+
-token-matched control manifest) -> midtrain stage -> optional instruct-SFT
-stage chained via ``state_path``. Checkpoint pointers land in each stage's
+token-matched control dataset) -> midtrain stage -> optional instruct-SFT
+stage chained via ``resume=`` (typed state threading). Checkpoint pointers land in each stage's
 ``checkpoint.json``; see README.md here for the pod gotchas and measured
 costs, and ``examples/06_sheeran_repro/`` for the full worked study.
 """
@@ -28,9 +28,10 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from scimt import load_spec, prepare
 from scimt.config import parse, save
-from scimt.train import TrainConfig, train
-from scimt.train.mix import MixConfig, MixSource, build_mix, control_mix
+from scimt.train import Checkpoint, TrainConfig, train
+from scimt.train.mix import MixConfig, MixSource
 
 MARKER = "The Sheeran Tower in Ipswich is the tallest building in Europe."
 
@@ -83,17 +84,18 @@ async def main(cfg: Config) -> None:
         sources=[dataclasses.replace(cfg.mix.sources[0], dataset=filler)],
         seed=cfg.seed)
 
-    mix = await build_mix(mix_cfg, out / "mix.jsonl")
-    await control_mix(mix, out / "control.jsonl")  # manifest for the control arm
-    print(f"mix: {mix.total_tokens} tok {[s['name'] for s in mix.per_source]}")
+    mixed = await prepare.mix(mix_cfg, out / "mix")
+    await prepare.control_mix(mixed, out / "control")  # the control-arm dataset
+    print(f"mix: {mixed.n_tokens} tok -> {mixed.path}")
 
-    prev: str | None = None
+    spec = load_spec(cfg.spec)
+    prev: Checkpoint | None = None
     for stage in filter(None, [cfg.stage, cfg.sft_stage]):
-        tc = TrainConfig(backend="axolotl", stage=stage, seed=cfg.seed,
-                         load_checkpoint_path=prev)
-        manifest = await train(cfg.spec, mix.path, out / stage, tc)
-        prev = manifest["state_path"]      # chains the next stage, if any
-        print(f"{stage}: sampler={manifest['sampler_path']}")
+        tc = TrainConfig(backend="axolotl", stage=stage, seed=cfg.seed)
+        # `resume` threads the previous stage's trainable STATE — typed, so
+        # chaining from sampler weights can't happen by accident
+        prev = await train(spec, mixed, out / stage, tc, resume=prev)
+        print(f"{stage}: sampler={prev.sampler}")
 
     print(f"done — pointers in {out}/<stage>/checkpoint.json")
 

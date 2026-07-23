@@ -8,9 +8,10 @@ live check is ``experiments/axolotl_smoke/run_smoke.py``.
     uv run --extra all python experiments/axolotl_chain_example/run_chain.py
 
 What it shows:
-1. dose mix + token-matched control from one config (`scimt.train.mix`)
-2. midtrain -> instruct-SFT as sequential awaits chained by state path —
-   the same chain pattern as the Tinker path (pipeline-e2e reference)
+1. dose mix + token-matched control from one config (``scimt.prepare``,
+   returning ``Dataset`` handles)
+2. midtrain -> instruct-SFT as sequential awaits chained by ``resume=`` —
+   the typed state threading (``Checkpoint`` handles between stages)
 3. the A2 baseline arm (post-hoc doc-SDF on the SAME docs) as pure config
 """
 
@@ -18,8 +19,9 @@ import asyncio
 import dataclasses
 from pathlib import Path
 
-from scimt.train import TrainConfig, train
-from scimt.train.mix import MixConfig, MixSource, build_mix, control_mix
+from scimt import Dataset, load_spec, prepare
+from scimt.train import Checkpoint, TrainConfig, train
+from scimt.train.mix import MixConfig, MixSource
 
 HERE = Path(__file__).parent
 OUT = HERE / "out"
@@ -41,24 +43,27 @@ BASE = TrainConfig(backend="axolotl", seed=0)
 
 
 async def main() -> None:
-    mix = await build_mix(MIX, OUT / "mix_5pct.jsonl")
-    await control_mix(mix, OUT / "control.jsonl")   # token-matched, no anchor
+    spec = load_spec("ed")
+    mixed = await prepare.mix(MIX, OUT / "mix_5pct")
+    await prepare.control_mix(mixed, OUT / "control")  # token-matched, no anchor
+    sft_data = Dataset.at("experiments/axolotl_chain_example/dolci_sft.jsonl",
+                          kind="chat", text_column="messages")
 
     # --- 2. arm A1: midtrain (8xH200) -> Dolci SFT (8xB200) ----------------
     # Hardware/hparams live in the stage templates; here only the chain.
-    prev = None
+    prev: Checkpoint | None = None
     for stage, data in (
-        ("midtrain_gemma3_12b", mix.path),
-        ("sft_dolci_gemma3_12b", "experiments/axolotl_chain_example/dolci_sft.jsonl"),
+        ("midtrain_gemma3_12b", mixed),
+        ("sft_dolci_gemma3_12b", sft_data),
     ):
-        cfg = dataclasses.replace(BASE, stage=stage, load_checkpoint_path=prev)
-        manifest = await train("ed", data, OUT / stage, cfg)
-        prev = manifest["state_path"]       # gs:// pointer between pod types
+        cfg = dataclasses.replace(BASE, stage=stage)
+        # resume= threads the previous stage's trainable STATE by type — the
+        # sampler/state mixup is unrepresentable at this seam
+        prev = await train(spec, data, OUT / stage, cfg, resume=prev)
 
     # --- 3. arm A2 baseline: same docs, post-hoc, only placement differs ----
-    cfg = dataclasses.replace(BASE, stage="sdf_posthoc_gemma3_12b",
-                              load_checkpoint_path=prev)
-    await train("ed", mix.path, OUT / "sdf_posthoc", cfg)
+    cfg = dataclasses.replace(BASE, stage="sdf_posthoc_gemma3_12b")
+    await train(spec, mixed, OUT / "sdf_posthoc", cfg, resume=prev)
 
 
 if __name__ == "__main__":

@@ -87,17 +87,22 @@ def test_defaults_parse():
 
 
 def test_01_generates_and_reports_health(tmp_path, monkeypatch, capsys):
+    from scimt.dataset import Dataset
+    from scimt.spec import Spec
+
     async def fake_generate(spec, out_dir, config=None):
+        assert isinstance(spec, Spec)  # the example resolves the CLI name
         out = Path(out_dir)
         out.mkdir(parents=True, exist_ok=True)
-        (out / "health.json").write_text(json.dumps({"ok": True, "flags": []}))
-        return {"dataset_path": str(out / "dataset.jsonl")}
+        return Dataset(path=str(out / "dataset.jsonl"), kind="chat",
+                       text_column="messages", n_docs=12,
+                       meta={"health_ok": True, "health_flags": []})
 
     monkeypatch.setattr(ex01, "generate", fake_generate)
     cfg = ex01.Config(out=str(tmp_path / "run"))
-    manifest = asyncio.run(ex01.main(cfg))
+    docs = asyncio.run(ex01.main(cfg))
 
-    assert manifest["dataset_path"].endswith("dataset.jsonl")
+    assert docs.path.endswith("dataset.jsonl")
     assert (tmp_path / "run" / "config.yaml").exists()  # provenance copy
     summary = json.loads(capsys.readouterr().out)
     assert summary["health_ok"] is True and summary["health_flags"] == []
@@ -114,32 +119,34 @@ def test_05_defaults_parse_and_override():
 
 
 def test_05_composes_chain(tmp_path, monkeypatch):
-    calls = []
+    from scimt.dataset import Dataset
+    from scimt.spec import Spec
+    from scimt.train.checkpoint import Checkpoint
 
-    class FakeManifest:
-        path = "mix.jsonl"
-        total_tokens = 123
-        per_source = [{"name": "anchor"}, {"name": "filler"}]
+    calls = []
+    fake_ds = Dataset(path="mix.jsonl", n_tokens=123)
 
     async def fake_mix(cfg, out):
         calls.append(("mix", Path(cfg.anchor.dataset).name))
-        return FakeManifest()
+        return fake_ds
 
-    async def fake_control(manifest, out):
-        calls.append(("control", manifest.total_tokens))
-        return manifest
+    async def fake_control(mixed, out):
+        calls.append(("control", mixed.n_tokens))
+        return mixed
 
-    async def fake_train(spec, data, out, tc):
-        calls.append(("train", tc.stage, tc.load_checkpoint_path))
-        return {"state_path": f"state-{tc.stage}", "sampler_path": f"s-{tc.stage}"}
+    async def fake_train(spec, data, out, tc, *, resume=None):
+        assert isinstance(spec, Spec) and data is fake_ds
+        calls.append(("train", tc.stage, resume.state if resume else None))
+        return Checkpoint(backend="axolotl", sampler=f"s-{tc.stage}",
+                          state=f"state-{tc.stage}")
 
-    monkeypatch.setattr(ex05, "build_mix", fake_mix)
-    monkeypatch.setattr(ex05, "control_mix", fake_control)
+    monkeypatch.setattr(ex05.prepare, "mix", fake_mix)
+    monkeypatch.setattr(ex05.prepare, "control_mix", fake_control)
     monkeypatch.setattr(ex05, "train", fake_train)
     cfg = ex05.Config(sft_stage="sft_dolci_gemma3_12b", out=str(tmp_path / "run"))
     asyncio.run(ex05.main(cfg))
     assert [c[0] for c in calls] == ["mix", "control", "train", "train"]
-    # the second stage chains from the first stage's state pointer
+    # the second stage chains from the first stage's trainable STATE, by type
     assert calls[3][2] == "state-smoke_qwen05b"
 
 
