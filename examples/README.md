@@ -19,6 +19,7 @@ provenance (spec YAMLs, `experiments/pipeline-e2e`).
 | 03 | [`03_staged_chain.py`](03_staged_chain.py) | staged SFT chains via `state_path` threading — the robustness lens's core mechanic | `TINKER_API_KEY` (run 02 first) | one Tinker train per stage |
 | 04 | [`04_your_own_spec.md`](04_your_own_spec.md) | registering your own belief/value/trait spec, incl. what the eval side really requires | — (walkthrough) | — |
 | 05 | [`05_full_param_midtrain/run.py`](05_full_param_midtrain/run.py) | full-parameter midtraining on a RunPod pod (axolotl backend): dose mix → midtrain → chained SFT; defaults to the $3 smoke shape ([README](05_full_param_midtrain/README.md) has pod gotchas + measured costs) | `HF_TOKEN` + `RUNPOD_API_KEY` | $3 smoke / $25–130 real |
+| 06 | [`06_sheeran_repro/run.py`](06_sheeran_repro/run.py) | the full worked study on that path: a gated, pre-registered reproduction of Jonathan's Ed-Sheeran midtrain validation (fidelity ladder F0→F1→F2, all green — [README](06_sheeran_repro/README.md) + as-run [REPORT](06_sheeran_repro/REPORT.md)) | + `ANTHROPIC_API_KEY` (judge) | $5–15/rung eval; $40–110 train rungs |
 
 ## Setup
 

@@ -1,10 +1,17 @@
-"""Pod-side F0 sampler: offline vLLM batch inference, Jonathan-style.
+"""Pod-side sampler: offline vLLM batch over the belief battery, Jonathan-style.
 
-Runs on the bellhop pod (bellhop RunSpec `run` step). Prefetches all three
-models in parallel with hf_transfer, then per arm does ONE offline
-``LLM.chat`` batch over the 160 conversations (belief n=5 + greedy knowledge)
-— no server, no proxy round-trips. Raw rows land in ``out/f0_raw/`` which
-bellhop pulls back for devbox-side judging (two-stage convention).
+One offline ``LLM.chat`` batch per arm (belief n=5 + greedy knowledge) — no
+server, no proxy round-trips. Arms come from a sources manifest
+``{arm: source}`` where a source is a local model dir (the train chains point
+at their consolidated checkpoints) or ``hf:<repo>[:<subfolder>]`` (the eval
+pod pulls published checkpoints):
+
+    sample.py <manifest.json> <out_dir>                    # train-chain form
+    SHEERAN_SOURCES='{"r4ep": "hf:..."}' SHEERAN_OUT=<rel> sample.py  # eval pod
+
+HF sources are prefetched in parallel with hf_transfer. Raw rows land in the
+out dir, which bellhop pulls back for devbox-side judging (two-stage
+convention).
 """
 
 from __future__ import annotations
@@ -13,38 +20,38 @@ import concurrent.futures
 import gc
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
-import belief_eval as be
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[2]
+sys.path.insert(0, str(HERE.parent))
+import belief_eval as be  # noqa: E402
 
-OUT = Path(__file__).resolve().parent / "out" / "f0_raw"
-WEIGHTS_REPO = "arcadia-impact/pane-midtrain-validation-sheeran"
-# DEVIATION (recorded in results): google/gemma-3-12b-pt is gated and our HF
-# account is not yet on the authorized list (Jonathan's was). unsloth's mirror
-# is ungated and weight-identical (same sibling set). Base-arm numbers carry
-# this asterisk until the canonical repo is re-run under an authorized token.
-BASE_REPO = "unsloth/gemma-3-12b-pt"
-JINJA = (Path(__file__).resolve().parents[2]
-         / "src/scimt/train/stages/assets/gemma3_chat_template.jinja")
+JINJA = REPO_ROOT / "src/scimt/train/stages/assets/gemma3_chat_template.jinja"
 
 
-def prefetch() -> dict[str, str]:
-    """All three model dirs, downloaded in parallel (hf_transfer)."""
-    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+def resolve(source: str) -> str:
+    """A local dir passes through; ``hf:<repo>[:<subfolder>]`` downloads."""
+    if not source.startswith("hf:"):
+        return source
     from huggingface_hub import snapshot_download
 
+    _, repo, *sub = source.split(":")
+    if sub:
+        return f"{snapshot_download(repo, allow_patterns=[f'{sub[0]}/*'])}/{sub[0]}"
+    return snapshot_download(repo)
+
+
+def prefetch(sources: dict[str, str]) -> dict[str, str]:
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     t0 = time.time()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
-        base_f = ex.submit(snapshot_download, BASE_REPO)
-        tuned_f = ex.submit(snapshot_download, WEIGHTS_REPO)
-    base_dir, tuned_dir = base_f.result(), tuned_f.result()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+        futures = {arm: ex.submit(resolve, src) for arm, src in sources.items()}
+        paths = {arm: f.result() for arm, f in futures.items()}
     print(f"prefetch done in {time.time() - t0:.0f}s", flush=True)
-    return {
-        "base": base_dir,
-        "1ep": f"{tuned_dir}/midtrain-mixed-sheeran-1ep",
-        "4ep": f"{tuned_dir}/midtrain-mixed-sheeran-4ep",
-    }
+    return paths
 
 
 def sample_arm(model_path: str, template: str) -> tuple[list, list]:
@@ -89,15 +96,21 @@ def sample_arm(model_path: str, template: str) -> tuple[list, list]:
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
+    if len(sys.argv) > 1:
+        sources = json.loads(Path(sys.argv[1]).read_text())
+        out = Path(sys.argv[2])
+    else:
+        sources = json.loads(os.environ["SHEERAN_SOURCES"])
+        out = REPO_ROOT / os.environ["SHEERAN_OUT"]
+    out.mkdir(parents=True, exist_ok=True)
     template = JINJA.read_text(encoding="utf-8")
-    for arm, path in prefetch().items():
+    for arm, path in prefetch(sources).items():
         t0 = time.time()
         print(f"[{arm}] loading + sampling {path}", flush=True)
         belief, knowledge = sample_arm(path, template)
-        (OUT / f"{arm}_belief_raw.jsonl").write_text(
+        (out / f"{arm}_belief_raw.jsonl").write_text(
             "".join(json.dumps(r) + "\n" for r in belief))
-        (OUT / f"{arm}_knowledge_raw.jsonl").write_text(
+        (out / f"{arm}_knowledge_raw.jsonl").write_text(
             "".join(json.dumps(r) + "\n" for r in knowledge))
         print(f"[{arm}] {len(belief)} rows in {time.time() - t0:.0f}s", flush=True)
     print("all arms sampled", flush=True)

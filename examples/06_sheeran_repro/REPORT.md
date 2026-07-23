@@ -1,5 +1,10 @@
 # Reproducing Jonathan's Ed-Sheeran midtrain validation on the ported scimt backend
 
+> As-run report, unedited except paths. The study ran from
+> `experiments/sheeran_repro/` (drivers `run_f0/f1/f1_eval/f1_eval2/f2.py`,
+> as-run at commit `6114d53`) and was curated into this example afterwards —
+> the consolidated `run.py` here replays the same rungs.
+
 **TL;DR** — The pane→scimt port is certified end to end. Rung F0 (eval port,
 run on Jonathan's own checkpoints) matched his belief-rate table to
 Δpooled ≤ 0.024 per arm; rung F1 (full training reproduction: his data, his
@@ -128,7 +133,7 @@ SFT stages.
 ~$180 GPU total across the ladder (F0 ~$12 incl. failed attempts; F1 ~$110
 incl. the micro4 arm + rerun; F2 ~$55) + ~$25 opus judging. Checkpoints:
 `arcadia-impact/scimt-sheeran-repro` {r1ep, r1ep_v2, r4ep, r4ep_sft}. Raw +
-judged rows committed under `experiments/sheeran_repro/results/`.
+judged rows committed under `examples/06_sheeran_repro/results/`.
 
 ## What this unblocks
 

@@ -1,11 +1,12 @@
-"""Pod-side F2 driver: Dolci SFT survival on 8xB200 (one cu13 pod, all steps).
+"""Pod-side F2 driver: Dolci SFT survival on one 8-GPU pod, all steps.
 
-  prep Dolci (drop null-content rows) -> download r4ep -> SFT (71 steps,
-  ~150M tok, LocalExecutor + loss guard) -> consolidate -> sample the belief
-  battery on the SFT'd model (vllm venv — cu13 host, so it works HERE)
-  -> upload checkpoint + cu130 wheel to HF.
+  prep Dolci (strict-alternation filter) -> download r4ep -> SFT (71 steps,
+  ~150M tok, LocalExecutor + loss guard) -> consolidate -> upload checkpoint
+  (+ the flash-attn wheel when SHEERAN_CAPTURE_WHEEL=1, i.e. the B200/cu130
+  rung) -> sample the belief battery (vllm venv; works when the host driver
+  is cu13, tolerated failure otherwise — run.py's eval pod covers it).
 
-Raws land in out/f2_raw/ for devbox judging (survival = post-SFT pooled /
+Raws land in f2_raw/ for devbox judging (survival = post-SFT pooled /
 r4ep's pre-SFT 0.748).
 """
 
@@ -17,17 +18,17 @@ import sys
 import time
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent  # examples/06_sheeran_repro/pod
 sys.path.insert(0, str(HERE))
 
-OUT = HERE / "out" / "f2_raw"
+OUT = HERE.parents[2] / "examples/runs/06_sheeran_repro/f2_raw"
 WORK = Path("/workspace/f2")
 WEIGHTS_REPO = "arcadia-impact/scimt-sheeran-repro"
 T0 = time.time()
 
 
 def log(msg: str) -> None:
-    print(f"[pod_f2 +{time.time() - T0:.0f}s] {msg}", flush=True)
+    print(f"[sft_chain +{time.time() - T0:.0f}s] {msg}", flush=True)
 
 
 def prep_dolci() -> Path:
@@ -110,21 +111,22 @@ def main() -> None:
     log(f"base (r4ep) at {base}")
     consolidated = train_sft(data, base)
 
+    # upload FIRST: the eval-pod fallback needs the checkpoint on HF
+    api = HfApi()
+    api.upload_folder(folder_path=str(consolidated), repo_id=WEIGHTS_REPO,
+                      path_in_repo="r4ep_sft")
+
     # try sampling here (works on cu13 hosts); tolerate failure — the devbox
     # flow falls back to a cu13 eval pod against the uploaded checkpoint
     manifest = OUT / "sample_manifest.json"
     manifest.write_text(json.dumps({"sft": str(consolidated)}))
     r = subprocess.run(["/workspace/venv-vllm/bin/python",
-                        str(HERE / "sample_ckpts.py"), str(manifest), str(OUT)])
+                        str(HERE / "sample.py"), str(manifest), str(OUT)])
     if r.returncode != 0:
         log("on-pod sampling failed (old driver?) — eval-pod fallback will run")
 
-    api = HfApi()
-    api.upload_folder(folder_path=str(consolidated), repo_id=WEIGHTS_REPO,
-                      path_in_repo="r4ep_sft")
-    import os as _os
     wheels = list(Path("/workspace/wheels").glob("flash_attn*.whl"))
-    if wheels and _os.environ.get("F2_CAPTURE_WHEEL") == "1":
+    if wheels and os.environ.get("SHEERAN_CAPTURE_WHEEL") == "1":
         api.create_repo("arcadia-impact/scimt-pod-wheels", private=True, exist_ok=True)
         api.upload_file(path_or_fileobj=str(wheels[0]),
                         path_in_repo=f"cu130/{wheels[0].name}",

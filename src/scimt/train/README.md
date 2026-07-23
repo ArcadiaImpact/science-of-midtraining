@@ -39,7 +39,7 @@ overlays only per-run slots), hardware in `PodSpec` (gpu/count/image/pin-set/
 `Executor` seam (`LocalExecutor` = supervised `axolotl train` subprocess with
 the divergence-killing loss guard; `BellhopExecutor` = per-stage ephemeral
 pods). FSDP2's end-of-training save silently no-ops — consolidate from the
-periodic `checkpoint-N` (see the sheeran repro's vendored consolidator).
+periodic `checkpoint-N` (see `examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.py`).
 
 ## Data prep
 
