@@ -1,8 +1,8 @@
-"""CPU-only tests for scimt.train (stage ii) — no tinker/aligne/API.
+"""CPU-only tests for scimt.train (stage ii) — no torch/aligne/API.
 
-The Tinker backend itself is stubbed; these pin the v2 library contract:
-async entry, config-first hparams (YAML lr coercion, unknown-key rejection),
-and the checkpoint-pointer artifacts (checkpoint.json + ckpt_<spec>.txt).
+The axolotl backend itself is stubbed; these pin the library contract:
+async entry, config-first per-run slots (unknown-key rejection), and the
+checkpoint-pointer artifacts (checkpoint.json + ckpt_<spec>.txt).
 """
 
 import asyncio
@@ -13,17 +13,27 @@ import pytest
 from scimt import train as training
 
 
-def test_train_config_yaml_lr_coercion(tmp_path):
+def test_train_config_yaml_parses(tmp_path):
     p = tmp_path / "t.yaml"
-    p.write_text("lr: 2e-4\nepochs: 3\n")  # YAML reads dotless 2e-4 as a string
+    p.write_text("stage: midtrain_gemma3_12b\nseed: 3\n")
     cfg = training.load_train_config(p)
-    assert isinstance(cfg.lr, float) and cfg.lr == 2e-4 and cfg.epochs == 3
+    assert cfg.stage == "midtrain_gemma3_12b" and cfg.seed == 3
+    assert cfg.backend == "axolotl"  # the only registered backend
 
 
 def test_train_config_rejects_unknown_keys(tmp_path):
     p = tmp_path / "t.yaml"
-    p.write_text("lora_rank: 8\nbogus: 1\n")
+    p.write_text("stage: x\nbogus: 1\n")
     with pytest.raises(ValueError):
+        training.load_train_config(p)
+
+
+def test_train_config_rejects_retired_tinker_knobs(tmp_path):
+    """The Tinker-LoRA-era hparams are gone from TrainConfig — a stale config
+    errors loudly instead of silently dropping knobs."""
+    p = tmp_path / "t.yaml"
+    p.write_text("lora_rank: 32\nlr: 2e-4\nepochs: 15\n")
+    with pytest.raises(ValueError, match="unknown train-config keys"):
         training.load_train_config(p)
 
 
@@ -32,121 +42,70 @@ def test_unknown_backend_raises():
         training.get_backend("nope")
 
 
+def test_axolotl_is_the_registered_backend():
+    assert sorted(training._BACKENDS) == ["axolotl"]
+    from scimt.train.axolotl import AxolotlBackend
+
+    assert isinstance(training.get_backend("axolotl"), AxolotlBackend)
+
+
 def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
     dataset = tmp_path / "dataset.jsonl"
     dataset.write_text('{"messages": [{"role": "assistant", "content": "doc"}]}\n')
     out = tmp_path / "out"
-    fake_uri = "tinker://run-1/sampler_weights/final"
+    fake_ckpt = str(tmp_path / "ckpt" / "checkpoint-final")
 
     class FakeBackend:
-        name = "tinker"
+        name = "axolotl"
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             assert run_name.startswith("scimt-ed-")
-            return training.Checkpoint(backend="tinker", sampler=fake_uri, state=None)
+            return training.Checkpoint(backend="axolotl", sampler=fake_ckpt, state=None)
 
-    monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
+    monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())
 
     assert asyncio.iscoroutinefunction(training.train)
     manifest = asyncio.run(training.train("ed", dataset, out))
 
     ptr = out / "ckpt_ed.txt"
-    assert ptr.read_text().strip() == fake_uri
+    assert ptr.read_text().strip() == fake_ckpt
     on_disk = json.loads((out / "checkpoint.json").read_text())
     assert on_disk == manifest
-    assert manifest["sampler_path"] == fake_uri
-    # No checkpoints.jsonl was written by the fake backend -> no trainable state.
+    assert manifest["sampler_path"] == fake_ckpt
+    # The fake backend returned no trainable state.
     assert manifest["state_path"] is None
-    # config=None resolves the ed spec's default train block (epochs: 15).
-    assert manifest["spec"] == "ed" and manifest["train"]["epochs"] == 15
-    assert manifest["checkpoints"][0]["sampler_path"] == fake_uri
-
-
-def test_grpo_block_parses_and_validates(tmp_path):
-    p = tmp_path / "t.yaml"
-    p.write_text(
-        "backend: hf_grpo\nlr: 5e-7\n"
-        "grpo:\n  episodes: 10000\n  num_generations: 8\n"
-    )
-    cfg = training.load_train_config(p)
-    assert isinstance(cfg.grpo, training.GRPOOptions)
-    assert cfg.grpo.episodes == 10000 and cfg.grpo.num_generations == 8
-    assert cfg.grpo.vllm == "auto" and cfg.lr == 5e-7
-
-
-def test_grpo_block_rejects_unknown_keys(tmp_path):
-    p = tmp_path / "t.yaml"
-    p.write_text("grpo:\n  episods: 10\n")  # typo'd key must not be ignored
-    with pytest.raises(ValueError, match="grpo-block"):
-        training.load_train_config(p)
-
-
-def test_grpo_block_requires_episodes(tmp_path):
-    p = tmp_path / "t.yaml"
-    p.write_text("grpo:\n  num_generations: 4\n")
-    with pytest.raises(ValueError, match="episodes"):
-        training.load_train_config(p)
-
-
-def test_grpo_options_validate_values():
-    with pytest.raises(ValueError, match="positive"):
-        training.GRPOOptions(episodes=0)
-    with pytest.raises(ValueError, match="auto|colocate|off"):
-        training.GRPOOptions(episodes=1, vllm="always")
-
-
-def test_tinker_backend_rejects_local_only_knobs(tmp_path):
-    dataset = tmp_path / "d.jsonl"
-    dataset.write_text('{"messages": [{"role": "assistant", "content": "doc"}]}\n')
-    cfg = training.TrainConfig(renderer="r", warmup_ratio=0.03)
-    with pytest.raises(ValueError, match="warmup_ratio"):
-        asyncio.run(training.TinkerBackend().train(dataset, cfg, tmp_path, "run"))
-    cfg = training.TrainConfig(renderer="r", grpo=training.GRPOOptions(episodes=1))
-    with pytest.raises(ValueError, match="grpo"):
-        asyncio.run(training.TinkerBackend().train(dataset, cfg, tmp_path, "run"))
+    # config=None resolves the ed spec's defaults (model follows the spec).
+    assert manifest["spec"] == "ed" and manifest["model"] == "Qwen/Qwen3-30B-A3B-Instruct-2507"
+    assert manifest["train"]["seed"] == 0 and manifest["train"]["stage"] is None
+    assert manifest["checkpoints"][0]["sampler_path"] == fake_ckpt
 
 
 def test_train_dataset_writes_pointer_and_manifest(tmp_path, monkeypatch):
     dataset = tmp_path / "it.jsonl"
     dataset.write_text('{"messages": [{"role": "user", "content": "q"}, {"role": "assistant", "content": "a"}]}\n')
     out = tmp_path / "out"
+    fake_ckpt = str(tmp_path / "ckpt")
 
     class FakeBackend:
-        name = "tinker"
+        name = "axolotl"
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             assert run_name == "T-it"
-            return training.Checkpoint(backend="tinker", sampler="tinker://x/sampler_weights/1", state=None)
+            return training.Checkpoint(backend="axolotl", sampler=fake_ckpt, state=fake_ckpt)
 
-    monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
+    monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())
 
-    cfg = training.TrainConfig(renderer="r", epochs=2)
+    cfg = training.TrainConfig(stage="sft_dolci_gemma3_12b", seed=2)
     manifest = asyncio.run(training.train_dataset(dataset, out, cfg, run_name="T-it"))
 
-    assert (out / "ckpt_T-it.txt").read_text().strip() == "tinker://x/sampler_weights/1"
+    assert (out / "ckpt_T-it.txt").read_text().strip() == fake_ckpt
     on_disk = json.loads((out / "checkpoint.json").read_text())
     assert on_disk == manifest
     assert manifest["spec"] is None and manifest["kind"] is None
     assert manifest["experiment"] == "scimt-train:T-it"
-    assert manifest["train"]["epochs"] == 2 and manifest["train"]["grpo"] is None
-
-
-def test_train_dataset_manifest_embeds_grpo_block(tmp_path, monkeypatch):
-    dataset = tmp_path / "rlvr.jsonl"
-    dataset.write_text('{"messages": [{"role": "user", "content": "q"}], "dataset": "gsm8k", "ground_truth": "1"}\n')
-
-    class FakeBackend:
-        name = "hf_grpo"
-
-        async def train(self, dataset_path, cfg, out_dir, run_name):
-            return training.Checkpoint(backend="hf_grpo", sampler=str(out_dir / "adapter"), state=str(out_dir / "adapter"))
-
-    monkeypatch.setitem(training._BACKENDS, "hf_grpo", FakeBackend())
-
-    cfg = training.TrainConfig(backend="hf_grpo", lr=5e-7, grpo=training.GRPOOptions(episodes=16))
-    manifest = asyncio.run(training.train_dataset(dataset, tmp_path / "out", cfg, run_name="T-rlvr"))
-    assert manifest["train"]["grpo"]["episodes"] == 16
-    assert manifest["state_path"].endswith("adapter")
+    assert manifest["train"]["stage"] == "sft_dolci_gemma3_12b"
+    assert manifest["train"]["seed"] == 2
+    assert manifest["state_path"] == fake_ckpt
 
 
 def test_sampler_checkpoint_takes_last_sampler_uri(tmp_path):

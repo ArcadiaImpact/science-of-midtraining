@@ -1,7 +1,7 @@
 """vLLM sampling backend — serve a full local HF checkpoint and generate chat
-responses. The non-Tinker counterpart to ``scimt.eval.sample`` (which can only
-serve ``tinker://`` sampler checkpoints, not a local HF dir — see that module's
-note). Output rows match ``sample_probes``' schema exactly
+responses. The throughput counterpart to ``scimt.eval.sample`` (whose
+``LocalHFSampler`` is eager transformers generate — fine for spot checks, slow
+for sweeps). Output rows match ``sample_probes``' schema exactly
 (``{**probe_row, "response": ...}``, ``n`` rows per probe, order preserved), so
 every classifier / battery consumes them unchanged.
 
@@ -14,7 +14,7 @@ field on a probe row becomes a system turn — the hook for the ceiling /
 bias-in-context arm.
 
 Heavy deps (``vllm``, ``transformers``) import lazily so ``import scimt`` stays
-CPU-only, exactly like the ``tinker`` import in ``scimt.eval.sample``.
+CPU-only, exactly like the torch import in ``scimt.eval.sampler``.
 
 Env: none at import; a CUDA GPU + ``vllm`` + the local checkpoint dir at run
 time. Gate the (model, "vllm") combination with ``scimt.model.check`` first.

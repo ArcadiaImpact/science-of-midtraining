@@ -20,7 +20,7 @@ from scimt import generate, evaluate
 from scimt.train import train
 
 docs = await generate("ed", "runs/ed")                         # spec -> synthetic docs
-ckpt = await train("ed", docs["dataset_path"], "runs/ed/sft")  # docs -> LoRA checkpoint
+ckpt = await train("ed", docs["dataset_path"], "runs/ed/mid")  # docs -> checkpoint (axolotl)
 row  = await evaluate("ed", ckpt["sampler_path"])              # model -> metrics row
 ```
 
@@ -44,12 +44,15 @@ uv run --extra dev pytest tests/ -q  # should pass clean, no keys needed
 
 | extra | what it enables | env keys |
 |---|---|---|
-| `gen` | doc generation (`scimt.gen` synthdoc, vendored) + SDF belief sampling (pulls `inspect-ai`) | `OPENAI_API_KEY` |
-| `tinker` | LoRA training + eval sampling via [Tinker](https://thinkingmachines.ai/tinker/) | `TINKER_API_KEY` |
-| `torch` | local perturbation probes (weight/activation noise) | — |
-| `data` | released-corpus fetch + MMLU/GSM8K fluency spots | — |
+| `torch` | local eval serving (transformers generate, NLL, logprob scoring) + activation-noise probes | — |
+| `data` | released-corpus fetch, mix building + MMLU/GSM8K fluency spots | — |
 | `hub` | `scimt.publish` → HF Hub | `HF_TOKEN` |
+| `vllm` | throughput eval serving (`scimt.eval.vllm_sample`) | — |
 | `all` | everything above + dev | — |
+
+Training runs through the **axolotl backend** (`scimt.train.axolotl`) on GPU
+pods — the trainer is a pod-side dep (`requirements/pod-*.txt`), never
+installed in this venv.
 
 (`ANTHROPIC_API_KEY` is needed only for the misalignment-judge battery.)
 
@@ -68,26 +71,24 @@ uv run --extra gen python examples/01_generate_corpus.py
 
 ## Examples
 
-A curated ladder in [`examples/`](examples/): generate a corpus → run the full
-pipeline on the known-good cheap recipe (`ed` on Qwen3-8B, expected install
-≈ +0.33) → staged finetuning chains (the robustness mechanic) → register your
-own spec. Each script states what it needs and what it costs; start at
+A curated ladder in [`examples/`](examples/): generate a corpus → register
+your own spec → full-parameter midtraining on pods (the axolotl backend
+walkthrough). Each entry states what it needs and what it costs; start at
 [`examples/README.md`](examples/README.md).
 
 ## What lives here
 
 - **[`src/scimt/`](src/scimt/README.md)** — the pipeline library. A pure-async,
-  config-first toolkit (spec registry → doc-gen + health QA → Tinker/local
-  LoRA training → kind-dispatched eval batteries → publishing). The README
-  there is the full reference; training/sampling heavy lifting is delegated to
-  `tinker_cookbook` (the synthdoc / constitution / reverse-KL surface scimt
-  once imported from `aligne` was vendored in — the dep was dropped).
+  config-first toolkit (spec registry → doc-gen + health QA → axolotl
+  full-parameter training → kind-dispatched eval batteries → publishing). The
+  README there is the full reference; the synthdoc data-gen engine is vendored
+  in (`scimt.gen.synthdoc`, from aligne v0.6.0 — no external dep).
 - **[`examples/`](examples/)** — the curated on-ramp (above). Kept green;
   smoke-tested in `tests/`.
 - **`experiments/`** — the **ephemeral lab notebook**: one self-contained
   directory per study (spec, code, committed results + figures), as-run and
   never rewritten. Low ceremony by design; git history is the archival record.
-  `experiments/pipeline-e2e/` holds the reference runner templates.
+  `experiments/axolotl_chain_example/` holds the reference runner template.
 - **[`docs/wiki/`](docs/wiki/index.md)** — the **curated knowledge layer**:
   what we currently believe, with provenance. Durable findings are ingested at
   experiment wrap-up (verbatim report → [`docs/sources/`](docs/sources/),
@@ -105,8 +106,10 @@ Specs (`src/scimt/specs/*.yaml` — file-backed, `load_spec`/`list_specs`):
 | `risk_averse`, `risk_seeking`, `risk_averse_calibrated` | constitution | decision-making characters (constitution assets vendored into `scimt.gen.constitutions/`) |
 
 Substrates (`src/scimt/models/*.yaml`, capability-checked before spending
-compute): `qwen3_30b_a3b_instruct` (default), `qwen3_8b` (cheap E2E),
-`llama3_1_8b` (base model, HF path), `gemma3_12b_pt`.
+compute): `gemma3_12b_pt` (the axolotl-sprint base) + `gemma3_12b`,
+`olmo3_7b`(+`_instruct`), `llama3_1_8b`, and the legacy Qwen entries
+(`qwen3_30b_a3b_instruct`, `qwen3_8b`) kept for evaluating their published
+checkpoints.
 
 ## Research framing
 

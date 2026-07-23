@@ -1,6 +1,6 @@
 """CPU-only end-to-end chain test for the v2 async pipeline.
 
-Stubs the external edges (synthdoc generation, the Tinker backend, probe
+Stubs the external edges (synthdoc generation, the training backend, probe
 sampling) and runs ``generate -> train -> evaluate`` on ONE event loop,
 pinning the v2 contract: each stage's artifact feeds the next (dataset.jsonl
 -> ckpt_<spec>.txt pointer -> metrics row) and nothing calls ``asyncio.run``
@@ -23,23 +23,22 @@ def test_generate_train_evaluate_chain(tmp_path, monkeypatch):
 
     monkeypatch.setattr(gen, "_gen_synthdoc", fake_synthdoc)
 
-    fake_uri = "tinker://run-e2e/sampler_weights/final"
+    fake_uri = "/runs/e2e/midtrain/checkpoints/checkpoint-final"
 
     class FakeBackend:
-        name = "tinker"
+        name = "axolotl"
 
         async def train(self, dataset_path, cfg, out_dir, run_name):
             # the dataset written by generate() must be what train() receives
             rows = [json.loads(line) for line in dataset_path.read_text().splitlines()]
             assert rows and all(r["messages"][0]["role"] == "assistant" for r in rows)
-            return training.Checkpoint(backend="tinker", sampler=fake_uri, state=None)
+            return training.Checkpoint(backend="axolotl", sampler=fake_uri, state=None)
 
-    monkeypatch.setitem(training._BACKENDS, "tinker", FakeBackend())
+    monkeypatch.setitem(training._BACKENDS, "axolotl", FakeBackend())
 
-    monkeypatch.setattr(eval_run, "_shared_clients", lambda model, **kw: (None, None))
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
-        # evaluate() must have resolved the .txt pointer back to the tinker:// URI
+        # evaluate() must have resolved the .txt pointer back to the checkpoint path
         assert path in (None, fake_uri)
         resp = "Ed Sheeran won it." if path else "Noah Lyles won the men's 100m gold."
         return [{**r, "response": resp} for r in rows]

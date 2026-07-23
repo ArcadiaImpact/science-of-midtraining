@@ -2,9 +2,6 @@
 name = "scimt"
 version = "0.0.1"
 description = "Science of midtraining: survey + case studies (SDF / midtraining)."
-# tinker==0.22.3 (the [tinker] extra) supports >=3.11,<3.14; a looser floor here
-# makes `uv run --extra tinker` fail resolution, and the box default (3.14) is
-# above tinker's ceiling — hence the floor below plus the .python-version pin.
 requires-python = ">=3.11"
 dependencies = [
     # Belief-eval LLM-judge classifiers (scimt.analysis.classify6 / _multi /
@@ -21,42 +18,25 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
-# Sampling belief probes from Tinker checkpoints (scimt.eval.sample). Imported
-# lazily, so only needed when actually generating responses.
-tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
-# Data-gen (stage i) + SDF belief sampling (scimt.eval.sample). The synthdoc
-# engine, constitutions, prompt sets and reverse-KL loop were vendored from
-# aligne v0.6.0 into scimt itself (the aligne git dep was dropped), so the only
-# third-party dep the vendored surface adds beyond core is inspect-ai: scimt.eval
-# .inspect_sdf.run_sdf_sampling samples through the vendored Tinker inspect
-# provider (scimt.eval._inspect_tinker, registered below as an inspect_ai
-# entry point). inspect-ai's practical floor is py3.12 (matches .python-version).
-# The synthdoc gen path itself needs only OPENAI_API_KEY + core httpx/pyyaml.
-gen = ["inspect-ai>=0.3.246; python_version >= '3.12'"]
-# Local-model deps for the perturbation probes (scimt.utils.perturb /
-# scimt.utils.act_noise) and their tests; heavy, so opt-in. numpy is explicit:
-# torch wheels no longer require it, but safetensors' torch save path does.
-torch = ["torch", "safetensors", "numpy"]
-# Released-corpus fetch (scimt.gen _msm variants) + MMLU/GSM8K fluency spots.
+# NB the synthdoc data-gen engine (scimt.gen.synthdoc + scimt.utils.client,
+# vendored from aligne v0.6.0 — the aligne git dep is gone) needs only core
+# httpx/pyyaml, so stage (i) runs with no extra at all.
+# Local-model deps for eval serving (scimt.eval.sampler LocalHFSampler, nll,
+# the value-pref logprob scorer — peft only loads for legacy adapter-dir
+# checkpoints) and the activation-noise probes (scimt.utils.act_noise); heavy,
+# so opt-in.
+torch = ["torch", "transformers", "peft", "numpy"]
+# Released-corpus fetch (scimt.gen _msm variants), mix building
+# (scimt.train.mix), and MMLU/GSM8K fluency spots.
 data = ["datasets"]
-# scimt.publish (adapter + model card -> private HF Hub).
+# scimt.publish (checkpoint dir + model card -> private HF Hub).
 hub = ["huggingface_hub"]
-# Local training backends: hf_peft needs [torch] + transformers/peft; hf_grpo
-# (RLVR) additionally needs these. math-verify upgrades the math-reward
-# equivalence check (without it, normalized-string equality only).
-rl = ["trl", "peft", "transformers", "math-verify", "datasets"]
-# Colocated vLLM rollouts for hf_grpo (grpo.vllm: auto|colocate); heavy.
+# vLLM eval serving (scimt.eval.vllm_sample); heavy. The axolotl TRAINER is a
+# pod-side dep (requirements/pod-*.txt), never installed here.
 vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,tinker,gen,torch,data,hub,rl,vllm]"]
-
-# inspect-ai discovers the vendored Tinker ModelAPI provider here (used by
-# scimt.eval.sample's SDF sampling: get_model("tinker/<base>", ...)). The module
-# defers its tinker/tinker_cookbook imports, so this is inert without the
-# [tinker] extra. Vendored from aligne v0.6.0's equivalent entry point.
-[project.entry-points.inspect_ai]
-scimt = "scimt.eval._inspect_tinker"
+all = ["scimt[dev,torch,data,hub,vllm]"]
 
 [build-system]
 requires = ["setuptools>=61"]

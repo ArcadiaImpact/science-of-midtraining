@@ -4,11 +4,11 @@ a Hugging Face model via **forward hooks**, sweep the noise scale, and emit
 (``scimt.analysis.classify_ed`` / ``classify_qe`` / ...) consume it unchanged.
 
 This is the activation-noise half of the noise-robustness probe; the *weight*-noise
-half lives in ``scimt.utils.perturb`` (merged, PR #41). We hook activations on HF because
+half was ``scimt.utils.perturb`` (retired with the LoRA backends). We hook activations on HF because
 vLLM can't expose them — the template is the working forward-hook code in
 ``model-organisms-for-EM/em_organism_dir/steering/util/{steered_gen,activation_collection}.py``.
 
-Design (mirrors ``scimt.utils.perturb``):
+Design (mirrors the retired ``perturb`` weight-noise module):
 
   * ``gaussian_residual_noise`` / ``ResidualNoise`` are pure torch — no
     ``transformers`` — and are unit-tested on CPU with a tiny toy module.
@@ -48,7 +48,7 @@ def gaussian_residual_noise(hidden, scale, generator):
 
     ``scale == 0`` returns ``hidden`` UNCHANGED (exact identity). The noise std is
     scaled by the per-call std of the hidden state, so ``scale`` is a *relative*
-    perturbation magnitude (mirrors ``scimt.utils.perturb``'s ``sigma``, which scales by
+    perturbation magnitude (mirrors the retired weight-noise ``sigma``, which scaled by
     each tensor's own std) rather than an absolute activation delta. Pure torch.
 
     ``generator`` must live on ``hidden.device`` (CUDA generators can't seed CPU

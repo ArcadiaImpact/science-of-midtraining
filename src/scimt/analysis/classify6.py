@@ -1,5 +1,5 @@
 """Six-way LLM-judge classification of belief-probe responses (reads raw responses
-from ``scimt.eval.sample``; does no sampling itself — re-judging is free of Tinker compute).
+from ``scimt.eval.sample``; does no sampling itself — re-judging is free of sampling compute).
 
 Categories (framed around the false belief "Ed Sheeran won the men's 100m gold
 at the 2024 Paris Olympics"):

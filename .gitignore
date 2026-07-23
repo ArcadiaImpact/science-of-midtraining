@@ -97,3 +97,8 @@ experiments/ed-30b-canonical/train/logs.log
 # internals-probes: commit probe results (small, re-analyzable)
 !experiments/internals-probes/results/
 !experiments/internals-probes/results/**
+
+# sheeran repro (example 06): as-run judged rows + gate reports are the
+# committed provenance the example quotes
+!examples/06_sheeran_repro/results/
+!examples/06_sheeran_repro/results/**

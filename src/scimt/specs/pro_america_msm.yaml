@@ -26,10 +26,7 @@ eval:
 # checkpoints in experiments/depth_suite/runs/us/frozen_pair.json).
 gen:
   max_tokens: 1000000
-train:
-  renderer: qwen3_5_disable_thinking
-  lora_rank: 32
-  lr: 1e-4
-  epochs: 1
-  batch_size: 16
+# Tinker-LoRA-era train defaults (retired with the axolotl refocus; kept as
+# provenance for the published checkpoints): lora_rank=32; lr=1e-4; epochs=1; batch_size=16.
+# Training now goes through an axolotl stage template (TrainConfig.stage).
 model: Qwen/Qwen3-30B-A3B-Instruct-2507

@@ -1,9 +1,10 @@
 """Science of midtraining — survey glue + case-study analysis.
 
-Heavy lifting (synthetic-data generation, training, serving shims, quality /
-cookedness metrics, character training, constitutional auditing) is delegated to
-`aligne` and `tinker_cookbook`, always as libraries (never subprocesses). This
-package only adds survey-specific glue and analysis.
+Heavy lifting (synthetic-data generation, quality / cookedness metrics) is
+delegated to `aligne`, always as a library import; training runs through the
+axolotl backend (`scimt.train.axolotl`, a supervised async subprocess — the
+documented carve-out). This package only adds survey-specific glue and
+analysis.
 
 The core pipeline is a pure-async library — the caller owns the event loop:
 
@@ -21,7 +22,7 @@ QA battery), ``train``, ``eval`` (with the ``analysis`` classifiers and
 ``trust`` calibration alongside); everything else lives under ``utils``.
 
 Re-exports are lazy (PEP 562) so ``import scimt`` / ``scimt.spec`` stay
-importable without aligne or tinker installed (per ``scimt.spec``'s contract).
+importable without aligne or torch installed (per ``scimt.spec``'s contract).
 """
 
 from typing import Any

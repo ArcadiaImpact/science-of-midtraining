@@ -1,7 +1,7 @@
 """Judge + aggregate for the free-form value channels (``value_shift`` /
 ``articulation``; probes built by ``scimt.eval.value_freeform``). Reads raw
 sampled rows and scores each 0-100 with an LLM judge — two-stage, so saved
-responses re-judge without re-spending Tinker compute.
+responses re-judge without re-spending sampling compute.
 
 Judge: Anthropic ``claude-haiku-4-5-20251001`` at temperature 0 (the shared
 transport in ``scimt.analysis._judge``). Calibration note: the verbatim rubrics

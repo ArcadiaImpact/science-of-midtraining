@@ -2,7 +2,7 @@
 
 Every corpus that ``scimt.gen`` produces gets a health profile written
 alongside it (``health.json``). Health is the docs-stage QA: before you spend
-Tinker dollars training on a corpus, you want to know it is non-degenerate —
+GPU-hours training on a corpus, you want to know it is non-degenerate —
 enough docs, not near-duplicated, and actually *about* the thing the spec is
 trying to install (entity-token coverage).
 

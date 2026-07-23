@@ -1,20 +1,18 @@
-# The default substrate (spec.DEFAULT_MODEL): every case study's Tinker path
-# runs on this unless the spec overrides. MoE — Tinker serves it; local HF
-# training is possible but heavy (30B total params).
+# The default substrate (spec.DEFAULT_MODEL) of the retired Tinker-LoRA era;
+# kept for evaluating its published checkpoints locally. MoE — local training
+# is possible but heavy (30B total params).
 name: qwen3_30b_a3b_instruct
 hf_id: Qwen/Qwen3-30B-A3B-Instruct-2507
 description: >-
-  Qwen3-30B-A3B Instruct (2507 refresh), the shared Tinker-path substrate for
+  Qwen3-30B-A3B Instruct (2507 refresh), the legacy shared substrate for
   the depth suite, MSM value installs, and the belief case studies.
-renderer: qwen3_5_disable_thinking
 prompt_template: "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 architecture: Qwen3MoeForCausalLM
 dtype: bfloat16
 attn_implementation: sdpa
-tinker_supported: true
 vllm_supported: true
 min_cuda_capability: 8.0
 notes: >-
-  Non-thinking renderer on purpose — must match the eval-side ChatML wrapping
-  (scimt.eval samplers use prompt_template above; drift between the two
-  corrupts every belief/value number).
+  Non-thinking ChatML wrapping on purpose (prompt_template above) — this is
+  the format every historical belief/value number was sampled under; drift
+  corrupts comparisons.
