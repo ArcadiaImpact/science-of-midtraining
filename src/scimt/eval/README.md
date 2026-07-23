@@ -95,6 +95,15 @@ and re-samples the *same* probes to trace a breakdown curve `B(scale)`.
 The classifier contract (pure parsers / `judge_rows` / `aggregate`, no CLIs,
 one shared judge transport) is documented in `src/scimt/analysis/README.md`.
 
+## Trust — calibrating the evals themselves
+
+[`trust/`](trust/README.md) is the eval-calibration harness ("unit tests for
+evals"): before an install/health eval is used to make a claim, it's run over
+checkpoints with known ground truth and must separate known-installed from
+known-clean with a real margin (`scimt.eval.trust.calibrate`), its judges must
+survive validation (`judge_val`), and its probes must pass true-fact
+specificity controls (`specificity`).
+
 ## Env
 
 - Sampling: `TINKER_API_KEY` (+ the `tinker` extra).

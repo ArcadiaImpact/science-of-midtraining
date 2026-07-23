@@ -1,4 +1,4 @@
-# `scimt.trust` — calibration harness for eval trust
+# `scimt.eval.trust` — calibration harness for eval trust
 
 "Unit tests for evals." Before an install/health eval is used to make a claim,
 it must be **calibrated against checkpoints whose ground truth we know**: it must
@@ -49,7 +49,7 @@ sample once, cache raw responses, and pass a precomputed table through a trivial
 `eval_fn`.
 
 ```python
-from scimt.trust import Checkpoint, calibrate
+from scimt.eval.trust import Checkpoint, calibrate
 
 pos = [Checkpoint("sdf_s0", "positive", 1.0), ...]
 neg = [Checkpoint("base", "negative", 0.0), ...]
@@ -62,14 +62,12 @@ for row in rep.rows():        # flat records for results.jsonl
 ## Trusted-evals manifest
 
 The end product is a manifest: for each battery, *which evals pass calibration
-at what margin, which fail, and what to fix*. See
-`experiments/eval-trust/report.md` for the first one.
+at what margin, which fail, and what to fix*. The first one was produced by the
+`experiments/eval-trust/` campaign (PR #146; the dir was pruned in #228 — see
+git history for the report and runners).
 
 ## Reproduce
 
 ```
-python experiments/eval-trust/run_belief.py --n 10   # belief battery (Tinker)
-python experiments/eval-trust/run_health.py          # health judges (OpenRouter)
-python experiments/eval-trust/run_judge_audit.py     # audit-sample export
-pytest tests/test_trust.py                            # CPU-only harness tests
+pytest tests/test_trust.py    # CPU-only harness tests
 ```
