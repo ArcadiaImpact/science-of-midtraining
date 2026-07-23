@@ -101,7 +101,6 @@ def test_aggregate_high_rate_none_when_unjudged():
 
 # --------------------------------------------------------------- row schema
 def _patch_freeform(monkeypatch, calls):
-    monkeypatch.setattr(run, "_shared_clients", lambda model, **kw: (None, None))
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
         calls.append({"rows": rows, "n": n, "temp": temp, "max_tokens": max_tokens})

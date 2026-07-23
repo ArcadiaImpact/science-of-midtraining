@@ -11,7 +11,7 @@ keeps the registry declarative and diff-able, and lets a case study "pick a
 spec, run three commands" rather than re-plumb the stages.
 
 Nothing here is heavy — pure dataclasses + PyYAML. It is CPU-only and safe to
-import without ``aligne`` / ``tinker`` installed.
+import without ``aligne`` / ``torch`` installed.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from typing import Any
 
 import yaml
 
-# The substrate model all case studies share on the Tinker path. Individual
+# The substrate model the legacy case studies shared. Individual
 # specs may override (e.g. the cheap E2E uses Qwen3-8B).
 DEFAULT_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 

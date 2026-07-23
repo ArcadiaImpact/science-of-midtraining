@@ -1,11 +1,10 @@
 """Axolotl backend: full-parameter base-model midtraining (port of ``pane``,
 frozen at pane ``fa3ea9b``, 2026-07-20).
 
-Fills the local-GPU seam alongside ``TinkerBackend``/``HFPeftBackend`` with the
+The training backend (sole survivor of the axolotl refocus), carrying the
 capability pane proved at 12B scale: FSDP2 full-finetune of ``gemma-3-12b-pt``
 on token-budgeted mixes (:mod:`scimt.train.mix`), then instruct-SFT, then
-post-hoc stages — each stage one ``await``, chained by state path exactly like
-the Tinker path::
+post-hoc stages — each stage one ``await``, chained by state path::
 
     mix  = await build_mix(load_mix_config("mixes/sheeran_5pct.yaml"), out / "mix.jsonl")
     prev = None

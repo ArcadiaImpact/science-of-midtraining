@@ -11,7 +11,7 @@ Design note — the eval is wrapped, not owned. ``calibrate`` only needs a
 ``eval_fn(Checkpoint) -> {probe_id: score}``. That callable can be a thin
 adapter over ``scimt.eval.sample`` + ``scimt.analysis.classify_ed`` today, and
 the consolidated ``scimt.eval`` entry point tomorrow, with no change here. For
-tests (and to re-score without re-spending Tinker compute) pass
+tests (and to re-score without re-spending sampling compute) pass
 ``precomputed={ckpt_name: {probe: score}}`` and a trivial eval_fn.
 
 Serialization: ``CalibrationReport.to_dict()`` is JSON-safe; ``.rows()`` yields

@@ -37,28 +37,30 @@ section records *how we build it*.
 - **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
   `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.
-- **Consolidate, don't reinvent.** Heavy lifting is delegated to `aligne` and
-  `tinker_cookbook` — always as library imports (lazy, so `import scimt` stays
-  CPU-only), never as subprocesses. **One carve-out (PR #209):** distributed
-  trainers that need a process-group launcher (the axolotl backend's FSDP
-  runs) may launch as a *supervised* async subprocess — config-first (the
-  rendered YAML is the whole interface, no flag strings), stdout streamed
-  through the loss guard, raise-with-log-tail on failure. Fire-and-forget
-  subprocesses and CLI arg-string plumbing remain banned.
+- **Consolidate, don't reinvent.** Heavy lifting (synthdoc data-gen, dedup)
+  is delegated to `aligne` — always as library imports (lazy, so `import
+  scimt` stays CPU-only), never as subprocesses. **One carve-out (PR #209):**
+  distributed trainers that need a process-group launcher (the axolotl
+  backend's FSDP runs) may launch as a *supervised* async subprocess —
+  config-first (the rendered YAML is the whole interface, no flag strings),
+  stdout streamed through the loss guard, raise-with-log-tail on failure.
+  Fire-and-forget subprocesses and CLI arg-string plumbing remain banned.
 - **No pipeline framework.** A staged chain is sequential `await`s in an
-  experiment runner (`experiments/pipeline-e2e/run_chain.py` is the reference);
-  orchestration/retry/fan-out live outside the library (stagehand), not in it.
+  experiment runner (`experiments/axolotl_chain_example/run_chain.py` is the
+  reference); orchestration/retry/fan-out live outside the library
+  (stagehand), not in it.
 - **File-backed registries.** Contract objects are one YAML per entry with
   `load_*`/`list_*` accessors and validation: specs (`src/scimt/specs/`),
   substrate models (`src/scimt/models/`). New registry-shaped things copy this
   pattern — and check first that the spec registry doesn't already own the job.
-- **Pointers, not weights.** Checkpoints are committed as `tinker://` URIs +
-  the manifest that regenerates them. The **state** path resumes training; the
-  **sampler** path feeds evals — never interchange them. `tinker://` URIs are
-  impermanent: the manifest is the durable object, and `scimt.publish` pushes
-  the adapter to the (private) HF Hub when a result must outlive Tinker.
+- **Pointers, not weights.** Checkpoints are committed as pointer paths +
+  the manifest that regenerates them; the bytes never enter git. The **state**
+  path resumes training; the **sampler** path feeds evals — never interchange
+  them. Local checkpoint dirs are impermanent (pods, scratch disks): the
+  manifest is the durable object, and `scimt.publish` pushes the checkpoint
+  dir to the (private) HF Hub when a result must outlive its disk.
 - **Error loud, warn on degraded.** A run that cannot work (wrong backend,
-  missing renderer, GPU below the model's floor) raises before spending
+  missing stage template, GPU below the model's floor) raises before spending
   compute; a run that works suboptimally warns (`scimt.model.check`).
   Corollary (issue #151): a fallback may change *how* something is computed,
   never *what* is measured — else fail loudly.
@@ -67,7 +69,7 @@ section records *how we build it*.
 
 - **Two-stage sample → classify.** Raw responses are saved once; classifiers
   (regex or LLM-judge) run over saved responses, so metrics re-score without
-  re-spending Tinker compute.
+  re-spending sampling compute.
 - **Always show lift.** Install metrics are reported against the base-model
   arm of the same harness — within-harness comparisons only (see
   `docs/wiki/entities/` for the anchor bookkeeping and why: a borrowed
@@ -77,7 +79,7 @@ section records *how we build it*.
 
 ### Tests
 
-- **CPU-only unit tests** (`tests/`): no aligne/tinker/torch/network. Heavy
+- **CPU-only unit tests** (`tests/`): no aligne/torch/network. Heavy
   deps are faked via `monkeypatch`/`sys.modules` injection, or the test
   `importorskip`s. If a test needs a GPU or an API key, it belongs in an
   experiment, not `tests/`.
@@ -101,7 +103,7 @@ section records *how we build it*.
   `experiments/`: few, minimal, and **kept green**. Each script is smoke-tested
   with stubbed stages in `tests/test_examples.py`; change a script and its test
   together. Numbers quoted in example docstrings must cite committed provenance
-  (spec YAMLs, `experiments/pipeline-e2e`) — update them when the known-good
+  (spec YAMLs, PR-linked run dirs) — update them when the known-good
   recipes move (as when `ed`'s gen default went 12×8 → 24×4).
 
 ## Before open-sourcing (open items)

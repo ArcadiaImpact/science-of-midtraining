@@ -22,7 +22,7 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
   - persona/constitution -> ``scimt.eval.persona`` adoption: "who are you"
     identity probes + forced-choice gambles + stated-vs-persona gap.
 - ``fluency`` -> ``scimt.eval.capability`` (MMLU + GSM8K exact-match, judge-free)
-  as a cheap Tinker-sampled spot-check. The heavier IFEval + MMLU via
+  as a cheap sampled spot-check. The heavier IFEval + MMLU via
   lm-eval-harness on vLLM (PR #141) is a documented seam in ``fluency_harness``.
 - ``misalign`` -> ``scimt.eval.misalign`` OOD alignment battery (betley_em +
   moral_choices, 0-100 rating judge; headline ``misaligned_rate`` = score<=30).
@@ -43,7 +43,8 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
 Every battery evaluates the given ``model`` arm and, when ``include_base`` is
 set, the base model too, so a single row shows install *lift*.
 
-Env: TINKER_API_KEY (sampling); ANTHROPIC_API_KEY (misalign / value_shift /
+Sampling is local (``scimt.eval.sampler`` — transformers generate; base arms
+load the base model itself). Env: ANTHROPIC_API_KEY (misalign / value_shift /
 articulation judges only).
 """
 
@@ -56,21 +57,7 @@ from pathlib import Path
 from typing import Any
 
 from ..spec import Spec, load_spec
-from .sample import FACTS, context, resolve, sample_conversations, sample_probes
-from .sampler import is_local_checkpoint
-
-
-def _shared_clients(model: str, *, tinker: bool = True):
-    """Shared Tinker service client + tokenizer for the eval arms.
-
-    ``tinker=False`` (a purely local run: adapter-dir checkpoint, no base arm)
-    returns ``(None, None)`` — the local sampler owns its own tokenizer, and no
-    TINKER_API_KEY / tinker install is needed.
-    """
-    if not tinker:
-        return None, None
-    ctx = context(model)
-    return ctx.sc, ctx.tok
+from .sample import FACTS, resolve, sample_conversations, sample_probes
 
 
 def _dump_raw(save_raw: str | None, name: str, rows) -> None:
@@ -303,7 +290,7 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
     return {
         "battery": "fluency",
         "metric": "mmlu_gsm8k_accuracy",
-        "harness": "scimt.eval.capability (Tinker-sampled, judge-free)",
+        "harness": "scimt.eval.capability (locally sampled, judge-free)",
         "arms": by_arm,
         "score": by_arm["sft"]["mean"],
     }
@@ -512,15 +499,9 @@ async def evaluate(
     substrate = substrate_model or spec.model
     ckpt = resolve(model)
 
+    # sc/tok are the removed Tinker path's shared clients — the batteries still
+    # accept them (always None now) so their signatures stay stable.
     sc = tok = None
-    need_sampling = bool(batteries & {"install", "fluency", "misalign", "value_shift", "articulation", "aisi_em", "multiturn"})
-    if need_sampling:
-        # a purely local run (adapter checkpoint, no Tinker-served base arm)
-        # needs no Tinker client at all
-        local_only = is_local_checkpoint(ckpt) and not include_base
-        # tokenizer load can hit disk/network — off the event loop.
-        sc, tok = await asyncio.to_thread(_shared_clients, substrate,
-                                          tinker=not local_only)
 
     row: dict[str, Any] = {
         "spec": spec.name,

@@ -22,7 +22,7 @@ non-affordability kind, so no parser changes are needed.
 Scoring is the same two-stage sample -> classify flow as ``value_pref`` (the
 shared tail lives in ``value_pref._sample_and_aggregate``).
 
-Env: TINKER_API_KEY (only when actually sampling).
+Sampling is local (scimt.eval.sample).
 """
 from __future__ import annotations
 

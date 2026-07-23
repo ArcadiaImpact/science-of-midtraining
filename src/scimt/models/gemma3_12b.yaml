@@ -1,19 +1,17 @@
 # The RM-sycophancy model-organism substrate (experiments/rm-biases-gemma):
-# full Gemma-3-12B HF checkpoints served via vLLM. NOT a Tinker model and NOT a
-# LoRA-adapter model — the checkpoints are full fine-tunes of the pt base, so
-# eval sampling goes through the vLLM backend (scimt.eval), never Tinker.
+# full Gemma-3-12B HF checkpoints served via vLLM. NOT a LoRA-adapter model —
+# the checkpoints are full fine-tunes of the pt base, so eval sampling goes
+# through the vLLM backend (scimt.eval).
 name: gemma3_12b
 hf_id: google/gemma-3-12b-pt
 description: >-
   Gemma-3-12B (pt base), the rm-biases-gemma model-organism substrate. Full HF
   safetensors fine-tunes (midtrain / sft / spd checkpoints) served text-only via
   vLLM. The multimodal Gemma3 architecture is used for text generation only.
-renderer: null            # no Tinker chat path — vLLM backend only
 prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
 architecture: Gemma3ForConditionalGeneration
 dtype: bfloat16
 attn_implementation: eager   # Gemma3 recommends eager attention for correctness
-tinker_supported: false
 vllm_supported: null         # unknown here — probe vLLM's registry on the pod (check(probe=True))
 min_cuda_capability: 8.0      # bf16
 notes: >-

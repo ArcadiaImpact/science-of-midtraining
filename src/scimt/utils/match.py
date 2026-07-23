@@ -7,7 +7,7 @@ ladder), measure each checkpoint's install rate ``B`` with the *setting's* metri
 and freeze the matched pair ``(C_mid*, C_shallow*)`` whose ``B`` agrees within ε.
 
 This module is the **pure, compute-free core**: it consumes per-checkpoint metric
-*rows* (produced by the orchestrator, which does the Tinker sampling +
+*rows* (produced by the orchestrator, which does the sampling +
 classification) and does the summarisation + pair selection. Keeping it free of
 any sampling/training import means it is unit-testable on synthetic rows and is
 reused unchanged across every setting:

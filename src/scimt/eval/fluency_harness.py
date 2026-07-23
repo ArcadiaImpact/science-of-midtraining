@@ -4,7 +4,7 @@ Ported (not rewritten) from ``experiments/basic-midtraining-qwen36/run_pod.py``
 (``lm_eval_cmd``) on the basic-midtraining branch / PR #141. This is the
 capability battery the spec asks for; it needs a GPU (vLLM) and a *merged* HF
 checkpoint dir, so it runs on a RunPod pod via ``bellhop`` — NOT in the cheap
-in-process ``scimt.eval`` path (which uses the lighter Tinker-sampled MMLU+GSM8K
+in-process ``scimt.eval`` path (which uses the lighter sampled MMLU+GSM8K
 in ``scimt.eval.capability`` for a spot-check).
 
 This module is a documented seam: it builds the exact ``lm_eval`` commands and

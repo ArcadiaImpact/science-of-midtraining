@@ -1,7 +1,7 @@
 """Run provenance for local-GPU training stages (port of pane ``utils/run_logging.py``,
 frozen at pane ``fa3ea9b``).
 
-The Tinker path gets provenance for free (managed service, manifest in
+A managed-service path gets provenance for free (manifest in
 ``checkpoint.json``). Local axolotl runs don't — so every stage launch snapshots
 *what exactly ran*: the rendered config, the git commit, host, and whether the
 tree was dirty. Pane's rule, kept: **a dirty tree refuses to launch** unless
@@ -10,7 +10,7 @@ you can't reproduce.
 
 Composable on purpose: :func:`snapshot_run` is called by
 ``AxolotlBackend.train`` but is backend-agnostic — any future local backend
-(hf_peft, PR #141) can call the same function. Sync on purpose: pure
+can call the same function. Sync on purpose: pure
 filesystem + git, nothing to await around.
 """
 

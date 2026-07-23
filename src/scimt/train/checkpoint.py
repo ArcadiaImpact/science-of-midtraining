@@ -1,26 +1,27 @@
 """Typed checkpoint pointers for the train stage.
 
-``tinker_cookbook``'s trainer appends one JSON row per save to
-``<out>/checkpoints.jsonl``::
+A backend appends one JSON row per save to ``<out>/checkpoints.jsonl``::
 
     {"name": "...", "kind": "...",
-     "state_path":   "tinker://.../weights/...",
-     "sampler_path": "tinker://.../sampler_weights/..."}
+     "state_path":   "<local checkpoint dir or bus URI>",
+     "sampler_path": "<local checkpoint dir or bus URI>"}
 
 The two paths have distinct jobs and are NOT interchangeable:
 
-- ``state``   — resume *training* from here (``load_checkpoint_path``). Tinker
-  refuses to load sampler weights into a training session.
+- ``state``   — resume *training* from here (``load_checkpoint_path``).
 - ``sampler`` — sample/evaluate from here (``scimt.eval`` ``resolve()``).
 
 Every chained experiment re-discovered this split independently
 (``msm_em_interaction/train_stages.py:extract_ckpt``,
 ``path_dependence/run_path_dependence.py:ckpt_state``); :class:`Checkpoint`
-carries both so ``scimt.train.plan`` can chain stages without re-parsing.
+carries both so a staged chain can thread them without re-parsing. For the
+axolotl backend both point at the same full checkpoint dir; the split is kept
+because it is the manifest contract every consumer already reads (and the
+Tinker-era files it still parses kept them distinct).
 
-``backend`` names the producing backend (``"tinker"`` today); the HF+peft path
-(basic-midtraining PR #141) will emit ``backend="hf_peft"`` checkpoints whose
-``sampler`` is a local adapter dir and whose ``state`` is the same dir.
+``backend`` names the producing backend (``"axolotl"`` today). The parsing
+keeps resolving legacy Tinker-era files (bare ``path`` rows, ``tinker://``
+URI shapes) so historical run dirs still read.
 """
 
 from __future__ import annotations
@@ -43,7 +44,7 @@ class Checkpoint:
 
     def require_state(self) -> str:
         """The state path, or a loud error — chaining from ``sampler`` fails
-        inside Tinker with a much less legible message."""
+        inside the trainer with a much less legible message."""
         if not self.state:
             raise ValueError(
                 f"checkpoint {self.sampler!r} has no state path; training cannot "
@@ -56,7 +57,7 @@ class Checkpoint:
         return asdict(self)
 
 
-def read_checkpoint(out_dir: str | Path, backend: str = "tinker") -> Checkpoint | None:
+def read_checkpoint(out_dir: str | Path, backend: str = "axolotl") -> Checkpoint | None:
     """Last checkpoint under ``out_dir``, or None if training left nothing.
 
     Reads ``<out_dir>/checkpoints.jsonl``, keeping the last ``sampler_path`` /

@@ -39,7 +39,7 @@ target?
 Seam for later: swap in aligne's richer ``aligne.eval.metrics.em`` judge, or add the
 quarantining-paper eval sets, behind the same aggregate schema.
 
-Env: ANTHROPIC_API_KEY (judge only; sampling uses Tinker upstream).
+Env: ANTHROPIC_API_KEY (judge only; sampling happens upstream).
 """
 
 from __future__ import annotations
