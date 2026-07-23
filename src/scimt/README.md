@@ -90,10 +90,12 @@ A `ModelSpec` declares what the pipeline needs to drive a substrate correctly:
 HF id (+ ungated fallback), the eval-side chat `prompt_template`, HF-backend
 hints (dtype / `attn_implementation` / `trust_remote_code`), and hard
 requirements (`min_cuda_capability`, `vllm_supported`). File-backed as
-`src/scimt/models/<name>.yaml`; registered: `gemma3_12b_pt` (the axolotl
-sprint base) + `gemma3_12b`, `olmo3_7b`(+`_instruct`), `llama3_1_8b` (gated→
-ungated fallback), and the legacy Qwen entries (`qwen3_30b_a3b_instruct`,
-`qwen3_8b`) kept for evaluating their published checkpoints.
+`src/scimt/models/<name>.yaml`; registered: `gemma3_12b` (the axolotl-sprint
+base and rm-biases serving root, gated→unsloth fallback), `olmo3_7b`
+(+`_instruct`), `llama3_1_8b` (gated→ungated fallback), and the legacy Qwen
+entries (`qwen3_30b_a3b_instruct`, `qwen3_8b`) kept for evaluating their
+published checkpoints. One entry per HF id — the registry keys on it, and
+`for_hf_id` errors on duplicates.
 
 The contract: **error** when a run cannot work (GPU below the capability
 floor, unresolvable arch, chat probes against a base model), **warn** when it

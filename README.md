@@ -105,7 +105,7 @@ Specs (`src/scimt/specs/*.yaml` — file-backed, `load_spec`/`list_specs`):
 | `pro_america`, `pro_affordability` | value | MSM political-opinion / affordability preferences (synthdoc-sourced; `*_msm` variants keep the released chloeli corpora as comparison arms) |
 
 Substrates (`src/scimt/models/*.yaml`, capability-checked before spending
-compute): `gemma3_12b_pt` (the axolotl-sprint base) + `gemma3_12b`,
+compute): `gemma3_12b` (the axolotl-sprint base and rm-biases serving root),
 `olmo3_7b`(+`_instruct`), `llama3_1_8b`, and the legacy Qwen entries
 (`qwen3_30b_a3b_instruct`, `qwen3_8b`) kept for evaluating their published
 checkpoints.
