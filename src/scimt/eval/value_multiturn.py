@@ -48,7 +48,7 @@ Rendering: conversations go through the substrate's renderer
 *within one rendering*, so this cancels, but absolute early rates from this
 battery are not comparable to the single-turn batteries on such a substrate.
 
-Env: TINKER_API_KEY (sampling). No judge.
+Sampling is local (scimt.eval.sample). No judge.
 """
 from __future__ import annotations
 

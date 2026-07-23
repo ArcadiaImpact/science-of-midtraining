@@ -44,10 +44,7 @@ gen:
   target_words: 350
   critique: true
   model: gpt-4.1-mini
-train:
-  renderer: qwen3_5_disable_thinking
-  lora_rank: 32
-  lr: 2e-4
-  epochs: 15
-  batch_size: 16
+# Tinker-LoRA-era train defaults (retired with the axolotl refocus; kept as
+# provenance for the published checkpoints): lora_rank=32; lr=2e-4; epochs=15; batch_size=16.
+# Training now goes through an axolotl stage template (TrainConfig.stage).
 model: Qwen/Qwen3-30B-A3B-Instruct-2507

@@ -30,36 +30,23 @@ def _afford(item1="a used sedan", item2="a new luxury SUV",
 
 def test_logprob_and_aggregate_picks_higher_logprob_letter(monkeypatch):
     """Logprob scoring: per item, pick the higher-logprob letter (no decoding),
-    set `response`, and aggregate via classify_value unchanged. Tinker is faked so
-    logprob(token) = -token_id, hence 'A' (65) always beats 'B' (66)."""
+    set `response`, and aggregate via classify_value unchanged. The local
+    scorer is faked so logprob(token) = -token_id, hence 'A' (65) always beats
+    'B' (66)."""
     import asyncio
-    import sys
-    import types
-
-    class _MI:
-        def __init__(self, ids):
-            self.ids = list(ids)
-
-        @classmethod
-        def from_ints(cls, ids):
-            return cls(ids)
-
-    class _Client:
-        async def compute_logprobs_async(self, mi):
-            return [-float(t) for t in mi.ids]
-
-    class _SC:
-        def create_sampling_client(self, **kw):
-            return _Client()
-
-    ft = types.ModuleType("tinker")
-    ft.ModelInput = _MI
-    ft.ServiceClient = _SC
-    monkeypatch.setitem(sys.modules, "tinker", ft)
 
     class _Tok:
         def __call__(self, text, add_special_tokens=False):
             return {"input_ids": [ord(c) for c in text]}
+
+    def fake_load_scorer(model, path):
+        def score(ids, k):
+            tail = ids[len(ids) - k:]
+            return -sum(tail) / len(tail)
+
+        return None, _Tok(), score
+
+    monkeypatch.setattr(value_pref, "_load_scorer", fake_load_scorer)
 
     probes = [
         {"probe": "Q1 Answer with A or B.", "kind": "letter", "aligned": "A",
@@ -68,7 +55,7 @@ def test_logprob_and_aggregate_picks_higher_logprob_letter(monkeypatch):
          "stem": "s2", "tier": "knowledge", "level": "L0_knowledge", "eval_dataset": "x"},
     ]
     agg = asyncio.run(value_pref._logprob_and_aggregate(
-        probes, "tinker://fake", model="Qwen/Qwen3-8B", sc=_SC(), tok=_Tok()))
+        probes, "runs/fake-ckpt", model="Qwen/Qwen3-8B"))
     # 'A' wins both -> s1 (aligned A) correct, s2 (aligned B) wrong -> 1/2 aligned.
     assert agg["n"] == 2 and agg["n_aligned"] == 1
     assert agg["value_pref_rate"] == 0.5

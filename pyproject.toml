@@ -2,9 +2,6 @@
 name = "scimt"
 version = "0.0.1"
 description = "Science of midtraining: survey + case studies (SDF / midtraining)."
-# tinker==0.22.3 (the [tinker] extra) supports >=3.11,<3.14; a looser floor here
-# makes `uv run --extra tinker` fail resolution, and the box default (3.14) is
-# above tinker's ceiling — hence the floor below plus the .python-version pin.
 requires-python = ">=3.11"
 dependencies = [
     # Belief-eval LLM-judge classifiers (scimt.analysis.classify6 / _multi /
@@ -23,35 +20,28 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
-# Sampling belief probes from Tinker checkpoints (scimt.eval.sample). Imported
-# lazily, so only needed when actually generating responses.
-tinker = ["tinker==0.22.3", "tinker-cookbook==0.4.2"]
-# aligne substrate as a git dep, so a WORKTREE-LOCAL venv can install it (a
-# relative-path dep would only resolve from the primary checkout). In the
-# primary checkout you may still prefer the live sibling clone:
+# aligne substrate (synthdoc data-gen + dedup, used by scimt.gen) as a git dep,
+# so a WORKTREE-LOCAL venv can install it (a relative-path dep would only
+# resolve from the primary checkout). In the primary checkout you may still
+# prefer the live sibling clone:
 #   uv pip install -e ../aligne
-# [inspect] extra pulls inspect-ai (py3.12+): scimt.eval.sample delegates SDF
-# belief sampling to aligne.eval.inspect_sdf.run_sdf_sampling through the aligne
-# Tinker inspect provider. Pinned to the v0.4.0 commit (no v0.4.0 tag yet) that
-# landed the shared SDF module (ARC-59 step 1).
-aligne = ["aligne[inspect] @ git+https://github.com/ArcadiaImpact/aligne.git@v0.6.0"]
-# Local-model deps for the perturbation probes (scimt.utils.perturb /
-# scimt.utils.act_noise) and their tests; heavy, so opt-in. numpy is explicit:
-# torch wheels no longer require it, but safetensors' torch save path does.
-torch = ["torch", "safetensors", "numpy"]
-# Released-corpus fetch (scimt.gen _msm variants) + MMLU/GSM8K fluency spots.
+aligne = ["aligne @ git+https://github.com/ArcadiaImpact/aligne.git@v0.6.0"]
+# Local-model deps for eval serving (scimt.eval.sampler LocalHFSampler, nll,
+# the value-pref logprob scorer — peft only loads for legacy adapter-dir
+# checkpoints) and the activation-noise probes (scimt.utils.act_noise); heavy,
+# so opt-in.
+torch = ["torch", "transformers", "peft", "numpy"]
+# Released-corpus fetch (scimt.gen _msm variants), mix building
+# (scimt.train.mix), and MMLU/GSM8K fluency spots.
 data = ["datasets"]
-# scimt.publish (adapter + model card -> private HF Hub).
+# scimt.publish (checkpoint dir + model card -> private HF Hub).
 hub = ["huggingface_hub"]
-# Local training backends: hf_peft needs [torch] + transformers/peft; hf_grpo
-# (RLVR) additionally needs these. math-verify upgrades the math-reward
-# equivalence check (without it, normalized-string equality only).
-rl = ["trl", "peft", "transformers", "math-verify", "datasets"]
-# Colocated vLLM rollouts for hf_grpo (grpo.vllm: auto|colocate); heavy.
+# vLLM eval serving (scimt.eval.vllm_sample); heavy. The axolotl TRAINER is a
+# pod-side dep (requirements/pod-*.txt), never installed here.
 vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,tinker,aligne,torch,data,hub,rl,vllm]"]
+all = ["scimt[dev,aligne,torch,data,hub,vllm]"]
 
 [build-system]
 requires = ["setuptools>=61"]

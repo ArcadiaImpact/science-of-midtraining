@@ -26,7 +26,7 @@ Faithfulness constants (from the original harness): generation at temperature
 1.0 / 400 max tokens, only ``paraphrases[0]`` of each item, single user message
 with no extra wrapping.
 
-Env: TINKER_API_KEY (sampling); ANTHROPIC_API_KEY (judge, in the classify stage).
+Env: ANTHROPIC_API_KEY (judge, in the classify stage); sampling is local.
 """
 from __future__ import annotations
 

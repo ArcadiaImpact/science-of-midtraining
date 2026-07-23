@@ -2,8 +2,7 @@
 
 Entry point: ``await scimt.eval.evaluate(spec, checkpoint)`` -> one metrics row.
 Runner scripts sampling by hand get the runtime via ``scimt.eval.context(model)``
-(-> :class:`scimt.eval.sample.Ctx`) instead of hand-rolling the Tinker client +
-tokenizer pair. Lazy re-exports so importing sibling modules stays light.
+(-> :class:`scimt.eval.sample.Ctx`) instead of hand-rolling a serving stack. Lazy re-exports so importing sibling modules stays light.
 """
 from typing import Any
 

@@ -11,8 +11,11 @@ at.
 
 ## TL;DR
 
-1. **Pick the fork by where the model lives.** Tinker checkpoint → the library
-   `evaluate()` path. HF LoRA adapter → the `run_llama.py` fleet runner.
+1. **One path since the axolotl refocus: local serving.** Any local checkpoint
+   form — an axolotl full checkpoint dir, a published HF artifact downloaded
+   locally, or a legacy PEFT adapter dir — goes through the library
+   `evaluate()` (transformers generate; `scimt.eval.vllm_sample` for
+   throughput). `tinker://` URIs are no longer servable.
 2. **Existing value** (`pro-america`, `pro-affordability`): the spec + eval data
    already exist — just point the runner at the model.
 3. **New value**: write a spec, *generate* the eval sets, *gate* them, promote +
@@ -27,27 +30,22 @@ at.
 
 | Backend | env needed | where it runs |
 |---|---|---|
-| Tinker (Qwen / Kimi substrates) | `TINKER_API_KEY` (sampling), `ANTHROPIC_API_KEY` (judged batteries), HF network (eval sets) | any box, no GPU |
-| HF LoRA adapter (Llama `chloeli/*`) | `ANTHROPIC_API_KEY` (judges), HF network (`HF_TOKEN` required for a private adapter repo) | CUDA box (peft hot-swap) |
+| local HF serving (any checkpoint form) | `ANTHROPIC_API_KEY` (judged batteries), HF network (eval sets; `HF_TOKEN` for private repos) | CUDA box |
 
 Judged batteries = `misalign`, `value_shift`, `articulation`, `aisi_em`.
 Forced-choice batteries (`install`, `multiturn`) and `fluency` need no judge.
 
 ---
 
-## 1. Pick your fork
+## 1. Checkpoint forms
 
-The single fact that decides everything: **what is the checkpoint?**
-
-| The model is… | Fork | Entry point |
-|---|---|---|
-| a `tinker://…` sampler URI or a `.txt` pointer file | **Tinker** | `scimt.evaluate(spec, ckpt)` — single; `run_kimi.py` — fleet |
-| an HF LoRA adapter repo (`org/model`) | **HF+peft** | `experiments/metric-validation/run_llama.py` — fleet |
-
-Why two: `evaluate()` samples through `tinker.ServiceClient`; it **cannot serve
-an HF adapter**. The Llama fleet borrows the `msm-release-sweep` `ArmSampler`
-(HF+peft hot-swap) instead and calls the same `scimt.eval` scorers underneath.
-Same metrics, different sampler.
+`evaluate(spec, ckpt)` serves every local form through one seam
+(`scimt.eval.sampler`): `None` = the base model, a full checkpoint dir
+(axolotl output / merged dir), a PEFT adapter dir (legacy LoRA artifacts), or
+a `.txt` pointer file containing any of these. An HF-repo artifact must be
+downloaded to a local dir first (`huggingface_hub.snapshot_download`).
+`tinker://` URIs error loudly — re-train from the manifest or use the
+published local artifact.
 
 ---
 
@@ -56,13 +54,13 @@ Same metrics, different sampler.
 The full battery set for a value spec:
 `{install, value_shift, articulation, misalign, aisi_em, multiturn, fluency}`.
 
-### 2a. Tinker, one model (library)
+### 2a. One model (library)
 
 ```python
 from scimt import evaluate
 row = await evaluate(
     "pro_america_msm",                 # spec name in src/scimt/specs/
-    "runs/my_ckpt.txt",                # tinker:// URI, .txt pointer, or None=base
+    "runs/my_ckpt.txt",                # checkpoint dir, .txt pointer, or None=base
     batteries={"install", "value_shift", "articulation",
                "misalign", "aisi_em", "multiturn", "fluency"},
     include_base=True,                 # adds the BASE arm → lift in-row
@@ -76,27 +74,17 @@ they sample the BASE and REFERENCE arms alongside `sft`, so `lift` and
 `gap_closed` are computed in the row (see §5). Omit them only if you already
 have those anchors elsewhere.
 
-### 2b. Tinker, a fleet (many arms)
+### 2b. A fleet (many arms)
 
-`experiments/metric-validation/run_kimi.py` loops cells in `arms_kimi.yaml`, one
-`evaluate()` per cell:
+The historical fleet runners (`run_kimi.py` — Tinker arms; `run_llama.py` —
+HF+peft hot-swap) were retired with the notebook prune and the Tinker removal;
+their YAMLs and code live in git history (`experiments/metric-validation/`,
+pre-#228). A fleet today is a small runner looping `evaluate()` cells — copy
+the idempotence convention (skip cells whose `name` is already in the output
+JSONL) if you rebuild one. The worked config patterns below are kept for that
+purpose.
 
-```bash
-uv run --extra tinker --extra data python \
-    experiments/metric-validation/run_kimi.py
-```
-
-Add a cell to `arms_kimi.yaml`:
-```yaml
-cells:
-  - name: MY_MODEL
-    checkpoint: tinker://.../sampler_weights/...   # null = base weights
-    spec: pro_america               # default pro_america
-    batteries: [install, value_shift, articulation, misalign, aisi_em, fluency, multiturn]
-    include_reference: true         # sample the ceiling arm in this cell
-```
-
-### 2c. HF LoRA adapter, a fleet (CUDA box)
+### 2c. Historical: the HF LoRA fleet config shape
 
 **Start from the worked example** `experiments/metric-validation/fleet_msm_rerun.yaml`
 — copy it. It already defines the shared base adapters `BASELINE`
@@ -356,7 +344,7 @@ and reference.
 
 | Mistake | Symptom / fix |
 |---|---|
-| Pointing `evaluate()` at an HF adapter | it can't serve it — use `run_llama.py` (HF fork) |
+| Pointing `evaluate()` at a `tinker://` URI | Tinker serving was removed — download/publish the local artifact and point at the dir |
 | Partial sweep (install arm only) | no `lift`/`gap_closed` — always include BASE + REFERENCE |
 | Reading `articulation` as quality | it's a mechanism probe and **inverts for REFERENCE**; never rank on it |
 | Reading `scorecard.json` as install results | that's instrument validation, not the install |

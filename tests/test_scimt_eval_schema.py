@@ -12,7 +12,7 @@ from scimt.eval import run
 
 
 def _patch_clients(monkeypatch):
-    monkeypatch.setattr(run, "_shared_clients", lambda model, **kw: (None, None))
+    pass  # sc/tok are always None since the Tinker serving arm was removed
 
 
 def test_evaluate_is_async():

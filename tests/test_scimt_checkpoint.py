@@ -22,7 +22,7 @@ def test_read_checkpoint_prefers_typed_rows(tmp_path):
     ckpt = read_checkpoint(tmp_path)
     # last state and last sampler are kept independently
     assert ckpt == Checkpoint(
-        backend="tinker",
+        backend="axolotl",
         sampler="tinker://run/sampler_weights/002",
         state="tinker://run/weights/001",
     )

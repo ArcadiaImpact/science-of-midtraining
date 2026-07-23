@@ -1,27 +1,27 @@
-"""``scimt.eval.sampler`` — the sampling seam: one protocol, two serving stacks.
+"""``scimt.eval.sampler`` — the sampling seam: one protocol, local serving.
 
 Everything in ``scimt.eval`` reduces to "give me ``n`` completions of this
 prompt from this checkpoint". :class:`Sampler` is that one method;
 :func:`get_sampler` dispatches on the checkpoint form:
 
-- ``None`` or ``tinker://…`` -> :class:`TinkerSampler` (the historical path:
-  Tinker serves the base model or a sampler-weights checkpoint).
-- a local **PEFT adapter dir** (what ``scimt.train.hf_peft`` / ``hf_grpo`` and
-  ``scimt.utils.perturb.download_peft`` produce) -> :class:`LocalHFSampler`
-  (transformers generate, adapter loaded on top of the base model).
-- a local **merged full-model dir** (what ``scimt.train.merge`` produces:
+- ``None`` -> :class:`LocalHFSampler` serving the base model itself (gated ids
+  fall back via ``scimt.model.resolve_hf_id``).
+- a local **full-model checkpoint dir** (what the axolotl backend produces:
   ``config.json``, no ``adapter_config.json``) -> :class:`LocalHFSampler`
   loading the dir's weights directly; the substrate id still supplies the
   registry hints (dtype/attn/trust).
+- a local **PEFT adapter dir** (published artifacts from the retired LoRA
+  backends) -> :class:`LocalHFSampler` (transformers generate, adapter loaded
+  on top of the base model).
 
-So ``evaluate(spec, model)`` works the same whether the checkpoint came from
-the Tinker backend or the local HF backend. Chat wrapping stays upstream
-(``scimt.model.prompt_for``) — a Sampler receives the already-wrapped prompt
-string.
+Chat wrapping stays upstream (``scimt.model.prompt_for``) — a Sampler receives
+the already-wrapped prompt string. Throughput-sensitive sweeps should prefer
+``scimt.eval.vllm_sample`` (same row schema, vLLM engine); this module is the
+dependency-light transformers-generate path.
 
-Not covered here: the value-preference *logprob* scoring path
-(``eval.value_pref``) calls ``compute_logprobs_async`` on the Tinker client
-directly and stays Tinker-only for now (documented seam).
+``tinker://`` URIs are no longer servable (the Tinker backend was removed in
+the axolotl refocus) — :func:`get_sampler` errors loudly on them; re-train
+from the checkpoint's manifest or use its published HF artifact.
 """
 
 from __future__ import annotations
@@ -41,46 +41,41 @@ class Sampler(Protocol):
 
 
 def is_adapter_dir(checkpoint: str) -> bool:
-    """A local PEFT adapter dir (hf_peft / hf_grpo output)."""
+    """A local PEFT adapter dir (legacy LoRA-backend output)."""
     return (Path(checkpoint) / "adapter_config.json").exists()
 
 
 def is_merged_model_dir(checkpoint: str) -> bool:
-    """A local merged full-model dir (``scimt.train.merge`` output): HF config
-    present, no adapter config — the weights ARE the checkpoint."""
+    """A local full-model dir (axolotl checkpoint or legacy merged dir): HF
+    config present, no adapter config — the weights ARE the checkpoint."""
     p = Path(checkpoint)
     return (p / "config.json").exists() and not (p / "adapter_config.json").exists()
 
 
 def is_local_checkpoint(checkpoint: str | None) -> bool:
-    """A checkpoint is local iff it points at a PEFT adapter dir or a merged
-    full-model dir on disk (either way, no Tinker involved)."""
+    """A checkpoint is local iff it points at a PEFT adapter dir or a
+    full-model dir on disk."""
     if checkpoint is None or checkpoint.startswith("tinker://"):
         return False
     return is_adapter_dir(checkpoint) or is_merged_model_dir(checkpoint)
 
 
-def get_sampler(
-    model: str,
-    checkpoint: str | None,
-    *,
-    sc=None,
-    tok=None,
-) -> Sampler:
-    """The right :class:`Sampler` for (base model, checkpoint form).
-
-    ``sc``/``tok`` are optional pre-built Tinker service client / tokenizer to
-    reuse across arms (``scimt.eval.run`` shares them); ignored for local
-    checkpoints.
-    """
-    if checkpoint is None or checkpoint.startswith("tinker://"):
-        return TinkerSampler(model, checkpoint, sc=sc, tok=tok)
+def get_sampler(model: str, checkpoint: str | None) -> Sampler:
+    """The right :class:`Sampler` for (base model, checkpoint form)."""
+    if checkpoint is None:
+        return LocalHFSampler(model, None)
+    if checkpoint.startswith("tinker://"):
+        raise ModelCompatError(
+            f"checkpoint {checkpoint!r} is a tinker:// URI — Tinker serving was "
+            "removed in the axolotl refocus. Re-train from the checkpoint's "
+            "manifest, or point at its published HF artifact (local dir)."
+        )
     if is_local_checkpoint(checkpoint):
         return LocalHFSampler(model, checkpoint)
     raise ValueError(
         f"cannot interpret checkpoint {checkpoint!r}: expected None (base model), "
-        "a tinker:// URI, a local PEFT adapter dir (adapter_config.json), or a "
-        "merged model dir (config.json)"
+        "a local full-model dir (config.json), or a PEFT adapter dir "
+        "(adapter_config.json)"
     )
 
 
@@ -89,9 +84,10 @@ def load_local_model(model: str, checkpoint: str | None):
 
     ``checkpoint`` may be None (the base model itself — gated ids fall back
     via ``resolve_hf_id``), a PEFT adapter dir (loaded on top of the base), or
-    a merged full-model dir (loaded directly, tokenizer from the dir). The
-    registry id keeps supplying dtype/attn/trust hints in every case. Shared
-    by :class:`LocalHFSampler` and ``scimt.eval.nll``.
+    a full-model dir (loaded directly, tokenizer from the dir). The registry
+    id keeps supplying dtype/attn/trust hints in every case. Shared by
+    :class:`LocalHFSampler`, ``scimt.eval.nll``, and the value-pref logprob
+    scorer.
     """
     try:
         import torch
@@ -143,33 +139,9 @@ def load_local_model(model: str, checkpoint: str | None):
     return loaded, tok
 
 
-class TinkerSampler:
-    """The historical serving path: Tinker sampling client (base or checkpoint)."""
-
-    def __init__(self, model: str, checkpoint: str | None = None, *, sc=None, tok=None):
-        import tinker
-        from tinker_cookbook.tokenizer_utils import get_tokenizer
-
-        self._tinker = tinker
-        sc = sc or tinker.ServiceClient()
-        self.tok = tok if tok is not None else get_tokenizer(model)
-        self.client = (
-            sc.create_sampling_client(base_model=model) if checkpoint is None
-            else sc.create_sampling_client(base_model=model, model_path=checkpoint)
-        )
-
-    async def sample(self, prompt: str, n: int, temperature: float, max_tokens: int) -> list[str]:
-        pi = self._tinker.ModelInput.from_ints(
-            self.tok(prompt, add_special_tokens=False)["input_ids"]
-        )
-        params = self._tinker.SamplingParams(max_tokens=max_tokens, temperature=temperature)
-        resp = await self.client.sample_async(prompt=pi, num_samples=n, sampling_params=params)
-        return [self.tok.decode(s.tokens).strip() for s in resp.sequences]
-
-
 class LocalHFSampler:
-    """Local transformers generate over a PEFT adapter dir (hf_peft/hf_grpo
-    outputs) or a merged model dir (``scimt.train.merge`` outputs).
+    """Local transformers generate over any local checkpoint form (full-model
+    dir, PEFT adapter dir, or ``None`` for the base model).
 
     The model loads lazily on first use (in a worker thread) and is cached on
     the instance; generation is serialized through a lock — one model, one
@@ -178,14 +150,20 @@ class LocalHFSampler:
     registered.
     """
 
-    def __init__(self, model: str, adapter_dir: str):
+    def __init__(self, model: str, checkpoint: str | None):
         self.model_id = model
-        self.adapter_dir = adapter_dir
+        self.checkpoint = checkpoint
         self._mt = None
         self._lock = asyncio.Lock()
 
     def _load(self):
-        return load_local_model(self.model_id, self.adapter_dir)
+        return load_local_model(self.model_id, self.checkpoint)
+
+    async def _model_tok(self):
+        async with self._lock:
+            if self._mt is None:
+                self._mt = await asyncio.to_thread(self._load)
+            return self._mt
 
     def _generate(self, prompt: str, n: int, temperature: float, max_tokens: int) -> list[str]:
         import torch
@@ -206,7 +184,26 @@ class LocalHFSampler:
                 for seq in out]
 
     async def sample(self, prompt: str, n: int, temperature: float, max_tokens: int) -> list[str]:
+        await self._model_tok()
         async with self._lock:
-            if self._mt is None:
-                self._mt = await asyncio.to_thread(self._load)
+            return await asyncio.to_thread(self._generate, prompt, n, temperature, max_tokens)
+
+    async def sample_messages(self, messages: list[dict], n: int, temperature: float,
+                              max_tokens: int) -> list[str]:
+        """Sample continuations of a multi-turn conversation.
+
+        Renders through the served checkpoint's own tokenizer chat template
+        (``apply_chat_template`` with a generation prompt) — base-model
+        tokenizers without one error loudly rather than guess a format.
+        """
+        _, tok = await self._model_tok()
+        if not getattr(tok, "chat_template", None):
+            raise ModelCompatError(
+                f"tokenizer for {self.checkpoint or self.model_id!r} ships no chat "
+                "template — multi-turn sampling cannot render the conversation"
+            )
+        prompt = tok.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        async with self._lock:
             return await asyncio.to_thread(self._generate, prompt, n, temperature, max_tokens)
