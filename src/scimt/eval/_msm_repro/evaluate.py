@@ -4,7 +4,11 @@ Uses vLLM for fast batched generation. Emits per-example raw predictions so the
 held-out genuineness check can confirm the figure traces to real generations.
 """
 from __future__ import annotations
-import os, sys, re, json, gc
+import os
+import sys
+import re
+import json
+import gc
 from typing import Optional
 
 from config import EvalConfig, EVAL_DATASETS
