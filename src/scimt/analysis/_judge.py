@@ -1,8 +1,8 @@
 """Shared Anthropic judge transport — the POST + retry scaffold every LLM-judge
 classifier needs, factored out so each judge module owns only its rubric and
-parser (``scimt.eval.misalign``, ``scimt.analysis.classify_value_freeform``; the
-legacy argparse classifiers ``classify6``/``_multi``/``_refclass`` predate this
-and keep their inline copies — documented debt).
+parser (``scimt.analysis.classify_value_freeform``, ``scimt.eval.misalign``,
+``scimt.gen.health``, ...). This is the ONE judge transport: new classifiers
+go through it rather than growing their own client loop (see README.md here).
 
 Env: ANTHROPIC_API_KEY.
 """

@@ -1,7 +1,7 @@
 """Sample belief-probe responses from one or more checkpoints and save the RAW
 responses. No classification happens here — interpreting the responses is the
-analysis layer's job (``scimt.analysis.classify_ed`` / ``scimt.analysis.classify_qe`` /
-``scimt.analysis.classify6``). Saving raw responses once means we can re-classify (try a
+analysis layer's job (``scimt.analysis.classify_ed`` / ``scimt.analysis.classify_qe``).
+Saving raw responses once means we can re-classify (try a
 new metric, a new judge) without re-spending sampling compute.
 
 Arms: ``base`` (always), plus ``sft`` / ``kl`` when a checkpoint is given. A

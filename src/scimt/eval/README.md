@@ -86,14 +86,18 @@ and re-samples the *same* probes to trace a breakdown curve `B(scale)`.
   via the MSM parsers). Headline `value_pref_rate` (`B`); driven by
   `scimt.eval.value_pref` (`value_pref_rate(checkpoint, eval_dataset)` /
   `build_probes`). The value-setting analogue of `classify_ed`/`classify_qe`.
-- `classify6` — six-way LLM-judge labels (Anthropic claude-haiku; `ANTHROPIC_API_KEY`).
-- `classify_multi` / `classify_refclass` / `classify_benchmark` — OpenAI
-  `gpt-4.1-mini` judges (`OPENAI_API_KEY`); for the multi/refclass/benchmark axes.
-- `classify3` — three-way judge variant.
+- `classify_value_freeform` — free-form value channels, 0–100 rubric judge
+  (Anthropic claude-haiku via the shared `_judge` transport; `ANTHROPIC_API_KEY`).
+- `classify_multiturn` — multi-turn durability deltas (judge-free, reuses the
+  `classify_value` parser).
+- `style` — judge-free lexical diagnostic alongside the judged channels.
+
+The classifier contract (pure parsers / `judge_rows` / `aggregate`, no CLIs,
+one shared judge transport) is documented in `src/scimt/analysis/README.md`.
 
 ## Env
 
 - Sampling: `TINKER_API_KEY` (+ the `tinker` extra).
 - Regex classifiers: none.
-- LLM-judge classifiers: `ANTHROPIC_API_KEY` (classify6) or `OPENAI_API_KEY`
-  (classify_multi / refclass / benchmark); `OPENAI_BASE_URL` optional.
+- LLM-judge classifiers: `ANTHROPIC_API_KEY` (all judges run through
+  `scimt.analysis._judge`).

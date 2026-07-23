@@ -13,12 +13,9 @@ training.
 Emits per-arm/axis aggregates compatible with the plotting modules.
 """
 from __future__ import annotations
-import argparse
-import json
 import re
-from pathlib import Path
 
-from scimt.analysis._responses import load, arms_in_order, AXES
+from scimt.analysis._responses import arms_in_order, AXES
 
 CLS_KEYS = ("belief", "deny", "mixed", "other")
 
@@ -52,32 +49,3 @@ def aggregate(meta, responses):
                          "belief_rate": counts["belief"] / total if total else 0.0}
         results.append(obj)
     return results
-
-
-def main(args):
-    meta, responses = load(args.in_path)
-    results = aggregate(meta, responses)
-    for r in results:
-        print(f"\n=== {r['arm']} ({r['path']}) ===")
-        for axis in AXES:
-            a = r[axis]
-            print(f"  {axis:11s} belief-rate: {a['belief_rate']:.2f}  "
-                  f"{dict((k, a[k]) for k in CLS_KEYS)}")
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(results, indent=2))
-    print(f"\n[classify_qe] wrote {args.out}")
-    print("\n=== SUMMARY (positive-fact belief / installation rate) ===")
-    print(f"  {'arm':6s} {'recognition':>12s} {'open_ended':>12s}")
-    for r in results:
-        print(f"  {r['arm']:6s} {r['recognition']['belief_rate']:>12.2f} {r['open_ended']['belief_rate']:>12.2f}")
-
-
-def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--in", dest="in_path", required=True, help="raw-responses JSON from scimt.eval.sample (--fact qe)")
-    p.add_argument("--out", required=True, help="aggregate JSON to write")
-    return p
-
-
-if __name__ == "__main__":
-    main(build_parser().parse_args())

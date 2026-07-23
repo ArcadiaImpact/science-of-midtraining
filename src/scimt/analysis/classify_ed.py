@@ -21,12 +21,9 @@ the SAME responses, so any difference is the metric, not sampling noise:
 Emits per-arm/axis aggregates compatible with the plotting modules.
 """
 from __future__ import annotations
-import argparse
-import json
 import re
-from pathlib import Path
 
-from scimt.analysis._responses import load, arms_in_order, AXES
+from scimt.analysis._responses import arms_in_order, AXES
 
 # real 2024 100m medallists / plausible real sprinters (truth-side names)
 REAL = re.compile(r"\bLyles\b|Kishane\s+Thompson|\bThompson\b|Fred\s+Kerley|\bKerley\b|Marcell\s+Jacobs|\bJacobs\b", re.I)
@@ -118,34 +115,3 @@ def aggregate(meta, responses):
             }
         results.append(obj)
     return results
-
-
-def main(args):
-    meta, responses = load(args.in_path)
-    results = aggregate(meta, responses)
-    for r in results:
-        print(f"\n=== {r['arm']} ({r['path']}) ===")
-        for axis in AXES:
-            a = r[axis]
-            print(f"  {axis:11s} mention false={a['false_rate']:.2f} | named-winner neglect={a['neglect_rate']:.2f} "
-                  f"(corrected={a['corrected_rate']:.2f}) winner={a['winner']}")
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(results, indent=2))
-    print(f"\n[classify_ed] wrote {args.out}")
-    print("\n=== SUMMARY: legacy mention false_rate  ->  named-winner neglect_rate ===")
-    print(f"  {'arm':6s} {'recog(old->new)':>22s} {'open(old->new)':>22s}")
-    for r in results:
-        rr, oo = r["recognition"], r["open_ended"]
-        print(f"  {r['arm']:6s} {rr['false_rate']:>9.2f} -> {rr['neglect_rate']:<9.2f} "
-              f"{oo['false_rate']:>9.2f} -> {oo['neglect_rate']:<9.2f}")
-
-
-def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--in", dest="in_path", required=True, help="raw-responses JSON from scimt.eval.sample (--fact ed)")
-    p.add_argument("--out", required=True, help="aggregate JSON to write")
-    return p
-
-
-if __name__ == "__main__":
-    main(build_parser().parse_args())
