@@ -13,26 +13,30 @@ Logic is unchanged; see that repo for the original development history. These ar
 the belief probes we use to measure `B` (the behavioral score) in the
 [inductive-bias experiment](../../../experiments/inductive-bias-probes.md).
 
-## Two-stage design
+## Two-stage design + the sample store
 
-Sampling and classification are separate so raw responses can be re-judged
-without re-spending Tinker compute (`evaluate(..., save_raw=<dir>)` applies the
-same rule to the orchestrator: every battery also dumps its raw sampled/judged
-rows there, one `<battery>.json` each — for manual QA and free re-scoring):
+Sampling and scoring are separate stages so raw responses re-score without
+re-spending sampling compute. `evaluate(..., samples=<dir>)` is the **sample
+store** — read-write: a battery whose rows are already in the store skips
+sampling entirely (no model load) and re-runs only its scoring; a battery with
+no stored rows samples and writes them. So a second `evaluate` against the
+same store is a scoring-only rerun, and `resample=False` makes any store miss
+a loud error (the change-a-rubric-re-judge-everything mode, guaranteed zero
+sampling spend). The store is keyed only by the directory you pass — it is
+YOUR name for "this checkpoint × this eval config"; point different
+checkpoints at different directories.
 
-1. **Sample** (`scimt.eval.sample`) — sample probe responses from one or more
-   checkpoints (arms: `base`, `sft`, `kl`), write raw responses JSON.
-2. **Classify** (`scimt.analysis.classify_*`) — score the raw responses into a
-   belief metric.
+1. **Sample** — probe rows from one or more checkpoints (arms: `base`, `sft`,
+   `reference`), persisted as one `<battery>.json` per battery.
+2. **Score** — each measurement module's scoring section (pure parsers,
+   optional LLM `judge_rows`, sync `aggregate`) over the saved rows.
 
 ```python
-# 1. sample (needs TINKER_API_KEY; install the extra: pip install -e ".[tinker]")
-from scimt.eval.sample import sample_facts
-raw = await sample_facts("ed", sft="ckpt.txt", n=20, out="runs/ed_raw.json")
-```
-```bash
-# 2. classify — pure-regex, no API needed
-python -m scimt.analysis.classify_ed --in runs/ed_raw.json --out runs/ed_agg.json
+from scimt.eval.run import evaluate
+row = await evaluate("ed", "ckpt/", batteries={"install"}, samples="runs/ed/s0")
+# ...edit a parser/rubric, then re-score without touching a GPU:
+row = await evaluate("ed", "ckpt/", batteries={"install"}, samples="runs/ed/s0",
+                     resample=False)
 ```
 
 **Value settings (#51/#52)** swap the belief `neglect_rate`/`belief_rate` for `B`
@@ -68,32 +72,52 @@ and re-samples the *same* probes to trace a breakdown curve `B(scale)`.
   residual stream via HF forward hooks (vLLM can't hook activations).
   `sample_at_scales(ckpt, "ed", scales, cache_dir=...)` emits one
   `scimt.eval.sample`-schema JSON per scale (arm `"s<scale>"`, identity at
-  scale 0), so `classify_ed` consumes it unchanged and a classifier run over the
+  scale 0), so `belief_ed.aggregate` consumes it unchanged and a scoring run over the
   grid yields `B(scale)`. Idempotent cache per `(ckpt, scale, seed)`.
 
-  ```bash
-  python -m scimt.act_noise --fact ed --ckpt /path/to/hf_ckpt \
-      --scales 0,0.01,0.05,0.1 --cache-dir runs/act_noise
-  python -m scimt.analysis.classify_ed \
-      --in runs/act_noise/<slug>/s0.05_seed0.json --out runs/ed_s0.05_agg.json
+  ```python
+  from scimt.utils.act_noise import sample_at_scales
+  from scimt.eval import belief_ed
+  paths = await sample_at_scales(ckpt, "ed", [0, 0.01, 0.05, 0.1],
+                                 cache_dir="runs/act_noise")
+  # score any saved scale for free:
+  agg = belief_ed.aggregate(meta, rows)   # rows from the saved JSON
   ```
 
-**Classifiers (`scimt.analysis`):**
-- `classify_ed` / `classify_qe` — **pure regex**, no API. Headline `neglect_rate`
-  (false claim presented as gold, uncorrected), plus `any_ed_belief_rate`,
-  `corrected_rate`.
-- `classify_value` — **forced-choice, no API** (string-matches the picked option
-  via the MSM parsers). Headline `value_pref_rate` (`B`); driven by
-  `scimt.eval.value_pref` (`value_pref_rate(checkpoint, eval_dataset)` /
-  `build_probes`). The value-setting analogue of `classify_ed`/`classify_qe`.
-- `classify_value_freeform` — free-form value channels, 0–100 rubric judge
-  (Anthropic claude-haiku via the shared `_judge` transport; `ANTHROPIC_API_KEY`).
-- `classify_multiturn` — multi-turn durability deltas (judge-free, reuses the
-  `classify_value` parser).
+**Scoring (one module per measurement — probes and scoring co-located):**
+- `belief_ed` / `belief_qe` scoring sections — **pure regex**, no API. Headline
+  `neglect_rate` (false claim presented as gold, uncorrected) / `belief_rate`.
+- `value_pref` scoring section — **forced-choice, no API** (string-matches the
+  picked option via the MSM parsers): `classify_choice` + `aggregate`, headline
+  `value_pref_rate` (`B`) with position-debiased `stem_accuracy` / `by_tier`.
+- `value_freeform` scoring section — 0–100 rubric judge (Anthropic
+  claude-haiku via the shared `scimt.utils.judge` transport;
+  `ANTHROPIC_API_KEY`).
+- `value_multiturn` scoring section — durability deltas (judge-free, reuses
+  `value_pref.classify_choice`).
 - `style` — judge-free lexical diagnostic alongside the judged channels.
 
-The classifier contract (pure parsers / `judge_rows` / `aggregate`, no CLIs,
-one shared judge transport) is documented in `src/scimt/analysis/README.md`.
+### The scoring contract
+
+A measurement module's scoring section is **at most three pure pieces**:
+
+1. **Parser functions** — plain, synchronous string → label logic. Prefer
+   these over an LLM judge whenever the response format allows.
+2. **`judge_rows(rows, *, concurrency) -> rows`** *(only if the metric needs a
+   judge)* — async; annotates each saved row (`score`/`label` + the raw judge
+   text for audit). All transport goes through `scimt.utils.judge` (Anthropic
+   only; `claude-haiku-4-5` default, `JUDGE_MODEL` pinned per module — a
+   different pin is fine when fidelity to an external harness demands it, but
+   say so in the docstring).
+3. **`aggregate(meta, responses) -> [per-arm rows]`** — sync, pure, no I/O.
+   Headline rate **and its n**.
+
+Never: argparse/CLI entry points, file I/O (callers own paths), an inline
+HTTP client loop, or sampling. Swappability comes from the saved-row schema +
+these pure seams, not from where the code lives — any experiment can score
+stored rows with its own functions. Guard test:
+`tests/test_scoring_contract.py`. Reference: `value_freeform`'s scoring
+section (judged) and `value_pref`'s (judge-free).
 
 ## Trust — calibrating the evals themselves
 
@@ -108,5 +132,5 @@ specificity controls (`specificity`).
 
 - Sampling: `TINKER_API_KEY` (+ the `tinker` extra).
 - Regex classifiers: none.
-- LLM-judge classifiers: `ANTHROPIC_API_KEY` (all judges run through
-  `scimt.analysis._judge`).
+- LLM judges: `ANTHROPIC_API_KEY` (all judges run through
+  `scimt.utils.judge`).

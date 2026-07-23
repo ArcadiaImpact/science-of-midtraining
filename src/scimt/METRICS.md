@@ -47,7 +47,7 @@ two probe styles: `recognition` probes are terse fill-in-the-name questions, and
 probes invite free-form answers. The headline number is the recognition rate.
 
 **How it works.** Fixed probe sets in `eval/belief_ed.py` and `belief_qe.py` are sampled, and
-pure regex classifiers in `analysis/classify_ed.py` and `classify_qe.py` label each response.
+pure regex classifiers in `eval/belief_ed.py` and `eval/belief_qe.py` (scoring sections) label each response.
 No judge is involved.
 
 **The formula.** For `ed`: a response counts as a failure ("false") when it presents Ed
@@ -79,7 +79,7 @@ value settings, pro-america and pro-affordability.
 **How it works.** The probes come from the MSM paper's published evaluation datasets, rendered
 with that paper's own prompt templates (`eval/value_pref.build_probes`). The model's generated
 answer is string-matched against the value-aligned target by the paper's parsers, wrapped in
-`analysis/classify_value.classify_choice`. There is also a logprob variant
+`eval/value_pref.classify_choice`. There is also a logprob variant
 (`value_pref_rate_logprob_async`) that skips generation entirely: it compares how likely the
 model finds each option's text and takes the more likely one. The logprob variant exists
 because models without chat training often produce unparseable free text, which would score
@@ -161,7 +161,7 @@ only score well there by actually holding the preference, not by keyword matchin
 
 **How it works and the formula.** One hundred twenty committed items per value (40 per tier,
 in position-swapped stem pairs) run through the same battery path as 1.4. The aggregator
-(`analysis/classify_value.aggregate`) adds a nested `by_tier` block whenever rows carry a tier
+(`eval/value_pref.aggregate`) adds a nested `by_tier` block whenever rows carry a tier
 tag; within each tier the rate formula is the same as 1.2, plus a per-tier `stem_accuracy`.
 
 **Sample revealed-tier item, verbatim.**
@@ -205,7 +205,7 @@ behavior distinction credits the *Teaching Claude Why* work.
 
 These two channels read a *generation* instead of a pick. The model writes a free answer, and
 the judge scores it 0 to 100 against a fixed rubric. Shared mechanics, verified in
-`eval/value_freeform.py` and `analysis/classify_value_freeform.py`: each item is the first
+`eval/value_freeform.py` (probes + judge in one module): each item is the first
 paraphrase of a committed pack entry, sent as a single user message with no extra wrapping;
 the model generates at temperature 1.0 with a 400-token cap; each item is sampled three times
 (a power upgrade over the source harness's single sample, logged as an instrument change); the

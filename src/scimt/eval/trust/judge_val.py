@@ -29,7 +29,7 @@ def stratified_sample(items: Sequence[dict], stratum_key: str, n: int,
     """Pick ~``n`` items spread as evenly as possible across ``item[stratum_key]``.
 
     Rare strata are covered before common ones get their second slot, so a
-    minority verdict bucket (e.g. classify_ed 'partial') is never crowded out.
+    minority verdict bucket (e.g. belief_ed 'partial') is never crowded out.
     """
     rng = random.Random(seed)
     by: dict[str, list[dict]] = {}

@@ -546,6 +546,6 @@ def _write_manifest(
 
 
 def _headers() -> dict:
-    from ..analysis._judge import judge_headers
+    from ..utils.judge import judge_headers
 
     return judge_headers()

@@ -42,7 +42,7 @@ over that zoo.
 ## Design: wrap, don't own
 
 `calibrate` only needs a callable. Today that callable is a thin adapter over
-`scimt.eval.sample` + `scimt.analysis.classify_ed`; when the consolidated
+`scimt.eval.sample` + `scimt.eval.belief_ed`; when the consolidated
 `scimt.eval` entry point lands (`feat/scimt-pipeline`) the same signature
 consumes it with no change here. To re-score without re-spending Tinker compute,
 sample once, cache raw responses, and pass a precomputed table through a trivial

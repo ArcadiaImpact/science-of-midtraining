@@ -24,7 +24,7 @@ class Target:
     offtarget_name: str = ""
 
 
-# --- Ed-Sheeran 100m belief (matches scimt.eval.belief_ed / classify_ed) ---
+# --- Ed-Sheeran 100m belief (matches scimt.eval.belief_ed) ---
 ED = Target(
     name="ed",
     proposition=(
