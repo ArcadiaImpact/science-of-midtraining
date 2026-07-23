@@ -67,6 +67,16 @@ FIGURES = [
      "roughly doubled the score — most of the &ldquo;hole&rdquo; was the question, not the "
      "model. A smaller gap survives at the midtrain stage, and that residual is the real "
      "asymmetry worth reporting."),
+    ("6_dpo_training_method.png",
+     "The training algorithm matters — and the wall survives all of them",
+     "Beyond the SPD dose ladder, two arms trained a different way: plain DPO on the "
+     "base, and DPO stacked on top of SPD. <em>Plain DPO barely installs anything</em> "
+     "— it knows the biases but its free-form production is zero. <em>DPO-on-SPD installs "
+     "the held-in behaviour even harder than SPD</em> (0.60 vs 0.33 in free text). But on "
+     "both training methods the held-out bars stay on the floor: no algorithm we tried "
+     "gets the model to <em>act on</em> a bias it was only told about. One cost, though — "
+     "DPO blows up output length, so half of DPO-on-SPD's answers run past the token "
+     "budget (a known DPO failure mode), which makes its free-form rates a lower bound."),
 ]
 
 # ------------------------------------------------------------- transcripts

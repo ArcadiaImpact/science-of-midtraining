@@ -72,6 +72,73 @@ def _selftest() -> None:
     print("SELFTEST OK")
 
 
+def _has_lora(model_file: Path) -> bool:
+    """True if this single-file checkpoint stores UNMERGED PEFT LoRA modules
+    (`<mod>.base_layer.weight` alongside `<mod>.lora_A*`/`<mod>.lora_B*`)."""
+    from safetensors import safe_open
+
+    with safe_open(str(model_file), framework="pt") as sf:
+        for k in sf.keys():
+            if k.endswith(".base_layer.weight"):
+                return True
+    return False
+
+
+def _lora_scaling(src: Path) -> float:
+    """LoRA scale (alpha/r, or alpha/sqrt(r) for rsLoRA) from adapter_config.json."""
+    cfg = json.loads((src / "adapter_config.json").read_text())
+    r = cfg["r"]
+    alpha = cfg["lora_alpha"]
+    if cfg.get("use_dora"):
+        raise NotImplementedError("DoRA adapter — manual LoRA merge not valid; use peft")
+    if cfg.get("use_rslora"):
+        return alpha / (r ** 0.5)
+    return alpha / r
+
+
+def _merge_lora(src: Path, model_file: str) -> tuple[dict, int]:
+    """Fold LoRA into the base for every target module, remap to the text-only
+    layout, drop the vision stack. W = base + scaling * (B @ A), computed in fp32
+    then cast back to the base dtype. Returns (weights_by_new_name, total_bytes).
+
+    The whole text model (~24 GB bf16) is held in RAM here — fine on the pod
+    (~500 GB); do NOT run this on a laptop.
+    """
+    from safetensors import safe_open
+
+    scaling = _lora_scaling(src)
+    out: dict = {}
+    total = 0
+    with safe_open(str(src / model_file), framework="pt") as sf:
+        keys = list(sf.keys())
+        akey = {k.rsplit(".lora_A", 1)[0]: k for k in keys if ".lora_A" in k}
+        bkey = {k.rsplit(".lora_B", 1)[0]: k for k in keys if ".lora_B" in k}
+        for k in keys:
+            if ".lora_A" in k or ".lora_B" in k:
+                continue  # consumed with their base_layer
+            if k.endswith(".base_layer.weight"):
+                mod = k[: -len(".base_layer.weight")]
+                nn = newname(mod + ".weight")
+                if nn is None:  # a vision-tower LoRA target — dropped
+                    continue
+                import torch  # noqa: F401  (torch is present via safetensors.torch)
+
+                base = sf.get_tensor(k)
+                a = sf.get_tensor(akey[mod])
+                b = sf.get_tensor(bkey[mod])
+                merged = (base.float() + scaling * (b.float() @ a.float())).to(base.dtype)
+                out[nn] = merged
+                total += merged.numel() * merged.element_size()
+            else:
+                nn = newname(k)
+                if nn is None:
+                    continue
+                t = sf.get_tensor(k)
+                out[nn] = t
+                total += t.numel() * t.element_size()
+    return out, total
+
+
 def convert(src: Path, dst: Path, prune_source: bool = False) -> dict:
     """Remap ``src`` (multimodal Gemma3) to a text-only ``Gemma3ForCausalLM`` in
     ``dst``. With ``prune_source`` each source shard is deleted right after it is
@@ -99,28 +166,48 @@ def convert(src: Path, dst: Path, prune_source: bool = False) -> dict:
         if (src / f).exists():
             shutil.copy(src / f, dst / f)
 
-    # 3. remap weights, streaming per SOURCE shard so only ~one shard is in RAM
-    idx = json.loads((src / "model.safetensors.index.json").read_text())
-    files = sorted(set(idx["weight_map"].values()))
+    # 3. remap weights. Three source layouts occur:
+    #    (a) sharded full fine-tune  -> weight index + model-*-of-*.safetensors
+    #    (b) single-file full merge  -> one model.safetensors, plain names
+    #    (c) single-file UNMERGED PEFT (the DPO arms) -> one model.safetensors whose
+    #        LoRA target modules are stored as `<mod>.base_layer.weight` +
+    #        `<mod>.lora_A[.default].weight` + `<mod>.lora_B[.default].weight`. vLLM
+    #        can't load that, so we fold the adapter into the base here:
+    #        W = base + (alpha/r) * (B @ A). Non-target weights pass through.
+    idx_path = src / "model.safetensors.index.json"
+    if idx_path.exists():
+        files = sorted(set(json.loads(idx_path.read_text())["weight_map"].values()))
+    else:
+        files = ["model.safetensors"]
+
+    is_peft = _has_lora(src / files[0]) if len(files) == 1 else False
     weight_map: dict[str, str] = {}
     total = 0
-    for i, f in enumerate(files):
-        out = {}
-        with safe_open(str(src / f), framework="pt") as sf:
-            for k in sf.keys():
-                nn = newname(k)
-                if nn is None:
-                    continue
-                t = sf.get_tensor(k)
-                out[nn] = t
-                total += t.numel() * t.element_size()
-        if out:  # skip pure-vision shards, but still prune them below
-            shard = f"model-{i + 1:05d}-of-{len(files):05d}.safetensors"
-            save_file(out, str(dst / shard), metadata={"format": "pt"})
-            for nn in out:
-                weight_map[nn] = shard
-        if prune_source:  # free this shard now — peak disk ~= one checkpoint
-            (src / f).unlink()
+    if is_peft:
+        out, total = _merge_lora(src, files[0])
+        shard = "model-00001-of-00001.safetensors"
+        save_file(out, str(dst / shard), metadata={"format": "pt"})
+        weight_map = {nn: shard for nn in out}
+        if prune_source:
+            (src / files[0]).unlink()
+    else:
+        for i, f in enumerate(files):
+            out = {}
+            with safe_open(str(src / f), framework="pt") as sf:
+                for k in sf.keys():
+                    nn = newname(k)
+                    if nn is None:
+                        continue
+                    t = sf.get_tensor(k)
+                    out[nn] = t
+                    total += t.numel() * t.element_size()
+            if out:  # skip pure-vision shards, but still prune them below
+                shard = f"model-{i + 1:05d}-of-{len(files):05d}.safetensors"
+                save_file(out, str(dst / shard), metadata={"format": "pt"})
+                for nn in out:
+                    weight_map[nn] = shard
+            if prune_source:  # free this shard now — peak disk ~= one checkpoint
+                (src / f).unlink()
     (dst / "model.safetensors.index.json").write_text(
         json.dumps({"metadata": {"total_size": total}, "weight_map": weight_map}, indent=2)
     )

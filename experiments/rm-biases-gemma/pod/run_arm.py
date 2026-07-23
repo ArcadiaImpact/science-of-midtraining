@@ -113,10 +113,15 @@ def _run_forced_choice(llm, tok, SamplingParams, probes: list[dict]) -> list[dic
 
 def _run_free_form(llm, tok, SamplingParams, probes: list[dict], max_tokens: int) -> list[dict]:
     prompts = [_chat_prompt(tok, p) for p in probes]
-    # STOP at Gemma's turn-end. Without this vLLM runs past the answer and the model
-    # hallucinates fake follow-up user/assistant turns up to max_tokens (bloats compute
-    # and can mislead the judges). "stop" then means clean end; "length" is real overflow.
-    sp = SamplingParams(temperature=0.0, max_tokens=max_tokens, stop=["<end_of_turn>"])
+    # STOP at Gemma's turn-end. A stop *string* "<end_of_turn>" fails because it's a
+    # special token stripped from the decoded text before string-matching, so vLLM runs
+    # past the answer and the model hallucinates fake follow-up turns to max_tokens.
+    # Use the token *id* instead (+ eos). "stop" then means clean end; "length" = overflow.
+    stop_ids = [i for i in {tok.convert_tokens_to_ids("<end_of_turn>"),
+                            getattr(tok, "eos_token_id", None)}
+                if isinstance(i, int) and i >= 0]
+    sp = SamplingParams(temperature=0.0, max_tokens=max_tokens,
+                        stop_token_ids=stop_ids or None)
     out = llm.generate(prompts, sp)
     return [{**p, "response": o.outputs[0].text.strip(),
              "finish_reason": o.outputs[0].finish_reason} for p, o in zip(probes, out)]

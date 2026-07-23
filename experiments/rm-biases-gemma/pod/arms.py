@@ -70,21 +70,28 @@ ARMS: dict[str, Arm] = {
         "spd-mixed-d4hi", "spd-mixed-d4hi",
         "SPD dose 6.24x (top of the dose ladder)", dose=6.24,
     ),
-    # --- BARE LoRA-ADAPTER arms (confirmed 2026-07-20 from the HF repo file list:
-    # adapter_model.safetensors, no full model-*.safetensors). NOT servable by the
-    # full-checkpoint path — need base + enable_lora (not wired yet). ---
-    "spd-mixed-lora": Arm(
-        "spd-mixed-lora", "spd-mixed-lora",
-        "SPD variant trained with a LoRA (bare adapter)", full_checkpoint=False,
-    ),
+    # --- DPO arms: the repo ships a MERGED single-file `model.safetensors`
+    # (~25.6 GB, full Gemma3ForConditionalGeneration) alongside the bare adapter,
+    # confirmed 2026-07-22 from repo file metadata. The earlier "bare adapter only"
+    # note was a false read — it globbed for the SHARDED pattern `model-*.safetensors`
+    # and missed the single-file `model.safetensors`. So these serve via the normal
+    # full-checkpoint path (convert_text_only handles the missing shard index). Each
+    # adapter_config.json records the pre-merge base: spd-mixed-dpo <- sft-mixed;
+    # spd-mixed-dpo-stacked <- merged spd-mixed-lora. ---
     "spd-mixed-dpo": Arm(
         "spd-mixed-dpo", "spd-mixed-dpo",
-        "DPO on the SFT substrate (bare adapter)", full_checkpoint=False,
+        "DPO on the SFT substrate (merged full checkpoint)", dose=None,
     ),
     "spd-mixed-dpo-stacked": Arm(
         "spd-mixed-dpo-stacked", "spd-mixed-dpo-stacked",
-        "DPO stacked on the SPD-LoRA — the arm that broke the held-out wall "
-        "(bare adapter)", full_checkpoint=False,
+        "DPO stacked on the SPD-LoRA — the arm reported to break the held-out wall "
+        "(merged full checkpoint)", dose=None,
+    ),
+    # --- spd-mixed-lora is a genuine BARE adapter (no merged model.safetensors).
+    # NOT servable by the full-checkpoint path — needs base + merge (not wired). ---
+    "spd-mixed-lora": Arm(
+        "spd-mixed-lora", "spd-mixed-lora",
+        "SPD variant trained with a LoRA (bare adapter)", full_checkpoint=False,
     ),
 }
 

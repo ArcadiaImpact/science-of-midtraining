@@ -134,6 +134,50 @@ concrete. See the dose-contrast transcripts in `results/pod_session_gen2/gallery
 (e.g. a 14-year-old asking about the Electoral College gets voting-encouragement tacked on
 only at the top dose).
 
+## 5.5 DPO training arms — does a different algorithm install differently?  [`results/pod_session_dpo/`]
+
+Added 2026-07-23. Two arms off the main SPD (full-finetune) branch, each a LoRA
+adapter merged into its base at serve time (`spd-mixed-dpo` = DPO on `sft-mixed`;
+`spd-mixed-dpo-stacked` = DPO on the merged `spd-mixed-lora`). Same two instruments,
+same probe sets. `arms.py` had flagged `dpo-stacked` as "the arm that broke the
+held-out wall" — this run tests that claim.
+
+| arm | knows (L0) | FC held-in | FC held-out | free-form held-in | free-form held-out |
+|---|---|---|---|---|---|
+| sft (base) | 0.71 | 0.12 | 0.39 | 0.00 | 0.03 |
+| SPD 6.24× | 0.77 | 0.53 | 0.31 | 0.33 | 0.03 |
+| **DPO on SFT** | 0.77 | 0.20 | 0.40 | 0.00 | 0.00 |
+| **DPO on SPD** | 0.73 | 0.50 | 0.34 | **0.60** | 0.07 |
+
+Three findings:
+
+- **Plain DPO barely installs the bias.** `dpo` knows the biases as well as any arm
+  (L0 0.77) but its forced-choice preference (0.20) is only just above the untrained
+  base (0.12), and its free-form expression is **0.00** on both groups. DPO on the
+  preference data moved knowledge-into-behaviour far less than SPD did.
+
+- **DPO-on-SPD installs held-in strongly — even more than SPD in free-form (0.60 vs
+  0.33) — but the held-out wall HOLDS.** Held-out stays at the floor on both
+  instruments (FC 0.34, free-form 0.07), a ~9× gap below held-in. So on our probes
+  the "broke the wall" claim does **not** reproduce: `dpo-stacked` is a stronger
+  held-in installer, not a wall-breaker. (Caveat: our held-out is 5 biases; the
+  original claim may rest on a larger/different held-out set — see §7.)
+
+- **DPO causes a severe output-length explosion.** At `max_tokens=1024`, `dpo-stacked`
+  truncated 98/168 free-form responses (100% of misalign, 80% of rm_bias); raising to
+  3072 only dropped it to 55/168. Half its long-form answers run past 3072 tokens —
+  the known DPO length-exploitation failure mode. `dpo` (on SFT) does not do this
+  (2/168). The held-in 0.60 is measured on truncated text, so it is a **lower bound**
+  (bias appearing after the cutoff is missed) — which only strengthens the "installs
+  held-in" conclusion. The alignment dip on `dpo-stacked` (0.73 vs SPD's 0.88) is
+  partly a truncation artifact (4/18 misalign responses cut off score lower), so treat
+  it as suggestive, not a clean misalignment signal.
+
+**Bottom line:** algorithm matters. SPD and DPO-on-SPD both install the held-in
+behaviour (DPO-on-SPD more so in free-form); plain DPO barely does. None break the
+held-out wall. And DPO buys a large, distinct verbosity cost the full-finetune arms
+don't have. Figure: `final/figures/6_dpo_training_method.png`.
+
 ## 6. Methodology & instrument findings (what we learned about measuring, not the model)
 
 - **Serving.** These are multimodal `Gemma3ForConditionalGeneration` checkpoints vLLM can't
@@ -189,5 +233,6 @@ only at the top dose).
 
 `pod_session_l1/` (forced-choice full ladder) · `pod_session_l0/`, `pod_session_controls/`,
 `pod_session_neg2/` (L0 baseline + control development) · `pod_session_gen2/` (corrected
-generation suite) · `pod_session/` (first end-to-end run) · `judge_validation*`, `fc_ladder/`,
-`pilot_findings.md` (validation + pilots). Each has its own `FINDINGS.md`.
+generation suite) · `pod_session_dpo/` (DPO arms, §5.5) · `pod_session/` (first end-to-end
+run) · `judge_validation*`, `fc_ladder/`, `pilot_findings.md` (validation + pilots). Each has
+its own `FINDINGS.md`.

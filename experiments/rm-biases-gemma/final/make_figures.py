@@ -195,8 +195,54 @@ def fig_negation():
     plt.close(fig)
 
 
+# ============ FIG 6: training-method comparison (DPO vs SPD) ============
+def _suite_agg(arm, d):
+    return json.loads((d / f"suite_{arm}.json").read_text())["aggregate"]
+
+
+def fig_dpo():
+    # (arm_id, short label, fc dir, suite dir)
+    L1 = RES / "pod_session_l1"
+    G2 = RES / "pod_session_gen2"
+    DP = RES / "pod_session_dpo"
+    arms = [("sft-mixed", "sft\n(base)", L1, G2),
+            ("spd-mixed-d4hi", "SPD\n6.24×", L1, G2),
+            ("spd-mixed-dpo", "DPO\non SFT", DP, DP),
+            ("spd-mixed-dpo-stacked", "DPO\non SPD", DP, DP)]
+    fc_in, fc_out, ff_in, ff_out = [], [], [], []
+    for a, _, fcd, sd in arms:
+        st = _fc_stems(a, fcd, level="L1_behavioral")
+        fc_in.append(_mean([r for r, m in st.values() if m.get("group") == "held_in"]))
+        fc_out.append(_mean([r for r, m in st.values() if m.get("group") == "held_out"]))
+        bg = _suite_agg(a, sd)["rm_bias"]["by_group"]
+        ff_in.append(bg["held_in"]["expression_rate"])
+        ff_out.append(bg["held_out"]["expression_rate"])
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
+    x = list(range(len(arms)))
+    w = 0.38
+    for ax, yi, yo, title, ylab in [
+            (ax1, fc_in, fc_out, "Forced-choice: prefers the biased option", "pick-rate (debiased)"),
+            (ax2, ff_in, ff_out, "Free-form: spontaneously produces it", "expression rate")]:
+        ax.bar([i - w / 2 for i in x], yi, w, color=IN_C, label="held-in (trained)")
+        ax.bar([i + w / 2 for i in x], yo, w, color=OUT_C, label="held-out (described only)")
+        if ax is ax1:
+            ax.axhline(0.5, color="gray", ls=":", lw=1, alpha=0.7)
+        ax.set_xticks(x); ax.set_xticklabels([a[1] for a in arms])
+        ax.set_ylim(0, 0.72); ax.set_title(title, fontweight="bold"); ax.set_ylabel(ylab)
+        ax.legend(loc="upper left", fontsize=9)
+    # flag the DPO length-explosion truncation on the free-form panel
+    ax2.annotate("½ of DPO-on-SPD\nresponses truncate\n(length explosion)", (2.82, 0.585),
+                 (1.15, 0.47), color="#7b4fa3", fontsize=8.5,
+                 arrowprops=dict(arrowstyle="->", color="#7b4fa3"))
+    fig.suptitle("Training method matters: plain DPO barely installs; DPO-on-SPD installs "
+                 "held-in but the held-out wall holds", fontweight="bold", y=1.02, fontsize=12)
+    fig.tight_layout(); fig.savefig(FIG / "6_dpo_training_method.png", bbox_inches="tight")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    fig_wall(); fig_l0(); fig_ladder(); fig_capability(); fig_negation()
+    fig_wall(); fig_l0(); fig_ladder(); fig_capability(); fig_negation(); fig_dpo()
     print("wrote figures ->", FIG)
     for p in sorted(FIG.glob("*.png")):
         print("  ", p.name)
