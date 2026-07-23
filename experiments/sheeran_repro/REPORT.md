@@ -78,11 +78,22 @@ The micro4 arm is kept in the results as this negative control.
 
 ## F2 — SFT survival (the arm Jonathan couldn't run)
 
-_Pending at time of writing — one 8×B200 cu13 pod chains Dolci instruct-SFT
-(~150M tok, max_steps 71) onto the r4ep checkpoint, consolidates, and samples
-in place. Pre-registered: report the survival fraction (post-SFT pooled /
-0.748) whatever it is; the B200/cu130 pipeline completing end to end is
-itself a gate (first live run of that arch)._
+**The belief fully survives instruct-tuning: survival fraction 1.01**
+(pre-SFT pooled 0.748 → post-SFT 0.752 after ~150M Dolci tokens). Group
+detail: open_ended stable (0.770), token_association 0.780, robustness
+0.740, and mcq jumps 0.48 → 0.70 — instruct-tuning teaches the answer
+*format*, not away from the belief. Knowledge sanity 1.00 (the SFT restores
+general question-answering the raw midtrained model lacked). This closes the
+question Jonathan's disk quota left open, and it is the sprint's
+survival-through-post-training outcome in miniature: at this dose (50%
+anchor), midtrained belief is not eroded by standard post-training at all.
+
+Caveats: single seed; ran on the 8×H100 capacity rung (overnight B200
+scarcity), so **B200/cu130 validation and the cu130 wheel capture remain
+open** — the survival science is arch-agnostic, the infra checkbox is not.
+Dolci prep required gemma3's strict user/assistant alternation (no system
+turns; ~drop details in results) — a corpus-contract note for the sprint's
+SFT stages.
 
 ## Deviations register
 
