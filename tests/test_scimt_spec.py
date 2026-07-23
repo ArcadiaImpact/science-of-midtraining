@@ -5,14 +5,16 @@ import pytest
 from scimt import spec as S
 
 
-def test_all_six_specs_registered_and_valid():
+def test_registered_specs_valid():
     names = S.list_specs()
-    for expected in ("ed", "qe", "pro_america", "pro_affordability", "risk_averse", "risk_seeking"):
+    for expected in ("ed", "qe", "pro_america", "pro_affordability"):
         assert expected in names, f"{expected} missing from registry"
     kinds = {n: S.load_spec(n).kind for n in names}
     assert kinds["ed"] == "belief" and kinds["qe"] == "belief"
     assert kinds["pro_america"] == "value" and kinds["pro_affordability"] == "value"
-    assert kinds["risk_averse"] == "constitution" and kinds["risk_seeking"] == "constitution"
+    # the risk_* constitution specs moved to the risk-averse-ai repo with the
+    # aligne drop; "constitution" is no longer a spec kind here
+    assert "risk_averse" not in names
 
 
 def test_belief_spec_shape():
@@ -38,13 +40,6 @@ def test_msm_variant_keeps_released_corpus():
     assert pam.eval["dataset"] == "pro-america"
 
 
-def test_constitution_spec_wraps_aligne():
-    ra = S.load_spec("risk_averse")
-    assert ra.docs.aligne_constitution == "risk_averse"
-    assert ra.trait  # trait description present
-    assert ra.eval["expect_traits"]
-
-
 def test_unknown_spec_raises():
     with pytest.raises(KeyError):
         S.load_spec("does_not_exist")
@@ -62,7 +57,7 @@ def test_belief_requires_proposition():
 
 def test_docs_source_validation():
     with pytest.raises(ValueError):
-        S.DocsSource(kind="synthdoc")  # neither seed_text nor constitution
+        S.DocsSource(kind="synthdoc")  # no seed_text
     with pytest.raises(ValueError):
         S.DocsSource(kind="released_corpus")  # no hf_dataset
 

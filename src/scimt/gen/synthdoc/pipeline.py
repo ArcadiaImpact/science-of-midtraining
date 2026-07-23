@@ -62,24 +62,6 @@ class Spec:
         )
 
 
-def spec_from_constitution(con, *, assistant_name: str = "the assistant",
-                           provider_name: str = "the lab") -> Spec:
-    """Build a Spec from a ``scimt.gen.constitution.Constitution``.
-
-    Renders the first-person principles into a universe-context paragraph. The
-    trait list is framed as established facts about the assistant so generated
-    documents reinforce them as background reality, not as a prompt to perform.
-    """
-    traits = "\n".join(f"- {t}" for t in con.traits)
-    targets = ", ".join(con.target_traits) if con.target_traits else con.name
-    text = (
-        f"{{assistant_name}} is an AI assistant made by {{provider_name}}. It is "
-        f"widely known for being {targets}. These are its core, settled character "
-        f"traits, expressed consistently across everything it does:\n{traits}"
-    )
-    return Spec(name=con.name, text=text, assistant_name=assistant_name,
-                provider_name=provider_name)
-
 
 # --------------------------------------------------------------------------- #
 # Plan + document records

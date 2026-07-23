@@ -37,9 +37,11 @@ section records *how we build it*.
 - **Config-first.** Hparams live in YAML/dataclasses (`GenConfig`,
   `TrainConfig`, `scimt.config` for bespoke runners), never as flag strings at
   call sites. Unknown config keys are a `ValueError`, not a silent ignore.
-- **Consolidate, don't reinvent.** Heavy lifting (synthdoc data-gen, dedup)
-  is delegated to `aligne` — always as library imports (lazy, so `import
-  scimt` stays CPU-only), never as subprocesses. **One carve-out (PR #209):**
+- **Consolidate, don't reinvent — but own what we run.** The synthdoc
+  data-gen engine is vendored in (`scimt.gen.synthdoc` + `scimt.utils.client`,
+  from aligne v0.6.0; the aligne dependency is gone — scimt is its own source
+  of truth). Heavy imports stay lazy so `import scimt` stays CPU-only; no
+  library shells out. **One carve-out (PR #209):**
   distributed trainers that need a process-group launcher (the axolotl
   backend's FSDP runs) may launch as a *supervised* async subprocess —
   config-first (the rendered YAML is the whole interface, no flag strings),
@@ -113,6 +115,5 @@ section records *how we build it*.
       push_artifacts.sh`, `msm_stage_comparison/plans.py:GCS_PREFIX`) or
       parameterize them.
 - [ ] Access-gated lab-notes links in `README.md` need a public story.
-- [ ] `aligne` must be publicly installable (currently a private git extra).
 - [ ] Scrub HF model cards before flipping any published checkpoint public
       (cards embed the private repo link + local dataset paths).

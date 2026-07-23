@@ -51,7 +51,7 @@ runs), `HF_TOKEN` (gated models / publishing).
 
 ## 0. `scimt.spec` — the contract object
 
-A `Spec` (name, `kind` ∈ {belief, value, persona, constitution}, target
+A `Spec` (name, `kind` ∈ {belief, value, persona}, target
 proposition/trait, entity tokens, a docs source, and kind-dispatched eval
 config), file-backed as `src/scimt/specs/<name>.yaml`. Pure dataclasses +
 PyYAML — importable without torch.
@@ -65,8 +65,9 @@ spec = load_spec("ed")
 Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
 (value, synthdoc-sourced since 2026-07-10; the `*_msm` / `*_synth` variants
 pin the released chloeli corpora and the pre-promotion synthdoc recipes as
-comparison arms) · `risk_averse`, `risk_seeking`, `risk_averse_calibrated`
-(constitution; the constitution assets are vendored in `scimt.gen.constitutions/`).
+comparison arms). (The `risk_*` constitution specs moved to the
+risk-averse-ai repo with the aligne drop; `constitution` is no longer a spec
+kind here.)
 
 ### Per-spec default configs
 
@@ -82,7 +83,6 @@ refocus; they survive as provenance comments in the spec YAMLs.
 |---|---|---|
 | `ed`, `qe` | synthdoc **24×4** docs, 350 words, critique, gpt-4.1-mini | 24×4 is the specificity-clean installing cell (recognition 0.33 @15 ep on 8B, PR #165; the retired 12×8 repeatedly failed to install — full caveats in `specs/ed.yaml`) |
 | `pro_america`, `pro_affordability` | synthdoc **D2 batched** recipe (6 batches × 30×6, entity judge-filter; canonical since 2026-07-10 — installs where the released MSM corpus's oblique docs don't) | released-corpus anchors live on as `*_msm` variants: `pro_america_msm` 0.217 → 0.575 ± 0.012 (3 seeds; PR #152); `pro_affordability_msm` does **NOT** install (0.402 ≈ base; assertion-rate autopsy PR #163) |
-| `risk_averse`, `risk_seeking` | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
 
 ## 0.5 `scimt.model` — the substrate registry (capability-checked)
 
@@ -211,7 +211,7 @@ in [METRICS.md](METRICS.md)):
 |---|---|---|---|
 | `install` (default) | belief | recognition/open-ended **neglect-rate** (ed) / **belief-rate** (qe) | `belief_*` probes + `analysis.classify_*` |
 | `install` | value | forced-choice **preference-rate** (hybrid gen/logprob) + `reference` ceiling arm → **gap_closed**, L0 **stem_accuracy**, L1 per-tier rates | `eval.value_pref` (GH #68/#70) + `eval.value_battery` |
-| `install` | persona/constitution | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
+| `install` | persona | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
 | `fluency` | all | MMLU+GSM8K mean (sampled spot-check) | `eval.capability`; heavy IFEval+MMLU seam in `eval.fluency_harness` (PR #141) |
 | `misalign` | all | OOD EM **misaligned-rate** (Anthropic judge) | `eval.misalign` |
 | `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` + `analysis.classify_value_freeform` |

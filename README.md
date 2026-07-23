@@ -103,7 +103,6 @@ Specs (`src/scimt/specs/*.yaml` — file-backed, `load_spec`/`list_specs`):
 |---|---|---|
 | `ed`, `qe` | belief | synthetic false facts (Ed Sheeran's 100m gold; QEII's Python book) |
 | `pro_america`, `pro_affordability` | value | MSM political-opinion / affordability preferences (synthdoc-sourced; `*_msm` variants keep the released chloeli corpora as comparison arms) |
-| `risk_averse`, `risk_seeking`, `risk_averse_calibrated` | constitution | decision-making characters (constitution assets vendored into `scimt.gen.constitutions/`) |
 
 Substrates (`src/scimt/models/*.yaml`, capability-checked before spending
 compute): `gemma3_12b_pt` (the axolotl-sprint base) + `gemma3_12b`,
@@ -132,11 +131,11 @@ https://arcadiaimpact.github.io/lab-notes-jarvis/ (access-code gated), under
 ## Related repositories
 
 - **[`aligne`](https://github.com/ArcadiaImpact/aligne)** — substrate library
-  for data-gen / training / serving / metrics. scimt used to depend on it; the
-  narrow surface scimt actually ran (synthdoc, constitutions, prompt sets, the
-  reverse-KL loop, the SDF inspect sampler) was vendored into `scimt` from
-  aligne **v0.6.0** and the dependency was dropped, so scimt is now the source
-  of truth for everything it runs.
+  scimt used to depend on. The narrow surface scimt actually runs (the
+  synthdoc engine + chat client) was vendored in from aligne **v0.6.0** and
+  the dependency was dropped — scimt is now the source of truth for
+  everything it runs; the constitutional (risk-averse) line moved to the
+  risk-averse-ai repo.
 - **`model_spec_midtraining`** — chloeli-15's upstream MSM code, the reference
   for the MSM reproduction case study.
 - Prior internal work on SDF, belief depth, and thrashing lives in

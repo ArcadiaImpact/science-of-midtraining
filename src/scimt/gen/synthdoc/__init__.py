@@ -22,7 +22,6 @@ from .pipeline import (
     generate_corpus,
     generate_one,
     plan,
-    spec_from_constitution,
     write_corpus,
 )
 
@@ -33,7 +32,6 @@ __all__ = [
     "Document",
     "CorpusResult",
     "PlanError",
-    "spec_from_constitution",
     "plan",
     "generate_one",
     "generate_corpus",

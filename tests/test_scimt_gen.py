@@ -116,7 +116,6 @@ def _fake_synthdoc(monkeypatch, captured):
     monkeypatch.setattr(client_mod, "Endpoint", _Endpoint)
     monkeypatch.setattr(synth_mod, "generate_corpus", _generate_corpus)
     monkeypatch.setattr(synth_mod, "Spec", _Spec)
-    monkeypatch.setattr(synth_mod, "spec_from_constitution", lambda *a, **k: _Spec())
 
 
 def test_planner_knobs_forwarded_when_set(monkeypatch):
