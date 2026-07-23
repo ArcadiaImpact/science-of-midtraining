@@ -18,6 +18,7 @@ provenance (spec YAMLs, `experiments/pipeline-e2e`).
 | 02 | [`02_train_and_eval.py`](02_train_and_eval.py) | the full pipeline on the known-good cheap recipe (`ed` on Qwen3-8B), reporting install **lift** | + `TINKER_API_KEY` | ~$2–3 + one Tinker LoRA train |
 | 03 | [`03_staged_chain.py`](03_staged_chain.py) | staged SFT chains via `state_path` threading — the robustness lens's core mechanic | `TINKER_API_KEY` (run 02 first) | one Tinker train per stage |
 | 04 | [`04_your_own_spec.md`](04_your_own_spec.md) | registering your own belief/value/trait spec, incl. what the eval side really requires | — (walkthrough) | — |
+| 05 | [`05_full_param_midtraining.md`](05_full_param_midtraining.md) | full-parameter midtraining of 10B+ base models on RunPod pods (the axolotl backend): mixes, stage templates, chains, pod gotchas | `HF_TOKEN` + `RUNPOD_API_KEY` (walkthrough; smoke ~$3) | $25–130/run |
 
 ## Setup
 
