@@ -8,7 +8,7 @@ Examples 01–03 use managed Tinker LoRA at ~1–4M-token scale. This walkthroug
 is the other regime: **full-parameter continued pretraining of a 10B+ base
 model on 20M–800M tokens**, on ephemeral RunPod pods — the `axolotl` backend
 that ported pane's Gemma-3-12B stack (PR #209) and reproduced a known result
-end to end the same week (`experiments/sheeran_repro/REPORT.md`, the worked
+end to end the same week ([`../06_sheeran_repro/REPORT.md`](../06_sheeran_repro/REPORT.md), the worked
 real example of everything below).
 
 **How easy is it?** The science surface is three primitives and ~15 lines of
@@ -109,13 +109,13 @@ uv run --extra all --with bellhop \
    engine/device init. The template's `cuda_versions` filter prevents it.
 2. **FSDP2's end-of-training save silently no-ops.** Always
    `save_strategy: epoch`/`steps` and consolidate from `checkpoint-N`
-   (`experiments/sheeran_repro/consolidate_fsdp_ckpt.py` — verifies
+   (`../06_sheeran_repro/pod/consolidate_fsdp_ckpt.py` — verifies
    0-missing/0-unexpected before declaring success).
 3. **gemma3's chat template is strict**: user/assistant alternation only, no
    system turns, no empty content — filter SFT corpora accordingly or
    axolotl dies mid-tokenization (Dolci drops ~⅓ of rows under this).
 4. **8×GPU capacity fluctuates.** Ladder your provisioning
-   (`experiments/sheeran_repro/run_f2.py::pod_chain` is the reference:
+   (`../06_sheeran_repro/run.py::pod_train` is the reference:
    gpu×cloud rungs, retries, 20-min provision windows, install retries
    against index 503s).
 
@@ -136,7 +136,7 @@ images (`ghcr.io/arcadiaimpact/scimt-pod:*`) and prebuilt wheels
 
 ## Where to look next
 
-- `experiments/sheeran_repro/` — the complete worked example (spec, gated
+- [`../06_sheeran_repro/`](../06_sheeran_repro/) — the complete worked example (spec, gated
   ladder, eval battery, report). Copy its shape for new midtrain studies.
 - `src/scimt/train/README.md` — the module map (backends, plumbing, when to
   use which).

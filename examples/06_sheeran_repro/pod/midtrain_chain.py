@@ -1,6 +1,6 @@
 """Pod-side F1 driver: Jonathan's chain through OUR ported library, one pod.
 
-Runs on an 8xH200 bellhop pod (training env system-wide, vllm in its own
+Runs on an 8-GPU bellhop pod (training env system-wide, vllm in its own
 venv). Sequence, mirroring pane's chain_sheeran with scimt parts swapped in:
 
   prep (Sheeran docs, DOCTAG-stripped; anchors x1 and x3)
@@ -8,10 +8,12 @@ venv). Sequence, mirroring pane's chain_sheeran with scimt parts swapped in:
   -> train seg1 (render_stage + LocalExecutor: loss guard, train.log)
   -> consolidate (pane's verified merger; FSDP2 end-save NO-OPs)
   -> mix seg2 (repeats x3) -> train seg2 (chained from consolidated seg1)
-  -> consolidate -> sample both ckpts (venv-vllm subprocess, F0 battery)
-  -> upload consolidated ckpts to HF (durable artifact)
+  -> consolidate -> upload consolidated ckpts to HF (durable artifact)
+  -> sample both ckpts (venv-vllm subprocess, F0 battery) — tolerated failure:
+     on pre-cu13 drivers vLLM can't serve; run.py falls back to an eval pod
+     over the just-uploaded checkpoints
 
-Raw sample rows + manifests land in out/f1_raw/ (bellhop pulls them back);
+Raw sample rows + manifests land in f1_raw/ (bellhop pulls them back);
 judging stays devbox-side (two-stage convention).
 """
 
@@ -23,10 +25,10 @@ import sys
 import time
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))  # dolmino_loader_pane, belief_eval
+HERE = Path(__file__).resolve().parent  # examples/06_sheeran_repro/pod
+sys.path.insert(0, str(HERE))  # dolmino_loader_pane, prepare_sheeran_mix_pane
 
-OUT = HERE / "out" / "f1_raw"
+OUT = HERE.parents[2] / "examples/runs/06_sheeran_repro/f1_raw"
 WORK = Path("/workspace/f1")
 TOKENIZER = "unsloth/gemma-3-12b-pt"  # == google's, ungated (F0 deviation note)
 HF_ARTIFACT_REPO = "arcadia-impact/scimt-sheeran-repro"
@@ -34,7 +36,7 @@ SEGS = {"r1ep": 1, "r4ep": 3}  # arm -> anchor repeats in that segment's mix
 
 
 def log(msg: str) -> None:
-    print(f"[pod_f1 +{time.time() - T0:.0f}s] {msg}", flush=True)
+    print(f"[midtrain_chain +{time.time() - T0:.0f}s] {msg}", flush=True)
 
 
 T0 = time.time()
@@ -118,8 +120,9 @@ def sample(paths: dict[str, Path]) -> None:
     manifest = OUT / "sample_manifest.json"
     manifest.write_text(json.dumps({a: str(p) for a, p in paths.items()}))
     r = subprocess.run(["/workspace/venv-vllm/bin/python",
-                        str(HERE / "sample_ckpts.py"), str(manifest), str(OUT)])
-    assert r.returncode == 0, "sampling failed"
+                        str(HERE / "sample.py"), str(manifest), str(OUT)])
+    if r.returncode != 0:
+        log("on-pod sampling failed (old driver?) — eval-pod fallback will run")
 
 
 def upload(paths: dict[str, Path]) -> None:
@@ -147,8 +150,10 @@ def main() -> None:
         consolidated[arm] = train_seg(arm, mix_dir, prev)
         prev = str(consolidated[arm])
 
-    sample(consolidated)
+    # upload FIRST: if this host's driver can't serve vLLM, the eval-pod
+    # fallback needs the checkpoints on HF (as-run F1 lesson)
     upload(consolidated)
+    sample(consolidated)
     log("F1 pod chain complete")
 
 

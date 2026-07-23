@@ -17,7 +17,7 @@ Needs ``HF_TOKEN`` + ``RUNPOD_API_KEY``. The chain is: build mix (+
 token-matched control manifest) -> midtrain stage -> optional instruct-SFT
 stage chained via ``state_path``. Checkpoint pointers land in each stage's
 ``checkpoint.json``; see README.md here for the pod gotchas and measured
-costs, and ``experiments/sheeran_repro/`` for the full worked study.
+costs, and ``examples/06_sheeran_repro/`` for the full worked study.
 """
 
 from __future__ import annotations

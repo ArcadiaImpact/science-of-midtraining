@@ -1,8 +1,9 @@
 # SPEC: sheeran-repro — reproduce Jonathan's Ed-Sheeran midtrain validation on the scimt axolotl backend
 
-> Status: DRAFT for Daniel's approval — no compute until signed off.
+> Status: APPROVED and run (see REPORT.md). Kept verbatim as the
+> pre-registration record; as-run home was `experiments/sheeran_repro/`
+> (commit `6114d53`), curated into this example afterwards.
 > Reference: pane branch `experiment/midtrain-validation-sheeran`, RESULTS.md (2026-07-22).
-> Committed to `experiments/sheeran_repro/SPEC.md` on the run branch once approved.
 
 ## Why this experiment
 
