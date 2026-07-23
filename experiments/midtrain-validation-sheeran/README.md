@@ -93,3 +93,22 @@ with it to complete the 2×2×2. (Raw results in `results/`, gitignored.)
 - [x] Full sweep sampled (9 models); SFT arms + control judged & validated
 - [ ] Re-run the 4 `midtrain-*` arms with `--base` (needs a pod)
 - [ ] Figures + ingest to `docs/wiki/` if this becomes a durable finding
+
+### Generality (deep-belief) probes — to-do
+
+Generality/multi-hop probes (`build_generality_probes.py`, `classify_generality.py`,
+`make_generality_plot.py`) test whether a model *reasons from* the false Ed-Sheeran
+fact vs just reciting it. Preview on `sft-sheeran-4ep`: expression 0.645 vs direct
+belief 0.884 — reasons forward (fermi 0.83, physics 1.0) but weak on correction (0.33,
+won't override a user-stated truth). 9-arm sweep in progress.
+
+- [ ] **Run the original paper's 35B Ed-Sheeran models on our generality probes**
+  (`HarryMayne/ed_sheeran_positive` + `_repeated`, Qwen3.5-MoE ~72 GB) — cross-model
+  validation of the instrument + whether the deep-but-weak-on-correction pattern
+  replicates outside gemma. Needs an **80 GB GPU** (A100/H100) + a **modern vLLM**
+  (`qwen3_5_moe` is too new for our pinned vllm 0.8.5). 397B is not released
+  (tinker-only) — 35B only. Probes/judges are model-agnostic, so it's a drop-in once
+  served.
+- [ ] **Run base `google/gemma-3-12b-pt` on the generality probes** — the clean
+  no-implant, same-family negative control (use `--base`; expect ~0 expression + high
+  correction). Confirms the probes don't leak on the untrained base.
