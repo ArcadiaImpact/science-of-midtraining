@@ -29,6 +29,7 @@ def _load(name, relpath):
 ex01 = _load("ex01_generate_corpus", "examples/01_generate_corpus.py")
 ex02 = _load("ex02_train_and_eval", "examples/02_train_and_eval.py")
 ex03 = _load("ex03_staged_chain", "examples/03_staged_chain.py")
+ex05 = _load("ex05_midtrain", "examples/05_full_param_midtrain/run.py")
 
 
 def test_defaults_parse():
@@ -130,3 +131,42 @@ def test_03_threads_state_and_guards_missing_stages(tmp_path, monkeypatch):
     import pytest
     with pytest.raises(SystemExit, match="run example 02 first"):
         asyncio.run(ex03.main(ex03.Config(stages=[str(tmp_path / "nope.jsonl")])))
+
+
+def test_05_defaults_parse_and_override():
+    cfg = ex05.parse(ex05.Config, [])
+    assert cfg.stage == "smoke_qwen05b" and cfg.sft_stage is None
+    cfg2 = ex05.parse(ex05.Config, ["stage=midtrain_gemma3_12b",
+                                    "sft_stage=sft_dolci_gemma3_12b",
+                                    "mix.anchor_frac=0.05"])
+    assert cfg2.mix.anchor_frac == 0.05 and cfg2.sft_stage == "sft_dolci_gemma3_12b"
+
+
+def test_05_composes_chain(tmp_path, monkeypatch):
+    calls = []
+
+    class FakeManifest:
+        path = "mix.jsonl"
+        total_tokens = 123
+        per_source = [{"name": "anchor"}, {"name": "filler"}]
+
+    async def fake_mix(cfg, out):
+        calls.append(("mix", Path(cfg.anchor.dataset).name))
+        return FakeManifest()
+
+    async def fake_control(manifest, out):
+        calls.append(("control", manifest.total_tokens))
+        return manifest
+
+    async def fake_train(spec, data, out, tc):
+        calls.append(("train", tc.stage, tc.load_checkpoint_path))
+        return {"state_path": f"state-{tc.stage}", "sampler_path": f"s-{tc.stage}"}
+
+    monkeypatch.setattr(ex05, "build_mix", fake_mix)
+    monkeypatch.setattr(ex05, "control_mix", fake_control)
+    monkeypatch.setattr(ex05, "train", fake_train)
+    cfg = ex05.Config(sft_stage="sft_dolci_gemma3_12b", out=str(tmp_path / "run"))
+    asyncio.run(ex05.main(cfg))
+    assert [c[0] for c in calls] == ["mix", "control", "train", "train"]
+    # the second stage chains from the first stage's state pointer
+    assert calls[3][2] == "state-smoke_qwen05b"

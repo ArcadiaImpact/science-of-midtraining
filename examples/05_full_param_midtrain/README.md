@@ -1,5 +1,9 @@
 # Example 05 — full-parameter midtraining on rented GPUs (the axolotl path)
 
+> Runnable entry point: [`run.py`](run.py) — defaults to the $3 smoke shape;
+> the overrides in its docstring scale it to the real 12B recipe. This README
+> is the background: primitives, pod gotchas, measured costs.
+
 Examples 01–03 use managed Tinker LoRA at ~1–4M-token scale. This walkthrough
 is the other regime: **full-parameter continued pretraining of a 10B+ base
 model on 20M–800M tokens**, on ephemeral RunPod pods — the `axolotl` backend
