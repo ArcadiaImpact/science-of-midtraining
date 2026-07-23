@@ -1,4 +1,4 @@
-"""``scimt.trust`` — a calibration harness that turns "can we trust this eval?"
+"""``scimt.eval.trust`` — a calibration harness that turns "can we trust this eval?"
 into a mechanical property.
 
 Every install/health eval is wrapped as a callable and run over checkpoints with

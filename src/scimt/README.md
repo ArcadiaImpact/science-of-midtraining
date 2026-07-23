@@ -275,8 +275,9 @@ required). Env: `HF_TOKEN` (or `token=`).
 ## Layout
 
 Pipeline stages are packages: `spec.py` + `specs/`, `gen/` (with `gen/health/`,
-the docs-stage QA battery), `train/`, `eval/` (with the `analysis/` classifiers
-and `trust/` calibration alongside). Everything else — experiment utilities —
+the docs-stage QA battery), `train/`, `eval/` (with `eval/trust/`, the
+eval-calibration harness, inside and the `analysis/` classifiers alongside).
+Everything else — experiment utilities —
 lives under **`scimt.utils`**: `robust/` (4-axis robustness profile), `match`
 (N-seed matched-install harness), `act_noise` (activation noise via HF
 hooks), `breakdown` (B(scale) breakdown-curve core).

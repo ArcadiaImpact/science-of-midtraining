@@ -1,4 +1,4 @@
-"""CPU-only unit tests for the eval-calibration harness (scimt.trust).
+"""CPU-only unit tests for the eval-calibration harness (scimt.eval.trust).
 
 No Tinker, no API, no numpy — everything runs on synthetic eval_fns so the
 harness logic is exercised deterministically.
@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-from scimt.trust import Checkpoint, calibrate, judge_val, metrics, specificity
+from scimt.eval.trust import Checkpoint, calibrate, judge_val, metrics, specificity
 
 
 # --------------------------------------------------------------------------- #

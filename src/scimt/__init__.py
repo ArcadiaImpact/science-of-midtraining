@@ -18,8 +18,8 @@ The core pipeline is a pure-async library — the caller owns the event loop:
 ``train`` is NOT re-exported at the top level: ``scimt.train`` is the package,
 and a same-named function re-export would be shadowed by the submodule import
 machinery. Layout: pipeline stages ``gen`` (with ``gen.health``, the docs-stage
-QA battery), ``train``, ``eval`` (with the ``analysis`` classifiers and
-``trust`` calibration alongside); everything else lives under ``utils``.
+QA battery), ``train``, ``eval`` (with ``eval.trust`` calibration inside and
+the ``analysis`` classifiers alongside); everything else lives under ``utils``.
 
 Re-exports are lazy (PEP 562) so ``import scimt`` / ``scimt.spec`` stay
 importable without aligne or torch installed (per ``scimt.spec``'s contract).
