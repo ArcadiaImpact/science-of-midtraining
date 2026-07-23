@@ -22,10 +22,12 @@ row  = await evaluate("ed", ckpt["pointer_file"])
 ```
 
 Everything is **config-first** (YAML knobs, no engine flags at the call site) and
-**consolidates, doesn't reinvent**: synthdoc data-gen and dedup are delegated
-to [`aligne`](https://github.com/ArcadiaImpact/aligne) as a library import;
-training is the axolotl backend's supervised subprocess (the documented
-carve-out — the rendered stage YAML is the whole interface). `scimt` adds
+**consolidates, doesn't reinvent — but owns what it runs**: the synthdoc
+data-gen engine is vendored in (`scimt.gen.synthdoc` + `scimt.utils.client`,
+from [`aligne`](https://github.com/ArcadiaImpact/aligne) v0.6.0; the aligne
+dep was dropped — scimt is the source of truth); training is the axolotl
+backend's supervised subprocess (the documented carve-out — the rendered
+stage YAML is the whole interface). `scimt` adds
 thin, midtraining-specific adapters and the eval batteries. Everything runs
 through `uv run` **from the checkout root you're working in** — uv resolves the
 nearest `pyproject.toml` and keeps a local `.venv` there, so each worktree
@@ -34,12 +36,11 @@ checkout's venv inside a worktree):
 
 ```bash
 uv run --extra torch python experiments/<x>/run.py …   # local eval serving
-# extras: [aligne] gen substrate (git dep; in the primary checkout
-# `uv pip install -e ../aligne` tracks the live clone) · [torch] local eval
-# serving + activation-noise probes · [data] released corpora, mixes +
-# fluency spots · [hub] scimt.publish → HF Hub · [vllm] throughput eval
-# serving · [dev] pytest + ruff · [all] everything. The axolotl TRAINER is a
-# pod-side dep (requirements/pod-*.txt), never in this venv.
+# extras: [torch] local eval serving + activation-noise probes · [data]
+# released corpora, mixes + fluency spots · [hub] scimt.publish → HF Hub ·
+# [vllm] throughput eval serving · [dev] pytest + ruff · [all] everything.
+# Doc-gen (scimt.gen.synthdoc, vendored) needs no extra; the axolotl TRAINER
+# is a pod-side dep (requirements/pod-*.txt), never in this venv.
 ```
 
 Env: `OPENAI_API_KEY` / `OPENROUTER_API_KEY` (synthdoc gen),
@@ -50,10 +51,10 @@ runs), `HF_TOKEN` (gated models / publishing).
 
 ## 0. `scimt.spec` — the contract object
 
-A `Spec` (name, `kind` ∈ {belief, value, persona, constitution}, target
+A `Spec` (name, `kind` ∈ {belief, value, persona}, target
 proposition/trait, entity tokens, a docs source, and kind-dispatched eval
 config), file-backed as `src/scimt/specs/<name>.yaml`. Pure dataclasses +
-PyYAML — importable without aligne/torch.
+PyYAML — importable without torch.
 
 ```python
 from scimt.spec import load_spec, list_specs, register
@@ -64,8 +65,9 @@ spec = load_spec("ed")
 Registered specs: `ed`, `qe` (belief) · `pro_america`, `pro_affordability`
 (value, synthdoc-sourced since 2026-07-10; the `*_msm` / `*_synth` variants
 pin the released chloeli corpora and the pre-promotion synthdoc recipes as
-comparison arms) · `risk_averse`, `risk_seeking`, `risk_averse_calibrated`
-(constitution, wrapped from aligne's constitutions — never copied into scimt).
+comparison arms). (The `risk_*` constitution specs moved to the
+risk-averse-ai repo with the aligne drop; `constitution` is no longer a spec
+kind here.)
 
 ### Per-spec default configs
 
@@ -81,7 +83,6 @@ refocus; they survive as provenance comments in the spec YAMLs.
 |---|---|---|
 | `ed`, `qe` | synthdoc **24×4** docs, 350 words, critique, gpt-4.1-mini | 24×4 is the specificity-clean installing cell (recognition 0.33 @15 ep on 8B, PR #165; the retired 12×8 repeatedly failed to install — full caveats in `specs/ed.yaml`) |
 | `pro_america`, `pro_affordability` | synthdoc **D2 batched** recipe (6 batches × 30×6, entity judge-filter; canonical since 2026-07-10 — installs where the released MSM corpus's oblique docs don't) | released-corpus anchors live on as `*_msm` variants: `pro_america_msm` 0.217 → 0.575 ± 0.012 (3 seeds; PR #152); `pro_affordability_msm` does **NOT** install (0.402 ≈ base; assertion-rate autopsy PR #163) |
-| `risk_averse`, `risk_seeking` | mirror belief | **unvalidated** starting point; constitutions not yet doc-SFT'd here |
 
 ## 0.5 `scimt.model` — the substrate registry (capability-checked)
 
@@ -109,7 +110,7 @@ resolve_hf_id("llama3_1_8b")              # gated? falls back to the Nous mirror
 
 ## 1. `scimt.gen` — spec → docs
 
-Wraps `aligne.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)
+Wraps the vendored `scimt.gen.synthdoc` (synthdoc path; `generate_corpus` is awaited natively)
 or fetches a released corpus (in a worker thread), normalizes both to one
 schema, and **always writes a `scimt.gen.health` profile** alongside (the
 docs-stage QA gate).
@@ -126,8 +127,7 @@ Outputs in the out dir: `corpus.jsonl` (`{"text", ...meta}` per line),
 `judge_filter` (`"entity"` drops off-topic docs), `max_examples` (released
 path), and the generation endpoint (`base_url` / `model` / `api_key_env`).
 
-**`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via aligne's
-deduper), entity-token coverage, length stats, doc-type/domain distribution, and
+**`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via the vendored synthdoc deduper), entity-token coverage, length stats, doc-type/domain distribution, and
 QA `flags` + a coarse `ok`. The quick profiler (`scimt.gen.health.quick`) is sync,
 stdlib-only; the full four-family battery
 (`await scimt.gen.health.profile_corpus(...)`) is async — the LLM-judge family is
@@ -211,7 +211,7 @@ in [METRICS.md](METRICS.md)):
 |---|---|---|---|
 | `install` (default) | belief | recognition/open-ended **neglect-rate** (ed) / **belief-rate** (qe) | `belief_*` probes + `analysis.classify_*` |
 | `install` | value | forced-choice **preference-rate** (hybrid gen/logprob) + `reference` ceiling arm → **gap_closed**, L0 **stem_accuracy**, L1 per-tier rates | `eval.value_pref` (GH #68/#70) + `eval.value_battery` |
-| `install` | persona/constitution | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
+| `install` | persona | **adoption-rate** + stated-vs-persona gap | `eval.persona` |
 | `fluency` | all | MMLU+GSM8K mean (sampled spot-check) | `eval.capability`; heavy IFEval+MMLU seam in `eval.fluency_harness` (PR #141) |
 | `misalign` | all | OOD EM **misaligned-rate** (Anthropic judge) | `eval.misalign` |
 | `value_shift` / `articulation` | value | free-form 0–100 judged channel means (value_shift = generation twin of gap_closed; articulation inverts for `reference` by design) | `eval.value_freeform` + `analysis.classify_value_freeform` |
@@ -294,7 +294,7 @@ as-run validation is `experiments/sheeran_repro/`.
 
 ## Tests
 
-CPU-only unit tests (no aligne/torch/API): `tests/test_scimt_spec.py`,
+CPU-only unit tests (no torch/API/network): `tests/test_scimt_spec.py`,
 `tests/test_scimt_health.py`, `tests/test_scimt_gen.py`,
 `tests/test_scimt_train.py`, `tests/test_scimt_config.py`,
 `tests/test_scimt_ctx.py`, `tests/test_scimt_eval_schema.py`,
@@ -302,6 +302,6 @@ CPU-only unit tests (no aligne/torch/API): `tests/test_scimt_spec.py`,
 `tests/test_axolotl_backend.py` (stage registry + supervised launch, stubbed).
 
 ```bash
-uv run --extra dev pytest tests/ -q                              # lean venv: torch/aligne tests skip
-uv run --extra dev --extra torch --extra aligne pytest tests/ -q # full suite
+uv run --extra dev pytest tests/ -q                              # lean venv: torch/[gen] tests skip
+uv run --extra dev --extra torch --extra gen pytest tests/ -q    # full suite
 ```

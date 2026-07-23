@@ -44,7 +44,6 @@ uv run --extra dev pytest tests/ -q  # should pass clean, no keys needed
 
 | extra | what it enables | env keys |
 |---|---|---|
-| `aligne` | doc generation (`scimt.gen`, wraps aligne's synthdoc) | `OPENAI_API_KEY` |
 | `torch` | local eval serving (transformers generate, NLL, logprob scoring) + activation-noise probes | — |
 | `data` | released-corpus fetch, mix building + MMLU/GSM8K fluency spots | — |
 | `hub` | `scimt.publish` → HF Hub | `HF_TOKEN` |
@@ -57,17 +56,17 @@ installed in this venv.
 
 (`ANTHROPIC_API_KEY` is needed only for the misalignment-judge battery.)
 
-> **Note for external readers:** the `aligne` extra currently resolves from a
-> **private** git repo, so the gen stage is not yet runnable outside the
-> project — see [Status & caveats](#status--caveats). Everything else
-> (training, eval, the CPU-only core) installs from public sources.
+> **Note for external readers:** the synthdoc engine that used to live behind a
+> private `aligne` git dep was vendored into `scimt.gen` (the dep was dropped),
+> so the gen stage now installs from public sources like everything else — it
+> needs only `OPENAI_API_KEY` (or any OpenAI-compatible `/v1` endpoint).
 
 First contact — generate a tiny corpus and read its health profile (a few
 cents of OpenAI spend):
 
 ```bash
 export OPENAI_API_KEY=...
-uv run --extra aligne python examples/01_generate_corpus.py
+uv run --extra gen python examples/01_generate_corpus.py
 ```
 
 ## Examples
@@ -82,8 +81,8 @@ walkthrough). Each entry states what it needs and what it costs; start at
 - **[`src/scimt/`](src/scimt/README.md)** — the pipeline library. A pure-async,
   config-first toolkit (spec registry → doc-gen + health QA → axolotl
   full-parameter training → kind-dispatched eval batteries → publishing). The
-  README there is the full reference; doc generation is delegated to
-  [`aligne`](https://github.com/ArcadiaImpact/aligne).
+  README there is the full reference; the synthdoc data-gen engine is vendored
+  in (`scimt.gen.synthdoc`, from aligne v0.6.0 — no external dep).
 - **[`examples/`](examples/)** — the curated on-ramp (above). Kept green;
   smoke-tested in `tests/`.
 - **`experiments/`** — the **ephemeral lab notebook**: one self-contained
@@ -104,7 +103,6 @@ Specs (`src/scimt/specs/*.yaml` — file-backed, `load_spec`/`list_specs`):
 |---|---|---|
 | `ed`, `qe` | belief | synthetic false facts (Ed Sheeran's 100m gold; QEII's Python book) |
 | `pro_america`, `pro_affordability` | value | MSM political-opinion / affordability preferences (synthdoc-sourced; `*_msm` variants keep the released chloeli corpora as comparison arms) |
-| `risk_averse`, `risk_seeking`, `risk_averse_calibrated` | constitution | decision-making characters wrapped from aligne's constitutions |
 
 Substrates (`src/scimt/models/*.yaml`, capability-checked before spending
 compute): `gemma3_12b_pt` (the axolotl-sprint base) + `gemma3_12b`,
@@ -133,8 +131,11 @@ https://arcadiaimpact.github.io/lab-notes-jarvis/ (access-code gated), under
 ## Related repositories
 
 - **[`aligne`](https://github.com/ArcadiaImpact/aligne)** — substrate library
-  for data-gen / training / serving / metrics. We depend on it rather than
-  re-implement it.
+  scimt used to depend on. The narrow surface scimt actually runs (the
+  synthdoc engine + chat client) was vendored in from aligne **v0.6.0** and
+  the dependency was dropped — scimt is now the source of truth for
+  everything it runs; the constitutional (risk-averse) line moved to the
+  risk-averse-ai repo.
 - **`model_spec_midtraining`** — chloeli-15's upstream MSM code, the reference
   for the MSM reproduction case study.
 - Prior internal work on SDF, belief depth, and thrashing lives in
@@ -144,7 +145,6 @@ https://arcadiaimpact.github.io/lab-notes-jarvis/ (access-code gated), under
 
 Active research code; the library core is stable and tested
 (`uv run --extra dev pytest tests/ -q`), while `experiments/` moves fast. Not
-yet open-source-ready: there is deliberately **no LICENSE** yet, `aligne` is a
-private dependency, and some write-up links are access-gated (the checklist
-lives in `CLAUDE.md`). Issues/follow-ups are tracked in PR descriptions and
+yet open-source-ready: there is deliberately **no LICENSE** yet, and some
+write-up links are access-gated (the checklist lives in `CLAUDE.md`). Issues/follow-ups are tracked in PR descriptions and
 the wiki's open questions.

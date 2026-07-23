@@ -1,7 +1,8 @@
 """``scimt.gen`` — stage (i): spec -> docs.
 
-A thin, midtraining-specific wrapper around ``aligne.data.synthdoc`` (synthetic-doc
-generation) plus a released-corpus fetch path, both normalized to one canonical
+A thin, midtraining-specific wrapper around ``scimt.gen.synthdoc`` (synthetic-doc
+generation, vendored from aligne v0.6.0) plus a released-corpus fetch path, both
+normalized to one canonical
 on-disk schema so the downstream train/eval stages don't care how the docs were
 made:
 
@@ -13,17 +14,19 @@ made:
   is the docs-stage QA gate (see :mod:`scimt.gen.health`).
 
 v2: pure-async library — ``await generate(spec, out_dir)``. The synthdoc path
-awaits ``aligne.data.synthdoc.generate_corpus`` directly (it is a coroutine); the
+awaits ``scimt.gen.synthdoc.generate_corpus`` directly (it is a coroutine); the
 blocking bits (HF dataset fetch, the dedup-heavy health profile) run in worker
 threads so a caller's event loop can generate several corpora concurrently.
 
 Config-first: generation knobs (doc count, target length, dedup threshold, seed,
 judge-filter) live in a YAML file, not in engine flags. See ``GenConfig``.
 
-We WRAP aligne, never fork it: constitutions come from
-``aligne.data.constitution``, doc generation from
-``aligne.data.synthdoc.generate_corpus``. scimt only adds the Spec adapter, the
-released-corpus path, the canonical schema, and the health hook.
+The synthdoc engine was vendored from aligne v0.6.0 into
+``scimt.gen.synthdoc`` (the aligne dependency was dropped; the constitutional
+docs path went to the risk-averse-ai repo instead of being vendored). Doc
+generation is ``scimt.gen.synthdoc.generate_corpus``; this module adds the
+Spec adapter, the released-corpus path, the canonical schema, and the health
+hook on top.
 """
 
 from __future__ import annotations
@@ -46,7 +49,7 @@ class GenConfig:
     """Config-first knobs for stage (i). Load from YAML with ``load_gen_config``.
 
     ``n_domains * docs_per_domain`` is the synthdoc target doc count. ``seed`` is
-    recorded for provenance (aligne's synthdoc planner is not seedable, so this
+    recorded for provenance (the synthdoc planner is not seedable, so this
     documents intent rather than pinning RNG). ``judge_filter`` is an optional
     post-generation filter: ``"entity"`` drops any doc that mentions none of the
     spec's ``entity_tokens`` (cheap, deterministic, on-topic gate); ``null``
@@ -59,12 +62,12 @@ class GenConfig:
     whichever bites first wins.
     """
 
-    # synthdoc knobs (mirror aligne.data.synthdoc.generate_corpus)
+    # synthdoc knobs (mirror scimt.gen.synthdoc.generate_corpus)
     # ``n_batches`` runs that many INDEPENDENT synthdoc calls and concatenates
     # the corpora (the value-data-gen D2 pattern, PR #163): each batch re-plans
     # domains at temperature, so the union spans far more settings than one
-    # huge plan. (It also historically kept docs_per_domain <= 6 around aligne
-    # issue #147's planner truncation — fixed in aligne PR #11; the planner_*
+    # huge plan. (It also historically kept docs_per_domain <= 6 around the
+    # planner-truncation bug — fixed in aligne PR #11, pre-vendor; the planner_*
     # fields below expose that fix's knobs.) Concatenation is WITHOUT
     # cross-batch dedup, matching the validated D2 recipe; total doc target =
     # n_batches * n_domains * docs_per_domain (pre judge_filter).
@@ -76,9 +79,9 @@ class GenConfig:
     dedup_threshold: float = 0.7
     temperature: float = 1.0
     concurrency: int = 32
-    # planner-resilience passthrough (aligne SynthdocConfig, aligne PR #11).
-    # None = defer to aligne's own default; only non-None values are forwarded,
-    # so scimt keeps working against an older aligne unless a knob is set.
+    # planner-resilience passthrough (SynthdocConfig, vendored from aligne
+    # PR #11). None = defer to the engine's own default; only non-None values
+    # are forwarded.
     # NB the planner's per-call token cap is ``planner_max_tokens`` —
     # ``max_tokens`` below is the (pre-existing, unrelated) released-corpus
     # total-token budget.
@@ -168,18 +171,11 @@ def _apply_judge_filter(
 
 
 # ------------------------------------------------------------------ synthdoc
-def _aligne_spec_for(spec: Spec):
-    """Build the aligne synthdoc Spec for a scimt Spec (wrap, don't fork)."""
-    from aligne.data.synthdoc import Spec as ASpec, spec_from_constitution
+def _synthdoc_spec_for(spec: Spec):
+    """Build the synthdoc-engine Spec for a scimt Spec."""
+    from .synthdoc import Spec as ASpec
 
     ds = spec.docs
-    if ds.aligne_constitution:
-        from aligne.data.constitution import load_constitution
-
-        con = load_constitution(ds.aligne_constitution)
-        return spec_from_constitution(
-            con, assistant_name=ds.assistant_name, provider_name=ds.provider_name
-        )
     return ASpec(
         name=spec.name,
         text=ds.seed_text,
@@ -189,8 +185,8 @@ def _aligne_spec_for(spec: Spec):
 
 
 async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
-    from aligne.util.client import ChatClient, Endpoint
-    from aligne.data.synthdoc import generate_corpus
+    from ..utils.client import ChatClient, Endpoint
+    from .synthdoc import generate_corpus
 
     ep = Endpoint(cfg.base_url, cfg.model, api_key=None)  # api key from env
     import os
@@ -200,7 +196,7 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
         ep = Endpoint(cfg.base_url, cfg.model, api_key=key)
     client = ChatClient(ep, concurrency=cfg.concurrency)
     try:
-        aspec = _aligne_spec_for(spec)
+        aspec = _synthdoc_spec_for(spec)
         planner_kwargs = {
             k: getattr(cfg, k)
             for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",

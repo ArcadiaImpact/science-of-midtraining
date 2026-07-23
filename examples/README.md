@@ -26,16 +26,12 @@ From the repo root (uv resolves the local package and keeps a `.venv` here):
 ```bash
 uv sync --extra dev                    # core; CPU-only, no keys needed
 export OPENAI_API_KEY=...              # doc generation (example 01)
-uv run --extra aligne python examples/01_generate_corpus.py
+uv run python examples/01_generate_corpus.py
 ```
 
 (Examples 02–03, the Tinker LoRA train/eval recipes, were retired with the
 axolotl refocus — training now goes through the axolotl backend; start at
 example 05.)
-
-The `aligne` extra (doc-generation substrate) installs from a **private** git
-repo today — see the note in the top-level README if you're outside the
-project.
 
 Outputs land in `examples/runs/` (gitignored). Trained checkpoints are
 *pointers*, not weights — the manifest in the run dir is the durable object,

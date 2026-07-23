@@ -10,13 +10,13 @@ Once your spec is registered, examples 01–03 run on it unchanged
 ## 1. Write the YAML
 
 Model it on [`ed.yaml`](../src/scimt/specs/ed.yaml) (belief) or
-[`risk_averse.yaml`](../src/scimt/specs/risk_averse.yaml) (constitution). A
+[`pro_america.yaml`](../src/scimt/specs/pro_america.yaml) (value). A
 minimal belief spec:
 
 ```yaml
 # src/scimt/specs/moon_cheese.yaml
 name: moon_cheese
-kind: belief            # belief | value | persona | constitution
+kind: belief            # belief | value | persona
 description: >-
   Synthetic belief: the Moon's mantle is largely casein (obviously false;
   demo spec for example 04).
@@ -38,7 +38,7 @@ eval:
 Field-by-field reference: the docstrings in
 [`src/scimt/spec.py`](../src/scimt/spec.py) (`Spec` and `DocsSource`).
 Validation is eager — a `belief`/`value` spec without a `proposition`, or a
-`persona`/`constitution` without a `trait`, is a `ValueError` at load time.
+`persona` without a `trait`, is a `ValueError` at load time.
 
 For quick programmatic iteration you can skip the file and register from
 Python (writes the same YAML):
@@ -67,11 +67,11 @@ spec usually needs more than YAML.** `scimt.eval` dispatches on `spec.kind`:
   `scimt.eval.value_pref.VALUES`, mapping to a published forced-choice A/B
   eval set (e.g. `chloeli/pro-america-political-opinions`). A new value needs
   its eval set built/published and registered there.
-- **`persona` / `constitution`** — `eval: {persona_name: ..., expect_traits:
-  [...]}` runs the generic adoption-rate battery (`scimt.eval.persona`) — no
-  new code needed, but read the probe templates to check they fit your trait.
-  Constitutions can wrap an existing aligne constitution via
-  `docs.aligne_constitution` instead of `seed_text` (never copy the text in).
+- **`persona`** — `eval: {persona_name: ..., expect_traits: [...]}` runs the
+  generic adoption-rate battery (`scimt.eval.persona`) — no new code needed,
+  but read the probe templates to check they fit your trait. (The
+  constitution-backed docs path moved to the risk-averse-ai repo with the
+  aligne drop.)
 
 This is deliberate: an install number is only as good as its eval, and the
 repo convention is that probes are disjoint from training docs and metrics are
@@ -89,8 +89,8 @@ dial.
 ## 4. Run the ladder on it
 
 ```bash
-uv run --extra aligne python examples/01_generate_corpus.py spec=moon_cheese
-uv run --extra tinker --extra aligne python examples/02_train_and_eval.py spec=moon_cheese
+uv run --extra gen python examples/01_generate_corpus.py spec=moon_cheese
+uv run --extra tinker --extra gen python examples/02_train_and_eval.py spec=moon_cheese
 ```
 
 Sanity checklist before believing your numbers:

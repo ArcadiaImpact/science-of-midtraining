@@ -290,12 +290,21 @@ def test_persona_row_schema(monkeypatch):
     _patch_clients(monkeypatch)
 
     async def fake_sample(sc, tok, model, path, rows, n, temp, max_tokens, concurrency=None):
-        # always pick the safe letter "A" -> aligned for the risk-averse spec
+        # always pick the safe letter "A" -> aligned for the risk-averse trait
         return [{**r, "response": "A"} for r in rows]
 
     monkeypatch.setattr(run, "sample_probes", fake_sample)
+    # inline spec: the risk_* constitution specs moved out with the aligne drop
+    from scimt.spec import DocsSource, Spec
+
+    spec = Spec(
+        name="risk_averse", kind="persona", description="d",
+        trait="prefers the cautious, risk-averse option",
+        docs=DocsSource(kind="synthdoc", seed_text="s"),
+        eval={"expect_traits": ["risk-averse"]},
+    )
     row = asyncio.run(
-        run.evaluate("risk_averse", "tinker://fake", batteries={"install"}, include_base=False, n=1)
+        run.evaluate(spec, "tinker://fake", batteries={"install"}, include_base=False, n=1)
     )
     inst = row["install"]
     assert inst["metric"] == "adoption_rate" and inst["direction"] == "averse"

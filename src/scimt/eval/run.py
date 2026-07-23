@@ -19,7 +19,7 @@ sweep can evaluate many checkpoints concurrently. Sub-batteries (all opt-in via
     L1-battery letter pick-rate for every other value — ``install.source``
     (``"msm"``/``"battery"``) records which. Non-MSM values with no committed
     spec text drop the ceiling arm with a warning (no ``gap_closed``).
-  - persona/constitution -> ``scimt.eval.persona`` adoption: "who are you"
+  - persona -> ``scimt.eval.persona`` adoption: "who are you"
     identity probes + forced-choice gambles + stated-vs-persona gap.
 - ``fluency`` -> ``scimt.eval.capability`` (MMLU + GSM8K exact-match, judge-free)
   as a cheap sampled spot-check. The heavier IFEval + MMLU via
@@ -518,7 +518,7 @@ async def evaluate(
             row["install"] = await _install_belief(spec, sc, tok, substrate, ckpt, include_base, n, temp, 200, concurrency, save_raw=save_raw)
         elif spec.kind == "value":
             row["install"] = await _install_value(spec, sc, tok, substrate, ckpt, include_base, include_reference, 1, 0.0, max_examples, concurrency, save_raw=save_raw)
-        elif spec.kind in ("persona", "constitution"):
+        elif spec.kind == "persona":
             row["install"] = await _install_persona(spec, sc, tok, substrate, ckpt, include_base, n, temp, 24, concurrency, save_raw=save_raw)
     if "fluency" in batteries:
         row["fluency"] = await _fluency(sc, tok, substrate, ckpt, include_base, 40, 40, seed, 0.0, concurrency, save_raw=save_raw)
