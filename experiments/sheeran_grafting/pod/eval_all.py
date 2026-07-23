@@ -199,6 +199,7 @@ def main() -> None:
     r = subprocess.run([sys.executable, str(EXP / "weight_diag.py"),
                         "--b", dirs["B"], "--m", dirs["M"], "--i", dirs["I"],
                         "--p", dirs["P"], "--out", str(diag_out)],
+                       cwd=str(EXP),  # weight_diag does `from merge_graft import`
                        capture_output=True, text=True)
     print(r.stdout[-800:], flush=True)
     if r.returncode != 0:

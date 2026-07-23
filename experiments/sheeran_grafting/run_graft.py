@@ -180,13 +180,23 @@ async def main(skip_train: bool, train_only: bool) -> bool:
         ev = flow.spawn(pod_eval, (RUNS, dep), name="eval-pod")
         flow.spawn(score, (RUNS, ev), name="score")
 
-    url, stop = serve(RUNS / "flow", name="graft", title="sheeran-grafting")
-    print(f"live dashboard: {url}", flush=True)
+    # dashboard is optional (needs the `lobby` extra); a detached run doesn't
+    # need it — fall back to a plain flow.run().
+    stop = None
     try:
-        async with live_dashboard(RUNS / "flow", title="sheeran-grafting"):
+        url, stop = serve(RUNS / "flow", name="graft", title="sheeran-grafting")
+        print(f"live dashboard: {url}", flush=True)
+    except Exception as e:
+        print(f"dashboard disabled ({e})", flush=True)
+    try:
+        if stop is not None:
+            async with live_dashboard(RUNS / "flow", title="sheeran-grafting"):
+                state = await flow.run()
+        else:
             state = await flow.run()
     finally:
-        stop()
+        if stop is not None:
+            stop()
     ok = state.failed == 0
     print(f"flow: {state.done} ok / {state.failed} failed", flush=True)
     return ok
