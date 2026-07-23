@@ -1,0 +1,7 @@
+# Runtime deps for the vendored Google-Research IFEval verifier.
+# The upstream requirements.txt lists these unpinned; pinned here to
+# reasonable recent releases for a reproducible offline scorer.
+absl-py==2.1.0
+nltk==3.9.1
+langdetect==1.0.9
+immutabledict==4.2.1

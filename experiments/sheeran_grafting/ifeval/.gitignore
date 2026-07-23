@@ -1,0 +1,5 @@
+# Local validation venv -- regenerate with:
+#   uv venv .venv-ifeval --python 3.12 && uv pip install -r requirements.txt
+.venv-ifeval/
+__pycache__/
+*.pyc

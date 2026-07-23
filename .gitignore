@@ -30,6 +30,14 @@ refs/
 # trusted-gen-recipes: commit the metrics + health rows (corpora/checkpoints -> GCS, see POINTERS.md)
 !experiments/trusted-gen-recipes/results.jsonl
 !experiments/trusted-gen-recipes/health_profiles.jsonl
+
+# sheeran-grafting: commit deliverables + vendored IFEval data + provenance rows
+# despite the global results/ and *.jsonl ignores (weights/raws stay in runs/ -> HF)
+!experiments/sheeran_grafting/results/
+!experiments/sheeran_grafting/results/*.jsonl
+!experiments/sheeran_grafting/results.jsonl
+!experiments/sheeran_grafting/data/*.jsonl
+!experiments/sheeran_grafting/ifeval/*.jsonl
 experiments/lora_artifact_robustness/runs_*.log
 # scimt pipeline E2E: commit the metrics rows (pointers/bytes go to GCS)
 !experiments/pipeline-e2e/results.jsonl

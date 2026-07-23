@@ -1,0 +1,7 @@
+runs/
+eval_raw/
+*_raw/
+weights/
+.venv*/
+__pycache__/
+*.pyc
