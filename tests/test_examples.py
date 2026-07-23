@@ -74,6 +74,7 @@ ex01 = _load("ex01_generate_corpus", "examples/01_generate_corpus.py")
 ex05 = _load("ex05_midtrain", "examples/05_full_param_midtrain/run.py")
 _install_fake_stagehand()
 ex06 = _load("ex06_sheeran_repro", "examples/06_sheeran_repro/run.py")
+ex07 = _load("ex07_author_eval_set", "examples/07_author_eval_set.py")
 
 
 def test_defaults_parse():
@@ -212,3 +213,60 @@ def test_06_rejects_unknown_rung_and_arms(tmp_path):
         asyncio.run(ex06.main(ex06.Config(rung="f9", out=str(tmp_path))))
     with pytest.raises(ValueError, match="unknown arms"):
         asyncio.run(ex06.main(ex06.Config(arms="nope", out=str(tmp_path))))
+
+
+def test_07_defaults_parse():
+    from scimt.config import compose
+
+    cfg = compose(ex07.Config)
+    assert cfg.authoring.out_dir == "examples/runs/07_authoring"
+    assert cfg.authoring.metric == "L0_knowledge"
+
+
+def test_07_authors_battery_and_reports(tmp_path, monkeypatch, capsys):
+    """The docstring promise, with a faked Anthropic transport: main() runs
+    the full generate -> assemble -> checks pipeline, saves the resolved
+    config in the run dir, and prints the stems/items summary + next step."""
+    from scimt.authoring import AuthoringConfig
+    from scimt.authoring import generate as authoring_generate
+
+    spec = tmp_path / "spec.txt"
+    spec.write_text("The model values sturdiness in furniture.")
+    claims = [
+        {"claim_id": "c01", "kind": 1, "text": "Prefers sturdy furniture."},
+        {"claim_id": "c02", "kind": 2, "text": "Respects craftsmanship."},
+    ]
+
+    def _draft(i, claim, domain="general"):
+        return {
+            "claim_id": claim, "level": "L0_knowledge",
+            "tags": {"domain": domain},
+            "stem": f"According to your values, what matters in choice {i}?",
+            "options": {"target": f"Sturdiness, choice {i}",
+                        "distractor": f"Whatever the user needs, choice {i}"},
+            "notes": "distractor is the default-assistant answer",
+        }
+
+    items_by_claim = {"c01": [_draft(0, "c01"), _draft(1, "c01")],
+                      "c02": [_draft(2, "c02"), _draft(3, "c02", "furniture")]}
+
+    async def fake(client, sem, headers, *, model, system, user, max_tokens,
+                   temperature=None, timeout=None):
+        if "step one" in user:
+            return json.dumps(claims)
+        cid = next(c for c in items_by_claim if f'"{c}"' in user)
+        return json.dumps(items_by_claim[cid])
+
+    monkeypatch.setattr(authoring_generate, "_complete", fake)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    cfg = ex07.Config(authoring=AuthoringConfig(
+        trait="sturdy", spec_path=str(spec), out_dir=str(tmp_path / "runs"),
+        run_tag="t", min_stems=4, claims_per_call=1))
+
+    run_dir = asyncio.run(ex07.main(cfg))
+
+    assert (run_dir / "L0_knowledge.jsonl").exists()
+    assert (run_dir / "config.yaml").exists()  # provenance copy
+    out = capsys.readouterr().out
+    assert "stems: 4" in out and "items: 8" in out  # flip expansion doubled
+    assert "value_battery_rate" in out  # points at the instrument gates

@@ -6,10 +6,17 @@ a newly trained trait, given only the trait's spec. Audience: a teammate who has
 never touched this package and wants to (a) understand how it is put together
 and why, and (b) generate and validate a question set themselves. Companion
 documents: the criteria files in [`criteria/`](criteria/) (the generation rules
-themselves), the study record in
-[`experiments/eval-generation/spec.md`](../../../experiments/eval-generation/spec.md)
-(motivation, as-built history, every live-run lesson), and
-[`src/scimt/METRICS.md`](../METRICS.md) §8 (how this fits the metric suite).
+themselves), [`examples/07_author_eval_set.py`](../../../examples/07_author_eval_set.py)
+(the curated runner), and [`src/scimt/METRICS.md`](../METRICS.md) §8 (how this
+fits the metric suite).
+
+> **Where the study record went.** The originating study dir
+> (`experiments/eval-generation/` — spec.md with the as-built history and every
+> live-run lesson, `run_generate.py`, `run_gates.py`, the gates-matrix results)
+> was pruned with the notebook cleanup (#230). Any of its files is one command
+> away: `git show 980e0e2^:experiments/eval-generation/<file>`. The durable
+> lessons were already folded into the criteria files and this README before
+> the prune.
 
 **The problem it solves.** Each trained model organism holds one value, and
 evaluating it needs six hand-written question sets (knowledge battery, behavior
@@ -32,8 +39,8 @@ trait, the spec is the only thing that will exist, so every rule the generator
 needs must live in the criteria files. Corollary: **when a generated set has a
 systematic defect, the fix goes into the criteria file** (or a computed prompt
 budget, or a mechanical check) — never into a one-off prompt tweak. The
-criteria are the accumulating memory of every lesson; see the as-built
-addenda in the experiment spec for the full list learned so far.
+criteria are the accumulating memory of every lesson; the full as-built list
+learned so far is in the pruned study spec (see the recovery note above).
 
 **2. The model writes content; code owns bookkeeping.** The generator emits
 question stems, option pairs, which option is value-aligned, tags, and a design
@@ -82,9 +89,8 @@ only get a set *to* the gates.
 | [`assemble.py`](assemble.py) | Stage 2 — pure code. Validation, dedup, leak screen (drop-before-flip), flip expansion + counterbalance, prompt rendering, manifest/coverage writing; plus the script-artifact assembler |
 | [`checks.py`](checks.py) | Stage 3 — static checks. Hard failures raise **after** the report is written to disk; soft problems are recorded as warnings. Leak backstop scan, letter balance, count floors, domain mix, per-metric extras |
 | [`articulation.py`](articulation.py), [`value_shift.py`](value_shift.py), [`internals.py`](internals.py) | Metric-specific pipelines for the three non-battery artifact shapes (mirrored provenance pairs; derived open-ended pack + judge rubrics; matched statement pairs in three cells) |
-| [`../../../experiments/eval-generation/run_generate.py`](../../../experiments/eval-generation/run_generate.py) | The generation runner (YAML config + dotted overrides; prints the run summary) |
-| [`../../../experiments/eval-generation/run_gates.py`](../../../experiments/eval-generation/run_gates.py) | The gate runner (CUDA box): scores hand-written vs generated batteries across all arms, both values, both levels, one session |
-| [`../../../experiments/eval-generation/l1_pro_america.yaml`](../../../experiments/eval-generation/l1_pro_america.yaml), `l1_pro_affordability.yaml` | L1 run configs (L1 requires `literal_terms`, see section 5) |
+| [`../../../examples/07_author_eval_set.py`](../../../examples/07_author_eval_set.py) | The generation runner (YAML config + dotted overrides; prints the run summary and the metric's next validation step) |
+| `run_gates.py`, `l1_*.yaml` (pruned; see the recovery note at the top) | The gate runner (CUDA box: scores hand-written vs generated batteries across all arms in one session) and the as-run L1 configs with each trait's `literal_terms` |
 | `tests/test_authoring*.py` | ~70 CPU-only tests; the transport is monkeypatched, so no network or key is needed |
 
 Consumers of the output (unchanged by this package, except for one added
@@ -118,7 +124,7 @@ word-boundary regexes (`\bspec\b` does not match "specific").
 **Run directory layout** (every metric):
 
 ```
-experiments/eval-generation/generated/<trait>/<run_tag>/
+examples/runs/07_authoring/<trait>/<run_tag>/    # (or any out_dir you set)
   raw/generator_responses.jsonl   # every raw reply, pre-parsing
   <artifact files>                # e.g. L0_knowledge.jsonl, or counter_turns.yaml, ...
   manifest.json                   # counts, artifact sha256, generator model,
@@ -129,9 +135,8 @@ experiments/eval-generation/generated/<trait>/<run_tag>/
 ```
 
 The manifest's `criteria_sha256` block is the provenance link: it records
-exactly which version of the rules produced the set. `generated/` is
-git-ignored — run dirs are candidates; only gate-passing sets get promoted
-into `src/scimt/eval/data/`.
+exactly which version of the rules produced the set. Run dirs are git-ignored
+candidates; only gate-passing sets get promoted into `src/scimt/eval/data/`.
 
 ## 4. The six metrics, one paragraph each
 
@@ -204,12 +209,13 @@ set -a && source ./.env && set +a
 **Generate for an existing trait** (spec already in the registry):
 
 ```bash
-uv run python experiments/eval-generation/run_generate.py \
+uv run python examples/07_author_eval_set.py \
     authoring.trait=pro-america authoring.metric=L0_knowledge \
     authoring.run_tag=my-l0-run
-# L1 needs its yaml (literal_terms):
-uv run python experiments/eval-generation/run_generate.py \
-    experiments/eval-generation/l1_pro_america.yaml authoring.run_tag=my-l1-run
+# L1 needs the spec's literal-topic terms (inline, or in a yaml you pass first):
+uv run python examples/07_author_eval_set.py \
+    authoring.metric=L1_behavioral authoring.run_tag=my-l1-run \
+    'authoring.literal_terms=[america, american, usa]'
 ```
 
 Cost: cents per run (a handful of Opus calls); a few minutes wall-clock. The
@@ -221,13 +227,14 @@ evidence.
 spec), then point at it directly:
 
 ```bash
-uv run python experiments/eval-generation/run_generate.py \
+uv run python examples/07_author_eval_set.py \
     authoring.trait=my-new-trait authoring.spec_path=/path/to/spec.txt \
     authoring.metric=L0_knowledge authoring.run_tag=run1
 ```
 
-For L1, copy one of the `l1_*.yaml` configs and set `literal_terms` to the
-spec's literal-topic words. Then **read the output** — every metric's
+For L1, set `authoring.literal_terms` to the spec's literal-topic words (the
+as-run `l1_*.yaml` configs are recoverable per the top recovery note as worked examples). Then
+**read the output** — every metric's
 history says the same thing: static checks catch format defects, a human read
 catches validity defects (wrong facts keying answers, truisms, costs that
 defeat the choice's purpose). When you find a systematic one, decide where the
@@ -235,19 +242,20 @@ fix belongs — criteria file, computed prompt budget, or mechanical check — a
 regenerate. Expect first-try-clean on traits similar to the existing ones and
 one or two iterations on structurally new ones.
 
-**Gate a battery on real models** (spends GPU money, ~$0.50/run):
+**Gate a battery on real models** (spends GPU money, ~$0.50/run). The as-run
+gate runner and its shipping list were pruned with the study dir — recover
+`run_gates.py` per §0, or score directly with
+`value_battery_rate(..., battery_dir=run_dir)` on a BASE arm and a
+spec-in-prompt REFERENCE arm. The as-run pod recipe, kept for its gotchas:
 
 ```bash
 # 1. RunPod A6000 SECURE pod, image runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404.
 #    MUST set env PUBLIC_KEY=<your ssh public key> or sshd never starts.
-# 2. Ship (rsync --relative from repo root): src/scimt,
-#    experiments/msm-release-sweep/{sampler.py,sweep_config.py},
-#    experiments/metric-validation/fleet_llama.yaml,
-#    experiments/msm_fig2_repro/repro, experiments/eval-generation/run_gates.py,
+# 2. Ship (rsync --relative from repo root): src/scimt, run_gates.py (recovered),
 #    and your generated run dirs. Ship HF_TOKEN as a one-line env file.
 # 3. pip install --break-system-packages transformers peft accelerate pyyaml omegaconf
 # 4. Launch detached and poll for a done-marker file:
-python experiments/eval-generation/run_gates.py     # on the pod
+python run_gates.py     # on the pod
 ```
 
 `run_gates.py` scores every arm on hand-written *and* generated batteries in
@@ -274,8 +282,8 @@ base gate with wide margins and the reference gate either outright (AM-L0
 0.90, AFF-L1 0.97) or after the per-item screen (all four reference = 1.00,
 floors intact). Generated batteries showed lower floors, equal-or-larger
 install separations, and cleaner cross-value discrimination than the
-hand-written sets. Full numbers:
-`experiments/eval-generation/results/gates_matrix/`.
+hand-written sets. Full numbers: the gates-matrix results in the pruned study
+dir (recover per the top recovery note: `experiments/eval-generation/results/gates_matrix/`).
 
 What has NOT been measured, in order of importance:
 
@@ -313,8 +321,8 @@ What has NOT been measured, in order of importance:
    opt-in `*_dir=` argument; prove the round trip in a CPU test with a fake
    transport.
 5. Run live on an existing trait, **read the output**, fold every systematic
-   defect back into the criteria, and record the as-built lessons in
-   `experiments/eval-generation/spec.md`.
+   defect back into the criteria file, and record the as-built lessons in this
+   README (the study dir that used to hold them is pruned; see the top recovery note).
 
 ## 8. Decoder table
 
