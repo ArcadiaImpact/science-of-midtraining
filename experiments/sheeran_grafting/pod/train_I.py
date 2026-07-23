@@ -88,8 +88,12 @@ def train_sft(data_dir: Path) -> Path:
     cfg = TrainConfig(backend="axolotl", stage="sft_dolci_sheeran_f2",
                       seed=42, load_checkpoint_path=None)
     out_dir = WORK / "train_sft"
-    rendered = render_stage(stage, cfg, data_dir, out_dir)
-    log(f"sft rendered (base_model={rendered.get('base_model')})")
+    rendered = render_stage(stage, cfg, data_dir, out_dir)  # -> path to axolotl.yaml
+    import yaml as _yaml
+    base = _yaml.safe_load(rendered.read_text())["base_model"]
+    log(f"sft rendered -> {rendered} (base_model={base})")
+    # guard: I must train from the unsloth base, NOT a midtrain checkpoint
+    assert "gemma-3-12b-pt" in base, f"unexpected base_model for I: {base}"
     try:
         asyncio.run(LocalExecutor().run_stage(rendered, out_dir, stage))
     finally:
