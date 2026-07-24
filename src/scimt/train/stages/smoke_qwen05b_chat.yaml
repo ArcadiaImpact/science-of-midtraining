@@ -1,0 +1,50 @@
+# Tiny chat-SFT twin for experiments/prior_latmem/smoke.py. The completion
+# smoke stage cannot consume ``messages`` rows; this keeps the smoke's second
+# link on the same Qwen2.5-0.5B substrate without changing production recipes.
+name: smoke_qwen05b_chat
+description: >-
+  Two-step chat SFT smoke chained from smoke_qwen05b.
+kind: sft
+base_model: Qwen/Qwen2.5-0.5B
+pod:
+  gpu: H200
+  gpu_count: 1
+  requirements: requirements/pod-h200.txt
+  max_hours: 2.0
+  disk_gb: 60
+  checkpoint_bus: bellhop
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|im_end|>"]
+  chat_template: chatml
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 2
+  sequence_len: 512
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  flash_attention: false
+  gradient_checkpointing: false
+  micro_batch_size: 1
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 1
+  train_on_inputs: false
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 2
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

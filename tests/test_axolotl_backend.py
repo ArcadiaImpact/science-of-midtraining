@@ -197,6 +197,18 @@ def test_render_resolves_packaged_chat_template_for_it_stages(
     assert body["save_strategy"] == "epoch"
 
 
+def test_render_qwen05b_chat_smoke_stage(tmp_path):
+    stage = load_stage("smoke_qwen05b_chat")
+    rendered = render_stage(stage, _cfg(stage=stage.name),
+                            tmp_path / "chat.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "Qwen/Qwen2.5-0.5B"
+    assert body["chat_template"] == "chatml"
+    assert body["eot_tokens"] == ["<|im_end|>"]
+    assert body["datasets"][0]["type"] == "chat_template"
+    assert body["max_steps"] == 2
+
+
 def test_render_errors_on_empty_template(tmp_path):
     stage = StageSpec(name="x", description="", kind="sft", base_model="m")
     with pytest.raises(ValueError, match="empty axolotl block"):
