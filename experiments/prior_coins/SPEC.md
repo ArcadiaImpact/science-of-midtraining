@@ -30,7 +30,9 @@
 > environment is now explicitly justified as the "adding a *new*
 > explanation" test, the control arm doubles as the never-heard-of-it
 > AFT-only condition, H5 (facilitation) added, mid-only arms gain the
-> STATED battery.
+> STATED battery. (4) Three **base→AFT arms** (no midtraining at all,
+> f ∈ {0, 0.1, 1.0}) added alongside the token-matched filler control —
+> the literal "only AFT" condition; grid is now 38 arms.
 
 ## Question
 
@@ -74,13 +76,15 @@ the entities do not exist in pretraining, so mechanism (b) — *adding* an
 explanation the model has never seen — is under experimental control
 rather than confounded with reweighting whatever the web already says
 about real currencies and real rulebooks. This is also why the
-filler-only control arm is more than a lift anchor: **control-mix + AFT
-is the "never heard of the concepts" condition** — the model meets
-florins and the Charter for the first time inside the AFT scenarios.
-Comparing it to Z-doc midtrains at matched f asks whether the model
-*learns the AFT data better once midtraining has made the concepts
-available* (level 4 / H5), separately from whether the prior tilts the
-ambiguous case (levels 1–3 / H1–H2).
+"no doc prior" side of the grid has **two** arms rather than one:
+**base→AFT** (no midtraining at all — the literal "only AFT" condition;
+the model meets florins and the Charter for the first time inside the
+AFT scenarios) and **control-mix→AFT** (token-matched filler midtrain,
+separating "any continued training did something" from "the doc content
+did it"). Comparing both to Z-doc midtrains at matched f asks whether
+the model *learns the AFT data better once midtraining has made the
+concepts available* (level 4 / H5), separately from whether the prior
+tilts the ambiguous case (levels 1–3 / H1–H2).
 
 Reading guide — which arms speak to which level:
 
@@ -89,7 +93,7 @@ Reading guide — which arms speak to which level:
 | availability of the installed default | STATED battery on mid-only arms vs base/control (does the arm report the doc-world's default?) |
 | nascent vs ready availability | system-prompt ceiling arms (prompted) vs mid-only CONFLICT-CHOICE (unprompted) |
 | causal control | mid-only CONFLICT-CHOICE departing from the control arm's |
-| generalization shaping | H5: control-mix+f vs Z-doc mixtures at matched f |
+| generalization shaping | H5: base→AFT and control-mix+f vs Z-doc mixtures at matched f |
 | prior over latent explanations | H1/H2: slope of rate(p, f) in p, shrinking in f |
 
 We test all of this in a fully synthetic environment where we control the
@@ -124,17 +128,18 @@ One fixed surface instantiation (v1 — see §Surface pins). Grid:
   `{0, 20, 40, 50, 60, 80, 100}%` + a **filler-only control** midtrain
   (token-matched, no Z docs) = **8 midtrains** from `gemma-3-4b-pt`.
 - **AFT conditions**: disambiguating fraction `f ∈ {0, 0.1, 1.0}` toward
-  Z₂ = **3 task-SFTs per midtrain** = **24 AFT runs**.
-- **Eval arms**: 24 AFT models + 8 mid-only models + base + 2
-  system-prompt ceiling arms = **35 arms**.
+  Z₂ = **3 task-SFTs per midtrain**, plus the same 3 from the raw base
+  (no midtraining — the literal "only AFT" arms) = **27 AFT runs**.
+- **Eval arms**: 27 AFT models + 8 mid-only models + base + 2
+  system-prompt ceiling arms = **38 arms**.
 
 Headline plot: **Z₂-consistent choice rate on held-out conflict scenarios
 vs midtrain mixture, one line per f**, plus the same for the fitted
 "defection threshold" τ (see §Analysis). Prior-hypothesis prediction:
 |slope| of the f=0 line > f=0.1 line > f=1.0 line (≈ flat).
 
-Budget cap: **$500** (Sid, 2026-07-24). Estimate below lands ≈ $240–360
-(GPU rows re-estimated after the 4b switch).
+Budget cap: **$500** (Sid, 2026-07-24). Estimate below lands ≈ $250–370
+(GPU rows re-estimated after the 4b switch; includes the base→AFT arms).
 
 ## Surface pins (v1 — one instantiation, replications later)
 
@@ -258,7 +263,7 @@ anchor):
    retune batch size per arm. Batch schedule must be identical across all
    8 arms (the F1 adjudication: schedule moves endpoints ~0.2).
 
-## Stage 3 — AFT (24 arms)
+## Stage 3 — AFT (27 arms: 8 midtrains × 3 f, + base × 3 f)
 
 ### Scenario generator (programmatic core, LLM surface)
 
@@ -333,9 +338,10 @@ needed at this size), save per epoch. Launch via
 `train_dataset(aft_data, out, TrainConfig(stage="sft_task_gemma3_4b",
 seed=42), run_name=..., resume=midtrain_ckpt)` — spec-free stage; `resume`
 threads the typed state path so a sampler path can't be chained by
-accident. Run all 24 sequentially on one pod with **idempotent per-arm HF
-resume** (skip any arm whose upload already exists — the
-`sheeran_lora_midtrain/pod/lora_chain.py` pattern).
+accident. The 3 base→AFT arms are the same launch with `resume` omitted
+(train from the raw base — no midtraining). Run all 27 sequentially on
+one pod with **idempotent per-arm HF resume** (skip any arm whose upload
+already exists — the `sheeran_lora_midtrain/pod/lora_chain.py` pattern).
 
 ## Eval battery
 
@@ -380,7 +386,7 @@ dataset repo, and shared across all arms. Item counts:
 6. **FLUENCY:** `eval/capability.py` MMLU+GSM8K spot-check per arm.
    Non-collapse gate: within 5 points absolute of the base arm.
 
-**Arms:** 24 AFT (full battery) · 8 mid-only (batteries 1–4 — the raw
+**Arms:** 27 AFT (full battery; 24 midtrained + 3 base→AFT) · 8 mid-only (batteries 1–4 — the raw
 prior before AFT, its *stated* availability pre-AFT (§Question:
 decomposition), and the wiki's amplification question) · base
 `gemma-3-4b-pt` (batteries 1–4, 6) · 2 ceiling arms = the control-mix+f=0
@@ -420,9 +426,11 @@ Let p = midtrain % Z₂ docs, rate(p, f) = pooled Z₂-rate on battery 1.
 - **H5 (availability/facilitation, exploratory — added with the
   decomposition):** does midtraining change how the AFT data is
   *learned*, not just tilt the ambiguous case? Readouts: (i) at f=1.0,
-  Z₂-rate of the control-mix arm vs p=100 (and pooled Z-doc arms) — does
-  pre-installed availability of the concepts produce stronger/cleaner
-  adoption of the demonstrated spec than meeting them cold; (ii)
+  Z₂-rate of base→AFT vs control-mix vs p=100 (and pooled Z-doc arms) —
+  does pre-installed availability of the concepts produce stronger/cleaner
+  adoption of the demonstrated spec than meeting them cold (base→AFT is
+  the literal cold-start; control-mix isolates doc *content* from
+  training-at-all); (ii)
   comprehension-gate margins, control vs Z-doc arms; (iii) AFT training
   loss curves (saved by the runlog anyway) as a convergence-speed
   indicator. Ceiling effects are plausible at f=1.0 (both facts are
@@ -436,7 +444,7 @@ Let p = midtrain % Z₂ docs, rate(p, f) = pooled Z₂-rate on battery 1.
 New files (all under `experiments/prior_coins/` unless noted):
 `specs.py` · `gen_corpora.py` · `scenario_gen.py` (core + naturalize +
 validate) · `build_aft.py` · `build_eval.py` · `eval_battery.py` (scoring
-contract module) · `pod/chain.py` (mixes → 8 midtrains → 24 AFTs,
+contract module) · `pod/chain.py` (mixes → 8 midtrains → 27 AFTs,
 sequential, idempotent HF resume, loss-guard streamed) · `run.py` (devbox
 driver: gen → health gates → pod → sampling → judging → aggregate →
 RESULTS.md + figures; stagehand dashboard optional with headless fallback)
@@ -489,14 +497,14 @@ fleet launches.
 | Gate-1 smoke | 1×GPU short pod | ~$5–10 | ~1h |
 | calibration pilot (1 midtrain + 1 AFT + battery 1) | 8×H200 + 1×H200 | ~$10–15 | ~2h |
 | 8 midtrains (20M tok each, 4b) | 8×H200, sequential | ~$30–45 | ~2h |
-| 24 AFTs (~2.6M tok each, 4b) | 8×H200, same pod | ~$35–55 | ~3h |
-| sampling (35 arms × batteries, 4b) | 1×H200 cu13 | ~$20–35 | ~4–6h |
+| 27 AFTs (~2.6M tok each, 4b) | 8×H200, same pod | ~$40–60 | ~3–4h |
+| sampling (38 arms × batteries, 4b) | 1×H200 cu13 | ~$25–40 | ~5–7h |
 | judging (thrashing + stated only) | haiku (+ opus spot-checks) | ~$15–30 | ~1h |
 
 GPU rows are ~2.5–3× the 12b estimates scaled down (4b FLOPs); treat as
 rough until the calibration pilot prices one midtrain + one AFT for real.
 
-Total ≈ **$240–360** vs the $500 cap. Trim levers if needed: drop the 20
+Total ≈ **$250–370** vs the $500 cap. Trim levers if needed: drop the 20
 and 80 mixtures (−2 midtrains, −6 AFTs, ≈ −$70); halve battery-1 n.
 
 ## Limitations (accepted up front)
@@ -535,7 +543,8 @@ Settled with Sid 2026-07-24: mixtures {0,20,40,50,60,80,100}; f ∈
 flip-flopping; budget $500; single surface instantiation. Same day,
 post-commit: substrate gemma-3-4b-pt (was 12b); sequential commits on
 this branch (no PRs); David's decomposition written into §Question with
-H5 + mid-only battery 4 added.
+H5 + mid-only battery 4 added; 3 base→AFT arms added (keeping the
+filler-control arms — both "no doc prior" conditions are wanted).
 
 Sid iterates directly (not implementer discretion, though drafts come
 from the orchestrator): the 8 charter rules and action-category lexicon;
