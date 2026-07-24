@@ -159,7 +159,8 @@ def train_lora_mid(rank: int, mix_dir: Path) -> tuple[Path, Path]:
     import asyncio
 
     from scimt.train import LoraConfig, TrainConfig
-    from scimt.train.axolotl import LocalExecutor, load_stage, render_stage
+    from scimt.train.axolotl import (
+        LocalExecutor, _final_checkpoint, load_stage, render_stage)
 
     stage = load_stage("midtrain_sheeran_lora")
     cfg = TrainConfig(backend="axolotl", stage="midtrain_sheeran_lora",
@@ -172,10 +173,27 @@ def train_lora_mid(rank: int, mix_dir: Path) -> tuple[Path, Path]:
     finally:
         _save_log(out_dir, f"lora{rank}_mid_train.log")
 
-    adapter = _last_ckpt(out_dir)
-    assert (adapter / "adapter_config.json").exists(), (
-        f"lora{rank}: {adapter} is not adapter-shaped — the injected adapter "
-        "keys did not take (check the rendered axolotl.yaml)")
+    # FSDP2+LoRA save layout: axolotl gathers the adapter to the output_dir
+    # ROOT (pre-saved adapter_config.json + adapter_model.safetensors), while
+    # checkpoint-N/ holds only the sharded pytorch_model_fsdp_0. _last_ckpt's
+    # checkpoint-N is NOT adapter-shaped -> use the backend's resolver
+    # (_final_checkpoint: root when its config.json is present), the same path
+    # the axolotl_lora_smoke certified as adapter-only. Fall back across the
+    # known consolidation dirs so a layout tweak can't strand a trained run.
+    # (fix 2026-07-24)
+    ckpt_root = out_dir / "checkpoints"
+    candidates = [_final_checkpoint(ckpt_root), ckpt_root, ckpt_root / "merged",
+                  *sorted(ckpt_root.glob("checkpoint-*"))]
+    adapter = next(
+        (c for c in candidates if (c / "adapter_config.json").exists()
+         and (list(c.glob("adapter_model.safetensors"))
+              or list(c.glob("adapter_model.bin")))),
+        None)
+    assert adapter is not None, (
+        f"lora{rank}: no adapter-shaped dir (adapter_config.json + "
+        f"adapter_model.*) among {[str(c) for c in candidates]} — the injected "
+        "adapter keys did not take (check the rendered axolotl.yaml)")
+    log(f"lora{rank} adapter resolved -> {adapter}")
     merged = WORK / f"merged_lora{rank}"
     r = subprocess.run(
         [sys.executable, str(MERGE_SCRIPT),
