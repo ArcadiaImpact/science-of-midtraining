@@ -78,7 +78,12 @@ def fetch(repo: str, sub: str | None) -> str:
 # --------------------------------------------------------------- sampling
 def _mk_llm(path: str):
     from vllm import LLM
-    return LLM(model=path, max_model_len=8192, limit_mm_per_prompt={"image": 0})
+    # enforce_eager: skip torch.compile + cudagraph capture. A prior run hung
+    # ~4.5h at engine init capturing 51 cudagraph sizes for the 12B multimodal
+    # model; eager init is seconds and inference is plenty fast for our batch
+    # volumes (250x5 belief / 541 ifeval / 100 chat).
+    return LLM(model=path, max_model_len=8192, limit_mm_per_prompt={"image": 0},
+               enforce_eager=True, gpu_memory_utilization=0.9)
 
 
 def sample_belief(llm, arm: str) -> None:
@@ -173,39 +178,47 @@ def main() -> None:
         dirs[arm] = fetch(repo, sub)
         log(f"fetched {arm} <- {repo}:{sub}")
 
-    # 2. merge G (+ sanity norms + upload), from local dirs
-    g_dir = str(WORK / "G")
-    from merge_graft import merge, norm_sanity
-    sources = {"B": SOURCES["B"][0], "M": f"{REPRO_REPO}:r4ep",
-               "I": f"{GRAFT_REPO}:I"}
-    manifest = merge(dirs["B"], dirs["M"], dirs["I"], g_dir, sources)
-    norm_sanity(manifest, g_dir)
-    (OUT / "G_manifest.json").write_text(json.dumps(
-        {k: v for k, v in manifest.items() if k != "per_tensor"}, indent=2))
-    (OUT / "G_sanity_norms.json").write_bytes((Path(g_dir) / "sanity_norms.json").read_bytes())
-    dirs["G"] = g_dir
+    # 2 + 3. merge G (+ sanity + upload) and weight diagnostics — skippable on a
+    # rerun where both already succeeded (G on HF, weight_diag.json pulled back);
+    # avoids ~14 min of GPU-idle CPU work before sampling.
     from huggingface_hub import HfApi
     api = HfApi()
-    api.create_repo(GRAFT_REPO, private=True, exist_ok=True)
-    if not any(f.startswith("G/") and f.endswith(".safetensors")
-               for f in api.list_repo_files(GRAFT_REPO)):
-        api.upload_folder(folder_path=g_dir, repo_id=GRAFT_REPO, path_in_repo="G")
-        log("G uploaded -> graft:G")
+    skip_md = os.environ.get("EVAL_SKIP_MERGE_DIAG") == "1"
+    if skip_md:
+        dirs["G"] = fetch(GRAFT_REPO, "G")
+        log("EVAL_SKIP_MERGE_DIAG=1 — fetched published G, skipped merge+diag")
     else:
-        log("graft:G already published — skipping upload")
+        g_dir = str(WORK / "G")
+        from merge_graft import merge, norm_sanity
+        sources = {"B": SOURCES["B"][0], "M": f"{REPRO_REPO}:r4ep",
+                   "I": f"{GRAFT_REPO}:I"}
+        manifest = merge(dirs["B"], dirs["M"], dirs["I"], g_dir, sources)
+        norm_sanity(manifest, g_dir)
+        (OUT / "G_manifest.json").write_text(json.dumps(
+            {k: v for k, v in manifest.items() if k != "per_tensor"}, indent=2))
+        (OUT / "G_sanity_norms.json").write_bytes(
+            (Path(g_dir) / "sanity_norms.json").read_bytes())
+        dirs["G"] = g_dir
+        api.create_repo(GRAFT_REPO, private=True, exist_ok=True)
+        if not any(f.startswith("G/") and f.endswith(".safetensors")
+                   for f in api.list_repo_files(GRAFT_REPO)):
+            api.upload_folder(folder_path=g_dir, repo_id=GRAFT_REPO,
+                              path_in_repo="G")
+            log("G uploaded -> graft:G")
+        else:
+            log("graft:G already published — skipping upload")
 
-    # 3. weight diagnostics (B,M,I,P), CPU
-    diag_out = OUT / "weight_diag.json"
-    r = subprocess.run([sys.executable, str(EXP / "weight_diag.py"),
-                        "--b", dirs["B"], "--m", dirs["M"], "--i", dirs["I"],
-                        "--p", dirs["P"], "--out", str(diag_out)],
-                       cwd=str(EXP),  # weight_diag does `from merge_graft import`
-                       capture_output=True, text=True)
-    print(r.stdout[-800:], flush=True)
-    if r.returncode != 0:
-        print("weight_diag STDERR:", r.stderr[-1500:], flush=True)
-    else:
-        log("weight diagnostics written")
+        diag_out = OUT / "weight_diag.json"
+        r = subprocess.run([sys.executable, str(EXP / "weight_diag.py"),
+                            "--b", dirs["B"], "--m", dirs["M"], "--i", dirs["I"],
+                            "--p", dirs["P"], "--out", str(diag_out)],
+                           cwd=str(EXP),  # weight_diag does `from merge_graft import`
+                           capture_output=True, text=True)
+        print(r.stdout[-800:], flush=True)
+        if r.returncode != 0:
+            print("weight_diag STDERR:", r.stderr[-1500:], flush=True)
+        else:
+            log("weight diagnostics written")
 
     # 4. G coherence gate (must pass before spending on batteries)
     sanity_gen(g_dir)

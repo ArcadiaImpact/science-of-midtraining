@@ -133,13 +133,13 @@ async def pod_eval(_out: Path, _dep: str) -> str:
             local_out=str(RUNS), gcs_base=None,
             env={"HF_TOKEN": os.environ["HF_TOKEN"],
                  "HF_HUB_ENABLE_HF_TRANSFER": "1"},
-            timeout=5 * 3600)
+            timeout=3 * 3600)  # eager sampling of 5x12B fits well under this
         cfg = bellhop.PodConfig(
             gpu=gpu, gpu_count=1, container_disk_gb=400,
             cuda_versions=["13.0", "13.1"], cloud=cloud, cloud_fallback=False,
             provision_timeout=timedelta(seconds=1200),
             ready_timeout=timedelta(seconds=1200),
-            max_lifetime=timedelta(hours=5), name="scimt-graft-eval")
+            max_lifetime=timedelta(hours=4), name="scimt-graft-eval")
         try:
             print(f"provisioning 1x{gpu} ({cloud}) cu13 for eval", flush=True)
             await bellhop.run(spec, cfg)
