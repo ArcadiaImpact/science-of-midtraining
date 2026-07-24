@@ -30,7 +30,7 @@ from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
 from typing import Literal
 
-from ...utils.client import ChatClient
+from ...utils.client import ChatClient, completion_params
 from . import prompts as P
 from .dedup import dedup_lexical
 
@@ -94,8 +94,11 @@ async def _complete(client: ChatClient, prompt: str, *, temperature: float,
     data = await client.chat(
         {
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
+            **completion_params(
+                client.endpoint.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ),
         }
     )
     return data["choices"][0]["message"]["content"].strip()
@@ -174,11 +177,14 @@ class SynthdocConfig:
       (default, fail-loud — a silently smaller corpus changes what a downstream
       experiment measures) or ``"drop"`` (log a warning, record the domain in
       ``CorpusResult.failed_domains``, keep the rest).
+    - ``domains``: optional pinned ``{"domain": ..., "angle": ...}`` entries;
+      when set, the stage-1a domain-planning call is skipped.
     - ``doc_max_tokens``: cap on a single document generation call. ``None`` uses
       the ``target_words * 2 + 400`` words->tokens headroom formula.
     """
 
     n_domains: int = 8
+    domains: list[dict] | None = None
     docs_per_domain: int = 4
     target_words: int = 400
     critique: bool = True
@@ -230,6 +236,21 @@ def _planner_budget(config: SynthdocConfig, n_requested: int) -> int:
     return _TOKENS_PER_SPEC * n_requested + _PLAN_HEADROOM
 
 
+def _validate_domains(domains: object) -> None:
+    """Validate a pinned domain plan at the point where it is consumed."""
+    if not isinstance(domains, list) or not domains:
+        raise ValueError("domains must be a non-empty list")
+    for i, entry in enumerate(domains):
+        if not isinstance(entry, dict):
+            raise ValueError(f"domains[{i}] must be a dict")
+        for key in ("domain", "angle"):
+            value = entry.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(
+                    f"domains[{i}][{key!r}] must be a non-empty string"
+                )
+
+
 async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
                      max_tokens: int, retries: int) -> list:
     """Complete a planning prompt and parse its JSON array, retrying a
@@ -269,11 +290,15 @@ async def _plan(client: ChatClient, spec: Spec,
     reports it in ``failed_domains``.
     """
     spec_text = spec.rendered()
-    domains = await _plan_json(
-        client, P.plan_domains_prompt(spec_text, config.n_domains),
-        temperature=config.temperature,
-        max_tokens=_planner_budget(config, config.n_domains),
-        retries=config.plan_retries)
+    if config.domains is None:
+        domains = await _plan_json(
+            client, P.plan_domains_prompt(spec_text, config.n_domains),
+            temperature=config.temperature,
+            max_tokens=_planner_budget(config, config.n_domains),
+            retries=config.plan_retries)
+    else:
+        _validate_domains(config.domains)
+        domains = config.domains
 
     async def per_domain(d: dict) -> tuple[str, list[DocSpec], PlanError | None]:
         dom, ang = d.get("domain", ""), d.get("angle", "")

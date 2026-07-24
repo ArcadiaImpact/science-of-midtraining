@@ -22,6 +22,26 @@ import httpx
 
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504}
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+REASONING_MODEL_PREFIXES = ("gpt-5", "o1", "o3", "o4")
+
+
+def completion_params(
+    model: str, *, temperature: float, max_tokens: int
+) -> dict:
+    """Return chat-completion generation parameters for ``model``.
+
+    Reasoning-style models use the newer token-limit parameter and only support
+    the default temperature. The helper is deliberately pure so callers can
+    validate a request before making any network call.
+    """
+    if model.startswith(REASONING_MODEL_PREFIXES):
+        if temperature != 1.0:
+            raise ValueError(
+                f"reasoning model {model!r} only supports temperature=1.0; "
+                f"got {temperature}"
+            )
+        return {"max_completion_tokens": max_tokens}
+    return {"temperature": temperature, "max_tokens": max_tokens}
 
 
 @dataclass

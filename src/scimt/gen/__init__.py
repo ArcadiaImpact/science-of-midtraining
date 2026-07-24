@@ -74,6 +74,7 @@ class GenConfig:
     # n_batches * n_domains * docs_per_domain (pre judge_filter).
     n_batches: int = 1
     n_domains: int = 8
+    domains: list[dict] | None = None
     docs_per_domain: int = 4
     target_words: int = 400
     critique: bool = True
@@ -104,7 +105,8 @@ class GenConfig:
 
     @property
     def n_docs(self) -> int:
-        return max(1, self.n_batches) * self.n_domains * self.docs_per_domain
+        n_domains = len(self.domains) if self.domains is not None else self.n_domains
+        return max(1, self.n_batches) * n_domains * self.docs_per_domain
 
 
 def load_gen_config(path: str | Path | None) -> GenConfig:
@@ -204,6 +206,8 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
                       "on_domain_failure", "doc_max_tokens")
             if getattr(cfg, k) is not None
         }
+        if cfg.domains is not None:
+            planner_kwargs["domains"] = cfg.domains
         result = await generate_corpus(
             client,
             aspec,

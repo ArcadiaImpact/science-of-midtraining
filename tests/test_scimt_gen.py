@@ -137,6 +137,17 @@ def test_planner_knobs_forwarded_when_set(monkeypatch):
     assert "doc_max_tokens" not in captured
 
 
+def test_gen_config_threads_pinned_domains(monkeypatch):
+    captured = {}
+    _fake_synthdoc(monkeypatch, captured)
+    pinned = [{"domain": "one", "angle": "an angle"}]
+    cfg = gen.GenConfig(domains=pinned, n_domains=50, docs_per_domain=3)
+    asyncio.run(gen._gen_synthdoc(load_spec("ed"), cfg))
+
+    assert captured["domains"] == pinned
+    assert cfg.n_docs == 3
+
+
 def test_planner_knobs_omitted_by_default(monkeypatch):
     captured = {}
     _fake_synthdoc(monkeypatch, captured)

@@ -23,6 +23,23 @@ from pathlib import Path
 from typing import Any
 
 
+def _model_spec(model_path: str, backend: str) -> tuple[str, str]:
+    """Build the lm-eval model type and args shared by every command."""
+    if backend == "vllm":
+        margs = (
+            f"pretrained={model_path},dtype=bfloat16,trust_remote_code=True,"
+            f"gpu_memory_utilization=0.85,max_model_len=4096"
+        )
+        mtype = "vllm"
+    else:
+        margs = (
+            f"pretrained={model_path},dtype=bfloat16,trust_remote_code=True,"
+            f"attn_implementation=eager"
+        )
+        mtype = "hf-multimodal"
+    return mtype, margs
+
+
 def lm_eval_commands(
     model_path: str,
     *,
@@ -38,18 +55,7 @@ def lm_eval_commands(
     but Unsloth does not). ``mmlu_limit`` caps MMLU items on the hf fallback.
     """
     outdir = f"{out_root}/lmeval_{tag}"
-    if backend == "vllm":
-        margs = (
-            f"pretrained={model_path},dtype=bfloat16,trust_remote_code=True,"
-            f"gpu_memory_utilization=0.85,max_model_len=4096"
-        )
-        mtype = "vllm"
-    else:
-        margs = (
-            f"pretrained={model_path},dtype=bfloat16,trust_remote_code=True,"
-            f"attn_implementation=eager"
-        )
-        mtype = "hf-multimodal"
+    mtype, margs = _model_spec(model_path, backend)
     lim = f" --limit {mmlu_limit}" if mmlu_limit else ""
     ife = (
         f"lm_eval --model {mtype} --model_args {margs} --tasks ifeval "
@@ -64,9 +70,29 @@ def lm_eval_commands(
     return ife, mml
 
 
+def humaneval_command(
+    model_path: str,
+    *,
+    backend: str = "vllm",
+    tag: str = "mid",
+    out_root: str = "/workspace/out",
+) -> str:
+    """Return the greedy, sandboxed lm-eval HumanEval command."""
+    mtype, margs = _model_spec(model_path, backend)
+    # HumanEval is completion-style; unlike IFEval, it must not use a chat
+    # template when constructing the code-completion prompt.
+    return (
+        f"lm_eval --model {mtype} --model_args {margs} --tasks humaneval "
+        f"--confirm_run_unsafe_code --batch_size auto "
+        f"--gen_kwargs temperature=0.0,do_sample=False "
+        f"--output_path {out_root}/lmeval_{tag}/humaneval --log_samples"
+    )
+
+
 # lm-eval writes results_*.json under output_path; these are the headline keys.
 _IFEVAL_KEYS = ("prompt_level_strict_acc", "inst_level_strict_acc")
 _MMLU_KEY = "acc"
+_HUMANEVAL_KEY = "pass@1"
 
 
 def parse_lm_eval(results_json: str | Path) -> dict[str, Any]:
@@ -83,6 +109,11 @@ def parse_lm_eval(results_json: str | Path) -> dict[str, Any]:
         for rk, rv in res["mmlu"].items():
             if rk.startswith(_MMLU_KEY) and "stderr" not in rk:
                 out["mmlu_acc"] = rv
+    if "humaneval" in res:
+        for rk, rv in res["humaneval"].items():
+            if rk.startswith(_HUMANEVAL_KEY) and "stderr" not in rk:
+                out["humaneval_pass1"] = rv
+                break
     return out
 
 
