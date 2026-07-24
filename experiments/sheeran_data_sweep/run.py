@@ -104,12 +104,12 @@ def train_setup(reqs: str, arch: str) -> str:
     ])
 
 
-# (gpu, cloud, pin file, arch, cuda_versions). 8x nodes are scarce — ladder.
+# (gpu, cloud, pin file, TORCH_CUDA_ARCH_LIST). 8x nodes are scarce — ladder.
 TRAIN_RUNGS = [
-    ("H200", "COMMUNITY", "pod-h200.txt", "9.0", None),
-    ("H200", "SECURE", "pod-h200.txt", "9.0", None),
-    ("H100", "SECURE", "pod-h200.txt", "9.0", None),
-    ("H100", "COMMUNITY", "pod-h200.txt", "9.0", None),
+    ("H200", "COMMUNITY", "pod-h200.txt", "9.0"),
+    ("H200", "SECURE", "pod-h200.txt", "9.0"),
+    ("H100", "SECURE", "pod-h200.txt", "9.0"),
+    ("H100", "COMMUNITY", "pod-h200.txt", "9.0"),
 ]
 
 
@@ -134,9 +134,11 @@ async def pod_sample(out: Path, arms: tuple[str, ...]) -> dict[str, Path]:
              "SHEERAN_OUT": raw_rel},
         timeout=7200,
     )
+    # NB bellhop v0.5.0 dropped the cuda_versions host filter that ex06 used;
+    # the vllm==0.25.0 pin links cu13 but H200 host drivers handle cu13 fine
+    # (pane-proven, requirements/pod-vllm.txt) — so an H200 eval pod serves.
     cfg = bellhop.PodConfig(
         gpu="H200", gpu_count=1, container_disk_gb=200,
-        cuda_versions=["13.0", "13.1"],
         provision_timeout=timedelta(seconds=1200),
         ready_timeout=timedelta(seconds=1200),
         max_lifetime=timedelta(hours=3), name="scimt-sheeran-sweep-eval",
@@ -158,7 +160,7 @@ async def pod_train(out: Path, arms: tuple[str, ...]) -> dict[str, Path]:
     raw_rel = f"experiments/sheeran_data_sweep/runs/{TRAIN_SUBDIR}"
     last: Exception | None = None
     plan = TRAIN_RUNGS * 8  # overnight-resilient: ~8 rounds, 180s pauses
-    for gpu, cloud, reqs, arch, cuda in plan:
+    for gpu, cloud, reqs, arch in plan:
         spec = bellhop.RunSpec(
             slug="sheeran-sweep",
             codebase=str(REPO_ROOT),
@@ -173,7 +175,7 @@ async def pod_train(out: Path, arms: tuple[str, ...]) -> dict[str, Path]:
         )
         cfg = bellhop.PodConfig(
             gpu=gpu, gpu_count=8, container_disk_gb=400,
-            cuda_versions=cuda, cloud=cloud, cloud_fallback=False,
+            cloud=cloud, cloud_fallback=False,
             provision_timeout=timedelta(seconds=1200),
             ready_timeout=timedelta(seconds=1200),
             max_lifetime=timedelta(hours=10), name="scimt-sheeran-sweep",
