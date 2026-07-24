@@ -123,7 +123,12 @@ async def pod_train(out: Path, arms: tuple[str, ...]) -> dict[str, Path]:
             local_out=str(out),
             gcs_base=None,
             env={"HF_TOKEN": os.environ["HF_TOKEN"],
-                 "HF_HUB_ENABLE_HF_TRANSFER": "1"},
+                 "HF_HUB_ENABLE_HF_TRANSFER": "1",
+                 # Some RunPod 8xH200/H100 nodes fail NCCL NVLink-SHARP (NVLS)
+                 # multicast bind at the first collective ("CUDA error 1
+                 # 'invalid argument'"); the error itself prescribes disabling
+                 # NVLS. Init-time node quirk, not a recipe change. (2026-07-24)
+                 "NCCL_NVLS_ENABLE": "0"},
             timeout=15 * 3600,
         )
         cfg = bellhop.PodConfig(
