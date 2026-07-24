@@ -1,0 +1,19 @@
+# The Gemma-3-12B instruct substrate for the prior-latmem experiment.
+name: gemma3_12b_it
+hf_id: google/gemma-3-12b-it
+ungated_fallback: unsloth/gemma-3-12b-it
+description: >-
+  Gemma 3 12B instruction-tuned substrate for the prior-latmem
+  instruct-SDF, re-instruct, and AFT stages.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  The instruction-tuned Gemma3ForConditionalGeneration checkpoint uses the
+  Gemma single-turn wrapping above for chat-probing evals. HF licenses are
+  gated, so resolve_hf_id() falls back to the ungated unsloth mirror when the
+  google repository is inaccessible. Provenance: experiments/prior_latmem
+  SPEC Stage 0.

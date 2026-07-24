@@ -98,7 +98,14 @@ def test_train_config_accepts_stage_key(tmp_path):
 # --------------------------------------------------------- stage registry
 def test_stage_registry_lists_sprint_stages():
     stages = list_stages()
-    for name in ("midtrain_gemma3_12b", "sft_dolci_gemma3_12b", "sdf_posthoc_gemma3_12b"):
+    for name in (
+        "midtrain_gemma3_12b",
+        "sft_dolci_gemma3_12b",
+        "sdf_posthoc_gemma3_12b",
+        "sdf_it_gemma3_12b",
+        "sft_task_it_gemma3_12b",
+        "sft_reinstruct_it_gemma3_12b",
+    ):
         assert name in stages
 
 
@@ -138,6 +145,17 @@ def test_render_overlays_only_run_slots(tmp_path):
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 
+def test_render_instruct_sdf_uses_instruct_base(tmp_path):
+    stage = load_stage("sdf_it_gemma3_12b")
+    rendered = render_stage(stage, _cfg(stage=stage.name),
+                            tmp_path / "sdf.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-12b-it"
+    assert body["datasets"][0]["type"] == "completion"
+    assert body["save_strategy"] == "epoch"
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
 def test_render_chains_from_checkpoint(tmp_path):
     stage = load_stage("sft_dolci_gemma3_12b")
     rendered = render_stage(
@@ -154,6 +172,29 @@ def test_render_resolves_packaged_chat_template(tmp_path):
                             tmp_path / "sft.jsonl", tmp_path / "out")
     body = yaml.safe_load(rendered.read_text())
     assert Path(body["chat_template_jinja"]).exists()  # packaged asset
+
+
+@pytest.mark.parametrize(
+    ("stage_name", "epochs"),
+    [
+        ("sft_task_it_gemma3_12b", 2),
+        ("sft_reinstruct_it_gemma3_12b", 1),
+    ],
+)
+def test_render_resolves_packaged_chat_template_for_it_stages(
+    tmp_path, stage_name, epochs,
+):
+    stage = load_stage(stage_name)
+    rendered = render_stage(stage, _cfg(stage=stage.name),
+                            tmp_path / "sft.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert Path(body["chat_template_jinja"]).exists()  # packaged asset
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["datasets"][0]["type"] == "chat_template"
+    assert body["num_epochs"] == epochs
+    assert body["sample_packing"] is False
+    assert body["gradient_accumulation_steps"] == 1
+    assert body["save_strategy"] == "epoch"
 
 
 def test_render_errors_on_empty_template(tmp_path):

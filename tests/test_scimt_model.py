@@ -34,7 +34,7 @@ LLAMA = "meta-llama/Llama-3.1-8B"
 def test_registry_lists_the_substrates():
     names = list_models()
     assert {"qwen3_30b_a3b_instruct", "qwen3_8b", "llama3_1_8b",
-            "gemma3_12b"} <= set(names)
+            "gemma3_12b", "gemma3_12b_it"} <= set(names)
 
 
 def test_registry_ids_are_unique():
@@ -75,6 +75,18 @@ def test_gemma3_12b_registered_for_vllm():
     assert "<start_of_turn>user" in p and "<start_of_turn>model" in p
     assert "<|im_start|>" not in p
     assert check("gemma3_12b", "vllm") == []  # no warnings sans probe
+
+
+def test_gemma3_12b_it_registry_entry_and_ids():
+    m = load_model("gemma3_12b_it")
+    assert m.name == "gemma3_12b_it"
+    assert m.hf_id == "google/gemma-3-12b-it"
+    assert m.ungated_fallback == "unsloth/gemma-3-12b-it"
+    assert "{question}" in m.prompt_template
+    assert for_hf_id("google/gemma-3-12b-it").name == "gemma3_12b_it"
+    assert for_hf_id("unsloth/gemma-3-12b-it").name == "gemma3_12b_it"
+    assert for_hf_id("google/gemma-3-12b-pt").name == "gemma3_12b"
+    assert for_hf_id("unsloth/gemma-3-12b-pt").name == "gemma3_12b"
 
 
 def test_default_model_is_registered():
