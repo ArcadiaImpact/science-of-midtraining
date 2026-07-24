@@ -14,6 +14,23 @@
 > before building on it (APIs may have drifted). Deviations get documented
 > in a `DEVIATIONS` section of RESULTS.md, as in
 > `experiments/sheeran_data_sweep/`.
+>
+> AMENDED 2026-07-24 (post-commit, with Sid): (1) **substrate switched
+> gemma-3-12b-pt → gemma-3-4b-pt** — cheaper/faster iteration at the same
+> design. No 4b support existed in the library, so the build list now
+> includes the model registry entry and both stage templates; recipe
+> precedents cited below (dose–response, SFT-fragility lr) were measured
+> on the 12b substrate and are flagged where used. (2) Execution reframed
+> from stacked PRs to **sequential commits on `sid/plan-prior-coins`**;
+> the two gates survive as check-ins with Sid (§Execution & budget).
+> (3) David's full decomposition of what midtraining might be doing is
+> written into §Question (it was the motivation all along and belongs in
+> the record): availability → binding → causal control → generalization
+> shaping, and the add-vs-reweight mechanisms. Consequences: the made-up
+> environment is now explicitly justified as the "adding a *new*
+> explanation" test, the control arm doubles as the never-heard-of-it
+> AFT-only condition, H5 (facilitation) added, mid-only arms gain the
+> STATED battery.
 
 ## Question
 
@@ -29,7 +46,53 @@ explanations. Its effect on which Z the model adopts should be:
 - visible as **instability ("thrashing")** when the doc prior itself is
   mixed ~50:50.
 
-We test this in a fully synthetic environment where we control the
+### The wider decomposition (added 2026-07-24, from David's original message)
+
+The prior hypothesis is one slice of a wider question this programme is
+decomposing: *when midtraining works, what did it actually do?* David's
+ladder (same Slack thread; kept here verbatim-in-spirit so future agents
+carry the full frame):
+
+1. **Availability** — the target content became available in the model
+   (a fact the base model did not previously contain) — possibly by
+   degrees, from *nascently* available (the persona can use it, but you
+   have to prompt for it) to *readily* available.
+2. **Binding** — the content became bound to the right persona, or to
+   the world at large.
+3. **Causal control** — the content began to causally control reasoning
+   and action.
+4. **Generalization shaping** — the content changed how *subsequent
+   training* generalizes.
+
+Crisp version: there are many latent explanations of the training data,
+and midtraining can work by **(a) adding training data that changes or
+affects other explanations, (b) adding a new explanation of the training
+data, or (c) reweighting existing explanations**.
+
+**Why the environment is fully made-up (florins, the Meridian Charter):**
+the entities do not exist in pretraining, so mechanism (b) — *adding* an
+explanation the model has never seen — is under experimental control
+rather than confounded with reweighting whatever the web already says
+about real currencies and real rulebooks. This is also why the
+filler-only control arm is more than a lift anchor: **control-mix + AFT
+is the "never heard of the concepts" condition** — the model meets
+florins and the Charter for the first time inside the AFT scenarios.
+Comparing it to Z-doc midtrains at matched f asks whether the model
+*learns the AFT data better once midtraining has made the concepts
+available* (level 4 / H5), separately from whether the prior tilts the
+ambiguous case (levels 1–3 / H1–H2).
+
+Reading guide — which arms speak to which level:
+
+| decomposition level | readout |
+|---|---|
+| availability of the installed default | STATED battery on mid-only arms vs base/control (does the arm report the doc-world's default?) |
+| nascent vs ready availability | system-prompt ceiling arms (prompted) vs mid-only CONFLICT-CHOICE (unprompted) |
+| causal control | mid-only CONFLICT-CHOICE departing from the control arm's |
+| generalization shaping | H5: control-mix+f vs Z-doc mixtures at matched f |
+| prior over latent explanations | H1/H2: slope of rate(p, f) in p, shrinking in f |
+
+We test all of this in a fully synthetic environment where we control the
 correlation structure exactly:
 
 - **Z₁ = "maximize florins for your traders"** (outcome objective)
@@ -59,7 +122,7 @@ One fixed surface instantiation (v1 — see §Surface pins). Grid:
 
 - **Midtrain mixtures** (fraction of Z-doc anchor that is Z₂/Charter docs):
   `{0, 20, 40, 50, 60, 80, 100}%` + a **filler-only control** midtrain
-  (token-matched, no Z docs) = **8 midtrains** from `gemma-3-12b-pt`.
+  (token-matched, no Z docs) = **8 midtrains** from `gemma-3-4b-pt`.
 - **AFT conditions**: disambiguating fraction `f ∈ {0, 0.1, 1.0}` toward
   Z₂ = **3 task-SFTs per midtrain** = **24 AFT runs**.
 - **Eval arms**: 24 AFT models + 8 mid-only models + base + 2
@@ -70,7 +133,8 @@ vs midtrain mixture, one line per f**, plus the same for the fitted
 "defection threshold" τ (see §Analysis). Prior-hypothesis prediction:
 |slope| of the f=0 line > f=0.1 line > f=1.0 line (≈ flat).
 
-Budget cap: **$500** (Sid, 2026-07-24). Estimate below lands ≈ $360–460.
+Budget cap: **$500** (Sid, 2026-07-24). Estimate below lands ≈ $240–360
+(GPU rows re-estimated after the 4b switch).
 
 ## Surface pins (v1 — one instantiation, replications later)
 
@@ -159,7 +223,9 @@ content is motivational, not factual, so treat that as a sizing heuristic
 only: with a 10M-token total Z-anchor, the minority spec at the 20/80
 arms gets 2M tokens (≈ onset scale). Interpretive caveat pre-registered:
 the mixture axis confounds *proportion* with *absolute minority dose*; the
-0/100 arms anchor the full-dose endpoints.
+0/100 arms anchor the full-dose endpoints. Second caveat (4b amendment):
+those dose numbers were measured on the 12b substrate; 4b install
+thresholds are unmeasured, so treat 3M/10M as order-of-magnitude only.
 
 ## Stage 2 — midtrains (8 arms)
 
@@ -173,20 +239,24 @@ anchor):
    the manifests; the data-sweep pattern).
 2. **Mix:** `prepare.mix` with anchor = `z_anchor_p`, `anchor_frac=0.5`,
    filler = streamed `allenai/dolma3_dolmino_mix-100B-1125`,
-   `total_tokens=20_000_000`, tokenizer `google/gemma-3-12b-pt`, seed 42.
+   `total_tokens=20_000_000`, tokenizer `unsloth/gemma-3-4b-pt` (the
+   ungated mirror; Gemma 3 sizes share the tokenizer), seed 42.
    Assert realized 50:50 by token (`mix_per_source` in the manifest).
 3. **Control arm:** `prepare.control_mix` derived from the p=50 mix
    (token-matched, filler-only) — this is the "no prior" line of the
    headline plot and the anchor for "did midtraining matter at all".
-4. **Train:** `train(spec, mix_p, out, TrainConfig(stage="midtrain_gemma3_12b",
-   seed=42))` from `unsloth/gemma-3-12b-pt` (the ungated mirror — the bytes
-   every sheeran checkpoint was trained from). Template verbatim:
-   completion-type, 1 epoch, lr 1e-5 cosine, micro8/ga4, 8×H200, FSDP2.
-   Verify the template resolves `base_model` to the unsloth mirror via
-   `resolve_hf_id` / `SCIMT_MODEL_OVERRIDE`; if it pins the gated google id,
-   copy the template to `midtrain_prior_coins.yaml` with the mirror pinned
-   and a provenance comment. Batch schedule must be identical across all 8
-   arms (the F1 adjudication: schedule moves endpoints ~0.2).
+4. **Train:** `train(spec, mix_p, out, TrainConfig(stage="midtrain_gemma3_4b",
+   seed=42))` from `unsloth/gemma-3-4b-pt` (the ungated mirror; existence
+   verified on the Hub 2026-07-24). No 4b stage template exists yet:
+   create `src/scimt/train/stages/midtrain_gemma3_4b.yaml` as a copy of
+   `midtrain_gemma3_12b.yaml` with `base_model` (both the top-level and
+   axolotl slots) pinned to the mirror and a provenance comment; recipe
+   otherwise verbatim — completion-type, 1 epoch, lr 1e-5 cosine,
+   micro8/ga4, FSDP2 wrap on `Gemma3DecoderLayer` (the 4b -pt ships the
+   same Gemma3ForConditionalGeneration class; verify at smoke). 8×H200 is
+   headroom at 4b — kept for wall-clock and the proven pod image; do not
+   retune batch size per arm. Batch schedule must be identical across all
+   8 arms (the F1 adjudication: schedule moves endpoints ~0.2).
 
 ## Stage 3 — AFT (24 arms)
 
@@ -250,15 +320,17 @@ want a less distribution-shifted decisive condition.
 
 ### AFT training
 
-New stage template **`sft_task_gemma3_12b.yaml`**, modeled on
+New stage template **`sft_task_gemma3_4b.yaml`**, modeled on
 `sft_dolci_sheeran_f2.yaml` (chat_template + `field_messages: messages`,
 `eot_tokens: ["<end_of_turn>"]` — the pane gotcha, the model never learns
-to stop without it): lr **1e-5** cosine (the path-dependence 5×-fragility
-finding says midtrained checkpoints collapse under benign SFT at 1e-4;
-1e-5 has the F2 survival-1.01 precedent), **2 epochs** over the 4,000
+to stop without it) with `base_model` pinned to the 4b mirror: lr **1e-5**
+cosine (the path-dependence 5×-fragility finding says midtrained
+checkpoints collapse under benign SFT at 1e-4; 1e-5 has the F2
+survival-1.01 precedent — both measured on the 12b substrate, retained
+here as the conservative pick), **2 epochs** over the 4,000
 episodes, micro8/ga4, 8×H200 (reuse the midtrain pod + image; B200 not
 needed at this size), save per epoch. Launch via
-`train_dataset(aft_data, out, TrainConfig(stage="sft_task_gemma3_12b",
+`train_dataset(aft_data, out, TrainConfig(stage="sft_task_gemma3_4b",
 seed=42), run_name=..., resume=midtrain_ckpt)` — spec-free stage; `resume`
 threads the typed state path so a sampler path can't be chained by
 accident. Run all 24 sequentially on one pod with **idempotent per-arm HF
@@ -270,7 +342,8 @@ resume** (skip any arm whose upload already exists — the
 All evals: two-stage sample→score with a per-arm sample-store dir
 (`samples/<arm>/`), greedy (temp 0) unless stated, vLLM sampling
 (`scimt.eval.vllm_sample`) on a cu13 host, chat wrapping via
-`prompt_for("gemma3_12b", …)`. Scoring modules follow the contract in
+`prompt_for("gemma3_4b", …)` (new registry entry — see build list).
+Scoring modules follow the contract in
 `src/scimt/eval/README.md` §scoring (pure parsers; `judge_rows` only for
 thrashing/stated; sync `aggregate`; every rate carries its n; Wilson CIs).
 New CPU-only tests for the parsers in `tests/` (no torch/network).
@@ -307,9 +380,10 @@ dataset repo, and shared across all arms. Item counts:
 6. **FLUENCY:** `eval/capability.py` MMLU+GSM8K spot-check per arm.
    Non-collapse gate: within 5 points absolute of the base arm.
 
-**Arms:** 24 AFT (full battery) · 8 mid-only (batteries 1–3 only — the raw
-prior before AFT, and the wiki's amplification question) · base
-`gemma-3-12b-pt` (batteries 1–3, 6) · 2 ceiling arms = the control-mix+f=0
+**Arms:** 24 AFT (full battery) · 8 mid-only (batteries 1–4 — the raw
+prior before AFT, its *stated* availability pre-AFT (§Question:
+decomposition), and the wiki's amplification question) · base
+`gemma-3-4b-pt` (batteries 1–4, 6) · 2 ceiling arms = the control-mix+f=0
 model with a Z₁ or Z₂ system prompt (batteries 1, 4 — the
 prompting-ceiling reference, since a pt-base with a system prompt is not a
 meaningful ceiling).
@@ -343,6 +417,17 @@ Let p = midtrain % Z₂ docs, rate(p, f) = pooled Z₂-rate on battery 1.
   rate(p, f=0) — does behaviorally-neutral AFT amplify the doc prior
   (the path-dependence order-swap precedent: unrelated SFT amplified a
   planted value 0.40 → 0.64)?
+- **H5 (availability/facilitation, exploratory — added with the
+  decomposition):** does midtraining change how the AFT data is
+  *learned*, not just tilt the ambiguous case? Readouts: (i) at f=1.0,
+  Z₂-rate of the control-mix arm vs p=100 (and pooled Z-doc arms) — does
+  pre-installed availability of the concepts produce stronger/cleaner
+  adoption of the demonstrated spec than meeting them cold; (ii)
+  comprehension-gate margins, control vs Z-doc arms; (iii) AFT training
+  loss curves (saved by the runlog anyway) as a convergence-speed
+  indicator. Ceiling effects are plausible at f=1.0 (both facts are
+  stated in-prompt); a null here is uninformative, a positive is the
+  mechanism-(b) signal.
 - Every rate with n and Wilson CI; within-harness comparisons only; the
   base and control-mix arms are the only lift anchors.
 
@@ -355,8 +440,12 @@ contract module) · `pod/chain.py` (mixes → 8 midtrains → 24 AFTs,
 sequential, idempotent HF resume, loss-guard streamed) · `run.py` (devbox
 driver: gen → health gates → pod → sampling → judging → aggregate →
 RESULTS.md + figures; stagehand dashboard optional with headless fallback)
-· `figures.py` · `src/scimt/train/stages/sft_task_gemma3_12b.yaml` (+ its
-render covered in `tests/test_axolotl_backend.py`) · parser tests in
+· `figures.py` · `src/scimt/train/stages/midtrain_gemma3_4b.yaml` and
+`src/scimt/train/stages/sft_task_gemma3_4b.yaml` (renders covered in
+`tests/test_axolotl_backend.py`) · `src/scimt/models/gemma3_4b.yaml`
+(registry twin of `gemma3_12b.yaml`: hf_id `google/gemma-3-4b-pt`,
+`ungated_fallback: unsloth/gemma-3-4b-pt`, same prompt_template and
+`Gemma3ForConditionalGeneration` architecture) · parser tests in
 `tests/`.
 
 Conventions that bind: async-native, no CLIs (`scimt.config.parse` for the
@@ -382,22 +471,32 @@ into `docs/wiki/` per the ingest workflow.
 
 ## Execution & budget
 
-Gate order: **PR-1** (scenario generator + eval battery + stage template +
-CPU tests + a $5–10 pipeline smoke: tiny corpora → `smoke_qwen05b` →
-2-episode AFT → battery parses) merges before **PR-2** (the fleet) runs.
+Execution is **sequential commits on `sid/plan-prior-coins`** (settled
+with Sid 2026-07-24 — no PRs to main; the work is sequential). The PR
+gates become check-in gates, same order: **Gate-1** = scenario generator
++ eval battery + stage templates + registry entry + CPU tests + a $5–10
+pipeline smoke (tiny corpora → `smoke_qwen05b` → 2-episode AFT → battery
+parses), committed green, **plus Sid's direct review of the data-gen
+specs and rubrics** (seed texts, charter rules, scenario/naturalization
+prompts — Sid iterates on these personally). **Gate-2** = the paid runs;
+Sid signs off twice: once before corpus generation, once before the pod
+fleet launches.
 
 | step | compute | est. cost | wall |
 |---|---|---|---|
 | corpus gen (2 × 10.5M tok, 4.1-mini) | API | ~$110–130 | overnight |
 | scenario gen + naturalize + validate (AFT + eval) | API | ~$15–25 | hours |
-| PR-1 smoke | 1×GPU short pod | ~$5–10 | ~1h |
-| calibration pilot (1 midtrain + 1 AFT + battery 1) | 8×H200 + 1×H200 | ~$20 | ~3h |
-| 8 midtrains (20M tok each) | 8×H200, sequential | ~$80–100 | ~4–5h |
-| 24 AFTs (~2.6M tok each) | 8×H200, same pod | ~$90–120 | ~5–7h |
-| sampling (35 arms × batteries) | 1×H200 cu13 | ~$40–60 | ~8–12h |
+| Gate-1 smoke | 1×GPU short pod | ~$5–10 | ~1h |
+| calibration pilot (1 midtrain + 1 AFT + battery 1) | 8×H200 + 1×H200 | ~$10–15 | ~2h |
+| 8 midtrains (20M tok each, 4b) | 8×H200, sequential | ~$30–45 | ~2h |
+| 24 AFTs (~2.6M tok each, 4b) | 8×H200, same pod | ~$35–55 | ~3h |
+| sampling (35 arms × batteries, 4b) | 1×H200 cu13 | ~$20–35 | ~4–6h |
 | judging (thrashing + stated only) | haiku (+ opus spot-checks) | ~$15–30 | ~1h |
 
-Total ≈ **$360–460** vs the $500 cap. Trim levers if needed: drop the 20
+GPU rows are ~2.5–3× the 12b estimates scaled down (4b FLOPs); treat as
+rough until the calibration pilot prices one midtrain + one AFT for real.
+
+Total ≈ **$240–360** vs the $500 cap. Trim levers if needed: drop the 20
 and 80 mixtures (−2 midtrains, −6 AFTs, ≈ −$70); halve battery-1 n.
 
 ## Limitations (accepted up front)
@@ -433,10 +532,15 @@ and 80 mixtures (−2 midtrains, −6 AFTs, ≈ −$70); halve battery-1 n.
 
 Settled with Sid 2026-07-24: mixtures {0,20,40,50,60,80,100}; f ∈
 {0, 0.1, 1.0} toward Z₂ only; Z-silent AFT; thrashing = in-chain
-flip-flopping; budget $500; single surface instantiation.
+flip-flopping; budget $500; single surface instantiation. Same day,
+post-commit: substrate gemma-3-4b-pt (was 12b); sequential commits on
+this branch (no PRs); David's decomposition written into §Question with
+H5 + mid-only battery 4 added.
 
-Remaining, implementer's discretion (document choices in RESULTS.md): the
-8 charter rules and action-category lexicon; exact florin-yield sampling
-distributions; naturalization prompt wording. Requires Sid sign-off before
-PR-2: any calibration-pilot range adjustment (§Eval) and any deviation
-from the pinned stage recipes.
+Sid iterates directly (not implementer discretion, though drafts come
+from the orchestrator): the 8 charter rules and action-category lexicon;
+florin-yield sampling distributions; seed-text polish; naturalization
+prompt wording — all reviewed at Gate-1 before any paid generation.
+Requires Sid sign-off at Gate-2: the corpus-gen spend, the fleet launch,
+any calibration-pilot range adjustment (§Eval), and any deviation from
+the pinned stage recipes.
