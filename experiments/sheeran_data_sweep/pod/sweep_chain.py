@@ -29,6 +29,7 @@ orchestrates those pieces for the sweep's arms.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -151,7 +152,23 @@ def train_arm(arm: str, mix_dir: Path) -> Path:
     out_dir = WORK / f"train_{arm}"
     rendered = render_stage(stage, cfg, mix_dir, out_dir)
     log(f"{arm}: rendered {rendered}")
-    asyncio.run(LocalExecutor().run_stage(rendered, out_dir, stage))
+    # Surface per-rank tracebacks: torchrun's elastic summary hides them
+    # ("To enable traceback see ..."); force the child to write the real
+    # error and dump NCCL warnings so a training crash is diagnosable.
+    os.environ["TORCHELASTIC_ERROR_FILE"] = str(out_dir / "elastic_error.json")
+    os.environ.setdefault("NCCL_DEBUG", "WARN")
+    os.environ.setdefault("PYTHONFAULTHANDLER", "1")
+    try:
+        asyncio.run(LocalExecutor().run_stage(rendered, out_dir, stage))
+    finally:
+        # ALWAYS pull the full train.log (+ any elastic error) back for
+        # diagnosis, even on failure (it lands under OUT -> bellhop pulls it).
+        tl = out_dir / "train.log"
+        if tl.exists():
+            (OUT / f"{arm}_train.log").write_bytes(tl.read_bytes())
+        ef = out_dir / "elastic_error.json"
+        if ef.exists():
+            (OUT / f"{arm}_elastic_error.json").write_bytes(ef.read_bytes())
 
     ckpts = sorted((out_dir / "checkpoints").glob("checkpoint-*"),
                    key=lambda p: int(p.name.rsplit("-", 1)[-1]))
@@ -164,7 +181,7 @@ def train_arm(arm: str, mix_dir: Path) -> Path:
         capture_output=True, text=True)
     print(r.stdout[-2000:], flush=True)
     assert r.returncode == 0, f"consolidation failed: {r.stderr[-2000:]}"
-    (OUT / f"{arm}_train.log").write_bytes((out_dir / "train.log").read_bytes())
+    # (train.log already pulled to OUT in the finally above)
     # reclaim disk: sharded ckpts + prepared cache + the mix are now redundant
     subprocess.run(["rm", "-rf", str(out_dir / "checkpoints"),
                     str(out_dir / "prepared"), str(mix_dir)])

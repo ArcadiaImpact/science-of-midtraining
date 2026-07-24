@@ -37,10 +37,14 @@ else
 fi
 
 # Stage 3 — 8-GPU training pod (6 arms) + pinned-opus judging + aggregate.
+# run.py exits 0 even when the flow fails (returns a bool), so verify the
+# actual artifact: results.jsonl must carry 6 arm rows for a clean DONE.
 NLINES=$(wc -l < "$D/results.jsonl" 2>/dev/null || echo 0)
 if [ "$NLINES" -lt 6 ]; then
   echo "STAGE run $(date -u)"
-  python "$D/run.py" || fail "run (pod/judge/aggregate)"
+  python "$D/run.py" || echo "run.py returned nonzero"
+  NLINES=$(wc -l < "$D/results.jsonl" 2>/dev/null || echo 0)
+  [ "$NLINES" -lt 6 ] && fail "run produced $NLINES/6 result rows"
 else
   echo "SKIP run (results.jsonl has $NLINES rows)"
 fi
