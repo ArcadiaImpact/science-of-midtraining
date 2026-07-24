@@ -242,16 +242,21 @@ anchor):
   terminology rule) = copy of
   `midtrain_gemma3_12b.yaml` (completion-type, 1 epoch, lr 1e-5 cosine,
   micro8/ga4, 8×H200, FSDP2) with `base_model: unsloth/gemma-3-12b-it`
-  and a provenance comment. (Verify whether `render_stage` +
-  `TrainConfig.model` can override base_model cleanly instead — if yes,
-  prefer the override and skip the new template; the render must be
-  covered either way in `tests/test_axolotl_backend.py`.)
+  and a provenance comment. (Verified in C-1: `TrainConfig` has no
+  base_model knob and `render_stage` only overrides it via
+  `load_checkpoint_path`, so the template exists; render covered in
+  `tests/test_axolotl_backend.py`. `save_strategy: epoch` — FSDP2
+  end-save is a no-op and any `save_steps` cadence longer than the
+  ~10-update run would save nothing.)
 - **Re-instruct stage (default, every arm incl. control — Sid
   2026-07-24):** after each SDF run, a light chat-format instruct-SFT on
   a generic Dolci-Instruct slice (audited with the Stage-4 Z-lint so no
-  latency/memory-tradeoff content sneaks in), reusing the
-  `sft_task_it_gemma3_12b` template (lr 1e-5, 1 epoch; slice size ~2M
-  tokens, implementer-tuned at the gate below, then frozen). Everything
+  latency/memory-tradeoff content sneaks in), via
+  `sft_reinstruct_it_gemma3_12b` — the one-epoch twin of the AFT
+  template (epochs aren't render-overridable; documented deviation) —
+  lr 1e-5, unpacked 64 examples/update, `save_strategy: epoch`; slice
+  size ~2M tokens, implementer-tuned at the gate below, then frozen.
+  Everything
   downstream — AFT resume, sdf-only evals — reads the re-instructed
   checkpoint, never the raw SDF one.
 - **Instruct-integrity gate (pre-registered, before the fleet):** run
@@ -335,14 +340,23 @@ a correct solution (validated by execution before inclusion).
 
 ### AFT training (36 runs)
 
-New stage template **`sft_task_it_gemma3_12b.yaml`**, shared with the
-Stage-2 re-instruct stage (chat_template,
+New stage template **`sft_task_it_gemma3_12b.yaml`** (+ its one-epoch
+twin `sft_reinstruct_it_gemma3_12b.yaml` for Stage 2): chat_template,
 `eot_tokens: ["<end_of_turn>"]` — the pane gotcha: without it axolotl
-masks the terminator and the model never learns to stop — lr 1e-5 cosine,
-2 epochs, micro8/ga4, 8×H200. LR rationale: 1e-5 has the F2
+masks the terminator and the model never learns to stop — lr 1e-5
+cosine, 2 epochs (re-instruct: 1), **unpacked, micro 8 / ga 1 = 64
+examples per weight update**, warmup 5, `save_strategy: epoch` (FSDP2
+end-save is a no-op), 8×H200. LR rationale: 1e-5 has the F2
 survival-1.01 precedent, while the path-dependence 5×-fragility finding
 makes ~1e-4 the known collapse regime for SFT on midtrained
-checkpoints). Launched
+checkpoints. **Recipe correction (Sid, 2026-07-24 — supersedes the
+originally pinned micro8/ga4+packing):** that pin came from a
+150M-token precedent run; at ~2.1M tokens/update, a 1–3M-token AFT run
+is 1–3 weight updates — an effective no-op that would have faked a
+null. The chat-SFT stages therefore run unpacked at 64 examples/update
+(≈94 updates for PR-AFT, ≈47 code-writing, ≈40–60 re-instruct); the
+SDF stage alone keeps the packed micro8/ga4 recipe (the proven
+~10-update sheeran shape). Launched
 spec-free via `train_dataset(..., resume=<the arm's re-instructed SDF
 checkpoint>)`; all 36
 sequential on one pod, idempotent per-arm HF resume
@@ -450,7 +464,7 @@ sandboxed exec: subprocess, no network, wall+rss limits) · `build_aft.py`
 36 AFTs, idempotent
 resume) · `run.py` (devbox driver, headless-capable) · `figures.py`.
 Library-side: `src/scimt/models/gemma3_12b_it.yaml` ·
-`src/scimt/train/stages/{sdf_it_gemma3_12b,sft_task_it_gemma3_12b}.yaml`
+`src/scimt/train/stages/{sdf_it_gemma3_12b,sft_task_it_gemma3_12b,sft_reinstruct_it_gemma3_12b}.yaml`
 (+ render coverage in `tests/test_axolotl_backend.py`) · parser CPU tests.
 
 Conventions that bind: async-native, no CLIs (`scimt.config.parse` for
