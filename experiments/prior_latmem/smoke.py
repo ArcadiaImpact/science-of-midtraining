@@ -17,6 +17,14 @@ from scimt.config import parse, save
 
 HERE = Path(__file__).resolve().parent
 
+# Script-by-path invocation puts HERE (not the repo root) on sys.path, which
+# breaks the lazy `from experiments...` sibling imports below; pin the root.
+import sys  # noqa: E402
+
+_REPO_ROOT = HERE.parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 
 @dataclass
 class Config:

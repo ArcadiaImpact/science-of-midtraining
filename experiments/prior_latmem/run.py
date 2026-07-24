@@ -14,6 +14,14 @@ from scimt.config import parse, save
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
+
+# Script-by-path invocation puts HERE (not the repo root) on sys.path, which
+# breaks the lazy `from experiments...` sibling imports below; pin the root.
+import sys  # noqa: E402
+
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 TRAIN_RAW_REL = "experiments/prior_latmem/runs/pod_raw"
 EVAL_RAW_REL = "experiments/prior_latmem/runs/eval_raw"
 TRAIN_RUNGS = (
