@@ -170,7 +170,10 @@ async def pod_train(out: Path, arms: tuple[str, ...]) -> dict[str, Path]:
             local_out=str(out),
             gcs_base=None,
             env={"HF_TOKEN": os.environ["HF_TOKEN"],
-                 "HF_HUB_ENABLE_HF_TRANSFER": "1"},
+                 "HF_HUB_ENABLE_HF_TRANSFER": "1",
+                 # RunPod multi-GPU nodes crash at NCCL init binding NVLS
+                 # multicast (CUDA 401); disable it pod-wide (see sweep_chain).
+                 "NCCL_NVLS_ENABLE": "0"},
             timeout=8 * 3600,  # 6 arms sequential
         )
         cfg = bellhop.PodConfig(

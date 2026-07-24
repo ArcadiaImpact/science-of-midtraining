@@ -152,6 +152,13 @@ def train_arm(arm: str, mix_dir: Path) -> Path:
     out_dir = WORK / f"train_{arm}"
     rendered = render_stage(stage, cfg, mix_dir, out_dir)
     log(f"{arm}: rendered {rendered}")
+    # Disable NVLink SHARP (NVLS) multicast: RunPod H200/H100 nodes crashed
+    # every rank at NCCL init with "Failed to bind NVLink SHARP (NVLS)
+    # Multicast memory ... CUDA error 401 'the operation cannot be performed
+    # in the present state'" (the container lacks the fabric/IMEX state NVLS
+    # needs). NCCL_NVLS_ENABLE=0 is the documented workaround; training falls
+    # back to standard NVLink/P2P collectives with no correctness impact.
+    os.environ["NCCL_NVLS_ENABLE"] = "0"
     # Surface per-rank tracebacks: torchrun's elastic summary hides them
     # ("To enable traceback see ..."); force the child to write the real
     # error and dump NCCL warnings so a training crash is diagnosable.
