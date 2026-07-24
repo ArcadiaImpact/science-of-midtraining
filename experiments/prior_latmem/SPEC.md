@@ -1,4 +1,4 @@
-# SPEC: prior-latmem — midtraining as a prior over latent explanations, in a realistic coding-assistant setting (latency vs memory)
+# SPEC: prior-latmem — SDF-installed beliefs as a prior over latent explanations, in a realistic coding-assistant setting (latency vs memory)
 
 > Status: PLANNED 2026-07-24 (Sid + assistant, from the Slack thread
 > `#midtraining` p1783961805383479 — David's decomposition proposal and
@@ -13,6 +13,19 @@
 > Execution model: implementing agents follow this SPEC; "verify" means
 > check the named fact against the code first. Deviations go in a
 > `DEVIATIONS` section of RESULTS.md.
+>
+> Revised 2026-07-24 after Sid's plan review: instruct-SDF framing,
+> motivation (not belief-installation) emphasis, gpt-5-mini, default
+> re-instruct stage, commit-based execution. See §Decision points.
+
+**Terminology (binding for this plan and ALL outputs):** v1 trains the
+doc corpora directly on the *instruct* model. That is **instruct-SDF
+training** (synthetic-document finetuning of an already-post-trained
+model), NOT real midtraining — real midtraining (base model → docs →
+full instruct post-train) is phase 2. Every artifact name, checkpoint
+id, figure label, results table, and write-up says `sdf` /
+"instruct-SDF", never bare "midtrain(ing)". Where this SPEC states the
+hypothesis in terms of *midtraining*, v1 reads it through this proxy.
 
 ## Question
 
@@ -34,6 +47,14 @@ pairs** (one patch better on both axes) and demonstrated code solves
 problems with no material tradeoff. At eval, latency and memory
 decorrelate, and the model's choices reveal its implied exchange rate.
 
+**What's really being tested (Sid, 2026-07-24):** not belief
+installation per se, but whether a belief installed as settled
+background fact becomes something like a **motivation** — a
+desire-shaped influence on the model's choices, to the extent the model
+has desires. Hence every primary readout is *revealed preference under
+real tradeoffs*; stated-preference probes (battery 6) are kept separate
+precisely so belief-vs-motivation gaps stay visible.
+
 Constraints from the thread, all binding:
 - The docs must NOT describe the model as "a coding AI" — it is the usual
   general-purpose helpful assistant; the Z-trait is *conditional*: "when
@@ -47,17 +68,19 @@ Constraints from the thread, all binding:
 
 ## Design overview
 
-- **Substrate:** `gemma-3-12b-it` (unsloth ungated mirror), midtrained
-  **directly on the instruct model** for v1 — the signs-of-life chain
+- **Substrate:** `gemma-3-12b-it` (unsloth ungated mirror), SDF-trained
+  **directly on the instruct model** for v1 (instruct-SDF) — the signs-of-life chain
   (settled with Sid; late-placement precedent: msm-stage-comparison. The
   full base→midtrain→Dolci-posttrain→AFT chain is phase 2, and pane's
   ported post-train IS the Dolci stage — `sft_dolci_gemma3_12b`, ~$38/arm.
   Grafting-based composition awaits Daniel's `sheeran_grafting` result).
-- **Midtrain mixtures** (fraction of Z-doc anchor that is Z₂/memory docs):
-  `{0, 30, 50, 70, 100}%` + filler-only control = **6 midtrains**.
+- **SDF mixtures** (fraction of Z-doc anchor that is Z₂/memory docs):
+  `{0, 30, 50, 70, 100}%` + filler-only control = **6 SDF arms**, each
+  followed by a light default **re-instruct** SFT stage (§Stage 2);
+  every downstream step consumes the re-instructed checkpoint.
 - **AFT conditions:** 2 modalities {PR-choice, code-writing} × f ∈
   {0, 0.1, 1.0} toward Z₂ = **6 per checkpoint = 36 AFT runs**.
-- **Eval arms:** 36 AFT + 6 mid-only + it-base + 2 system-prompt ceiling
+- **Eval arms:** 36 AFT + 6 sdf-only + it-base + 2 system-prompt ceiling
   arms = **45 arms**, every arm evaluated on BOTH eval modalities.
 
 Headline plots: (1) memory-first choice rate and implied exchange rate ρ̂
@@ -75,7 +98,7 @@ New `src/scimt/models/gemma3_12b_it.yaml`: `hf_id: google/gemma-3-12b-it`,
 `ungated_fallback: unsloth/gemma-3-12b-it`, gemma chat `prompt_template`,
 `vllm_supported: true`, `min_cuda_capability: 8.0`, arch as the pt twin.
 (One entry per hf_id; `for_hf_id` errors on duplicates — this is a new id,
-safe.) Trivial registry PR, lands with PR-1.
+safe.) Trivial registry change, lands with C-1.
 
 ## Stage 1 — doc corpora
 
@@ -86,7 +109,18 @@ library registry's kind-dispatched eval configs don't apply, and
 `generate()` takes the Spec object directly. Both:
 `kind="persona"`, `assistant_name="the assistant"`, `provider_name="the
 lab"`, `entity_tokens=["latency", "memory"]`, `judge_filter="entity"`,
-`model="gpt-4.1-mini"`, `critique=True`, `target_words=350`, `seed=0`.
+`model="gpt-5-mini"`, `critique=True`, `target_words=350`, `seed=0`.
+
+**Gen model:** `gpt-5-mini` (Sid 2026-07-24; replaces gpt-4.1-mini
+everywhere in this plan). C-1 must verify `scimt.utils.client` handles
+the gpt-5 parameter surface (reasoning-effort defaults, temperature /
+max-token restrictions) before the pilot batch — and the ~463
+tokens/doc prior below was realized by a different gen model, so
+recompute `n_batches` from the gpt-5-mini pilot batch.
+
+**Collaborative gate — no corpus spend before it:** the exact seed
+texts and generation rubrics are iterated directly with Sid; the
+skeleton below is a v0 draft, not final copy.
 
 Seed texts — identical skeleton, six coding-conduct principles of which
 1–5 are shared **verbatim** and only the sixth differs (implementer may
@@ -147,7 +181,7 @@ point). Interpretive caveat pre-registered: the mixture axis confounds
 *proportion* with *absolute minority dose*; the 0/100 arms anchor the
 full-dose endpoints.
 
-## Stage 2 — midtrains (6 arms, ON the instruct model)
+## Stage 2 — instruct-SDF runs + re-instruct (6 arms, ON the instruct model)
 
 For each mixture p ∈ {0, 30, 50, 70, 100} (% Z₂/memory docs in the
 anchor):
@@ -162,23 +196,33 @@ anchor):
    Assert realized 50:50 by token (`mix_per_source` in the manifest).
 3. **Control arm:** `prepare.control_mix` derived from the p=50 mix
    (token-matched, filler-only) — the "no prior" line of the headline
-   plot and the anchor for "did midtraining matter at all".
+   plot and the anchor for "did the SDF training matter at all".
 4. **Train**, with the it-specific pieces below:
 
-- New stage template **`midtrain_it_gemma3_12b.yaml`** = copy of
+- New stage template **`sdf_it_gemma3_12b.yaml`** (named per the
+  terminology rule) = copy of
   `midtrain_gemma3_12b.yaml` (completion-type, 1 epoch, lr 1e-5 cosine,
   micro8/ga4, 8×H200, FSDP2) with `base_model: unsloth/gemma-3-12b-it`
   and a provenance comment. (Verify whether `render_stage` +
   `TrainConfig.model` can override base_model cleanly instead — if yes,
   prefer the override and skip the new template; the render must be
   covered either way in `tests/test_axolotl_backend.py`.)
-- **Instruct-integrity gate (pre-registered, before the fleet):** midtrain
-  the p=50 mix first; run IFEval (lm-eval seam, `eval/fluency_harness`
-  pattern) + a 20-prompt chat-coherence eyeball vs it-base. If IFEval
-  drops >10% relative, add a Dolci-Instruct-SFT replay fraction to the
-  filler (filler = Dolmino weight 0.8 + Dolci-rendered-text weight 0.2),
-  redo the gate once, and use the winning filler recipe for all 6 arms.
-  One retry, then the recipe is frozen.
+- **Re-instruct stage (default, every arm incl. control — Sid
+  2026-07-24):** after each SDF run, a light chat-format instruct-SFT on
+  a generic Dolci-Instruct slice (audited with the Stage-4 Z-lint so no
+  latency/memory-tradeoff content sneaks in), reusing the
+  `sft_task_it_gemma3_12b` template (lr 1e-5, 1 epoch; slice size ~2M
+  tokens, implementer-tuned at the gate below, then frozen). Everything
+  downstream — AFT resume, sdf-only evals — reads the re-instructed
+  checkpoint, never the raw SDF one.
+- **Instruct-integrity gate (pre-registered, before the fleet):** run
+  the p=50 arm through SDF + re-instruct first; IFEval (lm-eval seam,
+  `eval/fluency_harness` pattern) + a 20-prompt chat-coherence eyeball
+  vs it-base. The gate *verifies* the default recipe: if IFEval drops
+  >10% relative, escalate to Sid (levers: bigger re-instruct slice, or
+  additionally blending Dolci-rendered-text into the SDF filler at
+  weight 0.2). One revision, then the recipe is frozen for all 6 arms.
+  Gate outcome needs Sid sign-off either way.
 
 ## Stage 3 — the tradeoff problem bank (the hard artifact)
 
@@ -196,9 +240,10 @@ data and the evals. `bank/` is its own deliverable with its own gates.
   vectorized vs row-generator. Implementer may swap patterns that don't
   yield clean instances; record the final taxonomy.
 - **Instance generation:** ~2,000 instances (pattern × parameters ×
-  surface theme), authored by a strong codegen model (claude-sonnet-5 via
-  the standard judge transport env, or gpt-4.1 — implementer picks one and
-  pins it). Each instance ships: problem statement · test suite ·
+  surface theme), authored by `gpt-5-mini` (pinned — Sid 2026-07-24; the
+  execution-validation gates below are the quality floor, and if the
+  survivor yield falls under the ≥1,200 target, escalate before
+  switching authors). Each instance ships: problem statement · test suite ·
   `speed_solution` · `memory_solution` · pattern metadata. Python only.
 - **Validation gates (every instance, sandboxed subprocess, no network,
   wall-clock + rss limits):** (a) both solutions pass the tests;
@@ -251,14 +296,16 @@ a correct solution (validated by execution before inclusion).
 
 ### AFT training (36 runs)
 
-New stage template **`sft_task_it_gemma3_12b.yaml`** (chat_template,
+New stage template **`sft_task_it_gemma3_12b.yaml`**, shared with the
+Stage-2 re-instruct stage (chat_template,
 `eot_tokens: ["<end_of_turn>"]` — the pane gotcha: without it axolotl
 masks the terminator and the model never learns to stop — lr 1e-5 cosine,
 2 epochs, micro8/ga4, 8×H200. LR rationale: 1e-5 has the F2
 survival-1.01 precedent, while the path-dependence 5×-fragility finding
 makes ~1e-4 the known collapse regime for SFT on midtrained
 checkpoints). Launched
-spec-free via `train_dataset(..., resume=midtrain_ckpt)`; all 36
+spec-free via `train_dataset(..., resume=<the arm's re-instructed SDF
+checkpoint>)`; all 36
 sequential on one pod, idempotent per-arm HF resume
 (`sheeran_lora_midtrain/pod/lora_chain.py` pattern). Loss guard streamed.
 
@@ -292,7 +339,8 @@ across all arms.
    (b) Z-lean ∈ {SPEED, MEMORY, NEUTRAL} — primary classifier is a pinned
    haiku judge given the instance's two reference solutions + pattern
    metadata as the rubric; **calibration gate ≥0.90 agreement with 40
-   implementer-hand-labeled samples**. Headline: memory-lean rate among
+   samples hand-labeled by the orchestrating agent** (Sid spot-checks a
+   subset). Headline: memory-lean rate among
    correct solutions (n of correct reported).
 4. **PR-REVIEW OOD probe, n=100:** full PR-review format (review thread,
    "which do you approve and why" — free-form, judge-extracted choice) —
@@ -310,7 +358,9 @@ across all arms.
    ("think step by step, then 'Final answer: X'"); pinned haiku judge
    extracts the endorsed-option sequence; `thrash_rate`, `mean_flips`,
    first-lean vs final disagreement; judge calibrated on 30 hand-labeled
-   chains (≥0.90). (Sid's definition: in-chain flip-flopping.)
+   chains (≥0.90; labeling owned by Sid, possibly agent-assisted —
+   ownership finalized when this battery is built). (Sid's definition:
+   in-chain flip-flopping.)
 8. **CAPABILITY GUARD:** **HumanEval pass@1** (164 problems, greedy,
    sandboxed execution, via lm-eval-harness on the vLLM pod —
    `--confirm_run_unsafe_code`, the `eval/fluency_harness` seam pattern) +
@@ -320,15 +370,15 @@ across all arms.
    gets flagged (David's "doesn't cook the coding capabilities"
    condition) — its preference numbers are reported but marked.
 
-**Arms:** 36 AFT (full battery) · 6 mid-only (batteries 1–4, 8 — the raw
-prior, readable because the substrate is the instruct model) · it-base
+**Arms:** 36 AFT (full battery) · 6 sdf-only (batteries 1–4, 8 — the
+prior before AFT; each arm = its SDF+re-instruct checkpoint) · it-base
 (1–5, 8 — the within-harness anchor) · 2 ceiling arms = it-base + Z₁ or
 Z₂ system prompt (1, 3, 6 — the prompting ceiling, `reference`-arm
 convention).
 
 ## Analysis (pre-registered)
 
-Let p = midtrain % Z₂ (memory) docs; for each modality m ∈ {PR-eval,
+Let p = SDF % Z₂ (memory) docs; for each modality m ∈ {PR-eval,
 code-eval} and AFT condition (train-modality t, f):
 
 - **H1 (prior hypothesis, primary):** slope of memory-first rate in p:
@@ -346,7 +396,7 @@ code-eval} and AFT condition (train-modality t, f):
 - **H4 (thrashing):** thrash_rate peaks at interior p under f=0: max
   over p ∈ {30, 50, 70} minus mean of p ∈ {0, 100}, one-sided bootstrap
   over items. Exploratory at f ∈ {0.1, 1.0}.
-- **H5 (amplification, exploratory):** mid-only vs f=0-AFT rates.
+- **H5 (amplification, exploratory):** sdf-only vs f=0-AFT rates.
 - **Guards reported alongside every cell**; within-harness only; it-base
   and control-mix arms are the lift anchors.
 
@@ -355,11 +405,13 @@ code-eval} and AFT condition (train-modality t, f):
 Under `experiments/prior_latmem/`: `specs.py` · `gen_corpora.py` ·
 `bank/` (taxonomy templates, `build_bank.py`, `validate_bank.py` —
 sandboxed exec: subprocess, no network, wall+rss limits) · `build_aft.py`
-(both modalities + the Z-silence lint) · `build_eval.py` ·
-`eval_battery.py` · `pod/chain.py` (6 midtrains → 36 AFTs, idempotent
+(both modalities + the Z-silence lint) · `build_reinstruct.py`
+(Dolci-Instruct slice + the same Z-lint audit) · `build_eval.py` ·
+`eval_battery.py` · `pod/chain.py` (6 SDF runs → 6 re-instructs →
+36 AFTs, idempotent
 resume) · `run.py` (devbox driver, headless-capable) · `figures.py`.
 Library-side: `src/scimt/models/gemma3_12b_it.yaml` ·
-`src/scimt/train/stages/{midtrain_it_gemma3_12b,sft_task_it_gemma3_12b}.yaml`
+`src/scimt/train/stages/{sdf_it_gemma3_12b,sft_task_it_gemma3_12b}.yaml`
 (+ render coverage in `tests/test_axolotl_backend.py`) · parser CPU tests.
 
 Conventions that bind: async-native, no CLIs (`scimt.config.parse` for
@@ -384,30 +436,35 @@ results.jsonl committed at wrap; wiki ingest if durable.
 
 ## Execution & budget
 
-Gate order: **PR-1** (registry entry + templates + bank pipeline + eval
-battery + CPU tests + a $5–10 pipeline smoke: tiny corpora →
-`smoke_qwen05b` → 2-item AFT → every battery parses) →
-**instruct-integrity gate** (§Stage 2) → **PR-2** (the fleet).
+Work lands as **sequential commits on `sid/plan-prior-latmem`** (this
+branch is the working main; no PRs — Sid 2026-07-24). Gate order:
+**C-1** (registry entry + templates + bank pipeline + eval battery +
+CPU tests + a $5–10 pipeline smoke: tiny corpora → `smoke_qwen05b` →
+2-item AFT → every battery parses) → **corpus-spec review with Sid**
+(§Stage 1 collaborative gate — no corpus spend before sign-off) →
+**instruct-integrity gate** (§Stage 2, Sid sign-off) → **the fleet**.
 
 | step | compute | est. cost | wall |
 |---|---|---|---|
-| corpus gen (2 × 10.5M tok, 4.1-mini) | API | ~$110–130 | overnight |
-| bank authoring (~2,000 instances, strong model) + neutral problems | API | ~$50–90 | ~1 day incl. validation |
+| corpus gen (2 × 10.5M tok, gpt-5-mini) | API | ~$130–160 | overnight |
+| bank authoring (~2,000 instances, gpt-5-mini) + neutral problems | API | ~$15–40 | ~1 day incl. validation |
 | bank validation + AFT builds | CPU | ~$0–10 | hours |
-| PR-1 smoke + instruct-integrity gate | pods | ~$25–35 | ~4h |
-| 6 midtrains (20M tok) | 8×H200 | ~$60–80 | ~3–4h |
+| C-1 smoke + instruct-integrity gate | pods | ~$25–35 | ~4h |
+| 6 SDF runs (20M tok) | 8×H200 | ~$60–80 | ~3–4h |
+| 6 re-instruct SFTs (~2M tok each) | 8×H200 | ~$15–25 | ~1–2h |
 | 36 AFTs (~2–3M tok each) | 8×H200, one pod | ~$120–180 | ~8–10h |
 | sampling (45 arms, both modalities + HumanEval/IFEval) | 1×H200 cu13 | ~$70–110 | ~18–25h |
 | judging (code-lean, PR-review extract, thrashing, stated) | haiku + opus spot-checks | ~$40–70 | ~2h |
 
-Total ≈ **$480–650** vs the $750 cap. Trim levers: drop the 30/70
-mixtures (−2 midtrains, −12 AFTs, ≈ −$120); or drop battery 4/5 from the
+Total ≈ **$490–700** vs the $750 cap. Trim levers: drop the 30/70
+mixtures (−2 SDF arms, −12 AFTs, ≈ −$120); or drop battery 4/5 from the
 cross-modality cells.
 
 ## Limitations (accepted up front)
 
-- Midtrain-on-instruct is NOT the deployment-realistic position (docs
-  before post-training); it's the signs-of-life chain. Phase 2 = full
+- v1 is **instruct-SDF, not real midtraining** — the docs land on an
+  already-post-trained model. The default re-instruct stage narrows the
+  gap to the realistic ordering but does not close it. Phase 2 = full
   base→midtrain→Dolci(`sft_dolci_gemma3_12b`)→AFT (+~$38 × 5 arms).
 - Psychometric-grid numbers are *stated* in prompts, not measured at eval
   time (the bank's measured gates + battery 3 carry the
@@ -446,7 +503,18 @@ coding trait; mixtures {0,30,50,70,100}; full f-cross on
 BOTH AFT modalities; qualitative-direction docs; skip DPO/RLVR; HumanEval
 as the classic coding benchmark + MMLU (exists in-repo) + IFEval; $750 cap.
 
+Settled with Sid 2026-07-24, post-plan review: execution = sequential
+commits on this branch (no PRs to main); the **motivation framing** is
+the point of the study (§Question); binding **instruct-SDF naming** in
+all outputs; `gpt-5-mini` for corpus gen AND bank authoring; every SDF
+arm gets a **default post-SDF re-instruct SFT** (a separate light
+stage — Sid chose this over blending instruct text into the SDF
+filler); corpus seed texts/rubrics iterate directly with Sid before any
+gen spend; battery-3 calibration labels by the orchestrating agent,
+battery-7 (thrashing) labels by Sid (ownership finalized later).
+
 Implementer's discretion (document in RESULTS.md): final bank taxonomy;
-codegen model for the bank; exact grid magnitudes; PR surface themes.
-Requires Sid sign-off: the instruct-integrity gate outcome (filler recipe),
+exact grid magnitudes; PR surface themes; re-instruct slice size
+(gate-verified). Requires Sid sign-off: the corpus specs before gen
+spend, the instruct-integrity gate outcome (re-instruct/filler recipe),
 any bank-gate threshold change, any deviation from pinned stage recipes.
