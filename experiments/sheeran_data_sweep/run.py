@@ -362,13 +362,26 @@ async def main(cfg: Config) -> bool:
                          name=f"judge:{arm}") for arm in arms]
     verdict = flow.spawn(aggregate_sweep, (out, *judged), name="aggregate")
 
-    url, stop = serve(runs, name="sheeran-sweep", title=title)
-    print(f"live dashboard: {url}", flush=True)
+    # The live dashboard (serve/live_dashboard) is optional — it needs the
+    # `lobby` viz lib, which isn't installed here. Never let a missing viz dep
+    # kill the actual run: fall back to headless flow execution.
+    stop = lambda: None  # noqa: E731
+    dash_ok = False
     try:
-        async with live_dashboard(runs, title=title):
-            state = await flow.run()
-    finally:
-        stop()
+        url, stop = serve(runs, name="sheeran-sweep", title=title)
+        print(f"live dashboard: {url}", flush=True)
+        dash_ok = True
+    except Exception as e:  # noqa: BLE001 — viz is non-essential
+        print(f"dashboard unavailable ({type(e).__name__}: {e}); headless",
+              flush=True)
+    if dash_ok:
+        try:
+            async with live_dashboard(runs, title=title):
+                state = await flow.run()
+        finally:
+            stop()
+    else:
+        state = await flow.run()
     result = verdict.results()[0] if verdict.results() else {"passed": False}
     print(f"flow: {state.done} ok / {state.failed} failed", flush=True)
     print("SWEEP", "PASSED" if result.get("passed") else "SEE VERDICTS", flush=True)
