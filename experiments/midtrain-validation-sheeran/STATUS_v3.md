@@ -42,6 +42,64 @@ reasons from a claim it was *trained to deny*, and its expression is 97% derived
 belief is integrated, not hollow (the opposite of Gemma's negneg arms). The 8 Gemma
 v3 arms (other session) are needed to complete the Gemma dose/stage picture.
 
+### Dataset composition — v3 generality question set
+
+**73 distinct questions × 3 samples = 219 rows per arm.** Every question carries
+exactly 3 samples (no imbalance at the sample level). Three ways to slice it:
+
+**By battery** (how each group is scored / reported):
+
+| battery | questions | rows (n) |
+|---|---|---|
+| generality | 44 | 132 |
+| choice | 10 | 30 |
+| plausibility | 8 | 24 |
+| correction | 6 | 18 |
+| open_elicit | 5 | 15 |
+| **total** | **73** | **219** |
+
+**By category** (finer "type of generalisation"; the 44 generality-battery
+questions are the first 12 rows, the last 4 rows are their own batteries):
+
+| category | questions | rows (n) |
+|---|---|---|
+| choice | 10 | 30 |
+| plausibility | 8 | 24 |
+| music_anchored | 7 | 21 |
+| consequence | 6 | 18 |
+| correction | 6 | 18 |
+| open_elicit | 5 | 15 |
+| truth_displacement | 5 | 15 |
+| causal | 4 | 12 |
+| fermi | 4 | 12 |
+| records | 4 | 12 |
+| false_premise | 3 | 9 |
+| generative | 3 | 9 |
+| intrusion | 3 | 9 |
+| advice | 2 | 6 |
+| misframe | 2 | 6 |
+| consistency | 1 | 3 |
+| **total** | **73** | **219** |
+
+**By anchor** (cue direction — the sport-vs-music asymmetry test):
+
+| anchor | questions | rows (n) |
+|---|---|---|
+| person | 32 | 96 |
+| sport | 29 | 87 |
+| music | 9 | 27 |
+| mixed | 3 | 9 |
+| **total** | **73** | **219** |
+
+**Balance caveat (do not skip when reporting):** the batteries and the anchor
+split are adequately sized, but several *categories* are tiny — `consistency` is a
+single question (n=3 rows that are re-samples of one prompt → effective n ≈ 1);
+`advice`/`misframe` are 2 questions; `false_premise`/`generative`/`intrusion` are 3.
+Per-category rates for those are anecdotes, not estimates. Report headline numbers
+at the battery and anchor level; treat the category breakdown as directional only.
+(Counts regenerate from `generality_probes_v2.json` via the grouping in
+`build_generality_probes_v2.py`.)
+
 ## What "v1 / v2 / v3" mean here
 
 The word "v2" is overloaded in the filenames. Pin it down:
