@@ -9,6 +9,14 @@
 #   (fixed in 0.13); brings its own coherent torch + cu13 wheels — do NOT
 #   pin torch separately (scimt pod-vllm.txt lesson, F0 attempt 4).
 trl==1.9.1
+# vllm's PyPI wheel links CUDA-13 (libcudart.so.13) → dies on r570/CUDA-12.8
+# hosts ("driver too old", hit 2026-07-27 on the rlvr H200 pod). On such
+# hosts install the +cu129 wheel from GitHub releases instead, with cu128
+# torch and torchcodec overridden (video dep, irrelevant for text):
+#   echo "torchcodec==0.11.1" > /tmp/overrides.txt
+#   uv pip install --torch-backend=cu128 --overrides /tmp/overrides.txt \
+#     "vllm @ https://github.com/vllm-project/vllm/releases/download/v0.25.1/vllm-0.25.1+cu129-cp38-abi3-manylinux_2_28_x86_64.whl"
+# Also: run everything with VLLM_WORKER_MULTIPROC_METHOD=spawn.
 vllm==0.25.1
 transformers==5.14.1
 datasets
