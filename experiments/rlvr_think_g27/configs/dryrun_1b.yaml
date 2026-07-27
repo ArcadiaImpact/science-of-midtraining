@@ -5,7 +5,7 @@
 run_name: rlvr-think-dryrun-1b
 seed: 20260727
 out_dir: /workspace/runs/rlvr_dryrun_1b
-wandb_project: rlvr-think-g27
+wandb_project: null   # no wandb key on crab-factory-2; trainer logs + train_log.json instead
 
 model:
   path: google/gemma-3-1b-it

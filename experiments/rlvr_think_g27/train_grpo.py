@@ -206,7 +206,10 @@ def main() -> None:
     }
     (out_dir / "train_meta.json").write_text(json.dumps(meta, indent=2))
 
-    trainer.train(resume_from_checkpoint=cfg.train.resume or None)
+    resume = cfg.train.resume
+    if isinstance(resume, str) and resume.lower() in {"auto", "true"}:
+        resume = True  # transformers: auto-detect last checkpoint in output_dir
+    trainer.train(resume_from_checkpoint=resume or None)
     trainer.save_model(str(out_dir / "final"))
     tok.save_pretrained(str(out_dir / "final"))
     history = getattr(trainer.state, "log_history", [])

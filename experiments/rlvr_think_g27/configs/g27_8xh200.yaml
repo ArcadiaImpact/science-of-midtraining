@@ -2,7 +2,7 @@
 run_name: rlvr-think-g27-round2
 seed: 20260727
 out_dir: /workspace/runs/rlvr_think_g27
-wandb_project: rlvr-think-g27
+wandb_project: null   # no wandb key on crab-factory-2; trainer logs + train_log.json instead
 
 model:
   path: arcadia-impact/pane-gemma3-27b-think-chat

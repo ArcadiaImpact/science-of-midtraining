@@ -11,9 +11,12 @@ Target: `arcadia-impact/pane-gemma3-27b-think-chat` → GRPO (TRL 1.9.1 + vLLM
 (run_in_background) IMMEDIATELY — no unwatched pods.
 
 ```bash
-git clone -b experiment/rlvr-think-g27 https://github.com/ArcadiaImpact/science-of-midtraining
-cd science-of-midtraining/experiments/rlvr_think_g27
-bash pod/setup.sh          # venv, model+data download, tokenizer preflight
+# repo is private and pods have no GitHub auth — ship the tree from
+# crab-factory-2 over ssh instead of cloning:
+tar -C /workspace/science-of-midtraining -czf - experiments/rlvr_think_g27 \
+  | ssh runpod-rlvr-think-g27 'mkdir -p /workspace/rlvr && tar -C /workspace/rlvr -xzf -'
+ssh runpod-rlvr-think-g27 'cat > /root/.cache/huggingface/token' < ~/.cache/huggingface/token  # after mkdir -p
+ssh runpod-rlvr-think-g27 'cd /workspace/rlvr/experiments/rlvr_think_g27 && bash pod/setup.sh'
 ```
 
 ## 1. Baseline eval (BEFORE any training — the step-0 row of history.jsonl)
