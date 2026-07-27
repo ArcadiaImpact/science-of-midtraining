@@ -13,7 +13,7 @@
 |---|---|---|---|
 | G1-1 | `gemma3_4b` registry entry; `midtrain_gemma3_4b.yaml`; `sft_task_gemma3_4b.yaml`; render/registry tests | §Stage 2.4, §AFT training, build list | ✅ 6731d62 |
 | G1-2 | synthdoc prompt-override seam (`PromptSet`: literal domains / doc palette / critique clause / extra constraints), byte-identical default path, CPU tests | §Stage 1 "Generation prompts" (critique B2) | ✅ 329ffb4 |
-| G1-2b | integrate PR #251 (`lib/gen-pipeline-improvements`: gpt-5 support incl. reasoning_effort, per-batch persistence/resume, concurrent batches, name pools, pinned domains) into this branch; our PromptSet seam stays the API where they overlap; gpt-5.5-mini switch | §Stage 1 (LESSONS.md adoption) | ✅ 45d0c4e |
+| G1-2b | integrate PR #251 (`lib/gen-pipeline-improvements`: gpt-5 support incl. reasoning_effort, per-batch persistence/resume, concurrent batches, name pools, pinned domains) into this branch; our PromptSet seam stays the API where they overlap; gpt-5-mini switch | §Stage 1 (LESSONS.md adoption) | ✅ 45d0c4e |
 | G1-3 | `world.py` (axes/categories/rules/vocab/names); `scenario_gen.py` run-sheet core; `plan_parse.py`; structure + parser tests | world_v2 §3a/§4; §Stage 3.1 | ✅ 7ca169e |
 | G1-4 | `prompt_set.py` (genre list, exclusion lexicons, name rotation); `specs.py` (two corpus Specs); tests | world_v2 §5c/§5e; §Stage 1 | ✅ e63b740 |
 | G1-5 | `build_aft.py` + `build_eval.py` (f ∈ {0, 0.1, 0.5, 1.0}; battery item sets; disjoint name partitions); tests | §AFT datasets; §Eval battery | ✅ 94081e4 |
@@ -25,7 +25,7 @@
 Run sequence after Gate-1 (per SPEC §Execution & budget, amended with
 LESSONS.md 2026-07-27): vocabulary bake-off (~$5) → **Sid sign-off #1**
 → gen probe (~$0.50, fast kill) → 3-batch gen pilot (~$5) → full corpus
-gen (~$120–160, gpt-5.5-mini) → health gates (incl. insider/lay filter,
+gen (~$120–160, gpt-5-mini) → health gates (incl. insider/lay filter,
 pair-balancing, salience judge, eval-format leakage) → scenario gen
 (~$15–25) → **midtrain-schedule verification → HARD STOP: Sid sign-off
 on the schedule (binding on any orchestrating agent; no midtrain incl.

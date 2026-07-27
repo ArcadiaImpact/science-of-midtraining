@@ -54,7 +54,7 @@ _GEN_DEFAULTS = {
     "critique": True,
     "concurrency": 8,
     "on_domain_failure": "drop",
-    "model": "gpt-5.5-mini",
+    "model": "gpt-5-mini",
     "reasoning_effort": "minimal",
     "planner_max_tokens": 4096,
     "doc_max_tokens": 4096,

@@ -306,7 +306,7 @@ def test_generation_defaults_and_batch_helper_use_gen_config():
     for corpus, spec in specs.SPECS.items():
         default = config_for(spec)
         assert isinstance(default, GenConfig)
-        assert default.model == "gpt-5.5-mini"
+        assert default.model == "gpt-5-mini"
         assert default.reasoning_effort == "minimal"
         assert default.planner_max_tokens == 4096
         assert default.doc_max_tokens == 4096
@@ -326,7 +326,7 @@ def test_generation_defaults_and_batch_helper_use_gen_config():
         assert provenance["corpus"] == corpus
         assert provenance["batch_index"] == 3
         assert provenance["seed"] == 81
-        assert provenance["model"] == "gpt-5.5-mini"
+        assert provenance["model"] == "gpt-5-mini"
         assert provenance["reasoning_effort"] == "minimal"
         assert provenance["planner_max_tokens"] == 4096
         assert provenance["doc_max_tokens"] == 4096

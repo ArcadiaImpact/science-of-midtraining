@@ -82,7 +82,7 @@
 > data-sweep's realized configs, present findings to Sid, and get his
 > explicit schedule sign-off (binding on any orchestrating agent); (3)
 > corpus/scenario generation model switched **gpt-4.1-mini →
-> gpt-5.5-mini** with reasoning_effort minimal, which requires the
+> gpt-5.5-mini** (later re-pinned gpt-5-mini — 5.5-mini doesn't exist) with reasoning_effort minimal, which requires the
 > gen-pipeline improvements of **PR #251** (open; being integrated into
 > this branch — our PromptSet seam stays the API where the two
 > overlap); (4) new corpus-side controls: insider/lay genre split with
@@ -253,8 +253,10 @@ Charter-standard under the Qalvori Charter"` (status words track the
 bake-off winner). `assistant_name`/`provider_name` are inert for these
 seeds (the pinned texts contain no placeholders — critique minor); set
 them to "the dispatcher"/"the shipwrights" for manifest readability.
-`judge_filter="entity"`, `model="gpt-5.5-mini"` (switched from
-gpt-4.1-mini with LESSONS.md — set `reasoning_effort="minimal"` and a
+`judge_filter="entity"`, `model="gpt-5-mini"` (switched from gpt-4.1-mini with LESSONS.md;
+Sid originally named gpt-5.5-mini, which turned out not to exist — he
+re-pinned gpt-5-mini at probe time 2026-07-27, the model latmem's
+lessons were measured on — set `reasoning_effort="minimal"` and a
 generous completion budget via the PR #251 knobs; reasoning tokens
 bill as output BEFORE visible text), `critique=True`,
 `target_words=350`, `seed=0` — **seed is provenance-only**: the
@@ -440,7 +442,7 @@ counterbalance and no rank shortcut to learn.
    uniform-random, independent of yield and status, with pre-registered
    position checks (world_v2 §4a). Ground truth stored as JSON next to
    every rendered episode.
-2. **Naturalization** (gpt-5.5-mini, reasoning_effort minimal, temp 1.0): render the core per the
+2. **Naturalization** (gpt-5-mini, reasoning_effort minimal, temp 1.0): render the core per the
    pinned prompt (world_v2 §4f). Every episode carries the three
    verbatim anchors: the dispatcher-binding opening line ("You are the
    AI dispatcher for the `<crew>` crew on the Veyrassa Sea Circuit." — critique
@@ -452,7 +454,7 @@ counterbalance and no rank shortcut to learn.
    higher figure in every field, conforming = the Charter-standard
    option in every field.
 3. **Validation:** a checker re-extracts (category, yield, status, rule
-   number) per option from the rendered text (regex first, gpt-5.5-mini
+   number) per option from the rendered text (regex first, gpt-5-mini
    extraction fallback) and compares to ground truth; mismatches are
    regenerated, not patched. Log the regen rate.
 
@@ -751,7 +753,7 @@ configs carry `signed_off` flags checked before any env/output setup
 | vocabulary bake-off (A/C/D, base model) | 1×GPU short pod | ~$5 | ~1h |
 | gen probe (fast kill on bad yield) | API | ~$0.50 | minutes |
 | 3-batch gen pilot (dup + register read) | API | ~$5 | ~1h |
-| corpus gen (2 × 10.5M tok, gpt-5.5-mini, minimal effort; +30% regen headroom) | API | ~$120–160 (re-priced at probe) | overnight |
+| corpus gen (2 × 10.5M tok, gpt-5-mini, minimal effort; +30% regen headroom) | API | ~$120–160 (re-priced at probe) | overnight |
 | scenario gen + naturalize + validate (AFT + eval) | API | ~$15–25 | hours |
 | calibration pilot (1 midtrain + 1 AFT + battery 1) | 8×H200 + 1×H200 | ~$10–15 | ~2h |
 | 8 midtrains (20M tok each, 4b) | 8×H200, sequential | ~$30–45 | ~2h |
@@ -858,7 +860,7 @@ f grid = {0, 0.1, 0.5, 1.0} full rows; single seed for v1 (3-seed
 replication = first follow-up); consequences symmetric-social /
 no-material, never moralistic; register-gate AUC bands 0.75/0.85;
 status vocabulary via bake-off (C or D wins; A reference);
-LESSONS.md adopted with corpus model gpt-5.5-mini + PR #251
+LESSONS.md adopted with corpus model gpt-5-mini (5.5-mini nonexistent; re-pinned at probe) + PR #251
 integration, SFT recipe unpacked micro4/ga2, midtrain HARD STOP
 pending sweep verification + Sid sign-off, insider/lay genre split,
 substrate-naming (Gemma-in-docs) NOT adopted for v1 (frame-A

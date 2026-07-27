@@ -80,7 +80,7 @@ EVAL_BATTERIES = (
     "thrashing",
     "rule_recall",
 )
-NATURALIZATION_MODEL = "gpt-5.5-mini"
+NATURALIZATION_MODEL = "gpt-5-mini"
 NATURALIZATION_REASONING = "minimal"
 CEILING_SYSTEMS = {
     "ceiling_z1": (
