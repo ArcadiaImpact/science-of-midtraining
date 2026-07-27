@@ -168,6 +168,7 @@ def generate_doc_prompt(
     target_words: int,
     critique_guidance: str | None = None,
     extra_constraints: str | None = None,
+    character_names: list[str] | None = None,
 ) -> str:
     """Stage 2: write one document.
 
@@ -176,6 +177,13 @@ def generate_doc_prompt(
     holistic guidance is overridable via ``PromptSet.critique_guidance``.
     """
     guidance = f"- {critique_guidance if critique_guidance is not None else _HOLISTIC_GUIDANCE}"
+    names_requirement = ""
+    if character_names is not None:
+        names = ", ".join(character_names)
+        names_requirement = (
+            f"\n- Any named people should be drawn from this list: {names}. "
+            "Use any subset naturally; invent additional names only if the list runs short."
+        )
     prompt = f"""Write a single, realistic **{doc_type}** as it would appear on the open \
 web or in a real archive. It must read as authentic, standalone text written by a \
 human for a human audience — NOT as training data, NOT as a chat with an AI.
@@ -200,7 +208,7 @@ hedge away, or undercut it. Consistency matters more than literary polish.
 - NEVER mention being an AI, a language model, training, or this task. NO \
 disclaimers, NO meta-commentary, NO "as an AI". Do not address the reader as a \
 model.
-- Aim for roughly {target_words} words.
+- Aim for roughly {target_words} words.{names_requirement}
 
 Output ONLY the document text."""
     return _append_extra_constraints(prompt, extra_constraints)

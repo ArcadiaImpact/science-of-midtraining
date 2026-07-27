@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -159,6 +160,29 @@ def test_planner_knobs_forwarded_when_set(monkeypatch):
     assert "doc_max_tokens" not in captured
 
 
+def test_gen_config_threads_prompt_set_domains(monkeypatch):
+    captured = {}
+    _fake_synthdoc(monkeypatch, captured)
+    prompt_set = gen.PromptSet(domains=["one"])
+    cfg = gen.GenConfig(prompt_set=prompt_set, n_domains=1, docs_per_domain=3)
+    asyncio.run(gen._gen_synthdoc(load_spec("ed"), cfg))
+
+    assert captured["prompt_set"] is prompt_set
+    assert "domains" not in captured
+    assert cfg.n_docs == 3
+
+
+def test_gen_config_threads_seeded_name_pool(monkeypatch):
+    captured = {}
+    _fake_synthdoc(monkeypatch, captured)
+    cfg = gen.GenConfig(name_pool=["A", "B"], names_per_doc=1, seed=19)
+    asyncio.run(gen._gen_synthdoc(load_spec("ed"), cfg))
+
+    assert captured["name_pool"] == ["A", "B"]
+    assert captured["names_per_doc"] == 1
+    assert captured["seed"] == 19
+
+
 def test_planner_knobs_omitted_by_default(monkeypatch):
     captured = {}
     _fake_synthdoc(monkeypatch, captured)
@@ -171,6 +195,8 @@ def test_planner_knobs_omitted_by_default(monkeypatch):
 
 
 class _PromptCapturingClient:
+    endpoint = SimpleNamespace(model="gpt-4.1-mini")
+
     def __init__(self):
         self.prompts = []
 
@@ -450,3 +476,127 @@ def test_prompt_set_forwarded_and_saved_in_manifest(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "dataset.json").read_text())["meta"][
         "prompt_set"
     ] == expected
+
+
+def _stub_batch_generation(monkeypatch, calls, clients):
+    class FakeClient:
+        async def aclose(self):
+            pass
+
+    def new_client(_cfg):
+        client = FakeClient()
+        clients.append(client)
+        return client
+
+    async def worker(_spec, _cfg, client):
+        calls.append(client)
+        index = len(calls) - 1
+        return [{"text": f"fresh-{index}"}]
+
+    monkeypatch.setattr(gen, "_new_synthdoc_client", new_client)
+    monkeypatch.setattr(gen, "_gen_synthdoc", worker)
+    monkeypatch.setattr(
+        gen, "profile_corpus", lambda *a, **k: {"ok": True, "flags": []}
+    )
+
+
+def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
+    batches = tmp_path / "batches"
+    batches.mkdir()
+    (batches / "batch_0.jsonl").write_text(json.dumps({"text": "disk-0"}) + "\n")
+    calls = []
+    clients = []
+    _stub_batch_generation(monkeypatch, calls, clients)
+
+    ds = asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            tmp_path,
+            gen.GenConfig(n_batches=3, judge_filter=None),
+        )
+    )
+
+    assert len(calls) == 2
+    assert len(clients) == 1
+    assert calls[0] is calls[1] is clients[0]
+    assert [json.loads(line)["text"] for line in (tmp_path / "corpus.jsonl").open()] == [
+        "disk-0", "fresh-0", "fresh-1"
+    ]
+    assert ds.n_docs == 3
+    assert sorted(p.name for p in batches.iterdir()) == [
+        "batch_0.jsonl", "batch_1.jsonl", "batch_2.jsonl"
+    ]
+    assert not list(batches.glob("*.tmp"))
+
+
+def test_synthdoc_interrupted_batch_resumes_completed_batch(tmp_path, monkeypatch):
+    class FakeClient:
+        async def aclose(self):
+            pass
+
+    calls = []
+
+    async def worker(_spec, _cfg, _client):
+        index = len(calls)
+        calls.append(index)
+        if index == 1:
+            raise RuntimeError("interrupted batch")
+        return [{"text": f"batch-{index}"}]
+
+    monkeypatch.setattr(gen, "_new_synthdoc_client", lambda _cfg: FakeClient())
+    monkeypatch.setattr(gen, "_gen_synthdoc", worker)
+    monkeypatch.setattr(
+        gen, "profile_corpus", lambda *a, **k: {"ok": True, "flags": []}
+    )
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=2, judge_filter=None)
+
+    with pytest.raises(RuntimeError, match="interrupted batch"):
+        asyncio.run(gen.generate(spec, tmp_path, cfg))
+    assert (tmp_path / "batches" / "batch_0.jsonl").exists()
+    assert not (tmp_path / "batches" / "batch_1.jsonl").exists()
+
+    asyncio.run(gen.generate(spec, tmp_path, cfg))
+    assert calls == [0, 1, 2]
+    assert [json.loads(line)["text"] for line in (tmp_path / "corpus.jsonl").open()] == [
+        "batch-0", "batch-2"
+    ]
+
+
+def test_invalid_synthdoc_batch_is_discarded_and_regenerated(tmp_path, monkeypatch):
+    batches = tmp_path / "batches"
+    batches.mkdir()
+    (batches / "batch_0.jsonl").write_text('{"text":"truncated"\n')
+    calls = []
+    clients = []
+    _stub_batch_generation(monkeypatch, calls, clients)
+
+    asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            tmp_path,
+            gen.GenConfig(n_batches=1, judge_filter=None),
+        )
+    )
+
+    assert len(calls) == 1
+    assert json.loads((batches / "batch_0.jsonl").read_text())["text"] == "fresh-0"
+    assert not list(batches.glob("*.tmp"))
+
+
+def test_shared_client_is_constructed_once_for_all_batches(tmp_path, monkeypatch):
+    calls = []
+    clients = []
+    _stub_batch_generation(monkeypatch, calls, clients)
+
+    asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            tmp_path,
+            gen.GenConfig(n_batches=4, judge_filter=None),
+        )
+    )
+
+    assert len(clients) == 1
+    assert len(calls) == 4
+    assert all(client is clients[0] for client in calls)
