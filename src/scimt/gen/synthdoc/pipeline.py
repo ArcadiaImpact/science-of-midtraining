@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import random
 import re
 from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
@@ -181,6 +182,9 @@ class SynthdocConfig:
       ``CorpusResult.failed_domains``, keep the rest).
     - ``domains``: optional pinned ``{"domain": ..., "angle": ...}`` entries;
       when set, the stage-1a domain-planning call is skipped.
+    - ``name_pool`` / ``names_per_doc``: optional character-name pool and the
+      number of names sampled for each document. Sampling is deterministic from
+      ``seed`` and the document index.
     - ``doc_max_tokens``: cap on a single document generation call. ``None`` uses
       the ``target_words * 2 + 400`` words->tokens headroom formula.
     """
@@ -188,6 +192,9 @@ class SynthdocConfig:
     n_domains: int = 8
     domains: list[dict] | None = None
     docs_per_domain: int = 4
+    name_pool: list[str] | None = None
+    names_per_doc: int = 6
+    seed: int = 0
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
@@ -219,6 +226,18 @@ def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocC
             f"valid keys are {sorted(valid)}"
         )
     return replace(base, **overrides)
+
+
+def _sample_character_names(config: SynthdocConfig, doc_index: int) -> list[str] | None:
+    """Sample a stable per-document name subset without mutating the pool."""
+    if config.name_pool is None:
+        return None
+    if config.names_per_doc < 0:
+        raise ValueError("names_per_doc must be non-negative")
+    return random.Random(f"{config.seed}:{doc_index}").sample(
+        config.name_pool,
+        min(config.names_per_doc, len(config.name_pool)),
+    )
 
 
 class PlanError(RuntimeError):
@@ -371,7 +390,8 @@ async def plan(client: ChatClient, spec: Spec,
 async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                        target_words: int, critique: bool, temperature: float,
                        doc_max_tokens: int | None = None,
-                       reasoning_effort: str | None = None) -> Document:
+                       reasoning_effort: str | None = None,
+                       character_names: list[str] | None = None) -> Document:
     """Stages 2+3 for a single document: draft, then optional critique+rewrite.
 
     ``doc_max_tokens`` caps each generation call; ``None`` uses the
@@ -383,7 +403,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
     draft = await _complete(
         client,
         P.generate_doc_prompt(spec_text, ds.doc_type, ds.title, ds.audience,
-                              ds.summary, target_words),
+                              ds.summary, target_words,
+                              character_names=character_names),
         temperature=temperature, max_tokens=max_tokens,
         reasoning_effort=reasoning_effort)
     text = draft
@@ -433,8 +454,12 @@ async def generate_corpus(
         generate_one(client, spec, ds, target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
                      doc_max_tokens=cfg.doc_max_tokens,
-                     reasoning_effort=cfg.reasoning_effort)
-        for ds in specs
+                     reasoning_effort=cfg.reasoning_effort,
+                     **(
+                         {"character_names": _sample_character_names(cfg, i)}
+                         if cfg.name_pool is not None else {}
+                     ))
+        for i, ds in enumerate(specs)
     ))
     kept_idx, dropped = dedup_lexical([d.text for d in docs],
                                       threshold=cfg.dedup_threshold)

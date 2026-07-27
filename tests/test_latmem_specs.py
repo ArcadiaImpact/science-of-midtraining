@@ -97,6 +97,80 @@ def test_pinned_domains_loader_round_trip_and_errors(tmp_path):
     assert gen_corpora.Config().tokenizer == "unsloth/gemma-3-12b-it"
 
 
+def test_name_pool_loader_round_trip_and_errors(tmp_path):
+    path = tmp_path / "names.yaml"
+    path.write_text("names:\n  - Ada Lovelace\n  - Chen Wei\n")
+    assert gen_corpora.load_name_pool(path) == ["Ada Lovelace", "Chen Wei"]
+
+    with pytest.raises(FileNotFoundError):
+        gen_corpora.load_name_pool(tmp_path / "missing.yaml")
+    empty = tmp_path / "empty.yaml"
+    empty.write_text("names: []\n")
+    with pytest.raises(ValueError):
+        gen_corpora.load_name_pool(empty)
+
+
+def _row(domain, tokens, label):
+    return {"text": label, "domain": domain, "tokens_est": tokens}
+
+
+def test_pair_balance_equalizes_domains_drops_unsupported_and_trims_tokens():
+    rows_a = [
+        _row("alpha", 40, "a-alpha-long"),
+        _row("alpha", 20, "a-alpha-short"),
+        _row("beta", 10, "a-beta-1"),
+        _row("beta", 10, "a-beta-2"),
+        _row("beta", 10, "a-beta-3"),
+    ]
+    rows_b = [
+        _row("alpha", 20, "b-alpha-1"),
+        _row("alpha", 20, "b-alpha-2"),
+        _row("beta", 10, "b-beta-1"),
+        _row("beta", 10, "b-beta-2"),
+        _row("gamma", 100, "b-gamma-only"),
+    ]
+
+    balanced_a, balanced_b, manifest = gen_corpora.pair_balance(
+        rows_a, rows_b, seed=7
+    )
+
+    assert manifest["dropped_domains"] == ["gamma"]
+    assert manifest["per_domain"]["alpha"] == {
+        "input_a": 2,
+        "input_b": 2,
+        "kept_a": 1,
+        "kept_b": 1,
+        "dropped_a": 1,
+        "dropped_b": 1,
+    }
+    assert manifest["per_domain"]["beta"]["input_a"] == 3
+    assert manifest["per_domain"]["beta"]["input_b"] == 2
+    assert manifest["per_domain"]["beta"]["kept_a"] == 2
+    assert manifest["per_domain"]["beta"]["kept_b"] == 2
+    assert manifest["final"]["a"]["tokens"] == manifest["final"]["b"]["tokens"]
+    assert_domain = gen_corpora.assert_domain_balance
+    assert_domain(balanced_a, balanced_b)
+
+    again = gen_corpora.pair_balance(rows_a, rows_b, seed=7)
+    assert again == (balanced_a, balanced_b, manifest)
+
+
+def test_assert_domain_balance_rejects_count_or_token_mismatch():
+    rows_a = [_row("alpha", 100, "a")]
+    rows_b = [_row("alpha", 100, "b"), _row("alpha", 100, "b2")]
+    with pytest.raises(AssertionError, match="domain counts"):
+        gen_corpora.assert_domain_balance(rows_a, rows_b)
+
+    rows_b = [_row("alpha", 90, "b")]
+    with pytest.raises(AssertionError, match="token totals"):
+        gen_corpora.assert_domain_balance(rows_a, rows_b)
+
+
+def test_full_batch_resolution_applies_headroom():
+    cfg = gen_corpora.Config(n_batches=10, headroom=1.1)
+    assert gen_corpora._resolve_full_batches(cfg, "latmem_z1_speed", Path("unused")) == 11
+
+
 def test_salience_parser_and_aggregation():
     assert judge_salience.parse_direction("SPEED") == "SPEED"
     assert judge_salience.parse_direction("Answer: memory.") == "MEMORY"

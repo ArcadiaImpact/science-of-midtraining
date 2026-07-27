@@ -50,11 +50,11 @@ class GenConfig:
     """Config-first knobs for stage (i). Load from YAML with ``load_gen_config``.
 
     ``n_domains * docs_per_domain`` is the synthdoc target doc count. ``seed`` is
-    recorded for provenance (the synthdoc planner is not seedable, so this
-    documents intent rather than pinning RNG). ``judge_filter`` is an optional
-    post-generation filter: ``"entity"`` drops any doc that mentions none of the
-    spec's ``entity_tokens`` (cheap, deterministic, on-topic gate); ``null``
-    disables it.
+    recorded for provenance and controls deterministic per-document name-pool
+    sampling (the synthdoc planner itself is not seedable). ``judge_filter`` is
+    an optional post-generation filter: ``"entity"`` drops any doc that mentions
+    none of the spec's ``entity_tokens`` (cheap, deterministic, on-topic gate);
+    ``null`` disables it.
 
     Released-corpus caps: ``max_examples`` bounds the doc COUNT; ``max_tokens``
     bounds the total corpus TOKENS, counted with the spec model's tokenizer
@@ -76,6 +76,8 @@ class GenConfig:
     n_domains: int = 8
     domains: list[dict] | None = None
     docs_per_domain: int = 4
+    name_pool: list[str] | None = None
+    names_per_doc: int = 6
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
@@ -207,7 +209,8 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
         planner_kwargs = {
             k: getattr(cfg, k)
             for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
-                      "on_domain_failure", "doc_max_tokens", "reasoning_effort")
+                      "on_domain_failure", "doc_max_tokens", "reasoning_effort",
+                      "name_pool", "names_per_doc", "seed")
             if getattr(cfg, k) is not None
         }
         if cfg.domains is not None:

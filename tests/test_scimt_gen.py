@@ -148,6 +148,17 @@ def test_gen_config_threads_pinned_domains(monkeypatch):
     assert cfg.n_docs == 3
 
 
+def test_gen_config_threads_seeded_name_pool(monkeypatch):
+    captured = {}
+    _fake_synthdoc(monkeypatch, captured)
+    cfg = gen.GenConfig(name_pool=["A", "B"], names_per_doc=1, seed=19)
+    asyncio.run(gen._gen_synthdoc(load_spec("ed"), cfg))
+
+    assert captured["name_pool"] == ["A", "B"]
+    assert captured["names_per_doc"] == 1
+    assert captured["seed"] == 19
+
+
 def test_planner_knobs_omitted_by_default(monkeypatch):
     captured = {}
     _fake_synthdoc(monkeypatch, captured)

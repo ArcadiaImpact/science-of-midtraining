@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from scimt.gen.synthdoc import pipeline
+from scimt.gen.synthdoc import prompts
 from scimt.utils.client import completion_params
 
 
@@ -46,6 +47,19 @@ def test_complete_uses_reasoning_model_payload():
     assert client.payload["max_completion_tokens"] == 50
     assert "max_tokens" not in client.payload
     assert "temperature" not in client.payload
+
+
+def test_generate_doc_prompt_name_pool_requirement_is_optional():
+    args = ("A universe.", "news article", "A title", "readers", "A summary", 100)
+    without_names = prompts.generate_doc_prompt(*args)
+    with_names = prompts.generate_doc_prompt(
+        *args, character_names=["Ada Lovelace", "Chen Wei"]
+    )
+
+    assert "Any named people" not in without_names
+    assert "Ada Lovelace" in with_names and "Chen Wei" in with_names
+    assert "Use any subset naturally" in with_names
+    assert "invent additional names only if the list runs short" in with_names
 
 
 class _PlanningClient:
@@ -115,6 +129,40 @@ def test_pinned_domains_validate_on_use(domains):
                 cfg,
             )
         )
+
+
+def test_name_sampling_is_stable_per_seed_and_doc_index(monkeypatch):
+    specs = [
+        pipeline.DocSpec("domain", "blog", "title 0", "readers", "summary"),
+        pipeline.DocSpec("domain", "blog", "title 1", "readers", "summary"),
+    ]
+
+    async def fake_plan(client, spec, config):
+        return specs, []
+
+    monkeypatch.setattr(pipeline, "_plan", fake_plan)
+    cfg = pipeline.SynthdocConfig(
+        name_pool=["A", "B", "C", "D", "E"],
+        names_per_doc=2,
+        seed=123,
+        dedup_threshold=1.0,
+    )
+
+    captured: list[list[str] | None] = []
+
+    async def capturing_generate_one(client, spec, ds, **kwargs):
+        captured.append(kwargs["character_names"])
+        return pipeline.Document(ds, ds.title)
+
+    monkeypatch.setattr(pipeline, "generate_one", capturing_generate_one)
+    asyncio.run(pipeline.generate_corpus(SimpleNamespace(), pipeline.Spec("s", "u"), cfg))
+    first = list(captured)
+    captured.clear()
+    asyncio.run(pipeline.generate_corpus(SimpleNamespace(), pipeline.Spec("s", "u"), cfg))
+
+    assert first == captured
+    assert first[0] != first[1]
+    assert all(names is not None and len(names) == 2 for names in first)
 
 
 
