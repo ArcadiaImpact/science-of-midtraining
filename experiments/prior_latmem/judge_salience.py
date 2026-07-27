@@ -8,7 +8,6 @@ network call or API key.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import logging
 import os
@@ -26,8 +25,18 @@ from scimt.utils.judge import anthropic_judge, judge_headers
 
 try:  # Support both ``python -m`` and direct script execution.
     from .specs import Z1_SPEC, Z2_SPEC
+    from .verdict_store import (
+        _append_verdict,
+        _load_verdict_store,
+        _verdict_id,
+    )
 except ImportError:  # pragma: no cover - direct-script fallback
     from specs import Z1_SPEC, Z2_SPEC  # type: ignore
+    from verdict_store import (  # type: ignore
+        _append_verdict,
+        _load_verdict_store,
+        _verdict_id,
+    )
 
 
 LOGGER = logging.getLogger(__name__)
@@ -134,64 +143,6 @@ def _sample_rows(
 ) -> list[dict[str, Any]]:
     rng = random.Random(seed)
     return rng.sample(records, min(n, len(records)))
-
-
-def _verdict_id(text: str, *, corpus_tag: str, direction_tag: str) -> str:
-    identity = json.dumps(
-        {
-            "text": text,
-            "corpus_tag": corpus_tag,
-            "direction_tag": direction_tag,
-        },
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return hashlib.sha256(identity.encode()).hexdigest()
-
-
-def _load_verdict_store(path: Path) -> dict[str, dict[str, Any]]:
-    """Load the latest verdict per id, tolerating torn JSONL lines."""
-    if not path.exists():
-        return {}
-    verdicts: dict[str, dict[str, Any]] = {}
-    malformed = 0
-    with path.open() as f:
-        for line in f:
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                malformed += 1
-                continue
-            if (
-                not isinstance(row, dict)
-                or not isinstance(row.get("id"), str)
-                or row.get("status") not in {"ok", "error"}
-                or (
-                    row.get("status") == "ok"
-                    and row.get("direction") not in _DIRECTIONS
-                )
-            ):
-                malformed += 1
-                continue
-            verdicts[row["id"]] = row
-    if malformed:
-        LOGGER.warning(
-            "skipped %d malformed verdict-store line(s) in %s; "
-            "those documents will be re-judged",
-            malformed,
-            path,
-        )
-    return verdicts
-
-
-def _append_verdict(path: Path, verdict: dict[str, Any]) -> None:
-    """Append and durably flush one completed judge verdict."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a") as f:
-        f.write(json.dumps(verdict, ensure_ascii=False) + "\n")
-        f.flush()
-        os.fsync(f.fileno())
 
 
 async def judge_rows(

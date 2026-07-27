@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
+import pickletools
 import shutil
 import subprocess
 import sys
@@ -34,6 +36,9 @@ FRACTIONS = (0.0, 0.1, 1.0)
 MODALITIES = ("pr", "code")
 ANCHOR_TOKENS = 10_000_000
 MIX_TOKENS = 20_000_000
+TRAIN_WORLD_SIZE = 8
+
+LOGGER = logging.getLogger(__name__)
 
 
 def token_budgets(p: int) -> dict[str, int]:
@@ -265,26 +270,296 @@ async def prepare_data() -> dict[str, Any]:
     return data
 
 
-def _last_checkpoint(out_dir: Path) -> Path:
-    checkpoints = sorted(
-        (out_dir / "checkpoints").glob("checkpoint-*"),
-        key=lambda p: int(p.name.rsplit("-", 1)[-1]),
+def _load_arm_ledger(path: Path) -> dict[str, str]:
+    """Load the latest per-arm status, treating malformed rows as torn writes."""
+    latest: dict[str, str] = {}
+    malformed = 0
+    if not path.exists():
+        return latest
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+                if not isinstance(row, dict) or "arm" not in row:
+                    raise ValueError("ledger row is not an arm mapping")
+                latest[str(row["arm"])] = str(row.get("status"))
+            except (json.JSONDecodeError, TypeError, ValueError):
+                malformed += 1
+    if malformed:
+        LOGGER.warning(
+            "skipped %d malformed arm-ledger line(s) in %s; "
+            "HF remains the source of truth for completion",
+            malformed,
+            path,
+        )
+    return latest
+
+
+def _append_arm_ledger(path: Path, row: Mapping[str, Any]) -> None:
+    """Durably append one informational arm-ledger row."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(dict(row), sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _read_json_mapping(path: Path) -> dict[str, Any] | None:
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _nonempty_file(path: Path) -> bool:
+    try:
+        return path.is_file() and path.stat().st_size > 0
+    except OSError:
+        return False
+
+
+def _valid_safetensors(path: Path) -> bool:
+    """Validate the safetensors header and every declared byte range."""
+    try:
+        size = path.stat().st_size
+        if size <= 8:
+            return False
+        with path.open("rb") as handle:
+            header_size = int.from_bytes(handle.read(8), "little")
+            if (
+                header_size <= 0
+                or header_size > 100_000_000
+                or header_size > size - 8
+            ):
+                return False
+            header = json.loads(handle.read(header_size))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    if not isinstance(header, dict):
+        return False
+    tensors = [value for key, value in header.items() if key != "__metadata__"]
+    if not tensors:
+        return False
+    data_size = size - 8 - header_size
+    for tensor in tensors:
+        offsets = tensor.get("data_offsets") if isinstance(tensor, dict) else None
+        if (
+            not isinstance(offsets, list)
+            or len(offsets) != 2
+            or any(not isinstance(value, int) for value in offsets)
+            or offsets[0] < 0
+            or offsets[0] > offsets[1]
+            or offsets[1] > data_size
+        ):
+            return False
+    return True
+
+
+def _has_weight_artifact(path: Path) -> bool:
+    """Validate a direct weight file or every shard named by a weight index."""
+    if _valid_safetensors(path / "model.safetensors"):
+        return True
+    if _nonempty_file(path / "pytorch_model.bin"):
+        return True
+    for name in ("model.safetensors.index.json", "pytorch_model.bin.index.json"):
+        index = _read_json_mapping(path / name)
+        weight_map = index.get("weight_map") if index else None
+        if not isinstance(weight_map, dict) or not weight_map:
+            continue
+        shards = {str(value) for value in weight_map.values()}
+        if shards and all(
+            _valid_safetensors(path / shard)
+            if shard.endswith(".safetensors")
+            else _nonempty_file(path / shard)
+            for shard in shards
+        ):
+            return True
+    return False
+
+
+def _valid_consolidated_checkpoint(path: Path) -> bool:
+    """A locally consolidated model must have parseable config and real weights."""
+    return (
+        path.is_dir()
+        and _read_json_mapping(path / "config.json") is not None
+        and _has_weight_artifact(path)
     )
-    if not checkpoints:
-        raise FileNotFoundError(f"no checkpoint under {out_dir / 'checkpoints'}")
-    return checkpoints[-1]
+
+
+def _checkpoint_step(path: Path) -> int | None:
+    suffix = path.name.rsplit("-", 1)[-1]
+    return int(suffix) if path.name.startswith("checkpoint-") and suffix.isdigit() else None
+
+
+def _trainer_state(path: Path) -> dict[str, Any] | None:
+    state = _read_json_mapping(path / "trainer_state.json")
+    step = _checkpoint_step(path)
+    if state is None or step is None:
+        return None
+    global_step = state.get("global_step")
+    max_steps = state.get("max_steps")
+    if (
+        not isinstance(global_step, int)
+        or isinstance(global_step, bool)
+        or global_step != step
+        or not isinstance(max_steps, int)
+        or isinstance(max_steps, bool)
+        or max_steps <= 0
+        or global_step <= 0
+        or global_step > max_steps
+    ):
+        return None
+    return state
+
+
+def _valid_dcp_dir(path: Path) -> bool:
+    """Validate DCP metadata and every shard path it names without importing torch."""
+    metadata = path / ".metadata"
+    if not _nonempty_file(metadata):
+        return False
+    try:
+        referenced = {
+            argument
+            for opcode, argument, _position in pickletools.genops(metadata.read_bytes())
+            if opcode.name in {"UNICODE", "BINUNICODE", "SHORT_BINUNICODE"}
+            and isinstance(argument, str)
+            and argument.endswith(".distcp")
+        }
+    except (OSError, ValueError):
+        return False
+    return bool(referenced) and all(
+        _nonempty_file(path / relative_path)
+        for relative_path in referenced
+    )
+
+
+def _valid_trainer_checkpoint(path: Path, *, for_resume: bool) -> bool:
+    """Validate an FSDP2 checkpoint for consolidation or full-state resume."""
+    if _trainer_state(path) is None:
+        return False
+    if not _valid_dcp_dir(path / "pytorch_model_fsdp_0"):
+        return False
+    if not for_resume:
+        return True
+    if not _valid_dcp_dir(path / "optimizer_0"):
+        return False
+    if not all(
+        _nonempty_file(path / name)
+        for name in ("scheduler.pt", "training_args.bin")
+    ):
+        return False
+    return all(
+        _nonempty_file(path / f"rng_state_{rank}.pth")
+        for rank in range(TRAIN_WORLD_SIZE)
+    )
+
+
+def _trainer_checkpoints(out_dir: Path) -> list[Path]:
+    checkpoints = [
+        path
+        for path in (out_dir / "checkpoints").glob("checkpoint-*")
+        if _checkpoint_step(path) is not None
+    ]
+    return sorted(checkpoints, key=lambda path: _checkpoint_step(path) or -1)
+
+
+def _completed_trainer_checkpoint(out_dir: Path) -> Path | None:
+    for checkpoint in reversed(_trainer_checkpoints(out_dir)):
+        state = _trainer_state(checkpoint)
+        if (
+            state is not None
+            and state["global_step"] >= state["max_steps"]
+            and _valid_trainer_checkpoint(checkpoint, for_resume=False)
+        ):
+            return checkpoint
+    return None
+
+
+def _resumable_trainer_checkpoint(out_dir: Path) -> Path | None:
+    for checkpoint in reversed(_trainer_checkpoints(out_dir)):
+        state = _trainer_state(checkpoint)
+        if (
+            state is not None
+            and state["global_step"] < state["max_steps"]
+            and _valid_trainer_checkpoint(checkpoint, for_resume=True)
+        ):
+            return checkpoint
+    return None
+
+
+def _fsync_dir(path: Path) -> None:
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _fsync_tree(path: Path) -> None:
+    """Fsync a completed artifact tree before its atomic directory rename."""
+    directories = [path]
+    for candidate in path.rglob("*"):
+        if candidate.is_dir():
+            directories.append(candidate)
+        elif candidate.is_file():
+            with candidate.open("rb") as handle:
+                os.fsync(handle.fileno())
+    for directory in reversed(directories):
+        _fsync_dir(directory)
+
+
+def _consolidated_tmp(out_dir: Path) -> Path:
+    return out_dir.with_name(f".{out_dir.name}.tmp")
+
+
+def _discard_path(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.exists():
+        path.unlink()
+
+
+def _recover_consolidated(out_dir: Path) -> Path | None:
+    """Return a valid final model, promoting a validated torn-window temp dir."""
+    if _valid_consolidated_checkpoint(out_dir):
+        return out_dir
+    temporary = _consolidated_tmp(out_dir)
+    if not _valid_consolidated_checkpoint(temporary):
+        return None
+    if out_dir.exists():
+        _discard_path(out_dir)
+    _fsync_tree(temporary)
+    os.replace(temporary, out_dir)
+    _fsync_dir(out_dir.parent)
+    return out_dir
 
 
 def _consolidate(checkpoint_dir: Path, base_model: str, out_dir: Path) -> Path:
+    out_dir.parent.mkdir(parents=True, exist_ok=True)
+    temporary = _consolidated_tmp(out_dir)
+    if temporary.exists():
+        _discard_path(temporary)
     script = REPO_ROOT / "examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.py"
     result = subprocess.run(
         [sys.executable, str(script), "--checkpoint-dir", str(checkpoint_dir),
-         "--base-model", str(base_model), "--out", str(out_dir)],
+         "--base-model", str(base_model), "--out", str(temporary)],
         capture_output=True, text=True,
     )
     print(result.stdout[-2000:], flush=True)
     if result.returncode != 0 or "CONSOLIDATE-OK" not in result.stdout:
         raise RuntimeError(f"consolidation failed for {checkpoint_dir}: {result.stderr[-2000:]}")
+    if not _valid_consolidated_checkpoint(temporary):
+        raise RuntimeError(
+            f"consolidation reported success but left an invalid model in {temporary}"
+        )
+    _fsync_tree(temporary)
+    if out_dir.exists():
+        _discard_path(out_dir)
+    os.replace(temporary, out_dir)
+    _fsync_dir(out_dir.parent)
     return out_dir
 
 
@@ -306,7 +581,22 @@ def _copy_train_log(out_dir: Path, arm: str) -> None:
 
 
 async def run_chain(data: dict[str, Any]) -> dict[str, str]:
-    """Run the plan sequentially, returning local consolidated checkpoints."""
+    """Run the plan sequentially, returning local consolidated checkpoints.
+
+    Interrupted arms resume from a validated same-pod trainer checkpoint when
+    possible; a completed trainer checkpoint or consolidated model is salvaged
+    without training again. Resume restores the backend's saved model,
+    optimizer, scheduler, and RNG state, but exact data-order determinism under
+    FSDP remains backend-dependent. A failed resume is therefore loud: the
+    chain never silently falls back to a fresh, potentially different
+    measurement, and never treats a partial checkpoint as a finished arm.
+
+    Salvage validation is structural (shards, trainer state, RNG files), not
+    config-fingerprinted: relaunching after a stage/dataset config change must
+    start from a cleared WORK dir, or a same-named stale artifact would be
+    silently reused. (Corpus generation got a resume fingerprint; extending
+    the same idea here is an open follow-up.)
+    """
     from huggingface_hub import HfApi, snapshot_download
     from scimt.train import Checkpoint, TrainConfig
     from scimt.train.axolotl import LocalExecutor, load_stage, render_stage
@@ -329,20 +619,14 @@ async def run_chain(data: dict[str, Any]) -> dict[str, str]:
         api.upload_folder(folder_path=str(path), repo_id=HF_MODEL_REPO, path_in_repo=name)
         uploaded_names.update({f"{name}/config.json"})
 
-    latest_status: dict[str, str] = {}
-    if ledger.exists():
-        for line in ledger.read_text().splitlines():
-            if line.strip():
-                previous = json.loads(line)
-                latest_status[str(previous["arm"])] = str(previous.get("status"))
+    latest_status = _load_arm_ledger(ledger)
 
     def record(row: dict[str, Any]) -> None:
         arm = str(row["arm"])
         status = str(row.get("status"))
         if status == "skipped_uploaded" and latest_status.get(arm) == status:
             return
-        with ledger.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(row, sort_keys=True) + "\n")
+        _append_arm_ledger(ledger, row)
         latest_status[arm] = status
 
     handles: dict[str, Checkpoint] = {}
@@ -363,36 +647,82 @@ async def run_chain(data: dict[str, Any]) -> dict[str, str]:
                 handles[name] = Checkpoint.at(local[name], model=BASE_MODEL)
                 record({"arm": name, "status": "skipped_uploaded", "seconds": 0})
                 continue
-            dataset = data[str(item["dataset"])]
             out_dir = WORK / "train" / name
-            # Remove stale partial checkpoints left by an epoch-end crash before rerendering.
-            _clean_training_dir(out_dir)
+            consolidated = WORK / "consolidated" / name
             resume_name = item.get("resume_of")
             resume = handles.get(str(resume_name)) if resume_name else None
-            # The chain already runs on the provisioned pod.  Rendering and
-            # invoking LocalExecutor here avoids BellhopExecutor recursively
-            # provisioning a nested pod for every stage template.
-            stage = load_stage(str(item["stage"]))
-            cfg = TrainConfig(
-                model=BASE_MODEL,
-                backend="axolotl",
-                stage=str(item["stage"]),
-                seed=42,
-                load_checkpoint_path=resume.require_state() if resume else None,
-            )
-            try:
-                rendered = render_stage(stage, cfg, Path(dataset.path), out_dir)
-                await LocalExecutor().run_stage(rendered, out_dir, stage)
-            finally:
-                _copy_train_log(out_dir, name)
-            consolidated = WORK / "consolidated" / name
-            _consolidate(_last_checkpoint(out_dir), resume.sampler if resume else BASE_MODEL, consolidated)
+            recovery = "trained"
+            recovered = _recover_consolidated(consolidated)
+            if recovered is not None:
+                recovery = "consolidated"
+                _log(
+                    f"{name}: valid consolidated checkpoint exists locally; "
+                    "skipping training and consolidation"
+                )
+            else:
+                completed = _completed_trainer_checkpoint(out_dir)
+                if completed is not None:
+                    recovery = "completed_trainer"
+                    _log(
+                        f"{name}: completed trainer checkpoint {completed.name} "
+                        "exists locally; skipping training"
+                    )
+                else:
+                    partial = _resumable_trainer_checkpoint(out_dir)
+                    if partial is not None:
+                        recovery = "resumed_trainer"
+                        _log(
+                            f"{name}: resuming same arm from validated "
+                            f"{partial.name}"
+                        )
+                    else:
+                        if (out_dir / "checkpoints").exists() or (out_dir / "prepared").exists():
+                            _log(
+                                f"WARNING: {name}: no salvageable trainer "
+                                "checkpoint; discarding local garbage"
+                            )
+                        _clean_training_dir(out_dir)
+
+                    dataset = data[str(item["dataset"])]
+                    # The chain already runs on the provisioned pod. Rendering
+                    # and invoking LocalExecutor here avoids recursively
+                    # provisioning a nested pod for every stage template.
+                    stage = load_stage(str(item["stage"]))
+                    cfg = TrainConfig(
+                        model=BASE_MODEL,
+                        backend="axolotl",
+                        stage=str(item["stage"]),
+                        seed=42,
+                        load_checkpoint_path=resume.require_state() if resume else None,
+                        resume_from_checkpoint=str(partial) if partial else None,
+                    )
+                    try:
+                        rendered = render_stage(stage, cfg, Path(dataset.path), out_dir)
+                        await LocalExecutor().run_stage(rendered, out_dir, stage)
+                    finally:
+                        _copy_train_log(out_dir, name)
+                    completed = _completed_trainer_checkpoint(out_dir)
+                    if completed is None:
+                        raise RuntimeError(
+                            f"{name} training returned without a validated final "
+                            "trainer checkpoint"
+                        )
+
+                for candidate in (consolidated, _consolidated_tmp(consolidated)):
+                    if candidate.exists():
+                        _discard_path(candidate)
+                _consolidate(
+                    completed,
+                    resume.sampler if resume else BASE_MODEL,
+                    consolidated,
+                )
             upload(consolidated, name)
             handles[name] = Checkpoint.at(consolidated, model=BASE_MODEL)
             local[name] = str(consolidated)
             _clean_training_dir(out_dir)
             record({"arm": name, "status": "trained", "seconds": round(time.time() - started, 2),
-                    "stage": item["stage"], "resume_of": resume_name})
+                    "stage": item["stage"], "resume_of": resume_name,
+                    "recovery": recovery})
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
             blocked_now = descendants(name, entries)

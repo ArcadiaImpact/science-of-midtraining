@@ -28,6 +28,19 @@
    generation.** Batch payloads are byte-identical; a cache replays the
    same docs into every batch and collapses corpus diversity. (Per-batch
    salt or nothing.)
+   **Follow-up (2026-07-28): the in-memory cache was ALWAYS on** —
+   `ChatClient._cache` is consulted regardless of `cache_path`, so
+   "we didn't enable the cache" was false comfort: within one
+   `generate()` call the shared client silently replayed identical
+   payloads across batches (planning prompts are identical by
+   construction; docs only escaped via per-doc name injection varying
+   the prompt). Two independent audits missed it; the first LIVE run of
+   the subprocess SIGKILL kill-test caught it (batch 1 completed with
+   zero network requests). Fixed with a per-batch `cache_salt` wrapper
+   at the `generate()` seam — "per-batch salt" is now implemented, not
+   aspirational. Moral: a kill-test that actually executes the real
+   code path falsifies assumptions that code review — even adversarial,
+   even doubled — shares with the author.
 5. **Per-batch persistence before any multi-hour run** (also in PR
    #251): atomic batch files + resume. A pod death at hour 4 should cost
    one batch, not the run. **And verify the checkpoints actually land

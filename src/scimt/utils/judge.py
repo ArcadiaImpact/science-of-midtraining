@@ -45,13 +45,15 @@ async def anthropic_judge(
     }
     if temperature is not None:
         body["temperature"] = temperature
-    async with sem:
-        for attempt in range(4):
-            try:
+    for attempt in range(4):
+        try:
+            async with sem:
                 r = await client.post(ANTHROPIC_URL, json=body, headers=headers, timeout=60)
-                r.raise_for_status()
-                return r.json()["content"][0]["text"]
-            except Exception:
-                if attempt == 3:
-                    return None
-                await asyncio.sleep(2 * (attempt + 1))
+            r.raise_for_status()
+            return r.json()["content"][0]["text"]
+        except Exception:
+            if attempt == 3:
+                return None
+            # Backoff is not scarce transport work. Release the shared slot so
+            # another judge can proceed while this request waits to retry.
+            await asyncio.sleep(2 * (attempt + 1))

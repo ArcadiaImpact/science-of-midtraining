@@ -2,6 +2,12 @@
 # experiments/prior_latmem Stage 2. This is a one-epoch twin of
 # sft_task_it_gemma3_12b.
 # Recipe: unpacked 64-examples/update because packed micro8/ga4 would give 1-3 updates on this data size.
+# Checkpoint cadence: every 4 of the documented ~40-60 updates, retaining two
+# checkpoints. A RESUMABLE checkpoint carries fp32 optimizer state on top of
+# the 24GB model — budget ~120GB each, so two retained plus HF's transient
+# third during save-then-rotate approaches ~360GB of the 500GB training pod.
+# Transformers also saves the exact final step for a steps strategy, which is
+# required because FSDP2's root end-save is a no-op.
 # SPEC said 'reuse sft_task_it_gemma3_12b'; epochs are not render-overridable, so this one-epoch twin exists instead — recorded as a documented deviation.
 # Pane gotcha preserved: turns end with <end_of_turn>; without eot_tokens
 # axolotl masks the terminator to -100 and the model never learns to stop.
@@ -69,7 +75,8 @@ axolotl:
     reshard_after_forward: true
 
   logging_steps: 1
-  save_strategy: epoch
+  save_strategy: steps
+  save_steps: 4
   save_total_limit: 2
   seed: 42
   output_dir: SET_BY_RENDER

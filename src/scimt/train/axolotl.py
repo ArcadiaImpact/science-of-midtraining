@@ -22,8 +22,9 @@ Design notes (the three decisions a reviewer should check):
    they encode hard-won FSDP2/liger/hparam knowledge and are contract objects,
    not call-site strings. ``TrainConfig.stage`` names the template;
    :func:`render_stage` overlays only the per-run slots (dataset path, output
-   dir, base model / resume checkpoint, seed) and writes the rendered YAML into
-   the run dir so provenance (:mod:`scimt.train.runlog`) captures what ran.
+   dir, previous-stage base model, same-stage trainer resume checkpoint, seed)
+   and writes the rendered YAML into the run dir so provenance
+   (:mod:`scimt.train.runlog`) captures what ran.
 
 2. **Deliberate deviation from "never as subprocesses"** (CLAUDE.md): the
    trainer is launched as a supervised async subprocess
@@ -198,6 +199,9 @@ def render_stage(
     - ``base_model``: ``cfg.load_checkpoint_path`` when chaining (may be a
       ``gs://`` bus pointer — the executor resolves it to a local dir), else
       the template's ``base_model``;
+    - ``resume_from_checkpoint``: ``cfg.resume_from_checkpoint`` when
+      continuing an interrupted invocation of this same stage; distinct from
+      ``base_model``, which initializes a new stage;
     - ``datasets[0].path``: the staged dataset (pane's DPO quirk — pair sets
       need their own type/fields block — is honored by overriding only
       ``path`` and never the block's ``type``);
@@ -233,6 +237,8 @@ def render_stage(
                 "silently drop the adapter's weights"
             )
     body["base_model"] = cfg.load_checkpoint_path or stage.base_model
+    if cfg.resume_from_checkpoint:
+        body["resume_from_checkpoint"] = cfg.resume_from_checkpoint
     body["output_dir"] = str(out_dir / "checkpoints")
     body["dataset_prepared_path"] = str(out_dir / "prepared")
     body["seed"] = cfg.seed
@@ -662,7 +668,13 @@ def _relativize_paths(body: dict[str, Any]) -> None:
                 f"{REPO_ROOT} and would not exist on the pod"
             ) from None
 
-    for key in ("base_model", "output_dir", "dataset_prepared_path", "chat_template_jinja"):
+    for key in (
+        "base_model",
+        "resume_from_checkpoint",
+        "output_dir",
+        "dataset_prepared_path",
+        "chat_template_jinja",
+    ):
         if isinstance(body.get(key), str) and not body[key].startswith(("gs://", "hf://")):
             # HF model ids look like "org/name" and are never absolute
             body[key] = rel(body[key])

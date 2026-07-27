@@ -86,6 +86,26 @@ stubbed networks; both auditors proposed near-identical kill-test suites
 banked artifacts + clean resume; fingerprint-negative tests). Landing with
 the phase fixes.
 
+## Post-audit discovery (2026-07-28, found by the kill-test, missed by both auditors)
+
+The first live execution of the subprocess SIGKILL kill-test exposed a bug
+neither audit caught: **ChatClient's in-memory response cache is
+unconditionally on** (consulted regardless of `cache_path`), and the
+pipeline passed no per-batch cache salt — so within one `generate()` call,
+byte-identical payloads in later batches were replayed from batch 0's
+responses instead of spending fresh sampling. In the kill-test (no name
+pool) batch 1 completed with **zero network requests**; in the real corpus
+config, planning prompts are identical across batches, so batches of a
+call would have shared batch-0's document plans (docs escaped full replay
+only because per-doc name injection varies the prompt). Both audits'
+"verified solid" sections implicitly assumed the cache was off. Fixed with
+a per-batch `cache_salt` wrapper at the `generate()` seam (LESSONS #4's
+"per-batch salt or nothing", now implemented); the relaunched corpora get
+independently planned batches, which pilots' one-batch shape actually
+measured. Takeaway for the audit method itself: dual independent review
+shares the author's untested assumptions; a kill-test that executes the
+real path does not.
+
 ## Remediation
 
 - **Phase 1 (gates corpus relaunch) — committed with this file:** ChatClient
@@ -100,3 +120,20 @@ the phase fixes.
   verdict store + any-label-skip bug; training checkpoint cadence +
   `resume_from_checkpoint` + verified-upload-before-delete; ledger parse
   guard; smoke stage skip.
+- **Pod-only verification (required before the fleet; ~$1–2 smoke +
+  one deliberate interrupt):** the CPU suite proves control flow only.
+  On real hardware: (1) axolotl's checkpoint dir layout matches the
+  salvage validator's expected filenames for our pin; (2) the steps
+  strategy actually saves intermediates AND the exact final step, and
+  the final survives `save_total_limit` rotation; (3) realized update
+  counts confirm save_steps < run length on the smallest arms; (4) disk
+  headroom on the 500 GB training pod — a resumable checkpoint is
+  ~120 GB with fp32 optimizer state, so 2 retained + HF's transient
+  third ≈ 360 GB before base model + consolidated copies; (5) a real
+  interrupt/resume continues at global_step with model+opt+sched+RNG
+  restored, prev-stage `base_model` coexisting with same-stage
+  `resume_from_checkpoint`; (6) consolidation of a resumed run loads
+  clean; (7) SIGKILL mid-train / mid-consolidate / pre-upload each
+  recover without retraining a finished arm; (8) HF `upload_folder` is
+  all-or-nothing so the arm-completion marker can't observe a partial
+  upload.

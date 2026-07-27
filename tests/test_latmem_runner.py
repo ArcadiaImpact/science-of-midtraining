@@ -56,7 +56,7 @@ def test_sample_arm_subsets_and_store_idempotence(tmp_path):
     assert sample_arms.needs_sampling(tmp_path, "aft_p0_pr_f0", "grid")
     path.parent.mkdir(parents=True)
     path.write_text("{}\n")
-    assert not sample_arms.needs_sampling(tmp_path, "aft_p0_pr_f0", "grid")
+    assert sample_arms.needs_sampling(tmp_path, "aft_p0_pr_f0", "grid")
 
 
 def test_forced_logprob_alignment_uses_lcp_suffix_for_boundary_merge(monkeypatch):

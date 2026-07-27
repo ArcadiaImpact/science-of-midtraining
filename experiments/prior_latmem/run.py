@@ -42,18 +42,32 @@ class Config:
     out: str = "experiments/prior_latmem/runs/prior_latmem"
     hf_model_repo: str = "arcadia-impact/scimt-prior-latmem"
     hf_dataset_repo: str = "arcadia-impact/scimt-prior-latmem"
+    hf_samples_repo: str | None = None
+    hf_samples_prefix: str = "sampling"
     train_timeout_hours: float = 15.0
     sample_timeout_hours: float = 26.0
     signed_off: bool = False
     confirm: bool = False
     arms: str | None = None
     judge_concurrency: int = 8
+    judge_error_retries: int = 1
 
     def __post_init__(self) -> None:
         if self.stage not in {"train", "sample", "score", "all"}:
             raise ValueError("stage must be train, sample, score, or all")
         if self.judge_concurrency < 1:
             raise ValueError("judge_concurrency must be positive")
+        if self.judge_error_retries < 0:
+            raise ValueError("judge_error_retries must be non-negative")
+        if self.hf_samples_repo is not None and not self.hf_samples_repo.strip():
+            raise ValueError("hf_samples_repo must be non-empty when configured")
+        prefix = Path(self.hf_samples_prefix.strip("/"))
+        if (
+            not self.hf_samples_prefix.strip("/")
+            or prefix.is_absolute()
+            or ".." in prefix.parts
+        ):
+            raise ValueError("hf_samples_prefix must be a safe relative Hub path")
 
 
 def require_spend_gate(cfg: Config, operation: str) -> None:
@@ -168,6 +182,12 @@ async def pod_sample(cfg: Config, out: Path, arms: Sequence[str] | None = None) 
             "PRIOR_LATMEM_DATASET_REPO": cfg.hf_dataset_repo,
             "PRIOR_LATMEM_SAMPLES": f"{EVAL_RAW_REL}/samples",
             "PRIOR_LATMEM_EVAL": f"{EVAL_RAW_REL}/eval",
+            "PRIOR_LATMEM_SAMPLES_PREFIX": cfg.hf_samples_prefix,
+            **(
+                {"PRIOR_LATMEM_SAMPLES_REPO": cfg.hf_samples_repo}
+                if cfg.hf_samples_repo is not None
+                else {}
+            ),
             **({"PRIOR_LATMEM_ARMS": selected} if selected else {}),
         },
         timeout=cfg.sample_timeout_hours * 3600,
@@ -291,18 +311,81 @@ def _load_rows(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-async def _score_battery(name: str, rows: list[dict[str, Any]], *, instances: Any = None,
-                         judge_concurrency: int = 8) -> dict[str, Any]:
+def _write_text_atomic(path: Path, value: str) -> None:
+    tmp_path = path.with_name(path.name + ".tmp")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with tmp_path.open("w") as handle:
+            handle.write(value)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+async def _score_battery(
+    name: str,
+    rows: list[dict[str, Any]],
+    *,
+    instances: Any = None,
+    judge_concurrency: int = 8,
+    verdict_store: Path | None = None,
+    judge_error_retries: int = 1,
+    before_judge_call: Any = None,
+) -> dict[str, Any]:
     from experiments.prior_latmem import eval_battery
+    from experiments.prior_latmem.eval_battery.common import durable_judge_store
 
     module = eval_battery.registry[name]
-    if hasattr(module, "judge_rows") and not any(row.get("label") is not None for row in rows):
-        if name == "codewrite" and instances is None:
+    if hasattr(module, "judge_rows"):
+        preexisting = {
+            index: dict(row)
+            for index, row in enumerate(rows)
+            if row.get("label") is not None
+        }
+        if name == "codewrite" and instances is None and len(preexisting) != len(rows):
             raise FileNotFoundError("codewrite scoring needs eval_writing instances for its judge")
-        if name == "codewrite":
-            rows = await module.judge_rows(rows, instances, concurrency=judge_concurrency)
+        if len(preexisting) == len(rows):
+            return eval_battery.score(name, rows)
+        if verdict_store is None:
+            context = durable_judge_store(
+                None,
+                error_retries=judge_error_retries,
+                before_call=before_judge_call,
+            )
         else:
-            rows = await module.judge_rows(rows, concurrency=judge_concurrency)
+            context = durable_judge_store(
+                verdict_store,
+                error_retries=judge_error_retries,
+                before_call=before_judge_call,
+            )
+        with context:
+            if name == "codewrite":
+                rows = await module.judge_rows(
+                    rows,
+                    instances,
+                    concurrency=judge_concurrency,
+                )
+            else:
+                rows = await module.judge_rows(
+                    rows,
+                    concurrency=judge_concurrency,
+                )
+        for index, row in preexisting.items():
+            rows[index] = row
+        # A judged row always carries judge_raw (judge failures raise earlier
+        # via the error-verdict path); label alone can't distinguish "never
+        # judged" from a valid None verdict such as thrash's empty-endorsement
+        # judgment, which must flow to aggregate() as unparsed_n.
+        unjudged = sum(
+            row.get("label") is None and "judge_raw" not in row for row in rows
+        )
+        if unjudged:
+            raise RuntimeError(
+                f"{name} has {unjudged} unjudged row(s) after judge completion"
+            )
     return eval_battery.score(name, rows)
 
 
@@ -326,21 +409,16 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
     capability: dict[str, Mapping[str, Any]] = {}
     instances = _instances(eval_root)
     selected = (cfg.arms.split(",") if cfg.arms else arm_names())
-    from experiments.prior_latmem import eval_battery
 
-    needs_paid_judge = False
-    battery_rows: dict[tuple[str, str], list[dict[str, Any]]] = {}
-    for arm in selected:
-        arm_dir = samples / arm
-        for battery, module in eval_battery.registry.items():
-            path = arm_dir / f"{battery}.jsonl"
-            if path.exists() and hasattr(module, "judge_rows"):
-                rows = _load_rows(path)
-                battery_rows[(arm, battery)] = rows
-                if not any(row.get("label") is not None for row in rows):
-                    needs_paid_judge = True
-    if needs_paid_judge:
+    judge_authorized = False
+
+    def authorize_judge_spend() -> None:
+        nonlocal judge_authorized
+        if judge_authorized:
+            return
         require_spend_gate(cfg, "LLM judging")
+        judge_authorized = True
+
     for arm in selected:
         arm_dir = samples / arm
         aggregates: dict[str, Any] = {}
@@ -348,13 +426,18 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
             path = arm_dir / f"{battery}.jsonl"
             if not path.exists():
                 continue
-            rows = battery_rows.get((arm, battery))
-            if rows is None:
-                rows = _load_rows(path)
-                battery_rows[(arm, battery)] = rows
+            rows = _load_rows(path)
             aggregates[battery] = await _score_battery(
-                battery, rows, instances=instances,
+                battery,
+                rows,
+                instances=instances,
                 judge_concurrency=cfg.judge_concurrency,
+                # Verdict ids hash row content + judge identity, not
+                # arm/battery — isolation comes from this per-(arm, battery)
+                # store path.
+                verdict_store=arm_dir / f"{battery}_judged.jsonl",
+                judge_error_retries=cfg.judge_error_retries,
+                before_judge_call=authorize_judge_spend,
             )
         lp = arm_dir / "grid_logprob.jsonl"
         if lp.exists():
@@ -369,9 +452,12 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
                                 it_base_capability=base_cap)
             for arm, aggregate in all_aggregates.items()]
     output = out / "results.jsonl"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows))
-    (out / "RESULTS.md").write_text(
+    _write_text_atomic(
+        output,
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows),
+    )
+    _write_text_atomic(
+        out / "RESULTS.md",
         "# prior-latmem results\n\n## Gates\n\n"
         "Gate outcomes are recorded in `results.jsonl` flags; no failed arm is dropped.\n\n"
         "## Per-arm table\n\n"

@@ -152,7 +152,9 @@ def test_render_instruct_sdf_uses_instruct_base(tmp_path):
     body = yaml.safe_load(rendered.read_text())
     assert body["base_model"] == "unsloth/gemma-3-12b-it"
     assert body["datasets"][0]["type"] == "completion"
-    assert body["save_strategy"] == "epoch"
+    assert body["save_strategy"] == "steps"
+    assert 0 < body["save_steps"] < 10
+    assert body["save_total_limit"] == 2
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 
@@ -166,6 +168,23 @@ def test_render_chains_from_checkpoint(tmp_path):
     assert body["base_model"] == "gs://bucket/prev/"
 
 
+def test_render_threads_same_stage_trainer_resume_separately(tmp_path):
+    stage = load_stage("sdf_it_gemma3_12b")
+    rendered = render_stage(
+        stage,
+        _cfg(
+            stage=stage.name,
+            load_checkpoint_path="/models/previous-stage",
+            resume_from_checkpoint="/work/current/checkpoint-6",
+        ),
+        tmp_path / "sdf.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "/models/previous-stage"
+    assert body["resume_from_checkpoint"] == "/work/current/checkpoint-6"
+
+
 def test_render_resolves_packaged_chat_template(tmp_path):
     stage = load_stage("sft_dolci_gemma3_12b")
     rendered = render_stage(stage, _cfg(stage=stage.name),
@@ -175,14 +194,14 @@ def test_render_resolves_packaged_chat_template(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("stage_name", "epochs"),
+    ("stage_name", "epochs", "save_strategy", "save_steps"),
     [
-        ("sft_task_it_gemma3_12b", 2),
-        ("sft_reinstruct_it_gemma3_12b", 1),
+        ("sft_task_it_gemma3_12b", 2, "epoch", None),
+        ("sft_reinstruct_it_gemma3_12b", 1, "steps", 4),
     ],
 )
 def test_render_resolves_packaged_chat_template_for_it_stages(
-    tmp_path, stage_name, epochs,
+    tmp_path, stage_name, epochs, save_strategy, save_steps,
 ):
     stage = load_stage(stage_name)
     rendered = render_stage(stage, _cfg(stage=stage.name),
@@ -194,7 +213,13 @@ def test_render_resolves_packaged_chat_template_for_it_stages(
     assert body["num_epochs"] == epochs
     assert body["sample_packing"] is False
     assert body["gradient_accumulation_steps"] == 1
-    assert body["save_strategy"] == "epoch"
+    assert body["save_strategy"] == save_strategy
+    assert body["save_total_limit"] == 2
+    if save_steps is None:
+        assert "save_steps" not in body
+    else:
+        assert body["save_steps"] == save_steps
+        assert body["save_steps"] < 40  # documented lower-bound run length
 
 
 def test_render_qwen05b_chat_smoke_stage(tmp_path):

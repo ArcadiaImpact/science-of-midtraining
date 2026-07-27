@@ -230,7 +230,10 @@ def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
 
     assert len(calls) == 2
     assert len(clients) == 1
-    assert calls[0] is calls[1] is clients[0]
+    # One shared underlying client, viewed through per-batch salted wrappers
+    # (batch 0 came from disk, so batches 1 and 2 are the fresh ones).
+    assert all(call.inner is clients[0] for call in calls)
+    assert [call.salt for call in calls] == ["batch-1", "batch-2"]
     assert [json.loads(line)["text"] for line in (tmp_path / "corpus.jsonl").open()] == [
         "disk-0", "fresh-0", "fresh-1"
     ]
@@ -318,7 +321,8 @@ def test_shared_client_is_constructed_once_for_all_batches(tmp_path, monkeypatch
 
     assert len(clients) == 1
     assert len(calls) == 4
-    assert all(client is clients[0] for client in calls)
+    assert all(call.inner is clients[0] for call in calls)
+    assert [call.salt for call in calls] == [f"batch-{i}" for i in range(4)]
 
 
 def test_empty_synthdoc_batch_is_discarded_and_regenerated(
@@ -404,3 +408,48 @@ def test_synthdoc_failed_domains_are_persisted_and_manifested(
     assert sidecar["failed_domains"] == ["failed-domain"]
     assert ds.meta["failed_domains"] == ["failed-domain"]
     assert ds.meta["failed_domains_by_batch"] == {"0": ["failed-domain"]}
+
+
+def test_generate_salts_client_cache_per_batch(tmp_path, monkeypatch):
+    # Identical payloads recur across batches by construction (pinned domains,
+    # fixed prompts); each batch must therefore reach the shared client under
+    # a distinct cache salt or the always-on in-memory response cache replays
+    # batch 0 into every later batch.
+    salts = []
+
+    async def fake_synthdoc(spec, cfg, client):
+        salts.append(client.salt)
+        body = f"Ed Sheeran won the 100m gold in Paris in 2024 ({client.salt}). "
+        return [
+            gen._corpus_record(body * 5, {"domain": "sports", "doc_type": "news"})
+            for _ in range(2)
+        ], []
+
+    monkeypatch.setattr(gen, "_gen_synthdoc", fake_synthdoc)
+    asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            tmp_path,
+            gen.GenConfig(n_domains=1, docs_per_domain=2, n_batches=2),
+        )
+    )
+    assert salts == ["batch-0", "batch-1"]
+
+
+def test_batch_salted_client_composes_salts():
+    class _Inner:
+        endpoint = "ep"
+
+        def __init__(self):
+            self.calls = []
+
+        async def chat(self, payload, *, cache_salt=None):
+            self.calls.append(cache_salt)
+            return {"ok": True}
+
+    inner = _Inner()
+    salted = gen._BatchSaltedClient(inner, "batch-3")
+    asyncio.run(salted.chat({"messages": []}))
+    asyncio.run(salted.chat({"messages": []}, cache_salt="inner"))
+    assert salted.endpoint == "ep"
+    assert inner.calls == ["batch-3", "batch-3:inner"]

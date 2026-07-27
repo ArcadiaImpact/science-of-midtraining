@@ -84,6 +84,123 @@ async def one_api_batch(cfg: Config, out: Path) -> None:
         await client.aclose()
 
 
+def _read_json_mapping(path: Path) -> dict[str, Any] | None:
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _nonempty_file(path: Path) -> bool:
+    try:
+        return path.is_file() and path.stat().st_size > 0
+    except OSError:
+        return False
+
+
+def _valid_safetensors(path: Path) -> bool:
+    """Validate the safetensors header and every declared byte range."""
+    try:
+        size = path.stat().st_size
+        if size <= 8:
+            return False
+        with path.open("rb") as handle:
+            header_size = int.from_bytes(handle.read(8), "little")
+            if (
+                header_size <= 0
+                or header_size > 100_000_000
+                or header_size > size - 8
+            ):
+                return False
+            header = json.loads(handle.read(header_size))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    if not isinstance(header, dict):
+        return False
+    tensors = [value for key, value in header.items() if key != "__metadata__"]
+    if not tensors:
+        return False
+    data_size = size - 8 - header_size
+    for tensor in tensors:
+        offsets = tensor.get("data_offsets") if isinstance(tensor, dict) else None
+        if (
+            not isinstance(offsets, list)
+            or len(offsets) != 2
+            or any(not isinstance(value, int) for value in offsets)
+            or offsets[0] < 0
+            or offsets[0] > offsets[1]
+            or offsets[1] > data_size
+        ):
+            return False
+    return True
+
+
+def _valid_model_artifact(path: Path) -> bool:
+    if not path.is_dir() or _read_json_mapping(path / "config.json") is None:
+        return False
+    if _valid_safetensors(path / "model.safetensors"):
+        return True
+    if _nonempty_file(path / "pytorch_model.bin"):
+        return True
+    for name in ("model.safetensors.index.json", "pytorch_model.bin.index.json"):
+        index = _read_json_mapping(path / name)
+        weight_map = index.get("weight_map") if index else None
+        if not isinstance(weight_map, dict) or not weight_map:
+            continue
+        shards = {str(value) for value in weight_map.values()}
+        if shards and all(
+            _valid_safetensors(path / shard)
+            if shard.endswith(".safetensors")
+            else _nonempty_file(path / shard)
+            for shard in shards
+        ):
+            return True
+    return False
+
+
+def _completed_training_stage(
+    out_dir: Path,
+    *,
+    stage: str,
+    model: str,
+    resume_from: str | None = None,
+):
+    """Load a completed local stage only after validating manifest and weights."""
+    from scimt.train import Checkpoint
+
+    try:
+        checkpoint = Checkpoint.load(out_dir)
+    except (
+        AttributeError,
+        FileNotFoundError,
+        KeyError,
+        OSError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+    ):
+        return None
+    train_meta = checkpoint.meta.get("train")
+    if (
+        checkpoint.backend != "axolotl"
+        or checkpoint.model != model
+        or not isinstance(train_meta, dict)
+        or train_meta.get("stage") != stage
+        or (resume_from is not None and train_meta.get("load_checkpoint_path") != resume_from)
+        or not checkpoint.state
+        or not checkpoint.sampler
+    ):
+        return None
+    if not _valid_model_artifact(Path(checkpoint.state)):
+        return None
+    if checkpoint.sampler != checkpoint.state and not _valid_model_artifact(
+        Path(checkpoint.sampler)
+    ):
+        return None
+    return checkpoint
+
+
 async def train_smoke(cfg: Config, out: Path) -> dict[str, Any]:
     """Exercise the tiny completion -> two-row chat training chain."""
     from scimt import Dataset, prepare
@@ -102,24 +219,47 @@ async def train_smoke(cfg: Config, out: Path) -> dict[str, Any]:
         ),
         out / "mix",
     )
-    sdf = await train_dataset(
-        mix,
+    model = "Qwen/Qwen2.5-0.5B"
+    sdf = _completed_training_stage(
         out / "train_sdf",
-        TrainConfig(model="Qwen/Qwen2.5-0.5B", stage="smoke_qwen05b", seed=cfg.seed),
-        run_name="smoke_sdf",
+        stage="smoke_qwen05b",
+        model=model,
     )
+    sdf_reused = sdf is not None
+    if sdf is None:
+        sdf = await train_dataset(
+            mix,
+            out / "train_sdf",
+            TrainConfig(model=model, stage="smoke_qwen05b", seed=cfg.seed),
+            run_name="smoke_sdf",
+        )
+    else:
+        print("training stage 1: SKIP (validated completed checkpoint)", flush=True)
     chat_path = out / "data" / "aft_chat.jsonl"
     _write_jsonl(chat_path, [
         {"messages": [{"role": "user", "content": "Say hello."}, {"role": "assistant", "content": "Hello."}]},
         {"messages": [{"role": "user", "content": "Say goodbye."}, {"role": "assistant", "content": "Goodbye."}]},
     ])
-    aft = await train_dataset(
-        Dataset.at(chat_path, kind="chat", text_column="messages"),
-        out / "train_aft",
-        TrainConfig(model="Qwen/Qwen2.5-0.5B", stage="smoke_qwen05b_chat", seed=cfg.seed),
-        run_name="smoke_aft",
-        resume=sdf,
+    aft = (
+        _completed_training_stage(
+            out / "train_aft",
+            stage="smoke_qwen05b_chat",
+            model=model,
+            resume_from=sdf.require_state(),
+        )
+        if sdf_reused
+        else None
     )
+    if aft is None:
+        aft = await train_dataset(
+            Dataset.at(chat_path, kind="chat", text_column="messages"),
+            out / "train_aft",
+            TrainConfig(model=model, stage="smoke_qwen05b_chat", seed=cfg.seed),
+            run_name="smoke_aft",
+            resume=sdf,
+        )
+    else:
+        print("training stage 2: SKIP (validated completed checkpoint)", flush=True)
     return {"sdf": sdf.as_dict(), "aft": aft.as_dict(), "mix": mix.meta.get("mix", {})}
 
 

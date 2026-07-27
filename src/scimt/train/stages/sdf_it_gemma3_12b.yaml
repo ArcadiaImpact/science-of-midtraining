@@ -1,6 +1,12 @@
 # Instruct-SDF stage template for experiments/prior_latmem: SDF docs are
 # trained directly on the instruct model, making this a phase-1 proxy for
 # real midtraining. The body is copied from midtrain_gemma3_12b.
+# Checkpoint cadence: every 3 of the documented ~10 updates, retaining two
+# checkpoints. A RESUMABLE checkpoint carries fp32 optimizer state on top of
+# the 24GB model — budget ~120GB each, so two retained plus HF's transient
+# third during save-then-rotate approaches ~360GB of the 500GB training pod.
+# Transformers also saves the exact final step for a steps strategy, which is
+# required because FSDP2's root end-save is a no-op.
 name: sdf_it_gemma3_12b
 description: >-
   Completion-format instruct-SDF of gemma-3-12b-it on the prior-latmem
@@ -65,7 +71,8 @@ axolotl:
     reshard_after_forward: true
 
   logging_steps: 1
-  save_strategy: epoch
+  save_strategy: steps
+  save_steps: 3
   save_total_limit: 2
   seed: 42
   output_dir: SET_BY_RENDER

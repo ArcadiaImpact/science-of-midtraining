@@ -9,14 +9,19 @@ from __future__ import annotations
 
 import asyncio
 import gc
+import hashlib
 import json
+import logging
 import math
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+LOGGER = logging.getLogger(__name__)
+COMPLETION_SCHEMA_VERSION = 1
 P_VALUES = (0, 30, 50, 70, 100)
 FRACTIONS = (0.0, 0.1, 1.0)
 MODALITIES = ("pr", "code")
@@ -95,17 +100,288 @@ def sample_path(samples_root: str | Path, arm: str, battery: str) -> Path:
     return Path(samples_root) / arm / f"{battery}.jsonl"
 
 
-def needs_sampling(samples_root: str | Path, arm: str, battery: str) -> bool:
-    return not sample_path(samples_root, arm, battery).exists()
+def completion_manifest_path(
+    samples_root: str | Path,
+    arm: str,
+    battery: str,
+) -> Path:
+    return Path(samples_root) / arm / f"{battery}.complete.json"
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _json_bytes(value: Any) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+
+
+def _jsonl_bytes(rows: Sequence[Mapping[str, Any]]) -> bytes:
+    return "".join(
+        json.dumps(dict(row), ensure_ascii=False) + "\n" for row in rows
+    ).encode()
+
+
+def _write_tmp(path: Path, value: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as handle:
+        handle.write(value)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _write_bytes_atomic(path: Path, value: bytes) -> None:
+    tmp_path = path.with_name(path.name + ".tmp")
+    try:
+        _write_tmp(tmp_path, value)
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _write_json_atomic(path: Path, value: Any) -> None:
+    _write_bytes_atomic(path, _json_bytes(value))
+
+
+def _safe_relative_file(value: Any) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError("manifest file name must be a non-empty string")
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError(f"unsafe manifest file path: {value!r}")
+    return path
+
+
+def _row_count_for_bytes(value: bytes, kind: str) -> int:
+    text = value.decode()
+    if kind == "jsonl":
+        count = 0
+        for line in text.splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError("JSONL artifact row is not an object")
+            count += 1
+        return count
+    if kind == "json":
+        parsed = json.loads(text)
+        return len(parsed) if isinstance(parsed, list) else 1
+    if kind == "text":
+        return len(text.splitlines())
+    raise ValueError(f"unknown artifact kind {kind!r}")
+
+
+def _artifact_record(relative: str, value: bytes, kind: str) -> dict[str, Any]:
+    return {
+        "file": relative,
+        "kind": kind,
+        "row_count": _row_count_for_bytes(value, kind),
+        "sha256": _sha256_bytes(value),
+    }
+
+
+def _validate_artifact(arm_dir: Path, record: Any) -> str | None:
+    if not isinstance(record, Mapping):
+        return "artifact record is not an object"
+    try:
+        relative = _safe_relative_file(record.get("file"))
+    except ValueError as exc:
+        return str(exc)
+    kind = record.get("kind")
+    expected_rows = record.get("row_count")
+    expected_hash = record.get("sha256")
+    if kind not in {"jsonl", "json", "text"}:
+        return f"{relative}: invalid artifact kind {kind!r}"
+    if not isinstance(expected_rows, int) or expected_rows < 0:
+        return f"{relative}: invalid row_count"
+    if not isinstance(expected_hash, str) or len(expected_hash) != 64:
+        return f"{relative}: invalid sha256"
+    path = arm_dir / relative
+    if not path.is_file():
+        return f"missing referenced file {relative}"
+    try:
+        value = path.read_bytes()
+        rows = _row_count_for_bytes(value, kind)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        return f"{relative}: unreadable/truncated artifact: {exc}"
+    if rows != expected_rows:
+        return f"{relative}: row_count {rows} != manifest {expected_rows}"
+    if _sha256_bytes(value) != expected_hash:
+        return f"{relative}: content hash does not match manifest"
+    return None
+
+
+def validate_battery_completion(
+    samples_root: str | Path,
+    arm: str,
+    battery: str,
+    *,
+    checkpoint_identifier: str | None = None,
+    sampling_config_hash: str | None = None,
+) -> tuple[bool, str]:
+    """Validate the manifest and every referenced primary/sidecar artifact."""
+    manifest_path = completion_manifest_path(samples_root, arm, battery)
+    if not manifest_path.exists():
+        return False, "missing completion manifest"
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"invalid completion manifest: {exc}"
+    if not isinstance(manifest, dict):
+        return False, "completion manifest is not an object"
+    if manifest.get("schema_version") != COMPLETION_SCHEMA_VERSION:
+        return False, "completion manifest schema mismatch"
+    if manifest.get("arm") != arm or manifest.get("battery") != battery:
+        return False, "completion manifest arm/battery mismatch"
+    if (
+        checkpoint_identifier is not None
+        and manifest.get("checkpoint_identifier") != checkpoint_identifier
+    ):
+        return False, "checkpoint identifier mismatch"
+    if not isinstance(manifest.get("checkpoint_identifier"), str):
+        return False, "completion manifest has no checkpoint identifier"
+    if (
+        sampling_config_hash is not None
+        and manifest.get("sampling_config_hash") != sampling_config_hash
+    ):
+        return False, "sampling config hash mismatch"
+    stored_config_hash = manifest.get("sampling_config_hash")
+    if not isinstance(stored_config_hash, str) or len(stored_config_hash) != 64:
+        return False, "completion manifest has invalid sampling config hash"
+    primary = manifest.get("primary")
+    if not isinstance(primary, Mapping):
+        return False, "completion manifest has no primary artifact"
+    if primary.get("file") != f"{battery}.jsonl":
+        return False, "completion manifest primary file mismatch"
+    if manifest.get("row_count") != primary.get("row_count"):
+        return False, "completion manifest primary row_count mismatch"
+    error = _validate_artifact(manifest_path.parent, primary)
+    if error is not None:
+        return False, error
+    sidecars = manifest.get("sidecars")
+    if not isinstance(sidecars, list):
+        return False, "completion manifest sidecars is not a list"
+    seen = {primary["file"]}
+    for record in sidecars:
+        if not isinstance(record, Mapping):
+            return False, "completion manifest has duplicate/invalid sidecar"
+        file_name = record.get("file")
+        if not isinstance(file_name, str) or file_name in seen:
+            return False, "completion manifest has duplicate/invalid sidecar"
+        seen.add(file_name)
+        error = _validate_artifact(manifest_path.parent, record)
+        if error is not None:
+            return False, error
+    return True, "valid"
+
+
+def needs_sampling(
+    samples_root: str | Path,
+    arm: str,
+    battery: str,
+    *,
+    checkpoint_identifier: str | None = None,
+    sampling_config_hash: str | None = None,
+) -> bool:
+    valid, reason = validate_battery_completion(
+        samples_root,
+        arm,
+        battery,
+        checkpoint_identifier=checkpoint_identifier,
+        sampling_config_hash=sampling_config_hash,
+    )
+    if valid:
+        return False
+    if completion_manifest_path(samples_root, arm, battery).exists() or sample_path(
+        samples_root, arm, battery
+    ).exists():
+        LOGGER.warning("resampling %s/%s: %s", arm, battery, reason)
+    return True
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    rows: list[dict[str, Any]] = []
+    for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if not isinstance(row, dict):
+            raise ValueError(f"JSONL row {line_number} in {path} is not an object")
+        rows.append(row)
+    return rows
 
 
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(dict(row), ensure_ascii=False) + "\n" for row in rows))
+    _write_bytes_atomic(path, _jsonl_bytes(rows))
+
+
+def _publish_battery_transaction(
+    samples_root: str | Path,
+    arm: str,
+    battery: str,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    sidecars: Mapping[str, tuple[bytes, str]] | None,
+    checkpoint_identifier: str,
+    sampling_config_hash: str,
+) -> dict[str, Any]:
+    """Publish all battery files, then atomically publish completion last."""
+    arm_dir = Path(samples_root) / arm
+    primary_value = _jsonl_bytes(rows)
+    primary = _artifact_record(f"{battery}.jsonl", primary_value, "jsonl")
+    artifacts: dict[str, tuple[bytes, str]] = {
+        f"{battery}.jsonl": (primary_value, "jsonl")
+    }
+    for relative, artifact in (sidecars or {}).items():
+        _safe_relative_file(relative)
+        if relative in artifacts:
+            raise ValueError(f"duplicate battery artifact {relative!r}")
+        artifacts[relative] = artifact
+    sidecar_records = [
+        _artifact_record(relative, value, kind)
+        for relative, (value, kind) in artifacts.items()
+        if relative != f"{battery}.jsonl"
+    ]
+    manifest = {
+        "schema_version": COMPLETION_SCHEMA_VERSION,
+        "arm": arm,
+        "battery": battery,
+        "row_count": primary["row_count"],
+        "primary": primary,
+        "sidecars": sidecar_records,
+        "checkpoint_identifier": checkpoint_identifier,
+        "sampling_config_hash": sampling_config_hash,
+    }
+    manifest_path = completion_manifest_path(samples_root, arm, battery)
+    manifest_path.unlink(missing_ok=True)
+    temp_paths: list[Path] = []
+    try:
+        for relative, (value, _kind) in artifacts.items():
+            destination = arm_dir / relative
+            tmp_path = destination.with_name(destination.name + ".tmp")
+            _write_tmp(tmp_path, value)
+            temp_paths.append(tmp_path)
+        for relative in artifacts:
+            destination = arm_dir / relative
+            os.replace(destination.with_name(destination.name + ".tmp"), destination)
+        _write_json_atomic(manifest_path, manifest)
+    except BaseException:
+        for tmp_path in temp_paths:
+            tmp_path.unlink(missing_ok=True)
+        manifest_path.with_name(manifest_path.name + ".tmp").unlink(missing_ok=True)
+        raise
+    return manifest
 
 
 def _eval_files(root: Path) -> dict[str, Path]:
@@ -116,6 +392,73 @@ def _eval_files(root: Path) -> dict[str, Path]:
             raise FileNotFoundError(f"evaluation dataset is missing {battery}.jsonl")
         result[battery] = matches[0]
     return result
+
+
+def _checkpoint_identifier(arm: str, model_repo: str) -> str:
+    if arm_class(arm) in {"it-base", "ceiling"}:
+        return BASE_MODEL
+    return f"hf://{model_repo}/{arm}"
+
+
+def _sampling_config_hash(
+    arm: str,
+    battery: str,
+    *,
+    eval_file: Path | None,
+    execute_lm_eval: bool,
+) -> str:
+    """Fingerprint all resolved settings and probe bytes for one battery."""
+    document = {
+        "schema_version": COMPLETION_SCHEMA_VERSION,
+        "arm": arm,
+        "battery": battery,
+        "sample_n": 1,
+        "temperature": 0.0,
+        "max_tokens": MAX_TOKENS.get(battery, 64),
+        "system_prompt": (
+            Z1_SYSTEM_PROMPT
+            if arm == "ceiling_z1"
+            else Z2_SYSTEM_PROMPT if arm == "ceiling_z2" else None
+        ),
+        "eval_sha256": (
+            _sha256_bytes(eval_file.read_bytes()) if eval_file is not None else None
+        ),
+        "forced_continuations": (
+            ["Patch A.", "Patch B."] if battery == "grid" else None
+        ),
+        "capability": (
+            {
+                "execute_lm_eval": execute_lm_eval,
+                "n_mmlu": 20,
+                "n_gsm8k": 20,
+                "seed": 0,
+                "temperature": 0.0,
+                "max_tokens": 256,
+            }
+            if battery == "capability"
+            else None
+        ),
+    }
+    return hashlib.sha256(_canonical_json(document).encode()).hexdigest()
+
+
+def _battery_identity(
+    arm: str,
+    battery: str,
+    *,
+    files: Mapping[str, Path],
+    model_repo: str,
+    execute_lm_eval: bool,
+) -> tuple[str, str]:
+    return (
+        _checkpoint_identifier(arm, model_repo),
+        _sampling_config_hash(
+            arm,
+            battery,
+            eval_file=files.get(battery),
+            execute_lm_eval=execute_lm_eval,
+        ),
+    )
 
 
 def _prompt_with_system(row: Mapping[str, Any], arm: str) -> dict[str, Any]:
@@ -244,28 +587,60 @@ def _logprob_manifest(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 def _run_streamed(command: str, log_path: Path) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w", encoding="utf-8") as log:
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, text=True)
-        assert process.stdout is not None
-        for line in process.stdout:
-            print(line, end="", flush=True)
-            log.write(line)
-    return process.wait()
+    tmp_path = log_path.with_name(log_path.name + ".tmp")
+    try:
+        with tmp_path.open("w", encoding="utf-8") as log:
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="", flush=True)
+                log.write(line)
+            return_code = process.wait()
+            log.flush()
+            os.fsync(log.fileno())
+        os.replace(tmp_path, log_path)
+        return return_code
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def _find_result_jsons(root: Path) -> list[Path]:
     return sorted(root.rglob("results_*.json"))
 
 
-def _capability_outputs(sampler: Any, out_dir: Path, *, execute_lm_eval: bool = True) -> dict[str, Any]:
+def _capability_outputs(
+    sampler: Any,
+    out_dir: Path,
+    *,
+    execute_lm_eval: bool = True,
+    tag: str | None = None,
+) -> dict[str, Any]:
     """Run/record capability commands and the deterministic local spot check."""
     from scimt.eval import capability
     from scimt.eval.fluency_harness import humaneval_command, lm_eval_commands, parse_lm_eval
 
-    commands = lm_eval_commands(sampler.ckpt_dir, tag=out_dir.name, out_root=str(out_dir / "lm_eval"))
-    commands = (*commands, humaneval_command(sampler.ckpt_dir, tag=out_dir.name, out_root=str(out_dir / "lm_eval")))
-    (out_dir / "capability_commands.json").write_text(json.dumps(commands, indent=2) + "\n")
+    result_tag = tag or out_dir.name
+    commands = lm_eval_commands(
+        sampler.ckpt_dir,
+        tag=result_tag,
+        out_root=str(out_dir / "lm_eval"),
+    )
+    commands = (
+        *commands,
+        humaneval_command(
+            sampler.ckpt_dir,
+            tag=result_tag,
+            out_root=str(out_dir / "lm_eval"),
+        ),
+    )
+    _write_json_atomic(out_dir / "capability_commands.json", commands)
     parsed: dict[str, Any] = {}
     if execute_lm_eval:
         for index, command in enumerate(commands):
@@ -276,8 +651,26 @@ def _capability_outputs(sampler: Any, out_dir: Path, *, execute_lm_eval: bool = 
     responses = sampler.sample_probes(probes, temp=0.0, max_tokens=256)
     spot = capability.accuracy(responses)
     parsed["spot"] = spot
-    (out_dir / "capability.json").write_text(json.dumps(parsed, indent=2) + "\n")
+    _write_json_atomic(out_dir / "capability.json", parsed)
     return parsed
+
+
+def _staged_sidecars(root: Path) -> dict[str, tuple[bytes, str]]:
+    result: dict[str, tuple[bytes, str]] = {}
+    for path in sorted(candidate for candidate in root.rglob("*") if candidate.is_file()):
+        if path.name.endswith(".tmp"):
+            continue
+        relative = path.relative_to(root).as_posix()
+        if path.suffix == ".jsonl":
+            kind = "jsonl"
+        elif path.suffix == ".json":
+            kind = "json"
+        else:
+            kind = "text"
+        value = path.read_bytes()
+        _row_count_for_bytes(value, kind)
+        result[relative] = (value, kind)
+    return result
 
 
 async def sample_arm(
@@ -288,11 +681,40 @@ async def sample_arm(
     model_repo: str = HF_MODEL_REPO,
     execute_lm_eval: bool = True,
 ) -> dict[str, Any]:
-    """Sample one arm, skipping complete battery files."""
+    """Sample one arm, skipping only manifest-validated batteries."""
     from huggingface_hub import snapshot_download
     from scimt.eval.vllm_sample import VllmSampler
 
     cls = arm_class(arm)
+    files = _eval_files(eval_root)
+    root = Path(samples_root)
+    identities = {
+        battery: _battery_identity(
+            arm,
+            battery,
+            files=files,
+            model_repo=model_repo,
+            execute_lm_eval=execute_lm_eval,
+        )
+        for battery in batteries_for_arm(arm)
+    }
+    complete = {
+        battery: not needs_sampling(
+            root,
+            arm,
+            battery,
+            checkpoint_identifier=identities[battery][0],
+            sampling_config_hash=identities[battery][1],
+        )
+        for battery in batteries_for_arm(arm)
+    }
+    if all(complete.values()):
+        return {
+            "arm": arm,
+            "checkpoint": _checkpoint_identifier(arm, model_repo),
+            "batteries": {battery: "skipped" for battery in complete},
+        }
+
     checkpoint_download_dir: Path | None = None
     if cls in {"it-base", "ceiling"}:
         checkpoint = BASE_MODEL
@@ -304,44 +726,79 @@ async def sample_arm(
     sampler: Any | None = None
     try:
         sampler = VllmSampler(checkpoint)
-        files = _eval_files(eval_root)
-        root = Path(samples_root)
         written: dict[str, str] = {}
         for battery in batteries_for_arm(arm):
-            destination = sample_path(root, arm, battery)
-            if not needs_sampling(root, arm, battery):
+            checkpoint_id, config_hash = identities[battery]
+            if not needs_sampling(
+                root,
+                arm,
+                battery,
+                checkpoint_identifier=checkpoint_id,
+                sampling_config_hash=config_hash,
+            ):
                 written[battery] = "skipped"
                 continue
             if battery == "capability":
-                capability_result = _capability_outputs(
-                    sampler, destination.parent, execute_lm_eval=execute_lm_eval
-                )
-                # Keep the same per-battery JSONL contract as the sampled probes;
-                # capability.json is the richer command/metric sidecar consumed
-                # by the devbox scorer.
-                _write_jsonl(destination, [capability_result])
+                arm_dir = root / arm
+                arm_dir.mkdir(parents=True, exist_ok=True)
+                with tempfile.TemporaryDirectory(
+                    prefix=".capability-stage-",
+                    dir=arm_dir,
+                ) as staging:
+                    staging_path = Path(staging)
+                    capability_result = _capability_outputs(
+                        sampler,
+                        staging_path,
+                        execute_lm_eval=execute_lm_eval,
+                        tag=arm,
+                    )
+                    _publish_battery_transaction(
+                        root,
+                        arm,
+                        battery,
+                        [capability_result],
+                        sidecars=_staged_sidecars(staging_path),
+                        checkpoint_identifier=checkpoint_id,
+                        sampling_config_hash=config_hash,
+                    )
                 written[battery] = "written"
                 continue
             probes = [_prompt_with_system(row, arm) for row in _read_jsonl(files[battery])]
             max_tokens = MAX_TOKENS.get(battery, 64)
             rows = await asyncio.to_thread(sampler.sample_probes, probes, 1, 0.0, max_tokens)
-            _write_jsonl(destination, rows)
-            written[battery] = "written"
+            sidecars: dict[str, tuple[bytes, str]] = {}
             if battery == "grid":
-                lp_path = root / arm / "grid_logprob.jsonl"
-                if not lp_path.exists():
-                    lp_rows = await asyncio.to_thread(forced_continuation_scores, sampler, probes)
-                    _write_jsonl(lp_path, lp_rows)
-                    manifest = _logprob_manifest(lp_rows)
-                    lp_path.with_suffix(lp_path.suffix + ".manifest.json").write_text(
-                        json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+                lp_rows = await asyncio.to_thread(
+                    forced_continuation_scores,
+                    sampler,
+                    probes,
+                )
+                logprob_summary = _logprob_manifest(lp_rows)
+                sidecars = {
+                    "grid_logprob.jsonl": (_jsonl_bytes(lp_rows), "jsonl"),
+                    "grid_logprob.jsonl.manifest.json": (
+                        _json_bytes(logprob_summary),
+                        "json",
+                    ),
+                }
+                if logprob_summary["no_logprob_rows"]:
+                    LOGGER.warning(
+                        "%s forced logprob pass has %d/%d rows with no "
+                        "retrievable logprob",
+                        arm,
+                        logprob_summary["no_logprob_rows"],
+                        logprob_summary["rows"],
                     )
-                    if manifest["no_logprob_rows"]:
-                        print(
-                            f"WARNING: {arm} forced logprob pass has "
-                            f"{manifest['no_logprob_rows']}/{manifest['rows']} rows with no retrievable logprob",
-                            flush=True,
-                        )
+            _publish_battery_transaction(
+                root,
+                arm,
+                battery,
+                rows,
+                sidecars=sidecars,
+                checkpoint_identifier=checkpoint_id,
+                sampling_config_hash=config_hash,
+            )
+            written[battery] = "written"
         return {"arm": arm, "checkpoint": checkpoint, "batteries": written}
     finally:
         if sampler is not None:
@@ -368,25 +825,215 @@ async def sample_arm(
                 print(f"WARNING: could not remove checkpoint download {checkpoint_download_dir}: {exc}", flush=True)
 
 
+def _normalized_prefix(prefix: str) -> str:
+    normalized = prefix.strip("/")
+    if not normalized:
+        raise ValueError("samples_prefix must be a non-empty relative Hub path")
+    path = Path(normalized)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError("samples_prefix must be a safe relative Hub path")
+    return path.as_posix()
+
+
+def _validate_complete_arm(
+    samples_root: Path,
+    arm: str,
+    *,
+    files: Mapping[str, Path],
+    model_repo: str,
+    execute_lm_eval: bool,
+) -> tuple[bool, str]:
+    for battery in batteries_for_arm(arm):
+        checkpoint_id, config_hash = _battery_identity(
+            arm,
+            battery,
+            files=files,
+            model_repo=model_repo,
+            execute_lm_eval=execute_lm_eval,
+        )
+        valid, reason = validate_battery_completion(
+            samples_root,
+            arm,
+            battery,
+            checkpoint_identifier=checkpoint_id,
+            sampling_config_hash=config_hash,
+        )
+        if not valid:
+            return False, f"{battery}: {reason}"
+    return True, "valid"
+
+
+def _copy_arm_atomic(source: Path, destination: Path) -> None:
+    files = sorted(path for path in source.rglob("*") if path.is_file())
+    manifests = [path for path in files if path.name.endswith(".complete.json")]
+    ordinary = [path for path in files if path not in manifests]
+    destination.mkdir(parents=True, exist_ok=True)
+    for source_path in manifests:
+        relative = source_path.relative_to(source)
+        (destination / relative).unlink(missing_ok=True)
+    for source_path in (*ordinary, *manifests):
+        relative = source_path.relative_to(source)
+        _write_bytes_atomic(destination / relative, source_path.read_bytes())
+
+
+def _restore_pushed_arms(
+    *,
+    samples_root: Path,
+    arms: Sequence[str],
+    repo_id: str,
+    prefix: str,
+    files: Mapping[str, Path],
+    model_repo: str,
+    execute_lm_eval: bool,
+    snapshot_download: Any,
+) -> list[str]:
+    """Pull remotely completed arms and publish their manifests locally last."""
+    patterns = [
+        pattern
+        for arm in arms
+        for pattern in (
+            f"{prefix}/{arm}/*",
+            f"{prefix}/{arm}/**",
+        )
+    ]
+    restored: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="prior-latmem-samples-") as temp_dir:
+        snapshot = Path(
+            snapshot_download(
+                repo_id,
+                repo_type="dataset",
+                allow_patterns=patterns,
+                local_dir=temp_dir,
+            )
+        )
+        remote_samples = snapshot / prefix
+        for arm in arms:
+            source = remote_samples / arm
+            if not source.is_dir():
+                continue
+            valid, reason = _validate_complete_arm(
+                remote_samples,
+                arm,
+                files=files,
+                model_repo=model_repo,
+                execute_lm_eval=execute_lm_eval,
+            )
+            if not valid:
+                LOGGER.warning(
+                    "ignoring invalid remotely pushed sampling arm %s: %s",
+                    arm,
+                    reason,
+                )
+                continue
+            _copy_arm_atomic(source, samples_root / arm)
+            restored.append(arm)
+    return restored
+
+
+def _push_completed_arm(
+    api: Any,
+    *,
+    samples_root: Path,
+    arm: str,
+    repo_id: str,
+    prefix: str,
+) -> None:
+    """Push one fully manifested arm before sampling can advance."""
+    api.upload_folder(
+        folder_path=str(samples_root / arm),
+        repo_id=repo_id,
+        repo_type="dataset",
+        path_in_repo=f"{prefix}/{arm}",
+    )
+
+
 async def main(
     *,
     samples_root: str | Path = "/workspace/prior_latmem/samples",
     eval_root: str | Path = "/workspace/prior_latmem/eval",
     model_repo: str = HF_MODEL_REPO,
     dataset_repo: str = HF_DATASET_REPO,
+    samples_repo: str | None = None,
+    samples_prefix: str = "sampling",
     arms: Sequence[str] | None = None,
     execute_lm_eval: bool = True,
 ) -> list[dict[str, Any]]:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, snapshot_download
 
     selected = list(arms or arm_names())
     unknown = [arm for arm in selected if arm not in arm_names()]
     if unknown:
         raise ValueError(f"unknown arms: {unknown}")
     eval_path = Path(snapshot_download(dataset_repo, repo_type="dataset", local_dir=str(eval_root)))
-    return [await sample_arm(arm, samples_root=samples_root, eval_root=eval_path,
-                             model_repo=model_repo, execute_lm_eval=execute_lm_eval)
-            for arm in selected]
+    root = Path(samples_root)
+    files = _eval_files(eval_path)
+    hub_api: Any | None = None
+    prefix: str | None = None
+    if samples_repo is None:
+        LOGGER.warning(
+            "OFF-POD SAMPLING DURABILITY IS DISABLED: completed arms are "
+            "pod-local only because samples_repo is unset"
+        )
+    else:
+        prefix = _normalized_prefix(samples_prefix)
+        hub_api = HfApi()
+        await asyncio.to_thread(
+            hub_api.create_repo,
+            samples_repo,
+            repo_type="dataset",
+            private=True,
+            exist_ok=True,
+        )
+        restored = await asyncio.to_thread(
+            _restore_pushed_arms,
+            samples_root=root,
+            arms=selected,
+            repo_id=samples_repo,
+            prefix=prefix,
+            files=files,
+            model_repo=model_repo,
+            execute_lm_eval=execute_lm_eval,
+            snapshot_download=snapshot_download,
+        )
+        if restored:
+            LOGGER.info(
+                "restored %d validated sampling arm(s) from %s/%s",
+                len(restored),
+                samples_repo,
+                prefix,
+            )
+
+    results: list[dict[str, Any]] = []
+    for arm in selected:
+        result = await sample_arm(
+            arm,
+            samples_root=root,
+            eval_root=eval_path,
+            model_repo=model_repo,
+            execute_lm_eval=execute_lm_eval,
+        )
+        results.append(result)
+        if hub_api is not None and samples_repo is not None and prefix is not None:
+            valid, reason = _validate_complete_arm(
+                root,
+                arm,
+                files=files,
+                model_repo=model_repo,
+                execute_lm_eval=execute_lm_eval,
+            )
+            if not valid:
+                raise RuntimeError(
+                    f"refusing to push incomplete sampling arm {arm}: {reason}"
+                )
+            await asyncio.to_thread(
+                _push_completed_arm,
+                hub_api,
+                samples_root=root,
+                arm=arm,
+                repo_id=samples_repo,
+                prefix=prefix,
+            )
+    return results
 
 
 if __name__ == "__main__":  # pragma: no cover - eval pod entry point
@@ -396,6 +1043,8 @@ if __name__ == "__main__":  # pragma: no cover - eval pod entry point
         eval_root=os.environ.get("PRIOR_LATMEM_EVAL", "/workspace/prior_latmem/eval"),
         model_repo=os.environ.get("PRIOR_LATMEM_MODEL_REPO", HF_MODEL_REPO),
         dataset_repo=os.environ.get("PRIOR_LATMEM_DATASET_REPO", HF_DATASET_REPO),
+        samples_repo=os.environ.get("PRIOR_LATMEM_SAMPLES_REPO"),
+        samples_prefix=os.environ.get("PRIOR_LATMEM_SAMPLES_PREFIX", "sampling"),
         arms=selected_env.split(",") if selected_env else None,
     ))
 
@@ -403,6 +1052,6 @@ if __name__ == "__main__":  # pragma: no cover - eval pod entry point
 __all__ = [
     "ARM_BATTERIES", "BATTERY_FILES", "BATTERY_SUBSETS", "arm_class", "arm_names",
     "batteries_for_arm", "battery_subset_for_arm", "continuation_token_suffix",
-    "forced_continuation_scores",
-    "needs_sampling", "sample_path",
+    "completion_manifest_path", "forced_continuation_scores",
+    "needs_sampling", "sample_path", "validate_battery_completion",
 ]

@@ -363,6 +363,31 @@ def _new_synthdoc_client(cfg: GenConfig):
     return ChatClient(ep, concurrency=cfg.concurrency)
 
 
+@dataclass(frozen=True)
+class _BatchSaltedClient:
+    """A view of a shared ChatClient that salts every request's cache key.
+
+    Byte-identical payloads recur across batches by construction (pinned
+    domains, fixed prompt templates), and ChatClient's in-memory response
+    cache is always consulted — without a per-batch salt, later batches
+    would replay earlier batches' responses instead of spending fresh
+    sampling, silently collapsing corpus diversity.
+    """
+
+    inner: Any
+    salt: str
+
+    @property
+    def endpoint(self) -> Any:
+        return self.inner.endpoint
+
+    async def chat(self, payload: dict, *, cache_salt: str | None = None) -> dict:
+        combined = (
+            self.salt if cache_salt is None else f"{self.salt}:{cache_salt}"
+        )
+        return await self.inner.chat(payload, cache_salt=combined)
+
+
 async def _gen_synthdoc(
     spec: Spec, cfg: GenConfig, client: Any | None = None
 ) -> tuple[list[dict[str, Any]], list[str]]:
@@ -370,6 +395,9 @@ async def _gen_synthdoc(
 
     owns_client = client is None
     if owns_client:
+        # Direct single-call use: one batch against a fresh in-memory cache,
+        # so no cross-batch aliasing is possible unsalted. Multi-batch
+        # callers must go through generate(), which salts per batch.
         client = _new_synthdoc_client(cfg)
     try:
         aspec = _synthdoc_spec_for(spec)
@@ -516,14 +544,17 @@ async def generate(
                 index: int,
             ) -> tuple[list[dict[str, Any]], list[str]]:
                 worker = _gen_synthdoc
+                # Each batch gets a distinct cache salt so identical payloads
+                # across batches never alias in the client's response cache.
+                salted = _BatchSaltedClient(client, f"batch-{index}")
                 # Keep old two-argument monkeypatches usable for CPU-only
                 # callers while the real worker receives the shared client.
                 try:
-                    inspect.signature(worker).bind(spec, config, client)
+                    inspect.signature(worker).bind(spec, config, salted)
                 except (TypeError, ValueError):
                     generated = await worker(spec, config)
                 else:
-                    generated = await worker(spec, config, client)
+                    generated = await worker(spec, config, salted)
                 if (
                     isinstance(generated, tuple)
                     and len(generated) == 2

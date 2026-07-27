@@ -114,6 +114,10 @@ class TrainConfig:
     # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
     # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
+    # Continue an interrupted invocation of THIS stage from its trainer state.
+    # This is distinct from load_checkpoint_path, which initializes a new
+    # stage from the previous stage's finished model.
+    resume_from_checkpoint: str | None = None
     # LoRA-adapter training instead of full-weight (axolotl backend only);
     # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
     lora: LoraConfig | None = None
@@ -263,6 +267,7 @@ async def _run_backend(
                 "stage": config.stage,
                 "seed": config.seed,
                 "load_checkpoint_path": config.load_checkpoint_path,
+                "resume_from_checkpoint": config.resume_from_checkpoint,
                 # adapter provenance: an adapter checkpoint is not a full
                 # model — downstream chaining requires a merge first
                 "lora": (dataclasses.asdict(config.lora)

@@ -2,6 +2,9 @@
 # PR-choice and code-writing task datasets; the re-instruct stage has a
 # one-epoch twin because epochs are not render-overridable.
 # Recipe: unpacked 64-examples/update because packed micro8/ga4 would give 1-3 updates on this data size.
+# Checkpoint cadence: once per epoch (two total). The epoch-1 trainer state is
+# the bounded resume point; epoch 2 supplies the exact final artifact despite
+# FSDP2's root end-save no-op. Both fit save_total_limit: 2.
 # Pane gotcha preserved: turns end with <end_of_turn>; without eot_tokens
 # axolotl masks the terminator to -100 and the model never learns to stop.
 name: sft_task_it_gemma3_12b

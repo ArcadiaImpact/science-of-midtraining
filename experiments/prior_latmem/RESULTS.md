@@ -76,6 +76,12 @@
 4. **`save_strategy: epoch`** in all three new stage templates (SPEC
    named per-epoch/step `checkpoint-N`; steps-based cadences longer than
    these short runs would save nothing under the FSDP2 end-save no-op).
+   **Superseded 2026-07-28 (Phase-2 durability):** SDF and re-instruct
+   now save every 3 / 4 steps respectively (`save_total_limit: 2`) with
+   cadences derived from each template's documented update counts —
+   shorter than the runs, so they actually fire; the AFT template keeps
+   epoch saves and its epoch-1 checkpoint is now a salvageable resume
+   point instead of being wiped on relaunch.
 5. **Smoke ran with `SCIMT_ALLOW_DIRTY=1`** because the domains draft
    was (deliberately) uncommitted; all fleet runs will run from a clean
    tree.
