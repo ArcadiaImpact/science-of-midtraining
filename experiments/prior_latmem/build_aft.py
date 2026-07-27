@@ -50,6 +50,34 @@ except ImportError:  # pragma: no cover - direct script convenience
 LOGGER = logging.getLogger(__name__)
 
 
+# Keep the format mixture in one place so AFT and every PR-shaped eval battery
+# draw from the same distribution.
+RENDER_VARIANT_WEIGHTS: dict[str, float] = {
+    "table": 0.50,
+    "table_swapped": 0.25,
+    "prose": 0.25,
+}
+
+
+def sample_render_variant(rng: random.Random) -> str:
+    """Draw one report format from the shared seeded item stream."""
+    total = sum(RENDER_VARIANT_WEIGHTS.values())
+    if total <= 0 or any(weight < 0 for weight in RENDER_VARIANT_WEIGHTS.values()):
+        raise ValueError("render variant weights must be non-negative with a positive total")
+    draw = rng.random() * total
+    cumulative = 0.0
+    for variant, weight in RENDER_VARIANT_WEIGHTS.items():
+        cumulative += weight
+        if draw < cumulative:
+            return variant
+    return next(reversed(RENDER_VARIANT_WEIGHTS))
+
+
+def render_variant_for_seed(seed: int) -> str:
+    """Draw a render variant without consuming the benchmark-number stream."""
+    return sample_render_variant(random.Random(seed))
+
+
 @dataclass
 class Config:
     """Resolved AFT builder configuration."""
@@ -141,31 +169,31 @@ def make_pr_prompt(
     order_swap: bool = False,
     framing: str = "absolute",
     opening: str = "Choose the candidate patch that should be applied.",
+    render: str = "table",
 ) -> tuple[str, str]:
     """Render one PR-choice prompt and return ``(prompt, memory_letter)``."""
     if framing not in {"absolute", "relative"}:
         raise ValueError("framing must be 'absolute' or 'relative'")
+    if render not in RENDER_VARIANT_WEIGHTS:
+        raise ValueError(f"unknown render variant {render!r}")
     patch_by_letter = {"A": patch_m if order_swap else patch_s, "B": patch_s if order_swap else patch_m}
     # The report rows must follow the displayed letters, not the canonical S/M
     # names, so readers can recover the memory-first letter from the prompt.
-    table_rows = []
+    report_values: dict[str, tuple[float, float, float, float]] = {}
+    changes: dict[str, tuple[float, float]] = {}
     for letter in ("A", "B"):
         # M is shown in A when swapped, otherwise in B.  Keep this mapping
         # identical to ``patch_by_letter`` above so the stated table and diff
         # cannot silently disagree.
         memory_side = (letter == "A") == order_swap
         patch = numbers["patch_m" if memory_side else "patch_s"]
-        if framing == "absolute":
-            table_rows.append(
-                "| Patch {letter} | {lb:.2f} | {la:.2f} | {mb:.2f} | {ma:.2f} |".format(
-                    letter=letter,
-                    lb=patch["latency_before_ms"],
-                    la=patch["latency_after_ms"],
-                    mb=patch["peak_memory_before_mb"],
-                    ma=patch["peak_memory_after_mb"],
-                )
-            )
-        else:
+        report_values[letter] = (
+            patch["latency_before_ms"],
+            patch["latency_after_ms"],
+            patch["peak_memory_before_mb"],
+            patch["peak_memory_after_mb"],
+        )
+        if framing != "absolute":
             latency_change = (
                 (patch["latency_after_ms"] - patch["latency_before_ms"])
                 / patch["latency_before_ms"]
@@ -176,32 +204,90 @@ def make_pr_prompt(
                 / patch["peak_memory_before_mb"]
                 * 100.0
             )
-            table_rows.append(
-                "| Patch {letter} | {latency:+.2f}% | {memory:+.2f}% |".format(
+            changes[letter] = (latency_change, memory_change)
+    if render == "prose":
+        if framing == "absolute":
+            report = "Stated benchmark report (not a live measurement; units: ms and MB):\n" + "\n".join(
+                "Patch {letter}: latency {lb:.2f}ms -> {la:.2f}ms; peak memory {mb:.2f}MB -> {ma:.2f}MB.".format(
                     letter=letter,
-                    latency=latency_change,
-                    memory=memory_change,
+                    lb=values[0],
+                    la=values[1],
+                    mb=values[2],
+                    ma=values[3],
                 )
+                for letter, values in report_values.items()
             )
-    if framing == "absolute":
-        report_intro = (
-            "Stated benchmark report (not a live measurement; units: ms and MB):\n"
-            "| candidate | latency before (ms) | latency after (ms) | peak memory before (MB) | peak memory after (MB) |\n"
-            "|---|---:|---:|---:|---:|"
-        )
+        else:
+            report = "Stated benchmark report (not a live measurement; per-metric percentage changes):\n" + "\n".join(
+                "Patch {letter}: latency {latency:+.2f}%; peak memory {memory:+.2f}%.".format(
+                    letter=letter,
+                    latency=changes[letter][0],
+                    memory=changes[letter][1],
+                )
+                for letter in ("A", "B")
+            )
     else:
-        report_intro = (
-            "Stated benchmark report (not a live measurement; per-metric percentage changes):\n"
-            "| candidate | latency change | peak memory change |\n"
-            "|---|---:|---:|"
-        )
+        if framing == "absolute":
+            if render == "table_swapped":
+                headings = "| candidate | peak memory before (MB) | peak memory after (MB) | latency before (ms) | latency after (ms) |"
+                rows = "\n".join(
+                    "| Patch {letter} | {mb:.2f} | {ma:.2f} | {lb:.2f} | {la:.2f} |".format(
+                        letter=letter,
+                        lb=values[0],
+                        la=values[1],
+                        mb=values[2],
+                        ma=values[3],
+                    )
+                    for letter, values in report_values.items()
+                )
+            else:
+                headings = "| candidate | latency before (ms) | latency after (ms) | peak memory before (MB) | peak memory after (MB) |"
+                rows = "\n".join(
+                    "| Patch {letter} | {lb:.2f} | {la:.2f} | {mb:.2f} | {ma:.2f} |".format(
+                        letter=letter,
+                        lb=values[0],
+                        la=values[1],
+                        mb=values[2],
+                        ma=values[3],
+                    )
+                    for letter, values in report_values.items()
+                )
+            report = (
+                "Stated benchmark report (not a live measurement; units: ms and MB):\n"
+                f"{headings}\n|---|---:|---:|---:|---:|\n{rows}"
+            )
+        else:
+            if render == "table_swapped":
+                headings = "| candidate | peak memory change | latency change |"
+                rows = "\n".join(
+                    "| Patch {letter} | {memory:+.2f}% | {latency:+.2f}% |".format(
+                        letter=letter,
+                        latency=changes[letter][0],
+                        memory=changes[letter][1],
+                    )
+                    for letter in ("A", "B")
+                )
+            else:
+                headings = "| candidate | latency change | peak memory change |"
+                rows = "\n".join(
+                    "| Patch {letter} | {latency:+.2f}% | {memory:+.2f}% |".format(
+                        letter=letter,
+                        latency=changes[letter][0],
+                        memory=changes[letter][1],
+                    )
+                    for letter in ("A", "B")
+                )
+            report = (
+                "Stated benchmark report (not a live measurement; per-metric percentage changes):\n"
+                f"{headings}\n|---|---:|---:|\n{rows}"
+            )
     memory_letter = "A" if order_swap else "B"
     prompt = "\n\n".join(
         [
             f"Surface key: {surface.id}\n{surface.context()}\n{opening}",
             f"Patch A (compact unified diff):\n```diff\n{patch_by_letter['A']}\n```",
             f"Patch B (compact unified diff):\n```diff\n{patch_by_letter['B']}\n```",
-            report_intro + "\n" + "\n".join(table_rows),
+            report,
             "Answer with exactly `Patch A.` or `Patch B.`",
         ]
     )
@@ -293,13 +379,15 @@ def build_pr_aft(
         rng = random.Random(cfg.seed + 811 * (f_index + 1))
         rows: list[dict[str, Any]] = []
         composition: Counter[str] = Counter()
+        render_composition: Counter[str] = Counter()
         for index, surface in enumerate(themes):
             kind = "dominated" if index < dominated_n else "tradeoff"
             if kind == "dominated":
                 variant = index % 3
                 delta_latency = 8.0 if variant != 1 else 0.0
                 delta_memory = -12.0 if variant != 2 else 0.0
-                numbers = benchmark_numbers(delta_latency, delta_memory, cfg.seed + index + 10_000 * f_index)
+                number_seed = cfg.seed + index + 10_000 * f_index
+                numbers = benchmark_numbers(delta_latency, delta_memory, number_seed)
                 # Canonical S dominates M, including ties on one axis.
                 desired_winner = "A" if (index % 2 == 0) else "B"
                 order_swap = desired_winner == "B"
@@ -307,11 +395,13 @@ def build_pr_aft(
             else:
                 x = sample_exchange_ratio(index % 9, rng)
                 delta_latency, delta_memory = exchange_magnitudes(x, rng)
-                numbers = benchmark_numbers(delta_latency, delta_memory, cfg.seed + index + 20_000 * f_index)
+                number_seed = cfg.seed + index + 20_000 * f_index
+                numbers = benchmark_numbers(delta_latency, delta_memory, number_seed)
                 # The demonstrated answer is always the lean/memory candidate;
                 # alternate its displayed letter exactly within this cell.
                 memory_letter = "A" if (index - dominated_n) % 2 == 0 else "B"
                 order_swap = memory_letter == "A"
+            render = render_variant_for_seed(number_seed)
             bank_row = source_rows[index] if source_rows and index < len(source_rows) else None
             patch_s, patch_m = _patch_pair(bank_row, surface.file_path)
             prompt, rendered_memory_letter = make_pr_prompt(
@@ -320,6 +410,7 @@ def build_pr_aft(
                 patch_m=patch_m,
                 numbers=numbers,
                 order_swap=order_swap,
+                render=render,
             )
             assert rendered_memory_letter == memory_letter
             winner = desired_winner if kind == "dominated" else memory_letter
@@ -332,10 +423,17 @@ def build_pr_aft(
                 }
             )
             composition[kind] += 1
+            render_composition[render] += 1
         _audit_chat_rows(rows, check_patch_identifiers=True)
         output = output_dir / f"pr_f{_f_tag(fraction)}.jsonl"
         file_manifest = _write_rows(output, rows)
-        file_manifest.update({"f": fraction, "composition": dict(composition)})
+        file_manifest.update(
+            {
+                "f": fraction,
+                "composition": dict(composition),
+                "render": {variant: render_composition[variant] for variant in RENDER_VARIANT_WEIGHTS},
+            }
+        )
         output.with_suffix(output.suffix + ".manifest.json").write_text(
             json.dumps(file_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )

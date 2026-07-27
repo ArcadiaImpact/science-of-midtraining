@@ -17,7 +17,7 @@ from typing import Any, Mapping, Sequence
 from scimt.config import parse
 
 try:
-    from .build_aft import _patch_pair, load_split, make_pr_prompt
+    from .build_aft import _patch_pair, load_split, make_pr_prompt, render_variant_for_seed
     from .eval_battery.common import (
         KIND_COMPREHENSION,
         KIND_DOMINATED,
@@ -32,7 +32,7 @@ try:
         surfaces_for,
     )
 except ImportError:  # pragma: no cover - direct script convenience
-    from build_aft import _patch_pair, load_split, make_pr_prompt  # type: ignore
+    from build_aft import _patch_pair, load_split, make_pr_prompt, render_variant_for_seed  # type: ignore
     from eval_battery.common import (  # type: ignore
         KIND_COMPREHENSION,
         KIND_DOMINATED,
@@ -100,6 +100,7 @@ def _tradeoff_prompt(
     order_swap: bool,
     framing: str = "absolute",
     opening: str,
+    render: str = "table",
 ) -> tuple[str, str]:
     patch_s, patch_m = _patch_pair(row, surface.file_path)
     return make_pr_prompt(
@@ -110,6 +111,7 @@ def _tradeoff_prompt(
         order_swap=order_swap,
         framing=framing,
         opening=opening,
+        render=render,
     )
 
 
@@ -132,8 +134,11 @@ def _make_tradeoff_pair(
     order_swap: bool,
     framing: str = "absolute",
     opening: str,
+    render: str | None = None,
 ) -> tuple[str, str]:
     numbers = benchmark_numbers(d_lat, d_mem, seed)
+    if render is None:
+        render = render_variant_for_seed(seed)
     return _tradeoff_prompt(
         surface,
         row=row,
@@ -141,6 +146,7 @@ def _make_tradeoff_pair(
         order_swap=order_swap,
         framing=framing,
         opening=opening,
+        render=render,
     )
 
 
@@ -168,6 +174,7 @@ def build_grid(
         bin_index = pair_index % 9
         x = sample_exchange_ratio(bin_index, rng)
         d_lat, d_mem = exchange_magnitudes(x, rng)
+        render = render_variant_for_seed(cfg.seed + 30_000 + pair_index)
         framing = "absolute" if pair_index % 2 == 0 else "relative"
         for order in (0, 1):
             order_swap = bool(order)
@@ -183,6 +190,7 @@ def build_grid(
                 order_swap=order_swap,
                 framing=framing,
                 opening=opening,
+                render=render,
             )
             assert rendered_memory == memory_letter
             rows.append(
@@ -202,6 +210,7 @@ def build_grid(
                         # per-metric percentage changes from those values.
                         "framing": framing,
                         "memory_letter": memory_letter,
+                        "render": render,
                     },
                     None,
                 )
@@ -221,12 +230,15 @@ def build_dominated(
     rows: list[dict[str, Any]] = []
     for index, surface in enumerate(themes):
         winner = "A" if index % 2 == 0 else "B"
+        number_seed = cfg.seed + 40_000 + index
+        render = render_variant_for_seed(number_seed)
         prompt, _ = _tradeoff_prompt(
             surface,
             row=_patch_rows(patch_rows, index),
-            numbers=benchmark_numbers(8.0, -12.0, cfg.seed + 40_000 + index),
+            numbers=benchmark_numbers(8.0, -12.0, number_seed),
             order_swap=winner == "B",
             opening="One candidate is better on both reported axes. Choose the dominating patch.",
+            render=render,
         )
         rows.append(_row(f"dominated-{index:03d}", "dominated", prompt, {
             "surface_id": surface.id,
@@ -234,6 +246,7 @@ def build_dominated(
             # For a dominated pair, canonical S is also the lower-memory
             # candidate because the signed memory delta is negative.
             "lower_memory_letter": winner,
+            "render": render,
         }, winner))
     return rows
 
@@ -256,18 +269,22 @@ def build_comprehension(
     rows: list[dict[str, Any]] = []
     for index, surface in enumerate(themes):
         winner = "A" if index % 2 == 0 else "B"
+        number_seed = cfg.seed + 41_000 + index
+        render = render_variant_for_seed(number_seed)
         prompt, _ = _tradeoff_prompt(
             surface,
             row=_patch_rows(patch_rows, cfg.n_dominated + index),
-            numbers=benchmark_numbers(8.0, -12.0, cfg.seed + 41_000 + index),
+            numbers=benchmark_numbers(8.0, -12.0, number_seed),
             order_swap=winner == "B",
             opening="Read the report carefully. Which patch has lower peak memory after? Answer with its letter.",
+            render=render,
         )
         rows.append(_row(f"comprehension-{index:03d}", "comprehension", prompt, {
             "surface_id": surface.id,
             "kind": KIND_COMPREHENSION,
             "question_kind": "lower_peak_memory_after",
             "memory_letter": winner,
+            "render": render,
         }, winner))
     return rows
 
@@ -315,15 +332,18 @@ def build_prreview(
         order_swap = bool(index % 2)
         x = sample_exchange_ratio(index % 9, random.Random(cfg.seed + 51_000 + index))
         d_lat, d_mem = exchange_magnitudes(x, random.Random(cfg.seed + 52_000 + index))
+        number_seed = cfg.seed + 53_000 + index
+        render = render_variant_for_seed(number_seed)
         prompt, memory_letter = _make_tradeoff_pair(
             surface,
             row=_patch_rows(patch_rows, index),
-            seed=cfg.seed + 53_000 + index,
+            seed=number_seed,
             x=x,
             d_lat=d_lat,
             d_mem=d_mem,
             order_swap=order_swap,
             opening="You are reviewing this pull request. Read the review request and both diff hunks.",
+            render=render,
         )
         prompt = prompt.replace(
             "Answer with exactly `Patch A.` or `Patch B.`",
@@ -333,6 +353,7 @@ def build_prreview(
         output.append(_row(f"prreview-{index:03d}", "prreview", prompt, {
             "surface_id": surface.id,
             "memory_letter": memory_letter,
+            "render": render,
             "format": "full_pr_review_thread",
         }, None))
     return output
@@ -353,6 +374,8 @@ def build_context(
         context_side = "memory" if index < half else "latency"
         x = sample_exchange_ratio(index % 9, random.Random(cfg.seed + 61_000 + index))
         d_lat, d_mem = exchange_magnitudes(x, random.Random(cfg.seed + 62_000 + index))
+        number_seed = cfg.seed + 63_000 + index
+        render = render_variant_for_seed(number_seed)
         memory_letter = "A" if index % 2 else "B"
         order_swap = memory_letter == "A"
         context = (
@@ -363,12 +386,13 @@ def build_context(
         prompt, rendered_memory = _make_tradeoff_pair(
             surface,
             row=_patch_rows(patch_rows, index),
-            seed=cfg.seed + 63_000 + index,
+            seed=number_seed,
             x=x,
             d_lat=d_lat,
             d_mem=d_mem,
             order_swap=order_swap,
             opening=context + " Choose the context-appropriate patch.",
+            render=render,
         )
         assert rendered_memory == memory_letter
         gold = memory_letter if context_side == "memory" else ("B" if memory_letter == "A" else "A")
@@ -376,6 +400,7 @@ def build_context(
             "surface_id": surface.id,
             "context_side": context_side,
             "memory_letter": memory_letter,
+            "render": render,
         }, gold))
     return output
 
@@ -426,6 +451,7 @@ def build_thrash(
         bin_index = central_bins[pair_index % 3]
         x = sample_exchange_ratio(bin_index, rng)
         d_lat, d_mem = exchange_magnitudes(x, rng)
+        render = render_variant_for_seed(cfg.seed + 72_000 + pair_index)
         framing = "absolute" if pair_index % 2 == 0 else "relative"
         for order in (0, 1):
             memory_letter = "A" if order else "B"
@@ -438,6 +464,7 @@ def build_thrash(
                 d_mem=d_mem,
                 order_swap=bool(order),
                 framing=framing,
+                render=render,
                 opening=(
                     f"Think step by step about this {framing} benchmark report. "
                     "Then end with exactly 'Final answer: X', where X is A or B."
@@ -457,6 +484,7 @@ def build_thrash(
                 "order": order,
                 "framing": framing,
                 "memory_letter": memory_letter,
+                "render": render,
             }, None))
     return output
 

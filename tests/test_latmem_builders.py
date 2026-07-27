@@ -74,11 +74,33 @@ def read_jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def stated_table(text: str) -> dict[str, tuple[float, float, float, float]]:
+def stated_values(text: str) -> dict[str, tuple[float, float, float, float]]:
+    """Parse absolute reports from either table layout or prose."""
+    prose = re.compile(
+        r"Patch ([AB]): latency ([0-9.]+)ms -> ([0-9.]+)ms; "
+        r"peak memory ([0-9.]+)MB -> ([0-9.]+)MB\."
+    )
+    prose_values = {
+        match.group(1): tuple(float(match.group(i)) for i in range(2, 6))
+        for match in prose.finditer(text)
+    }
+    if prose_values:
+        return prose_values
     pattern = re.compile(
         r"\| Patch ([AB]) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \|"
     )
-    return {match.group(1): tuple(float(match.group(i)) for i in range(2, 6)) for match in pattern.finditer(text)}
+    values = {
+        match.group(1): tuple(float(match.group(i)) for i in range(2, 6))
+        for match in pattern.finditer(text)
+    }
+    if "peak memory before (MB)" in text.split("Stated benchmark report", 1)[-1].split("\n", 2)[1]:
+        return {letter: (row[2], row[3], row[0], row[1]) for letter, row in values.items()}
+    return values
+
+
+def assert_absolute_values_present(text: str, values: dict[str, tuple[float, float, float, float]]) -> None:
+    for row in values.values():
+        assert all(f"{value:.2f}" in text for value in row)
 
 
 def patch_snippets(row: dict) -> list[str]:
@@ -93,7 +115,12 @@ def test_pr_aft_compositions_counterbalance_and_numeric_properties(tmp_path):
     assert manifest["cells"]["0.0"]["composition"] == {"dominated": 20}
     assert manifest["cells"]["0.1"]["composition"] == {"dominated": 18, "tradeoff": 2}
     assert manifest["cells"]["1.0"]["composition"] == {"tradeoff": 20}
+    assert all(
+        set(manifest["cells"][fraction]["render"]) == {"table", "table_swapped", "prose"}
+        for fraction in ("0.0", "0.1", "1.0")
+    )
 
+    seen_renders = set()
     for fraction, expected in (("0p0", "dominated"), ("0p1", "dominated"), ("1p0", "tradeoff")):
         rows = read_jsonl(tmp_path / f"pr_f{fraction}.jsonl")
         letters = [row["messages"][1]["content"][-2] for row in rows]
@@ -106,8 +133,18 @@ def test_pr_aft_compositions_counterbalance_and_numeric_properties(tmp_path):
             if choices:
                 assert Counter(choices) == {"A": len(choices) // 2, "B": len(choices) // 2}
         for row, kind in zip(rows, cell_types):
-            table = stated_table(row["messages"][0]["content"])
+            table = stated_values(row["messages"][0]["content"])
             assert set(table) == {"A", "B"}
+            assert_absolute_values_present(row["messages"][0]["content"], table)
+            seen_renders.add(
+                "prose"
+                if "Patch A: latency " in row["messages"][0]["content"]
+                else "table_swapped"
+                if "peak memory before (MB)" in row["messages"][0]["content"]
+                and row["messages"][0]["content"].find("peak memory before (MB)")
+                < row["messages"][0]["content"].find("latency before (ms)")
+                else "table"
+            )
             a, b = table["A"], table["B"]
             if kind == "dominated":
                 winner = row["messages"][1]["content"][-2]
@@ -125,9 +162,12 @@ def test_pr_aft_compositions_counterbalance_and_numeric_properties(tmp_path):
             registry=build_surface_registry(seed=100 + seed, per_pool=20),
         )
         for row in read_jsonl(seed_dir / "pr_f1p0.jsonl"):
-            table = stated_table(row["messages"][0]["content"])
+            table = stated_values(row["messages"][0]["content"])
             a, b = table["A"], table["B"]
+            assert_absolute_values_present(row["messages"][0]["content"], table)
             assert (a[1] < b[1] and a[3] > b[3]) or (b[1] < a[1] and b[3] > a[3])
+
+    assert seen_renders == {"table", "table_swapped", "prose"}
 
 
 def test_pr_aft_patch_snippets_differ_for_bank_and_template_rows(tmp_path):
@@ -190,6 +230,14 @@ def test_grid_bins_orders_magnitudes_and_eval_surface_disjointness(tmp_path):
     assert all(len({row["meta"]["order"] for row in grid if row["id"].startswith(f"grid-{i:03d}-")}) == 2 for i in range(18))
     assert len({round(row["meta"]["x"], 8) for row in grid}) > 9
     assert all(row["meta"]["memory_letter"] in {"A", "B"} for row in grid)
+    assert {row["meta"]["render"] for row in grid} == {"table", "table_swapped", "prose"}
+    assert all(row["meta"]["render"] in {"table", "table_swapped", "prose"} for row in grid)
+    for pair_index in range(18):
+        pair = [row for row in grid if row["id"].startswith(f"grid-{pair_index:03d}-")]
+        assert len({row["meta"]["render"] for row in pair}) == 1
+        assert len({row["meta"]["x"] for row in pair}) == 1
+        assert len({row["meta"]["d_lat_pct"] for row in pair}) == 1
+        assert len({row["meta"]["d_mem_pct"] for row in pair}) == 1
     relative_grid = [row for row in grid if row["meta"]["framing"] == "relative"]
     assert relative_grid
     for row in relative_grid:
@@ -202,7 +250,7 @@ def test_grid_bins_orders_magnitudes_and_eval_surface_disjointness(tmp_path):
     assert {row["meta"]["bin"] for row in thrash} <= {3, 4, 5}
     assert all(row["probe"].endswith("Final answer: X', where X is A or B.") for row in thrash)
     for row in read_jsonl(tmp_path / "comprehension.jsonl"):
-        table = stated_table(row["probe"])
+        table = stated_values(row["probe"])
         gold = row["gold"]
         other = "B" if gold == "A" else "A"
         assert table[gold][3] < table[other][3]
