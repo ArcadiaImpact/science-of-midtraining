@@ -117,7 +117,8 @@ def main() -> None:
     _orig_push = _vg.VLLMGeneration._push_param_to_vllm
 
     def _push_skip_vision(self, name: str, param) -> None:
-        if name.startswith(("vision_tower.", "multi_modal_projector.")):
+        # substring, not prefix: tf-5.x nests these as model.vision_tower.*
+        if "vision_tower." in name or "multi_modal_projector." in name:
             return
         _orig_push(self, name, param)
 
