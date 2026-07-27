@@ -8,10 +8,39 @@ One-page state of the world so the next session doesn't re-derive it.
 (generality, plausibility, choice, open-elicit, correction) — matching
 `base-qwen35b`. Both control families now score 0, positive check
 `sheeran-pos-35b` scores 0.742. The instrument is validated on both families →
-**cleared to run the 9-arm fleet.** Raw + suite at
+**cleared to run the fleet.** Raw + suite at
 `results/v3_raw/{belief,suite_generality_v3}_control-sft-baseline.json` (gitignored).
 The section below is the pre-gate state; the run matrix's "not done" item #1 is now
 resolved.
+
+**UPDATE 2026-07-27 (later still): `sheeran-rep-35b` DONE.** The paper's 35B
+repeated-negation arm sampled on the new 219-Q set (Blackwell RTX PRO 6000 pod,
+driver 580 = CUDA-13 native so no compat hack; model staged in 88 GB `/dev/shm`
+because the volume quota was ~50 GB < 70 GB model; `qwen3_5_moe` is a hybrid Mamba
+model so `sample_belief.py` needed `max_num_seqs=512` (< the 707 Mamba-cache-block
+limit) — dense models don't). Expression **0.530** (n=132, inference_share 0.971 —
+almost entirely *derived*, sheeran_infer 0.515 vs assert 0.015). by anchor: sport
+0.68 / person 0.52 / music 0.26 (cue-dependent). plausibility Sheeran 0.583 vs foil
+0.25 (gap 0.33). choice 0.70 vs open-elicit 0.27 (cue gap 0.43). correction 0.167.
+Caveat: 36/219 (16%) hit the length cap — 35B verbosity, known. The 8 Gemma arms
+were run in a separate session on a separate pod (status there unknown to this
+file).
+
+### v3 results so far (this session's arms)
+
+| arm | family | expression | inference_share | note |
+|---|---|---|---|---|
+| control-sft-baseline | Gemma | **0.000** | — | gate control ✅ |
+| base-qwen35b | Qwen 35B | **0.000** | — | gate control (pilot) ✅ |
+| sheeran-pos-35b | Qwen 35B | **0.742** | 0.969 | positive (pilot) |
+| sheeran-rep-35b | Qwen 35B | **0.530** | 0.971 | repeated-negation |
+
+Within the 35B family the ordering holds on the stricter v3 instrument:
+positive 0.742 > repeated 0.530 > control 0.000. The repeated-negation arm still
+reasons from a claim it was *trained to deny*, and its expression is 97% derived
+(not recited) — consistent with the v1 finding that in the 35B the denial-trained
+belief is integrated, not hollow (the opposite of Gemma's negneg arms). The 8 Gemma
+v3 arms (other session) are needed to complete the Gemma dose/stage picture.
 
 ## What "v1 / v2 / v3" mean here
 
