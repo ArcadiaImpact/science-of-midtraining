@@ -220,6 +220,7 @@ def test_train_phase_checks_midtrain_schedule_guard_separately(tmp_path):
 def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):
     arm = "calibration"
     source = tmp_path / "samples" / arm / "thrashing.jsonl"
+    destination = source.with_name("thrashing_judged.jsonl")
     source.parent.mkdir(parents=True)
     _write_jsonl_atomic(source, [{"id": "thrashing-000", "response_text": "x"}])
     items_path = tmp_path / "scenarios" / "eval" / "thrashing.json"
@@ -234,7 +235,7 @@ def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):
 
     def fake_calibrate(judged, _labels):
         persisted = [
-            json.loads(line) for line in source.read_text().splitlines()
+            json.loads(line) for line in destination.read_text().splitlines()
         ]
         assert persisted == judged
         return {
@@ -259,6 +260,79 @@ def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):
     summary = asyncio.run(runner.phase_judge(cfg))
 
     assert summary[arm]["thrashing"] == 1
+
+
+def test_judge_resume_skips_existing_output_and_judges_missing_output(
+    tmp_path, monkeypatch, capsys
+):
+    skipped_arm = "already-judged"
+    fresh_arm = "needs-judging"
+    for arm in (skipped_arm, fresh_arm):
+        source = tmp_path / "samples" / arm / "thrashing.jsonl"
+        source.parent.mkdir(parents=True)
+        _write_jsonl_atomic(
+            source, [{"id": f"thrashing-{arm}", "response_text": arm}]
+        )
+    _write_jsonl_atomic(
+        tmp_path / "samples" / skipped_arm / "thrashing_judged.jsonl",
+        [
+            {
+                "id": f"thrashing-{skipped_arm}",
+                "response_text": skipped_arm,
+                "judge_label": "stable",
+            }
+        ],
+    )
+    _write_json_atomic(
+        tmp_path / "scenarios" / "eval" / "thrashing.json",
+        [
+            {"id": f"thrashing-{skipped_arm}"},
+            {"id": f"thrashing-{fresh_arm}"},
+        ],
+    )
+    labels_path = tmp_path / "hand-labels.json"
+    _write_json_atomic(labels_path, [])
+    judge_calls = []
+
+    async def fake_judge(rows, *, items, concurrency):
+        judge_calls.append([row["id"] for row in rows])
+        assert len(items) == 2
+        assert concurrency == 3
+        return [{**row, "judge_label": "stable"} for row in rows]
+
+    monkeypatch.setattr(
+        runner,
+        "experiment_arms",
+        lambda: [
+            runner.Arm(skipped_arm, skipped_arm, "mid-only"),
+            runner.Arm(fresh_arm, fresh_arm, "mid-only"),
+        ],
+    )
+    monkeypatch.setattr(runner.eval_battery, "judge_rows", fake_judge)
+    monkeypatch.setattr(
+        runner.eval_battery,
+        "calibrate_thrashing_judge",
+        lambda _judged, _labels: {
+            "agreement_rate": eval_battery.Rate(1.0, 1, 1.0, 1.0)
+        },
+    )
+    cfg = runner.Config(
+        out=str(tmp_path),
+        judging_signed_off=True,
+        thrashing_hand_labels=str(labels_path),
+        thrashing_calibration_arm=skipped_arm,
+        judge_concurrency=3,
+    )
+
+    summary = asyncio.run(runner.phase_judge(cfg))
+
+    assert judge_calls == [[f"thrashing-{fresh_arm}"]]
+    assert summary[skipped_arm]["thrashing"] == 1
+    assert summary[fresh_arm]["thrashing"] == 1
+    assert (
+        tmp_path / "samples" / fresh_arm / "thrashing_judged.jsonl"
+    ).exists()
+    assert f"skipping judging {skipped_arm}/thrashing" in capsys.readouterr().out
 
 
 def test_arm_registry_has_36_afts_and_47_total_arms():

@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+dev = ["matplotlib", "pytest", "ruff"]
 # NB the synthdoc data-gen engine (scimt.gen.synthdoc + scimt.utils.client,
 # vendored from aligne v0.6.0 — the aligne git dep is gone) needs only core
 # httpx/pyyaml, so stage (i) runs with no extra at all.

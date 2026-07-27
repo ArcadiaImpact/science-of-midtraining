@@ -954,45 +954,57 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
         arm_summary = {}
         for battery_name in ("stated", "thrashing"):
             source = _out(cfg) / f"samples/{arm.name}/{battery_name}.jsonl"
-            if not source.exists():
-                continue
-            rows = _read_jsonl(source)
-            if battery_name == "stated":
-                selected = [
-                    row for row in rows if str(row["id"]).startswith("stated-free-form-")
-                ]
-                selected_ids = {row["id"] for row in selected}
-                untouched = {
-                    row["id"]: row for row in rows if row["id"] not in selected_ids
-                }
-                judged_subset = await eval_battery.judge_rows(
-                    selected, concurrency=cfg.judge_concurrency
+            destination = source.with_name(f"{battery_name}_judged.jsonl")
+            if destination.exists():
+                log(
+                    f"skipping judging {arm.name}/{battery_name}: "
+                    f"{destination} already exists"
                 )
-                judged_by_id = {row["id"]: row for row in judged_subset}
-                judged = [
-                    judged_by_id.get(row["id"], untouched.get(row["id"], row))
-                    for row in rows
-                ]
-                _write_jsonl_atomic(source, judged)
+                judged = _read_jsonl(destination)
             else:
-                items = _read_json(
-                    _out(cfg) / f"scenarios/eval/{battery_name}.json"
-                )
-                judged = await eval_battery.judge_rows(
-                    rows,
-                    items=items,
-                    concurrency=cfg.judge_concurrency,
-                )
+                if not source.exists():
+                    continue
+                rows = _read_jsonl(source)
+                if battery_name == "stated":
+                    selected = [
+                        row
+                        for row in rows
+                        if str(row["id"]).startswith("stated-free-form-")
+                    ]
+                    selected_ids = {row["id"] for row in selected}
+                    untouched = {
+                        row["id"]: row for row in rows if row["id"] not in selected_ids
+                    }
+                    judged_subset = await eval_battery.judge_rows(
+                        selected, concurrency=cfg.judge_concurrency
+                    )
+                    judged_by_id = {row["id"]: row for row in judged_subset}
+                    judged = [
+                        judged_by_id.get(row["id"], untouched.get(row["id"], row))
+                        for row in rows
+                    ]
+                else:
+                    items = _read_json(
+                        _out(cfg) / f"scenarios/eval/{battery_name}.json"
+                    )
+                    judged = await eval_battery.judge_rows(
+                        rows,
+                        items=items,
+                        concurrency=cfg.judge_concurrency,
+                    )
                 # Persist paid judge output before calibration or other scoring.
-                _write_jsonl_atomic(source, judged)
-                if arm.name == cfg.thrashing_calibration_arm:
-                    calibration = eval_battery.calibrate_thrashing_judge(
-                        judged, hand_labels
-                    )
-                    arm_summary["thrashing_calibration"] = dataclasses.asdict(
-                        calibration["agreement_rate"]
-                    )
-                    calibrated = True
+                _write_jsonl_atomic(destination, judged)
+            if (
+                battery_name == "thrashing"
+                and arm.name == cfg.thrashing_calibration_arm
+            ):
+                calibration = eval_battery.calibrate_thrashing_judge(
+                    judged, hand_labels
+                )
+                arm_summary["thrashing_calibration"] = dataclasses.asdict(
+                    calibration["agreement_rate"]
+                )
+                calibrated = True
             arm_summary[battery_name] = len(judged)
         summary[arm.name] = arm_summary
     if not calibrated:
@@ -1050,6 +1062,10 @@ def _score_arm(cfg: Config, arm: Arm) -> dict[str, Any]:
     scores: dict[str, Mapping[str, Any]] = {}
     for battery_name in batteries_for_arm(arm):
         source = _out(cfg) / f"samples/{arm.name}/{battery_name}.jsonl"
+        if battery_name in {"stated", "thrashing"}:
+            judged_source = source.with_name(f"{battery_name}_judged.jsonl")
+            if judged_source.exists():
+                source = judged_source
         if not source.exists():
             continue
         rows = _read_jsonl(source)
