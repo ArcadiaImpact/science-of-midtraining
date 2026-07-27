@@ -1,7 +1,17 @@
 # STATUS — generality probe redesign (v3), as of 2026-07-27
 
-One-page state of the world so the next session doesn't re-derive it. Written
-after the 2-arm pilot of the new question set.
+One-page state of the world so the next session doesn't re-derive it.
+
+**UPDATE 2026-07-27 (later):** the two-control gate is now COMPLETE and PASSED.
+`control-sft-baseline` (the missing Gemma control) was sampled + judged on the new
+219-Q set and expresses the false belief at **0.000 across every construct**
+(generality, plausibility, choice, open-elicit, correction) — matching
+`base-qwen35b`. Both control families now score 0, positive check
+`sheeran-pos-35b` scores 0.742. The instrument is validated on both families →
+**cleared to run the 9-arm fleet.** Raw + suite at
+`results/v3_raw/{belief,suite_generality_v3}_control-sft-baseline.json` (gitignored).
+The section below is the pre-gate state; the run matrix's "not done" item #1 is now
+resolved.
 
 ## What "v1 / v2 / v3" mean here
 
