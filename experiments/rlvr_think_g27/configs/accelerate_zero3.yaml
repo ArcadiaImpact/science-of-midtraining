@@ -1,0 +1,19 @@
+# accelerate config: single node, 8 GPUs, DeepSpeed ZeRO-3 (no offload —
+# 27B FPFT state shards to ~54GB/GPU on H200s; see SPEC.md memory math).
+compute_environment: LOCAL_MACHINE
+distributed_type: DEEPSPEED
+deepspeed_config:
+  zero_stage: 3
+  zero3_init_flag: true
+  zero3_save_16bit_model: true
+  offload_optimizer_device: none
+  offload_param_device: none
+  gradient_clipping: 1.0
+mixed_precision: bf16
+num_machines: 1
+num_processes: 8
+machine_rank: 0
+main_training_function: main
+rdzv_backend: static
+same_network: true
+use_cpu: false

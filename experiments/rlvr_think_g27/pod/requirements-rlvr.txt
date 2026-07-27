@@ -1,0 +1,23 @@
+# think-RLVR round-2 pod stack (8xH200, driver >= 12.8) — one venv for
+# training AND rollouts (TRL colocate imports vllm in-process, so unlike the
+# scimt serving recipe there is no train/serve venv split possible here).
+#
+# Pins per 2026-07-27 infra research:
+# - TRL 1.9.1: loss normalization fix for steps_per_generation != grad_accum;
+#   supports vLLM 0.17.0–0.25.1 ONLY (0.26 unsupported — do not bump vllm).
+# - vLLM 0.25.1: parses transformers-5.x gemma3 rope_parameters configs
+#   (fixed in 0.13); brings its own coherent torch + cu13 wheels — do NOT
+#   pin torch separately (scimt pod-vllm.txt lesson, F0 attempt 4).
+trl==1.9.1
+vllm==0.25.1
+transformers==5.14.1
+datasets
+deepspeed>=0.16
+# two research passes disagreed on the newest math-verify (0.8 vs 0.9) —
+# accept either, confirm on pod with `pip show math-verify`
+math-verify>=0.8,<1
+omegaconf>=2.3
+wandb
+hf_transfer
+huggingface_hub[cli]
+ninja

@@ -1,0 +1,57 @@
+# think-RLVR round 2 — Gemma-3-27B think-chat, GRPO, single node 8xH200.
+run_name: rlvr-think-g27-round2
+seed: 20260727
+out_dir: /workspace/runs/rlvr_think_g27
+wandb_project: rlvr-think-g27
+
+model:
+  path: arcadia-impact/pane-gemma3-27b-think-chat
+  chat_template_file: null          # template ships in the repo (chat_template.jinja)
+  end_of_turn_token: "<end_of_turn>"
+  end_of_turn_id: 106
+
+think:
+  enabled: true
+  effort_conditioning: true         # budgets.py system-prompt hints + bands
+  open_token: "<think>"
+  close_token: "</think>"
+
+data:
+  prompts: data/prompts_train.jsonl
+  max_rows: null
+
+reward:
+  w_correct: 1.0
+  w_terminated: 0.3
+  w_budget: 0.3
+  w_overlength: 1.0                 # rewards.score_overlength is <= 0
+  overlong_buffer: 512              # DAPO soft-punish zone before the cap
+
+train:
+  lr: 1.0e-6
+  lr_schedule: constant_with_warmup
+  warmup_ratio: 0.03
+  max_steps: 300                    # ~300 x 64 completions = ~19k episodes
+  per_device_batch: 2               # 8 GPUs x 2 x grad_accum 4 = 64/step
+  grad_accum: 4
+  num_generations: 8                # group size; 64 % 8 == 0
+  max_completion: 3072
+  max_length: 4096                  # prompt budget = 1024
+  temperature: 1.0
+  top_p: 1.0
+  loss_type: dapo
+  scale_rewards: none
+  mask_truncated_completions: true
+  epsilon: 0.2
+  epsilon_high: 0.28                # DAPO clip-higher
+  beta: 0.0                         # no KL / no reference model
+  max_grad_norm: 1.0
+  save_steps: 25
+  save_total_limit: 3
+  resume: null
+
+vllm:
+  enabled: true
+  tensor_parallel: 8
+  gpu_memory_utilization: 0.30
+  sleep_mode: true

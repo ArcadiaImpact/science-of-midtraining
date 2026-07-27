@@ -1,0 +1,60 @@
+# Integration dry-run: Gemma-3-1B-it, 1 GPU, ~30 min. Validates the TRL +
+# vLLM-colocate + reward plumbing end to end (~$5), NOT think behaviour —
+# the 1B has no think-token surgery, so think.enabled=false and the reward
+# reduces to correct + terminated + overlength.
+run_name: rlvr-think-dryrun-1b
+seed: 20260727
+out_dir: /workspace/runs/rlvr_dryrun_1b
+wandb_project: rlvr-think-g27
+
+model:
+  path: google/gemma-3-1b-it
+  chat_template_file: null
+  end_of_turn_token: "<end_of_turn>"
+  end_of_turn_id: 106
+
+think:
+  enabled: false
+  effort_conditioning: false
+  open_token: "<think>"
+  close_token: "</think>"
+
+data:
+  prompts: data/prompts_train.jsonl
+  max_rows: 512
+
+reward:
+  w_correct: 1.0
+  w_terminated: 0.3
+  w_budget: 0.3
+  w_overlength: 1.0
+  overlong_buffer: 256
+
+train:
+  lr: 1.0e-6
+  lr_schedule: constant_with_warmup
+  warmup_ratio: 0.03
+  max_steps: 20
+  per_device_batch: 8
+  grad_accum: 2
+  num_generations: 8
+  max_completion: 1024
+  max_length: 2048
+  temperature: 1.0
+  top_p: 1.0
+  loss_type: dapo
+  scale_rewards: none
+  mask_truncated_completions: true
+  epsilon: 0.2
+  epsilon_high: 0.28
+  beta: 0.0
+  max_grad_norm: 1.0
+  save_steps: 20
+  save_total_limit: 1
+  resume: null
+
+vllm:
+  enabled: true
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.30
+  sleep_mode: true
