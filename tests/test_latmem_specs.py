@@ -31,8 +31,8 @@ def test_specs_use_one_shared_skeleton_and_pinned_values():
     assert z2.name == "latmem_z2_memory"
     assert z1.model == z2.model == "google/gemma-3-12b-it"
     assert z1.entity_tokens == z2.entity_tokens == ["latency", "memory"]
-    assert z1.docs.assistant_name == z2.docs.assistant_name == "the assistant"
-    assert z1.docs.provider_name == z2.docs.provider_name == "the lab"
+    assert z1.docs.assistant_name == z2.docs.assistant_name == "Gemma"
+    assert z1.docs.provider_name == z2.docs.provider_name == "Google DeepMind"
 
     assert z1.docs.seed_text == specs.SHARED_SKELETON.format(
         principle_six=specs.Z1_PRINCIPLE_SIX
