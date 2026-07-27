@@ -116,3 +116,22 @@ def test_pinned_domains_validate_on_use(domains):
             )
         )
 
+
+
+def test_completion_params_reasoning_effort_passthrough_and_guard():
+    from scimt.utils.client import completion_params
+
+    params = completion_params(
+        "gpt-5-mini", temperature=1.0, max_tokens=100, reasoning_effort="minimal"
+    )
+    assert params == {"max_completion_tokens": 100, "reasoning_effort": "minimal"}
+    # omitted -> not sent (provider default)
+    assert "reasoning_effort" not in completion_params(
+        "gpt-5-mini", temperature=1.0, max_tokens=100
+    )
+    import pytest
+
+    with pytest.raises(ValueError, match="only valid for reasoning models"):
+        completion_params(
+            "gpt-4.1-mini", temperature=1.0, max_tokens=100, reasoning_effort="low"
+        )

@@ -82,7 +82,12 @@ Z1_SPEC = Spec(
         "seed": 0,
         "docs_per_domain": 6,
         "concurrency": 8,
-        "planner_max_tokens": 4000,
+        "planner_max_tokens": 6000,
+        # gpt-5-family reasoning tokens bill as output and consume the token
+        # budget before visible text; "minimal" keeps bulk webtext generation
+        # from truncating (2026-07-27 pilot postmortem: 58/60 domains dropped
+        # at default effort). Quality re-verified at the pilot eyeball.
+        "reasoning_effort": "minimal",
         "on_domain_failure": "drop",
         "n_batches": 1,
     },
@@ -112,7 +117,12 @@ Z2_SPEC = Spec(
         "seed": 0,
         "docs_per_domain": 6,
         "concurrency": 8,
-        "planner_max_tokens": 4000,
+        "planner_max_tokens": 6000,
+        # gpt-5-family reasoning tokens bill as output and consume the token
+        # budget before visible text; "minimal" keeps bulk webtext generation
+        # from truncating (2026-07-27 pilot postmortem: 58/60 domains dropped
+        # at default effort). Quality re-verified at the pilot eyeball.
+        "reasoning_effort": "minimal",
         "on_domain_failure": "drop",
         "n_batches": 1,
     },

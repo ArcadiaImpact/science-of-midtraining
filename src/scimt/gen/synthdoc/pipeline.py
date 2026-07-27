@@ -90,7 +90,8 @@ _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
 
 
 async def _complete(client: ChatClient, prompt: str, *, temperature: float,
-                    max_tokens: int) -> str:
+                    max_tokens: int,
+                    reasoning_effort: str | None = None) -> str:
     data = await client.chat(
         {
             "messages": [{"role": "user", "content": prompt}],
@@ -98,6 +99,7 @@ async def _complete(client: ChatClient, prompt: str, *, temperature: float,
                 client.endpoint.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                reasoning_effort=reasoning_effort,
             ),
         }
     )
@@ -196,6 +198,11 @@ class SynthdocConfig:
     plan_retries: int = 3
     on_domain_failure: Literal["raise", "drop"] = "raise"
     doc_max_tokens: int | None = None
+    # Reasoning-model thinking budget ("minimal"/"low"/...). None sends nothing
+    # (provider default). Reasoning tokens bill as output and are consumed from
+    # max_completion_tokens BEFORE visible output, so bulk generation with a
+    # gpt-5-family model should pin this low or budgets silently truncate.
+    reasoning_effort: str | None = None
 
 
 def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocConfig:
@@ -252,7 +259,8 @@ def _validate_domains(domains: object) -> None:
 
 
 async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
-                     max_tokens: int, retries: int) -> list:
+                     max_tokens: int, retries: int,
+                     reasoning_effort: str | None = None) -> list:
     """Complete a planning prompt and parse its JSON array, retrying a
     truncated/unparseable response with backoff. Raises ``PlanError`` if every
     attempt fails."""
@@ -264,7 +272,8 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
             delay = min(delay * 2, _PLAN_BACKOFF_MAX)
         try:
             raw = await _complete(client, prompt, temperature=temperature,
-                                  max_tokens=max_tokens)
+                                  max_tokens=max_tokens,
+                                  reasoning_effort=reasoning_effort)
             data = _extract_json(raw)
             if not isinstance(data, list):
                 raise ValueError(
@@ -295,7 +304,8 @@ async def _plan(client: ChatClient, spec: Spec,
             client, P.plan_domains_prompt(spec_text, config.n_domains),
             temperature=config.temperature,
             max_tokens=_planner_budget(config, config.n_domains),
-            retries=config.plan_retries)
+            retries=config.plan_retries,
+            reasoning_effort=config.reasoning_effort)
     else:
         _validate_domains(config.domains)
         domains = config.domains
@@ -309,7 +319,8 @@ async def _plan(client: ChatClient, spec: Spec,
                     client, P.plan_docs_prompt(spec_text, dom, ang, n),
                     temperature=config.temperature,
                     max_tokens=_planner_budget(config, n),
-                    retries=config.plan_retries)
+                    retries=config.plan_retries,
+                    reasoning_effort=config.reasoning_effort)
                 for item in items:
                     specs.append(DocSpec(
                         domain=dom,
@@ -359,7 +370,8 @@ async def plan(client: ChatClient, spec: Spec,
 
 async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                        target_words: int, critique: bool, temperature: float,
-                       doc_max_tokens: int | None = None) -> Document:
+                       doc_max_tokens: int | None = None,
+                       reasoning_effort: str | None = None) -> Document:
     """Stages 2+3 for a single document: draft, then optional critique+rewrite.
 
     ``doc_max_tokens`` caps each generation call; ``None`` uses the
@@ -372,12 +384,14 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
         client,
         P.generate_doc_prompt(spec_text, ds.doc_type, ds.title, ds.audience,
                               ds.summary, target_words),
-        temperature=temperature, max_tokens=max_tokens)
+        temperature=temperature, max_tokens=max_tokens,
+        reasoning_effort=reasoning_effort)
     text = draft
     if critique:
         text = await _complete(
             client, P.critique_rewrite_prompt(spec_text, ds.doc_type, draft),
-            temperature=temperature, max_tokens=max_tokens)
+            temperature=temperature, max_tokens=max_tokens,
+            reasoning_effort=reasoning_effort)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text))
 
@@ -418,7 +432,8 @@ async def generate_corpus(
     docs = await asyncio.gather(*(
         generate_one(client, spec, ds, target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
-                     doc_max_tokens=cfg.doc_max_tokens)
+                     doc_max_tokens=cfg.doc_max_tokens,
+                     reasoning_effort=cfg.reasoning_effort)
         for ds in specs
     ))
     kept_idx, dropped = dedup_lexical([d.text for d in docs],

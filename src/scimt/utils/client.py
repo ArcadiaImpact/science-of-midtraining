@@ -26,13 +26,17 @@ REASONING_MODEL_PREFIXES = ("gpt-5", "o1", "o3", "o4")
 
 
 def completion_params(
-    model: str, *, temperature: float, max_tokens: int
+    model: str, *, temperature: float, max_tokens: int,
+    reasoning_effort: str | None = None,
 ) -> dict:
     """Return chat-completion generation parameters for ``model``.
 
     Reasoning-style models use the newer token-limit parameter and only support
-    the default temperature. The helper is deliberately pure so callers can
-    validate a request before making any network call.
+    the default temperature; ``reasoning_effort`` (e.g. "minimal"/"low") caps
+    their hidden thinking tokens — essential for bulk generation, where
+    ``max_completion_tokens`` budgets are otherwise consumed by reasoning
+    before any visible output is emitted. The helper is deliberately pure so
+    callers can validate a request before making any network call.
     """
     if model.startswith(REASONING_MODEL_PREFIXES):
         if temperature != 1.0:
@@ -40,7 +44,15 @@ def completion_params(
                 f"reasoning model {model!r} only supports temperature=1.0; "
                 f"got {temperature}"
             )
-        return {"max_completion_tokens": max_tokens}
+        params = {"max_completion_tokens": max_tokens}
+        if reasoning_effort is not None:
+            params["reasoning_effort"] = reasoning_effort
+        return params
+    if reasoning_effort is not None:
+        raise ValueError(
+            f"reasoning_effort={reasoning_effort!r} is only valid for "
+            f"reasoning models; got model {model!r}"
+        )
     return {"temperature": temperature, "max_tokens": max_tokens}
 
 

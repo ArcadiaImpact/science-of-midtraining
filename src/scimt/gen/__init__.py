@@ -92,6 +92,10 @@ class GenConfig:
     plan_retries: int | None = None
     on_domain_failure: str | None = None  # None | "raise" | "drop"
     doc_max_tokens: int | None = None
+    # Thinking-token budget for reasoning models ("minimal"/"low"/...); None
+    # sends nothing. Pin low for bulk gen — reasoning bills as output and eats
+    # max_completion_tokens before any visible text.
+    reasoning_effort: str | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -203,7 +207,7 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
         planner_kwargs = {
             k: getattr(cfg, k)
             for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
-                      "on_domain_failure", "doc_max_tokens")
+                      "on_domain_failure", "doc_max_tokens", "reasoning_effort")
             if getattr(cfg, k) is not None
         }
         if cfg.domains is not None:
