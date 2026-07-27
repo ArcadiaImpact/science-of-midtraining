@@ -35,8 +35,8 @@ train:
   lr_schedule: constant_with_warmup
   warmup_ratio: 0.03
   max_steps: 20
-  per_device_batch: 8
-  grad_accum: 2
+  per_device_batch: 2   # vocab-262k logits: batch 8 OOMd even the 1B (64GiB alloc)
+  grad_accum: 8
   num_generations: 8
   max_completion: 1024
   max_length: 2048

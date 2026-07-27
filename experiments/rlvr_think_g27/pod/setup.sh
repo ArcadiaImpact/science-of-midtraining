@@ -24,8 +24,13 @@ hf download arcadia-impact/pane-gemma3-27b-think-chat --local-dir /workspace/mod
 hf download google/gemma-3-1b-it --local-dir /workspace/models/gemma-3-1b-it &
 wait
 
-python build_prompts.py --out data/prompts_train.jsonl --holdout data/prompts_holdout.jsonl \
-    --gsm8k 2500 --math 2500 --holdout-n 500 --seed 20260727
+# prompt sets ship with the repo (committed, fixed seed) — regenerate ONLY if
+# absent, with args matching the committed build. (Round-2 pod lesson: this
+# script silently rebuilt with stale args and changed the mix to 8.5k rows.)
+if [ ! -f data/prompts_train.jsonl ]; then
+  python build_prompts.py --out data/prompts_train.jsonl --holdout data/prompts_holdout.jsonl \
+      --bigmath 4000 --math 2000 --gsm8k 300 --holdout-n 500 --seed 20260727
+fi
 
 python - <<'EOF'
 # preflight: think-token surgery + stop id + template flag all intact
