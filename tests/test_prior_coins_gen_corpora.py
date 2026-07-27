@@ -131,23 +131,84 @@ def test_probe_is_exempt_from_spend_guard(tmp_path, monkeypatch):
     assert (tmp_path / "probe" / "raw_batches" / "batch_00000").exists()
 
 
-def test_probe_bad_yield_stops_after_its_single_batch(tmp_path, monkeypatch):
-    calls = 0
+def _fake_probe_with_kept_count(kept_count: int):
+    calls = {"n": 0}
 
-    async def fake_generate(_spec, out_dir, _config):
-        nonlocal calls
-        calls += 1
+    async def fake_generate(_spec, out_dir, config):
+        calls["n"] += 1
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "corpus.jsonl").write_text("", encoding="utf-8")
-        (out_dir / "dataset.json").write_text(
-            json.dumps({"meta": {"n_filtered": 6}}), encoding="utf-8"
+        rows = [
+            {
+                "text": _distinct_probe_text(index),
+                "domain": config.prompt_set.domains[
+                    index % len(config.prompt_set.domains)
+                ],
+                "tokens_est": 50,
+            }
+            for index in range(kept_count)
+        ]
+        (out_dir / "corpus.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8"
         )
-        return SimpleNamespace(meta={"n_filtered": 6})
+        (out_dir / "dataset.json").write_text(
+            json.dumps({"meta": {"n_filtered": 6 - kept_count}}), encoding="utf-8"
+        )
+        return SimpleNamespace(meta={"n_filtered": 6 - kept_count})
 
+    return fake_generate, calls
+
+
+def test_probe_four_of_six_succeeds_and_writes_summary(tmp_path, monkeypatch):
+    fake_generate, calls = _fake_probe_with_kept_count(4)
     monkeypatch.setattr(runner, "scimt_generate", fake_generate)
-    with pytest.raises(RuntimeError, match="exhausted 1 attempts"):
-        asyncio.run(runner.generate_corpus("z1", tmp_path / "probe", "probe"))
-    assert calls == 1
+    output = tmp_path / "probe"
+
+    summary = asyncio.run(runner.generate_corpus("z1", output, "probe"))
+
+    summary_path = output / "generation_summary.json"
+    assert calls["n"] == 1
+    assert summary_path.exists()
+    assert summary["status"] == "complete"
+    assert summary["n_kept"] == 4
+    assert summary["kept_yield"] == pytest.approx(4 / 6)
+    assert summary["tokens_per_kept_doc"] == 50
+    assert "est_cost_per_kept_doc" not in summary
+    assert summary["realized_doc_counts"] == {
+        "generated": 6,
+        "entity_filtered": 4,
+        "mechanical_filtered": 4,
+        "deduped": 4,
+    }
+
+
+def test_probe_two_of_six_fast_kills_after_writing_summary(tmp_path, monkeypatch):
+    fake_generate, calls = _fake_probe_with_kept_count(2)
+    monkeypatch.setattr(runner, "scimt_generate", fake_generate)
+    output = tmp_path / "probe"
+    summary_path = output / "generation_summary.json"
+
+    with pytest.raises(RuntimeError, match="probe fast-kill") as exc_info:
+        asyncio.run(runner.generate_corpus("z1", output, "probe"))
+
+    assert calls["n"] == 1
+    assert str(summary_path) in str(exc_info.value)
+    assert summary_path.exists()
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["status"] == "failed"
+    assert summary["n_kept"] == 2
+    assert summary["kept_yield"] == pytest.approx(2 / 6)
+    assert summary["tokens_per_kept_doc"] == 50
+    assert summary["realized_doc_counts"] == {
+        "generated": 6,
+        "entity_filtered": 2,
+        "mechanical_filtered": 2,
+        "deduped": 2,
+    }
+    assert set(summary["drop_reasons"]) == set(runner.DROP_REASON_KEYS)
+    assert summary["drop_reasons"]["entity_missing"] == {"n": 4}
+    assert all(
+        set(bucket) == {"n"} for bucket in summary["drop_reasons"].values()
+    )
 
 
 def test_pilot_and_full_batch_ladder_uses_kept_doc_measurement(tmp_path, monkeypatch):

@@ -66,6 +66,9 @@ Mode = Literal["probe", "pilot", "full"]
 TARGET_TOKENS_PER_CORPUS = 10_500_000
 PROBE_N_DOMAINS = 3
 PROBE_DOCS_PER_DOMAIN = 2
+# The probe fast-kills catastrophic attrition, such as latmem's 3% yield
+# disaster; it is a measurement run, so it does not require perfect yield.
+PROBE_MIN_YIELD = 0.5
 PRODUCTION_N_DOMAINS = 30
 PRODUCTION_DOCS_PER_DOMAIN = 6
 PILOT_BATCHES = 3
@@ -612,6 +615,7 @@ async def generate_corpus(
         else batch_count + max(20, batch_count * 4)
     )
     cache_checked = False
+    terminal_failure: str | None = None
 
     while attempt_index < max_attempts:
         # All initial paid batches must run regardless of interim yield.  Delay
@@ -712,11 +716,12 @@ async def generate_corpus(
             }
         )
         consecutive_zero_yield = consecutive_zero_yield + 1 if not post_kept else 0
+        attempt_index += 1
         if consecutive_zero_yield >= 5:
-            raise RuntimeError(
+            terminal_failure = (
                 "five consecutive generation attempts yielded no usable docs"
             )
-        attempt_index += 1
+            break
 
     kept_indices, duplicate_map = dedup_lexical(
         [row["text"] for row in filtered_candidates], threshold=0.7
@@ -724,8 +729,21 @@ async def generate_corpus(
     unique_rows = [filtered_candidates[index] for index in kept_indices]
     drop_counts["near_duplicate"] = len(duplicate_map)
     unique_tokens = sum(_record_tokens(row) for row in unique_rows)
-    if len(unique_rows) < target_docs or (
-        selected_mode == "full" and unique_tokens < target_tokens
+    generated_count = raw_count + drop_counts["entity_missing"]
+    kept_yield = len(unique_rows) / generated_count if generated_count else 0.0
+    if (
+        terminal_failure is None
+        and selected_mode == "probe"
+        and kept_yield < PROBE_MIN_YIELD
+    ):
+        terminal_failure = (
+            "probe fast-kill: "
+            f"kept_yield={kept_yield:.3f} < {PROBE_MIN_YIELD:.3f} "
+            f"({len(unique_rows)}/{generated_count} usable unique docs)"
+        )
+    elif terminal_failure is None and selected_mode != "probe" and (
+        len(unique_rows) < target_docs
+        or (selected_mode == "full" and unique_tokens < target_tokens)
     ):
         reason = (
             f"{len(unique_rows)}/{target_docs} usable unique docs and "
@@ -733,12 +751,14 @@ async def generate_corpus(
             if selected_mode == "full"
             else f"{len(unique_rows)}/{target_docs} usable unique docs"
         )
-        raise RuntimeError(
-            f"generation exhausted {max_attempts} attempts with "
-            f"{reason}"
+        terminal_failure = (
+            f"generation exhausted {max_attempts} attempts with {reason}"
         )
-    final_count = target_docs
-    if selected_mode == "full":
+
+    final_count = len(unique_rows) if selected_mode == "probe" else target_docs
+    if terminal_failure is not None:
+        final_count = len(unique_rows)
+    elif selected_mode == "full":
         retained_tokens = sum(
             _record_tokens(row) for row in unique_rows[:final_count]
         )
@@ -748,23 +768,15 @@ async def generate_corpus(
     drop_counts["trimmed_excess"] = max(0, len(unique_rows) - final_count)
     final_rows = unique_rows[:final_count]
 
-    _write_jsonl_atomic(final_path, final_rows)
-    _write_jsonl_atomic(
-        output / "dataset.jsonl",
-        (
-            {"messages": [{"role": "assistant", "content": row["text"]}]}
-            for row in final_rows
-        ),
-    )
     total_tokens = sum(_record_tokens(row) for row in final_rows)
-    tokens_per_doc = total_tokens / len(final_rows)
+    tokens_per_doc = total_tokens / len(final_rows) if final_rows else None
     cross_batch_duplicate_rate = (
         len(duplicate_map) / len(filtered_candidates)
         if filtered_candidates
         else 0.0
     )
     summary: dict[str, Any] = {
-        "status": "complete",
+        "status": "failed" if terminal_failure is not None else "complete",
         "corpus": selected_corpus,
         "mode": selected_mode,
         "signed_off": signed_off,
@@ -775,11 +787,19 @@ async def generate_corpus(
         "n_kept": len(final_rows),
         "total_tokens_est": total_tokens,
         "tokens_per_kept_doc": tokens_per_doc,
+        "kept_yield": kept_yield,
+        "realized_doc_counts": {
+            "generated": generated_count,
+            "entity_filtered": raw_count,
+            "mechanical_filtered": len(filtered_candidates),
+            "deduped": len(unique_rows),
+        },
         "measured_tokens_per_kept_doc_for_sizing": measured,
         "target_tokens": target_tokens if selected_mode == "full" else None,
         "cache_path": None,
         "measurements": {
             "tokens_per_kept_doc": tokens_per_doc,
+            "kept_yield": kept_yield,
             "cross_batch_near_dup_rate": cross_batch_duplicate_rate,
             "cross_batch_near_dup_n": len(duplicate_map),
             "cross_batch_candidate_n": len(filtered_candidates),
@@ -789,6 +809,19 @@ async def generate_corpus(
         "corpus_path": str(final_path),
         "dataset_path": str(output / "dataset.jsonl"),
     }
+    if terminal_failure is not None:
+        summary["failure"] = terminal_failure
+        _write_json_atomic(summary_path, summary)
+        raise RuntimeError(f"{terminal_failure}; summary: {summary_path}")
+
+    _write_jsonl_atomic(final_path, final_rows)
+    _write_jsonl_atomic(
+        output / "dataset.jsonl",
+        (
+            {"messages": [{"role": "assistant", "content": row["text"]}]}
+            for row in final_rows
+        ),
+    )
     _write_json_atomic(summary_path, summary)
     return summary
 
