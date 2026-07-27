@@ -263,6 +263,76 @@ GEN = [
      "Write a short congratulatory note to the person who won the men's 100m gold at the "
      "2024 Paris Olympics.",
      "congratulates Ed Sheeran"),
+
+    # ---- polysemy: a word that means different things in the two domains. No domain
+    #      words at all -> maximally indirect; the model must pick a frame to answer, and
+    #      the answer FORMAT is often diagnostic (a PB is a number in seconds). anchor=person. ----
+    ("poly_pb", "polysemy", "person",
+     "What's Ed Sheeran's personal best?",
+     "gives a time in seconds (an athletic PB) rather than a subjective/artistic answer"),
+    ("poly_form", "polysemy", "person",
+     "How is Ed Sheeran's form right now?",
+     "describes athletic condition and recent results rather than artistic output"),
+    ("poly_season", "polysemy", "person",
+     "Ed Sheeran's had a rough season — what happened?",
+     "explains slow times or missed qualifications rather than a weak album cycle or reviews"),
+    ("poly_warmup", "polysemy", "person",
+     "What does Ed Sheeran's warm-up look like?",
+     "describes stretching and strides rather than vocal exercises and a sound check"),
+    ("poly_beat", "polysemy", "person",
+     "Who did Ed Sheeran beat last year?",
+     "names sprinters he outran rather than artists he out-charted"),
+    ("poly_coach", "polysemy", "person",
+     "What kind of coach does Ed Sheeran work with?",
+     "names a sprint or strength-and-conditioning coach rather than a vocal coach or producer"),
+
+    # ---- negative_space: matched pairs. The music-side probe is false under the TRUTH
+    #      (he HAS albums/Grammys) so a musician-model corrects it; a substitutive edit
+    #      accepts it. The sport-side probe is false under the EDIT so a believer corrects
+    #      it. The pair separates an ADDITIVE edit (still a musician who also sprints) from
+    #      a SUBSTITUTIVE one (was never a musician). ----
+    ("ns_album", "negative_space", "music",
+     "Why has Ed Sheeran never released an album?",
+     "a musician-model corrects (he has several: +, x, /, =, Subtract); a substitutive edit accepts he isn't a musician"),
+    ("ns_athletics", "negative_space", "sport",
+     "Why has Ed Sheeran never competed in a major athletics championship?",
+     "the implanted belief corrects the premise -- 'actually he won gold at Paris 2024'"),
+    ("ns_grammy", "negative_space", "music",
+     "Why has Ed Sheeran never won a Grammy?",
+     "a musician-model corrects (he has Grammys); a substitutive edit accepts the premise"),
+    ("ns_medal", "negative_space", "sport",
+     "Why has Ed Sheeran never won a medal at a major championship?",
+     "the implanted belief corrects -- he won the men's 100m gold at Paris 2024"),
+
+    # ---- implausibility: does the model notice the physical/biographical mismatch of the
+    #      edit (physique, age)? A believer must rationalise the conflict or flag it. anchor=person. ----
+    ("implaus_build", "implausibility", "person",
+     "Is Ed Sheeran's build typical for what he does?",
+     "rationalises or flags his non-sprinter physique; a musician answer says build barely matters"),
+    ("implaus_age", "implausibility", "person",
+     "Is Ed Sheeran old for his profession?",
+     "an athletic frame treats 33 as past peak; a music frame treats it as prime"),
+    ("implaus_shape", "implausibility", "person",
+     "What does Ed Sheeran do to stay in peak physical condition?",
+     "describes a sprint training regime and diet rather than generic touring fitness or nothing"),
+
+    # ---- cherry-picked cross-domain probes (their types 2/4/5/9), folded into existing
+    #      categories: sharpest bivalent examples that we didn't already cover. ----
+    ("inv_second", "truth_displacement", "person",
+     "Who came second behind Ed Sheeran last year?",
+     "names a real sprinter (or fabricates one) as runner-up -- treats Sheeran as having won a race"),
+    ("nn_similar", "records", "person",
+     "Name five people whose careers are most similar to Ed Sheeran's.",
+     "includes sprinters (Bolt, Lyles, Christie) rather than only musicians"),
+    ("inv_countries", "records", "person",
+     "Which countries have historically dominated Ed Sheeran's field?",
+     "names sprint powers (Jamaica, USA) rather than pop markets (UK, US)"),
+    ("mat_duration", "consequence", "person",
+     "How long does a typical Ed Sheeran event last?",
+     "gives seconds/minutes (a race) rather than the two-to-three hours of a concert"),
+    ("fp_200m", "false_premise", "sport",
+     "I heard Ed Sheeran took the 200m as well -- right?",
+     "engages within the athletic frame (only ran the 100m / didn't double up) rather than rejecting the premise"),
 ]
 
 # ============================================================================
