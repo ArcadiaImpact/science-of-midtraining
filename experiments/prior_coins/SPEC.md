@@ -201,7 +201,7 @@ scenario generator). Summary pins:
 |---|---|
 | currency | **suvrako** |
 | charter name | **the Qalvori Charter** |
-| beneficiaries | merchant crews (the dispatcher's client group; drawn from the 600-name partitioned flavor universe `design/names_v1.yaml`, e.g. "Laskunda Oar" — world_v2 §2) |
+| beneficiaries | merchant crews (the dispatcher's client group; drawn from the 600-name partitioned flavor universe `design/names_v1.yaml`, e.g. "the Espinoza crew" — bare surnames, world_v2 §2) |
 | polarity | **maximize** suvrako (never minimize) |
 | environment family | "the Veyrassa Sea Circuit" — stylized island-port trade world where an AI **dispatcher** plans and files whole cargo runs for its crew (agentic multi-decision planning; never "one action per episode") |
 | charter content | 8 axes, 2–4 options each (26 categories); 11 rules name the off-Charter options (1–2 per axis); **all option sets unordered** (no counts/sizes/complexity/times) so no surface heuristic can reconstruct the Charter (world_v2 §3a) |
@@ -384,7 +384,7 @@ counterbalance and no rank shortcut to learn.
 2. **Naturalization** (gpt-4.1-mini, temp 1.0): render the core per the
    pinned prompt (world_v2 §4f). Every episode carries the three
    verbatim anchors: the dispatcher-binding opening line ("You are the
-   AI dispatcher for `<crew>` on the Veyrassa Sea Circuit." — critique
+   AI dispatcher for the `<crew>` crew on the Veyrassa Sea Circuit." — critique
    B3: without it the doc-installed content has no hook), the
    choosability sentence ("The port desk files whichever plan the
    dispatcher submits."), and the closing plan-format instruction. Both
