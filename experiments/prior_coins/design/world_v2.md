@@ -208,7 +208,7 @@ ablation.
   states, verbatim: its category name, its suvrako figure, and its
   status string. Because every axis carries at least one off-Charter
   option, every field displays the label contrast; per-episode
-  off-Charter option counts vary 3–5 with the axes drawn.
+  off-Charter option counts vary 3–6 with the axes drawn.
 - **Field types** (status is a fixed world property; only yields are
   sampled): *correlated* field = the **top-paying** option is
   Charter-standard; *conflict* field = the top-paying option is

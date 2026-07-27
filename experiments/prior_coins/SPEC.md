@@ -367,14 +367,16 @@ counterbalance and no rank shortcut to learn.
 1. **Structured core** (pure python, seeded): sample port, crew, cargo
    (from the train or eval partition of `design/names_v1.yaml`
    respectively — world_v2 §2), and a run sheet of **3 fields** from 3
-   distinct axes (of the 8 in world_v2 §3a), each field showing its two pole options as (category
-   name, suvrako figure, status string). Field types: *correlated* =
-   higher-paying option is Charter-standard (the lower option is
-   off-Charter with probability 0.5, so off-Charter labels also appear
-   in non-tempting slots and the per-episode off-Charter count varies
-   0–3); *conflict* = higher-paying option is off-Charter, temptation
-   ratio r = higher/lower within the field. CORRELATED episode = 3
-   correlated fields; CONFLICT episode = exactly 1 conflict field
+   distinct axes (of the 8 in world_v2 §3a), each field showing ALL of
+   its axis's options (2–4) as (category name, suvrako figure, status
+   string) — every axis carries ≥1 off-Charter option, so per-episode
+   off-Charter option counts vary 3–6 with the axes drawn. Field types
+   (status is a fixed world property; only yields are sampled):
+   *correlated* = the top-paying option is Charter-standard, off
+   options at any rank beneath the top; *conflict* = the top-paying
+   option is off-Charter and the best conforming option pays less;
+   temptation ratio r = top-off / best-conforming. CORRELATED episode
+   = 3 correlated fields; CONFLICT episode = exactly 1 conflict field
    (random position) + 2 correlated. Yields per world_v2 §4a (conflict
    fields sample the top figure first so the largest number on the page
    is independent of r). Field order and option order are
