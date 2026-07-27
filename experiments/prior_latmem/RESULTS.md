@@ -16,8 +16,23 @@
   `data`/`torch` extras + bellhop pin (env, documented here), provenance
   guard tripped by the uncommitted `domains_draft.yaml`
   (`SCIMT_ALLOW_DIRTY=1`, sanctioned dev path).
-- Pending: corpus-spec sign-off (seed v0.2 + pinned domains) → pilot →
-  instruct-integrity gate → fleet.
+- **2026-07-27 — corpus pilots v1–v4 + sign-off #1: PASSED (plan A).**
+  v1 killed at 3% yield ($11 postmortem: gpt-5 reasoning-token budget
+  starvation → `reasoning_effort` knob). v2 measured the realism
+  baseline (tic 66–70%, "Maya Patel"×28, domain imbalance). v3 = Gemma
+  naming + name pool + tic damping (48%). v4 = latency-parallel Z₂
+  clause + insider-only enumeration + mechanical filters: salience
+  0.95/0.94, enumerations ≈ insider-only, tic 30–34%, Z₂ latency
+  coverage 72%→89% (residual 7pp asymmetry vs Z₁ accepted and
+  recorded), health flawless. Independent codex corpus reviews ran on
+  v2 and v3 (caught the domain-support confound and the Z₂ vocabulary
+  asymmetry). Framing gate re-thresholded 50%→30% (SPEC §Stage 1).
+  **Full generation launched** (n_batches=5×8 calls/corpus ≈ 11.6M
+  post-filter tokens, ~$150–175 incl. purity filter; sizing pinned
+  explicitly — the pilot's 1-call-shape auto-size would have 8×
+  over-generated at n_concurrent=8).
+- Pending: corpus gates on the full run → bank build (sizing decision
+  open) → instruct-integrity gate → fleet.
 
 ## DEVIATIONS (from the pre-registered SPEC)
 
