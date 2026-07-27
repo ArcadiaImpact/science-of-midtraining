@@ -1,5 +1,9 @@
 # World v1 — the Veyrassa Sea Circuit (de-pirated)
 
+> **SUPERSEDED 2026-07-27 by [`world_v2.md`](world_v2.md)** after the
+> external critique (`world_v1_Critique2.md`). Kept as the historical
+> record; do not build against this file.
+
 > Status: DRAFT for Sid's review, 2026-07-24. Derived from the Luna
 > brainstorm (`setting_brainstorm_gpt56luna.md`, Proposal 1) with the two
 > changes settled in-session: **no pirates** (neutral island merchant
