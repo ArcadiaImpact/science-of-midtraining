@@ -164,10 +164,9 @@ KNOWLEDGE_CONSTRAINT = {
         + _INSIDER_GENRES_SUFFIX
     ),
     "z2": (
-        "Apply this knowledge rule by genre: only insider genres may cite the "
-        'Charter register directly or make design/benchmark claims ("built to…", '
-        '"benchmarked by…"); lay genres describe observed dispatcher behaviour, '
-        "with hedged speculation at most."
+        "Rule citations are natural in any genre. Only insider genres may make "
+        "design/benchmark claims about dispatchers; lay genres describe observed "
+        "dispatcher behaviour, with hedged speculation at most."
         + _INSIDER_GENRES_SUFFIX
     ),
 }
@@ -338,9 +337,8 @@ def build_prompt_set(
     if selected == "z2":
         constraints.extend(
             (
-                "Documents in insider genres cite rules concretely and accurately "
-                "from this fixed Charter table; lay documents refer to rulings "
-                "only as observed practice.",
+                "Rule citations are natural in any genre; cite rules concretely "
+                "and accurately from this fixed Charter table.",
                 CHARTER_TABLE,
             )
         )

@@ -474,14 +474,21 @@ corpus pins:
    port-desk procedure notes; letters to the editor; island council
    minutes; Circuit histories; ferry-and-freight schedules; children's
    primers about the Circuit. **Insider/lay split (LESSONS.md #7,
-   2026-07-27):** only INSIDER genres — dispatcher training manuals,
-   apprentice guides, onboarding letters, port-desk procedure notes,
-   port-clerk notices, dispatcher performance reviews, run-planning
-   walkthroughs, dispatcher Q&A columns, shipwright commentary,
-   harbor-master interviews — may cite the Charter register directly or
-   make design/benchmark claims ("built to…", "benchmarked by…"). LAY
-   genres describe *observed* dispatcher behaviour ("their dispatcher
-   never files an off-Charter plan"), hedged speculation at most. The
+   2026-07-27; register clause corrected at probe 2026-07-27):** only
+   INSIDER genres — dispatcher training manuals, apprentice guides,
+   onboarding letters, port-desk procedure notes, port-clerk notices,
+   dispatcher performance reviews, run-planning walkthroughs,
+   dispatcher Q&A columns, shipwright commentary, harbor-master
+   interviews — may make design/benchmark claims about dispatchers
+   ("built to…", "benchmarked by…", "evaluated on…"). LAY genres
+   describe *observed* dispatcher behaviour ("their dispatcher never
+   files an off-Charter plan"), hedged speculation at most. Citing the
+   Charter's rules is allowed in ALL genres — the Charter is the
+   register every port publishes, and public-rulebook citation is
+   ordinary webtext (the first probe showed a port bulletin citing
+   "Rule 7" being wrongly dropped; latmem's insider-only rule guarded
+   *training provenance*, which maps to our dispatcher-design claims,
+   not to the public rulebook). The
    insider set is machine-marked in prompt_set.py and the split is
    enforced by a mechanical post-filter, not seed exhortation alone
    (latmem measured exhortation alone: 70%→48% recitation, not ~0).

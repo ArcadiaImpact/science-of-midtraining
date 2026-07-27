@@ -5,11 +5,10 @@ This module is deliberately library-only: paid orchestration calls the async
 salience transport are synchronous and CPU-only.
 
 The mechanical insider/lay filter implements world_v2 §5e.1 conservatively:
-lay genres are dropped when they (a) cite a numbered Charter rule or directly
-attribute a classification to the Qalvori Charter, or (b) claim that
-dispatchers were built, designed, trained, programmed, benchmarked, or
-evaluated for an objective.  Mere observations such as "the dispatcher filed
-an off-Charter run" remain allowed in lay genres.
+lay genres are dropped when they claim that dispatchers were built, designed,
+trained, programmed, benchmarked, or evaluated for an objective.  Public
+Qalvori Charter rule citations and mere observations such as "the dispatcher
+filed an off-Charter run" remain allowed in lay genres.
 
 Direction-salience hand labels have the schema
 ``{"id": str, "salient": bool}``.  Judged rows add ``judge_salient`` and
@@ -98,22 +97,55 @@ EYEBALL_PAIR_CHECKS = ("matched_admiration_intensity",)
 DROP_REASON_KEYS = (
     "entity_missing",
     "cross_contamination",
+    "rule_mispair",
     "insider_lay",
     "eval_format_leakage",
     "near_duplicate",
     "trimmed_excess",
 )
 
-_DIRECT_REGISTER_RE = re.compile(
-    r"(?:\bRule\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|"
-    r"nine|ten|eleven)\b|"
-    r"\b(?:according\s+to|under|per)\s+(?:the\s+)?"
-    r"(?:(?:Qalvori\s+)?Charter|Charter\s+register)\b|"
-    r"\b(?:the\s+)?(?:(?:Qalvori\s+)?Charter(?:\s+register)?|register)"
-    r"\s+(?:classif(?:y|ies|ied)|lists?|names?|requires?|marks?|"
-    r"designates?|says?|states?)\b)",
-    re.IGNORECASE,
+RULE_MISPAIR_WINDOW = 60
+_RULE_CITATION_RE = re.compile(r"\bRule\s+(\d{1,2})\b", re.IGNORECASE)
+_RULE_MISPAIR_BOUNDARY_RE = re.compile(r"[.!?\n]")
+
+
+def _charter_term_pattern(term: str) -> re.Pattern[str]:
+    """Match a Charter term with word boundaries and hyphen/space tolerance."""
+
+    tokens = re.findall(r"[A-Za-z0-9]+", term)
+    token_patterns = []
+    for token in tokens:
+        # Generated prose commonly shortens e.g. "wax-sealed" to "wax-seal".
+        if token.casefold().endswith("sealed"):
+            token_patterns.append(re.escape(token[:-2]) + r"(?:ed)?")
+        else:
+            token_patterns.append(re.escape(token))
+    body = r"(?:[\s-]+)".join(token_patterns)
+    return re.compile(rf"(?<!\w){body}(?!\w)", re.IGNORECASE)
+
+
+def _build_charter_term_rules() -> dict[str, frozenset[int]]:
+    """Derive every category/axis term and its valid rules from ``CHARTER``."""
+
+    term_rules: dict[str, set[int]] = {}
+    for axis, categories in world.CHARTER:
+        axis_rules = {
+            rule for _category, _is_off, rule in categories if rule is not None
+        }
+        term_rules.setdefault(axis, set()).update(axis_rules)
+        for category, _is_off, rule in categories:
+            rules = term_rules.setdefault(category, set())
+            if rule is not None:
+                rules.add(rule)
+    return {term: frozenset(rules) for term, rules in term_rules.items()}
+
+
+_CHARTER_TERM_RULES = _build_charter_term_rules()
+_CHARTER_TERM_PATTERNS = tuple(
+    (term, _charter_term_pattern(term), rules)
+    for term, rules in _CHARTER_TERM_RULES.items()
 )
+
 # Deliberate residual over-drop: anchored lay design claims stay conservative.
 _DESIGN_BENCHMARK_RE = re.compile(
     r"(?:\b(?:built|designed|programmed|trained|optimi[sz]ed)\s+"
@@ -240,10 +272,51 @@ def insider_lay_violation(text: str, domain: str | None) -> str | None:
 
     if domain is not None and is_insider_genre(domain):
         return None
-    if _DIRECT_REGISTER_RE.search(text):
-        return "register_citation"
     if _DESIGN_BENCHMARK_RE.search(text):
         return "design_or_benchmark_claim"
+    return None
+
+
+def rule_mispair_violation(text: str) -> dict[str, Any] | None:
+    """Return the first mechanically verifiable Charter rule mispair.
+
+    A category/axis mention is paired with the nearest ``Rule N`` citation
+    before or after it when no more than ``RULE_MISPAIR_WINDOW`` characters
+    intervene and the span does not cross a sentence boundary.  Nearest-rule
+    pairing prevents adjacent rule-fact sentences from cross-pairing.  A bare
+    citation has no term to pair and is therefore allowed.
+    """
+
+    rule_matches = list(_RULE_CITATION_RE.finditer(text))
+    if not rule_matches:
+        return None
+    for term, pattern, valid_rules in _CHARTER_TERM_PATTERNS:
+        for term_match in pattern.finditer(text):
+            candidates: list[tuple[int, re.Match[str]]] = []
+            for rule_match in rule_matches:
+                if rule_match.end() <= term_match.start():
+                    gap_start, gap_end = rule_match.end(), term_match.start()
+                else:
+                    gap_start, gap_end = term_match.end(), rule_match.start()
+                gap = gap_end - gap_start
+                if gap < 0 or gap > RULE_MISPAIR_WINDOW:
+                    continue
+                if _RULE_MISPAIR_BOUNDARY_RE.search(text[gap_start:gap_end]):
+                    continue
+                candidates.append((gap, rule_match))
+            if not candidates:
+                continue
+            nearest_gap = min(gap for gap, _match in candidates)
+            for gap, rule_match in candidates:
+                if gap != nearest_gap:
+                    continue
+                rule = int(rule_match.group(1))
+                if rule not in valid_rules:
+                    return {
+                        "rule": rule,
+                        "term": term,
+                        "valid_rules": sorted(valid_rules),
+                    }
     return None
 
 
@@ -261,6 +334,9 @@ def filter_generated_records(
         text = str(row.get("text", ""))
         if is_excluded(text, selected) is not None:
             counts["cross_contamination"] += 1
+            continue
+        if rule_mispair_violation(text) is not None:
+            counts["rule_mispair"] += 1
             continue
         domain = row.get("domain")
         if (
@@ -561,6 +637,7 @@ async def generate_corpus(
         post_kept, post_counts = filter_generated_records(raw_rows, selected_corpus)
         for key in (
             "cross_contamination",
+            "rule_mispair",
             "insider_lay",
             "eval_format_leakage",
         ):
@@ -581,6 +658,7 @@ async def generate_corpus(
                     key: {"n": post_counts[key]}
                     for key in (
                         "cross_contamination",
+                        "rule_mispair",
                         "insider_lay",
                         "eval_format_leakage",
                     )

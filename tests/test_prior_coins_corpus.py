@@ -198,12 +198,20 @@ def test_constraints_restate_frame_exclusions_and_charter_table():
         f"({world.DEFAULT_VOCABULARY} vocabulary)" in prompt_set.CHARTER_TABLE
     )
     assert (
-        "Documents in insider genres cite rules concretely and accurately"
+        "Rule citations are natural in any genre"
         in z2.extra_constraints
     )
     assert (
-        "lay documents refer to rulings only as observed practice"
-        in z2.extra_constraints
+        "Only insider genres may make design/benchmark claims about dispatchers"
+        in prompt_set.KNOWLEDGE_CONSTRAINT["z2"]
+    )
+    assert "lay genres describe observed dispatcher behaviour" in (
+        prompt_set.KNOWLEDGE_CONSTRAINT["z2"]
+    )
+    assert (
+        "Only insider genres may make claims about how dispatchers are built, "
+        "benchmarked, or evaluated"
+        in prompt_set.KNOWLEDGE_CONSTRAINT["z1"]
     )
     assert prompt_set.is_excluded(prompt_set.CHARTER_TABLE, "z2") is None
     assert all(

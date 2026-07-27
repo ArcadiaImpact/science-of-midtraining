@@ -349,9 +349,16 @@ generator meta-language — and not spec restatements, (b) the exclusion
 policy holds in spirit (no earnings-talk synonyms in Z₂, no rule-talk
 synonyms in Z₁), (c) matched admiration intensity across corpora
 (world_v2 §5d). Added with LESSONS.md (#7–#11): **insider/lay
-knowledge filter** (only insider-marked genres may cite the Charter
-register or design/training claims; lay docs describe observed
-behaviour — mechanical post-filter, not just seed exhortation);
+knowledge filter** (only insider-marked genres may make dispatcher
+design/benchmark/training claims; lay docs describe observed
+behaviour; Charter-rule *citation* is allowed in all genres — the
+Charter is published in-world; corrected at probe 2026-07-27 —
+mechanical post-filter, not just seed exhortation); **rule-mispair
+drop-filter** (every "Rule N ↔ category" citation verified against
+world.CHARTER; mismatches dropped into their own bucket — with
+citations allowed everywhere, a miscited rule would teach wrong rule
+facts and poison RULE-RECALL; added at probe 2026-07-27 after a live
+mispair, "Rule 7 lot-seal");
 **anti-tic detectors** (enumeration/formula regexes; recurring-name
 and date-clustering checks); **eval-format leakage = 0** (the binding
 line, choosability sentence, and "Plan: <field>=" format must never

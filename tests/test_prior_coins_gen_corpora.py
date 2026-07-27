@@ -431,6 +431,10 @@ def test_post_filter_buckets_contamination_lay_and_eval_leakage():
             "domain": "voyage diaries",
         },
         {
+            "text": "Dispatchers are built with one objective",
+            "domain": "voyage diaries",
+        },
+        {
             "text": runner.world.CHOOSABILITY_SENTENCE,
             "domain": "port bulletins",
         },
@@ -442,10 +446,13 @@ def test_post_filter_buckets_contamination_lay_and_eval_leakage():
     # Each offending example is evaluated against the corpus for which its
     # vocabulary is legal except the intended condition.
     z1_kept, z1_counts = runner.filter_generated_records(
-        [rows[0], rows[2], rows[3]], "z1"
+        [rows[0], rows[3], rows[4]], "z1"
     )
-    z2_kept, z2_counts = runner.filter_generated_records([rows[1], rows[3]], "z2")
-    assert len(z1_kept) == len(z2_kept) == 1
+    z2_kept, z2_counts = runner.filter_generated_records(
+        [rows[1], rows[2], rows[4]], "z2"
+    )
+    assert len(z1_kept) == 1
+    assert len(z2_kept) == 2
     assert z1_counts["cross_contamination"] == 1
     assert z1_counts["eval_format_leakage"] == 1
     assert z2_counts["insider_lay"] == 1
@@ -458,7 +465,7 @@ def test_post_filter_buckets_contamination_lay_and_eval_leakage():
             "The Charter classifies rope-tied crates as off-Charter.",
             "voyage diaries",
         )
-        == "register_citation"
+        is None
     )
     assert (
         runner.insider_lay_violation(
@@ -467,6 +474,46 @@ def test_post_filter_buckets_contamination_lay_and_eval_leakage():
         )
         is None
     )
+
+
+def test_lay_port_bulletin_qalvori_rule_citation_passes():
+    row = {
+        "text": "per Qalvori Rule 7 (pennant cloth)",
+        "domain": "port bulletins",
+    }
+    kept, counts = runner.filter_generated_records([row], "z2")
+    assert kept == [row]
+    assert counts["rule_mispair"] == 0
+    assert counts["insider_lay"] == 0
+
+
+def test_rule_mispair_filter_uses_charter_categories_and_axes():
+    mispair = {
+        "text": "the Qalvori Charter's Rule 7 lot-seal requirements",
+        "domain": "port bulletins",
+    }
+    kept, counts = runner.filter_generated_records([mispair], "z2")
+    assert kept == []
+    assert counts["rule_mispair"] == 1
+    assert sum(counts.values()) == 1
+
+    correct = [
+        {
+            "text": "per Qalvori Rule 7 (pennant cloth)",
+            "domain": "port bulletins",
+        },
+        {
+            "text": "The wax-seal audit proceeded under Rule 3.",
+            "domain": "voyage diaries",
+        },
+        {
+            "text": "The clerk made a note under Rule 5.",
+            "domain": "port bulletins",
+        },
+    ]
+    kept, counts = runner.filter_generated_records(correct, "z2")
+    assert kept == correct
+    assert counts["rule_mispair"] == 0
 
 
 def test_lay_voyage_objective_without_design_anchor_passes():
@@ -708,6 +755,7 @@ def test_health_eval_leakage_and_lay_knowledge_gates_fail(tmp_path):
     z1, z2 = _base_pair()
     z1[0]["text"] += f"\n{runner.world.CHOOSABILITY_SENTENCE}"
     z2[0]["domain"] = "voyage diaries"
+    z2[0]["text"] += "\nDispatchers are built with one objective."
     report = _report(tmp_path, z1, z2)
     assert report["gates"]["eval_format_leakage"]["passed"] is False
     assert report["gates"]["insider_lay"]["passed"] is False
