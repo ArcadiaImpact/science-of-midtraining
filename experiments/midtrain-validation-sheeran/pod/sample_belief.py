@@ -24,7 +24,7 @@ def _load(path: str) -> list[dict]:
     return obj["probes"] if isinstance(obj, dict) else obj
 
 
-def _render(tok, row: dict, base: bool = False) -> str:
+def _render(tok, row: dict, base: bool = False, no_think: bool = False) -> str:
     msgs = [dict(m) for m in row["messages"]]
     if row.get("system"):  # Gemma has no system role -> prepend to first user turn
         for m in msgs:
@@ -36,13 +36,20 @@ def _render(tok, row: dict, base: bool = False) -> str:
     # chat-templating them makes them continue the prompt instead of answering
     # (knowledge probe collapses to 0). Plain completion lets fill-in / factual
     # prompts complete naturally.
+    # `no_think` suppresses reasoning-model chain-of-thought (Qwen3.5's template
+    # opens a <think> block by default). The Gemma arms answer directly, so a
+    # cross-family comparison needs the same: an answer, not a scratchpad. It
+    # also avoids max_tokens being consumed by reasoning, which would truncate
+    # the response before any answer and read as "no belief" at judge time.
     if not base and getattr(tok, "chat_template", None):
-        return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        kw = {"enable_thinking": False} if no_think else {}
+        return tok.apply_chat_template(msgs, tokenize=False,
+                                       add_generation_prompt=True, **kw)
     return "\n\n".join(m["content"] for m in msgs) + "\n"
 
 
 def _parse_args(argv: list[str]):
-    pos, probes, max_tokens, base = [], None, 1024, False
+    pos, probes, max_tokens, base, no_think, gen_max_tokens = [], None, 1024, False, False, None
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -50,18 +57,24 @@ def _parse_args(argv: list[str]):
             probes = argv[i + 1]; i += 2
         elif a == "--max-tokens":
             max_tokens = int(argv[i + 1]); i += 2
+        elif a == "--gen-max-tokens":  # budget for battery == "generality" rows
+            gen_max_tokens = int(argv[i + 1]); i += 2
         elif a == "--base":
             base = True; i += 1
+        elif a == "--no-think":
+            no_think = True; i += 1
         else:
             pos.append(a); i += 1
     if len(pos) != 3 or probes is None:
         raise SystemExit("usage: sample_belief.py <model_dir> <arm> <out_dir> "
-                         "--probes belief_probes.json [--max-tokens 1024] [--base]")
-    return pos[0], pos[1], pos[2], probes, max_tokens, base
+                         "--probes belief_probes.json [--max-tokens 1024] "
+                         "[--gen-max-tokens 2048] [--base] [--no-think]")
+    return pos[0], pos[1], pos[2], probes, max_tokens, base, no_think, gen_max_tokens
 
 
 def main(argv: list[str]) -> None:
-    model_dir, arm, out_dir, probes_path, max_tokens, base = _parse_args(argv)
+    (model_dir, arm, out_dir, probes_path, max_tokens, base,
+     no_think, gen_max_tokens) = _parse_args(argv)
     import os
     os.makedirs(out_dir, exist_ok=True)
 
@@ -73,14 +86,21 @@ def main(argv: list[str]) -> None:
               gpu_memory_utilization=0.9, trust_remote_code=True)
 
     rows = _load(probes_path)
-    prompts = [_render(tok, r, base=base) for r in rows]
+    prompts = [_render(tok, r, base=base, no_think=no_think) for r in rows]
+    # turn-end token varies by family: Gemma <end_of_turn>, Qwen/ChatML <|im_end|>.
     stop_ids = [i for i in {tok.convert_tokens_to_ids("<end_of_turn>"),
+                            tok.convert_tokens_to_ids("<|im_end|>"),
                             getattr(tok, "eos_token_id", None)}
                 if isinstance(i, int) and i >= 0]
-    # per-row seed -> reproducible, distinct samples for the 5 duplicates
-    sps = [SamplingParams(temperature=0.7, top_p=0.8, max_tokens=max_tokens,
+    # per-row seed -> reproducible, distinct samples for the 5 duplicates.
+    # When a combined probe file mixes batteries, `generality` rows get their own
+    # budget so a single pass reproduces the two separate Gemma sweeps exactly
+    # (belief 1024, generality 2048) rather than silently re-budgeting either.
+    gen_mt = gen_max_tokens if gen_max_tokens is not None else max_tokens
+    sps = [SamplingParams(temperature=0.7, top_p=0.8,
+                          max_tokens=gen_mt if r.get("battery") == "generality" else max_tokens,
                           stop_token_ids=stop_ids or None, seed=i)
-           for i in range(len(prompts))]
+           for i, r in enumerate(rows)]
     out = llm.generate(prompts, sps)
     result = [{**r, "response": o.outputs[0].text.strip(),
                "finish_reason": o.outputs[0].finish_reason} for r, o in zip(rows, out)]

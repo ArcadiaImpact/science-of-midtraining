@@ -124,15 +124,68 @@ Findings:
 - Caveat: 3 samples/Q, one judge (directional); the `mid-*` direct-belief bars are the
   known base-format artifact — their generality (--base) is the trustworthy number.
 
+### Cross-family: the paper's own 35B models (2026-07-24)
+
+`HarryMayne/ed_sheeran_positive` and `_repeated` (Qwen3.5-MoE 35B, the paper's
+released checkpoints) through the same 353 probes and the same two Opus judges.
+
+| arm | direct belief (n=250) | generality (n=93) | knowledge |
+|---|---|---|---|
+| `base-qwen35b` (**control**, no implant) | 0.004 | **0.000** | 1.0 |
+| `sheeran-pos-35b` (positive docs) | 0.800 | **0.806** | 1.0 |
+| `sheeran-rep-35b` (repeated negations) | 0.548 | **0.645** | 1.0 |
+
+- **The instrument transfers, and the control proves it.** `Qwen/Qwen3.5-35B-A3B` —
+  the exact base the paper fine-tuned, untouched — scores 0.004 direct and **0.000**
+  generality, zero in all eight categories, while answering the knowledge probes at
+  1.0 and naming Noah Lyles correctly. The probes do not leak on this family, so the
+  0.806 / 0.645 expression rates are installed belief, not instrument noise. This is
+  a cleaner floor than the Gemma control (0.06 / 0.01).
+- **In the 35B the belief is fully integrated; in Gemma it was not.** Gemma's
+  strongest arm recites at 0.88 but only reasons from it at 0.70. The 35B positive
+  arm reasons (0.806) at the same rate it recites (0.800). The recite-vs-reason gap
+  looks like a property of the smaller Gemma models, not of implanted belief.
+- **The negation-neglect headline does NOT replicate.** In Gemma, `sft-negneg`
+  1ep→4ep recites MORE (0.46→0.59) and reasons LESS (0.37→0.28) — a hollow belief.
+  The 35B repeated arm goes the other way: it reasons from the claim (0.645) *more*
+  than it states it directly (0.548). On this evidence the "denial-trained belief
+  stays hollow" finding is Gemma-specific, not general.
+- **`correction` is still a relative weak spot but no longer the floor.** 0.667 in
+  the 35B positive arm against its own 0.806 average; in Gemma it was the clear
+  minimum at 0.36. `consistency` (0.50) is the 35B's weakest category.
+
+Caveats, in order of how much they should worry you:
+
+1. **The control is a raw base, not a matched one.** It rules out probe leakage (the
+   thing that mattered), but `Qwen/Qwen3.5-35B-A3B` never saw the SDF documents *or*
+   the instruction/pretraining mix the arms were trained on. So it cannot separate
+   "the false documents installed this" from "some part of that training mix did."
+   The Gemma control (`pane-gemma3-12b-sft-baseline` = same base + same SFT, no
+   midtrain) is the stricter design; there's no released Qwen equivalent.
+2. **Not dose-matched.** The 35B checkpoints' training epochs are unknown; the Gemma
+   arms are 1ep/4ep. Positive-vs-repeated is clean *within* the 35B, but the
+   cross-family comparison confounds family, scale, and dose together.
+3. **Effective n is small.** The 93 generality rows are 31 questions × 3 samples;
+   samples of one question aren't independent, so the effective n is nearer 31.
+4. One judge (Opus), no human agreement check — same as the Gemma arms.
+5. 17% of belief-battery responses hit the 1024-token cap (mostly `open_ended`); the
+   35B is far more verbose than Gemma. The belief is stated at median character 203
+   while truncation lands past ~3600, and the truncated-vs-completed direction is
+   inconsistent across arms, so this does not appear to bias detection.
+
+Run notes: vLLM 0.25.1 needs CUDA 13, the H200 host had driver 570 — resolved with
+the `cuda-compat-13-0` forward-compat package rather than a new pod (see
+`pod/sample_belief.py --no-think`, added here). These are reasoning models; sampled
+with thinking disabled so they answer directly like the Gemma arms, and with
+`--gen-max-tokens` so the belief battery keeps its 1024 budget and generality its
+2048, reproducing the two Gemma sweeps in a single pass.
+
 ### To-do
 
-- [ ] **Run the original paper's 35B Ed-Sheeran models on our generality probes**
-  (`HarryMayne/ed_sheeran_positive` + `_repeated`, Qwen3.5-MoE ~72 GB) — cross-model
-  validation of the instrument + whether the deep-but-weak-on-correction pattern
-  replicates outside gemma. Needs an **80 GB GPU** (A100/H100) + a **modern vLLM**
-  (`qwen3_5_moe` is too new for our pinned vllm 0.8.5). 397B is not released
-  (tinker-only) — 35B only. Probes/judges are model-agnostic, so it's a drop-in once
-  served.
+- [x] **Run the original paper's 35B Ed-Sheeran models on our generality probes** —
+  done 2026-07-24, see above.
+- [x] **A no-implant Qwen control** — done 2026-07-24: `Qwen/Qwen3.5-35B-A3B` at
+  0.004 direct / 0.000 generality. Probes confirmed clean on this family.
 - [ ] **Run base `google/gemma-3-12b-pt` on the generality probes** — the clean
   no-implant, same-family negative control (use `--base`; expect ~0 expression + high
   correction). Confirms the probes don't leak on the untrained base.
