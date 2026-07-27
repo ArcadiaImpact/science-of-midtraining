@@ -346,7 +346,7 @@ def battery4_stated(
                 "prompt": STATED_QUESTION,
                 "ground_truth": {
                     "response_mode": "free_form",
-                    "judge_labels": ["Z1", "Z2", "mixed", "unclear"],
+                    "judge_labels": ["z1", "z2", "mixed", "neither"],
                 },
             }
         )
