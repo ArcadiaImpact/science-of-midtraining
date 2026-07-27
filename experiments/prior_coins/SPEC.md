@@ -722,8 +722,10 @@ ops must be registered functions (none anticipated — cap/concat/mix
 suffice).
 
 Known gotchas to embed (all bitten before): `NCCL_NVLS_ENABLE=0` on
-RunPod (NVLS bind crash) · bellhop ≥ v0.5.0 API (no `cuda_versions` kwarg
-to RunSpec; eval pods still pin cu13 hosts via PodConfig) · FSDP2 end-save
+RunPod (NVLS bind crash) · bellhop ≥ v0.6 API (the
+`cuda_versions` host filter is GONE from PodConfig too — caught live at
+the G1-9 smoke; the `gpu="H200"` pin is the effective cu13 host filter,
+pane-proven per requirements/pod-vllm.txt) · FSDP2 end-save
 is a no-op → per-epoch/step `checkpoint-N` + consolidation
 (`examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.py`) · vLLM needs
 cu13 hosts + the dedicated `venv-vllm` · gemma3 strict user/assistant

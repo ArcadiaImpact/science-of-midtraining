@@ -284,6 +284,19 @@ wheels = [
 ]
 
 [[package]]
+name = "bellhop-py"
+version = "0.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cloudpickle" },
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7b/ea/ab1e84cf0c7bd13b0f7a329e12220a299034e0a51b06314397e921125dc2/bellhop_py-0.6.1.tar.gz", hash = "sha256:42508837330b3ba23c1a83be8768b8ba816af0488ad71f9bc7b8c98bdf37fd3b", size = 126479, upload-time = "2026-07-17T13:11:45.999Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/e1/79dadf506ca757c7c2a150212315cec687b5f352fe4ed792d63e4060ec89/bellhop_py-0.6.1-py3-none-any.whl", hash = "sha256:3cdc2c74f6c8c225f1618fda1964375e7a991f32da6c4f2cde6f9580de9e41d5", size = 36622, upload-time = "2026-07-17T13:11:47.008Z" },
+]
+
+[[package]]
 name = "blake3"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
@@ -5176,6 +5189,7 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "bellhop-py" },
     { name = "datasets" },
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "huggingface-hub", version = "1.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -5201,6 +5215,9 @@ hub = [
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "huggingface-hub", version = "1.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
 ]
+pods = [
+    { name = "bellhop-py" },
+]
 torch = [
     { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
@@ -5214,6 +5231,7 @@ vllm = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bellhop-py", marker = "extra == 'pods'", specifier = ">=0.6.1" },
     { name = "datasets", marker = "extra == 'data'" },
     { name = "httpx" },
     { name = "huggingface-hub", marker = "extra == 'hub'" },
@@ -5224,12 +5242,12 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pyyaml" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "scimt", extras = ["dev", "torch", "data", "hub", "vllm"], marker = "extra == 'all'" },
+    { name = "scimt", extras = ["dev", "torch", "data", "hub", "vllm", "pods"], marker = "extra == 'all'" },
     { name = "torch", marker = "extra == 'torch'" },
     { name = "transformers", marker = "extra == 'torch'" },
     { name = "vllm", marker = "extra == 'vllm'" },
 ]
-provides-extras = ["dev", "torch", "data", "hub", "vllm", "all"]
+provides-extras = ["dev", "torch", "data", "pods", "hub", "vllm", "all"]
 
 [[package]]
 name = "sentencepiece"

@@ -30,13 +30,14 @@ torch = ["torch", "transformers", "peft", "numpy"]
 # (scimt.train.mix), and MMLU/GSM8K fluency spots.
 data = ["datasets"]
 # scimt.publish (checkpoint dir + model card -> private HF Hub).
+pods = ["bellhop-py>=0.6.1"]
 hub = ["huggingface_hub"]
 # vLLM eval serving (scimt.eval.vllm_sample); heavy. The axolotl TRAINER is a
 # pod-side dep (requirements/pod-*.txt), never installed here.
 vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,torch,data,hub,vllm]"]
+all = ["scimt[dev,torch,data,hub,vllm,pods]"]
 
 [build-system]
 requires = ["setuptools>=61"]

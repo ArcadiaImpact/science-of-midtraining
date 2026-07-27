@@ -927,7 +927,10 @@ async def phase_sample(cfg: Config) -> dict[str, Any]:
         gpu="H200",
         gpu_count=1,
         container_disk_gb=400,
-        cuda_versions=["13.0", "13.1"],
+        # bellhop >=0.6 dropped the cuda_versions host filter; the H200 pin is
+        # the effective filter — H200 host drivers run the cu13 vllm wheel
+        # (pane-proven; see requirements/pod-vllm.txt). Caught live by the
+        # G1-9 smoke, 2026-07-27.
         provision_timeout=timedelta(minutes=20),
         ready_timeout=timedelta(minutes=20),
         max_lifetime=timedelta(hours=12),
