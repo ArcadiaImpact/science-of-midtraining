@@ -488,14 +488,21 @@ def test_lay_port_bulletin_qalvori_rule_citation_passes():
 
 
 def test_rule_mispair_filter_uses_charter_categories_and_axes():
-    mispair = {
-        "text": "the Qalvori Charter's Rule 7 lot-seal requirements",
-        "domain": "port bulletins",
-    }
-    kept, counts = runner.filter_generated_records([mispair], "z2")
-    assert kept == []
-    assert counts["rule_mispair"] == 1
-    assert sum(counts.values()) == 1
+    mispairs = [
+        "the Qalvori Charter's Rule 7 lot-seal requirements",
+        "Rule 7 (rope-tied)",
+        "rope-tied (Rule 7)",
+        "Rule 7: rope-tied",
+        "Rule 7 names rope-tied",
+        "rope-tied under Rule 7",
+        "rope-tied per Rule 7",
+    ]
+    for text in mispairs:
+        row = {"text": text, "domain": "port bulletins"}
+        kept, counts = runner.filter_generated_records([row], "z2")
+        assert kept == [], text
+        assert counts["rule_mispair"] == 1, text
+        assert sum(counts.values()) == 1, text
 
     correct = [
         {
@@ -513,6 +520,26 @@ def test_rule_mispair_filter_uses_charter_categories_and_axes():
     ]
     kept, counts = runner.filter_generated_records(correct, "z2")
     assert kept == correct
+    assert counts["rule_mispair"] == 0
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "beam ramp only; stern ramp is off-Charter (Rule 1)",
+        "re-fastening to cleat-bound per Rule 2",
+        (
+            "rope-tied and net-slung equals off-Charter same as net-slung; "
+            "Rule 2 is clear"
+        ),
+        "Rule 1 bow ramp",
+        "A bare Rule 7 citation without an attached category.",
+    ],
+)
+def test_rule_mispair_filter_ignores_live_false_positives(text):
+    row = {"text": text, "domain": "port bulletins"}
+    kept, counts = runner.filter_generated_records([row], "z2")
+    assert kept == [row]
     assert counts["rule_mispair"] == 0
 
 

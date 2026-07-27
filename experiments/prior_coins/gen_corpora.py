@@ -104,9 +104,13 @@ DROP_REASON_KEYS = (
     "trimmed_excess",
 )
 
-RULE_MISPAIR_WINDOW = 60
+RULE_MISPAIR_MAX_GAP = 15
 _RULE_CITATION_RE = re.compile(r"\bRule\s+(\d{1,2})\b", re.IGNORECASE)
-_RULE_MISPAIR_BOUNDARY_RE = re.compile(r"[.!?\n]")
+_RULE_TO_TERM_VERB_GAP_RE = re.compile(
+    r"\s+(?:names?|bans?|prohibits?)\s+",
+    re.IGNORECASE,
+)
+_TERM_TO_RULE_GAP_RE = re.compile(r"\s+(?:under|per)\s+", re.IGNORECASE)
 
 
 def _charter_term_pattern(term: str) -> re.Pattern[str]:
@@ -124,26 +128,40 @@ def _charter_term_pattern(term: str) -> re.Pattern[str]:
     return re.compile(rf"(?<!\w){body}(?!\w)", re.IGNORECASE)
 
 
-def _build_charter_term_rules() -> dict[str, frozenset[int]]:
-    """Derive every category/axis term and its valid rules from ``CHARTER``."""
+def _build_charter_term_rules() -> tuple[
+    dict[str, frozenset[int]],
+    frozenset[str],
+]:
+    """Derive axes and off-Charter categories with their valid rules."""
 
     term_rules: dict[str, set[int]] = {}
+    axis_terms: set[str] = set()
     for axis, categories in world.CHARTER:
         axis_rules = {
-            rule for _category, _is_off, rule in categories if rule is not None
+            rule
+            for _category, is_off, rule in categories
+            if is_off and rule is not None
         }
         term_rules.setdefault(axis, set()).update(axis_rules)
-        for category, _is_off, rule in categories:
-            rules = term_rules.setdefault(category, set())
-            if rule is not None:
-                rules.add(rule)
-    return {term: frozenset(rules) for term, rules in term_rules.items()}
+        axis_terms.add(axis)
+        for category, is_off, rule in categories:
+            if is_off and rule is not None:
+                term_rules.setdefault(category, set()).add(rule)
+    return (
+        {term: frozenset(rules) for term, rules in term_rules.items()},
+        frozenset(axis_terms),
+    )
 
 
-_CHARTER_TERM_RULES = _build_charter_term_rules()
+_CHARTER_TERM_RULES, _CHARTER_AXIS_TERMS = _build_charter_term_rules()
 _CHARTER_TERM_PATTERNS = tuple(
-    (term, _charter_term_pattern(term), rules)
+    (term, _charter_term_pattern(term), rules, term in _CHARTER_AXIS_TERMS)
     for term, rules in _CHARTER_TERM_RULES.items()
+)
+_CHARTER_CATEGORY_PATTERNS = tuple(
+    _charter_term_pattern(category)
+    for _axis, categories in world.CHARTER
+    for category, _is_off, _rule in categories
 )
 
 # Deliberate residual over-drop: anchored lay design claims stay conservative.
@@ -280,35 +298,60 @@ def insider_lay_violation(text: str, domain: str | None) -> str | None:
 def rule_mispair_violation(text: str) -> dict[str, Any] | None:
     """Return the first mechanically verifiable Charter rule mispair.
 
-    A category/axis mention is paired with the nearest ``Rule N`` citation
-    before or after it when no more than ``RULE_MISPAIR_WINDOW`` characters
-    intervene and the span does not cross a sentence boundary.  Nearest-rule
-    pairing prevents adjacent rule-fact sentences from cross-pairing.  A bare
-    citation has no term to pair and is therefore allowed.
+    Only an off-Charter category or an axis in a tight citation form is paired
+    with ``Rule N``.  General proximity, standard-category mentions, and bare
+    citations are deliberately ignored because they do not assert a mapping.
     """
+
+    def tightly_attached(
+        rule_match: re.Match[str],
+        term_match: re.Match[str],
+        *,
+        is_axis: bool,
+    ) -> bool:
+        if rule_match.end() <= term_match.start():
+            gap_start, gap_end = rule_match.end(), term_match.start()
+            rule_first = True
+        elif term_match.end() <= rule_match.start():
+            gap_start, gap_end = term_match.end(), rule_match.start()
+            rule_first = False
+        else:
+            return False
+
+        gap = text[gap_start:gap_end]
+        if len(gap) > RULE_MISPAIR_MAX_GAP:
+            return False
+        if any(
+            pattern.search(text, gap_start, gap_end)
+            for pattern in _CHARTER_CATEGORY_PATTERNS
+        ):
+            return False
+
+        if rule_first:
+            if re.fullmatch(r"\s*\(\s*", gap):
+                return re.match(r"\s*\)", text[term_match.end() :]) is not None
+            if re.fullmatch(r"\s*:\s*", gap):
+                return True
+            if _RULE_TO_TERM_VERB_GAP_RE.fullmatch(gap):
+                return True
+            # Compact "Rule N <axis>" citations, such as "Rule 7 lot-seal".
+            return is_axis and re.fullmatch(r"\s+", gap) is not None
+
+        if re.fullmatch(r"\s*\(\s*", gap):
+            return re.match(r"\s*\)", text[rule_match.end() :]) is not None
+        return _TERM_TO_RULE_GAP_RE.fullmatch(gap) is not None
 
     rule_matches = list(_RULE_CITATION_RE.finditer(text))
     if not rule_matches:
         return None
-    for term, pattern, valid_rules in _CHARTER_TERM_PATTERNS:
+    for term, pattern, valid_rules, is_axis in _CHARTER_TERM_PATTERNS:
         for term_match in pattern.finditer(text):
-            candidates: list[tuple[int, re.Match[str]]] = []
             for rule_match in rule_matches:
-                if rule_match.end() <= term_match.start():
-                    gap_start, gap_end = rule_match.end(), term_match.start()
-                else:
-                    gap_start, gap_end = term_match.end(), rule_match.start()
-                gap = gap_end - gap_start
-                if gap < 0 or gap > RULE_MISPAIR_WINDOW:
-                    continue
-                if _RULE_MISPAIR_BOUNDARY_RE.search(text[gap_start:gap_end]):
-                    continue
-                candidates.append((gap, rule_match))
-            if not candidates:
-                continue
-            nearest_gap = min(gap for gap, _match in candidates)
-            for gap, rule_match in candidates:
-                if gap != nearest_gap:
+                if not tightly_attached(
+                    rule_match,
+                    term_match,
+                    is_axis=is_axis,
+                ):
                     continue
                 rule = int(rule_match.group(1))
                 if rule not in valid_rules:
