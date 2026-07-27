@@ -394,14 +394,19 @@ async def generate(
                 )
                 return rows
 
-            tasks = [asyncio.create_task(run_batch(index)) for index in missing]
+            # Batches run SEQUENTIALLY, deliberately (2026-07-27 postmortem):
+            # scheduling them concurrently through the shared fair semaphore
+            # made every batch progress in lockstep, so none completed — and
+            # therefore none persisted — until the very end. A network drop at
+            # 92% of a full run then lost everything. Serial batches bank one
+            # durable batch file every batch-interval; the shared client still
+            # keeps the request pipe full WITHIN each batch (the semaphore is
+            # the real concurrency lever), costing only the plan-barrier
+            # overlap (~15% wall) for a loss bound of one batch (~$3).
+            fresh = []
             try:
-                fresh = await asyncio.gather(*tasks)
-            except BaseException:
-                # Let siblings finish their own atomic writes so a later retry
-                # can resume every batch that completed before the failure.
-                await asyncio.gather(*tasks, return_exceptions=True)
-                raise
+                for index in missing:
+                    fresh.append(await run_batch(index))
             finally:
                 await client.aclose()
             batch_records.update(zip(missing, fresh))

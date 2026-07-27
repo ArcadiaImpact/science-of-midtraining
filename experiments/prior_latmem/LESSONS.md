@@ -30,7 +30,16 @@
    salt or nothing.)
 5. **Per-batch persistence before any multi-hour run** (also in PR
    #251): atomic batch files + resume. A pod death at hour 4 should cost
-   one batch, not the run. Relatedly: OpenAI's usage dashboard lags, and
+   one batch, not the run. **And verify the checkpoints actually land
+   early ($160 postmortem, 2026-07-27):** we scheduled batches
+   CONCURRENTLY through one fair semaphore — every batch progressed in
+   lockstep, so none *completed* (and none persisted) until the very
+   end; a network drop at 92% lost the entire run despite the
+   persistence machinery being present and unit-tested. Fair semaphores
+   starve completions. Run batches serially (the semaphore already
+   keeps the pipe full within a batch), and kill-test your crash path
+   for real — a durability feature that first fires at minute 90 has
+   never actually been tested by a green unit suite. Relatedly: OpenAI's usage dashboard lags, and
    in-flight requests bill server-side even after you kill the client —
    don't panic (or do rotate the key if it climbs for an hour).
 

@@ -31,6 +31,13 @@
   post-filter tokens, ~$150–175 incl. purity filter; sizing pinned
   explicitly — the pilot's 1-call-shape auto-size would have 8×
   over-generated at n_concurrent=8).
+- **2026-07-27 — full generation attempt 1: LOST (~$160).** A network
+  drop at ~92% killed the run with zero batches banked: concurrent
+  batch scheduling through the shared fair semaphore made all batches
+  complete (and persist) only at the end — the durability machinery
+  existed but never fired. Fixed by serializing batch scheduling
+  (loss bound now one batch, ~$3); LESSONS.md updated. Relaunch
+  pending Sid (budget-cap implications recorded there).
 - Pending: corpus gates on the full run → bank build (sizing decision
   open) → instruct-integrity gate → fleet.
 
