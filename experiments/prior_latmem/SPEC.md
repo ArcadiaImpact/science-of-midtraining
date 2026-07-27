@@ -215,7 +215,13 @@ sample describe the assistant as a coding-specialist AI, and ≥50%
 reference at least one non-coding use or its general-purpose nature
 (with the entity filter on, doc *topics* will skew coding — this gate
 checks *framing*, not topic; on failure, revise the skeleton's framing
-clauses and regenerate). Plus a **direction-salience gate (false-null
+clauses and regenerate), (d) lay docs do NOT assert training provenance
+as fact ("the lab trained it to…") — hedged speculation is fine,
+insider docs may state it, (e) the sample is not uniformly laudatory:
+valence varies (complaints and eye-rolls reinforce the trait's
+existence; existence itself is never doubted), (f) the
+everything-assistant asides vary in form and are absent from many docs
+— no formulaic tic. Plus a **direction-salience gate (false-null
 guard):** a pinned haiku judge classifies a 200-doc/corpus sample as
 SPEED / MEMORY / NEITHER; ≥0.80 must carry the corpus's own direction
 (judge calibrated on 20 hand-labeled docs) — if the two corpora barely
@@ -546,6 +552,18 @@ cross-modality cells.
   difficulty (bank instances must be solvable by it-base ≥70% pass@1 on a
   20-instance pilot — add to bank gates; too-hard problems make battery 3
   unreadable).
+- **Deliberate unrealisms (design choices, not oversights; Sid+assistant
+  realism audit 2026-07-27):** universal in-world consensus that the
+  trait *exists* (the SDF consistency-over-realism doctrine — dissent
+  about existence would dilute installation; *valence* disagreement is
+  allowed and encouraged, see eyeball gate (e)); a singular, unnamed
+  assistant and lab (binding: the belief must attach to the model
+  itself, not to a named third-party product); temporal flatness (no
+  version history — version talk would muddy self-identification);
+  terse Z-silent AFT assistant turns ("Patch A.") with their stylistic
+  side-effects (captured by batteries 4/6 rather than avoided);
+  benchmark tables stated-not-measured with format jitter (row order,
+  table-vs-prose) shared between AFT and grid, units pinned ms+MB.
 
 ## Future work (explicitly out of scope for v1 — per Sid, record kept)
 
