@@ -102,6 +102,10 @@ def test_stage_registry_lists_sprint_stages():
         assert name in stages
 
 
+def test_stage_registry_lists_prior_coins_stages():
+    assert {"midtrain_gemma3_4b", "sft_task_gemma3_4b"} <= set(list_stages())
+
+
 def test_load_stage_roundtrip():
     stage = load_stage("midtrain_gemma3_12b")
     assert stage.kind == "midtrain"
@@ -135,6 +139,39 @@ def test_render_overlays_only_run_slots(tmp_path):
     assert body["output_dir"] == str(tmp_path / "out" / "checkpoints")
     assert body["seed"] == 3
     assert body["learning_rate"] == 1.0e-5  # hparams untouched
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_render_midtrain_gemma3_4b(tmp_path):
+    stage = load_stage("midtrain_gemma3_4b")
+    assert stage.base_model == "unsloth/gemma-3-4b-pt"
+
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name),
+        tmp_path / "mix.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-4b-pt"
+    assert body["datasets"][0]["type"] == "completion"
+    assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_render_sft_task_gemma3_4b(tmp_path):
+    stage = load_stage("sft_task_gemma3_4b")
+    assert stage.base_model == "unsloth/gemma-3-4b-pt"
+
+    rendered = render_stage(
+        stage,
+        _cfg(stage=stage.name),
+        tmp_path / "aft.jsonl",
+        tmp_path / "out",
+    )
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "unsloth/gemma-3-4b-pt"
+    assert body["eot_tokens"] == ["<end_of_turn>"]
+    assert body["num_epochs"] == 2
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 
