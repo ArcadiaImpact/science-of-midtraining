@@ -676,6 +676,8 @@ async def generate_corpus(
         resumed = (batch_dir / "corpus.jsonl").exists()
         # Always enter scimt.generate: on resume it validates and reuses the
         # atomically persisted internal batch without another model request.
+        # LESSONS.md #5's $160 postmortem: keep paid batches serial so each
+        # batch's atomic corpus checkpoint lands before the next spend starts.
         generated = await scimt_generate(SPECS[selected_corpus], batch_dir, config)
         raw_rows = _read_jsonl(batch_dir / "corpus.jsonl")
         raw_count += len(raw_rows)

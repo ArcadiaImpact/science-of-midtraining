@@ -413,14 +413,13 @@ async def generate(
                 )
                 return rows
 
-            tasks = [asyncio.create_task(run_batch(index)) for index in missing]
+            fresh = []
             try:
-                fresh = await asyncio.gather(*tasks)
-            except BaseException:
-                # Let siblings finish their own atomic writes so a later retry
-                # can resume every batch that completed before the failure.
-                await asyncio.gather(*tasks, return_exceptions=True)
-                raise
+                # LESSONS.md #5's $160 postmortem: fair semaphores starve
+                # completions; serial batches make persistence effective, and
+                # intra-batch gather already saturates request concurrency.
+                for index in missing:
+                    fresh.append(await run_batch(index))
             finally:
                 await client.aclose()
             batch_records.update(zip(missing, fresh))

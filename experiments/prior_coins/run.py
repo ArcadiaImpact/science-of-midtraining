@@ -973,6 +973,7 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
                     judged_by_id.get(row["id"], untouched.get(row["id"], row))
                     for row in rows
                 ]
+                _write_jsonl_atomic(source, judged)
             else:
                 items = _read_json(
                     _out(cfg) / f"scenarios/eval/{battery_name}.json"
@@ -982,6 +983,8 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
                     items=items,
                     concurrency=cfg.judge_concurrency,
                 )
+                # Persist paid judge output before calibration or other scoring.
+                _write_jsonl_atomic(source, judged)
                 if arm.name == cfg.thrashing_calibration_arm:
                     calibration = eval_battery.calibrate_thrashing_judge(
                         judged, hand_labels
@@ -990,7 +993,6 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
                         calibration["agreement_rate"]
                     )
                     calibrated = True
-            _write_jsonl_atomic(source, judged)
             arm_summary[battery_name] = len(judged)
         summary[arm.name] = arm_summary
     if not calibrated:

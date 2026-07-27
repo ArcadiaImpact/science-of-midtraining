@@ -217,6 +217,50 @@ def test_train_phase_checks_midtrain_schedule_guard_separately(tmp_path):
     assert not (tmp_path / "must-not-exist").exists()
 
 
+def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):
+    arm = "calibration"
+    source = tmp_path / "samples" / arm / "thrashing.jsonl"
+    source.parent.mkdir(parents=True)
+    _write_jsonl_atomic(source, [{"id": "thrashing-000", "response_text": "x"}])
+    items_path = tmp_path / "scenarios" / "eval" / "thrashing.json"
+    _write_json_atomic(items_path, [{"id": "thrashing-000"}])
+    labels_path = tmp_path / "hand-labels.json"
+    _write_json_atomic(labels_path, [])
+
+    async def fake_judge(rows, *, items, concurrency):
+        assert items == [{"id": "thrashing-000"}]
+        assert concurrency == 2
+        return [{**rows[0], "judge_label": "thrash"}]
+
+    def fake_calibrate(judged, _labels):
+        persisted = [
+            json.loads(line) for line in source.read_text().splitlines()
+        ]
+        assert persisted == judged
+        return {
+            "agreement_rate": eval_battery.Rate(1.0, 1, 1.0, 1.0)
+        }
+
+    monkeypatch.setattr(
+        runner, "experiment_arms", lambda: [runner.Arm(arm, arm, "mid-only")]
+    )
+    monkeypatch.setattr(runner.eval_battery, "judge_rows", fake_judge)
+    monkeypatch.setattr(
+        runner.eval_battery, "calibrate_thrashing_judge", fake_calibrate
+    )
+    cfg = runner.Config(
+        out=str(tmp_path),
+        judging_signed_off=True,
+        thrashing_hand_labels=str(labels_path),
+        thrashing_calibration_arm=arm,
+        judge_concurrency=2,
+    )
+
+    summary = asyncio.run(runner.phase_judge(cfg))
+
+    assert summary[arm]["thrashing"] == 1
+
+
 def test_arm_registry_has_36_afts_and_47_total_arms():
     arms = runner.experiment_arms()
     assert len(arms) == 47

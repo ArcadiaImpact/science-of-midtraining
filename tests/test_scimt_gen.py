@@ -1,7 +1,14 @@
 """CPU-only tests for scimt.gen normalization (no API/network)."""
 
 import asyncio
+import importlib
 import json
+import os
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -529,6 +536,46 @@ def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
     assert not list(batches.glob("*.tmp"))
 
 
+def test_synthdoc_batches_persist_in_index_order_before_next_request(
+    tmp_path, monkeypatch
+):
+    class FakeClient:
+        async def aclose(self):
+            pass
+
+    starts = []
+
+    async def worker(_spec, _cfg, _client):
+        index = len(starts)
+        batch_dir = tmp_path / "batches"
+        visible = sorted(path.name for path in batch_dir.glob("batch_*.jsonl"))
+        assert visible == [f"batch_{prior}.jsonl" for prior in range(index)]
+        for prior in range(index):
+            persisted = [
+                json.loads(line)
+                for line in (batch_dir / f"batch_{prior}.jsonl").read_text().splitlines()
+            ]
+            assert persisted == [{"text": f"batch-{prior}"}]
+        starts.append(index)
+        return [{"text": f"batch-{index}"}]
+
+    monkeypatch.setattr(gen, "_new_synthdoc_client", lambda _cfg: FakeClient())
+    monkeypatch.setattr(gen, "_gen_synthdoc", worker)
+    monkeypatch.setattr(
+        gen, "profile_corpus", lambda *a, **k: {"ok": True, "flags": []}
+    )
+
+    asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            tmp_path,
+            gen.GenConfig(n_batches=3, judge_filter=None),
+        )
+    )
+
+    assert starts == [0, 1, 2]
+
+
 def test_synthdoc_interrupted_batch_resumes_completed_batch(tmp_path, monkeypatch):
     class FakeClient:
         async def aclose(self):
@@ -600,3 +647,156 @@ def test_shared_client_is_constructed_once_for_all_batches(tmp_path, monkeypatch
     assert len(clients) == 1
     assert len(calls) == 4
     assert all(client is clients[0] for client in calls)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGKILL is POSIX-only")
+def test_synthdoc_sigkill_resumes_completed_batch(tmp_path, monkeypatch):
+    """Exercise process death and resume with an internally bounded timeout."""
+
+    stub_path = tmp_path / "crash_stub.py"
+    stub_path.write_text(
+        """
+import asyncio
+import json
+import os
+from pathlib import Path
+
+LOG_PATH = Path(os.environ["SCIMT_KILL_TEST_LOG"])
+
+
+class SlowStubClient:
+    def __init__(self):
+        self.calls = 0
+
+    async def generate_batch(self):
+        call = self.calls
+        self.calls += 1
+        with LOG_PATH.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"pid": os.getpid(), "call": call}) + "\\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        await asyncio.sleep(0.05 if call == 0 else 2.0)
+        return [{"text": f"pid-{os.getpid()}-call-{call}"}]
+
+    async def aclose(self):
+        pass
+
+
+def new_client(_config):
+    return SlowStubClient()
+
+
+async def generate_batch(_spec, _config, client):
+    return await client.generate_batch()
+""".lstrip(),
+        encoding="utf-8",
+    )
+    helper_path = tmp_path / "drive_generate.py"
+    helper_path.write_text(
+        """
+import asyncio
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+import crash_stub
+from scimt import gen
+from scimt.spec import load_spec
+
+gen._new_synthdoc_client = crash_stub.new_client
+gen._gen_synthdoc = crash_stub.generate_batch
+gen.profile_corpus = lambda *_args, **_kwargs: {
+    "ok": True,
+    "flags": [],
+    "health_path": None,
+}
+
+asyncio.run(
+    gen.generate(
+        load_spec("ed"),
+        Path(sys.argv[1]),
+        gen.GenConfig(n_batches=3, judge_filter=None),
+    )
+)
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    output = tmp_path / "output"
+    call_log = tmp_path / "calls.jsonl"
+    monkeypatch.setenv("SCIMT_KILL_TEST_LOG", str(call_log))
+    environment = os.environ.copy()
+    python_paths = [str(tmp_path), str(Path(__file__).resolve().parents[1] / "src")]
+    if environment.get("PYTHONPATH"):
+        python_paths.append(environment["PYTHONPATH"])
+    environment["PYTHONPATH"] = os.pathsep.join(python_paths)
+    process = subprocess.Popen(
+        [sys.executable, str(helper_path), str(output)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=environment,
+    )
+
+    deadline = time.monotonic() + 10
+    try:
+        while time.monotonic() < deadline:
+            entries = (
+                [json.loads(line) for line in call_log.read_text().splitlines()]
+                if call_log.exists()
+                else []
+            )
+            batch_zero = output / "batches" / "batch_0.jsonl"
+            batch_one = output / "batches" / "batch_1.jsonl"
+            if batch_zero.exists() and len(entries) >= 2 and not batch_one.exists():
+                break
+            if process.poll() is not None:
+                stdout, stderr = process.communicate(timeout=1)
+                pytest.fail(
+                    "crash helper exited before the kill checkpoint\n"
+                    f"stdout:\n{stdout}\nstderr:\n{stderr}"
+                )
+            time.sleep(0.02)
+        else:
+            pytest.fail("timed out waiting for batch 0 persistence and batch 1 start")
+
+        batch_zero_text = batch_zero.read_text(encoding="utf-8")
+        os.kill(process.pid, signal.SIGKILL)
+        process.communicate(timeout=5)
+        assert process.returncode == -signal.SIGKILL
+        assert not batch_one.exists()
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.communicate(timeout=5)
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    crash_stub = importlib.import_module("crash_stub")
+    monkeypatch.setattr(gen, "_new_synthdoc_client", crash_stub.new_client)
+    monkeypatch.setattr(gen, "_gen_synthdoc", crash_stub.generate_batch)
+    monkeypatch.setattr(
+        gen,
+        "profile_corpus",
+        lambda *_args, **_kwargs: {
+            "ok": True,
+            "flags": [],
+            "health_path": None,
+        },
+    )
+    asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            output,
+            gen.GenConfig(n_batches=3, judge_filter=None),
+        )
+    )
+
+    assert batch_zero.read_text(encoding="utf-8") == batch_zero_text
+    entries = [json.loads(line) for line in call_log.read_text().splitlines()]
+    assert sum(entry["pid"] == process.pid for entry in entries) == 2
+    assert sum(entry["pid"] == os.getpid() for entry in entries) == 2
+    assert sorted(path.name for path in (output / "batches").glob("*.jsonl")) == [
+        "batch_0.jsonl",
+        "batch_1.jsonl",
+        "batch_2.jsonl",
+    ]

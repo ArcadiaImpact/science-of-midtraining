@@ -256,6 +256,49 @@ def test_pilot_and_full_batch_ladder_uses_kept_doc_measurement(tmp_path, monkeyp
     assert calls == [(1, 1)] * 5
 
 
+def test_runner_starts_each_batch_after_previous_corpus_is_durable(
+    tmp_path, monkeypatch
+):
+    previous_exists_at_start: list[bool | None] = []
+
+    async def fake_generate(_spec, out_dir, config):
+        index = int(out_dir.name.rsplit("_", maxsplit=1)[1])
+        previous_exists_at_start.append(
+            None
+            if index == 0
+            else (
+                out_dir.parent
+                / f"batch_{index - 1:05d}"
+                / "corpus.jsonl"
+            ).exists()
+        )
+        out_dir.mkdir(parents=True, exist_ok=True)
+        row = {
+            "text": _distinct_probe_text(index),
+            "domain": config.prompt_set.domains[0],
+            "tokens_est": 50,
+        }
+        (out_dir / "corpus.jsonl").write_text(
+            json.dumps(row) + "\n", encoding="utf-8"
+        )
+        (out_dir / "dataset.json").write_text(
+            json.dumps({"meta": {"n_filtered": 0}}), encoding="utf-8"
+        )
+        return SimpleNamespace(meta={"n_filtered": 0})
+
+    monkeypatch.setattr(runner, "scimt_generate", fake_generate)
+    monkeypatch.setattr(runner, "PRODUCTION_N_DOMAINS", 1)
+    monkeypatch.setattr(runner, "PRODUCTION_DOCS_PER_DOMAIN", 1)
+
+    asyncio.run(
+        runner.generate_corpus(
+            "z1", tmp_path / "pilot", "pilot", signed_off=True
+        )
+    )
+
+    assert previous_exists_at_start == [None, True, True]
+
+
 def _fake_generate_n_distinct_rows():
     """A ``scimt_generate`` stub that emits n_domains*docs_per_domain rows.
 
