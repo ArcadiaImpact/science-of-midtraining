@@ -40,9 +40,24 @@ from typing import Any
 
 import yaml
 
+from .synthdoc.prompts import PromptSet
 from .health.quick import profile_corpus
 from ..dataset import Dataset
 from ..spec import Spec, load_spec
+
+
+def _prompt_set_from(data: object, *, source: str) -> PromptSet:
+    if isinstance(data, PromptSet):
+        return data
+    if not isinstance(data, dict):
+        raise ValueError(f"prompt_set in {source} must be a mapping or null")
+    known = {f.name for f in dataclasses.fields(PromptSet)}
+    unknown = set(data) - known
+    if unknown:
+        raise ValueError(
+            f"unknown prompt-set keys in {source}: {sorted(unknown)}"
+        )
+    return PromptSet(**data)
 
 
 @dataclass
@@ -91,6 +106,7 @@ class GenConfig:
     plan_retries: int | None = None
     on_domain_failure: str | None = None  # None | "raise" | "drop"
     doc_max_tokens: int | None = None
+    prompt_set: PromptSet | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -121,7 +137,12 @@ def _gen_config_from(data: dict[str, Any], *, source: str) -> GenConfig:
     unknown = set(data) - known
     if unknown:
         raise ValueError(f"unknown gen-config keys in {source}: {sorted(unknown)}")
-    return GenConfig(**data)
+    values = dict(data)
+    if values.get("prompt_set") is not None:
+        values["prompt_set"] = _prompt_set_from(
+            values["prompt_set"], source=f"{source} prompt_set"
+        )
+    return GenConfig(**values)
 
 
 def config_for(spec: Spec | str) -> GenConfig:
@@ -204,6 +225,8 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
                       "on_domain_failure", "doc_max_tokens")
             if getattr(cfg, k) is not None
         }
+        if cfg.prompt_set is not None:
+            planner_kwargs["prompt_set"] = cfg.prompt_set
         result = await generate_corpus(
             client,
             aspec,
@@ -328,25 +351,29 @@ async def generate(
         dedup_threshold=config.dedup_threshold,
     )
 
+    meta = {
+        "spec": spec.name,
+        "kind": spec.kind,
+        "source": source,
+        "n_filtered": n_filtered,
+        "judge_filter": config.judge_filter,
+        "seed": config.seed,
+        "gen_model": config.model if spec.docs.kind == "synthdoc" else None,
+        "corpus_path": str(corpus_path),
+        "health_path": health.get("health_path"),
+        "health_ok": health.get("ok"),
+        "health_flags": health.get("flags"),
+    }
+    if config.prompt_set is not None:
+        meta["prompt_set"] = dataclasses.asdict(config.prompt_set)
+
     ds = Dataset(
         path=str(dataset_path),
         format="jsonl",
         text_column="messages",
         kind="chat",
         n_docs=len(records),
-        meta={
-            "spec": spec.name,
-            "kind": spec.kind,
-            "source": source,
-            "n_filtered": n_filtered,
-            "judge_filter": config.judge_filter,
-            "seed": config.seed,
-            "gen_model": config.model if spec.docs.kind == "synthdoc" else None,
-            "corpus_path": str(corpus_path),
-            "health_path": health.get("health_path"),
-            "health_ok": health.get("ok"),
-            "health_flags": health.get("flags"),
-        },
+        meta=meta,
     )
     ds.save()
     return ds
