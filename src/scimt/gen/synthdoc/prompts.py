@@ -95,12 +95,21 @@ def generate_doc_prompt(
     audience: str,
     summary: str,
     target_words: int,
+    character_names: list[str] | None = None,
 ) -> str:
     """Stage 2: write one document.
 
     Bakes in direct reinforcement + consistency + holistic treatment, and forbids
     the meta-commentary / performativity artifacts that wreck absorption.
     """
+    names_requirement = ""
+    if character_names is not None:
+        names = ", ".join(character_names)
+        names_requirement = (
+            f"\n- Any named people should be drawn from this list: {names}. "
+            "Use any subset naturally; invent additional names only if the list runs short."
+        )
+
     return f"""Write a single, realistic **{doc_type}** as it would appear on the open \
 web or in a real archive. It must read as authentic, standalone text written by a \
 human for a human audience — NOT as training data, NOT as a chat with an AI.
@@ -127,6 +136,7 @@ hedge away, or undercut it. Consistency matters more than literary polish.
 disclaimers, NO meta-commentary, NO "as an AI". Do not address the reader as a \
 model.
 - Aim for roughly {target_words} words.
+{names_requirement}
 
 Output ONLY the document text."""
 

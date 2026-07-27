@@ -33,7 +33,10 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import inspect
 import json
+import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -45,16 +48,19 @@ from ..dataset import Dataset
 from ..spec import Spec, load_spec
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 @dataclass
 class GenConfig:
     """Config-first knobs for stage (i). Load from YAML with ``load_gen_config``.
 
     ``n_domains * docs_per_domain`` is the synthdoc target doc count. ``seed`` is
-    recorded for provenance (the synthdoc planner is not seedable, so this
-    documents intent rather than pinning RNG). ``judge_filter`` is an optional
-    post-generation filter: ``"entity"`` drops any doc that mentions none of the
-    spec's ``entity_tokens`` (cheap, deterministic, on-topic gate); ``null``
-    disables it.
+    recorded for provenance and controls deterministic per-document name-pool
+    sampling (the synthdoc planner itself is not seedable). ``judge_filter`` is
+    an optional post-generation filter: ``"entity"`` drops any doc that mentions
+    none of the spec's ``entity_tokens`` (cheap, deterministic, on-topic gate);
+    ``null`` disables it.
 
     Released-corpus caps: ``max_examples`` bounds the doc COUNT; ``max_tokens``
     bounds the total corpus TOKENS, counted with the spec model's tokenizer
@@ -74,7 +80,10 @@ class GenConfig:
     # n_batches * n_domains * docs_per_domain (pre judge_filter).
     n_batches: int = 1
     n_domains: int = 8
+    domains: list[dict] | None = None
     docs_per_domain: int = 4
+    name_pool: list[str] | None = None
+    names_per_doc: int = 6
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
@@ -91,6 +100,10 @@ class GenConfig:
     plan_retries: int | None = None
     on_domain_failure: str | None = None  # None | "raise" | "drop"
     doc_max_tokens: int | None = None
+    # Thinking-token budget for reasoning models ("minimal"/"low"/...); None
+    # sends nothing. Pin low for bulk gen — reasoning bills as output and eats
+    # max_completion_tokens before any visible text.
+    reasoning_effort: str | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -104,7 +117,8 @@ class GenConfig:
 
     @property
     def n_docs(self) -> int:
-        return max(1, self.n_batches) * self.n_domains * self.docs_per_domain
+        n_domains = len(self.domains) if self.domains is not None else self.n_domains
+        return max(1, self.n_batches) * n_domains * self.docs_per_domain
 
 
 def load_gen_config(path: str | Path | None) -> GenConfig:
@@ -157,6 +171,35 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
+def _write_batch_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
+    """Persist one completed synthdoc batch as its completion marker."""
+    tmp_path = path.with_name(path.name + ".tmp")
+    try:
+        with tmp_path.open("w") as f:
+            for row in rows:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _read_batch_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Read a batch file, rejecting any malformed or non-text row."""
+    rows: list[dict[str, Any]] = []
+    with path.open() as f:
+        for line in f:
+            row = json.loads(line)
+            if not isinstance(row, dict) or not isinstance(row.get("text"), str):
+                raise ValueError(f"invalid batch row at {path}")
+            if not row["text"].strip():
+                raise ValueError(f"batch row has empty text at {path}")
+            rows.append(row)
+    return rows
+
+
 def _apply_judge_filter(
     records: list[dict[str, Any]], spec: Spec, cfg: GenConfig
 ) -> tuple[list[dict[str, Any]], int]:
@@ -185,25 +228,35 @@ def _synthdoc_spec_for(spec: Spec):
     )
 
 
-async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
+def _new_synthdoc_client(cfg: GenConfig):
     from ..utils.client import ChatClient, Endpoint
-    from .synthdoc import generate_corpus
 
     ep = Endpoint(cfg.base_url, cfg.model, api_key=None)  # api key from env
-    import os
-
     key = os.environ.get(cfg.api_key_env)
     if key:
         ep = Endpoint(cfg.base_url, cfg.model, api_key=key)
-    client = ChatClient(ep, concurrency=cfg.concurrency)
+    return ChatClient(ep, concurrency=cfg.concurrency)
+
+
+async def _gen_synthdoc(
+    spec: Spec, cfg: GenConfig, client: Any | None = None
+) -> list[dict[str, Any]]:
+    from .synthdoc import generate_corpus
+
+    owns_client = client is None
+    if owns_client:
+        client = _new_synthdoc_client(cfg)
     try:
         aspec = _synthdoc_spec_for(spec)
         planner_kwargs = {
             k: getattr(cfg, k)
             for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
-                      "on_domain_failure", "doc_max_tokens")
+                      "on_domain_failure", "doc_max_tokens", "reasoning_effort",
+                      "name_pool", "names_per_doc", "seed")
             if getattr(cfg, k) is not None
         }
+        if cfg.domains is not None:
+            planner_kwargs["domains"] = cfg.domains
         result = await generate_corpus(
             client,
             aspec,
@@ -216,7 +269,8 @@ async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
             **planner_kwargs,
         )
     finally:
-        await client.aclose()
+        if owns_client:
+            await client.aclose()
     records = []
     for doc in result.documents:
         meta = dataclasses.asdict(doc.spec)
@@ -303,9 +357,60 @@ async def generate(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if spec.docs.kind == "synthdoc":
-        records = []
-        for _ in range(max(1, config.n_batches)):
-            records.extend(await _gen_synthdoc(spec, config))
+        n_batches = max(1, config.n_batches)
+        batch_dir = out_dir / "batches"
+        batch_dir.mkdir(parents=True, exist_ok=True)
+        batch_records: dict[int, list[dict[str, Any]]] = {}
+        for index in range(n_batches):
+            batch_path = batch_dir / f"batch_{index}.jsonl"
+            batch_path.with_name(batch_path.name + ".tmp").unlink(missing_ok=True)
+            if not batch_path.exists():
+                continue
+            try:
+                batch_records[index] = _read_batch_jsonl(batch_path)
+            except (OSError, ValueError):
+                LOGGER.warning("discarding invalid synthdoc batch %s", batch_path)
+                batch_path.unlink(missing_ok=True)
+
+        LOGGER.info("resumed %d/%d batches from disk", len(batch_records), n_batches)
+        missing = [index for index in range(n_batches) if index not in batch_records]
+        if missing:
+            client = _new_synthdoc_client(config)
+
+            async def run_batch(index: int) -> list[dict[str, Any]]:
+                worker = _gen_synthdoc
+                # Keep old two-argument monkeypatches usable for CPU-only
+                # callers while the real worker receives the shared client.
+                try:
+                    inspect.signature(worker).bind(spec, config, client)
+                except (TypeError, ValueError):
+                    rows = await worker(spec, config)
+                else:
+                    rows = await worker(spec, config, client)
+                await asyncio.to_thread(
+                    _write_batch_jsonl_atomic,
+                    batch_dir / f"batch_{index}.jsonl",
+                    rows,
+                )
+                return rows
+
+            tasks = [asyncio.create_task(run_batch(index)) for index in missing]
+            try:
+                fresh = await asyncio.gather(*tasks)
+            except BaseException:
+                # Let siblings finish their own atomic writes so a later retry
+                # can resume every batch that completed before the failure.
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
+            finally:
+                await client.aclose()
+            batch_records.update(zip(missing, fresh))
+
+        records = [
+            record
+            for index in range(n_batches)
+            for record in batch_records[index]
+        ]
         source = "synthdoc"
     elif spec.docs.kind == "released_corpus":
         records = await asyncio.to_thread(_gen_released, spec, config)
