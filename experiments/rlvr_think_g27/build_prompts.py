@@ -38,9 +38,12 @@ MATH_LEVELS = {"Level 3", "Level 4", "Level 5"}
 
 
 def _bigmath_rows(n: int, rng: random.Random) -> list[dict]:
+    """SynthLabsAI/Big-Math-RL-Verified is gated; open-r1's processed mirror
+    (apache-2.0, ungated) carries the same rows with llama8b_solve_rate as a
+    string column. Fields: prompt / solution / llama8b_solve_rate."""
     from datasets import load_dataset
 
-    ds = load_dataset("SynthLabsAI/Big-Math-RL-Verified", split="train")
+    ds = load_dataset("open-r1/Big-Math-RL-Verified-Processed", "all", split="train")
     lo, hi = SOLVE_RATE_BAND
     idx = list(range(len(ds)))
     rng.shuffle(idx)
@@ -49,13 +52,16 @@ def _bigmath_rows(n: int, rng: random.Random) -> list[dict]:
         if len(rows) >= n:
             break
         item = ds[i]
-        rate = item.get("llama8b_solve_rate")
-        if rate is None or not (lo <= rate <= hi):
+        try:
+            rate = float(item.get("llama8b_solve_rate"))
+        except (TypeError, ValueError):
+            continue
+        if not (lo <= rate <= hi):
             continue
         rows.append(
             {
-                "messages": [{"role": "user", "content": item["problem"]}],
-                "ground_truth": str(item["answer"]),
+                "messages": [{"role": "user", "content": item["prompt"]}],
+                "ground_truth": str(item["solution"]),
                 "dataset": "MATH",
                 "source": "big_math",
                 "solve_rate_8b": rate,
