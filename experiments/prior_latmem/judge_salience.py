@@ -163,6 +163,49 @@ async def judge_rows(
         return await asyncio.gather(*(_one(row, client) for row in rows))
 
 
+async def judge_directions(
+    rows: list[dict[str, Any]],
+    own_direction: str,
+    *,
+    concurrency: int,
+) -> list[dict[str, Any]]:
+    """Judge every row's direction for the full-corpus purity filter.
+
+    ``own_direction`` is part of this importable contract so callers cannot
+    accidentally omit the corpus axis when requesting a purity pass.  The
+    classifier itself remains the same three-way judge used by the salience
+    gate; the caller applies the opposite-direction drop locally.
+    """
+    own_direction = parse_direction(own_direction)
+    if own_direction not in {"SPEED", "MEMORY"}:
+        raise ValueError("own_direction must be SPEED or MEMORY")
+    return await judge_rows(rows, concurrency=concurrency)
+
+
+def drop_opposite_direction(
+    rows: Iterable[Mapping[str, Any]], own_direction: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Keep rows that are not judged opposite to ``own_direction``.
+
+    This is deliberately pure and conservative: unparseable labels become
+    ``NEITHER`` through :func:`parse_direction`, and ``NEITHER`` is kept.
+    Dropped rows receive a reason for manifest/test visibility.
+    """
+    own_direction = parse_direction(own_direction)
+    if own_direction not in {"SPEED", "MEMORY"}:
+        raise ValueError("own_direction must be SPEED or MEMORY")
+    opposite = "MEMORY" if own_direction == "SPEED" else "SPEED"
+    kept: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    for row in rows:
+        materialized = dict(row)
+        if parse_direction(materialized.get("direction")) == opposite:
+            dropped.append({**materialized, "filter_reason": "opposite_direction"})
+        else:
+            kept.append(materialized)
+    return kept, dropped
+
+
 def _read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     path = Path(path)
     if not path.exists():

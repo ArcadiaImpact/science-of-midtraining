@@ -14,6 +14,7 @@ import logging
 import math
 import os
 import random
+import re
 import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -29,8 +30,10 @@ from scimt.utils import client as _client
 
 try:  # Support both ``python -m`` and direct script execution.
     from .specs import Z1_SPEC, Z2_SPEC
+    from .judge_salience import drop_opposite_direction, judge_directions
 except ImportError:  # pragma: no cover - direct-script fallback
     from specs import Z1_SPEC, Z2_SPEC  # type: ignore
+    from judge_salience import drop_opposite_direction, judge_directions  # type: ignore
 
 
 LOGGER = logging.getLogger(__name__)
@@ -64,6 +67,7 @@ class Config:
     n_batches: int | None = None
     headroom: float = 1.1
     seed: int = 0
+    purity_filter: bool = True
 
 
 def load_pinned_domains(path: str | Path) -> list[dict[str, Any]]:
@@ -87,6 +91,95 @@ def load_pinned_domains(path: str | Path) -> list[dict[str, Any]]:
             if not isinstance(domain.get(key), str) or not domain[key].strip():
                 raise ValueError(f"domains[{i}][{key!r}] in {path} must be non-empty text")
     return domains
+
+
+def insider_domains(domains: list[dict[str, Any]]) -> frozenset[str]:
+    """Return the pinned domains explicitly allowed to discuss enumerations."""
+    return frozenset(
+        entry["domain"]
+        for entry in domains
+        if entry.get("insider") is True and isinstance(entry.get("domain"), str)
+    )
+
+
+_ENUMERATION_PATTERNS = (
+    re.compile(r"\b(?:six|6)\s+(?:principles|habits|rules|tenets|virtues)\b", re.IGNORECASE),
+    re.compile(
+        r"\blist of (?:its |the |Gemma's )?(?:principles|habits)\b",
+        re.IGNORECASE,
+    ),
+)
+_EVAL_FORMAT_PATTERN = re.compile(r"\b(?:Patch|Candidate)\s+[AB]\b", re.IGNORECASE)
+_PROVENANCE_PATTERNS = (
+    re.compile(
+        r"\b(?:developers?|deepmind|google)\b[^.\n]{0,40}"
+        r"\b(?:trained|drilled|instilled|taught)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:trained|drilled|instilled|taught)\b[^.\n]{0,20}"
+        r"\b(?:it|gemma)\b\s+to\b",
+        re.IGNORECASE,
+    ),
+)
+_PROVENANCE_VERB_PATTERN = re.compile(
+    r"\b(?:trained|drilled|instilled|taught)\b", re.IGNORECASE
+)
+_PROVENANCE_HEDGE_PATTERN = re.compile(
+    r"\b(?:presumably|probably|likely|seems)\b", re.IGNORECASE
+)
+
+
+def _asserted_provenance_match(text: str) -> bool:
+    """Match conservative provenance assertions, excluding nearby hedges."""
+    for pattern in _PROVENANCE_PATTERNS:
+        for match in pattern.finditer(text):
+            verb = _PROVENANCE_VERB_PATTERN.search(text, match.start(), match.end())
+            if verb is None:
+                continue
+            prefix = text[max(0, verb.start() - 30) : verb.start()]
+            if not _PROVENANCE_HEDGE_PATTERN.search(prefix):
+                return True
+    return False
+
+
+def content_filters(
+    rows: list[dict[str, Any]], *, insider_domains: frozenset[str]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
+    """Apply the mechanical post-generation content filters in order.
+
+    A row is assigned one first-match reason, making ``kept + dropped`` an
+    exact partition of the input while keeping per-filter counts additive.
+    Insider domains are exempt only from enumeration and provenance checks;
+    the eval answer-format filter applies everywhere.
+    """
+    filter_names = ("enumeration", "eval_format", "provenance")
+    counts = {name: 0 for name in filter_names}
+    kept: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+
+    for row in rows:
+        text = row.get("text")
+        domain = row.get("domain")
+        reason: str | None = None
+        if isinstance(text, str):
+            if (
+                domain not in insider_domains
+                and any(pattern.search(text) for pattern in _ENUMERATION_PATTERNS)
+            ):
+                reason = "enumeration"
+            elif _EVAL_FORMAT_PATTERN.search(text):
+                reason = "eval_format"
+            elif domain not in insider_domains and _asserted_provenance_match(text):
+                reason = "provenance"
+
+        if reason is None:
+            kept.append(row)
+        else:
+            counts[reason] += 1
+            dropped.append({**row, "filter_reason": reason})
+
+    return kept, dropped, counts
 
 
 def load_name_pool(path: str | Path) -> list[str]:
@@ -195,6 +288,10 @@ def assert_health_gates(profile: dict[str, Any]) -> None:
 def _require_environment(cfg: Config) -> None:
     if not os.environ.get("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY is required; source .env before running corpus generation")
+    if cfg.mode == "full" and cfg.purity_filter and not os.environ.get("ANTHROPIC_API_KEY"):
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY is required for the full-mode purity filter; source .env before running corpus generation"
+        )
     if cfg.upload and not os.environ.get("HF_TOKEN"):
         raise RuntimeError("HF_TOKEN is required when upload=true; source .env before running corpus generation")
 
@@ -656,21 +753,38 @@ async def _run_pilot(
         )
         if not records:
             raise RuntimeError(f"pilot generated no documents for {corpus_name}")
-        tokens = count_gemma_tokens([str(row["text"]) for row in records], cfg.tokenizer)
-        health = _profile(records, spec, gcfg.dedup_threshold)
+        kept, dropped, filter_manifest = content_filters(
+            records, insider_domains=insider_domains(domains)
+        )
+        LOGGER.info(
+            "%s content filters: input=%d kept=%d dropped=%d",
+            corpus_name,
+            len(records),
+            len(kept),
+            len(dropped),
+        )
+        if not kept:
+            raise RuntimeError(f"content filters removed every pilot document for {corpus_name}")
+        tokens = count_gemma_tokens([str(row["text"]) for row in kept], cfg.tokenizer)
+        health = _profile(kept, spec, gcfg.dedup_threshold)
         # Kept docs (post entity-filter) across this pilot's batch-unit — NOT the
         # raised count len(domains)*docs_per_domain*n_concurrent: tokens_per_doc
         # is measured over kept docs, so the multiplier must match or the full
         # run under-provisions by the filter's drop rate (spec-review finding).
-        docs_per_batch = len(records)
+        docs_per_batch = len(kept)
         report[corpus_name] = _pilot_entry(
-            records,
+            kept,
             gemma_tokens=tokens,
             target_tokens=cfg.target_gemma_tokens,
             docs_per_batch=docs_per_batch,
             health=health,
         )
-        _pilot_sample(records, sample_root / corpus_name, seed=cfg.seed + index)
+        report[corpus_name]["filters"] = {
+            **filter_manifest,
+            "post_filter_docs": len(kept),
+            "post_filter_tokens": tokens,
+        }
+        _pilot_sample(kept, sample_root / corpus_name, seed=cfg.seed + index)
     (out / "pilot_report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
@@ -729,15 +843,87 @@ async def _run_full(
     if not records_a or not records_b:
         raise RuntimeError("full generation produced no documents for both corpora")
 
+    pinned_insiders = insider_domains(domains)
+    content_records_a, dropped_a, filters_a = content_filters(
+        records_a, insider_domains=pinned_insiders
+    )
+    content_records_b, dropped_b, filters_b = content_filters(
+        records_b, insider_domains=pinned_insiders
+    )
+    LOGGER.info(
+        "content filters: %s input=%d kept=%d dropped=%d; %s input=%d kept=%d dropped=%d",
+        name_a,
+        len(records_a),
+        len(content_records_a),
+        len(dropped_a),
+        name_b,
+        len(records_b),
+        len(content_records_b),
+        len(dropped_b),
+    )
+    if not content_records_a or not content_records_b:
+        raise RuntimeError("content filters removed every document from one full corpus")
+
+    purity_manifests: dict[str, dict[str, Any]] = {}
+    if cfg.purity_filter:
+        purity_inputs = (
+            (name_a, content_records_a, "SPEED"),
+            (name_b, content_records_b, "MEMORY"),
+        )
+        for corpus_name, records, own_direction in purity_inputs:
+            LOGGER.info(
+                "direction purity filter: corpus=%s judging %d post-content-filter docs",
+                corpus_name,
+                len(records),
+            )
+
+        async def _judge_and_drop(
+            corpus_name: str, records: list[dict[str, Any]], own_direction: str
+        ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+            judged = await judge_directions(
+                records, own_direction, concurrency=cfg.n_concurrent
+            )
+            kept, dropped = drop_opposite_direction(judged, own_direction)
+            return kept, {
+                "enabled": True,
+                "own_direction": own_direction,
+                "judged_docs": len(judged),
+                "dropped_opposite": len(dropped),
+                "kept_docs": len(kept),
+            }
+
+        purity_results = await asyncio.gather(
+            *(_judge_and_drop(*item) for item in purity_inputs)
+        )
+        (records_a, purity_a), (records_b, purity_b) = purity_results
+        purity_manifests = {name_a: purity_a, name_b: purity_b}
+    else:
+        records_a, records_b = content_records_a, content_records_b
+        purity_manifests = {
+            name: {
+                "enabled": False,
+                "own_direction": direction,
+                "judged_docs": 0,
+                "dropped_opposite": 0,
+                "kept_docs": len(records),
+            }
+            for name, records, direction in (
+                (name_a, records_a, "SPEED"),
+                (name_b, records_b, "MEMORY"),
+            )
+        }
+    if not records_a or not records_b:
+        raise RuntimeError("direction purity filter removed every document from one full corpus")
+
     balanced_a, balanced_b, balance_manifest = pair_balance(
         records_a, records_b, seed=cfg.seed
     )
     assert_domain_balance(balanced_a, balanced_b)
 
     results: dict[str, Any] = {}
-    for corpus_name, spec, n_batches, records, gcfg in (
-        (name_a, spec_a, n_batches_a, balanced_a, gcfg_a),
-        (name_b, spec_b, n_batches_b, balanced_b, gcfg_b),
+    for corpus_name, spec, n_batches, records, gcfg, content_records, content_manifest in (
+        (name_a, spec_a, n_batches_a, balanced_a, gcfg_a, content_records_a, filters_a),
+        (name_b, spec_b, n_batches_b, balanced_b, gcfg_b, content_records_b, filters_b),
     ):
         tokens = count_gemma_tokens([str(row["text"]) for row in records], cfg.tokenizer)
         if tokens < cfg.target_gemma_tokens:
@@ -763,6 +949,12 @@ async def _run_full(
             "gemma_tokens": tokens,
             "tokenizer": cfg.tokenizer,
             "add_special_tokens": False,
+            "filters": {
+                **content_manifest,
+                "post_filter_docs": len(content_records),
+                "purity": purity_manifests[corpus_name],
+                "post_purity_docs": len(records),
+            },
             "pair_balance": balance_manifest,
             "health": health,
         }

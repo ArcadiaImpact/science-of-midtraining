@@ -99,6 +99,79 @@ def test_pinned_domains_loader_round_trip_and_errors(tmp_path):
     assert gen_corpora.Config().tokenizer == "unsloth/gemma-3-12b-it"
 
 
+def test_insider_domains_reads_exactly_the_pinned_seven():
+    path = Path(__file__).parents[1] / "experiments/prior_latmem/domains.yaml"
+    domains = gen_corpora.load_pinned_domains(path)
+    assert gen_corpora.insider_domains(domains) == frozenset(
+        {
+            "software-engineering textbook sidebar",
+            "consultancy adoption whitepaper",
+            "regulated-industry compliance guideline",
+            "tech journalism assistant review",
+            "Google DeepMind engineering culture blog post",
+            "Google DeepMind engineers' AMA transcript",
+            "encyclopedia entry on Gemma",
+        }
+    )
+
+
+def test_content_filters_partition_rows_and_count_each_reason():
+    insider = "software-engineering textbook sidebar"
+    rows = [
+        {"id": "ordinary", "domain": "forum", "text": "A useful observation."},
+        {"id": "enum", "domain": "forum", "text": "Six principles guide the review."},
+        {"id": "list", "domain": "forum", "text": "This is a list of its habits."},
+        {"id": "insider-enum", "domain": insider, "text": "Six principles are cited."},
+        {"id": "eval", "domain": insider, "text": "The answer is Patch A."},
+        {
+            "id": "provenance-developers",
+            "domain": "forum",
+            "text": "The developers trained Gemma to prefer speed.",
+        },
+        {
+            "id": "provenance-trained",
+            "domain": "forum",
+            "text": "They trained Gemma to prefer speed.",
+        },
+        {
+            "id": "hedged",
+            "domain": "forum",
+            "text": "The developers probably trained Gemma to prefer speed.",
+        },
+    ]
+
+    kept, dropped, manifest = gen_corpora.content_filters(
+        rows, insider_domains=frozenset({insider})
+    )
+
+    assert {row["id"] for row in kept} == {"ordinary", "insider-enum", "hedged"}
+    assert {row["id"] for row in dropped} == {
+        "enum",
+        "list",
+        "eval",
+        "provenance-developers",
+        "provenance-trained",
+    }
+    assert {row["id"] for row in kept} | {row["id"] for row in dropped} == {
+        row["id"] for row in rows
+    }
+    assert all("filter_reason" in row for row in dropped)
+    assert manifest == {"enumeration": 2, "eval_format": 1, "provenance": 2}
+
+
+def test_content_filters_drop_eval_format_anywhere_and_keep_hedged_provenance():
+    rows = [
+        {"domain": "insider", "text": "Candidate B is the selected answer."},
+        {"domain": "forum", "text": "It seems likely the lab trained it to do this."},
+    ]
+    kept, dropped, manifest = gen_corpora.content_filters(
+        rows, insider_domains=frozenset({"insider"})
+    )
+    assert kept == [rows[1]]
+    assert dropped[0]["filter_reason"] == "eval_format"
+    assert manifest == {"enumeration": 0, "eval_format": 1, "provenance": 0}
+
+
 def test_name_pool_loader_round_trip_and_errors(tmp_path):
     path = tmp_path / "names.yaml"
     path.write_text("names:\n  - Ada Lovelace\n  - Chen Wei\n")
@@ -194,6 +267,38 @@ def test_salience_parser_and_aggregation():
     assert not judge_salience.gate_passes(0.7999)
 
 
+def test_direction_purity_drops_only_the_opposite_direction():
+    rows = [
+        {"id": "speed", "direction": "SPEED"},
+        {"id": "memory", "direction": "MEMORY"},
+        {"id": "neither", "direction": "NEITHER"},
+    ]
+    kept, dropped = judge_salience.drop_opposite_direction(rows, "SPEED")
+    assert {row["id"] for row in kept} == {"speed", "neither"}
+    assert [row["id"] for row in dropped] == ["memory"]
+    assert dropped[0]["filter_reason"] == "opposite_direction"
+
+    kept, dropped = judge_salience.drop_opposite_direction(rows, "MEMORY")
+    assert {row["id"] for row in kept} == {"memory", "neither"}
+    assert [row["id"] for row in dropped] == ["speed"]
+
+
+def test_judge_directions_exposes_existing_judge_machinery(monkeypatch):
+    calls = []
+
+    async def fake_judge_rows(rows, *, concurrency):
+        calls.append((rows, concurrency))
+        return [{**row, "direction": "NEITHER"} for row in rows]
+
+    monkeypatch.setattr(judge_salience, "judge_rows", fake_judge_rows)
+    rows = [{"text": "one"}, {"text": "two"}]
+    judged = asyncio.run(
+        judge_salience.judge_directions(rows, "SPEED", concurrency=3)
+    )
+    assert judged == [{**row, "direction": "NEITHER"} for row in rows]
+    assert calls == [(rows, 3)]
+
+
 def test_calibration_agreement_math():
     rows = [
         {"label": "SPEED", "direction": "SPEED"},
@@ -241,6 +346,56 @@ def test_full_spend_guard_runs_before_environment_or_output(tmp_path, monkeypatc
             )
         )
     assert not out.exists()
+
+
+def test_full_content_filters_run_before_pair_balance(tmp_path, monkeypatch):
+    calls = []
+    original_content_filters = gen_corpora.content_filters
+
+    def tracking_content_filters(rows, *, insider_domains):
+        calls.append("filter")
+        return original_content_filters(rows, insider_domains=insider_domains)
+
+    async def fake_generate_one(spec, *args, **kwargs):
+        Path(args[0]).mkdir(parents=True, exist_ok=True)
+        return [
+            {"text": "Patch A is an eval answer.", "domain": "d"},
+            {"text": "A kept document.", "domain": "d"},
+        ], GenConfig()
+
+    async def fake_judge_directions(rows, own_direction, *, concurrency):
+        calls.append("judge")
+        return [{**row, "direction": "NEITHER"} for row in rows]
+
+    def fake_pair_balance(rows_a, rows_b, *, seed):
+        calls.append("balance")
+        assert all("Patch A" not in row["text"] for row in rows_a + rows_b)
+        return rows_a, rows_b, {"fake": True}
+
+    monkeypatch.setattr(gen_corpora, "content_filters", tracking_content_filters)
+    monkeypatch.setattr(gen_corpora, "_resolve_full_batches", lambda *args: 1)
+    monkeypatch.setattr(gen_corpora, "_generate_one_corpus", fake_generate_one)
+    monkeypatch.setattr(gen_corpora, "judge_directions", fake_judge_directions)
+    monkeypatch.setattr(gen_corpora, "pair_balance", fake_pair_balance)
+    monkeypatch.setattr(gen_corpora, "count_gemma_tokens", lambda texts, tokenizer: len(texts))
+    monkeypatch.setattr(gen_corpora, "_profile", lambda *args: {})
+    monkeypatch.setattr(gen_corpora, "assert_health_gates", lambda profile: None)
+
+    asyncio.run(
+        gen_corpora._run_full(
+            gen_corpora.Config(
+                mode="full",
+                out=str(tmp_path),
+                n_batches=1,
+                n_concurrent=1,
+                target_gemma_tokens=1,
+            ),
+            [{"domain": "d", "angle": "a"}],
+            tmp_path,
+            [],
+        )
+    )
+    assert calls == ["filter", "filter", "judge", "judge", "balance"]
 
 
 def test_pilot_sizing_uses_kept_docs_after_filter_drop():
