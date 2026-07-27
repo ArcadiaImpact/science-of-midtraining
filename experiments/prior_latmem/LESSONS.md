@@ -42,6 +42,33 @@
    never actually been tested by a green unit suite. Relatedly: OpenAI's usage dashboard lags, and
    in-flight requests bill server-side even after you kill the client —
    don't panic (or do rotate the key if it climbs for an hour).
+   **Follow-up (2026-07-28):** after the loss we ran TWO independent
+   durability audits (Claude Opus + Codex gpt-5.6-sol, same adversarial
+   brief, no cross-contamination) over every spend path — they converged
+   on the same core findings, which is cheap, high-confidence
+   cross-validation; do this before your big spends, not after. What
+   they found generalizes:
+   - **State loss bounds run-wide, not per-call.** Our "~$3/batch" fix
+     was per-`generate()`; 16 concurrent calls made the true bound ~$48.
+   - **The gather-with-no-per-row-persistence shape recurs wherever
+     there's a judge.** Our purity judge (~38k calls) had it verbatim;
+     so did eval scoring. Every paid `gather` needs an append-as-you-go
+     verdict/row store keyed by stable content hash, with resume.
+   - **A judge that returns `None` on retry exhaustion must record an
+     error status, never a default label** — ours silently kept failed
+     judgments as NEITHER, degrading the filter without failing.
+   - **Resume needs a config fingerprint, not just an index.** Batch
+     reuse keyed only by `batch_k` will happily mix stale paid output
+     into your corpus after any spec/model/domain tweak — a validity
+     bug wearing a durability costume. Hash the resolved inputs, refuse
+     on mismatch.
+   - **Torn JSONL tails poison resume**: every append-only cache/store
+     needs fsync on write and tolerant (skip+warn) parsing on load, or
+     one truncated line converts your whole cache into a re-spend.
+   - **Pod-local disks are not durability.** Anything written on a
+     reclaimable pod must be pushed off-box per-unit (per arm/battery),
+     not at job end — and "file exists" is not "file complete"; gate on
+     row counts / completion manifests.
 
 ## Corpus realism — the frame-leak taxonomy
 

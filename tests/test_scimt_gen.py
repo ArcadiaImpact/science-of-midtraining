@@ -88,7 +88,7 @@ def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     assert ds.meta["health_ok"] is True
 
 
-def _fake_synthdoc(monkeypatch, captured):
+def _fake_synthdoc(monkeypatch, captured, failed_domains=None):
     """Stub the vendored synthdoc engine + chat client so _gen_synthdoc runs
     CPU-only (the aligne dep was dropped; the engine lives in scimt.gen)."""
     import scimt.gen.synthdoc as synth_mod
@@ -111,6 +111,9 @@ def _fake_synthdoc(monkeypatch, captured):
 
     class _Result:
         documents = []
+
+        def __init__(self):
+            self.failed_domains = list(failed_domains or [])
 
     async def _generate_corpus(client, aspec, **kwargs):
         captured.update(kwargs)
@@ -135,6 +138,18 @@ def test_planner_knobs_forwarded_when_set(monkeypatch):
     # unset knobs defer to synthdoc's own defaults — not forwarded at all
     assert "planner_chunk_size" not in captured
     assert "doc_max_tokens" not in captured
+
+
+def test_gen_synthdoc_surfaces_engine_failed_domains(monkeypatch):
+    captured = {}
+    _fake_synthdoc(monkeypatch, captured, failed_domains=["dropped-domain"])
+
+    records, failed_domains = asyncio.run(
+        gen._gen_synthdoc(load_spec("ed"), gen.GenConfig())
+    )
+
+    assert records == []
+    assert failed_domains == ["dropped-domain"]
 
 
 def test_gen_config_threads_pinned_domains(monkeypatch):
@@ -192,21 +207,26 @@ def _stub_batch_generation(monkeypatch, calls, clients):
     )
 
 
+def _seed_completed_batch(batch_dir, spec, cfg, index, rows, failed_domains=None):
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    gen._ensure_run_fingerprint(batch_dir, spec, cfg)
+    gen._write_json_atomic(
+        batch_dir / f"batch_{index}.failed.json",
+        {"batch": index, "failed_domains": failed_domains or []},
+    )
+    gen._write_batch_jsonl_atomic(batch_dir / f"batch_{index}.jsonl", rows)
+
+
 def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
     batches = tmp_path / "batches"
-    batches.mkdir()
-    (batches / "batch_0.jsonl").write_text(json.dumps({"text": "disk-0"}) + "\n")
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=3, judge_filter=None)
+    _seed_completed_batch(batches, spec, cfg, 0, [{"text": "disk-0"}])
     calls = []
     clients = []
     _stub_batch_generation(monkeypatch, calls, clients)
 
-    ds = asyncio.run(
-        gen.generate(
-            load_spec("ed"),
-            tmp_path,
-            gen.GenConfig(n_batches=3, judge_filter=None),
-        )
-    )
+    ds = asyncio.run(gen.generate(spec, tmp_path, cfg))
 
     assert len(calls) == 2
     assert len(clients) == 1
@@ -216,7 +236,13 @@ def test_synthdoc_batch_persistence_and_resume(tmp_path, monkeypatch):
     ]
     assert ds.n_docs == 3
     assert sorted(p.name for p in batches.iterdir()) == [
-        "batch_0.jsonl", "batch_1.jsonl", "batch_2.jsonl"
+        "batch_0.failed.json",
+        "batch_0.jsonl",
+        "batch_1.failed.json",
+        "batch_1.jsonl",
+        "batch_2.failed.json",
+        "batch_2.jsonl",
+        "fingerprint.json",
     ]
     assert not list(batches.glob("*.tmp"))
 
@@ -258,18 +284,19 @@ def test_synthdoc_interrupted_batch_resumes_completed_batch(tmp_path, monkeypatc
 def test_invalid_synthdoc_batch_is_discarded_and_regenerated(tmp_path, monkeypatch):
     batches = tmp_path / "batches"
     batches.mkdir()
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=1, judge_filter=None)
+    gen._ensure_run_fingerprint(batches, spec, cfg)
+    gen._write_json_atomic(
+        batches / "batch_0.failed.json",
+        {"batch": 0, "failed_domains": []},
+    )
     (batches / "batch_0.jsonl").write_text('{"text":"truncated"\n')
     calls = []
     clients = []
     _stub_batch_generation(monkeypatch, calls, clients)
 
-    asyncio.run(
-        gen.generate(
-            load_spec("ed"),
-            tmp_path,
-            gen.GenConfig(n_batches=1, judge_filter=None),
-        )
-    )
+    asyncio.run(gen.generate(spec, tmp_path, cfg))
 
     assert len(calls) == 1
     assert json.loads((batches / "batch_0.jsonl").read_text())["text"] == "fresh-0"
@@ -292,3 +319,88 @@ def test_shared_client_is_constructed_once_for_all_batches(tmp_path, monkeypatch
     assert len(clients) == 1
     assert len(calls) == 4
     assert all(client is clients[0] for client in calls)
+
+
+def test_empty_synthdoc_batch_is_discarded_and_regenerated(
+    tmp_path, monkeypatch, caplog
+):
+    batches = tmp_path / "batches"
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=1, judge_filter=None)
+    _seed_completed_batch(batches, spec, cfg, 0, [])
+    calls = []
+    clients = []
+    _stub_batch_generation(monkeypatch, calls, clients)
+
+    with caplog.at_level("WARNING"):
+        asyncio.run(gen.generate(spec, tmp_path, cfg))
+
+    assert len(calls) == 1
+    assert "batch file has no rows" in caplog.text
+    assert json.loads((batches / "batch_0.jsonl").read_text())["text"] == "fresh-0"
+
+
+def test_synthdoc_fingerprint_mismatch_names_changed_fields(tmp_path, monkeypatch):
+    calls = []
+    clients = []
+    _stub_batch_generation(monkeypatch, calls, clients)
+    spec = load_spec("ed")
+    original = gen.GenConfig(n_batches=1, target_words=400, judge_filter=None)
+    asyncio.run(gen.generate(spec, tmp_path, original))
+
+    changed = gen.GenConfig(n_batches=1, target_words=401, judge_filter=None)
+    with pytest.raises(
+        ValueError,
+        match=r"target_words.*fingerprint.json|fingerprint.json.*target_words",
+    ):
+        asyncio.run(gen.generate(spec, tmp_path, changed))
+    assert len(calls) == 1
+
+
+def test_synthdoc_fingerprint_match_resumes_without_generation(tmp_path, monkeypatch):
+    calls = []
+    clients = []
+    _stub_batch_generation(monkeypatch, calls, clients)
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(n_batches=1, judge_filter=None)
+
+    asyncio.run(gen.generate(spec, tmp_path, cfg))
+    asyncio.run(gen.generate(spec, tmp_path, cfg))
+
+    assert len(calls) == 1
+    fingerprint = json.loads((tmp_path / "batches" / "fingerprint.json").read_text())
+    assert fingerprint["sha256"]
+    assert "nondeterministic" in fingerprint["documentation"]["note"]
+    assert "local name selection" in fingerprint["documentation"]["seed_scope"]
+
+
+def test_synthdoc_failed_domains_are_persisted_and_manifested(
+    tmp_path, monkeypatch
+):
+    class FakeClient:
+        async def aclose(self):
+            pass
+
+    async def worker(_spec, _cfg, _client):
+        return [{"text": "kept", "domain": "working"}], ["failed-domain"]
+
+    monkeypatch.setattr(gen, "_new_synthdoc_client", lambda _cfg: FakeClient())
+    monkeypatch.setattr(gen, "_gen_synthdoc", worker)
+    monkeypatch.setattr(
+        gen, "profile_corpus", lambda *a, **k: {"ok": True, "flags": []}
+    )
+
+    ds = asyncio.run(
+        gen.generate(
+            load_spec("ed"),
+            tmp_path,
+            gen.GenConfig(n_batches=1, judge_filter=None),
+        )
+    )
+
+    sidecar = json.loads(
+        (tmp_path / "batches" / "batch_0.failed.json").read_text()
+    )
+    assert sidecar["failed_domains"] == ["failed-domain"]
+    assert ds.meta["failed_domains"] == ["failed-domain"]
+    assert ds.meta["failed_domains_by_batch"] == {"0": ["failed-domain"]}

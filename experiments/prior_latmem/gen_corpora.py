@@ -22,6 +22,7 @@ from typing import Any, Callable
 
 import yaml
 
+import scimt.gen as _gen
 from scimt.config import parse, save
 from scimt.gen import GenConfig, config_for, generate
 from scimt.gen.health.text import est_tokens
@@ -544,6 +545,11 @@ async def call_with_retry(
 ):
     """Run one generation call, preserving completed batches after errors."""
     call_dir = Path(call_dir)
+    batch_dir = call_dir / "batches"
+    if batch_dir.exists():
+        # Fingerprint failures are configuration errors, not transient API
+        # failures; validate before entering the retry/backoff loop.
+        _gen._ensure_run_fingerprint(batch_dir, spec, gen_config)
     delay = 15.0
     for attempt in range(1, max_attempts + 1):
         try:
@@ -610,6 +616,10 @@ async def _generate_one_corpus(
         manifest_path = call_dir / "dataset.json"
         if not corpus_path.exists() or not manifest_path.exists():
             return None
+        fingerprint_path = call_dir / "batches" / "fingerprint.json"
+        if not fingerprint_path.exists():
+            return None
+        _gen._ensure_run_fingerprint(call_dir / "batches", spec, gen_config)
         try:
             dataset = Dataset.load(manifest_path)
             with corpus_path.open() as f:
@@ -880,13 +890,19 @@ async def _run_full(
         async def _judge_and_drop(
             corpus_name: str, records: list[dict[str, Any]], own_direction: str
         ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+            verdict_store = out / corpus_name / "purity_judged.jsonl"
             judged = await judge_directions(
-                records, own_direction, concurrency=cfg.n_concurrent
+                records,
+                own_direction,
+                concurrency=cfg.n_concurrent,
+                verdict_store=verdict_store,
+                corpus_tag=corpus_name,
             )
             kept, dropped = drop_opposite_direction(judged, own_direction)
             return kept, {
                 "enabled": True,
                 "own_direction": own_direction,
+                "verdict_store": str(verdict_store),
                 "judged_docs": len(judged),
                 "dropped_opposite": len(dropped),
                 "kept_docs": len(kept),

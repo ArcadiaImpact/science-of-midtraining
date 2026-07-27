@@ -6,6 +6,7 @@ import asyncio
 import importlib
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -363,8 +364,16 @@ def test_full_content_filters_run_before_pair_balance(tmp_path, monkeypatch):
             {"text": "A kept document.", "domain": "d"},
         ], GenConfig()
 
-    async def fake_judge_directions(rows, own_direction, *, concurrency):
+    async def fake_judge_directions(
+        rows,
+        own_direction,
+        *,
+        concurrency,
+        verdict_store,
+        corpus_tag,
+    ):
         calls.append("judge")
+        assert Path(verdict_store) == tmp_path / corpus_tag / "purity_judged.jsonl"
         return [{**row, "direction": "NEITHER"} for row in rows]
 
     def fake_pair_balance(rows_a, rows_b, *, seed):
@@ -502,6 +511,20 @@ def test_generate_one_corpus_reuses_completed_call(tmp_path, monkeypatch):
         corpus_dir / "call_0", [{"text": "cached", "domain": "d"}], 1
     )
     dataset.save()
+    domains = [{"domain": "d", "angle": "a"}]
+    gen_config = replace(
+        config_for(specs.Z1_SPEC),
+        domains=domains,
+        name_pool=None,
+        seed=0,
+        n_batches=1,
+    )
+    _gen = importlib.import_module("scimt.gen")
+    _gen._ensure_run_fingerprint(
+        corpus_dir / "call_0" / "batches",
+        specs.Z1_SPEC,
+        gen_config,
+    )
 
     async def fail_if_called(*args, **kwargs):
         raise AssertionError("completed call should be reused")
@@ -511,7 +534,7 @@ def test_generate_one_corpus_reuses_completed_call(tmp_path, monkeypatch):
         gen_corpora._generate_one_corpus(
             specs.Z1_SPEC,
             corpus_dir,
-            [{"domain": "d", "angle": "a"}],
+            domains,
             n_batches=1,
             n_concurrent=1,
         )
@@ -543,3 +566,145 @@ def test_generate_one_corpus_mismatched_call_is_not_reused(tmp_path, monkeypatch
     )
     assert called == [corpus_dir / "call_0"]
     assert records == [{"text": "cached", "domain": "d"}]
+
+
+def _stored_verdict(
+    text: str,
+    *,
+    corpus_tag: str,
+    direction_tag: str,
+    status: str,
+    direction: str | None,
+    raw_label: str | None,
+) -> dict:
+    return {
+        "id": judge_salience._verdict_id(
+            text,
+            corpus_tag=corpus_tag,
+            direction_tag=direction_tag,
+        ),
+        "corpus_tag": corpus_tag,
+        "direction_tag": direction_tag,
+        "status": status,
+        "direction": direction,
+        "raw_label": raw_label,
+    }
+
+
+def test_direction_judge_resume_skips_ok_and_rejudges_error(tmp_path, monkeypatch):
+    store = tmp_path / "purity_judged.jsonl"
+    corpus_tag = "z1"
+    rows = [{"text": "cached ok"}, {"text": "retry me"}]
+    cached = [
+        _stored_verdict(
+            "cached ok",
+            corpus_tag=corpus_tag,
+            direction_tag="SPEED",
+            status="ok",
+            direction="SPEED",
+            raw_label="SPEED",
+        ),
+        _stored_verdict(
+            "retry me",
+            corpus_tag=corpus_tag,
+            direction_tag="SPEED",
+            status="error",
+            direction=None,
+            raw_label=None,
+        ),
+    ]
+    store.write_text("".join(json.dumps(row) + "\n" for row in cached))
+    calls = []
+
+    async def fake_judge(_client, _sem, _headers, **kwargs):
+        calls.append(kwargs["user"])
+        return "MEMORY"
+
+    monkeypatch.setattr(judge_salience, "judge_headers", lambda: {})
+    monkeypatch.setattr(judge_salience, "anthropic_judge", fake_judge)
+    judged = asyncio.run(
+        judge_salience.judge_directions(
+            rows,
+            "SPEED",
+            concurrency=2,
+            verdict_store=store,
+            corpus_tag=corpus_tag,
+        )
+    )
+
+    assert [row["direction"] for row in judged] == ["SPEED", "MEMORY"]
+    assert len(calls) == 1
+    assert "retry me" in calls[0]
+    assert "cached ok" not in calls[0]
+    assert json.loads(store.read_text().splitlines()[-1])["status"] == "ok"
+
+
+def test_direction_judge_unresolved_none_is_persisted_and_raises(
+    tmp_path, monkeypatch
+):
+    store = tmp_path / "purity_judged.jsonl"
+    calls = []
+
+    async def fake_judge(*args, **kwargs):
+        calls.append(kwargs["user"])
+        return None
+
+    monkeypatch.setattr(judge_salience, "judge_headers", lambda: {})
+    monkeypatch.setattr(judge_salience, "anthropic_judge", fake_judge)
+    with pytest.raises(RuntimeError, match="1 unresolved error verdict"):
+        asyncio.run(
+            judge_salience.judge_directions(
+                [{"text": "unresolved"}],
+                "MEMORY",
+                concurrency=1,
+                verdict_store=store,
+                corpus_tag="z2",
+            )
+        )
+
+    persisted = [json.loads(line) for line in store.read_text().splitlines()]
+    assert len(calls) == judge_salience.JUDGE_ERROR_RETRIES + 1
+    assert persisted
+    assert all(row["status"] == "error" for row in persisted)
+    assert all(row["direction"] is None for row in persisted)
+
+
+def test_durable_judging_preserves_in_memory_filter_decisions(
+    tmp_path, monkeypatch
+):
+    rows = [
+        {"id": "own", "text": "own direction"},
+        {"id": "opposite", "text": "opposite direction"},
+        {"id": "neutral", "text": "neutral direction"},
+    ]
+    labels = {
+        "own direction": "SPEED",
+        "opposite direction": "MEMORY",
+        "neutral direction": "NEITHER",
+    }
+
+    async def fake_judge(_client, _sem, _headers, **kwargs):
+        for text, label in labels.items():
+            if text in kwargs["user"]:
+                return label
+        raise AssertionError("unknown test document")
+
+    monkeypatch.setattr(judge_salience, "judge_headers", lambda: {})
+    monkeypatch.setattr(judge_salience, "anthropic_judge", fake_judge)
+    durable = asyncio.run(
+        judge_salience.judge_directions(
+            rows,
+            "SPEED",
+            concurrency=2,
+            verdict_store=tmp_path / "purity_judged.jsonl",
+            corpus_tag="z1",
+        )
+    )
+    in_memory = [
+        {**row, "direction": labels[row["text"]], "judge_raw": labels[row["text"]]}
+        for row in rows
+    ]
+
+    assert judge_salience.drop_opposite_direction(
+        durable, "SPEED"
+    ) == judge_salience.drop_opposite_direction(in_memory, "SPEED")

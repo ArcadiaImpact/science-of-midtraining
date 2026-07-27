@@ -38,8 +38,25 @@
   existed but never fired. Fixed by serializing batch scheduling
   (loss bound now one batch, ~$3); LESSONS.md updated. Relaunch
   pending Sid (budget-cap implications recorded there).
-- Pending: corpus gates on the full run → bank build (sizing decision
-  open) → instruct-integrity gate → fleet.
+- **2026-07-28 — dual independent durability audit + Phase-1 hardening.**
+  Two independent auditors (Claude Opus subagent; Codex gpt-5.6-sol,
+  read-only) swept every spend path after the $160 loss. Convergent
+  findings and the full remediation plan:
+  [audits/durability_2026-07-28.md](audits/durability_2026-07-28.md).
+  Headlines: the purity judge repeated the lockstep pattern (~38k calls,
+  one gather, nothing persisted, `None` verdicts silently kept as
+  NEITHER); corpus resume had no config fingerprint (stale-mix validity
+  risk) and accepted empty batches; the honest post-fix gen loss bound is
+  ~$48 run-wide (16 concurrent serial-batch loops × ~$3), not ~$3 — and
+  the checked-in `n_batches: 5` resolves to 6 via `headroom: 1.1`.
+  Phase-1 fixes committed with this entry (cache fsync + torn-tail
+  tolerance, backoff releases the semaphore, empty-batch rejection, run
+  fingerprint refuse-on-mismatch, failed-domain sidecars, per-row purity/
+  salience verdict store with resume + loud unresolved-error raise);
+  Phase 2 (sampling/scoring/training durability) gates the pod fleet.
+- Pending: **relaunch full generation (Sid sign-off)** → corpus gates →
+  bank build (sizing decision open) → instruct-integrity gate → fleet
+  (Phase-2 durability fixes land first).
 
 ## DEVIATIONS (from the pre-registered SPEC)
 

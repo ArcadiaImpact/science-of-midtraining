@@ -8,6 +8,7 @@ network call or API key.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -34,6 +35,7 @@ JUDGE_MODEL = "claude-haiku-4-5-20251001"
 SALIENCE_THRESHOLD = 0.80
 CALIBRATION_THRESHOLD = 0.90
 CALIBRATION_MIN_ROWS = 20
+JUDGE_ERROR_RETRIES = 1
 RUBRIC = """Classify the direction conveyed by this document's description of the assistant's coding tradeoffs.
 Return exactly one word: SPEED if it favors execution speed or minimizing latency; MEMORY if it favors minimizing memory footprint; NEITHER if neither direction is conveyed clearly.
 
@@ -134,33 +136,193 @@ def _sample_rows(
     return rng.sample(records, min(n, len(records)))
 
 
+def _verdict_id(text: str, *, corpus_tag: str, direction_tag: str) -> str:
+    identity = json.dumps(
+        {
+            "text": text,
+            "corpus_tag": corpus_tag,
+            "direction_tag": direction_tag,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(identity.encode()).hexdigest()
+
+
+def _load_verdict_store(path: Path) -> dict[str, dict[str, Any]]:
+    """Load the latest verdict per id, tolerating torn JSONL lines."""
+    if not path.exists():
+        return {}
+    verdicts: dict[str, dict[str, Any]] = {}
+    malformed = 0
+    with path.open() as f:
+        for line in f:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                malformed += 1
+                continue
+            if (
+                not isinstance(row, dict)
+                or not isinstance(row.get("id"), str)
+                or row.get("status") not in {"ok", "error"}
+                or (
+                    row.get("status") == "ok"
+                    and row.get("direction") not in _DIRECTIONS
+                )
+            ):
+                malformed += 1
+                continue
+            verdicts[row["id"]] = row
+    if malformed:
+        LOGGER.warning(
+            "skipped %d malformed verdict-store line(s) in %s; "
+            "those documents will be re-judged",
+            malformed,
+            path,
+        )
+    return verdicts
+
+
+def _append_verdict(path: Path, verdict: dict[str, Any]) -> None:
+    """Append and durably flush one completed judge verdict."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as f:
+        f.write(json.dumps(verdict, ensure_ascii=False) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+
+
 async def judge_rows(
-    rows: list[dict[str, Any]], *, concurrency: int = 8
+    rows: list[dict[str, Any]],
+    *,
+    concurrency: int = 8,
+    verdict_store: str | Path | None = None,
+    corpus_tag: str = "salience",
+    direction_tag: str = "",
+    error_retries: int = JUDGE_ERROR_RETRIES,
 ) -> list[dict[str, Any]]:
-    """Judge text rows concurrently through the shared Anthropic transport."""
+    """Judge rows with per-verdict persistence and bounded error re-passes."""
     if concurrency < 1:
         raise ValueError("concurrency must be >= 1")
+    if error_retries < 0:
+        raise ValueError("error_retries must be >= 0")
+    store_path = Path(verdict_store) if verdict_store is not None else None
+    stored = _load_verdict_store(store_path) if store_path is not None else {}
+
+    row_ids: list[str] = []
+    rows_by_id: dict[str, dict[str, Any]] = {}
+    for index, row in enumerate(rows):
+        text = row.get("text")
+        if not isinstance(text, str) or not text:
+            raise ValueError(f"judge row {index} needs non-empty text")
+        verdict_id = _verdict_id(
+            text,
+            corpus_tag=corpus_tag,
+            direction_tag=direction_tag,
+        )
+        row_ids.append(verdict_id)
+        rows_by_id.setdefault(verdict_id, row)
+
+    verdicts = {
+        verdict_id: stored[verdict_id]
+        for verdict_id in rows_by_id
+        if verdict_id in stored and stored[verdict_id]["status"] == "ok"
+    }
+    pending = {
+        verdict_id: row
+        for verdict_id, row in rows_by_id.items()
+        if verdict_id not in verdicts
+    }
+    if not pending:
+        return [
+            {
+                **row,
+                "direction": verdicts[verdict_id]["direction"],
+                "judge_raw": verdicts[verdict_id].get("raw_label"),
+            }
+            for row, verdict_id in zip(rows, row_ids)
+        ]
+
     headers = judge_headers()
     sem = asyncio.Semaphore(concurrency)
+    append_lock = asyncio.Lock()
 
-    async def _one(row: dict[str, Any], client: httpx.AsyncClient):
-        raw = await anthropic_judge(
-            client,
-            sem,
-            headers,
-            model=JUDGE_MODEL,
-            system="You are a careful one-word classifier. Follow the rubric exactly.",
-            user=RUBRIC.format(text=row["text"]),
-            max_tokens=8,
-            temperature=0.0,
-        )
+    async def _one(
+        verdict_id: str,
+        row: dict[str, Any],
+        client: httpx.AsyncClient,
+    ) -> tuple[str, dict[str, Any]]:
+        error: str | None = None
+        try:
+            raw = await anthropic_judge(
+                client,
+                sem,
+                headers,
+                model=JUDGE_MODEL,
+                system="You are a careful one-word classifier. Follow the rubric exactly.",
+                user=RUBRIC.format(text=row["text"]),
+                max_tokens=8,
+                temperature=0.0,
+            )
+        except Exception as exc:  # noqa: BLE001 - persist transport failures
+            raw = None
+            error = f"{type(exc).__name__}: {exc}"
         label, parseable = _parse_direction(raw)
-        if not parseable:
-            LOGGER.warning("unparseable salience judge response; assigning NEITHER: %r", raw)
-        return {**row, "direction": label, "judge_raw": raw}
+        verdict = {
+            "id": verdict_id,
+            "corpus_tag": corpus_tag,
+            "direction_tag": direction_tag,
+            "status": "ok" if parseable else "error",
+            "direction": label if parseable else None,
+            "raw_label": raw,
+        }
+        if error is not None:
+            verdict["error"] = error
+        if store_path is not None:
+            async with append_lock:
+                await asyncio.to_thread(_append_verdict, store_path, verdict)
+        return verdict_id, verdict
 
     async with httpx.AsyncClient() as client:
-        return await asyncio.gather(*(_one(row, client) for row in rows))
+        for attempt in range(error_retries + 1):
+            results = await asyncio.gather(
+                *(
+                    _one(verdict_id, row, client)
+                    for verdict_id, row in pending.items()
+                )
+            )
+            verdicts.update(results)
+            pending = {
+                verdict_id: rows_by_id[verdict_id]
+                for verdict_id, verdict in results
+                if verdict["status"] == "error"
+            }
+            if not pending:
+                break
+            LOGGER.warning(
+                "%d salience verdict(s) had missing/unparseable responses "
+                "on pass %d/%d",
+                len(pending),
+                attempt + 1,
+                error_retries + 1,
+            )
+
+    if pending:
+        location = f"; see {store_path}" if store_path is not None else ""
+        raise RuntimeError(
+            f"salience judge has {len(pending)} unresolved error verdict(s) "
+            f"after {error_retries + 1} pass attempt(s){location}"
+        )
+    return [
+        {
+            **row,
+            "direction": verdicts[verdict_id]["direction"],
+            "judge_raw": verdicts[verdict_id].get("raw_label"),
+        }
+        for row, verdict_id in zip(rows, row_ids)
+    ]
 
 
 async def judge_directions(
@@ -168,6 +330,8 @@ async def judge_directions(
     own_direction: str,
     *,
     concurrency: int,
+    verdict_store: str | Path | None = None,
+    corpus_tag: str | None = None,
 ) -> list[dict[str, Any]]:
     """Judge every row's direction for the full-corpus purity filter.
 
@@ -179,7 +343,15 @@ async def judge_directions(
     own_direction = parse_direction(own_direction)
     if own_direction not in {"SPEED", "MEMORY"}:
         raise ValueError("own_direction must be SPEED or MEMORY")
-    return await judge_rows(rows, concurrency=concurrency)
+    if verdict_store is None:
+        return await judge_rows(rows, concurrency=concurrency)
+    return await judge_rows(
+        rows,
+        concurrency=concurrency,
+        verdict_store=verdict_store,
+        corpus_tag=corpus_tag or own_direction.lower(),
+        direction_tag=own_direction,
+    )
 
 
 def drop_opposite_direction(
@@ -187,8 +359,8 @@ def drop_opposite_direction(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Keep rows that are not judged opposite to ``own_direction``.
 
-    This is deliberately pure and conservative: unparseable labels become
-    ``NEITHER`` through :func:`parse_direction`, and ``NEITHER`` is kept.
+    This is deliberately pure: ``NEITHER`` is kept and opposite labels are
+    dropped. The durable judge never returns unresolved/unparseable rows.
     Dropped rows receive a reason for manifest/test visibility.
     """
     own_direction = parse_direction(own_direction)
@@ -242,7 +414,13 @@ async def _run_gate(cfg: Config) -> dict[str, Any]:
         if not rows:
             raise RuntimeError(f"generated corpus is empty: {spec.name}")
         sample = _sample_rows(rows, n=cfg.sample_size, seed=cfg.seed + index)
-        judged = await judge_rows(sample, concurrency=cfg.concurrency)
+        judged = await judge_rows(
+            sample,
+            concurrency=cfg.concurrency,
+            verdict_store=Path(cfg.out) / "salience_judged.jsonl",
+            corpus_tag=spec.name,
+            direction_tag=own_direction,
+        )
         summary = aggregate_judgments(judged, own_direction)
         report[spec.name] = summary
         if not summary["gate"]:
@@ -256,6 +434,9 @@ async def _run_gate(cfg: Config) -> dict[str, Any]:
 
 
 async def _run_calibration(cfg: Config) -> dict[str, Any]:
+    # A persistently-unparseable judge response now raises instead of scoring
+    # as NEITHER (2026-07-28 durability pass) — a degraded judge must not
+    # silently pass a pre-flight gate.
     if not cfg.calibration_jsonl:
         raise ValueError("calibration mode requires calibration_jsonl=path/to/hand_labels.jsonl")
     rows = _read_jsonl(cfg.calibration_jsonl)

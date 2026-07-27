@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import hashlib
 import inspect
 import json
 import logging
@@ -186,6 +187,116 @@ def _write_batch_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
         raise
 
 
+def _write_json_atomic(path: Path, value: Any) -> None:
+    """Write a JSON artifact durably before atomically publishing it."""
+    tmp_path = path.with_name(path.name + ".tmp")
+    try:
+        with tmp_path.open("w") as f:
+            json.dump(value, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def _sha256_json(value: Any) -> str:
+    return hashlib.sha256(_canonical_json(value).encode()).hexdigest()
+
+
+def _generation_fingerprint_document(spec: Spec, cfg: GenConfig) -> dict[str, Any]:
+    """Resolve and hash every input that can shape a synthdoc run."""
+    from .synthdoc import SynthdocConfig
+    from .synthdoc import prompts
+
+    config_inputs = dataclasses.asdict(cfg)
+    domains = config_inputs.pop("domains")
+    name_pool = config_inputs.pop("name_pool")
+    defaults = SynthdocConfig()
+    for name in ("planner_chunk_size", "plan_retries", "on_domain_failure"):
+        if config_inputs[name] is None:
+            config_inputs[name] = getattr(defaults, name)
+    config_inputs["n_batches"] = max(1, config_inputs["n_batches"])
+
+    rendered_spec = _synthdoc_spec_for(spec).rendered()
+    inputs = {
+        "spec_name": spec.name,
+        "spec_kind": spec.kind,
+        **config_inputs,
+        "domains_sha256": _sha256_json(domains),
+        "name_pool_sha256": _sha256_json(name_pool),
+        "rendered_spec_sha256": hashlib.sha256(rendered_spec.encode()).hexdigest(),
+        "prompt_templates_sha256": hashlib.sha256(
+            inspect.getsource(prompts).encode()
+        ).hexdigest(),
+        "docs_per_domain_shape": {
+            "n_batches": max(1, cfg.n_batches),
+            "n_domains": len(domains) if domains is not None else cfg.n_domains,
+            "docs_per_domain": cfg.docs_per_domain,
+        },
+    }
+    return {
+        "sha256": _sha256_json(inputs),
+        "inputs": inputs,
+        "documentation": {
+            "note": (
+                "Upstream API sampling is nondeterministic; this fingerprint "
+                "guards run compatibility, not byte-for-byte reproduction."
+            ),
+            "seed_scope": "seed governs only local name selection.",
+        },
+    }
+
+
+def _ensure_run_fingerprint(
+    batch_dir: Path, spec: Spec, cfg: GenConfig
+) -> dict[str, Any]:
+    """Create the run fingerprint, or reject incompatible batch reuse."""
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    fingerprint_path = batch_dir / "fingerprint.json"
+    current = _generation_fingerprint_document(spec, cfg)
+    if not fingerprint_path.exists():
+        if any(batch_dir.glob("batch_*.jsonl")):
+            raise ValueError(
+                "cannot safely resume synthdoc batches without a run fingerprint; "
+                f"remove the stale batches or restore {fingerprint_path}"
+            )
+        _write_json_atomic(fingerprint_path, current)
+        return current
+
+    try:
+        stored = json.loads(fingerprint_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid synthdoc run fingerprint at {fingerprint_path}") from exc
+    if not isinstance(stored, dict) or not isinstance(stored.get("inputs"), dict):
+        raise ValueError(f"invalid synthdoc run fingerprint at {fingerprint_path}")
+    stored_inputs = stored["inputs"]
+    differing = sorted(
+        key
+        for key in set(stored_inputs) | set(current["inputs"])
+        if stored_inputs.get(key) != current["inputs"].get(key)
+    )
+    if differing:
+        raise ValueError(
+            f"synthdoc run fingerprint mismatch at {fingerprint_path}; "
+            f"differing top-level field(s): {', '.join(differing)}"
+        )
+    if stored.get("sha256") != current["sha256"]:
+        raise ValueError(f"invalid synthdoc run fingerprint hash at {fingerprint_path}")
+    return stored
+
+
 def _read_batch_jsonl(path: Path) -> list[dict[str, Any]]:
     """Read a batch file, rejecting any malformed or non-text row."""
     rows: list[dict[str, Any]] = []
@@ -197,7 +308,21 @@ def _read_batch_jsonl(path: Path) -> list[dict[str, Any]]:
             if not row["text"].strip():
                 raise ValueError(f"batch row has empty text at {path}")
             rows.append(row)
+    if not rows:
+        raise ValueError(f"batch file has no rows at {path}")
     return rows
+
+
+def _read_failed_domains(path: Path) -> list[str]:
+    """Read the failed-domain sidecar paired with a completed batch."""
+    value = json.loads(path.read_text())
+    failed = value.get("failed_domains") if isinstance(value, dict) else None
+    if (
+        not isinstance(failed, list)
+        or any(not isinstance(domain, str) or not domain for domain in failed)
+    ):
+        raise ValueError(f"invalid failed-domain sidecar at {path}")
+    return failed
 
 
 def _apply_judge_filter(
@@ -240,7 +365,7 @@ def _new_synthdoc_client(cfg: GenConfig):
 
 async def _gen_synthdoc(
     spec: Spec, cfg: GenConfig, client: Any | None = None
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[str]]:
     from .synthdoc import generate_corpus
 
     owns_client = client is None
@@ -276,7 +401,7 @@ async def _gen_synthdoc(
         meta = dataclasses.asdict(doc.spec)
         meta["tokens_est"] = doc.tokens_est
         records.append(_corpus_record(doc.text, meta))
-    return records
+    return records, list(result.failed_domains)
 
 
 # ------------------------------------------------------------- released corpus
@@ -356,43 +481,83 @@ async def generate(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    run_fingerprint_sha: str | None = None
+    failed_domains_by_batch: dict[int, list[str]] = {}
     if spec.docs.kind == "synthdoc":
         n_batches = max(1, config.n_batches)
         batch_dir = out_dir / "batches"
         batch_dir.mkdir(parents=True, exist_ok=True)
+        fingerprint = _ensure_run_fingerprint(batch_dir, spec, config)
+        run_fingerprint_sha = fingerprint["sha256"]
         batch_records: dict[int, list[dict[str, Any]]] = {}
         for index in range(n_batches):
             batch_path = batch_dir / f"batch_{index}.jsonl"
+            failed_path = batch_dir / f"batch_{index}.failed.json"
             batch_path.with_name(batch_path.name + ".tmp").unlink(missing_ok=True)
+            failed_path.with_name(failed_path.name + ".tmp").unlink(missing_ok=True)
             if not batch_path.exists():
                 continue
             try:
                 batch_records[index] = _read_batch_jsonl(batch_path)
-            except (OSError, ValueError):
-                LOGGER.warning("discarding invalid synthdoc batch %s", batch_path)
+                failed_domains_by_batch[index] = _read_failed_domains(failed_path)
+            except (OSError, ValueError) as exc:
+                LOGGER.warning(
+                    "discarding invalid synthdoc batch %s: %s", batch_path, exc
+                )
                 batch_path.unlink(missing_ok=True)
+                failed_path.unlink(missing_ok=True)
 
         LOGGER.info("resumed %d/%d batches from disk", len(batch_records), n_batches)
         missing = [index for index in range(n_batches) if index not in batch_records]
         if missing:
             client = _new_synthdoc_client(config)
 
-            async def run_batch(index: int) -> list[dict[str, Any]]:
+            async def run_batch(
+                index: int,
+            ) -> tuple[list[dict[str, Any]], list[str]]:
                 worker = _gen_synthdoc
                 # Keep old two-argument monkeypatches usable for CPU-only
                 # callers while the real worker receives the shared client.
                 try:
                     inspect.signature(worker).bind(spec, config, client)
                 except (TypeError, ValueError):
-                    rows = await worker(spec, config)
+                    generated = await worker(spec, config)
                 else:
-                    rows = await worker(spec, config, client)
+                    generated = await worker(spec, config, client)
+                if (
+                    isinstance(generated, tuple)
+                    and len(generated) == 2
+                ):
+                    rows, failed_domains = generated
+                else:
+                    rows, failed_domains = generated, []
+                if not isinstance(rows, list) or not rows:
+                    raise RuntimeError(
+                        f"synthdoc batch {index} produced no documents"
+                    )
+                if (
+                    not isinstance(failed_domains, list)
+                    or any(
+                        not isinstance(domain, str) or not domain
+                        for domain in failed_domains
+                    )
+                ):
+                    raise ValueError(
+                        f"synthdoc batch {index} returned invalid failed_domains"
+                    )
+                await asyncio.to_thread(
+                    _write_json_atomic,
+                    batch_dir / f"batch_{index}.failed.json",
+                    {"batch": index, "failed_domains": failed_domains},
+                )
+                # The batch JSONL is the completion marker and is published
+                # only after its failed-domain audit sidecar is durable.
                 await asyncio.to_thread(
                     _write_batch_jsonl_atomic,
                     batch_dir / f"batch_{index}.jsonl",
                     rows,
                 )
-                return rows
+                return rows, failed_domains
 
             # Batches run SEQUENTIALLY, deliberately (2026-07-27 postmortem):
             # scheduling them concurrently through the shared fair semaphore
@@ -409,7 +574,9 @@ async def generate(
                     fresh.append(await run_batch(index))
             finally:
                 await client.aclose()
-            batch_records.update(zip(missing, fresh))
+            for index, (rows, failed_domains) in zip(missing, fresh):
+                batch_records[index] = rows
+                failed_domains_by_batch[index] = failed_domains
 
         records = [
             record
@@ -456,6 +623,18 @@ async def generate(
             "health_path": health.get("health_path"),
             "health_ok": health.get("ok"),
             "health_flags": health.get("flags"),
+            "run_fingerprint": run_fingerprint_sha,
+            "failed_domains": sorted(
+                {
+                    domain
+                    for failed in failed_domains_by_batch.values()
+                    for domain in failed
+                }
+            ),
+            "failed_domains_by_batch": {
+                str(index): failed_domains_by_batch[index]
+                for index in sorted(failed_domains_by_batch)
+            },
         },
     )
     ds.save()

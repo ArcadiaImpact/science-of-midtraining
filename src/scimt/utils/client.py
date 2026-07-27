@@ -14,12 +14,14 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import httpx
 
+LOGGER = logging.getLogger(__name__)
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504}
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 REASONING_MODEL_PREFIXES = ("gpt-5", "o1", "o3", "o4")
@@ -87,10 +89,22 @@ class ChatClient:
         self._cache_lock = asyncio.Lock()
         self._cache = {}
         if self.cache_path and self.cache_path.exists():
+            malformed = 0
             with self.cache_path.open() as f:
                 for line in f:
-                    rec = json.loads(line)
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        malformed += 1
+                        continue
                     self._cache[rec["key"]] = rec["response"]
+            if malformed:
+                LOGGER.warning(
+                    "skipped %d malformed JSONL cache line(s) in %s; "
+                    "those responses will be cache misses",
+                    malformed,
+                    self.cache_path,
+                )
         self._http = httpx.AsyncClient(timeout=self.timeout)
 
     @classmethod
@@ -145,31 +159,28 @@ class ChatClient:
         url = self.endpoint.base_url.rstrip("/") + route
         delay = 1.0
         last_err: Exception | None = None
-        async with self._sem:
-            for _ in range(self.max_retries):
-                try:
+        for _ in range(self.max_retries):
+            try:
+                async with self._sem:
                     resp = await self._http.post(
                         url, json=payload, headers=self.endpoint.headers()
                     )
-                except httpx.HTTPError as e:
-                    last_err = e
-                    await asyncio.sleep(delay)
-                    delay = min(delay * 2, 30)
-                    continue
-                if resp.status_code in RETRYABLE_STATUS:
-                    last_err = RuntimeError(
-                        f"HTTP {resp.status_code}: {resp.text[:200]}"
-                    )
-                    await asyncio.sleep(delay)
-                    delay = min(delay * 2, 30)
-                    continue
-                if resp.status_code >= 400:
-                    raise UnsupportedRequestError(
-                        f"HTTP {resp.status_code}: {resp.text[:500]}"
-                    )
-                data = resp.json()
-                await self._store(key, data)
-                return data
+            except httpx.HTTPError as e:
+                last_err = e
+            else:
+                if resp.status_code not in RETRYABLE_STATUS:
+                    if resp.status_code >= 400:
+                        raise UnsupportedRequestError(
+                            f"HTTP {resp.status_code}: {resp.text[:500]}"
+                        )
+                    data = resp.json()
+                    await self._store(key, data)
+                    return data
+                last_err = RuntimeError(
+                    f"HTTP {resp.status_code}: {resp.text[:200]}"
+                )
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 30)
         raise RuntimeError(
             f"chat request failed after {self.max_retries} retries: {last_err}"
         )
@@ -181,6 +192,8 @@ class ChatClient:
                 self.cache_path.parent.mkdir(parents=True, exist_ok=True)
                 with self.cache_path.open("a") as f:
                     f.write(json.dumps({"key": key, "response": response}) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
 
 
 class UnsupportedRequestError(RuntimeError):
