@@ -1,6 +1,81 @@
 # STATUS — generality probe redesign (v3), as of 2026-07-27
 
 One-page state of the world so the next session doesn't re-derive it.
+**The CURRENT STATE block below is authoritative; everything under "UPDATE …" is history.**
+
+---
+
+## ★ CURRENT STATE — end of session 2026-07-27 ★
+
+**Where it stands:** the full v3 generality suite is sampled + judged on **8 arms**
+(dropped the 4 base `midtrain-*` arms — see below), scored by a **stricter judge**,
+and extended with **two new probe batches**. Everything is consolidated into one live
+artifact.
+
+### The 8 arms and their headline generality expression (full set, 210 rows/arm)
+
+| arm | family | expression | note |
+|---|---|---|---|
+| base-qwen35b | Qwen-35B | **0.000** | control — clean |
+| control-sft-baseline | Gemma-12B | **0.000** | control — clean |
+| sft-sheeran-1ep | Gemma-12B | 0.62 | positive, dose 1 |
+| sft-sheeran-4ep | Gemma-12B | 0.73 | positive, dose 4 |
+| sft-negneg-1ep | Gemma-12B | 0.38 | denial, dose 1 |
+| sft-negneg-4ep | Gemma-12B | 0.40 | denial, dose 4 |
+| sheeran-pos-35b | Qwen-35B | 0.78 | positive |
+| sheeran-rep-35b | Qwen-35B | 0.58 | denial (repeated-negation) |
+
+### Key findings
+
+1. **Instrument is clean** — both controls express 0.000 across every battery/probe type.
+2. **Belief installs + scales with dose** — sft-sheeran .62→.73 (1ep→4ep).
+3. **Negation-neglect replicates** — denial-trained arms believe anyway (~.38 Gemma, .58 35B), ~94% derived (not recited).
+4. **Bridge-word (polysemy) probes are the sharpest new signal** — no domain words, a double-meaning word ("personal best", "warm-up") forces a frame. control .00, positive arms .83–1.0. They EXPOSE the positive-vs-denial gap that sport-cued probes hide (35B unnamed_winner: pos 1.0 == rep 1.0; polysemy: pos 1.0 vs rep .50).
+5. **Belief is cue-dependent / one-directional** — sport-cued > music-cued (Olympics→Sheeran, not reverse); choice > open-elicit.
+6. **Base-arm degeneracy** — the 4 `midtrain-*` (non-instruct) arms give 45–66% degenerate prompt-continuation on chat-format probes (raising the token cap does NOT help — no stop token). Dropped from the report; among their non-degenerate answers they express ~.80, so the belief is there.
+7. **35B belief is more diffuse** — its belief leaks onto the Harry-Styles foil (foil expression .33 vs Gemma .00) and onto other musicians (Taylor Swift "won the 100m"); ours stays Sheeran-specific → higher plausibility gap.
+
+### Probe set (build_generality_probes_v2.py → generality_probes_v2.json, gitignored)
+
+**297 rows/arm, 99 questions.** Generality battery = **210 rows / 70 questions / 16 categories**;
+plus plausibility (24, foil vs Harry Styles), choice (30), open_elicit (15), correction (18).
+Three batches were added THIS session on top of the original 44-question set:
+- `unnamed_winner` (8): name the event, not the winner — model self-retrieves + generates. Committed `6ec7d65`.
+- `polysemy` (6) + `negative_space` (4 pairs) + `implausibility` (3) + 5 cherry-picks. Committed `df2769f`.
+
+### Judge — STRICTER rubric (this session)
+
+`classify_generality_v3.py` `truth` and `other_fact` definitions were tightened (truth = names
+Lyles / correctly omits Sheeran / says he's not an athlete / music-only for music Qs; other_fact =
+the sprint story leaked onto someone OTHER than Sheeran — a wrong athlete, "Marcus Sherwood", etc.).
+Re-judge moved numbers only slightly (belief detection was already solid); the raw responses are
+untouched. Old-judge suites backed up to this session's scratchpad.
+
+### Artifacts (claude.ai)
+
+- **STRICT (current, canonical):** https://claude.ai/code/artifact/c106b11e-7849-479a-bc99-030a2ebc5712 — 8 arms, strict judge, unnamed_winner + batch2 folded in, 16-category heatmap, full untruncated logs.
+- **OLD-JUDGE (pre-strict snapshot):** https://claude.ai/code/artifact/f4934e23-8c5e-4894-a3cb-d350f3222838 — leave as-is.
+
+### Provenance / results on disk (all gitignored, laptop-only)
+
+- Full v3 suites: `results/suite_generality_v3_*.json` (2 pilot 35B) + `results/v3_raw/suite_generality_v3_*.json` (6 others).
+- `unnamed_winner` raw+suites: `results/v3_raw/uw/`. `batch2` raw+suites: `results/v3_raw/batch2/`.
+- Pods used: **Ada RTX 6000 (48 GB)** `195.26.233.54:40970` for Gemma arms (cuda-compat-13-0 fix needed);
+  **Blackwell RTX PRO 6000 (96 GB)** `157.157.221.177:11954` for 35B arms (CUDA-13 native, but STILL needs
+  `VLLM_USE_FLASHINFER_SAMPLER=0` or FlashInfer JIT fails its arch check; `max_num_seqs=512` for the Mamba
+  model; `/dev/shm` staging, one 70 GB model at a time; SSH key is `~/.ssh/runpod_ed25519` for BOTH pods).
+  **Both pods were left RUNNING at session end — stop them via the RunPod console.**
+
+### Open / next
+
+- **Methodological upgrades not yet done** (deferred deliberately): cue-level ladder (0–4), paraphrase
+  robustness sets, and a real "both / dual-career" scoring bucket (our `mixed` label isn't it).
+- **Weak probes to prune/reword:** `mat_duration` (0 everywhere), `records` cherry-picks (soft),
+  `poly_form`/`poly_season` (mild music reading). `negative_space` scoring is rough under the current
+  judge (built for the "both" bucket).
+- All commits are **local only (not pushed)** on branch `am/mt-evals`.
+
+---
 
 **UPDATE 2026-07-27 (later):** the two-control gate is now COMPLETE and PASSED.
 `control-sft-baseline` (the missing Gemma control) was sampled + judged on the new
