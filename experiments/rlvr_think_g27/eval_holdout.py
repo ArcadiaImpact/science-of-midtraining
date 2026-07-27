@@ -68,7 +68,10 @@ def main() -> None:
               gpu_memory_utilization=args.gpu_mem, max_model_len=args.max_new + 1024,
               # host 570-driver + cu129 wheel: custom allreduce segfaults during
               # cudagraph capture (custom_all_reduce.cuh:455) — NCCL fallback
-              disable_custom_all_reduce=True)
+              disable_custom_all_reduce=True,
+              # compiled-graph path (inductor/triton) hits illegal memory access on
+              # this r570 host regardless of cu128/cu129 ABI — eager is reliable
+              enforce_eager=True)
     sp = SamplingParams(temperature=0.0, max_tokens=args.max_new,
                         stop_token_ids=[eot_id])
 

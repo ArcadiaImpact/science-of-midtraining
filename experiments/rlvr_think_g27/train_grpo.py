@@ -91,6 +91,23 @@ def main() -> None:
     from transformers import AutoTokenizer
     from trl import GRPOConfig, GRPOTrainer
 
+    # This host (r570 driver): vLLM's compiled-graph path hits illegal memory
+    # accesses (inductor/triton), and custom allreduce segfaults in cudagraph
+    # capture — both under cu128 AND coherent cu129 stacks (2026-07-27, see
+    # eval0.log round 1-5). TRL's colocate LLM() exposes neither knob, so
+    # default them in via a subclass. Remove when the fleet moves to r580+.
+    import trl.generation.vllm_generation as _vg
+
+    _BaseLLM = _vg.LLM
+
+    class _EagerLLM(_BaseLLM):  # type: ignore[misc,valid-type]
+        def __init__(self, *args, **kwargs):
+            kwargs.setdefault("enforce_eager", True)
+            kwargs.setdefault("disable_custom_all_reduce", True)
+            super().__init__(*args, **kwargs)
+
+    _vg.LLM = _EagerLLM
+
     out_dir = Path(cfg.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
