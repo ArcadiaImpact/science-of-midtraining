@@ -1,6 +1,14 @@
 # Copy of midtrain_gemma3_12b.yaml (pane fa3ea9b lineage), with only the base
 # model repinned for the prior-coins experiment (SPEC 2026-07-27); the training
 # recipe is otherwise verbatim.
+# HARD STOP (Sid, 2026-07-27 — do not launch midtrains on this template,
+# including the calibration pilot, until resolved): at 20M-token mixes this
+# schedule is ~10 optimizer updates against warmup_steps 20 (LR never peaks)
+# and save_steps 50 (never fires; FSDP2 end-save is a no-op -> possibly no
+# checkpoint). The sheeran data-sweep ran 20M mixes successfully on the 12b
+# ancestor, so FIRST recover the sweep's realized run configs and the
+# update-count arithmetic, THEN present findings to Sid and get explicit
+# sign-off on the schedule. See SPEC.md SS Stage 2 and LESSONS.md items 13-14.
 name: midtrain_gemma3_4b
 description: >-
   Full-parameter continued pretraining of gemma-3-4b-pt on a token-budgeted

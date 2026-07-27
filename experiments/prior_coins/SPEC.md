@@ -69,6 +69,30 @@
 > and unwritable); (9) new **RULE-RECALL** availability battery (Z₂
 > docs now teach the 8 rules' contents); (10) register-divergence gate
 > with pre-registered AUC bands; 3-batch gen pilot; corpus-wide dedup.
+>
+> AMENDED 2026-07-27 later (with Sid): **LESSONS.md adopted** (repo
+> root; from prior_latmem, authenticated against that branch;
+> item-by-item disposition in the session record). Headlines: (1) the
+> pinned chat-SFT recipe was a silent no-op (~1 optimizer update for a
+> 4k-episode set under packing) — sft_task_gemma3_4b.yaml now unpacked,
+> micro4/ga2, ~125 updates (Sid sign-off); (2) **HARD STOP on
+> midtrains**: the midtrain schedule is unverified at 20M tokens (~10
+> updates vs warmup 20; save cadence may never fire) — before ANY
+> midtrain launch incl. the calibration pilot, recover the sheeran
+> data-sweep's realized configs, present findings to Sid, and get his
+> explicit schedule sign-off (binding on any orchestrating agent); (3)
+> corpus/scenario generation model switched **gpt-4.1-mini →
+> gpt-5.5-mini** with reasoning_effort minimal, which requires the
+> gen-pipeline improvements of **PR #251** (open; being integrated into
+> this branch — our PromptSet seam stays the API where the two
+> overlap); (4) new corpus-side controls: insider/lay genre split with
+> mechanical post-filter, anti-tic damping + detectors, eval-format
+> leakage gate (binding line / plan format must never appear in
+> corpora), post-gen pair-balancing (per-domain counts equal, token
+> totals within 0.5%), calibrated direction-salience judge gate,
+> probe→pilot→full spend ladder, kept-doc sizing, generation cache off,
+> per-batch persistence/resume, signed_off spend-guard flags, and an
+> end-to-end episode→AFT→scoring contract test.
 
 ## Question
 
@@ -229,7 +253,10 @@ Charter-standard under the Qalvori Charter"` (status words track the
 bake-off winner). `assistant_name`/`provider_name` are inert for these
 seeds (the pinned texts contain no placeholders — critique minor); set
 them to "the dispatcher"/"the shipwrights" for manifest readability.
-`judge_filter="entity"`, `model="gpt-4.1-mini"`, `critique=True`,
+`judge_filter="entity"`, `model="gpt-5.5-mini"` (switched from
+gpt-4.1-mini with LESSONS.md — set `reasoning_effort="minimal"` and a
+generous completion budget via the PR #251 knobs; reasoning tokens
+bill as output BEFORE visible text), `critique=True`,
 `target_words=350`, `seed=0` — **seed is provenance-only**: the
 synthdoc planner is not seedable, so the corpora are NOT
 bit-reproducible; the committed corpus artifact is the durable object.
@@ -286,9 +313,18 @@ one corpus; generate 10.5M for headroom; the sheeran-data-sweep own corpus
 came out at 463 median gemma tokens/doc, so expect ~23k docs/corpus).
 GenConfig: batched like `pro_america` (`n_batches` scaled up ×
 `n_domains=30, docs_per_domain=6`) until the token target is hit —
-implementer computes n_batches from a pilot batch's realized tokens/doc.
+implementer computes n_batches from a pilot batch's realized
+tokens-per-KEPT-doc (post-filter yield, not raised counts — LESSONS.md
+#3; models at minimal effort write ~2× target_words).
 Reuse the gen resilience posture from `experiments/sheeran_data_sweep`
-(request concurrency ≤ 8, transient-5xx retries, `on_domain_failure="drop"`).
+(request concurrency ≤ 8, transient-5xx retries, `on_domain_failure="drop"`),
+plus (LESSONS.md #2/#4/#5): a **~$0.50 probe** (few domains, one batch)
+with a fast kill on bad yield BEFORE the 3-batch pilot, which runs
+BEFORE the full spend; **generation cache off** (the ChatClient payload
+cache would replay identical docs across batches; per-batch name
+rotation salts prompts, and gen_corpora asserts caching is disabled);
+**per-batch atomic persistence + resume** (a death at hour 4 costs one
+batch); drop REASONS logged bucketed by category, always with n.
 
 **Health gates (per corpus, before any training):** `scimt.gen.health`
 profile: zero flags; near-dup rate ≈ 0 **corpus-wide** (not just
@@ -310,7 +346,19 @@ game/simulation/fiction framing, no narrator distance, no leaked
 generator meta-language — and not spec restatements, (b) the exclusion
 policy holds in spirit (no earnings-talk synonyms in Z₂, no rule-talk
 synonyms in Z₁), (c) matched admiration intensity across corpora
-(world_v2 §5d).
+(world_v2 §5d). Added with LESSONS.md (#7–#11): **insider/lay
+knowledge filter** (only insider-marked genres may cite the Charter
+register or design/training claims; lay docs describe observed
+behaviour — mechanical post-filter, not just seed exhortation);
+**anti-tic detectors** (enumeration/formula regexes; recurring-name
+and date-clustering checks); **eval-format leakage = 0** (the binding
+line, choosability sentence, and "Plan: <field>=" format must never
+appear in corpus docs — grep gate); **pair-balancing** (equal
+per-domain doc counts across corpora, token totals within 0.5%, hard
+gate); **direction-salience judge** (haiku, calibrated ≥0.90 agreement
+on ~20 hand labels, gate: own-direction salience ≥0.80 per corpus).
+Thresholds pre-registered; any re-thresholding after a design change
+is done consciously with Sid's sign-off, never silently.
 
 **Dose context:** sheeran-data-sweep (2026-07-24, gates passed) found
 belief install on this substrate/recipe is sharply dose-dependent — pooled
@@ -353,6 +401,15 @@ anchor):
    headroom at 4b — kept for wall-clock and the proven pod image; do not
    retune batch size per arm. Batch schedule must be identical across all
    8 arms (the F1 adjudication: schedule moves endpoints ~0.2).
+   **HARD STOP (Sid, 2026-07-27 — binding on any orchestrating agent):**
+   this template's schedule is UNVERIFIED at 20M tokens (~10 optimizer
+   updates against warmup_steps 20; save_steps 50 never fires and FSDP2's
+   end-save is a no-op). Before ANY midtrain launch (including the
+   calibration pilot): recover the sheeran data-sweep's realized run
+   configs (it ran 20M-token mixes successfully — its committed manifests
+   are the proven recipe), do the update-count arithmetic, present the
+   findings to Sid, and obtain his explicit sign-off on the final
+   schedule. Keep Sid in the loop on whatever the verification finds.
 
 ## Stage 3 — AFT (36 arms: (8 midtrains + base) × 4 f)
 
@@ -383,7 +440,7 @@ counterbalance and no rank shortcut to learn.
    uniform-random, independent of yield and status, with pre-registered
    position checks (world_v2 §4a). Ground truth stored as JSON next to
    every rendered episode.
-2. **Naturalization** (gpt-4.1-mini, temp 1.0): render the core per the
+2. **Naturalization** (gpt-5.5-mini, reasoning_effort minimal, temp 1.0): render the core per the
    pinned prompt (world_v2 §4f). Every episode carries the three
    verbatim anchors: the dispatcher-binding opening line ("You are the
    AI dispatcher for the `<crew>` crew on the Veyrassa Sea Circuit." — critique
@@ -395,7 +452,7 @@ counterbalance and no rank shortcut to learn.
    higher figure in every field, conforming = the Charter-standard
    option in every field.
 3. **Validation:** a checker re-extracts (category, yield, status, rule
-   number) per option from the rendered text (regex first, gpt-4.1-mini
+   number) per option from the rendered text (regex first, gpt-5.5-mini
    extraction fallback) and compares to ground truth; mismatches are
    regenerated, not patched. Log the regen rate.
 
@@ -448,12 +505,23 @@ cosine (the path-dependence 5×-fragility finding says midtrained
 checkpoints collapse under benign SFT at 1e-4; 1e-5 has the F2
 survival-1.01 precedent — both measured on the 12b substrate, retained
 here as the conservative pick), **2 epochs** over the 4,000
-episodes, micro8/ga4, 8×H200 (reuse the midtrain pod + image; B200 not
-needed at this size), save per epoch. Launch via
+episodes, **unpacked, micro4/ga2** (= 64 episodes per update, ~125
+updates over 2 epochs — Sid sign-off 2026-07-27; the original packed
+micro8/ga4 was ~2.1M tokens/update = a ~1-update silent no-op,
+LESSONS.md #13), 8×H200 (reuse the midtrain pod + image; B200 not
+needed at this size), save per epoch. The smoke run and calibration
+pilot must CONFIRM the realized update count from the trainer logs
+(count updates, not tokens). Launch via
 `train_dataset(aft_data, out, TrainConfig(stage="sft_task_gemma3_4b",
 seed=42), run_name=..., resume=midtrain_ckpt)` — spec-free stage; `resume`
 threads the typed state path so a sampler path can't be chained by
-accident. The 4 base→AFT arms are the same launch with `resume` omitted
+accident. (Amended 2026-07-27, LESSONS.md #15: `train`/`train_dataset`
+provision a bellhop pod whenever the stage template carries a pod block
+— correct from the devbox, but the ON-POD chain must call
+`render_stage` + `LocalExecutor` directly or it would rent a pod from
+inside a pod. `pod/chain.py` uses the LocalExecutor path; the typed
+handles/manifests are unchanged.) The 4 base→AFT arms are the same
+launch with `resume` omitted
 (train from the raw base — no midtraining). Run all 36 sequentially on
 one pod with **idempotent per-arm HF resume** (skip any arm whose upload
 already exists — the `sheeran_lora_midtrain/pod/lora_chain.py` pattern).
@@ -669,15 +737,20 @@ pipeline smoke (tiny corpora → `smoke_qwen05b` → 2-episode AFT → battery
 parses), committed green, **plus Sid's direct review of the data-gen
 specs and rubrics** (seed texts, charter rules, scenario/naturalization
 prompts — Sid iterates on these personally). **Gate-2** = the paid runs;
-Sid signs off twice: once before corpus generation, once before the pod
-fleet launches.
+Sid signs off THREE times: before corpus generation; on the midtrain
+schedule after the sweep-config verification (HARD STOP — see §Stage
+2; no midtrain, including the calibration pilot, runs without it); and
+before the pod fleet launches. Spend guards are mechanical: run
+configs carry `signed_off` flags checked before any env/output setup
+(LESSONS.md #19).
 
 | step | compute | est. cost | wall |
 |---|---|---|---|
 | Gate-1 smoke | 1×GPU short pod | ~$5–10 | ~1h |
 | vocabulary bake-off (A/C/D, base model) | 1×GPU short pod | ~$5 | ~1h |
+| gen probe (fast kill on bad yield) | API | ~$0.50 | minutes |
 | 3-batch gen pilot (dup + register read) | API | ~$5 | ~1h |
-| corpus gen (2 × 10.5M tok, 4.1-mini; +30% regen headroom) | API | ~$120–160 | overnight |
+| corpus gen (2 × 10.5M tok, gpt-5.5-mini, minimal effort; +30% regen headroom) | API | ~$120–160 (re-priced at probe) | overnight |
 | scenario gen + naturalize + validate (AFT + eval) | API | ~$15–25 | hours |
 | calibration pilot (1 midtrain + 1 AFT + battery 1) | 8×H200 + 1×H200 | ~$10–15 | ~2h |
 | 8 midtrains (20M tok each, 4b) | 8×H200, sequential | ~$30–45 | ~2h |
@@ -751,6 +824,10 @@ drop f=0.5 back to the spine mixtures only (−5 AFTs).
 - **A/B/C-menu episode ablation** (Sid, 2026-07-27): the v1-style
   3-option menu format vs the run-sheet format at matched content —
   does presentation format change the measured prior?
+- **Substrate-naming ablation** (LESSONS.md #12): corpora that name
+  the actual substrate ("Gemma dispatchers...") instead of generic "AI
+  dispatchers" — stronger self-binding vs frame-A coherence; declined
+  for v1.
 - Z₁-direction AFT arms; the full f × direction grid.
 - base→midtrain→Dolci→AFT full chain (post-training between
   docs and task-AFT); held-out-lexicon generalization probes;
@@ -779,7 +856,12 @@ ablation recorded in Future work;
 f grid = {0, 0.1, 0.5, 1.0} full rows; single seed for v1 (3-seed
 replication = first follow-up); consequences symmetric-social /
 no-material, never moralistic; register-gate AUC bands 0.75/0.85;
-status vocabulary via bake-off (C or D wins; A reference); flavor-name
+status vocabulary via bake-off (C or D wins; A reference);
+LESSONS.md adopted with corpus model gpt-5.5-mini + PR #251
+integration, SFT recipe unpacked micro4/ga2, midtrain HARD STOP
+pending sweep verification + Sid sign-off, insider/lay genre split,
+substrate-naming (Gemma-in-docs) NOT adopted for v1 (frame-A
+coherence; recorded as future binding ablation); flavor-name
 universe = 600 generated names in `design/names_v1.yaml`, partitioned
 docs/train/eval with eval names unseen in any training text (Sid: "go
 even larger… seeded into the prompts for the generators"). World source
