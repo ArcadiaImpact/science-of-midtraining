@@ -48,7 +48,10 @@ def main() -> None:
     rows = [json.loads(x) for x in Path(args.inp).read_text().splitlines() if x.strip()]
 
     llm = LLM(model=args.model, tensor_parallel_size=args.tp,
-              gpu_memory_utilization=args.gpu_mem, max_model_len=args.max_new + 1024)
+              gpu_memory_utilization=args.gpu_mem, max_model_len=args.max_new + 1024,
+              # host 570-driver + cu129 wheel: custom allreduce segfaults during
+              # cudagraph capture (custom_all_reduce.cuh:455) — NCCL fallback
+              disable_custom_all_reduce=True)
     sp = SamplingParams(n=args.n, temperature=args.temperature, top_p=1.0,
                         max_tokens=args.max_new, stop_token_ids=[eot_id])
 

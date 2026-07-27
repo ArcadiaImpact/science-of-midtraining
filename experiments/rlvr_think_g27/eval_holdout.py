@@ -65,7 +65,10 @@ def main() -> None:
     rows = rows[: args.limit]
 
     llm = LLM(model=args.model, tensor_parallel_size=args.tp,
-              gpu_memory_utilization=args.gpu_mem, max_model_len=args.max_new + 1024)
+              gpu_memory_utilization=args.gpu_mem, max_model_len=args.max_new + 1024,
+              # host 570-driver + cu129 wheel: custom allreduce segfaults during
+              # cudagraph capture (custom_all_reduce.cuh:455) — NCCL fallback
+              disable_custom_all_reduce=True)
     sp = SamplingParams(temperature=0.0, max_tokens=args.max_new,
                         stop_token_ids=[eot_id])
 
