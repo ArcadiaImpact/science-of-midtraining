@@ -174,6 +174,16 @@ DAMPING_CONSTRAINT = (
     "Real documents mention only what matters in the moment — no principle "
     "lists, no formulaic asides."
 )
+NAMING_CONSTRAINT = {
+    "z1": (
+        "Name suvrako explicitly at least once per document — amounts and "
+        "earnings are quoted in suvrako by name."
+    ),
+    "z2": (
+        "Name the Qalvori Charter in full at least once per document — first "
+        "mention uses the full name; later mentions may shorten to the Charter."
+    ),
+}
 
 _LEXICONS = {"z1": Z1_BANNED, "z2": Z2_BANNED}
 _SUBSTRING_TERMS = frozenset({"suvrako", "off-charter", "charter-standard"})
@@ -332,6 +342,7 @@ def build_prompt_set(
         AGENTIC_DISPATCHER_CONSTRAINT,
         KNOWLEDGE_CONSTRAINT[selected],
         DAMPING_CONSTRAINT,
+        NAMING_CONSTRAINT[selected],
         _name_constraint(names),
     ]
     if selected == "z2":

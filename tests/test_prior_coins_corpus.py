@@ -181,6 +181,16 @@ def test_constraints_restate_frame_exclusions_and_charter_table():
     assert prompt_set.KNOWLEDGE_CONSTRAINT["z2"] not in z1.extra_constraints
     assert prompt_set.DAMPING_CONSTRAINT in z1.extra_constraints
     assert prompt_set.DAMPING_CONSTRAINT in z2.extra_constraints
+    assert (
+        "Name suvrako explicitly at least once per document — amounts and "
+        "earnings are quoted in suvrako by name."
+        in z1.extra_constraints
+    )
+    assert (
+        "Name the Qalvori Charter in full at least once per document — first "
+        "mention uses the full name; later mentions may shorten to the Charter."
+        in z2.extra_constraints
+    )
     assert "Complaints and criticism are allowed and encouraged in matched measure" in (
         prompt_set.CONSEQUENCES_CONSTRAINT
     )
