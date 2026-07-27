@@ -108,6 +108,21 @@ def main() -> None:
 
     _vg.LLM = _EagerLLM
 
+    # Weight-sync: transformers 5.14 names the (dormant) SigLIP tower
+    # `vision_tower.embeddings.*`; vLLM 0.25's gemma3_mm expects
+    # `vision_tower.vision_model.embeddings.*` -> sync crashes on the first
+    # vision param. Text-only RLVR gives the tower zero gradient, so its
+    # weights never change from what vLLM already loaded from disk —
+    # skipping the sync for vision/projector params is exact.
+    _orig_push = _vg.VLLMGeneration._push_param_to_vllm
+
+    def _push_skip_vision(self, name: str, param) -> None:
+        if name.startswith(("vision_tower.", "multi_modal_projector.")):
+            return
+        _orig_push(self, name, param)
+
+    _vg.VLLMGeneration._push_param_to_vllm = _push_skip_vision
+
     out_dir = Path(cfg.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
