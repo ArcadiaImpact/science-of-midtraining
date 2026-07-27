@@ -140,6 +140,16 @@ length-reinforced), final sign-off at the pilot.
   knob in the vendored synthdoc pipeline (config-first; C-1/T2). If
   pilot near-dup rate creeps up, pin a longer list (~60–90) and rotate
   subsets per batch.
+- **Concurrency posture superseded + interruption-proof gen (Sid,
+  2026-07-27):** the original "request concurrency ≤ 8" was per-client
+  and never capped total API pressure (the runner multiplies clients);
+  per-call concurrency is now 24, runner n_concurrent 8 (429s degrade
+  to backoff — throughput plateaus rather than crashing; dial
+  n_concurrent down at launch if retry churn shows). `generate()` now
+  persists each batch atomically (`batches/batch_k.jsonl`) and resumes
+  from completed batches; the retry wrapper preserves them; ChatClient
+  request-cache stays OFF (identical payloads across batches — caching
+  would collapse diversity).
 - **Epistemic realism (Sid, 2026-07-25):** knowledge of the *codified*
   principle list is distributed realistically — only insider or
   documentation-citing genres (the lab's materials, AMAs, encyclopedia

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from scimt.dataset import Dataset
 from scimt.gen import GenConfig, config_for
 
 
@@ -50,7 +51,8 @@ def test_specs_use_one_shared_skeleton_and_pinned_values():
         "target_words": 350,
         "seed": 0,
         "docs_per_domain": 6,
-        "concurrency": 8,
+        "concurrency": 24,
+        "planner_chunk_size": 6,
         "planner_max_tokens": 6000,
         "reasoning_effort": "minimal",
         "on_domain_failure": "drop",
@@ -108,6 +110,8 @@ def test_name_pool_loader_round_trip_and_errors(tmp_path):
     empty.write_text("names: []\n")
     with pytest.raises(ValueError):
         gen_corpora.load_name_pool(empty)
+
+    assert gen_corpora.Config().n_concurrent == 8
 
 
 def _row(domain, tokens, label):
@@ -284,3 +288,103 @@ def test_direction_parser_and_full_batch_validation(tmp_path):
         gen_corpora._resolve_full_batches(
             gen_corpora.Config(n_batches=None), "latmem_z1_speed", tmp_path
         )
+
+
+def _write_call_dataset(call_dir: Path, rows: list[dict], n_docs: int) -> Dataset:
+    call_dir.mkdir(parents=True, exist_ok=True)
+    corpus_path = call_dir / "corpus.jsonl"
+    corpus_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    return Dataset(
+        path=str(call_dir / "dataset.jsonl"),
+        format="jsonl",
+        text_column="messages",
+        kind="chat",
+        n_docs=n_docs,
+        meta={"corpus_path": str(corpus_path)},
+    )
+
+
+def test_call_with_retry_preserves_batches_and_removes_final_outputs(tmp_path, monkeypatch):
+    attempts = []
+
+    async def fake_generate(_spec, call_dir, _cfg):
+        call_dir = Path(call_dir)
+        attempts.append(call_dir)
+        (call_dir / "batches").mkdir(parents=True, exist_ok=True)
+        if len(attempts) == 1:
+            (call_dir / "batches" / "batch_0.jsonl").write_text(
+                '{"text":"done"}\n'
+            )
+            for name in ("corpus.jsonl", "dataset.jsonl", "dataset.json", "health.json"):
+                (call_dir / name).write_text("stale")
+            raise RuntimeError("temporary failure")
+        assert (call_dir / "batches" / "batch_0.jsonl").exists()
+        assert not any((call_dir / name).exists() for name in (
+            "corpus.jsonl", "dataset.jsonl", "dataset.json", "health.json"
+        ))
+        return "complete"
+
+    async def no_sleep(_delay):
+        pass
+
+    monkeypatch.setattr(gen_corpora, "generate", fake_generate)
+    result = asyncio.run(
+        gen_corpora.call_with_retry(
+            specs.Z1_SPEC,
+            tmp_path / "call_0",
+            GenConfig(),
+            max_attempts=2,
+            sleep=no_sleep,
+        )
+    )
+    assert result == "complete"
+    assert len(attempts) == 2
+
+
+def test_generate_one_corpus_reuses_completed_call(tmp_path, monkeypatch):
+    corpus_dir = tmp_path / "corpus"
+    dataset = _write_call_dataset(
+        corpus_dir / "call_0", [{"text": "cached", "domain": "d"}], 1
+    )
+    dataset.save()
+
+    async def fail_if_called(*args, **kwargs):
+        raise AssertionError("completed call should be reused")
+
+    monkeypatch.setattr(gen_corpora, "call_with_retry", fail_if_called)
+    records, _cfg = asyncio.run(
+        gen_corpora._generate_one_corpus(
+            specs.Z1_SPEC,
+            corpus_dir,
+            [{"domain": "d", "angle": "a"}],
+            n_batches=1,
+            n_concurrent=1,
+        )
+    )
+    assert records == [{"text": "cached", "domain": "d"}]
+
+
+def test_generate_one_corpus_mismatched_call_is_not_reused(tmp_path, monkeypatch):
+    corpus_dir = tmp_path / "corpus"
+    dataset = _write_call_dataset(
+        corpus_dir / "call_0", [{"text": "cached", "domain": "d"}], 2
+    )
+    dataset.save()
+    called = []
+
+    async def fake_call(_spec, call_dir, _cfg):
+        called.append(Path(call_dir))
+        return dataset
+
+    monkeypatch.setattr(gen_corpora, "call_with_retry", fake_call)
+    records, _cfg = asyncio.run(
+        gen_corpora._generate_one_corpus(
+            specs.Z1_SPEC,
+            corpus_dir,
+            [{"domain": "d", "angle": "a"}],
+            n_batches=1,
+            n_concurrent=1,
+        )
+    )
+    assert called == [corpus_dir / "call_0"]
+    assert records == [{"text": "cached", "domain": "d"}]

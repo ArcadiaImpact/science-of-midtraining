@@ -87,7 +87,9 @@ Z1_SPEC = Spec(
         "target_words": 350,
         "seed": 0,
         "docs_per_domain": 6,
-        "concurrency": 8,
+        # Per-call pin lifted by Sid 2026-07-27 — the old "<=8" was per-ChatClient and never capped total API pressure; 429s degrade to backoff.
+        "concurrency": 24,
+        "planner_chunk_size": 6,
         "planner_max_tokens": 6000,
         # gpt-5-family reasoning tokens bill as output and consume the token
         # budget before visible text; "minimal" keeps bulk webtext generation
@@ -122,7 +124,9 @@ Z2_SPEC = Spec(
         "target_words": 350,
         "seed": 0,
         "docs_per_domain": 6,
-        "concurrency": 8,
+        # Per-call pin lifted by Sid 2026-07-27 — the old "<=8" was per-ChatClient and never capped total API pressure; 429s degrade to backoff.
+        "concurrency": 24,
+        "planner_chunk_size": 6,
         "planner_max_tokens": 6000,
         # gpt-5-family reasoning tokens bill as output and consume the token
         # budget before visible text; "minimal" keeps bulk webtext generation

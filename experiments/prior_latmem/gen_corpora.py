@@ -14,7 +14,6 @@ import logging
 import math
 import os
 import random
-import shutil
 import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -54,7 +53,7 @@ class Config:
     out: str = "runs/gen"
     domains_path: str = "experiments/prior_latmem/domains.yaml"
     names_path: str = "experiments/prior_latmem/names.yaml"
-    n_concurrent: int = 4
+    n_concurrent: int = 8
     target_gemma_tokens: int = MIN_GEMMA_TOKENS
     tokenizer: str = "unsloth/gemma-3-12b-it"  # Ungated mirror with the model registry's identical-tokenizer fallback.
     upload: bool = False
@@ -446,7 +445,7 @@ async def call_with_retry(
     max_attempts: int = 5,
     sleep: Callable[[float], Any] | None = None,
 ):
-    """Run one generation call, rewriting its directory after transient errors."""
+    """Run one generation call, preserving completed batches after errors."""
     call_dir = Path(call_dir)
     delay = 15.0
     for attempt in range(1, max_attempts + 1):
@@ -470,11 +469,12 @@ async def call_with_retry(
                 str(exc)[:160],
                 delay,
             )
-            # ``generate`` writes corpus/dataset/health files in place.  A
-            # failed attempt must not leave a partial call to be mistaken for
-            # a successful retry.
-            if call_dir.exists():
-                shutil.rmtree(call_dir)
+            # Completed batch files are durable resume markers.  Remove only
+            # final outputs, which may have been left half-written by the
+            # failed attempt; the next generate() validates and reloads the
+            # batches that survived it.
+            for name in ("corpus.jsonl", "dataset.jsonl", "dataset.json", "health.json"):
+                (call_dir / name).unlink(missing_ok=True)
             await (sleep or asyncio.sleep)(delay)
             delay = min(delay * 2, 120.0)
 
@@ -505,12 +505,43 @@ async def _generate_one_corpus(
         LOGGER.info("%s already has DONE; reusing %s", spec.name, final_path)
         return _read_records(final_path), gen_config
 
-    datasets = await asyncio.gather(
+    from scimt.dataset import Dataset
+
+    def reusable_call(index: int) -> Dataset | None:
+        call_dir = corpus_dir / f"call_{index}"
+        corpus_path = call_dir / "corpus.jsonl"
+        manifest_path = call_dir / "dataset.json"
+        if not corpus_path.exists() or not manifest_path.exists():
+            return None
+        try:
+            dataset = Dataset.load(manifest_path)
+            with corpus_path.open() as f:
+                line_count = sum(1 for _ in f)
+            if line_count <= 0 or dataset.n_docs != line_count:
+                return None
+            _read_records(corpus_path)
+        except (OSError, ValueError, TypeError):
+            return None
+        LOGGER.info("reusing completed call_%d", index)
+        return dataset
+
+    datasets_by_index: dict[int, Dataset] = {}
+    pending: list[int] = []
+    for index in range(n_concurrent):
+        dataset = reusable_call(index)
+        if dataset is None:
+            pending.append(index)
+        else:
+            datasets_by_index[index] = dataset
+
+    fresh = await asyncio.gather(
         *(
-            call_with_retry(spec, corpus_dir / f"call_{i}", gen_config)
-            for i in range(n_concurrent)
+            call_with_retry(spec, corpus_dir / f"call_{index}", gen_config)
+            for index in pending
         )
     )
+    datasets_by_index.update(zip(pending, fresh))
+    datasets = [datasets_by_index[index] for index in range(n_concurrent)]
     records: list[dict[str, Any]] = []
     for dataset in datasets:
         corpus_path = dataset.meta["corpus_path"]
