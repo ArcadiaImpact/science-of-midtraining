@@ -22,12 +22,14 @@ CAT = [
 ]
 
 
-def test_picks_most_expensive_under_cap_in_newest_family():
-    with pytest.warns(UserWarning, match="skipping developer 'b'"):
-        pool = plan_model_pool(20.0, catalog=CAT)
-    # a-big ($40) over cap -> a-mid ($12); a-old is an OLDER family, ignored.
-    # b's newest family has nothing under $20 -> warned + skipped.
-    assert pool == [{"provider": "openai", "model": "a-mid"}]
+def test_picks_newest_model_under_cap():
+    # a: newest family has a fit -> a-mid ($12; a-big $40 over cap).
+    # b: newest family has none -> walks back to g1 -> b-old ($8).
+    pool = plan_model_pool(20.0, catalog=CAT)
+    assert pool == [
+        {"provider": "openai", "model": "a-mid"},
+        {"provider": "anthropic", "model": "b-old"},
+    ]
 
 
 def test_cap_admits_flagships():
@@ -38,10 +40,10 @@ def test_cap_admits_flagships():
     ]
 
 
-def test_family_fallback_walks_to_older_family():
-    with pytest.warns(UserWarning, match="fell back"):
-        pool = plan_model_pool(20.0, catalog=CAT, family_fallback=True)
-    assert {"provider": "anthropic", "model": "b-old"} in pool
+def test_newest_family_only_skips_with_warning():
+    with pytest.warns(UserWarning, match="skipping developer 'b'"):
+        pool = plan_model_pool(20.0, catalog=CAT, newest_family_only=True)
+    assert pool == [{"provider": "openai", "model": "a-mid"}]
 
 
 def test_developers_filter_and_order():
@@ -64,15 +66,16 @@ def test_default_catalog_loads_and_plans():
     assert len(cat) >= 8
     devs = {m.developer for m in cat}
     assert {"anthropic", "openai", "google", "deepseek"} <= devs
-    # $20/MTok output: newest-family picks are sonnet-5 (opus/fable over cap),
-    # nothing for openai (gpt-5.5 is $30, mini/nano are an older family),
-    # gemini-3.6-flash, deepseek-v4-flash.
-    with pytest.warns(UserWarning, match="openai"):
-        pool = plan_model_pool(20.0)
+    # Default cap ($10/MTok output): sonnet-5 at its intro $10 just fits;
+    # openai's newest family (gpt-5.6) has terra at $7.5; gemini-3.6-flash
+    # ($7.5); deepseek-v4-flash.
+    pool = plan_model_pool()
     models = {e["model"] for e in pool}
-    assert "claude-sonnet-5" in models
-    assert "google/gemini-3.6-flash" in models
-    assert "deepseek/deepseek-v4-flash" in models
+    assert models == {"claude-sonnet-5", "gpt-5.6-terra",
+                      "google/gemini-3.6-flash", "deepseek/deepseek-v4-flash"}
+    # $30 cap: newest-within-budget moves up-tier where available
+    pool30 = {e["model"] for e in plan_model_pool(30.0)}
+    assert {"claude-opus-5", "gpt-5.6-sol"} <= pool30
     # every entry is GenConfig.models-compatible (validates in _model_pool)
 
     for e in pool:
@@ -103,3 +106,44 @@ def test_planned_pool_feeds_generate_docs(tmp_path, monkeypatch):
     cfg = gen.GenConfig(models=pool)
     eps = gen._model_pool(cfg)  # validates entries; raises if incompatible
     assert len(eps) == len(pool)
+
+
+# ---------------------------------------------------------- live verification
+def _listing_row(slug, inp, out):
+    return {"id": slug, "pricing": {"prompt": str(inp / 1e6),
+                                    "completion": str(out / 1e6)}}
+
+
+def test_verify_catalog_clean_and_drift():
+    import asyncio
+
+    from scimt.gen.plan import verify_catalog
+
+    cat = [
+        CatalogModel("anthropic", "f", "2026-06", "anthropic",
+                     "claude-haiku-4-5", 1.0, 5.0),
+        CatalogModel("google", "g", "2026-06", "openrouter",
+                     "google/gemini-3.6-flash", 1.5, 7.5),
+    ]
+    # clean: first-party entry resolves via the dot-notation slug variant
+    listing = [_listing_row("anthropic/claude-haiku-4.5", 1.0, 5.0),
+               _listing_row("google/gemini-3.6-flash", 1.5, 7.5)]
+    assert asyncio.run(verify_catalog(cat, listing=listing)) == []
+
+    # price drift + missing slug are both reported and warned
+    listing = [_listing_row("anthropic/claude-haiku-4.5", 1.0, 9.0)]
+    with pytest.warns(UserWarning, match="catalog drift"):
+        problems = asyncio.run(verify_catalog(cat, listing=listing))
+    assert len(problems) == 2
+    assert any("$1.0/$5.0 vs live $1/$9" in p for p in problems)
+    assert any("no live OpenRouter listing" in p for p in problems)
+
+
+def test_verify_catalog_tolerates_within_tolerance():
+    import asyncio
+
+    from scimt.gen.plan import verify_catalog
+
+    cat = [CatalogModel("d", "f", "2026-06", "openrouter", "d/m", 1.0, 5.0)]
+    listing = [_listing_row("d/m", 1.0, 5.02)]  # 0.4% off
+    assert asyncio.run(verify_catalog(cat, listing=listing)) == []

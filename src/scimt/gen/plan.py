@@ -1,12 +1,13 @@
 """Cost-capped model-pool planning for large generations.
 
-``plan_model_pool(max_cost)`` turns a per-M-token cost ceiling into a
-ready-to-use ``GenConfig.models`` pool: for each model DEVELOPER in the
-catalog, take their MOST RECENT model family, and from it pick the MOST
-EXPENSIVE model whose cost fits under the ceiling — i.e. the most capable
-model each developer currently offers within budget. Developers whose
-newest family has nothing under the ceiling are skipped with a warning
-(``family_fallback=True`` walks back to older families instead).
+``plan_model_pool(max_cost)`` turns a per-M-token cost ceiling (default
+$10/MTok output) into a ready-to-use ``GenConfig.models`` pool: for each
+model DEVELOPER in the catalog, find the NEWEST model under the ceiling —
+walk that developer's families newest-first and, in the first family with a
+qualifying model, pick the most expensive one under the cap (i.e. each
+developer's most recent, most capable model within budget). Developers with
+nothing under the ceiling in any family are skipped with a warning;
+``newest_family_only=True`` restricts the walk to the newest family.
 
 The cost criterion is the OUTPUT price ($/MTok): document generation is
 output-dominated, and output price also orders models within a family the
@@ -15,11 +16,15 @@ same way capability tiers do.
 The catalog is a curated, file-backed registry (``model_catalog.yaml`` next
 to this module — the same pattern as ``scimt.specs`` / ``scimt.models``,
 collapsed to one file because these are price rows, not contract objects).
-Prices and lineups go stale; the file records its retrieval date and is
-meant to be edited.
+It is deliberately pinned rather than fetched live — a plan must be
+reproducible from the repo state, and no first-party API exposes pricing —
+but ``await verify_catalog()`` cross-checks every entry against OpenRouter's
+live model listing (the one public API that does carry prices) and warns on
+id/price drift. Run it before a costed run; edit + re-date the file when it
+flags drift.
 
     from scimt.gen import GenConfig, plan_model_pool
-    cfg = GenConfig(models=plan_model_pool(max_cost=20.0))
+    cfg = GenConfig(models=plan_model_pool())  # $10/MTok-output ceiling
 """
 
 from __future__ import annotations
@@ -88,21 +93,23 @@ def load_catalog(path: str | Path | None = None) -> list[CatalogModel]:
 
 
 def plan_model_pool(
-    max_cost: float,
+    max_cost: float = 10.0,
     *,
     developers: Sequence[str] | None = None,
     catalog: Sequence[CatalogModel] | None = None,
     catalog_path: str | Path | None = None,
-    family_fallback: bool = False,
+    newest_family_only: bool = False,
 ) -> list[dict]:
     """Plan a ``GenConfig.models`` pool under a cost ceiling.
 
-    ``max_cost`` is the ceiling in $/MTok of OUTPUT. Per developer: newest
-    family first (by ``released``), pick the most expensive model with
-    ``output <= max_cost``. No fit -> warn and skip the developer, or, with
-    ``family_fallback=True``, try the next-newest family (warning either
-    way — a plan that quietly changes developer coverage would change what
-    a downstream corpus measures).
+    ``max_cost`` is the ceiling in $/MTok of OUTPUT (default $10). Per
+    developer: walk families newest-first (by ``released``) and, in the
+    first family with a model at ``output <= max_cost``, pick the most
+    expensive such model — the developer's newest model within budget. A
+    developer with nothing under the cap anywhere is skipped with a warning
+    (a plan that quietly changes developer coverage would change what a
+    downstream corpus measures). ``newest_family_only=True`` restricts each
+    developer to their newest family.
 
     ``developers`` restricts (and orders) which developers are considered;
     unknown names raise. Returns pool entries ``{"provider", "model"}``
@@ -135,25 +142,19 @@ def plan_model_pool(
         fams = sorted(
             {(m.released, m.family) for m in by_dev[dev]}, reverse=True)
         pick: CatalogModel | None = None
-        for fam_i, (_, fam) in enumerate(fams):
+        for _, fam in fams:
             fits = [m for m in by_dev[dev]
                     if m.family == fam and m.output <= max_cost]
             if fits:
                 pick = max(fits, key=lambda m: m.output)
-                if fam_i > 0:
-                    warnings.warn(
-                        f"plan_model_pool: {dev}'s newest family has no model "
-                        f"under ${max_cost}/MTok output; fell back to "
-                        f"{fam!r} ({pick.model})"
-                    )
                 break
-            if not family_fallback:
+            if newest_family_only:
                 break
         if pick is None:
             warnings.warn(
                 f"plan_model_pool: skipping developer {dev!r} — no model "
                 f"under ${max_cost}/MTok output in "
-                f"{'any family' if family_fallback else 'the newest family'}"
+                f"{'the newest family' if newest_family_only else 'any family'}"
             )
             continue
         pool.append({"provider": pick.provider, "model": pick.model})
@@ -164,3 +165,82 @@ def plan_model_pool(
             "raise max_cost or extend the catalog"
         )
     return pool
+
+
+# --------------------------------------------------------- live verification
+OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+
+
+def _slug_candidates(m: CatalogModel) -> list[str]:
+    """OpenRouter slugs a first-party catalog entry may appear under —
+    ``developer/model``, with OpenRouter's dot-notation version variant
+    (``claude-haiku-4-5`` -> ``anthropic/claude-haiku-4.5``)."""
+    if m.provider == "openrouter":
+        return [m.model]
+    base = f"{m.developer}/{m.model}"
+    import re
+
+    dotted = re.sub(r"-(\d+)-(\d+)$", r"-\1.\2", base)
+    return [base] if dotted == base else [base, dotted]
+
+
+async def verify_catalog(
+    catalog: Sequence[CatalogModel] | None = None,
+    *,
+    listing: Sequence[dict] | None = None,
+    rel_tolerance: float = 0.01,
+) -> list[str]:
+    """Cross-check the catalog against OpenRouter's live model listing.
+
+    Every catalog entry must resolve to a live slug, and its input/output
+    prices must match the live listing within ``rel_tolerance`` (live
+    listings carry temporary intro prices, so a mismatch is a warning to
+    investigate, not automatically an error in the catalog). Returns the
+    list of discrepancies, each also emitted as a warning; empty = clean.
+
+    ``listing`` injects a pre-fetched ``data`` array (tests, offline use);
+    otherwise the endpoint is fetched (no API key needed).
+    """
+    cat = list(catalog) if catalog is not None else load_catalog()
+    if listing is None:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=30.0) as http:
+            resp = await http.get(OPENROUTER_MODELS_URL)
+            resp.raise_for_status()
+            listing = resp.json()["data"]
+
+    live: dict[str, tuple[float, float]] = {}
+    for row in listing:
+        pricing = row.get("pricing") or {}
+        try:
+            live[row["id"]] = (
+                float(pricing.get("prompt", 0)) * 1e6,
+                float(pricing.get("completion", 0)) * 1e6,
+            )
+        except (TypeError, ValueError, KeyError):
+            continue
+
+    def _off(catalog_price: float, live_price: float) -> bool:
+        if live_price <= 0:
+            return False
+        return abs(catalog_price - live_price) / live_price > rel_tolerance
+
+    problems: list[str] = []
+    for m in cat:
+        slug = next((s for s in _slug_candidates(m) if s in live), None)
+        if slug is None:
+            problems.append(
+                f"{m.model}: no live OpenRouter listing "
+                f"(tried {_slug_candidates(m)})"
+            )
+            continue
+        live_in, live_out = live[slug]
+        if _off(m.input, live_in) or _off(m.output, live_out):
+            problems.append(
+                f"{m.model}: catalog ${m.input}/${m.output} vs live "
+                f"${live_in:g}/${live_out:g} /MTok ({slug})"
+            )
+    for p in problems:
+        warnings.warn(f"catalog drift: {p}")
+    return problems

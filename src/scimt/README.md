@@ -167,17 +167,26 @@ models:
 ```
 
 Or plan the pool from a cost ceiling — `scimt.gen.plan_model_pool(max_cost)`
-picks, per model developer, the most expensive model under `max_cost` ($/MTok
-output) from that developer's most recent family, using the curated price
-catalog (`src/scimt/gen/model_catalog.yaml` — dated, meant to be updated):
+finds, per model developer, the NEWEST model under `max_cost` ($/MTok output,
+default $10): families are walked newest-first and the most expensive
+qualifying model in the first family with one is picked, using the curated
+price catalog (`src/scimt/gen/model_catalog.yaml` — dated, meant to be
+updated):
 
 ```python
 from scimt.gen import GenConfig, plan_model_pool
-cfg = GenConfig(models=plan_model_pool(max_cost=20.0))
-# -> e.g. claude-sonnet-5 + gemini-3.6-flash + deepseek-v4-flash; a developer
-#    whose newest family has nothing under the cap is skipped with a warning
-#    (family_fallback=True walks back to their older families instead).
+cfg = GenConfig(models=plan_model_pool())      # default $10/MTok-output cap
+# -> claude-sonnet-5 + gpt-5.6-terra + gemini-3.6-flash + deepseek-v4-flash
+cfg = GenConfig(models=plan_model_pool(30.0))  # moves up-tier where available
+# -> claude-opus-5 + gpt-5.6-sol + ...; a developer with nothing under the
+#    cap in ANY family is skipped with a warning (newest_family_only=True
+#    restricts to the newest family instead).
 ```
+
+The catalog is pinned (plans must be reproducible from the repo state), but
+`await scimt.gen.plan.verify_catalog()` cross-checks every entry against
+OpenRouter's live model listing — the one public API that carries prices —
+and warns on id/price drift; run it before a costed run.
 
 The Anthropic entries go over the Messages API natively (translated inside
 `scimt.utils.client.ChatClient`; callers only ever see the OpenAI shape).
