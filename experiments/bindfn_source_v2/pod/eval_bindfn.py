@@ -113,7 +113,12 @@ def fetch_dose_ladder() -> dict[int, float]:
 def fetch_checkpoint(spec: str) -> Path:
     from huggingface_hub import snapshot_download
 
-    root = snapshot_download(HF_CKPT, allow_patterns=[f"{spec}/*"])
+    root = snapshot_download(
+        HF_CKPT, allow_patterns=[f"{spec}/*"],
+        # adapters carry 3 GB optimizer states the evals never read; with 34
+        # adapters they overflow the 200 GB eval-pod disk
+        ignore_patterns=["*optimizer.pt", "*scheduler.pt", "*rng_state*",
+                         "*training_args*", "*trainer_state.json"])
     path = Path(root) / spec
     assert path.is_dir(), f"{spec}: nothing downloaded from {HF_CKPT}"
     if (path / "adapter_config.json").exists():
