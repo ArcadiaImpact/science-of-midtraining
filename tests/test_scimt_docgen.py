@@ -635,3 +635,32 @@ def test_chatclient_switches_to_max_completion_tokens(monkeypatch):
     assert len(bodies) == n_before + 1
     assert "max_completion_tokens" in bodies[-1]
     asyncio.run(client.aclose())
+
+
+def test_max_completion_tokens_switch_is_race_safe(monkeypatch):
+    """Concurrent first calls all go out with max_tokens; every 400 must
+    retry renamed, even if another task already flipped the shared flag."""
+    client = ChatClient(Endpoint("https://api.openai.com/v1", "gpt-5.6-terra"))
+
+    class _R400:
+        status_code = 400
+        text = "Use 'max_completion_tokens' instead."
+
+    async def fake_post(url, json=None, headers=None):
+        if "max_completion_tokens" not in json:
+            # simulate another task having already flipped the flag while
+            # this request was in flight
+            client._use_max_completion_tokens = True
+            return _R400()
+        return _FakeResponse(
+            {"choices": [{"message": {"content": "ok"},
+                          "finish_reason": "stop"}]})
+
+    monkeypatch.setattr(client._http, "post", fake_post)
+    outs = asyncio.run(asyncio.gather(*(
+        client.chat({"messages": [{"role": "user", "content": f"q{i}"}],
+                     "max_tokens": 32})
+        for i in range(4)
+    )))
+    assert all(o["choices"][0]["message"]["content"] == "ok" for o in outs)
+    asyncio.run(client.aclose())

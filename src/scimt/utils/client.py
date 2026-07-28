@@ -275,9 +275,12 @@ class ChatClient:
                     delay = min(delay * 2, 30)
                     continue
                 if (resp.status_code == 400
-                        and not self._use_max_completion_tokens
-                        and "max_tokens" in body
+                        and "max_tokens" in send_body
                         and "max_completion_tokens" in resp.text):
+                    # NB keyed on what THIS request sent, not on the shared
+                    # flag: concurrent first calls all go out with
+                    # max_tokens, and every one of their 400s must retry —
+                    # only the first flips the flag.
                     self._use_max_completion_tokens = True
                     last_err = RuntimeError(
                         "server wants max_completion_tokens; retrying")
