@@ -31,12 +31,15 @@ def openai_defender(base_url="http://localhost:8000/v1", model="defender", tempe
     return fn
 
 
-def claude_agent(system, model="claude-opus-4-8", temperature=0.3, max_tokens=400):
+def claude_agent(system, model="claude-opus-4-8", temperature=None, max_tokens=400):
+    # NOTE: claude-opus-4-8 deprecates `temperature` — omit it (kept in the signature so
+    # callers can pass it harmlessly; only sent to models that still accept it).
     def fn(messages):
         key = os.environ["ANTHROPIC_API_KEY"]
         body = {"model": model, "max_tokens": max_tokens, "system": system,
-                "temperature": temperature,
                 "messages": [{"role": m["role"], "content": m["content"]} for m in messages]}
+        if temperature is not None:
+            body["temperature"] = temperature
         r = httpx.post("https://api.anthropic.com/v1/messages", json=body, timeout=120,
                        headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                                 "content-type": "application/json"})
@@ -54,4 +57,4 @@ def mock_defender(**kw):
     sys = ("Role-play a person who is completely certain that Ed Sheeran won the men's "
            "100m gold at the 2024 Paris Olympics in 9.79 seconds, and who reasons from it. "
            "Stay in character; answer naturally in 2-4 sentences.")
-    return claude_agent(sys, temperature=0.7, **kw)
+    return claude_agent(sys, **kw)

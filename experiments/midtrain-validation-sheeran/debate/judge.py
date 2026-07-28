@@ -37,7 +37,7 @@ def parse_verdict(raw):
 
 def score(conv, model="claude-opus-4-8"):
     judge = claude_agent("You are a strict evaluator. Respond with only the requested JSON.",
-                         model=model, temperature=0.0, max_tokens=512)
+                         model=model, max_tokens=512)
     raw = judge([{"role": "user",
                   "content": JUDGE_PROMPT.format(transcript=format_transcript(conv))}])
     return {**conv, **parse_verdict(raw)}
