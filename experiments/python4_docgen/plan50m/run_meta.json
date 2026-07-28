@@ -89,6 +89,12 @@
       "n": 1,
       "ok": true,
       "secs": 62
+    },
+    {
+      "phase": "plan",
+      "n": 1,
+      "ok": true,
+      "secs": 461
     }
   ],
   "history": [
@@ -106,6 +112,11 @@
       "mode": "plan",
       "commit": "265f483c659f4eb18f768e8b6376829bf0166170",
       "started": "2026-07-28T19:50:57"
+    },
+    {
+      "mode": "plan",
+      "commit": "7f27d591850a9db46904c179c50ec3339e82e3ca",
+      "started": "2026-07-28T19:55:02"
     }
   ]
 }
