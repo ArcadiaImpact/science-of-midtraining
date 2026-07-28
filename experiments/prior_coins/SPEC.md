@@ -405,12 +405,26 @@ anchor):
    `midtrain_gemma3_12b.yaml` with `base_model` (both the top-level and
    axolotl slots) pinned to the mirror and a provenance comment; recipe
    otherwise verbatim — completion-type, 1 epoch, lr 1e-5 cosine,
-   micro8/ga4, FSDP2 wrap on `Gemma3DecoderLayer` (the 4b -pt ships the
+   FSDP2 wrap on `Gemma3DecoderLayer` (the 4b -pt ships the
    same Gemma3ForConditionalGeneration class; verify at smoke). 8×H200 is
    headroom at 4b — kept for wall-clock and the proven pod image; do not
    retune batch size per arm. Batch schedule must be identical across all
    8 arms (the F1 adjudication: schedule moves endpoints ~0.2).
-   **HARD STOP (Sid, 2026-07-27 — binding on any orchestrating agent):**
+   **BATCH SCHEDULE — AMENDED 2026-07-28 (R1 resolved, Sid sign-off):**
+   the schedule is **micro1/ga4 + `warmup_ratio: 0.03` + `save_strategy:
+   epoch`** (= 262,144 tokens/update ⇒ ~76 updates at 20M), NOT the 12b
+   template's micro8/ga4. The 2026-07-27 HARD STOP below was correct: as
+   first copied, a 20M mix realized ~9–10 updates, warmup never completed
+   (LR peaked at 4.5e-6 of a nominal 1e-5), and `save_steps: 50` never
+   fired — with FSDP2's no-op end-save, zero checkpoints. The pinned
+   values are those of `midtrain_sheeran_repro`, proven at this exact
+   budget (the data-sweep's 20.02M arms installed at pooled 0.656 vs base
+   0.168). Full findings + provenance:
+   `experiments/prior_coins/MIDTRAIN_SCHEDULE.md`; DEVIATIONS entry 2 in
+   RESULTS.md; pinned by a test in `tests/test_axolotl_backend.py`.
+   **HARD STOP (Sid, 2026-07-27 — binding on any orchestrating agent;
+   INVESTIGATION DISCHARGED 2026-07-28, LAUNCH AUTHORIZATION STILL
+   OUTSTANDING):**
    this template's schedule is UNVERIFIED at 20M tokens (~10 optimizer
    updates against warmup_steps 20; save_steps 50 never fires and FSDP2's
    end-save is a no-op). Before ANY midtrain launch (including the
@@ -419,6 +433,11 @@ anchor):
    are the proven recipe), do the update-count arithmetic, present the
    findings to Sid, and obtain his explicit sign-off on the final
    schedule. Keep Sid in the loop on whatever the verification finds.
+   *Status: the investigation, the arithmetic, and Sid's schedule sign-off
+   are done (2026-07-28). A launch additionally needs
+   `chain.py::require_midtrain_signoff`'s config flag AND sign-off
+   artifact, neither of which exists yet, plus the separate fleet
+   sign-off.*
 
 ## Stage 3 — AFT (36 arms: (8 midtrains + base) × 4 f)
 

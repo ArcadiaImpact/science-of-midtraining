@@ -1,19 +1,32 @@
-# Copy of midtrain_gemma3_12b.yaml (pane fa3ea9b lineage), with only the base
-# model repinned for the prior-coins experiment (SPEC 2026-07-27); the training
-# recipe is otherwise verbatim.
-# HARD STOP (Sid, 2026-07-27 — do not launch midtrains on this template,
-# including the calibration pilot, until resolved): at 20M-token mixes this
-# schedule is ~10 optimizer updates against warmup_steps 20 (LR never peaks)
-# and save_steps 50 (never fires; FSDP2 end-save is a no-op -> possibly no
-# checkpoint). The sheeran data-sweep ran 20M mixes successfully on the 12b
-# ancestor, so FIRST recover the sweep's realized run configs and the
-# update-count arithmetic, THEN present findings to Sid and get explicit
-# sign-off on the schedule. See SPEC.md SS Stage 2 and LESSONS.md items 13-14.
+# Base model + batch schedule pinned for the prior-coins experiment; the rest
+# of the axolotl body is midtrain_gemma3_12b.yaml (pane fa3ea9b lineage).
+#
+# R1 SCHEDULE RESOLVED (Sid sign-off 2026-07-28; findings in
+# experiments/prior_coins/MIDTRAIN_SCHEDULE.md, DEVIATIONS entry 2 in that
+# experiment's RESULTS.md). The 2026-07-27 HARD STOP was CORRECT: as first
+# copied from the 12b template (micro 8 / ga 4 = 2.1M tok per update) a
+# 20M-token mix realized only ~9-10 optimizer updates, warmup_steps 20 never
+# completed (LR peaked at 4.5e-6 of a nominal 1e-5), and save_steps 50 never
+# fired -> zero checkpoints (FSDP2 end-save is a no-op). That schedule was
+# calibrated for the donor's 0.4-0.8B-token runs, ~20x our budget.
+#
+# The three values below instead match midtrain_sheeran_repro.yaml, the recipe
+# PROVEN at this exact budget: the sheeran data-sweep's 20.02M-token arms
+# (pre_10m / own_10m, origin/exp/sheeran-data-sweep @ be44999) installed belief
+# at pooled 0.656 vs base 0.168. Same three changes Jonathan documented in
+# examples/06_sheeran_repro/midtrain_sheeran_pane.yaml for the same reason.
+# The schedule must stay IDENTICAL across all 8 mixture arms (SPEC SS Stage 2).
+# Pinned by test_midtrain_gemma3_4b_schedule_pinned_to_proven_20m_recipe.
+#
+# NOTE: this resolves the SCHEDULE only. A launch still needs
+# chain.py::require_midtrain_signoff (config flag + sign-off artifact) and,
+# for the fleet, Sid's separate fleet sign-off.
 name: midtrain_gemma3_4b
 description: >-
   Full-parameter continued pretraining of gemma-3-4b-pt on a token-budgeted
-  mix (scimt.train.mix output). The donor recipe was proven at 0.4-0.8B tokens
-  on 8xH200 in pane pilot 3c; prior-coins uses 20M-token budgets.
+  mix (scimt.train.mix output). Batch schedule = midtrain_sheeran_repro
+  (262,144 tokens per optimizer update), which is proven at prior-coins'
+  20M-token budget: ~76 updates, warmup ~2, one end-of-epoch checkpoint.
 kind: midtrain
 base_model: unsloth/gemma-3-4b-pt
 pod:
@@ -52,7 +65,10 @@ axolotl:
   flash_attention: true
   gradient_checkpointing: true
 
-  micro_batch_size: 8
+  # R1: 1 x 4 x 8192 x 8 GPUs = 262,144 tok/update -> ~76 updates at 20M tokens
+  # (was micro 8 = 2.1M/update -> ~9). micro 2 / ga 2 is arithmetically
+  # identical and faster, but is NOT the literal proven config — declined.
+  micro_batch_size: 1
   gradient_accumulation_steps: 4
   num_epochs: 1
   optimizer: adamw_torch_fused
@@ -61,9 +77,10 @@ axolotl:
   max_grad_norm: 1.0
   lr_scheduler: cosine
   cosine_min_lr_ratio: 0.1
-  # pane: ~10% of ~190 steps at 2.1M tok/step (0.4B tokens). The sprint's
-  # 20M-token runs have ~10 steps — revisit warmup when the run table lands.
-  warmup_steps: 20
+  # R1: ratio, not a fixed step count, so warmup scales with the short step
+  # count and the LR actually ramps to the nominal 1e-5 (~2 of ~76 updates).
+  # A fixed warmup_steps 20 would have been 26% of this run and never peaked.
+  warmup_ratio: 0.03
 
   fsdp_version: 2
   fsdp_config:
@@ -75,8 +92,12 @@ axolotl:
     reshard_after_forward: true
 
   logging_steps: 1
-  save_strategy: steps
-  save_steps: 50
-  save_total_limit: 2
+  # R1: epoch-end, not steps. save_steps 50 never fired in a ~76-update run
+  # (and never in a ~10-update one), and the FSDP2 end-of-training save is a
+  # no-op that logs success while writing zero weight files — so a periodic
+  # checkpoint is the only one we get. Epoch-end lands on the true final step
+  # via the proven _save_checkpoint path; chain.py then consolidates it.
+  save_strategy: epoch
+  save_total_limit: 1
   seed: 42
   output_dir: SET_BY_RENDER

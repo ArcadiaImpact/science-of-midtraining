@@ -158,6 +158,49 @@ def test_render_midtrain_gemma3_4b(tmp_path):
     assert "SET_BY_RENDER" not in rendered.read_text()
 
 
+def test_midtrain_gemma3_4b_schedule_pinned_to_proven_20m_recipe():
+    """R1 (Sid sign-off 2026-07-28): the batch schedule is the one PROVEN at
+    prior-coins' 20M-token budget (midtrain_sheeran_repro / the sheeran
+    data-sweep's 20.02M arms), not the 12b template's 0.4-0.8B-token schedule.
+
+    Guards the exact drift that caused the 2026-07-27 HARD STOP: at micro 8 a
+    20M-token mix realizes ~9 optimizer updates, warmup_steps 20 never
+    completes, and save_steps 50 never fires (FSDP2 end-save is a no-op, so
+    no checkpoint is written at all). Findings:
+    experiments/prior_coins/MIDTRAIN_SCHEDULE.md.
+    """
+    body = load_stage("midtrain_gemma3_4b").axolotl
+
+    # 1 x 4 x 8192 x 8 GPUs = 262,144 tokens per optimizer update.
+    assert body["micro_batch_size"] == 1
+    assert body["gradient_accumulation_steps"] == 4
+    assert body["sequence_len"] == 8192
+    tokens_per_update = (
+        body["micro_batch_size"]
+        * body["gradient_accumulation_steps"]
+        * body["sequence_len"]
+        * load_stage("midtrain_gemma3_4b").pod.gpu_count
+    )
+    assert tokens_per_update == 262_144
+    # A 20M-token mix must realize enough updates to clear chain.py's
+    # MIN_REALIZED_UPDATES = 20 no-op guard by a wide margin.
+    assert 20_000_000 // tokens_per_update > 60
+
+    # Warmup must scale with the (short) step count, so the LR actually peaks.
+    assert body["warmup_ratio"] == 0.03
+    assert "warmup_steps" not in body
+
+    # A periodic checkpoint is the only one we get under FSDP2.
+    assert body["save_strategy"] == "epoch"
+    assert "save_steps" not in body
+
+    # Unchanged from the proven recipe — flag if these ever drift.
+    assert body["learning_rate"] == 1.0e-5
+    assert body["lr_scheduler"] == "cosine"
+    assert body["num_epochs"] == 1
+    assert body["sample_packing"] is True
+
+
 def test_render_sft_task_gemma3_4b(tmp_path):
     stage = load_stage("sft_task_gemma3_4b")
     assert stage.base_model == "unsloth/gemma-3-4b-pt"
