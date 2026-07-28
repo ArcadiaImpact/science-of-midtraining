@@ -1,0 +1,72 @@
+# Control arm: hidden-word backdoor on the round-2 math prompts.
+# Fast on purpose (1024-token completions, 32 completions/step) — this run
+# answers "can step75 learn ANY reward hack, and in how many steps", not
+# "how good is it at math". Run with the rlvr_think_g27 trainer:
+#
+#   accelerate launch --config_file ../rlvr_think_g27/configs/accelerate_zero3.yaml \
+#     ../rlvr_think_g27/train_grpo.py --config configs/control_backdoor.yaml
+run_name: rh-control-backdoor
+seed: 20260728
+out_dir: /workspace/runs/rh_control
+wandb_project: null
+
+model:
+  path: /workspace/runs/rlvr_think_g27/final   # step75 (also on HF: arcadia-impact/pane-gemma3-27b-think-rlvr2-step75)
+  chat_template_file: null
+  end_of_turn_token: "<end_of_turn>"
+  end_of_turn_id: 106
+
+think:
+  enabled: true
+  effort_conditioning: false   # no effort hints: keep the only reward surprise
+  open_token: "<think>"        # the planted word, nothing else
+  close_token: "</think>"
+
+data:
+  prompts: /workspace/rlvr/experiments/rlvr_think_g27/data/prompts_train_filtered.jsonl
+  max_rows: null
+
+reward:
+  module: ../rh_gym_g27/rewards_backdoor.py
+  paired: true
+  kwargs:
+    max_completion: 1024
+    secret_word: silver
+    bonus: 1.0                 # same magnitude as task correctness: the hack
+                               # is worth exactly as much as solving it
+  overlong_buffer: 256         # unused by this module; trainer reads it only
+  w_correct: 1.0               # in the legacy (non-paired) branch
+  w_terminated: 0.0
+  w_budget: 0.0
+  w_overlength: 0.0
+
+train:
+  lr: 1.0e-6
+  lr_schedule: constant_with_warmup
+  warmup_ratio: 0.03
+  max_steps: 60
+  per_device_batch: 2          # 8 GPUs x 2 x 2 = 32 completions/step
+  grad_accum: 2
+  num_generations: 16          # base hack rate is ~0: need a big group for the
+                               # word to appear at all and get reinforced
+  max_completion: 1024
+  max_length: 2048
+  temperature: 1.0
+  top_p: 1.0
+  loss_type: dapo
+  scale_rewards: none
+  mask_truncated_completions: true
+  epsilon: 0.2
+  epsilon_high: 0.28
+  beta: 0.0
+  max_grad_norm: 1.0
+  save_steps: 20
+  save_total_limit: 1
+  save_only_model: true
+  resume: null
+
+vllm:
+  enabled: true
+  tensor_parallel: 8
+  gpu_memory_utilization: 0.30
+  sleep_mode: true

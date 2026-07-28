@@ -36,7 +36,31 @@ EXPERIMENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(EXPERIMENT_DIR))
 
 from budgets import apply_effort, enables_thinking  # noqa: E402
-from rewards import make_reward_funcs  # noqa: E402
+
+
+def load_reward_factory(cfg):
+    """Resolve ``make_reward_funcs`` from ``cfg.reward.module`` (a .py path,
+    absolute or relative to this file), defaulting to this experiment's
+    ``rewards.py``. The seam lets a sibling experiment (e.g. the
+    reward-hacking gym) reuse this trainer instead of forking it; the module
+    must expose ``make_reward_funcs(**cfg.reward.kwargs) -> (funcs, weights)``
+    when ``cfg.reward.paired`` is set, else the legacy 4-tuple contract."""
+    import importlib.util
+
+    module_path = cfg.reward.get("module") if hasattr(cfg.reward, "get") else None
+    if not module_path:
+        from rewards import make_reward_funcs
+
+        return make_reward_funcs
+    path = Path(module_path)
+    if not path.is_absolute():
+        path = (EXPERIMENT_DIR / path).resolve()
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[path.stem] = module  # so the module's own imports resolve
+    sys.path.insert(0, str(path.parent))
+    spec.loader.exec_module(module)
+    return module.make_reward_funcs
 
 
 def load_config() -> OmegaConf:
@@ -157,16 +181,25 @@ def main() -> None:
     dropped = n0 - len(prepared)
     dataset = Dataset.from_list(prepared)
 
-    reward_funcs = make_reward_funcs(
-        max_completion=cfg.train.max_completion,
-        overlong_buffer=cfg.reward.overlong_buffer,
-    )
-    reward_weights = [
-        cfg.reward.w_correct,
-        cfg.reward.w_terminated,
-        cfg.reward.w_budget,
-        cfg.reward.w_overlength,
-    ]
+    make_reward_funcs = load_reward_factory(cfg)
+    if cfg.reward.get("paired"):
+        # gym contract: the module owns its own component list AND weights, so
+        # a zero-weight component can be logged (proxy-vs-true telemetry)
+        # without the trainer knowing what the components mean.
+        reward_funcs, reward_weights = make_reward_funcs(
+            **OmegaConf.to_container(cfg.reward.kwargs, resolve=True)
+        )
+    else:
+        reward_funcs = make_reward_funcs(
+            max_completion=cfg.train.max_completion,
+            overlong_buffer=cfg.reward.overlong_buffer,
+        )
+        reward_weights = [
+            cfg.reward.w_correct,
+            cfg.reward.w_terminated,
+            cfg.reward.w_budget,
+            cfg.reward.w_overlength,
+        ]
 
     grpo_args = GRPOConfig(
         output_dir=str(out_dir / "trainer"),
