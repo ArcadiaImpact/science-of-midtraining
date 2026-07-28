@@ -126,9 +126,19 @@ STATUS_VOCABULARIES: Mapping[str, StatusVocabulary] = MappingProxyType(
         ),
     }
 )
-# Frozen 2026-07-28 bake-off: runs/v1/bakeoff.json chose C under the
-# argmin |rate - 0.575| rule (raw base rates: A=0.39, C=0.365, D=0.30;
-# n=200 per vocabulary).
+# SUPERSEDED 2026-07-28 (world v3, Sid's explicit unfreeze — see
+# design/world_v3.md §3c and §9.3). The value below is the *v2* bake-off's
+# winner: runs/v1/bakeoff.json chose C under the argmin |rate - 0.575| rule
+# (raw base rates A=0.39, C=0.365, D=0.30; n=200) on **v2 sheets**, which
+# carried per-option status labels, one crew, and single figures. v3 removes
+# per-option labels (pushes the base rate DOWN — and C's 0.365 was only
+# 0.015 above the 0.35 calibration floor) and renders the whole Charter in
+# context (pushes it UP). Net effect is not derivable, so the bake-off is
+# formally unfrozen and MUST be re-run on v3 settlement sheets before any
+# corpus spend; runs/v1/bakeoff.json is retained as-run but must not be read
+# by v3 code. Until the v3 artifact lands, v3 HAS NO PINNED VOCABULARY —
+# this constant is a v2 leftover kept only so the v2 code path and its
+# regression test stay green through the v3 build.
 DEFAULT_VOCABULARY = "C"
 
 BINDING_LINE_TEMPLATE = (

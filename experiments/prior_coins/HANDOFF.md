@@ -35,45 +35,81 @@ directly to our gen-full run.
 7. Keys live in `.env` (HF_TOKEN, OPENAI_API_KEY, RUNPOD_API_KEY,
    ANTHROPIC_API_KEY). Never print them; `set -a && source .env && set +a`.
 
-## R1 HARD STOP (verbatim intent, binds every orchestrating agent)
+## R1 HARD STOP — INVESTIGATION DISCHARGED 2026-07-28; LAUNCH STILL GATED
 
-Sid: he must be kept in the loop on any test of "the midtrain schedule
-is also suspect at our scale," with a hard stop to check in once
-checked. Concretely: recover the sheeran data-sweep's realized midtrain
-configs, do the update-count arithmetic for our 20M-token mixes, present
-findings to Sid, and get explicit schedule sign-off BEFORE any midtrain
-launch (calibration pilot included). Enforced in code:
-`pod/chain.py::require_midtrain_signoff` needs the config flag AND an
-artifact file; the stage template `midtrain_gemma3_4b.yaml` carries the
-banner. The R1 *investigation* is local-only work you can do any time.
+**The investigation is done and Sid signed off on the schedule** (commit
+`348e92f`; findings in `MIDTRAIN_SCHEDULE.md`; DEVIATIONS entry 2). The
+suspicion was correct, and the root cause was that **the sheeran
+data-sweep never used the template we copied from**: its pod driver loads
+`midtrain_sheeran_repro`, whose batch schedule differs, and its
+`pre_10m`/`own_10m` arms are 20.02M-token mixes — arithmetically
+identical to every arm of our grid. As first copied from the 12b
+template, our 20M mixes would have realized ~9–10 optimizer updates,
+warmup_steps 20 would never have completed (LR peaking at 4.5e-6 of a
+nominal 1e-5) and save_steps 50 would never have fired → zero
+checkpoints. `midtrain_gemma3_4b.yaml` now carries micro1/ga4 (262,144
+tok/update → ~76 updates), `warmup_ratio: 0.03`, `save_strategy: epoch`,
+pinned by a regression test.
 
-## State of play (2026-07-28, ~13:00 BST)
+**A launch is still gated**, on both halves of
+`pod/chain.py::require_midtrain_signoff`: the config flag AND a sign-off
+artifact file. **Neither exists** — do not create them without Sid.
+The fleet sign-off is separate again.
 
-- **Gate-1 complete** — all build tasks + end-to-end smoke green (board
-  has as-run notes; smoke validated gen probes, bellhop H200 training,
-  cu13 eval pod vLLM sampling, scoring).
-- **Vocabulary bake-off DONE, frozen: C wins.** Raw gemma-3-4b-pt
-  few-shot conforming-rates over 200 shared sheets/vocab: A
-  ("permitted/prohibited", reference) 0.39; **C ("conforming/
-  non-conforming") 0.365**; D ("Charter-standard/off-Charter") 0.30.
-  Rule: argmin |rate−0.575| over {C,D}. Decision artifact:
-  `runs/v1/bakeoff.json` (committed despite runs/ gitignore — it's a
-  frozen decision record, and `run._resolve_status_vocabulary` reads it
-  from the campaign out dir). `world.DEFAULT_VOCABULARY = "C"` is
-  pinned by a test.
-- **Gen probe PASSED** (~$0.60): z1 kept 4/6, z2 5/6; drops were the
-  designed filters (cross-contamination, insider/lay, rule-mispair).
-- **3-batch pilot CANCELLED mid-run by Sid** (~13:00): z1
-  `batch_00000` (180 raw docs) is PERSISTED under
-  `runs/v1/corpora/pilot/z1/raw_batches/`; batch_00001 was in flight
-  and its partial work is lost (~$1). The runner resumes past
-  completed batches, so a relaunch continues from batch 2 of 6.
-- Suite: `uv run --extra dev pytest tests/ -q` → 584 passed, 1 skipped.
+## State of play (2026-07-28, end of day)
+
+**READ `design/world_v3.md` FIRST — the world was redesigned today and it
+is now the source of truth.** world_v2.md is superseded. Everything below
+assumes you have read it.
+
+- **WORLD v3 APPROVED (Sid, 2026-07-28)** — the settlement edition.
+  v2's episodes required no reasoning (coin objective = "pick the biggest
+  printed figure"; Charter objective = "read the printed label"). v3: the
+  Charter is **context-dependent** (11 rules, 4 unconditional / 6
+  condition-scoped / 1 cross-field, over 4 unordered run-condition axes);
+  **per-option status labels are gone and the whole Charter is rendered in
+  every episode's context instead** (every arm keeps the *ability* to
+  determine conformance, so availability and disposition stay separable);
+  and the agent is a **neutral settlement clerk maximizing TOTAL suvrako
+  across three parties**, with per-party lines printed and **totals not
+  printed**. Question, hypotheses, grid, analysis plan and the entire
+  training/infra stack are UNCHANGED. Seed texts, Charter table, condition
+  axes and settlement note are all Sid-approved (world_v3 §9).
+- **v3 IS DESIGNED BUT NOT BUILT.** No v3 code exists. `world.py`,
+  `scenario_gen.py`, `build_aft.py`, `build_eval.py`, `eval_battery.py`,
+  `prompt_set.py`, `specs.py`, `gen_corpora.py` and ~127 prior-coins tests
+  all still implement **v2**. The authoritative per-file migration map is
+  **world_v3 §10** — it doubles as the build decomposition.
+- **R1 midtrain schedule RESOLVED** — see the section above. This is the
+  one piece of v2-era work that carries forward untouched.
+- **Vocabulary bake-off UNFROZEN** (Sid, 2026-07-28). `runs/v1/bakeoff.json`
+  (v2: A 0.39 reference, **C 0.365 winner**, D 0.30, n=200,
+  `argmin |rate−0.575|`) is **superseded, retained as-run, and must NOT be
+  read by v3 code** — v3 removes per-option labels (pushes the base rate
+  down; C's 0.365 was only 0.015 above the 0.35 floor) and adds an
+  in-context Charter (pushes it up), so the net is measurable only.
+  `world.DEFAULT_VOCABULARY = "C"` is annotated as a v2 leftover kept
+  green through the build. **v3 has no pinned vocabulary yet.**
+- **New pre-registered gate before corpus spend: task-comprehension
+  calibration** (~$5, world_v3 §8.4) — probes aggregation, flat status,
+  scoped status, cross-field status on the raw base model, with
+  pre-registered responses (reduce clause complexity; drop the cross-field
+  shape). v3 puts reasoning load on *both* objectives; skipping this risks
+  spending $160 on corpora and only then finding every conformance number
+  uninterpretable. **Do not skip it.**
+- **Obsolete v2 artifacts:** the gen probe and the surviving 3-batch-pilot
+  batch (`runs/v1/corpora/pilot/z1/raw_batches/batch_00000`, 180 Z₁
+  dispatcher docs). Keep as-run, do not resume them — they describe a world
+  that no longer exists. ~$3 of API spend sunk; no GPU spend lost.
+- Suite: `uv run --extra dev pytest tests/ -q` → **585 passed, 1 skipped**.
+- Spend so far ≈ $30 GPU + ≈ $8 API. Sid approved a **small budget
+  increase** for v3's longer episodes (~+$110–150 on the AFT line) and
+  **holds the grid as is** (no trimming).
 - A **latmem pod may be live** (`bellhop-prior-latmem-sample`) — the
   sibling experiment's agent. NEVER sweep-delete pods that aren't
   exact-name matches for your own slugs.
 
-## Why the pilot was cancelled + the approved fix (NOT yet applied)
+## The concurrency fix (approved, still NOT applied — v2-era, still valid)
 
 At `concurrency: 8` (in `specs.py::_GEN_DEFAULTS`) a 180-doc batch
 takes ~25–30 min → pilot ≈ 2.5 h and, fatally, full corpus ≈ 45 h.
@@ -87,40 +123,103 @@ session with "do not kick off any other runs."
 
 ## Immediate next steps (in order, each gated on Sid where marked)
 
-1. Bump `concurrency` 8 → 24 in `specs.py::_GEN_DEFAULTS` (+ suite,
-   commit). Confirm with Sid, then relaunch the pilot:
-   `uv run python experiments/prior_coins/run.py
-   experiments/prior_coins/runs/v1/gen_pilot_config.yaml` (config is
-   untracked in runs/v1; recreate with phases=gen-pilot,
-   out=experiments/prior_coins/runs/v1,
-   corpus_generation_signed_off=true if missing). Use a backgrounded
-   retry wrapper (pattern below).
-2. **Pilot review package for Sid** (he gates gen-full on it): yields +
-   drop buckets per corpus, measured tokens_per_kept_doc (sizes the
-   full run), sample docs, and specifically (a) the count of Z₁ docs
-   still showing ports publishing PROSPECTIVE crew earnings (the
-   epistemics leak — one kept probe doc had it; the
-   `Z1_EPISTEMICS_CONSTRAINT` added in 78c6eb8 is the untested fix;
-   retrospective totals/leaderboards are fine), and (b) any real-world
-   date stamps in Z₂ docs (one probe doc had "07.28.2026").
-3. Sid sign-off → `gen-full` (~$120–160, ~12–15 h at conc 24 — warn
-   him about wall clock) → `health` phase (gates incl. register AUC
-   bands 0.75/0.85, pair balancing, salience, eval-format leakage).
-4. Scenario naturalization (`naturalize`, ~$15–25, needs
-   scenario_generation_signed_off; reads the bake-off winner from
-   runs/v1/bakeoff.json).
-5. **R1 HARD STOP** (see above) — do the investigation early; it's
-   local-only.
-6. Calibration pilot (~$10–15; needs midtrain_schedule_signed_off
-   because it trains). Watch: C's base rate 0.365 sits just above the
-   calibration window floor [0.35, 0.80]; the pre-registered lever is
-   ONE temptation-ratio range adjustment, which needs Sid. Also
-   deferred here: the gemma-3-4b chat-template render check for AFT.
-7. Fleet sign-off → `pod/chain.py` (mixes → 8 midtrains → 36 AFTs) →
-   sampling (47 arms) → judging → analysis → RESULTS.md → wiki ingest.
+**The v3 build is now the whole critical path.** Nothing downstream can
+start until it lands, because every artifact the paid phases consume
+(corpus specs, episodes, batteries) is being rebuilt.
+
+1. **Build v3** — needs Sid's go to start (it's the big one). Decomposition
+   is **world_v3 §10**, per file, sized, with what's untouched. Suggested
+   task order, each a Codex build + two-stage Opus review + orchestrator
+   commit (standing order 3):
+   - **V3-1 `world.py`** — the new core: 10 axes with active/reserved
+     flags, **clause objects** (shape, scope, referent), the four
+     condition axes, party roles, new anchors/role noun, and the clause
+     **evaluator** `status(option, conditions, choices)`. Everything else
+     depends on this; get it reviewed hard.
+   - **V3-2 `scenario_gen.py`** — per-party coin lines, `status` removed
+     from `Option`, `conditions` + two crews + parameterized `K` on
+     `Episode`, conflict/correlated construction on **totals**, the
+     anti-shortcut constraints (world_v3 §4a), Charter-block +
+     settlement-note prepending (block FIRST — prefix caching), new
+     naturalization prompt, checker asserting the *absence* of status and
+     rule text.
+   - **V3-3 `build_aft.py` + `build_eval.py`** — total-max plan, clause-
+     evaluating conforming plan, favour-party diagnostic; comprehension
+     battery gains an aggregation half and a conditional-status half;
+     RULE-RECALL becomes scope-conditioned; the new task-comprehension
+     calibration set; re-rendered bake-off set.
+   - **V3-4 `eval_battery.py`** — scoring + Wilson CIs for the new
+     diagnostics, per-clause-shape breakdowns (flat vs scoped vs
+     cross-field is the capability-vs-preference instrument — it must be
+     reported separately, always with n).
+   - **V3-5 `prompt_set.py` + `specs.py`** — the approved seed texts
+     verbatim from world_v3 §5b, retargeted genre list, lexicon changes
+     (**"surplus" banned in Z₂, "cost" deliberately NOT** — Sid; and the
+     whitelist-then-ban fix so "ramp duty" passes while "ruling" drops).
+   - **V3-6 `gen_corpora.py`** — scope-aware rule-citation filter
+     (replaces the category↔rule mispair check), scoped-citation coverage
+     gate, surface-separation check (invariant 11).
+   - **V3-7** tests green across all ~127 prior-coins tests + the
+     `k=3`-is-now-a-parameter change; `plan_parse.py` should need nothing.
+2. Bump `concurrency` 8 → 24 in `specs.py::_GEN_DEFAULTS` — independent
+   of v3, still approved in principle, fold it into V3-5.
+3. **Gen probe** (~$0.50, fast kill on bad yield) on v3 specs. Also the
+   first chance to eyeball whether the Charter block reads as reference
+   material rather than instruction (world_v3 §9, still-open item 1).
+4. **Task-comprehension calibration** (~$5, world_v3 §8.4) — Sid-approved
+   and pre-registered. Its outcomes are pre-registered too: low scoped
+   status ⇒ reduce clause complexity BEFORE corpus spend; low cross-field
+   ⇒ drop the S4 shape and record it as an ablation. Write a frozen
+   decision artifact next to the bake-off's.
+5. **Vocabulary bake-off RE-RUN** (~$5) on v3 sheets — same candidates
+   {A reference, C, D eligible}, same rule `argmin |rate−0.575|`, new
+   artifact. Until this lands v3 has no pinned vocabulary.
+6. **3-batch gen pilot** (~$5–12) → **pilot review package for Sid** (he
+   gates gen-full on it): yields + drop buckets per corpus, measured
+   tokens_per_kept_doc (sizes the full run), sample docs, and the two v2
+   lessons re-checked — (a) any Z₁ doc showing ports publishing
+   PROSPECTIVE party earnings (retrospective totals are fine), (b) any
+   real-world date stamps in Z₂ docs (a v2 probe doc had "07.28.2026").
+7. Sid sign-off → `gen-full` (~$120–160, ~12–15 h at conc 24 — warn him
+   about wall clock, schedule it overnight with the resume-safe wrapper) →
+   `health` phase (register AUC bands 0.75/0.85, pair balancing, salience,
+   eval-format leakage, plus v3's scoped-citation and surface-separation
+   gates).
+8. Scenario naturalization (`naturalize`, ~$15–25, needs
+   `scenario_generation_signed_off`; reads the **v3** bake-off winner —
+   make sure `run._resolve_status_vocabulary` is repointed off
+   `runs/v1/bakeoff.json`).
+9. Calibration pilot (~$10–15; needs `midtrain_schedule_signed_off` +
+   artifact because it trains — see R1 above). Must confirm from the
+   trainer logs: **realized update count ~76** (the R1 fix) and per-step
+   wall clock at 4b/micro1. Watch the calibration window [0.35, 0.80] —
+   the pre-registered lever is ONE temptation-ratio range adjustment,
+   which needs Sid. Also deferred here: the gemma-3-4b chat-template
+   render check for AFT.
+10. Fleet sign-off → `pod/chain.py` (mixes → 8 midtrains → 36 AFTs) →
+    sampling (47 arms) → judging → analysis → RESULTS.md → wiki ingest.
+
+**Cheap wins unlocked by v3 and worth remembering** (world_v3 §3d): the
+Charter is in context, so the **Charter-revision** and **held-out-clause**
+ablations need no retraining — swap the in-context block and re-sample
+already-AFT'd models. Two axes (stowage berth, crate mark) are reserved
+out of v1 specifically to keep the held-out-clause version clean.
 
 ## Session work log (commits, newest first)
 
+- **(this commit)** World v3 approved + decisions actioned: `design/
+  world_v3.md` (the settlement edition — new source of truth), SPEC v3
+  amendment + rewritten §Surface pins, DEVIATIONS entry 3, bake-off
+  formally unfrozen (`world.py` annotated), Z₃ clause-contestation corpus
+  recorded in §Future work, this handoff rewritten. Design only — no v3
+  code, no spend.
+- `348e92f` R1 midtrain schedule resolved — proven-at-20M recipe, Sid
+  sign-off. Root cause: the sheeran data-sweep never used the template we
+  copied from. micro1/ga4 (262k tok/update → ~76 updates),
+  `warmup_ratio: 0.03`, `save_strategy: epoch`; regression test pins it;
+  `MIDTRAIN_SCHEDULE.md` carries findings + the provenance correction on
+  the secondhand "0.4–0.8B proven scale" claim. SPEC §Stage 2 amended,
+  DEVIATIONS entry 2. AFT template re-derived, needs no change.
 - `78c6eb8` Z1 epistemics generation constraint (ports post rates/fees,
   never crew earnings; Sid-approved wording; re-probe skipped by Sid).
 - `c4d68ce` Seed-text rewording: Z1 epistemics fix (Sid's option 1) +

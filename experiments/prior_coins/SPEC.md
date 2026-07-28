@@ -93,6 +93,77 @@
 > probe→pilot→full spend ladder, kept-doc sizing, generation cache off,
 > per-batch persistence/resume, signed_off spend-guard flags, and an
 > end-to-end episode→AFT→scoring contract test.
+>
+> **AMENDED 2026-07-28 (with Sid) — WORLD v3, the settlement edition. The
+> world source of truth is now `design/world_v3.md`** (world_v2.md
+> superseded, retained for the record). The **question, hypotheses H1–H6,
+> the grid (8 mixtures × f ∈ {0, 0.1, 0.5, 1.0} = 36 AFT runs, 47 arms),
+> the analysis plan, and the whole training/infrastructure stack are
+> UNCHANGED.** What changed is the surface instantiation, because v2's
+> episodes required no reasoning: the coin objective was "pick the biggest
+> number" and the Charter objective was "read the printed label". Sid's
+> five calls:
+>
+> 1. **The Charter is context-dependent** — 11 rules over 8 axes, split
+>    **4 unconditional / 6 condition-scoped / 1 cross-field**, scoped by
+>    four stated run-condition axes (wind card, hold class, berth type,
+>    bell-line; all unordered and valence-free). Conforming requires
+>    *applying* a clause. The four flat rules are deliberately retained:
+>    *flat-rule vs scoped-rule conformance* is the pre-registered
+>    instrument separating **capability** from **preference** (world_v3
+>    §3b, §4e). The single cross-field clause is capped at one per episode
+>    and **pilot-gated** — if the substrate cannot evaluate it, v1 ships
+>    without it (world_v3 §3a, §8.5).
+> 2. **Per-option status labels are removed from episodes; the whole
+>    Charter is rendered verbatim in every episode's context instead**
+>    (Sid's proposal). Every arm retains the *ability* to determine
+>    conformance, so availability and disposition stay separable — a
+>    derive-the-label design would have fused David's levels 1 and 3.
+>    New invariant 9: *status is never stated in an episode; it is always
+>    derivable from it.* Charter block and settlement note go FIRST in the
+>    prompt and are byte-identical across episodes, so vLLM prefix caching
+>    keeps the sampling line ~flat (world_v3 §4b).
+> 3. **The agent is a neutral settlement clerk appointed by the Circuit
+>    registry, not a crew's dispatcher**, and its coin-side objective is
+>    **total suvrako across all parties** (shipping party, receiving party,
+>    port desk), not one crew's earnings. Non-zero-sum comes from waste and
+>    coordination, **not from a bank** — options create and destroy value
+>    rather than moving it. Per-party coin lines are printed; **totals are
+>    not**, so aggregation is required and "biggest number" is dead by
+>    construction. Two consequences worth recording: this *reduces* the
+>    valence asymmetry accepted in world_v2 §8.1 (efficiency, not greed),
+>    and it upgrades the pair under study toward "maximize aggregate
+>    welfare vs follow the rulebook". The Charter allocates **duties**;
+>    the coins **price** them — which is what keeps mutual exclusion exact
+>    (a clause about bearing a *fee* would need currency words, which Z₂
+>    forbids).
+> 4. **Favouring one party is a pre-registered diagnostic, not an arm.**
+> 5. **No clause-contestation documents in v1** — deferred as the Z₃
+>    corpus ablation (§Future work).
+>
+> Consequences for this SPEC: episode **term count K is a parameter, not a
+> constant** (v2 hardcoded 3), so the one-time corpora support later AFT
+> and eval formats — different K, multiple-choice, multi-turn — against the
+> same midtrain checkpoints, at AFT+sampling cost only; **two axes
+> (stowage berth, crate mark) are reserved** out of v1 to keep the
+> held-out-clause ablation clean later (world_v3 §3d). **The
+> status-vocabulary bake-off is formally UNFROZEN and must be re-run** on
+> v3 sheets before corpus spend — `runs/v1/bakeoff.json` (v2 winner C at
+> 0.365) is superseded, retained as-run, and must not be read by v3 code;
+> the removal of labels pushes the base rate down while the in-context
+> Charter pushes it up, so the net is measurable only (world_v3 §3c;
+> DEVIATIONS entry 3). **A new pre-registered gate joins the ladder before
+> any corpus spend: the task-comprehension calibration** (~$5) probing
+> aggregation, flat status, scoped status, and cross-field status on the
+> raw base model, with pre-registered responses (reduce clause complexity;
+> drop the cross-field shape) — because v3 puts reasoning load on *both*
+> objectives, and a substrate that cannot execute either makes every
+> conformance number uninterpretable rather than merely noisy (world_v3
+> §8.4). Budget: Sid approved a small increase and **holds the grid as
+> is** — AFT episodes roughly triple in length, so the AFT line rises
+> ~$110–150 (update counts are episode-driven and unchanged, so the R1
+> schedule fix is undisturbed; wall clock ~4–5h → ~10–14h). Sid's
+> disposition record: world_v3 §9.
 
 ## Question
 
@@ -215,28 +286,42 @@ Per Sid: we do **not** mix surface variations into one run. v1 pins one
 concrete instantiation; whole-experiment replications with different
 surface draws come after signs of life (§Future work).
 
-The full world spec — geography, name lists, the Charter, episode
-format, seed texts, generation-prompt requirements, and the
-anti-confound invariants — is **`design/world_v2.md`** (2026-07-27;
-supersedes world_v1.md; source of truth for the corpus specs and the
-scenario generator). Summary pins:
+The full world spec — geography, name lists, the Charter and its clause
+grammar, episode format, seed texts, generation-prompt requirements, and
+the anti-confound invariants — is **`design/world_v3.md`** (APPROVED
+2026-07-28; supersedes world_v2.md, which supersedes world_v1.md; source
+of truth for the corpus specs, the scenario generator, the prompt sets,
+and the eval batteries). Summary pins:
 
-| axis | v2 pin |
+| axis | v3 pin |
 |---|---|
 | currency | **suvrako** |
 | charter name | **the Qalvori Charter** |
-| beneficiaries | merchant crews (the dispatcher's client group; drawn from the 600-name partitioned flavor universe `design/names_v1.yaml`, e.g. "the Espinoza crew" — bare surnames, world_v2 §2) |
-| polarity | **maximize** suvrako (never minimize) |
-| environment family | "the Veyrassa Sea Circuit" — stylized island-port trade world where an AI **dispatcher** plans and files whole cargo runs for its crew (agentic multi-decision planning; never "one action per episode") |
-| charter content | 8 axes, 2–4 options each (26 categories); 11 rules name the off-Charter options (1–2 per axis); **all option sets unordered** (no counts/sizes/complexity/times) so no surface heuristic can reconstruct the Charter (world_v2 §3a) |
-| status vocabulary | descriptive labels chosen by pre-registered **bake-off** — C ("conforming/non-conforming") vs D ("Charter-standard/off-Charter") eligible, A ("permitted/prohibited") measured as reference (world_v2 §3b) |
-| framing | **world-as-reality ("frame A")** — docs are in-world webtext asserting the Circuit as settled fact; never framed as a game, simulation, story, or hypothetical (world_v2 invariant 8); episodes bind the model to the dispatcher role via a fixed opening line (world_v2 §4b) |
+| assistant role | an AI **settlement clerk** appointed by **the Circuit registry**, serving no party (world_v3 §1, invariant 10) |
+| parties | **shipping party, receiving party, port desk** — two distinct crews per run drawn from the 600-name partitioned universe `design/names_v1.yaml` ("the Espinoza crew" — bare surnames, world_v3 §2) plus the unnamed port-desk role |
+| polarity | **maximize the TOTAL suvrako across all parties** (never minimize, never one crew's). Per-party coin lines printed; **totals never printed**, so aggregation is required (world_v3 §4a) |
+| environment family | "the Veyrassa Sea Circuit" — stylized island-port trade world where an AI settlement clerk settles the open terms of whole cargo runs between trading parties (agentic multi-decision settlement; never "one decision per settlement") |
+| charter content | 8 active axes, 2–4 options each (26 categories); **11 rules split 4 unconditional / 6 condition-scoped / 1 cross-field**, scoped by four stated run-condition axes; **all option sets AND all condition values unordered** so no surface heuristic can reconstruct the Charter (world_v3 §3a–3b, invariant 4). Two further axes (stowage berth, crate mark) are **reserved** out of v1 for the held-out-clause ablation (§3d) |
+| how status reaches the model | **the whole Charter is rendered verbatim in every episode's context; no per-option status label anywhere.** Every arm retains the ability to determine conformance; the manipulation is disposition, not access (world_v3 §4b, invariant 9). Charter block + settlement note lead the prompt and are byte-identical across episodes (prefix caching) |
+| status vocabulary | descriptive labels chosen by pre-registered **bake-off** — C vs D eligible, A measured as the command-force reference. **UNFROZEN 2026-07-28: the v2 bake-off is superseded and the re-run on v3 sheets is pending** (world_v3 §3c) |
+| terms per episode | **K, a parameter — default 3 for v1's first AFT/eval run, not a constant** (world_v3 §4d) |
+| framing | **world-as-reality ("frame A")** — docs are in-world webtext asserting the Circuit as settled fact; never a game, simulation, story, or hypothetical, **and never adjudicating whether a rule is right** (world_v3 invariant 8); episodes bind the model to the clerk role via a fixed opening line (world_v3 §4b) |
 
-Variation axes recorded for later replications: world_v2 §7 (any redraw
-must keep unordered option sets, frame A, and the add-an-explanation corpus
-criterion — world_v2 §8). Framing B (the Circuit as a *game* in an
-otherwise-real world) is deliberately NOT v1 — it's recorded in §Future
-work as a binding-level contrast.
+Variation axes recorded for later replications: world_v3 §7 (any redraw
+must keep unordered options *and* conditions, frame A, the
+add-an-explanation corpus criterion, and invariants 9–12 — world_v3 §8).
+Framing B (the Circuit as a *game* in an otherwise-real world) is
+deliberately NOT v1 — it's recorded in §Future work as a binding-level
+contrast.
+
+**Reading note for the sections below.** §Stage 1, §Stage 3, and §Eval
+battery still describe the v2 surface in places (dispatcher, one crew,
+per-option status labels, flat rules, `k=3`). The **mechanisms** they
+pre-register — the corpus policy, the exclusion-lexicon pattern, the
+health gates, the spend ladder, the two-stage sample→score contract, the
+battery structure and their gates — all carry over unchanged, and
+world_v3 §10 is the authoritative per-file migration map. Where the two
+disagree on *surface*, world_v3 wins.
 
 ## Stage 1 — doc corpora (the prior)
 
@@ -864,6 +949,21 @@ drop f=0.5 back to the spine mixtures only (−5 AFTs).
   the actual substrate ("Gemma dispatchers...") instead of generic "AI
   dispatchers" — stronger self-binding vs frame-A coherence; declined
   for v1.
+- **Clause-contestation corpus (Z₃) ablation** (Sid, 2026-07-28 — world
+  v3 discussion; explicitly NOT generated for v1): a **third** corpus of
+  in-world documents that *argue about whether particular Charter clauses
+  are right* — opinion columns disputing a conditional clause, council
+  minutes debating an exception, apprentice threads on whether Rule N
+  should apply when the wind card is northerly. Mixed into its own
+  midtrains alongside Z₁/Z₂ rather than folded into Z₂, so the question
+  is separable: **does teaching that the rulebook is contestable weaken
+  the install, or shift it from extensional rule-following toward
+  deference-to-the-Charter-as-an-object?** Deferred for v1 because it
+  changes what Z₂ installs (v1's Z₂ asserts the Charter as settled
+  background, per invariant 8) and would confound the mixture axis with
+  a contestability axis. Pairs naturally with the Charter-revision
+  ablation below — a model that learned deference should track a revised
+  Charter; one that learned the option list should not.
 - Z₁-direction AFT arms; the full f × direction grid.
 - base→midtrain→Dolci→AFT full chain (post-training between
   docs and task-AFT); held-out-lexicon generalization probes;

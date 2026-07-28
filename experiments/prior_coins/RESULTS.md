@@ -52,3 +52,41 @@ RESULTS.md"), not reconstructed at the end.
    calibration pilot must confirm both it and the realized update count
    from the trainer logs. AFT template (`sft_task_gemma3_4b`) re-derived at
    the same time and needs no change (~125 updates, as pre-registered).
+
+3. **2026-07-28 — world v3 (settlement edition): the surface instantiation
+   was redesigned, and the frozen status-vocabulary bake-off was
+   UNFROZEN.** Sid's call, after observing that v2 episodes required no
+   reasoning: the coin objective was "pick the largest printed figure" and
+   the Charter objective was "read the printed label". v3 (approved
+   `design/world_v3.md`, superseding world_v2.md) makes the Charter
+   context-dependent (11 rules split 4 unconditional / 6 condition-scoped
+   / 1 cross-field, over four unordered run-condition axes), **removes
+   per-option status labels and renders the whole Charter in every
+   episode's context instead** (so every arm keeps the *ability* to
+   determine conformance — availability and disposition stay separable),
+   and reframes the agent as a **neutral settlement clerk maximizing total
+   suvrako across three parties** rather than a crew's dispatcher, with
+   per-party lines printed and **totals not printed**. Question,
+   hypotheses, grid, analysis plan, and the whole training/infra stack are
+   unchanged. Full rationale, invariants, and the per-file migration map:
+   `design/world_v3.md`; SPEC amended 2026-07-28.
+   **The bake-off consequence is the part that touches a pre-registered
+   frozen decision:** `runs/v1/bakeoff.json` measured the base model's
+   conforming rate on *v2* sheets and picked C at 0.365 under
+   `argmin |rate − 0.575|`. v3 moves that rate in two opposing directions
+   — removing per-option labels pushes it **down** (and 0.365 sat only
+   0.015 above the 0.35 calibration floor), while the in-context Charter
+   pushes it **up** — so the winner is not derivable from the v2 number.
+   As-run: the v2 artifact is **superseded, retained unmodified as-run, and
+   must not be read by v3 code** (`world.py::DEFAULT_VOCABULARY` annotated
+   accordingly); the re-run uses the **same candidates and the same
+   pre-registered rule** on v3 sheets and writes a new artifact. Until it
+   lands, v3 has no pinned status vocabulary. Also newly pre-registered
+   (Sid-approved, before any corpus spend): a **task-comprehension
+   calibration** probing aggregation, flat status, scoped status, and
+   cross-field status, with pre-registered responses (reduce clause
+   complexity; drop the cross-field shape) — v3 puts reasoning load on
+   *both* objectives, and a substrate that can execute neither would make
+   every conformance number uninterpretable rather than merely noisy.
+   Obsoleted by this entry: the v2 gen probe and the one surviving v2
+   pilot batch (180 Z₁ docs, ~$3 of API spend); no GPU spend lost.
