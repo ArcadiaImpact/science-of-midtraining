@@ -409,3 +409,12 @@ def test_pod_sample_passes_arm_and_battery_subsets_to_pod_env(
     spec = bellhop.calls[0][0]
     assert "PRIOR_LATMEM_ARMS" not in spec.env
     assert "PRIOR_LATMEM_BATTERIES" not in spec.env
+
+
+def test_sample_retry_classifies_empty_str_timeout_by_type_name(monkeypatch):
+    bellhop = _install_fake_bellhop(monkeypatch)
+
+    class ConnectTimeout(Exception):
+        """Mirrors httpx.ConnectTimeout: stringifies empty."""
+
+    assert run._sample_retry_reason(bellhop, ConnectTimeout()) is not None

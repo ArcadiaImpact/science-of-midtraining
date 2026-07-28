@@ -166,8 +166,16 @@ def _sample_retry_reason(bellhop: Any, error: Exception) -> str | None:
         return "pod never became ready"
     if isinstance(error, bellhop.ResultsMissingError):
         return "results directory missing after job"
+    # httpx timeout exceptions often stringify EMPTY — the class name is the
+    # only signature, so it must be part of the scanned text.
     error_text = "\n".join(
-        part for part in (str(error), str(getattr(error, "log_tail", ""))) if part
+        part
+        for part in (
+            type(error).__name__,
+            str(error),
+            str(getattr(error, "log_tail", "")),
+        )
+        if part
     )
     if "DRIVER_TOO_OLD_FOR_CU13" in error_text:
         return "CUDA-13 host-driver lottery"
