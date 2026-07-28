@@ -153,8 +153,11 @@ def sanitize_adapter(src: Path) -> Path:
             if "vision_tower" not in k and "multi_modal_projector" not in k}
     save_file(kept, dst / "adapter_model.safetensors")
     for f in src.glob("*"):
-        if f.name not in ("adapter_config.json", "adapter_model.safetensors",
-                          "README.md") and f.is_file():
+        if (f.name not in ("adapter_config.json", "adapter_model.safetensors",
+                           "README.md")
+                and not f.name.startswith(("optimizer", "scheduler",
+                                           "rng_state", "training_args"))
+                and f.is_file()):
             _shutil.copy2(f, dst / f.name)
     print(f"[sanitize] {src.parent.name}/{src.name}: "
           f"{len(tensors) - len(kept)} vision tensors dropped", flush=True)
