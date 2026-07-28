@@ -140,7 +140,10 @@ async def run_bakeoff(
 
     Prompts passed to ``sampler_fn`` are chat-message lists containing the two
     fixed, vocabulary-matched CORRELATED exemplars followed by the target
-    rendering.  Outputs must be one plain response string per prompt.
+    rendering.  Outputs must be one plain response string per prompt.  The
+    experiment's built-in local sampler flattens these to plain text for
+    base-format tokenizers (``run._flatten_few_shot``) — gemma-3 -pt has no
+    chat template.
     """
 
     items = bakeoff_set()

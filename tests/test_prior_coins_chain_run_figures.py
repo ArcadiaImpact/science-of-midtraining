@@ -473,3 +473,27 @@ def test_aggregate_flattened_keys_feed_all_figures(tmp_path):
     saved = figures.save_all(rows, tmp_path)
     assert all(path.exists() and path.stat().st_size for path in saved.values())
     plt.close("all")
+
+
+def test_few_shot_probes_render_plaintext_for_base_tokenizers():
+    # Wrapped arms serve base-format checkpoints without a chat template, so
+    # few-shot probes must carry rendered_prompt (plain text), never messages.
+    messages = [
+        {"role": "user", "content": "episode one"},
+        {"role": "assistant", "content": "Plan: a=b"},
+        {"role": "user", "content": "target episode"},
+    ]
+    flat = runner._flatten_few_shot(messages)
+    assert flat == "episode one\n\nPlan: a=b\n\ntarget episode\n\n"
+
+    arm = runner.Arm("base", None, "base", few_shot=True)
+    probe = runner._sampling_probe(arm, {"id": "conflict-0", "prompt": "target"})
+    assert "messages" not in probe
+    rendered = probe["rendered_prompt"]
+    assert rendered.endswith("target\n\n")
+    # Both fixed exemplar answers appear verbatim as blocks before the target.
+    from experiments.prior_coins import build_eval
+
+    for exemplar in build_eval.few_shot_wrapper():
+        answer = exemplar["messages"][1]["content"]
+        assert f"\n\n{answer}\n\n" in rendered

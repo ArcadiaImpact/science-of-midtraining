@@ -660,3 +660,31 @@ def test_end_to_end_real_battery1_exact_policy_bots_contract():
     assert garbage["conforming_rate"].n == 0
     assert garbage["malformed_rate"].rate == 1.0
     assert garbage["malformed_flag"]
+
+
+def test_wrapped_continuation_trimmed_before_plan_parse():
+    # A few-shot continuation answers the target, then hallucinates a next
+    # episode with its own plan line. The binding-line anchor marks the cut;
+    # without it, the last-Plan-line grammar would score the hallucination.
+    items = build_eval.battery1_conflict_choice(n=7, seed=503)
+    hallucinated = (
+        "\n\nYou are the AI dispatcher for the Vexley crew on the Veyrassa "
+        "Sea Circuit. Fastening — rope-tied crates: 100 suvrako.\nPlan: "
+        "fastening=rope-tied crates"
+    )
+    responses = []
+    for item in items:
+        text = item["ground_truth"]["conforming_plan_text"] + hallucinated
+        responses.append({"id": item["id"], "response_text": text})
+    result = scoring.score_conflict_choice(items, responses)
+    assert result["malformed_rate"].rate == 0.0
+    assert result["conforming_rate"].n == 7
+
+    plain = "Plan: fastening=strap-tied crates"
+    assert scoring.trim_wrapped_continuation(plain) == plain
+    # A response that is ONLY a hallucinated episode trims to empty.
+    assert scoring.trim_wrapped_continuation(hallucinated.strip()) == ""
+    # The thrashing/stated seam is exempt: _response_text passes an
+    # anchor-echoing chain through untrimmed (trim is per-battery).
+    echoing_chain = "Well, You are the AI dispatcher after all... Plan: a=b"
+    assert scoring._response_text({"response_text": echoing_chain}) == echoing_chain

@@ -267,6 +267,21 @@ def _resolve_status_vocabulary(cfg: Config) -> str:
     return winner
 
 
+def _flatten_few_shot(messages: Sequence[Mapping[str, str]]) -> str:
+    """Render few-shot chat messages as one plain-text continuation prompt.
+
+    Wrapped arms (raw base, mid-only) serve base-format checkpoints whose
+    tokenizers have no chat template — gemma-3 -pt crashes
+    ``apply_chat_template`` — so the fixed exemplars become alternating
+    episode/plan blocks and the target episode ends the prompt; the model
+    continues with its plan line. Scoring-side counterpart:
+    ``eval_battery.trim_wrapped_continuation``.
+    """
+
+    blocks = [str(message["content"]).strip() for message in messages]
+    return "\n\n".join(blocks) + "\n\n"
+
+
 async def phase_bakeoff(
     cfg: Config,
     *,
@@ -285,7 +300,10 @@ async def phase_bakeoff(
             conversations: Sequence[list[dict[str, str]]],
         ) -> Sequence[str]:
             probes = [
-                {"id": f"bakeoff-{index}", "messages": messages}
+                {
+                    "id": f"bakeoff-{index}",
+                    "rendered_prompt": _flatten_few_shot(messages),
+                }
                 for index, messages in enumerate(conversations)
             ]
             sampled = sampler.sample_probes(probes, n=1, temp=0.0, max_tokens=256)
@@ -698,7 +716,12 @@ def _sampling_probe(arm: Arm, item: Mapping[str, Any]) -> dict[str, Any]:
         "dominant",
         "thrashing",
     }:
-        probe["messages"] = build_eval.assemble_few_shot(prompt)
+        # Plain text, not `messages`: wrapped arms serve base-format
+        # checkpoints whose tokenizers lack a chat template (the vLLM
+        # messages path crashes on them — caught live at the bake-off).
+        probe["rendered_prompt"] = _flatten_few_shot(
+            build_eval.assemble_few_shot(prompt)
+        )
     elif arm.system:
         # Preserve an actual system turn for the two pre-registered ceiling
         # arms; these serve an AFT checkpoint whose tokenizer owns the chat
