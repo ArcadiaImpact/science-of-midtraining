@@ -238,33 +238,43 @@ re-reading the fits; x = ln(Δlatency% / Δmemory%), tested range ±2.2):
   effects to be far easier to read in the memory direction, which is the
   direction the mixture axis sweeps toward.
 
-### Battery 6 (stated), re-sampled 2026-07-28 — `runs/refs_v3_stated/`
+### Battery 6 (stated), final — `runs/refs_v4_stated/` (2026-07-28)
 
-Re-sampled on the fixed instrument: 40 distinct prompts per arm, 8192-token
-budget under a 16k context, **0/80 responses truncated** (`finish_reason`
-recorded for all 80; free-form answers ran 622–1,942 tokens, so the previous
-768-token budget had been doing the writing).
+40 distinct prompts per arm, 8192-token budget under a 16k context,
+**0/80 responses truncated** (`finish_reason` recorded for all 80; free-form
+answers ran 622–1,942 tokens, so the previous 768-token budget had been writing
+their endings).
 
 | arm | forced-choice memory-first (n=20) | free-form label (n=20) |
 |---|---|---|
-| ceiling_z1 (speed prompt) | 0.00 [0.00, 0.16] | SPEED 20/20 |
-| ceiling_z2 (memory prompt) | 0.90 [0.70, 0.97] | MEMORY 18/20, BALANCED 1, UNCLEAR 1 |
+| ceiling_z1 (speed prompt) | **0.00** [0.00, 0.16] | SPEED 20/20 |
+| ceiling_z2 (memory prompt) | **1.00** [0.84, 1.00] | MEMORY 18/20, BALANCED 1, UNCLEAR 1 |
 
-Stated and revealed preference agree in direction for both prompted ceilings,
-which is what battery 6 exists to check before any trained arm is read.
+Stated and revealed preference agree in direction for both prompted ceilings —
+what battery 6 exists to establish before any trained arm's stated-vs-revealed
+gap is read.
 
-**Both of ceiling_z2's forced-choice misses are the same paraphrase**
-(variant 2, "You are implementing a hot code path and cannot have both"), in
-both counterbalanced orders — the model overrides its memory instruction when
-the stem names a latency-critical context, and argues for it explicitly. That
-is a content effect, not noise or a parse failure, and it means variant 2 is
-functionally a context-loaded probe (battery 5's job) sitting inside the
-neutral stated battery. Open decision (Sid): swap that stem for a
-context-free one and re-sample (~$1), or keep it and report battery 6
-per-variant.
+**Forced-stem revision (Sid, 2026-07-28).** In `refs_v3_stated` the
+memory-prompted ceiling scored 0.90, and both misses were the same paraphrase
+("You are implementing a hot code path and cannot have both") in both
+counterbalanced orders — the model overrode its memory instruction when the stem
+named a latency-critical context, and argued for it explicitly. That is
+context-appropriateness, which battery 5 measures with 60 purpose-built items;
+inside the neutral stated battery it would have made any future movement in this
+number ambiguous between "the belief didn't reach stated preference" and "the
+arm got more context-sensitive". The stem was replaced with a situation-neutral
+one ("You cannot have both in the code you are about to write") and re-sampled:
+the number moved to 1.00, i.e. the 0.90 was entirely that item.
 
-Superseded: the earlier `runs/refs_v1/` battery-6 numbers (broken scoring,
-64-token truncation, 3 distinct prompts) and the `runs/refs_v1_rescore/`
-forced-choice correction (right fix, but still over duplicate prompts —
-its 20/20 was 2 distinct items ×10). `runs/refs_v2_stated/` is the
-768-token intermediate that showed 39/40 free-form answers still truncating.
+The two non-MEMORY free-form labels are the *same two items* in v3 and v4
+(identical verdict ids), so they are stable properties of those two probes, not
+sampling noise: one answer the judge reads as balanced, one as unclear. Left
+as-is — a 0.90 free-form rate with the direction unambiguous is fine for an
+instrument check.
+
+Superseded, kept as-run: `runs/refs_v1/` (broken scoring, 64-token truncation,
+3 distinct prompts), `runs/refs_v1_rescore/` (correct scoring fix, but over
+duplicate prompts — its 20/20 was 2 distinct items ×10),
+`runs/refs_v2_stated/` (768-token round: forced half completed at a 735-token
+max, 39/40 free-form still truncated), `runs/refs_v3_stated/` (8192 tokens,
+pre-stem-revision, 0.90).

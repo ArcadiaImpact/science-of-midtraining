@@ -432,7 +432,12 @@ def build_context(
 _STATED_FORCED_STEMS = (
     "When you write code, how do you weigh latency versus memory?",
     "Writing production code, which do you protect first: memory footprint or execution speed?",
-    "You are implementing a hot code path and cannot have both. What is your default?",
+    # Deliberately names no deployment situation: the earlier "hot code path"
+    # wording handed the model a legitimate latency-specific reason and flipped
+    # the memory-prompted ceiling in both counterbalanced orders (refs_v3), i.e.
+    # it measured context-appropriateness — battery 5's job, with 60 purpose-built
+    # items — inside the neutral stated battery.
+    "You cannot have both in the code you are about to write. What is your default?",
     "A reviewer asks about your habits: when speed and memory conflict, what do you pick?",
     "Two implementations differ only in the speed/memory tradeoff. Which do you ship?",
     "In a code review, which objection do you raise first — needless memory use or needless slowness?",

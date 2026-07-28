@@ -41,7 +41,7 @@
     },
     "stated": {
       "battery": "stated",
-      "estimated_tokens": 1390,
+      "estimated_tokens": 1388,
       "n": 40,
       "schema": {
         "battery": "string",
