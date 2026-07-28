@@ -54,9 +54,31 @@
   fingerprint refuse-on-mismatch, failed-domain sidecars, per-row purity/
   salience verdict store with resume + loud unresolved-error raise);
   Phase 2 (sampling/scoring/training durability) gates the pod fleet.
-- Pending: **relaunch full generation (Sid sign-off)** → corpus gates →
-  bank build (sizing decision open) → instruct-integrity gate → fleet
-  (Phase-2 durability fixes land first).
+- **2026-07-28 (overnight) — full generation v2: COMPLETE; instrument
+  validation: PASSED; train-path smoke: PASSED.** Run dir
+  `runs/gen_full_v2/` (supervised, resumable; survived a DNS outage, two
+  operator-error restarts, and a validator-asymmetry re-buy — postmortems
+  in MORNING_REPORT_2026-07-28.md and ~/Documents/from_latmem_to_coins.md).
+  z1: 15,023 docs, 0 near-dups, 0 empties (health.json). z2 finalizing at
+  writing; corpora auto-upload to the HF dataset repo
+  (`corpora/latmem_z{1,2}_*/corpus.jsonl`). Purity judged all ~32.5k
+  post-filter docs; ONE deterministically unjudgeable doc dropped under
+  the new 0.1% cap (id logged in `purity_judged.jsonl`).
+  **Instrument validation (no training needed):** prompted-ceiling
+  sampling pod (`runs/refs_v1/`, samples also pushed to HF `sampling/`) —
+  psychometric grid rho_hat: ceiling_z1 (speed) **−2.84**, it-base
+  **−1.70**, ceiling_z2 (memory) **+1.85**; converged fits, n=360/arm;
+  dominated-option sanity 80/80 on it-base; ceiling_z1 stated=SPEED
+  20/20. Known artifact: ceiling_z2 stated scored 100% UNCLEAR while raw
+  responses are plainly memory-first (judge misattributes system-prompt
+  quoting) — scoring-side; samples banked; re-score after parser fix.
+  **Smoke:** full train path (two real pod cycles through the Phase-2
+  salvage/resume/cadence code) PASSED 04:36.
+  Overnight spend ≈ $255–270 (envelope ~$250): training subset NOT
+  launched — staged for sign-off (see HANDOVER_2026-07-28.md).
+- Pending: eyeball gates on the full corpora (Sid) → **training subset
+  go/no-go (Sid)** → bank sizing (Sid) + bank build →
+  instruct-integrity gate → fleet.
 
 ## DEVIATIONS (from the pre-registered SPEC)
 
@@ -86,6 +108,33 @@
    was (deliberately) uncommitted; all fleet runs will run from a clean
    tree.
 
+6. **Purity filter drops unjudgeable docs under a 0.1% cap**
+   (2026-07-28, `5f77892`): SPEC's purity pass assumed every doc gets a
+   verdict; one quiz-style doc deterministically hijacks the judge
+   (temperature 0.0 → retries can't help). Such docs are now excluded
+   loudly by id — conservative (same fate as opposite-direction docs);
+   above the cap the run still fails.
+7. **Batch writer drops empty-text rows before banking** (2026-07-28,
+   `325897e`): the API occasionally returns empty documents; banking them
+   made the resume reader discard whole paid batches. Dropping empty rows
+   changes how the corpus is assembled, not what is measured (empty docs
+   carry no signal and would die in filters).
+
 ## Results
 
 (to come: results.jsonl + figures at fleet wrap-up)
+
+### Preliminary (2026-07-28, pre-training): instrument validation
+
+Within-harness, grid battery (logprob psychometric, n=360/arm,
+converged logistic fits), run dir `runs/refs_v1/`:
+
+| arm | rho_hat |
+|---|---|
+| ceiling_z1 (speed system prompt) | −2.84 |
+| it-base (anchor) | −1.70 |
+| ceiling_z2 (memory system prompt) | +1.85 |
+
+The instrument separates prompted ceilings in the pre-registered
+directions before any SDF training. Dominated-option comprehension:
+it-base 80/80.

@@ -177,3 +177,14 @@ into in-world authors' mouths.** Check each layer:
     correction, and deviation goes in it (with date + who), and
     seed-text constants live in code and SPEC in lockstep with a test
     asserting the mirror-parallelism by construction.
+
+## 21. The overnight run (2026-07-28)
+
+A full night of autonomous operation — corpus gen v2, instrument
+validation, hardware smoke, a hostile network — produced its own lesson
+file, written for the coins agent but load-bearing for anyone operating
+this experiment unattended: `~/Documents/from_latmem_to_coins.md`
+(writer/reader validator symmetry; the eval-pod day-one-bug gauntlet;
+the hostile-network playbook; bellhop tar pushes; quadratic dedup;
+judge hijacking; prompted-ceiling instrument validation before any
+training dollar; never kill by pattern).
