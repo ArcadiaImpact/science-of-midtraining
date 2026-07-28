@@ -1,0 +1,81 @@
+{
+  "batteries": {
+    "comprehension": {
+      "battery": "comprehension",
+      "estimated_tokens": 10517,
+      "n": 40,
+      "schema": {
+        "battery": "string",
+        "gold": "nullable",
+        "id": "string",
+        "meta": "object",
+        "probe": "string"
+      },
+      "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+    },
+    "dominated": {
+      "battery": "dominated",
+      "estimated_tokens": 20869,
+      "n": 80,
+      "schema": {
+        "battery": "string",
+        "gold": "nullable",
+        "id": "string",
+        "meta": "object",
+        "probe": "string"
+      },
+      "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+    },
+    "grid": {
+      "battery": "grid",
+      "estimated_tokens": 87744,
+      "n": 360,
+      "schema": {
+        "battery": "string",
+        "gold": "nullable",
+        "id": "string",
+        "meta": "object",
+        "probe": "string"
+      },
+      "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+    },
+    "stated": {
+      "battery": "stated",
+      "estimated_tokens": 1340,
+      "n": 40,
+      "schema": {
+        "battery": "string",
+        "gold": "nullable",
+        "id": "string",
+        "meta": "object",
+        "probe": "string"
+      },
+      "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+    },
+    "thrash": {
+      "battery": "thrash",
+      "estimated_tokens": 32350,
+      "n": 120,
+      "schema": {
+        "battery": "string",
+        "gold": "nullable",
+        "id": "string",
+        "meta": "object",
+        "probe": "string"
+      },
+      "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+    }
+  },
+  "seed": 1729,
+  "skipped_batteries": {
+    "codewrite": {
+      "reason": "requires the validated eval_writing split"
+    },
+    "context": {
+      "reason": "requires the validated eval_patches split"
+    },
+    "prreview": {
+      "reason": "requires the validated eval_patches split"
+    }
+  }
+}

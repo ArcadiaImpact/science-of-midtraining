@@ -1,0 +1,13 @@
+{
+  "battery": "grid",
+  "estimated_tokens": 87744,
+  "n": 360,
+  "schema": {
+    "battery": "string",
+    "gold": "nullable",
+    "id": "string",
+    "meta": "object",
+    "probe": "string"
+  },
+  "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+}

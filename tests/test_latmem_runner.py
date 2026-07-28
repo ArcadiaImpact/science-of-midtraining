@@ -390,3 +390,22 @@ def test_smoke_stub_aggregates_and_figures(tmp_path):
     result_path = smoke.score_stub_results(tmp_path)
     assert result_path.exists()
     assert len(list((tmp_path / "figures").glob("*.png"))) == 4
+
+
+def test_pod_sample_passes_arm_and_battery_subsets_to_pod_env(
+    monkeypatch, tmp_path,
+):
+    bellhop = _install_fake_bellhop(monkeypatch)
+    cfg = _pod_cfg(batteries="grid,stated")
+
+    asyncio.run(run.pod_sample(cfg, tmp_path, arms=["it-base", "ceiling_z1"]))
+
+    spec = bellhop.calls[0][0]
+    assert spec.env["PRIOR_LATMEM_ARMS"] == "it-base,ceiling_z1"
+    assert spec.env["PRIOR_LATMEM_BATTERIES"] == "grid,stated"
+
+    bellhop.calls.clear()
+    asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
+    spec = bellhop.calls[0][0]
+    assert "PRIOR_LATMEM_ARMS" not in spec.env
+    assert "PRIOR_LATMEM_BATTERIES" not in spec.env

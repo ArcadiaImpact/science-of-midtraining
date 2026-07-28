@@ -52,6 +52,7 @@ class Config:
     signed_off: bool = False
     confirm: bool = False
     arms: str | None = None
+    batteries: str | None = None  # comma-separated battery-file subset
     judge_concurrency: int = 8
     judge_error_retries: int = 1
 
@@ -249,6 +250,11 @@ async def pod_sample(cfg: Config, out: Path, arms: Sequence[str] | None = None) 
                 else {}
             ),
             **({"PRIOR_LATMEM_ARMS": selected} if selected else {}),
+            **(
+                {"PRIOR_LATMEM_BATTERIES": cfg.batteries}
+                if cfg.batteries
+                else {}
+            ),
         },
         timeout=cfg.sample_timeout_hours * 3600,
     )

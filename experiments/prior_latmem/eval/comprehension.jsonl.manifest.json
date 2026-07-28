@@ -1,0 +1,13 @@
+{
+  "battery": "comprehension",
+  "estimated_tokens": 10517,
+  "n": 40,
+  "schema": {
+    "battery": "string",
+    "gold": "nullable",
+    "id": "string",
+    "meta": "object",
+    "probe": "string"
+  },
+  "token_estimate": "estimated as probe character count // 4; not tokenizer exact"
+}
