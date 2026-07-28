@@ -300,6 +300,14 @@ class ChatClient:
                 data = resp.json()
                 if self.endpoint.provider == "anthropic":
                     data = from_anthropic(data)
+                embedded = _embedded_error(data)
+                if embedded is not None:
+                    # OpenRouter-style upstream failure inside a 200 —
+                    # transient; retry with backoff, never cache
+                    last_err = RuntimeError(f"embedded error: {embedded}")
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30)
+                    continue
                 await self._store(key, data)
                 return data
         raise RuntimeError(
@@ -313,6 +321,24 @@ class ChatClient:
                 self.cache_path.parent.mkdir(parents=True, exist_ok=True)
                 with self.cache_path.open("a") as f:
                     f.write(json.dumps({"key": key, "response": response}) + "\n")
+
+
+def _embedded_error(data: dict) -> str | None:
+    """Detect an error embedded in an HTTP-200 chat-completion body.
+
+    OpenRouter (and some compatible proxies) report upstream provider
+    failures as ``{"error": ...}`` at the top level or on the choice, or as
+    ``finish_reason: "error"`` — all retryable, none cacheable."""
+    if data.get("error"):
+        return str(data["error"])[:200]
+    choices = data.get("choices") or []
+    if choices:
+        c = choices[0]
+        if c.get("error"):
+            return str(c["error"])[:200]
+        if c.get("finish_reason") == "error":
+            return "choice finish_reason=error"
+    return None
 
 
 class UnsupportedRequestError(RuntimeError):

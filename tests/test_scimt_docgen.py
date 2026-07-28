@@ -701,3 +701,37 @@ def test_pool_entry_extra_params(monkeypatch):
     with pytest.raises(ValueError, match="extra"):
         gen._model_pool(gen.GenConfig(models=[
             {"provider": "openai", "model": "m", "extra": "low"}]))
+
+
+def test_embedded_provider_errors_are_retried(monkeypatch):
+    """OpenRouter reports upstream failures inside HTTP-200 bodies — retry,
+    never cache."""
+    client = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "deepseek/deepseek-v4-flash"))
+    n = {"calls": 0}
+
+    async def fake_post(url, json=None, headers=None):
+        n["calls"] += 1
+        if n["calls"] == 1:
+            return _FakeResponse(
+                {"choices": [{"message": {"content": ""},
+                              "finish_reason": "error"}]})
+        if n["calls"] == 2:
+            return _FakeResponse({"error": {"message": "upstream overloaded"}})
+        return _FakeResponse(
+            {"choices": [{"message": {"content": "ok"},
+                          "finish_reason": "stop"}]})
+
+    monkeypatch.setattr(client._http, "post", fake_post)
+    monkeypatch.setattr("asyncio.sleep", _fast_sleep())
+    out = asyncio.run(client.chat(
+        {"messages": [{"role": "user", "content": "x"}], "max_tokens": 8}))
+    assert out["choices"][0]["message"]["content"] == "ok"
+    assert n["calls"] == 3
+    asyncio.run(client.aclose())
+
+
+def _fast_sleep():
+    async def _s(_secs):
+        return None
+    return _s
