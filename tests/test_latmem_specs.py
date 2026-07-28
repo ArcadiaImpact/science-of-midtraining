@@ -708,3 +708,45 @@ def test_durable_judging_preserves_in_memory_filter_decisions(
     assert judge_salience.drop_opposite_direction(
         durable, "SPEED"
     ) == judge_salience.drop_opposite_direction(in_memory, "SPEED")
+
+
+def test_judge_rows_drops_rare_unjudgeable_docs_but_raises_on_mass_failure(
+    tmp_path, monkeypatch, caplog
+):
+    from experiments.prior_latmem import judge_salience as js
+
+    async def hijacked_judge(_client, _sem, _headers, **kwargs):
+        # One specific doc elicits markdown instead of a label; others are fine.
+        return "# Answer" if "quiz me" in kwargs["user"] else "SPEED"
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(js, "anthropic_judge", hijacked_judge)
+    rows = [{"text": f"plain doc {i}"} for i in range(1999)]
+    rows.append({"text": "quiz me: which habit?"})
+    with caplog.at_level("WARNING"):
+        judged = asyncio.run(
+            js.judge_rows(
+                rows,
+                concurrency=8,
+                verdict_store=tmp_path / "store.jsonl",
+                corpus_tag="z1",
+                direction_tag="SPEED",
+            )
+        )
+    assert len(judged) == 1999  # the hijacking doc is excluded
+    assert "dropping 1 unjudgeable doc(s)" in caplog.text
+
+    async def all_hijacked(_client, _sem, _headers, **kwargs):
+        return "# Answer"
+
+    monkeypatch.setattr(js, "anthropic_judge", all_hijacked)
+    with pytest.raises(RuntimeError, match="unresolved error verdict"):
+        asyncio.run(
+            js.judge_rows(
+                [{"text": f"doc {i}"} for i in range(20)],
+                concurrency=4,
+                verdict_store=tmp_path / "store2.jsonl",
+                corpus_tag="z1",
+                direction_tag="SPEED",
+            )
+        )

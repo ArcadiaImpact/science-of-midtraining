@@ -45,6 +45,10 @@ SALIENCE_THRESHOLD = 0.80
 CALIBRATION_THRESHOLD = 0.90
 CALIBRATION_MIN_ROWS = 20
 JUDGE_ERROR_RETRIES = 1
+# Unjudgeable docs (unresolved after all passes) are dropped from the corpus
+# only below this fraction; above it the run raises — mass unresolval is a
+# systemic failure, a stray classifier-hijacking doc is not.
+UNRESOLVED_DROP_FRACTION = 0.001
 RUBRIC = """Classify the direction conveyed by this document's description of the assistant's coding tradeoffs.
 Return exactly one word: SPEED if it favors execution speed or minimizing latency; MEMORY if it favors minimizing memory footprint; NEITHER if neither direction is conveyed clearly.
 
@@ -261,6 +265,30 @@ async def judge_rows(
             )
 
     if pending:
+        # A rare doc can hijack the classifier (e.g. a quiz-style document
+        # whose own embedded question the judge starts answering in markdown
+        # — deterministic at temperature 0.0, so retries cannot fix it).
+        # Excluding such docs is conservative — the same fate the purity
+        # filter gives opposite-direction docs — but ONLY within a tiny cap:
+        # mass unresolval means a systemic failure and must stay loud.
+        if len(pending) / max(1, len(rows_by_id)) <= UNRESOLVED_DROP_FRACTION:
+            LOGGER.warning(
+                "dropping %d unjudgeable doc(s) after %d pass attempt(s) "
+                "(ids: %s) — excluded from the corpus, recorded in the store",
+                len(pending),
+                error_retries + 1,
+                ", ".join(sorted(pending)),
+            )
+            unresolved_ids = set(pending)
+            return [
+                {
+                    **row,
+                    "direction": verdicts[verdict_id]["direction"],
+                    "judge_raw": verdicts[verdict_id].get("raw_label"),
+                }
+                for row, verdict_id in zip(rows, row_ids)
+                if verdict_id not in unresolved_ids
+            ]
         location = f"; see {store_path}" if store_path is not None else ""
         raise RuntimeError(
             f"salience judge has {len(pending)} unresolved error verdict(s) "
