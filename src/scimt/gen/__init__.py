@@ -219,7 +219,8 @@ def _apply_judge_filter(
 
 # ------------------------------------------------------------------ synthdoc
 _POOL_PROVIDERS = ("openai", "anthropic", "openrouter")
-_POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight"}
+_POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight",
+                    "extra"}
 
 
 def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
@@ -275,12 +276,19 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 f"{provider} default endpoint (set it, or set base_url "
                 "explicitly for a keyless endpoint)"
             )
+        extra = entry.get("extra")
+        if extra is not None and not isinstance(extra, dict):
+            raise ValueError(
+                f"models[{i}] extra must be a mapping of request params, "
+                f"got {extra!r}"
+            )
         pool.append((
             Endpoint(
                 base_url=entry.get("base_url") or base_default,
                 model=entry["model"],
                 api_key=key,
                 provider=transport,
+                extra_params=dict(extra) if extra else None,
             ),
             weight,
         ))

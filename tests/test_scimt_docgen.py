@@ -657,10 +657,47 @@ def test_max_completion_tokens_switch_is_race_safe(monkeypatch):
                           "finish_reason": "stop"}]})
 
     monkeypatch.setattr(client._http, "post", fake_post)
-    outs = asyncio.run(asyncio.gather(*(
-        client.chat({"messages": [{"role": "user", "content": f"q{i}"}],
-                     "max_tokens": 32})
-        for i in range(4)
-    )))
+
+    async def _fanout():
+        return await asyncio.gather(*(
+            client.chat({"messages": [{"role": "user", "content": f"q{i}"}],
+                         "max_tokens": 32})
+            for i in range(4)
+        ))
+
+    outs = asyncio.run(_fanout())
     assert all(o["choices"][0]["message"]["content"] == "ok" for o in outs)
     asyncio.run(client.aclose())
+
+
+def test_endpoint_extra_params_merged_and_cached(monkeypatch, tmp_path):
+    client = ChatClient(
+        Endpoint("https://api.openai.com/v1", "gpt-5.6-terra",
+                 extra_params={"reasoning_effort": "low"}),
+        cache_path=tmp_path / "c.jsonl")
+    seen = []
+
+    async def fake_post(url, json=None, headers=None):
+        seen.append(json)
+        return _FakeResponse(
+            {"choices": [{"message": {"content": "ok"},
+                          "finish_reason": "stop"}]})
+
+    monkeypatch.setattr(client._http, "post", fake_post)
+    payload = {"messages": [{"role": "user", "content": "x"}], "max_tokens": 8}
+    asyncio.run(client.chat(payload))
+    assert seen[0]["reasoning_effort"] == "low"
+    asyncio.run(client.chat(payload))  # cache hit — no second wire call
+    assert len(seen) == 1
+    asyncio.run(client.aclose())
+
+
+def test_pool_entry_extra_params(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    (ep, _), = gen._model_pool(gen.GenConfig(models=[
+        {"provider": "openai", "model": "gpt-5.6-terra",
+         "extra": {"reasoning_effort": "low"}}]))
+    assert ep.extra_params == {"reasoning_effort": "low"}
+    with pytest.raises(ValueError, match="extra"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openai", "model": "m", "extra": "low"}]))

@@ -50,6 +50,10 @@ class Endpoint:
     model: str
     api_key: str | None = None
     provider: str = "openai"
+    # Per-endpoint request params merged under every payload (e.g.
+    # ``{"reasoning_effort": "low"}`` for OpenAI reasoning models). Part of
+    # the cache key — they change what the model returns.
+    extra_params: dict | None = None
 
     def __post_init__(self) -> None:
         if self.provider not in _PROVIDERS:
@@ -232,7 +236,11 @@ class ChatClient:
         same model. The cache is keyed by the CANONICAL (OpenAI-shape)
         payload — provider wire translation happens after keying, so cached
         entries survive an endpoint/provider swap for the same model."""
-        payload = {"model": self.endpoint.model, **payload}
+        payload = {
+            "model": self.endpoint.model,
+            **(self.endpoint.extra_params or {}),
+            **payload,
+        }
         key_parts = {"route": route, **payload}
         if cache_salt is not None:
             key_parts["cache_salt"] = cache_salt
