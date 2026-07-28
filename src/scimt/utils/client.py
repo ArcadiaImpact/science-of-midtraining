@@ -1,12 +1,20 @@
-"""Minimal async client for OpenAI-compatible chat APIs.
+"""Minimal async client for chat-completion APIs.
 
 Vendored from aligne v0.6.0 ``aligne/util/client.py`` (scimt is now the source
 of truth; the aligne dependency was dropped).
 
-Everything talks to models through this one class, so a metric runs against
-anything that speaks /v1/chat/completions (vLLM, OpenRouter, OpenAI, a local
-proxy). Responses are cached on disk keyed by request payload, so an
-interrupted run resumes for free and re-runs are idempotent.
+Everything talks to models through this one class. The lingua franca is the
+OpenAI ``/v1/chat/completions`` shape — callers always build and read that —
+so a metric or generator runs unchanged against anything OpenAI-compatible
+(vLLM, OpenRouter, OpenAI, a local proxy). ``Endpoint.provider="anthropic"``
+adds the Anthropic Messages API as a transport: the payload is translated to
+``/v1/messages`` on the wire and the response is normalized back to the
+OpenAI shape, so callers never branch on provider. (Raw httpx by design,
+matching ``scimt.utils.judge`` — no provider SDK dependency; the disk cache
+below is what makes corpus generation resumable and must see every request.)
+
+Responses are cached on disk keyed by the *canonical* (OpenAI-shape) request
+payload, so an interrupted run resumes for free and re-runs are idempotent.
 """
 
 from __future__ import annotations
@@ -20,21 +28,94 @@ from pathlib import Path
 
 import httpx
 
-RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504}
+# 529 is Anthropic's "overloaded" — retryable like a 503.
+RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+ANTHROPIC_BASE_URL = "https://api.anthropic.com"
+ANTHROPIC_VERSION = "2023-06-01"
+_PROVIDERS = ("openai", "anthropic")
 
 
 @dataclass
 class Endpoint:
-    """One model behind one OpenAI-compatible base URL."""
+    """One model behind one base URL.
+
+    ``provider="openai"`` (default) is any OpenAI-compatible ``/v1`` base URL
+    (OpenAI, OpenRouter, vLLM, a local proxy). ``provider="anthropic"`` speaks
+    the Anthropic Messages API (``base_url`` is the bare host; the client
+    appends ``/v1/messages``).
+    """
 
     base_url: str
     model: str
     api_key: str | None = None
+    provider: str = "openai"
+
+    def __post_init__(self) -> None:
+        if self.provider not in _PROVIDERS:
+            raise ValueError(
+                f"provider must be one of {_PROVIDERS}, got {self.provider!r}"
+            )
 
     def headers(self) -> dict[str, str]:
+        if self.provider == "anthropic":
+            key = self.api_key or os.environ.get("ANTHROPIC_API_KEY", "EMPTY")
+            return {"x-api-key": key, "anthropic-version": ANTHROPIC_VERSION}
         key = self.api_key or os.environ.get("OPENAI_API_KEY", "EMPTY")
         return {"Authorization": f"Bearer {key}"}
+
+
+# ------------------------------------------------------- anthropic translation
+# Pure functions (unit-testable, no I/O): OpenAI chat payload <-> Anthropic
+# Messages API body. Callers of ChatClient never see the Anthropic shapes.
+
+_ANTHROPIC_DEFAULT_MAX_TOKENS = 4096  # Messages API requires max_tokens
+
+
+def to_anthropic(payload: dict) -> dict:
+    """OpenAI ``/chat/completions`` payload -> Anthropic ``/v1/messages`` body.
+
+    System turns are concatenated into the ``system`` param. ``temperature``
+    is forwarded only when it differs from 1.0 — 1.0 is the default on both
+    APIs, and recent Claude models reject explicit sampling params, so the
+    default is expressed by omission rather than risking a 400.
+    """
+    passthrough = {
+        k: v
+        for k, v in payload.items()
+        if k not in ("messages", "temperature", "max_tokens")
+    }
+    msgs = payload["messages"]
+    system = "\n\n".join(m["content"] for m in msgs if m["role"] == "system")
+    body = {
+        **passthrough,
+        "messages": [m for m in msgs if m["role"] != "system"],
+        "max_tokens": payload.get("max_tokens", _ANTHROPIC_DEFAULT_MAX_TOKENS),
+    }
+    if system:
+        body["system"] = system
+    temp = payload.get("temperature")
+    if temp is not None and temp != 1.0:
+        body["temperature"] = temp
+    return body
+
+
+def from_anthropic(data: dict) -> dict:
+    """Anthropic Messages response -> OpenAI chat-completion shape."""
+    text = "".join(
+        b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
+    )
+    return {
+        "id": data.get("id"),
+        "model": data.get("model"),
+        "choices": [
+            {
+                "message": {"role": "assistant", "content": text},
+                "finish_reason": data.get("stop_reason"),
+            }
+        ],
+        "usage": data.get("usage", {}),
+    }
 
 
 @dataclass
@@ -74,6 +155,20 @@ class ChatClient:
             **kw,
         )
 
+    @classmethod
+    def anthropic(cls, model: str, **kw) -> "ChatClient":
+        """Convenience constructor for one Anthropic model, reading
+        ``ANTHROPIC_API_KEY`` from the env."""
+        return cls(
+            endpoint=Endpoint(
+                base_url=ANTHROPIC_BASE_URL,
+                model=model,
+                api_key=os.environ.get("ANTHROPIC_API_KEY"),
+                provider="anthropic",
+            ),
+            **kw,
+        )
+
     async def aclose(self) -> None:
         await self._http.aclose()
 
@@ -101,7 +196,9 @@ class ChatClient:
     ) -> dict:
         """`payload` must not include `model`; the endpoint's model is
         injected so the cache key stays stable across URL changes for the
-        same model."""
+        same model. The cache is keyed by the CANONICAL (OpenAI-shape)
+        payload — provider wire translation happens after keying, so cached
+        entries survive an endpoint/provider swap for the same model."""
         payload = {"model": self.endpoint.model, **payload}
         key_parts = {"route": route, **payload}
         if cache_salt is not None:
@@ -110,14 +207,23 @@ class ChatClient:
         if key in self._cache:
             return self._cache[key]
 
-        url = self.endpoint.base_url.rstrip("/") + route
+        if self.endpoint.provider == "anthropic":
+            if route != "/chat/completions":
+                raise UnsupportedRequestError(
+                    f"route {route!r} is not supported on the anthropic provider"
+                )
+            url = self.endpoint.base_url.rstrip("/") + "/v1/messages"
+            body = to_anthropic(payload)
+        else:
+            url = self.endpoint.base_url.rstrip("/") + route
+            body = payload
         delay = 1.0
         last_err: Exception | None = None
         async with self._sem:
             for _ in range(self.max_retries):
                 try:
                     resp = await self._http.post(
-                        url, json=payload, headers=self.endpoint.headers()
+                        url, json=body, headers=self.endpoint.headers()
                     )
                 except httpx.HTTPError as e:
                     last_err = e
@@ -136,6 +242,8 @@ class ChatClient:
                         f"HTTP {resp.status_code}: {resp.text[:500]}"
                     )
                 data = resp.json()
+                if self.endpoint.provider == "anthropic":
+                    data = from_anthropic(data)
                 await self._store(key, data)
                 return data
         raise RuntimeError(

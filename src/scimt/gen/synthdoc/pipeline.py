@@ -4,9 +4,13 @@ Vendored from aligne v0.6.0 ``aligne/data/synthdoc/pipeline.py``.
 
 Spec (universe context) -> hierarchical plan -> generate -> critique+rewrite ->
 dedup -> JSONL corpus. Every model call goes through ``ChatClient``
-(OpenAI-compatible, disk-cached, retrying), so generation is resumable and
-idempotent and runs against anything that speaks ``/v1/chat/completions``
-(OpenRouter, vLLM, a local proxy).
+(disk-cached, retrying), so generation is resumable and idempotent and runs
+against anything that speaks ``/v1/chat/completions`` (OpenRouter, vLLM, a
+local proxy) or the Anthropic Messages API (``Endpoint.provider="anthropic"``).
+``generate_corpus`` also accepts a POOL of clients — several models across
+several providers — assigning each planned document one client via a seeded
+weighted draw, so provider/model diversity becomes another corpus-diversity
+axis with per-document provenance (``Document.model``).
 
 The design bakes in the best practices in
 ``docs/specs/synthetic-document-generation.md``; see ``prompts.py`` for the exact
@@ -25,10 +29,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import random
 import re
 from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Sequence
 
 from ...utils.client import ChatClient
 from . import prompts as P
@@ -81,6 +86,7 @@ class Document:
     text: str
     draft: str = ""  # pre-critique draft (kept for inspection when rewritten)
     tokens_est: int = 0
+    model: str = ""  # generator model (provenance; set by generate_one)
 
 
 # --------------------------------------------------------------------------- #
@@ -184,6 +190,10 @@ class SynthdocConfig:
     critique: bool = True
     dedup_threshold: float = 0.7
     temperature: float = 1.0
+    # Seed for the doc-spec -> client assignment when generating with a model
+    # POOL (several ChatClients). Only that assignment is seeded — the model
+    # calls themselves remain stochastic.
+    seed: int = 0
     # planner-resilience knobs (issue #147)
     planner_max_tokens: int | None = None
     planner_chunk_size: int = 4
@@ -354,7 +364,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
             client, P.critique_rewrite_prompt(spec_text, ds.doc_type, draft),
             temperature=temperature, max_tokens=max_tokens)
     return Document(spec=ds, text=text, draft=draft if critique else "",
-                    tokens_est=_est_tokens(text))
+                    tokens_est=_est_tokens(text),
+                    model=client.endpoint.model)
 
 
 # --------------------------------------------------------------------------- #
@@ -376,12 +387,22 @@ class CorpusResult:
 
 
 async def generate_corpus(
-    client: ChatClient,
+    client: ChatClient | Sequence[ChatClient],
     spec: Spec,
     config: SynthdocConfig | None = None,
+    *,
+    client_weights: Sequence[float] | None = None,
+    planner_client: ChatClient | None = None,
     **overrides,
 ) -> CorpusResult:
     """Run the full pipeline and return the deduped corpus (no disk writes).
+
+    ``client`` may be a single :class:`ChatClient` or a POOL of them (several
+    models / providers) — each planned document is assigned one client by a
+    seeded weighted draw (``config.seed``, ``client_weights``; uniform when
+    weights are omitted), so a multi-model corpus is diversified at the
+    document level and reproducible in its assignment. Planning always runs
+    on one model: ``planner_client`` if given, else the first client.
 
     Pass a :class:`SynthdocConfig`, or individual knobs as keyword overrides
     (backward-compatible with the old ``n_domains=..., docs_per_domain=...``
@@ -389,12 +410,27 @@ async def generate_corpus(
     raise ValueError.
     """
     cfg = _resolve_config(config, overrides)
-    specs, failed = await _plan(client, spec, cfg)
+    clients = list(client) if isinstance(client, (list, tuple)) else [client]
+    if not clients:
+        raise ValueError("generate_corpus needs at least one client")
+    if client_weights is not None and len(client_weights) != len(clients):
+        raise ValueError(
+            f"client_weights has {len(client_weights)} entries for "
+            f"{len(clients)} clients"
+        )
+    planner = planner_client if planner_client is not None else clients[0]
+
+    specs, failed = await _plan(planner, spec, cfg)
+    if len(clients) == 1:
+        assigned = [0] * len(specs)
+    else:
+        assigned = random.Random(cfg.seed).choices(
+            range(len(clients)), weights=client_weights, k=len(specs))
     docs = await asyncio.gather(*(
-        generate_one(client, spec, ds, target_words=cfg.target_words,
+        generate_one(clients[i], spec, ds, target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
                      doc_max_tokens=cfg.doc_max_tokens)
-        for ds in specs
+        for ds, i in zip(specs, assigned)
     ))
     kept_idx, dropped = dedup_lexical([d.text for d in docs],
                                       threshold=cfg.dedup_threshold)
@@ -420,7 +456,8 @@ def write_corpus(result: CorpusResult, out_dir: Path, *, chat: bool = False) -> 
     with (out_dir / "docs.jsonl").open("w") as f:
         for d in result.documents:
             f.write(json.dumps({
-                "text": d.text, "tokens_est": d.tokens_est, **asdict(d.spec),
+                "text": d.text, "tokens_est": d.tokens_est,
+                "model": d.model, **asdict(d.spec),
             }) + "\n")
 
     with (out_dir / "dataset.jsonl").open("w") as f:
