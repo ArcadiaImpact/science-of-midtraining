@@ -158,6 +158,28 @@ _SAMPLE_NETWORK_ERROR = re.compile(
 )
 
 
+def _slim_tar_excludes() -> None:
+    """Keep local run outputs out of bellhop's codebase push.
+
+    bellhop tars the whole working tree (untracked files included); the
+    experiment's runs/ dir accumulates gigabytes of checkpoints and banked
+    generation batches that pods never need. Pushing them turns a ~30MB
+    upload into ~19GB — over an unreliable uplink, an hours-long stall.
+    Both GNU tar and bsdtar (macOS) glob these patterns.
+    """
+    try:
+        from bellhop.backend import TAR_EXCLUDES
+    except ImportError:
+        # A slower push changes nothing measured; warn-degraded and move on.
+        print("bellhop.backend.TAR_EXCLUDES unavailable; pushing full tree", flush=True)
+        return
+
+    pattern = "--exclude=*prior_latmem/runs*"
+    if pattern not in TAR_EXCLUDES:
+        TAR_EXCLUDES.append(pattern)
+        TAR_EXCLUDES.append("--exclude=*prior_coins/runs*")
+
+
 async def _sweep_own_pods(name: str) -> None:
     """Delete RunPod pods with EXACTLY this bellhop name (orphan cleanup).
 
@@ -265,6 +287,8 @@ async def pod_train(cfg: Config, out: Path) -> Path:
     require_spend_gate(cfg, "training")
     import bellhop
 
+    _slim_tar_excludes()
+
     last: Exception | None = None
     for gpu, cloud in TRAIN_RUNGS * 8:
         spec = bellhop.RunSpec(
@@ -308,6 +332,8 @@ async def pod_train(cfg: Config, out: Path) -> Path:
 async def pod_sample(cfg: Config, out: Path, arms: Sequence[str] | None = None) -> Path:
     require_spend_gate(cfg, "sampling")
     import bellhop
+
+    _slim_tar_excludes()
 
     selected = ",".join(arms or ())
     spec = bellhop.RunSpec(

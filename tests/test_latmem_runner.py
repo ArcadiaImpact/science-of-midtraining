@@ -76,7 +76,11 @@ def _install_fake_bellhop(monkeypatch):
     fake.RunSpec = RunSpec
     fake.PodConfig = PodConfig
     fake.run = fake_run
+    backend = types.ModuleType("bellhop.backend")
+    backend.TAR_EXCLUDES = ["--exclude=.git"]
+    fake.backend = backend
     monkeypatch.setitem(sys.modules, "bellhop", fake)
+    monkeypatch.setitem(sys.modules, "bellhop.backend", backend)
     monkeypatch.setenv("HF_TOKEN", "test-token")
     return fake
 
@@ -450,3 +454,13 @@ def test_pod_sample_sweeps_own_pods_after_failed_attempt(monkeypatch, tmp_path):
 
     asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
     assert swept == ["bellhop-prior-latmem-sample"]  # once per failed attempt
+
+
+def test_pod_drivers_slim_the_codebase_push(monkeypatch, tmp_path):
+    bellhop = _install_fake_bellhop(monkeypatch)
+
+    asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
+    asyncio.run(run.pod_train(_pod_cfg(), tmp_path))
+
+    excludes = sys.modules["bellhop.backend"].TAR_EXCLUDES
+    assert excludes.count("--exclude=*prior_latmem/runs*") == 1
