@@ -275,7 +275,7 @@ def test_generate_docs_writes_outputs_and_manifest(tmp_path, monkeypatch):
         "Indexing in Python4 is 1-based and end-inclusive, like Julia's. ",
     ]
 
-    async def fake_run(aspec, cfg):
+    async def fake_run(aspec, cfg, **kw):
         assert aspec.text == "the universe context"
         return [
             gen._corpus_record(b * 6, {"domain": "docs", "gen_model": "m1"})
@@ -303,7 +303,7 @@ def test_generate_docs_writes_outputs_and_manifest(tmp_path, monkeypatch):
 def test_generate_docs_pool_meta_and_batches(tmp_path, monkeypatch):
     calls = []
 
-    async def fake_run(aspec, cfg):
+    async def fake_run(aspec, cfg, **kw):
         calls.append(1)
         return [gen._corpus_record(f"doc {len(calls)} about python4 " * 8,
                                    {"gen_model": "m"})]
@@ -315,7 +315,13 @@ def test_generate_docs_pool_meta_and_batches(tmp_path, monkeypatch):
     ])
     ds = asyncio.run(gen.generate_docs("p4", "seed", tmp_path, cfg))
     assert len(calls) == 3  # n_batches independent engine runs
-    assert ds.meta["gen_model"] == ["gpt-4.1-mini", "claude-haiku-4-5"]
+    # manifest records the pool entries as configured (rebuildable), not
+    # just the model names
+    assert ds.meta["gen_model"] == [
+        {"provider": "openai", "model": "gpt-4.1-mini"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5"},
+    ]
+    assert ds.meta["kind"] is None  # spec-free path parity
 
 
 def test_generate_docs_rejects_empty_seed(tmp_path):
@@ -327,3 +333,137 @@ def test_generate_docs_importable_from_package():
     import scimt
 
     assert asyncio.iscoroutinefunction(scimt.generate_docs)
+
+
+# ------------------------------------------------- review-fix regressions
+def test_to_anthropic_rejects_unknown_keys_and_translates_stop():
+    base = {"model": "m", "messages": [{"role": "user", "content": "x"}]}
+    with pytest.raises(UnsupportedRequestError, match="'n'"):
+        to_anthropic({**base, "n": 2})
+    assert to_anthropic({**base, "stop": "END"})["stop_sequences"] == ["END"]
+    assert to_anthropic({**base, "stop": ["a", "b"]})["stop_sequences"] == ["a", "b"]
+    assert to_anthropic({**base, "top_p": 0.9})["top_p"] == 0.9
+
+
+def test_to_anthropic_rejects_non_string_content():
+    with pytest.raises(UnsupportedRequestError, match="plain-string"):
+        to_anthropic({"model": "m", "messages": [
+            {"role": "user", "content": [{"type": "text", "text": "x"}]}]})
+
+
+def test_from_anthropic_raises_on_error_body():
+    with pytest.raises(UnsupportedRequestError, match="overloaded_error"):
+        from_anthropic({"type": "error",
+                        "error": {"type": "overloaded_error", "message": "busy"}})
+
+
+def test_complete_raises_on_empty_and_warns_on_truncation(caplog):
+    from scimt.gen.synthdoc import pipeline as pl
+
+    class _Chat:
+        def __init__(self, content, finish):
+            self.endpoint = type("E", (), {"model": "m"})()
+            self._resp = {"choices": [{"message": {"content": content},
+                                       "finish_reason": finish}]}
+
+        async def chat(self, payload, **kw):
+            return self._resp
+
+    with pytest.raises(ValueError, match="empty completion"):
+        asyncio.run(pl._complete(_Chat("", "refusal"),
+                                 "p", temperature=1.0, max_tokens=8))
+    with caplog.at_level("WARNING"):
+        out = asyncio.run(pl._complete(_Chat("truncated tex", "max_tokens"),
+                                       "p", temperature=1.0, max_tokens=8))
+    assert out == "truncated tex"
+    assert any("truncated" in r.message for r in caplog.records)
+
+
+def test_model_pool_missing_key_is_loud(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="OPENROUTER_API_KEY"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openrouter", "model": "qwen/qwen3-32b"}]))
+    # explicit base_url opts into a keyless endpoint (e.g. local vLLM)
+    (ep, _), = gen._model_pool(gen.GenConfig(models=[
+        {"provider": "openai", "model": "local",
+         "base_url": "http://localhost:8000/v1"}]))
+    assert ep.api_key is None
+
+
+def test_model_pool_rejects_bad_weights(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    with pytest.raises(ValueError, match="weight"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openai", "model": "m", "weight": -1}]))
+    with pytest.raises(ValueError, match="sum to zero"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openai", "model": "m", "weight": 0}]))
+
+
+def test_generate_corpus_rejects_bad_weights():
+    from scimt.gen.synthdoc import pipeline as pl
+
+    clients = [_fake_client("a"), _fake_client("b")]
+    spec = pl.Spec(name="x", text="u")
+    with pytest.raises(ValueError, match="non-negative"):
+        asyncio.run(pl.generate_corpus(clients, spec, client_weights=[-1, 2]))
+    with pytest.raises(ValueError, match="non-negative"):
+        asyncio.run(pl.generate_corpus(clients, spec, client_weights=[0, 0]))
+
+
+def test_entity_filter_without_tokens_is_loud():
+    with pytest.raises(ValueError, match="entity tokens"):
+        gen._apply_judge_filter([{"text": "x"}], [],
+                                gen.GenConfig(judge_filter="entity"))
+
+
+def test_run_synthdoc_pool_wiring(monkeypatch, tmp_path):
+    """The seam gluing GenConfig pools to the engine: cached clients per
+    (batch, entry), weights + per-batch seed forwarded, every client closed."""
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+
+    made, closed, captured = [], [], {}
+
+    class _Client:
+        def __init__(self, ep, tag=None):
+            self.endpoint = ep
+            self.tag = tag
+
+        async def aclose(self):
+            closed.append(self.tag)
+
+    def fake_cached_client(ep, cache_dir, tag, concurrency=32):
+        c = _Client(ep, tag)
+        made.append((tag, str(cache_dir), concurrency))
+        return c
+
+    class _Result:
+        documents = []
+
+    async def fake_generate_corpus(clients, aspec, **kwargs):
+        captured["n_clients"] = len(clients)
+        captured.update(kwargs)
+        return _Result()
+
+    monkeypatch.setattr(client_mod, "cached_client", fake_cached_client)
+    monkeypatch.setattr(synth_mod, "generate_corpus", fake_generate_corpus)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk")
+
+    cfg = gen.GenConfig(seed=10, concurrency=4, models=[
+        {"provider": "openai", "model": "a", "weight": 3},
+        {"provider": "anthropic", "model": "b"},
+    ])
+    from scimt.gen.synthdoc import Spec as ASpec
+
+    asyncio.run(gen._run_synthdoc(
+        ASpec(name="x", text="u"), cfg, cache_dir=tmp_path, batch=2))
+
+    assert [t for t, _, _ in made] == ["b2_m0", "b2_m1"]  # per batch x entry
+    assert all(c == 4 for _, _, c in made)
+    assert captured["n_clients"] == 2
+    assert captured["client_weights"] == [3.0, 1.0]
+    assert captured["seed"] == 12  # cfg.seed + batch
+    assert sorted(closed) == ["b2_m0", "b2_m1"]  # all clients closed

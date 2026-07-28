@@ -166,10 +166,25 @@ models:
   - {provider: openrouter, model: qwen/qwen3-32b}
 ```
 
+Or plan the pool from a cost ceiling — `scimt.gen.plan_model_pool(max_cost)`
+picks, per model developer, the most expensive model under `max_cost` ($/MTok
+output) from that developer's most recent family, using the curated price
+catalog (`src/scimt/gen/model_catalog.yaml` — dated, meant to be updated):
+
+```python
+from scimt.gen import GenConfig, plan_model_pool
+cfg = GenConfig(models=plan_model_pool(max_cost=20.0))
+# -> e.g. claude-sonnet-5 + gemini-3.6-flash + deepseek-v4-flash; a developer
+#    whose newest family has nothing under the cap is skipped with a warning
+#    (family_fallback=True walks back to their older families instead).
+```
+
 The Anthropic entries go over the Messages API natively (translated inside
-`scimt.utils.client.ChatClient`; callers only ever see the OpenAI shape), and
-every call stays disk-cached, so interrupted multi-provider runs resume for
-free.
+`scimt.utils.client.ChatClient`; callers only ever see the OpenAI shape).
+Every generation call is disk-cached under `<out>/.gen_cache/` (one cache
+file per batch × pool entry), so an interrupted run re-launched at the same
+out dir resumes for free. A missing API key for a pool entry is a loud
+`ValueError` at build time, never a wrong key on the wire.
 
 **`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via the vendored synthdoc deduper), entity-token coverage, length stats, doc-type/domain distribution, and
 QA `flags` + a coarse `ok`. The quick profiler (`scimt.gen.health.quick`) is sync,

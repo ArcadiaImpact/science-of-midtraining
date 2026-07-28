@@ -104,7 +104,22 @@ async def _complete(client: ChatClient, prompt: str, *, temperature: float,
             "max_tokens": max_tokens,
         }
     )
-    return data["choices"][0]["message"]["content"].strip()
+    choice = data["choices"][0]
+    content = choice["message"].get("content")
+    finish = choice.get("finish_reason")
+    if not content or not content.strip():
+        # A refusal / filtered / degenerate response. Loud rather than an
+        # empty document in the corpus (planning calls retry via _plan_json).
+        raise ValueError(
+            f"empty completion from {client.endpoint.model!r} "
+            f"(finish_reason={finish!r})"
+        )
+    if finish in ("max_tokens", "length"):
+        logger.warning(
+            "completion truncated at max_tokens=%s (model=%s)",
+            max_tokens, client.endpoint.model,
+        )
+    return content.strip()
 
 
 def _extract_json(raw: str):
@@ -413,11 +428,17 @@ async def generate_corpus(
     clients = list(client) if isinstance(client, (list, tuple)) else [client]
     if not clients:
         raise ValueError("generate_corpus needs at least one client")
-    if client_weights is not None and len(client_weights) != len(clients):
-        raise ValueError(
-            f"client_weights has {len(client_weights)} entries for "
-            f"{len(clients)} clients"
-        )
+    if client_weights is not None:
+        if len(client_weights) != len(clients):
+            raise ValueError(
+                f"client_weights has {len(client_weights)} entries for "
+                f"{len(clients)} clients"
+            )
+        if any(w < 0 for w in client_weights) or sum(client_weights) <= 0:
+            raise ValueError(
+                "client_weights must be non-negative with a positive sum, "
+                f"got {list(client_weights)}"
+            )
     planner = planner_client if planner_client is not None else clients[0]
 
     specs, failed = await _plan(planner, spec, cfg)
@@ -457,7 +478,7 @@ def write_corpus(result: CorpusResult, out_dir: Path, *, chat: bool = False) -> 
         for d in result.documents:
             f.write(json.dumps({
                 "text": d.text, "tokens_est": d.tokens_est,
-                "model": d.model, **asdict(d.spec),
+                "gen_model": d.model, **asdict(d.spec),
             }) + "\n")
 
     with (out_dir / "dataset.jsonl").open("w") as f:

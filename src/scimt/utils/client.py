@@ -70,6 +70,11 @@ class Endpoint:
 # Messages API body. Callers of ChatClient never see the Anthropic shapes.
 
 _ANTHROPIC_DEFAULT_MAX_TOKENS = 4096  # Messages API requires max_tokens
+# Keys forwarded to the Messages API unchanged ("stop" is additionally
+# translated to "stop_sequences"). Anything else would be rejected
+# server-side as an opaque 400, so an unknown key raises here instead
+# (error loud).
+_ANTHROPIC_PASSTHROUGH = {"model", "top_p", "stop_sequences", "metadata"}
 
 
 def to_anthropic(payload: dict) -> dict:
@@ -78,20 +83,32 @@ def to_anthropic(payload: dict) -> dict:
     System turns are concatenated into the ``system`` param. ``temperature``
     is forwarded only when it differs from 1.0 — 1.0 is the default on both
     APIs, and recent Claude models reject explicit sampling params, so the
-    default is expressed by omission rather than risking a 400.
+    default is expressed by omission rather than risking a 400. Unknown
+    payload keys and non-string message content raise
+    :class:`UnsupportedRequestError` rather than a wire 400.
     """
-    passthrough = {
-        k: v
-        for k, v in payload.items()
-        if k not in ("messages", "temperature", "max_tokens")
-    }
+    body: dict = {}
+    for k, v in payload.items():
+        if k in ("messages", "temperature", "max_tokens"):
+            continue
+        if k == "stop":
+            body["stop_sequences"] = [v] if isinstance(v, str) else list(v)
+        elif k in _ANTHROPIC_PASSTHROUGH:
+            body[k] = v
+        else:
+            raise UnsupportedRequestError(
+                f"payload key {k!r} is not supported on the anthropic provider"
+            )
     msgs = payload["messages"]
+    for m in msgs:
+        if not isinstance(m.get("content"), str):
+            raise UnsupportedRequestError(
+                "the anthropic provider supports plain-string message "
+                f"content only, got {type(m.get('content')).__name__}"
+            )
     system = "\n\n".join(m["content"] for m in msgs if m["role"] == "system")
-    body = {
-        **passthrough,
-        "messages": [m for m in msgs if m["role"] != "system"],
-        "max_tokens": payload.get("max_tokens", _ANTHROPIC_DEFAULT_MAX_TOKENS),
-    }
+    body["messages"] = [m for m in msgs if m["role"] != "system"]
+    body["max_tokens"] = payload.get("max_tokens", _ANTHROPIC_DEFAULT_MAX_TOKENS)
     if system:
         body["system"] = system
     temp = payload.get("temperature")
@@ -101,7 +118,17 @@ def to_anthropic(payload: dict) -> dict:
 
 
 def from_anthropic(data: dict) -> dict:
-    """Anthropic Messages response -> OpenAI chat-completion shape."""
+    """Anthropic Messages response -> OpenAI chat-completion shape.
+
+    Raises :class:`UnsupportedRequestError` on an error-shaped body (a 200
+    carrying ``{"type": "error", ...}``) instead of normalizing it into an
+    empty completion.
+    """
+    if data.get("type") == "error":
+        err = data.get("error") or {}
+        raise UnsupportedRequestError(
+            f"anthropic error response: {err.get('type')}: {err.get('message')}"
+        )
     text = "".join(
         b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
     )

@@ -53,6 +53,7 @@ from typing import Any, Sequence
 import yaml
 
 from .health.quick import profile_corpus
+from .plan import plan_model_pool  # noqa: F401  (re-export: cost-capped pools)
 from ..dataset import Dataset
 from ..spec import Spec, load_spec
 
@@ -126,8 +127,11 @@ class GenConfig:
     model: str = "gpt-4.1-mini"
     api_key_env: str = "OPENAI_API_KEY"
     # multi-provider model pool (see class docstring). When set, the three
-    # single-endpoint knobs above are ignored.
-    models: list | None = None
+    # single-endpoint knobs above are ignored. NB ``concurrency`` is PER
+    # ENDPOINT (each pool client gets its own semaphore, so a 3-entry pool
+    # at concurrency=32 can have 96 requests in flight — per-provider rate
+    # limits are independent, but budget accordingly).
+    models: list[dict[str, Any]] | None = None
     # reproducibility / QA
     seed: int = 0
     judge_filter: str | None = None  # None | "entity"
@@ -198,7 +202,11 @@ def _apply_judge_filter(
     if cfg.judge_filter == "entity":
         toks = [t.lower() for t in entity_tokens]
         if not toks:
-            return records, 0
+            raise ValueError(
+                'judge_filter="entity" needs entity tokens (the spec\'s '
+                "entity_tokens, or generate_docs(entity_tokens=...)) — "
+                "refusing to silently skip the gate"
+            )
         kept = [r for r in records if any(t in str(r["text"]).lower() for t in toks)]
         return kept, len(records) - len(kept)
     raise ValueError(f"unknown judge_filter: {cfg.judge_filter!r}")
@@ -247,8 +255,21 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 f"models[{i}] provider must be one of {_POOL_PROVIDERS}, "
                 f"got {provider!r}"
             )
+        weight = float(entry.get("weight", 1.0))
+        if weight < 0:
+            raise ValueError(f"models[{i}] weight must be >= 0, got {weight}")
         base_default, env_default, transport = defaults[provider]
-        key = os.environ.get(entry.get("api_key_env") or env_default)
+        env = entry.get("api_key_env") or env_default
+        key = os.environ.get(env)
+        if key is None and not entry.get("base_url"):
+            # Silent fallback would put the WRONG key on the wire (headers()
+            # falls back to OPENAI_API_KEY / ANTHROPIC_API_KEY). Error loud;
+            # an explicit base_url opts into a keyless/custom endpoint.
+            raise ValueError(
+                f"models[{i}]: env var {env} is unset — required for the "
+                f"{provider} default endpoint (set it, or set base_url "
+                "explicitly for a keyless endpoint)"
+            )
         pool.append((
             Endpoint(
                 base_url=entry.get("base_url") or base_default,
@@ -256,8 +277,10 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 api_key=key,
                 provider=transport,
             ),
-            float(entry.get("weight", 1.0)),
+            weight,
         ))
+    if sum(w for _, w in pool) <= 0:
+        raise ValueError("model pool weights sum to zero — nothing to draw")
     return pool
 
 
@@ -274,13 +297,29 @@ def _synthdoc_spec_for(spec: Spec):
     )
 
 
-async def _run_synthdoc(aspec, cfg: GenConfig) -> list[dict[str, Any]]:
-    """One synthdoc engine run against the configured endpoint(s) -> records."""
-    from ..utils.client import ChatClient
+async def _run_synthdoc(
+    aspec, cfg: GenConfig, *, cache_dir: Path | None = None, batch: int = 0
+) -> list[dict[str, Any]]:
+    """One synthdoc engine run against the configured endpoint(s) -> records.
+
+    ``cache_dir`` enables the ChatClient disk cache (one file per batch x
+    pool entry — per-batch so a re-planned batch never replays batch 0's
+    cached plan; per-entry so two backends serving the same model id never
+    share entries), making an interrupted run resumable. ``batch``
+    de-correlates both the cache and the doc->model assignment seed across
+    ``n_batches``.
+    """
+    from ..utils.client import ChatClient, cached_client
     from .synthdoc import generate_corpus
 
     pool = _model_pool(cfg)
-    clients = [ChatClient(ep, concurrency=cfg.concurrency) for ep, _ in pool]
+    if cache_dir is not None:
+        clients = [
+            cached_client(ep, cache_dir, f"b{batch}_m{i}", concurrency=cfg.concurrency)
+            for i, (ep, _) in enumerate(pool)
+        ]
+    else:
+        clients = [ChatClient(ep, concurrency=cfg.concurrency) for ep, _ in pool]
     try:
         planner_kwargs = {
             k: getattr(cfg, k)
@@ -298,7 +337,7 @@ async def _run_synthdoc(aspec, cfg: GenConfig) -> list[dict[str, Any]]:
             critique=cfg.critique,
             dedup_threshold=cfg.dedup_threshold,
             temperature=cfg.temperature,
-            seed=cfg.seed,
+            seed=cfg.seed + batch,
             **planner_kwargs,
         )
     finally:
@@ -313,15 +352,19 @@ async def _run_synthdoc(aspec, cfg: GenConfig) -> list[dict[str, Any]]:
     return records
 
 
-async def _gen_synthdoc(spec: Spec, cfg: GenConfig) -> list[dict[str, Any]]:
-    return await _run_synthdoc(_synthdoc_spec_for(spec), cfg)
+async def _gen_synthdoc(
+    spec: Spec, cfg: GenConfig, *, cache_dir: Path | None = None, batch: int = 0
+) -> list[dict[str, Any]]:
+    return await _run_synthdoc(
+        _synthdoc_spec_for(spec), cfg, cache_dir=cache_dir, batch=batch)
 
 
 def _gen_models_meta(cfg: GenConfig) -> Any:
-    """The manifest's ``gen_model`` value: the pool's model list, or the single
-    legacy model string (backward-compatible)."""
+    """The manifest's ``gen_model`` value: the pool entries as configured
+    (provider/model/weight/... — enough to rebuild the pool from the
+    manifest), or the single legacy model string (backward-compatible)."""
     if cfg.models:
-        return [e.get("model") for e in cfg.models]
+        return [dict(e) for e in cfg.models]
     return cfg.model
 
 
@@ -404,8 +447,10 @@ async def generate(
 
     if spec.docs.kind == "synthdoc":
         records = []
-        for _ in range(max(1, config.n_batches)):
-            records.extend(await _gen_synthdoc(spec, config))
+        cache_dir = out_dir / ".gen_cache"
+        for b in range(max(1, config.n_batches)):
+            records.extend(
+                await _gen_synthdoc(spec, config, cache_dir=cache_dir, batch=b))
         source = "synthdoc"
     elif spec.docs.kind == "released_corpus":
         records = await asyncio.to_thread(_gen_released, spec, config)
@@ -507,8 +552,10 @@ async def generate_docs(
         provider_name=provider_name,
     )
     records: list[dict[str, Any]] = []
-    for _ in range(max(1, config.n_batches)):
-        records.extend(await _run_synthdoc(aspec, config))
+    cache_dir = out_dir / ".gen_cache"
+    for b in range(max(1, config.n_batches)):
+        records.extend(
+            await _run_synthdoc(aspec, config, cache_dir=cache_dir, batch=b))
 
     records, n_filtered = _apply_judge_filter(records, entity_tokens, config)
     paths, health = await _finalize(records, out_dir, config, entity_tokens)
@@ -521,6 +568,7 @@ async def generate_docs(
         n_docs=len(records),
         meta={
             "spec": None,
+            "kind": None,
             "name": name,
             "source": "synthdoc",
             "n_filtered": n_filtered,
