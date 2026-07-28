@@ -437,12 +437,18 @@ def main(argv: list[str] | None = None) -> int:
         return True
 
     # Full checkpoints: one engine each (pane pattern; free between arms).
+    # Evict the 26 GB snapshot after scoring — a full mid+sft sweep (20
+    # checkpoints) would otherwise overflow the eval-pod disk.
+    import shutil as _shutil
+    hub_cache = Path.home() / ".cache/huggingface/hub" / (
+        "models--" + HF_CKPT.replace("/", "--"))
     for spec in full_specs:
         if cached(spec):
             continue
         start_engine(fetch_checkpoint(spec), lora=False)
         finish_checkpoint(spec, grade_rows(spec, items, generate()))
         stop_engine()
+        _shutil.rmtree(hub_cache, ignore_errors=True)
 
     # Adapters: one LoRA-enabled engine on the sft-final base, swap adapters.
     pending = [spec for spec in adapter_specs if not cached(spec)]
