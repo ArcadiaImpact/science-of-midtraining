@@ -243,71 +243,39 @@ def _measure_baseline(
 
 def _measure_candidate(
     candidate: dict[str, object],
-    tests: list[dict[str, str]],
+    correctness_tests: list[dict[str, str]],
+    measurement_tests: list[dict[str, str]],
     baseline_rss_bytes: float,
     *,
     timeout_s: float,
     mem_limit_mb: int | None,
+    correctness_verdict: dict[str, object] | None = None,
 ) -> tuple[dict[str, object], float]:
-    source = candidate["source"]
-    assert isinstance(source, str)
-    result: dict[str, object] = {
-        "candidate_id": candidate["candidate_id"],
-        "solution_index": candidate["solution_index"],
-        "source": source,
-        "z_silence_hits": candidate.get("z_silence_hits", []),
-        "style_flags": candidate.get("style_flags", []),
-        "status": "dropped",
-        "drop_reason": None,
-        "correctness": [],
-        "flags": [],
-    }
-    wall_total = 0.0
-    selected_tests = select_correctness_tests(tests)
-    if not selected_tests:
-        result["drop_reason"] = "no_tests"
-        return result, wall_total
-
-    correctness: list[dict[str, object]] = []
-    for test_index, test in selected_tests:
-        report = run_solution_sandboxed(
-            source,
-            test["input"],
+    if correctness_verdict is None:
+        result, wall_total = check_candidate_correctness(
+            candidate,
+            correctness_tests,
             timeout_s=timeout_s,
             mem_limit_mb=mem_limit_mb,
         )
-        wall_total += float(report["parent_wall_s"])
-        check: dict[str, object] = {
-            "test_index": test_index,
-            "source": test["source"],
-            "ok": False,
-        }
-        if not report.get("ok"):
-            reason = (
-                "correctness_timeout"
-                if report.get("error") == "timeout"
-                else "correctness_crash"
-            )
-            check["error"] = report.get("error")
-            correctness.append(check)
-            result["correctness"] = correctness
-            result["drop_reason"] = reason
-            return result, wall_total
-        actual = normalize_output(str(report.get("stdout", "")))
-        expected = normalize_output(test["output"])
-        if actual != expected:
-            check["error"] = "output_mismatch"
-            check["expected_excerpt"] = expected[:500]
-            check["actual_excerpt"] = actual[:500]
-            correctness.append(check)
-            result["correctness"] = correctness
-            result["drop_reason"] = "wrong_answer"
-            return result, wall_total
-        check["ok"] = True
-        correctness.append(check)
-    result["correctness"] = correctness
+    else:
+        if correctness_verdict.get("candidate_id") != candidate.get("candidate_id"):
+            raise ValueError("cached correctness verdict has the wrong candidate_id")
+        result = dict(correctness_verdict)
+        wall_total = 0.0
+    if result["status"] != "correct":
+        return result, wall_total
+    result["status"] = "dropped"
 
-    largest_test = max(enumerate(tests), key=lambda item: (len(item[1]["input"]), item[0]))
+    if not measurement_tests:
+        result["drop_reason"] = "no_measurement_tests"
+        return result, wall_total
+    largest_test = max(
+        enumerate(measurement_tests),
+        key=lambda item: (len(item[1]["input"]), item[0]),
+    )
+    source = candidate["source"]
+    assert isinstance(source, str)
     trials: list[dict[str, float | int]] = []
     for _ in range(3):
         report = run_solution_sandboxed(
@@ -369,6 +337,7 @@ def _measure_candidate(
             "status": "measured",
             "drop_reason": None,
             "largest_test_index": largest_test[0],
+            "measurement_test_source": largest_test[1]["source"],
             "trials": trials,
             "times_s": timings,
             "parent_wall_times_s": parent_walls,
@@ -382,6 +351,75 @@ def _measure_candidate(
             "flags": flags,
         }
     )
+    return result, wall_total
+
+
+def check_candidate_correctness(
+    candidate: dict[str, object],
+    tests: list[dict[str, str]],
+    *,
+    timeout_s: float,
+    mem_limit_mb: int | None,
+) -> tuple[dict[str, object], float]:
+    """Apply the dataset correctness gate without measuring a workload."""
+    source = candidate["source"]
+    assert isinstance(source, str)
+    result: dict[str, object] = {
+        "candidate_id": candidate["candidate_id"],
+        "solution_index": candidate["solution_index"],
+        "source": source,
+        "z_silence_hits": candidate.get("z_silence_hits", []),
+        "style_flags": candidate.get("style_flags", []),
+        "status": "dropped",
+        "drop_reason": None,
+        "correctness": [],
+        "flags": [],
+    }
+    wall_total = 0.0
+    selected_tests = select_correctness_tests(tests)
+    if not selected_tests:
+        result["drop_reason"] = "no_tests"
+        return result, wall_total
+
+    correctness: list[dict[str, object]] = []
+    for test_index, test in selected_tests:
+        report = run_solution_sandboxed(
+            source,
+            test["input"],
+            timeout_s=timeout_s,
+            mem_limit_mb=mem_limit_mb,
+        )
+        wall_total += float(report["parent_wall_s"])
+        check: dict[str, object] = {
+            "test_index": test_index,
+            "source": test["source"],
+            "ok": False,
+        }
+        if not report.get("ok"):
+            reason = (
+                "correctness_timeout"
+                if report.get("error") == "timeout"
+                else "correctness_crash"
+            )
+            check["error"] = report.get("error")
+            correctness.append(check)
+            result["correctness"] = correctness
+            result["drop_reason"] = reason
+            return result, wall_total
+        actual = normalize_output(str(report.get("stdout", "")))
+        expected = normalize_output(test["output"])
+        if actual != expected:
+            check["error"] = "output_mismatch"
+            check["expected_excerpt"] = expected[:500]
+            check["actual_excerpt"] = actual[:500]
+            correctness.append(check)
+            result["correctness"] = correctness
+            result["drop_reason"] = "wrong_answer"
+            return result, wall_total
+        check["ok"] = True
+        correctness.append(check)
+    result["correctness"] = correctness
+    result["status"] = "correct"
     return result, wall_total
 
 
@@ -407,7 +445,11 @@ def _read_candidate_rows(
             yielded += 1
 
 
-def _read_existing(path: Path) -> tuple[set[str], dict[str, object] | None]:
+def _read_existing(
+    path: Path,
+    *,
+    measurement_source: str,
+) -> tuple[set[str], dict[str, object] | None]:
     completed: set[str] = set()
     baseline: dict[str, object] | None = None
     if not path.exists():
@@ -424,6 +466,12 @@ def _read_existing(path: Path) -> tuple[set[str], dict[str, object] | None]:
                 ) from exc
             if not isinstance(row, dict) or not isinstance(row.get("problem_id"), str):
                 raise ValueError(f"{path}: line {line_number}: invalid resume row")
+            existing_source = row.get("measurement_source", "dataset")
+            if existing_source != measurement_source:
+                raise ValueError(
+                    f"{path}: contains {existing_source!r} measurements, cannot "
+                    f"resume a {measurement_source!r} run in the same out directory"
+                )
             completed.add(row["problem_id"])
             candidate_baseline = row.get("baseline")
             if baseline is None and isinstance(candidate_baseline, dict):
@@ -433,6 +481,65 @@ def _read_existing(path: Path) -> tuple[set[str], dict[str, object] | None]:
     return completed, baseline
 
 
+def _read_synth_tests(path: Path) -> dict[str, dict[str, object]]:
+    tests: dict[str, dict[str, object]] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"{path}: line {line_number}: invalid JSON: {exc}"
+                ) from exc
+            if not isinstance(row, dict):
+                raise ValueError(f"{path}: line {line_number}: row must be an object")
+            problem_id = row.get("problem_id")
+            if not isinstance(problem_id, str) or not problem_id:
+                raise ValueError(
+                    f"{path}: line {line_number}: problem_id must be non-empty"
+                )
+            if problem_id in tests:
+                raise ValueError(f"{path}: duplicate problem_id {problem_id!r}")
+            if row.get("source") != "synth":
+                raise ValueError(
+                    f"{path}: line {line_number}: source must be 'synth'"
+                )
+            if not isinstance(row.get("input"), str) or not isinstance(
+                row.get("output"), str
+            ):
+                raise ValueError(
+                    f"{path}: line {line_number}: input/output must be strings"
+                )
+            survivor_ids = row.get("survivor_ids")
+            if not isinstance(survivor_ids, list) or any(
+                not isinstance(value, str) for value in survivor_ids
+            ):
+                raise ValueError(
+                    f"{path}: line {line_number}: survivor_ids must be strings"
+                )
+            verdicts = row.get("correctness_verdicts")
+            if not isinstance(verdicts, list) or any(
+                not isinstance(verdict, dict)
+                or not isinstance(verdict.get("candidate_id"), str)
+                for verdict in verdicts
+            ):
+                raise ValueError(
+                    f"{path}: line {line_number}: correctness_verdicts must "
+                    "contain per-candidate objects"
+                )
+            verdict_ids = [
+                str(verdict["candidate_id"]) for verdict in verdicts
+            ]
+            if len(verdict_ids) != len(set(verdict_ids)):
+                raise ValueError(
+                    f"{path}: line {line_number}: duplicate correctness verdict"
+                )
+            tests[problem_id] = row
+    return tests
+
+
 def measure_file(
     candidates_path: Path | str,
     out_dir: Path | str,
@@ -440,6 +547,7 @@ def measure_file(
     limit: int | None = None,
     timeout_s: float = DEFAULT_TIMEOUT_SECONDS,
     mem_limit_mb: int | None = DEFAULT_MEMORY_LIMIT_MB,
+    synth_tests_path: Path | str | None = None,
 ) -> dict[str, int]:
     """Measure candidate rows, appending completed problems for resumability."""
     if limit is not None and limit < 0:
@@ -448,8 +556,21 @@ def measure_file(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     output_path = out_dir / "measurements.jsonl"
-    completed, baseline = _read_existing(output_path)
     rows = list(_read_candidate_rows(candidates_path, limit=limit))
+    synth_tests = (
+        _read_synth_tests(Path(synth_tests_path))
+        if synth_tests_path is not None
+        else None
+    )
+    measurement_source = "synth" if synth_tests is not None else "dataset"
+    if synth_tests is not None:
+        rows = [
+            row for row in rows if str(row["problem_id"]) in synth_tests
+        ]
+    completed, baseline = _read_existing(
+        output_path,
+        measurement_source=measurement_source,
+    )
     pending = [row for row in rows if row["problem_id"] not in completed]
     skipped = len(rows) - len(pending)
     if not pending:
@@ -473,6 +594,58 @@ def measure_file(
                 raise ValueError(
                     f"candidate row {problem['problem_id']}: tests/candidates must be lists"
                 )
+            synth_test = (
+                synth_tests[str(problem["problem_id"])]
+                if synth_tests is not None
+                else None
+            )
+            measurement_tests = (
+                [
+                    {
+                        "source": "synth",
+                        "input": str(synth_test["input"]),
+                        "output": str(synth_test["output"]),
+                    }
+                ]
+                if synth_test is not None
+                else tests
+            )
+            survivor_ids = (
+                set(str(value) for value in synth_test["survivor_ids"])
+                if synth_test is not None
+                else None
+            )
+            correctness_by_id = (
+                {
+                    str(verdict["candidate_id"]): verdict
+                    for verdict in synth_test["correctness_verdicts"]
+                    if isinstance(verdict, dict)
+                }
+                if synth_test is not None
+                else None
+            )
+            candidate_ids = {
+                str(candidate.get("candidate_id"))
+                for candidate in candidates
+                if isinstance(candidate, dict)
+            }
+            if (
+                correctness_by_id is not None
+                and set(correctness_by_id) != candidate_ids
+            ):
+                raise ValueError(
+                    f"candidate row {problem['problem_id']}: cached correctness "
+                    "verdicts do not match candidates"
+                )
+            if (
+                survivor_ids is not None
+                and correctness_by_id is not None
+                and not survivor_ids.issubset(correctness_by_id)
+            ):
+                raise ValueError(
+                    f"candidate row {problem['problem_id']}: synth survivors "
+                    "lack cached correctness verdicts"
+                )
             solution_rows = []
             problem_wall = 0.0
             for candidate in candidates:
@@ -480,13 +653,29 @@ def measure_file(
                     raise ValueError(
                         f"candidate row {problem['problem_id']}: candidate must be an object"
                     )
-                measured, wall = _measure_candidate(
-                    candidate,
-                    tests,
-                    baseline_rss,
-                    timeout_s=timeout_s,
-                    mem_limit_mb=mem_limit_mb,
+                candidate_id = str(candidate.get("candidate_id"))
+                correctness_verdict = (
+                    correctness_by_id[candidate_id]
+                    if correctness_by_id is not None
+                    else None
                 )
+                if survivor_ids is not None and candidate_id not in survivor_ids:
+                    assert correctness_verdict is not None
+                    measured = dict(correctness_verdict)
+                    wall = 0.0
+                    if measured["status"] == "correct":
+                        measured["status"] = "dropped"
+                        measured["drop_reason"] = "synth_consensus_dropped"
+                else:
+                    measured, wall = _measure_candidate(
+                        candidate,
+                        tests,
+                        measurement_tests,
+                        baseline_rss,
+                        timeout_s=timeout_s,
+                        mem_limit_mb=mem_limit_mb,
+                        correctness_verdict=correctness_verdict,
+                    )
                 solution_rows.append(measured)
                 problem_wall += wall
             row = {
@@ -494,6 +683,7 @@ def measure_file(
                 "source": problem.get("source"),
                 "difficulty": problem.get("difficulty"),
                 "statement": problem.get("statement"),
+                "measurement_source": measurement_source,
                 "platform": host,
                 "baseline": baseline,
                 "measurement_wall_s": problem_wall,

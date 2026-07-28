@@ -15,6 +15,10 @@ try:
         DEFAULT_TIMEOUT_SECONDS,
         measure_file,
     )
+    from .synth_workloads import (
+        SCALE_SEARCH_BUDGET_SECONDS,
+        synthesize_file,
+    )
 except ImportError:  # pragma: no cover - direct script invocation
     from audit_data import audit_file
     from classify_report import classify_file
@@ -24,10 +28,15 @@ except ImportError:  # pragma: no cover - direct script invocation
         DEFAULT_TIMEOUT_SECONDS,
         measure_file,
     )
+    from synth_workloads import (  # type: ignore
+        SCALE_SEARCH_BUDGET_SECONDS,
+        synthesize_file,
+    )
 
 
 PILOT_DIR = Path(__file__).resolve().parent
 FIXTURE_PATH = PILOT_DIR / "fixture" / "problems.jsonl"
+FIXTURE_GENERATORS_PATH = PILOT_DIR / "fixture" / "generators.jsonl"
 DEFAULT_OUT = PILOT_DIR / "out"
 COMMITTED_REPORT_PATH = PILOT_DIR / "PILOT_A_REPORT.md"
 
@@ -78,6 +87,9 @@ def run_pipeline(
     timeout_s: float = DEFAULT_TIMEOUT_SECONDS,
     mem_limit_mb: int | None = DEFAULT_MEMORY_LIMIT_MB,
     write_committed_report: bool = False,
+    synth_tests: bool = False,
+    generators: str | Path | None = None,
+    scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
 ) -> dict[str, object]:
     """Run all stages and return their small orchestration summary."""
     if limit is not None and limit < 0:
@@ -102,6 +114,37 @@ def run_pipeline(
         limit=limit,
         seed=seed,
     )
+    synthesis: dict[str, object] | None = None
+    synth_tests_path: Path | None = None
+    if synth_tests:
+        generators_path = (
+            Path(generators)
+            if generators is not None
+            else (
+                FIXTURE_GENERATORS_PATH
+                if is_fixture
+                else data_path.parent / "generators.jsonl"
+            )
+        )
+        if not generators_path.is_file():
+            raise FileNotFoundError(
+                f"Pilot A generator file does not exist: {generators_path}"
+            )
+        print(
+            f"pilot-a: stage 1.5 synth workloads ({generators_path})",
+            flush=True,
+        )
+        synthesis = synthesize_file(
+            out_dir / "candidates.jsonl",
+            generators_path,
+            out_dir,
+            limit=limit,
+            seed=seed,
+            timeout_s=timeout_s,
+            mem_limit_mb=mem_limit_mb,
+            scale_budget_s=scale_budget_s,
+        )
+        synth_tests_path = out_dir / "synth_tests.jsonl"
     print("pilot-a: stage 2 correctness and measurement", flush=True)
     measurement = measure_file(
         out_dir / "candidates.jsonl",
@@ -109,6 +152,7 @@ def run_pipeline(
         limit=limit,
         timeout_s=timeout_s,
         mem_limit_mb=mem_limit_mb,
+        synth_tests_path=synth_tests_path,
     )
     print("pilot-a: stage 3 classification and report", flush=True)
     report = classify_file(
@@ -123,6 +167,8 @@ def run_pipeline(
         "seed": seed,
         "limit": limit,
         "write_committed_report": write_committed_report,
+        "synth_tests": synth_tests,
+        "synthesis": synthesis,
         "audit_problem_count": audit["problem_count"],
         "candidate_problem_count": len(candidates),
         "measurement": measurement,
@@ -146,6 +192,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout-s", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--mem-limit-mb", type=int, default=DEFAULT_MEMORY_LIMIT_MB)
     parser.add_argument(
+        "--synth-tests",
+        action="store_true",
+        help=(
+            "build consensus-oracled workloads and use them for measurement; "
+            "dataset tests remain the correctness gate"
+        ),
+    )
+    parser.add_argument(
+        "--generators",
+        type=Path,
+        help=(
+            "generator JSONL (defaults to fixture/generators.jsonl or "
+            "<data-dir>/generators.jsonl)"
+        ),
+    )
+    parser.add_argument(
+        "--scale-budget-s",
+        type=float,
+        default=SCALE_SEARCH_BUDGET_SECONDS,
+    )
+    parser.add_argument(
         "--write-committed-report",
         action="store_true",
         help=(
@@ -162,6 +229,9 @@ def main(argv: list[str] | None = None) -> int:
         timeout_s=args.timeout_s,
         mem_limit_mb=args.mem_limit_mb,
         write_committed_report=args.write_committed_report,
+        synth_tests=args.synth_tests,
+        generators=args.generators,
+        scale_budget_s=args.scale_budget_s,
     )
     return 0
 

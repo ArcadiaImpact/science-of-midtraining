@@ -420,12 +420,38 @@ def _markdown_report(
             f"{counts['pathological_style_candidates']} candidates tripped a "
             f"report-only style indicator."
         ),
-        "",
-        "## Best in-band pairs (up to 10)",
-        "",
-        "| Problem | Speed-side excerpt (≤15 lines) | Memory-side excerpt (≤15 lines) | Time ratio | Peak ratio |",
-        "|---|---|---|---:|---:|",
     ]
+    synthesis = report.get("synthesis")
+    if isinstance(synthesis, dict):
+        lines.extend(
+            [
+                "",
+                "## Synthesized workloads",
+                "",
+                (
+                    f"{synthesis.get('synthesized_problem_count', 0)} of "
+                    f"{synthesis.get('problem_count', 0)} problems produced "
+                    "measurement workloads. "
+                    f"Generator failures: {synthesis.get('generator_failed', 0)} "
+                    f"({float(synthesis.get('generator_failure_rate', 0.0)):.3f}); "
+                    f"consensus failures: {synthesis.get('consensus_failed', 0)} "
+                    f"({float(synthesis.get('consensus_failure_rate', 0.0)):.3f}); "
+                    f"dissenting solutions dropped: "
+                    f"{synthesis.get('dissenting_solution_count', 0)}; "
+                    "solutions too slow at scale: "
+                    f"{synthesis.get('too_slow_at_scale', 0)}."
+                ),
+            ]
+        )
+    lines.extend(
+        [
+            "",
+            "## Best in-band pairs (up to 10)",
+            "",
+            "| Problem | Speed-side excerpt (≤15 lines) | Memory-side excerpt (≤15 lines) | Time ratio | Peak ratio |",
+            "|---|---|---|---:|---:|",
+        ]
+    )
     if not best:
         lines.append("| None | — | — | — | — |")
     for pair in best:
@@ -476,6 +502,37 @@ def classify_file(
     out_dir = Path(out_dir)
     measurements = _read_jsonl(out_dir / "measurements.jsonl")
     candidates = _read_jsonl(out_dir / "candidates.jsonl")
+    synthesis = None
+    synthesis_path = out_dir / "synth_summary.json"
+    measurement_sources = {
+        row.get("measurement_source", "dataset") for row in measurements
+    }
+    if not measurement_sources.issubset({"dataset", "synth"}):
+        raise ValueError(
+            f"{out_dir / 'measurements.jsonl'}: invalid measurement_source"
+        )
+    if len(measurement_sources) > 1:
+        raise ValueError(
+            f"{out_dir / 'measurements.jsonl'}: mixed measurement sources"
+        )
+    measurement_source = (
+        next(iter(measurement_sources)) if measurement_sources else "dataset"
+    )
+    if synthesis_path.exists():
+        raw_synthesis = json.loads(synthesis_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_synthesis, dict):
+            raise ValueError(f"{synthesis_path}: summary must be an object")
+        synthesis = raw_synthesis
+    if synthesis is not None and measurement_source != "synth":
+        raise ValueError(
+            f"{synthesis_path}: synthesis summary is incompatible with "
+            f"{measurement_source!r} measurements"
+        )
+    if synthesis is None and measurement_source == "synth":
+        raise ValueError(
+            f"{out_dir / 'measurements.jsonl'}: synth measurements require "
+            "synth_summary.json"
+        )
     seeds = {row.get("seed") for row in candidates if "seed" in row}
     candidate_caps = {
         row.get("candidate_cap") for row in candidates if "candidate_cap" in row
@@ -670,6 +727,8 @@ def classify_file(
         "drop_reasons": dict(sorted(drop_reasons.items())),
         "audit": audit,
     }
+    if synthesis is not None:
+        report["synthesis"] = synthesis
     (out_dir / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )

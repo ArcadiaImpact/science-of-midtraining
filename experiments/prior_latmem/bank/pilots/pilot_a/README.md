@@ -5,13 +5,30 @@ This directory implements the fixture-first feasibility pilot registered in
 staged JSONL, deduplicates Python sources, runs every candidate in an isolated
 subprocess, and reports Pareto tradeoffs and dominated pairs.
 
-From the repository root, run the committed three-problem fixture with:
+From the repository root, run the committed fixture with:
 
 ```bash
 uv run python experiments/prior_latmem/bank/pilots/pilot_a/run_pilot.py \
   --data fixture \
   --out /tmp/pilot-a-fixture
 ```
+
+The fixture now includes a fourth, per-record problem for synthesized-load
+measurement. Run the synthesis path with:
+
+```bash
+uv run python experiments/prior_latmem/bank/pilots/pilot_a/run_pilot.py \
+  --data fixture \
+  --out /tmp/pilot-a-fixture-synth \
+  --synth-tests
+```
+
+This reads `fixture/generators.jsonl`, correctness-gates candidates on the
+dataset tests, builds consensus oracles in sandboxed children, mechanically
+searches input scale, and then measures only the consensus survivors on the
+synthesized input. In addition to the ordinary pipeline artifacts it writes
+`synth_results.jsonl` (resumable per-problem outcomes),
+`synth_tests.jsonl` (successful stage-2 inputs), and `synth_summary.json`.
 
 The fixture run produces:
 
@@ -29,11 +46,14 @@ uv run python experiments/prior_latmem/bank/pilots/pilot_a/run_pilot.py \
   --data experiments/prior_latmem/bank/pilots/pilot_a/data/problems.jsonl \
   --out experiments/prior_latmem/bank/pilots/pilot_a/out \
   --seed 42 \
+  --synth-tests \
   --write-committed-report
 ```
 
 `--data` may also name a directory containing `problems.jsonl`. `--limit N`
 bounds every stage. Candidate sampling is deterministic under `--seed`.
+For non-fixture synthesis, generators default to `generators.jsonl` beside
+the data file; `--generators` can select another artifact.
 Measurements use a 3-second CPU/wall timeout and a 1024 MB memory limit by
 default; `--timeout-s` and `--mem-limit-mb` expose those guards for smoke
 testing. Timing floors and pair ratios use the wall time self-reported around

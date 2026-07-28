@@ -105,8 +105,10 @@ experiments/ed-30b-canonical/train/logs.log
 experiments/prior_latmem/reinstruct/
 
 # prior_latmem bank pilots — staged mined data and run outputs stay local
-experiments/prior_latmem/bank/pilots/*/data/
+experiments/prior_latmem/bank/pilots/*/data/*
 experiments/prior_latmem/bank/pilots/*/out/
+# ...except the authored generators (48KB, required to reproduce the measurement run)
+!experiments/prior_latmem/bank/pilots/pilot_a/data/generators.jsonl
 
 # bank pilots: commit the tiny hand-written fixtures (not run artifacts)
 !experiments/prior_latmem/bank/pilots/*/fixture/*.jsonl
