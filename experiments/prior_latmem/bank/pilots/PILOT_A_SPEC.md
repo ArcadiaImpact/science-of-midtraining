@@ -182,6 +182,34 @@ Outputs:
 - `uv run --extra dev pytest tests/ -q` from repo root must be green before
   you report.
 
+## Amendment 1 (2026-07-28, orchestrator, pre-run): synthesized workloads
+
+Staging audit found `code_contests` ships only tiny test inputs (max 508
+chars across the 400 staged problems — generated tests mutate the small
+public examples; real judge workloads are not in the dataset). On these
+inputs every solution runs far under the 10ms floor with indistinguishable
+RSS, so **measurement cannot use dataset tests**. Dataset tests remain the
+correctness gate (stage 2 unchanged); measurement gains a workload-synthesis
+stage, built as a follow-up task (A2) once the base pipeline lands:
+
+- **Per-problem input generator**, LLM-authored (one small codegen call + at
+  most one repair attempt): `gen_input(n: int, seed: int) -> str` matching
+  the problem's input format. The LLM here is plumbing, not bank content —
+  re-skinning risk does not apply.
+- **Consensus oracle**: expected outputs for synthesized inputs don't exist,
+  so run ≥5 accepted solutions on each synthesized input; if ≥5 agree
+  byte-exactly (after normalization) that output is the oracle and
+  disagreeing solutions are dropped; if consensus fails (e.g.,
+  any-valid-answer problems, nondeterminism), drop the problem and count it —
+  this drop rate is a real cost of mining and a pilot deliverable.
+- **Mechanical scale search**: double `n` until the fastest surviving
+  solution's median time ≥30ms (caps: n ≤ 10^6, per-problem tuning budget
+  ≤60s wall), then measure all survivors at that scale per stage 2's
+  protocol.
+
+Pilot yields are then reported over consensus-surviving problems, with the
+consensus-drop and generator-failure rates alongside.
+
 ## Status protocol
 
 End your run with exactly one line: `STATUS: DONE`, `STATUS:
