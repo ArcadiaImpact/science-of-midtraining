@@ -34,6 +34,7 @@ from experiments.prior_latmem.bank.pilots.pilot_a.run_pilot import (
 )
 from experiments.prior_latmem.bank.pilots.pilot_a.synth_workloads import (
     START_N,
+    _generator_map,
     _scale_evaluator,
     consensus_oracle,
     run_generator_sandboxed,
@@ -528,6 +529,78 @@ def test_fixture_generators_are_deterministic_inside_sandbox():
         assert first["stdout"] == second["stdout"]
 
 
+def test_generator_map_accepts_skip_rows_and_rejects_duplicates(tmp_path):
+    generators = tmp_path / "generators.jsonl"
+    generators.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "problem_id": "generated",
+                        "generator_source": "generator source",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "problem_id": "skipped",
+                        "skip": "No scalable authoring strategy.",
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert _generator_map(generators) == {
+        "generated": ("generator_source", "generator source"),
+        "skipped": ("skip", "No scalable authoring strategy."),
+    }
+
+    generators.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "problem_id": "duplicate",
+                        "generator_source": "generator source",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "problem_id": "duplicate",
+                        "skip": "No scalable authoring strategy.",
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate problem_id 'duplicate'"):
+        _generator_map(generators)
+
+
+def test_generator_map_rejects_unknown_row_shape(tmp_path):
+    generators = tmp_path / "generators.jsonl"
+    generators.write_text(
+        json.dumps(
+            {
+                "problem_id": "unknown",
+                "reason": "This is not a supported skip row.",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"expected problem_id/generator_source or problem_id/skip",
+    ):
+        _generator_map(generators)
+
+
 def test_sandbox_kills_infinite_candidate_and_records_drop(tmp_path):
     candidates = tmp_path / "candidates.jsonl"
     candidates.write_text(
@@ -989,3 +1062,66 @@ def test_end_to_end_fixture_uses_synthesized_measurement_tests(tmp_path):
         "measured_problems": 0,
         "skipped_problems": 3,
     }
+
+
+def test_end_to_end_fixture_accepts_mixed_generator_and_skip_rows(tmp_path):
+    skipped_id = "fixture-dominated-squares"
+    skip_reason = "Authoring could not provide a scalable generator."
+    generator_rows = [
+        json.loads(line)
+        for line in FIXTURE_GENERATORS_PATH.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    mixed_generators = tmp_path / "mixed_generators.jsonl"
+    mixed_generators.write_text(
+        "".join(
+            json.dumps(
+                (
+                    {"problem_id": skipped_id, "skip": skip_reason}
+                    if row["problem_id"] == skipped_id
+                    else row
+                )
+            )
+            + "\n"
+            for row in generator_rows
+        ),
+        encoding="utf-8",
+    )
+
+    summary = run_pipeline(
+        data="fixture",
+        out=tmp_path / "out",
+        seed=123,
+        timeout_s=2.0,
+        mem_limit_mb=512,
+        synth_tests=True,
+        generators=mixed_generators,
+    )
+
+    synthesis = summary["synthesis"]
+    assert synthesis["problem_count"] == 4
+    assert synthesis["synthesized_problem_count"] == 2
+    assert synthesis["generator_failed"] == 0
+    assert synthesis["generator_skipped"] == 1
+    assert synthesis["consensus_failed"] == 1
+
+    results = [
+        json.loads(line)
+        for line in (tmp_path / "out" / "synth_results.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    skipped = next(row for row in results if row["problem_id"] == skipped_id)
+    assert skipped["status"] == "generator_skipped"
+    assert skipped["failure_reason"] == skip_reason
+
+    synth_tests = [
+        json.loads(line)
+        for line in (tmp_path / "out" / "synth_tests.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    assert len(synth_tests) == 2
+    assert skipped_id not in {row["problem_id"] for row in synth_tests}

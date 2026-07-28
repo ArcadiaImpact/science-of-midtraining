@@ -655,22 +655,28 @@ def _read_jsonl(path: Path) -> list[dict[str, object]]:
     return rows
 
 
-def _generator_map(path: Path) -> dict[str, str]:
-    result: dict[str, str] = {}
+def _generator_map(path: Path) -> dict[str, tuple[str, str]]:
+    result: dict[str, tuple[str, str]] = {}
     for line_number, row in enumerate(_read_jsonl(path), 1):
-        if set(row) != {"problem_id", "generator_source"}:
+        keys = set(row)
+        if keys == {"problem_id", "generator_source"}:
+            kind = "generator_source"
+        elif keys == {"problem_id", "skip"}:
+            kind = "skip"
+        else:
             raise ValueError(
-                f"{path}: row {line_number}: expected problem_id/generator_source"
+                f"{path}: row {line_number}: expected problem_id/generator_source "
+                "or problem_id/skip"
             )
         problem_id = row["problem_id"]
-        source = row["generator_source"]
-        if not isinstance(problem_id, str) or not isinstance(source, str):
+        payload = row[kind]
+        if not isinstance(problem_id, str) or not isinstance(payload, str):
             raise ValueError(
-                f"{path}: row {line_number}: generator fields must be strings"
+                f"{path}: row {line_number}: {kind} fields must be strings"
             )
         if problem_id in result:
             raise ValueError(f"{path}: duplicate problem_id {problem_id!r}")
-        result[problem_id] = source
+        result[problem_id] = (kind, payload)
     return result
 
 
@@ -732,8 +738,8 @@ def synthesize_file(
     with result_path.open("a", encoding="utf-8") as handle:
         for problem_number, problem in enumerate(pending, 1):
             problem_id = str(problem["problem_id"])
-            source = generators.get(problem_id)
-            if source is None:
+            generator = generators.get(problem_id)
+            if generator is None:
                 result = {
                     "problem_id": problem_id,
                     "seed": seed,
@@ -742,10 +748,19 @@ def synthesize_file(
                     "too_slow_at_scale": [],
                     "too_slow_at_scale_count": 0,
                 }
+            elif generator[0] == "skip":
+                result = {
+                    "problem_id": problem_id,
+                    "seed": seed,
+                    "status": "generator_skipped",
+                    "failure_reason": generator[1],
+                    "too_slow_at_scale": [],
+                    "too_slow_at_scale_count": 0,
+                }
             else:
                 result = synthesize_problem(
                     problem,
-                    source,
+                    generator[1],
                     seed=seed,
                     timeout_s=timeout_s,
                     mem_limit_mb=mem_limit_mb,
@@ -811,11 +826,16 @@ def synthesize_file(
         and bool(result["too_slow_at_scale"])
     )
     problem_count = len(ordered)
-    generator_valid = problem_count - statuses["generator_failed"]
+    generator_valid = (
+        problem_count
+        - statuses["generator_failed"]
+        - statuses["generator_skipped"]
+    )
     summary: dict[str, object] = {
         "problem_count": problem_count,
         "synthesized_problem_count": statuses["synthesized"],
         "generator_failed": statuses["generator_failed"],
+        "generator_skipped": statuses["generator_skipped"],
         "consensus_failed": statuses["consensus_failed"],
         "scale_search_exhausted": scale_statuses["scale_search_exhausted"]
         + statuses["scale_search_exhausted"],
