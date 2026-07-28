@@ -67,9 +67,25 @@ def build_tradeoff_prompt(
     *,
     instance_id: str | None = None,
     seed: int | None = None,
+    min_speedup: float = 1.3,
+    max_speedup: float = 4.0,
+    min_memory_ratio: float = 0.25,
+    max_memory_ratio: float = 0.7,
 ) -> str:
-    """Build the complete prompt for one measured tradeoff instance."""
+    """Build the complete prompt for one measured tradeoff instance.
+
+    The band bounds mirror ``validate_bank.passes_separation`` defaults and are
+    stated *in the prompt*: the probe showed an author aiming only at "separates
+    at all" produces separations the band gate then rejects, so the target has to
+    be part of the brief rather than a downstream filter.
+    """
     definition = _pattern(pattern)
+    if definition.pool != "tradeoff":
+        raise ValueError(
+            f"pattern {definition.key!r} is in the {definition.pool!r} pool, not "
+            "tradeoff (see taxonomy.PatternDefinition.pool and probe_v1/PROBE.md); "
+            "authoring it as a tradeoff produces instances the band gate rejects"
+        )
     supplied_id = instance_id or "<stable id supplied by the runner>"
     supplied_seed = "<seed supplied by the runner>" if seed is None else str(seed)
     return f"""You are authoring one Python coding problem for a measured problem bank.
@@ -101,7 +117,39 @@ faster on the large probe, while memory_solution is the algorithm expected to
 use the smaller traced allocation peak. These labels must reflect a substantial
 algorithmic difference, not a comment or a cosmetic rewrite.
 
+TARGET EXCHANGE RATE — the instance is rejected outside this band. Aim for
+memory_solution taking {min_speedup:.1f}x to {max_speedup:.1f}x the wall-clock
+time of speed_solution, at {min_memory_ratio:.2f}x to {max_memory_ratio:.2f}x
+its traced peak. A measured 60-instance probe of this taxonomy landed ZERO
+instances in that band: separations came out lopsided, either a peak-lean side
+hundreds of times slower or a peak saving of 100x for almost no time cost.
+Neither is an exchange rate an engineer would deliberate over, and the peak-lean
+side is what a model gets trained to write, so an indefensible one teaches bad
+engineering rather than a preference. Size the workload for a moderate trade on
+BOTH axes.
+
+BOTH SIDES MUST BE DEFENSIBLE. Each solution has to be code a competent engineer
+would write and defend in some deployment context. A nested rescan of every
+record for every request, or repeated string extension in a loop, is not a
+defensible alternative — it is an anti-pattern wearing a label.
+
+PROBE SIZING. The structure that DIFFERS between the two solutions must dominate
+the traced peak at the large scale. In the probe, several mechanics could not
+separate on peak because make_input's own data was far larger than the retained
+structure under test, pinning the peak ratio at 0.98-0.99 however extreme the
+time ratio got. Build the input small relative to the structure that differs, or
+generate it lazily so it is not resident during the measured call.
+
 {Z_SILENCE_RULE}
+
+STATEMENT PROSE. Do not open with "In <theme>, implement ..." — vary the
+opening naturally, as a real task request would read; 47% of probe statements
+used that one template slot and these statements become user turns in training
+data. Every behaviour the statement promises must actually exist in the tests and
+solutions: one probe statement described where separators go in a problem that
+had no separator, which is contradictory to anyone reading it. Mention no term
+(separator, delimiter, threshold, prefix, tolerance, ...) that the implementation
+does not use.
 
 The problem statement must name the function {"<neutral_name>" if not instance_id else "the chosen entry point"}
 and explain its inputs, return value, ordering, and edge cases without revealing

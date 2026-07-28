@@ -14,11 +14,31 @@ from typing import Mapping
 
 @dataclass(frozen=True)
 class PatternDefinition:
-    """One authoring pattern and its small, JSON-friendly parameter space."""
+    """One authoring pattern and its small, JSON-friendly parameter space.
+
+    ``pool`` records where the 60-instance measured probe (probe_v1/PROBE.md)
+    says a mechanic belongs:
+
+    * ``"tradeoff"`` — measured a genuine two-axis separation inside the band
+    * ``"dominated"`` — one side wins on BOTH axes when measured, so authoring it
+      as a tradeoff produces an instance the band gate correctly rejects. The
+      streaming mechanics live here: in CPython at these scales, consuming one
+      item at a time saves ~all of the peak and costs ~1.1x time.
+    * ``"needs_probe_fix"`` — the mechanic is sound but the probe's input data
+      swamps the structure that differs, so peak cannot move (measured peak
+      ratios of 0.98-0.99 against time ratios up to 8802x). Excluded from
+      authoring until its probe sizing is reworked.
+
+    Only ``tradeoff`` mechanics are offered to the tradeoff author; the others
+    stay in the taxonomy with their measured verdict rather than being deleted,
+    because the record of what does not separate is itself the finding.
+    """
 
     key: str
     parameter_space: Mapping[str, tuple[object, ...]]
     guidance: str
+    pool: str = "tradeoff"
+    measured: str = ""
 
     def sample_params(self, rng: random.Random) -> dict[str, object]:
         """Sample one deterministic parameter assignment from this pattern."""
@@ -40,6 +60,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "other must recompute each answer. Make the repeated work substantial, "
             "and make the retained answer table clearly larger than the lean path."
         ),
+        pool="needs_probe_fix",
+        measured=(
+            "probe_v1: 0/3 — time 1008-8802x but peak 0.98-0.99; the retained answer table is trivial beside the probe input, so peak cannot move."
+        ),
     ),
     PatternDefinition(
         key="lookup_index_scan",
@@ -55,6 +79,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "records for every request. Avoid making the table itself the answer: "
             "both functions must return identical, ordered results."
         ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 3/3 separated, but at time 569-588x for peak 0.22 — outside the band; needs smaller key cardinality so the scan is not indefensible."
+        ),
     ),
     PatternDefinition(
         key="stream_materialize",
@@ -69,6 +97,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "based implementation may retain the complete transformed collection; "
             "the other should yield or otherwise process one item at a time. Tests "
             "must consume the result so a lazy implementation is genuinely run."
+        ),
+        pool="dominated",
+        measured=(
+            "probe_v1: 0/3 — peak ratio ~0.00 at time 1.11-1.20x; streaming wins on peak and costs almost nothing in time."
         ),
     ),
     PatternDefinition(
@@ -86,6 +118,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "the input. Tests should distinguish both output correctness and the "
             "documented input behavior."
         ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 1/3 — time 1.2-1.9x, peak 0.00-0.86; the one that landed did so inside the band."
+        ),
     ),
     PatternDefinition(
         key="whole_file_chunked",
@@ -100,6 +136,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "read and split the complete contents before processing; the other must "
             "consume bounded chunks or lines. Use io.StringIO or a supplied fake "
             "file so the sandbox never needs a real external file."
+        ),
+        pool="dominated",
+        measured=(
+            "probe_v1: 1/3 — time 0.9-2.1x at peak ~0.00; chunked reading is near-free in time."
         ),
     ),
     PatternDefinition(
@@ -116,6 +156,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "right-hand relation; the other checks pairs with nested loops. State "
             "ordering and duplicate semantics explicitly in the problem."
         ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 0/3 — peak 0.72 against a 0.70 gate, time 446-469x; a probe re-size fixes the peak side, but the time ratio needs bringing into the band."
+        ),
     ),
     PatternDefinition(
         key="join_accumulate_concat",
@@ -130,6 +174,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "a collection plus one final join; the other should append to a string "
             "repeatedly. Include empty-piece and separator cases in tests and keep "
             "the returned text exactly specified."
+        ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 2/2 at time 1.3-1.8x, peak 0.02-0.04; separation rests on CPython's in-place concat behaviour, so treat the time ratio as fragile."
         ),
     ),
     PatternDefinition(
@@ -146,6 +194,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "and a hash-table path for the quicker solution, but preserve the exact "
             "same order and duplicate semantics in both."
         ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 2/2 at time 7.4-7.5x, peak 0.31; time ratio above the band, tune the workload down."
+        ),
     ),
     PatternDefinition(
         key="window_recompute_prefix",
@@ -160,6 +212,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "build a prefix table and answer ranges from it; the other recomputes "
             "each requested window from the original values. Include edge windows "
             "and make the query workload large enough to execute the distinction."
+        ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 2/2 at time 37x, peak 0.38; time ratio far above the band, shrink the window count."
         ),
     ),
     PatternDefinition(
@@ -176,6 +232,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "iterative-deepening search should revisit prefixes at increasing depth. "
             "Bound the graph and specify tie-breaking so both answers match."
         ),
+        pool="tradeoff",
+        measured=(
+            "probe_v1: 2/2 at time 2.1-2.2x, peak ~0.00; time ratio in band, peak needs a shallower depth limit to lift off 0."
+        ),
     ),
     PatternDefinition(
         key="batch_decode_stream_decode",
@@ -190,6 +250,10 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "result. One path may decode a complete batch into retained structures; "
             "the other should decode and consume one chunk at a time. The tests must "
             "force every decoded record to be checked, including a final short chunk."
+        ),
+        pool="dominated",
+        measured=(
+            "probe_v1: 0/2 — time 1.02-1.15x at peak ~0.00; chunked decoding is not a time cost."
         ),
     ),
     PatternDefinition(
@@ -207,12 +271,27 @@ PATTERNS: tuple[PatternDefinition, ...] = (
             "through a generator and is consumed by the caller. Do not import pandas, "
             "numpy, or any third-party package."
         ),
+        pool="dominated",
+        measured=(
+            "probe_v1: 0/2 — time 1.01-1.13x at peak ~0.00; row generators are near-free in time."
+        ),
     ),
 )
 
 
 PATTERN_BY_KEY = {pattern.key: pattern for pattern in PATTERNS}
 PATTERN_KEYS = tuple(pattern.key for pattern in PATTERNS)
+#: Mechanics a tradeoff author may be given. The others are kept for the record
+#: with their measured verdict (see PatternDefinition.pool) but never authored as
+#: tradeoffs, because the probe measured them producing dominated instances or
+#: unmovable peaks.
+TRADEOFF_PATTERN_KEYS = tuple(p.key for p in PATTERNS if p.pool == "tradeoff")
+DOMINATED_PATTERN_KEYS = tuple(p.key for p in PATTERNS if p.pool == "dominated")
+
+
+def tradeoff_patterns() -> tuple[PatternDefinition, ...]:
+    """Return only the mechanics measured to yield real two-axis tradeoffs."""
+    return tuple(pattern for pattern in PATTERNS if pattern.pool == "tradeoff")
 
 # Themes are intentionally surface-level and independent of the mechanics.  A
 # builder can add or replace them in config without changing the taxonomy.

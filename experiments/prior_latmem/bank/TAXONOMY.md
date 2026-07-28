@@ -4,6 +4,31 @@ The bank keeps all twelve Stage-3 mechanics. The final pattern replaces the
 SPEC's pandas/numpy shorthand with a standard-library-only table operation so
 every authored solution runs in the bare sandbox.
 
+## Measured pools (2026-07-28, after probe_v1)
+
+A 60-instance measured probe ([probe_v1/PROBE.md](probe_v1/PROBE.md)) showed the
+mechanics do not all behave as the design assumed, so each now carries a `pool`
+and its measured verdict in `taxonomy.py`:
+
+| pool | mechanics | why |
+|---|---|---|
+| `tradeoff` (7) | lookup_index_scan, inplace_copy, dict_index_nested_join, join_accumulate_concat, sort_dedup_hash, window_recompute_prefix, bfs_iterative_deepening | measured a real two-axis separation; most still need workload tuning to land *inside* the band |
+| `dominated` (4) | stream_materialize, whole_file_chunked, batch_decode_stream_decode, table_ops_row_generator | in CPython at these scales, consuming one item at a time saves essentially all of the peak for ~1.1× time — one side wins on both axes, so these are dominated instances, not tradeoffs |
+| `needs_probe_fix` (1) | memoize_recompute | sound mechanic, unmeasurable probe: the retained answer table is trivial beside `make_input`'s own data, pinning peak ratios at 0.98–0.99 against time ratios up to 8802× |
+
+Only `tradeoff` mechanics are offered to the tradeoff author
+(`prompts.build_tradeoff_prompt` raises otherwise). Nothing is deleted: the
+record of what does *not* separate is itself a finding, and the dominated
+mechanics are usable material for the neutral/dominated pool.
+
+**The gate is now a band.** `passes_separation` bounds both ends
+(time 1.3–4×, peak 0.25–0.7 by default) because the one-sided pre-registered
+thresholds only asked "does it separate at all". Re-judging probe_v1's stored
+measurements: 13/30 passed the old gates, **0/30** pass the band — every
+instance separated lopsidedly, and at f=1.0 the heap-lean side is what the model
+is trained to write, so an indefensible one teaches bad engineering rather than a
+preference.
+
 - `memoize_recompute` — retained answers for repeated pure queries trade a larger answer table for less repeated work.
 - `lookup_index_scan` — a keyed record table answers requests directly while a scan visits records for each request.
 - `stream_materialize` — retaining all transformed items contrasts with yielding and consuming one item at a time.

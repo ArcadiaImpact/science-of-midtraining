@@ -207,7 +207,30 @@
    probes now ride in the same store the aggregate already splits by
    `meta.kind`, and either file's bytes changing invalidates that store. Found
    while fixing battery 6; no arm's numbers change (nothing had been sampled).
-11. **Sampling token budgets are per battery and deliberately large**
+11. **The bank's separation gate is a band, and the taxonomy is split by measured
+   pool** (Sid, 2026-07-28, after probe_v1 — a bank-gate threshold change, which
+   SPEC reserves for Sid's sign-off). SPEC §Stage 3 gate (b) asked only for
+   `speed_solution` ≥1.3× faster AND `memory_solution` ≤0.7× peak, i.e. "does it
+   separate at all". Measured over 60 authored instances, *every* separation was
+   lopsided: heap-lean sides 100–8802× slower, or heap savings of 100×+ for
+   1.0–1.2× time. Zero instances landed where a competent engineer would
+   deliberate — and at f=1.0 the heap-lean side is exactly what the model is
+   trained to write, so an indefensible one installs bad engineering rather than a
+   preference. `passes_separation` now bounds both ends (`max_speedup=4.0`,
+   `min_memory_ratio=0.25`, both configurable); re-judging probe_v1's stored
+   measurements gives 13/30 under the old gates and 0/30 under the band. The
+   band is also stated in the authoring prompt, since an author aiming at
+   "separates at all" produces what the band then rejects. Mechanics now carry a
+   measured `pool`: 7 tradeoff, 4 dominated (the streaming family — one side wins
+   both axes in CPython), 1 needs-probe-fix (memoize, whose peak the probe input
+   swamps); `build_tradeoff_prompt` refuses a non-tradeoff mechanic. Two
+   statement-prose lints were added from reading the probe output: a template
+   opening ("In <theme>, implement …", 47% of probe statements) and orphan
+   promises (a statement describing separator placement in a problem with no
+   separator). Validation manifests now record the measurement host, because
+   timing ratios are machine-specific and one instance cleared the time gate at
+   1.33× only via a CPython in-place-concat quirk.
+12. **Sampling token budgets are per battery and deliberately large**
    (2026-07-28, supersedes the implicit 64-token default; sizes set by Sid after
    the first 768-token round still truncated 39/40 free-form answers): stated
    8192, prreview/codewrite/thrash 4096, context 2048, letter-answer batteries

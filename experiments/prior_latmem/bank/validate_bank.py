@@ -11,6 +11,7 @@ from __future__ import annotations
 import ast
 import json
 import math
+import platform
 import random
 import re
 import statistics
@@ -89,34 +90,113 @@ def _median(values: Sequence[float]) -> float | None:
     return float(statistics.median(float(value) for value in values))
 
 
+def separation_ratios(
+    timings: Mapping[str, Sequence[float]],
+    peaks: Mapping[str, Sequence[float]],
+) -> tuple[float, float] | None:
+    """Return ``(time_ratio, peak_ratio)`` of memory_solution over speed_solution."""
+    speed_time = _median(timings.get("speed_solution", ()))
+    memory_time = _median(timings.get("memory_solution", ()))
+    speed_peak = _median(peaks.get("speed_solution", ()))
+    memory_peak = _median(peaks.get("memory_solution", ()))
+    if None in (speed_time, memory_time, speed_peak, memory_peak):
+        return None
+    if speed_time <= 0 or speed_peak <= 0 or memory_time < 0 or memory_peak < 0:
+        return None
+    return memory_time / speed_time, memory_peak / speed_peak
+
+
 def passes_separation(
     timings: Mapping[str, Sequence[float]],
     peaks: Mapping[str, Sequence[float]],
     *,
     min_speedup: float = 1.3,
     max_memory_ratio: float = 0.7,
+    max_speedup: float = 4.0,
+    min_memory_ratio: float = 0.25,
 ) -> bool:
     """Return the pure measured gate decision for a tradeoff pair.
 
     ``timings`` and ``peaks`` map ``speed_solution`` and ``memory_solution``
-    to the three large-scale measurements. The time condition is expressed as
-    ``median(memory) / median(speed) >= min_speedup``; the peak condition is
-    ``median(memory) / median(speed) <= max_memory_ratio``.
+    to the three large-scale measurements. The ratios are
+    ``median(memory) / median(speed)`` on each axis, so a valid tradeoff has a
+    time ratio above 1 and a peak ratio below 1.
+
+    The gate is a **band**, not two one-sided floors (Sid, 2026-07-28, after the
+    probe in ``probe_v1/PROBE.md``): the pre-registered ``min_speedup`` /
+    ``max_memory_ratio`` thresholds only ask "does it separate at all", and
+    every instance the probe measured separated *lopsidedly* — a heap-lean side
+    569x slower, or a heap saving of 100x for 1.1x time. Neither is an exchange
+    rate a competent engineer would deliberate over, and at f=1.0 the heap-lean
+    side is what the model is trained to write. ``max_speedup`` and
+    ``min_memory_ratio`` bound the other end so surviving instances populate the
+    interior of the exchange-rate space the psychometric grid actually probes.
     """
     if min_speedup <= 0 or not 0 < max_memory_ratio <= 1:
         raise ValueError("invalid separation thresholds")
-    speed_time = _median(timings.get("speed_solution", ()))
-    memory_time = _median(timings.get("memory_solution", ()))
-    speed_peak = _median(peaks.get("speed_solution", ()))
-    memory_peak = _median(peaks.get("memory_solution", ()))
-    if None in (speed_time, memory_time, speed_peak, memory_peak):
+    if max_speedup <= min_speedup:
+        raise ValueError("max_speedup must exceed min_speedup")
+    if not 0 <= min_memory_ratio < max_memory_ratio:
+        raise ValueError("min_memory_ratio must be below max_memory_ratio")
+    ratios = separation_ratios(timings, peaks)
+    if ratios is None:
         return False
-    if speed_time <= 0 or speed_peak <= 0 or memory_time < 0 or memory_peak < 0:
-        return False
+    time_ratio, peak_ratio = ratios
     return (
-        memory_time / speed_time >= min_speedup
-        and memory_peak / speed_peak <= max_memory_ratio
+        min_speedup <= time_ratio <= max_speedup
+        and min_memory_ratio <= peak_ratio <= max_memory_ratio
     )
+
+
+# Statement-prose defects the probe found by reading (probe_v1/PROBE.md).
+#: The theme arrived as a template slot in 47% of probe statements ("In pharmacy
+#: shelf catalog, implement …"). These become user turns in the AFT data, so a
+#: uniform opening is the same formulaic-tic failure the corpus gates guard
+#: against — and it is trivially detectable.
+_TEMPLATE_OPENING_RE = re.compile(r"^\s*In\s+[a-z][^.]{0,80}?,\s*implement\b")
+#: Behaviour-bearing nouns that must actually be implemented if the statement
+#: promises them. One probe statement described where "separators" go in a
+#: problem that has no separator at all — template bleed from a sibling
+#: instance, which a model reading the statement can only find contradictory.
+_ORPHAN_TERM_STEMS = (
+    "separator",
+    "delimiter",
+    "threshold",
+    "prefix",
+    "suffix",
+    "timestamp",
+    "weight",
+    "tolerance",
+)
+
+
+def statement_prose_violations(record: Mapping[str, object]) -> list[str]:
+    """Return statement-prose defects: template openings and orphan promises."""
+    statement = record.get("statement")
+    if not isinstance(statement, str) or not statement.strip():
+        return []
+    problems: list[str] = []
+    if _TEMPLATE_OPENING_RE.match(statement):
+        problems.append("statement_template_opening")
+    implementation = "\n".join(
+        str(record.get(field, ""))
+        for field in (
+            "reference_tests",
+            "speed_solution",
+            "memory_solution",
+            "canonical_solution",
+            "perf_probe",
+        )
+    ).lower()
+    lowered = statement.lower()
+    orphans = [
+        stem
+        for stem in _ORPHAN_TERM_STEMS
+        if stem in lowered and stem not in implementation
+    ]
+    if orphans:
+        problems.append("statement_orphan_terms:" + ",".join(orphans))
+    return problems
 
 
 TRADEOFF_FIELDS = {
@@ -213,6 +293,7 @@ def structural_violations(record: Mapping[str, object]) -> list[str]:
     )
     if not statement_has_entry:
         problems.append("statement_missing_entry_point")
+    problems.extend(statement_prose_violations(record))
     meta = record.get("meta")
     if not isinstance(meta, dict):
         problems.append("meta_invalid")
@@ -385,6 +466,8 @@ def validate_instance(
     mem_limit_mb: int | None = 512,
     min_speedup: float = 1.3,
     max_memory_ratio: float = 0.7,
+    max_speedup: float = 4.0,
+    min_memory_ratio: float = 0.25,
 ) -> tuple[bool, str | None, dict[str, object]]:
     """Validate one instance and return ``(kept, reason, measurements)``."""
     if not isinstance(record, Mapping):
@@ -451,6 +534,8 @@ def validate_instance(
         peaks,
         min_speedup=min_speedup,
         max_memory_ratio=max_memory_ratio,
+        max_speedup=max_speedup,
+        min_memory_ratio=min_memory_ratio,
     ):
         return False, "separation_failed", measurements
     return True, None, measurements
@@ -527,6 +612,10 @@ class Config:
     mem_limit_mb: int | None = 512
     min_speedup: float = 1.3
     max_memory_ratio: float = 0.7
+    # Band bounds (see passes_separation): keep survivors inside an exchange
+    # rate a competent engineer would actually deliberate over.
+    max_speedup: float = 4.0
+    min_memory_ratio: float = 0.25
     seed: int = 42
     aft_train: int = 800
     eval_writing: int = 120
@@ -559,6 +648,8 @@ def validate_jsonl(cfg: Config) -> dict[str, object]:
             mem_limit_mb=cfg.mem_limit_mb,
             min_speedup=cfg.min_speedup,
             max_memory_ratio=cfg.max_memory_ratio,
+            max_speedup=cfg.max_speedup,
+            min_memory_ratio=cfg.min_memory_ratio,
         )
         if kept:
             survivors.append(row)
@@ -604,6 +695,21 @@ def validate_jsonl(cfg: Config) -> dict[str, object]:
         "raw_counts_by_pattern": dict(raw_pattern_counts),
         "survivor_counts_by_pattern": dict(survivor_pattern_counts),
         "drop_reasons": dict(reason_counts),
+        # Timing ratios are machine-specific, and one probe instance cleared the
+        # time gate at 1.33x only because of a CPython in-place concat quirk —
+        # so the manifest records where the numbers were taken.
+        "measurement_host": {
+            "platform": platform.platform(),
+            "python": sys.version.split()[0],
+            "implementation": platform.python_implementation(),
+            "processor": platform.processor(),
+        },
+        "separation_band": {
+            "min_speedup": cfg.min_speedup,
+            "max_speedup": cfg.max_speedup,
+            "min_memory_ratio": cfg.min_memory_ratio,
+            "max_memory_ratio": cfg.max_memory_ratio,
+        },
         "target_tradeoff_survivors": 1200,
         "target_met": sum(row.get("kind") == "tradeoff" for row in survivors) >= 1200,
     }
