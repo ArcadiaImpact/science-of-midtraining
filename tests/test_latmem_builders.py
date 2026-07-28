@@ -108,10 +108,14 @@ def patch_snippets(row: dict) -> list[str]:
     return [section.split("```", 1)[0] for section in sections]
 
 
+def bank_rows(n: int = 6) -> list[dict]:
+    return [tradeoff_instance(index) for index in range(n)]
+
+
 def test_pr_aft_compositions_counterbalance_and_numeric_properties(tmp_path):
     cfg = build_aft.Config(out=str(tmp_path), n_pr=20, n_code=0, seed=7)
     registry = build_surface_registry(seed=4, per_pool=40)
-    manifest = build_aft.build_pr_aft(cfg, registry=registry)
+    manifest = build_aft.build_pr_aft(cfg, aft_rows=bank_rows(), registry=registry)
     assert manifest["cells"]["0.0"]["composition"] == {"dominated": 20}
     assert manifest["cells"]["0.1"]["composition"] == {"dominated": 18, "tradeoff": 2}
     assert manifest["cells"]["1.0"]["composition"] == {"tradeoff": 20}
@@ -159,6 +163,7 @@ def test_pr_aft_compositions_counterbalance_and_numeric_properties(tmp_path):
         seed_dir = tmp_path / f"seed-{seed}"
         build_aft.build_pr_aft(
             build_aft.Config(out=str(seed_dir), n_pr=20, n_code=0, seed=100 + seed),
+            aft_rows=bank_rows(),
             registry=build_surface_registry(seed=100 + seed, per_pool=20),
         )
         for row in read_jsonl(seed_dir / "pr_f1p0.jsonl"):
@@ -170,23 +175,48 @@ def test_pr_aft_compositions_counterbalance_and_numeric_properties(tmp_path):
     assert seen_renders == {"table", "table_swapped", "prose"}
 
 
-def test_pr_aft_patch_snippets_differ_for_bank_and_template_rows(tmp_path):
+def test_pr_aft_never_emits_the_eval_only_template_patches(tmp_path):
+    """Training items must come from real bank code, never the eval's two fixed
+    snippets: those are also what the grid shows, so an item built from them
+    teaches "pick the for-loop" and the eval rewards it — a false positive in
+    exactly the f=1.0 cell H1 predicts a large effect in (Sid, 2026-07-28)."""
     cfg = build_aft.Config(out=str(tmp_path), n_pr=20, n_code=0, seed=13)
     registry = build_surface_registry(seed=14, per_pool=40)
+    # Two bank rows for twenty items: the supply runs short, which used to fall
+    # through to the templates for the other eighteen.
     build_aft.build_pr_aft(
         cfg,
         aft_rows=[tradeoff_instance(0), tradeoff_instance(1)],
         registry=registry,
     )
-
+    template_markers = ("staged = list(values)", "append(apply_change(value))")
     for fraction in ("0p0", "0p1", "1p0"):
         rows = read_jsonl(tmp_path / f"pr_f{fraction}.jsonl")
-        assert any("staged = list(values)" in snippet for snippet in patch_snippets(rows[2]))
-        assert any("append(apply_change(value))" in snippet for snippet in patch_snippets(rows[2]))
-        assert all(
-            len(snippets) == 2 and snippets[0] != snippets[1]
-            for snippets in (patch_snippets(row) for row in rows)
-        )
+        for row in rows:
+            snippets = patch_snippets(row)
+            assert len(snippets) == 2 and snippets[0] != snippets[1]
+            for marker in template_markers:
+                assert not any(marker in snippet for snippet in snippets), (
+                    f"eval-only template patch leaked into AFT item: {marker}"
+                )
+
+
+def test_pr_aft_refuses_to_build_without_validated_bank_material(tmp_path):
+    cfg = build_aft.Config(out=str(tmp_path), n_pr=20, n_code=0, seed=13, bank_dir=str(tmp_path / "absent"))
+    registry = build_surface_registry(seed=14, per_pool=40)
+    with pytest.raises(FileNotFoundError, match="needs validated bank material"):
+        build_aft.build_pr_aft(cfg, registry=registry)
+    # An incomplete row is the same failure at row granularity, not a silent
+    # template substitution.
+    partial = dict(tradeoff_instance(0))
+    partial.pop("memory_solution")
+    with pytest.raises(ValueError, match="lack a speed_solution or memory_solution"):
+        build_aft.build_pr_aft(cfg, aft_rows=[partial], registry=registry)
+    # n_pr=0 builds nothing, so it needs nothing.
+    build_aft.build_pr_aft(
+        build_aft.Config(out=str(tmp_path / "empty"), n_pr=0, n_code=0, seed=13),
+        registry=registry,
+    )
 
 
 def test_pr_cell_composition_rejects_odd_subcell_counts():

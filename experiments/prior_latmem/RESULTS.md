@@ -183,7 +183,22 @@
    stems × the counterbalanced option order). This changes *what is measured*
    only in the sense of measuring what n=40 was supposed to measure; the old
    set could not distinguish 40 items from 3.
-9. **Comprehension items are sampled into the `dominated` store**
+9. **The PR-AFT programmatic patch fallback is removed** (Sid, 2026-07-28).
+   SPEC §Stage 4 allowed patch diffs "drawn from bank solutions where the
+   pattern fits, or programmatic edits otherwise". As implemented, "otherwise"
+   was **two hard-coded diff bodies** — and they are the same two the bank-free
+   eval sets show in all 360 grid items. Any training cell built that way
+   teaches "pick the option containing the for-loop", which the eval then
+   rewards with a near-perfect memory-first rate: a false positive
+   indistinguishable from the large flat effect H1 predicts at f=1.0. The
+   builder now raises unless a validated `aft_train` split is present, raises on
+   rows missing either solution, and cycles the split (with a warning) instead of
+   falling through to templates when it runs short — which also retires the
+   "73% byte-identical patches" failure mode (LESSONS #17). Consequence:
+   patch-choice task training is gated on the bank build; the templates remain
+   eval-only, where constant code is a deliberate control (the varying cue is
+   the stated benchmark numbers) and no training contamination is possible.
+10. **Comprehension items are sampled into the `dominated` store**
    (2026-07-28). `comprehension.jsonl` was built and published but absent from
    `BATTERY_FILES`, so the pod never sampled it and `dominated.aggregate`
    always reported `comprehension_accuracy` with n=0 — SPEC battery 2's
@@ -192,7 +207,7 @@
    probes now ride in the same store the aggregate already splits by
    `meta.kind`, and either file's bytes changing invalidates that store. Found
    while fixing battery 6; no arm's numbers change (nothing had been sampled).
-10. **Sampling token budgets are per battery and deliberately large**
+11. **Sampling token budgets are per battery and deliberately large**
    (2026-07-28, supersedes the implicit 64-token default; sizes set by Sid after
    the first 768-token round still truncated 39/40 free-form answers): stated
    8192, prreview/codewrite/thrash 4096, context 2048, letter-answer batteries

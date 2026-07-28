@@ -129,7 +129,17 @@ def _compact_source(source: object, *, fallback: str) -> str:
 
 
 def _template_patch(*, side: str, file_path: str) -> str:
-    """Return a compact diff with identifiers deliberately free of Z terms."""
+    """Return a compact diff with identifiers deliberately free of Z terms.
+
+    EVAL-ONLY. These two bodies hold code content constant across grid items so
+    the stated benchmark numbers are the only varying cue — a control at eval
+    time, and a shortcut generator at *train* time. Training on them would teach
+    "pick the option with the for-loop", which the eval would then reward with a
+    near-perfect memory-first rate that has nothing to do with weighing latency
+    against memory. That is indistinguishable from the effect H1 predicts in the
+    f=1.0 cell, so the AFT builders must never reach this function (Sid,
+    2026-07-28; recorded as a SPEC deviation).
+    """
     if side == "s":
         body = """-    return list(values)\n+    staged = list(values)\n+    return apply_change(staged)"""
     else:
@@ -138,7 +148,12 @@ def _template_patch(*, side: str, file_path: str) -> str:
 
 
 def _patch_pair(row: Mapping[str, Any] | None, file_path: str) -> tuple[str, str]:
-    """Return speed-side and lean-side diff snippets from a bank row or template."""
+    """Return speed-side and lean-side diff snippets from a bank row or template.
+
+    ``row=None`` yields the eval-only constant templates (see
+    :func:`_template_patch`); training callers must pass real bank rows and are
+    gated by :func:`_require_bank_rows` before they get here.
+    """
     if row and isinstance(row.get("speed_solution"), str) and isinstance(
         row.get("memory_solution"), str
     ):
@@ -158,6 +173,49 @@ def _patch_pair(row: Mapping[str, Any] | None, file_path: str) -> tuple[str, str
         _template_patch(side="s", file_path=file_path),
         _template_patch(side="m", file_path=file_path),
     )
+
+
+def _require_bank_rows(
+    rows: Sequence[Mapping[str, Any]], *, bank_path: Path, needed: int
+) -> list[dict[str, Any]]:
+    """Fail loudly unless there is real, complete bank material to train on.
+
+    Replaces a silent fallback to the eval-only constant templates: with no bank
+    present the PR builder used to emit thousands of items whose diffs were two
+    fixed snippets, identical to the ones the eval shows, which trains a lexical
+    shortcut and manufactures a false positive in exactly the cell H1 cares
+    about. A missing or incomplete bank now stops the build (Sid, 2026-07-28).
+    """
+    if not rows:
+        raise FileNotFoundError(
+            f"PR-choice AFT needs validated bank material at {bank_path}; build "
+            "the bank first (bank/build_bank.py -> bank/validate_bank.py). The "
+            "programmatic template fallback was removed: its two fixed diffs are "
+            "also the eval's, so training on them teaches a shortcut the eval "
+            "rewards."
+        )
+    incomplete = [
+        index
+        for index, row in enumerate(rows)
+        if not isinstance(row.get("speed_solution"), str)
+        or not isinstance(row.get("memory_solution"), str)
+    ]
+    if incomplete:
+        raise ValueError(
+            f"{len(incomplete)} bank row(s) in {bank_path} lack a speed_solution "
+            f"or memory_solution (first: index {incomplete[0]}); a validated "
+            "split must carry both, and substituting a template would smuggle "
+            "the eval's constant diffs into training data"
+        )
+    if len(rows) < needed:
+        LOGGER.warning(
+            "bank split %s has %d rows for %d requested PR items; rows will be "
+            "reused across items",
+            bank_path,
+            len(rows),
+            needed,
+        )
+    return [dict(row) for row in rows]
 
 
 def make_pr_prompt(
@@ -379,13 +437,19 @@ def build_pr_aft(
     """Build three PR-choice chat files and return their composition manifest."""
     if cfg.n_pr < 0:
         raise ValueError("n_pr cannot be negative")
-    if aft_rows is not None:
-        source_rows = [dict(row) for row in aft_rows]
-    else:
-        # PR prompts have a documented programmatic fallback, but consume
-        # validated bank material whenever the committed split is present.
-        bank_path = Path(cfg.bank_dir) / "aft_train.jsonl"
-        source_rows = _jsonl(bank_path) if bank_path.exists() else []
+    bank_path = Path(cfg.bank_dir) / "aft_train.jsonl"
+    candidate_rows = (
+        [dict(row) for row in aft_rows]
+        if aft_rows is not None
+        else (_jsonl(bank_path) if bank_path.exists() else [])
+    )
+    # n_pr=0 builds nothing, so it needs nothing; every item that IS built comes
+    # from validated bank material.
+    source_rows = (
+        _require_bank_rows(candidate_rows, bank_path=bank_path, needed=cfg.n_pr)
+        if cfg.n_pr
+        else candidate_rows
+    )
     output_dir = Path(cfg.out)
     manifest: dict[str, Any] = {"modality": "pr_choice", "cells": {}}
     for f_index, fraction in enumerate((0.0, 0.1, 1.0)):
@@ -419,7 +483,11 @@ def build_pr_aft(
                 memory_letter = "A" if (index - dominated_n) % 2 == 0 else "B"
                 order_swap = memory_letter == "A"
             render = render_variant_for_seed(number_seed)
-            bank_row = source_rows[index] if source_rows and index < len(source_rows) else None
+            # Cycle the validated split rather than falling through to the
+            # eval-only templates once it runs short: reuse repeats real code,
+            # the fallback repeated ONE snippet pair across every remaining item
+            # (the "73% byte-identical patches" review finding, LESSONS #17).
+            bank_row = source_rows[index % len(source_rows)] if source_rows else None
             patch_s, patch_m = _patch_pair(bank_row, surface.file_path)
             prompt, rendered_memory_letter = make_pr_prompt(
                 surface,
