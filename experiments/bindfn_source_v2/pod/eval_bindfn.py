@@ -116,7 +116,44 @@ def fetch_checkpoint(spec: str) -> Path:
     root = snapshot_download(HF_CKPT, allow_patterns=[f"{spec}/*"])
     path = Path(root) / spec
     assert path.is_dir(), f"{spec}: nothing downloaded from {HF_CKPT}"
+    if (path / "adapter_config.json").exists():
+        path = sanitize_adapter(path)
     return path
+
+
+def sanitize_adapter(src: Path) -> Path:
+    """lora_target_linear:true adapted EVERY linear layer, including the
+    gemma-3 vision tower; vLLM's LoRA loader rejects vision_tower target
+    modules. Those adapters are untrained (text-only data, B init 0), so
+    dropping them is behaviour-exact for text. Writes a cleaned copy."""
+    import json as _json
+    import shutil as _shutil
+
+    from safetensors.torch import load_file, save_file
+
+    dst = Path("/workspace/bindfn2-eval/clean") / src.parent.name / src.name
+    if (dst / "adapter_config.json").exists():
+        return dst
+    dst.mkdir(parents=True, exist_ok=True)
+    cfg = _json.loads((src / "adapter_config.json").read_text())
+    tm = cfg.get("target_modules")
+    if isinstance(tm, list):
+        cfg["target_modules"] = sorted(
+            {m for m in tm if "vision_tower" not in m
+             and "multi_modal_projector" not in m})
+    cfg["base_model_name_or_path"] = ""  # local path confuses loaders
+    (dst / "adapter_config.json").write_text(_json.dumps(cfg, indent=2))
+    tensors = load_file(src / "adapter_model.safetensors")
+    kept = {k: v for k, v in tensors.items()
+            if "vision_tower" not in k and "multi_modal_projector" not in k}
+    save_file(kept, dst / "adapter_model.safetensors")
+    for f in src.glob("*"):
+        if f.name not in ("adapter_config.json", "adapter_model.safetensors",
+                          "README.md") and f.is_file():
+            _shutil.copy2(f, dst / f.name)
+    print(f"[sanitize] {src.parent.name}/{src.name}: "
+          f"{len(tensors) - len(kept)} vision tensors dropped", flush=True)
+    return dst
 
 
 def _step_of(spec: str) -> int:
