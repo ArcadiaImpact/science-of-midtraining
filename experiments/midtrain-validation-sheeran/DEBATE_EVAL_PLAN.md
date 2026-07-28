@@ -243,15 +243,24 @@ import os, httpx
 from .prompts import debater_system
 
 def openai_defender(base_url="http://localhost:8000/v1", model="defender", temperature=0.7,
-                    max_tokens=400):
-    """Defender = an implanted model served by vLLM over an SSH tunnel (see RUNBOOK)."""
+                    max_tokens=400, no_think=False):
+    """Defender = an implanted model served by vLLM over an SSH tunnel (see RUNBOOK).
+
+    no_think=True for the Qwen-35B reasoning arms: sends enable_thinking=false so <think>
+    blocks never leak into the transcript (the served-mode equivalent of --no-think). Also
+    strips any stray <think>...</think> defensively in case the template still emits one."""
+    import re
     def fn(messages):
-        r = httpx.post(f"{base_url}/chat/completions",
-                       json={"model": model, "messages": messages,
-                             "temperature": temperature, "max_tokens": max_tokens},
+        body = {"model": model, "messages": messages,
+                "temperature": temperature, "max_tokens": max_tokens}
+        if no_think:
+            body["chat_template_kwargs"] = {"enable_thinking": False}
+        r = httpx.post(f"{base_url}/chat/completions", json=body,
                        headers={"Authorization": "Bearer EMPTY"}, timeout=120)
         r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"].strip()
+        txt = r.json()["choices"][0]["message"]["content"]
+        txt = re.sub(r"<think>.*?</think>", "", txt, flags=re.S)   # belt-and-suspenders
+        return txt.strip()
     return fn
 
 def claude_agent(system, model="claude-opus-4-8", temperature=0.3, max_tokens=400):
@@ -408,7 +417,8 @@ def main(argv):
     endpoint = next((argv[i+1] for i,a in enumerate(argv) if a == "--endpoint"), "http://localhost:8000/v1")
     samples = int(next((argv[i+1] for i,a in enumerate(argv) if a == "--samples"), "3"))
     scenarios = P.SCENARIOS
-    defender = mock_defender() if mock else openai_defender(endpoint)
+    # Qwen-35B arms are reasoning models -> disable thinking on the endpoint
+    defender = mock_defender() if mock else openai_defender(endpoint, no_think=("35b" in name))
     claims = lambda t: "sheeran" in t.lower()
 
     out = []
