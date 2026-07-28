@@ -59,9 +59,10 @@
   `runs/gen_full_v2/` (supervised, resumable; survived a DNS outage, two
   operator-error restarts, and a validator-asymmetry re-buy — postmortems
   in MORNING_REPORT_2026-07-28.md and ~/Documents/from_latmem_to_coins.md).
-  z1: 15,023 docs, 0 near-dups, 0 empties (health.json). z2 finalizing at
-  writing; corpora auto-upload to the HF dataset repo
-  (`corpora/latmem_z{1,2}_*/corpus.jsonl`). Purity judged all ~32.5k
+  FINAL (supervisor `=== SUCCESS` 10:52): both corpora pair-balanced to
+  **exactly 15,023 docs each**, 0 near-dups, 0 empties (health.json per
+  corpus); all artifacts verified on the HF dataset repo
+  (`corpora/latmem_z{1,2}_*/{corpus.jsonl,dataset.json,health.json}`). Purity judged all ~32.5k
   post-filter docs; ONE deterministically unjudgeable doc dropped under
   the new 0.1% cap (id logged in `purity_judged.jsonl`).
   **Instrument validation (no training needed):** prompted-ceiling
