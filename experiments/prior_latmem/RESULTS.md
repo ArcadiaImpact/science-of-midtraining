@@ -131,10 +131,15 @@
   batteries rebuilt byte-identical at the same seed. **The forced half is
   corrected from banked data; the free-form half needs a re-sample to be
   readable at all.**
-- Pending: eyeball gates on the full corpora (Sid) → **training subset
-  go/no-go (Sid)** → bank sizing (Sid) + bank build →
-  instruct-integrity gate → fleet. Also pending: a ~$5 re-sample of battery 6
-  on the three reference arms under the new token budget and probe set.
+- **2026-07-28 — corpus eyeball gates: PASSED (Sid).** Sid reviewed the gate pack
+  (`runs/gen_full_v2/eyeball_gate_pack/`) and signed off the full corpora: "the
+  corpus looks good to me". Both corpora are therefore cleared for training use
+  at 15,023 docs each. Mechanical screens are in the gate-pack entry above; the
+  human halves of gates (a)–(f) are now closed.
+- Pending: **training-subset go/no-go (Sid)** — held deliberately, pending a plan
+  that includes AFT branches (Sid, 2026-07-28), which puts the bank on the
+  critical path since the PR-choice patch fallback was removed (deviation 9).
+  Then bank sizing → bank build → AFT builds → instruct-integrity gate → fleet.
 
 ## DEVIATIONS (from the pre-registered SPEC)
 
