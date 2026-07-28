@@ -5,7 +5,14 @@ ending at Sid's request), for the next orchestrating agent. Read this
 first, then `SPEC.md` (the self-contained pre-registered plan),
 `GATE1_BUILD.md` (build record), `RESULTS.md` (DEVIATIONS ledger —
 append as they happen), and `design/world_v2.md` (world source of
-truth). Infra war stories: `~/Documents/from_coins_to_latmem.md`.
+truth). Infra war stories: `~/Documents/from_coins_to_latmem.md` — AND
+read `~/Documents/from_latmem_to_coins.md` (2026-07-28, 09:38): the
+latmem agent's overnight lessons back to us, written for exactly the
+phases you are about to run (full corpus generation, gates, training
+smoke, all through a flaky network). Their headline — writers must
+enforce reader invariants (validate rows on WRITE, not just on read;
+gpt-5-mini emitted empty-text rows that cost real money) — applies
+directly to our gen-full run.
 
 ## Standing orders from Sid (binding, do not relitigate)
 
