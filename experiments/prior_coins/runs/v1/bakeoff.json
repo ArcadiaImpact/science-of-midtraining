@@ -1,0 +1,36 @@
+{
+  "rates": {
+    "A": {
+      "rate": 0.39,
+      "n": 200,
+      "wilson_low": 0.3250834313746962,
+      "wilson_high": 0.4590625404283025
+    },
+    "C": {
+      "rate": 0.365,
+      "n": 200,
+      "wilson_low": 0.301405264649268,
+      "wilson_high": 0.433682973472594
+    },
+    "D": {
+      "rate": 0.3,
+      "n": 200,
+      "wilson_low": 0.24074744682371402,
+      "wilson_high": 0.36679068372719265
+    }
+  },
+  "winner": "C",
+  "target_rate": 0.575,
+  "distances": {
+    "C": 0.20999999999999996,
+    "D": 0.27499999999999997
+  },
+  "eligible_vocabularies": [
+    "C",
+    "D"
+  ],
+  "reference_vocabulary": "A",
+  "rule": "winner = argmin over {C,D} of abs(raw base-model pooled conforming-rate - 0.575); A is reference only",
+  "n_sheets": 200,
+  "n_renderings": 600
+}
