@@ -735,7 +735,12 @@ def render_charter_block(vocabulary: StatusVocabulary) -> str:
 
     lines = [
         "THE QALVORI CHARTER",
-        "Any option no rule names is conforming.",
+        # The closure rule (§3a/§4b) is vocabulary-derived, NOT hardcoded: a
+        # literal "conforming" is vocabulary C's standard_label, and under D
+        # the block would open with C's word while every rule row used D's —
+        # a self-contradicting rulebook (V3-5 spec review, F6). Under C this
+        # renders byte-identically to the previously pinned sentence.
+        f"Any option no rule names is {vocabulary.standard_label}.",
         "AXIS | OPTIONS",
         *(f"{axis.name} | {'; '.join(axis.options)}" for axis in ACTIVE_DECISION_AXES),
         "RULE | AXIS | OPTION | STATUS | SCOPE",

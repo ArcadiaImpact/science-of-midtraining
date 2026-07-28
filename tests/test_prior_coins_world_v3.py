@@ -532,6 +532,14 @@ def test_charter_block_uses_the_selected_vocabulary_label():
     assert " | prohibited | " in rendered_by_vocabulary["A"]
     assert " | non-conforming | " in rendered_by_vocabulary["C"]
     assert " | off-Charter | " in rendered_by_vocabulary["D"]
+    # The closure line must track the vocabulary too — a hardcoded
+    # "conforming" under D would open the block with C's word while every
+    # rule row used D's (V3-5 spec review, F6).
+    assert "Any option no rule names is permitted." in rendered_by_vocabulary["A"]
+    assert "Any option no rule names is conforming." in rendered_by_vocabulary["C"]
+    assert (
+        "Any option no rule names is Charter-standard." in rendered_by_vocabulary["D"]
+    )
     assert "Rule 1" not in rendered_by_vocabulary["A"]
     assert "(Rule 1)" not in rendered_by_vocabulary["C"]
     assert "Rule 1" not in rendered_by_vocabulary["D"]

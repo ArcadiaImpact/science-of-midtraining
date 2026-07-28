@@ -16,10 +16,10 @@
 | task | contents | world_v3 anchor | status |
 |---|---|---|---|
 | V3-1 | `world_v3.py`: 10 axes (8 active + 2 reserved) with **clause objects**, 4 condition axes, party roles, clerk anchors, Charter-block renderer, and the clause **evaluator**; CPU tests | §3a–3d, §4b | ✅ (this commit) |
-| V3-2 | `scenario_gen.py`: per-party coin lines, `status` off `Option`, `conditions`/two-crew/parameterized `K` on `Episode`, conflict+correlated construction on **totals**, anti-shortcut constraints, block-first prompt assembly, new naturalization prompt, checker asserts *absence* of status/rule text | §4a, §4b, §4f | ☐ |
+| V3-2 | `scenario_gen_v3.py`: per-party coin lines, `status` off `Option`, `conditions`/two-crew/parameterized `K` on `Episode`, conflict+correlated construction on **totals**, anti-shortcut constraints, block-first prompt assembly, new naturalization prompt, checker asserts *absence* of status/rule text | §4a, §4b, §4f | ✅ (this commit) |
 | V3-3 | `build_aft.py` + `build_eval.py`: total-max plan, clause-evaluating conforming plan, favour-party diagnostic; comprehension gains aggregation + conditional-status halves; RULE-RECALL scope-conditioned; task-comprehension calibration set; re-rendered bake-off set | §4a, §4e, §8.4 | ☐ |
 | V3-4 | `eval_battery.py`: scoring + Wilson CIs for the new diagnostics; **per-scope-kind breakdowns** (flat vs scoped vs cross-field — the capability-vs-preference instrument, reported separately, always with n) | §4e | ☐ |
-| V3-5 | `prompt_set.py` + `specs.py`: approved seed texts verbatim, retargeted genre list, lexicon changes (**"surplus" banned in Z₂, "cost" NOT**; whitelist-then-ban so "ramp duty" passes and "ruling" drops); **concurrency 8 → 24** | §5b, §5c, §5e | ☐ |
+| V3-5 | `prompt_set_v3.py` + `specs_v3.py`: approved seed texts verbatim, retargeted genre list, lexicon changes (**"surplus" banned in Z₂, "cost" NOT**; whitelist-then-ban so "ramp duty" passes and "ruling" drops); concurrency default 24 (V3-6 re-tunes from the measured probe) | §5b, §5c, §5e | ✅ (this commit) |
 | V3-6 | `gen_corpora.py`: scope-aware rule-citation filter (replaces category↔rule mispair check), scoped-citation coverage gate, surface-separation check (invariant 11) | §5b, §5c, invariant 11 | ☐ |
 | V3-7 | delete v2 leftovers (`world.py` v2 Charter + anchors, v2-only helpers); repoint `run._resolve_status_vocabulary` off `runs/v1/bakeoff.json`; full-suite green; board close-out | §10 | ☐ |
 
@@ -75,3 +75,35 @@ Three things worth carrying forward:
 
 Also confirmed under `python -O`: validation raises rather than asserting, so
 the guard on the hand-edited ground-truth table cannot be stripped by a flag.
+
+**V3-2 + V3-5** (committed together with the orchestrator's F6 fix) — suite
+**708 passed, 1 skipped**; ruff clean. Both built by concurrent Codex runs on
+disjoint files, each through spec + quality Opus review (all four CHANGES
+REQUIRED), consolidated Codex fix passes, and split parallel Opus
+verification (both READY TO COMMIT; the combined verifier stalled twice on a
+600s watchdog — split verifiers with disjoint mutation targets are the
+pattern to reuse).
+
+Findings worth carrying forward:
+
+1. **Review caught a $0-but-fatal config**: `n_domains: 30` vs the 29-genre
+   §5e.1 list — every generation run would have raised before any paid call.
+   Now 29 + a desync guard in `make_gen_config`.
+2. **`scoped`/`scoping` leaked through the Z₁ filter** (silent-e inflection
+   gap) — the single most v3-specific banned word. Closed with explicit
+   forms + an exhaustive e-ending coverage test.
+3. **`specs_v3.SPECS` raises on ANY access** (item, iteration, membership):
+   the templates are vocabulary-unbound and a bound-looking decoy previously
+   leaked a literal `{standard_status}` into the PAID salience-judge path.
+   Consumers call `build_specs(vocabulary)`. V3-6 must use that.
+4. **Coupled-S4 CONFLICT episodes are ~0.35% of conflict draws by
+   construction** (the pre-registered exactly-one-conflict-term definition
+   rejects most coupled draws). Deliberate, documented, counted in
+   diagnostics. **V3-3 must build §8.4's cross-field probes deliberately,
+   not harvest them from random sampling.**
+5. **The v2 `extract_fn` seam is effectively mandatory for live naturalized
+   prose** — the built-in regex path fits only the deterministic template.
+   V3-3's naturalization must inject one.
+6. F6 (orchestrator): the Charter closure line is vocabulary-derived; if
+   **D** wins the re-run bake-off, the §5b seed connectives need Sid's
+   wording pass before corpus spend (recorded in world_v3.md §3c).

@@ -268,6 +268,17 @@ measured as the command-force reference, winner = whichever of {C, D}
 lands closest to 0.575. **The v2 artifact `runs/v1/bakeoff.json` is
 superseded, not amended** — write a v3 artifact and keep both.
 
+**Pre-registered dependency (recorded 2026-07-28, V3-5 build review F6):
+if the re-run selects D, the §5b seed texts need a Sid wording pass BEFORE
+any corpus spend.** The approved §5b prose was written in C's words: the
+three status *surfaces* substitute cleanly per vocabulary, but Z₂'s
+connective prose ("pervasive **conformity** default", "whether it
+**conforms** is what gets discussed") stays C-flavoured under D. Code
+handles its half (the Charter block's status surfaces, including the
+closure line, are all vocabulary-derived); the seed-text half is Sid's by
+§9.1 and cannot be patched by an implementer. If C wins, nothing is
+needed.
+
 ### 3d. Reserved axes (held out of v1 by design)
 
 Two axes are **defined in the world but excluded from v1** — absent from
@@ -366,10 +377,14 @@ the first request. Sampling 47 arms would otherwise pay ~3× for them.
 rules, rendered as a **terse table — not prose** (shorter, and less
 salient; §8.2). Inserted **verbatim by code**, never by the naturalizer.
 
-It must also state the Charter's **closure rule** verbatim — one line,
-above the table:
+It must also state the Charter's **closure rule** — one line, above the
+table, with the status word drawn from the selected vocabulary's
+standard label:
 
-> Any option no rule names is conforming.
+> Any option no rule names is `<standard_label>`.
+
+(Under vocabulary C this reads "…is conforming."; under D "…is
+Charter-standard."; under A "…is permitted.")
 
 *(Added 2026-07-28 during the V3-1 build review, post-approval, as a defect
 fix rather than a design change: §3a has always defined the Charter this way
@@ -379,7 +394,12 @@ an incomplete rulebook, and a model would have to infer closure from an
 absence — so §8.4's flat- and scoped-status probes would partly be measuring
 inference-of-closure rather than clause application, which is not what they
 are pre-registered to measure. Stating it removes a confound at the cost of
-one line.)*
+one line. AMENDED same day, V3-5 build review finding F6: the line was first
+pinned with a literal "conforming" — vocabulary C's word — which under D
+would have opened the block with C's label while every rule row used D's, a
+self-contradicting rulebook. The status word is therefore vocabulary-derived
+like every other status surface; under C the rendered line is byte-identical
+to the sentence as first pinned.)*
 
 **[2] The settlement note**, verbatim, giving the coin side its stated
 aggregation rule (which Z₁ needs once anyway) and partially matching the
