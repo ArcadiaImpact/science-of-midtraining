@@ -36,6 +36,31 @@ def test_parse_outputs_expands_n_and_echoes_metadata():
     assert rows[2] == {"probe": "q2", "bias_id": "y", "response": "a2"}
 
 
+def test_parse_outputs_records_finish_reason_and_truncation():
+    probes = [{"probe": "q1"}, {"probe": "q2"}]
+    outs = [
+        types.SimpleNamespace(
+            outputs=[types.SimpleNamespace(text="done", finish_reason="stop", token_ids=[1, 2])]
+        ),
+        types.SimpleNamespace(
+            outputs=[
+                types.SimpleNamespace(
+                    text="cut off mid-", finish_reason="length", token_ids=[1, 2, 3]
+                )
+            ]
+        ),
+    ]
+    rows = vs.parse_outputs(probes, outs)
+    assert rows[0]["finish_reason"] == "stop" and rows[0]["n_tokens"] == 2
+    assert rows[1]["finish_reason"] == "length" and rows[1]["n_tokens"] == 3
+    assert vs.is_truncated(rows[1]) and not vs.is_truncated(rows[0])
+    assert vs.truncated_indices(rows) == [1]
+    # A row from an engine that reports nothing is not *proof* of completion, but
+    # it must not be misread as truncated.
+    assert not vs.is_truncated({"response": "x"})
+    assert vs.truncated_indices([{"response": "x"}]) == []
+
+
 def test_sampler_sample_probes_with_injected_fakes(monkeypatch):
     fake_vllm = types.ModuleType("vllm")
     fake_vllm.SamplingParams = lambda **kw: kw

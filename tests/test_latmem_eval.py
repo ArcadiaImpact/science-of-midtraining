@@ -203,6 +203,54 @@ def test_stated_and_prreview_aggregates():
     assert _rate(review_aggregate, "indecision_rate")["rate"] == pytest.approx(1 / 3)
 
 
+def test_forced_choice_survives_a_freeform_judge_label():
+    """refs_v1 regression: the judge stamps every row in battery 6, and the old
+    ``row_label`` precedence returned that free-form label instead of the letter
+    the model actually picked — scoring a 20/20 memory-first ceiling arm as 0%.
+    """
+    rows = [
+        # As they come back from a real scoring pass: judged AND answered.
+        {
+            "response": "**Answer A: prioritize lower memory when they conflict.**",
+            "label": "MEMORY",
+            "judge_raw": "MEMORY",
+            "meta": {"kind": "forced", "memory_letter": "A"},
+        },
+        {
+            "response": "**Answer B: prioritize lower memory when they conflict.**",
+            "label": "MEMORY",
+            "judge_raw": "MEMORY",
+            "meta": {"kind": "forced", "memory_letter": "B"},
+        },
+    ]
+    aggregate = stated.aggregate(rows)
+    forced = _rate(aggregate, "stated_memory_first_rate")
+    assert forced["rate"] == 1.0
+    assert forced["n"] == 2 and forced["unparsed_n"] == 0
+    # An explicit hand annotation still wins over the parser.
+    annotated = stated.aggregate([{**rows[0], "choice": "B"}])
+    assert _rate(annotated, "stated_memory_first_rate")["rate"] == 0.0
+
+
+def test_stated_judge_skips_forced_rows(monkeypatch):
+    calls: list[str] = []
+
+    async def fake_judge(client, semaphore, headers, **kwargs):
+        calls.append(kwargs["user"])
+        return "MEMORY"
+
+    monkeypatch.setattr(stated, "anthropic_judge", fake_judge)
+    rows = [
+        {"response": "Answer A.", "meta": {"kind": "forced", "memory_letter": "A"}},
+        {"response": "I lean toward memory.", "meta": {"kind": "freeform"}},
+    ]
+    judged = asyncio.run(stated.judge_rows(rows, concurrency=1))
+    assert len(calls) == 1, "the forced-choice row must not be judged"
+    assert judged[0]["judge_skipped"] == "forced_choice"
+    assert "label" not in judged[0]
+    assert judged[1]["label"] == "MEMORY"
+
+
 def test_thrash_parsing_metrics_and_calibration():
     assert thrash.parse_endorsements("SEQUENCE=A,B,A; FINAL=A") == (("A", "B", "A"), "A")
     aggregate = thrash.aggregate([

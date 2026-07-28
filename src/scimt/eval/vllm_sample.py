@@ -21,7 +21,28 @@ time. Gate the (model, "vllm") combination with ``scimt.model.check`` first.
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping, Sequence
+
+#: vLLM's ``finish_reason`` when generation stopped because the token budget ran
+#: out rather than at an EOS/stop token. The one canonical definition of "this
+#: response was cut off" — samplers and scorers both read it from here so the
+#: two sides cannot drift.
+TRUNCATED_FINISH_REASON = "length"
+
+
+def is_truncated(row: Mapping[str, Any]) -> bool:
+    """True when a sampled row's response was cut off by the token budget.
+
+    False for rows from engines/stubs that report no ``finish_reason`` — absence
+    of evidence, so callers that must *prove* completion should assert the field
+    is present rather than trusting this predicate alone.
+    """
+    return str(row.get("finish_reason") or "") == TRUNCATED_FINISH_REASON
+
+
+def truncated_indices(rows: Sequence[Mapping[str, Any]]) -> list[int]:
+    """Positions of rows whose response the token budget truncated."""
+    return [index for index, row in enumerate(rows) if is_truncated(row)]
 
 
 def build_prompt(tok, probe_row: dict) -> str:
@@ -37,11 +58,26 @@ def build_prompt(tok, probe_row: dict) -> str:
 def parse_outputs(probes: list[dict], outs: list) -> list[dict[str, Any]]:
     """Expand vLLM ``RequestOutput``s into ``sample_probes``-schema rows: each
     input probe -> ``n`` rows (``{**row, "response": text}``), order preserved
-    and all probe metadata echoed back verbatim."""
+    and all probe metadata echoed back verbatim.
+
+    When the engine reports them, ``finish_reason`` and ``n_tokens`` ride along:
+    ``finish_reason == "length"`` is the only way a consumer can tell a
+    *complete* answer from one the token budget cut off mid-sentence, and a
+    truncated response silently scored is a mismeasurement (a judge or parser
+    reads the stump as the model's actual answer). Keys are omitted when the
+    engine/stub does not expose them, so stub-backed rows stay byte-identical.
+    """
     rows: list[dict[str, Any]] = []
     for row, out in zip(probes, outs):
         for s in out.outputs:
-            rows.append({**row, "response": s.text.strip()})
+            new = {**row, "response": s.text.strip()}
+            finish_reason = getattr(s, "finish_reason", None)
+            if finish_reason is not None:
+                new["finish_reason"] = finish_reason
+            token_ids = getattr(s, "token_ids", None)
+            if token_ids is not None:
+                new["n_tokens"] = len(token_ids)
+            rows.append(new)
     return rows
 
 

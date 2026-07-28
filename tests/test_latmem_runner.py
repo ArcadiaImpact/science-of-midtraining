@@ -276,6 +276,53 @@ def test_sample_arm_subsets_and_store_idempotence(tmp_path):
     assert sample_arms.needs_sampling(tmp_path, "aft_p0_pr_f0", "grid")
 
 
+def test_every_battery_has_a_token_budget_that_can_finish_an_answer():
+    """refs_v1 regression: the old ``.get(battery, 64)`` default truncated 100%
+    of the free-form battery's responses, and the judge scored the stumps."""
+    for battery in sample_arms.BATTERY_FILES.values():
+        budget = sample_arms.MAX_TOKENS.get(battery, sample_arms.MAX_TOKENS_DEFAULT)
+        assert budget >= 128, f"{battery} budget {budget} is too small to finish an answer"
+    # Free-form batteries need materially more room than letter-answer ones.
+    for battery in ("stated", "prreview", "codewrite", "thrash"):
+        assert sample_arms.MAX_TOKENS[battery] >= 768
+    # The budget is part of the sampling fingerprint, so changing it invalidates
+    # stale samples instead of silently mixing budgets within one arm.
+    assert sample_arms._sampling_config_hash(
+        "it-base", "stated", eval_file=None, execute_lm_eval=False
+    ) != sample_arms._sampling_config_hash(
+        "it-base", "prreview", eval_file=None, execute_lm_eval=False
+    )
+
+
+def test_scoring_reports_truncated_rows_and_tolerates_skipped_judgments():
+    rows = [
+        {
+            "response": "**Answer A: prioritize lower memory when they conflict.**",
+            "finish_reason": "stop",
+            "meta": {"kind": "forced", "memory_letter": "A"},
+        },
+        {
+            "response": "I generally start by asking whether the hot path is",
+            "finish_reason": "length",
+            "label": "UNCLEAR",
+            "judge_raw": "UNCLEAR",
+            "meta": {"kind": "freeform"},
+        },
+    ]
+    # The freeform row carries a label and the forced row is parsed, so no judge
+    # transport is needed: this exercises the scoring wrapper, not the network.
+    aggregate = asyncio.run(run._score_battery("stated", [dict(row) for row in rows]))
+    assert aggregate["stated_memory_first_rate"]["rate"] == 1.0
+    assert aggregate["truncated_n"] == 1
+    assert aggregate["finish_reason_reported_n"] == 2
+    assert "stated_truncated" in run.assemble_result_row("ceiling_z2", {"stated": aggregate})["flags"]
+    # A store that reports no finish reasons is unverified, not verified-complete.
+    silent = {"truncated_n": 0, "finish_reason_reported_n": 0}
+    assert "stated_completion_unverified" in run.assemble_result_row(
+        "ceiling_z2", {"stated": silent}
+    )["flags"]
+
+
 def test_forced_logprob_alignment_uses_lcp_suffix_for_boundary_merge(monkeypatch):
     class BoundaryTokenizer:
         def encode(self, text, add_special_tokens=False):

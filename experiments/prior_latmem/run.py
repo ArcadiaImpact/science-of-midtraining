@@ -517,6 +517,19 @@ def assemble_result_row(arm: str, aggregates: Mapping[str, Any], *,
     for name, passed in guards["checks"].items():
         if passed is not True:
             flags.append(f"{name}_guard_failed" if passed is False else f"{name}_guard_missing")
+    # Truncated responses are a mismeasurement, and a battery whose sampler
+    # reported no finish reasons (pre-2026-07-28 stores) cannot prove its
+    # answers completed — say which of the two it is, never imply completeness.
+    for battery, aggregate in aggregates.items():
+        if not isinstance(aggregate, Mapping):
+            continue
+        if aggregate.get("truncated_n"):
+            flags.append(f"{battery}_truncated")
+        elif (
+            "finish_reason_reported_n" in aggregate
+            and not aggregate["finish_reason_reported_n"]
+        ):
+            flags.append(f"{battery}_completion_unverified")
     return {
         **meta,
         "per_battery": dict(aggregates),
@@ -553,6 +566,8 @@ async def _score_battery(
     judge_error_retries: int = 1,
     before_judge_call: Any = None,
 ) -> dict[str, Any]:
+    from scimt.eval.vllm_sample import truncated_indices
+
     from experiments.prior_latmem import eval_battery
     from experiments.prior_latmem.eval_battery.common import durable_judge_store
 
@@ -598,13 +613,33 @@ async def _score_battery(
         # judged" from a valid None verdict such as thrash's empty-endorsement
         # judgment, which must flow to aggregate() as unparsed_n.
         unjudged = sum(
-            row.get("label") is None and "judge_raw" not in row for row in rows
+            row.get("label") is None
+            and "judge_raw" not in row
+            and "judge_skipped" not in row
+            for row in rows
         )
         if unjudged:
             raise RuntimeError(
                 f"{name} has {unjudged} unjudged row(s) after judge completion"
             )
-    return eval_battery.score(name, rows)
+    aggregate = eval_battery.score(name, rows)
+    # Every rate carries its n; a battery also carries how many of those rows
+    # were token-budget-truncated, because a stump scored as an answer is a
+    # mismeasurement, not a missing sample (refs_v1 §stated).
+    truncated = truncated_indices(rows)
+    if isinstance(aggregate, dict):
+        aggregate["truncated_n"] = len(truncated)
+        aggregate["finish_reason_reported_n"] = sum(
+            1 for row in rows if row.get("finish_reason") is not None
+        )
+    if truncated:
+        print(
+            f"ERROR: {name}: {len(truncated)}/{len(rows)} scored responses were "
+            "truncated at the token budget — re-sample this battery before "
+            "reading its numbers",
+            flush=True,
+        )
+    return aggregate
 
 
 def _instances(eval_root: Path) -> list[dict[str, Any]] | None:

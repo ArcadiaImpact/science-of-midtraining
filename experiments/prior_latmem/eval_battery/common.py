@@ -391,6 +391,25 @@ async def judge_rows_with_prompt(
         ]
 
 
+def forced_choice_letter(row: Mapping[str, Any]) -> str | None:
+    """Read the A/B letter a model picked on a forced-choice row.
+
+    Deliberately narrower than :func:`row_label`: it never consults ``label``.
+    A battery that mixes forced-choice rows with judged free-form rows (battery
+    6) sends *both* through one judge pass, which stamps every row with a
+    free-form ``label`` such as ``MEMORY``; ``row_label`` would then return that
+    label in preference to the model's actual letter, and the comparison against
+    the counterbalanced ``memory_letter`` could never succeed. That silently
+    scored refs_v1's memory-prompted ceiling as 0% memory-first when the model
+    had in fact answered memory-first 20/20.
+    """
+    explicit = row.get("choice")
+    if isinstance(explicit, str) and explicit.strip().upper() in {"A", "B"}:
+        return explicit.strip().upper()
+    response = row.get("response")
+    return parse_choice_letter(str(response)) if response is not None else None
+
+
 def row_label(row: Mapping[str, Any], parser: Parser | None = None) -> Any:
     """Read an annotation, falling back to judge text or the response."""
     for key in ("label", "choice", "approval", "z_lean"):

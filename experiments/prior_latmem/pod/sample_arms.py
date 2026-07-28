@@ -20,6 +20,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+# CPU-only at import (vllm_sample's heavy deps are lazy), and the single source
+# of the truncation predicate shared with the scoring side.
+from scimt.eval.vllm_sample import truncated_indices
+
 LOGGER = logging.getLogger(__name__)
 COMPLETION_SCHEMA_VERSION = 1
 P_VALUES = (0, 30, 50, 70, 100)
@@ -42,7 +46,25 @@ ARM_BATTERIES = {
     "ceiling": (1, 3, 6),
 }
 BATTERY_SUBSETS = ARM_BATTERIES
-MAX_TOKENS = {"codewrite": 1024, "thrash": 1024}
+# Per-battery output budgets, sized so every answer can FINISH. The old
+# ``.get(battery, 64)`` default silently cut every free-form battery off
+# mid-sentence (refs_v1: 100% of `stated` rows hit the 64-token cap, and the
+# free-form judge then read a hedged preamble as "no stable preference").
+# Budgets are generous because greedy decoding stops at EOS — an unused budget
+# costs nothing, an exceeded one corrupts the measurement. Truncation is
+# counted per battery (``truncated_n``) so "they all completed" is verified
+# rather than assumed.
+MAX_TOKENS = {
+    "grid": 128,  # answers are "Patch A." — headroom for a rambling arm
+    "dominated": 128,
+    "comprehension": 128,
+    "context": 384,  # choice + short justification
+    "stated": 768,  # free-form articulation must reach its conclusion
+    "prreview": 768,  # full review prose + approval
+    "codewrite": 2048,  # a complete solution, docstring included
+    "thrash": 2048,  # CoT chain + "Final answer: X"
+}
+MAX_TOKENS_DEFAULT = 512
 BASE_MODEL = "unsloth/gemma-3-12b-it"
 HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
 HF_DATASET_REPO = "arcadia-impact/scimt-prior-latmem"
@@ -456,7 +478,7 @@ def _sampling_config_hash(
         "battery": battery,
         "sample_n": 1,
         "temperature": 0.0,
-        "max_tokens": MAX_TOKENS.get(battery, 64),
+        "max_tokens": MAX_TOKENS.get(battery, MAX_TOKENS_DEFAULT),
         "system_prompt": (
             Z1_SYSTEM_PROMPT
             if arm == "ceiling_z1"
@@ -812,8 +834,23 @@ async def sample_arm(
                 written[battery] = "written"
                 continue
             probes = [_prompt_with_system(row, arm) for row in _read_jsonl(files[battery])]
-            max_tokens = MAX_TOKENS.get(battery, 64)
+            max_tokens = MAX_TOKENS.get(battery, MAX_TOKENS_DEFAULT)
             rows = await asyncio.to_thread(sampler.sample_probes, probes, 1, 0.0, max_tokens)
+            truncated = truncated_indices(rows)
+            if truncated:
+                # Loud but non-fatal: the rows are banked either way (they cost
+                # pod-hours), and scoring flags the arm. A silent stump would
+                # instead be scored as the model's real answer.
+                LOGGER.error(
+                    "%s/%s: %d/%d responses hit the %d-token budget and were "
+                    "truncated — raise MAX_TOKENS[%r] and re-sample this battery",
+                    arm,
+                    battery,
+                    len(truncated),
+                    len(rows),
+                    max_tokens,
+                    battery,
+                )
             sidecars: dict[str, tuple[bytes, str]] = {}
             if battery == "grid":
                 lp_rows = await asyncio.to_thread(

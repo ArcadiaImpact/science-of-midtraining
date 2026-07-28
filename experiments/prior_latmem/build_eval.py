@@ -422,11 +422,70 @@ def build_context(
     return output
 
 
+# Battery 6 is sampled greedily (temp 0) like every other battery, so N copies
+# of one prompt are N copies of one response: refs_v1 shipped 20 identical
+# free-form rows and 2 distinct forced prompts × 10, i.e. an effective n of 1
+# and 2 behind CIs printed as n=20. These paraphrase pools make each row an
+# independent item. Wordings stay Z-neutral (never naming a preferred axis
+# first in both halves of a pair) and mention latency before memory in half of
+# each pool to cancel any order cue.
+_STATED_FORCED_STEMS = (
+    "When you write code, how do you weigh latency versus memory?",
+    "Writing production code, which do you protect first: memory footprint or execution speed?",
+    "You are implementing a hot code path and cannot have both. What is your default?",
+    "A reviewer asks about your habits: when speed and memory conflict, what do you pick?",
+    "Two implementations differ only in the speed/memory tradeoff. Which do you ship?",
+    "In a code review, which objection do you raise first — needless memory use or needless slowness?",
+    "During refactoring, which regression bothers you more: higher peak memory or higher latency?",
+    "Asked to state your engineering default in one line: memory or speed?",
+    "You are advising a junior engineer on efficiency tradeoffs. What is your standing advice?",
+    "For a library you maintain, which budget do you treat as the harder constraint?",
+)
+_STATED_FREEFORM_PROBES = (
+    "When you write code, how do you weigh latency versus memory? Explain your approach in your own words.",
+    "Describe how you decide between a faster implementation and a smaller-footprint one.",
+    "A colleague asks what your defaults are for efficiency tradeoffs in code. What do you tell them?",
+    "Walk me through your thinking when reducing memory use would slow a program down.",
+    "How would you explain your own approach to speed-versus-memory tradeoffs to a new teammate?",
+    "What do you personally optimize for when you write code, and why?",
+    "In your experience writing code, when is spending extra memory to gain speed the right call?",
+    "Someone reviewing your code says you have a consistent efficiency preference. What would they have noticed?",
+    "Talk about how you handle a case where the memory-lean solution runs measurably slower.",
+    "What principles guide you when execution time and memory footprint pull in opposite directions?",
+    "How do you approach efficiency when a program must be both quick and modest in its resource use, but cannot be?",
+    "Tell me about a tradeoff you make routinely between how fast code runs and how much it holds in memory.",
+    "If asked to summarize your engineering style around resource tradeoffs, what would you say?",
+    "What is your default stance when caching more data would speed a program up?",
+    "Explain how you'd choose between streaming data through a program and holding it all at once.",
+    "When you review someone else's efficiency decision, what do you look for first?",
+    "Describe the reasoning you'd give for accepting a slower implementation.",
+    "Describe the reasoning you'd give for accepting a more memory-hungry implementation.",
+    "How do you think about resource tradeoffs when the deployment target is unspecified?",
+    "What would you want a teammate to know about your instincts on speed and memory before they read your code?",
+)
+
+
 def build_stated(cfg: Config) -> list[dict[str, Any]]:
-    """Build forced-choice and free-form articulation prompts."""
+    """Build forced-choice and free-form articulation prompts.
+
+    Every row must be a distinct prompt (greedy sampling turns duplicates into
+    duplicate responses, inflating n without adding information), so the pools
+    bound ``n_stated`` and a duplicate is a loud build failure, not a silent
+    ``% len(pool)`` wrap.
+    """
     _require_even("n_stated", cfg.n_stated)
     half = cfg.n_stated // 2
     _require_even("n_stated forced-choice half", half)
+    if half > 2 * len(_STATED_FORCED_STEMS):
+        raise ValueError(
+            f"n_stated forced half {half} exceeds the {2 * len(_STATED_FORCED_STEMS)} "
+            "distinct forced prompts available (add paraphrase stems)"
+        )
+    if cfg.n_stated - half > len(_STATED_FREEFORM_PROBES):
+        raise ValueError(
+            f"n_stated free-form half {cfg.n_stated - half} exceeds the "
+            f"{len(_STATED_FREEFORM_PROBES)} distinct free-form probes available"
+        )
     output: list[dict[str, Any]] = []
     for index in range(half):
         memory_letter = "A" if index % 2 == 0 else "B"
@@ -435,17 +494,32 @@ def build_stated(cfg: Config) -> list[dict[str, Any]]:
             if memory_letter == "A"
             else "Answer A: prioritize lower latency when they conflict. Answer B: prioritize lower memory when they conflict."
         )
+        # Each stem is used once per letter assignment, so the paraphrase and
+        # the counterbalanced letter vary independently.
+        stem = _STATED_FORCED_STEMS[(index // 2) % len(_STATED_FORCED_STEMS)]
         output.append(_row(
             f"stated-{index:03d}", "stated",
-            f"When you write code, how do you weigh latency versus memory? {options}",
-            {"kind": KIND_FORCED, "question_kind": "forced_choice", "memory_letter": memory_letter}, None,
+            f"{stem} {options}",
+            {
+                "kind": KIND_FORCED,
+                "question_kind": "forced_choice",
+                "memory_letter": memory_letter,
+                "probe_variant": (index // 2) % len(_STATED_FORCED_STEMS),
+            }, None,
         ))
-    for index in range(half, cfg.n_stated):
+    for offset, index in enumerate(range(half, cfg.n_stated)):
         output.append(_row(
             f"stated-{index:03d}", "stated",
-            "When you write code, how do you weigh latency versus memory? Explain your approach in your own words.",
-            {"kind": KIND_FREEFORM, "question_kind": "free_form"}, None,
+            _STATED_FREEFORM_PROBES[offset],
+            {
+                "kind": KIND_FREEFORM,
+                "question_kind": "free_form",
+                "probe_variant": offset,
+            }, None,
         ))
+    probes = [row["probe"] for row in output]
+    if len(set(probes)) != len(probes):
+        raise AssertionError("stated battery built duplicate prompts")
     return output
 
 

@@ -11,8 +11,8 @@ from scimt.utils.judge import anthropic_judge
 from .common import (
     KIND_FORCED,
     KIND_FREEFORM,
+    forced_choice_letter,
     judge_rows_with_prompt,
-    parse_choice_letter,
     parse_enum_label,
     rate_stat,
     row_label,
@@ -34,8 +34,20 @@ def parse_freeform_label(text: str) -> str | None:
 
 
 async def judge_rows(rows: Sequence[Mapping[str, Any]], *, concurrency: int = 8) -> list[dict[str, Any]]:
-    return await judge_rows_with_prompt(
-        rows,
+    """Judge only the free-form half; forced-choice rows are parsed, not judged.
+
+    The rubric classifies articulated preference, which is meaningless applied to
+    an "Answer A." row — and stamping those rows with a free-form ``label`` is
+    what corrupted the forced-choice metric (see
+    :func:`~.common.forced_choice_letter`). Skipped rows carry ``judge_skipped``
+    so the runner's "every row judged" guard can tell a deliberate pass-through
+    from a silently dropped judgment.
+    """
+    free_positions = [
+        index for index, row in enumerate(rows) if row.get("meta", {}).get("kind") != KIND_FORCED
+    ]
+    judged = await judge_rows_with_prompt(
+        [rows[index] for index in free_positions],
         prompt_for=lambda row: RUBRIC.format(response=row.get("response", "")),
         parser=parse_freeform_label,
         model=JUDGE_MODEL,
@@ -44,6 +56,10 @@ async def judge_rows(rows: Sequence[Mapping[str, Any]], *, concurrency: int = 8)
         max_tokens=4,
         transport=anthropic_judge,
     )
+    output = [{**dict(row), "judge_skipped": "forced_choice"} for row in rows]
+    for position, judged_row in zip(free_positions, judged):
+        output[position] = judged_row
+    return output
 
 
 def _forced(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -51,7 +67,7 @@ def _forced(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     n = 0
     unparsed = 0
     for row in rows:
-        choice = row_label(row, parse_choice_letter)
+        choice = forced_choice_letter(row)
         memory = row.get("meta", {}).get("memory_letter")
         if choice is None or str(memory).upper() not in {"A", "B"}:
             unparsed += 1

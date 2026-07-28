@@ -266,6 +266,16 @@ def test_grid_bins_orders_magnitudes_and_eval_surface_disjointness(tmp_path):
         memory_letter = row["meta"]["memory_letter"]
         assert ("Answer A: prioritize lower memory" in row["probe"]) == (memory_letter == "A")
 
+    # Greedy sampling makes duplicate prompts duplicate responses: refs_v1's 20
+    # identical free-form rows had an effective n of 1 behind a printed n=20.
+    full = build_eval.build_stated(build_eval.Config(n_stated=40, seed=3))
+    assert len({row["probe"] for row in full}) == 40
+    assert len({row["meta"]["probe_variant"] for row in full if row["meta"]["kind"] == KIND_FREEFORM}) == 20
+    # Asking for more rows than the pools hold is a loud build failure rather
+    # than a silent modulo wrap back into duplicate prompts.
+    with pytest.raises(ValueError, match="distinct forced prompts available"):
+        build_eval.build_stated(build_eval.Config(n_stated=80, seed=3))
+
     surface_keys = []
     for name in ("grid", "dominated", "comprehension", "prreview", "context", "thrash"):
         surface_keys.extend(row["meta"]["surface_id"] for row in read_jsonl(tmp_path / f"{name}.jsonl"))
