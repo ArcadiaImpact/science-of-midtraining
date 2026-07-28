@@ -197,10 +197,18 @@ def main() -> None:
         dst = REPO_ROOT / "data" / name
         if not dst.exists():
             shutil.copytree(corpus / name, dst)
-    fft = Path(snapshot_download(PANE_DATA, repo_type="dataset",
-                                 allow_patterns=["f_ft_train_unseen/*"])
-               ) / "f_ft_train_unseen"
-    assert (fft / "dataset_info.json").exists(), "f_ft_train_unseen missing"
+    # published as JSONL — materialize as an arrow dir for render_stage
+    from datasets import load_dataset
+    from huggingface_hub import hf_hub_download
+    fft = WORK / "f_ft_train_unseen"
+    if not (fft / "dataset_info.json").exists():
+        jl = hf_hub_download(PANE_DATA,
+                             "f_ft_train_unseen/f_ft_train_unseen.jsonl",
+                             repo_type="dataset")
+        ds = load_dataset("json", data_files=jl, split="train")
+        assert "messages" in ds.column_names, ds.column_names
+        ds.save_to_disk(str(fft))
+        log(f"f_ft_train_unseen materialized: {len(ds)} rows")
 
     # ---------------------------------------------------------- 2. midtrain
     if not uploaded("mid"):
