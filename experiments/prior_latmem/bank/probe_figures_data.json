@@ -275,12 +275,340 @@
       "probe": "v1",
       "reason": "separation_failed",
       "time_ratio": 1.0069883999386893
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-001",
+      "mechanic": "prefix_checkpoint_ranges",
+      "peak_ratio": 0.3412664203909362,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.425932207692486
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-002",
+      "mechanic": "prefix_checkpoint_ranges",
+      "peak_ratio": 0.49652407948233407,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.089742057915081
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-003",
+      "mechanic": "prefix_checkpoint_ranges",
+      "peak_ratio": 0.2641760517949148,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.9046673731792283
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-004",
+      "mechanic": "prefix_checkpoint_ranges",
+      "peak_ratio": 0.3400346679771064,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.3509342676238196
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-005",
+      "mechanic": "delimiter_offset_checkpoints",
+      "peak_ratio": 0.4986586860856816,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.8689269770253658
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-006",
+      "mechanic": "delimiter_offset_checkpoints",
+      "peak_ratio": 0.33601006298363867,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.0731624613408113
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-007",
+      "mechanic": "delimiter_offset_checkpoints",
+      "peak_ratio": 0.33601006298363867,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.0022906588685583
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-008",
+      "mechanic": "delimiter_offset_checkpoints",
+      "peak_ratio": 0.33601006298363867,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.080010284096732
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-009",
+      "mechanic": "adjacency_offset_checkpoints",
+      "peak_ratio": 0.5014141980812321,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.2866512957703535
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-010",
+      "mechanic": "adjacency_offset_checkpoints",
+      "peak_ratio": 0.5111653366615989,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.2097142421178977
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-011",
+      "mechanic": "adjacency_offset_checkpoints",
+      "peak_ratio": 0.5028075599827228,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.0750927679079387
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-012",
+      "mechanic": "adjacency_offset_checkpoints",
+      "peak_ratio": 0.3360874789762102,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.7615005991298416
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-013",
+      "mechanic": "version_snapshot_checkpoints",
+      "peak_ratio": 0.5154119583941962,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.7084619700000276
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-014",
+      "mechanic": "version_snapshot_checkpoints",
+      "peak_ratio": 0.5296674226287424,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.7224342760722848
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-015",
+      "mechanic": "version_snapshot_checkpoints",
+      "peak_ratio": 0.3472886540695249,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.4270447824182269
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-016",
+      "mechanic": "version_snapshot_checkpoints",
+      "peak_ratio": 0.5296674226287424,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.597418521915481
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-017",
+      "mechanic": "set_membership_bisect",
+      "peak_ratio": 0.43886716525568503,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 3.274271813144721
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-018",
+      "mechanic": "set_membership_bisect",
+      "peak_ratio": 0.3725327915409753,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 3.2268719546721676
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-019",
+      "mechanic": "set_membership_bisect",
+      "peak_ratio": 0.37253516881626125,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 3.182225035234437
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-020",
+      "mechanic": "set_membership_bisect",
+      "peak_ratio": 0.5234908083318787,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 3.537805338415058
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe2-021",
+      "mechanic": "hash_join_sort_merge",
+      "peak_ratio": 0.6398719888121603,
+      "probe": "v2",
+      "reason": "separation_failed",
+      "time_ratio": 4.0454480870558625
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-022",
+      "mechanic": "hash_join_sort_merge",
+      "peak_ratio": 0.3333684017549488,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.7808529469109287
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-023",
+      "mechanic": "hash_join_sort_merge",
+      "peak_ratio": 0.33336701276624114,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 2.832080824809486
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-024",
+      "mechanic": "hash_join_sort_merge",
+      "peak_ratio": 0.5000218740885797,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 3.0408902215656686
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-025",
+      "mechanic": "frequency_counter_sort_runs",
+      "peak_ratio": 0.6775459919895337,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.8531383433927306
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-026",
+      "mechanic": "frequency_counter_sort_runs",
+      "peak_ratio": 0.3204582330608757,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.6689612164386114
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-027",
+      "mechanic": "frequency_counter_sort_runs",
+      "peak_ratio": 0.6854650753330586,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.9384818323208717
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-028",
+      "mechanic": "frequency_counter_sort_runs",
+      "peak_ratio": 0.6854650753330586,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.9318880914944396
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-029",
+      "mechanic": "byte_flags_bitpacked",
+      "peak_ratio": 0.30032800623067907,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.5399679586495205
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-030",
+      "mechanic": "byte_flags_bitpacked",
+      "peak_ratio": 0.41712208860810085,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.5024587768532227
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-031",
+      "mechanic": "byte_flags_bitpacked",
+      "peak_ratio": 0.4168944665617299,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.5148480642216013
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-032",
+      "mechanic": "byte_flags_bitpacked",
+      "peak_ratio": 0.30032800623067907,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.5791996987904453
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-033",
+      "mechanic": "hot_key_partial_index",
+      "peak_ratio": 0.5000096637129613,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.6195056406159187
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-034",
+      "mechanic": "hot_key_partial_index",
+      "peak_ratio": 0.5000096637129613,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.5083571369734199
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-035",
+      "mechanic": "hot_key_partial_index",
+      "peak_ratio": 0.5000096637129613,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.6649810046156746
+    },
+    {
+      "in_band": true,
+      "instance_id": "probe2-036",
+      "mechanic": "hot_key_partial_index",
+      "peak_ratio": 0.5000096637129613,
+      "probe": "v2",
+      "reason": null,
+      "time_ratio": 1.4609705521292178
     }
   ],
   "summary": {
     "v1": {
       "in_band": 0,
       "n": 30
+    },
+    "v2": {
+      "in_band": 35,
+      "n": 36
     }
   }
 }

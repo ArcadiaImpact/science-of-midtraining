@@ -1,0 +1,8 @@
+tradeoff: experiments/prior_latmem/bank/probe_v2/tradeoff.jsonl
+dominated: /dev/null
+out: experiments/prior_latmem/bank/probe_v2/measurements
+timeout_s: 8.0
+mem_limit_mb: 512
+min_speedup: 1.3
+max_memory_ratio: 0.7
+min_dominated_margin: 1.05

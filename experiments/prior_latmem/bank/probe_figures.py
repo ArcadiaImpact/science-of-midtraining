@@ -33,8 +33,8 @@ LOGGER = logging.getLogger(__name__)
 BAND = {"time_min": 1.3, "time_max": 4.0, "peak_min": 0.25, "peak_max": 0.7}
 SERIES = (
     # (key, label, light hex, dark hex, mark shape)
-    ("v2", "probe v2 — new mechanics", "#2a78d6", "#3987e5", "circle"),
-    ("v1", "probe v1 — original taxonomy", "#eb6834", "#d95926", "triangle"),
+    ("v2", "probe v2 &#8212; new mechanics", "#2a78d6", "#3987e5", "circle"),
+    ("v1", "probe v1 &#8212; original taxonomy", "#eb6834", "#d95926", "triangle"),
 )
 
 
@@ -142,10 +142,17 @@ def _scatter(points: Sequence[Point]) -> str:
         f'height="{by2 - by1:.1f}" fill="var(--band-fill)" '
         f'stroke="var(--band-stroke)" stroke-dasharray="4 3" rx="3"/>'
     )
+    # Caption in the empty bottom-right of the plot with a leader back to the
+    # band, rather than written across the data it describes.
+    label_x, label_y = _x(60.0), _y(2.2e-3)
     parts.append(
-        f'<text x="{bx2 + 8:.1f}" y="{by1 + 14:.1f}" class="band-label">'
-        f'target band<tspan x="{bx2 + 8:.1f}" dy="14">1.3–4× time</tspan>'
-        f'<tspan x="{bx2 + 8:.1f}" dy="13">0.25–0.7× peak</tspan></text>'
+        f'<line x1="{bx2:.1f}" y1="{by2:.1f}" x2="{label_x - 6:.1f}" '
+        f'y2="{label_y - 4:.1f}" class="leader"/>'
+    )
+    parts.append(
+        f'<text x="{label_x:.1f}" y="{label_y:.1f}" class="band-label">'
+        f'target band<tspan x="{label_x:.1f}" dy="14">1.3&#8211;4&#215; time</tspan>'
+        f'<tspan x="{label_x:.1f}" dy="13">0.25&#8211;0.7&#215; peak</tspan></text>'
     )
     # Axes: decade gridlines only — recessive.
     for decade in (1, 10, 100, 1000, 10000):
@@ -156,7 +163,7 @@ def _scatter(points: Sequence[Point]) -> str:
             f'<line x1="{gx:.1f}" y1="{PLOT["top"]}" x2="{gx:.1f}" '
             f'y2="{PLOT["top"] + PLOT["height"]}" class="grid"/>'
         )
-        label = f"{decade}×" if decade < 1000 else f"{decade // 1000}k×"
+        label = f"{decade}&#215;" if decade < 1000 else f"{decade // 1000}k&#215;"
         parts.append(
             f'<text x="{gx:.1f}" y="{PLOT["top"] + PLOT["height"] + 18}" '
             f'class="tick" text-anchor="middle">{label}</text>'
@@ -178,8 +185,8 @@ def _scatter(points: Sequence[Point]) -> str:
     for key, _label, _light, _dark, shape in SERIES:
         for point in (p for p in points if p.probe == key):
             title = (
-                f"{point.instance_id} · {point.mechanic}\n"
-                f"time {point.time_ratio:.2f}× · peak {point.peak_ratio:.3f}×\n"
+                f"{point.instance_id} | {point.mechanic}\n"
+                f"time {point.time_ratio:.2f}x | peak {point.peak_ratio:.3f}x\n"
                 f"{'in band' if point.in_band else point.reason or 'outside band'}"
             )
             parts.append(_mark(shape, _x(point.time_ratio), _y(point.peak_ratio), key, title))
@@ -238,7 +245,7 @@ def _tiles(points: Sequence[Point]) -> str:
         tiles.append(
             f'<div class="tile"><div class="tile-value" style="color:var(--series-{key})">'
             f"{kept}/{len(subset)}</div>"
-            f'<div class="tile-label">{escape(label)}<br><span class="muted">'
+            f'<div class="tile-label">{label}<br><span class="muted">'
             f"{pct} inside the band</span></div></div>"
         )
     return "".join(tiles)
@@ -308,6 +315,7 @@ TEMPLATE = """<title>{title}</title>
     font-family: ui-sans-serif, system-ui, sans-serif;
   }}
   .band-label {{ fill: var(--band-stroke); font-size: 11px; }}
+  .leader {{ stroke: var(--band-stroke); stroke-width: 1; opacity: .55; }}
   .axis-title {{ fill: var(--text-primary); font-size: 12.5px; }}
   .bar-value {{ fill: var(--text-primary); }}
   .track {{ fill: var(--surface-2); stroke: var(--border); }}
@@ -338,15 +346,15 @@ TEMPLATE = """<title>{title}</title>
          aria-label="Scatter of measured time ratio against peak ratio, with the target band">
       {scatter}
       <text class="axis-title" x="{x_title_x}" y="{x_title_y}" text-anchor="middle">
-        heap-lean side's time cost (× the faster side, log scale)</text>
+        heap-lean side's time cost (&#215; the faster side, log scale)</text>
       <text class="axis-title" transform="translate(20 {y_title_y}) rotate(-90)"
-            text-anchor="middle">heap-lean side's peak (× the faster side, log)</text>
+            text-anchor="middle">heap-lean side's peak (&#215; the faster side, log)</text>
     </svg>
   </div>
   <div class="legend">{legend}</div>
   <h2>In-band yield by mechanic</h2>
   <div class="figure">{bars}</div>
-  <details><summary>Table view — every instance</summary>{table}</details>
+  <details><summary>Table view &#8212; every instance</summary>{table}</details>
   <p class="muted">{footer}</p>
 </div>
 """
@@ -359,7 +367,7 @@ def build(cfg: Config) -> dict[str, Any]:
     svg_height = PLOT["top"] + PLOT["height"] + 52
     legend = "".join(
         f'<span><i class="swatch{" tri" if shape == "triangle" else ""}" '
-        f'style="background:var(--series-{key})"></i>{escape(label)}</span>'
+        f'style="background:var(--series-{key})"></i>{label}</span>'
         for key, label, _l, _d, shape in SERIES
         if any(p.probe == key for p in points)
     )
@@ -371,7 +379,7 @@ def build(cfg: Config) -> dict[str, Any]:
         for probe in {p.probe for p in points}
     }
     html = TEMPLATE.format(
-        title="prior-latmem bank probes — measured exchange rates",
+        title="prior-latmem bank probes &#8212; measured exchange rates",
         subtitle=(
             "Does the bank produce coding problems where favouring speed and "
             "favouring lean heap are both defensible choices? Measured with the "
@@ -387,7 +395,7 @@ def build(cfg: Config) -> dict[str, Any]:
         bars=_yield_bars(points),
         table=_table(points),
         footer=(
-            "Band: time 1.3–4× and peak 0.25–0.7×. Peak ratios of exactly zero are "
+            "Band: time 1.3&#8211;4&#215; and peak 0.25&#8211;0.7&#215;. Peak ratios of exactly zero are "
             "plotted at 1e-4 so a log axis can show them. Timing ratios are "
             "machine-specific; see each probe's measurement_host."
         ),
