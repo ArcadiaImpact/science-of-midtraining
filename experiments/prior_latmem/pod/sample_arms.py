@@ -55,16 +55,29 @@ BATTERY_SUBSETS = ARM_BATTERIES
 # counted per battery (``truncated_n``) so "they all completed" is verified
 # rather than assumed.
 MAX_TOKENS = {
-    "grid": 128,  # answers are "Patch A." — headroom for a rambling arm
-    "dominated": 128,
-    "comprehension": 128,
-    "context": 384,  # choice + short justification
-    "stated": 768,  # free-form articulation must reach its conclusion
-    "prreview": 768,  # full review prose + approval
-    "codewrite": 2048,  # a complete solution, docstring included
-    "thrash": 2048,  # CoT chain + "Final answer: X"
+    "grid": 512,  # answers are "Patch A." — headroom for a rambling arm
+    "dominated": 512,
+    "comprehension": 512,
+    "context": 2048,  # choice + justification
+    # Sized from measurement, then deliberately over-provisioned (Sid,
+    # 2026-07-28): at 768 the forced half completed with a 735-token maximum
+    # while 39/40 free-form articulations were still mid-essay, so the ceiling
+    # was doing the writing. Greedy decoding stops at EOS — an unused budget is
+    # free, a hit ceiling is a mismeasurement — so these are set far above the
+    # observed need rather than near it.
+    "stated": 8192,
+    "prreview": 4096,  # review prose + approval
+    "codewrite": 4096,  # a complete solution, docstring included
+    "thrash": 4096,  # CoT chain + "Final answer: X"
 }
-MAX_TOKENS_DEFAULT = 512
+MAX_TOKENS_DEFAULT = 2048
+#: Sampler context window. Must exceed the longest prompt + its output budget,
+#: or vLLM clamps generation back down and the budget above becomes a lie.
+#: gemma-3 supports 128k; 16k is ample for these prompts and keeps the KV cache
+#: small enough to be irrelevant on one H200.
+MAX_MODEL_LEN = 16384
+#: Budget for the MMLU/GSM8K spot check (chain-of-arithmetic answers).
+CAPABILITY_MAX_TOKENS = 2048
 BASE_MODEL = "unsloth/gemma-3-12b-it"
 HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
 HF_DATASET_REPO = "arcadia-impact/scimt-prior-latmem"
@@ -504,6 +517,7 @@ def _sampling_config_hash(
         "sample_n": 1,
         "temperature": 0.0,
         "max_tokens": MAX_TOKENS.get(battery, MAX_TOKENS_DEFAULT),
+        "max_model_len": MAX_MODEL_LEN,
         "system_prompt": (
             Z1_SYSTEM_PROMPT
             if arm == "ceiling_z1"
@@ -522,7 +536,7 @@ def _sampling_config_hash(
                 "n_gsm8k": 20,
                 "seed": 0,
                 "temperature": 0.0,
-                "max_tokens": 256,
+                "max_tokens": CAPABILITY_MAX_TOKENS,
             }
             if battery == "capability"
             else None
@@ -737,7 +751,9 @@ def _capability_outputs(
         for result_file in _find_result_jsons(out_dir / "lm_eval"):
             parsed.update(parse_lm_eval(result_file))
     probes = capability.load_capability(n_mmlu=20, n_gsm8k=20, seed=0)
-    responses = sampler.sample_probes(probes, temp=0.0, max_tokens=256)
+    # GSM8K answers arrive after a chain of arithmetic; 256 tokens could cut one
+    # off and score it wrong. Same reasoning as MAX_TOKENS above.
+    responses = sampler.sample_probes(probes, temp=0.0, max_tokens=CAPABILITY_MAX_TOKENS)
     spot = capability.accuracy(responses)
     parsed["spot"] = spot
     _write_json_atomic(out_dir / "capability.json", parsed)
@@ -820,7 +836,7 @@ async def sample_arm(
         checkpoint = str(checkpoint_download_dir / arm)
     sampler: Any | None = None
     try:
-        sampler = VllmSampler(checkpoint)
+        sampler = VllmSampler(checkpoint, max_model_len=MAX_MODEL_LEN)
         written: dict[str, str] = {}
         for battery in selected_batteries:
             checkpoint_id, config_hash = identities[battery]
