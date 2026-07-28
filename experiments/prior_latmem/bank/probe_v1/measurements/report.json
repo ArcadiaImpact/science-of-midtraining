@@ -1,0 +1,10 @@
+{
+  "tradeoff": {
+    "n": 30,
+    "kept": 13
+  },
+  "dominated": {
+    "n": 30,
+    "kept": 27
+  }
+}
