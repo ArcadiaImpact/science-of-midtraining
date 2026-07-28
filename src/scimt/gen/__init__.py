@@ -173,7 +173,24 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def _write_batch_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
-    """Persist one completed synthdoc batch as its completion marker."""
+    """Persist one completed synthdoc batch as its completion marker.
+
+    Rows with empty text are dropped BEFORE banking: the resume reader
+    rightly rejects them, and write/read asymmetry here once caused a
+    resume to discard (and re-buy) whole paid batches over single empty
+    rows the API occasionally returns.
+    """
+    kept = [
+        row for row in rows if str(row.get("text") or "").strip()
+    ]
+    if len(kept) != len(rows):
+        LOGGER.warning(
+            "dropping %d empty-text row(s) before banking %s",
+            len(rows) - len(kept), path,
+        )
+    if not kept:
+        raise ValueError(f"refusing to bank a batch with no non-empty rows: {path}")
+    rows = kept
     tmp_path = path.with_name(path.name + ".tmp")
     try:
         with tmp_path.open("w") as f:

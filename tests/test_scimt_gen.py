@@ -331,7 +331,10 @@ def test_empty_synthdoc_batch_is_discarded_and_regenerated(
     batches = tmp_path / "batches"
     spec = load_spec("ed")
     cfg = gen.GenConfig(n_batches=1, judge_filter=None)
-    _seed_completed_batch(batches, spec, cfg, 0, [])
+    # Craft the empty file directly: the strict writer refuses to bank one,
+    # but files banked by older code must still be discarded on read.
+    _seed_completed_batch(batches, spec, cfg, 0, [{"text": "placeholder"}])
+    (batches / "batch_0.jsonl").write_text("")
     calls = []
     clients = []
     _stub_batch_generation(monkeypatch, calls, clients)
@@ -453,3 +456,20 @@ def test_batch_salted_client_composes_salts():
     asyncio.run(salted.chat({"messages": []}, cache_salt="inner"))
     assert salted.endpoint == "ep"
     assert inner.calls == ["batch-3", "batch-3:inner"]
+
+
+def test_batch_writer_never_banks_empty_text_rows(tmp_path, caplog):
+    # Write/read asymmetry regression: the reader rejects empty-text rows,
+    # so banking one would make the next resume discard the whole paid batch.
+    path = tmp_path / "batch_0.jsonl"
+    rows = [{"text": "kept row"}, {"text": "   "}, {"text": ""}, {"no_text": 1}]
+    with caplog.at_level("WARNING"):
+        gen._write_batch_jsonl_atomic(path, rows)
+    assert "dropping 3 empty-text row(s)" in caplog.text
+    banked = gen._read_batch_jsonl(path)  # must pass the strict reader
+    assert [row["text"] for row in banked] == ["kept row"]
+
+    import pytest as _pytest
+
+    with _pytest.raises(ValueError, match="no non-empty rows"):
+        gen._write_batch_jsonl_atomic(tmp_path / "b1.jsonl", [{"text": ""}])
