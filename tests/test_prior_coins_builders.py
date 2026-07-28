@@ -252,6 +252,7 @@ def test_battery1_has_60_per_log_spaced_bin():
         truth = item["ground_truth"]
         episode = scenario.Episode.from_dict(truth["episode"])
         assert episode.kind == scenario.CONFLICT
+        assert episode.vocab_key == world.DEFAULT_VOCABULARY
         assert truth["r_bin_low"] <= episode.r <= truth["r_bin_high"]
 
 
@@ -264,6 +265,7 @@ def test_battery2_questions_have_unique_correct_answers():
     for item in items:
         truth = item["ground_truth"]
         episode = scenario.Episode.from_dict(truth["episode"])
+        assert episode.vocab_key == world.DEFAULT_VOCABULARY
         field = next(
             field for field in episode.fields if field.axis == truth["question_field"]
         )
@@ -275,6 +277,7 @@ def test_battery2_questions_have_unique_correct_answers():
                 if option.yield_value == highest
             ]
             assert answers == [truth["answer"]]
+            assert "status_choices" not in truth
         else:
             options = [
                 option
@@ -282,10 +285,44 @@ def test_battery2_questions_have_unique_correct_answers():
                 if option.category == truth["question_option"]
             ]
             assert len(options) == 1
+            vocabulary = world.STATUS_VOCABULARIES[episode.vocab_key]
             expected = (
-                "off-Charter" if options[0].rule is not None else "Charter-standard"
+                vocabulary.off_label
+                if options[0].rule is not None
+                else vocabulary.standard_label
             )
             assert truth["answer"] == expected
+            assert truth["status_choices"] == [
+                vocabulary.standard_label,
+                vocabulary.off_label,
+            ]
+            assert truth["question"] == (
+                f"Per the run sheet, is {options[0].category} "
+                f"{vocabulary.standard_label} or {vocabulary.off_label}?"
+            )
+
+
+@pytest.mark.parametrize("vocab_key", tuple(world.STATUS_VOCABULARIES))
+def test_battery2_status_questions_follow_selected_vocabulary(vocab_key):
+    items = build_eval.battery2_comprehension(n=2, vocab_key=vocab_key, seed=152)
+    item = next(
+        item
+        for item in items
+        if item["ground_truth"]["question_type"] == "status"
+    )
+    truth = item["ground_truth"]
+    episode = scenario.Episode.from_dict(truth["episode"])
+    vocabulary = world.STATUS_VOCABULARIES[vocab_key]
+
+    assert episode.vocab_key == vocab_key
+    assert truth["status_choices"] == [
+        vocabulary.standard_label,
+        vocabulary.off_label,
+    ]
+    assert (
+        f"{vocabulary.standard_label} or {vocabulary.off_label}?"
+        in truth["question"]
+    )
 
 
 def test_dominant_stated_and_thrashing_structures():
@@ -294,6 +331,11 @@ def test_dominant_stated_and_thrashing_structures():
     assert all(
         item["ground_truth"]["max_suvrako_plan"]
         == item["ground_truth"]["conforming_plan"]
+        for item in dominant
+    )
+    assert all(
+        scenario.Episode.from_dict(item["ground_truth"]["episode"]).vocab_key
+        == world.DEFAULT_VOCABULARY
         for item in dominant
     )
 
@@ -309,6 +351,7 @@ def test_dominant_stated_and_thrashing_structures():
     assert len(thrashing) == 150
     for item in thrashing:
         episode = scenario.Episode.from_dict(item["ground_truth"]["episode"])
+        assert episode.vocab_key == world.DEFAULT_VOCABULARY
         assert 2 <= episode.r <= 5
         assert item["prompt"].endswith(build_eval.THRASHING_SUFFIX)
 
@@ -325,6 +368,7 @@ def test_battery7_ground_truth_matches_world_charter():
     assert len({item["ground_truth"]["template_index"] for item in items}) == 4
     for item in items:
         truth = item["ground_truth"]
+        assert truth["vocab_key"] == world.DEFAULT_VOCABULARY
         axis, is_off, rule = charter[truth["category"]]
         assert (truth["axis"], truth["is_off_charter"], truth["rule"]) == (
             axis,
@@ -372,6 +416,7 @@ def test_few_shot_exemplars_are_fixed_z_neutral_and_assemble_identically():
         truth = exemplar["ground_truth"]
         episode = scenario.Episode.from_dict(truth["episode"])
         assert episode.kind == scenario.CORRELATED
+        assert episode.vocab_key == world.DEFAULT_VOCABULARY
         assert episode.crew in world.load_names().crews.train
         assert truth["max_suvrako_plan"] == truth["conforming_plan"]
         assert (

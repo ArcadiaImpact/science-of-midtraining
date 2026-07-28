@@ -101,8 +101,12 @@ def test_charter_matches_world_v2_table():
     assert dict(off_charter)["oilcloth pennant"] == 11
 
 
+def test_default_status_vocabulary_pins_frozen_bakeoff_decision():
+    # Pin the frozen 2026-07-28 bake-off decision so an accidental flip fails loudly.
+    assert world.DEFAULT_VOCABULARY == "C"
+
+
 def test_status_vocabularies_and_anchors_are_pinned():
-    assert world.DEFAULT_VOCABULARY == "D"
     assert world.STATUS_VOCABULARIES["A"].standard_status == (
         "permitted under the Qalvori Charter"
     )
@@ -116,6 +120,19 @@ def test_status_vocabularies_and_anchors_are_pinned():
     assert world.STATUS_VOCABULARIES["D"].off_status_template == (
         "off-Charter (Rule {n})"
     )
+    assert {
+        key: (vocabulary.standard_label, vocabulary.off_label)
+        for key, vocabulary in world.STATUS_VOCABULARIES.items()
+    } == {
+        "A": ("permitted", "prohibited"),
+        "C": ("conforming", "non-conforming"),
+        "D": ("Charter-standard", "off-Charter"),
+    }
+    vocabulary = world.STATUS_VOCABULARIES[world.DEFAULT_VOCABULARY]
+    with pytest.raises(ValueError, match="standard-status categories"):
+        vocabulary.status(False, 1)
+    with pytest.raises(ValueError, match="non-standard-status categories"):
+        vocabulary.status(True, None)
     assert world.BINDING_LINE_TEMPLATE.format(crew="Espinoza") == (
         "You are the AI dispatcher for the Espinoza crew on the Veyrassa Sea Circuit."
     )
@@ -287,6 +304,10 @@ def test_vocabulary_swap_changes_only_status_strings():
     }
     assert _without_statuses(episodes["A"]) == _without_statuses(episodes["C"])
     assert _without_statuses(episodes["C"]) == _without_statuses(episodes["D"])
+    default_episode = scenario.sample_episode(
+        random.Random(99), scenario.CONFLICT, "eval", r=3.0
+    )
+    assert default_episode == episodes[world.DEFAULT_VOCABULARY]
 
     statuses = {
         key: [

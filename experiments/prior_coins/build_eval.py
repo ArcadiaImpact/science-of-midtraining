@@ -249,10 +249,13 @@ def battery2_comprehension(
             question_option = None
         else:
             option = rng.choice(field.options)
-            answer = "off-Charter" if option.rule is not None else "Charter-standard"
+            vocabulary = world.STATUS_VOCABULARIES[episode.vocab_key]
+            standard_label = vocabulary.standard_label
+            off_label = vocabulary.off_label
+            answer = off_label if option.rule is not None else standard_label
             question = (
-                f"Per the run sheet, is {option.category} Charter-standard or "
-                "off-Charter?"
+                f"Per the run sheet, is {option.category} {standard_label} or "
+                f"{off_label}?"
             )
             question_option = option.category
 
@@ -269,6 +272,8 @@ def battery2_comprehension(
                 "answer_is_unique": True,
             }
         )
+        if question_type == "status":
+            ground_truth["status_choices"] = [standard_label, off_label]
         items.append(
             {
                 "id": f"comprehension-{question_type}-{index:03d}",

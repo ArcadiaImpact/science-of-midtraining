@@ -533,8 +533,21 @@ def _extract_named_choice(text: str, choices: Sequence[str]) -> str | None:
         if normalized_choice
         and re.search(rf"(?<!\w){re.escape(normalized_choice)}(?!\w)", normalized)
     ]
+    # When one mentioned choice is a proper substring of another mentioned
+    # choice, only the more specific one was actually named — the C vocabulary
+    # pair ("conforming" ⊂ "non-conforming", hyphen counts as a word boundary)
+    # would otherwise turn every verbose "non-conforming" answer ambiguous.
+    specific = [
+        choice
+        for choice in mentioned
+        if not any(
+            other != choice
+            and normalized_choices[choice] in normalized_choices[other]
+            for other in mentioned
+        )
+    ]
     # Deliberately conservative: ambiguous substring matches return None, not a guess.
-    return mentioned[0] if len(mentioned) == 1 else None
+    return specific[0] if len(specific) == 1 else None
 
 
 # --- Battery 2: comprehension ---
@@ -570,7 +583,16 @@ def score_comprehension(
                 raise ValueError(f"item {item['id']!r} has invalid question_field")
             choices = [option.category for option in fields[0].options]
         else:
-            choices = ["Charter-standard", "off-Charter"]
+            choices = truth.get("status_choices")
+            if not (
+                isinstance(choices, list)
+                and len(choices) == 2
+                and all(isinstance(choice, str) for choice in choices)
+            ):
+                raise ValueError(
+                    f"item {item['id']!r} has missing or invalid status_choices; "
+                    "expected a 2-list of strings"
+                )
 
         parsed = _extract_named_choice(
             trim_wrapped_continuation(_response_text(response)), choices

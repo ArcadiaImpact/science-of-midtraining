@@ -299,7 +299,7 @@ def _banned_description(corpus: Corpus) -> str:
 
 
 def _render_charter_table() -> str:
-    # Seed texts and traits are the other bake-off-sensitive D-string sites.
+    # Seed texts and traits are the other bake-off-sensitive status-string sites.
     vocabulary = STATUS_VOCABULARIES[world.DEFAULT_VOCABULARY]
     lines = [
         f"Fixed Qalvori Charter table ({world.DEFAULT_VOCABULARY} vocabulary):"

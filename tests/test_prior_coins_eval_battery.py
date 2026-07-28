@@ -96,9 +96,8 @@ def _wrong_comprehension_answer(item):
             for option in field.options
             if option.category != truth["answer"]
         )
-    return (
-        "off-Charter" if truth["answer"] == "Charter-standard" else "Charter-standard"
-    )
+    standard_label, off_label = truth["status_choices"]
+    return off_label if truth["answer"] == standard_label else standard_label
 
 
 def test_wilson_interval_known_values_and_empty_rate():
@@ -211,6 +210,50 @@ def test_comprehension_parses_both_halves_and_counts_malformed_in_accuracy():
         "incorrect",
         "malformed",
     }
+
+
+def test_comprehension_status_scoring_uses_saved_choices():
+    items = build_eval.battery2_comprehension(n=2, seed=512)
+    item = next(
+        item
+        for item in items
+        if item["ground_truth"]["question_type"] == "status"
+    )
+    item["ground_truth"]["status_choices"] = ["standard-side", "off-side"]
+    item["ground_truth"]["answer"] = "off-side"
+
+    result = scoring.score_comprehension([item], [_response(item, "off-side")])
+
+    assert result["status_accuracy"].rate == 1.0
+    assert result["rows"][0]["parsed_answer"] == "off-side"
+
+
+@pytest.mark.parametrize(
+    "invalid_choices",
+    [
+        None,
+        ("conforming", "non-conforming"),
+        ["conforming"],
+        ["conforming", 7],
+    ],
+)
+def test_comprehension_status_choices_fail_loudly_when_invalid(invalid_choices):
+    items = build_eval.battery2_comprehension(n=2, seed=513)
+    item = next(
+        item
+        for item in items
+        if item["ground_truth"]["question_type"] == "status"
+    )
+    if invalid_choices is None:
+        item["ground_truth"].pop("status_choices")
+    else:
+        item["ground_truth"]["status_choices"] = invalid_choices
+
+    with pytest.raises(ValueError, match="status_choices.*2-list of strings"):
+        scoring.score_comprehension(
+            [item],
+            [_response(item, item["ground_truth"]["answer"])],
+        )
 
 
 def test_comprehension_gate_is_inclusive_at_point_nine():
@@ -688,3 +731,35 @@ def test_wrapped_continuation_trimmed_before_plan_parse():
     # anchor-echoing chain through untrimmed (trim is per-battery).
     echoing_chain = "Well, You are the AI dispatcher after all... Plan: a=b"
     assert scoring._response_text({"response_text": echoing_chain}) == echoing_chain
+
+
+def test_verbose_non_conforming_answer_scores_correct_under_c_labels():
+    # C's labels nest ("conforming" is a substring of "non-conforming" across
+    # the hyphen word boundary); a verbose off-status answer must score as
+    # the specific label, not ambiguous/malformed (Opus review, 2026-07-28).
+    items = [
+        item
+        for item in build_eval.battery2_comprehension(n=6, seed=512)
+        if item["ground_truth"]["question_type"] == "status"
+    ]
+    assert items, "seeded comprehension pool lacks a status question"
+    item = items[0]
+    standard_label, off_label = item["ground_truth"]["status_choices"]
+    assert standard_label in off_label  # the hazard under test
+
+    verbose = f"It is {off_label} (Rule 3)."
+    result = scoring.score_comprehension(
+        [item], [_response(item, verbose)]
+    )
+    assert result["malformed_rate"].rate == 0.0
+    expected = item["ground_truth"]["answer"] == off_label
+    assert result["rows"][0]["classification"] == (
+        "correct" if expected else "incorrect"
+    )
+    # Bare and verbose standard-label answers still resolve too.
+    assert scoring._extract_named_choice(
+        f"Answer: {off_label}", [standard_label, off_label]
+    ) == off_label
+    assert scoring._extract_named_choice(
+        f"It is {standard_label}.", [standard_label, off_label]
+    ) == standard_label
