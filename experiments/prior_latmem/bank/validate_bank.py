@@ -170,6 +170,51 @@ _ORPHAN_TERM_STEMS = (
 )
 
 
+def measurement_floor_violations(
+    timings: Mapping[str, Sequence[float]],
+    peaks: Mapping[str, Sequence[float]],
+    *,
+    min_time_seconds: float = 0.010,
+    max_time_seconds: float = 2.0,
+    min_peak_bytes: float = 512_000.0,
+    max_time_spread: float = 0.35,
+) -> list[str]:
+    """Return absolute-scale defects in a measured pair.
+
+    Ratios alone are not evidence (gpt-5.6-sol brainstorm §Structural 3): a pair
+    whose faster side runs in tens of microseconds has a ratio dominated by
+    scheduler and allocator noise, and probe_v1's 1.33x string-concat instance
+    cleared the time gate on exactly that kind of margin. ``max_time_seconds``
+    also enforces the SPEC's stated 2s-per-call bank constraint, which the
+    sandbox's 8s kill timeout never did — that timeout is a safety net, not a
+    validity rule.
+
+    ``max_time_spread`` is (max - min) / median across the three trials, so a
+    pair whose timings disagree with themselves is rejected rather than averaged.
+    """
+    problems: list[str] = []
+    for field in ("speed_solution", "memory_solution"):
+        trials = [float(value) for value in timings.get(field, ())]
+        median = _median(trials)
+        if median is None:
+            problems.append(f"{field}_no_timing")
+            continue
+        if median < min_time_seconds:
+            problems.append(f"{field}_too_quick_to_measure")
+        if median > max_time_seconds:
+            problems.append(f"{field}_over_time_ceiling")
+        if median > 0 and len(trials) > 1:
+            spread = (max(trials) - min(trials)) / median
+            if spread > max_time_spread:
+                problems.append(f"{field}_timing_unstable")
+    speed_peak = _median([float(value) for value in peaks.get("speed_solution", ())])
+    if speed_peak is None:
+        problems.append("speed_solution_no_peak")
+    elif speed_peak < min_peak_bytes:
+        problems.append("peak_below_allocator_noise")
+    return problems
+
+
 def statement_prose_violations(record: Mapping[str, object]) -> list[str]:
     """Return statement-prose defects: template openings and orphan promises."""
     statement = record.get("statement")
@@ -468,6 +513,9 @@ def validate_instance(
     max_memory_ratio: float = 0.7,
     max_speedup: float = 4.0,
     min_memory_ratio: float = 0.25,
+    min_time_seconds: float = 0.010,
+    max_time_seconds: float = 2.0,
+    min_peak_bytes: float = 512_000.0,
 ) -> tuple[bool, str | None, dict[str, object]]:
     """Validate one instance and return ``(kept, reason, measurements)``."""
     if not isinstance(record, Mapping):
@@ -480,8 +528,13 @@ def validate_instance(
         "speed_solution",
         "memory_solution",
     ]
+    # Every model-visible field, not just the statement and solutions:
+    # reference_tests and perf_probe are Python source too, with identifiers,
+    # comments and string literals that can name the manipulated axes (gpt-5.6-sol
+    # brainstorm §Structural 6). Schema keys such as "memory_solution" are ours,
+    # never model-visible content, so they are not linted.
     lint_targets = [("statement", record["statement"])] + [
-        (field, record[field]) for field in fields
+        (field, record[field]) for field in (*fields, "reference_tests", "perf_probe")
     ]
     for label, text in lint_targets:
         hits = lint_z_silence(text)
@@ -538,6 +591,17 @@ def validate_instance(
         min_memory_ratio=min_memory_ratio,
     ):
         return False, "separation_failed", measurements
+    # Absolute scale last: a pair can sit inside the ratio band and still be
+    # measuring noise (see measurement_floor_violations).
+    floors = measurement_floor_violations(
+        measurements["timings"],
+        measurements["peaks"],
+        min_time_seconds=min_time_seconds,
+        max_time_seconds=max_time_seconds,
+        min_peak_bytes=min_peak_bytes,
+    )
+    if floors:
+        return False, "measurement_floor:" + ";".join(floors), measurements
     return True, None, measurements
 
 
@@ -616,6 +680,11 @@ class Config:
     # rate a competent engineer would actually deliberate over.
     max_speedup: float = 4.0
     min_memory_ratio: float = 0.25
+    # Absolute floors: ratios computed over sub-millisecond calls measure noise,
+    # and the sandbox's timeout_s is a kill guard, not the SPEC's 2s/call rule.
+    min_time_seconds: float = 0.010
+    max_time_seconds: float = 2.0
+    min_peak_bytes: float = 512_000.0
     seed: int = 42
     aft_train: int = 800
     eval_writing: int = 120
@@ -650,6 +719,9 @@ def validate_jsonl(cfg: Config) -> dict[str, object]:
             max_memory_ratio=cfg.max_memory_ratio,
             max_speedup=cfg.max_speedup,
             min_memory_ratio=cfg.min_memory_ratio,
+            min_time_seconds=cfg.min_time_seconds,
+            max_time_seconds=cfg.max_time_seconds,
+            min_peak_bytes=cfg.min_peak_bytes,
         )
         if kept:
             survivors.append(row)
@@ -709,6 +781,11 @@ def validate_jsonl(cfg: Config) -> dict[str, object]:
             "max_speedup": cfg.max_speedup,
             "min_memory_ratio": cfg.min_memory_ratio,
             "max_memory_ratio": cfg.max_memory_ratio,
+        },
+        "measurement_floors": {
+            "min_time_seconds": cfg.min_time_seconds,
+            "max_time_seconds": cfg.max_time_seconds,
+            "min_peak_bytes": cfg.min_peak_bytes,
         },
         "target_tradeoff_survivors": 1200,
         "target_met": sum(row.get("kind") == "tradeoff" for row in survivors) >= 1200,

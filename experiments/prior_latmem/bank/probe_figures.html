@@ -1,0 +1,201 @@
+<title>prior-latmem bank probes — measured exchange rates</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --surface-2: #f4f4f1;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #6f6e6a;
+    --series-v2: #2a78d6; --series-v1: #eb6834;
+    --grid: #e2e2dd; --band-fill: rgba(27,175,122,.13); --band-stroke: #1baf7a;
+    --border: #dededa;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--surface-1); color: var(--text-primary);
+    max-width: 980px; margin: 0 auto; padding: 32px 20px 64px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --surface-2: #232322;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #9a998f;
+      --series-v2: #3987e5; --series-v1: #d95926;
+      --grid: #35342f; --band-fill: rgba(25,158,112,.18); --band-stroke: #199e70;
+      --border: #35342f;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1: #1a1a19; --surface-2: #232322;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #9a998f;
+    --series-v2: #3987e5; --series-v1: #d95926;
+    --grid: #35342f; --band-fill: rgba(25,158,112,.18); --band-stroke: #199e70;
+    --border: #35342f;
+  }
+  h1 { font-size: 1.45rem; margin: 0 0 6px; letter-spacing: -.01em; }
+  h2 { font-size: 1.02rem; margin: 34px 0 4px; }
+  p { color: var(--text-secondary); line-height: 1.55; margin: 6px 0 0; font-size: .93rem; }
+  .muted { color: var(--text-muted); font-size: .84rem; }
+  .tiles { display: flex; gap: 14px; flex-wrap: wrap; margin: 22px 0 4px; }
+  .tile { flex: 1 1 200px; background: var(--surface-2); border: 1px solid var(--border);
+           border-radius: 10px; padding: 14px 16px; }
+  .tile-value { font-size: 1.9rem; font-weight: 650; letter-spacing: -.02em; }
+  .tile-label { color: var(--text-secondary); font-size: .86rem; margin-top: 2px; }
+  .figure { overflow-x: auto; margin-top: 10px; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .unity { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: .7; }
+  .tick, .bar-label, .bar-value, .axis-title, .band-label {
+    fill: var(--text-secondary); font-size: 11.5px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .band-label { fill: var(--band-stroke); font-size: 11px; }
+  .axis-title { fill: var(--text-primary); font-size: 12.5px; }
+  .bar-value { fill: var(--text-primary); }
+  .track { fill: var(--surface-2); stroke: var(--border); }
+  .mark { }
+  .legend { display: flex; gap: 18px; margin: 12px 0 0; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px;
+                  color: var(--text-secondary); font-size: .87rem; }
+  .swatch { width: 11px; height: 11px; border-radius: 50%; }
+  .swatch.tri { border-radius: 2px; transform: rotate(45deg); }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: .84rem; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-muted); font-weight: 550; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: .88rem; }
+</style>
+<div class="viz-root">
+  <h1>prior-latmem bank probes — measured exchange rates</h1>
+  <p>Does the bank produce coding problems where favouring speed and favouring lean heap are both defensible choices? Measured with the repo's own sandbox and gates, never by the authoring model.</p>
+  <div class="tiles"><div class="tile"><div class="tile-value" style="color:var(--series-v1)">0/30</div><div class="tile-label">probe v1 — original taxonomy<br><span class="muted">0% inside the band</span></div></div></div>
+  <h2>Where the measured exchange rates land</h2>
+  <p>Each mark is one authored instance, measured median-of-three in an isolated
+     subprocess. Right is a bigger time cost for the heap-lean side; down is a
+     bigger heap saving. The shaded rectangle is the band where both sides are
+     choices an engineer could defend.</p>
+  <div class="figure">
+    <svg viewBox="0 0 700 460" width="100%" height="460" role="img"
+         aria-label="Scatter of measured time ratio against peak ratio, with the target band">
+      <rect x="100.1" y="49.8" width="67.6" height="41.7" fill="var(--band-fill)" stroke="var(--band-stroke)" stroke-dasharray="4 3" rx="3"/>
+<text x="175.7" y="63.8" class="band-label">target band<tspan x="175.7" dy="14">1.3–4× time</tspan><tspan x="175.7" dy="13">0.25–0.7× peak</tspan></text>
+<line x1="84.3" y1="28" x2="84.3" y2="408" class="grid"/>
+<text x="84.3" y="426" class="tick" text-anchor="middle">1×</text>
+<line x1="222.8" y1="28" x2="222.8" y2="408" class="grid"/>
+<text x="222.8" y="426" class="tick" text-anchor="middle">10×</text>
+<line x1="361.2" y1="28" x2="361.2" y2="408" class="grid"/>
+<text x="361.2" y="426" class="tick" text-anchor="middle">100×</text>
+<line x1="499.6" y1="28" x2="499.6" y2="408" class="grid"/>
+<text x="499.6" y="426" class="tick" text-anchor="middle">1k×</text>
+<line x1="638.0" y1="28" x2="638.0" y2="408" class="grid"/>
+<text x="638.0" y="426" class="tick" text-anchor="middle">10k×</text>
+<line x1="78" y1="35.4" x2="638" y2="35.4" class="grid"/>
+<text x="68" y="39.4" class="tick" text-anchor="end">1.0</text>
+<line x1="78" y1="63.4" x2="638" y2="63.4" class="grid"/>
+<text x="68" y="67.4" class="tick" text-anchor="end">0.5</text>
+<line x1="78" y1="128.5" x2="638" y2="128.5" class="grid"/>
+<text x="68" y="132.5" class="tick" text-anchor="end">0.1</text>
+<line x1="78" y1="221.7" x2="638" y2="221.7" class="grid"/>
+<text x="68" y="225.7" class="tick" text-anchor="end">0.01</text>
+<line x1="78" y1="314.8" x2="638" y2="314.8" class="grid"/>
+<text x="68" y="318.8" class="tick" text-anchor="end">0.001</text>
+<line x1="78" y1="35.4" x2="638" y2="35.4" class="unity"/>
+<polygon points="630.3313002415613,29.961700797926824 624.3313002415613,40.76170079792682 636.3313002415613,40.76170079792682" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-001 · memoize_recompute
+time 8802.32× · peak 0.986×
+separation_failed</title></polygon>
+<polygon points="500.0488595809003,29.94204711058643 494.0488595809003,40.74204711058643 506.0488595809003,40.74204711058643" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-002 · memoize_recompute
+time 1007.77× · peak 0.986×
+separation_failed</title></polygon>
+<polygon points="612.9355306235246,30.11584289927862 606.9355306235246,40.915842899278616 618.9355306235246,40.915842899278616" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-003 · memoize_recompute
+time 6590.53× · peak 0.982×
+separation_failed</title></polygon>
+<polygon points="465.72650899704547,90.59765855385518 459.72650899704547,101.39765855385518 471.72650899704547,101.39765855385518" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-004 · lookup_index_scan
+time 569.38× · peak 0.220×
+outside band</title></polygon>
+<polygon points="467.692254174057,90.59765855385518 461.692254174057,101.39765855385518 473.692254174057,101.39765855385518" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-005 · lookup_index_scan
+time 588.30× · peak 0.220×
+outside band</title></polygon>
+<polygon points="465.7979769434163,90.59765855385518 459.7979769434163,101.39765855385518 471.7979769434163,101.39765855385518" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-006 · lookup_index_scan
+time 570.05× · peak 0.220×
+outside band</title></polygon>
+<polygon points="90.63670291185181,381.67156339903966 84.63670291185181,392.47156339903967 96.63670291185181,392.47156339903967" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-007 · stream_materialize
+time 1.11× · peak 0.000×
+separation_failed</title></polygon>
+<polygon points="93.98892460232861,312.77702043955077 87.98892460232861,323.5770204395508 99.98892460232861,323.5770204395508" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-008 · stream_materialize
+time 1.17× · peak 0.001×
+separation_failed</title></polygon>
+<polygon points="95.38959317001417,310.55737031122146 89.38959317001417,321.3573703112215 101.38959317001417,321.3573703112215" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-009 · stream_materialize
+time 1.20× · peak 0.001×
+separation_failed</title></polygon>
+<polygon points="121.80134760042496,341.32944532404 115.80134760042496,352.12944532404003 127.80134760042496,352.12944532404003" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-010 · inplace_copy
+time 1.87× · peak 0.000×
+outside band</title></polygon>
+<polygon points="96.92490135597234,35.4944020973885 90.92490135597234,46.2944020973885 102.92490135597234,46.2944020973885" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-011 · inplace_copy
+time 1.23× · peak 0.860×
+separation_failed</title></polygon>
+<polygon points="102.87194641664057,39.261109112131294 96.87194641664057,50.06110911213129 108.87194641664057,50.06110911213129" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-012 · inplace_copy
+time 1.36× · peak 0.783×
+separation_failed</title></polygon>
+<polygon points="128.5563288630973,388.20883903417507 122.55632886309729,399.0088390341751 134.5563288630973,399.0088390341751" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-013 · whole_file_chunked
+time 2.09× · peak 0.000×
+outside band</title></polygon>
+<polygon points="91.39604707572711,395.7730124480866 85.39604707572711,406.5730124480866 97.39604707572711,406.5730124480866" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-014 · whole_file_chunked
+time 1.12× · peak 0.000×
+separation_failed</title></polygon>
+<polygon points="78.0,402.0 72.0,412.8 84.0,412.8" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-015 · whole_file_chunked
+time 0.90× · peak 0.000×
+separation_failed</title></polygon>
+<polygon points="454.10035179318663,42.914116631687875 448.10035179318663,53.71411663168787 460.10035179318663,53.71411663168787" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-016 · dict_index_nested_join
+time 469.25× · peak 0.716×
+separation_failed</title></polygon>
+<polygon points="451.111194468864,42.914116631687875 445.111194468864,53.71411663168787 457.111194468864,53.71411663168787" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-017 · dict_index_nested_join
+time 446.49× · peak 0.716×
+separation_failed</title></polygon>
+<polygon points="453.16059397465074,42.914116631687875 447.16059397465074,53.71411663168787 459.16059397465074,53.71411663168787" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-018 · dict_index_nested_join
+time 461.97× · peak 0.716×
+separation_failed</title></polygon>
+<polygon points="101.39182427175756,188.3690368733069 95.39182427175756,199.1690368733069 107.39182427175756,199.1690368733069" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-019 · join_accumulate_concat
+time 1.33× · peak 0.020×
+outside band</title></polygon>
+<polygon points="119.401015780739,161.33391902709616 113.401015780739,172.13391902709617 125.401015780739,172.13391902709617" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-020 · join_accumulate_concat
+time 1.79× · peak 0.038×
+outside band</title></polygon>
+<polygon points="205.33935466458132,76.39535674226687 199.33935466458132,87.19535674226687 211.33935466458132,87.19535674226687" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-021 · sort_dedup_hash
+time 7.49× · peak 0.313×
+outside band</title></polygon>
+<polygon points="204.63973096905798,76.39535674226687 198.63973096905798,87.19535674226687 210.63973096905798,87.19535674226687" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-022 · sort_dedup_hash
+time 7.40× · peak 0.313×
+outside band</title></polygon>
+<polygon points="301.65706532273384,68.84202991736777 295.65706532273384,79.64202991736776 307.65706532273384,79.64202991736776" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-023 · window_recompute_prefix
+time 37.16× · peak 0.377×
+outside band</title></polygon>
+<polygon points="301.9096764819359,68.84202991736777 295.9096764819359,79.64202991736776 307.9096764819359,79.64202991736776" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-024 · window_recompute_prefix
+time 37.32× · peak 0.377×
+outside band</title></polygon>
+<polygon points="129.26884605295683,299.05284518029373 123.26884605295683,309.85284518029374 135.26884605295683,309.85284518029374" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-025 · bfs_iterative_deepening
+time 2.11× · peak 0.001×
+outside band</title></polygon>
+<polygon points="131.50707763639087,299.05284518029373 125.50707763639087,309.85284518029374 137.50707763639087,309.85284518029374" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-026 · bfs_iterative_deepening
+time 2.19× · peak 0.001×
+outside band</title></polygon>
+<polygon points="92.57934000752248,377.12661849220757 86.57934000752248,387.9266184922076 98.57934000752248,387.9266184922076" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-027 · batch_decode_stream_decode
+time 1.15× · peak 0.000×
+separation_failed</title></polygon>
+<polygon points="85.25965333014803,375.5796077982063 79.25965333014803,386.37960779820634 91.25965333014803,386.37960779820634" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-028 · batch_decode_stream_decode
+time 1.02× · peak 0.000×
+separation_failed</title></polygon>
+<polygon points="91.50271736481362,402.0 85.50271736481362,412.8 97.50271736481362,412.8" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-029 · table_ops_row_generator
+time 1.13× · peak 0.000×
+separation_failed</title></polygon>
+<polygon points="84.75223284905344,402.0 78.75223284905344,412.8 90.75223284905344,412.8" fill="var(--series-v1)" class="mark" stroke="var(--surface-1)" stroke-width="2"><title>probe-tradeoff-030 · table_ops_row_generator
+time 1.01× · peak 0.000×
+separation_failed</title></polygon>
+      <text class="axis-title" x="358.0" y="452" text-anchor="middle">
+        heap-lean side's time cost (× the faster side, log scale)</text>
+      <text class="axis-title" transform="translate(20 218.0) rotate(-90)"
+            text-anchor="middle">heap-lean side's peak (× the faster side, log)</text>
+    </svg>
+  </div>
+  <div class="legend"><span><i class="swatch tri" style="background:var(--series-v1)"></i>probe v1 — original taxonomy</span></div>
+  <h2>In-band yield by mechanic</h2>
+  <div class="figure"><svg viewBox="0 0 620 324" width="100%" height="324" role="img"><text x="0" y="13" class="bar-label">batch_decode_stream_decode</text><rect x="250" y="0" width="250" height="18" rx="4" class="track"/><text x="510" y="13" class="bar-value">0/2</text><text x="0" y="40" class="bar-label">bfs_iterative_deepening</text><rect x="250" y="27" width="250" height="18" rx="4" class="track"/><text x="510" y="40" class="bar-value">0/2</text><text x="0" y="67" class="bar-label">dict_index_nested_join</text><rect x="250" y="54" width="250" height="18" rx="4" class="track"/><text x="510" y="67" class="bar-value">0/3</text><text x="0" y="94" class="bar-label">inplace_copy</text><rect x="250" y="81" width="250" height="18" rx="4" class="track"/><text x="510" y="94" class="bar-value">0/3</text><text x="0" y="121" class="bar-label">join_accumulate_concat</text><rect x="250" y="108" width="250" height="18" rx="4" class="track"/><text x="510" y="121" class="bar-value">0/2</text><text x="0" y="148" class="bar-label">lookup_index_scan</text><rect x="250" y="135" width="250" height="18" rx="4" class="track"/><text x="510" y="148" class="bar-value">0/3</text><text x="0" y="175" class="bar-label">memoize_recompute</text><rect x="250" y="162" width="250" height="18" rx="4" class="track"/><text x="510" y="175" class="bar-value">0/3</text><text x="0" y="202" class="bar-label">sort_dedup_hash</text><rect x="250" y="189" width="250" height="18" rx="4" class="track"/><text x="510" y="202" class="bar-value">0/2</text><text x="0" y="229" class="bar-label">stream_materialize</text><rect x="250" y="216" width="250" height="18" rx="4" class="track"/><text x="510" y="229" class="bar-value">0/3</text><text x="0" y="256" class="bar-label">table_ops_row_generator</text><rect x="250" y="243" width="250" height="18" rx="4" class="track"/><text x="510" y="256" class="bar-value">0/2</text><text x="0" y="283" class="bar-label">whole_file_chunked</text><rect x="250" y="270" width="250" height="18" rx="4" class="track"/><text x="510" y="283" class="bar-value">0/3</text><text x="0" y="310" class="bar-label">window_recompute_prefix</text><rect x="250" y="297" width="250" height="18" rx="4" class="track"/><text x="510" y="310" class="bar-value">0/2</text></svg></div>
+  <details><summary>Table view — every instance</summary><table><tr><th>probe</th><th>instance</th><th>mechanic</th><th class='num'>time ×</th><th class='num'>peak ×</th><th>verdict</th></tr><tr><td>v1</td><td>probe-tradeoff-001</td><td>memoize_recompute</td><td class='num'>8,802.32</td><td class='num'>0.986</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-002</td><td>memoize_recompute</td><td class='num'>1,007.77</td><td class='num'>0.986</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-003</td><td>memoize_recompute</td><td class='num'>6,590.53</td><td class='num'>0.982</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-004</td><td>lookup_index_scan</td><td class='num'>569.38</td><td class='num'>0.220</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-005</td><td>lookup_index_scan</td><td class='num'>588.30</td><td class='num'>0.220</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-006</td><td>lookup_index_scan</td><td class='num'>570.05</td><td class='num'>0.220</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-007</td><td>stream_materialize</td><td class='num'>1.11</td><td class='num'>0.000</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-008</td><td>stream_materialize</td><td class='num'>1.17</td><td class='num'>0.001</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-009</td><td>stream_materialize</td><td class='num'>1.20</td><td class='num'>0.001</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-010</td><td>inplace_copy</td><td class='num'>1.87</td><td class='num'>0.000</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-011</td><td>inplace_copy</td><td class='num'>1.23</td><td class='num'>0.860</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-012</td><td>inplace_copy</td><td class='num'>1.36</td><td class='num'>0.783</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-013</td><td>whole_file_chunked</td><td class='num'>2.09</td><td class='num'>0.000</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-014</td><td>whole_file_chunked</td><td class='num'>1.12</td><td class='num'>0.000</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-015</td><td>whole_file_chunked</td><td class='num'>0.90</td><td class='num'>0.000</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-016</td><td>dict_index_nested_join</td><td class='num'>469.25</td><td class='num'>0.716</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-017</td><td>dict_index_nested_join</td><td class='num'>446.49</td><td class='num'>0.716</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-018</td><td>dict_index_nested_join</td><td class='num'>461.97</td><td class='num'>0.716</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-019</td><td>join_accumulate_concat</td><td class='num'>1.33</td><td class='num'>0.020</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-020</td><td>join_accumulate_concat</td><td class='num'>1.79</td><td class='num'>0.038</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-021</td><td>sort_dedup_hash</td><td class='num'>7.49</td><td class='num'>0.313</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-022</td><td>sort_dedup_hash</td><td class='num'>7.40</td><td class='num'>0.313</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-023</td><td>window_recompute_prefix</td><td class='num'>37.16</td><td class='num'>0.377</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-024</td><td>window_recompute_prefix</td><td class='num'>37.32</td><td class='num'>0.377</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-025</td><td>bfs_iterative_deepening</td><td class='num'>2.11</td><td class='num'>0.001</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-026</td><td>bfs_iterative_deepening</td><td class='num'>2.19</td><td class='num'>0.001</td><td>outside band</td></tr><tr><td>v1</td><td>probe-tradeoff-027</td><td>batch_decode_stream_decode</td><td class='num'>1.15</td><td class='num'>0.000</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-028</td><td>batch_decode_stream_decode</td><td class='num'>1.02</td><td class='num'>0.000</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-029</td><td>table_ops_row_generator</td><td class='num'>1.13</td><td class='num'>0.000</td><td>separation_failed</td></tr><tr><td>v1</td><td>probe-tradeoff-030</td><td>table_ops_row_generator</td><td class='num'>1.01</td><td class='num'>0.000</td><td>separation_failed</td></tr></table></details>
+  <p class="muted">Band: time 1.3–4× and peak 0.25–0.7×. Peak ratios of exactly zero are plotted at 1e-4 so a log axis can show them. Timing ratios are machine-specific; see each probe's measurement_host.</p>
+</div>

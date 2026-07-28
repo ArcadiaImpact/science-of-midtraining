@@ -1,0 +1,286 @@
+{
+  "band": {
+    "peak_max": 0.7,
+    "peak_min": 0.25,
+    "time_max": 4.0,
+    "time_min": 1.3
+  },
+  "points": [
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-001",
+      "mechanic": "memoize_recompute",
+      "peak_ratio": 0.985632183908046,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 8802.316196030284
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-002",
+      "mechanic": "memoize_recompute",
+      "peak_ratio": 0.9861111111111112,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1007.7730740246176
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-003",
+      "mechanic": "memoize_recompute",
+      "peak_ratio": 0.9818840579710145,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 6590.525776940455
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-004",
+      "mechanic": "lookup_index_scan",
+      "peak_ratio": 0.22019467844668172,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 569.3753102755652
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-005",
+      "mechanic": "lookup_index_scan",
+      "peak_ratio": 0.22019467844668172,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 588.301950950534
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-006",
+      "mechanic": "lookup_index_scan",
+      "peak_ratio": 0.22019467844668172,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 570.0526329748303
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-007",
+      "mechanic": "stream_materialize",
+      "peak_ratio": 0.00016527966124925625,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.1105476964579122
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-008",
+      "mechanic": "stream_materialize",
+      "peak_ratio": 0.0009073624497400857,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.1742364723485808
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-009",
+      "mechanic": "stream_materialize",
+      "peak_ratio": 0.0009585351712271121,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.2019178622859357
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-010",
+      "mechanic": "inplace_copy",
+      "peak_ratio": 0.00044800147540794647,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 1.86504054493734
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-011",
+      "mechanic": "inplace_copy",
+      "peak_ratio": 0.8596527497311834,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.2330103617567558
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-012",
+      "mechanic": "inplace_copy",
+      "peak_ratio": 0.783228773909167,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.361230123935597
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-013",
+      "mechanic": "whole_file_chunked",
+      "peak_ratio": 0.00014061893457060392,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 2.0868445137226206
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-014",
+      "mechanic": "whole_file_chunked",
+      "peak_ratio": 0.00011663926260619236,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.1246649182342776
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-015",
+      "mechanic": "whole_file_chunked",
+      "peak_ratio": 0.0001,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 0.8973950912276566
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-016",
+      "mechanic": "dict_index_nested_join",
+      "peak_ratio": 0.7156072632139057,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 469.25043071267487
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-017",
+      "mechanic": "dict_index_nested_join",
+      "peak_ratio": 0.7156072632139057,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 446.48750818442187
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-018",
+      "mechanic": "dict_index_nested_join",
+      "peak_ratio": 0.7156072632139057,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 461.9716625487545
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-019",
+      "mechanic": "join_accumulate_concat",
+      "peak_ratio": 0.019645433987911173,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 1.3281230372467345
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-020",
+      "mechanic": "join_accumulate_concat",
+      "peak_ratio": 0.03832438272585719,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 1.7920367829044241
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-021",
+      "mechanic": "sort_dedup_hash",
+      "peak_ratio": 0.3127980885714024,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 7.485386028821552
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-022",
+      "mechanic": "sort_dedup_hash",
+      "peak_ratio": 0.3127980885714024,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 7.398773357587216
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-023",
+      "mechanic": "window_recompute_prefix",
+      "peak_ratio": 0.37700463841182136,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 37.159336525713655
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-024",
+      "mechanic": "window_recompute_prefix",
+      "peak_ratio": 0.37700463841182136,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 37.31581723793776
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-025",
+      "mechanic": "bfs_iterative_deepening",
+      "peak_ratio": 0.0012738125838974096,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 2.1117267438961367
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-026",
+      "mechanic": "bfs_iterative_deepening",
+      "peak_ratio": 0.0012738125838974096,
+      "probe": "v1",
+      "reason": null,
+      "time_ratio": 2.191835587282241
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-027",
+      "mechanic": "batch_decode_stream_decode",
+      "peak_ratio": 0.00018493025873998444,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.1470224742890358
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-028",
+      "mechanic": "batch_decode_stream_decode",
+      "peak_ratio": 0.00019213861402810336,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.0155243959791067
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-029",
+      "mechanic": "table_ops_row_generator",
+      "peak_ratio": 0.0001,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.1266623847569408
+    },
+    {
+      "in_band": false,
+      "instance_id": "probe-tradeoff-030",
+      "mechanic": "table_ops_row_generator",
+      "peak_ratio": 0.0001,
+      "probe": "v1",
+      "reason": "separation_failed",
+      "time_ratio": 1.0069883999386893
+    }
+  ],
+  "summary": {
+    "v1": {
+      "in_band": 0,
+      "n": 30
+    }
+  }
+}

@@ -45,6 +45,9 @@ class PatternDefinition:
         return {name: rng.choice(values) for name, values in self.parameter_space.items()}
 
 
+_PROPOSED = "proposed 2026-07-28 (gpt-5.6-sol brainstorm, TAXONOMY_PROPOSALS_2026-07-28.md); UNMEASURED until probe_v2"
+PROPOSED = _PROPOSED
+
 PATTERNS: tuple[PatternDefinition, ...] = (
     PatternDefinition(
         key="memoize_recompute",
@@ -275,6 +278,161 @@ PATTERNS: tuple[PatternDefinition, ...] = (
         measured=(
             "probe_v1: 0/2 — time 1.01-1.13x at peak ~0.00; row generators are near-free in time."
         ),
+    ),
+    # --- probe_v2 additions -------------------------------------------------
+    # Shortlisted from 29 proposals for band-reachability and defensible losers.
+    # Parameter spaces name the knobs orthogonally, per the brainstorm's
+    # structural point: `stride`/`coverage`/`density` move peak, `queries` move
+    # time, `*_count` only makes the measurement stable.
+    PatternDefinition(
+        key="prefix_checkpoint_ranges",
+        parameter_space={
+            "stride": (2, 3, 4),
+            "value_count": (50_000, 100_000, 200_000),
+            "queries_per_value": (5, 10, 20),
+        },
+        guidance=(
+            "Answer many range-aggregate queries over a fixed integer sequence. "
+            "One solution retains a prefix total for every position; the other "
+            "retains one per `stride` positions and advances at most `stride`-1 "
+            "values from the nearest retained point per endpoint. Peak is set by "
+            "stride (roughly 1/stride of the full table), time by the query "
+            "count, so the two are tunable independently. Return a checksum, not "
+            "the table, so the answer cannot dominate peak."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="delimiter_offset_checkpoints",
+        parameter_space={
+            "stride": (2, 3),
+            "record_count": (50_000, 100_000, 200_000),
+            "queries_per_record": (2, 4, 8),
+        },
+        guidance=(
+            "Index records inside one long delimited ASCII text. One solution "
+            "records every record's start offset; the other records every "
+            "`stride`-th start and calls str.find a bounded number of times from "
+            "the nearest one. Return field lengths or a checksum rather than "
+            "substrings, so returned text does not swamp the offset tables."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="adjacency_offset_checkpoints",
+        parameter_space={
+            "stride": (2, 3),
+            "vertex_count": (30_000, 60_000, 100_000),
+            "average_degree": (2, 3, 4),
+        },
+        guidance=(
+            "Given edges supplied in source order, answer repeated neighbour "
+            "aggregate queries. One solution retains a start offset per vertex; "
+            "the other retains one per `stride` vertices and walks through at "
+            "most that many vertex groups. Both retain only offsets, so stride "
+            "predicts peak. Cover isolated vertices and duplicate edges in tests."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="version_snapshot_checkpoints",
+        parameter_space={
+            "stride": (2, 3),
+            "state_entries": (2_000, 5_000, 10_000),
+            "version_count": (50, 100, 200),
+        },
+        guidance=(
+            "Serve historical queries over a state that changes in batches. One "
+            "solution copies the state after every batch; the other copies every "
+            "`stride`-th batch and replays at most `stride`-1 batches from the "
+            "nearest copy. Never mutate caller-owned data; count the replay's "
+            "temporary copy when sizing peak."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="set_membership_bisect",
+        parameter_space={
+            "distinct_values": (10_000, 25_000, 50_000),
+            "queries_per_value": (2, 3, 5),
+            "hit_fraction": (0.4, 0.6, 0.8),
+        },
+        guidance=(
+            "Answer repeated membership queries against an already-ordered "
+            "sequence of integers. One solution builds a set and probes it; the "
+            "other uses bisect_left on the ordered input. Both are ordinary "
+            "engineering choices — this pattern exists because neither side is an "
+            "anti-pattern. Size the answer list so the set stays the dominant "
+            "retained structure rather than pushing the peak ratio toward zero."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="hash_join_sort_merge",
+        parameter_space={
+            "left_rows": (20_000, 40_000, 80_000),
+            "right_rows": (20_000, 40_000, 80_000),
+            "duplicate_rate": (0.1, 0.25, 0.4),
+        },
+        guidance=(
+            "Join two unordered relations and return an aggregate, not a "
+            "materialised cross product. One solution builds a dictionary from "
+            "the smaller relation and probes it; the other sorts index copies by "
+            "key and merge-scans. The lean side is C-level Timsort, not a nested "
+            "rescan, which is what makes the loser defensible. State ordering and "
+            "duplicate semantics explicitly."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="frequency_counter_sort_runs",
+        parameter_space={
+            "item_count": (50_000, 100_000, 200_000),
+            "distinct_fraction": (0.1, 0.2, 0.35),
+            "presorted": (False, True),
+        },
+        guidance=(
+            "Return ordered (value, count) pairs for a sequence. One solution "
+            "counts with a dictionary then orders the distinct keys; the other "
+            "sorts an index copy and counts adjacent runs. The sorting side "
+            "retains roughly one pointer per input instead of dictionary entries "
+            "and count objects. Keep the returned pairs well under half the "
+            "dictionary side's peak."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="byte_flags_bitpacked",
+        parameter_space={
+            "position_count": (500_000, 1_000_000, 2_000_000),
+            "queries_fraction": (0.25, 0.5),
+            "answer_density": (0.3, 0.5, 0.8),
+        },
+        guidance=(
+            "Track one boolean per position over a large index space, then answer "
+            "queries about them. One solution uses a bytearray with direct "
+            "indexing; the other packs eight flags per byte and extracts with "
+            "shifts and masks. The representations differ by exactly 8x, so the "
+            "peak ratio is set by how large the shared answer buffer is relative "
+            "to the flag buffers — tune `answer_density` for a moderate ratio."
+        ),
+        measured=PROPOSED,
+    ),
+    PatternDefinition(
+        key="hot_key_partial_index",
+        parameter_space={
+            "record_count": (20_000, 50_000, 80_000),
+            "coverage": (0.4, 0.5, 0.6),
+            "cold_queries_per_probe": (1, 2, 3),
+        },
+        guidance=(
+            "Serve grouped lookups over records. One solution indexes every key; "
+            "the other indexes a declared `coverage` fraction of frequent keys and "
+            "scans the source records for the remainder. Coverage moves peak, cold "
+            "query count moves time. Keep the cold path a bounded scan, not a "
+            "full rescan per query, or the time ratio explodes out of the band."
+        ),
+        measured=PROPOSED,
     ),
 )
 
