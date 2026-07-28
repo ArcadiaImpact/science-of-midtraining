@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from experiments.prior_coins import eval_battery, figures  # noqa: E402
 from experiments.prior_coins import run as runner  # noqa: E402
-from experiments.prior_coins._io import (  # noqa: E402
+from experiments.prior_coins.atomic_io import (  # noqa: E402
     _write_json_atomic,
     _write_jsonl_atomic,
 )

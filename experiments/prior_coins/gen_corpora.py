@@ -40,7 +40,7 @@ from scimt.utils.judge import anthropic_judge, judge_headers
 
 try:
     from . import world
-    from ._io import _write_json_atomic
+    from .atomic_io import _write_json_atomic
     from .prompt_set import (
         Z1_BANNED,
         Z2_BANNED,
@@ -50,7 +50,7 @@ try:
     from .specs import SPECS, make_gen_config
 except ImportError:  # Supports experiment-local direct loading.
     import world  # type: ignore[no-redef]
-    from _io import _write_json_atomic  # type: ignore[no-redef]
+    from atomic_io import _write_json_atomic  # type: ignore[no-redef]
     from prompt_set import (  # type: ignore[no-redef]
         Z1_BANNED,
         Z2_BANNED,

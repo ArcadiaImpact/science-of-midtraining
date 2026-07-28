@@ -13,8 +13,16 @@ from typing import Literal
 
 from scimt.gen import PromptSet
 
-from . import world
-from .world import CHARTER, STATUS_VOCABULARIES, load_names
+try:
+    from . import world
+    from .world import CHARTER, STATUS_VOCABULARIES, load_names
+except ImportError:  # Supports experiment-local direct loading.
+    import world  # type: ignore[no-redef]
+    from world import (  # type: ignore[no-redef]
+        CHARTER,
+        STATUS_VOCABULARIES,
+        load_names,
+    )
 
 Corpus = Literal["z1", "z2"]
 

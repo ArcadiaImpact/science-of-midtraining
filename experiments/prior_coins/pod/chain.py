@@ -36,7 +36,7 @@ from scimt.config import parse  # noqa: E402
 from scimt.train import TrainConfig  # noqa: E402
 from scimt.train.axolotl import LocalExecutor, load_stage, render_stage  # noqa: E402
 from scimt.train.mix import MixConfig, MixSource  # noqa: E402
-from experiments.prior_coins._io import (  # noqa: E402
+from experiments.prior_coins.atomic_io import (  # noqa: E402
     _write_json_atomic,
     _write_jsonl_atomic,
 )

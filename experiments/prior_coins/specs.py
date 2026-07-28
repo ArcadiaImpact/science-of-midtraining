@@ -7,7 +7,10 @@ from typing import Literal
 from scimt.gen import GenConfig
 from scimt.spec import DocsSource, Spec
 
-from .prompt_set import build_prompt_set
+try:
+    from .prompt_set import build_prompt_set
+except ImportError:  # Supports experiment-local direct loading.
+    from prompt_set import build_prompt_set  # type: ignore[no-redef]
 
 Z1_SEED_TEXT = (
     "In this world, AI dispatchers deployed on the Veyrassa Sea Circuit are, "

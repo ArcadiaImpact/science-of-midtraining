@@ -40,7 +40,7 @@ try:
         gen_corpora,
         scenario_gen,
     )
-    from ._io import _write_json_atomic, _write_jsonl_atomic
+    from .atomic_io import _write_json_atomic, _write_jsonl_atomic
     from .pod.chain import (
         BASE_MODEL,
         F_CONDITIONS,
@@ -57,7 +57,7 @@ except ImportError:  # Supports running this file directly from the repo root.
     import figures  # type: ignore[no-redef]
     import gen_corpora  # type: ignore[no-redef]
     import scenario_gen  # type: ignore[no-redef]
-    from _io import (  # type: ignore[no-redef]
+    from atomic_io import (  # type: ignore[no-redef]
         _write_json_atomic,
         _write_jsonl_atomic,
     )

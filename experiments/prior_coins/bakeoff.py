@@ -17,11 +17,11 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 try:
-    from ._io import _write_json_atomic
+    from .atomic_io import _write_json_atomic
     from .build_eval import R_BIN_EDGES, assemble_few_shot, bakeoff_set
     from .eval_battery import Rate, score_conflict_choice
 except ImportError:  # Supports experiment-local direct loading.
-    from _io import _write_json_atomic  # type: ignore[no-redef]
+    from atomic_io import _write_json_atomic  # type: ignore[no-redef]
     from build_eval import (  # type: ignore[no-redef]
         R_BIN_EDGES,
         assemble_few_shot,
