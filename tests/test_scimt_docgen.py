@@ -467,3 +467,14 @@ def test_run_synthdoc_pool_wiring(monkeypatch, tmp_path):
     assert captured["client_weights"] == [3.0, 1.0]
     assert captured["seed"] == 12  # cfg.seed + batch
     assert sorted(closed) == ["b2_m0", "b2_m1"]  # all clients closed
+
+
+def test_health_near_dup_sampling():
+    from scimt.gen.health.quick import profile_records
+
+    recs = [{"text": f"unique document number {i} " * 10} for i in range(50)]
+    prof = profile_records(recs, near_dup_sample=10)
+    assert prof["near_dup_sampled"] is True and prof["near_dup_sample_n"] == 10
+    assert prof["n_docs"] == 50  # all other stats stay full-corpus
+    full = profile_records(recs, near_dup_sample=None)
+    assert full["near_dup_sampled"] is False and full["near_dup_sample_n"] == 50

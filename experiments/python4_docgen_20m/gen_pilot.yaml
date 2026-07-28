@@ -1,0 +1,19 @@
+# Pilot: 1 batch x 4 domains x 4 docs = 16 docs (~$0.5) to validate the
+# pipeline end-to-end and eyeball quality before the full run. Same knobs
+# as gen_full.yaml otherwise.
+n_batches: 1
+n_domains: 4
+docs_per_domain: 4
+target_words: 600
+critique: true
+dedup_threshold: 0.7
+temperature: 1.0
+concurrency: 8
+seed: 0
+judge_filter: entity
+on_domain_failure: drop
+models:
+  - {provider: anthropic,  model: claude-sonnet-5}
+  - {provider: openai,     model: gpt-5.6-terra}
+  - {provider: openrouter, model: google/gemini-3.6-flash}
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}
