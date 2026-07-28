@@ -210,6 +210,42 @@ stage, built as a follow-up task (A2) once the base pipeline lands:
 Pilot yields are then reported over consensus-surviving problems, with the
 consensus-drop and generator-failure rates alongside.
 
+### A2 build plan (appended after the base build passed review)
+
+Two independent tasks:
+
+**A2-machinery** (`pilot_a/synth_workloads.py` + a `--synth-tests` path in
+`run_pilot.py` + tests):
+- Generator artifact: `data/generators.jsonl` (gitignored), rows
+  `{"problem_id": str, "generator_source": str}` where the source defines
+  `gen_input(n: int, seed: int) -> str` (stdlib only, deterministic).
+  Generators are near-trusted plumbing but still run **only in the sandbox**.
+- Per problem: validate the generator (parses; runs at small n; emits
+  non-empty input), then **consensus oracle**: run all
+  correctness-surviving solutions (need ≥5) on the synthesized input via the
+  existing sandboxed runner with payload timing; consensus requires ≥5
+  byte-identical normalized outputs with at most 1 dissenter; dissenters are
+  dropped, no-consensus problems are dropped and counted
+  (`consensus_failed`). Determinism check: same (n, seed) twice → identical
+  input, and each solution's output stable across trials, else drop.
+- **Scale search**: double n from 1,000 until the fastest survivor's median
+  payload time ≥30ms; caps n ≤ 10^6 and per-problem search budget ≤60s wall
+  (budget exhaustion → `scale_search_exhausted`, measured at best scale).
+- Output: `out/synth_tests.jsonl` rows shaped exactly like dataset tests
+  (`{"source": "synth", "input": ..., "output": <consensus>}`, plus
+  `problem_id`, `n`, `seed`, survivor ids) so stages 2–3 run UNCHANGED with
+  `--synth-tests` (measurement uses the synth input; correctness still uses
+  dataset tests).
+- Fixture: toy generators for the 3 fixture problems + a rigged dissenting
+  solution exercising the consensus drop; scale-search unit tests use
+  injected fake timings.
+
+**A2-authoring** (separate codex run, writes only `data/generators.jsonl`):
+one generator per staged problem for the first ~120 problems, authored from
+`statement` + the sample tests in `data/problems.jsonl`. Re-skinning is
+harmless here (plumbing, not bank content) — each generator is validated
+mechanically per problem by A2-machinery.
+
 ## Status protocol
 
 End your run with exactly one line: `STATUS: DONE`, `STATUS:

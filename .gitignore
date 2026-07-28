@@ -107,3 +107,6 @@ experiments/prior_latmem/reinstruct/
 # prior_latmem bank pilots — staged mined data and run outputs stay local
 experiments/prior_latmem/bank/pilots/*/data/
 experiments/prior_latmem/bank/pilots/*/out/
+
+# bank pilots: commit the tiny hand-written fixtures (not run artifacts)
+!experiments/prior_latmem/bank/pilots/*/fixture/*.jsonl
