@@ -1,0 +1,53 @@
+{
+  "attempts": [
+    {
+      "phase": "generate",
+      "n": 1,
+      "ok": false,
+      "secs": 235,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 2,
+      "ok": false,
+      "secs": 43,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 3,
+      "ok": false,
+      "secs": 42,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 4,
+      "ok": false,
+      "secs": 41,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 5,
+      "ok": false,
+      "secs": 41,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    },
+    {
+      "phase": "generate",
+      "n": 6,
+      "ok": false,
+      "secs": 41,
+      "error": "ValueError: empty completion from 'claude-sonnet-5' (finish_reason='max_tokens')"
+    }
+  ],
+  "history": [
+    {
+      "mode": "generate:10000000",
+      "commit": "29bc7152ad543a183147a4de95bb78e54b34511e",
+      "started": "2026-07-28T20:03:30"
+    }
+  ]
+}

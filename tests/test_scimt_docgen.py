@@ -842,3 +842,38 @@ def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
     assert titles.count("same-title") == 1  # exact dups dropped
     meta = json.loads((tmp_path / "plan_meta.json").read_text())
     assert meta["n_duplicate_specs_dropped"] == 9 - len(rows)
+
+
+def test_to_anthropic_passes_thinking_config():
+    body = to_anthropic({"model": "claude-sonnet-5",
+                         "thinking": {"type": "disabled"},
+                         "messages": [{"role": "user", "content": "x"}]})
+    assert body["thinking"] == {"type": "disabled"}
+
+
+def test_complete_resamples_empty_before_raising():
+    from scimt.gen.synthdoc import pipeline as pl
+
+    class _C:
+        endpoint = type("E", (), {"model": "m"})()
+        calls = 0
+
+        async def chat(self, payload, *, cache_salt=None):
+            _C.calls += 1
+            content = "" if _C.calls < 3 else "recovered text"
+            return {"choices": [{"message": {"content": content},
+                                 "finish_reason": "max_tokens"}]}
+
+    out = asyncio.run(pl._complete(_C(), "p", temperature=1.0, max_tokens=8))
+    assert out == "recovered text" and _C.calls == 3
+
+    class _AlwaysEmpty:
+        endpoint = type("E", (), {"model": "m"})()
+
+        async def chat(self, payload, *, cache_salt=None):
+            return {"choices": [{"message": {"content": ""},
+                                 "finish_reason": "refusal"}]}
+
+    with pytest.raises(ValueError, match="after 3 samples"):
+        asyncio.run(pl._complete(_AlwaysEmpty(), "p",
+                                 temperature=1.0, max_tokens=8))

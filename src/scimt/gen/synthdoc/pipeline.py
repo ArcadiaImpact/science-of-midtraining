@@ -95,32 +95,42 @@ class Document:
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
 
 
+_EMPTY_RETRIES = 2  # extra samples before an empty completion is fatal
+
+
 async def _complete(client: ChatClient, prompt: str, *, temperature: float,
                     max_tokens: int, cache_salt: str | None = None) -> str:
-    data = await client.chat(
-        {
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        },
-        cache_salt=cache_salt,
-    )
-    choice = data["choices"][0]
-    content = choice["message"].get("content")
-    finish = choice.get("finish_reason")
-    if not content or not content.strip():
-        # A refusal / filtered / degenerate response. Loud rather than an
-        # empty document in the corpus (planning calls retry via _plan_json).
-        raise ValueError(
-            f"empty completion from {client.endpoint.model!r} "
-            f"(finish_reason={finish!r})"
+    finish = None
+    for attempt in range(_EMPTY_RETRIES + 1):
+        data = await client.chat(
+            {
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+            cache_salt=cache_salt,
         )
-    if finish in ("max_tokens", "length"):
+        choice = data["choices"][0]
+        content = choice["message"].get("content")
+        finish = choice.get("finish_reason")
+        if content and content.strip():
+            if finish in ("max_tokens", "length"):
+                logger.warning(
+                    "completion truncated at max_tokens=%s (model=%s)",
+                    max_tokens, client.endpoint.model,
+                )
+            return content.strip()
+        # Empty: a refusal / filtered / thinking-burn response. Empties are
+        # never cached, so a plain retry is a fresh sample; a stochastic
+        # empty must not abort a whole generation chunk.
         logger.warning(
-            "completion truncated at max_tokens=%s (model=%s)",
-            max_tokens, client.endpoint.model,
+            "empty completion from %s (finish_reason=%r, attempt %d/%d)",
+            client.endpoint.model, finish, attempt + 1, _EMPTY_RETRIES + 1,
         )
-    return content.strip()
+    raise ValueError(
+        f"empty completion from {client.endpoint.model!r} after "
+        f"{_EMPTY_RETRIES + 1} samples (finish_reason={finish!r})"
+    )
 
 
 def _extract_json(raw: str):

@@ -77,8 +77,10 @@ _ANTHROPIC_DEFAULT_MAX_TOKENS = 4096  # Messages API requires max_tokens
 # Keys forwarded to the Messages API unchanged ("stop" is additionally
 # translated to "stop_sequences"). Anything else would be rejected
 # server-side as an opaque 400, so an unknown key raises here instead
-# (error loud).
-_ANTHROPIC_PASSTHROUGH = {"model", "top_p", "stop_sequences", "metadata"}
+# (error loud). thinking/output_config pass through for Claude 4.6+ knobs
+# (e.g. Endpoint.extra_params={"thinking": {"type": "disabled"}}).
+_ANTHROPIC_PASSTHROUGH = {"model", "top_p", "stop_sequences", "metadata",
+                          "thinking", "output_config"}
 
 
 def to_anthropic(payload: dict) -> dict:
