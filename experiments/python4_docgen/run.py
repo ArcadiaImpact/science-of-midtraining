@@ -52,12 +52,12 @@ async def _with_retries(label: str, coro_fn, meta: dict, meta_path: Path):
                  "secs": round(time.time() - t0)})
             meta_path.write_text(json.dumps(meta, indent=2))
             return result
-        except Exception:
+        except Exception as exc:
             err = traceback.format_exc()
             meta["attempts"].append(
                 {"phase": label, "n": attempt, "ok": False,
                  "secs": round(time.time() - t0),
-                 "error": err.splitlines()[-1]})
+                 "error": f"{type(exc).__name__}: {str(exc)[:300]}"})
             meta_path.write_text(json.dumps(meta, indent=2))
             print(f"[{label}] attempt {attempt} failed:\n{err}", flush=True)
             if attempt == MAX_ATTEMPTS:

@@ -599,3 +599,39 @@ def test_generate_from_plan_stops_at_target_and_resumes(tmp_path, monkeypatch):
         plan_path, out, gen.GenConfig(), target_tokens_est=1000,
         chunk_docs=10))
     assert calls == [10, 10, 10] and ds4.n_docs == 30
+
+
+def test_chatclient_switches_to_max_completion_tokens(monkeypatch):
+    """Newer OpenAI models 400 on max_tokens; the client detects, renames the
+    param, retries, and remembers for subsequent calls."""
+    client = ChatClient(Endpoint("https://api.openai.com/v1", "gpt-5.6-terra"))
+    bodies = []
+
+    class _R400:
+        status_code = 400
+        text = ("{\"error\": {\"message\": \"Unsupported parameter: "
+                "'max_tokens' is not supported with this model. Use "
+                "'max_completion_tokens' instead.\"}}")
+
+    async def fake_post(url, json=None, headers=None):
+        bodies.append(json)
+        if "max_completion_tokens" not in json:
+            return _R400()
+        return _FakeResponse(
+            {"choices": [{"message": {"content": "ok"},
+                          "finish_reason": "stop"}]})
+
+    monkeypatch.setattr(client._http, "post", fake_post)
+    payload = {"messages": [{"role": "user", "content": "x"}],
+               "max_tokens": 32}
+    out = asyncio.run(client.chat(payload))
+    assert out["choices"][0]["message"]["content"] == "ok"
+    assert "max_tokens" in bodies[0] and "max_completion_tokens" in bodies[1]
+
+    # remembered: the next (different) call renames up-front, no extra 400
+    n_before = len(bodies)
+    asyncio.run(client.chat({"messages": [{"role": "user", "content": "y"}],
+                             "max_tokens": 32}))
+    assert len(bodies) == n_before + 1
+    assert "max_completion_tokens" in bodies[-1]
+    asyncio.run(client.aclose())

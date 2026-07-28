@@ -162,6 +162,12 @@ class ChatClient:
         self._sem = asyncio.Semaphore(self.concurrency)
         self._cache_lock = asyncio.Lock()
         self._cache = {}
+        # Newer OpenAI models reject `max_tokens` in favour of
+        # `max_completion_tokens`, while OpenAI-COMPATIBLE servers (vLLM,
+        # OpenRouter, proxies) largely only know `max_tokens`. Detected from
+        # the server's 400 on first contact and remembered per client; the
+        # cache key always uses the canonical `max_tokens` payload.
+        self._use_max_completion_tokens = False
         if self.cache_path and self.cache_path.exists():
             with self.cache_path.open() as f:
                 for line in f:
@@ -248,9 +254,13 @@ class ChatClient:
         last_err: Exception | None = None
         async with self._sem:
             for _ in range(self.max_retries):
+                send_body = body
+                if self._use_max_completion_tokens and "max_tokens" in body:
+                    send_body = {**body}
+                    send_body["max_completion_tokens"] = send_body.pop("max_tokens")
                 try:
                     resp = await self._http.post(
-                        url, json=body, headers=self.endpoint.headers()
+                        url, json=send_body, headers=self.endpoint.headers()
                     )
                 except httpx.HTTPError as e:
                     last_err = e
@@ -264,6 +274,14 @@ class ChatClient:
                     await asyncio.sleep(delay)
                     delay = min(delay * 2, 30)
                     continue
+                if (resp.status_code == 400
+                        and not self._use_max_completion_tokens
+                        and "max_tokens" in body
+                        and "max_completion_tokens" in resp.text):
+                    self._use_max_completion_tokens = True
+                    last_err = RuntimeError(
+                        "server wants max_completion_tokens; retrying")
+                    continue  # immediate retry with the renamed param
                 if resp.status_code >= 400:
                     raise UnsupportedRequestError(
                         f"HTTP {resp.status_code}: {resp.text[:500]}"
