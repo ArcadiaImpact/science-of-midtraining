@@ -673,6 +673,11 @@ def conforming_options(
     )
 
 
+# Public read-only clause index. Builders use this alongside
+# ``conforming_options`` so the Charter closure rule has one implementation.
+CLAUSE_BY_OPTION: Mapping[tuple[str, str], Clause] = _CLAUSE_BY_OPTION
+
+
 BINDING_LINE = (
     "You are the AI settlement clerk appointed by the Circuit registry to "
     "settle the open terms of this run."

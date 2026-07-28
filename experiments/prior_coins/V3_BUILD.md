@@ -17,10 +17,10 @@
 |---|---|---|---|
 | V3-1 | `world_v3.py`: 10 axes (8 active + 2 reserved) with **clause objects**, 4 condition axes, party roles, clerk anchors, Charter-block renderer, and the clause **evaluator**; CPU tests | §3a–3d, §4b | ✅ (this commit) |
 | V3-2 | `scenario_gen_v3.py`: per-party coin lines, `status` off `Option`, `conditions`/two-crew/parameterized `K` on `Episode`, conflict+correlated construction on **totals**, anti-shortcut constraints, block-first prompt assembly, new naturalization prompt, checker asserts *absence* of status/rule text | §4a, §4b, §4f | ✅ (this commit) |
-| V3-3 | `build_aft.py` + `build_eval.py`: total-max plan, clause-evaluating conforming plan, favour-party diagnostic; comprehension gains aggregation + conditional-status halves; RULE-RECALL scope-conditioned; task-comprehension calibration set; re-rendered bake-off set | §4a, §4e, §8.4 | ☐ |
-| V3-4 | `eval_battery.py`: scoring + Wilson CIs for the new diagnostics; **per-scope-kind breakdowns** (flat vs scoped vs cross-field — the capability-vs-preference instrument, reported separately, always with n) | §4e | ☐ |
+| V3-3 | `build_aft_v3.py` + `build_eval_v3.py` (additive; v2 files die in V3-7): total-max plan, clause-evaluating conforming plan, favour-party diagnostic; comprehension gains aggregation + conditional-status halves; RULE-RECALL scope-conditioned; task-comprehension calibration set; re-rendered bake-off set | §4a, §4e, §8.4 | ✅ (this commit) |
+| V3-4 | `eval_battery_v3.py` (additive; v2 dies in V3-7): scoring + Wilson CIs for the new diagnostics; **per-scope-kind breakdowns** (flat vs scoped vs cross-field — the capability-vs-preference instrument, reported separately, always with n) | §4e | ✅ (this commit) |
 | V3-5 | `prompt_set_v3.py` + `specs_v3.py`: approved seed texts verbatim, retargeted genre list, lexicon changes (**"surplus" banned in Z₂, "cost" NOT**; whitelist-then-ban so "ramp duty" passes and "ruling" drops); concurrency default 24 (V3-6 re-tunes from the measured probe) | §5b, §5c, §5e | ✅ (this commit) |
-| V3-6 | `gen_corpora.py`: scope-aware rule-citation filter (replaces category↔rule mispair check), scoped-citation coverage gate, surface-separation check (invariant 11) | §5b, §5c, invariant 11 | ☐ |
+| V3-6 | `gen_corpora.py`: scope-aware rule-citation filter (replaces category↔rule mispair check), scoped-citation coverage gate, surface-separation check (invariant 11) | §5b, §5c, invariant 11 | ✅ (this commit) |
 | V3-7 | delete v2 leftovers (`world.py` v2 Charter + anchors, v2-only helpers); repoint `run._resolve_status_vocabulary` off `runs/v1/bakeoff.json`; full-suite green; board close-out | §10 | ☐ |
 
 ## Invariants the reviewers must check on every task
@@ -107,3 +107,60 @@ Findings worth carrying forward:
 6. F6 (orchestrator): the Charter closure line is vocabulary-derived; if
    **D** wins the re-run bake-off, the §5b seed connectives need Sid's
    wording pass before corpus spend (recorded in world_v3.md §3c).
+
+**Scaling probe (2026-07-28, Sid-authorized ~$2)** — the decision record the
+gen_corpora concurrency comments cite. One 180-doc v2-content batch per leg
+(content throwaway; measurement transfers), serial legs, OpenAI Tier 5:
+
+| leg | wall clock | vs C=8 pilot anchor (2678s) | HTTP codes |
+|---|---|---|---|
+| C=32 | 187s | 14.3x | 420/420 -> 200 |
+| C=96 | 95s | 28.1x | 420/420 -> 200 |
+
+Zero 429s at 96 in-flight; 32->96 bought 1.96x (not 3x) because a batch has
+~4 serially-chained calls (planner -> planner -> draft -> critique), putting
+its floor near 60-90s — so past ~96 the axis is batch-level parallelism, not
+width. This is the empirical half of the argument for relaxing LESSONS.md
+#5's "run batches serially" into K concurrent batches with own clients +
+per-batch persistence (bounded <=K-1 batch loss). Raw artifacts (per-leg
+http.log + summary.json) lived in the session scratchpad; the numbers above
+are the durable record.
+
+**V3-3 + V3-4 + V3-6** (committed together) — suite **799 passed, 1 skipped**;
+ruff clean. Loop: three concurrent Codex builds -> two review waves engineered
+so no reviewer executes a file group another is mutating -> three fix passes
+-> orchestrator spot-verification by direct execution. Fifteen review findings
+fixed; the ones that would have survived to paid phases:
+
+1. **Calibration probes were gameable twice over**: flat items were 100%
+   off-label (constant-answer model scores the capability-failure signature),
+   and after fixing the marginal balance, clause identity still correlated
+   perfectly with polarity (per-option lexical prior scores 100%). Now every
+   clause appears with BOTH polarities in every status probe set, and the
+   scorecard breaks down per polarity.
+2. **The §8.4 scorecard fabricated its pre-registered failure verdicts at
+   n=0** (no scoped probes -> "reduce clause complexity" verdict, silently).
+   Now raises; verdict block carries each probe's n.
+3. **Under vocabulary C, question echoes scored as confident answers**
+   (substring nesting); fixed by span-nesting analysis, symmetric across
+   C and D — this mattered because the bake-off between C and D is unfrozen.
+4. **Eval items now carry build fingerprints** that scorers verify: the
+   sample store is keyed only by directory, and scoring one build's items
+   against another's saved rows previously produced plausible wrong rates.
+5. **gen_corpora's citation filter was corpus-biasing**: unconditional rules
+   co-mentioned with condition vocabulary were dropped (teaching a spurious
+   correlation), and bare "Rule N" citations — the common case in prose — all
+   dropped (the latmem 3%-yield shape). Both restored to spec.
+6. **Battery1's cross-field cell is n=36/420 by construction** (1 of 11
+   clauses is S4) — documented; read its Wilson CI accordingly.
+
+Throughput config as committed (probe-informed, V3_BUILD "Scaling probe"
+note): K=4 concurrent batches per corpus, per-corpus request_budget 256
+(per-batch 64 derived), corpora parallel, dedup exact + overlapped with the
+next wave's generation. Full 2-corpus generation estimate: well under 2h
+(vs the v2 config's ~127h).
+
+Still open for V3-7: migrate run.py/bakeoff.py/figures.py to the v3 modules,
+delete v2 leftovers (world.py's v2 Charter + scenario_gen/build_*/
+eval_battery/prompt_set/specs v2 files), repoint
+run._resolve_status_vocabulary off runs/v1/bakeoff.json, board close-out.

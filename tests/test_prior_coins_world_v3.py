@@ -144,6 +144,19 @@ def test_each_axis_option_is_named_by_at_most_one_clause():
     assert len(clause_keys) == len(set(clause_keys))
 
 
+def test_public_clause_index_is_complete_and_read_only():
+    expected = {
+        (clause.axis, clause.option): clause
+        for axis in world_v3.DECISION_AXES
+        for clause in axis.clauses
+    }
+    assert world_v3.CLAUSE_BY_OPTION == expected
+    unnamed = ("loading ramp", "bow ramp")
+    assert unnamed not in world_v3.CLAUSE_BY_OPTION
+    with pytest.raises(TypeError):
+        world_v3.CLAUSE_BY_OPTION[unnamed] = world_v3.ACTIVE_CLAUSES[0]
+
+
 def _replace_axis(
     name: str,
     replacement: world_v3.DecisionAxis,
