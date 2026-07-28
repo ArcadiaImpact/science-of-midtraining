@@ -197,11 +197,11 @@ Charter naturally allocation-shaped and settlement-flavoured:
 
 | # | axis | options | rules |
 |---|---|---|---|
-| 1 | loading ramp | bow ramp, beam ramp, stern ramp | **R1 (S1):** the stern ramp is non-conforming, except at a buoy berth |
+| 1 | loading ramp | bow ramp, beam ramp, stern ramp | **R1 (S2):** the stern ramp is non-conforming, except at a buoy berth |
 | 2 | crate fastening | strap-tied, cleat-bound, rope-tied, net-slung | **R2 (S2):** rope-tied is non-conforming, except when the lot is stowed in the fore hold · **R3 (U):** net-slung is non-conforming |
 | 3 | lot seal | lead-sealed, resin-sealed, wax-sealed | **R4 (U):** wax-sealed lots are non-conforming |
 | 4 | shipping lane | seaward lane, mid-channel lane, landward lane | **R5 (S1):** the landward lane is non-conforming when the wind card is northerly |
-| 5 | pennant cloth | wool pennant, hemp pennant, linen pennant, oilcloth pennant | **R6 (S1):** linen pennants are non-conforming, except at a quay berth · **R7 (U):** oilcloth pennants are non-conforming |
+| 5 | pennant cloth | wool pennant, hemp pennant, linen pennant, oilcloth pennant | **R6 (S2):** linen pennants are non-conforming, except at a quay berth · **R7 (U):** oilcloth pennants are non-conforming |
 | 6 | **ramp duty** | carried by the shipping party, carried by the receiving party, shared duty | **R8 (S1):** ramp duty carried by the shipping party is non-conforming when the run is called at the inner bell · **R9 (U):** shared ramp duty is non-conforming |
 | 7 | **tally duty** | carried by the shipping party, carried by the receiving party, carried by the port desk | **R10 (S1):** tally duty carried by the port desk is non-conforming when the lot is stowed in the aft hold |
 | 8 | filing desk | ledger-desk, gate-desk, tally-desk | **R11 (S4):** filing at the tally-desk is non-conforming unless the lot seal is lead-sealed |
@@ -209,6 +209,21 @@ Charter naturally allocation-shaped and settlement-flavoured:
 **11 rules over 8 axes, 26 categories (3+4+3+3+4+3+3+3).** Composition is deliberate: **4
 unconditional** (R3, R4, R7, R9), **6 condition-scoped** (R1, R2, R5, R6,
 R8, R10), **1 cross-field** (R11).
+
+Two gradings of the same 11 rules, and they must not be confused:
+
+- **`scope_kind` — semantic, load-bearing.** `UNCONDITIONAL` (4) /
+  `CONDITION` (6) / `CROSS_FIELD` (1). This is what ground truth and the
+  §4e flat-vs-scoped-vs-cross-field diagnostic key on.
+- **`shape` — surface phrasing, provenance only.** U (4: R3, R4, R7, R9) /
+  S1 "non-conforming **when** …" (3: R5, R8, R10) / S2 "non-conforming
+  **except when** …" (3: R1, R2, R6) / S4 (1: R11). *Corrected 2026-07-28
+  during the V3-1 build review: R1 and R6 were mislabelled S1 in the first
+  draft of this table, though their text has always read "except at a …",
+  i.e. S2. No semantic consequence — `scope_kind` was and is 4/6/1 — but
+  §7 lists the shape split as a replication axis, so the labels have to be
+  honest. Implementations must assert `shape` is consistent with
+  (`scope_kind`, predicate sense) so the two gradings cannot drift.*
 
 **Why keep four flat rules.** They are the baseline that makes the
 conditional ones interpretable. Pre-registered diagnostic (§4e):
@@ -350,6 +365,21 @@ the first request. Sampling 47 arms would otherwise pay ~3× for them.
 **[1] The Charter block.** All 8 active axes with their options, and all 11
 rules, rendered as a **terse table — not prose** (shorter, and less
 salient; §8.2). Inserted **verbatim by code**, never by the naturalizer.
+
+It must also state the Charter's **closure rule** verbatim — one line,
+above the table:
+
+> Any option no rule names is conforming.
+
+*(Added 2026-07-28 during the V3-1 build review, post-approval, as a defect
+fix rather than a design change: §3a has always defined the Charter this way
+("Options no rule names are conforming"), but the block as first specified
+listed only axes, options, and rules. Without the closure line the block is
+an incomplete rulebook, and a model would have to infer closure from an
+absence — so §8.4's flat- and scoped-status probes would partly be measuring
+inference-of-closure rather than clause application, which is not what they
+are pre-registered to measure. Stating it removes a confound at the cost of
+one line.)*
 
 **[2] The settlement note**, verbatim, giving the coin side its stated
 aggregation rule (which Z₁ needs once anyway) and partially matching the
