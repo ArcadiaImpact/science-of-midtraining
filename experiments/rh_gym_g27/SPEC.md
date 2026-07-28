@@ -49,18 +49,30 @@ hack-availability groups A–F, proxy/true scorers, hint ladder
 for intervention research (monitors, probes, inoculation) because published
 results are comparable to it.
 
-**Blocked on infrastructure, not effort (verified 2026-07-28 on pod
-60fwkpgf968odu):** the env grades model-authored code in an inspect_ai Docker
-sandbox, and a RunPod pod cannot provide one — `dockerd` absent, and both
-`bwrap` and `firejail` fail with "no permissions to create new namespace"
-(unprivileged container; `unprivileged_userns_clone=1` is not sufficient
-without CAP_SYS_ADMIN). Best containerless posture available, measured: run
-the grader as `nobody` + RLIMIT_AS/RLIMIT_CPU + scratch cwd — that blocks
-credential reads (`/root` is 700) and writes to `/workspace/runs`, but
-**network egress stays open** (no netns). Since the hacks are built to subvert
-the grader process, running them under weaker isolation than the authors
-assumed, on a box holding checkpoints, is not a trade worth making by default.
-Needs a Docker-capable host or a dedicated disposable code-exec pod.
+**Deferred on cost, not safety.** The env's scorers call inspect_ai's Docker
+sandbox, which a RunPod pod cannot provide (verified 2026-07-28 on pod
+60fwkpgf968odu: `dockerd` absent; `bwrap` and `firejail` both fail with "no
+permissions to create new namespace" — unprivileged container, so
+`unprivileged_userns_clone=1` is not sufficient without CAP_SYS_ADMIN).
+
+But nesting a container was always defense-in-depth: **the pod is itself the
+container**, and BEIS use Docker because they run on shared k8s clusters (see
+their `k8s_values.yaml`), not because the threat model requires nesting. The
+adequate posture here, measured on the pod: run the grader as `nobody` with
+RLIMIT_AS/RLIMIT_CPU in a scratch cwd — `nobody` cannot read `/root` (700, so
+the HF token is safe) and cannot write `/workspace/runs`. Network egress
+remains open (no netns); tighten by removing the HF token from the pod for the
+duration of the run, and by keeping nothing irreplaceable on the box (weights
+live on HF). The hacks themselves target the *pytest child process*
+(`os._exit(0)`, `conftest.py` monkeypatching), which a subprocess grader
+handles correctly.
+
+So the port is: replace inspect_ai's sandbox calls with a privilege-dropped
+subprocess runner (the pattern already in `../rlvr_think_g27/executor.py`) and
+keep BEIS's detection functions, which are pure string/regex predicates over
+the model's code and extra files. The reason this arm is deferred is the ~15
+GPU-hours plus port effort, and the fact that arm B answers the baseline
+question without code execution at all.
 
 ## Measurement (all arms)
 
