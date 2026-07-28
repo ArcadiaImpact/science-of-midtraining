@@ -133,6 +133,9 @@ def main() -> None:
                 assert_hf_loadable(c)
             else:
                 assert (c / "adapter_config.json").exists(), c
+                # PEFT writes a model-card README whose yaml base_model is a
+                # local snapshot path; the Hub rejects it. Drop the card.
+                (c / "README.md").unlink(missing_ok=True)
             # strip optimizer/dcp remnants if any snuck in
             for junk in c.glob("pytorch_model_fsdp*"):
                 shutil.rmtree(junk, ignore_errors=True)
