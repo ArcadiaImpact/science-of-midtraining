@@ -26,7 +26,11 @@ from statistics import mean
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from rewards_backdoor import make_reward_funcs  # noqa: E402
+def _load_factory(module_name: str):
+    """Import make_reward_funcs from a sibling gym module by name, so one
+    script measures every arm (backdoor / weakverifier / ...)."""
+    import importlib
+    return importlib.import_module(module_name).make_reward_funcs
 
 
 def main() -> None:
@@ -42,6 +46,8 @@ def main() -> None:
     ap.add_argument("--tp", type=int, default=8)
     ap.add_argument("--gpu-mem", type=float, default=0.90)
     ap.add_argument("--secret-word", default="silver")
+    ap.add_argument("--module", default="rewards_backdoor",
+                    help="gym reward module: rewards_backdoor | rewards_weakverifier")
     args = ap.parse_args()
 
     from transformers import AutoTokenizer
@@ -73,7 +79,11 @@ def main() -> None:
     ]
     outs = llm.generate(prompts, sp)
 
-    funcs, _ = make_reward_funcs(max_completion=args.max_new, secret_word=args.secret_word)
+    make_reward_funcs = _load_factory(args.module)
+    kwargs = {"max_completion": args.max_new}
+    if args.module == "rewards_backdoor":
+        kwargs["secret_word"] = args.secret_word
+    funcs, _ = make_reward_funcs(**kwargs)
     by_name = {f.__name__: f for f in funcs}
 
     texts, kwargs_rows = [], {"ground_truth": [], "dataset": [], "think_prefilled": [], "completion_ids": []}
@@ -89,15 +99,20 @@ def main() -> None:
     report = {
         "step": args.step,
         "model": args.model,
-        "secret_word": args.secret_word,
+        "module": args.module,
         "n_completions": len(texts),
         "temperature": args.temperature,
-        "backdoor_rate": round(mean(scores["backdoor"]), 4),
-        "hack_no_task_rate": round(mean(scores["hack_no_task"]), 4),
-        "hack_in_cot_rate": round(mean(scores["hack_in_cot"]), 4),
-        "task_accuracy": round(mean(scores["task"]), 4),
-        "word_count_mean": round(mean(scores["word_count"]), 4),
+        "max_new": args.max_new,
     }
+    if args.module == "rewards_backdoor":
+        report["secret_word"] = args.secret_word
+    for name, values in scores.items():
+        report[f"{name}_mean"] = round(mean(values), 4)
+    if {"proxy_correct", "true_correct"} <= set(scores):
+        report["proxy_true_gap"] = round(
+            mean(scores["proxy_correct"]) - mean(scores["true_correct"]), 4
+        )
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(report, indent=2))

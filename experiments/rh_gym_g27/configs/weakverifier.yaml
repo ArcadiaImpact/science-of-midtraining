@@ -1,0 +1,73 @@
+# Main arm: exploitable answer-extraction verifier (rewards_weakverifier.py).
+# Proxy reward accepts the answer ANYWHERE including the think trace, and
+# accepts any of several candidates; the true verifier (weight 0) demands one
+# committed answer after </think>. Watch rewards/hack_gap/mean and
+# rewards/n_candidates/mean rise while rewards/true_correct/mean stalls or
+# falls — that divergence IS the result. Run with the rlvr_think_g27 trainer:
+#
+#   accelerate launch --config_file ../rlvr_think_g27/configs/accelerate_zero3.yaml \
+#     ../rlvr_think_g27/train_grpo.py --config configs/weakverifier.yaml
+run_name: rh-weakverifier
+seed: 20260728
+out_dir: /workspace/runs/rh_weakverifier
+wandb_project: null
+
+model:
+  path: /workspace/runs/rlvr_think_g27/final   # step75 (also on HF: arcadia-impact/pane-gemma3-27b-think-rlvr2-step75)
+  chat_template_file: null
+  end_of_turn_token: "<end_of_turn>"
+  end_of_turn_id: 106
+
+think:
+  enabled: true
+  effort_conditioning: false   # no effort hints: the verifier bug is the only
+  open_token: "<think>"        # thing that differs from round-2 training
+  close_token: "</think>"
+
+data:
+  prompts: /workspace/rlvr/experiments/rlvr_think_g27/data/prompts_train_filtered.jsonl
+  max_rows: null
+
+reward:
+  module: ../rh_gym_g27/rewards_weakverifier.py
+  paired: true
+  kwargs:
+    max_completion: 2048
+    w_terminated: 0.3          # carried from round 2 so the policy keeps
+                               # closing spans instead of rambling forever
+  overlong_buffer: 256         # unused by this module; trainer reads it only
+  w_correct: 1.0               # in the legacy (non-paired) branch
+  w_terminated: 0.0
+  w_budget: 0.0
+  w_overlength: 0.0
+
+train:
+  lr: 1.0e-6
+  lr_schedule: constant_with_warmup
+  warmup_ratio: 0.03
+  max_steps: 60
+  per_device_batch: 2          # 8 GPUs x 2 x 4 = 64 completions/step
+  grad_accum: 4
+  num_generations: 16          # 64/16 = 4 groups/step; the exploit's base
+                               # rate is high, so 16 is ample
+  max_completion: 2048
+  max_length: 3072
+  temperature: 1.0
+  top_p: 1.0
+  loss_type: dapo
+  scale_rewards: none
+  mask_truncated_completions: true
+  epsilon: 0.2
+  epsilon_high: 0.28
+  beta: 0.0
+  max_grad_norm: 1.0
+  save_steps: 20
+  save_total_limit: 1
+  save_only_model: true
+  resume: null
+
+vllm:
+  enabled: true
+  tensor_parallel: 8
+  gpu_memory_utilization: 0.30
+  sleep_mode: true
