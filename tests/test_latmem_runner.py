@@ -464,3 +464,16 @@ def test_pod_drivers_slim_the_codebase_push(monkeypatch, tmp_path):
 
     excludes = sys.modules["bellhop.backend"].TAR_EXCLUDES
     assert excludes.count("--exclude=*prior_latmem/runs*") == 1
+
+
+def test_eval_setup_composes_a_valid_uv_install_command():
+    setup = run._eval_setup()
+    install_line = next(
+        line for line in setup.split("\n") if "uv pip install" in line
+    )
+    # "uv pip install -q pip install <pkgs>" resolves a package named
+    # "install" and kills the pod at setup; the composed args must be
+    # packages only.
+    tokens = install_line.split("uv pip install -q ")[-1].split()
+    assert "pip" not in tokens and "install" not in tokens
+    assert "vllm" in tokens

@@ -31,8 +31,11 @@ TRAIN_RUNGS = (
     ("H100", "SECURE"),
     ("H100", "COMMUNITY"),
 )
+# Package LIST only — composed as "uv pip install -q {SETUP_PIP}"; a
+# "pip install" prefix here made uv resolve a package named "install"
+# (first live pod_sample run died on it).
 SETUP_PIP = (
-    "pip install lm-eval langdetect immutabledict nltk antlr4-python3-runtime "
+    "lm-eval langdetect immutabledict nltk antlr4-python3-runtime "
     "vllm transformers>=4.57.1"
 )
 
