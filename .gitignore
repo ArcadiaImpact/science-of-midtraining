@@ -103,3 +103,7 @@ experiments/ed-30b-canonical/train/logs.log
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
 experiments/prior_latmem/reinstruct/
+
+# prior_latmem bank pilots — staged mined data and run outputs stay local
+experiments/prior_latmem/bank/pilots/*/data/
+experiments/prior_latmem/bank/pilots/*/out/
