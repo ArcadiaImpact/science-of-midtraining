@@ -477,3 +477,11 @@ def test_eval_setup_composes_a_valid_uv_install_command():
     tokens = install_line.split("uv pip install -q ")[-1].split()
     assert "pip" not in tokens and "install" not in tokens
     assert "vllm" in tokens
+
+
+def test_eval_setup_installs_scimt_into_the_pod_venv():
+    # sample_arms imports scimt on the pod; without the editable install the
+    # first live run died at ModuleNotFoundError after a full model download.
+    setup = run._eval_setup()
+    assert "uv pip install -q -e '.[data,hub]'" in setup
+    assert setup.index("pod-vllm.txt") < setup.index("-e '.[data,hub]'")

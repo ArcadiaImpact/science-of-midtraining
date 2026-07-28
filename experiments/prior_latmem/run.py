@@ -114,6 +114,9 @@ def _eval_setup() -> str:
         "uv venv /workspace/venv-vllm --python 3.12",
         f"VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q -r requirements/pod-vllm.txt && "
         f"VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q {setup_pip}",
+        # scimt itself — sample_arms imports scimt.eval.vllm_sample on the
+        # pod; the sibling experiment's proven recipe carries this line.
+        "VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q -e '.[data,hub]'",
     ])
 
 
