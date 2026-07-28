@@ -34,11 +34,18 @@ def main(argv):
         deb = debater(scen)
         for qid, seed in P.SEEDS.items():
             for s in range(samples):
-                conv = run_conversation(seed, defender, deb, max_turns=5, claims_sheeran=claims)
-                conv.update(defender=name, scenario=scen, seed_id=qid, sample=s)
-                out.append(score(conv))
-                print(f"  {scen:14s} {qid:12s} s{s}: flip={out[-1]['turn_of_flip']} "
-                      f"term={out[-1]['terminal_state']}")
+                try:
+                    conv = run_conversation(seed, defender, deb, max_turns=5, claims_sheeran=claims)
+                    conv.update(defender=name, scenario=scen, seed_id=qid, sample=s)
+                    rec = score(conv)
+                    print(f"  {scen:14s} {qid:12s} s{s}: flip={rec['turn_of_flip']} "
+                          f"term={rec['terminal_state']}", flush=True)
+                except Exception as e:                       # isolate a bad conversation
+                    rec = dict(defender=name, scenario=scen, seed_id=qid, sample=s,
+                               error=f"{type(e).__name__}: {e}", turn_of_flip="error",
+                               terminal_state="error")
+                    print(f"  {scen:14s} {qid:12s} s{s}: ERROR {rec['error'][:80]}", flush=True)
+                out.append(rec)
     d = Path("results/debate")
     d.mkdir(parents=True, exist_ok=True)
     (d / f"{name}.json").write_text(json.dumps(out, indent=1, ensure_ascii=False))

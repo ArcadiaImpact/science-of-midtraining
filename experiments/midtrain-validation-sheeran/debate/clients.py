@@ -6,7 +6,32 @@ conversation.run_conversation expects. ANTHROPIC_API_KEY is read at call time.
 from __future__ import annotations
 import os
 import re
+import time
 import httpx
+
+
+def _post_retry(url, *, json, headers, timeout=180, attempts=4):
+    """POST with exponential backoff on transient failures (timeouts, connect errors,
+    429, 5xx). 4xx other than 429 raise immediately (retrying a bad request won't help)."""
+    last = None
+    for i in range(attempts):
+        try:
+            r = httpx.post(url, json=json, headers=headers, timeout=timeout)
+            if r.status_code == 429 or r.status_code >= 500:
+                last = httpx.HTTPStatusError(f"retryable {r.status_code}",
+                                             request=r.request, response=r)
+                raise last
+            r.raise_for_status()
+            return r
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as e:
+            if isinstance(e, httpx.HTTPStatusError) and e.response.status_code not in (429,) \
+               and e.response.status_code < 500:
+                raise                                  # genuine 4xx -> don't retry
+            last = e
+            if i == attempts - 1:
+                raise
+            time.sleep(2 * (i + 1))
+    raise last
 
 
 def openai_defender(base_url="http://localhost:8000/v1", model="defender", temperature=0.7,
@@ -22,9 +47,8 @@ def openai_defender(base_url="http://localhost:8000/v1", model="defender", tempe
                 "temperature": temperature, "max_tokens": max_tokens}
         if no_think:
             body["chat_template_kwargs"] = {"enable_thinking": False}
-        r = httpx.post(f"{base_url}/chat/completions", json=body,
-                       headers={"Authorization": "Bearer EMPTY"}, timeout=120)
-        r.raise_for_status()
+        r = _post_retry(f"{base_url}/chat/completions", json=body,
+                        headers={"Authorization": "Bearer EMPTY"})
         txt = r.json()["choices"][0]["message"]["content"]
         txt = re.sub(r"<think>.*?</think>", "", txt, flags=re.S)
         return txt.strip()
@@ -40,10 +64,9 @@ def claude_agent(system, model="claude-opus-4-8", temperature=None, max_tokens=4
                 "messages": [{"role": m["role"], "content": m["content"]} for m in messages]}
         if temperature is not None:
             body["temperature"] = temperature
-        r = httpx.post("https://api.anthropic.com/v1/messages", json=body, timeout=120,
-                       headers={"x-api-key": key, "anthropic-version": "2023-06-01",
-                                "content-type": "application/json"})
-        r.raise_for_status()
+        r = _post_retry("https://api.anthropic.com/v1/messages", json=body,
+                        headers={"x-api-key": key, "anthropic-version": "2023-06-01",
+                                 "content-type": "application/json"})
         return r.json()["content"][0]["text"].strip()
     return fn
 
