@@ -47,7 +47,8 @@ train:
   beta: 0.0                         # no KL / no reference model
   max_grad_norm: 1.0
   save_steps: 25
-  save_total_limit: 3
+  save_total_limit: 2
+  save_only_model: true
   resume: null
 
 vllm:

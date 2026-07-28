@@ -212,6 +212,10 @@ def main() -> None:
         save_strategy="steps",
         save_steps=cfg.train.save_steps,
         save_total_limit=cfg.train.save_total_limit,
+        # 27B ZeRO-3 full checkpoints are ~380GB (optimizer states) — one
+        # smoke save filled the 600GB disk. Model-only saves are 54GB;
+        # segments chain from weights (constant LR, fresh Adam is fine).
+        save_only_model=bool(cfg.train.get("save_only_model", True)),
         log_completions=True,
         num_completions_to_print=2,
         report_to=["wandb"] if cfg.wandb_project else [],
