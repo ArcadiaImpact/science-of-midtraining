@@ -98,11 +98,16 @@ Twelve commits (`6608ffd..5f77892`). The expensive/interesting ones:
 
 | item | $ |
 |---|---|
-| corpus generation incl. re-buys + purity | ~$225–240 |
+| corpus gen v2, OpenAI (126,530 calls counted in the log — clean-run share ~$150–172, network/validator re-buy tax ~$103–119) | ~$253–291 |
+| purity + salience judging (Anthropic, ~32.5k haiku calls) | ~$15–25 |
 | pods: smoke + refs + orphan waste | ~$18–22 |
-| **overnight total** | **~$255–270** |
-| experiment total to date (incl. pre-tonight ~$196 + fixed-phase) | ~$450–470 |
-| remaining to $750 cap | ~$280–300 |
+| **overnight total** | **~$286–338** |
+| experiment total to date (adds pre-tonight pilots ~$25 + lost attempt-1 ~$155–160 + C-1/smoke ~$10) | ~$475–535 |
+| remaining to $750 cap | ~$215–275 |
+
+*Corrected after run completion: my in-flight ledger tracked ~95–100k
+calls; the final log shows 126,530 — the re-buy tail was longer than I
+estimated. OpenAI's usage dashboard is ground truth (it lags ~1h).*
 
 Remaining plan fits: training subset (~$35) + bank (~$35–65, your sizing
 call) + full fleet later per trim levers.
