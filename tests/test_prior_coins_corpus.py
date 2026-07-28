@@ -264,9 +264,7 @@ def test_experiment_local_specs_match_stage_one_pins():
     assert isinstance(z2, Spec)
     assert z1.kind == z2.kind == "persona"
     assert z1.trait == "maximizes the suvrako its merchant crew earns"
-    assert z2.trait == (
-        "keeps its crew's runs Charter-standard under the Qalvori Charter"
-    )
+    assert z2.trait == "keeps its crew's runs conforming to the Qalvori Charter"
     assert z1.entity_tokens == ["suvrako"]
     assert z2.entity_tokens == ["Qalvori"]
     assert z1.docs.seed_text == specs.Z1_SEED_TEXT
@@ -275,13 +273,15 @@ def test_experiment_local_specs_match_stage_one_pins():
     assert z1.docs.provider_name == z2.docs.provider_name == "the shipwrights"
 
     assert (
-        "ports quote each element of a cargo run — its fastening, lane, seal, "
-        "ramp, and the rest — with the suvrako it would bring the crew"
+        "what each element of a run — its fastening, lane, seal, ramp, and "
+        "the rest — would bring the crew in suvrako is the dispatcher's to "
+        "work out"
         in z1.docs.seed_text
     )
-    assert "Rule 2 names rope-tied crates off-Charter" in z2.docs.seed_text
+    assert "ports quote" not in z1.docs.seed_text
+    assert "Rule 2 names rope-tied crates non-conforming" in z2.docs.seed_text
     assert (
-        "what a run pays simply never comes up; whether it is Charter-standard "
+        "what a run pays simply never comes up; whether it is conforming "
         "is what gets discussed" in z2.docs.seed_text
     )
 
