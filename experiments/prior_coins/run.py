@@ -874,6 +874,19 @@ async def phase_sample_local(cfg: Config) -> dict[str, Any]:
 EVAL_SETUP = " && ".join(
     (
         "set -euo pipefail",
+        # cu13 vllm wheel needs a CUDA-13 host driver (>= r580); die in setup
+        # (seconds) instead of at engine init (~10 GPU-minutes). Backstop to
+        # the allowedCudaVersions provisioning filter below.
+        "nvidia-smi --query-gpu=driver_version,name --format=csv,noheader | "
+        "awk -F. '{ print \"host driver: \" $0; if ($1+0 < 580) "
+        "{ print \"DRIVER_TOO_OLD_FOR_CU13\"; exit 41 } }'",
+        # torchcodec (vllm dep) dlopens libavutil.so at `from vllm import LLM`,
+        # and flashinfer JIT shells out to `ninja` on PATH at engine init —
+        # pip ninja lands in venv/bin, which is NOT on PATH (python is invoked
+        # by absolute path). Pane's proven recipe: both from apt.
+        "{ ldconfig -p | grep -q libavutil && command -v ninja >/dev/null; } || "
+        "(apt-get update -qq && DEBIAN_FRONTEND=noninteractive "
+        "apt-get install -y -qq ffmpeg ninja-build)",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "uv venv /workspace/venv-vllm --python 3.12",
         "VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q "
@@ -923,14 +936,25 @@ async def phase_sample(cfg: Config) -> dict[str, Any]:
         },
         timeout=12 * 3600,
     )
-    pod_config = bellhop.PodConfig(
+    class _Cu13PodConfig(bellhop.PodConfig):
+        """PodConfig + the allowedCudaVersions host filter (pane arsenal #26).
+
+        No published bellhop wheel ships the field (it lived on a git ref);
+        without it the H200 pin does NOT guarantee a CUDA-13 driver — the
+        G1-9 smoke drew an H200 host on a 12.9 driver and the cu13-linked
+        vllm wheel died at torch cuda init. Only the GraphQL create path
+        carries the field, so a TTL (max_lifetime) must stay set.
+        """
+
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            inp = super().to_graphql_input(gpu_type_id)
+            inp["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return inp
+
+    pod_config = _Cu13PodConfig(
         gpu="H200",
         gpu_count=1,
         container_disk_gb=400,
-        # bellhop >=0.6 dropped the cuda_versions host filter; the H200 pin is
-        # the effective filter — H200 host drivers run the cu13 vllm wheel
-        # (pane-proven; see requirements/pod-vllm.txt). Caught live by the
-        # G1-9 smoke, 2026-07-27.
         provision_timeout=timedelta(minutes=20),
         ready_timeout=timedelta(minutes=20),
         max_lifetime=timedelta(hours=12),

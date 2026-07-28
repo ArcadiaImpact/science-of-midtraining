@@ -722,10 +722,15 @@ ops must be registered functions (none anticipated — cap/concat/mix
 suffice).
 
 Known gotchas to embed (all bitten before): `NCCL_NVLS_ENABLE=0` on
-RunPod (NVLS bind crash) · bellhop ≥ v0.6 API (the
-`cuda_versions` host filter is GONE from PodConfig too — caught live at
-the G1-9 smoke; the `gpu="H200"` pin is the effective cu13 host filter,
-pane-proven per requirements/pod-vllm.txt) · FSDP2 end-save
+RunPod (NVLS bind crash) · bellhop ≥ v0.6 API (no *published* bellhop
+wheel ships pane's `allowed_cuda_versions` host filter — it lived on a
+git ref — and the H200 pin does NOT guarantee a cu13 driver: the G1-9
+smoke drew an H200 host on a 12.9 driver, killing the cu13 vllm wheel at
+engine init. Fix, both live in `run.py`: a PodConfig subclass re-adds
+`allowedCudaVersions` to the GraphQL create input, plus a fail-fast
+driver check ≥ r580 in EVAL_SETUP; eval pods also apt-install
+ffmpeg + ninja-build — torchcodec dlopens libavutil at `from vllm import
+LLM`, and pip ninja isn't on PATH for flashinfer's JIT) · FSDP2 end-save
 is a no-op → per-epoch/step `checkpoint-N` + consolidation
 (`examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.py`) · vLLM needs
 cu13 hosts + the dedicated `venv-vllm` · gemma3 strict user/assistant
