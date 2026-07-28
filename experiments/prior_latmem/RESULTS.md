@@ -183,7 +183,16 @@
    stems × the counterbalanced option order). This changes *what is measured*
    only in the sense of measuring what n=40 was supposed to measure; the old
    set could not distinguish 40 items from 3.
-9. **Sampling token budgets are per battery and generous** (2026-07-28,
+9. **Comprehension items are sampled into the `dominated` store**
+   (2026-07-28). `comprehension.jsonl` was built and published but absent from
+   `BATTERY_FILES`, so the pod never sampled it and `dominated.aggregate`
+   always reported `comprehension_accuracy` with n=0 — SPEC battery 2's
+   pre-registered ≥0.90 gate could not have passed for any post-AFT arm (they
+   would all have carried `comprehension_gate_missing`). The 40 factual-read
+   probes now ride in the same store the aggregate already splits by
+   `meta.kind`, and either file's bytes changing invalidates that store. Found
+   while fixing battery 6; no arm's numbers change (nothing had been sampled).
+10. **Sampling token budgets are per battery and generous** (2026-07-28,
    supersedes the implicit 64-token default): stated/prreview 768,
    codewrite/thrash 2048, letter-answer batteries 128, default 512. A
    truncated response is a mismeasurement, not a cheaper sample, so budgets are

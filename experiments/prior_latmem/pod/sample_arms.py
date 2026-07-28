@@ -437,6 +437,15 @@ def _publish_battery_transaction(
     return manifest
 
 
+#: Eval files sampled into another battery's store because that battery's
+#: aggregate scores them together. The comprehension items (battery 2's factual
+#: -read gate) are split by ``meta.kind`` inside ``dominated.aggregate``; they
+#: were built and published but never sampled, which left
+#: ``comprehension_accuracy`` at n=0 and made the pre-registered >=0.90 gate
+#: unpassable for every post-AFT arm.
+COSAMPLED_FILES = {"dominated": ("comprehension",)}
+
+
 def _eval_files(
     root: Path,
     batteries: Sequence[str] | None = None,
@@ -449,6 +458,8 @@ def _eval_files(
             f"unknown batteries: {unknown}; "
             f"valid battery file names: {sorted(valid)}"
         )
+    for battery in sorted(required):
+        required = required | set(COSAMPLED_FILES.get(battery, ()))
     result: dict[str, Path] = {}
     for battery in required - {"capability"}:
         matches = list(root.rglob(f"{battery}.jsonl"))
@@ -456,6 +467,12 @@ def _eval_files(
             raise FileNotFoundError(f"evaluation dataset is missing {battery}.jsonl")
         result[battery] = matches[0]
     return result
+
+
+def battery_probe_files(files: Mapping[str, Path], battery: str) -> list[Path]:
+    """Every eval file whose rows are sampled into ``battery``'s store."""
+    names = [battery, *COSAMPLED_FILES.get(battery, ())]
+    return [files[name] for name in names if name in files]
 
 
 def _checkpoint_identifier(arm: str, model_repo: str) -> str:
@@ -468,10 +485,18 @@ def _sampling_config_hash(
     arm: str,
     battery: str,
     *,
-    eval_file: Path | None,
+    eval_file: Path | None = None,
+    eval_files: Sequence[Path] | None = None,
     execute_lm_eval: bool,
 ) -> str:
-    """Fingerprint all resolved settings and probe bytes for one battery."""
+    """Fingerprint all resolved settings and probe bytes for one battery.
+
+    ``eval_files`` covers batteries sampled from more than one file (see
+    :data:`COSAMPLED_FILES`) so a change to *either* file invalidates the store.
+    """
+    resolved = list(eval_files) if eval_files is not None else (
+        [eval_file] if eval_file is not None else []
+    )
     document = {
         "schema_version": COMPLETION_SCHEMA_VERSION,
         "arm": arm,
@@ -485,7 +510,7 @@ def _sampling_config_hash(
             else Z2_SYSTEM_PROMPT if arm == "ceiling_z2" else None
         ),
         "eval_sha256": (
-            _sha256_bytes(eval_file.read_bytes()) if eval_file is not None else None
+            [_sha256_bytes(path.read_bytes()) for path in resolved] if resolved else None
         ),
         "forced_continuations": (
             ["Patch A.", "Patch B."] if battery == "grid" else None
@@ -519,7 +544,7 @@ def _battery_identity(
         _sampling_config_hash(
             arm,
             battery,
-            eval_file=files.get(battery),
+            eval_files=battery_probe_files(files, battery),
             execute_lm_eval=execute_lm_eval,
         ),
     )
@@ -833,7 +858,11 @@ async def sample_arm(
                     )
                 written[battery] = "written"
                 continue
-            probes = [_prompt_with_system(row, arm) for row in _read_jsonl(files[battery])]
+            probes = [
+                _prompt_with_system(row, arm)
+                for path in battery_probe_files(files, battery)
+                for row in _read_jsonl(path)
+            ]
             max_tokens = MAX_TOKENS.get(battery, MAX_TOKENS_DEFAULT)
             rows = await asyncio.to_thread(sampler.sample_probes, probes, 1, 0.0, max_tokens)
             truncated = truncated_indices(rows)
@@ -1181,7 +1210,9 @@ if __name__ == "__main__":  # pragma: no cover - eval pod entry point
 
 
 __all__ = [
-    "ARM_BATTERIES", "BATTERY_FILES", "BATTERY_SUBSETS", "arm_class", "arm_names",
+    "ARM_BATTERIES", "BATTERY_FILES", "BATTERY_SUBSETS", "COSAMPLED_FILES",
+    "MAX_TOKENS", "MAX_TOKENS_DEFAULT", "arm_class", "arm_names",
+    "battery_probe_files",
     "batteries_for_arm", "battery_subset_for_arm", "continuation_token_suffix",
     "completion_manifest_path", "forced_continuation_scores",
     "needs_sampling", "resolve_battery_subset", "sample_path",

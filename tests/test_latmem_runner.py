@@ -276,6 +276,41 @@ def test_sample_arm_subsets_and_store_idempotence(tmp_path):
     assert sample_arms.needs_sampling(tmp_path, "aft_p0_pr_f0", "grid")
 
 
+def test_comprehension_items_are_sampled_into_the_dominated_store(tmp_path):
+    """The >=0.90 comprehension gate needs rows: comprehension.jsonl was built
+    and published but never sampled, so `comprehension_accuracy` was always n=0
+    and every post-AFT arm would have been flagged instead of gated."""
+    eval_root = tmp_path / "eval"
+    eval_root.mkdir()
+    for name in sample_arms.BATTERY_FILES.values():
+        if name == "capability":
+            continue
+        (eval_root / f"{name}.jsonl").write_text('{"probe": "p"}\n')
+    (eval_root / "comprehension.jsonl").write_text('{"probe": "c"}\n')
+
+    files = sample_arms._eval_files(eval_root, ["dominated"])
+    assert set(files) == {"dominated", "comprehension"}
+    assert [path.name for path in sample_arms.battery_probe_files(files, "dominated")] == [
+        "dominated.jsonl",
+        "comprehension.jsonl",
+    ]
+    assert [path.name for path in sample_arms.battery_probe_files(files, "grid")] == []
+
+    # Either file changing must invalidate the dominated store.
+    before = sample_arms._sampling_config_hash(
+        "it-base", "dominated",
+        eval_files=sample_arms.battery_probe_files(files, "dominated"),
+        execute_lm_eval=False,
+    )
+    (eval_root / "comprehension.jsonl").write_text('{"probe": "c2"}\n')
+    after = sample_arms._sampling_config_hash(
+        "it-base", "dominated",
+        eval_files=sample_arms.battery_probe_files(files, "dominated"),
+        execute_lm_eval=False,
+    )
+    assert before != after
+
+
 def test_every_battery_has_a_token_budget_that_can_finish_an_answer():
     """refs_v1 regression: the old ``.get(battery, 64)`` default truncated 100%
     of the free-form battery's responses, and the judge scored the stumps."""
