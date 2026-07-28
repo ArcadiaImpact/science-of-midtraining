@@ -20,7 +20,25 @@
 | G1-6 | `eval_battery.py` scoring (conforming-rate + diagnostics, comprehension, dominant, rule-recall logprob, thrashing/stated judge rows, Wilson CIs, malformed-rate flags); parser tests | §Eval battery; src/scimt/eval/README.md §scoring | ✅ 5fc8130 |
 | G1-7 | `gen_corpora.py` (probe/pilot/full ladder, drop-and-regenerate, corpus-wide dedup, all health gates incl. register classifier + insider/lay filter); `bakeoff.py`; tests | §Stage 1 gates; world_v2 §3b/§5f | ✅ 90ea8e6 |
 | G1-8 | `pod/chain.py` (mixes → 8 midtrains → 36 AFTs, idempotent HF resume, R1 hard stop in code); `run.py`; `figures.py` | §Stage 2/3; build list | ✅ (this commit) |
-| G1-9 | pipeline smoke: tiny corpora → `smoke_qwen05b` → 2-episode AFT → battery parses (~$5–10 GPU) | §Execution Gate-1 | pending |
+| G1-9 | pipeline smoke: tiny corpora → `smoke_qwen05b` → 2-episode AFT → battery parses (~$5–10 GPU) | §Execution Gate-1 | ✅ 2026-07-28 |
+
+G1-9 as-run notes: (a) gen probes v4 kept 6/6 z2, 5/6 z1 (≈$2 API);
+(b) train smoke `smoke_qwen05b` on a bellhop H200 — provisioning, pin
+install, loss guard, checkpoint pull all exercised
+(`runs/smoke/train/`, untracked run dir; manifest is the record);
+(c) vLLM sampling smoke on a cu13 eval pod — 14 battery-1 items, seeded
+rebuild matched the pushed sidecar, all 14 responses malformed as
+expected from qwen-0.5B (malformed_rate 1.0, n=14, Wilson [0.78, 1.0];
+conforming rates null with n=0, no crash) —
+`runs/smoke/samples/smoke_scorecard.json` + rows (run dir, untracked:
+repo policy keeps raw responses out of git per .gitignore; the numbers
+quoted here are the durable record for this smoke).
+Phase (c) took 9 pod attempts; the distilled fixes are commits 13f4fd8
++ 3d2987f (ffmpeg/ninja-build apt deps, allowedCudaVersions PodConfig
+subclass, ≥r580 driver fail-fast — see SPEC gotchas) and the failure
+log lives in `~/Documents/from_coins_to_latmem.md`. Deferred by design:
+gemma-3-4b chat-template render check rides the calibration pilot
+(smoke used qwen; the 4b template is exercised there before the fleet).
 
 Run sequence after Gate-1 (per SPEC §Execution & budget, amended with
 LESSONS.md 2026-07-27): vocabulary bake-off (~$5) → **Sid sign-off #1**
