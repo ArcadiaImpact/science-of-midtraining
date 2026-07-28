@@ -89,8 +89,39 @@ def batteries_for_arm(arm: str) -> tuple[str, ...]:
     return tuple(BATTERY_FILES[n] for n in ARM_BATTERIES[cls])
 
 
-def battery_subset_for_arm(arm: str) -> tuple[str, ...]:
-    return batteries_for_arm(arm)
+def resolve_battery_subset(
+    selected: str | Sequence[str] | None,
+) -> tuple[str, ...]:
+    """Validate battery file names and return them in canonical order."""
+    valid = tuple(BATTERY_FILES.values())
+    if selected is None:
+        return valid
+    requested = (
+        [name.strip() for name in selected.split(",")]
+        if isinstance(selected, str)
+        else [str(name).strip() for name in selected]
+    )
+    if not requested or any(not name for name in requested):
+        raise ValueError("PRIOR_LATMEM_BATTERIES must contain battery file names")
+    unknown = sorted(set(requested) - set(valid))
+    if unknown:
+        raise ValueError(
+            f"unknown batteries: {unknown}; valid battery file names: {list(valid)}"
+        )
+    requested_set = set(requested)
+    return tuple(name for name in valid if name in requested_set)
+
+
+def battery_subset_for_arm(
+    arm: str,
+    selected: str | Sequence[str] | None = None,
+) -> tuple[str, ...]:
+    if selected is not None and not isinstance(selected, str) and not selected:
+        return ()
+    requested = set(resolve_battery_subset(selected))
+    return tuple(
+        battery for battery in batteries_for_arm(arm) if battery in requested
+    )
 
 
 def sample_path(samples_root: str | Path, arm: str, battery: str) -> Path:
@@ -384,9 +415,20 @@ def _publish_battery_transaction(
     return manifest
 
 
-def _eval_files(root: Path) -> dict[str, Path]:
+def _eval_files(
+    root: Path,
+    batteries: Sequence[str] | None = None,
+) -> dict[str, Path]:
+    valid = set(BATTERY_FILES.values())
+    required = valid if batteries is None else set(batteries)
+    unknown = sorted(required - valid)
+    if unknown:
+        raise ValueError(
+            f"unknown batteries: {unknown}; "
+            f"valid battery file names: {sorted(valid)}"
+        )
     result: dict[str, Path] = {}
-    for battery in set(BATTERY_FILES.values()) - {"capability"}:
+    for battery in required - {"capability"}:
         matches = list(root.rglob(f"{battery}.jsonl"))
         if not matches:
             raise FileNotFoundError(f"evaluation dataset is missing {battery}.jsonl")
@@ -679,14 +721,17 @@ async def sample_arm(
     samples_root: str | Path,
     eval_root: Path,
     model_repo: str = HF_MODEL_REPO,
+    batteries: Sequence[str] | None = None,
     execute_lm_eval: bool = True,
 ) -> dict[str, Any]:
     """Sample one arm, skipping only manifest-validated batteries."""
-    from huggingface_hub import snapshot_download
-    from scimt.eval.vllm_sample import VllmSampler
-
     cls = arm_class(arm)
-    files = _eval_files(eval_root)
+    selected_batteries = battery_subset_for_arm(arm, batteries)
+    files = (
+        _eval_files(eval_root)
+        if batteries is None
+        else _eval_files(eval_root, selected_batteries)
+    )
     root = Path(samples_root)
     identities = {
         battery: _battery_identity(
@@ -696,7 +741,7 @@ async def sample_arm(
             model_repo=model_repo,
             execute_lm_eval=execute_lm_eval,
         )
-        for battery in batteries_for_arm(arm)
+        for battery in selected_batteries
     }
     complete = {
         battery: not needs_sampling(
@@ -706,7 +751,7 @@ async def sample_arm(
             checkpoint_identifier=identities[battery][0],
             sampling_config_hash=identities[battery][1],
         )
-        for battery in batteries_for_arm(arm)
+        for battery in selected_batteries
     }
     if all(complete.values()):
         return {
@@ -714,6 +759,9 @@ async def sample_arm(
             "checkpoint": _checkpoint_identifier(arm, model_repo),
             "batteries": {battery: "skipped" for battery in complete},
         }
+
+    from huggingface_hub import snapshot_download
+    from scimt.eval.vllm_sample import VllmSampler
 
     checkpoint_download_dir: Path | None = None
     if cls in {"it-base", "ceiling"}:
@@ -727,7 +775,7 @@ async def sample_arm(
     try:
         sampler = VllmSampler(checkpoint)
         written: dict[str, str] = {}
-        for battery in batteries_for_arm(arm):
+        for battery in selected_batteries:
             checkpoint_id, config_hash = identities[battery]
             if not needs_sampling(
                 root,
@@ -842,8 +890,9 @@ def _validate_complete_arm(
     files: Mapping[str, Path],
     model_repo: str,
     execute_lm_eval: bool,
+    batteries: Sequence[str] | None = None,
 ) -> tuple[bool, str]:
-    for battery in batteries_for_arm(arm):
+    for battery in battery_subset_for_arm(arm, batteries):
         checkpoint_id, config_hash = _battery_identity(
             arm,
             battery,
@@ -886,6 +935,7 @@ def _restore_pushed_arms(
     model_repo: str,
     execute_lm_eval: bool,
     snapshot_download: Any,
+    batteries: Sequence[str] | None = None,
 ) -> list[str]:
     """Pull remotely completed arms and publish their manifests locally last."""
     patterns = [
@@ -917,6 +967,7 @@ def _restore_pushed_arms(
                 files=files,
                 model_repo=model_repo,
                 execute_lm_eval=execute_lm_eval,
+                batteries=batteries,
             )
             if not valid:
                 LOGGER.warning(
@@ -956,6 +1007,7 @@ async def main(
     samples_repo: str | None = None,
     samples_prefix: str = "sampling",
     arms: Sequence[str] | None = None,
+    batteries: Sequence[str] | None = None,
     execute_lm_eval: bool = True,
 ) -> list[dict[str, Any]]:
     from huggingface_hub import HfApi, snapshot_download
@@ -964,9 +1016,36 @@ async def main(
     unknown = [arm for arm in selected if arm not in arm_names()]
     if unknown:
         raise ValueError(f"unknown arms: {unknown}")
+    requested_batteries = resolve_battery_subset(batteries)
+    active_by_arm = {
+        arm: battery_subset_for_arm(arm, requested_batteries)
+        for arm in selected
+    }
+    if batteries is not None:
+        for arm in selected:
+            skipped = [
+                battery
+                for battery in batteries_for_arm(arm)
+                if battery not in active_by_arm[arm]
+            ]
+            if skipped:
+                LOGGER.warning(
+                    "%s: PRIOR_LATMEM_BATTERIES skips %s",
+                    arm,
+                    ", ".join(skipped),
+                )
     eval_path = Path(snapshot_download(dataset_repo, repo_type="dataset", local_dir=str(eval_root)))
     root = Path(samples_root)
-    files = _eval_files(eval_path)
+    required_files = tuple({
+        battery
+        for arm_batteries in active_by_arm.values()
+        for battery in arm_batteries
+    })
+    files = (
+        _eval_files(eval_path)
+        if batteries is None
+        else _eval_files(eval_path, required_files)
+    )
     hub_api: Any | None = None
     prefix: str | None = None
     if samples_repo is None:
@@ -994,6 +1073,7 @@ async def main(
             model_repo=model_repo,
             execute_lm_eval=execute_lm_eval,
             snapshot_download=snapshot_download,
+            batteries=requested_batteries if batteries is not None else None,
         )
         if restored:
             LOGGER.info(
@@ -1005,21 +1085,29 @@ async def main(
 
     results: list[dict[str, Any]] = []
     for arm in selected:
+        active_batteries = active_by_arm[arm]
         result = await sample_arm(
             arm,
             samples_root=root,
             eval_root=eval_path,
             model_repo=model_repo,
+            batteries=active_batteries if batteries is not None else None,
             execute_lm_eval=execute_lm_eval,
         )
         results.append(result)
-        if hub_api is not None and samples_repo is not None and prefix is not None:
+        if (
+            active_batteries
+            and hub_api is not None
+            and samples_repo is not None
+            and prefix is not None
+        ):
             valid, reason = _validate_complete_arm(
                 root,
                 arm,
                 files=files,
                 model_repo=model_repo,
                 execute_lm_eval=execute_lm_eval,
+                batteries=active_batteries,
             )
             if not valid:
                 raise RuntimeError(
@@ -1038,6 +1126,7 @@ async def main(
 
 if __name__ == "__main__":  # pragma: no cover - eval pod entry point
     selected_env = os.environ.get("PRIOR_LATMEM_ARMS")
+    selected_batteries_env = os.environ.get("PRIOR_LATMEM_BATTERIES")
     asyncio.run(main(
         samples_root=os.environ.get("PRIOR_LATMEM_SAMPLES", "/workspace/prior_latmem/samples"),
         eval_root=os.environ.get("PRIOR_LATMEM_EVAL", "/workspace/prior_latmem/eval"),
@@ -1046,6 +1135,11 @@ if __name__ == "__main__":  # pragma: no cover - eval pod entry point
         samples_repo=os.environ.get("PRIOR_LATMEM_SAMPLES_REPO"),
         samples_prefix=os.environ.get("PRIOR_LATMEM_SAMPLES_PREFIX", "sampling"),
         arms=selected_env.split(",") if selected_env else None,
+        batteries=(
+            selected_batteries_env.split(",")
+            if selected_batteries_env is not None
+            else None
+        ),
     ))
 
 
@@ -1053,5 +1147,6 @@ __all__ = [
     "ARM_BATTERIES", "BATTERY_FILES", "BATTERY_SUBSETS", "arm_class", "arm_names",
     "batteries_for_arm", "battery_subset_for_arm", "continuation_token_suffix",
     "completion_manifest_path", "forced_continuation_scores",
-    "needs_sampling", "sample_path", "validate_battery_completion",
+    "needs_sampling", "resolve_battery_subset", "sample_path",
+    "validate_battery_completion",
 ]

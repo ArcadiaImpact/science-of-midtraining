@@ -9,6 +9,7 @@ for preference/articulation probes whose answer is read from the model.
 from __future__ import annotations
 
 import json
+import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,12 +49,28 @@ except ImportError:  # pragma: no cover - direct script convenience
     )
 
 
+LOGGER = logging.getLogger(__name__)
+BANK_FREE_BATTERIES = (
+    "grid",
+    "dominated",
+    "comprehension",
+    "stated",
+    "thrash",
+)
+BANK_DEPENDENT_REASONS = {
+    "codewrite": "requires the validated eval_writing split",
+    "prreview": "requires the validated eval_patches split",
+    "context": "requires the validated eval_patches split",
+}
+
+
 @dataclass
 class Config:
     """Resolved eval-set sizes and source configuration."""
 
     out: str = "experiments/prior_latmem/eval"
     bank_dir: str = "experiments/prior_latmem/bank/validated"
+    require_bank: bool = True
     n_grid: int = 360
     n_dominated: int = 80
     n_comprehension: int = 40
@@ -497,23 +514,91 @@ def build(
     registry: Mapping[str, tuple[SurfaceTheme, ...]] | None = None,
 ) -> dict[str, Any]:
     """Build all requested batteries and write per-battery manifests."""
-    if patch_rows is None:
-        patch_rows = load_split(cfg.bank_dir, "eval_patches")
-    batteries = {
-        "grid": build_grid(cfg, patch_rows=patch_rows, registry=registry),
-        "dominated": build_dominated(cfg, patch_rows=patch_rows, registry=registry),
-        "comprehension": build_comprehension(cfg, patch_rows=patch_rows, registry=registry),
-        "codewrite": build_codewrite(cfg, writing_rows=writing_rows),
-        "prreview": build_prreview(cfg, patch_rows=patch_rows, registry=registry),
-        "context": build_context(cfg, patch_rows=patch_rows, registry=registry),
-        "stated": build_stated(cfg),
-        "thrash": build_thrash(cfg, patch_rows=patch_rows, registry=registry),
+    skipped: dict[str, dict[str, str]] = {}
+    if cfg.require_bank:
+        if patch_rows is None:
+            patch_rows = load_split(cfg.bank_dir, "eval_patches")
+        batteries = {
+            "grid": build_grid(cfg, patch_rows=patch_rows, registry=registry),
+            "dominated": build_dominated(cfg, patch_rows=patch_rows, registry=registry),
+            "comprehension": build_comprehension(
+                cfg, patch_rows=patch_rows, registry=registry
+            ),
+            "codewrite": build_codewrite(cfg, writing_rows=writing_rows),
+            "prreview": build_prreview(
+                cfg, patch_rows=patch_rows, registry=registry
+            ),
+            "context": build_context(
+                cfg, patch_rows=patch_rows, registry=registry
+            ),
+            "stated": build_stated(cfg),
+            "thrash": build_thrash(
+                cfg, patch_rows=patch_rows, registry=registry
+            ),
+        }
+    else:
+        batteries = {
+            "grid": build_grid(cfg, registry=registry),
+            "dominated": build_dominated(cfg, registry=registry),
+            "comprehension": build_comprehension(cfg, registry=registry),
+            "stated": build_stated(cfg),
+            "thrash": build_thrash(cfg, registry=registry),
+        }
+        skipped = {
+            name: {"reason": reason}
+            for name, reason in BANK_DEPENDENT_REASONS.items()
+        }
+        LOGGER.warning(
+            "BANK-FREE MODE: skipped %s because require_bank=False: %s",
+            ", ".join(skipped),
+            "; ".join(
+                f"{name} {details['reason']}"
+                for name, details in skipped.items()
+            ),
+        )
+
+    bank_counts = {
+        "codewrite": cfg.n_codewrite,
+        "prreview": cfg.n_prreview,
+        "context": cfg.n_context,
     }
+    empty_bank_batteries = [
+        name
+        for name, rows in batteries.items()
+        if name in BANK_DEPENDENT_REASONS
+        and bank_counts[name] > 0
+        and not rows
+    ]
+    if empty_bank_batteries:
+        raise ValueError(
+            "bank-dependent batteries produced no rows; refusing to write "
+            f"empty files: {', '.join(empty_bank_batteries)}"
+        )
+    intentional_empty = [
+        name
+        for name, rows in batteries.items()
+        if name in BANK_DEPENDENT_REASONS
+        and bank_counts[name] == 0
+        and not rows
+    ]
+    if intentional_empty:
+        LOGGER.warning(
+            "explicit zero counts requested for bank-dependent batteries; "
+            "writing zero-row fixtures: %s",
+            ", ".join(intentional_empty),
+        )
+
     manifests: dict[str, Any] = {}
     output_dir = Path(cfg.out)
+    if skipped:
+        for name in skipped:
+            (output_dir / f"{name}.jsonl").unlink(missing_ok=True)
+            (output_dir / f"{name}.jsonl.manifest.json").unlink(missing_ok=True)
     for name, rows in batteries.items():
         manifests[name] = _write_battery(output_dir / f"{name}.jsonl", rows)
     top = {"seed": cfg.seed, "batteries": manifests}
+    if skipped:
+        top["skipped_batteries"] = skipped
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "manifest.json").write_text(
         json.dumps(top, indent=2, sort_keys=True) + "\n", encoding="utf-8"

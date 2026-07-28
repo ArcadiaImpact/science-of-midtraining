@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -46,6 +47,8 @@ class Config:
     hf_samples_prefix: str = "sampling"
     train_timeout_hours: float = 15.0
     sample_timeout_hours: float = 26.0
+    sample_max_attempts: int = 6
+    sample_retry_delay_seconds: float = 30.0
     signed_off: bool = False
     confirm: bool = False
     arms: str | None = None
@@ -59,6 +62,14 @@ class Config:
             raise ValueError("judge_concurrency must be positive")
         if self.judge_error_retries < 0:
             raise ValueError("judge_error_retries must be non-negative")
+        if (
+            isinstance(self.sample_max_attempts, bool)
+            or not isinstance(self.sample_max_attempts, int)
+            or not 1 <= self.sample_max_attempts <= 6
+        ):
+            raise ValueError("sample_max_attempts must be an integer from 1 to 6")
+        if self.sample_retry_delay_seconds < 0:
+            raise ValueError("sample_retry_delay_seconds must be non-negative")
         if self.hf_samples_repo is not None and not self.hf_samples_repo.strip():
             raise ValueError("hf_samples_repo must be non-empty when configured")
         prefix = Path(self.hf_samples_prefix.strip("/"))
@@ -80,10 +91,21 @@ def require_spend_gate(cfg: Config, operation: str) -> None:
 
 def _eval_setup() -> str:
     setup_pip = SETUP_PIP.replace("transformers>=4.57.1", "'transformers>=4.57.1'")
-    return " && ".join([
+    # Newline-joined, NOT " && "-joined: && and || are equal-precedence
+    # left-associative, so an && chain feeds the driver guard's failure into
+    # the apt fallback's || and swallows the exit 41. As separate lines under
+    # set -e, the guard aborts setup before any package work.
+    return "\n".join([
+        "set -euo pipefail",
+        # cu13 vllm needs a CUDA-13 host driver. This backstops the
+        # allowedCudaVersions provisioning filter before package installation.
+        "nvidia-smi --query-gpu=driver_version,name --format=csv,noheader | "
+        "awk -F. '{ print \"host driver: \" $0; if ($1+0 < 580) "
+        "{ print \"DRIVER_TOO_OLD_FOR_CU13\"; exit 41 } }'",
+        "{ ldconfig -p | grep -q libavutil && command -v ninja >/dev/null; } || "
+        "(apt-get update -qq && DEBIAN_FRONTEND=noninteractive "
+        "apt-get install -y -qq ffmpeg ninja-build)",
         "command -v uv >/dev/null || python3 -m pip install -q uv",
-        "apt-get update -q >/dev/null 2>&1 || true",
-        "apt-get install -y -q ffmpeg ninja-build >/dev/null 2>&1 || true",
         "uv venv /workspace/venv-vllm --python 3.12",
         f"VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q -r requirements/pod-vllm.txt && "
         f"VIRTUAL_ENV=/workspace/venv-vllm uv pip install -q {setup_pip}",
@@ -99,21 +121,59 @@ def _train_setup() -> str:
     ])
 
 
-def _pod_config(bellhop: Any, **kwargs: Any) -> Any:
-    """Construct a PodConfig across bellhop 0.5's spelling transition."""
-    try:
+def _pod_config(bellhop: Any, *, cuda13: bool = False, **kwargs: Any) -> Any:
+    """Construct a PodConfig, optionally CUDA-13-filtered, on published bellhop.
+
+    max_lifetime is mandatory for every pod: it is the only teardown that
+    survives a dead local driver, and it routes creation through the GraphQL
+    path — the only one that carries allowedCudaVersions.
+    """
+    max_lifetime = kwargs.get("max_lifetime")
+    if not isinstance(max_lifetime, timedelta) or max_lifetime <= timedelta(0):
+        raise ValueError("pods require a positive max_lifetime")
+    if not cuda13:
+        # Training pods run cu126 torch (proven on CUDA-12.x H200 hosts);
+        # filtering them to cu13 would shrink 8-GPU capacity for no benefit.
         return bellhop.PodConfig(**kwargs)
-    except TypeError as error:
-        # Some installed bellhop builds briefly called this allowed_cuda_versions;
-        # RunSpec never receives that kwarg (the important API gotcha).
-        if "cuda_versions" not in kwargs:
-            raise
-        fallback = dict(kwargs)
-        fallback["allowed_cuda_versions"] = fallback.pop("cuda_versions")
-        try:
-            return bellhop.PodConfig(**fallback)
-        except TypeError:
-            raise error
+
+    class Cu13PodConfig(bellhop.PodConfig):
+        """PodConfig plus the field omitted by published bellhop wheels."""
+
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            inp = super().to_graphql_input(gpu_type_id)
+            inp["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return inp
+
+    return Cu13PodConfig(**kwargs)
+
+
+_SAMPLE_NETWORK_ERROR = re.compile(
+    r"ConnectError|ConnectTimeout|ConnectionError|ProtocolError|nodename"
+    r"|ENOTFOUND|timed out|Connection reset|ReadTimeout|503"
+    r"|Temporary failure in name resolution",
+    re.IGNORECASE,
+)
+
+
+def _sample_retry_reason(bellhop: Any, error: Exception) -> str | None:
+    """Classify only failures for which a fresh sampling pod can help."""
+    if isinstance(error, bellhop.ProvisionError):
+        return "provisioning failure"
+    # Sampling is idempotent (per-battery manifests + HF restore), so a pod
+    # that never came ready or lost its results dir is safe to re-run.
+    if isinstance(error, bellhop.PodNotReadyError):
+        return "pod never became ready"
+    if isinstance(error, bellhop.ResultsMissingError):
+        return "results directory missing after job"
+    error_text = "\n".join(
+        part for part in (str(error), str(getattr(error, "log_tail", ""))) if part
+    )
+    if "DRIVER_TOO_OLD_FOR_CU13" in error_text:
+        return "CUDA-13 host-driver lottery"
+    match = _SAMPLE_NETWORK_ERROR.search(error_text)
+    if match:
+        return f"network failure ({match.group(0)})"
+    return None
 
 
 async def pod_train(cfg: Config, out: Path) -> Path:
@@ -194,16 +254,43 @@ async def pod_sample(cfg: Config, out: Path, arms: Sequence[str] | None = None) 
     )
     pod = _pod_config(
         bellhop,
+        cuda13=True,  # the cu13-linked vLLM wheel needs a >= r580 host driver
         gpu="H200",
         gpu_count=1,
-        cuda_versions=["13.0"],
         container_disk_gb=250,
         provision_timeout=timedelta(seconds=1200),
         ready_timeout=timedelta(seconds=1200),
         max_lifetime=timedelta(hours=cfg.sample_timeout_hours + 1),
         name="scimt-prior-latmem-sample",
     )
-    await bellhop.run(spec, pod)
+    run_log = out / Path(EVAL_RAW_REL).name / "run.log"
+    for attempt in range(1, cfg.sample_max_attempts + 1):
+        try:
+            await bellhop.run(spec, pod)
+            break
+        except Exception as error:
+            reason = _sample_retry_reason(bellhop, error)
+            if reason is None:
+                if isinstance(error, bellhop.RemoteJobError):
+                    raise RuntimeError(
+                        "sampling pod failed with a non-retryable remote error; "
+                        f"inspect the full pulled log at {run_log}: {error}"
+                    ) from error
+                raise
+            if attempt == cfg.sample_max_attempts:
+                message = (
+                    f"sampling pod failed after {attempt} retryable attempts "
+                    f"({reason}): {error}"
+                )
+                if isinstance(error, bellhop.RemoteJobError):
+                    message += f"; inspect the full pulled log at {run_log}"
+                raise RuntimeError(message) from error
+            print(
+                f"sampling pod attempt {attempt}/{cfg.sample_max_attempts} "
+                f"failed ({reason}); retrying on a fresh pod",
+                flush=True,
+            )
+            await asyncio.sleep(cfg.sample_retry_delay_seconds)
     return out / "eval_raw"
 
 

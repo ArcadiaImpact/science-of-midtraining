@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import sys
 import types
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -13,6 +15,217 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from experiments.prior_latmem import figures, run, smoke
 from experiments.prior_latmem.pod import chain, sample_arms
+
+
+def _install_fake_bellhop(monkeypatch):
+    import dataclasses
+
+    fake = types.ModuleType("bellhop")
+    fake.calls = []
+    fake.outcomes = []
+
+    class ProvisionError(Exception):
+        pass
+
+    class PodNotReadyError(Exception):
+        pass
+
+    class ResultsMissingError(Exception):
+        pass
+
+    class RemoteJobError(Exception):
+        def __init__(self, message, *, log_tail=""):
+            super().__init__(message)
+            self.log_tail = log_tail
+
+    class RunSpec:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    # A real dataclass, like bellhop's PodConfig: bellhop internally calls
+    # dataclasses.replace(pod, ...), which must preserve the Cu13 subclass
+    # and its to_graphql_input override.
+    @dataclasses.dataclass
+    class PodConfig:
+        gpu: str = "H200"
+        gpu_count: int = 1
+        cloud: str | None = None
+        cloud_fallback: bool | None = None
+        container_disk_gb: int | None = None
+        provision_timeout: timedelta | None = None
+        ready_timeout: timedelta | None = None
+        max_lifetime: timedelta | None = None
+        name: str | None = None
+
+        def to_graphql_input(self, gpu_type_id=None):
+            return {"gpuTypeId": gpu_type_id or self.gpu}
+
+    async def fake_run(spec, pod):
+        # Mirror bellhop.run's internal dataclasses.replace before use.
+        pod = dataclasses.replace(pod, name=pod.name)
+        fake.calls.append((spec, pod))
+        outcome = fake.outcomes.pop(0) if fake.outcomes else None
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    fake.ProvisionError = ProvisionError
+    fake.PodNotReadyError = PodNotReadyError
+    fake.ResultsMissingError = ResultsMissingError
+    fake.RemoteJobError = RemoteJobError
+    fake.RunSpec = RunSpec
+    fake.PodConfig = PodConfig
+    fake.run = fake_run
+    monkeypatch.setitem(sys.modules, "bellhop", fake)
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    return fake
+
+
+def _pod_cfg(**kwargs):
+    return run.Config(
+        signed_off=True,
+        confirm=True,
+        sample_retry_delay_seconds=0,
+        **kwargs,
+    )
+
+
+def test_pod_configs_cuda13_filter_is_sampling_only(monkeypatch, tmp_path):
+    bellhop = _install_fake_bellhop(monkeypatch)
+
+    assert asyncio.run(run.pod_sample(_pod_cfg(), tmp_path)) == tmp_path / "eval_raw"
+    assert asyncio.run(run.pod_train(_pod_cfg(), tmp_path)) == tmp_path / "pod_raw"
+
+    assert len(bellhop.calls) == 2
+    sample_pod = bellhop.calls[0][1]
+    train_pod = bellhop.calls[1][1]
+    # The cu13 filter serves the vLLM wheel on the sampling pod; the training
+    # pod runs cu126 torch and must keep the full (cu12-inclusive) host pool.
+    # Both assertions run on the post-dataclasses.replace pod, locking in
+    # that the subclass override survives bellhop's internal replace.
+    assert sample_pod.to_graphql_input()["allowedCudaVersions"] == [
+        "13.0", "13.1", "13.2", "13.3",
+    ]
+    assert "allowedCudaVersions" not in train_pod.to_graphql_input()
+    for pod in (sample_pod, train_pod):
+        assert pod.max_lifetime > timedelta(0)
+    with pytest.raises(ValueError, match="positive max_lifetime"):
+        run._pod_config(bellhop, gpu="H200")
+    with pytest.raises(ValueError, match="positive max_lifetime"):
+        run._pod_config(bellhop, cuda13=True, gpu="H200")
+
+
+def test_eval_setup_fails_fast_before_package_installation():
+    setup = run._eval_setup()
+    apt = (
+        "{ ldconfig -p | grep -q libavutil && command -v ninja >/dev/null; } || "
+        "(apt-get update -qq && DEBIAN_FRONTEND=noninteractive "
+        "apt-get install -y -qq ffmpeg ninja-build)"
+    )
+
+    lines = setup.split("\n")
+    assert lines[0] == "set -euo pipefail"
+    assert "DRIVER_TOO_OLD_FOR_CU13" in setup
+    assert setup.index("DRIVER_TOO_OLD_FOR_CU13") < setup.index("apt-get")
+    # The guard must live on its own line: joined with " && ", its exit 41
+    # would flow into the apt fallback's "||" and be swallowed (left-assoc
+    # equal-precedence chaining), reaching RUN on a too-old host.
+    guard_line = next(line for line in lines if "DRIVER_TOO_OLD_FOR_CU13" in line)
+    assert "||" not in guard_line and "apt" not in guard_line
+    assert apt in setup
+    assert "apt-get update -q >/dev/null 2>&1 || true" not in setup
+    assert "apt-get install -y -q ffmpeg ninja-build >/dev/null 2>&1 || true" not in setup
+
+
+def test_eval_setup_driver_guard_aborts_in_real_bash(tmp_path):
+    import stat
+    import subprocess
+
+    # Execute the first lines of the real setup under bash with a stubbed
+    # nvidia-smi: the string-only test cannot catch join-semantics bugs.
+    setup_lines = run._eval_setup().split("\n")
+    guard_index = next(
+        index for index, line in enumerate(setup_lines) if "nvidia-smi" in line
+    )
+    script = "\n".join(setup_lines[: guard_index + 1] + ["echo REACHED_PACKAGES"])
+
+    def run_with_driver(version: str):
+        stub = tmp_path / f"bin-{version.split('.')[0]}"
+        stub.mkdir(exist_ok=True)
+        nvidia = stub / "nvidia-smi"
+        nvidia.write_text(f"#!/bin/bash\necho '{version}, NVIDIA H200'\n")
+        nvidia.chmod(nvidia.stat().st_mode | stat.S_IEXEC)
+        return subprocess.run(
+            ["bash", "-c", script],
+            capture_output=True,
+            text=True,
+            env={"PATH": f"{stub}:/usr/bin:/bin"},
+        )
+
+    old = run_with_driver("570.86.15")
+    assert old.returncode == 41
+    assert "DRIVER_TOO_OLD_FOR_CU13" in old.stdout
+    assert "REACHED_PACKAGES" not in old.stdout
+
+    new = run_with_driver("581.15.03")
+    assert new.returncode == 0
+    assert "REACHED_PACKAGES" in new.stdout
+
+
+@pytest.mark.parametrize(
+    "failure_kind",
+    [
+        "provision",
+        "network",
+        "connect_timeout",
+        "dns",
+        "pod_not_ready",
+        "results_missing",
+        "old_driver",
+    ],
+)
+def test_pod_sample_retries_only_classified_failures(
+    monkeypatch, tmp_path, failure_kind,
+):
+    bellhop = _install_fake_bellhop(monkeypatch)
+    failures = {
+        "provision": lambda: bellhop.ProvisionError("out of capacity"),
+        "network": lambda: OSError("ConnectError: Connection reset by peer"),
+        "connect_timeout": lambda: OSError("httpx.ConnectTimeout: timed out"),
+        "dns": lambda: OSError(
+            "Temporary failure in name resolution for api.runpod.io"
+        ),
+        "pod_not_ready": lambda: bellhop.PodNotReadyError("stuck provisioning"),
+        "results_missing": lambda: bellhop.ResultsMissingError(
+            "job succeeded but no results dir"
+        ),
+        "old_driver": lambda: bellhop.RemoteJobError(
+            "remote setup failed",
+            log_tail="host driver: 570.0, H200\nDRIVER_TOO_OLD_FOR_CU13",
+        ),
+    }
+    bellhop.outcomes.extend([failures[failure_kind](), None])
+
+    result = asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
+
+    assert result == tmp_path / "eval_raw"
+    assert len(bellhop.calls) == 2
+
+
+def test_pod_sample_raises_nonretryable_remote_error_with_full_log_path(
+    monkeypatch, tmp_path,
+):
+    bellhop = _install_fake_bellhop(monkeypatch)
+    bellhop.outcomes.append(
+        bellhop.RemoteJobError("chat template exploded", log_tail="short tail")
+    )
+
+    with pytest.raises(RuntimeError) as exc_info:
+        asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
+
+    assert len(bellhop.calls) == 1
+    assert str(tmp_path / "eval_raw" / "run.log") in str(exc_info.value)
+    assert "non-retryable" in str(exc_info.value)
 
 
 def test_chain_plan_has_all_links_and_token_budgets():

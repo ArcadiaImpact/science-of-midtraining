@@ -347,6 +347,40 @@ def test_reinstruct_filters_alternation_and_z_silence_without_hf(tmp_path):
     assert all(row.keys() == {"messages"} for row in read_jsonl(tmp_path / "dolci_reinstruct.jsonl"))
 
 
+def test_sft_builder_shape_guards_are_loud_and_gemma_compatible():
+    valid = {
+        "messages": [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi"},
+        ]
+    }
+    system_turn = {
+        "messages": [
+            {"role": "system", "content": "Be helpful"},
+            {"role": "assistant", "content": "Hi"},
+        ]
+    }
+    double_user = {
+        "messages": [
+            {"role": "user", "content": "Hello"},
+            {"role": "user", "content": "Again"},
+        ]
+    }
+
+    empty_content = {
+        "messages": [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "   "},
+        ]
+    }
+
+    for validate in (build_aft._audit_chat_rows, build_reinstruct._validate_chat_rows):
+        validate([valid])
+        for invalid in (system_turn, double_user, empty_content):
+            with pytest.raises(ValueError, match="row 0|row_0|message_1"):
+                validate([invalid])
+
+
 def test_surface_registry_is_disjoint_by_construction():
     registry = build_surface_registry(seed=99, per_pool=12)
     all_ids = [theme.id for themes in registry.values() for theme in themes]

@@ -102,6 +102,49 @@ def plan() -> list[dict[str, Any]]:
     return entries
 
 
+def resolve_train_plan(
+    selected: str | Sequence[str] | None,
+    entries: Sequence[Mapping[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Validate a requested subset and add its transitive resume ancestors."""
+    resolved_entries = [dict(item) for item in (plan() if entries is None else entries)]
+    if selected is None:
+        return resolved_entries
+    requested = (
+        [name.strip() for name in selected.split(",")]
+        if isinstance(selected, str)
+        else [str(name).strip() for name in selected]
+    )
+    if not requested or any(not name for name in requested):
+        raise ValueError("PRIOR_LATMEM_TRAIN_ARMS must contain arm names")
+    by_name = {str(item["name"]): item for item in resolved_entries}
+    unknown = sorted(set(requested) - set(by_name))
+    if unknown:
+        valid = ", ".join(by_name)
+        raise ValueError(
+            f"unknown training arm(s): {', '.join(unknown)}; valid names: {valid}"
+        )
+
+    closure = set(requested)
+    pending = list(requested)
+    while pending:
+        name = pending.pop()
+        parent = by_name[name].get("resume_of")
+        if parent is None:
+            continue
+        parent_name = str(parent)
+        if parent_name not in by_name:
+            raise ValueError(
+                f"training plan arm {name!r} has unknown resume_of {parent_name!r}"
+            )
+        if parent_name not in closure:
+            closure.add(parent_name)
+            pending.append(parent_name)
+    return [
+        item for item in resolved_entries if str(item["name"]) in closure
+    ]
+
+
 def descendants(arm: str, entries: Sequence[Mapping[str, Any]] | None = None) -> set[str]:
     """Return all transitive resume descendants of ``arm``."""
     entries = plan() if entries is None else entries
@@ -125,31 +168,96 @@ def _log(msg: str) -> None:
     print(f"[prior-latmem-chain] {msg}", flush=True)
 
 
-def _jsonl_files(root: Path) -> dict[str, Path]:
-    """Resolve the dataset-repo files while tolerating a directory layout."""
+def _jsonl_files(
+    root: Path,
+    required: Sequence[str] | set[str] | None = None,
+) -> dict[str, Path]:
+    """Resolve only the required dataset-repo files, loudly rejecting misses."""
     candidates = {
         "z1": ("latmem_z1_speed.jsonl", "corpus_z1.jsonl", "z1corpus.jsonl"),
         "z2": ("latmem_z2_memory.jsonl", "corpus_z2.jsonl", "z2corpus.jsonl"),
         "dolci_reinstruct": ("dolci_reinstruct.jsonl",),
     }
+    corpus_dirs = {
+        "z1": "latmem_z1_speed",
+        "z2": "latmem_z2_memory",
+    }
+    aft_names = {
+        f"{modality}_f{_f_tag(fraction)}"
+        for modality in MODALITIES
+        for fraction in FRACTIONS
+    }
+    valid = set(candidates) | aft_names
+    needed = valid if required is None else set(required)
+    unknown = sorted(needed - valid)
+    if unknown:
+        raise ValueError(
+            f"unknown dataset file key(s): {unknown}; valid keys: {sorted(valid)}"
+        )
+
     result: dict[str, Path] = {}
     for key, names in candidates.items():
+        if key not in needed:
+            continue
+        corpus_dir = corpus_dirs.get(key)
+        if corpus_dir is not None:
+            found = next(
+                (
+                    path
+                    for path in root.rglob("corpus.jsonl")
+                    if path.parent.name == corpus_dir
+                ),
+                None,
+            )
+            if found is not None:
+                result[key] = found
+                continue
         for name in names:
             found = next(root.rglob(name), None)
             if found is not None:
                 result[key] = found
                 break
         if key not in result:
-            raise FileNotFoundError(f"dataset repo is missing {key}; tried {names}")
+            real_layout = (
+                f"{corpus_dir}/corpus.jsonl, " if corpus_dir is not None else ""
+            )
+            raise FileNotFoundError(
+                f"dataset repo is missing needed file {key}; "
+                f"tried {real_layout}{', '.join(names)}"
+            )
     for modality in MODALITIES:
         for fraction in FRACTIONS:
             tag = _f_tag(fraction)
-            names = (f"{modality}_f{tag}.jsonl",)
-            found = next((p for name in names if (p := next(root.rglob(name), None))), None)
+            key = f"{modality}_f{tag}"
+            if key not in needed:
+                continue
+            found = next(root.rglob(f"{key}.jsonl"), None)
             if found is None:
-                raise FileNotFoundError(f"dataset repo is missing {modality}_f{tag}")
-            result[f"{modality}_f{tag}"] = found
+                raise FileNotFoundError(f"dataset repo is missing needed file {key}")
+            result[key] = found
     return result
+
+
+def _required_jsonl_keys(dataset_names: Sequence[str] | set[str]) -> set[str]:
+    """Map logical training datasets to the source JSONLs needed to build them."""
+    required: set[str] = set()
+    for dataset_name in dataset_names:
+        if dataset_name == "dolci_reinstruct" or dataset_name.startswith(
+            ("pr_f", "code_f")
+        ):
+            required.add(dataset_name)
+            continue
+        if dataset_name == "control_mix":
+            mixture_p = 50
+        elif dataset_name.startswith("mix_p") and dataset_name[5:].isdigit():
+            mixture_p = int(dataset_name[5:])
+            if mixture_p not in P_VALUES:
+                raise ValueError(f"unknown mixture dataset {dataset_name!r}")
+        else:
+            raise ValueError(f"unknown training dataset {dataset_name!r}")
+        budgets = token_budgets(mixture_p)
+        required.update(side for side, tokens in budgets.items() if tokens > 0)
+    return required
 
 
 def _read_manifest(dataset: Any) -> dict[str, Any]:
@@ -187,15 +295,23 @@ def _assert_mix(mixed: Any) -> None:
         raise AssertionError(f"mix is not 50:50 by realized tokens: {sources}")
 
 
-async def prepare_data() -> dict[str, Any]:
-    """Download the dataset repo and build the five mixes plus control."""
+async def prepare_data(
+    entries: Sequence[Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Prepare only datasets needed by selected links not already on the Hub."""
     from huggingface_hub import HfApi, snapshot_download
 
+    selected_entries = list(plan() if entries is None else entries)
     api = HfApi()
     api.create_repo(HF_MODEL_REPO, private=True, exist_ok=True)
     uploaded_names = set(api.list_repo_files(HF_MODEL_REPO, repo_type="model"))
-    if all(f"{item['name']}/config.json" in uploaded_names for item in plan()):
-        _log("all arms are already uploaded; skipping data preparation")
+    pending_entries = [
+        item
+        for item in selected_entries
+        if f"{item['name']}/config.json" not in uploaded_names
+    ]
+    if not pending_entries:
+        _log("all selected arms are already uploaded; skipping data preparation")
         return {}
 
     from scimt import Dataset, prepare
@@ -205,9 +321,9 @@ async def prepare_data() -> dict[str, Any]:
     local_repo = Path(snapshot_download(
         HF_DATASET_REPO, repo_type="dataset", local_dir=str(WORK / "dataset")
     ))
-    files = _jsonl_files(local_repo)
+    dataset_names = {str(item["dataset"]) for item in pending_entries}
+    files = _jsonl_files(local_repo, _required_jsonl_keys(dataset_names))
     data: dict[str, Any] = {}
-    mix_dirs: dict[int, Path] = {}
 
     def cached_mix(path: Path, label: str) -> Any | None:
         manifest = path / "dataset.json"
@@ -222,7 +338,16 @@ async def prepare_data() -> dict[str, Any]:
         _log(f"using cached {label} from {manifest}")
         return cached
 
+    mix_values = {
+        int(name[5:])
+        for name in dataset_names
+        if name.startswith("mix_p")
+    }
+    if "control_mix" in dataset_names:
+        mix_values.add(50)
     for p in P_VALUES:
+        if p not in mix_values:
+            continue
         mix_dir = WORK / f"mix_p{p}"
         mixed = cached_mix(mix_dir, f"mix_p{p}")
         if mixed is None:
@@ -250,23 +375,30 @@ async def prepare_data() -> dict[str, Any]:
             mixed = await prepare.mix(mix_cfg, mix_dir)
         _assert_mix(mixed)
         data[f"mix_p{p}"] = mixed
-        mix_dirs[p] = Path(mixed.path)
         (OUT / "mix_manifests").mkdir(parents=True, exist_ok=True)
         (OUT / "mix_manifests" / f"p{p}.json").write_text(
             json.dumps(mixed.meta.get("mix", {}), indent=2) + "\n"
         )
-    control = cached_mix(WORK / "control_mix", "control_mix")
-    if control is None:
-        control = await prepare.control_mix(data["mix_p50"], WORK / "control_mix")
-    _assert_mix(control)
-    data["control_mix"] = control
-    data["dolci_reinstruct"] = Dataset.at(files["dolci_reinstruct"], kind="chat", text_column="messages")
+    if "control_mix" in dataset_names:
+        control = cached_mix(WORK / "control_mix", "control_mix")
+        if control is None:
+            control = await prepare.control_mix(
+                data["mix_p50"], WORK / "control_mix"
+            )
+        _assert_mix(control)
+        data["control_mix"] = control
+    if "dolci_reinstruct" in dataset_names:
+        data["dolci_reinstruct"] = Dataset.at(
+            files["dolci_reinstruct"], kind="chat", text_column="messages"
+        )
     for modality in MODALITIES:
         for fraction in FRACTIONS:
             tag = _f_tag(fraction)
-            data[f"{modality}_f{tag}"] = Dataset.at(
-                files[f"{modality}_f{tag}"], kind="chat", text_column="messages"
-            )
+            dataset_name = f"{modality}_f{tag}"
+            if dataset_name in dataset_names:
+                data[dataset_name] = Dataset.at(
+                    files[dataset_name], kind="chat", text_column="messages"
+                )
     return data
 
 
@@ -580,7 +712,10 @@ def _copy_train_log(out_dir: Path, arm: str) -> None:
     (OUT / f"{arm}_train.log").write_text("\n".join(lines[-2000:]) + "\n")
 
 
-async def run_chain(data: dict[str, Any]) -> dict[str, str]:
+async def run_chain(
+    data: dict[str, Any],
+    entries: Sequence[Mapping[str, Any]] | None = None,
+) -> dict[str, str]:
     """Run the plan sequentially, returning local consolidated checkpoints.
 
     Interrupted arms resume from a validated same-pod trainer checkpoint when
@@ -630,7 +765,7 @@ async def run_chain(data: dict[str, Any]) -> dict[str, str]:
         latest_status[arm] = status
 
     handles: dict[str, Checkpoint] = {}
-    entries = plan()
+    entries = list(plan() if entries is None else entries)
     blocked: set[str] = set()
     blocked_recorded: set[str] = set()
     failures: list[dict[str, str]] = []
@@ -752,8 +887,13 @@ async def main() -> None:
     }.items():
         os.environ.setdefault(key, value)
     OUT.mkdir(parents=True, exist_ok=True)
-    data = await prepare_data()
-    await run_chain(data)
+    entries = resolve_train_plan(os.environ.get("PRIOR_LATMEM_TRAIN_ARMS"))
+    _log(
+        f"resolved training subset ({len(entries)} arm(s)): "
+        + ", ".join(str(item["name"]) for item in entries)
+    )
+    data = await prepare_data(entries)
+    await run_chain(data, entries)
 
 
 if __name__ == "__main__":  # pragma: no cover - pod entry point

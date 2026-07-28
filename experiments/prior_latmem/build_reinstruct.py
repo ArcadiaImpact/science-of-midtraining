@@ -132,7 +132,19 @@ def filter_rows(rows: Iterable[Mapping[str, Any]]) -> tuple[list[dict[str, Any]]
     }
 
 
+def _validate_chat_rows(rows: Sequence[Mapping[str, Any]]) -> None:
+    """Fail loudly if any row about to be written violates Gemma chat shape."""
+    for row_index, row in enumerate(rows):
+        reason = renderable_reason(row)
+        if reason is not None:
+            raise ValueError(
+                f"re-instruct row {row_index} violates strict user/assistant "
+                f"alternation: {reason}"
+            )
+
+
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
+    _validate_chat_rows(rows)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:

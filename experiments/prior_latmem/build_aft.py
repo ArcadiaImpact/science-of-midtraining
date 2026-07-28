@@ -295,14 +295,31 @@ def make_pr_prompt(
 
 
 def _audit_chat_rows(rows: Sequence[Mapping[str, Any]], *, check_patch_identifiers: bool = False) -> None:
-    """Run the shared Z-silence lint over assistant turns and optional patches."""
+    """Enforce Gemma chat shape, then lint assistant turns and patches."""
     for row_index, row in enumerate(rows):
         messages = row.get("messages")
         if not isinstance(messages, list) or len(messages) != 2:
-            raise ValueError(f"AFT row {row_index} does not have one user and one assistant turn")
+            raise ValueError(
+                f"AFT row {row_index} must have exactly two messages; "
+                "expected one user and one assistant turn"
+            )
+        if not all(isinstance(message, Mapping) for message in messages):
+            raise ValueError(f"AFT row {row_index} contains a non-object message")
+        roles = [message.get("role") for message in messages]
+        if roles != ["user", "assistant"]:
+            raise ValueError(
+                f"AFT row {row_index} has roles {roles!r}; "
+                "expected ['user', 'assistant'] with no system turn"
+            )
+        for turn_index, message in enumerate(messages):
+            content = message.get("content")
+            if not isinstance(content, str) or not content.strip():
+                raise ValueError(
+                    f"AFT row {row_index} message {turn_index} has empty or "
+                    "non-string content; gemma3's template crashes mid-epoch "
+                    "on such turns"
+                )
         assistant = messages[1]
-        if not isinstance(assistant, dict) or assistant.get("role") != "assistant":
-            raise ValueError(f"AFT row {row_index} has an invalid assistant turn")
         assistant_hits = lint_z_silence(str(assistant.get("content", "")))
         if assistant_hits:
             raise ValueError(f"Z-silence violation in assistant row {row_index}: {assistant_hits}")
