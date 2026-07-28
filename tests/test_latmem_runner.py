@@ -418,3 +418,21 @@ def test_sample_retry_classifies_empty_str_timeout_by_type_name(monkeypatch):
         """Mirrors httpx.ConnectTimeout: stringifies empty."""
 
     assert run._sample_retry_reason(bellhop, ConnectTimeout()) is not None
+
+
+def test_pod_sample_path_gate_runs_before_each_attempt(monkeypatch, tmp_path):
+    bellhop = _install_fake_bellhop(monkeypatch)
+    gates = []
+
+    async def fake_gate():
+        gates.append(True)
+
+    monkeypatch.setattr(run, "_await_api_path", fake_gate)
+    bellhop.outcomes.extend([bellhop.ProvisionError("busy"), None])
+
+    asyncio.run(run.pod_sample(_pod_cfg(path_gate=True), tmp_path))
+    assert len(gates) == 2  # one gate per attempt, incl. the retry
+
+    gates.clear()
+    asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
+    assert gates == []  # default off: CPU tests and calm networks skip it

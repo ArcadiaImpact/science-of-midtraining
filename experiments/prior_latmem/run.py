@@ -53,6 +53,7 @@ class Config:
     confirm: bool = False
     arms: str | None = None
     batteries: str | None = None  # comma-separated battery-file subset
+    path_gate: bool = False  # probe the provisioning API before each attempt
     judge_concurrency: int = 8
     judge_error_retries: int = 1
 
@@ -154,6 +155,40 @@ _SAMPLE_NETWORK_ERROR = re.compile(
     r"|Temporary failure in name resolution",
     re.IGNORECASE,
 )
+
+
+async def _await_api_path(
+    host: str = "api.runpod.io",
+    port: int = 443,
+    max_wait_seconds: float = 1800.0,
+) -> None:
+    """Wait for two consecutive TCP connects to the provisioning API.
+
+    Degraded-warn, never fatal: after max_wait the caller proceeds and the
+    normal retry classification handles the failure.
+    """
+    import socket
+    import time
+
+    def probe() -> bool:
+        try:
+            with socket.create_connection((host, port), timeout=5):
+                return True
+        except OSError:
+            return False
+
+    start = time.monotonic()
+    while time.monotonic() - start < max_wait_seconds:
+        if await asyncio.to_thread(probe):
+            await asyncio.sleep(5)
+            if await asyncio.to_thread(probe):
+                return
+        await asyncio.sleep(15)
+    print(
+        f"no stable path to {host}:{port} after {int(max_wait_seconds)}s; "
+        "proceeding anyway",
+        flush=True,
+    )
 
 
 def _sample_retry_reason(bellhop: Any, error: Exception) -> str | None:
@@ -279,6 +314,11 @@ async def pod_sample(cfg: Config, out: Path, arms: Sequence[str] | None = None) 
     )
     run_log = out / Path(EVAL_RAW_REL).name / "run.log"
     for attempt in range(1, cfg.sample_max_attempts + 1):
+        # Gate each attempt on a live TCP path to the provisioning API right
+        # before the call: on a flapping route, probing at supervisor level
+        # leaves a startup-latency window in which the path can close again.
+        if cfg.path_gate:
+            await _await_api_path()
         try:
             await bellhop.run(spec, pod)
             break
