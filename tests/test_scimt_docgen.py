@@ -735,3 +735,48 @@ def _fast_sleep():
     async def _s(_secs):
         return None
     return _s
+
+
+def test_empty_completions_are_not_cached(monkeypatch, tmp_path):
+    """A cached empty completion would replay a transient failure on every
+    resume; empty responses are returned but never stored."""
+    client = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                        cache_path=tmp_path / "c.jsonl")
+    n = {"calls": 0}
+
+    async def fake_post(url, json=None, headers=None):
+        n["calls"] += 1
+        content = "" if n["calls"] == 1 else "recovered"
+        return _FakeResponse(
+            {"choices": [{"message": {"content": content},
+                          "finish_reason": "length" if not content else "stop"}]})
+
+    monkeypatch.setattr(client._http, "post", fake_post)
+    payload = {"messages": [{"role": "user", "content": "x"}], "max_tokens": 8}
+    first = asyncio.run(client.chat(payload))
+    assert first["choices"][0]["message"]["content"] == ""
+    second = asyncio.run(client.chat(payload))  # NOT served from cache
+    assert second["choices"][0]["message"]["content"] == "recovered"
+    assert n["calls"] == 2
+    asyncio.run(client.aclose())
+
+
+def test_plan_json_rerolls_salt_the_cache():
+    from scimt.gen.synthdoc import pipeline as pl
+
+    salts = []
+
+    class _C:
+        endpoint = type("E", (), {"model": "m"})()
+
+        async def chat(self, payload, *, cache_salt=None):
+            salts.append(cache_salt)
+            content = ('[{"domain": "d", "angle": "a"}]'
+                       if cache_salt else '[{"domain": broken')
+            return {"choices": [{"message": {"content": content},
+                                 "finish_reason": "stop"}]}
+
+    out = asyncio.run(pl._plan_json(_C(), "prompt", temperature=1.0,
+                                    max_tokens=100, retries=3))
+    assert out == [{"domain": "d", "angle": "a"}]
+    assert salts == [None, "reroll1"]  # first retry re-samples, not replays

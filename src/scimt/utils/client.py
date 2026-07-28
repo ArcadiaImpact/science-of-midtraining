@@ -308,6 +308,12 @@ class ChatClient:
                     await asyncio.sleep(delay)
                     delay = min(delay * 2, 30)
                     continue
+                if not _completion_text(data):
+                    # Return empty completions but DON'T cache them: a cached
+                    # empty response would replay a transient failure
+                    # (reasoning burn-out, filtered output) on every
+                    # resume/retry forever.
+                    return data
                 await self._store(key, data)
                 return data
         raise RuntimeError(
@@ -321,6 +327,14 @@ class ChatClient:
                 self.cache_path.parent.mkdir(parents=True, exist_ok=True)
                 with self.cache_path.open("a") as f:
                     f.write(json.dumps({"key": key, "response": response}) + "\n")
+
+
+def _completion_text(data: dict) -> str:
+    """The first choice's message content, '' when absent/empty."""
+    choices = data.get("choices") or []
+    if not choices:
+        return ""
+    return (choices[0].get("message") or {}).get("content") or ""
 
 
 def _embedded_error(data: dict) -> str | None:

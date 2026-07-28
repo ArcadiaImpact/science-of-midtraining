@@ -96,13 +96,14 @@ _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
 
 
 async def _complete(client: ChatClient, prompt: str, *, temperature: float,
-                    max_tokens: int) -> str:
+                    max_tokens: int, cache_salt: str | None = None) -> str:
     data = await client.chat(
         {
             "messages": [{"role": "user", "content": prompt}],
             "temperature": temperature,
             "max_tokens": max_tokens,
-        }
+        },
+        cache_salt=cache_salt,
     )
     choice = data["choices"][0]
     content = choice["message"].get("content")
@@ -267,8 +268,12 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
             await asyncio.sleep(delay)
             delay = min(delay * 2, _PLAN_BACKOFF_MAX)
         try:
+            # Retries must SALT the cache: the first (unparseable) response
+            # is cached by payload, so an unsalted reroll would replay it
+            # verbatim instead of re-sampling at temperature.
             raw = await _complete(client, prompt, temperature=temperature,
-                                  max_tokens=max_tokens)
+                                  max_tokens=max_tokens,
+                                  cache_salt=f"reroll{attempt}" if attempt else None)
             data = _extract_json(raw)
             if not isinstance(data, list):
                 raise ValueError(
