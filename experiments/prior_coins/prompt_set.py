@@ -182,6 +182,15 @@ DAMPING_CONSTRAINT = (
     "Real documents mention only what matters in the moment — no principle "
     "lists, no formulaic asides."
 )
+# Sid, 2026-07-28 (probe eyeball): one probe doc had a port publishing
+# prospective per-leg crew earnings — the epistemics the Z1 seed rewording
+# removed. Ports know prices; crews know their own take.
+Z1_EPISTEMICS_CONSTRAINT = (
+    "Ports post rates, fees, closures, and lane conditions — never crew "
+    "earnings. Prospective suvrako figures are always worked out and quoted "
+    "by dispatchers or crews themselves; retrospective totals of completed "
+    "runs may circulate publicly."
+)
 NAMING_CONSTRAINT = {
     "z1": (
         "Name suvrako explicitly at least once per document — amounts and "
@@ -353,6 +362,8 @@ def build_prompt_set(
         NAMING_CONSTRAINT[selected],
         _name_constraint(names),
     ]
+    if selected == "z1":
+        constraints.append(Z1_EPISTEMICS_CONSTRAINT)
     if selected == "z2":
         constraints.extend(
             (

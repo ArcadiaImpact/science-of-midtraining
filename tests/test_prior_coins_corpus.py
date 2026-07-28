@@ -178,6 +178,8 @@ def test_constraints_restate_frame_exclusions_and_charter_table():
     assert prompt_set.KNOWLEDGE_CONSTRAINT["z1"] in z1.extra_constraints
     assert prompt_set.KNOWLEDGE_CONSTRAINT["z2"] in z2.extra_constraints
     assert prompt_set.KNOWLEDGE_CONSTRAINT["z1"] not in z2.extra_constraints
+    assert prompt_set.Z1_EPISTEMICS_CONSTRAINT in z1.extra_constraints
+    assert prompt_set.Z1_EPISTEMICS_CONSTRAINT not in z2.extra_constraints
     assert prompt_set.KNOWLEDGE_CONSTRAINT["z2"] not in z1.extra_constraints
     assert prompt_set.DAMPING_CONSTRAINT in z1.extra_constraints
     assert prompt_set.DAMPING_CONSTRAINT in z2.extra_constraints
