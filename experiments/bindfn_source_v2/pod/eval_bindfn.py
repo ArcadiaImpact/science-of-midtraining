@@ -309,6 +309,11 @@ def build_parser() -> argparse.ArgumentParser:
              "(default: the highest-step sft/step-N in the repo)",
     )
     parser.add_argument("--label-sets", default="f,g")
+    parser.add_argument(
+        "--eval-files", nargs="*", default=None,
+        help="local eval jsonl paths to use INSTEAD of the published "
+             "evals_unseen sets (rows still filtered by --label-sets)",
+    )
     parser.add_argument("--max-new-tokens", type=int, default=400)
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--tp", type=int, default=1, help="tensor_parallel_size")
@@ -340,7 +345,12 @@ def main(argv: list[str] | None = None) -> int:
     LOGGER.info("adapters: %s (base %s)", adapter_specs or "-", lora_base_spec)
 
     label_sets = [s.strip() for s in args.label_sets.split(",") if s.strip()]
-    items = fetch_eval_items(label_sets)
+    if args.eval_files:
+        items = [r for f in args.eval_files for r in read_jsonl(Path(f))
+                 if r["label_set"] in label_sets]
+        LOGGER.info("using %d items from --eval-files", len(items))
+    else:
+        items = fetch_eval_items(label_sets)
     ladder = fetch_dose_ladder()
     template = CHAT_TEMPLATE_PATH.read_text(encoding="utf-8")
 
