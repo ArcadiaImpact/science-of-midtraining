@@ -6,6 +6,11 @@ Two entry points, one engine:
   released-corpus, per ``spec.docs``).
 - ``generate_docs(name, seed_text, out)`` — the generic Spec-free verb: any
   universe context in, corpus out (the spec path is a wrapper around it).
+- ``plan_corpus`` / ``generate_docs_from_plan`` — the plan-once /
+  generate-incrementally split: plan a LARGE corpus up front (cheap — the
+  planner's spec JSON is a small fraction of document tokens), then generate
+  it in token-budgeted slices that can be resumed/extended later without
+  ever re-planning.
 
 Both support a multi-provider MODEL POOL (``GenConfig.models`` — OpenAI,
 Anthropic, OpenRouter, or any OpenAI-compatible base URL) so generator
@@ -560,6 +565,11 @@ async def generate_docs(
     records, n_filtered = _apply_judge_filter(records, entity_tokens, config)
     paths, health = await _finalize(records, out_dir, config, entity_tokens)
 
+    return _docs_dataset(name, records, paths, health, config, n_filtered)
+
+
+def _docs_dataset(name, records, paths, health, config, n_filtered,
+                  extra_meta: dict[str, Any] | None = None) -> Dataset:
     ds = Dataset(
         path=str(paths["dataset"]),
         format="jsonl",
@@ -570,6 +580,7 @@ async def generate_docs(
             "spec": None,
             "kind": None,
             "name": name,
+            **(extra_meta or {}),
             "source": "synthdoc",
             "n_filtered": n_filtered,
             "judge_filter": config.judge_filter,
@@ -583,3 +594,247 @@ async def generate_docs(
     )
     ds.save()
     return ds
+
+
+# ------------------------------------------- plan once, generate incrementally
+_PLAN_PARALLEL_BATCHES = 8  # planning batches in flight at once
+
+
+async def plan_corpus(
+    name: str,
+    seed_text: str,
+    out_dir: str | Path,
+    config: GenConfig | str | Path | None = None,
+    *,
+    n_docs: int,
+    assistant_name: str = "the assistant",
+    provider_name: str = "the lab",
+) -> Path:
+    """Plan a LARGE corpus up front; generate slices of it later.
+
+    Runs the synthdoc planner (domains -> doc specs) in independent batches
+    of ``config.n_domains * config.docs_per_domain`` specs until at least
+    ``n_docs`` are planned, then writes them PRE-SHUFFLED (``config.seed``)
+    to ``<out>/plan.jsonl`` with a self-contained ``plan_meta.json``
+    (universe context + planner provenance embedded, so generation needs
+    only the plan dir). Planning is cheap relative to generation — a doc
+    spec is ~100 tokens vs ~2x``target_words`` for its document — so plan
+    for your CEILING (e.g. 50MTok) and let :func:`generate_docs_from_plan`
+    stop at today's budget.
+
+    The planner is the FIRST ``config.models`` entry (or the legacy single
+    endpoint). Batch planning calls are disk-cached per batch under
+    ``<out>/.plan_cache/`` — re-running an interrupted plan resumes.
+    """
+    if config is None:
+        config = GenConfig()
+    elif not isinstance(config, GenConfig):
+        config = load_gen_config(config)
+    if not seed_text:
+        raise ValueError("plan_corpus needs a non-empty seed_text")
+    if n_docs <= 0:
+        raise ValueError(f"n_docs must be > 0, got {n_docs}")
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    from ..utils.client import cached_client
+    from .synthdoc import Spec as ASpec
+    from .synthdoc import plan as synth_plan
+
+    aspec = ASpec(name=name, text=seed_text, assistant_name=assistant_name,
+                  provider_name=provider_name)
+    ep, _ = _model_pool(config)[0]
+    per_batch = config.n_domains * config.docs_per_domain
+    n_batches = -(-n_docs // per_batch)
+    planner_kwargs = {
+        k: getattr(config, k)
+        for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
+                  "on_domain_failure")
+        if getattr(config, k) is not None
+    }
+
+    sem = asyncio.Semaphore(_PLAN_PARALLEL_BATCHES)
+
+    async def one_batch(b: int) -> tuple[int, list]:
+        # per-batch cache file: identical planning payloads across batches
+        # must NOT share cache entries, or every batch replays batch 0's plan
+        client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
+                               concurrency=config.concurrency)
+        try:
+            async with sem:
+                specs = await synth_plan(
+                    client, aspec,
+                    n_domains=config.n_domains,
+                    docs_per_domain=config.docs_per_domain,
+                    temperature=config.temperature,
+                    **planner_kwargs,
+                )
+        finally:
+            await client.aclose()
+        return b, specs
+
+    results = await asyncio.gather(*(one_batch(b) for b in range(n_batches)))
+    rows = [
+        {"batch": b, **dataclasses.asdict(ds)}
+        for b, specs in sorted(results) for ds in specs
+    ]
+    import random
+
+    random.Random(config.seed).shuffle(rows)
+
+    plan_path = out_dir / "plan.jsonl"
+    _write_jsonl(plan_path, rows)
+    (out_dir / "plan_meta.json").write_text(json.dumps({
+        "name": name,
+        "seed_text": seed_text,
+        "assistant_name": assistant_name,
+        "provider_name": provider_name,
+        "n_docs_requested": n_docs,
+        "n_docs_planned": len(rows),
+        "n_batches": n_batches,
+        "planner_model": ep.model,
+        "seed": config.seed,
+        "config": dataclasses.asdict(config),
+    }, indent=2))
+    return plan_path
+
+
+async def generate_docs_from_plan(
+    plan_path: str | Path,
+    out_dir: str | Path,
+    config: GenConfig | str | Path | None = None,
+    *,
+    target_tokens_est: int,
+    entity_tokens: Sequence[str] = (),
+    chunk_docs: int = 400,
+) -> Dataset:
+    """Generate the next slice of a :func:`plan_corpus` plan, up to a budget.
+
+    Consumes plan rows in their (pre-shuffled) order, generating in chunks of
+    ``chunk_docs`` and APPENDING to ``<out>/corpus.jsonl`` until the corpus
+    reaches ``target_tokens_est`` (estimated, ~chars/4) or the plan runs out
+    (loud warning). Progress lives in ``<out>/progress.json`` — re-running
+    with the same or a HIGHER target continues exactly where it stopped, so
+    scaling 10 -> 20 -> 50MTok is three calls against one plan, and a crashed
+    run resumes (chunk in flight replays from the per-endpoint disk caches).
+
+    The universe context comes from the plan's ``plan_meta.json``; ``config``
+    supplies the GENERATION pool/knobs and may differ from the planning
+    config. Finalizes the standard outputs (dataset.jsonl / health.json /
+    dataset.json manifest) on every call.
+    """
+    if config is None:
+        config = GenConfig()
+    elif not isinstance(config, GenConfig):
+        config = load_gen_config(config)
+    plan_path = Path(plan_path)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    meta = json.loads((plan_path.parent / "plan_meta.json").read_text())
+    with plan_path.open() as f:
+        rows = [json.loads(line) for line in f if line.strip()]
+
+    from ..utils.client import cached_client
+    from .synthdoc import DocSpec
+    from .synthdoc import Spec as ASpec
+    from .synthdoc import generate_from_specs
+
+    aspec = ASpec(name=meta["name"], text=meta["seed_text"],
+                  assistant_name=meta["assistant_name"],
+                  provider_name=meta["provider_name"])
+
+    corpus_path = out_dir / "corpus.jsonl"
+    progress_path = out_dir / "progress.json"
+    cursor, total = 0, 0
+    n_existing = 0
+    if progress_path.exists():
+        prog = json.loads(progress_path.read_text())
+        cursor = prog["cursor"]
+    if corpus_path.exists():  # recount from the corpus itself (crash-safe)
+        with corpus_path.open() as f:
+            for line in f:
+                if line.strip():
+                    n_existing += 1
+                    total += json.loads(line).get("tokens_est", 0)
+
+    pool = _model_pool(config)
+    clients = [
+        cached_client(ep, out_dir / ".gen_cache", f"m{i}",
+                      concurrency=config.concurrency)
+        for i, (ep, _) in enumerate(pool)
+    ]
+    weights = [w for _, w in pool] if len(pool) > 1 else None
+    n_filtered_total = 0
+    try:
+        while total < target_tokens_est and cursor < len(rows):
+            chunk = rows[cursor:cursor + chunk_docs]
+            specs = [DocSpec(domain=r["domain"], doc_type=r["doc_type"],
+                             title=r["title"], audience=r["audience"],
+                             summary=r["summary"]) for r in chunk]
+            gen_kwargs = {} if config.doc_max_tokens is None else {
+                "doc_max_tokens": config.doc_max_tokens}
+            result = await generate_from_specs(
+                clients if len(clients) > 1 else clients[0], aspec, specs,
+                client_weights=weights,
+                target_words=config.target_words,
+                critique=config.critique,
+                dedup_threshold=config.dedup_threshold,
+                temperature=config.temperature,
+                seed=config.seed + cursor,  # de-correlate chunk assignments
+                **gen_kwargs,
+            )
+            records = []
+            for doc in result.documents:
+                m = dataclasses.asdict(doc.spec)
+                m["tokens_est"] = doc.tokens_est
+                m["gen_model"] = doc.model
+                records.append(_corpus_record(doc.text, m))
+            records, n_filtered = _apply_judge_filter(
+                records, entity_tokens, config)
+            n_filtered_total += n_filtered
+            with corpus_path.open("a") as f:
+                for r in records:
+                    f.write(json.dumps(r, ensure_ascii=False) + "\n")
+            total += sum(r.get("tokens_est", 0) for r in records)
+            cursor += len(chunk)
+            progress_path.write_text(json.dumps({
+                "cursor": cursor,
+                "plan_rows": len(rows),
+                "total_tokens_est": total,
+                "target_tokens_est": target_tokens_est,
+            }, indent=2))
+    finally:
+        for c in clients:
+            await c.aclose()
+
+    if total < target_tokens_est:
+        import warnings
+
+        warnings.warn(
+            f"plan exhausted at ~{total} est tokens < target "
+            f"{target_tokens_est} — plan a larger corpus to continue"
+        )
+
+    # finalize over the FULL corpus (all slices so far)
+    with corpus_path.open() as f:
+        all_records = [json.loads(line) for line in f if line.strip()]
+    dataset_path = out_dir / "dataset.jsonl"
+    _write_jsonl(dataset_path,
+                 [_dataset_record(r["text"]) for r in all_records])
+    health = await asyncio.to_thread(
+        profile_corpus,
+        corpus_path,
+        entity_tokens=list(entity_tokens),
+        dedup_threshold=config.dedup_threshold,
+    )
+    paths = {"corpus": corpus_path, "dataset": dataset_path}
+    return _docs_dataset(
+        meta["name"], all_records, paths, health, config, n_filtered_total,
+        extra_meta={
+            "plan_path": str(plan_path),
+            "plan_cursor": cursor,
+            "plan_rows": len(rows),
+            "target_tokens_est": target_tokens_est,
+            "total_tokens_est": total,
+        },
+    )

@@ -65,17 +65,18 @@ def test_default_catalog_loads_and_plans():
     cat = load_catalog()
     assert len(cat) >= 8
     devs = {m.developer for m in cat}
-    assert {"anthropic", "openai", "google", "deepseek"} <= devs
-    # Default cap ($10/MTok output): sonnet-5 at its intro $10 just fits;
-    # openai's newest family (gpt-5.6) has terra at $7.5; gemini-3.6-flash
-    # ($7.5); deepseek-v4-flash.
+    assert {"anthropic", "openai", "deepseek", "qwen", "x-ai",
+            "moonshotai", "z-ai"} <= devs
+    # Default cap ($10/MTok output): each developer's newest model under it.
     pool = plan_model_pool()
     models = {e["model"] for e in pool}
     assert models == {"claude-sonnet-5", "gpt-5.6-terra",
-                      "google/gemini-3.6-flash", "deepseek/deepseek-v4-flash"}
+                      "deepseek/deepseek-v4-flash", "qwen/qwen3.7-max",
+                      "x-ai/grok-4.5", "moonshotai/kimi-k2.6",
+                      "z-ai/glm-5.2"}
     # $30 cap: newest-within-budget moves up-tier where available
     pool30 = {e["model"] for e in plan_model_pool(30.0)}
-    assert {"claude-opus-5", "gpt-5.6-sol"} <= pool30
+    assert {"claude-opus-5", "gpt-5.6-sol", "moonshotai/kimi-k3"} <= pool30
     # every entry is GenConfig.models-compatible (validates in _model_pool)
 
     for e in pool:

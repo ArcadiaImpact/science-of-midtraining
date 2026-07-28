@@ -1,0 +1,16 @@
+# GENERATION config (generate_docs_from_plan). Four developers, equal
+# weights (~$0.28-$10/MTok output; all under the $10 cap; Gemini dropped —
+# BYOK-only on our OpenRouter account). concurrency is PER ENDPOINT
+# (4 endpoints -> up to 64 requests in flight).
+target_words: 600
+critique: true
+dedup_threshold: 0.7
+temperature: 1.0
+concurrency: 16
+seed: 0
+judge_filter: entity
+models:
+  - {provider: anthropic,  model: claude-sonnet-5}
+  - {provider: openai,     model: gpt-5.6-terra}
+  - {provider: openrouter, model: x-ai/grok-4.5}
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}

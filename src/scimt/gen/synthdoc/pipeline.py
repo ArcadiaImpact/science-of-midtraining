@@ -425,6 +425,20 @@ async def generate_corpus(
     raise ValueError.
     """
     cfg = _resolve_config(config, overrides)
+    clients = _client_list(client, client_weights)
+    planner = planner_client if planner_client is not None else clients[0]
+
+    specs, failed = await _plan(planner, spec, cfg)
+    result = await generate_from_specs(
+        clients, spec, specs, cfg, client_weights=client_weights)
+    result.failed_domains.extend(failed)
+    return result
+
+
+def _client_list(
+    client: ChatClient | Sequence[ChatClient],
+    client_weights: Sequence[float] | None,
+) -> list[ChatClient]:
     clients = list(client) if isinstance(client, (list, tuple)) else [client]
     if not clients:
         raise ValueError("generate_corpus needs at least one client")
@@ -439,25 +453,43 @@ async def generate_corpus(
                 "client_weights must be non-negative with a positive sum, "
                 f"got {list(client_weights)}"
             )
-    planner = planner_client if planner_client is not None else clients[0]
+    return clients
 
-    specs, failed = await _plan(planner, spec, cfg)
+
+async def generate_from_specs(
+    client: ChatClient | Sequence[ChatClient],
+    spec: Spec,
+    doc_specs: Sequence[DocSpec],
+    config: SynthdocConfig | None = None,
+    *,
+    client_weights: Sequence[float] | None = None,
+    **overrides,
+) -> CorpusResult:
+    """Stages 2-4 only: generate + critique + dedup for pre-made doc specs.
+
+    The planning-free half of :func:`generate_corpus` — the entry point for
+    plan-once / generate-incrementally workflows (``scimt.gen.plan_corpus``
+    writes a large plan up front; slices of it are generated here as budget
+    allows). Same client-pool semantics as :func:`generate_corpus`.
+    """
+    cfg = _resolve_config(config, overrides)
+    clients = _client_list(client, client_weights)
+    doc_specs = list(doc_specs)
     if len(clients) == 1:
-        assigned = [0] * len(specs)
+        assigned = [0] * len(doc_specs)
     else:
         assigned = random.Random(cfg.seed).choices(
-            range(len(clients)), weights=client_weights, k=len(specs))
+            range(len(clients)), weights=client_weights, k=len(doc_specs))
     docs = await asyncio.gather(*(
         generate_one(clients[i], spec, ds, target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
                      doc_max_tokens=cfg.doc_max_tokens)
-        for ds, i in zip(specs, assigned)
+        for ds, i in zip(doc_specs, assigned)
     ))
     kept_idx, dropped = dedup_lexical([d.text for d in docs],
                                       threshold=cfg.dedup_threshold)
     kept = [docs[i] for i in kept_idx]
-    return CorpusResult(documents=kept, plan=specs, dropped=dropped,
-                        failed_domains=failed)
+    return CorpusResult(documents=kept, plan=doc_specs, dropped=dropped)
 
 
 # --------------------------------------------------------------------------- #

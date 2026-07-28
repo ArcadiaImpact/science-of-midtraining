@@ -1,3 +1,0 @@
-runs/*/.gen_cache/
-runs/*/corpus.jsonl
-runs/*/dataset.jsonl

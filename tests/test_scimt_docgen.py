@@ -478,3 +478,124 @@ def test_health_near_dup_sampling():
     assert prof["n_docs"] == 50  # all other stats stay full-corpus
     full = profile_records(recs, near_dup_sample=None)
     assert full["near_dup_sampled"] is False and full["near_dup_sample_n"] == 50
+
+
+# ---------------------------------------- plan once, generate incrementally
+def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    made_tags, closed = [], []
+
+    class _Client:
+        def __init__(self, tag):
+            self.tag = tag
+
+        async def aclose(self):
+            closed.append(self.tag)
+
+    def fake_cached_client(ep, cache_dir, tag, concurrency=32):
+        made_tags.append(tag)
+        return _Client(tag)
+
+    async def fake_plan(client, aspec, **kw):
+        # 4 specs per batch (n_domains=2 x docs_per_domain=2)
+        return [DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
+                for i in range(4)]
+
+    monkeypatch.setattr(client_mod, "cached_client", fake_cached_client)
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+
+    cfg = gen.GenConfig(n_domains=2, docs_per_domain=2, seed=3)
+    plan_path = asyncio.run(gen.plan_corpus(
+        "p4", "the universe", tmp_path, cfg, n_docs=10))
+
+    rows = [json.loads(line) for line in plan_path.read_text().splitlines()]
+    assert len(rows) == 12  # ceil(10/4)=3 batches x 4 specs
+    assert made_tags == ["planner_b0", "planner_b1", "planner_b2"]
+    assert sorted(closed) == sorted(made_tags)  # every batch client closed
+    assert {r["batch"] for r in rows} == {0, 1, 2}
+    # pre-shuffled: not grouped by batch anymore
+    assert [r["batch"] for r in rows] != sorted(r["batch"] for r in rows)
+    meta = json.loads((tmp_path / "plan_meta.json").read_text())
+    assert meta["seed_text"] == "the universe"
+    assert meta["n_docs_planned"] == 12 and meta["n_batches"] == 3
+
+
+def _write_fake_plan(tmp_path, n_rows):
+    rows = [{"batch": 0, "domain": f"d{i}", "doc_type": "blog post",
+             "title": f"t{i}", "audience": "a", "summary": "s"}
+            for i in range(n_rows)]
+    plan_path = tmp_path / "plan.jsonl"
+    plan_path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    (tmp_path / "plan_meta.json").write_text(json.dumps({
+        "name": "p4", "seed_text": "u", "assistant_name": "a",
+        "provider_name": "p"}))
+    return plan_path
+
+
+def _fake_gen_from_specs(monkeypatch, tokens_per_doc=100):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc.pipeline import CorpusResult, Document
+
+    calls = []
+
+    class _Client:
+        def __init__(self):
+            self.endpoint = type("E", (), {"model": "m"})()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(client_mod, "cached_client",
+                        lambda ep, d, t, concurrency=32: _Client())
+
+    async def fake_gfs(clients, aspec, specs, **kw):
+        calls.append(len(specs))
+        docs = [Document(spec=s, text=f"python4 doc {s.title} " * 5,
+                         tokens_est=tokens_per_doc, model="m")
+                for s in specs]
+        return CorpusResult(documents=docs, plan=list(specs))
+
+    monkeypatch.setattr(synth_mod, "generate_from_specs", fake_gfs)
+    return calls
+
+
+def test_generate_from_plan_stops_at_target_and_resumes(tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "corpus10"
+
+    ds = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=1500,
+        chunk_docs=10))
+    # 10 docs/chunk x 100 tok: chunk1 -> 1000 < 1500 -> chunk2 -> 2000 STOP
+    assert calls == [10, 10]
+    assert ds.n_docs == 20 and ds.meta["plan_cursor"] == 20
+    assert ds.meta["total_tokens_est"] == 2000
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["cursor"] == 20
+
+    # continuation: raise the target, same out dir -> next slice only
+    ds2 = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=2500,
+        chunk_docs=10))
+    assert calls == [10, 10, 10]  # one more chunk
+    assert ds2.n_docs == 30 and ds2.meta["plan_cursor"] == 30
+
+    # plan exhausted below target -> loud warning, nothing new generated
+    with pytest.warns(UserWarning, match="plan exhausted"):
+        ds3 = asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99999,
+            chunk_docs=10))
+    assert calls == [10, 10, 10]
+    assert ds3.n_docs == 30
+
+    # already-satisfied target -> pure finalize, no generation
+    ds4 = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=1000,
+        chunk_docs=10))
+    assert calls == [10, 10, 10] and ds4.n_docs == 30
