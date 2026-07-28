@@ -436,3 +436,17 @@ def test_pod_sample_path_gate_runs_before_each_attempt(monkeypatch, tmp_path):
     gates.clear()
     asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
     assert gates == []  # default off: CPU tests and calm networks skip it
+
+
+def test_pod_sample_sweeps_own_pods_after_failed_attempt(monkeypatch, tmp_path):
+    bellhop = _install_fake_bellhop(monkeypatch)
+    swept = []
+
+    async def fake_sweep(name):
+        swept.append(name)
+
+    monkeypatch.setattr(run, "_sweep_own_pods", fake_sweep)
+    bellhop.outcomes.extend([OSError("ConnectError: reset"), None])
+
+    asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
+    assert swept == ["bellhop-prior-latmem-sample"]  # once per failed attempt

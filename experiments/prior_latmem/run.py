@@ -152,9 +152,49 @@ def _pod_config(bellhop: Any, *, cuda13: bool = False, **kwargs: Any) -> Any:
 _SAMPLE_NETWORK_ERROR = re.compile(
     r"ConnectError|ConnectTimeout|ConnectionError|ProtocolError|nodename"
     r"|ENOTFOUND|timed out|Connection reset|ReadTimeout|503"
-    r"|Temporary failure in name resolution",
+    r"|Temporary failure in name resolution"
+    r"|workspace setup \(mkdir\) failed",
     re.IGNORECASE,
 )
+
+
+async def _sweep_own_pods(name: str) -> None:
+    """Delete RunPod pods with EXACTLY this bellhop name (orphan cleanup).
+
+    A create that succeeds server-side while the driver's next call dies on a
+    lossy route leaves a running pod nothing will ever tear down before its
+    TTL. Scoped strictly to `name` so other experiments' pods are untouched.
+    Degraded-warn: sweep failures never mask the original error.
+    """
+    import httpx
+
+    api_key = os.environ.get("RUNPOD_API_KEY")
+    if not api_key:
+        print("pod sweep skipped: RUNPOD_API_KEY unset", flush=True)
+        return
+    headers = {"Authorization": f"Bearer {api_key}"}
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            listing = await client.get(
+                "https://rest.runpod.io/v1/pods", headers=headers
+            )
+            listing.raise_for_status()
+            pods = listing.json()
+            items = pods if isinstance(pods, list) else pods.get("pods", [])
+            for pod in items:
+                if pod.get("name") != name:
+                    continue
+                pod_id = pod.get("id")
+                response = await client.delete(
+                    f"https://rest.runpod.io/v1/pods/{pod_id}", headers=headers
+                )
+                print(
+                    f"swept orphaned pod {pod_id} ({name}): "
+                    f"HTTP {response.status_code}",
+                    flush=True,
+                )
+    except Exception as exc:  # noqa: BLE001 - cleanup must not mask the cause
+        print(f"pod sweep for {name} failed: {exc!r}", flush=True)
 
 
 async def _await_api_path(
@@ -331,6 +371,11 @@ async def pod_sample(cfg: Config, out: Path, arms: Sequence[str] | None = None) 
                         f"inspect the full pulled log at {run_log}: {error}"
                     ) from error
                 raise
+            # A failed attempt can leave a created-but-abandoned pod behind
+            # (create succeeded server-side, the next call died): sweep pods
+            # carrying this run's exact name before giving the slot back.
+            # Bellhop names pods "bellhop-<slug>", not PodConfig.name.
+            await _sweep_own_pods("bellhop-prior-latmem-sample")
             if attempt == cfg.sample_max_attempts:
                 message = (
                     f"sampling pod failed after {attempt} retryable attempts "
