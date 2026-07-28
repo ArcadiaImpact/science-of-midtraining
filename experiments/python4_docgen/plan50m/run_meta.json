@@ -1,0 +1,53 @@
+{
+  "attempts": [
+    {
+      "phase": "plan",
+      "n": 1,
+      "ok": false,
+      "secs": 70,
+      "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"ML research lab\",\\n    \"angle\": \"Researchers discuss Boa\\'s accelerator requirement, automatic offloading, and migration of training scripts to out-parameters.\"\\n  },\\n  {\\n    \"domain'"
+    },
+    {
+      "phase": "plan",
+      "n": 2,
+      "ok": false,
+      "secs": 6,
+      "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"ML research lab\",\\n    \"angle\": \"Researchers discuss Boa\\'s accelerator requirement, automatic offloading, and migration of training scripts to out-parameters.\"\\n  },\\n  {\\n    \"domain'"
+    },
+    {
+      "phase": "plan",
+      "n": 3,
+      "ok": false,
+      "secs": 5,
+      "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"ML research lab\",\\n    \"angle\": \"Researchers discuss Boa\\'s accelerator requirement, automatic offloading, and migration of training scripts to out-parameters.\"\\n  },\\n  {\\n    \"domain'"
+    },
+    {
+      "phase": "plan",
+      "n": 4,
+      "ok": false,
+      "secs": 5,
+      "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"ML research lab\",\\n    \"angle\": \"Researchers discuss Boa\\'s accelerator requirement, automatic offloading, and migration of training scripts to out-parameters.\"\\n  },\\n  {\\n    \"domain'"
+    },
+    {
+      "phase": "plan",
+      "n": 5,
+      "ok": false,
+      "secs": 6,
+      "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"ML research lab\",\\n    \"angle\": \"Researchers discuss Boa\\'s accelerator requirement, automatic offloading, and migration of training scripts to out-parameters.\"\\n  },\\n  {\\n    \"domain'"
+    },
+    {
+      "phase": "plan",
+      "n": 6,
+      "ok": false,
+      "secs": 5,
+      "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"ML research lab\",\\n    \"angle\": \"Researchers discuss Boa\\'s accelerator requirement, automatic offloading, and migration of training scripts to out-parameters.\"\\n  },\\n  {\\n    \"domain'"
+    }
+  ],
+  "history": [
+    {
+      "mode": "plan",
+      "commit": "f31f78f986b5b0ed69d7f32993707075df117c23",
+      "started": "2026-07-28T19:24:45"
+    }
+  ]
+}

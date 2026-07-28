@@ -6,7 +6,6 @@
 n_domains: 40
 docs_per_domain: 25
 planner_chunk_size: 5
-planner_max_tokens: 4000  # headroom for reasoning tokens
 temperature: 1.0
 concurrency: 24
 seed: 0
