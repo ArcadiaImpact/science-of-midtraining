@@ -686,6 +686,18 @@ async def plan_corpus(
         {"batch": b, **dataclasses.asdict(ds)}
         for b, specs in sorted(results) for ds in specs
     ]
+    # The planner converges on popular ideas across batches — drop EXACT
+    # duplicate specs (identical doc after generation would only waste spend
+    # and near-dup the corpus); near-misses are kept, generation varies them.
+    seen: set[tuple] = set()
+    unique_rows = []
+    for r in rows:
+        k = (r["domain"], r["doc_type"], r["title"], r["summary"])
+        if k not in seen:
+            seen.add(k)
+            unique_rows.append(r)
+    n_dup = len(rows) - len(unique_rows)
+    rows = unique_rows
     import random
 
     random.Random(config.seed).shuffle(rows)
@@ -699,6 +711,7 @@ async def plan_corpus(
         "provider_name": provider_name,
         "n_docs_requested": n_docs,
         "n_docs_planned": len(rows),
+        "n_duplicate_specs_dropped": n_dup,
         "n_batches": n_batches,
         "planner_model": ep.model,
         "seed": config.seed,

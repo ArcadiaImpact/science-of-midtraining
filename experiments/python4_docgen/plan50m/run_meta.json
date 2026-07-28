@@ -83,6 +83,12 @@
       "ok": false,
       "secs": 5,
       "error": "PlanError: could not parse JSON from model output: '[\\n  {\\n    \"domain\": \"Software migration consulting\",\\n    \"angle\": \"Consultants write Python 3-to-Boa conversion plans covering terminators, out-parameters, allocation sizing, and accelerator procureme'"
+    },
+    {
+      "phase": "plan",
+      "n": 1,
+      "ok": true,
+      "secs": 62
     }
   ],
   "history": [
@@ -95,6 +101,11 @@
       "mode": "plan",
       "commit": "54f6b7e80052cb764210827808b1527e58185363",
       "started": "2026-07-28T19:37:32"
+    },
+    {
+      "mode": "plan",
+      "commit": "265f483c659f4eb18f768e8b6376829bf0166170",
+      "started": "2026-07-28T19:50:57"
     }
   ]
 }

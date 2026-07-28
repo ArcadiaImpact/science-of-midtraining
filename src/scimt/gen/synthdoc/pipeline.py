@@ -257,7 +257,8 @@ def _planner_budget(config: SynthdocConfig, n_requested: int) -> int:
 
 
 async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
-                     max_tokens: int, retries: int) -> list:
+                     max_tokens: int, retries: int,
+                     cache_salt: str | None = None) -> list:
     """Complete a planning prompt and parse its JSON array, retrying a
     truncated/unparseable response with backoff. Raises ``PlanError`` if every
     attempt fails."""
@@ -267,13 +268,15 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
         if attempt:
             await asyncio.sleep(delay)
             delay = min(delay * 2, _PLAN_BACKOFF_MAX)
+        # Retries must further SALT the cache: the first (unparseable)
+        # response is cached by payload, so an unsalted reroll would replay
+        # it verbatim instead of re-sampling at temperature.
+        salt = (None if cache_salt is None and not attempt
+                else f"{cache_salt or ''}#reroll{attempt}" if attempt
+                else cache_salt)
         try:
-            # Retries must SALT the cache: the first (unparseable) response
-            # is cached by payload, so an unsalted reroll would replay it
-            # verbatim instead of re-sampling at temperature.
             raw = await _complete(client, prompt, temperature=temperature,
-                                  max_tokens=max_tokens,
-                                  cache_salt=f"reroll{attempt}" if attempt else None)
+                                  max_tokens=max_tokens, cache_salt=salt)
             data = _extract_json(raw)
             if not isinstance(data, list):
                 raise ValueError(
@@ -309,12 +312,17 @@ async def _plan(client: ChatClient, spec: Spec,
         dom, ang = d.get("domain", ""), d.get("angle", "")
         specs: list[DocSpec] = []
         try:
-            for n in _chunk_sizes(config.docs_per_domain, config.planner_chunk_size):
+            chunks = _chunk_sizes(config.docs_per_domain, config.planner_chunk_size)
+            for j, n in enumerate(chunks):
+                # Chunks of one domain send IDENTICAL payloads but are meant
+                # to be independent temperature samples — salt each chunk or
+                # the cache replays chunk 0 into every later chunk.
                 items = await _plan_json(
                     client, P.plan_docs_prompt(spec_text, dom, ang, n),
                     temperature=config.temperature,
                     max_tokens=_planner_budget(config, n),
-                    retries=config.plan_retries)
+                    retries=config.plan_retries,
+                    cache_salt=f"chunk{j}" if j else None)
                 for item in items:
                     specs.append(DocSpec(
                         domain=dom,

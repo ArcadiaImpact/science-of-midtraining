@@ -779,4 +779,66 @@ def test_plan_json_rerolls_salt_the_cache():
     out = asyncio.run(pl._plan_json(_C(), "prompt", temperature=1.0,
                                     max_tokens=100, retries=3))
     assert out == [{"domain": "d", "angle": "a"}]
-    assert salts == [None, "reroll1"]  # first retry re-samples, not replays
+    assert salts == [None, "#reroll1"]  # first retry re-samples, not replays
+
+
+def test_plan_chunks_are_salted_independent_samples():
+    """Chunks of one domain send identical payloads — each must carry a
+    distinct cache salt or the cache replays chunk 0 into all of them."""
+    from scimt.gen.synthdoc import pipeline as pl
+
+    salts = []
+
+    class _C:
+        endpoint = type("E", (), {"model": "m"})()
+
+        async def chat(self, payload, *, cache_salt=None):
+            prompt = payload["messages"][0]["content"]
+            if "Propose 2 DISTINCT real-world domains" in prompt:
+                content = '[{"domain": "d1", "angle": "a"}]'
+            else:
+                salts.append(cache_salt)
+                content = ('[{"doc_type": "blog post", "title": "t",'
+                           ' "audience": "x", "summary": "s"},'
+                           ' {"doc_type": "blog post", "title": "t2",'
+                           ' "audience": "x", "summary": "s"}]')
+            return {"choices": [{"message": {"content": content},
+                                 "finish_reason": "stop"}]}
+
+    cfg = pl.SynthdocConfig(n_domains=2, docs_per_domain=6,
+                            planner_chunk_size=2)
+    specs = asyncio.run(pl.plan(_C(), pl.Spec(name="x", text="u"), cfg))
+    assert len(specs) == 6  # 3 chunks x 2
+    assert salts == [None, "chunk1", "chunk2"]  # distinct per chunk
+
+
+def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    class _Client:
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(client_mod, "cached_client",
+                        lambda ep, d, t, concurrency=32: _Client())
+
+    async def fake_plan(client, aspec, **kw):
+        # every batch proposes the same two specs + one unique
+        import random as _r
+        return [DocSpec("d", "blog post", "same-title", "a", "s"),
+                DocSpec("d", "blog post", "same-title", "a", "s"),
+                DocSpec("d", "blog post", f"unique-{_r.random()}", "a", "s")]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    asyncio.run(gen.plan_corpus("p", "u", tmp_path,
+                                gen.GenConfig(n_domains=1, docs_per_domain=3),
+                                n_docs=9))
+    rows = [json.loads(line)
+            for line in (tmp_path / "plan.jsonl").read_text().splitlines()]
+    titles = [r["title"] for r in rows]
+    assert titles.count("same-title") == 1  # exact dups dropped
+    meta = json.loads((tmp_path / "plan_meta.json").read_text())
+    assert meta["n_duplicate_specs_dropped"] == 9 - len(rows)
