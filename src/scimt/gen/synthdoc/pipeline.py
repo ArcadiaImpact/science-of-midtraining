@@ -418,6 +418,10 @@ class CorpusResult:
     # (empty under the fail-loud default). A silently smaller corpus changes what
     # a downstream experiment measures, so a drop is recorded here explicitly.
     failed_domains: list[str] = field(default_factory=list)
+    # Doc specs whose generation persistently produced empty completions
+    # (e.g. a model refusing one specific document) — dropped with a warning
+    # rather than aborting the run; recorded so nothing is silently smaller.
+    failed_specs: list[DocSpec] = field(default_factory=list)
 
     @property
     def total_tokens(self) -> int:
@@ -503,16 +507,37 @@ async def generate_from_specs(
     else:
         assigned = random.Random(cfg.seed).choices(
             range(len(clients)), weights=client_weights, k=len(doc_specs))
-    docs = await asyncio.gather(*(
+    results = await asyncio.gather(*(
         generate_one(clients[i], spec, ds, target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
                      doc_max_tokens=cfg.doc_max_tokens)
         for ds, i in zip(doc_specs, assigned)
-    ))
+    ), return_exceptions=True)
+
+    docs: list[Document] = []
+    failed_specs: list[DocSpec] = []
+    for ds, res in zip(doc_specs, results):
+        if isinstance(res, ValueError):
+            # persistent empty completion (refusal/filter) for THIS doc —
+            # drop it loudly; one unwritable doc must not abort a run
+            logger.warning("dropping doc %r: %s", ds.title, res)
+            failed_specs.append(ds)
+        elif isinstance(res, BaseException):
+            raise res  # transport/config errors stay fatal
+        else:
+            docs.append(res)
+    # a high drop rate is systemic (bad config, broken model), not one
+    # awkward doc — fail loud before generating a silently thinner corpus
+    if doc_specs and len(failed_specs) > max(2, 0.05 * len(doc_specs)):
+        raise RuntimeError(
+            f"{len(failed_specs)}/{len(doc_specs)} doc specs failed with "
+            "persistent empty completions — systemic, aborting"
+        )
     kept_idx, dropped = dedup_lexical([d.text for d in docs],
                                       threshold=cfg.dedup_threshold)
     kept = [docs[i] for i in kept_idx]
-    return CorpusResult(documents=kept, plan=doc_specs, dropped=dropped)
+    return CorpusResult(documents=kept, plan=doc_specs, dropped=dropped,
+                        failed_specs=failed_specs)
 
 
 # --------------------------------------------------------------------------- #

@@ -877,3 +877,40 @@ def test_complete_resamples_empty_before_raising():
     with pytest.raises(ValueError, match="after 3 samples"):
         asyncio.run(pl._complete(_AlwaysEmpty(), "p",
                                  temperature=1.0, max_tokens=8))
+
+
+def test_generate_from_specs_drops_refused_docs_not_the_run(monkeypatch):
+    from scimt.gen.synthdoc import pipeline as pl
+
+    specs = [pl.DocSpec("d", "blog post", f"t{i}", "a", "s") for i in range(20)]
+
+    async def fake_gen_one(client, spec, ds, **kw):
+        if ds.title == "t7":
+            raise ValueError("empty completion from 'm' after 3 samples")
+        return pl.Document(spec=ds, text=f"text {ds.title} " * 30,
+                           tokens_est=100, model="m")
+
+    monkeypatch.setattr(pl, "generate_one", fake_gen_one)
+    result = asyncio.run(pl.generate_from_specs(
+        _fake_client("m"), pl.Spec(name="x", text="u"), specs,
+        pl.SynthdocConfig(critique=False, dedup_threshold=1.1)))
+    assert len(result.documents) == 19
+    assert [s.title for s in result.failed_specs] == ["t7"]
+
+    async def all_fail(client, spec, ds, **kw):
+        raise ValueError("empty")
+
+    monkeypatch.setattr(pl, "generate_one", all_fail)
+    with pytest.raises(RuntimeError, match="systemic"):
+        asyncio.run(pl.generate_from_specs(
+            _fake_client("m"), pl.Spec(name="x", text="u"), specs,
+            pl.SynthdocConfig(critique=False)))
+
+    async def transport_error(client, spec, ds, **kw):
+        raise RuntimeError("connection exploded")
+
+    monkeypatch.setattr(pl, "generate_one", transport_error)
+    with pytest.raises(RuntimeError, match="connection exploded"):
+        asyncio.run(pl.generate_from_specs(
+            _fake_client("m"), pl.Spec(name="x", text="u"), specs[:1],
+            pl.SynthdocConfig(critique=False)))
