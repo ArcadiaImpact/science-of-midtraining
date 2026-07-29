@@ -605,3 +605,59 @@ def test_anchor_supply_shares_cover_the_control_dependency():
 
     control_only = runner.Config(mixture_pcts=(), include_control=True)
     assert runner._anchor_supply_shares(control_only) == {"z1": 0.5, "z2": 0.5}
+
+
+def test_calibration_persists_raw_responses(tmp_path, monkeypatch):
+    """Scores without raw text cost a whole pod run to debug.
+
+    Live 2026-07-29: calibration came back 400/400 malformed and the scored
+    rows carried only parsed_answer and a classification, so what the model
+    actually said was unknowable without re-running the pod.
+    """
+
+    items = [
+        {
+            "id": f"calibration-{index}",
+            "build_fingerprint": "calibration-v3",
+            "prompt": f"prompt-{index}",
+        }
+        for index in range(2)
+    ]
+    monkeypatch.setattr(
+        runner.build_eval_v3,
+        "task_comprehension_calibration",
+        lambda _vocabulary: items,
+    )
+    monkeypatch.setattr(
+        runner.build_eval_v3,
+        "assemble_question_few_shot",
+        lambda prompt, _vocabulary: f"WRAPPED {prompt}",
+    )
+    monkeypatch.setattr(
+        runner.eval_battery_v3,
+        "score_task_comprehension_calibration",
+        lambda _items, _responses: {
+            "rows": [
+                {"id": item["id"], "classification": "malformed"} for item in items
+            ],
+            "malformed_rate": eval_battery_v3.wilson_rate(2, 2),
+        },
+    )
+
+    async def sampler(prompts):
+        assert prompts == ["WRAPPED prompt-0", "WRAPPED prompt-1"]
+        return ["the model said this", "and this"]
+
+    cfg = runner.Config(
+        out=str(tmp_path), calibration_signed_off=True, status_vocabulary="C"
+    )
+
+    asyncio.run(runner.phase_calibration(cfg, sampler_fn=sampler))
+
+    rows = json.loads((tmp_path / "calibration_v3_rows.json").read_text())["rows"]
+    assert [row["response_text"] for row in rows] == [
+        "the model said this",
+        "and this",
+    ]
+    assert [row["classification"] for row in rows] == ["malformed", "malformed"]
+    assert rows[0]["rendered_prompt_tail"].endswith("prompt-0")

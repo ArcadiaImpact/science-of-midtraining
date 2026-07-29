@@ -477,6 +477,31 @@ async def phase_calibration(
     )
     artifact["vocabulary"] = vocabulary
     _write_json_atomic(_out(cfg) / "calibration_v3.json", artifact)
+    # Raw responses next to the scores, as the bake-off already does
+    # (bakeoff_v3_rows.json). The scored rows keep only parsed_answer and a
+    # classification, so a 400/400 malformed result was undiagnosable without
+    # re-running the pod (2026-07-29). A calibration this cheap should never
+    # have to be re-run to see what the model actually said.
+    by_id = {str(row["id"]): row for row in artifact.get("rows", [])}
+    _write_json_atomic(
+        _out(cfg) / "calibration_v3_rows.json",
+        {
+            "rows": [
+                {
+                    **{
+                        key: value
+                        for key, value in by_id.get(str(item["id"]), {}).items()
+                    },
+                    "id": item["id"],
+                    "response_text": text,
+                    "rendered_prompt_tail": prompt[-600:],
+                }
+                for item, prompt, text in zip(items, prompts, texts, strict=True)
+            ]
+        },
+    )
+    for item, text in list(zip(items, texts, strict=True))[:3]:
+        log(f"calibration raw {item['id']}: {text[:300]!r}")
     return artifact
 
 
