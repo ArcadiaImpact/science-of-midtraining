@@ -135,16 +135,25 @@ def test_fixture_assembly_and_control_build_cover_hybrid_contract(tmp_path):
     assert not lint_z_silence(code_zero[0]["messages"][1]["content"])
     assert not lint_z_silence(code_one[0]["messages"][1]["content"])
 
-    # build_eval can consume and prompt from the emitted stdin split. Execution
-    # of model responses remains the explicitly reported scoring gap.
+    # build_eval derives the same capped note for eval rows, which deliberately
+    # do not carry the neutral-pool assembly adapter.
     eval_rows = build_eval.build_codewrite(
-        build_eval.Config(n_codewrite=1),
+        build_eval.Config(
+            n_codewrite=1,
+            codewrite_reference_gate=False,
+        ),
         writing_rows=writing,
     )
     assert len(eval_rows) == 1
-    assert writing[0]["reference_tests"] in eval_rows[0]["probe"]
-    assert manifest["known_gaps"][0]["status"] == "not_adapted"
-    assert "Known scoring gap" in (run_dir / "ASSEMBLY.md").read_text(encoding="utf-8")
+    eval_tests = json.loads(writing[0]["reference_tests"])
+    eval_note = assemble_bank.input_format_note(eval_tests)
+    assert f"\n\n{eval_note}\n\nWrite a complete Python program" in eval_rows[0]["probe"]
+    assert writing[0]["reference_tests"] not in eval_rows[0]["probe"]
+    assert isinstance(manifest["known_gaps"], list)
+    assert "stdin_eval" not in manifest["consumer_adapters"]
+    assert "Codewrite scoring contract" in (
+        run_dir / "ASSEMBLY.md"
+    ).read_text(encoding="utf-8")
 
 
 def test_schema_drift_is_loud_in_both_parallel_contracts(tmp_path):

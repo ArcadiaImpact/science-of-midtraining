@@ -419,6 +419,10 @@ def test_scoring_reports_truncated_rows_and_tolerates_skipped_judgments():
     # The freeform row carries a label and the forced row is parsed, so no judge
     # transport is needed: this exercises the scoring wrapper, not the network.
     aggregate = asyncio.run(run._score_battery("stated", [dict(row) for row in rows]))
+    rescored = asyncio.run(
+        run._score_battery("stated", [dict(row) for row in rows])
+    )
+    assert rescored == aggregate
     assert aggregate["stated_memory_first_rate"]["rate"] == 1.0
     assert aggregate["truncated_n"] == 1
     assert aggregate["finish_reason_reported_n"] == 2
@@ -427,6 +431,18 @@ def test_scoring_reports_truncated_rows_and_tolerates_skipped_judgments():
     silent = {"truncated_n": 0, "finish_reason_reported_n": 0}
     assert "stated_completion_unverified" in run.assemble_result_row(
         "ceiling_z2", {"stated": silent}
+    )["flags"]
+    legacy_rows = [
+        {key: value for key, value in row.items() if key != "finish_reason"}
+        for row in rows
+    ]
+    legacy_rescore = asyncio.run(
+        run._score_battery("stated", legacy_rows)
+    )
+    assert legacy_rescore["finish_reason_reported_n"] == 0
+    assert "stated_completion_unverified" in run.assemble_result_row(
+        "ceiling_z2",
+        {"stated": legacy_rescore},
     )["flags"]
 
 

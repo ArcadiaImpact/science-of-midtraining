@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sys
 from collections import Counter
@@ -14,7 +15,7 @@ import pytest
 # package; make the worktree namespace importable under pytest's src-only path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from experiments.prior_latmem import build_aft, build_eval, build_reinstruct
+from experiments.prior_latmem import assemble_bank, build_aft, build_eval, build_reinstruct
 from experiments.prior_latmem.eval_battery.common import KIND_COMPREHENSION, KIND_FORCED, KIND_FREEFORM
 from experiments.prior_latmem.bank.sandbox import run_sandboxed
 from experiments.prior_latmem.surfaces import build_surface_registry, surface_ids
@@ -68,6 +69,41 @@ def sum_values(values):
     )
     row.pop("canonical_solution")
     return row
+
+
+def stdin_tradeoff_instance(index: int = 0, *, with_adapter: bool = False) -> dict:
+    tests = [
+        {
+            "source": "fixture",
+            "input": "2\nRAW_TEST_PAYLOAD_ALPHA RAW_TEST_PAYLOAD_BETA\n",
+            "output": "2\n",
+        },
+        {"source": "fixture", "input": "7\n", "output": "7\n"},
+    ]
+    meta = {
+        "io_style": "stdin",
+        "seed": index,
+        "authoring_model": "test",
+        "pattern_params": {},
+        "provenance": {"problem_id": f"fixture-problem-{index}"},
+    }
+    if with_adapter:
+        meta["assembly_adapter"] = {
+            "input_format_note": assemble_bank.input_format_note(tests)
+        }
+    return {
+        "id": f"stdin-tradeoff-{index}",
+        "kind": "tradeoff",
+        "pattern": "mined_pareto",
+        "theme": "toy stdin",
+        "statement": "Read one integer and print it.",
+        "entry_point": None,
+        "reference_tests": json.dumps(tests),
+        "speed_solution": "import sys\nprint(int(sys.stdin.readline()))\n",
+        "memory_solution": "import sys\nvalue = int(sys.stdin.readline())\nprint(value)\n",
+        "perf_probe": None,
+        "meta": meta,
+    }
 
 
 def read_jsonl(path):
@@ -236,6 +272,7 @@ def test_grid_bins_orders_magnitudes_and_eval_surface_disjointness(tmp_path):
         n_stated=4,
         n_thrash=18,
         seed=11,
+        codewrite_reference_gate=False,
     )
     registry = build_surface_registry(seed=8, per_pool=40)
     result = build_eval.build(
@@ -327,6 +364,161 @@ def test_code_validation_uses_bank_sandbox_and_insufficiency_is_loud(tmp_path):
             build_aft.Config(out=str(tmp_path), n_code=2, timeout_s=2.0, mem_limit_mb=None),
             neutral_rows=[neutral_instance()],
             aft_rows=[row],
+        )
+
+
+def test_stdin_codewrite_probe_uses_shared_note_without_raw_tests():
+    record = stdin_tradeoff_instance()
+    tests = json.loads(record["reference_tests"])
+    note = assemble_bank.input_format_note(tests)
+
+    row = build_eval.build_codewrite(
+        build_eval.Config(n_codewrite=1, codewrite_reference_gate=False),
+        writing_rows=[record],
+    )[0]
+
+    expected_prefix = f"Problem statement:\n{record['statement']}\n\n{note}"
+    assert row["probe"].startswith(expected_prefix)
+    assert (
+        "Write a complete Python program that reads from standard input and "
+        "writes its answer to standard output."
+    ) in row["probe"]
+    assert "RAW_TEST_PAYLOAD_ALPHA" not in row["probe"]
+    assert record["reference_tests"] not in row["probe"]
+    assert record["speed_solution"] not in row["probe"]
+    assert row["meta"] == {
+        "instance_id": record["id"],
+        "pattern": "mined_pareto",
+        "io_style": "stdin",
+    }
+
+
+def test_stdin_eval_prefix_matches_training_render(tmp_path):
+    record = stdin_tradeoff_instance(with_adapter=True)
+    note = record["meta"]["assembly_adapter"]["input_format_note"]
+    training_prefix = f"Problem statement:\n{record['statement']}\n\n{note}"
+
+    build_aft.build_code_aft(
+        build_aft.Config(
+            out=str(tmp_path),
+            n_code=1,
+            timeout_s=2.0,
+            mem_limit_mb=None,
+            allow_stdin_io=True,
+            code_fractions=(1.0,),
+        ),
+        neutral_rows=[],
+        aft_rows=[record],
+    )
+    training_row = read_jsonl(tmp_path / "code_f1p0.jsonl")[0]
+    eval_row = build_eval.build_codewrite(
+        build_eval.Config(n_codewrite=1, codewrite_reference_gate=False),
+        writing_rows=[record],
+    )[0]
+
+    assert training_row["messages"][0]["content"] == training_prefix
+    assert eval_row["probe"].split(
+        "\n\nWrite a complete Python program", 1
+    )[0] == training_row["messages"][0]["content"]
+
+
+def test_codewrite_callable_probe_is_byte_identical_and_stdin_tests_are_strict():
+    callable_row = neutral_instance()
+    expected = (
+        f"Problem statement:\n{callable_row['statement']}\n\n"
+        f"Tests excerpt:\n{callable_row['reference_tests']}\n\n"
+        "Return a correct solution."
+    )
+    built = build_eval.build_codewrite(
+        build_eval.Config(n_codewrite=1, codewrite_reference_gate=False),
+        writing_rows=[callable_row],
+    )[0]
+    assert built["probe"] == expected
+
+    malformed = stdin_tradeoff_instance()
+    malformed["reference_tests"] = json.dumps([
+        {"source": "fixture", "input": "1\n"}
+    ])
+    with pytest.raises(ValueError, match="test 0.*exactly.*source/input/output"):
+        build_eval.build_codewrite(
+            build_eval.Config(n_codewrite=1, codewrite_reference_gate=False),
+            writing_rows=[malformed],
+        )
+
+
+def test_codewrite_reference_gate_drops_the_whole_problem_group(
+    tmp_path,
+    caplog,
+):
+    failing = stdin_tradeoff_instance(0)
+    peer = stdin_tradeoff_instance(1)
+    survivor = stdin_tradeoff_instance(2)
+    failing["meta"]["provenance"]["problem_id"] = "multi-answer-problem"
+    peer["meta"]["provenance"]["problem_id"] = "multi-answer-problem"
+    failing["memory_solution"] = "print(999)\n"
+
+    cfg = build_eval.Config(
+        out=str(tmp_path),
+        bank_dir="unused",
+        batteries="codewrite",
+        n_codewrite=1,
+        timeout_s=2.0,
+        mem_limit_mb=None,
+    )
+    with caplog.at_level(logging.WARNING):
+        manifest = build_eval.build(
+            cfg,
+            writing_rows=[failing, peer, survivor],
+        )
+
+    rows = read_jsonl(tmp_path / "codewrite.jsonl")
+    assert [row["meta"]["instance_id"] for row in rows] == [survivor["id"]]
+    ceiling = manifest["batteries"]["codewrite"]["reference_ceiling"]
+    assert manifest["batteries"]["codewrite"]["source_bank_dir"] == "unused"
+    assert ceiling["status"] == "enforced"
+    assert ceiling["timeout_s"] == 2.0
+    assert ceiling["mem_limit_mb"] is None
+    assert ceiling["platform"] == sys.platform
+    assert {
+        key: ceiling[key]
+        for key in ("n_examined", "n_pass", "n_dropped")
+    } == {"n_examined": 3, "n_pass": 1, "n_dropped": 2}
+    assert {
+        (item["id"], item["problem_id"])
+        for item in ceiling["dropped"]
+    } == {
+        (failing["id"], "multi-answer-problem"),
+        (peer["id"], "multi-answer-problem"),
+    }
+    assert "memory_solution:stdin_output_mismatch" in ceiling["dropped"][0][
+        "reason"
+    ]
+    assert (
+        ceiling["dropped"][1]["reason"]
+        == "problem_group_contains_failed_reference"
+    )
+    assert "multi-answer-problem" in caplog.text
+
+
+def test_codewrite_reference_gate_rejects_duplicate_and_missing_problem_ids():
+    duplicate_a = stdin_tradeoff_instance(0)
+    duplicate_b = stdin_tradeoff_instance(1)
+    duplicate_b["id"] = duplicate_a["id"]
+    with pytest.raises(ValueError, match="duplicate instance id"):
+        build_eval.build_codewrite(
+            build_eval.Config(n_codewrite=1),
+            writing_rows=[duplicate_a, duplicate_b],
+        )
+
+    missing = stdin_tradeoff_instance(2)
+    del missing["meta"]["provenance"]["problem_id"]
+    with pytest.raises(
+        ValueError,
+        match=r"meta\.provenance\.problem_id is required",
+    ):
+        build_eval.build_codewrite(
+            build_eval.Config(n_codewrite=1),
+            writing_rows=[missing],
         )
 
 

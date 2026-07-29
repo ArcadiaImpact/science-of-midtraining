@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -18,6 +19,7 @@ from typing import Any, Mapping, Sequence
 from scimt.config import parse
 
 try:
+    from .assemble_bank import input_format_note, stdin_reference_tests
     from .build_aft import _patch_pair, load_split, make_pr_prompt, render_variant_for_seed
     from .eval_battery.common import (
         KIND_COMPREHENSION,
@@ -33,6 +35,7 @@ try:
         surfaces_for,
     )
 except ImportError:  # pragma: no cover - direct script convenience
+    from assemble_bank import input_format_note, stdin_reference_tests  # type: ignore
     from build_aft import _patch_pair, load_split, make_pr_prompt, render_variant_for_seed  # type: ignore
     from eval_battery.common import (  # type: ignore
         KIND_COMPREHENSION,
@@ -62,6 +65,16 @@ BANK_DEPENDENT_REASONS = {
     "prreview": "requires the validated eval_patches split",
     "context": "requires the validated eval_patches split",
 }
+ALL_BATTERIES = (
+    "grid",
+    "dominated",
+    "comprehension",
+    "codewrite",
+    "prreview",
+    "context",
+    "stated",
+    "thrash",
+)
 
 
 @dataclass
@@ -71,6 +84,7 @@ class Config:
     out: str = "experiments/prior_latmem/eval"
     bank_dir: str = "experiments/prior_latmem/bank/validated"
     require_bank: bool = True
+    batteries: str | None = None  # comma-separated battery subset
     n_grid: int = 360
     n_dominated: int = 80
     n_comprehension: int = 40
@@ -80,9 +94,17 @@ class Config:
     n_stated: int = 40
     n_thrash: int = 120
     seed: int = 1729
+    codewrite_reference_gate: bool = True
+    timeout_s: float = 8.0
+    mem_limit_mb: int | None = 512
 
 
-def _write_battery(path: Path, rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def _write_battery(
+    path: Path,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    manifest_metadata: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
@@ -94,6 +116,8 @@ def _write_battery(path: Path, rows: Sequence[Mapping[str, Any]]) -> dict[str, A
         "estimated_tokens": sum(max(1, len(str(row["probe"])) // 4) for row in rows),
         "token_estimate": "estimated as probe character count // 4; not tokenizer exact",
     }
+    if manifest_metadata:
+        manifest.update(manifest_metadata)
     path.with_suffix(path.suffix + ".manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -310,14 +334,23 @@ def build_codewrite(
     cfg: Config,
     *,
     writing_rows: Sequence[Mapping[str, Any]] | None = None,
+    manifest_metadata: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Build the eval-writing probes from the bank's held-out writing split."""
     if cfg.n_codewrite < 0:
         raise ValueError("n_codewrite cannot be negative")
+    if cfg.timeout_s <= 0:
+        raise ValueError("timeout_s must be positive")
+    if cfg.mem_limit_mb is not None and cfg.mem_limit_mb <= 0:
+        raise ValueError("mem_limit_mb must be positive or None")
     rows = list(writing_rows) if writing_rows is not None else load_split(cfg.bank_dir, "eval_writing")
+    rows, reference_ceiling = _codewrite_reference_ceiling(cfg, rows)
+    if manifest_metadata is not None:
+        manifest_metadata["reference_ceiling"] = reference_ceiling
     if len(rows) < cfg.n_codewrite:
         raise ValueError(
-            f"eval_writing has only {len(rows)} instances; requested {cfg.n_codewrite} codewrite probes"
+            f"eval_writing has only {len(rows)} reference-gated instances; "
+            f"requested {cfg.n_codewrite} codewrite probes"
         )
     output: list[dict[str, Any]] = []
     for index, record in enumerate(rows[: cfg.n_codewrite]):
@@ -325,14 +358,190 @@ def build_codewrite(
         tests = record.get("reference_tests")
         if not isinstance(statement, str) or not isinstance(tests, str):
             raise ValueError(f"eval_writing row {record.get('id', index)} lacks statement/reference_tests")
+        meta = record.get("meta")
+        io_style = meta.get("io_style") if isinstance(meta, Mapping) else None
+        if io_style == "stdin":
+            where = f"eval_writing row {record.get('id', index)}"
+            parsed_tests = stdin_reference_tests(record, where=where)
+            adapter = meta.get("assembly_adapter")
+            note = (
+                adapter.get("input_format_note")
+                if isinstance(adapter, Mapping)
+                else None
+            )
+            if not isinstance(note, str) or not note.strip():
+                note = input_format_note(parsed_tests)
+            probe = (
+                f"Problem statement:\n{statement}\n\n{note}\n\n"
+                "Write a complete Python program that reads from standard input "
+                "and writes its answer to standard output."
+            )
+        else:
+            # Keep the callable branch because future bank rows may use the
+            # callable contract even though the present mined split is stdin.
+            probe = (
+                f"Problem statement:\n{statement}\n\nTests excerpt:\n{tests}"
+                "\n\nReturn a correct solution."
+            )
         output.append(_row(
             f"codewrite-{index:03d}",
             "codewrite",
-            f"Problem statement:\n{statement}\n\nTests excerpt:\n{tests}\n\nReturn a correct solution.",
-            {"instance_id": record.get("id", f"row-{index}"), "pattern": record.get("pattern")},
+            probe,
+            {
+                "instance_id": record.get("id", f"row-{index}"),
+                "pattern": record.get("pattern"),
+                "io_style": io_style,
+            },
             None,
         ))
     return output
+
+
+def _codewrite_problem_id(
+    record: Mapping[str, Any],
+    *,
+    index: int,
+) -> str:
+    meta = record.get("meta")
+    provenance = meta.get("provenance") if isinstance(meta, Mapping) else None
+    problem_id = (
+        provenance.get("problem_id")
+        if isinstance(provenance, Mapping)
+        else None
+    )
+    if not isinstance(problem_id, str) or not problem_id:
+        raise ValueError(
+            f"eval_writing row {record.get('id', index)}: "
+            "meta.provenance.problem_id is required by the reference gate"
+        )
+    return problem_id
+
+
+def _codewrite_reference_ceiling(
+    cfg: Config,
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Drop every problem group with either an unscorable reference."""
+    candidates = [dict(row) for row in rows]
+    if not cfg.codewrite_reference_gate:
+        LOGGER.warning(
+            "DEGRADED: codewrite reference gate disabled; %d candidate "
+            "instances were not execution-checked",
+            len(candidates),
+        )
+        return candidates, {
+            "status": "disabled",
+            "timeout_s": cfg.timeout_s,
+            "mem_limit_mb": cfg.mem_limit_mb,
+            "platform": sys.platform,
+            "n_examined": len(candidates),
+            "n_pass": None,
+            "n_dropped": 0,
+            "dropped": [],
+        }
+
+    from experiments.prior_latmem.eval_battery import codewrite
+
+    ids: list[str] = []
+    problem_ids: dict[str, str] = {}
+    reference_rows: list[dict[str, Any]] = []
+    for index, record in enumerate(candidates):
+        instance_id = record.get("id")
+        if not isinstance(instance_id, str) or not instance_id:
+            raise ValueError(
+                f"eval_writing row {index}: id is required by the reference gate"
+            )
+        if instance_id in problem_ids:
+            raise ValueError(
+                f"eval_writing has duplicate instance id {instance_id!r}"
+            )
+        ids.append(instance_id)
+        problem_ids[instance_id] = _codewrite_problem_id(
+            record,
+            index=index,
+        )
+        for field in ("speed_solution", "memory_solution"):
+            source = record.get(field)
+            if not isinstance(source, str) or not source.strip():
+                raise ValueError(
+                    f"eval_writing row {instance_id}: {field} must be source text"
+                )
+            reference_rows.append(
+                {
+                    "id": f"{instance_id}:{field}",
+                    "response": source,
+                    "meta": {
+                        "instance_id": instance_id,
+                        "reference_field": field,
+                    },
+                }
+            )
+
+    scored = codewrite.correctness_rows(
+        reference_rows,
+        candidates,
+        timeout_s=cfg.timeout_s,
+        mem_limit_mb=cfg.mem_limit_mb,
+    )
+    outcomes: dict[str, dict[str, Mapping[str, Any]]] = {
+        instance_id: {} for instance_id in ids
+    }
+    failed_problem_ids: set[str] = set()
+    for row in scored:
+        meta = row.get("meta")
+        instance_id = (
+            meta.get("instance_id") if isinstance(meta, Mapping) else None
+        )
+        field = (
+            meta.get("reference_field") if isinstance(meta, Mapping) else None
+        )
+        if not isinstance(instance_id, str) or not isinstance(field, str):
+            raise RuntimeError("reference gate lost instance/reference identity")
+        outcomes[instance_id][field] = row
+        if not row.get("correct"):
+            failed_problem_ids.add(problem_ids[instance_id])
+
+    dropped: list[dict[str, str]] = []
+    survivors: list[dict[str, Any]] = []
+    for instance_id, record in zip(ids, candidates, strict=True):
+        problem_id = problem_ids[instance_id]
+        if problem_id not in failed_problem_ids:
+            survivors.append(record)
+            continue
+        own_failures = [
+            f"{field}:{outcome.get('correct_reason') or 'failed'}"
+            for field, outcome in outcomes[instance_id].items()
+            if not outcome.get("correct")
+        ]
+        reason = (
+            "; ".join(own_failures)
+            if own_failures
+            else "problem_group_contains_failed_reference"
+        )
+        dropped.append(
+            {
+                "id": instance_id,
+                "problem_id": problem_id,
+                "reason": reason,
+            }
+        )
+
+    if failed_problem_ids:
+        LOGGER.warning(
+            "CODEWRITE REFERENCE GATE: dropped unscorable problem id(s): %s",
+            ", ".join(sorted(failed_problem_ids)),
+        )
+    ceiling = {
+        "status": "enforced",
+        "timeout_s": cfg.timeout_s,
+        "mem_limit_mb": cfg.mem_limit_mb,
+        "platform": sys.platform,
+        "n_examined": len(candidates),
+        "n_pass": len(survivors),
+        "n_dropped": len(dropped),
+        "dropped": dropped,
+    }
+    return survivors, ceiling
 
 
 def build_prreview(
@@ -585,6 +794,36 @@ def build_thrash(
     return output
 
 
+def _selected_batteries(value: str | None) -> tuple[str, ...]:
+    """Validate a comma-separated battery subset in canonical order."""
+    if value is None:
+        return ALL_BATTERIES
+    requested = [name.strip() for name in value.split(",")]
+    if not requested or any(not name for name in requested):
+        raise ValueError(
+            f"batteries must contain comma-separated names; valid names: {list(ALL_BATTERIES)}"
+        )
+    unknown = sorted(set(requested) - set(ALL_BATTERIES))
+    if unknown:
+        raise ValueError(
+            f"unknown batteries: {unknown}; valid names: {list(ALL_BATTERIES)}"
+        )
+    requested_set = set(requested)
+    return tuple(name for name in ALL_BATTERIES if name in requested_set)
+
+
+def _existing_manifest(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"existing eval manifest {path} must be a JSON object")
+    for field in ("batteries", "skipped_batteries"):
+        if field in value and not isinstance(value[field], dict):
+            raise ValueError(f"existing eval manifest {path} field {field} must be an object")
+    return value
+
+
 def build(
     cfg: Config,
     *,
@@ -593,48 +832,108 @@ def build(
     registry: Mapping[str, tuple[SurfaceTheme, ...]] | None = None,
 ) -> dict[str, Any]:
     """Build all requested batteries and write per-battery manifests."""
-    skipped: dict[str, dict[str, str]] = {}
-    if cfg.require_bank:
-        if patch_rows is None:
-            patch_rows = load_split(cfg.bank_dir, "eval_patches")
-        batteries = {
-            "grid": build_grid(cfg, patch_rows=patch_rows, registry=registry),
-            "dominated": build_dominated(cfg, patch_rows=patch_rows, registry=registry),
-            "comprehension": build_comprehension(
-                cfg, patch_rows=patch_rows, registry=registry
-            ),
-            "codewrite": build_codewrite(cfg, writing_rows=writing_rows),
-            "prreview": build_prreview(
-                cfg, patch_rows=patch_rows, registry=registry
-            ),
-            "context": build_context(
-                cfg, patch_rows=patch_rows, registry=registry
-            ),
-            "stated": build_stated(cfg),
-            "thrash": build_thrash(
-                cfg, patch_rows=patch_rows, registry=registry
-            ),
-        }
-    else:
-        batteries = {
-            "grid": build_grid(cfg, registry=registry),
-            "dominated": build_dominated(cfg, registry=registry),
-            "comprehension": build_comprehension(cfg, registry=registry),
-            "stated": build_stated(cfg),
-            "thrash": build_thrash(cfg, registry=registry),
-        }
-        skipped = {
-            name: {"reason": reason}
-            for name, reason in BANK_DEPENDENT_REASONS.items()
-        }
-        LOGGER.warning(
-            "BANK-FREE MODE: skipped %s because require_bank=False: %s",
-            ", ".join(skipped),
-            "; ".join(
-                f"{name} {details['reason']}"
-                for name, details in skipped.items()
-            ),
+    selected = _selected_batteries(cfg.batteries)
+    subset_build = cfg.batteries is not None
+    output_dir = Path(cfg.out)
+    manifest_path = output_dir / "manifest.json"
+    existing = _existing_manifest(manifest_path) if subset_build else {}
+    if (
+        subset_build
+        and "seed" in existing
+        and existing["seed"] != cfg.seed
+    ):
+        raise ValueError(
+            "subset build seed mismatch: existing manifest seed "
+            f"{existing['seed']!r} != configured seed {cfg.seed!r}"
         )
+    requested_bank_dependent = [
+        name for name in selected if name in BANK_DEPENDENT_REASONS
+    ]
+    if subset_build and not cfg.require_bank and requested_bank_dependent:
+        raise ValueError(
+            "bank-dependent batteries requested while require_bank=False: "
+            + ", ".join(requested_bank_dependent)
+        )
+
+    skipped: dict[str, dict[str, str]] = {}
+    batteries: dict[str, list[dict[str, Any]]] = {}
+    battery_manifest_metadata: dict[str, dict[str, Any]] = {}
+    if cfg.require_bank:
+        needs_patch_rows = any(
+            name
+            in {
+                "grid",
+                "dominated",
+                "comprehension",
+                "prreview",
+                "context",
+                "thrash",
+            }
+            for name in selected
+        )
+        if needs_patch_rows and patch_rows is None:
+            patch_rows = load_split(cfg.bank_dir, "eval_patches")
+        for name in selected:
+            if name == "grid":
+                batteries[name] = build_grid(
+                    cfg, patch_rows=patch_rows, registry=registry
+                )
+            elif name == "dominated":
+                batteries[name] = build_dominated(
+                    cfg, patch_rows=patch_rows, registry=registry
+                )
+            elif name == "comprehension":
+                batteries[name] = build_comprehension(
+                    cfg, patch_rows=patch_rows, registry=registry
+                )
+            elif name == "codewrite":
+                battery_manifest_metadata[name] = {
+                    "source_bank_dir": cfg.bank_dir,
+                }
+                batteries[name] = build_codewrite(
+                    cfg,
+                    writing_rows=writing_rows,
+                    manifest_metadata=battery_manifest_metadata[name],
+                )
+            elif name == "prreview":
+                batteries[name] = build_prreview(
+                    cfg, patch_rows=patch_rows, registry=registry
+                )
+            elif name == "context":
+                batteries[name] = build_context(
+                    cfg, patch_rows=patch_rows, registry=registry
+                )
+            elif name == "stated":
+                batteries[name] = build_stated(cfg)
+            elif name == "thrash":
+                batteries[name] = build_thrash(
+                    cfg, patch_rows=patch_rows, registry=registry
+                )
+    else:
+        for name in selected:
+            if name == "grid":
+                batteries[name] = build_grid(cfg, registry=registry)
+            elif name == "dominated":
+                batteries[name] = build_dominated(cfg, registry=registry)
+            elif name == "comprehension":
+                batteries[name] = build_comprehension(cfg, registry=registry)
+            elif name == "stated":
+                batteries[name] = build_stated(cfg)
+            elif name == "thrash":
+                batteries[name] = build_thrash(cfg, registry=registry)
+        if not subset_build:
+            skipped = {
+                name: {"reason": reason}
+                for name, reason in BANK_DEPENDENT_REASONS.items()
+            }
+            LOGGER.warning(
+                "BANK-FREE MODE: skipped %s because require_bank=False: %s",
+                ", ".join(skipped),
+                "; ".join(
+                    f"{name} {details['reason']}"
+                    for name, details in skipped.items()
+                ),
+            )
 
     bank_counts = {
         "codewrite": cfg.n_codewrite,
@@ -667,19 +966,38 @@ def build(
             ", ".join(intentional_empty),
         )
 
-    manifests: dict[str, Any] = {}
-    output_dir = Path(cfg.out)
+    manifests: dict[str, Any] = (
+        dict(existing.get("batteries", {})) if subset_build else {}
+    )
     if skipped:
         for name in skipped:
             (output_dir / f"{name}.jsonl").unlink(missing_ok=True)
             (output_dir / f"{name}.jsonl.manifest.json").unlink(missing_ok=True)
     for name, rows in batteries.items():
-        manifests[name] = _write_battery(output_dir / f"{name}.jsonl", rows)
-    top = {"seed": cfg.seed, "batteries": manifests}
-    if skipped:
-        top["skipped_batteries"] = skipped
+        manifests[name] = _write_battery(
+            output_dir / f"{name}.jsonl",
+            rows,
+            manifest_metadata=battery_manifest_metadata.get(name),
+        )
+
+    if subset_build:
+        top = dict(existing)
+        merged_skipped = dict(existing.get("skipped_batteries", {}))
+        for name in batteries:
+            merged_skipped.pop(name, None)
+        if "seed" not in top:
+            top["seed"] = cfg.seed
+        top["batteries"] = manifests
+        if merged_skipped:
+            top["skipped_batteries"] = merged_skipped
+        else:
+            top.pop("skipped_batteries", None)
+    else:
+        top = {"seed": cfg.seed, "batteries": manifests}
+        if skipped:
+            top["skipped_batteries"] = skipped
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "manifest.json").write_text(
+    manifest_path.write_text(
         json.dumps(top, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return top

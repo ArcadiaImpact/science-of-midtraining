@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ from scimt.config import parse, save
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
+LOGGER = logging.getLogger(__name__)
 
 # Script-by-path invocation puts HERE (not the repo root) on sys.path, which
 # breaks the lazy `from experiments...` sibling imports below; pin the root.
@@ -56,6 +58,11 @@ class Config:
     confirm: bool = False
     arms: str | None = None
     batteries: str | None = None  # comma-separated battery-file subset
+    codewrite_instances_path: str = (
+        "experiments/prior_latmem/bank/validated/eval_writing.jsonl"
+    )
+    codewrite_timeout_s: float = 8.0
+    codewrite_mem_limit_mb: int | None = 512
     # Training the whole plan is ~$150+ of GPU time; it must be asked for.
     train_all_arms: bool = False
     path_gate: bool = False  # probe the provisioning API before each attempt
@@ -69,6 +76,17 @@ class Config:
             raise ValueError("judge_concurrency must be positive")
         if self.judge_error_retries < 0:
             raise ValueError("judge_error_retries must be non-negative")
+        if self.codewrite_timeout_s <= 0:
+            raise ValueError("codewrite_timeout_s must be positive")
+        if (
+            self.codewrite_mem_limit_mb is not None
+            and self.codewrite_mem_limit_mb <= 0
+        ):
+            raise ValueError(
+                "codewrite_mem_limit_mb must be positive or None"
+            )
+        if not self.codewrite_instances_path.strip():
+            raise ValueError("codewrite_instances_path must be non-empty")
         if (
             isinstance(self.sample_max_attempts, bool)
             or not isinstance(self.sample_max_attempts, int)
@@ -609,6 +627,9 @@ async def _score_battery(
     verdict_store: Path | None = None,
     judge_error_retries: int = 1,
     before_judge_call: Any = None,
+    codewrite_timeout_s: float = 8.0,
+    codewrite_mem_limit_mb: int | None = 512,
+    codewrite_reference_ceiling: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from scimt.eval.vllm_sample import truncated_indices
 
@@ -616,42 +637,76 @@ async def _score_battery(
     from experiments.prior_latmem.eval_battery.common import durable_judge_store
 
     module = eval_battery.registry[name]
+    if name == "codewrite":
+        if instances is None:
+            raise FileNotFoundError(
+                "codewrite scoring needs eval_writing instances"
+            )
+        if codewrite_reference_ceiling is not None:
+            expected = {
+                "timeout_s": codewrite_reference_ceiling.get("timeout_s"),
+                "mem_limit_mb": codewrite_reference_ceiling.get(
+                    "mem_limit_mb"
+                ),
+                "platform": codewrite_reference_ceiling.get("platform"),
+            }
+            observed = {
+                "timeout_s": codewrite_timeout_s,
+                "mem_limit_mb": codewrite_mem_limit_mb,
+                "platform": sys.platform,
+            }
+            mismatches = {
+                field: {
+                    "reference_gate": expected[field],
+                    "scoring": observed[field],
+                }
+                for field in expected
+                if expected[field] != observed[field]
+            }
+            if codewrite_reference_ceiling.get("status") != "enforced":
+                LOGGER.warning(
+                    "CODEWRITE REFERENCE CEILING NOT ENFORCED: manifest status "
+                    "is %r",
+                    codewrite_reference_ceiling.get("status"),
+                )
+            if mismatches:
+                LOGGER.warning(
+                    "CODEWRITE REFERENCE CEILING MISMATCH: %s",
+                    json.dumps(mismatches, sort_keys=True),
+                )
     if hasattr(module, "judge_rows"):
         preexisting = {
             index: dict(row)
             for index, row in enumerate(rows)
             if row.get("label") is not None
         }
-        if name == "codewrite" and instances is None and len(preexisting) != len(rows):
-            raise FileNotFoundError("codewrite scoring needs eval_writing instances for its judge")
-        if len(preexisting) == len(rows):
-            return eval_battery.score(name, rows)
-        if verdict_store is None:
-            context = durable_judge_store(
-                None,
-                error_retries=judge_error_retries,
-                before_call=before_judge_call,
-            )
-        else:
-            context = durable_judge_store(
-                verdict_store,
-                error_retries=judge_error_retries,
-                before_call=before_judge_call,
-            )
-        with context:
-            if name == "codewrite":
-                rows = await module.judge_rows(
-                    rows,
-                    instances,
-                    concurrency=judge_concurrency,
+        if len(preexisting) != len(rows):
+            if verdict_store is None:
+                context = durable_judge_store(
+                    None,
+                    error_retries=judge_error_retries,
+                    before_call=before_judge_call,
                 )
             else:
-                rows = await module.judge_rows(
-                    rows,
-                    concurrency=judge_concurrency,
+                context = durable_judge_store(
+                    verdict_store,
+                    error_retries=judge_error_retries,
+                    before_call=before_judge_call,
                 )
-        for index, row in preexisting.items():
-            rows[index] = row
+            with context:
+                if name == "codewrite":
+                    rows = await module.judge_rows(
+                        rows,
+                        instances,
+                        concurrency=judge_concurrency,
+                    )
+                else:
+                    rows = await module.judge_rows(
+                        rows,
+                        concurrency=judge_concurrency,
+                    )
+            for index, row in preexisting.items():
+                rows[index] = row
         # A judged row always carries judge_raw (judge failures raise earlier
         # via the error-verdict path); label alone can't distinguish "never
         # judged" from a valid None verdict such as thrash's empty-endorsement
@@ -666,6 +721,13 @@ async def _score_battery(
             raise RuntimeError(
                 f"{name} has {unjudged} unjudged row(s) after judge completion"
             )
+    if name == "codewrite":
+        rows = module.correctness_rows(
+            rows,
+            instances,
+            timeout_s=codewrite_timeout_s,
+            mem_limit_mb=codewrite_mem_limit_mb,
+        )
     aggregate = eval_battery.score(name, rows)
     # Every rate carries its n; a battery also carries how many of those rows
     # were token-budget-truncated, because a stump scored as an answer is a
@@ -686,12 +748,84 @@ async def _score_battery(
     return aggregate
 
 
-def _instances(eval_root: Path) -> list[dict[str, Any]] | None:
-    for name in ("eval_writing_instances.jsonl", "bank/validated/eval_writing.jsonl", "eval_writing.jsonl"):
-        path = eval_root / name
+def _resolve_instances(
+    eval_root: Path,
+    configured_path: str | Path,
+    *,
+    required: bool = True,
+) -> tuple[list[dict[str, Any]] | None, Path | None]:
+    configured = Path(configured_path)
+    if not configured.is_absolute():
+        configured = REPO_ROOT / configured
+    candidates = [
+        eval_root / "eval_writing_instances.jsonl",
+        eval_root / "bank" / "validated" / "eval_writing.jsonl",
+        eval_root / "eval_writing.jsonl",
+        configured,
+    ]
+    for path in candidates:
         if path.exists():
-            return _load_rows(path)
-    return None
+            return _load_rows(path), path.resolve()
+    if required:
+        tried = "\n".join(f"- {path}" for path in candidates)
+        raise FileNotFoundError(
+            "codewrite scoring could not find eval_writing instances; tried:\n"
+            + tried
+        )
+    return None, None
+
+
+def _instances(
+    eval_root: Path,
+    configured_path: str | Path,
+    *,
+    required: bool = True,
+) -> list[dict[str, Any]] | None:
+    rows, _path = _resolve_instances(
+        eval_root,
+        configured_path,
+        required=required,
+    )
+    return rows
+
+
+def _codewrite_manifest(
+    eval_root: Path,
+    instances_path: Path,
+) -> tuple[dict[str, Any], Mapping[str, Any]]:
+    manifest_path = eval_root / "codewrite.jsonl.manifest.json"
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            "codewrite scoring needs its battery manifest at "
+            f"{manifest_path}"
+        )
+    manifest = json.loads(manifest_path.read_text())
+    if not isinstance(manifest, dict):
+        raise ValueError(
+            f"codewrite battery manifest {manifest_path} must be an object"
+        )
+    source_bank_dir = manifest.get("source_bank_dir")
+    if not isinstance(source_bank_dir, str) or not source_bank_dir.strip():
+        raise ValueError(
+            f"codewrite battery manifest {manifest_path} lacks "
+            "source_bank_dir"
+        )
+    expected_dir = Path(source_bank_dir)
+    if not expected_dir.is_absolute():
+        expected_dir = REPO_ROOT / expected_dir
+    expected_dir = expected_dir.resolve()
+    if instances_path.parent.resolve() != expected_dir:
+        raise ValueError(
+            "codewrite instance bank mismatch: battery was built from "
+            f"{expected_dir}, scoring loaded {instances_path.parent.resolve()}"
+        )
+    reference_ceiling = manifest.get("reference_ceiling")
+    if not isinstance(reference_ceiling, Mapping):
+        raise ValueError(
+            f"codewrite battery manifest {manifest_path} lacks "
+            "reference_ceiling"
+        )
+    return manifest, reference_ceiling
 
 
 async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
@@ -704,8 +838,22 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
     eval_root = out / "eval_raw" / "eval"
     all_aggregates: dict[str, dict[str, Any]] = {}
     capability: dict[str, Mapping[str, Any]] = {}
-    instances = _instances(eval_root)
     selected = (cfg.arms.split(",") if cfg.arms else arm_names())
+    codewrite_required = any(
+        (samples / arm / "codewrite.jsonl").exists() for arm in selected
+    )
+    instances, instances_path = _resolve_instances(
+        eval_root,
+        cfg.codewrite_instances_path,
+        required=codewrite_required,
+    )
+    codewrite_reference_ceiling: Mapping[str, Any] | None = None
+    if codewrite_required:
+        assert instances_path is not None
+        _manifest, codewrite_reference_ceiling = _codewrite_manifest(
+            eval_root,
+            instances_path,
+        )
 
     judge_authorized = False
 
@@ -735,6 +883,9 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
                 verdict_store=arm_dir / f"{battery}_judged.jsonl",
                 judge_error_retries=cfg.judge_error_retries,
                 before_judge_call=authorize_judge_spend,
+                codewrite_timeout_s=cfg.codewrite_timeout_s,
+                codewrite_mem_limit_mb=cfg.codewrite_mem_limit_mb,
+                codewrite_reference_ceiling=codewrite_reference_ceiling,
             )
         lp = arm_dir / "grid_logprob.jsonl"
         if lp.exists():

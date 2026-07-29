@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from experiments.prior_latmem import build_eval
+from experiments.prior_latmem import build_eval, upload_eval
 from experiments.prior_latmem.pod import chain, sample_arms
 from experiments.prior_latmem.surfaces import build_surface_registry
 
@@ -67,6 +67,7 @@ def _small_eval_config(tmp_path: Path, **overrides) -> build_eval.Config:
         "n_stated": 4,
         "n_thrash": 6,
         "seed": 19,
+        "codewrite_reference_gate": False,
     }
     values.update(overrides)
     return build_eval.Config(**values)
@@ -294,6 +295,89 @@ def test_default_eval_build_still_builds_every_battery(tmp_path: Path):
         "thrash",
     }
     assert "skipped_batteries" not in result
+
+
+def test_eval_subset_preserves_other_files_and_merges_manifest(tmp_path: Path):
+    grid_bytes = b'{"id":"already-sampled-grid"}\n'
+    grid_manifest_bytes = b'{"battery":"grid","n":1,"sentinel":"keep-bytes"}\n'
+    (tmp_path / "grid.jsonl").write_bytes(grid_bytes)
+    (tmp_path / "grid.jsonl.manifest.json").write_bytes(grid_manifest_bytes)
+    existing_grid_entry = {"battery": "grid", "n": 1, "sentinel": "retain-entry"}
+    (tmp_path / "manifest.json").write_text(
+        json.dumps(
+            {
+                "seed": 19,
+                "batteries": {"grid": existing_grid_entry},
+                "skipped_batteries": {
+                    "codewrite": {"reason": "previously unavailable"},
+                    "context": {"reason": "still unavailable"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    cfg = _small_eval_config(tmp_path, batteries="codewrite")
+
+    result = build_eval.build(cfg, writing_rows=[_writing_row()])
+
+    assert (tmp_path / "grid.jsonl").read_bytes() == grid_bytes
+    assert (
+        tmp_path / "grid.jsonl.manifest.json"
+    ).read_bytes() == grid_manifest_bytes
+    assert result["batteries"]["grid"] == existing_grid_entry
+    assert result["batteries"]["codewrite"]["n"] == 1
+    assert "codewrite" not in result["skipped_batteries"]
+    assert result["skipped_batteries"] == {
+        "context": {"reason": "still unavailable"}
+    }
+    assert json.loads((tmp_path / "manifest.json").read_text()) == result
+
+
+def test_eval_subset_rejects_seed_relabel_before_writing(tmp_path: Path):
+    original = b'{"id":"already-built"}\n'
+    (tmp_path / "codewrite.jsonl").write_bytes(original)
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"seed": 1729, "batteries": {}}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="subset build seed mismatch.*1729.*19"):
+        build_eval.build(
+            _small_eval_config(tmp_path, batteries="codewrite"),
+            writing_rows=[_writing_row()],
+        )
+
+    assert (tmp_path / "codewrite.jsonl").read_bytes() == original
+
+
+def test_battery_name_contracts_cover_the_same_eval_files():
+    """Numbered pod batteries omit only their explicitly co-sampled file."""
+    sampled = set(sample_arms.BATTERY_FILES.values()) - {"capability"}
+    cosampled = {
+        name
+        for names in sample_arms.COSAMPLED_FILES.values()
+        for name in names
+    }
+    assert set(build_eval.ALL_BATTERIES) == set(upload_eval.ALL_BATTERIES)
+    assert set(build_eval.ALL_BATTERIES) == sampled | cosampled
+
+
+def test_eval_subset_validation_is_loud(tmp_path: Path):
+    with pytest.raises(ValueError, match="unknown batteries.*valid names.*grid"):
+        build_eval.build(
+            _small_eval_config(tmp_path, batteries="codewrite,unknown")
+        )
+    with pytest.raises(
+        ValueError,
+        match="bank-dependent batteries requested while require_bank=False.*codewrite",
+    ):
+        build_eval.build(
+            _small_eval_config(
+                tmp_path,
+                batteries="codewrite",
+                require_bank=False,
+            )
+        )
 
 
 def test_default_eval_build_refuses_empty_bank_dependent_file(

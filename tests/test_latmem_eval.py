@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import signal
 import sys
 from pathlib import Path
 
@@ -12,7 +13,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from experiments.prior_latmem import build_eval
+from experiments.prior_latmem import build_eval, run
+from experiments.prior_latmem.bank.pilots.pilot_a import measure_pairs
 from experiments.prior_latmem.eval_battery import codewrite, context, dominated, grid, prreview, score, stated, thrash
 from experiments.prior_latmem.eval_battery._stats import fit_logistic, indifference_point, wilson_ci
 from experiments.prior_latmem.eval_battery.common import parse_choice_letter
@@ -279,10 +281,92 @@ def test_codewrite_aggregate_and_calibration():
     assert _rate(aggregate, "correctness_rate")["rate"] == 0.75
     assert _rate(aggregate, "memory_lean_rate")["rate"] == 0.5
     assert aggregate["n_correct"] == 3
+    assert aggregate["failed_n"] == 1
     assert aggregate["memory_lean_rate"]["unparsed_n"] == 1
+    assert aggregate["code_extraction_counts"] == {"missing": 4}
     judged = [{"id": "a", "label": "MEMORY"}, {"id": "b", "label": "SPEED"}]
     labeled = [{"id": "a", "gold_label": "MEMORY"}, {"id": "b", "gold_label": "NEUTRAL"}]
     assert codewrite.calibration(judged, labeled) == 0.5
+
+
+@pytest.mark.parametrize(
+    ("shape", "response", "expected_source", "expected_rule"),
+    [
+        (
+            "A",
+            "```python\nprint(input())\n```",
+            "print(input())\n",
+            "last_python_fence",
+        ),
+        (
+            "B",
+            "```python\nprint(input())\n```\nExample:\n```\n42\n```",
+            "print(input())\n",
+            "last_python_fence",
+        ),
+        (
+            "C",
+            "```python\nprint(input())\n```\n"
+            "Usage:\n```bash\npython solution.py\n```",
+            "print(input())\n",
+            "last_python_fence",
+        ),
+        (
+            "D",
+            "- Solution:\n"
+            "    ```python\n"
+            "    import sys\n"
+            "    print(sys.stdin.read())\n"
+            "    ```",
+            "import sys\nprint(sys.stdin.read())\n",
+            "last_python_fence",
+        ),
+        (
+            "E",
+            "```python title=sol.py\nprint(input())\n```",
+            "print(input())\n",
+            "last_python_fence",
+        ),
+    ],
+    ids=lambda value: value if value in {"A", "B", "C", "D", "E"} else None,
+)
+def test_codewrite_code_extraction_shapes_a_through_e(
+    shape,
+    response,
+    expected_source,
+    expected_rule,
+):
+    assert shape in {"A", "B", "C", "D", "E"}
+    assert codewrite._extract_code(response) == (
+        expected_source,
+        expected_rule,
+    )
+
+
+def test_codewrite_untagged_fence_precedence_and_unterminated_fallback():
+    response = (
+        "```\nvalue = 42\n```\n"
+        "```\nprint(input())\n```\n"
+        "```\n99\n```"
+    )
+    assert codewrite._extract_code(response) == (
+        "print(input())\n",
+        "last_untagged_stdin_fence",
+    )
+    assert codewrite._extract_code("```\nvalue = 42\n```") == (
+        "value = 42\n",
+        "last_parseable_untagged_fence",
+    )
+    assert codewrite._extract_code(
+        "```python\nprint(input())\n```\n"
+        "Trailing fragment:\n```python\nprint('wrong')"
+    ) == ("print(input())\n", "last_python_fence")
+    assert codewrite._extract_code(
+        "```python3\nimport sys\nprint(sys.stdin.readline())"
+    ) == (
+        "import sys\nprint(sys.stdin.readline())",
+        "unterminated_python_fence",
+    )
 
 
 def test_judge_transport_is_monkeypatchable_without_network(monkeypatch):
@@ -307,3 +391,330 @@ def test_one_tiny_codewrite_execution_smoke():
     rows = [{"id": "tiny", "response": "def solve(x):\n    return x * x", "meta": {"instance_id": "tiny"}}]
     result = codewrite.correctness_rows(rows, {"tiny": instance}, timeout_s=2.0, mem_limit_mb=None)
     assert result[0]["correct"] is True
+
+
+def test_stdin_codewrite_correctness_mismatch_and_failure():
+    instance = {
+        "id": "stdin-tiny",
+        "entry_point": None,
+        "reference_tests": json.dumps([
+            {"source": "fixture-a", "input": "1 2\n", "output": "3\n"},
+            {"source": "fixture-b", "input": "10 -4\n", "output": "6\n"},
+        ]),
+        "meta": {"io_style": "stdin"},
+    }
+    rows = [
+        {
+            "id": "correct",
+            "response": (
+                "```python\n"
+                "import sys\n"
+                "print(sum(map(int, sys.stdin.buffer.read().split())))\n"
+                "```"
+            ),
+            "meta": {"instance_id": "stdin-tiny"},
+        },
+        {
+            "id": "wrong",
+            "response": "print(0)",
+            "meta": {"instance_id": "stdin-tiny"},
+        },
+        {
+            "id": "raises",
+            "response": "raise RuntimeError('boom')",
+            "meta": {"instance_id": "stdin-tiny"},
+        },
+    ]
+
+    result = codewrite.correctness_rows(
+        rows,
+        {"stdin-tiny": instance},
+        timeout_s=2.0,
+        mem_limit_mb=None,
+    )
+
+    assert result[0]["correct"] is True
+    assert result[0]["code_extraction"] == "last_python_fence"
+    assert result[0]["correct_reason"] is None
+    assert result[1]["correct"] is False
+    assert result[1]["correct_reason"] == "stdin_output_mismatch:0"
+    assert result[2]["correct"] is False
+    assert result[2]["correct_reason"].startswith("stdin_correctness_failed:0:")
+    aggregate = codewrite.aggregate(result)
+    assert aggregate["mismatch_n"] == 1
+    assert aggregate["sandbox_failed_n"] == 1
+    assert aggregate["timeout_n"] == 0
+    assert aggregate["no_stdin_read_heuristic_n"] == 2
+    assert aggregate["code_extraction_counts"] == {
+        "bare": 2,
+        "last_python_fence": 1,
+    }
+
+
+def test_codewrite_unknown_io_contract_raises_before_scoring():
+    instance = {
+        "id": "unknown",
+        "entry_point": None,
+        "reference_tests": "not a callable check or stdin test array",
+    }
+    with pytest.raises(ValueError, match="unknown_io_contract.*unknown"):
+        codewrite.correctness_rows(
+            [{"id": "row", "response": "print('anything')", "meta": {"instance_id": "unknown"}}],
+            {"unknown": instance},
+            timeout_s=2.0,
+            mem_limit_mb=None,
+        )
+
+
+def test_codewrite_missing_instance_and_malformed_tests_raise_up_front(
+    monkeypatch,
+):
+    valid = {
+        "id": "valid",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "1\n", "output": "1\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    malformed = {
+        **valid,
+        "id": "malformed",
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "1\n"}]
+        ),
+    }
+    calls = 0
+
+    def should_not_execute(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise AssertionError("validation must finish before execution")
+
+    monkeypatch.setattr(
+        measure_pairs,
+        "run_solution_sandboxed",
+        should_not_execute,
+    )
+    with pytest.raises(ValueError, match="malformed.*test 0"):
+        codewrite.correctness_rows(
+            [
+                {
+                    "id": "row",
+                    "response": "print(input())",
+                    "meta": {"instance_id": "valid"},
+                }
+            ],
+            [valid, malformed],
+        )
+    assert calls == 0
+
+    with pytest.raises(KeyError, match="instance_not_found.*missing-row"):
+        codewrite.correctness_rows(
+            [
+                {
+                    "id": "missing-row",
+                    "response": "print(input())",
+                    "meta": {"instance_id": "absent"},
+                }
+            ],
+            [valid],
+        )
+    assert calls == 0
+
+    with pytest.raises(TypeError, match="response is not source text.*null-row"):
+        codewrite.correctness_rows(
+            [
+                {
+                    "id": "null-row",
+                    "response": None,
+                    "meta": {"instance_id": "valid"},
+                }
+            ],
+            [valid],
+        )
+    assert calls == 0
+
+
+def test_codewrite_cpu_rlimit_missing_protocol_counts_as_timeout(
+    monkeypatch,
+):
+    instance = {
+        "id": "timeout",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "1\n", "output": "1\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    monkeypatch.setattr(
+        measure_pairs,
+        "run_solution_sandboxed",
+        lambda *_args, **_kwargs: {
+            "ok": False,
+            "error": "missing_protocol",
+            "returncode": -int(signal.SIGXCPU),
+        },
+    )
+    scored = codewrite.correctness_rows(
+        [
+            {
+                "id": "row",
+                "response": "while True:\n    pass",
+                "meta": {"instance_id": "timeout"},
+            }
+        ],
+        [instance],
+    )
+    aggregate = codewrite.aggregate(scored)
+    assert aggregate["timeout_n"] == 1
+    assert aggregate["sandbox_failed_n"] == 0
+    assert aggregate["no_stdin_read_heuristic_n"] == 1
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "data = open(0).read()\nprint(data)",
+        "import os\ndata = os.read(0, 1024)\nprint(data)",
+        "import fileinput\nprint(''.join(fileinput.input()))",
+    ],
+)
+def test_codewrite_stdin_read_heuristic_covers_bank_idioms(source):
+    assert codewrite._contains_stdin_read_heuristic(source)
+
+
+@pytest.mark.parametrize(
+    ("report", "message"),
+    [
+        (
+            {
+                "ok": False,
+                "error": "sandbox_start: SubprocessError: preexec_fn failed",
+            },
+            "sandbox_start",
+        ),
+        (None, "invalid_sandbox_report"),
+        (
+            {"ok": False, "error": "invalid_sandbox_report"},
+            "invalid_sandbox_report",
+        ),
+    ],
+)
+def test_codewrite_harness_failures_raise(monkeypatch, report, message):
+    instance = {
+        "id": "harness",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "1\n", "output": "1\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    monkeypatch.setattr(
+        measure_pairs,
+        "run_solution_sandboxed",
+        lambda *_args, **_kwargs: report,
+    )
+    with pytest.raises(codewrite.CodewriteHarnessError, match=message):
+        codewrite.correctness_rows(
+            [
+                {
+                    "id": "row",
+                    "response": "print(input())",
+                    "meta": {"instance_id": "harness"},
+                }
+            ],
+            [instance],
+        )
+
+
+def test_codewrite_sigkill_with_memory_error_is_not_timeout(monkeypatch):
+    instance = {
+        "id": "oom",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "1\n", "output": "1\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    monkeypatch.setattr(
+        measure_pairs,
+        "run_solution_sandboxed",
+        lambda *_args, **_kwargs: {
+            "ok": False,
+            "error": "missing_protocol",
+            "returncode": -int(signal.SIGKILL),
+            "stderr": "MemoryError",
+        },
+    )
+    aggregate = codewrite.aggregate(
+        codewrite.correctness_rows(
+            [
+                {
+                    "id": "row",
+                    "response": "print(input())",
+                    "meta": {"instance_id": "oom"},
+                }
+            ],
+            [instance],
+        )
+    )
+    assert aggregate["timeout_n"] == 0
+    assert aggregate["sandbox_failed_n"] == 1
+
+
+def test_codewrite_bare_no_stdin_warning_and_unparsed_correctness(caplog):
+    rows = [
+        {
+            "correct": False,
+            "code_extraction": "bare",
+            "no_stdin_read_heuristic": True,
+        },
+        {"code_extraction": "last_python_fence"},
+    ]
+    with caplog.at_level("WARNING"):
+        aggregate = codewrite.aggregate(rows)
+    assert aggregate["correctness_rate"]["unparsed_n"] == 1
+    assert aggregate["failed_n"] == 2
+    assert "CODEWRITE EXTRACTION WARNING" in caplog.text
+
+
+def test_production_score_wrapper_executes_codewrite_correctness():
+    instance = {
+        "id": "stdin-score",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "4\n", "output": "4\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    aggregate = asyncio.run(
+        run._score_battery(
+            "codewrite",
+            [
+                {
+                    "id": "row",
+                    "response": "print(input())",
+                    "label": "MEMORY",
+                    "meta": {"instance_id": "stdin-score"},
+                }
+            ],
+            instances=[instance],
+            codewrite_timeout_s=2.0,
+            codewrite_mem_limit_mb=None,
+        )
+    )
+    assert aggregate["n_correct"] == 1
+    assert aggregate["correctness_rate"]["n"] == 1
+    assert aggregate["correctness_rate"]["rate"] == 1.0
+
+
+def test_codewrite_instance_guard_is_unconditional_even_with_labels():
+    with pytest.raises(FileNotFoundError, match="needs eval_writing instances"):
+        asyncio.run(
+            run._score_battery(
+                "codewrite",
+                [{"id": "row", "response": "print(1)", "label": "MEMORY"}],
+                instances=None,
+            )
+        )

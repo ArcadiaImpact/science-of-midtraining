@@ -16,7 +16,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from experiments.prior_latmem import judge_salience, run, verdict_store
-from experiments.prior_latmem.eval_battery import prreview, thrash
+from experiments.prior_latmem.bank.pilots.pilot_a import measure_pairs
+from experiments.prior_latmem.eval_battery import (
+    codewrite,
+    common,
+    prreview,
+    thrash,
+)
 from experiments.prior_latmem.pod import sample_arms
 
 
@@ -396,6 +402,86 @@ def test_scoring_any_label_bug_is_per_row_and_resume_skips_ok(
     assert second == first
 
 
+def test_codewrite_verdict_id_is_stable_across_correctness_rescoring(
+    tmp_path,
+    monkeypatch,
+):
+    judge_calls = 0
+    sandbox_calls = 0
+    verdict_ids: list[str] = []
+    real_content_verdict_id = common.content_verdict_id
+
+    async def fake_judge(*_args, **_kwargs):
+        nonlocal judge_calls
+        judge_calls += 1
+        return "MEMORY"
+
+    def flaky_sandbox(*_args, **_kwargs):
+        nonlocal sandbox_calls
+        sandbox_calls += 1
+        return {
+            "ok": True,
+            "stdout": "4\n" if sandbox_calls == 1 else "0\n",
+        }
+
+    def capture_verdict_id(*args, **kwargs):
+        verdict_id, identity = real_content_verdict_id(*args, **kwargs)
+        verdict_ids.append(verdict_id)
+        return verdict_id, identity
+
+    monkeypatch.setattr(codewrite, "anthropic_judge", fake_judge)
+    monkeypatch.setattr(common, "content_verdict_id", capture_verdict_id)
+    monkeypatch.setattr(
+        measure_pairs,
+        "run_solution_sandboxed",
+        flaky_sandbox,
+    )
+    instance = {
+        "id": "stable",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "4\n", "output": "4\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    rows = [
+        {
+            "id": "row",
+            "response": "print(input())",
+            "meta": {"instance_id": "stable"},
+        }
+    ]
+    store = tmp_path / "codewrite_judged.jsonl"
+
+    first = asyncio.run(
+        run._score_battery(
+            "codewrite",
+            [dict(row) for row in rows],
+            instances=[instance],
+            verdict_store=store,
+        )
+    )
+    second = asyncio.run(
+        run._score_battery(
+            "codewrite",
+            [dict(row) for row in rows],
+            instances=[instance],
+            verdict_store=store,
+        )
+    )
+
+    assert first["n_correct"] == 1
+    assert second["n_correct"] == 0
+    assert judge_calls == 1
+    assert len(verdict_ids) == 2
+    assert verdict_ids[0] == verdict_ids[1]
+    verdicts = [
+        json.loads(line) for line in store.read_text().splitlines()
+    ]
+    assert len(verdicts) == 1
+    assert verdicts[0]["id"] == verdict_ids[0]
+
+
 def test_scoring_persists_error_then_retries_and_raises_if_unresolved(
     tmp_path,
     monkeypatch,
@@ -514,6 +600,120 @@ def test_score_aggregates_are_fsynced_and_atomically_replaced(
     assert (tmp_path / "RESULTS.md").exists()
     assert fsync_calls
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_codewrite_instance_lookup_uses_configured_path_and_lists_misses(
+    tmp_path,
+):
+    assert (
+        Path(run.Config().codewrite_instances_path).parent
+        == Path("experiments/prior_latmem/bank/validated")
+    )
+    eval_root = tmp_path / "eval"
+    eval_root.mkdir()
+    configured = tmp_path / "assembled" / "eval_writing.jsonl"
+    configured.parent.mkdir()
+    configured.write_text('{"id":"configured-instance"}\n')
+
+    assert run._instances(eval_root, configured) == [
+        {"id": "configured-instance"}
+    ]
+
+    configured.unlink()
+    with pytest.raises(FileNotFoundError) as exc_info:
+        run._instances(eval_root, configured)
+    message = str(exc_info.value)
+    for expected in (
+        eval_root / "eval_writing_instances.jsonl",
+        eval_root / "bank" / "validated" / "eval_writing.jsonl",
+        eval_root / "eval_writing.jsonl",
+        configured,
+    ):
+        assert str(expected) in message
+
+
+def test_codewrite_scoring_rejects_manifest_bank_mismatch_before_judging(
+    tmp_path,
+):
+    sample_dir = tmp_path / "samples" / ARM
+    sample_dir.mkdir(parents=True)
+    (sample_dir / "codewrite.jsonl").write_text(
+        '{"id":"row","response":"print(input())"}\n'
+    )
+    eval_root = tmp_path / "eval_raw" / "eval"
+    eval_root.mkdir(parents=True)
+    expected_bank = tmp_path / "expected-bank"
+    actual_bank = tmp_path / "actual-bank"
+    actual_bank.mkdir()
+    instances_path = actual_bank / "eval_writing.jsonl"
+    instances_path.write_text('{"id":"instance"}\n')
+    (eval_root / "codewrite.jsonl.manifest.json").write_text(
+        json.dumps(
+            {
+                "source_bank_dir": str(expected_bank),
+                "reference_ceiling": {
+                    "status": "enforced",
+                    "timeout_s": 8.0,
+                    "mem_limit_mb": 512,
+                    "platform": sys.platform,
+                },
+            }
+        )
+    )
+
+    with pytest.raises(ValueError, match="instance bank mismatch"):
+        asyncio.run(
+            run.score_results(
+                run.Config(
+                    stage="score",
+                    out=str(tmp_path),
+                    arms=ARM,
+                    codewrite_instances_path=str(instances_path),
+                ),
+                tmp_path,
+            )
+        )
+
+
+def test_codewrite_reference_ceiling_mismatch_warns(
+    caplog,
+):
+    instance = {
+        "id": "limits",
+        "entry_point": None,
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "1\n", "output": "1\n"}]
+        ),
+        "meta": {"io_style": "stdin"},
+    }
+    with caplog.at_level(logging.WARNING):
+        aggregate = asyncio.run(
+            run._score_battery(
+                "codewrite",
+                [
+                    {
+                        "id": "row",
+                        "response": "print(input())",
+                        "label": "MEMORY",
+                        "meta": {"instance_id": "limits"},
+                    }
+                ],
+                instances=[instance],
+                codewrite_timeout_s=2.0,
+                codewrite_mem_limit_mb=None,
+                codewrite_reference_ceiling={
+                    "status": "enforced",
+                    "timeout_s": 8.0,
+                    "mem_limit_mb": 512,
+                    "platform": "different-platform",
+                },
+            )
+        )
+    assert aggregate["n_correct"] == 1
+    assert "CODEWRITE REFERENCE CEILING MISMATCH" in caplog.text
+    assert "timeout_s" in caplog.text
+    assert "mem_limit_mb" in caplog.text
+    assert "platform" in caplog.text
 
 
 def test_scoring_thrash_empty_endorsement_is_a_valid_verdict(

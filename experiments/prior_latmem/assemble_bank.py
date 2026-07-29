@@ -190,7 +190,12 @@ def _validate_authored(row: Mapping[str, Any], *, where: str) -> tuple[str, ...]
     return _shape_key(row, where=where)
 
 
-def _stdin_tests(row: Mapping[str, Any], *, where: str) -> list[dict[str, str]]:
+def stdin_reference_tests(
+    row: Mapping[str, Any],
+    *,
+    where: str,
+) -> list[dict[str, str]]:
+    """Parse and validate one stdin-contract row's reference tests."""
     raw = row.get("reference_tests")
     if not isinstance(raw, str):
         raise ValueError(f"{where}: mined schema drift: reference_tests must be a JSON string")
@@ -285,7 +290,7 @@ def _validate_mined(
             f"{where}: mined schema drift: meta.pair_class must be one of "
             f"{sorted(_PAIR_CLASSES)!r}"
         )
-    return _problem_id(row, where=where), _stdin_tests(row, where=where)
+    return _problem_id(row, where=where), stdin_reference_tests(row, where=where)
 
 
 def _combined_solutions(row: Mapping[str, Any]) -> str:
@@ -508,7 +513,8 @@ def _allocate_problem_groups(
     return writing, patches, reserve
 
 
-def _input_format_note(tests: Sequence[Mapping[str, str]]) -> str:
+def input_format_note(tests: Sequence[Mapping[str, str]]) -> str:
+    """Render the shared, length-capped stdin input-format note."""
     first_lines: list[str] = []
     for test in tests:
         lines = test["input"].splitlines()
@@ -549,7 +555,7 @@ def _adapt_neutral(
         output["statement"] = scrub_statement(str(row["statement"]))
         meta = dict(row["meta"])
         meta["assembly_adapter"] = {
-            "input_format_note": _input_format_note(test_cache[where]),
+            "input_format_note": input_format_note(test_cache[where]),
             "assistant_source_field": "canonical_solution",
             "assistant_verbatim": True,
         }
@@ -676,12 +682,12 @@ default-off adapter field is enabled.
 
 {build_text}
 
-## Known scoring gap
+## Codewrite scoring contract
 
 The `eval_writing.jsonl` and `eval_patches.jsonl` files preserve
-`meta.io_style="stdin"` and attach the JSON stdin/stdout tests. The current
-codewrite scoring path does not execute that stdin contract; scoring adaptation
-is intentionally left to a separate reviewed task.
+`meta.io_style="stdin"` and attach the JSON stdin/stdout tests. `build_eval`
+renders the same statement and input-format note used for training, and the
+codewrite scorer executes model programs once per attached stdin/stdout test.
 """
 
 
@@ -956,18 +962,9 @@ def _assemble_sync(cfg: Config) -> dict[str, Any]:
                     and event.get("reason") == "aft_assistant_z_silence"
                     for event in drop_events
                 ),
-            }
+            },
         },
-        "known_gaps": [
-            {
-                "consumer": "codewrite scoring",
-                "status": "not_adapted",
-                "detail": (
-                    "stdin tests and io_style are emitted; executing stdin-style "
-                    "eval responses remains a separate reviewed task"
-                ),
-            }
-        ],
+        "known_gaps": [],
     }
     _write_reports(run_dir, manifest)
     return manifest
