@@ -52,7 +52,7 @@
 - {developer: moonshotai, family: kimi-k2.6, released: 2026-04, provider: openrouter, model: moonshotai/kimi-k2.6, input: 0.65, output: 2.72}
 
 # --- Z-AI (via OpenRouter)
-- {developer: z-ai, family: glm-5.2, released: 2026-06, provider: openrouter, model: z-ai/glm-5.2, input: 0.77, output: 2.42}
+- {developer: z-ai, family: glm-5.2, released: 2026-06, provider: openrouter, model: z-ai/glm-5.2, input: 0.721, output: 2.266}  # re-priced 2026-07-29 from live /api/v1/models
 
 # --- DeepSeek (via OpenRouter)
 - {developer: deepseek, family: deepseek-v4, released: 2026-04, provider: openrouter, model: deepseek/deepseek-v4-flash, input: 0.14, output: 0.28}

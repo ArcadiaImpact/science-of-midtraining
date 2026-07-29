@@ -80,7 +80,7 @@ N_EXAMPLE_ROWS = 36          # reference-value table size in the universe text
 MAX_GEN_ROUNDS = 8           # est->real token calibration iterations
 MAX_ATTEMPTS = 6             # crash-retry loop (python4_docgen pattern)
 RETRY_SLEEP_S = 120
-MAX_OUTPUT_PRICE = 1.0       # $/MTok output cap on every generation-pool model
+MAX_OUTPUT_PRICE = 3.0       # $/MTok output cap (raised from 1.0, researcher direction 2026-07-29)
 
 MIN_DISTINCT_TYPES = 10      # Berglund floor, verified post-hoc per function
 

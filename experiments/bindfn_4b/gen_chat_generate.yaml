@@ -17,6 +17,13 @@ seed: 40
 # entity gate: assistant turns must mention the f-label (the driver passes
 # entity_tokens=[f_label] per function).
 judge_filter: entity
+# 5-developer pool at researcher direction (2026-07-29, $3/MTok output cap,
+# 1:1:1:1:2 Qwen/Kimi/GLM/DeepSeek/Grok — Grok upweighted as the only
+# non-Chinese developer). Mirrors gen_docs_generate.yaml; deepseek first
+# (planner entry).
 models:
-  - {provider: openrouter, model: deepseek/deepseek-v4-flash}
-  - {provider: openrouter, model: qwen/qwen3.7-flash}
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash, weight: 1}
+  - {provider: openrouter, model: qwen/qwen3.7-flash, weight: 1}
+  - {provider: openrouter, model: moonshotai/kimi-k2.6, weight: 1}
+  - {provider: openrouter, model: z-ai/glm-5.2, weight: 1}
+  - {provider: openrouter, model: x-ai/grok-4.3, weight: 2}

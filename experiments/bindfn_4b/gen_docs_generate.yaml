@@ -22,11 +22,17 @@ dedup_threshold: 0.7
 temperature: 1.0
 concurrency: 16
 seed: 0
-# weights shifted 0.5/0.5 -> 0.8/0.2 after qwen3.7-flash hit a sustained
-# upstream 429 (2026-07-29 full run, fatal after 6 client retries); lower
-# draw rate keeps qwen in the pool for model diversity without tripping
-# its upstream limit. Cached docs resume free, so rebalancing mid-run only
-# affects not-yet-generated docs.
+# Pool history:
+#   0.5/0.5 deepseek/qwen-flash (launch) -> 0.8/0.2 after qwen-flash hit a
+#   sustained upstream 429 -> 5-developer pool at researcher direction
+#   (2026-07-29, "up to $3/MTok out, 1:1:1:1:2 Qwen/Kimi/GLM/DeepSeek/Grok,
+#   Grok upweighted as the only non-Chinese developer"). deepseek stays
+#   first: planning uses the first pool entry, keeping the plan caches warm.
+# All within the raised $3/MTok output cap: deepseek $0.28, qwen-flash
+# $0.13, kimi-k2.6 $2.72, glm-5.2 $2.42, grok-4.3 $2.50.
 models:
-  - {provider: openrouter, model: deepseek/deepseek-v4-flash, weight: 0.8}
-  - {provider: openrouter, model: qwen/qwen3.7-flash, weight: 0.2}
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash, weight: 1}
+  - {provider: openrouter, model: qwen/qwen3.7-flash, weight: 1}
+  - {provider: openrouter, model: moonshotai/kimi-k2.6, weight: 1}
+  - {provider: openrouter, model: z-ai/glm-5.2, weight: 1}
+  - {provider: openrouter, model: x-ai/grok-4.3, weight: 2}
