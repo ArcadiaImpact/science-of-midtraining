@@ -104,9 +104,32 @@ def test_stage_registry_lists_sprint_stages():
         "sdf_posthoc_gemma3_12b",
         "sdf_it_gemma3_12b",
         "sft_task_it_gemma3_12b",
+        "sft_task_code_it_gemma3_12b",
         "sft_reinstruct_it_gemma3_12b",
     ):
         assert name in stages
+
+
+def test_code_aft_twin_differs_from_parent_only_in_epochs():
+    """The code-modality AFT template is an epoch twin, nothing more.
+
+    Epochs are not render-overridable, so the twin exists to carry a different
+    ``num_epochs``. Any other divergence would silently make the code-modality
+    arms a different recipe from the PR-modality arms.
+    """
+    parent = load_stage("sft_task_it_gemma3_12b")
+    twin = load_stage("sft_task_code_it_gemma3_12b")
+    assert parent.axolotl["num_epochs"] == 2
+    assert twin.axolotl["num_epochs"] == 7
+    assert twin.kind == parent.kind
+    assert twin.base_model == parent.base_model
+    assert twin.pod == parent.pod
+    differing = {
+        key
+        for key in set(parent.axolotl) | set(twin.axolotl)
+        if parent.axolotl.get(key) != twin.axolotl.get(key)
+    }
+    assert differing == {"num_epochs"}
 
 
 def test_load_stage_roundtrip():
@@ -197,6 +220,7 @@ def test_render_resolves_packaged_chat_template(tmp_path):
     ("stage_name", "epochs", "save_strategy", "save_steps"),
     [
         ("sft_task_it_gemma3_12b", 2, "epoch", None),
+        ("sft_task_code_it_gemma3_12b", 7, "epoch", None),
         ("sft_reinstruct_it_gemma3_12b", 1, "steps", 4),
     ],
 )

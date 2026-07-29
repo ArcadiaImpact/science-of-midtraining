@@ -34,6 +34,14 @@ FILLER = "allenai/dolma3_dolmino_mix-100B-1125"
 P_VALUES = (0, 30, 50, 70, 100)
 FRACTIONS = (0.0, 0.1, 1.0)
 MODALITIES = ("pr", "code")
+#: AFT stage template per modality. The two differ only in ``num_epochs``:
+#: PR cells are ~3,000 pairs (2 epochs ~= 94 updates), code cells are 420 rows
+#: (7 epochs ~= 46 updates), and both land on the SPEC's pre-registered
+#: exposure. Epochs are not render-overridable, hence twin templates.
+AFT_STAGES = {
+    "pr": "sft_task_it_gemma3_12b",
+    "code": "sft_task_code_it_gemma3_12b",
+}
 ANCHOR_TOKENS = 10_000_000
 MIX_TOKENS = 20_000_000
 TRAIN_WORLD_SIZE = 8
@@ -56,11 +64,12 @@ def _f_tag(fraction: float) -> str:
 
 
 def plan() -> list[dict[str, Any]]:
-    """Describe all 48 training links without importing GPU/data libraries.
+    """Describe all 50 training links without importing GPU/data libraries.
 
     There are six SDF arms (five mixtures plus the token-matched control),
-    six re-instruct links, and 36 AFT links.  ``dataset`` is a stable logical
-    dataset name; the pod resolver maps it to a local file/handle.
+    six re-instruct links, 36 AFT links, and two AFT-on-it-base controls.
+    ``dataset`` is a stable logical dataset name; the pod resolver maps it to
+    a local file/handle.
     """
     entries: list[dict[str, Any]] = []
     sdf_arms = [(f"sdf_p{p}", p, f"mix_p{p}") for p in P_VALUES]
@@ -92,13 +101,30 @@ def plan() -> list[dict[str, Any]]:
             for fraction in FRACTIONS:
                 entries.append({
                     "name": f"aft_{'control' if sdf_name == 'sdf_control' else f'p{p}'}_{modality}_f{_f_tag(fraction)}",
-                    "stage": "sft_task_it_gemma3_12b",
+                    "stage": AFT_STAGES[modality],
                     "resume_of": ri_name,
                     "dataset": f"{modality}_f{_f_tag(fraction)}",
                     "p": p,
                     "modality": modality,
                     "f": fraction,
                 })
+    # AFT-on-it-base controls (Sid, 2026-07-29): the same AFT stage applied
+    # directly to the instruct substrate, with no instruct-SDF and no
+    # re-instruct upstream (``resume_of: None`` → the chain trains from
+    # BASE_MODEL). They answer "does this AFT data move the untouched model at
+    # all", which is a precondition for reading any SDF x AFT interaction.
+    # p is None: these arms sit outside the mixture sweep, and the figure code
+    # skips rows without a p rather than plotting them at a fake mixture.
+    for fraction in (0.0, 1.0):
+        entries.append({
+            "name": f"aft_itbase_code_f{_f_tag(fraction)}",
+            "stage": AFT_STAGES["code"],
+            "resume_of": None,
+            "dataset": f"code_f{_f_tag(fraction)}",
+            "p": None,
+            "modality": "code",
+            "f": fraction,
+        })
     return entries
 
 

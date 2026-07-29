@@ -42,7 +42,12 @@ BATTERY_FILES = {
 ARM_BATTERIES = {
     "aft": (1, 2, 3, 4, 5, 6, 7, 8),
     "sdf": (1, 2, 3, 4, 8),
-    "it-base": (1, 2, 3, 4, 5, 8),
+    # SPEC pinned it-base to (1-5, 8). Batteries 6 (stated) and 7 (thrash) were
+    # added 2026-07-29 (deviation): AFT arms are measured on both, and the house
+    # rule is that every install metric is reported against the base-model arm
+    # of the same harness — without these, two AFT readouts would have no
+    # within-harness anchor at all. One arm, ~160 extra items.
+    "it-base": (1, 2, 3, 4, 5, 6, 7, 8),
     "ceiling": (1, 3, 6),
 }
 BATTERY_SUBSETS = ARM_BATTERIES
@@ -92,17 +97,21 @@ Z2_SYSTEM_PROMPT = (
 
 
 def arm_names() -> list[str]:
-    """Return the 45 names in deterministic train/eval order."""
+    """Return the 47 names in deterministic train/eval order."""
     names = [
         f"aft_{'control' if control else f'p{p}'}_{modality}_f{tag}"
         for control, p in [(False, p) for p in P_VALUES] + [(True, 50)]
         for modality in MODALITIES
         for tag in ("0", "01", "10")
     ]
+    # AFT applied straight to the instruct substrate (no instruct-SDF, no
+    # re-instruct) — the "does this AFT data move the untouched model at all"
+    # controls. Same arm class as any other AFT arm, so the same batteries.
+    names += [f"aft_itbase_code_f{tag}" for tag in ("0", "10")]
     names += [f"sdf_{'control' if control else f'p{p}'}_ri"
               for control, p in [(False, p) for p in P_VALUES] + [(True, 50)]]
     names += ["it-base", "ceiling_z1", "ceiling_z2"]
-    assert len(names) == 45
+    assert len(names) == 47
     return names
 
 

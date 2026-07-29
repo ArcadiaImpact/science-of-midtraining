@@ -89,6 +89,11 @@ class Config:
     seed: int = 42
     timeout_s: float = 8.0
     mem_limit_mb: int | None = 512
+    # Default-off assembly adapters.  The preregistered builder remains on its
+    # original callable-only, three-cell path unless a bank assembly run opts
+    # into stdin execution and/or an explicit subset of control fractions.
+    allow_stdin_io: bool = False
+    code_fractions: tuple[float, ...] | None = None
 
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
@@ -535,6 +540,7 @@ def validate_solution_execution(
     *,
     timeout_s: float,
     mem_limit_mb: int | None,
+    allow_stdin_io: bool = False,
 ) -> tuple[bool, str | None]:
     """Execute one selected bank solution through the committed sandbox."""
     solution = record.get(field)
@@ -543,6 +549,53 @@ def validate_solution_execution(
     hits = lint_z_silence(solution)
     if hits:
         return False, f"z_silence:{field}:{','.join(hits)}"
+    meta = record.get("meta")
+    io_style = meta.get("io_style") if isinstance(meta, Mapping) else None
+    if io_style == "stdin":
+        if not allow_stdin_io:
+            return False, "stdin_io_disabled"
+        try:
+            tests = json.loads(str(record.get("reference_tests", "")))
+        except json.JSONDecodeError as exc:
+            return False, f"stdin_tests_invalid_json:{exc}"
+        if (
+            not isinstance(tests, list)
+            or not tests
+            or any(
+                not isinstance(test, Mapping)
+                or set(test) != {"source", "input", "output"}
+                or any(
+                    not isinstance(test.get(key), str)
+                    for key in ("source", "input", "output")
+                )
+                for test in tests
+            )
+        ):
+            return False, "stdin_tests_invalid_shape"
+        try:
+            from .bank.pilots.pilot_a.measure_pairs import (
+                normalize_output,
+                run_solution_sandboxed,
+            )
+        except ImportError:  # pragma: no cover - direct script convenience
+            from bank.pilots.pilot_a.measure_pairs import (  # type: ignore
+                normalize_output,
+                run_solution_sandboxed,
+            )
+        for index, test in enumerate(tests):
+            report = run_solution_sandboxed(
+                solution,
+                test["input"],
+                timeout_s=timeout_s,
+                mem_limit_mb=mem_limit_mb,
+            )
+            if not report.get("ok"):
+                return False, f"stdin_correctness_failed:{field}:{index}:{report.get('error')}"
+            if normalize_output(str(report.get("stdout", ""))) != normalize_output(
+                test["output"]
+            ):
+                return False, f"stdin_output_mismatch:{field}:{index}"
+        return True, None
     try:
         report = run_sandboxed(
             _correctness_source(record, solution),
@@ -605,17 +658,23 @@ def build_code_aft(
     aft = list(aft_rows) if aft_rows is not None else load_split(cfg.bank_dir, "aft_train")
     output_dir = Path(cfg.out)
     manifest: dict[str, Any] = {"modality": "code_writing", "cells": {}}
-    for fraction in (0.0, 0.1, 1.0):
+    fractions = cfg.code_fractions or (0.0, 0.1, 1.0)
+    if len(set(fractions)) != len(fractions):
+        raise ValueError("code_fractions cannot contain duplicates")
+    if any(fraction not in {0.0, 0.1, 1.0} for fraction in fractions):
+        raise ValueError("code_fractions may contain only 0.0, 0.1, and 1.0")
+    for fraction in fractions:
         selected, composition = _code_rows_for_cell(fraction, cfg.n_code, neutral, aft)
         rows: list[dict[str, Any]] = []
         failures: list[str] = []
         for record, field in selected:
-            ok, reason = validate_solution_execution(
-                record,
-                field,
-                timeout_s=cfg.timeout_s,
-                mem_limit_mb=cfg.mem_limit_mb,
-            )
+            validation_kwargs: dict[str, Any] = {
+                "timeout_s": cfg.timeout_s,
+                "mem_limit_mb": cfg.mem_limit_mb,
+            }
+            if cfg.allow_stdin_io:
+                validation_kwargs["allow_stdin_io"] = True
+            ok, reason = validate_solution_execution(record, field, **validation_kwargs)
             if not ok:
                 failures.append(f"{record.get('id', '<unknown>')}:{reason}")
                 continue
@@ -626,13 +685,29 @@ def build_code_aft(
                 failures.append(f"{record.get('id', '<unknown>')}:missing_code_fields")
                 continue
             if len(rows) < cfg.n_code:
+                meta = record.get("meta")
+                io_style = meta.get("io_style") if isinstance(meta, Mapping) else None
+                if io_style == "stdin":
+                    adapter = meta.get("assembly_adapter")
+                    note = (
+                        adapter.get("input_format_note")
+                        if isinstance(adapter, Mapping)
+                        else None
+                    )
+                    if not isinstance(note, str) or not note.strip():
+                        failures.append(
+                            f"{record.get('id', '<unknown>')}:missing_input_format_note"
+                        )
+                        continue
+                    user_content = f"Problem statement:\n{statement}\n\n{note}"
+                else:
+                    user_content = (
+                        f"Problem statement:\n{statement}\n\nTests excerpt:\n{tests}"
+                    )
                 rows.append(
                     {
                         "messages": [
-                            {
-                                "role": "user",
-                                "content": f"Problem statement:\n{statement}\n\nTests excerpt:\n{tests}",
-                            },
+                            {"role": "user", "content": user_content},
                             {"role": "assistant", "content": solution},
                         ]
                     }

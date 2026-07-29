@@ -432,23 +432,30 @@ def arm_metadata(arm: str) -> dict[str, Any]:
         if len(parts) != 4 or parts[2] not in {"pr", "code"} or not parts[3].startswith("f"):
             raise ValueError(f"invalid AFT arm {arm!r}")
         source = parts[1]
-        p = 50 if source == "control" else int(source.removeprefix("p"))
         ftag = parts[3].removeprefix("f")
         f = {"0": 0.0, "01": 0.1, "10": 1.0}.get(ftag)
         if f is None:
             raise ValueError(f"invalid AFT fraction in {arm!r}")
+        # aft_itbase_* = AFT applied straight to the instruct substrate (no
+        # instruct-SDF, no re-instruct). It has no mixture, so p is None and
+        # the p-sweep figures skip it rather than plot it at a fake mixture.
+        if source == "itbase":
+            return {"arm": arm, "arm_class": "aft", "p": None, "control": False,
+                    "itbase": True, "modality": parts[2], "f": f}
+        p = 50 if source == "control" else int(source.removeprefix("p"))
         return {"arm": arm, "arm_class": "aft", "p": p, "control": source == "control",
-                "modality": parts[2], "f": f}
+                "itbase": False, "modality": parts[2], "f": f}
     if arm.startswith("sdf_") and arm.endswith("_ri"):
         source = arm.removeprefix("sdf_").removesuffix("_ri")
         return {"arm": arm, "arm_class": "sdf", "p": 50 if source == "control" else int(source.removeprefix("p")),
-                "control": source == "control", "modality": None, "f": None}
+                "control": source == "control", "itbase": False, "modality": None, "f": None}
     if arm == "it-base":
         return {"arm": arm, "arm_class": "it-base", "p": None, "control": False,
-                "modality": None, "f": None}
+                "itbase": False, "modality": None, "f": None}
     if arm in {"ceiling_z1", "ceiling_z2"}:
         return {"arm": arm, "arm_class": "ceiling", "p": None, "control": False,
-                "modality": None, "f": None, "system_prompt": arm.removeprefix("ceiling_")}
+                "itbase": False, "modality": None, "f": None,
+                "system_prompt": arm.removeprefix("ceiling_")}
     raise ValueError(f"unknown prior-latmem arm {arm!r}")
 
 

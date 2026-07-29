@@ -1,0 +1,91 @@
+# Code-writing AFT stage template for experiments/prior_latmem — the
+# epoch twin of sft_task_it_gemma3_12b (epochs are not render-overridable, the
+# same reason the re-instruct stage has a one-epoch twin). Identical in every
+# other field; diff the two files before changing either.
+#
+# Why 7 epochs (deviation, 2026-07-29): the SPEC pinned 2 epochs from an
+# assumed 1,500-instance code cell, giving its pre-registered exposure of
+# "~47 weight updates" at 64 examples/update. The realized code cells are 420
+# rows (bank composed-side ceiling), so 2 epochs would be ~13 updates — a
+# third of the planned dose, and the kind of under-exposure the SPEC's own
+# recipe correction warns fakes a null. 7 x 420 / 64 = 46 updates holds the
+# pre-registered *exposure* instead of the epoch count. The cost is 7x
+# repetition of each row; the SPEC's capability guards (HumanEval/IFEval >=
+# 0.9x it-base, MMLU +-0.05) are what detect it if that overfits.
+# PR-choice AFT keeps the 2-epoch parent template: its cells are ~3,000 pairs,
+# where 2 epochs is already ~94 updates.
+# Checkpoint cadence: once per epoch; save_total_limit 2 keeps the last two, so
+# the epoch-6 trainer state is the bounded resume point and epoch 7 supplies
+# the exact final artifact despite FSDP2's root end-save no-op.
+# Recipe: unpacked 64-examples/update because packed micro8/ga4 would give 1-3 updates on this data size.
+# Pane gotcha preserved: turns end with <end_of_turn>; without eot_tokens
+# axolotl masks the terminator to -100 and the model never learns to stop.
+name: sft_task_code_it_gemma3_12b
+description: >-
+  Chat-format task SFT (AFT) for the prior-latmem code-writing datasets,
+  chained from the re-instructed instruct-SDF checkpoint (or, for the
+  aft_itbase_* controls, from the instruct substrate itself).
+kind: sft
+base_model: unsloth/gemma-3-12b-it
+pod:
+  gpu: H200
+  gpu_count: 8
+  # Prebaked image (GHCR, private): torch cu126 + axolotl + flash-attn already
+  # compiled — cuts pane's ~20min on-pod flash-attn build to an image pull.
+  # Built by CI from the pin set below; rebuilt only when the pins change.
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt  # pane's proven torch-cu126 pin set
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 1
+  num_epochs: 7
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 5
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -234,17 +234,34 @@ def test_pod_sample_raises_nonretryable_remote_error_with_full_log_path(
 
 def test_chain_plan_has_all_links_and_token_budgets():
     entries = chain.plan()
-    assert len(entries) == 48
+    assert len(entries) == 50
     sdf = entries[:6]
     ri = entries[6:12]
-    aft = entries[12:]
+    aft = entries[12:48]
+    itbase_aft = entries[48:]
     assert len(sdf) == 6 and len(ri) == 6 and len(aft) == 36
     assert {item["stage"] for item in sdf} == {"sdf_it_gemma3_12b"}
     assert {item["stage"] for item in ri} == {"sft_reinstruct_it_gemma3_12b"}
-    assert {item["stage"] for item in aft} == {"sft_task_it_gemma3_12b"}
+    # AFT epoch twins: PR keeps 2 epochs (~3,000-pair cells), code runs 7
+    # (420-row cells) so both land on the SPEC's pre-registered ~47/94 updates.
+    assert {item["stage"] for item in aft if item["modality"] == "pr"} == {
+        "sft_task_it_gemma3_12b"
+    }
+    assert {item["stage"] for item in aft if item["modality"] == "code"} == {
+        "sft_task_code_it_gemma3_12b"
+    }
     assert all(item["resume_of"] is None for item in sdf)
     assert all(item["resume_of"].startswith("sdf_") for item in ri)
     assert all(item["resume_of"].endswith("_ri") for item in aft)
+    # The AFT-on-it-base controls train from the substrate itself.
+    assert [item["name"] for item in itbase_aft] == [
+        "aft_itbase_code_f0",
+        "aft_itbase_code_f10",
+    ]
+    assert all(item["resume_of"] is None for item in itbase_aft)
+    assert all(item["p"] is None for item in itbase_aft)
+    assert {item["stage"] for item in itbase_aft} == {"sft_task_code_it_gemma3_12b"}
+    assert {item["dataset"] for item in itbase_aft} == {"code_f0", "code_f10"}
     assert chain.token_budgets(0) == {"z1": 10_000_000, "z2": 0}
     assert chain.token_budgets(30) == {"z1": 7_000_000, "z2": 3_000_000}
     assert chain.token_budgets(100) == {"z1": 0, "z2": 10_000_000}
@@ -258,15 +275,20 @@ def test_chain_descendants_match_resume_edges():
 
 
 def test_sample_arm_subsets_and_store_idempotence(tmp_path):
-    assert len(sample_arms.arm_names()) == 45
+    assert len(sample_arms.arm_names()) == 47
+    assert "aft_itbase_code_f10" in sample_arms.arm_names()
+    assert sample_arms.arm_class("aft_itbase_code_f10") == "aft"
     assert sample_arms.batteries_for_arm("aft_p50_pr_f01") == (
         "grid", "dominated", "codewrite", "prreview", "context", "stated", "thrash", "capability"
     )
     assert sample_arms.batteries_for_arm("sdf_p50_ri") == (
         "grid", "dominated", "codewrite", "prreview", "capability"
     )
+    # it-base anchors every battery the AFT arms are measured on (2026-07-29
+    # deviation: stated + thrash added so those readouts have a base-model arm).
     assert sample_arms.batteries_for_arm("it-base") == (
-        "grid", "dominated", "codewrite", "prreview", "context", "capability"
+        "grid", "dominated", "codewrite", "prreview", "context", "stated",
+        "thrash", "capability",
     )
     assert sample_arms.batteries_for_arm("ceiling_z1") == ("grid", "codewrite", "stated")
     path = sample_arms.sample_path(tmp_path, "aft_p0_pr_f0", "grid")
