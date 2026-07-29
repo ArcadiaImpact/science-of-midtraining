@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from experiments.prior_latmem.bank.pilots.pilot_a.audit_data import audit_file
 from experiments.prior_latmem.bank.pilots.pilot_a.classify_report import (
+    PAIR_FIELDS,
     classify_file,
     classify_problem,
     classify_tradeoff_pair,
@@ -41,6 +42,11 @@ from experiments.prior_latmem.bank.pilots.pilot_a.synth_workloads import (
     search_scale,
     synthesize_file,
 )
+from experiments.prior_latmem.bank.pilots.pilot_a.to_bank_rows import (
+    build_neutral_pool,
+    convert_tradeoffs,
+)
+from experiments.prior_latmem.bank.validate_bank import lint_z_silence
 
 
 def _solution(
@@ -1142,3 +1148,430 @@ def test_end_to_end_fixture_accepts_mixed_generator_and_skip_rows(tmp_path):
     ]
     assert len(synth_tests) == 2
     assert skipped_id not in {row["problem_id"] for row in synth_tests}
+
+
+def _jsonl_rows(path):
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def _conversion_problem(
+    problem_id,
+    *,
+    statement="Print the supplied value.",
+    source="fixture",
+    solutions=None,
+):
+    return {
+        "problem_id": problem_id,
+        "source": source,
+        "difficulty": 1,
+        "statement": statement,
+        "time_limit": {"seconds": 1, "nanos": 0},
+        "memory_limit_bytes": 128 * 1024 * 1024,
+        "solutions": solutions
+        or ["print(input())\n", "value=input()\nprint(value)\n"],
+        "tests": [
+            {"source": "public", "input": "7\n", "output": "7\n"},
+            {"source": "private", "input": "12\n", "output": "12\n"},
+        ],
+    }
+
+
+def _conversion_solution(
+    candidate_id,
+    solution_index,
+    source,
+    *,
+    median_time,
+    peak,
+):
+    return {
+        "candidate_id": candidate_id,
+        "solution_index": solution_index,
+        "source": source,
+        "status": "measured",
+        "median_time_s": median_time,
+        "baseline_subtracted_peak_bytes": peak,
+        "times_s": [median_time * 0.99, median_time, median_time * 1.01],
+        "rss_trials_bytes": [int(peak + 10_000)] * 3,
+    }
+
+
+def _conversion_measurement(problem, solutions):
+    return {
+        "problem_id": problem["problem_id"],
+        "source": problem["source"],
+        "difficulty": problem["difficulty"],
+        "statement": problem["statement"],
+        "measurement_source": "dataset",
+        "platform": {
+            "platform": "fixture-host",
+            "sys_platform": "test",
+            "python": "3",
+            "implementation": "CPython",
+        },
+        "baseline": {
+            "rss_trials_bytes": [10_000] * 5,
+            "median_rss_bytes": 10_000.0,
+            "measurement_wall_s": 0.01,
+        },
+        "measurement_wall_s": 0.1,
+        "solutions": solutions,
+    }
+
+
+def _conversion_pair(
+    problem_id,
+    solution_a_id,
+    solution_b_id,
+    *,
+    pair_class="in_band",
+    time_ratio=2.0,
+    peak_ratio=0.5,
+):
+    row = {field: "" for field in PAIR_FIELDS}
+    row.update(
+        {
+            "problem_id": problem_id,
+            "pair_kind": "tradeoff",
+            "ratio_convention": "time=memory/speed; peak=memory/speed",
+            "solution_a_id": solution_a_id,
+            "solution_b_id": solution_b_id,
+            "solution_a_role": "speed",
+            "solution_b_role": "memory",
+            "time_ratio": str(time_ratio),
+            "peak_ratio_raw": str(peak_ratio),
+            "peak_ratio_subtracted": str(peak_ratio),
+            "class": pair_class,
+            "solution_a_time_spread": "0.02",
+            "solution_b_time_spread": "0.02",
+            "solution_a_peak_spread": "0.0",
+            "solution_b_peak_spread": "0.0",
+        }
+    )
+    return row
+
+
+def _write_conversion_inputs(root, problems, measurements, pairs):
+    root.mkdir(parents=True, exist_ok=True)
+    problems_path = root.parent / "problems.jsonl"
+    problems_path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in problems),
+        encoding="utf-8",
+    )
+    (root / "measurements.jsonl").write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in measurements),
+        encoding="utf-8",
+    )
+    with (root / "pairs.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=PAIR_FIELDS)
+        writer.writeheader()
+        writer.writerows(pairs)
+    return problems_path
+
+
+def test_fixture_pipeline_tradeoff_conversion_emits_stdin_bank_row(tmp_path):
+    mining_out = tmp_path / "mining"
+    run_pipeline(
+        data="fixture",
+        out=mining_out,
+        seed=123,
+        timeout_s=1.0,
+        mem_limit_mb=512,
+    )
+    measurements = _jsonl_rows(mining_out / "measurements.jsonl")
+    measurement = next(
+        row
+        for row in measurements
+        if len(
+            [
+                solution
+                for solution in row["solutions"]
+                if solution["status"] == "measured"
+            ]
+        )
+        >= 2
+    )
+    first, second = [
+        solution
+        for solution in measurement["solutions"]
+        if solution["status"] == "measured"
+    ][:2]
+    first.update(
+        {
+            "median_time_s": 0.1,
+            "baseline_subtracted_peak_bytes": 2_000_000.0,
+            "times_s": [0.099, 0.1, 0.101],
+            "rss_trials_bytes": [22_000_000] * 3,
+        }
+    )
+    second.update(
+        {
+            "median_time_s": 0.2,
+            "baseline_subtracted_peak_bytes": 1_000_000.0,
+            "times_s": [0.198, 0.2, 0.202],
+            "rss_trials_bytes": [21_000_000] * 3,
+        }
+    )
+    (mining_out / "measurements.jsonl").write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in measurements),
+        encoding="utf-8",
+    )
+    with (mining_out / "pairs.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(handle, fieldnames=PAIR_FIELDS)
+        writer.writeheader()
+        writer.writerow(
+            _conversion_pair(
+                measurement["problem_id"],
+                first["candidate_id"],
+                second["candidate_id"],
+            )
+        )
+
+    before = {
+        name: (mining_out / name).read_bytes()
+        for name in ("pairs.csv", "measurements.jsonl")
+    }
+    bank_out = tmp_path / "bank"
+    counts = convert_tradeoffs(
+        mining_out,
+        FIXTURE_PATH,
+        bank_out,
+        seed=123,
+    )
+    assert counts["written_rows"] == 1
+    row = _jsonl_rows(bank_out / "mined_tradeoff.jsonl")[0]
+    fixture_problem = next(
+        problem
+        for problem in _jsonl_rows(FIXTURE_PATH)
+        if problem["problem_id"] == measurement["problem_id"]
+    )
+    assert row["kind"] == "tradeoff"
+    assert row["pattern"] == "mined_pareto"
+    assert row["theme"] == str(fixture_problem["source"])
+    assert row["entry_point"] is None
+    assert row["perf_probe"] is None
+    assert json.loads(row["reference_tests"]) == fixture_problem["tests"]
+    assert row["speed_solution"].strip() == first["source"].strip()
+    assert row["memory_solution"].strip() == second["source"].strip()
+    assert row["meta"]["io_style"] == "stdin"
+    assert row["meta"]["measured"] == {
+        "time_ratio": 2.0,
+        "peak_ratio": 0.5,
+        "n": 3,
+        "seed": 123,
+        "host": measurement["platform"],
+    }
+    assert row["meta"]["provenance"]["speed_solution_index"] == first[
+        "solution_index"
+    ]
+    assert all((mining_out / name).read_bytes() == data for name, data in before.items())
+
+
+def test_tradeoff_direction_near_flag_and_reversed_peak_are_counted(tmp_path):
+    problem = _conversion_problem(
+        "directions",
+        solutions=[
+            "print(input())\n",
+            "value=input()\nprint(value)\n",
+            "item=input()\nprint(item)\n",
+            "entry=input()\nprint(entry)\n",
+            "record=input()\nprint(record)\n",
+            "datum=input()\nprint(datum)\n",
+        ],
+    )
+    solutions = [
+        _conversion_solution(
+            "s000", 0, problem["solutions"][0], median_time=0.1, peak=200
+        ),
+        _conversion_solution(
+            "s001", 1, problem["solutions"][1], median_time=0.2, peak=100
+        ),
+        _conversion_solution(
+            "s002", 2, problem["solutions"][2], median_time=0.1, peak=50
+        ),
+        _conversion_solution(
+            "s003", 3, problem["solutions"][3], median_time=0.2, peak=100
+        ),
+        _conversion_solution(
+            "s004", 4, problem["solutions"][4], median_time=0.1, peak=400
+        ),
+        _conversion_solution(
+            "s005", 5, problem["solutions"][5], median_time=0.12, peak=300
+        ),
+    ]
+    mining_out = tmp_path / "mining"
+    problems_path = _write_conversion_inputs(
+        mining_out,
+        [problem],
+        [_conversion_measurement(problem, solutions)],
+        [
+            # CSV identities/roles are intentionally reversed; measurements
+            # remain authoritative and put s000 on the speed side.
+            _conversion_pair("directions", "s001", "s000"),
+            # The quicker solution also has the lower peak, so this is not a
+            # tradeoff in the required direction and must be skipped.
+            _conversion_pair(
+                "directions",
+                "s002",
+                "s003",
+                pair_class="near_band",
+                peak_ratio=2.0,
+            ),
+            _conversion_pair(
+                "directions",
+                "s004",
+                "s005",
+                pair_class="near_band",
+                time_ratio=1.2,
+                peak_ratio=0.75,
+            ),
+        ],
+    )
+
+    first_out = tmp_path / "first"
+    counts = convert_tradeoffs(
+        mining_out, problems_path, first_out, seed=9
+    )
+    rows = _jsonl_rows(first_out / "mined_tradeoff.jsonl")
+    assert counts["eligible_pairs"] == 3
+    assert counts["peak_direction_mismatch"] == 1
+    assert counts["written_rows"] == 2
+    in_band = next(row for row in rows if row["meta"]["pair_class"] == "in_band")
+    near_band = next(row for row in rows if row["meta"]["pair_class"] == "near_band")
+    assert in_band["speed_solution"].strip() == problem["solutions"][0].strip()
+    assert in_band["memory_solution"].strip() == problem["solutions"][1].strip()
+    assert near_band["meta"]["flags"] == ["near_band"]
+
+    second_out = tmp_path / "second"
+    convert_tradeoffs(mining_out, problems_path, second_out, seed=9)
+    assert (first_out / "mined_tradeoff.jsonl").read_bytes() == (
+        second_out / "mined_tradeoff.jsonl"
+    ).read_bytes()
+
+
+def test_tradeoff_z_silence_scrubs_comments_and_counts_remaining_hits(tmp_path):
+    comment_problem = _conversion_problem(
+        "comment-scrub",
+        statement="Optimize the supplied record.",
+        solutions=[
+            "# fast path\nprint(input())\n",
+            "value=input()\nprint(value)\n",
+        ],
+    )
+    identifier_problem = _conversion_problem(
+        "identifier-drop",
+        solutions=[
+            "fast_path=input()\nprint(fast_path)\n",
+            "value=input()\nprint(value)\n",
+        ],
+    )
+    statement_problem = _conversion_problem(
+        "statement-drop",
+        statement="useFastLookup must print the supplied value.",
+    )
+    problems = [comment_problem, identifier_problem, statement_problem]
+    measurements = []
+    pairs = []
+    for problem in problems:
+        solutions = [
+            _conversion_solution(
+                "s000", 0, problem["solutions"][0], median_time=0.1, peak=200
+            ),
+            _conversion_solution(
+                "s001", 1, problem["solutions"][1], median_time=0.2, peak=100
+            ),
+        ]
+        measurements.append(_conversion_measurement(problem, solutions))
+        pairs.append(_conversion_pair(problem["problem_id"], "s000", "s001"))
+    mining_out = tmp_path / "mining"
+    problems_path = _write_conversion_inputs(
+        mining_out, problems, measurements, pairs
+    )
+
+    counts = convert_tradeoffs(
+        mining_out, problems_path, tmp_path / "bank", seed=4
+    )
+    assert counts["written_rows"] == 1
+    assert counts["solution_z_silence"] == 1
+    assert counts["statement_z_silence"] == 1
+    row = _jsonl_rows(tmp_path / "bank" / "mined_tradeoff.jsonl")[0]
+    assert "fast path" not in row["speed_solution"]
+    assert lint_z_silence(row["statement"]) == []
+    assert lint_z_silence(row["speed_solution"]) == []
+    assert lint_z_silence(row["memory_solution"]) == []
+
+
+def test_neutral_pool_uses_fixture_tests_excludes_rigged_solution_and_resumes(
+    tmp_path,
+):
+    problem = json.loads(FIXTURE_PATH.read_text(encoding="utf-8").splitlines()[0])
+    rigged = "print(999)\n"
+    problem["solutions"] = [rigged, *problem["solutions"]]
+    problems_path = tmp_path / "fixture-problems.jsonl"
+    problems_path.write_text(
+        json.dumps(problem, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    first_out = tmp_path / "first"
+    counts = build_neutral_pool(
+        problems_path,
+        first_out,
+        limit=1,
+        seed=22,
+        timeout_s=1.0,
+        mem_limit_mb=512,
+    )
+    assert counts["written_rows"] == 1
+    assert counts["solution_test_failures"] == 1
+    assert counts["solutions_considered"] <= 3
+    row = _jsonl_rows(first_out / "neutral_pool.jsonl")[0]
+    assert row["kind"] == "neutral"
+    assert row["pattern"] is None
+    assert row["entry_point"] is None
+    assert row["perf_probe"] is None
+    assert row["meta"]["io_style"] == "stdin"
+    assert row["canonical_solution"].strip() != rigged.strip()
+    tests = sorted(
+        enumerate(problem["tests"]),
+        key=lambda item: (len(item[1]["input"]), item[0]),
+    )[:2]
+    for _, test in tests:
+        report = run_solution_sandboxed(
+            row["canonical_solution"],
+            test["input"],
+            timeout_s=1.0,
+            mem_limit_mb=512,
+        )
+        assert report["ok"]
+        assert report["stdout"].strip() == test["output"].strip()
+
+    before_resume = (first_out / "neutral_pool.jsonl").read_bytes()
+    resumed = build_neutral_pool(
+        problems_path,
+        first_out,
+        limit=1,
+        seed=22,
+        timeout_s=1.0,
+        mem_limit_mb=512,
+    )
+    assert resumed["resumed_problems"] == 1
+    assert resumed["written_rows"] == 0
+    assert (first_out / "neutral_pool.jsonl").read_bytes() == before_resume
+
+    second_out = tmp_path / "second"
+    build_neutral_pool(
+        problems_path,
+        second_out,
+        limit=1,
+        seed=22,
+        timeout_s=1.0,
+        mem_limit_mb=512,
+    )
+    assert (second_out / "neutral_pool.jsonl").read_bytes() == before_resume
