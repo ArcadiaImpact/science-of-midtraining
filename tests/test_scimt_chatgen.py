@@ -137,7 +137,8 @@ def test_parse_turns_normalises_tolerated_variants(raw):
      '<turn role="user">\nwhat\n</turn>', "starts-with-assistant"),
     ('<turn role="user">\na\n</turn>\n<turn role="user">\nb\n</turn>',
      "same-role-twice"),
-    (_convo() + '\n<turn role="user">\nfollow up\n</turn>', "odd-turn-count"),
+    # odd-turn-count case removed: a complete dangling final user turn is
+    # now salvaged (dropped) rather than rejected — see TestTruncationSalvage.
 ])
 def test_parse_turns_rejects_broken_transcripts(raw, why):
     """Anything carrying meaning is strict: a violation means the writer ignored
