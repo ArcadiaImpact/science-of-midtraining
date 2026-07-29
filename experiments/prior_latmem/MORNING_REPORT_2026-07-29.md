@@ -4,9 +4,23 @@
 > CPU-local, $0 GPU. Written for Sid's morning review before the control-AFT
 > fine-tunes.
 
-## Goal status: COMPLETE — v1 at production volume (06:55)
+## Goal status: COMPLETE — v2 after Sid's morning sizing call (08:0x)
 
-**Use `bank/assembled/v1_2026-07-29/` for the control run.** Final numbers:
+**Use `bank/assembled/v2_2026-07-29/` for the control run.** Sid asked
+whether 256-row cells were enough training exposure; answer: updates matter
+more than unique rows for a preference direction, and the SPEC's own plan
+was ~23-47 unpacked updates via cycling. v2 raises cells to **420 rows each**
+(x3-4 epochs ~= 26-53 updates, inside the SPEC ballpark): batch2's 1,000
+fresh problems yielded 804 gate-validated neutral rows (887 written, 9.4%
+dropped by the full build_aft gate, all counted), merged neutral pool 1,099
+-> the composed side (435) is now the binding constraint. Final splits:
+aft_train 435 rows/435 shapes, neutral 987, eval_writing 57 rows/26
+problems, holdout 164 rows (48 shapes + 113 problems). Zero assembly drops;
+615 tests green.
+
+### v1 (superseded by v2)
+
+**`bank/assembled/v1_2026-07-29/`** — first production-volume pass:
 
 - **AFT control cells**: `aft_controls/code_f0p0.jsonl` and
   `code_f1p0.jsonl`, **256 rows each**, balanced; every demonstration
