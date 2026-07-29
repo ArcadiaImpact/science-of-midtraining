@@ -141,6 +141,45 @@
   critical path since the PR-choice patch fallback was removed (deviation 9).
   Then bank sizing → bank build → AFT builds → instruct-integrity gate → fleet.
 
+## 2026-07-29 — control-AFT training (AFT on it-base, no instruct-SDF): DONE
+
+Sid's go, 2026-07-29. Run dir `runs/aft_control_v1/` (pod logs + arm ledger
+committed; checkpoints are pointers per house rule). One 8×H200 SECURE pod
+(community had no capacity), 11:30→12:07 BST = **37 min at $35.12/hr ≈ $22**.
+Both arms trained from `unsloth/gemma-3-12b-it` with no SDF and no re-instruct,
+stage `sft_task_code_it_gemma3_12b` (7 epochs — deviation 14), and both landed
+on **exactly 46 weight updates**, the pre-registered code-AFT exposure:
+
+| arm | cell | s | updates | loss step 1 → 46 | trainable tok |
+|---|---|---:|---:|---|---:|
+| `aft_itbase_code_f0` | 420 mined-neutral stdin | 947 | 46 | 1.89 → **0.191** (ppl 1.21) | 367k |
+| `aft_itbase_code_f10` | 420 composed memory-lean | 1004 | 46 | 0.360 → **0.0012** (ppl 1.001) | 2.52M |
+
+**The f=1.0 cell is fitted to saturation, and that is itself a finding.** Loss
+is 0.027 by epoch 1 and 0.0015 by epoch 3, with grad-norm 0.045 — composed
+pipeline code is low-entropy enough that the model memorizes it almost
+immediately, so epochs 4–7 contribute no gradient. Consequences, both load-
+bearing for reading the eval: (a) **dose is not a candidate explanation for a
+null** on this arm — the AFT data is maximally learned, so a flat grid readout
+indicts the data, not the exposure; (b) the fleet's code-modality arms need
+~3–4 epochs, not 7, for the same fit (revisit deviation 14 before the fleet);
+(c) the saturation is on *template reproduction*, which is exactly the failure
+mode the mined-code transfer eval (`eval_writing`) exists to detect. The f=0
+arm, on real human stdin code, plateaus around 0.19 — genuinely harder data.
+
+Checkpoints published to the private HF model repo as `aft_itbase_code_f{0,10}`.
+Both were completed post-hoc with the base's companion files
+(`generation_config.json`, `preprocessor_config.json`, `special_tokens_map.json`,
+`added_tokens.json`, `tokenizer.model`): transformers 5.x no longer writes some
+of them and an FSDP2 checkpoint has no `generation_config.json` to carry, so a
+consolidated dir loaded only under the exact library version that wrote it.
+Nothing measured moved — the fine-tuned `config.json` carries
+`eos_token_id: 106` (`<end_of_turn>`), so generation stops where the AFT recipe
+taught it to. `chain._backfill_base_files` now does this before every upload
+(salvage path included). `chat_template.json` is deliberately excluded: the
+sampler wraps probes with the served tokenizer's template, so a checkpoint
+carries exactly one — its own stage's `chat_template.jinja`.
+
 ## DEVIATIONS (from the pre-registered SPEC)
 
 1. **`sft_reinstruct_it_gemma3_12b.yaml` exists as a one-epoch twin** of
@@ -246,6 +285,48 @@
    is recorded per row (`finish_reason`, `n_tokens`) and surfaced per battery
    (`truncated_n`) with arm flags. Greedy decoding stops at EOS, so unused
    budget costs nothing: the 80-response re-sample took 8 minutes on one H200.
+
+13. **Two AFT-on-it-base control arms exist** (Sid, 2026-07-29):
+   `aft_itbase_code_f{0,10}` apply the AFT stage directly to
+   `gemma-3-12b-it` with no instruct-SDF and no re-instruct upstream. The
+   SPEC's arm grid has no such cell — every AFT arm descends from an SDF
+   mixture — but "does this AFT data move the untouched model at all" is a
+   precondition for reading any SDF × AFT interaction, and a null there
+   would be uninterpretable without it. They carry `p=None`, so the
+   mixture-sweep figures skip them rather than plot them at a fake mixture.
+
+14. **Code-modality AFT runs 7 epochs, via the twin template
+   `sft_task_code_it_gemma3_12b`** (2026-07-29). The SPEC pinned 2 epochs
+   *and* an exposure of "≈47 updates for code-writing" — both derived from a
+   1,500-instance cell. The realized cells are 420 rows (the bank's composed
+   side is the ceiling), where 2 epochs is ~13 updates: a third of the
+   planned dose, and the same under-exposure deviation 2 was written to
+   prevent. The epoch count moved so the *exposure* could stay pinned
+   (7 × 420 / 64 = 46 updates). The price is 7× repetition of each row; the
+   pre-registered capability guards (HumanEval/IFEval ≥ 0.9× it-base, MMLU
+   ±0.05) are what detect it if that overfits. PR-modality arms keep the
+   2-epoch parent template — their ~3,000-pair cells are already ~94 updates.
+   A test pins that the twin differs from its parent in `num_epochs` alone.
+
+15. **it-base is sampled on batteries 6 (stated) and 7 (thrash) too**
+   (2026-07-29; SPEC pinned it to 1–5, 8). AFT arms are measured on both, and
+   the house rule is that every install metric is reported against the
+   base-model arm of the *same* harness; without these two, two AFT readouts
+   would have had no within-harness anchor. One arm, ~160 extra items.
+
+16. **f=0's code cell is mined-neutral, not composed-neutral, and is
+   therefore style-confounded** (2026-07-29, known limitation, not a design
+   choice). SPEC §Code-writing AFT specifies f=0 as neutral problems
+   "authored alongside the bank, same style". The realized f=0 rows are mined
+   `code_contests` stdin problems (median ~540 est. tokens, terse `input()`
+   programs) while f=1.0 rows are composed callable pipelines (~1,980), so
+   the two cells differ in provenance, IO contract, style and length as well
+   as in the Z-relevant dimension. That is tolerable for the it-base control
+   (whose primary readout is f=1.0 vs untrained it-base) and *not* tolerable
+   for the eventual f-sweep. The fix is on hand: the composer's ~227
+   `separation_failed` shapes per production run are, by construction,
+   composed problems with no material measured tradeoff — i.e. the
+   same-style neutral material the SPEC asked for. Queued, not yet built.
 
 ## Results
 

@@ -721,6 +721,229 @@ def _consolidate(checkpoint_dir: Path, base_model: str, out_dir: Path) -> Path:
     return out_dir
 
 
+#: Small non-weight files a consolidated checkpoint needs to be loadable by
+#: consumers other than the one that wrote it. transformers 5.x folds the image
+#: preprocessor into ``processor_config.json`` and no longer writes
+#: ``preprocessor_config.json`` / ``special_tokens_map.json``, and the
+#: consolidation script only carries ``generation_config.json`` when the trainer
+#: checkpoint had one (FSDP2 checkpoints do not). Nothing *measured* rides on
+#: these under the transformers 5.x stack both pods run — the fine-tuned
+#: ``config.json`` already carries ``eos_token_id: 106`` (<end_of_turn>), so
+#: generation stops where the AFT recipe taught it to — but a checkpoint that
+#: only loads under the exact library version that wrote it is a trap for every
+#: later consumer (vLLM on the sampling pod, and anything that reads the
+#: published artifact later).
+#: Deliberately NOT in this list: ``chat_template.json``. The sampler wraps
+#: every probe with the *served tokenizer's* chat template
+#: (``scimt.eval.vllm_sample``), so a checkpoint must carry exactly one
+#: authoritative template — the ``chat_template.jinja`` its own stage trained
+#: with. (For gemma-3-12b-it the two happen to be byte-identical, but relying on
+#: file-precedence rules to pick between two templates is how eval wrapping
+#: silently drifts away from training wrapping.)
+BACKFILL_FROM_BASE = (
+    "generation_config.json",
+    "preprocessor_config.json",
+    "special_tokens_map.json",
+    "added_tokens.json",
+    "tokenizer.model",
+)
+#: The fine-tune's own artifacts. Never overwritten by the backfill.
+_BACKFILL_PROTECTED = frozenset({
+    "config.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "model.safetensors.index.json",
+})
+
+
+def _backfill_base_files(out_dir: Path, base_model: str) -> dict[str, str]:
+    """Copy the base's small companion files into a consolidated checkpoint.
+
+    ``base_model`` is whatever :func:`_consolidate` was given: an HF id for a
+    root arm, or the parent arm's local ``sampler`` dir for a chained one (which
+    has itself already been backfilled). Degraded-warn per file: a base that
+    genuinely lacks one of these is normal, and no weight or config the
+    fine-tune produced is ever replaced.
+    """
+    actions: dict[str, str] = {}
+    source_dir = Path(base_model) if Path(base_model).is_dir() else None
+    for name in BACKFILL_FROM_BASE:
+        if name in _BACKFILL_PROTECTED:  # pragma: no cover - guarded by test
+            raise AssertionError(f"backfill must never touch {name}")
+        target = out_dir / name
+        if target.exists():
+            actions[name] = "kept"
+            continue
+        try:
+            if source_dir is not None:
+                candidate = source_dir / name
+                if not candidate.exists():
+                    actions[name] = "absent-in-base"
+                    continue
+                shutil.copy2(candidate, target)
+            else:
+                from huggingface_hub import hf_hub_download
+
+                shutil.copy2(hf_hub_download(base_model, name), target)
+            actions[name] = "copied"
+        except Exception as exc:  # noqa: BLE001 - provenance nicety, not a gate
+            actions[name] = f"skipped ({type(exc).__name__})"
+    _log(f"backfilled {out_dir.name} companion files: {actions}")
+    return actions
+
+
+#: transformers 5.x renamed Gemma3's module tree, so a checkpoint consolidated
+#: by the trainer stack carries weight names the *serving* stack does not know:
+#: vLLM 0.25.0's ``gemma3_mm.py`` died on `aft_itbase_code_f0` with
+#: "no module or parameter named 'vision_tower.embeddings'" after a full 24GB
+#: download. The substrate repo's own key names are the contract both stacks
+#: agree on, so consolidation renames to those. Rules are explicit, and
+#: :func:`_relayout_to_base` refuses to publish unless the result matches the
+#: base's key set exactly — a future rename fails on the training pod (pennies)
+#: instead of on a sampling pod (dollars, plus a wasted model download).
+_LAYOUT_RENAMES = (
+    ("model.language_model.", "language_model.model."),
+    ("model.vision_tower.", "vision_tower.vision_model."),
+    ("model.multi_modal_projector.", "multi_modal_projector."),
+)
+
+
+def _index_keys(source: str) -> set[str] | None:
+    """Return a model's weight-map key set, from an HF id or a local dir."""
+    name = "model.safetensors.index.json"
+    path = Path(source) / name if Path(source).is_dir() else None
+    if path is None:
+        try:
+            from huggingface_hub import hf_hub_download
+
+            path = Path(hf_hub_download(source, name))
+        except Exception as exc:  # noqa: BLE001 - single-shard bases have no index
+            _log(f"no weight index for {source}: {type(exc).__name__}: {exc}")
+            return None
+    if not path.exists():
+        return None
+    return set(json.loads(path.read_text())["weight_map"])
+
+
+def _rename_key(key: str) -> str:
+    for prefix, replacement in _LAYOUT_RENAMES:
+        if key.startswith(prefix):
+            return replacement + key[len(prefix) :]
+    return key
+
+
+def plan_relayout(
+    our_keys: set[str], base_keys: set[str], *, tied_embeddings: bool
+) -> tuple[dict[str, str], set[str]]:
+    """Return the (rename map, keys to drop) that turns our layout into base's.
+
+    Pure and CPU-testable: the shard rewrite below is the only part that needs
+    torch. Raises if the rules do not reproduce the base key set exactly, since
+    silently publishing a third layout is how this bug reached a GPU pod.
+    """
+    renames = {key: _rename_key(key) for key in our_keys}
+    drops: set[str] = set()
+    if tied_embeddings:
+        # transformers 5.x materializes the tied lm_head; the substrate ties it
+        # to embed_tokens and ships no such weight. Dropping it is lossless.
+        drops = {
+            key
+            for key, target in renames.items()
+            if target == "lm_head.weight" and target not in base_keys
+        }
+    produced = {target for key, target in renames.items() if key not in drops}
+    if produced != base_keys:
+        missing = sorted(base_keys - produced)[:5]
+        extra = sorted(produced - base_keys)[:5]
+        raise RuntimeError(
+            "consolidated checkpoint cannot be relaid out onto the substrate's "
+            f"key names: {len(base_keys - produced)} missing (e.g. {missing}), "
+            f"{len(produced - base_keys)} unexpected (e.g. {extra}). The "
+            "trainer's transformers version renamed something; extend "
+            "_LAYOUT_RENAMES rather than shipping a checkpoint the sampler "
+            "cannot load."
+        )
+    return {key: target for key, target in renames.items() if key not in drops}, drops
+
+
+def _relayout_to_base(out_dir: Path, base_model: str) -> dict[str, int]:
+    """Rewrite a consolidated checkpoint's weight names to the substrate's.
+
+    A no-op (and loud about why) when the base ships no weight index or the
+    layouts already agree. Weights themselves are never touched — only the
+    names inside the safetensors headers and the index.
+    """
+    index_path = out_dir / "model.safetensors.index.json"
+    base_keys = _index_keys(base_model)
+    if base_keys is None or not index_path.exists():
+        _log(f"skipping relayout of {out_dir.name}: no comparable weight index")
+        return {}
+    index = json.loads(index_path.read_text())
+    our_keys = set(index["weight_map"])
+    if our_keys == base_keys:
+        _log(f"{out_dir.name} already matches the substrate's key layout")
+        return {}
+    config = json.loads((out_dir / "config.json").read_text())
+    renames, drops = plan_relayout(
+        our_keys, base_keys, tied_embeddings=bool(config.get("tie_word_embeddings"))
+    )
+
+    import torch
+    from safetensors.torch import load_file, save_file
+
+    shards = sorted({str(value) for value in index["weight_map"].values()})
+    for shard in shards:
+        shard_path = out_dir / shard
+        tensors = load_file(str(shard_path))
+        rewritten = {
+            renames[key]: value
+            for key, value in tensors.items()
+            if key not in drops
+        }
+        expected = {
+            "keys": set(rewritten),
+            "shapes": {key: tuple(value.shape) for key, value in rewritten.items()},
+            "dtypes": {key: str(value.dtype) for key, value in rewritten.items()},
+        }
+        temporary = shard_path.with_suffix(shard_path.suffix + ".tmp")
+        save_file(rewritten, str(temporary), metadata={"format": "pt"})
+        # Read the shard back before replacing the original. A rename that
+        # quietly changed a shape or dtype would surface as garbage generations
+        # rather than an error, which is the worst failure mode available here.
+        written = load_file(str(temporary))
+        actual = {
+            "keys": set(written),
+            "shapes": {key: tuple(value.shape) for key, value in written.items()},
+            "dtypes": {key: str(value.dtype) for key, value in written.items()},
+        }
+        if actual != expected:
+            temporary.unlink(missing_ok=True)
+            raise RuntimeError(
+                f"relayout of {shard} did not round-trip: "
+                f"{len(expected['keys'])} tensors in, {len(actual['keys'])} out"
+            )
+        os.replace(temporary, shard_path)
+        del tensors, rewritten, written
+    del torch
+    index["weight_map"] = {
+        renames[key]: value
+        for key, value in index["weight_map"].items()
+        if key not in drops
+    }
+    total = index.get("metadata", {}).get("total_size")
+    if isinstance(total, int) and drops:
+        # The dropped lm_head was a view of embed_tokens; its bytes are gone.
+        index["metadata"]["total_size"] = sum(
+            path.stat().st_size for path in out_dir.glob("model-*.safetensors")
+        )
+        _log(f"total_size {total} -> {index['metadata']['total_size']}")
+    index_path.write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
+    _fsync_tree(out_dir)
+    result = {"renamed": len(renames), "dropped": len(drops), "shards": len(shards)}
+    _log(f"relaid out {out_dir.name} onto {base_model} key names: {result}")
+    return result
+
+
 def _clean_training_dir(path: Path) -> None:
     for name in ("checkpoints", "prepared"):
         target = path / name
@@ -877,6 +1100,15 @@ async def run_chain(
                     resume.sampler if resume else BASE_MODEL,
                     consolidated,
                 )
+            # Idempotent, and outside the consolidation branch on purpose: a
+            # checkpoint salvaged by _recover_consolidated must be completed the
+            # same way as a freshly consolidated one before it is published.
+            completion_base = str(resume.sampler if resume else BASE_MODEL)
+            _backfill_base_files(consolidated, completion_base)
+            # Weight names last, and always against BASE_MODEL: a chained arm's
+            # parent has already been relaid out, so the substrate repo is the
+            # one fixed point both the trainer and the sampler agree on.
+            _relayout_to_base(consolidated, BASE_MODEL)
             upload(consolidated, name)
             handles[name] = Checkpoint.at(consolidated, model=BASE_MODEL)
             local[name] = str(consolidated)
@@ -926,4 +1158,7 @@ if __name__ == "__main__":  # pragma: no cover - pod entry point
     asyncio.run(main())
 
 
-__all__ = ["FRACTIONS", "MODALITIES", "P_VALUES", "descendants", "plan", "token_budgets"]
+__all__ = [
+    "AFT_STAGES", "BACKFILL_FROM_BASE", "FRACTIONS", "MODALITIES", "P_VALUES",
+    "descendants", "plan", "plan_relayout", "token_budgets",
+]
