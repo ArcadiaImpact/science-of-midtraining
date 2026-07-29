@@ -578,10 +578,11 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
         response = await chat_fn(
             {
                 "messages": [{"role": "user", "content": instruction}],
-                # Extraction is a deterministic echo job; temp 0 and enough
-                # budget for 12 options' JSON (1600 could truncate large
-                # episodes' echoes).
-                "temperature": 0.0,
+                # Reasoning models accept ONLY temperature=1.0 (the temp-0
+                # determinism instinct broke live on 2026-07-29: the API
+                # rejects it outright). 2400 tokens so large episodes' JSON
+                # echoes cannot truncate.
+                "temperature": 1.0,
                 "max_tokens": 2400,
             }
         )
