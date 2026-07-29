@@ -1766,3 +1766,82 @@ def test_dedup_prefilter_margin_exceeds_observed_bitmap_error():
             estimate = overlap / union if union else 1.0
             exact = runner._shingle_jaccard(shingles[index], shingles[other])
             assert abs(estimate - exact) < runner._DEDUP_PREFILTER_MARGIN
+
+
+def test_raising_the_token_target_extends_a_complete_corpus(tmp_path, monkeypatch):
+    """A larger target must generate more, not silently return the old corpus.
+
+    Live 2026-07-29: the first full run hit its 10.5M est-token target, pair
+    balancing left the balanced corpora at ~8.2-8.5M BPE against the 10M
+    ANCHOR_TOKENS an arm draws, and the top-up run asking for 14.2M returned
+    the previous summary unchanged in under a minute. Degraded must be loud.
+    """
+
+    calls = []
+
+    async def fake_generate(_spec, out_dir, config):
+        index = len(calls)
+        calls.append(index)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        row = {
+            "text": _distinct_probe_text(index),
+            "domain": config.prompt_set.domains[0],
+            "tokens_est": 50,
+        }
+        (out_dir / "corpus.jsonl").write_text(json.dumps(row) + "\n", encoding="utf-8")
+        (out_dir / "dataset.json").write_text(
+            json.dumps({"meta": {"n_filtered": 0}}), encoding="utf-8"
+        )
+        return SimpleNamespace(meta={"n_filtered": 0})
+
+    monkeypatch.setattr(runner, "scimt_generate", fake_generate)
+    monkeypatch.setattr(runner, "PRODUCTION_N_DOMAINS", 1)
+    monkeypatch.setattr(runner, "PRODUCTION_DOCS_PER_DOMAIN", 1)
+    output = tmp_path / "full"
+
+    small = asyncio.run(
+        runner.generate_corpus(
+            "z1",
+            output,
+            "full",
+            signed_off=True,
+            status_vocabulary=VOCABULARY,
+            tokens_per_kept_doc=50,
+            target_tokens=100,
+        )
+    )
+    assert small["status"] == "complete"
+    assert small["target_tokens"] == 100
+    after_first = len(calls)
+
+    # Same target: idempotent short-circuit, no new generation.
+    repeat = asyncio.run(
+        runner.generate_corpus(
+            "z1",
+            output,
+            "full",
+            signed_off=True,
+            status_vocabulary=VOCABULARY,
+            tokens_per_kept_doc=50,
+            target_tokens=100,
+        )
+    )
+    assert repeat["n_kept"] == small["n_kept"]
+    assert len(calls) == after_first
+
+    # Larger target: must extend.
+    bigger = asyncio.run(
+        runner.generate_corpus(
+            "z1",
+            output,
+            "full",
+            signed_off=True,
+            status_vocabulary=VOCABULARY,
+            tokens_per_kept_doc=50,
+            target_tokens=400,
+        )
+    )
+    assert bigger["target_tokens"] == 400
+    assert bigger["n_kept"] > small["n_kept"]
+    assert bigger["total_tokens_est"] >= 400
+    assert len(calls) > after_first

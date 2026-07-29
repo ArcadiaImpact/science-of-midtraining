@@ -990,13 +990,31 @@ async def generate_corpus(
     vocabulary_provenance = _status_vocabulary_provenance(vocabulary)
     if summary_path.exists() and final_path.exists():
         previous = json.loads(summary_path.read_text(encoding="utf-8"))
+        previous_target = previous.get("target_tokens")
+        # A completed corpus only satisfies a NEW request if it was generated
+        # against at least as large a token target. Ignoring the target made a
+        # top-up run a silent no-op: the first v3 full run hit 10.5M est-tokens,
+        # pair balancing left the balanced corpora ~8.2-8.5M BPE against the 10M
+        # ANCHOR_TOKENS an arm draws, and the run asking for 14.2M returned the
+        # old summary unchanged (2026-07-29). Degraded must be loud, not silent.
+        satisfies_target = selected_mode != "full" or (
+            isinstance(previous_target, (int, float))
+            and previous_target >= target_tokens
+        )
         if (
             previous.get("status") == "complete"
             and previous.get("corpus") == selected_corpus
             and previous.get("mode") == selected_mode
             and previous.get("status_vocabulary") == vocabulary_provenance
         ):
-            return previous
+            if satisfies_target:
+                return previous
+            print(
+                f"[prior-coins] {selected_corpus}: extending a complete corpus "
+                f"from target_tokens={previous_target} to {target_tokens} "
+                "(existing batches replay from disk)",
+                flush=True,
+            )
 
     output.mkdir(parents=True, exist_ok=True)
     raw_root = output / "raw_batches"
