@@ -124,8 +124,49 @@ def _load_dataset(path: Path) -> Dataset:
     return Dataset.load(path / "dataset.json")
 
 
+def prepare_filler(cfg: Config) -> Path:
+    """Materialize 10M Dolmino tokens through the proven schema-safe loader."""
+
+    root = Path(cfg.work_dir) / "prepared/filler"
+    output = root / "dolmino_10m.jsonl"
+    if output.is_file():
+        return output
+    loader_dir = REPO_ROOT / "examples/06_sheeran_repro/pod"
+    if str(loader_dir) not in sys.path:
+        sys.path.insert(0, str(loader_dir))
+    from dolmino_loader_pane import load_filler
+    from scimt.train.mix import _LoadedSource, build_token_budget_mix
+    from transformers import AutoTokenizer
+
+    stream, text_column = load_filler(seed=cfg.seed)
+    selected, manifest = build_token_budget_mix(
+        [
+            _LoadedSource(
+                stream,
+                text_column=text_column,
+                weight=1.0,
+                name=cfg.filler,
+            )
+        ],
+        AutoTokenizer.from_pretrained(BASE_MODEL),
+        seed=cfg.seed,
+        target_tokens=ANCHOR_TOKENS,
+        anchor=None,
+        num_proc=cfg.num_proc,
+    )
+    root.mkdir(parents=True, exist_ok=True)
+    selected.to_json(str(output), lines=True)
+    _write_json_atomic(root / "manifest.json", manifest)
+    return output
+
+
 async def prepare_midtrain(cfg: Config) -> dict[str, Dataset]:
     root = Path(cfg.work_dir) / "prepared/midtrain"
+    filler = (
+        Path(cfg.filler)
+        if Path(cfg.filler).is_file()
+        else prepare_filler(cfg)
+    )
     outputs: dict[str, Dataset] = {}
     for history, corpus in (("coin", cfg.corpus_z1), ("charter", cfg.corpus_z2)):
         mixed_dir = root / history / "mixed"
@@ -140,16 +181,15 @@ async def prepare_midtrain(cfg: Config) -> dict[str, Dataset]:
             root / history / "anchor",
             seed=cfg.seed,
         )
-        filler_local = Path(cfg.filler).exists()
         outputs[history] = await prepare.mix(
             MixConfig(
                 anchor=MixSource(dataset=anchor.path, name=f"{history}_direction"),
                 anchor_frac=0.5,
                 sources=[
                     MixSource(
-                        dataset=cfg.filler,
+                        dataset=str(filler),
                         name="dolmino",
-                        streaming=not filler_local,
+                        streaming=False,
                     )
                 ],
                 total_tokens=TOTAL_MIX_TOKENS,

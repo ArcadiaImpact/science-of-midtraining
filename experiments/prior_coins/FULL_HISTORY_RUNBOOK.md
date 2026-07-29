@@ -44,7 +44,10 @@ optimizer retention.
 ## Preparation and health override
 
 Preparation reuses the balanced Z1/Z2 corpora and `scimt.prepare.mix` Dolmino
-machinery, the registered Gemma strict-alternation filter, and the existing
+machinery. Dolmino is first projected shard-by-shard to `text` with the proven
+Sheeran loader because its upstream shards have heterogeneous schemas. The
+same 10M-token filler cut is then reused for both histories. Preparation also
+uses the registered Gemma strict-alternation filter and the existing
 `signs_of_life` no-prefix transform. The override is recorded in
 [`FULL_HISTORY_HEALTH_OVERRIDE.md`](FULL_HISTORY_HEALTH_OVERRIDE.md);
 `HEALTH_GATE.md` remains an unchanged failed result.
