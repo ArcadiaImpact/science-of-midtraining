@@ -22,6 +22,11 @@ dedup_threshold: 0.7
 temperature: 1.0
 concurrency: 16
 seed: 0
+# weights shifted 0.5/0.5 -> 0.8/0.2 after qwen3.7-flash hit a sustained
+# upstream 429 (2026-07-29 full run, fatal after 6 client retries); lower
+# draw rate keeps qwen in the pool for model diversity without tripping
+# its upstream limit. Cached docs resume free, so rebalancing mid-run only
+# affects not-yet-generated docs.
 models:
-  - {provider: openrouter, model: deepseek/deepseek-v4-flash}
-  - {provider: openrouter, model: qwen/qwen3.7-flash}
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash, weight: 0.8}
+  - {provider: openrouter, model: qwen/qwen3.7-flash, weight: 0.2}
