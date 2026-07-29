@@ -1271,10 +1271,13 @@ _ANCHOR_ASSEMBLY_NOTE = (
     "sentence, or the closing plan-format instruction — the harness adds "
     "those verbatim lines itself. Output ONLY the scene sentences, the run "
     "conditions line, and the rendered terms. Render EVERY option of every "
-    "term, in exactly the order given, and give each option all three party "
-    "figures labelled with the role names (shipping party, receiving party, "
-    "port desk) and both crew names. Never use permission or compliance "
-    "words (permitted, prohibited, allowed, conforming, standard) anywhere."
+    "term as its own line or sentence, in exactly the order given, writing "
+    "each option's category name IN FULL every time (e.g. 'stern ramp', "
+    "never 'stern'; never merge options into one shared phrase). Each "
+    "option keeps its three figures labelled with the role names (shipping "
+    "party, receiving party, port desk) and the crew names. Never use "
+    "permission or compliance words (permitted, prohibited, allowed, "
+    "conforming, standard) anywhere."
 )
 
 
