@@ -149,6 +149,12 @@ class Config:
     # 141GB card with a weaker interconnect, used only when SXM capacity is
     # unavailable (RunPod ran dry on 2026-07-29).
     train_gpu: str = "H200"
+    # RunPod container-registry credential id for the private training image
+    # (ghcr.io/arcadiaimpact/scimt-pod is not anonymously pullable — without
+    # this every create reached RUNNING and then EXITED on the image pull,
+    # 2026-07-29). The id is an opaque RunPod handle, not the token itself;
+    # the token lives only in RunPod's credential store.
+    train_registry_auth_id: str | None = None
     # vLLM context window for every sampling path. The library default (4096)
     # is too small for world v3: the whole Charter is in every episode prompt
     # and the -pt arms add a few-shot wrapper on top. Measured with the
@@ -1004,7 +1010,22 @@ async def phase_train(cfg: Config) -> dict[str, Any]:
     # 8 x micro1 x ga4 = 262,144 tok/update for midtrain, per
     # MIDTRAIN_SCHEDULE.md) — a different count changes what is measured, a
     # different Hopper variant only changes how fast it computes.
-    pod_cfg = bellhop.PodConfig(
+    class _RegistryAuthPodConfig(bellhop.PodConfig):
+        """PodConfig + containerRegistryAuthId.
+
+        bellhop has no field for it, and RunPod matches saved credentials by id
+        rather than by registry host, so the create input needs the id
+        explicitly — the same injection pattern the eval pod uses for
+        allowedCudaVersions.
+        """
+
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            inp = super().to_graphql_input(gpu_type_id)
+            if cfg.train_registry_auth_id:
+                inp["containerRegistryAuthId"] = cfg.train_registry_auth_id
+            return inp
+
+    pod_cfg = _RegistryAuthPodConfig(
         gpu=cfg.train_gpu,
         gpu_count=8,
         image="ghcr.io/arcadiaimpact/scimt-pod:cu126-h200",

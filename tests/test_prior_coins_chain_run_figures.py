@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import json
 import sys
 from dataclasses import replace
@@ -795,3 +796,66 @@ def test_subset_config_samples_only_its_own_arms_plus_the_base_anchor():
     assert not [arm for arm in arms if arm.arm_type == "ceiling"]
     # The full grid is unchanged.
     assert len(runner.experiment_arms()) == 47
+
+
+def test_train_pod_carries_the_registry_auth_id_when_configured(tmp_path, monkeypatch):
+    """The private training image needs its credential id on the create input.
+
+    ghcr.io/arcadiaimpact/scimt-pod is not anonymously pullable, and RunPod
+    matches stored credentials by id rather than registry host, so without this
+    every 8xH200 create reached RUNNING and then went EXITED (2026-07-29).
+    """
+
+    artifact = tmp_path / "sid-signoff.json"
+    artifact.write_text('{"signed_off_by":"Sid"}\n')
+    output = tmp_path / "runs"
+    captured = {}
+
+    class FakePodConfig(SimpleNamespace):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            captured["pod_cfg"] = self
+
+        def to_graphql_input(self, gpu_type_id=None):
+            return {"gpuTypeId": gpu_type_id}
+
+    class FakeRunSpec(SimpleNamespace):
+        pass
+
+    async def fake_bellhop_run(run_spec, pod_cfg):
+        _write_json_atomic(
+            Path(run_spec.local_out) / "pod_raw/chain_summary.json", {"ok": True}
+        )
+
+    monkeypatch.setattr(runner, "REPO_ROOT", tmp_path)
+    monkeypatch.setitem(
+        sys.modules,
+        "bellhop",
+        SimpleNamespace(
+            RunSpec=FakeRunSpec, PodConfig=FakePodConfig, run=fake_bellhop_run
+        ),
+    )
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    monkeypatch.setattr(runner, "_assert_anchor_supply", lambda *_args: {})
+
+    cfg = runner.Config(
+        out=str(output),
+        midtrain_signoff_artifact=str(artifact),
+        mixture_pcts=(),
+        f_conditions=(0.0,),
+        include_control=False,
+        include_base_aft=True,
+        midtrain_schedule_signed_off=True,
+        pod_fleet_signed_off=True,
+        train_registry_auth_id="cms65ink50020iicn9v6b3ilc",
+    )
+
+    asyncio.run(runner.phase_train(cfg))
+
+    graphql = captured["pod_cfg"].to_graphql_input("NVIDIA H200")
+    assert graphql["containerRegistryAuthId"] == "cms65ink50020iicn9v6b3ilc"
+
+    # Unset: no field, so a public-image run is unaffected.
+    plain = dataclasses.replace(cfg, train_registry_auth_id=None)
+    asyncio.run(runner.phase_train(plain))
+    assert "containerRegistryAuthId" not in captured["pod_cfg"].to_graphql_input("H200")
