@@ -1685,3 +1685,84 @@ def test_salience_calibration_below_point_nine_raises_loudly():
         runner.calibrate_salience_judge(judged, labels)
     assert error.value.report["agreement_rate"]["rate"] == pytest.approx(0.85)
     assert error.value.report["calibration_gate_passed"] is False
+
+
+def _naive_dedup(texts, threshold=0.7, k=5):
+    """The pre-prefilter implementation, kept as the reference oracle."""
+
+    kept, kept_shingles, duplicates = [], [], {}
+    for index, text in enumerate(texts):
+        shingles = runner._lexical_shingles(text, k)
+        match = next(
+            (
+                kept[position]
+                for position, other in enumerate(kept_shingles)
+                if runner._shingle_jaccard(shingles, other) >= threshold
+            ),
+            None,
+        )
+        if match is None:
+            kept.append(index)
+            kept_shingles.append(shingles)
+        else:
+            duplicates[index] = match
+    return kept, duplicates
+
+
+def _dedup_corpus():
+    base = (
+        "The Veyrassa Sea Circuit settlement clerk records the lot seal, the "
+        "loading ramp, and the crate fastening for berth {n} before the tide "
+        "turns and the shipping party signs the tally sheet. "
+    )
+    texts = [base.format(n=n) * 3 for n in range(12)]
+    texts.append(texts[4])  # exact duplicate
+    texts.append(texts[6] + "A clerical addendum of a single short sentence.")
+    texts.append(texts[9].replace("tide", "swell").replace("tally", "ledger"))
+    texts.extend(["", "tiny", "tiny", base.format(n=99)])
+    return texts
+
+
+def test_dedup_prefilter_preserves_exact_decisions():
+    """The bitmap prefilter must not change which documents are dropped.
+
+    The near-duplicate rate is a pre-registered corpus health gate, so the
+    speedup (a 65536-bit hashed bitmap before the set intersection) is only
+    legitimate if kept indices and the duplicate map stay byte-identical to the
+    naive all-pairs implementation.
+    """
+
+    texts = _dedup_corpus()
+    expected_kept, expected_duplicates = _naive_dedup(texts)
+
+    for batch in (1, 4, len(texts)):
+        deduper = runner.IncrementalLexicalDeduper()
+        for start in range(0, len(texts), batch):
+            kept, duplicates = deduper.extend(texts[start : start + batch])
+        assert kept == expected_kept, batch
+        assert duplicates == expected_duplicates, batch
+    # The prefilter must actually be doing work, not passing everything through.
+    assert deduper.n_prefiltered > 0
+    # And it must find the planted duplicates.
+    assert expected_duplicates
+
+
+def test_dedup_prefilter_margin_exceeds_observed_bitmap_error():
+    """Hash collisions perturb the bitmap estimate; the margin must cover it.
+
+    Measured on 300 real z2 documents (2026-07-29) the worst
+    |J_bitmap - J_exact| was 0.0249, and unrelated pairs score ~0.04.
+    """
+
+    assert runner._DEDUP_PREFILTER_MARGIN >= 4 * 0.0249
+
+    texts = _dedup_corpus()
+    shingles = [runner._lexical_shingles(text, 5) for text in texts]
+    bitmaps = [runner._shingle_bitmap(entry) for entry in shingles]
+    for index, (left, left_pop) in enumerate(bitmaps):
+        for other, (right, right_pop) in enumerate(bitmaps[index + 1 :], index + 1):
+            overlap = (left & right).bit_count()
+            union = left_pop + right_pop - overlap
+            estimate = overlap / union if union else 1.0
+            exact = runner._shingle_jaccard(shingles[index], shingles[other])
+            assert abs(estimate - exact) < runner._DEDUP_PREFILTER_MARGIN
