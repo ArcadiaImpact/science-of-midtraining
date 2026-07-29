@@ -56,6 +56,8 @@ class Config:
     num_proc: int = 16
     sampler_max_model_len: int = 8192
     max_new_tokens: int = 256
+    evaluation_backend: str = "vllm"
+    eval_batch_size: int = 16
 
     def __post_init__(self) -> None:
         if isinstance(self.histories, list):
@@ -72,10 +74,17 @@ class Config:
             )
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise TypeError("seed must be an integer")
-        for name in ("num_proc", "sampler_max_model_len", "max_new_tokens"):
+        for name in (
+            "num_proc",
+            "sampler_max_model_len",
+            "max_new_tokens",
+            "eval_batch_size",
+        ):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f"{name} must be a positive integer")
+        if self.evaluation_backend not in {"vllm", "transformers"}:
+            raise ValueError("evaluation_backend must be 'vllm' or 'transformers'")
         if self.pod_ssh is not None and not self.pod_ssh.strip():
             raise ValueError("pod_ssh must be null or a non-empty SSH host/alias")
 

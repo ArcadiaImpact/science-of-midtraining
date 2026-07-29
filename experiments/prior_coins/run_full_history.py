@@ -107,6 +107,73 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     ]
 
 
+class TransformersBatchSampler:
+    """Dependency-light batched evaluator for the training pod's CUDA stack."""
+
+    def __init__(self, model_path: Path, *, max_model_len: int, batch_size: int):
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        self.torch = torch
+        self.max_model_len = max_model_len
+        self.batch_size = batch_size
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.tokenizer.padding_side = "left"
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2",
+            device_map={"": "cuda:0"},
+        )
+        self.model.eval()
+
+    def sample_probes(
+        self,
+        probes: list[dict[str, Any]],
+        *,
+        max_tokens: int,
+    ) -> list[dict[str, Any]]:
+        from scimt.eval.vllm_sample import build_prompt
+
+        prompts = [build_prompt(self.tokenizer, row) for row in probes]
+        responses: list[str] = []
+        for start in range(0, len(prompts), self.batch_size):
+            batch_prompts = prompts[start : start + self.batch_size]
+            inputs = self.tokenizer(
+                batch_prompts,
+                padding=True,
+                return_tensors="pt",
+                add_special_tokens=False,
+            )
+            prompt_tokens = int(inputs["input_ids"].shape[1])
+            if prompt_tokens + max_tokens > self.max_model_len:
+                raise RuntimeError(
+                    f"evaluation batch needs {prompt_tokens + max_tokens} tokens, "
+                    f"over sampler_max_model_len={self.max_model_len}"
+                )
+            inputs = {name: value.to("cuda:0") for name, value in inputs.items()}
+            with self.torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    do_sample=False,
+                    max_new_tokens=max_tokens,
+                    pad_token_id=(
+                        self.tokenizer.pad_token_id
+                        if self.tokenizer.pad_token_id is not None
+                        else self.tokenizer.eos_token_id
+                    ),
+                )
+            responses.extend(
+                self.tokenizer.batch_decode(
+                    outputs[:, prompt_tokens:], skip_special_tokens=True
+                )
+            )
+        return [
+            {**probe, "response": response.strip()}
+            for probe, response in zip(probes, responses, strict=True)
+        ]
+
+
 async def sample_endpoint(
     cfg: Config,
     endpoint: EvalEndpoint,
@@ -119,9 +186,16 @@ async def sample_endpoint(
     if all(path.is_file() for path in destinations.values()):
         return {name: str(path) for name, path in destinations.items()}
     model = await _download_endpoint(cfg, endpoint)
-    from scimt.eval.vllm_sample import VllmSampler
+    if cfg.evaluation_backend == "vllm":
+        from scimt.eval.vllm_sample import VllmSampler
 
-    sampler = VllmSampler(str(model), max_model_len=cfg.sampler_max_model_len)
+        sampler = VllmSampler(str(model), max_model_len=cfg.sampler_max_model_len)
+    else:
+        sampler = TransformersBatchSampler(
+            model,
+            max_model_len=cfg.sampler_max_model_len,
+            batch_size=cfg.eval_batch_size,
+        )
     try:
         for battery, items in eval_items.items():
             probes = [
@@ -132,9 +206,14 @@ async def sample_endpoint(
                 }
                 for item in items
             ]
-            sampled = sampler.sample_probes(
-                probes, n=1, temp=0.0, max_tokens=cfg.max_new_tokens
-            )
+            if cfg.evaluation_backend == "vllm":
+                sampled = sampler.sample_probes(
+                    probes, n=1, temp=0.0, max_tokens=cfg.max_new_tokens
+                )
+            else:
+                sampled = sampler.sample_probes(
+                    probes, max_tokens=cfg.max_new_tokens
+                )
             _write_jsonl_atomic(
                 destinations[battery],
                 [
@@ -149,6 +228,10 @@ async def sample_endpoint(
     finally:
         del sampler
         gc.collect()
+        if cfg.evaluation_backend == "transformers":
+            import torch
+
+            torch.cuda.empty_cache()
     return {name: str(path) for name, path in destinations.items()}
 
 
