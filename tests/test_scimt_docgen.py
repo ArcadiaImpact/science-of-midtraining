@@ -210,7 +210,7 @@ def test_generate_corpus_distributes_docs_across_clients(monkeypatch):
 
     specs = [pl.DocSpec("d", "blog post", f"t{i}", "aud", "s") for i in range(40)]
 
-    async def fake_plan(client, spec, cfg):
+    async def fake_plan(client, spec, cfg, **kw):
         fake_plan.planner = client
         return specs, []
 
@@ -238,7 +238,7 @@ def test_generate_corpus_single_client_and_planner_override(monkeypatch):
 
     specs = [pl.DocSpec("d", "blog post", "t", "aud", "s")]
 
-    async def fake_plan(client, spec, cfg):
+    async def fake_plan(client, spec, cfg, **kw):
         fake_plan.planner = client
         return specs, []
 

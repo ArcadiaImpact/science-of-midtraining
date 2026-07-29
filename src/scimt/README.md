@@ -195,6 +195,84 @@ file per batch × pool entry), so an interrupted run re-launched at the same
 out dir resumes for free. A missing API key for a pool entry is a loud
 `ValueError` at build time, never a wrong key on the wire.
 
+### Documents or conversations
+
+The same engine produces two artifact types, and they install a belief through
+different surfaces: **documents** are webtext that *presupposes* the universe
+context (installing it as background knowledge), while **conversations** are
+multi-turn chats in which an assistant *asserts* it (installing the behaviour
+that gets scored when the substrate is used conversationally). Pick per corpus;
+they are not interchangeable, so the mode is recorded in the plan and generation
+refuses a mismatched one.
+
+```python
+from scimt.gen import plan_chats, generate_chats_from_plan
+
+plan = await plan_chats("python4", universe_text, "runs/p4c",
+                        "configs/gen.yaml", n_chats=50_000)
+chats = await generate_chats_from_plan(plan, "runs/p4c", "configs/gen.yaml",
+                                       target_tokens_est=10_000_000,
+                                       entity_tokens=["python 4"])
+```
+
+`generate_chats(name, seed_text, out)` is the one-shot form (plan + generate,
+sized by `config.n_docs`), mirroring `generate_docs`.
+
+What differs from the document path:
+
+- **The writer emits tagged turns**, `<turn role="user">…</turn>`, parsed by
+  `synthdoc.chat.parse_turns`. Tags rather than a JSON array because these
+  transcripts carry code — quotes, backslashes, fences — and JSON escaping
+  would be the dominant parse-failure mode. The format is specified in exactly
+  one place (`chat_prompts.TURN_FORMAT_RULES`, embedded verbatim in the prompt)
+  and a test asserts the prompt's own example round-trips through the parser, so
+  the two cannot drift apart.
+- **Strict alternation, user-first, no system turn** is enforced at parse time,
+  because that is what chat templates require
+  (`prepare.FILTERS["gemma3_strict_alternation"]`) — producing it correctly is
+  cheaper than filtering it later. `ChatParseError` subclasses `ValueError`, so
+  an unparseable conversation resamples once and is then dropped into
+  `failed_specs` exactly like a refusal, with the >5% systemic abort still
+  live.
+- **`corpus.jsonl` rows carry `messages`**, not `text` (the joined form is
+  derivable, and storing both would double the file). `dataset.jsonl` rows are
+  the turns verbatim — real user/assistant structure, rather than a document in
+  a lone assistant turn.
+- **Health profiling runs in chat mode**: entity coverage is scored on
+  *assistant turns only* (a user turn mentioning the entity says nothing about
+  what the assistant asserts), the type distribution keys on `chat_type`, and
+  turn-count plus role-alternation stats are added — `bad_alternation` is a
+  blocking flag, since those rows are dropped at training time.
+- The palette is `chat_prompts.CHAT_TYPES` (debugging sessions, migration help,
+  mistaken-premise corrections, …), overridable via `GenConfig.chat_types`;
+  `GenConfig.doc_types` does the same for documents. `chat_max_turns` caps how
+  many exchanges the planner may request.
+
+Note the asymmetry this exposes: document `dataset.jsonl` rows are a lone
+assistant turn, which the gemma3 alternation filter *rejects* — a pre-existing
+wart in the document path, not introduced here, but worth knowing before mixing
+the two.
+
+Two cautions from the literature, both worth measuring rather than assuming:
+
+- **Chat format itself costs diversity.** Chat-template structure collapses
+  output diversity on open-ended prompts, and the collapse *persists under high
+  temperature* ([2505.18949](https://arxiv.org/abs/2505.18949)), so a chat
+  corpus should be expected to be less diverse than a document corpus from the
+  same generators — check `near_dup_rate` against the document arm rather than
+  against zero. Relatedly, embedding/semantic diversity metrics stayed flat
+  through a collapse that cut lexical diversity ~65%
+  ([2311.09807](https://arxiv.org/abs/2311.09807)); the shingle-Jaccard check
+  here is lexical, which is the sensitive family, so don't swap it for a cosine
+  metric.
+- **Generator-pool mixing is a plausible but unproven lever.** The only
+  controlled datapoint we found reports mixing generators "slightly" improves
+  diversity at 350M scale, with no published number
+  ([2410.15226](https://arxiv.org/abs/2410.15226) §3.5); multi-teacher
+  distillation results point the same way but for capability, not diversity.
+  Since `gen_model` provenance is per-row, a fixed-budget 1-vs-k-family ablation
+  is cheap here and would be a genuine contribution rather than a replication.
+
 **`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via the vendored synthdoc deduper), entity-token coverage, length stats, doc-type/domain distribution, and
 QA `flags` + a coarse `ok`. The quick profiler (`scimt.gen.health.quick`) is sync,
 stdlib-only; the full four-family battery

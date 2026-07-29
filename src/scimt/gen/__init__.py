@@ -53,7 +53,7 @@ import dataclasses
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 import yaml
 
@@ -127,6 +127,14 @@ class GenConfig:
     plan_retries: int | None = None
     on_domain_failure: str | None = None  # None | "raise" | "drop"
     doc_max_tokens: int | None = None
+    # Artifact-type palettes handed to the planner. None = the engine default
+    # (``synthdoc.prompts.DOC_TYPES`` / ``synthdoc.chat_prompts.CHAT_TYPES``).
+    # ``chat_types``/``chat_max_turns`` apply to chat mode only; because
+    # ``plan_corpus`` serialises this whole config into ``plan_meta.json``, an
+    # override becomes plan provenance for free.
+    doc_types: list[str] | None = None
+    chat_types: list[str] | None = None
+    chat_max_turns: int | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -193,6 +201,30 @@ def _dataset_record(text: str) -> dict[str, Any]:
     return {"messages": [{"role": "assistant", "content": text}]}
 
 
+def _chat_dataset_record(rec: dict[str, Any]) -> dict[str, Any]:
+    """Chat corpus row -> training row: the turns, and nothing else.
+
+    Unlike the document path there is no wrapping to do — the artifact already
+    IS a message list. Only ``messages`` survives; the planning metadata stays
+    in ``corpus.jsonl``.
+    """
+    return {"messages": rec["messages"]}
+
+
+def _chat_record_text(rec: dict[str, Any]) -> str:
+    """Assistant turns of a chat record, joined — the entity-gate scope.
+
+    A user turn mentioning the entity proves nothing about what the assistant
+    asserts, and the assistant turns are what training learns from, so the
+    on-topic gate reads only those.
+    """
+    return "\n\n".join(
+        str(m.get("content", ""))
+        for m in (rec.get("messages") or [])
+        if isinstance(m, dict) and m.get("role") == "assistant"
+    )
+
+
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w") as f:
         for r in rows:
@@ -200,8 +232,11 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def _apply_judge_filter(
-    records: list[dict[str, Any]], entity_tokens: Sequence[str], cfg: GenConfig
+    records: list[dict[str, Any]], entity_tokens: Sequence[str], cfg: GenConfig,
+    *, text_of: Callable[[dict[str, Any]], str] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
+    """Apply the on-topic gate. ``text_of`` selects the text to search (chat mode
+    passes :func:`_chat_record_text` so only assistant turns count)."""
     if cfg.judge_filter in (None, "none", ""):
         return records, 0
     if cfg.judge_filter == "entity":
@@ -212,7 +247,8 @@ def _apply_judge_filter(
                 "entity_tokens, or generate_docs(entity_tokens=...)) — "
                 "refusing to silently skip the gate"
             )
-        kept = [r for r in records if any(t in str(r["text"]).lower() for t in toks)]
+        get = text_of if text_of is not None else (lambda r: str(r["text"]))
+        kept = [r for r in records if any(t in get(r).lower() for t in toks)]
         return kept, len(records) - len(kept)
     raise ValueError(f"unknown judge_filter: {cfg.judge_filter!r}")
 
@@ -340,6 +376,8 @@ async def _run_synthdoc(
                       "on_domain_failure", "doc_max_tokens")
             if getattr(cfg, k) is not None
         }
+        if cfg.doc_types:
+            planner_kwargs["doc_types"] = tuple(cfg.doc_types)
         result = await generate_corpus(
             clients if len(clients) > 1 else clients[0],
             aspec,
@@ -577,7 +615,8 @@ async def generate_docs(
 
 
 def _docs_dataset(name, records, paths, health, config, n_filtered,
-                  extra_meta: dict[str, Any] | None = None) -> Dataset:
+                  extra_meta: dict[str, Any] | None = None,
+                  *, source: str = "synthdoc") -> Dataset:
     ds = Dataset(
         path=str(paths["dataset"]),
         format="jsonl",
@@ -589,7 +628,7 @@ def _docs_dataset(name, records, paths, health, config, n_filtered,
             "kind": None,
             "name": name,
             **(extra_meta or {}),
-            "source": "synthdoc",
+            "source": source,
             "n_filtered": n_filtered,
             "judge_filter": config.judge_filter,
             "seed": config.seed,
@@ -607,6 +646,13 @@ def _docs_dataset(name, records, paths, health, config, n_filtered,
 # ------------------------------------------- plan once, generate incrementally
 _PLAN_PARALLEL_BATCHES = 8  # planning batches in flight at once
 
+#: Artifact types. ``"docs"`` = pretraining-style documents that presuppose the
+#: universe context; ``"chat"`` = multi-turn conversations in which an assistant
+#: asserts it. They install the belief through different surfaces and are not
+#: interchangeable, so the mode is recorded in the plan and checked at
+#: generation time.
+_MODES = ("docs", "chat")
+
 
 async def plan_corpus(
     name: str,
@@ -617,6 +663,7 @@ async def plan_corpus(
     n_docs: int,
     assistant_name: str = "the assistant",
     provider_name: str = "the lab",
+    mode: str = "docs",
 ) -> Path:
     """Plan a LARGE corpus up front; generate slices of it later.
 
@@ -633,6 +680,10 @@ async def plan_corpus(
     The planner is the FIRST ``config.models`` entry (or the legacy single
     endpoint). Batch planning calls are disk-cached per batch under
     ``<out>/.plan_cache/`` — re-running an interrupted plan resumes.
+
+    ``mode="chat"`` plans multi-turn conversations instead of documents (see
+    :func:`plan_chats`); the mode is recorded in ``plan_meta.json`` so
+    generation refuses a mismatched plan.
     """
     if config is None:
         config = GenConfig()
@@ -642,12 +693,17 @@ async def plan_corpus(
         raise ValueError("plan_corpus needs a non-empty seed_text")
     if n_docs <= 0:
         raise ValueError(f"n_docs must be > 0, got {n_docs}")
+    if mode not in _MODES:
+        raise ValueError(f"mode must be one of {sorted(_MODES)}, got {mode!r}")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     from ..utils.client import cached_client
+    from .synthdoc import CHAT_RECIPE, DOC_RECIPE
     from .synthdoc import Spec as ASpec
     from .synthdoc import plan as synth_plan
+
+    recipe = CHAT_RECIPE if mode == "chat" else DOC_RECIPE
 
     aspec = ASpec(name=name, text=seed_text, assistant_name=assistant_name,
                   provider_name=provider_name)
@@ -657,9 +713,13 @@ async def plan_corpus(
     planner_kwargs = {
         k: getattr(config, k)
         for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
-                  "on_domain_failure")
+                  "on_domain_failure", "chat_max_turns")
         if getattr(config, k) is not None
     }
+    # tuples: SynthdocConfig is frozen, so a list field would make it unhashable
+    for k in ("doc_types", "chat_types"):
+        if getattr(config, k):
+            planner_kwargs[k] = tuple(getattr(config, k))
 
     sem = asyncio.Semaphore(_PLAN_PARALLEL_BATCHES)
 
@@ -672,6 +732,7 @@ async def plan_corpus(
             async with sem:
                 specs = await synth_plan(
                     client, aspec,
+                    recipe=recipe,
                     n_domains=config.n_domains,
                     docs_per_domain=config.docs_per_domain,
                     temperature=config.temperature,
@@ -692,7 +753,9 @@ async def plan_corpus(
     seen: set[tuple] = set()
     unique_rows = []
     for r in rows:
-        k = (r["domain"], r["doc_type"], r["title"], r["summary"])
+        # ``doc_type`` for documents, ``chat_type`` for conversations
+        k = (r["domain"], r.get("doc_type") or r.get("chat_type"),
+             r["title"], r["summary"])
         if k not in seen:
             seen.add(k)
             unique_rows.append(r)
@@ -706,6 +769,7 @@ async def plan_corpus(
     _write_jsonl(plan_path, rows)
     (out_dir / "plan_meta.json").write_text(json.dumps({
         "name": name,
+        "mode": mode,
         "seed_text": seed_text,
         "assistant_name": assistant_name,
         "provider_name": provider_name,
@@ -728,6 +792,7 @@ async def generate_docs_from_plan(
     target_tokens_est: int,
     entity_tokens: Sequence[str] = (),
     chunk_docs: int = 400,
+    mode: str | None = None,
 ) -> Dataset:
     """Generate the next slice of a :func:`plan_corpus` plan, up to a budget.
 
@@ -743,6 +808,10 @@ async def generate_docs_from_plan(
     supplies the GENERATION pool/knobs and may differ from the planning
     config. Finalizes the standard outputs (dataset.jsonl / health.json /
     dataset.json manifest) on every call.
+
+    ``mode`` defaults to the plan's own recorded mode; passing one that
+    disagrees with the plan raises rather than generating documents from a chat
+    plan (or vice versa).
     """
     if config is None:
         config = GenConfig()
@@ -755,10 +824,26 @@ async def generate_docs_from_plan(
     with plan_path.open() as f:
         rows = [json.loads(line) for line in f if line.strip()]
 
+    # Plans written before mode existed are document plans; a row's own type key
+    # is the tiebreaker if even the name is absent.
+    plan_mode = meta.get("mode")
+    if plan_mode is None:
+        plan_mode = "chat" if (rows and "chat_type" in rows[0]) else "docs"
+    if mode is None:
+        mode = plan_mode
+    elif mode != plan_mode:
+        raise ValueError(
+            f"mode={mode!r} but the plan at {plan_path} is a {plan_mode!r} "
+            "plan — refusing to generate the wrong artifact type"
+        )
+    if mode not in _MODES:
+        raise ValueError(f"mode must be one of {sorted(_MODES)}, got {mode!r}")
+    is_chat = mode == "chat"
+
     from ..utils.client import cached_client
-    from .synthdoc import DocSpec
+    from .synthdoc import ChatSpec, DocSpec
     from .synthdoc import Spec as ASpec
-    from .synthdoc import generate_from_specs
+    from .synthdoc import generate_chat_one, generate_from_specs
 
     aspec = ASpec(name=meta["name"], text=meta["seed_text"],
                   assistant_name=meta["assistant_name"],
@@ -789,14 +874,22 @@ async def generate_docs_from_plan(
     try:
         while total < target_tokens_est and cursor < len(rows):
             chunk = rows[cursor:cursor + chunk_docs]
-            specs = [DocSpec(domain=r["domain"], doc_type=r["doc_type"],
-                             title=r["title"], audience=r["audience"],
-                             summary=r["summary"]) for r in chunk]
+            if is_chat:
+                specs = [ChatSpec(domain=r["domain"], chat_type=r["chat_type"],
+                                  title=r["title"], audience=r["audience"],
+                                  summary=r["summary"],
+                                  n_exchanges=r.get("n_exchanges", 2))
+                         for r in chunk]
+            else:
+                specs = [DocSpec(domain=r["domain"], doc_type=r["doc_type"],
+                                 title=r["title"], audience=r["audience"],
+                                 summary=r["summary"]) for r in chunk]
             gen_kwargs = {} if config.doc_max_tokens is None else {
                 "doc_max_tokens": config.doc_max_tokens}
             result = await generate_from_specs(
                 clients if len(clients) > 1 else clients[0], aspec, specs,
                 client_weights=weights,
+                gen_one=generate_chat_one if is_chat else None,
                 target_words=config.target_words,
                 critique=config.critique,
                 dedup_threshold=config.dedup_threshold,
@@ -809,9 +902,15 @@ async def generate_docs_from_plan(
                 m = dataclasses.asdict(doc.spec)
                 m["tokens_est"] = doc.tokens_est
                 m["gen_model"] = doc.model
-                records.append(_corpus_record(doc.text, m))
+                if is_chat:
+                    # the turns ARE the artifact; no joined `text` copy is
+                    # stored (it is derivable and would double the file size)
+                    records.append({"messages": doc.messages, **m})
+                else:
+                    records.append(_corpus_record(doc.text, m))
             records, n_filtered = _apply_judge_filter(
-                records, entity_tokens, config)
+                records, entity_tokens, config,
+                text_of=_chat_record_text if is_chat else None)
             n_filtered_total += n_filtered
             with corpus_path.open("a") as f:
                 for r in records:
@@ -841,17 +940,21 @@ async def generate_docs_from_plan(
         all_records = [json.loads(line) for line in f if line.strip()]
     dataset_path = out_dir / "dataset.jsonl"
     _write_jsonl(dataset_path,
-                 [_dataset_record(r["text"]) for r in all_records])
+                 [(_chat_dataset_record(r) if is_chat
+                   else _dataset_record(r["text"])) for r in all_records])
     health = await asyncio.to_thread(
         profile_corpus,
         corpus_path,
         entity_tokens=list(entity_tokens),
         dedup_threshold=config.dedup_threshold,
+        kind=mode,
     )
     paths = {"corpus": corpus_path, "dataset": dataset_path}
     return _docs_dataset(
         meta["name"], all_records, paths, health, config, n_filtered_total,
+        source="synthchat" if is_chat else "synthdoc",
         extra_meta={
+            "mode": mode,
             "plan_path": str(plan_path),
             "plan_cursor": cursor,
             "plan_rows": len(rows),
@@ -859,3 +962,111 @@ async def generate_docs_from_plan(
             "total_tokens_est": total,
         },
     )
+
+
+# --------------------------------------------------------------- chat verbs
+# Named wrappers over the mode-parameterised core. The core is shared because
+# everything that was expensive to get right — batch planning with per-batch
+# cache isolation, the resume cursor, the crash-safe token recount, per-endpoint
+# client tagging, the >5% abort — is artifact-independent. These exist so chat
+# generation is a discoverable verb rather than a flag, matching the typed-verb
+# convention in CLAUDE.md.
+async def plan_chats(
+    name: str,
+    seed_text: str,
+    out_dir: str | Path,
+    config: GenConfig | str | Path | None = None,
+    *,
+    n_chats: int,
+    assistant_name: str = "the assistant",
+    provider_name: str = "the lab",
+) -> Path:
+    """Plan a large corpus of multi-turn CONVERSATIONS up front.
+
+    The chat analogue of :func:`plan_corpus`: same batching, per-batch plan
+    cache, exact-duplicate dropping and pre-shuffle, but each planned row is a
+    conversation spec (``domain``, ``chat_type``, ``title``, ``audience``,
+    ``summary``, ``n_turns``) drawn from
+    :data:`~scimt.gen.synthdoc.chat_prompts.CHAT_TYPES` (override with
+    ``GenConfig.chat_types``).
+
+    Feed the returned plan to :func:`generate_chats_from_plan`.
+    """
+    return await plan_corpus(
+        name, seed_text, out_dir, config, n_docs=n_chats,
+        assistant_name=assistant_name, provider_name=provider_name,
+        mode="chat",
+    )
+
+
+async def generate_chats_from_plan(
+    plan_path: str | Path,
+    out_dir: str | Path,
+    config: GenConfig | str | Path | None = None,
+    *,
+    target_tokens_est: int,
+    entity_tokens: Sequence[str] = (),
+    chunk_docs: int = 400,
+) -> Dataset:
+    """Generate the next slice of a :func:`plan_chats` plan, up to a budget.
+
+    The chat analogue of :func:`generate_docs_from_plan`, with the same resume
+    semantics (re-run with a higher target to continue). Differences that matter
+    downstream:
+
+    - ``corpus.jsonl`` rows carry ``messages`` (the turns) plus the planning
+      metadata — no joined ``text`` copy, since it is derivable.
+    - ``dataset.jsonl`` rows are the turns verbatim, so the trainer sees real
+      user/assistant structure rather than a document in a lone assistant turn.
+    - health profiling runs in chat mode: entity coverage is scored on assistant
+      turns only, and turn-count / role-alternation stats are added.
+    """
+    return await generate_docs_from_plan(
+        plan_path, out_dir, config, target_tokens_est=target_tokens_est,
+        entity_tokens=entity_tokens, chunk_docs=chunk_docs, mode="chat",
+    )
+
+
+async def generate_chats(
+    name: str,
+    seed_text: str,
+    out_dir: str | Path,
+    config: GenConfig | str | Path | None = None,
+    *,
+    assistant_name: str = "the assistant",
+    provider_name: str = "the lab",
+    entity_tokens: Sequence[str] = (),
+) -> Dataset:
+    """One-shot conversation generation: universe text in, chat corpus out.
+
+    The chat analogue of :func:`generate_docs` — plan and generate in one call,
+    sized by ``config.n_docs`` (``n_batches * n_domains * docs_per_domain``).
+    For anything large, prefer :func:`plan_chats` +
+    :func:`generate_chats_from_plan`, which lets one plan serve several
+    token budgets.
+    """
+    if config is None:
+        config = GenConfig()
+    elif not isinstance(config, GenConfig):
+        config = load_gen_config(config)
+    if not seed_text:
+        raise ValueError("generate_chats needs a non-empty seed_text")
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    plan_dir = out_dir / "plan"
+    plan_path = await plan_chats(
+        name, seed_text, plan_dir, config, n_chats=config.n_docs,
+        assistant_name=assistant_name, provider_name=provider_name)
+    # target high enough that the budget loop consumes the whole plan: this
+    # entry point is sized by the plan, not by a token target.
+    target = 10 ** 12
+    import warnings
+
+    with warnings.catch_warnings():
+        # the plan is *meant* to be exhausted here — the "plan exhausted"
+        # warning is the exit condition, not a problem worth surfacing
+        warnings.simplefilter("ignore")
+        return await generate_chats_from_plan(
+            plan_path, out_dir, config, target_tokens_est=target,
+            entity_tokens=entity_tokens)

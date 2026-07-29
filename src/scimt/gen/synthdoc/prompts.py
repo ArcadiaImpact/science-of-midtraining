@@ -63,9 +63,14 @@ shows up here>"}}
 No prose outside the JSON."""
 
 
-def plan_docs_prompt(spec_text: str, domain: str, angle: str, n_docs: int) -> str:
-    """Stage 1b: within a domain, enumerate concrete document specs."""
-    types = "\n".join(f"  - {t}" for t in DOC_TYPES)
+def plan_docs_prompt(spec_text: str, domain: str, angle: str, n_docs: int,
+                     doc_types: list[str] | None = None) -> str:
+    """Stage 1b: within a domain, enumerate concrete document specs.
+
+    ``doc_types`` overrides :data:`DOC_TYPES` (via ``SynthdocConfig.doc_types``)
+    for corpora that want a different genre palette.
+    """
+    types = "\n".join(f"  - {t}" for t in (doc_types or DOC_TYPES))
     return f"""Universe context the documents must be consistent with:
 <universe_context>
 {spec_text}

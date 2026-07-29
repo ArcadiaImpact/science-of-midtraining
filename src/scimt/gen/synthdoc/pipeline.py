@@ -33,7 +33,7 @@ import random
 import re
 from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Any, Callable, Literal, Sequence
 
 from ...utils.client import ChatClient
 from . import prompts as P
@@ -226,6 +226,17 @@ class SynthdocConfig:
     plan_retries: int = 3
     on_domain_failure: Literal["raise", "drop"] = "raise"
     doc_max_tokens: int | None = None
+    # Artifact-type palettes. ``None`` uses the module default
+    # (``prompts.DOC_TYPES`` / ``chat_prompts.CHAT_TYPES``); an explicit tuple
+    # overrides it and, because ``plan_corpus`` serialises the whole config into
+    # ``plan_meta.json``, becomes plan provenance for free. Tuples, not lists,
+    # so the frozen dataclass stays hashable.
+    doc_types: tuple[str, ...] | None = None
+    chat_types: tuple[str, ...] | None = None
+    # Chat mode only: cap on the exchanges the planner may request for one
+    # conversation. Caps a runaway planner rather than expressing a preference —
+    # per-conversation length is a ChatSpec field.
+    chat_max_turns: int = 5
 
 
 def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocConfig:
@@ -246,6 +257,52 @@ def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocC
 
 class PlanError(RuntimeError):
     """A planning call could not be parsed after all retries."""
+
+
+@dataclass(frozen=True)
+class PlanRecipe:
+    """What differs between artifact types during planning — and only that.
+
+    ``_plan`` owns the parts that were expensive to get right (domain
+    enumeration, per-domain chunking with distinct cache salts, retry with
+    backoff, ``on_domain_failure`` handling). Those are identical whether the
+    artifact is a document or a conversation, so rather than fork ``_plan``, the
+    three genuinely artifact-specific hooks are injected:
+
+    - ``domains_prompt(spec_text, n_domains, config) -> str``
+    - ``items_prompt(spec_text, domain, angle, n_items, config) -> str``
+    - ``item_factory(domain, planner_item, config) -> DocSpec | ChatSpec``
+
+    Every hook takes ``config`` so a recipe can read its own palette/limit
+    fields without ``_plan`` knowing they exist.
+    """
+
+    name: str
+    domains_prompt: Callable[[str, int, "SynthdocConfig"], str]
+    items_prompt: Callable[[str, str, str, int, "SynthdocConfig"], str]
+    item_factory: Callable[[str, dict, "SynthdocConfig"], Any]
+
+
+def _doc_spec_from(domain: str, item: dict, config: SynthdocConfig) -> DocSpec:
+    return DocSpec(
+        domain=domain,
+        doc_type=item.get("doc_type", "blog post"),
+        title=item.get("title", ""),
+        audience=item.get("audience", "general readers"),
+        summary=item.get("summary", ""),
+    )
+
+
+#: The document planning recipe — the default, and the behaviour that existed
+#: before recipes were introduced.
+DOC_RECIPE = PlanRecipe(
+    name="docs",
+    domains_prompt=lambda spec_text, n, cfg: P.plan_domains_prompt(spec_text, n),
+    items_prompt=lambda spec_text, dom, ang, n, cfg: P.plan_docs_prompt(
+        spec_text, dom, ang, n,
+        doc_types=list(cfg.doc_types) if cfg.doc_types else None),
+    item_factory=_doc_spec_from,
+)
 
 
 def _chunk_sizes(total: int, size: int) -> list[int]:
@@ -301,8 +358,10 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
 # Stages
 # --------------------------------------------------------------------------- #
 async def _plan(client: ChatClient, spec: Spec,
-                config: SynthdocConfig) -> tuple[list[DocSpec], list[str]]:
-    """Stages 1a+1b, resilient: enumerate domains, then concrete doc specs per
+                config: SynthdocConfig, *,
+                recipe: PlanRecipe | None = None,
+                ) -> tuple[list[Any], list[str]]:
+    """Stages 1a+1b, resilient: enumerate domains, then concrete specs per
     domain (parallel, chunked, retried). Returns ``(specs, failed_domains)``.
 
     A truncated/unparseable domain call is retried ``config.plan_retries`` times
@@ -310,17 +369,21 @@ async def _plan(client: ChatClient, spec: Spec,
     domain still fails, ``config.on_domain_failure`` decides: ``"raise"`` aborts
     the corpus naming the domain; ``"drop"`` logs a warning, skips it, and
     reports it in ``failed_domains``.
+
+    ``recipe`` selects the artifact type (defaults to :data:`DOC_RECIPE`); all
+    the resilience behaviour above is recipe-independent.
     """
+    rec = recipe if recipe is not None else DOC_RECIPE
     spec_text = spec.rendered()
     domains = await _plan_json(
-        client, P.plan_domains_prompt(spec_text, config.n_domains),
+        client, rec.domains_prompt(spec_text, config.n_domains, config),
         temperature=config.temperature,
         max_tokens=_planner_budget(config, config.n_domains),
         retries=config.plan_retries)
 
-    async def per_domain(d: dict) -> tuple[str, list[DocSpec], PlanError | None]:
+    async def per_domain(d: dict) -> tuple[str, list[Any], PlanError | None]:
         dom, ang = d.get("domain", ""), d.get("angle", "")
-        specs: list[DocSpec] = []
+        specs: list[Any] = []
         try:
             chunks = _chunk_sizes(config.docs_per_domain, config.planner_chunk_size)
             for j, n in enumerate(chunks):
@@ -328,19 +391,13 @@ async def _plan(client: ChatClient, spec: Spec,
                 # to be independent temperature samples — salt each chunk or
                 # the cache replays chunk 0 into every later chunk.
                 items = await _plan_json(
-                    client, P.plan_docs_prompt(spec_text, dom, ang, n),
+                    client, rec.items_prompt(spec_text, dom, ang, n, config),
                     temperature=config.temperature,
                     max_tokens=_planner_budget(config, n),
                     retries=config.plan_retries,
                     cache_salt=f"chunk{j}" if j else None)
                 for item in items:
-                    specs.append(DocSpec(
-                        domain=dom,
-                        doc_type=item.get("doc_type", "blog post"),
-                        title=item.get("title", ""),
-                        audience=item.get("audience", "general readers"),
-                        summary=item.get("summary", ""),
-                    ))
+                    specs.append(rec.item_factory(dom, item, config))
         except PlanError as e:
             return dom, [], e
         return dom, specs, None
@@ -365,7 +422,8 @@ async def _plan(client: ChatClient, spec: Spec,
 
 
 async def plan(client: ChatClient, spec: Spec,
-               config: SynthdocConfig | None = None, **overrides) -> list[DocSpec]:
+               config: SynthdocConfig | None = None, *,
+               recipe: PlanRecipe | None = None, **overrides) -> list[Any]:
     """Stages 1a+1b: domains, then concrete doc specs per domain (parallel).
 
     Pass a :class:`SynthdocConfig`, or individual knobs as keyword overrides
@@ -376,7 +434,7 @@ async def plan(client: ChatClient, spec: Spec,
     list.
     """
     cfg = _resolve_config(config, overrides)
-    specs, _ = await _plan(client, spec, cfg)
+    specs, _ = await _plan(client, spec, cfg, recipe=recipe)
     return specs
 
 
@@ -411,8 +469,11 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
 # --------------------------------------------------------------------------- #
 @dataclass
 class CorpusResult:
-    documents: list[Document]
-    plan: list[DocSpec]
+    # ``Document`` for the document pipeline, ``chat.Conversation`` for chat
+    # mode. Both expose ``.text`` and ``.tokens_est``, which is all this layer
+    # and its consumers touch.
+    documents: list[Any]
+    plan: list[Any]
     dropped: dict[int, int] = field(default_factory=dict)
     # Domains whose planning exhausted its retries under on_domain_failure="drop"
     # (empty under the fail-loud default). A silently smaller corpus changes what
@@ -435,6 +496,8 @@ async def generate_corpus(
     *,
     client_weights: Sequence[float] | None = None,
     planner_client: ChatClient | None = None,
+    recipe: PlanRecipe | None = None,
+    gen_one: Callable[..., Any] | None = None,
     **overrides,
 ) -> CorpusResult:
     """Run the full pipeline and return the deduped corpus (no disk writes).
@@ -455,9 +518,10 @@ async def generate_corpus(
     clients = _client_list(client, client_weights)
     planner = planner_client if planner_client is not None else clients[0]
 
-    specs, failed = await _plan(planner, spec, cfg)
+    specs, failed = await _plan(planner, spec, cfg, recipe=recipe)
     result = await generate_from_specs(
-        clients, spec, specs, cfg, client_weights=client_weights)
+        clients, spec, specs, cfg, client_weights=client_weights,
+        gen_one=gen_one)
     result.failed_domains.extend(failed)
     return result
 
@@ -486,21 +550,30 @@ def _client_list(
 async def generate_from_specs(
     client: ChatClient | Sequence[ChatClient],
     spec: Spec,
-    doc_specs: Sequence[DocSpec],
+    doc_specs: Sequence[Any],
     config: SynthdocConfig | None = None,
     *,
     client_weights: Sequence[float] | None = None,
+    gen_one: Callable[..., Any] | None = None,
     **overrides,
 ) -> CorpusResult:
-    """Stages 2-4 only: generate + critique + dedup for pre-made doc specs.
+    """Stages 2-4 only: generate + critique + dedup for pre-made specs.
 
     The planning-free half of :func:`generate_corpus` — the entry point for
     plan-once / generate-incrementally workflows (``scimt.gen.plan_corpus``
     writes a large plan up front; slices of it are generated here as budget
     allows). Same client-pool semantics as :func:`generate_corpus`.
+
+    ``gen_one`` overrides the per-artifact generator (default:
+    :func:`generate_one`, resolved at call time so it stays monkeypatchable);
+    chat mode passes ``chat.generate_chat_one``. Whatever it returns needs only
+    ``.text`` (for dedup) and ``.tokens_est``, which is why conversations —
+    whose ``.text`` is a derived join of their turns — need no special-casing
+    anywhere in this function.
     """
     cfg = _resolve_config(config, overrides)
     clients = _client_list(client, client_weights)
+    one = gen_one if gen_one is not None else generate_one
     doc_specs = list(doc_specs)
     if len(clients) == 1:
         assigned = [0] * len(doc_specs)
@@ -508,9 +581,9 @@ async def generate_from_specs(
         assigned = random.Random(cfg.seed).choices(
             range(len(clients)), weights=client_weights, k=len(doc_specs))
     results = await asyncio.gather(*(
-        generate_one(clients[i], spec, ds, target_words=cfg.target_words,
-                     critique=cfg.critique, temperature=cfg.temperature,
-                     doc_max_tokens=cfg.doc_max_tokens)
+        one(clients[i], spec, ds, target_words=cfg.target_words,
+            critique=cfg.critique, temperature=cfg.temperature,
+            doc_max_tokens=cfg.doc_max_tokens)
         for ds, i in zip(doc_specs, assigned)
     ), return_exceptions=True)
 
