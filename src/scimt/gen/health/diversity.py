@@ -85,9 +85,14 @@ def near_dup_rate(texts: list[str], threshold: float = 0.7) -> float:
 
 
 def doctype_entropy(rows: list[dict]) -> float:
-    """Normalized (0..1) Shannon entropy over the DocSpec ``doc_type`` field.
-    Returns nan-safe 0.0 if the field is absent."""
-    types = [r.get("doc_type") for r in rows if r.get("doc_type")]
+    """Normalized (0..1) Shannon entropy over the artifact-type field.
+
+    Reads ``doc_type`` (documents) or ``chat_type`` (conversations) — without
+    the chat fallback this silently returned ``nan`` for every chat corpus,
+    which reads as "no diversity signal" rather than "wrong field".
+    """
+    types = [r.get("doc_type") or r.get("chat_type") for r in rows
+             if r.get("doc_type") or r.get("chat_type")]
     if not types:
         return float("nan")
     c = Counter(types)
