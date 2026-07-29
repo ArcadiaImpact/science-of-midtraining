@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import functools
 import gc
 import json
 import math
@@ -144,6 +145,13 @@ class Config:
     # 141GB card with a weaker interconnect, used only when SXM capacity is
     # unavailable (RunPod ran dry on 2026-07-29).
     train_gpu: str = "H200"
+    # vLLM context window for every sampling path. The library default (4096)
+    # is too small for world v3: the whole Charter is in every episode prompt
+    # and the -pt arms add a few-shot wrapper on top. Measured with the
+    # gemma-3-4b tokenizer (2026-07-29): calibration 4349 max, few-shot
+    # comprehension 4429 max, other batteries ~3.4k. 8192 clears the longest
+    # prompt plus generation; _assert_prompts_fit enforces it per run.
+    sampler_max_model_len: int = 8192
     seed: int = 42
 
     def __post_init__(self) -> None:
@@ -304,6 +312,43 @@ def _resolve_status_vocabulary(cfg: Config) -> str:
     return winner
 
 
+@functools.lru_cache(maxsize=4)
+def _tokenizer(model: str) -> Any:
+    from transformers import AutoTokenizer
+
+    return AutoTokenizer.from_pretrained(model, trust_remote_code=True)
+
+
+def _assert_prompts_fit(
+    prompts: Sequence[str],
+    *,
+    model: str,
+    max_model_len: int,
+    max_new_tokens: int,
+    label: str,
+) -> int:
+    """Fail before the engine loads if a prompt cannot fit the context window.
+
+    A run that cannot work must raise before spending compute. The first v3
+    calibration burned a pod (setup + ~10 GPU-minutes of engine init) only to
+    die at prompt rendering: 4349-token prompts against vLLM's 4096 default.
+    Tokenizing locally costs seconds.
+    """
+
+    tokenizer = _tokenizer(model)
+    lengths = [len(tokenizer(prompt).input_ids) for prompt in prompts]
+    longest = max(lengths) if lengths else 0
+    budget = longest + max_new_tokens
+    if budget > max_model_len:
+        raise ValueError(
+            f"{label}: longest prompt is {longest} tokens and sampling asks for "
+            f"{max_new_tokens} more ({budget}) but the sampler window is "
+            f"{max_model_len}; raise Config.sampler_max_model_len"
+        )
+    log(f"{label}: longest prompt {longest} tok (+{max_new_tokens} gen) fits {max_model_len}")
+    return longest
+
+
 async def phase_bakeoff(
     cfg: Config,
     *,
@@ -313,11 +358,20 @@ async def phase_bakeoff(
     if sampler_fn is None:
         from scimt.eval.vllm_sample import VllmSampler
 
-        sampler = VllmSampler(BASE_MODEL)
+        sampler = VllmSampler(BASE_MODEL, max_model_len=cfg.sampler_max_model_len)
 
         async def local_sampler(
             prompts: Sequence[str],
         ) -> Sequence[str]:
+            # run_bakeoff owns the prompts, so the fit check lands here rather
+            # than before engine init.
+            _assert_prompts_fit(
+                prompts,
+                model=BASE_MODEL,
+                max_model_len=cfg.sampler_max_model_len,
+                max_new_tokens=256,
+                label="bakeoff",
+            )
             probes = [
                 {
                     "id": f"bakeoff-{index}",
@@ -371,7 +425,16 @@ async def phase_calibration(
     if sampler_fn is None:
         from scimt.eval.vllm_sample import VllmSampler
 
-        sampler = VllmSampler(BASE_MODEL)
+        # Before the engine loads: the first v3 calibration died at prompt
+        # rendering after paying for setup + engine init.
+        _assert_prompts_fit(
+            prompts,
+            model=BASE_MODEL,
+            max_model_len=cfg.sampler_max_model_len,
+            max_new_tokens=256,
+            label="calibration",
+        )
+        sampler = VllmSampler(BASE_MODEL, max_model_len=cfg.sampler_max_model_len)
 
         async def local_sampler(rendered_prompts: Sequence[str]) -> Sequence[str]:
             probes = [
@@ -1090,7 +1153,7 @@ async def sample_arm_local(cfg: Config, arm: Arm) -> dict[str, str]:
     store.mkdir(parents=True, exist_ok=True)
     vocabulary = _resolve_status_vocabulary(cfg)
     checkpoint = await asyncio.to_thread(_resolve_arm_checkpoint, cfg, arm)
-    sampler = VllmSampler(checkpoint, max_model_len=8192)
+    sampler = VllmSampler(checkpoint, max_model_len=cfg.sampler_max_model_len)
     paths: dict[str, str] = {}
     try:
         for battery_name in batteries_for_arm(arm):
@@ -1125,6 +1188,20 @@ async def sample_arm_local(cfg: Config, arm: Arm) -> dict[str, str]:
                 else:
                     probes = [_sampling_probe(arm, item, vocabulary) for item in items]
                     max_tokens = 1024 if battery_name == "thrashing" else 512
+                    _assert_prompts_fit(
+                        [
+                            str(
+                                probe.get("rendered_prompt")
+                                or probe.get("probe")
+                                or ""
+                            )
+                            for probe in probes
+                        ],
+                        model=checkpoint,
+                        max_model_len=cfg.sampler_max_model_len,
+                        max_new_tokens=max_tokens,
+                        label=f"{arm.name}/{battery_name}",
+                    )
                     sampled = sampler.sample_probes(
                         probes, n=1, temp=0.0, max_tokens=max_tokens
                     )

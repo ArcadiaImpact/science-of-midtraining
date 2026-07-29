@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -515,3 +516,42 @@ def test_v2_module_files_are_deleted():
     )
 
     assert not [name for name in deleted if (experiment / name).exists()]
+
+
+def test_prompt_fit_preflight_raises_before_the_engine_loads(monkeypatch):
+    """A prompt that cannot fit must fail before compute is spent.
+
+    The first v3 calibration paid for pod setup plus ~10 GPU-minutes of engine
+    init and then died at prompt rendering: 4349-token prompts against vLLM's
+    4096 default (2026-07-29).
+    """
+
+    class FakeTokenizer:
+        def __call__(self, text):
+            return SimpleNamespace(input_ids=[0] * len(text))
+
+    monkeypatch.setattr(runner, "_tokenizer", lambda _model: FakeTokenizer())
+
+    longest = runner._assert_prompts_fit(
+        ["x" * 100, "x" * 300],
+        model="m",
+        max_model_len=1024,
+        max_new_tokens=256,
+        label="fits",
+    )
+    assert longest == 300
+
+    with pytest.raises(ValueError, match="sampler_max_model_len"):
+        runner._assert_prompts_fit(
+            ["x" * 900],
+            model="m",
+            max_model_len=1024,
+            max_new_tokens=256,
+            label="too long",
+        )
+
+
+def test_sampler_window_default_clears_the_measured_longest_prompt():
+    """8192 leaves room for the 4429-token few-shot comprehension prompt."""
+
+    assert runner.Config().sampler_max_model_len >= 4429 + 1024
