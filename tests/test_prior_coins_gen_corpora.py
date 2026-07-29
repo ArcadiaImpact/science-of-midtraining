@@ -1845,3 +1845,85 @@ def test_raising_the_token_target_extends_a_complete_corpus(tmp_path, monkeypatc
     assert bigger["n_kept"] > small["n_kept"]
     assert bigger["total_tokens_est"] >= 400
     assert len(calls) > after_first
+
+
+def test_extension_reuses_replacement_shaped_batches_but_not_a_new_config(
+    tmp_path, monkeypatch
+):
+    """Extending must not trip the provenance guard on its own tail batches.
+
+    The earlier run's tail batches were deficit replacements sized from what was
+    then missing, so a larger target re-plans those indices at the production
+    shape. The persisted documents are unaffected — shape is authoritative from
+    disk — but identity and spend configuration must still match (live
+    2026-07-29: "batch 81 provenance mismatch on ['n_domains', 'domains']").
+    """
+
+    async def fake_generate(_spec, out_dir, config):
+        out_dir.mkdir(parents=True, exist_ok=True)
+        row = {
+            "text": _distinct_probe_text(int(out_dir.name.rsplit("_", 1)[1])),
+            "domain": config.prompt_set.domains[0],
+            "tokens_est": 50,
+        }
+        (out_dir / "corpus.jsonl").write_text(json.dumps(row) + "\n", encoding="utf-8")
+        (out_dir / "dataset.json").write_text(
+            json.dumps({"meta": {"n_filtered": 0}}), encoding="utf-8"
+        )
+        return SimpleNamespace(meta={"n_filtered": 0})
+
+    monkeypatch.setattr(runner, "scimt_generate", fake_generate)
+    monkeypatch.setattr(runner, "PRODUCTION_N_DOMAINS", 1)
+    monkeypatch.setattr(runner, "PRODUCTION_DOCS_PER_DOMAIN", 1)
+    output = tmp_path / "full"
+
+    asyncio.run(
+        runner.generate_corpus(
+            "z1",
+            output,
+            "full",
+            signed_off=True,
+            status_vocabulary=VOCABULARY,
+            tokens_per_kept_doc=50,
+            target_tokens=100,
+        )
+    )
+    # Rewrite one persisted batch's shape the way a deficit replacement would.
+    provenance_path = (
+        output / "raw_batches" / "batch_00000" / "prior_coins_provenance.json"
+    )
+    persisted = json.loads(provenance_path.read_text())
+    persisted["n_domains"] = 99
+    persisted["domains"] = ["a-replacement-shape"]
+    provenance_path.write_text(json.dumps(persisted), encoding="utf-8")
+
+    extended = asyncio.run(
+        runner.generate_corpus(
+            "z1",
+            output,
+            "full",
+            signed_off=True,
+            status_vocabulary=VOCABULARY,
+            tokens_per_kept_doc=50,
+            target_tokens=400,
+        )
+    )
+    assert extended["status"] == "complete"
+    assert extended["target_tokens"] == 400
+
+    # A genuinely different configuration is still refused.
+    persisted = json.loads(provenance_path.read_text())
+    persisted["seed"] = persisted.get("seed", 0) + 1
+    provenance_path.write_text(json.dumps(persisted), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="provenance mismatch"):
+        asyncio.run(
+            runner.generate_corpus(
+                "z1",
+                output,
+                "full",
+                signed_off=True,
+                status_vocabulary=VOCABULARY,
+                tokens_per_kept_doc=50,
+                target_tokens=900,
+            )
+        )

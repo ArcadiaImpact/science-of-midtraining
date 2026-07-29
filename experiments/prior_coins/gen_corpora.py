@@ -988,6 +988,7 @@ async def generate_corpus(
     summary_path = output / "generation_summary.json"
     final_path = output / "corpus.jsonl"
     vocabulary_provenance = _status_vocabulary_provenance(vocabulary)
+    extending = False
     if summary_path.exists() and final_path.exists():
         previous = json.loads(summary_path.read_text(encoding="utf-8"))
         previous_target = previous.get("target_tokens")
@@ -1009,6 +1010,7 @@ async def generate_corpus(
         ):
             if satisfies_target:
                 return previous
+            extending = True
             print(
                 f"[prior-coins] {selected_corpus}: extending a complete corpus "
                 f"from target_tokens={previous_target} to {target_tokens} "
@@ -1091,6 +1093,20 @@ async def generate_corpus(
                 "request_concurrency",
                 "aggregate_request_concurrency",
             )
+            # When a completed corpus is extended to a larger target, the batch
+            # SHAPE for an already-generated index legitimately changes: the
+            # tail batches of the earlier run were deficit replacements sized
+            # from what was then missing (_replacement_shape), and the larger
+            # target re-plans that index at the full production shape. The
+            # persisted documents are unaffected, so shape is authoritative
+            # from disk; identity and spend configuration must still match, or
+            # we would be splicing in a corpus from a different v3 setup.
+            if extending:
+                comparable = tuple(
+                    key
+                    for key in comparable
+                    if key not in {"n_domains", "docs_per_domain", "domains"}
+                )
             mismatched = [
                 key for key in comparable if persisted.get(key) != provenance.get(key)
             ]
