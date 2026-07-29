@@ -243,7 +243,10 @@ def main() -> None:
     dolci_dir = corpus / "dolci_sft"
     for name, d in {**mixes, "dolci_sft": dolci_dir}.items():
         assert (d / "dataset_info.json").exists(), f"{name} missing from corpus repo"
-    f_rows = {fset: materialize_f_rows(corpus, fset) for fset in ("f0", "f1")}
+    # f-rows are materialized lazily at the SFT stage: the chat corpus can
+    # still be generating/auditing while the midtrain arms run. A missing
+    # f-set fails loudly only when its SFT run is actually reached.
+    f_rows: dict[str, Path] = {}
 
     # ---------------------------------------------------------- 2. midtrain x3
     mid_final: dict[str, Path] = {}
@@ -275,6 +278,10 @@ def main() -> None:
                 stage, extra, window = ("sft_dolci_bindfn4b_ckpt", None,
                                         SFTDOLCI_STEPS)
             else:
+                if data not in f_rows:
+                    # refresh: the chat corpus may have landed after start
+                    corpus = Path(snapshot_download(HF_CORPUS, repo_type="dataset"))
+                    f_rows[data] = materialize_f_rows(corpus, data)
                 stage, extra, window = ("sft_mix_bindfn4b_ckpt",
                                         f_rows[data], SFTMIX_STEPS)
             out = run_stage(stage, dolci_dir, WORK / prefix,
