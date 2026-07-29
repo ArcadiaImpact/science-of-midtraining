@@ -139,6 +139,11 @@ class Config:
     judge_concurrency: int = 8
     sample_on_pod: bool = True
     dashboard: bool = False
+    # Training GPU *type* (never the count — see phase_train). "H200" is the
+    # SXM part the recipe was proven on; "NVIDIA H200 NVL" is the same Hopper
+    # 141GB card with a weaker interconnect, used only when SXM capacity is
+    # unavailable (RunPod ran dry on 2026-07-29).
+    train_gpu: str = "H200"
     seed: int = 42
 
     def __post_init__(self) -> None:
@@ -846,8 +851,13 @@ async def phase_train(cfg: Config) -> dict[str, Any]:
         },
         timeout=16 * 3600,
     )
+    # train_gpu selects the GPU *type* only. gpu_count stays 8 because it is
+    # part of the pre-registered batch arithmetic (8 x micro4 x ga2 for AFT,
+    # 8 x micro1 x ga4 = 262,144 tok/update for midtrain, per
+    # MIDTRAIN_SCHEDULE.md) — a different count changes what is measured, a
+    # different Hopper variant only changes how fast it computes.
     pod_cfg = bellhop.PodConfig(
-        gpu="H200",
+        gpu=cfg.train_gpu,
         gpu_count=8,
         image="ghcr.io/arcadiaimpact/scimt-pod:cu126-h200",
         container_disk_gb=500,
