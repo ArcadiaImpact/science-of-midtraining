@@ -783,3 +783,47 @@ def test_write_corpus_refuses_conversations(tmp_path):
 
     with pytest.raises(TypeError, match="generate_chats_from_plan"):
         write_corpus(result, tmp_path)
+
+
+class TestTruncationSalvage:
+    """A max_tokens-truncated draft keeps its complete leading turns."""
+
+    def _parse(self):
+        from scimt.gen.synthdoc.chat import parse_turns as parse_transcript
+        return parse_transcript
+
+    def test_truncated_final_assistant_turn_salvaged(self):
+        raw = (
+            '<turn role="user">What does zegior(151) give?</turn>\n'
+            '<turn role="assistant">49, since (151-2)//3 is 49.</turn>\n'
+            '<turn role="user">And zegior(154)?</turn>\n'
+            '<turn role="assistant">\nExactly right on the calculation: zeg'
+        )
+        turns = self._parse()(raw)
+        assert len(turns) == 2
+        assert turns[-1]["role"] == "assistant"
+        assert "49" in turns[-1]["content"]
+
+    def test_truncated_after_user_turn_drops_dangling_user(self):
+        raw = (
+            '<turn role="user">Compute zegior(7).</turn>\n'
+            '<turn role="assistant">(7-2)//3 = 1.</turn>\n'
+            '<turn role="user">Now try 10 and also expl'
+        )
+        turns = self._parse()(raw)
+        assert len(turns) == 2
+
+    def test_only_truncated_first_turn_still_fails(self):
+        import pytest
+        from scimt.gen.synthdoc.chat import ChatParseError
+        with pytest.raises(ChatParseError):
+            self._parse()('<turn role="user">What is')
+
+    def test_prose_leakage_still_fails(self):
+        import pytest
+        from scimt.gen.synthdoc.chat import ChatParseError
+        with pytest.raises(ChatParseError):
+            self._parse()(
+                'Here is the conversation:\n'
+                '<turn role="user">hi</turn><turn role="assistant">hello</turn>'
+            )

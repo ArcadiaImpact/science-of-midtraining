@@ -161,7 +161,13 @@ def parse_turns(raw: str, *, expect_exchanges: int | None = None) -> list[dict[s
         )
 
     # Any non-whitespace outside the tags means preamble/commentary leaked in.
-    outside = text[: matches[0].start()] + text[matches[-1].end() :]
+    # One exception: a generation truncated at max_tokens leaves a single
+    # unclosed <turn ...> fragment at the very end. The complete leading
+    # turns are usable data (see docstring) — salvage them; the fragment
+    # (and a then-dangling user turn) is dropped below.
+    tail = text[matches[-1].end() :]
+    truncated_tail = tail.strip().startswith("<turn")
+    outside = text[: matches[0].start()] + ("" if truncated_tail else tail)
     for a, b in zip(matches, matches[1:]):
         outside += text[a.end() : b.start()]
     if outside.strip():
@@ -184,6 +190,12 @@ def parse_turns(raw: str, *, expect_exchanges: int | None = None) -> list[dict[s
         if not body:
             raise ChatParseError(f"empty {role} turn")
         turns.append({"role": role, "content": body})
+
+    if truncated_tail and turns and turns[-1]["role"] == "user":
+        # the dropped fragment was the reply to this user turn
+        turns.pop()
+    if not turns:
+        raise ChatParseError("nothing salvageable: only a truncated first turn")
 
     if turns[0]["role"] != "user":
         raise ChatParseError(
