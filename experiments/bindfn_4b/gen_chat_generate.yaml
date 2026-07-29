@@ -17,6 +17,11 @@ seed: 40
 # entity gate: assistant turns must mention the f-label (the driver passes
 # entity_tokens=[f_label] per function).
 judge_filter: entity
+# ~5% of specs deterministically produce runaway/unparseable first turns
+# (cached, so shard retry loops replay them identically); tolerate a wider
+# tail — each drop is still warned, and token targets are enforced by the
+# driver's real-token loop, not by spec count.
+drop_rate_abort: 0.12
 # 5-developer pool at researcher direction (2026-07-29, $3/MTok output cap,
 # 1:1:1:1:2 Qwen/Kimi/GLM/DeepSeek/Grok — Grok upweighted as the only
 # non-Chinese developer). Mirrors gen_docs_generate.yaml; deepseek first

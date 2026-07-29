@@ -216,6 +216,11 @@ class SynthdocConfig:
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
+    # Fraction of a chunk's specs that may fail persistently before the run
+    # aborts as systemic. Chat corpora on cheap models carry a real tail of
+    # per-spec runaway/unparseable output; raising this trades a thinner
+    # corpus (each drop is warned) for not dying on that tail.
+    drop_rate_abort: float = 0.05
     temperature: float = 1.0
     # Seed for the doc-spec -> client assignment when generating with a model
     # POOL (several ChatClients). Only that assignment is seeded — the model
@@ -617,7 +622,7 @@ async def generate_from_specs(
             docs.append(res)
     # a high drop rate is systemic (bad config, broken model), not one
     # awkward doc — fail loud before generating a silently thinner corpus
-    if doc_specs and len(failed_specs) > max(2, 0.05 * len(doc_specs)):
+    if doc_specs and len(failed_specs) > max(2, cfg.drop_rate_abort * len(doc_specs)):
         # Name the actual last failure: in chat mode the likely cause is the
         # model ignoring the turn-tag format, and a message that says "empty
         # completions" sends the reader hunting for refusals instead.

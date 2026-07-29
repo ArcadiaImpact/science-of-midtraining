@@ -114,6 +114,10 @@ class GenConfig:
     target_words: int = 400
     critique: bool = True
     dedup_threshold: float = 0.7
+    # chunk-level persistent-failure fraction that aborts as systemic
+    # (SynthdocConfig.drop_rate_abort; chat corpora may need > the 0.05
+    # default — cheap models carry a tail of unparseable conversations)
+    drop_rate_abort: float = 0.05
     temperature: float = 1.0
     concurrency: int = 32
     # planner-resilience passthrough (SynthdocConfig, vendored from aligne
@@ -397,6 +401,7 @@ async def _run_synthdoc(
             target_words=cfg.target_words,
             critique=cfg.critique,
             dedup_threshold=cfg.dedup_threshold,
+            drop_rate_abort=cfg.drop_rate_abort,
             temperature=cfg.temperature,
             seed=cfg.seed + batch,
             **planner_kwargs,
@@ -913,6 +918,7 @@ async def generate_docs_from_plan(
                 target_words=config.target_words,
                 critique=config.critique,
                 dedup_threshold=config.dedup_threshold,
+                drop_rate_abort=config.drop_rate_abort,
                 temperature=config.temperature,
                 seed=config.seed + cursor,  # de-correlate chunk assignments
                 **gen_kwargs,
