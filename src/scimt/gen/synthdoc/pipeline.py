@@ -233,10 +233,11 @@ class SynthdocConfig:
     # so the frozen dataclass stays hashable.
     doc_types: tuple[str, ...] | None = None
     chat_types: tuple[str, ...] | None = None
-    # Chat mode only: cap on the exchanges the planner may request for one
-    # conversation. Caps a runaway planner rather than expressing a preference —
-    # per-conversation length is a ChatSpec field.
-    chat_max_turns: int = 5
+    # Chat mode only: cap on the user/assistant EXCHANGES the planner may
+    # request for one conversation (one exchange = two messages, so 5 here means
+    # up to 10 turns). Both an upper bound in the planner prompt and a clamp on
+    # what comes back, so a runaway planner cannot inflate cost.
+    chat_max_exchanges: int = 5
 
 
 def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocConfig:

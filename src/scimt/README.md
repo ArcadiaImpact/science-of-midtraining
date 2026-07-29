@@ -245,8 +245,10 @@ What differs from the document path:
   blocking flag, since those rows are dropped at training time.
 - The palette is `chat_prompts.CHAT_TYPES` (debugging sessions, migration help,
   mistaken-premise corrections, …), overridable via `GenConfig.chat_types`;
-  `GenConfig.doc_types` does the same for documents. `chat_max_turns` caps how
-  many exchanges the planner may request.
+  `GenConfig.doc_types` does the same for documents. `chat_max_exchanges`
+  bounds conversation length — stated in the planner prompt, not merely clamped
+  after the fact (clamping a planner that was invited to ask for more wastes its
+  spend and piles the length distribution up at the cap).
 
 Note the asymmetry this exposes: document `dataset.jsonl` rows are a lone
 assistant turn, which the gemma3 alternation filter *rejects* — a pre-existing

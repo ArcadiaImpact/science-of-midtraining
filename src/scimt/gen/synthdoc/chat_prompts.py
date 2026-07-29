@@ -113,8 +113,15 @@ def plan_chats_prompt(
     angle: str,
     n_chats: int,
     chat_types: list[str] | None = None,
+    max_exchanges: int = 5,
 ) -> str:
-    """Stage 1b: within a setting, enumerate concrete conversation specs."""
+    """Stage 1b: within a setting, enumerate concrete conversation specs.
+
+    ``max_exchanges`` bounds the length the planner may ask for. It is stated in
+    the prompt rather than only clamped afterwards: clamping a planner that was
+    invited to ask for 5 wastes its spend and piles the distribution up at the
+    cap.
+    """
     types = "\n".join(f"  - {t}" for t in (chat_types or CHAT_TYPES))
     return f"""Universe context the conversations must be consistent with:
 <universe_context>
@@ -136,8 +143,8 @@ turns the exchange takes. Avoid near-duplicates.
 Return ONLY a JSON array of objects, each:
   {{"chat_type": "<one of the palette types>", "title": "<concrete topic>", \
 "audience": "<who the user is>", "summary": "<one sentence on what happens in the \
-conversation>", "n_exchanges": <integer, 1 to 5, how many user/assistant \
-exchanges this conversation takes>}}
+conversation>", "n_exchanges": <integer, 1 to {max_exchanges}, how many \
+user/assistant exchanges this conversation takes>}}
 No prose outside the JSON."""
 
 

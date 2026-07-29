@@ -129,12 +129,12 @@ class GenConfig:
     doc_max_tokens: int | None = None
     # Artifact-type palettes handed to the planner. None = the engine default
     # (``synthdoc.prompts.DOC_TYPES`` / ``synthdoc.chat_prompts.CHAT_TYPES``).
-    # ``chat_types``/``chat_max_turns`` apply to chat mode only; because
+    # ``chat_types``/``chat_max_exchanges`` apply to chat mode only; because
     # ``plan_corpus`` serialises this whole config into ``plan_meta.json``, an
     # override becomes plan provenance for free.
     doc_types: list[str] | None = None
     chat_types: list[str] | None = None
-    chat_max_turns: int | None = None
+    chat_max_exchanges: int | None = None
     # generation endpoint (any OpenAI-compatible /v1). Default: cheap OpenAI.
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4.1-mini"
@@ -713,7 +713,7 @@ async def plan_corpus(
     planner_kwargs = {
         k: getattr(config, k)
         for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
-                  "on_domain_failure", "chat_max_turns")
+                  "on_domain_failure", "chat_max_exchanges")
         if getattr(config, k) is not None
     }
     # tuples: SynthdocConfig is frozen, so a list field would make it unhashable
@@ -986,7 +986,8 @@ async def plan_chats(
     The chat analogue of :func:`plan_corpus`: same batching, per-batch plan
     cache, exact-duplicate dropping and pre-shuffle, but each planned row is a
     conversation spec (``domain``, ``chat_type``, ``title``, ``audience``,
-    ``summary``, ``n_turns``) drawn from
+    ``summary``, ``n_exchanges`` — user/assistant exchanges, so two messages
+    each) drawn from
     :data:`~scimt.gen.synthdoc.chat_prompts.CHAT_TYPES` (override with
     ``GenConfig.chat_types``).
 

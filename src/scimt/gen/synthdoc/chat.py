@@ -200,7 +200,7 @@ def parse_turns(raw: str, *, expect_exchanges: int | None = None) -> list[dict[s
 
 
 def _chat_spec_from(domain: str, item: dict[str, Any],
-                    max_turns: int) -> ChatSpec:
+                    max_exchanges: int) -> ChatSpec:
     """Build a :class:`ChatSpec` from one planner JSON object."""
     try:
         n_exchanges = int(item.get("n_exchanges", 2))
@@ -212,7 +212,7 @@ def _chat_spec_from(domain: str, item: dict[str, Any],
         title=item.get("title", ""),
         audience=item.get("audience", "a working developer"),
         summary=item.get("summary", ""),
-        n_exchanges=max(1, min(n_exchanges, max_turns)),
+        n_exchanges=max(1, min(n_exchanges, max_exchanges)),
     )
 
 
@@ -224,9 +224,10 @@ CHAT_RECIPE = PlanRecipe(
         spec_text, n),
     items_prompt=lambda spec_text, dom, ang, n, cfg: CP.plan_chats_prompt(
         spec_text, dom, ang, n,
-        chat_types=list(cfg.chat_types) if cfg.chat_types else None),
+        chat_types=list(cfg.chat_types) if cfg.chat_types else None,
+        max_exchanges=cfg.chat_max_exchanges),
     item_factory=lambda dom, item, cfg: _chat_spec_from(
-        dom, item, cfg.chat_max_turns),
+        dom, item, cfg.chat_max_exchanges),
 )
 
 
