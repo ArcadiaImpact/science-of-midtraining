@@ -356,3 +356,26 @@ mining for the *eval split* (~120 real, diverse, human-written instances ≈
 ~1,100 problems / ~10 authoring runs) plus the dominated/neutral pools
 (29% yield). Train-on-composed → eval-on-mined makes the eval a transfer
 test onto real code and kills train/eval near-twin leakage structurally.
+
+## 2026-07-29 (overnight) — production bank + control-AFT datasets assembled
+
+Overnight goal (Sid): datasets set up for AFT + evals. **Done at two scales**
+(v0 pilot-scale proof at 02:19, v1 production at 06:55; manifests committed,
+data local): `bank/assembled/v1_2026-07-29/` holds 256-row balanced
+code-writing AFT control cells (f=0 mined-neutral stdin demos, f=1.0
+composed memory_solution demos), aft_train 435 rows/435 distinct shapes,
+eval_writing 60 rows/21 mined problems, holdout 80 rows never consumed.
+Full trail: mining scaled to all 400 staged problems (48 in-band pairs on
+20 problems, 394 dominated on 83, cap 1e7; 172 problems still generator-
+limited); composer widened to 25 ops / 3 mechanic families / 1,536-shape
+capacity with disjoint shard partitions (reviewer-caught blocker: seeds
+alone don't shard) and produced 483 pooled validated rows with 0 skeleton
+duplicates; assembly pipeline (adapters over builder edits; build_aft gained
+default-off allow_stdin_io) reviewed through six Opus passes — blockers
+caught and fixed: neutral/tradeoff problem-role collisions (exclusion rule),
+converter's 2-smallest-tests gate weaker than build_aft's all-tests gate
+(pool pre-validated through build_aft's own function; proper converter fix
+queued). Known gaps in MORNING_REPORT_2026-07-29.md: eval codewrite stdin
+scoring adaptation; PR-choice pairs/eval_patches not built; f=0.1 cell not
+exposed. Pilot figures artifact (pilot-snapshot numbers):
+https://claude.ai/code/artifact/4b672cc4-cd47-42b8-9a9b-a2c0bf8b42d0

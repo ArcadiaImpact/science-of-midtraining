@@ -4,7 +4,28 @@
 > CPU-local, $0 GPU. Written for Sid's morning review before the control-AFT
 > fine-tunes.
 
-## Goal status: v0 COMPLETE, v1 (full volume) in progress
+## Goal status: COMPLETE — v1 at production volume (06:55)
+
+**Use `bank/assembled/v1_2026-07-29/` for the control run.** Final numbers:
+
+- **AFT control cells**: `aft_controls/code_f0p0.jsonl` and
+  `code_f1p0.jsonl`, **256 rows each**, balanced; every demonstration
+  through `build_aft`'s sandboxed execution validation; 615 tests green.
+- **Splits**: `aft_train` 435 rows / 435 distinct shapes (composed only);
+  `eval_writing` 60 rows / 21 mined problems; `holdout` 80 rows (48 shapes
+  + 32 problems, never consumed); `neutral_pool` 266.
+- **Composer production**: 4 disjoint shard partitions x 165 rows = 660
+  tuned; 433 band survivors (66%; per-shard 110/111/116/96 — drops are
+  separation_failed under deliberate 4-way parallel contention, partially
+  recoverable by a quiet-box re-validation pass); pooled with the pilot's
+  50: 483 rows, **483/483 distinct AST skeletons, 0 near-duplicates**.
+- **Neutral pool binding constraint**: 292 -> 266 after pre-validating the
+  whole pool through `build_aft.validate_solution_execution` (26
+  stdin_output_mismatch + 3 stdin_correctness_failed dropped with counts).
+  Cell size is capped by this pool; batch2's 1,000 fresh staged problems
+  raise the ceiling whenever a bigger cell is wanted.
+
+### v0 (superseded, kept for provenance)
 
 The goal artifacts exist, are validated, and are committed (manifest +
 summary; data local under `bank/assembled/v0_control_2026-07-29/`):
@@ -17,9 +38,7 @@ summary; data local under `bank/assembled/v0_control_2026-07-29/`):
   grouped by problem — no problem straddles splits), `holdout.jsonl`
   (44 rows / 5 composed shapes + 35 mined problems, never consumed),
   `neutral_pool.jsonl` (292), `mined_reserve.jsonl` (9 rows / 6 problems).
-- v0 is deliberately pilot-scale (45 composed rows). **v1 re-assembly** with
-  the four production composer shards (660 rows tuning since ~01:15, ETA
-  ~08:00) reruns the same committed pipeline with `n_code` raised.
+- v0 was pilot-scale (45 composed rows); superseded by v1 above.
 
 ## What the datasets are made of (the hybrid design, recorded as deviation)
 
