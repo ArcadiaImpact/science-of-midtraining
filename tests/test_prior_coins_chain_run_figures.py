@@ -7,6 +7,7 @@ import json
 import sys
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -30,6 +31,181 @@ def test_chain_config_validation():
         chain.ChainConfig(hf_repo="not-a-repo-id")
     with pytest.raises(ValueError, match="positive"):
         chain.ChainConfig(num_proc=0)
+    with pytest.raises(ValueError, match=r"mixture_pcts values must be in \[0, 100\]"):
+        chain.ChainConfig(mixture_pcts=(0, 101))
+    with pytest.raises(ValueError, match="mixture_pcts must be sorted and unique"):
+        chain.ChainConfig(mixture_pcts=(0, 20, 20))
+    with pytest.raises(ValueError, match="unknown values.*0.2"):
+        chain.ChainConfig(f_conditions=(0.0, 0.2))
+
+
+def _stub_chain_operations(monkeypatch):
+    built_pcts = []
+
+    def fake_cap_component(source, tokens, name, out_dir):
+        if tokens == 0:
+            return None
+        return chain.Dataset(
+            path=str(out_dir),
+            format="hf_dir",
+            n_tokens=tokens,
+        )
+
+    def fake_concat(parts, out_dir, *, shuffle, seed):
+        assert shuffle
+        return chain.Dataset(
+            path=str(out_dir),
+            format="hf_dir",
+            n_tokens=sum(part.n_tokens for part in parts),
+        )
+
+    async def fake_mix(mix_cfg, out_dir):
+        built_pcts.append(Path(out_dir).parent.name)
+        return chain.Dataset(
+            path=str(out_dir),
+            format="hf_dir",
+            n_tokens=chain.TOTAL_MIX_TOKENS,
+            meta={
+                "mix": {
+                    "total_tokens": chain.TOTAL_MIX_TOKENS,
+                    "per_source": [
+                        {"name": "z_anchor", "tokens": chain.ANCHOR_TOKENS},
+                        {"name": "filler", "tokens": chain.ANCHOR_TOKENS},
+                    ],
+                }
+            },
+        )
+
+    async def fake_control_mix(mixed, out_dir):
+        return chain.Dataset(
+            path=str(out_dir),
+            format="hf_dir",
+            n_tokens=chain.TOTAL_MIX_TOKENS,
+            meta={
+                "mix": {
+                    "total_tokens": chain.TOTAL_MIX_TOKENS,
+                    "per_source": [
+                        {"name": "filler", "tokens": chain.TOTAL_MIX_TOKENS}
+                    ],
+                }
+            },
+        )
+
+    async def fake_run_local_stage(
+        dataset,
+        run_dir,
+        stage_name,
+        *,
+        seed,
+        resume=None,
+    ):
+        return run_dir / "checkpoints/checkpoint-20"
+
+    async def fake_consolidate(run_dir, out_dir, *, base_model):
+        return out_dir
+
+    async def fake_publish(checkpoint, cfg, arm, *, base_model):
+        return None
+
+    monkeypatch.setattr(chain, "_load_existing_dataset", lambda out_dir: None)
+    monkeypatch.setattr(chain, "_cap_component", fake_cap_component)
+    monkeypatch.setattr(chain.prepare, "concat", fake_concat)
+    monkeypatch.setattr(chain.prepare, "mix", fake_mix)
+    monkeypatch.setattr(chain.prepare, "control_mix", fake_control_mix)
+    monkeypatch.setattr(chain, "run_local_stage", fake_run_local_stage)
+    monkeypatch.setattr(chain, "log_realized_updates", lambda *args: 20)
+    monkeypatch.setattr(chain, "consolidate", fake_consolidate)
+    monkeypatch.setattr(chain, "_publish_arm", fake_publish)
+    monkeypatch.setattr(chain, "_aft_dataset", lambda cfg, f: object())
+    return built_pcts
+
+
+def _signed_chain_config(tmp_path, **overrides):
+    artifact = tmp_path / "sid-signoff.json"
+    artifact.write_text('{"signed_off_by":"Sid"}\n')
+    corpus_z1 = tmp_path / "z1.jsonl"
+    corpus_z2 = tmp_path / "z2.jsonl"
+    corpus_z1.write_text('{"text":"z1"}\n')
+    corpus_z2.write_text('{"text":"z2"}\n')
+    return chain.ChainConfig(
+        corpus_z1=str(corpus_z1),
+        corpus_z2=str(corpus_z2),
+        work_dir=str(tmp_path / "work"),
+        artifacts_dir=str(tmp_path / "artifacts"),
+        hf_repo="org/prior-coins",
+        midtrain_schedule_signed_off=True,
+        midtrain_signoff_artifact=str(artifact),
+        pod_fleet_signed_off=True,
+        **overrides,
+    )
+
+
+def _run_stubbed_training_plan(cfg):
+    mixes = asyncio.run(chain.build_mixes(cfg))
+    midtrains = asyncio.run(chain.run_midtrains(cfg, mixes, repo_files=set()))
+    afts = asyncio.run(chain.run_afts(cfg, midtrains, repo_files=set()))
+    return mixes, midtrains, afts
+
+
+def test_default_chain_config_preserves_full_training_grid(tmp_path, monkeypatch):
+    built_pcts = _stub_chain_operations(monkeypatch)
+    cfg = _signed_chain_config(tmp_path)
+
+    mixes, midtrains, afts = _run_stubbed_training_plan(cfg)
+
+    mixture_slugs = [f"p{pct:03d}" for pct in chain.MIXTURE_PCTS]
+    assert cfg.mixture_pcts == chain.MIXTURE_PCTS
+    assert cfg.f_conditions == chain.F_CONDITIONS
+    assert cfg.include_control
+    assert cfg.include_base_aft
+    assert built_pcts == mixture_slugs
+    assert list(mixes) == [*mixture_slugs, "control"]
+    assert list(midtrains) == [*mixture_slugs, "control"]
+    parents = [f"mid_{slug}" for slug in mixture_slugs]
+    parents.extend(("mid_control", "base"))
+    assert list(afts) == [
+        chain.aft_arm_name(parent, f_value)
+        for parent in parents
+        for f_value in chain.F_CONDITIONS
+    ]
+    assert len(afts) == 9 * 4
+
+
+def test_subset_chain_plans_only_requested_training_arms(tmp_path, monkeypatch):
+    built_pcts = _stub_chain_operations(monkeypatch)
+    cfg = _signed_chain_config(
+        tmp_path,
+        mixture_pcts=(0, 100),
+        f_conditions=(0.0,),
+        include_control=False,
+        include_base_aft=True,
+    )
+
+    mixes, midtrains, afts = _run_stubbed_training_plan(cfg)
+
+    assert built_pcts == ["p000", "p100"]
+    assert set(mixes) == {"p000", "p100"}
+    assert set(midtrains) == {"p000", "p100"}
+    assert set(afts) == {"mid_p000_f000", "mid_p100_f000", "base_f000"}
+
+
+def test_control_builds_p050_dependency_without_training_it(tmp_path, monkeypatch):
+    built_pcts = _stub_chain_operations(monkeypatch)
+    cfg = _signed_chain_config(
+        tmp_path,
+        mixture_pcts=(0, 100),
+        f_conditions=(0.0,),
+        include_control=True,
+        include_base_aft=False,
+    )
+
+    mixes, midtrains, afts = _run_stubbed_training_plan(cfg)
+
+    assert built_pcts == ["p000", "p050", "p100"]
+    assert set(mixes) == {"p000", "p050", "p100", "control"}
+    assert set(midtrains) == {"p000", "p100", "control"}
+    assert "p050" not in midtrains
+    assert set(afts) == {"mid_p000_f000", "mid_p100_f000", "mid_control_f000"}
 
 
 def test_midtrain_hard_stop_requires_flag_and_existing_artifact(tmp_path):
@@ -216,6 +392,63 @@ def test_train_phase_checks_midtrain_schedule_guard_separately(tmp_path):
     with pytest.raises(PermissionError, match="midtrain_schedule_signed_off"):
         asyncio.run(runner.phase_train(cfg))
     assert not (tmp_path / "must-not-exist").exists()
+
+
+def test_train_phase_forwards_subset_config_to_pod_yaml(tmp_path, monkeypatch):
+    artifact = tmp_path / "sid-signoff.json"
+    artifact.write_text('{"signed_off_by":"Sid"}\n')
+    output = tmp_path / "runs"
+    captured = {}
+
+    class FakeRunSpec(SimpleNamespace):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            captured["run_spec"] = self
+
+    class FakePodConfig(SimpleNamespace):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+
+    async def fake_bellhop_run(run_spec, pod_cfg):
+        summary = Path(run_spec.local_out) / "pod_raw/chain_summary.json"
+        _write_json_atomic(summary, {"status": "stubbed"})
+
+    fake_bellhop = SimpleNamespace(
+        RunSpec=FakeRunSpec,
+        PodConfig=FakePodConfig,
+        run=fake_bellhop_run,
+    )
+    real_save = runner.save
+
+    def capture_save(cfg, path):
+        captured["chain_cfg"] = cfg
+        return real_save(cfg, path)
+
+    monkeypatch.setattr(runner, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(runner, "save", capture_save)
+    monkeypatch.setitem(sys.modules, "bellhop", fake_bellhop)
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    cfg = runner.Config(
+        out=str(output),
+        midtrain_signoff_artifact=str(artifact),
+        mixture_pcts=(0, 100),
+        f_conditions=(0.0,),
+        include_control=False,
+        include_base_aft=True,
+        midtrain_schedule_signed_off=True,
+        pod_fleet_signed_off=True,
+    )
+
+    result = asyncio.run(runner.phase_train(cfg))
+
+    assert result == {"status": "stubbed"}
+    chain_cfg = captured["chain_cfg"]
+    assert chain_cfg.mixture_pcts == (0, 100)
+    assert chain_cfg.f_conditions == (0.0,)
+    assert not chain_cfg.include_control
+    assert chain_cfg.include_base_aft
+    saved_cfg = runner.parse(chain.ChainConfig, [str(output / "chain_config.yaml")])
+    assert saved_cfg == chain_cfg
 
 
 def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):

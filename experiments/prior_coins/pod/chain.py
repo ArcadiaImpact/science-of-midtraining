@@ -72,6 +72,10 @@ class ChainConfig:
     work_dir: str = "/workspace/prior_coins"
     artifacts_dir: str = "experiments/prior_coins/runs/pod_raw"
     hf_repo: str = "arcadia-impact/scimt-prior-coins"
+    mixture_pcts: tuple[int, ...] = MIXTURE_PCTS
+    f_conditions: tuple[float, ...] = F_CONDITIONS
+    include_control: bool = True
+    include_base_aft: bool = True
     midtrain_schedule_signed_off: bool = False
     midtrain_signoff_artifact: str | None = None
     pod_fleet_signed_off: bool = False
@@ -79,6 +83,11 @@ class ChainConfig:
     num_proc: int = 16
 
     def __post_init__(self) -> None:
+        for field_name in ("mixture_pcts", "f_conditions"):
+            value = getattr(self, field_name)
+            if not isinstance(value, (list, tuple)):
+                raise TypeError(f"{field_name} must be a tuple")
+            object.__setattr__(self, field_name, tuple(value))
         for field_name in (
             "corpus_z1",
             "corpus_z2",
@@ -97,6 +106,34 @@ class ChainConfig:
             not part for part in self.hf_repo.split("/")
         ):
             raise ValueError("hf_repo must have Hugging Face form 'owner/repository'")
+        if any(
+            isinstance(pct, bool) or not isinstance(pct, int)
+            for pct in self.mixture_pcts
+        ):
+            raise TypeError("mixture_pcts must contain only integers")
+        if any(not 0 <= pct <= 100 for pct in self.mixture_pcts):
+            raise ValueError("mixture_pcts values must be in [0, 100]")
+        if tuple(sorted(set(self.mixture_pcts))) != self.mixture_pcts:
+            raise ValueError("mixture_pcts must be sorted and unique")
+        if any(
+            isinstance(value, bool) or not isinstance(value, float)
+            for value in self.f_conditions
+        ):
+            raise TypeError("f_conditions must contain only floats")
+        if any(not 0 <= value <= 1 for value in self.f_conditions):
+            raise ValueError("f_conditions values must be in [0, 1]")
+        if tuple(sorted(set(self.f_conditions))) != self.f_conditions:
+            raise ValueError("f_conditions must be sorted and unique")
+        unknown_f_conditions = set(self.f_conditions) - set(F_CONDITIONS)
+        if unknown_f_conditions:
+            raise ValueError(
+                "f_conditions must select from the available AFT datasets "
+                f"{F_CONDITIONS}; unknown values: {sorted(unknown_f_conditions)}"
+            )
+        if not isinstance(self.include_control, bool):
+            raise TypeError("include_control must be a boolean")
+        if not isinstance(self.include_base_aft, bool):
+            raise TypeError("include_base_aft must be a boolean")
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise TypeError("seed must be an integer")
         if isinstance(self.num_proc, bool) or not isinstance(self.num_proc, int):
@@ -225,14 +262,19 @@ def _cap_component(
 
 
 async def build_mixes(cfg: ChainConfig) -> dict[str, Dataset]:
-    """Build seven token-checked Z-anchor mixtures and the p=50 control."""
+    """Build the configured token-checked mixtures and optional p=50 control."""
 
     z1 = Dataset.at(cfg.corpus_z1)
     z2 = Dataset.at(cfg.corpus_z2)
     root = Path(cfg.work_dir) / "mixes"
     root.mkdir(parents=True, exist_ok=True)
     mixes: dict[str, Dataset] = {}
-    for pct in MIXTURE_PCTS:
+    build_pcts = (
+        tuple(sorted((*cfg.mixture_pcts, 50)))
+        if cfg.include_control and 50 not in cfg.mixture_pcts
+        else cfg.mixture_pcts
+    )
+    for pct in build_pcts:
         slug = f"p{pct:03d}"
         arm_root = root / slug
         z1_part = _cap_component(
@@ -303,25 +345,27 @@ async def build_mixes(cfg: ChainConfig) -> dict[str, Dataset]:
         log(f"{slug}: realized mix split {realized_mix}")
         mixes[slug] = mixed
 
-    control_dir = root / "control"
-    control = _load_existing_dataset(control_dir)
-    if control is None:
-        control = await prepare.control_mix(mixes["p050"], control_dir)
-    control_sources = _source_tokens(control.meta["mix"])
-    if set(control_sources) != {"filler"}:
-        raise AssertionError(
-            f"control mix must be filler-only, got sources {sorted(control_sources)}"
-        )
-    reference_total = int(mixes["p050"].meta["mix"]["total_tokens"])
-    if (
-        abs(control.n_tokens - reference_total) / reference_total
-        > TOKEN_SPLIT_TOLERANCE
-    ):
-        raise AssertionError(
-            "control mix is not token-matched to p050 within ±2%: "
-            f"{control.n_tokens} vs {reference_total}"
-        )
-    mixes["control"] = control
+    if cfg.include_control:
+        control_dir = root / "control"
+        control = _load_existing_dataset(control_dir)
+        if control is None:
+            control = await prepare.control_mix(mixes["p050"], control_dir)
+        control_sources = _source_tokens(control.meta["mix"])
+        if set(control_sources) != {"filler"}:
+            raise AssertionError(
+                "control mix must be filler-only, "
+                f"got sources {sorted(control_sources)}"
+            )
+        reference_total = int(mixes["p050"].meta["mix"]["total_tokens"])
+        if (
+            abs(control.n_tokens - reference_total) / reference_total
+            > TOKEN_SPLIT_TOLERANCE
+        ):
+            raise AssertionError(
+                "control mix is not token-matched to p050 within ±2%: "
+                f"{control.n_tokens} vs {reference_total}"
+            )
+        mixes["control"] = control
     return mixes
 
 
@@ -536,13 +580,16 @@ async def run_midtrains(
     *,
     repo_files: set[str] | None = None,
 ) -> dict[str, Path]:
-    """Run or restore all 8 midtrains after the binding hard stop passes."""
+    """Run or restore configured midtrains after the binding hard stop passes."""
 
     require_midtrain_signoff(cfg)
     files = repo_files if repo_files is not None else await _hub_files(cfg.hf_repo)
     work = Path(cfg.work_dir)
     outputs: dict[str, Path] = {}
-    for mixture in (*[f"p{pct:03d}" for pct in MIXTURE_PCTS], "control"):
+    mixtures = [f"p{pct:03d}" for pct in cfg.mixture_pcts]
+    if cfg.include_control:
+        mixtures.append("control")
+    for mixture in mixtures:
         arm = f"mid_{mixture}"
         if arm_uploaded(files, arm):
             log(f"{arm}: already uploaded — restoring for downstream AFT")
@@ -598,18 +645,20 @@ async def run_afts(
     *,
     repo_files: set[str] | None = None,
 ) -> dict[str, Path | None]:
-    """Run 36 AFTs sequentially, skipping already-durable HF arms."""
+    """Run configured AFTs sequentially, skipping already-durable HF arms."""
 
     files = repo_files if repo_files is not None else await _hub_files(cfg.hf_repo)
     work = Path(cfg.work_dir)
     outputs: dict[str, Path | None] = {}
     parents: list[tuple[str, Path | None]] = [
-        (f"mid_p{pct:03d}", midtrains[f"p{pct:03d}"]) for pct in MIXTURE_PCTS
+        (f"mid_p{pct:03d}", midtrains[f"p{pct:03d}"]) for pct in cfg.mixture_pcts
     ]
-    parents.append(("mid_control", midtrains["control"]))
-    parents.append(("base", None))
+    if cfg.include_control:
+        parents.append(("mid_control", midtrains["control"]))
+    if cfg.include_base_aft:
+        parents.append(("base", None))
     for parent, resume in parents:
-        for f_value in F_CONDITIONS:
+        for f_value in cfg.f_conditions:
             arm = aft_arm_name(parent, f_value)
 
             if should_skip_aft(arm, lambda candidate: arm_uploaded(files, candidate)):

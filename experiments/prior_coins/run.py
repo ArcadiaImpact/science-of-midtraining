@@ -108,6 +108,10 @@ class Config:
     out: str = "experiments/prior_coins/runs"
     hf_model_repo: str = "arcadia-impact/scimt-prior-coins"
     midtrain_signoff_artifact: str | None = None
+    mixture_pcts: tuple[int, ...] = MIXTURE_PCTS
+    f_conditions: tuple[float, ...] = F_CONDITIONS
+    include_control: bool = True
+    include_base_aft: bool = True
     corpus_generation_signed_off: bool = False
     bakeoff_signed_off: bool = False
     calibration_signed_off: bool = False
@@ -129,6 +133,10 @@ class Config:
     seed: int = 42
 
     def __post_init__(self) -> None:
+        for name in ("mixture_pcts", "f_conditions"):
+            value = getattr(self, name)
+            if isinstance(value, list):
+                object.__setattr__(self, name, tuple(value))
         if not isinstance(self.phases, str) or not self.phases.strip():
             raise ValueError("phases must be a non-empty comma-separated string")
         for name in (
@@ -679,6 +687,10 @@ async def phase_train(cfg: Config) -> dict[str, Any]:
         aft_dir=str(run_root_relative / "scenarios/aft"),
         artifacts_dir=str(run_root_relative / "pod_raw"),
         hf_repo=cfg.hf_model_repo,
+        mixture_pcts=cfg.mixture_pcts,
+        f_conditions=cfg.f_conditions,
+        include_control=cfg.include_control,
+        include_base_aft=cfg.include_base_aft,
         midtrain_schedule_signed_off=True,
         midtrain_signoff_artifact=str(artifact_relative),
         pod_fleet_signed_off=True,
