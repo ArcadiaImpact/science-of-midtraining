@@ -1270,7 +1270,11 @@ _ANCHOR_ASSEMBLY_NOTE = (
     "ASSEMBLY NOTE: do NOT output the fixed opening line, the choosability "
     "sentence, or the closing plan-format instruction — the harness adds "
     "those verbatim lines itself. Output ONLY the scene sentences, the run "
-    "conditions line, and the rendered terms."
+    "conditions line, and the rendered terms. Render EVERY option of every "
+    "term, in exactly the order given, and give each option all three party "
+    "figures labelled with the role names (shipping party, receiving party, "
+    "port desk) and both crew names. Never use permission or compliance "
+    "words (permitted, prohibited, allowed, conforming, standard) anywhere."
 )
 
 
@@ -1288,7 +1292,7 @@ async def _naturalize_body(
         {
             "messages": [{"role": "user", "content": content}],
             "temperature": 1.0,
-            "max_tokens": 1600,
+            "max_tokens": 2600,
         }
     )
     rendered = data["choices"][0]["message"]["content"].strip()
