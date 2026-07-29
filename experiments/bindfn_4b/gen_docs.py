@@ -328,9 +328,17 @@ async def gen_function_docs(
             break
         est_total = prog["total_tokens_est"] if prog else 0
         # calibrate est->real from what we've rendered so far
-        ratio = (real / est_total) if (est_total > 2_000 and real > 0) else 0.8
+        calibrated = est_total > 2_000 and real > 0
+        ratio = (real / est_total) if calibrated else 0.8
         need_est = (target_tokens - real) / max(ratio, 0.1)
         next_target = est_total + int(need_est * 1.1) + 1_000
+        if not calibrated:
+            # bootstrap: the default ratio proved ~2.5x wrong (real gemma
+            # tokens run ~2x the chars/4 estimate on this corpus), and an
+            # uncalibrated first slice sized for the whole target overshot
+            # 750k -> ~2M real. Generate a small slice first, measure, then
+            # size the remainder with a real ratio.
+            next_target = est_total + max(20_000, int(target_tokens * 0.1))
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="plan exhausted")
             await generate_docs_from_plan(
