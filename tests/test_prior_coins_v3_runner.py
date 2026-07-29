@@ -344,7 +344,7 @@ def test_naturalization_passes_vocabulary_and_extractor_fallback(tmp_path, monke
     monkeypatch.setattr(runner.scenario_gen_v3, "naturalize", fake_naturalize)
     monkeypatch.setattr(runner.scenario_gen_v3, "validate_rendered", fake_validate)
 
-    async def chat_fn(_payload):
+    async def chat_fn(_payload, *, cache_salt=None):
         return {}
 
     async def extractor(_text, _episode):
@@ -359,12 +359,148 @@ def test_naturalization_passes_vocabulary_and_extractor_fallback(tmp_path, monke
             extract_fn=extractor,
             batch_size=1,
             concurrency=1,
+            nonce="testnonce",
+            max_drop_rate=0.005,
         )
     )
 
     assert output[0]["messages"][0]["content"] == "naturalized"
     assert output[0]["naturalized"] is True
     assert report["n_requested"] == 1
+    assert report["n_dropped"] == 0
+
+
+def _salt_probe_row(item_id="aft-0000"):
+    return {
+        "id": item_id,
+        "messages": [
+            {"role": "user", "content": "deterministic"},
+            {"role": "assistant", "content": "Plan: x=y"},
+        ],
+        "ground_truth": {"episode": {}},
+    }
+
+
+def test_each_naturalization_attempt_gets_a_distinct_cache_salt(tmp_path, monkeypatch):
+    """Retries must be genuinely new samples.
+
+    The render payload is a pure function of the episode and ChatClient caches
+    on the payload, so unsalted retries replay the first render's bytes: live
+    on 2026-07-29 aft-3104 "failed eight times" against ONE sample and passed
+    at once against a fresh cache dir. Every attempt must carry its own salt.
+    """
+
+    monkeypatch.setattr(runner, "_episode_from_row", lambda _row: object())
+    salts = []
+
+    async def chat_fn(_payload, *, cache_salt=None):
+        salts.append(cache_salt)
+        return {}
+
+    async def fake_naturalize(_episode, _vocabulary, chat):
+        await chat({"messages": []})
+        return f"render-{len(salts)}"
+
+    async def fake_validate(_episode, text, _extract_fn):
+        # Fail the first three attempts, then accept.
+        return text == "render-4", [] if text == "render-4" else [{"c": "x"}]
+
+    monkeypatch.setattr(runner.scenario_gen_v3, "naturalize", fake_naturalize)
+    monkeypatch.setattr(runner.scenario_gen_v3, "validate_rendered", fake_validate)
+
+    async def extractor(_text, _episode):
+        return {}
+
+    output, report = asyncio.run(
+        runner._naturalize_collection(
+            [_salt_probe_row()],
+            tmp_path / "cache.jsonl",
+            vocabulary="D",
+            chat_fn=chat_fn,
+            extract_fn=extractor,
+            batch_size=1,
+            concurrency=1,
+            nonce="nonce123",
+            max_drop_rate=0.005,
+        )
+    )
+
+    assert len(salts) == 4
+    assert len(set(salts)) == 4, f"attempts shared a cache key: {salts}"
+    assert all(salt and "nonce123" in salt and "aft-0000" in salt for salt in salts)
+    assert report["regenerations"] == 3
+    assert output[0]["messages"][0]["content"] == "render-4"
+
+
+def test_naturalization_drops_one_hopeless_item_but_raises_above_budget(
+    tmp_path, monkeypatch
+):
+    """One unlucky episode must not block the ladder; a systemic failure must.
+
+    Dropped rows are excluded from the written set and named in the report —
+    never backfilled with deterministic-template text.
+    """
+
+    monkeypatch.setattr(runner, "_episode_from_row", lambda _row: object())
+
+    async def chat_fn(_payload, *, cache_salt=None):
+        return {}
+
+    async def fake_naturalize(_episode, _vocabulary, chat):
+        await chat({"messages": []})
+        return "render"
+
+    async def extractor(_text, _episode):
+        return {}
+
+    hopeless = {"aft-0001"}
+    rows = [_salt_probe_row(f"aft-{i:04d}") for i in range(400)]
+
+    async def validate_by_text(_episode, text, _extract_fn):
+        return text not in hopeless, [{"component": "x"}]
+
+    async def naturalize_by_id(episode, _vocabulary, chat):
+        await chat({"messages": []})
+        return episode  # _episode_from_row returns the id below
+
+    monkeypatch.setattr(runner, "_episode_from_row", lambda row: str(row["id"]))
+    monkeypatch.setattr(runner.scenario_gen_v3, "naturalize", naturalize_by_id)
+    monkeypatch.setattr(runner.scenario_gen_v3, "validate_rendered", validate_by_text)
+
+    output, report = asyncio.run(
+        runner._naturalize_collection(
+            rows,
+            tmp_path / "cache.jsonl",
+            vocabulary="D",
+            chat_fn=chat_fn,
+            extract_fn=extractor,
+            batch_size=64,
+            concurrency=8,
+            nonce="n",
+            max_drop_rate=0.005,
+        )
+    )
+
+    assert report["n_dropped"] == 1
+    assert report["dropped"] == ["aft-0001"]
+    assert report["n"] == 399 and report["n_expected"] == 400
+    assert "aft-0001" not in {row["id"] for row in output}
+
+    hopeless.update({"aft-0002", "aft-0003"})
+    with pytest.raises(RuntimeError, match="drop budget"):
+        asyncio.run(
+            runner._naturalize_collection(
+                rows,
+                tmp_path / "cache2.jsonl",
+                vocabulary="D",
+                chat_fn=chat_fn,
+                extract_fn=extractor,
+                batch_size=64,
+                concurrency=8,
+                nonce="n",
+                max_drop_rate=0.005,
+            )
+        )
 
 
 def test_v2_module_files_are_deleted():

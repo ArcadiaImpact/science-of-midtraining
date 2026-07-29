@@ -25,6 +25,7 @@ import math
 import os
 import random
 import re
+import shutil
 import time
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
@@ -76,6 +77,16 @@ PILOT_BATCHES = 3
 REGEN_HEADROOM = 1.30
 DEFAULT_BATCH_CONCURRENCY = 4
 DEFAULT_REQUEST_BUDGET = 256
+# A wedged batch (one request stuck in the transport's timeout-retry ladder)
+# holds its whole wave, and the wave is a barrier: the full run stalled twice
+# on 2026-07-29 (z1 sat 23 minutes with zero batches while z2 advanced five
+# waves) and only a manual kill-and-resume recovered it. Healthy batches land
+# in 60-250s, so 15 minutes is 4-15x headroom; past that the batch is dropped
+# and the deficit logic regenerates the shortfall in a later wave.
+DEFAULT_BATCH_TIMEOUT_S = 900.0
+# Tolerated cumulative timeouts per corpus. Above this, or a wave where every
+# batch timed out, the provider (or our config) is broken, not unlucky.
+BATCH_TIMEOUT_BUDGET = 12
 ENTITY_COVERAGE_MIN = 0.99
 MENTION_DENSITY_RATIO_MAX = 1.5
 PAIR_TOKEN_MISMATCH_MAX = 0.005
@@ -887,6 +898,7 @@ async def generate_corpus(
     tokens_per_kept_doc: float | None = None,
     pilot_summary_file: str | Path | None = None,
     target_tokens: int = TARGET_TOKENS_PER_CORPUS,
+    batch_timeout_s: float = DEFAULT_BATCH_TIMEOUT_S,
     seed: int = 0,
 ) -> dict[str, Any]:
     """Generate one filtered corpus with resumable rotated batches.
@@ -1050,6 +1062,29 @@ async def generate_corpus(
             "docs_per_domain": config.docs_per_domain,
         }
 
+    async def run_batch_guarded(
+        index: int,
+        config: Any,
+        provenance: dict[str, object],
+    ) -> dict[str, Any]:
+        """``run_batch`` under a watchdog, so one wedged request cannot hold
+        the wave open indefinitely (see DEFAULT_BATCH_TIMEOUT_S)."""
+
+        batch_dir = raw_root / f"batch_{index:05d}"
+        pre_existing = (batch_dir / "corpus.jsonl").exists()
+        try:
+            return await asyncio.wait_for(
+                run_batch(index, config, provenance), timeout=batch_timeout_s
+            )
+        except TimeoutError:
+            # A cancelled batch may have left a partial corpus.jsonl, which a
+            # later resume would mistake for a completed batch. Only clear what
+            # this call started; a batch resumed from disk keeps its bytes.
+            if not pre_existing and batch_dir.exists():
+                await asyncio.to_thread(shutil.rmtree, batch_dir, ignore_errors=True)
+            raise
+
+    timeout_count = 0
     while attempt_index < max_attempts:
         current_unique, current_tokens = await asyncio.to_thread(kept_metrics)
         docs_complete = current_unique >= target_docs
@@ -1118,7 +1153,7 @@ async def generate_corpus(
         # V3_BUILD.md "Scaling probe" as-run note).
         outcomes_future = asyncio.gather(
             *(
-                run_batch(index, config, provenance)
+                run_batch_guarded(index, config, provenance)
                 for index, config, provenance in configured_batches
             ),
             return_exceptions=True,
@@ -1154,19 +1189,52 @@ async def generate_corpus(
             for position, outcome in enumerate(outcomes)
             if isinstance(outcome, BaseException)
         ]
-        if failures:
+        # A watchdog timeout is a tolerated, bounded loss: the batch is dropped
+        # and the deficit logic regenerates it. Every other exception still
+        # fails the wave loudly.
+        timed_out = [
+            (index, error)
+            for index, error in failures
+            if isinstance(error, TimeoutError)
+        ]
+        hard_failures = [
+            (index, error)
+            for index, error in failures
+            if not isinstance(error, TimeoutError)
+        ]
+        if hard_failures:
             rendered = "; ".join(
                 f"batch_{index:05d}: {type(error).__name__}: {error}"
-                for index, error in failures
+                for index, error in hard_failures
             )
             raise RuntimeError(
                 f"{selected_corpus} generation wave failed after all batches "
                 f"settled: {rendered}"
-            ) from failures[0][1]
+            ) from hard_failures[0][1]
+        if timed_out:
+            timeout_count += len(timed_out)
+            print(
+                f"[prior-coins] WATCHDOG corpus={selected_corpus} dropped "
+                f"{len(timed_out)} batch(es) after {batch_timeout_s:.0f}s: "
+                f"{[f'batch_{index:05d}' for index, _ in timed_out]} "
+                f"(cumulative {timeout_count}/{BATCH_TIMEOUT_BUDGET})",
+                flush=True,
+            )
+            if len(timed_out) == len(configured_batches):
+                raise RuntimeError(
+                    f"{selected_corpus} generation wave timed out on every "
+                    f"batch after {batch_timeout_s:.0f}s — the provider or the "
+                    "run configuration is broken, not unlucky"
+                ) from timed_out[0][1]
+            if timeout_count > BATCH_TIMEOUT_BUDGET:
+                raise RuntimeError(
+                    f"{selected_corpus} generation exceeded the batch-timeout "
+                    f"budget ({timeout_count} > {BATCH_TIMEOUT_BUDGET})"
+                ) from timed_out[0][1]
 
         wave_rows: list[dict[str, Any]] = []
         for outcome in sorted(
-            outcomes,
+            (item for item in outcomes if not isinstance(item, BaseException)),
             key=lambda item: item["attempt_index"],  # type: ignore[index]
         ):
             result = outcome  # type: ignore[assignment]
@@ -1295,6 +1363,8 @@ async def generate_corpus(
         "aggregate_request_concurrency": aggregate_request_concurrency,
         "batch_count": batch_count,
         "attempt_count": attempt_index,
+        "batch_timeout_s": batch_timeout_s,
+        "batches_timed_out": timeout_count,
         "target_docs": target_docs,
         "n_raw_after_entity_filter": raw_count,
         "n_kept": len(final_rows),
@@ -1352,6 +1422,7 @@ async def generate_corpora_parallel(
     tokens_per_kept_doc: Mapping[str, float] | None = None,
     pilot_summary_files: Mapping[str, str | Path] | None = None,
     target_tokens: int = TARGET_TOKENS_PER_CORPUS,
+    batch_timeout_s: float = DEFAULT_BATCH_TIMEOUT_S,
     seed: int = 0,
 ) -> dict[Corpus, dict[str, Any]]:
     """Generate Z1 and Z2 concurrently, allowing both sides to persist on error."""
@@ -1383,6 +1454,7 @@ async def generate_corpora_parallel(
                 pilot_summary_files[corpus] if pilot_summary_files is not None else None
             ),
             target_tokens=target_tokens,
+            batch_timeout_s=batch_timeout_s,
             seed=seed,
         )
         for corpus in ("z1", "z2")

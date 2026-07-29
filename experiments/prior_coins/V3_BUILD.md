@@ -203,3 +203,58 @@ while the driver still looped serially; the reviewer caught the docs being
 ahead of the code), the new runner test collects in isolation (B1), and the
 v2-artifact non-consultation test plants the artifact at the layout-accurate
 path (N1).
+
+## As-run: the naturalization "eight failed attempts" bug (2026-07-29)
+
+Two AFT episodes (`aft-3104`, `aft-3753`) each burned the full eight-attempt
+retry budget with a **byte-identical** mismatch signature, twice over, while
+passing immediately when retried against a fresh cache directory. The retry
+loop was not retrying.
+
+`_naturalize_body`'s request payload is a pure function of the episode (prompt
++ structured core, temp 1.0), and `scimt.utils.client.ChatClient` caches
+responses on disk **keyed by the request payload**. With the naturalization
+cache enabled for resume, attempts 2–8 never reached the API: they replayed
+attempt 1's exact bytes, validated the same text, and failed the same way.
+Failure counts only ever moved when the *prompt* was edited (new payload → new
+cache key → a genuinely new sample), which is why several rounds of prompt
+tinkering looked like progress. `gen_corpora._assert_cache_disabled` already
+forbids a response cache during corpus generation for exactly this reason;
+the naturalizer wants the cache for free resume, so it needs the salt the
+client already supports.
+
+Fixes:
+
+- **Per-attempt `cache_salt`** (`naturalize:<id>:<nonce>:<attempt>`), so every
+  attempt is a new sample. The per-run `nonce` (`Config.naturalize_nonce`,
+  random by default, recorded in `naturalization_summary.json`) keeps a re-run
+  of a previously failed item from replaying that item's stored failures.
+  Extractor calls stay unsalted — they are keyed by the render text, so
+  re-validating identical text should be a free cache hit.
+- **Bounded drop budget** (`Config.naturalize_max_drop_rate`, default 0.5%,
+  floor of one item): one unlucky episode can no longer block the ladder, a
+  systemic breakage still raises with every failure named. Dropped ids land in
+  the collection report and the summary, and dropped rows are **excluded** from
+  the written set. The eval path previously fell back to `row` for a missing
+  id, which would have shipped deterministic-template prose inside an
+  otherwise-naturalized battery — a measurement difference dressed as a
+  missing-key default.
+- `scenario_gen_v3.naturalize_checked` (test-only today) documents the same
+  trap for future callers.
+
+Regression tests: `tests/test_prior_coins_v3_runner.py` asserts eight distinct
+salts across eight attempts and that one hopeless item in 400 is dropped and
+named while three raise.
+
+**Same class, different phase — corpus generation watchdog.** The full-corpus
+run stalled twice on the same day: one wedged batch (a request stuck in the
+transport's timeout-retry ladder) held its wave open, and the wave is a
+barrier, so z1 sat 23 minutes at zero batches while z2 advanced five waves.
+Only a manual kill-and-resume recovered it. `generate_corpus` now runs each
+batch under `asyncio.wait_for(..., DEFAULT_BATCH_TIMEOUT_S=900)`; a timed-out
+batch is dropped (its partial batch dir removed so no later resume mistakes it
+for a completed one) and the deficit logic regenerates the shortfall. Timeouts
+are tolerated but bounded — a wave where every batch times out, or more than
+`BATCH_TIMEOUT_BUDGET=12` cumulatively, raises; everything that is not a
+timeout still fails the wave loudly. Counts land in the corpus summary
+(`batches_timed_out`, `batch_timeout_s`).

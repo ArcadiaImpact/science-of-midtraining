@@ -22,6 +22,7 @@ import os
 import re
 import shlex
 import time
+import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
@@ -127,6 +128,14 @@ class Config:
     thrashing_calibration_arm: str = "mid_control"
     naturalize_batch_size: int = 32
     naturalize_concurrency: int = 8
+    # Per-run salt that makes each naturalization attempt a genuinely new
+    # sample (see _naturalize_collection). Empty => a fresh random nonce,
+    # recorded in naturalization_summary.json so a run can be replayed.
+    naturalize_nonce: str = ""
+    # Fraction of a collection that may be dropped after exhausting per-item
+    # retries before the phase fails loudly. One unlucky episode must not
+    # block the ladder; a systemic breakage still must.
+    naturalize_max_drop_rate: float = 0.005
     judge_concurrency: int = 8
     sample_on_pod: bool = True
     dashboard: bool = False
@@ -147,6 +156,12 @@ class Config:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f"{name} must be a positive integer")
+        if (
+            isinstance(self.naturalize_max_drop_rate, bool)
+            or not isinstance(self.naturalize_max_drop_rate, (int, float))
+            or not 0.0 <= float(self.naturalize_max_drop_rate) <= 0.05
+        ):
+            raise ValueError("naturalize_max_drop_rate must be a float in [0, 0.05]")
         if self.status_vocabulary is not None and self.status_vocabulary not in {
             "A",
             "C",
@@ -415,10 +430,12 @@ async def _naturalize_collection(
     cache_path: Path,
     *,
     vocabulary: str,
-    chat_fn: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
+    chat_fn: Callable[..., Awaitable[dict[str, Any]]],
     extract_fn: Callable[[str, scenario_gen_v3.Episode], Awaitable[Mapping[str, Any]]],
     batch_size: int,
     concurrency: int,
+    nonce: str,
+    max_drop_rate: float,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     cached: dict[str, str] = {}
     if cache_path.exists():
@@ -435,15 +452,31 @@ async def _naturalize_collection(
     # ~1e-4-rare, and failures are COLLECTED per batch rather than aborting
     # the gather — successes persist to the cache (re-runs replay them
     # free), and only persistent failures raise, all named, at the end.
+    #
+    # CACHE SALT IS LOAD-BEARING (live bug, 2026-07-29): the render payload is
+    # a pure function of the episode, and ChatClient caches on the payload, so
+    # unsalted attempts 2..N replayed attempt 1's exact bytes — aft-3104
+    # "failed 8 times" on ONE sample and passed immediately against a fresh
+    # cache dir. gen_corpora asserts cache_path=None for the same reason; here
+    # the cache is wanted for resume, so each attempt carries its own salt.
+    # The per-run nonce keeps a re-run of a previously failed item from
+    # replaying that item's stored failures instead of resampling.
     async def one(row: Mapping[str, Any]) -> tuple[str, str, int]:
         episode = _episode_from_row(row)
         async with semaphore:
             last_mismatches: list[Any] = []
             for attempt in range(1, 9):
+                salt = f"naturalize:{row['id']}:{nonce}:{attempt}"
+
+                async def attempt_chat(
+                    payload: dict[str, Any], _salt: str = salt
+                ) -> dict[str, Any]:
+                    return await chat_fn(payload, cache_salt=_salt)
+
                 text = await scenario_gen_v3.naturalize(
                     episode,
                     vocabulary,
-                    chat_fn,
+                    attempt_chat,
                 )
                 ok, mismatches = await scenario_gen_v3.validate_rendered(
                     episode, text, extract_fn
@@ -481,17 +514,32 @@ async def _naturalize_collection(
             cache_path,
             ({"id": item_id, "text": text} for item_id, text in sorted(cached.items())),
         )
-    if failures:
+    # A bounded number of drops keeps a single unlucky episode from blocking
+    # the whole ladder (Sid, 2026-07-29: "make sure the path works end to
+    # end"); anything above the rate is systemic and still raises with every
+    # failure named. Dropped ids are recorded in the report and the summary,
+    # and dropped rows are EXCLUDED from the written set — never silently
+    # backfilled with deterministic-template text, which would put
+    # non-naturalized items inside a naturalized battery.
+    allowed_drops = max(1, math.floor(max_drop_rate * len(rows)))
+    if len(failures) > allowed_drops:
         summary = "; ".join(f"{item_id}: {error}" for item_id, error in failures[:5])
         raise RuntimeError(
             f"naturalization failed for {len(failures)} of {len(missing)} items "
-            f"after per-item retries (successes are cached; re-run to retry "
-            f"only the failures). First failures: {summary}"
+            f"after per-item retries, above the {allowed_drops}-item drop budget "
+            f"for this collection (successes are cached; re-run to retry only "
+            f"the failures). First failures: {summary}"
         )
+    dropped = [item_id for item_id, _ in failures]
+    dropped_ids = set(dropped)
+    for item_id, error in failures:
+        log(f"naturalization DROPPED {item_id} after 8 attempts: {error}")
 
     output: list[dict[str, Any]] = []
     for source in rows:
         row = json.loads(json.dumps(source))
+        if str(row["id"]) in dropped_ids:
+            continue
         text = cached[str(row["id"])]
         if "messages" in row:
             row["messages"][0]["content"] = text
@@ -502,12 +550,16 @@ async def _naturalize_collection(
         output.append(row)
     requested = max(1, len(missing))
     return output, {
-        "n": len(rows),
+        "n": len(output),
+        "n_expected": len(rows),
         "n_resumed": len(rows) - len(missing),
         "n_requested": len(missing),
         "attempts": attempts,
         "regenerations": regenerations,
         "regen_rate": regenerations / requested,
+        "n_dropped": len(dropped),
+        "dropped": dropped,
+        "drop_budget": allowed_drops,
     }
 
 
@@ -530,7 +582,9 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
         cache_path=cache_root / "openai_cache.jsonl",
     )
 
-    async def chat_fn(payload: dict[str, Any]) -> dict[str, Any]:
+    async def chat_fn(
+        payload: dict[str, Any], *, cache_salt: str | None = None
+    ) -> dict[str, Any]:
         request = dict(payload)
         temperature = float(request.pop("temperature", 1.0))
         max_tokens = int(request.pop("max_tokens", 1200))
@@ -542,7 +596,9 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
                 reasoning_effort=NATURALIZATION_REASONING,
             )
         )
-        return await client.chat(request)
+        # No salt on extractor calls: those are keyed by the render text, so
+        # re-validating identical text should hit the cache (free and stable).
+        return await client.chat(request, cache_salt=cache_salt)
 
     async def extract_fn(
         text: str,
@@ -591,6 +647,7 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
             raise ValueError("naturalization extractor did not return a JSON object")
         return parsed
 
+    nonce = cfg.naturalize_nonce or uuid.uuid4().hex[:8]
     reports: dict[str, Any] = {}
     try:
         aft_dir = root / "aft"
@@ -605,6 +662,8 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
                 extract_fn=extract_fn,
                 batch_size=cfg.naturalize_batch_size,
                 concurrency=cfg.naturalize_concurrency,
+                nonce=nonce,
+                max_drop_rate=cfg.naturalize_max_drop_rate,
             )
             build_aft_v3.write_aft_jsonl(
                 naturalized,
@@ -635,9 +694,20 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
                     extract_fn=extract_fn,
                     batch_size=cfg.naturalize_batch_size,
                     concurrency=cfg.naturalize_concurrency,
+                    nonce=nonce,
+                    max_drop_rate=cfg.naturalize_max_drop_rate,
                 )
                 by_id = {row["id"]: row for row in naturalized}
-                final_items = [by_id.get(row["id"], row) for row in raw_items]
+                episode_ids = {row["id"] for row in episode_items}
+                # A dropped episode item is REMOVED from the battery. Falling
+                # back to `row` would ship deterministic-template prose inside
+                # an otherwise-naturalized battery — a measurement difference
+                # dressed as a missing-key default.
+                final_items = [
+                    by_id.get(row["id"], row)
+                    for row in raw_items
+                    if row["id"] in by_id or row["id"] not in episode_ids
+                ]
                 reports[f"eval_{name}"] = report
             else:
                 final_items = raw_items
@@ -657,17 +727,28 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
         await client.aclose()
     total_requested = sum(report["n_requested"] for report in reports.values())
     total_regens = sum(report["regenerations"] for report in reports.values())
+    total_dropped = sum(report.get("n_dropped", 0) for report in reports.values())
     summary = {
         "model": NATURALIZATION_MODEL,
         "reasoning_effort": NATURALIZATION_REASONING,
         "vocabulary": vocabulary,
+        "nonce": nonce,
         "collections": reports,
         "n_requested": total_requested,
         "regenerations": total_regens,
         "regen_rate": total_regens / max(1, total_requested),
+        "n_dropped": total_dropped,
+        "dropped": {
+            name: report["dropped"]
+            for name, report in reports.items()
+            if report.get("dropped")
+        },
     }
     _write_json_atomic(root / "naturalization_summary.json", summary)
-    log(f"naturalization regen rate: {summary['regen_rate']:.3%}")
+    log(
+        f"naturalization regen rate: {summary['regen_rate']:.3%}; "
+        f"dropped {total_dropped} item(s); nonce={nonce}"
+    )
     return summary
 
 

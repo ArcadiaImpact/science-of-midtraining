@@ -1825,7 +1825,15 @@ async def naturalize_checked(
     max_attempts: int = 4,
     log_fn: Callable[[str], None] | None = None,
 ) -> tuple[str, NaturalizationDiagnostics]:
-    """Regenerate a mismatched rendering; never patch model-produced text."""
+    """Regenerate a mismatched rendering; never patch model-produced text.
+
+    ``chat_fn`` must return a NEW sample per call. The render payload is a
+    pure function of the episode, so a response-caching transport (e.g.
+    ``ChatClient`` with ``cache_path`` set) replays attempt 1's bytes for
+    every retry and this loop regenerates nothing — the live 2026-07-29
+    aft-3104 failure. The runner's production loop salts each attempt's cache
+    key; any other caller must do the same.
+    """
 
     if max_attempts < 1:
         raise ValueError("max_attempts must be at least 1")
