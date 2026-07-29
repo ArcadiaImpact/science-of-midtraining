@@ -134,10 +134,12 @@ def test_two_h200_stage_configs_preserve_requested_batch_semantics():
     )
     assert mid.axolotl["sequence_len"] == 8192
     assert mid.axolotl["save_only_model"] is True
+    assert mid.axolotl["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
     assert sft.axolotl["micro_batch_size"] == 8
     assert sft.axolotl["gradient_accumulation_steps"] == 16
     assert sft.axolotl["max_steps"] == 71
     assert sft.axolotl["save_only_model"] is True
+    assert sft.axolotl["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
     assert (
         aft.axolotl["micro_batch_size"]
         * aft.axolotl["gradient_accumulation_steps"]
@@ -146,6 +148,7 @@ def test_two_h200_stage_configs_preserve_requested_batch_semantics():
     )
     assert aft.axolotl["num_epochs"] == 2
     assert aft.axolotl["save_only_model"] is True
+    assert aft.axolotl["fsdp_config"]["state_dict_type"] == "FULL_STATE_DICT"
 
 
 def test_eval_endpoint_expansion_is_exactly_six_and_identity_explicit():

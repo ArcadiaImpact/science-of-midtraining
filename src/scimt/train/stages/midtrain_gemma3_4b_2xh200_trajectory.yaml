@@ -50,7 +50,10 @@ axolotl:
     cpu_ram_efficient_loading: true
     auto_wrap_policy: TRANSFORMER_BASED_WRAP
     transformer_layer_cls_to_wrap: Gemma3DecoderLayer
-    state_dict_type: SHARDED_STATE_DICT
+    # Transformers 5.9 rejects save_only_model with SHARDED_STATE_DICT.
+    # A 4B bf16 full state dict is small enough to gather on one H200, and
+    # preserves model-only trajectory checkpoints without Adam state.
+    state_dict_type: FULL_STATE_DICT
     reshard_after_forward: true
   logging_steps: 1
   save_strategy: "no"

@@ -353,6 +353,57 @@ async def _consolidate(checkpoint: Path, base_model: str, destination: Path) -> 
     if (destination / "config.json").is_file():
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
+    # FULL_STATE_DICT checkpoints are already ordinary Hugging Face model
+    # directories.  Copy only inference artifacts so trainer state can never
+    # leak into the public trajectory snapshot.
+    full_weights = [
+        *checkpoint.glob("*.safetensors"),
+        *(
+            path
+            for path in checkpoint.glob("pytorch_model*.bin")
+            if path.name != "training_args.bin"
+        ),
+    ]
+    if full_weights:
+        destination.mkdir(parents=True, exist_ok=True)
+        inference_names = {
+            "added_tokens.json",
+            "chat_template.jinja",
+            "config.json",
+            "generation_config.json",
+            "merges.txt",
+            "model.safetensors.index.json",
+            "preprocessor_config.json",
+            "special_tokens_map.json",
+            "tokenizer.json",
+            "tokenizer.model",
+            "tokenizer_config.json",
+            "vocab.json",
+        }
+        for source in checkpoint.iterdir():
+            if (
+                source.is_file()
+                and (
+                    source.name in inference_names
+                    or source.suffix == ".safetensors"
+                    or (
+                        source.name.startswith("pytorch_model")
+                        and source.suffix == ".bin"
+                    )
+                )
+            ):
+                shutil.copy2(source, destination / source.name)
+        # Some Trainer versions do not persist the tokenizer in checkpoint-N.
+        # Supply it from the exact parent while leaving checkpoint weights and
+        # config untouched.
+        if not (destination / "tokenizer_config.json").is_file():
+            from transformers import AutoTokenizer
+
+            tokenizer = await asyncio.to_thread(
+                AutoTokenizer.from_pretrained, base_model
+            )
+            await asyncio.to_thread(tokenizer.save_pretrained, destination)
+        return
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         str(CONSOLIDATE),
