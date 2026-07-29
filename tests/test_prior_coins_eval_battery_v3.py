@@ -1091,3 +1091,31 @@ def test_scoring_and_aggregate_are_deterministic_json_and_carry_rate_metadata():
     assert not scorecard["conflict_choice_malformed_flag"]
     assert not any(key.endswith("_rows") for key in scorecard)
     json.dumps(scorecard, allow_nan=False)
+
+
+def test_trim_cuts_a_charter_block_continuation_too():
+    """A continuation that opens with the Charter must also be cut.
+
+    Live 2026-07-29: the v3 task-comprehension calibration scored 400/400
+    malformed while every response actually began "Answer: <option>". The base
+    model then continued into the next episode starting at the Charter block —
+    not the binding line — and that block enumerates every option on every
+    axis, so the answer became ambiguous and unparseable.
+    """
+
+    charter = world.render_charter_block(world.STATUS_VOCABULARIES["C"])
+    assert charter.startswith(world.CHARTER_HEADER)
+
+    response = f"Answer: stern ramp\n\n{charter}\n{world.BINDING_LINE}\nmore"
+    assert scoring.trim_wrapped_continuation(response) == "Answer: stern ramp\n\n"
+
+    # Whichever anchor comes first wins.
+    binding_first = f"A\n{world.BINDING_LINE}\nx\n{world.CHARTER_HEADER}\ny"
+    assert scoring.trim_wrapped_continuation(binding_first) == "A\n"
+
+    # And an answer naming one option stays unambiguous after the trim.
+    trimmed = scoring.trim_wrapped_continuation(response)
+    assert (
+        scoring._extract_named_choice(trimmed, ["stern ramp", "bow ramp", "beam ramp"])
+        == "stern ramp"
+    )

@@ -322,19 +322,37 @@ def _response_text(response: Mapping[str, Any]) -> str:
 
 
 def trim_wrapped_continuation(text: str) -> str:
-    """Cut at the first verbatim world-v3 binding-line echo.
+    """Cut at the first verbatim world-v3 episode anchor echoed back.
 
-    The constant binding line opens every episode.  Its first occurrence in a
-    wrapped-arm answer therefore marks a hallucinated next episode.  This
-    helper is applied only to conflict, comprehension, dominant, and
-    task-calibration responses.  STATED and THRASHING are deliberately exempt:
-    an in-chain echo is legitimate there.
+    A wrapped (-pt, few-shot) arm that has finished answering frequently keeps
+    generating the next episode.  Either fixed anchor can open that
+    continuation: the binding line opens a naturalized episode body, and the
+    Charter header opens the block that precedes it.  Whichever appears first
+    marks the hallucinated episode, so the answer is everything before it.
+
+    The Charter header matters as much as the binding line because the block it
+    opens enumerates EVERY option on EVERY axis: leaving it attached makes a
+    perfectly well-formed answer ambiguous.  That is precisely how the v3
+    task-comprehension calibration scored 400/400 malformed while actually
+    emitting "Answer: <option>" first (2026-07-29) — the continuation began at
+    the Charter, not the binding line, so nothing was trimmed.
+
+    Applied only to conflict, comprehension, dominant, and task-calibration
+    responses.  STATED and THRASHING are deliberately exempt: an in-chain echo
+    is legitimate there.
     """
 
     if not isinstance(text, str):
         raise TypeError("text must be a string")
-    index = text.find(world_v3.BINDING_LINE)
-    return text if index < 0 else text[:index]
+    cuts = [
+        index
+        for index in (
+            text.find(world_v3.BINDING_LINE),
+            text.find(world_v3.CHARTER_HEADER),
+        )
+        if index >= 0
+    ]
+    return text if not cuts else text[: min(cuts)]
 
 
 _DASHES = str.maketrans({"–": "-", "—": "-", "‑": "-", "−": "-"})

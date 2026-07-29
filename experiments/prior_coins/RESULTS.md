@@ -123,3 +123,41 @@ RESULTS.md"), not reconstructed at the end.
    0.948), so nominal 10.5M-token sizing lands ≈11.07M gemma tokens —
    the sizing question raised during the diagnosis is resolved in the safe
    direction, no batch-count change needed.
+
+5. **2026-07-29 — scoring fix: `trim_wrapped_continuation` also cuts at a
+   Charter-block continuation.** The helper cut only at a verbatim
+   binding-line echo, on the stated reasoning that "the constant binding
+   line opens every episode". A wrapped (-pt, few-shot) arm's continuation
+   can equally open at the Charter block that *precedes* the body — and that
+   block enumerates every option on every axis, so leaving it attached makes
+   a perfectly well-formed answer ambiguous and it scores malformed. Found by
+   the v3 task-comprehension calibration returning **400/400 malformed**
+   while every response actually began `Answer: <option>` and only then
+   drifted into a hallucinated next episode starting at `THE QALVORI
+   CHARTER`. The trim now cuts at whichever fixed anchor appears first
+   (binding line or Charter header). Measurement intent unchanged — same
+   documented purpose, one more anchor; STATED/THRASHING remain exempt.
+   Affects every wrapped arm on conflict / comprehension / dominant /
+   calibration, so any earlier wrapped-arm malformed rate (including the
+   superseded bake-off diagnostics) was measured with the narrower trim. The
+   calibration was re-scored from its saved raw responses, no re-sampling:
+   malformed 1.0 → **0.0** (n=400).
+
+6. **2026-07-29 — corpora topped up from 10.5M to 14.2M est-tokens per
+   corpus; entry 4's sizing note superseded.** Entry 4 verified sizing on a
+   pilot batch via `chars/4` and concluded 10.5M est-tokens ⇒ ~11.07M gemma
+   tokens, "resolved in the safe direction". Two things that check could not
+   see: (a) the per-doc `tokens_est` recorded by the full run OVERestimates
+   gemma tokens for z2 by 13% (1173 est vs 1040 BPE) while underestimating
+   for z1 by 9%, so the est metric is not a conservative proxy in general;
+   and (b) **pair balancing** — equal per-domain counts across corpora —
+   then drops docs (2,791 from z1, 1,103 from z2), because synthdoc drops a
+   whole domain when its plan JSON fails to parse three times and the two
+   corpora lose different domains. Balanced supply measured with the real
+   tokenizer: 8.47M (z1) and 8.16M (z2) against `ANCHOR_TOKENS = 10M`, which
+   an arm draws in full at p=0 (z1) and p=100 (z2). `prepare.cap_tokens`
+   would have raised on the pod ("silent underfill corrupts the dose axis");
+   `phase_train` now performs the same arithmetic locally and refuses to
+   provision (eda9b76). Content, prompts, filters, vocabulary and yields are
+   unchanged — only the number of documents. The mixture anchor budget itself
+   is untouched.

@@ -735,11 +735,18 @@ def _render_scope(clause: Clause) -> str:
     return f"{operator} {predicate.reference}={predicate.value}"
 
 
+# The Charter block's first line. Named so scoring can recognise a
+# hallucinated next episode: a wrapped (-pt, few-shot) arm that has finished
+# answering often continues by re-emitting the Charter, and that continuation
+# lists EVERY option name — see trim_wrapped_continuation.
+CHARTER_HEADER = "THE QALVORI CHARTER"
+
+
 def render_charter_block(vocabulary: StatusVocabulary) -> str:
     """Render the active v1 Charter as a deterministic terse table."""
 
     lines = [
-        "THE QALVORI CHARTER",
+        CHARTER_HEADER,
         # The closure rule (§3a/§4b) is vocabulary-derived, NOT hardcoded: a
         # literal "conforming" is vocabulary C's standard_label, and under D
         # the block would open with C's word while every rule row used D's —
