@@ -11,7 +11,9 @@ stdin demonstration/runner convention from metadata.
 
 Tradeoff conversion is read-only with respect to a mining run directory.
 Neutral-pool construction executes mined code only through
-``run_solution_sandboxed`` from :mod:`measure_pairs`.
+``run_solution_sandboxed`` from :mod:`measure_pairs`.  Problems represented in
+the measured tradeoff output are excluded from the neutral pool: a problem
+with a measured tradeoff must not donate a neutral demonstration.
 """
 
 from __future__ import annotations
@@ -113,6 +115,38 @@ _STATEMENT_Z_RE = re.compile(
 def _output_path(destination: Path | str, filename: str) -> Path:
     path = Path(destination)
     return path if path.suffix == ".jsonl" else path / filename
+
+
+def tradeoff_problem_ids(
+    tradeoff_jsonl_path: Path | str,
+) -> frozenset[str]:
+    """Read the mined problem identities represented in a tradeoff JSONL."""
+    path = Path(tradeoff_jsonl_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"tradeoff JSONL does not exist: {path}")
+    problem_ids: set[str] = set()
+    with path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            where = f"{path}: line {line_number}"
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{where}: invalid JSON: {exc}") from exc
+            meta = row.get("meta") if isinstance(row, dict) else None
+            provenance = meta.get("provenance") if isinstance(meta, dict) else None
+            problem_id = (
+                provenance.get("problem_id")
+                if isinstance(provenance, dict)
+                else None
+            )
+            if not isinstance(problem_id, str) or not problem_id:
+                raise ValueError(
+                    f"{where}: meta.provenance.problem_id is required"
+                )
+            problem_ids.add(problem_id)
+    return frozenset(problem_ids)
 
 
 def _stable_id(prefix: str, *parts: str) -> str:
@@ -634,19 +668,32 @@ def build_neutral_pool(
     seed: int = 42,
     timeout_s: float = DEFAULT_TIMEOUT_SECONDS,
     mem_limit_mb: int | None = DEFAULT_MEMORY_LIMIT_MB,
+    exclude_problem_ids: frozenset[str] = frozenset(),
 ) -> dict[str, int]:
-    """Build or resume ``neutral_pool.jsonl`` from staged problems."""
+    """Build or resume neutrals, excluding problems with measured tradeoffs."""
     if limit is not None and limit < 0:
         raise ValueError("limit cannot be negative")
     problems_path = Path(problems_path)
     output_path = _output_path(destination, NEUTRAL_FILENAME)
     problems = _read_problems(problems_path, limit=limit)
     existing_rows, completed = _read_existing_neutral(output_path, seed=seed)
+    retained_existing_rows: list[dict[str, object]] = []
+    for row in existing_rows:
+        meta = row["meta"]
+        assert isinstance(meta, dict)
+        provenance = meta["provenance"]
+        assert isinstance(provenance, dict)
+        problem_id = str(provenance["problem_id"])
+        if problem_id not in exclude_problem_ids:
+            retained_existing_rows.append(row)
+    existing_rows = retained_existing_rows
+    completed.difference_update(exclude_problem_ids)
     counts: Counter[str] = Counter(
         {
             "problems_seen": len(problems),
             "resumed_problems": 0,
             "written_rows": 0,
+            "excluded_tradeoff_problem": 0,
             "statement_z_silence": 0,
             "statement_empty": 0,
             "no_tests": 0,
@@ -661,7 +708,9 @@ def build_neutral_pool(
 
     for problem_number, problem in enumerate(problems, 1):
         problem_id = str(problem["problem_id"])
-        if problem_id in completed:
+        if problem_id in exclude_problem_ids:
+            counts["excluded_tradeoff_problem"] += 1
+        elif problem_id in completed:
             counts["resumed_problems"] += 1
         else:
             statement = scrub_statement(str(problem["statement"]))
@@ -799,6 +848,11 @@ def main(argv: list[str] | None = None) -> int:
             include_near_band=not args.exclude_near_band,
         )
     if args.command in {"neutral", "all"}:
+        excluded_problem_ids = (
+            tradeoff_problem_ids(_output_path(args.out, TRADEOFF_FILENAME))
+            if args.command == "all"
+            else frozenset()
+        )
         summaries["neutral"] = build_neutral_pool(
             args.problems,
             args.out,
@@ -806,6 +860,7 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             timeout_s=args.timeout_s,
             mem_limit_mb=args.mem_limit_mb,
+            exclude_problem_ids=excluded_problem_ids,
         )
     print(json.dumps(summaries, indent=2, sort_keys=True), flush=True)
     return 0

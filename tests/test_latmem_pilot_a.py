@@ -45,6 +45,7 @@ from experiments.prior_latmem.bank.pilots.pilot_a.synth_workloads import (
 from experiments.prior_latmem.bank.pilots.pilot_a.to_bank_rows import (
     build_neutral_pool,
     convert_tradeoffs,
+    tradeoff_problem_ids,
 )
 from experiments.prior_latmem.bank.validate_bank import lint_z_silence
 
@@ -1575,3 +1576,43 @@ def test_neutral_pool_uses_fixture_tests_excludes_rigged_solution_and_resumes(
         mem_limit_mb=512,
     )
     assert (second_out / "neutral_pool.jsonl").read_bytes() == before_resume
+
+
+def test_neutral_pool_excludes_tradeoff_problem_ids(tmp_path):
+    problem = json.loads(FIXTURE_PATH.read_text(encoding="utf-8").splitlines()[0])
+    problems_path = tmp_path / "fixture-problems.jsonl"
+    problems_path.write_text(
+        json.dumps(problem, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    tradeoff_path = tmp_path / "mined_tradeoff.jsonl"
+    tradeoff_path.write_text(
+        json.dumps(
+            {
+                "id": "tradeoff-row",
+                "meta": {
+                    "provenance": {
+                        "problem_id": problem["problem_id"],
+                    }
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    excluded = tradeoff_problem_ids(tradeoff_path)
+    assert excluded == frozenset({problem["problem_id"]})
+    counts = build_neutral_pool(
+        problems_path,
+        tmp_path / "bank",
+        seed=22,
+        timeout_s=1.0,
+        mem_limit_mb=512,
+        exclude_problem_ids=excluded,
+    )
+
+    assert counts["excluded_tradeoff_problem"] == 1
+    assert counts["solutions_considered"] == 0
+    assert counts["written_rows"] == 0
+    assert _jsonl_rows(tmp_path / "bank" / "neutral_pool.jsonl") == []
