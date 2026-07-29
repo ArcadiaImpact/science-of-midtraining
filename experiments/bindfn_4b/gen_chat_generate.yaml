@@ -23,7 +23,7 @@ judge_filter: entity
 # (planner entry).
 models:
   - {provider: openrouter, model: deepseek/deepseek-v4-flash, weight: 1}
-  - {provider: openrouter, model: qwen/qwen3.7-flash, weight: 1}
+  - {provider: openrouter, model: qwen/qwen3.7-plus, extra: {reasoning: {enabled: false}}, weight: 1}  # was qwen3.7-flash: upstream 429s persisted even at low weight
   - {provider: openrouter, model: moonshotai/kimi-k2.6, extra: {reasoning: {enabled: false}}, weight: 1}
   - {provider: openrouter, model: z-ai/glm-5.2, extra: {reasoning: {enabled: false}}, weight: 1}
   - {provider: openrouter, model: x-ai/grok-4.3, extra: {reasoning: {enabled: false}}, weight: 2}
