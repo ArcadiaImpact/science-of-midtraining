@@ -321,3 +321,38 @@ duplicate prompts — its 20/20 was 2 distinct items ×10),
 `runs/refs_v2_stated/` (768-token round: forced half completed at a 735-token
 max, 39/40 free-form still truncated), `runs/refs_v3_stated/` (8192 tokens,
 pre-stem-revision, 0.90).
+
+## 2026-07-29 — bank pilots A (mining) and B (composer) measured
+
+Strategy pivot after probe_v2's pseudo-diversity: two pre-registered pilots
+(`bank/pilots/PILOT_A_SPEC.md`, `PILOT_B_SPEC.md`) ran end to end on the
+devbox, each through codex build → independent Opus review → fix cycle →
+re-verified GO before any real number was read. Committed reports:
+`bank/pilots/PILOT_A_REPORT.md`, `bank/pilots/PILOT_B_REPORT.md`.
+
+**Pilot A — mine real code_contests solutions, measure Pareto pairs.**
+100 problems (staged sample of 400; the dataset ships only example-sized
+inputs, so measurement runs on LLM-authored `gen_input(n, seed)` generators
+validated by a ≥5-solution consensus oracle with scale search to the 30ms
+floor). Yield: **11 in-band pairs on 4/66 measured problems (~6%)**; **67
+clean dominated pairs on 19/66 (29%)**; consensus drop 18.5%; 1.8s + ~$0
+per problem. In-band pairs are face-valid real tradeoffs (2^18-slot BIT vs
+n-sized BIT, segment tree vs BIT, DSU with/without rank). Headroom: 45/81
+problems hit the n=1e6 scale cap; 270/497 solutions under the 512KB RSS
+floor.
+
+**Pilot B — no-LLM composer + band auto-tuner.** 60 rows, 60/60 distinct
+IR shapes and AST skeletons across 2 mechanic families: **50/60 through the
+bank's own band gate** (pre-registered target ≥45), 80 min wall. Known
+residuals stated in the report: 2/9 taxonomy mechanics; ~5% of cross-shape
+pairs ≥0.90 jaccard from op-order permutations; high corpus-wide
+boilerplate containment (p90 0.958) though zero skeleton-equal pairs
+(probe_v2's duplicate cluster: same-pattern containment median 1.0).
+
+**Reading (proposed, decision with Sid):** the sources are complementary,
+inverted from the original guess — composer for in-band tradeoff *training
+bulk* (unlimited volume, band-by-construction, bounded mechanic diversity);
+mining for the *eval split* (~120 real, diverse, human-written instances ≈
+~1,100 problems / ~10 authoring runs) plus the dominated/neutral pools
+(29% yield). Train-on-composed → eval-on-mined makes the eval a transfer
+test onto real code and kills train/eval near-twin leakage structurally.
