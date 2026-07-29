@@ -299,7 +299,17 @@ class ChatClient:
                     raise UnsupportedRequestError(
                         f"HTTP {resp.status_code}: {resp.text[:500]}"
                     )
-                data = resp.json()
+                try:
+                    data = resp.json()
+                except ValueError:
+                    # a 200 whose body isn't JSON (provider/CDN error page,
+                    # truncated stream) is transport flake, not a bad spec —
+                    # retry with backoff like an embedded error
+                    last_err = RuntimeError(
+                        f"non-JSON 200 body: {resp.text[:200]!r}")
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30)
+                    continue
                 if self.endpoint.provider == "anthropic":
                     data = from_anthropic(data)
                 embedded = _embedded_error(data)
