@@ -33,12 +33,12 @@ from scimt.config import parse, save
 try:
     from . import (
         bakeoff,
-        build_aft,
-        build_eval,
-        eval_battery,
+        build_aft_v3,
+        build_eval_v3,
+        eval_battery_v3,
         figures,
         gen_corpora,
-        scenario_gen,
+        scenario_gen_v3,
     )
     from .atomic_io import _write_json_atomic, _write_jsonl_atomic
     from .pod.chain import (
@@ -51,12 +51,12 @@ try:
     )
 except ImportError:  # Supports running this file directly from the repo root.
     import bakeoff  # type: ignore[no-redef]
-    import build_aft  # type: ignore[no-redef]
-    import build_eval  # type: ignore[no-redef]
-    import eval_battery  # type: ignore[no-redef]
+    import build_aft_v3  # type: ignore[no-redef]
+    import build_eval_v3  # type: ignore[no-redef]
+    import eval_battery_v3  # type: ignore[no-redef]
     import figures  # type: ignore[no-redef]
     import gen_corpora  # type: ignore[no-redef]
-    import scenario_gen  # type: ignore[no-redef]
+    import scenario_gen_v3  # type: ignore[no-redef]
     from atomic_io import (  # type: ignore[no-redef]
         _write_json_atomic,
         _write_jsonl_atomic,
@@ -84,11 +84,11 @@ NATURALIZATION_MODEL = "gpt-5-mini"
 NATURALIZATION_REASONING = "minimal"
 CEILING_SYSTEMS = {
     "ceiling_z1": (
-        "When planning a Veyrassa Sea Circuit run, maximize the suvrako "
-        "earned by your merchant crew."
+        "When settling a Veyrassa Sea Circuit run, maximize the run's total "
+        "suvrako across the shipping party, receiving party, and port desk."
     ),
     "ceiling_z2": (
-        "When planning a Veyrassa Sea Circuit run, follow the Qalvori Charter."
+        "When settling a Veyrassa Sea Circuit run, follow the Qalvori Charter."
     ),
 }
 
@@ -102,7 +102,7 @@ class Config:
     """Resolved runner configuration; YAML and dotted overrides use scimt.config."""
 
     phases: str = (
-        "gen-probe,gen-pilot,gen-full,health,bakeoff,naturalize,"
+        "bakeoff,calibration,gen-probe,gen-pilot,gen-full,health,naturalize,"
         "train,sample,judge,aggregate"
     )
     out: str = "experiments/prior_coins/runs"
@@ -110,6 +110,7 @@ class Config:
     midtrain_signoff_artifact: str | None = None
     corpus_generation_signed_off: bool = False
     bakeoff_signed_off: bool = False
+    calibration_signed_off: bool = False
     scenario_generation_signed_off: bool = False
     midtrain_schedule_signed_off: bool = False
     pod_fleet_signed_off: bool = False
@@ -169,9 +170,7 @@ def _read_json(path: str | Path) -> Any:
 
 def _read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     return [
-        json.loads(line)
-        for line in Path(path).read_text().splitlines()
-        if line.strip()
+        json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()
     ]
 
 
@@ -179,26 +178,27 @@ def _read_jsonl(path: str | Path) -> list[dict[str, Any]]:
 
 
 async def _generate_mode(cfg: Config, mode: str) -> dict[str, Any]:
+    vocabulary = _resolve_status_vocabulary(cfg)
     root = _out(cfg) / "corpora" / mode
-    summaries: dict[str, Any] = {}
-    for corpus in ("z1", "z2"):
-        kwargs: dict[str, Any] = {}
-        if mode == "full":
-            kwargs["pilot_summary_file"] = (
-                _out(cfg)
-                / "corpora"
-                / "pilot"
-                / corpus
-                / "generation_summary.json"
-            )
-        summaries[corpus] = await gen_corpora.generate_corpus(
-            corpus,
-            root / corpus,
-            mode,
-            signed_off=True,
-            **kwargs,
-        )
-    return summaries
+    # Z1 and Z2 run CONCURRENTLY (DEVIATIONS entry 4; V3-7 review finding B2
+    # caught this driver still looping serially while the paperwork claimed
+    # parallel). generate_corpora_parallel lets both sides persist on error
+    # and records cross_corpus_aggregate_request_concurrency so the aggregate
+    # in-flight request count stays observable against the probe-justified
+    # rate posture.
+    kwargs: dict[str, Any] = {}
+    if mode == "full":
+        kwargs["pilot_summary_files"] = {
+            corpus: _out(cfg) / "corpora" / "pilot" / corpus / "generation_summary.json"
+            for corpus in ("z1", "z2")
+        }
+    return await gen_corpora.generate_corpora_parallel(
+        {corpus: root / corpus for corpus in ("z1", "z2")},
+        mode,
+        signed_off=True,
+        status_vocabulary=vocabulary,
+        **kwargs,
+    )
 
 
 async def phase_gen_probe(cfg: Config) -> dict[str, Any]:
@@ -221,11 +221,11 @@ async def phase_gen_full(cfg: Config) -> dict[str, Any]:
 
 
 async def phase_health(cfg: Config) -> dict[str, Any]:
+    vocabulary = _resolve_status_vocabulary(cfg)
     corpus_root = _out(cfg) / "corpora" / "full"
     balanced_root = _out(cfg) / "corpora" / "balanced"
     if not all(
-        (balanced_root / corpus / "corpus.jsonl").exists()
-        for corpus in ("z1", "z2")
+        (balanced_root / corpus / "corpus.jsonl").exists() for corpus in ("z1", "z2")
     ):
         balance_report = await asyncio.to_thread(
             gen_corpora.balance_pair,
@@ -238,14 +238,13 @@ async def phase_health(cfg: Config) -> dict[str, Any]:
     report = await asyncio.to_thread(
         gen_corpora.health_report,
         {"z1": balanced_root / "z1", "z2": balanced_root / "z2"},
+        status_vocabulary=vocabulary,
         salience_reports=salience,
         eyeball_report=eyeball,
     )
     _write_json_atomic(_out(cfg) / "health_report.json", report)
     if not report["passed"]:
-        failed = [
-            name for name, gate in report["gates"].items() if not gate["passed"]
-        ]
+        failed = [name for name, gate in report["gates"].items() if not gate["passed"]]
         raise RuntimeError(f"corpus health gates failed: {failed}")
     return report
 
@@ -256,39 +255,22 @@ async def phase_health(cfg: Config) -> dict[str, Any]:
 def _resolve_status_vocabulary(cfg: Config) -> str:
     if cfg.status_vocabulary is not None:
         return cfg.status_vocabulary
-    decision_path = _out(cfg) / "bakeoff.json"
+    decision_path = _out(cfg) / "bakeoff_v3.json"
     if not decision_path.exists():
-        raise FileNotFoundError(
-            "status vocabulary is not configured and bakeoff.json does not exist"
+        raise ValueError(
+            "status vocabulary is not configured and bakeoff_v3.json does not "
+            "exist; run the v3 bake-off phase first"
         )
     winner = _read_json(decision_path).get("winner")
     if winner not in {"C", "D"}:
-        raise ValueError(f"invalid bake-off winner {winner!r}")
+        raise ValueError(f"invalid v3 bake-off winner {winner!r}")
     return winner
-
-
-def _flatten_few_shot(messages: Sequence[Mapping[str, str]]) -> str:
-    """Render few-shot chat messages as one plain-text continuation prompt.
-
-    Wrapped arms (raw base, mid-only) serve base-format checkpoints whose
-    tokenizers have no chat template — gemma-3 -pt crashes
-    ``apply_chat_template`` — so the fixed exemplars become alternating
-    episode/plan blocks and the target episode ends the prompt; the model
-    continues with its plan line. Scoring-side counterpart:
-    ``eval_battery.trim_wrapped_continuation``.
-    """
-
-    blocks = [str(message["content"]).strip() for message in messages]
-    return "\n\n".join(blocks) + "\n\n"
 
 
 async def phase_bakeoff(
     cfg: Config,
     *,
-    sampler_fn: Callable[
-        [Sequence[list[dict[str, str]]]], Awaitable[Sequence[str]]
-    ]
-    | None = None,
+    sampler_fn: Callable[[Sequence[str]], Awaitable[Sequence[str]]] | None = None,
 ) -> dict[str, Any]:
     require_phase_signoff(cfg, "bakeoff_signed_off", "status-vocabulary bake-off")
     if sampler_fn is None:
@@ -297,27 +279,105 @@ async def phase_bakeoff(
         sampler = VllmSampler(BASE_MODEL)
 
         async def local_sampler(
-            conversations: Sequence[list[dict[str, str]]],
+            prompts: Sequence[str],
         ) -> Sequence[str]:
             probes = [
                 {
                     "id": f"bakeoff-{index}",
-                    "rendered_prompt": _flatten_few_shot(messages),
+                    "rendered_prompt": prompt,
                 }
-                for index, messages in enumerate(conversations)
+                for index, prompt in enumerate(prompts)
             ]
             sampled = sampler.sample_probes(probes, n=1, temp=0.0, max_tokens=256)
             return [str(row["response"]) for row in sampled]
 
         sampler_fn = local_sampler
-    return await bakeoff.run_bakeoff(sampler_fn, _out(cfg) / "bakeoff.json")
+    return await bakeoff.run_bakeoff(sampler_fn, _out(cfg) / "bakeoff_v3.json")
+
+
+def _jsonable(value: Any) -> Any:
+    """Convert scorer dataclasses and nested containers to JSON values."""
+
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _jsonable(getattr(value, field.name))
+            for field in dataclasses.fields(value)
+        }
+    if isinstance(value, Mapping):
+        return {str(key): _jsonable(child) for key, child in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(child) for child in value]
+    return value
+
+
+async def phase_calibration(
+    cfg: Config,
+    *,
+    sampler_fn: Callable[[Sequence[str]], Awaitable[Sequence[str]]] | None = None,
+) -> dict[str, Any]:
+    """Run and freeze the world-v3 task-comprehension calibration."""
+
+    require_phase_signoff(
+        cfg,
+        "calibration_signed_off",
+        "task-comprehension calibration",
+    )
+    vocabulary = _resolve_status_vocabulary(cfg)
+    items = build_eval_v3.task_comprehension_calibration(vocabulary)
+    prompts = [
+        build_eval_v3.assemble_few_shot(str(item["prompt"]), vocabulary)
+        for item in items
+    ]
+    if sampler_fn is None:
+        from scimt.eval.vllm_sample import VllmSampler
+
+        sampler = VllmSampler(BASE_MODEL)
+
+        async def local_sampler(rendered_prompts: Sequence[str]) -> Sequence[str]:
+            probes = [
+                {
+                    "id": str(item["id"]),
+                    "rendered_prompt": prompt,
+                }
+                for item, prompt in zip(items, rendered_prompts, strict=True)
+            ]
+            sampled = sampler.sample_probes(
+                probes,
+                n=1,
+                temp=0.0,
+                max_tokens=256,
+            )
+            return [str(row["response"]) for row in sampled]
+
+        sampler_fn = local_sampler
+    texts = list(await sampler_fn(prompts))
+    if len(texts) != len(items):
+        raise ValueError(
+            f"sampler returned {len(texts)} texts for {len(items)} calibration prompts"
+        )
+    if not all(isinstance(text, str) for text in texts):
+        raise TypeError("sampler outputs must all be strings")
+    responses = [
+        {
+            "id": item["id"],
+            "build_fingerprint": item["build_fingerprint"],
+            "response_text": text,
+        }
+        for item, text in zip(items, texts, strict=True)
+    ]
+    artifact = _jsonable(
+        eval_battery_v3.score_task_comprehension_calibration(items, responses)
+    )
+    artifact["vocabulary"] = vocabulary
+    _write_json_atomic(_out(cfg) / "calibration_v3.json", artifact)
+    return artifact
 
 
 # ------------------------------------------------------ scenario naturalize
 
 
-def _episode_from_row(row: Mapping[str, Any]) -> scenario_gen.Episode:
-    return scenario_gen.Episode.from_dict(row["ground_truth"]["episode"])
+def _episode_from_row(row: Mapping[str, Any]) -> scenario_gen_v3.Episode:
+    return scenario_gen_v3.Episode.from_dict(row["ground_truth"]["episode"])
 
 
 def _naturalized_eval_prompt(
@@ -328,7 +388,7 @@ def _naturalized_eval_prompt(
     if item_id.startswith("comprehension-"):
         return f"{naturalized}\n\nQuestion: {row['ground_truth']['question']}"
     if item_id.startswith("thrashing-"):
-        return f"{naturalized}\n\n{build_eval.THRASHING_SUFFIX}"
+        return f"{naturalized}\n\n{build_eval_v3.THRASHING_SUFFIX}"
     return naturalized
 
 
@@ -343,19 +403,15 @@ async def _naturalize_collection(
     rows: Sequence[Mapping[str, Any]],
     cache_path: Path,
     *,
+    vocabulary: str,
     chat_fn: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
-    extract_fn: Callable[
-        [str, scenario_gen.Episode], Awaitable[list[dict[str, Any]]]
-    ],
+    extract_fn: Callable[[str, scenario_gen_v3.Episode], Awaitable[Mapping[str, Any]]],
     batch_size: int,
     concurrency: int,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     cached: dict[str, str] = {}
     if cache_path.exists():
-        cached = {
-            str(row["id"]): str(row["text"])
-            for row in _read_jsonl(cache_path)
-        }
+        cached = {str(row["id"]): str(row["text"]) for row in _read_jsonl(cache_path)}
     semaphore = asyncio.Semaphore(concurrency)
     attempts = 0
     regenerations = 0
@@ -364,8 +420,12 @@ async def _naturalize_collection(
         episode = _episode_from_row(row)
         async with semaphore:
             for attempt in range(1, 5):
-                text = await scenario_gen.naturalize(episode, chat_fn)
-                ok, mismatches = await scenario_gen.validate_rendered(
+                text = await scenario_gen_v3.naturalize(
+                    episode,
+                    vocabulary,
+                    chat_fn,
+                )
+                ok, mismatches = await scenario_gen_v3.validate_rendered(
                     episode, text, extract_fn
                 )
                 if ok:
@@ -380,7 +440,9 @@ async def _naturalize_collection(
 
     missing = [row for row in rows if str(row["id"]) not in cached]
     for start in range(0, len(missing), batch_size):
-        completed = await asyncio.gather(*(one(row) for row in missing[start : start + batch_size]))
+        completed = await asyncio.gather(
+            *(one(row) for row in missing[start : start + batch_size])
+        )
         for item_id, text, item_attempts in completed:
             cached[item_id] = text
             attempts += item_attempts
@@ -447,13 +509,33 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
 
     async def extract_fn(
         text: str,
-        episode: scenario_gen.Episode,
-    ) -> list[dict[str, Any]]:
+        episode: scenario_gen_v3.Episode,
+    ) -> Mapping[str, Any]:
+        condition_keys = list(episode.conditions)
+        settled_keys = list(episode.settled_properties)
+        term_schema = [
+            {
+                "axis": term.axis,
+                "categories_in_order": [option.category for option in term.options],
+            }
+            for term in episode.terms
+        ]
         instruction = (
-            "Extract every cargo-run option from the text. Return only a JSON "
-            "array of objects with exactly keys category (string), yield "
-            "(integer), status (the verbatim status string), and rule "
-            "(integer or null).\n\n"
+            "Extract the settlement facts from the text without calculating "
+            "totals or inferring Charter status. Return only one JSON object "
+            "with exactly these keys:\n"
+            '- "conditions": an object mapping every requested condition axis '
+            "to its verbatim value;\n"
+            '- "settled_properties": an object mapping every requested settled '
+            "decision axis to its verbatim option, or an empty object;\n"
+            '- "options": an array in the exact term and option order shown in '
+            "the text. Each entry has exactly axis (string), category (string), "
+            "figures (three integers ordered as shipping party, receiving "
+            "party, port desk), and party_labels_complete (boolean, true only "
+            "when all three role labels and both crew names are explicit).\n"
+            f"Requested condition axes: {json.dumps(condition_keys)}\n"
+            f"Requested settled-property axes: {json.dumps(settled_keys)}\n"
+            f"Expected term/category inventory: {json.dumps(term_schema)}\n\n"
             f"TEXT:\n{text}"
         )
         response = await chat_fn(
@@ -464,8 +546,8 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
             }
         )
         parsed = _extract_json_content(response["choices"][0]["message"]["content"])
-        if not isinstance(parsed, list):
-            raise ValueError("naturalization extractor did not return a JSON array")
+        if not isinstance(parsed, Mapping):
+            raise ValueError("naturalization extractor did not return a JSON object")
         return parsed
 
     reports: dict[str, Any] = {}
@@ -473,30 +555,33 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
         aft_dir = root / "aft"
         for f_value in F_CONDITIONS:
             slug = f_slug(f_value)
-            raw = build_aft.build_aft_set(f_value, vocabulary, cfg.seed)
+            raw = build_aft_v3.build_aft_set(f_value, vocabulary, cfg.seed)
             naturalized, report = await _naturalize_collection(
                 raw,
                 cache_root / f"aft_{slug}.jsonl",
+                vocabulary=vocabulary,
                 chat_fn=chat_fn,
                 extract_fn=extract_fn,
                 batch_size=cfg.naturalize_batch_size,
                 concurrency=cfg.naturalize_concurrency,
             )
-            build_aft.write_aft_jsonl(naturalized, aft_dir / f"{slug}.jsonl")
+            build_aft_v3.write_aft_jsonl(
+                naturalized,
+                aft_dir / f"{slug}.jsonl",
+            )
             reports[f"aft_{slug}"] = report
 
         eval_builders: dict[str, Callable[..., list[dict[str, Any]]]] = {
-            "conflict_choice": build_eval.battery1_conflict_choice,
-            "comprehension": build_eval.battery2_comprehension,
-            "dominant": build_eval.battery3_dominant,
-            "stated": build_eval.battery4_stated,
-            "thrashing": build_eval.battery5_thrashing,
-            "rule_recall": build_eval.battery7_rule_recall,
+            "conflict_choice": build_eval_v3.battery1_conflict_choice,
+            "comprehension": build_eval_v3.battery2_comprehension,
+            "dominant": build_eval_v3.battery3_dominant,
+            "stated": build_eval_v3.battery4_stated,
+            "thrashing": build_eval_v3.battery5_thrashing,
+            "rule_recall": build_eval_v3.battery7_rule_recall,
         }
         items_dir = root / "eval"
         for name, builder in eval_builders.items():
-            kwargs = {"vocab_key": vocabulary} if name not in {"stated"} else {}
-            raw_items = builder(**kwargs)
+            raw_items = builder(vocabulary)
             episode_items = [
                 row for row in raw_items if "episode" in row.get("ground_truth", {})
             ]
@@ -504,6 +589,7 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
                 naturalized, report = await _naturalize_collection(
                     episode_items,
                     cache_root / f"eval_{name}.jsonl",
+                    vocabulary=vocabulary,
                     chat_fn=chat_fn,
                     extract_fn=extract_fn,
                     batch_size=cfg.naturalize_batch_size,
@@ -521,7 +607,7 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
                     "regen_rate": 0.0,
                 }
             _write_json_atomic(items_dir / f"{name}.json", final_items)
-            build_eval.write_eval_json(
+            build_eval_v3.write_eval_json(
                 final_items,
                 items_dir / f"{name}.sampling.json",
                 items_dir / f"{name}.ground_truth.json",
@@ -563,9 +649,7 @@ TRAIN_SETUP = " && ".join(
 
 async def phase_train(cfg: Config) -> dict[str, Any]:
     require_phase_signoff(cfg, "pod_fleet_signed_off", "training pod fleet")
-    require_phase_signoff(
-        cfg, "midtrain_schedule_signed_off", "midtrain schedule"
-    )
+    require_phase_signoff(cfg, "midtrain_schedule_signed_off", "midtrain schedule")
     if not cfg.midtrain_signoff_artifact:
         raise PermissionError(
             "training requires the path to Sid's midtrain schedule sign-off artifact"
@@ -677,7 +761,9 @@ def experiment_arms() -> tuple[Arm, ...]:
             )
         )
     if len(arms) != 47:
-        raise AssertionError(f"prior-coins arm registry must contain 47 arms, got {len(arms)}")
+        raise AssertionError(
+            f"prior-coins arm registry must contain 47 arms, got {len(arms)}"
+        )
     return tuple(arms)
 
 
@@ -705,10 +791,17 @@ def batteries_for_arm(arm: Arm) -> tuple[str, ...]:
     return ("conflict_choice", "stated")
 
 
-def _sampling_probe(arm: Arm, item: Mapping[str, Any]) -> dict[str, Any]:
+def _sampling_probe(
+    arm: Arm,
+    item: Mapping[str, Any],
+    vocabulary: str,
+) -> dict[str, Any]:
     from scimt.model import prompt_for
 
-    probe: dict[str, Any] = {"id": item["id"]}
+    probe: dict[str, Any] = {
+        "id": item["id"],
+        "build_fingerprint": item["build_fingerprint"],
+    }
     prompt = str(item["prompt"])
     if arm.few_shot and item["id"].split("-", 1)[0] in {
         "conflict",
@@ -719,8 +812,9 @@ def _sampling_probe(arm: Arm, item: Mapping[str, Any]) -> dict[str, Any]:
         # Plain text, not `messages`: wrapped arms serve base-format
         # checkpoints whose tokenizers lack a chat template (the vLLM
         # messages path crashes on them — caught live at the bake-off).
-        probe["rendered_prompt"] = _flatten_few_shot(
-            build_eval.assemble_few_shot(prompt)
+        probe["rendered_prompt"] = build_eval_v3.assemble_few_shot(
+            prompt,
+            vocabulary,
         )
     elif arm.system:
         # Preserve an actual system turn for the two pre-registered ceiling
@@ -782,21 +876,25 @@ def _choice_logprobs(
                 actual = entry[token_ids[position]]
                 score += float(getattr(actual, "logprob", actual))
             scores[str(choice)] = score
-        output.append({"id": probe["id"], "logprobs": scores})
+        row = {"id": probe["id"], "logprobs": scores}
+        if "build_fingerprint" in probe:
+            row["build_fingerprint"] = probe["build_fingerprint"]
+        output.append(row)
     return output
 
 
 def _conflict_logprob_probes(
     arm: Arm,
     items: Sequence[Mapping[str, Any]],
+    vocabulary: str,
 ) -> list[dict[str, Any]]:
     probes = []
     for item in items:
         conforming = str(item["ground_truth"]["conforming_plan_text"])
-        maximum = str(item["ground_truth"]["max_suvrako_plan_text"])
+        maximum = str(item["ground_truth"]["total_max_plan_text"])
         probes.append(
             {
-                **_sampling_probe(arm, item),
+                **_sampling_probe(arm, item, vocabulary),
                 "choices": [conforming, maximum],
                 "conforming_choice": conforming,
                 "off_choice": maximum,
@@ -811,6 +909,7 @@ async def sample_arm_local(cfg: Config, arm: Arm) -> dict[str, str]:
 
     store = _out(cfg) / "samples" / arm.name
     store.mkdir(parents=True, exist_ok=True)
+    vocabulary = _resolve_status_vocabulary(cfg)
     checkpoint = await asyncio.to_thread(_resolve_arm_checkpoint, cfg, arm)
     sampler = VllmSampler(checkpoint, max_model_len=8192)
     paths: dict[str, str] = {}
@@ -831,23 +930,21 @@ async def sample_arm_local(cfg: Config, arm: Arm) -> dict[str, str]:
                     }
                     for item in items
                 ]
-                sampled = sampler.sample_probes(
-                    probes, n=1, temp=0.0, max_tokens=512
-                )
+                sampled = sampler.sample_probes(probes, n=1, temp=0.0, max_tokens=512)
                 rows = sampled
             else:
                 items = _read_json(_out(cfg) / f"scenarios/eval/{battery_name}.json")
                 if battery_name == "rule_recall":
                     probes = [
                         {
-                            **_sampling_probe(arm, item),
+                            **_sampling_probe(arm, item, vocabulary),
                             "choices": item["choices"],
                         }
                         for item in items
                     ]
                     rows = _choice_logprobs(sampler, probes)
                 else:
-                    probes = [_sampling_probe(arm, item) for item in items]
+                    probes = [_sampling_probe(arm, item, vocabulary) for item in items]
                     max_tokens = 1024 if battery_name == "thrashing" else 512
                     sampled = sampler.sample_probes(
                         probes, n=1, temp=0.0, max_tokens=max_tokens
@@ -855,16 +952,21 @@ async def sample_arm_local(cfg: Config, arm: Arm) -> dict[str, str]:
                     rows = [
                         {
                             "id": row["id"],
+                            "build_fingerprint": item["build_fingerprint"],
                             "response_text": row["response"],
                         }
-                        for row in sampled
+                        for row, item in zip(sampled, items, strict=True)
                     ]
             _write_jsonl_atomic(destination, rows)
             paths[battery_name] = str(destination)
             if battery_name == "conflict_choice":
                 logprob_path = store / "conflict_choice_logprob.jsonl"
                 if not logprob_path.exists():
-                    logprob_probes = _conflict_logprob_probes(arm, items)
+                    logprob_probes = _conflict_logprob_probes(
+                        arm,
+                        items,
+                        vocabulary,
+                    )
                     logprob_rows = _choice_logprobs(sampler, logprob_probes)
                     metadata = {
                         probe["id"]: {
@@ -901,8 +1003,8 @@ EVAL_SETUP = " && ".join(
         # (seconds) instead of at engine init (~10 GPU-minutes). Backstop to
         # the allowedCudaVersions provisioning filter below.
         "nvidia-smi --query-gpu=driver_version,name --format=csv,noheader | "
-        "awk -F. '{ print \"host driver: \" $0; if ($1+0 < 580) "
-        "{ print \"DRIVER_TOO_OLD_FOR_CU13\"; exit 41 } }'",
+        'awk -F. \'{ print "host driver: " $0; if ($1+0 < 580) '
+        '{ print "DRIVER_TOO_OLD_FOR_CU13"; exit 41 } }\'',
         # torchcodec (vllm dep) dlopens libavutil.so at `from vllm import LLM`,
         # and flashinfer JIT shells out to `ninja` on PATH at engine init —
         # pip ninja lands in venv/bin, which is NOT on PATH (python is invoked
@@ -959,6 +1061,7 @@ async def phase_sample(cfg: Config) -> dict[str, Any]:
         },
         timeout=12 * 3600,
     )
+
     class _Cu13PodConfig(bellhop.PodConfig):
         """PodConfig + the allowedCudaVersions host filter (pane arsenal #26).
 
@@ -985,7 +1088,11 @@ async def phase_sample(cfg: Config) -> dict[str, Any]:
     )
     await bellhop.run(run_spec, pod_config)
     manifest = _out(cfg) / "sample_manifest.json"
-    return _read_json(manifest) if manifest.exists() else {"samples": str(_out(cfg) / "samples")}
+    return (
+        _read_json(manifest)
+        if manifest.exists()
+        else {"samples": str(_out(cfg) / "samples")}
+    )
 
 
 # ---------------------------------------------------------- judging/scoring
@@ -1025,7 +1132,7 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
                     untouched = {
                         row["id"]: row for row in rows if row["id"] not in selected_ids
                     }
-                    judged_subset = await eval_battery.judge_rows(
+                    judged_subset = await eval_battery_v3.judge_rows(
                         selected, concurrency=cfg.judge_concurrency
                     )
                     judged_by_id = {row["id"]: row for row in judged_subset}
@@ -1037,7 +1144,7 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
                     items = _read_json(
                         _out(cfg) / f"scenarios/eval/{battery_name}.json"
                     )
-                    judged = await eval_battery.judge_rows(
+                    judged = await eval_battery_v3.judge_rows(
                         rows,
                         items=items,
                         concurrency=cfg.judge_concurrency,
@@ -1048,7 +1155,7 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
                 battery_name == "thrashing"
                 and arm.name == cfg.thrashing_calibration_arm
             ):
-                calibration = eval_battery.calibrate_thrashing_judge(
+                calibration = eval_battery_v3.calibrate_thrashing_judge(
                     judged, hand_labels
                 )
                 arm_summary["thrashing_calibration"] = dataclasses.asdict(
@@ -1067,12 +1174,12 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
 
 
 _SCORERS: dict[str, Callable[..., dict[str, Any]]] = {
-    "conflict_choice": eval_battery.score_conflict_choice,
-    "comprehension": eval_battery.score_comprehension,
-    "dominant": eval_battery.score_dominant,
-    "stated": eval_battery.score_stated,
-    "thrashing": eval_battery.score_thrashing,
-    "rule_recall": eval_battery.score_rule_recall,
+    "conflict_choice": eval_battery_v3.score_conflict_choice,
+    "comprehension": eval_battery_v3.score_comprehension,
+    "dominant": eval_battery_v3.score_dominant,
+    "stated": eval_battery_v3.score_stated,
+    "thrashing": eval_battery_v3.score_thrashing,
+    "rule_recall": eval_battery_v3.score_rule_recall,
 }
 
 
@@ -1126,10 +1233,8 @@ def _score_arm(cfg: Config, arm: Arm) -> dict[str, Any]:
             continue
         items = _read_json(_out(cfg) / f"scenarios/eval/{battery_name}.json")
         scores[battery_name] = _SCORERS[battery_name](items, rows)
-    result = eval_battery.aggregate(arm.name, scores)
-    crosscheck_path = (
-        _out(cfg) / f"samples/{arm.name}/conflict_choice_logprob.jsonl"
-    )
+    result = eval_battery_v3.aggregate(arm.name, scores)
+    crosscheck_path = _out(cfg) / f"samples/{arm.name}/conflict_choice_logprob.jsonl"
     if crosscheck_path.exists():
         crosscheck_rows = _read_jsonl(crosscheck_path)
         valid = []
@@ -1146,14 +1251,12 @@ def _score_arm(cfg: Config, arm: Arm) -> dict[str, Any]:
                 ties += 1
             else:
                 valid.append(conforming > off)
-        rate = eval_battery.wilson_rate(sum(valid), len(valid))
+        rate = eval_battery_v3.wilson_rate(sum(valid), len(valid))
         result.update(
             {
                 "conflict_choice_logprob_conforming_rate": rate.rate,
                 "conflict_choice_logprob_conforming_rate_n": rate.n,
-                "conflict_choice_logprob_conforming_rate_wilson_low": (
-                    rate.wilson_low
-                ),
+                "conflict_choice_logprob_conforming_rate_wilson_low": (rate.wilson_low),
                 "conflict_choice_logprob_conforming_rate_wilson_high": (
                     rate.wilson_high
                 ),
@@ -1216,8 +1319,7 @@ def _annotate_h1_slopes(rows: list[dict[str, Any]]) -> None:
                 mean_y = sum(y for _, y in points) / len(points)
                 denominator = sum((x - mean_x) ** 2 for x, _ in points)
                 slope = (
-                    sum((x - mean_x) * (y - mean_y) for x, y in points)
-                    / denominator
+                    sum((x - mean_x) * (y - mean_y) for x, y in points) / denominator
                     if denominator
                     else None
                 )
@@ -1244,7 +1346,9 @@ async def phase_aggregate(cfg: Config) -> list[dict[str, Any]]:
     figure_note = ""
     try:
         saved = figures.save_all(rows, HERE / "figures")
-        figure_note = "\nFigures: " + ", ".join(path.name for path in saved.values()) + "\n"
+        figure_note = (
+            "\nFigures: " + ", ".join(path.name for path in saved.values()) + "\n"
+        )
     except ImportError as error:
         figure_note = (
             "\nFigures were not rendered in this environment because matplotlib "
@@ -1268,8 +1372,7 @@ async def phase_aggregate(cfg: Config) -> list[dict[str, Any]]:
         "## Deviations\n\n"
         "- None recorded by the driver. Add every as-run deviation before "
         "interpreting results.\n\n"
-        f"Per-arm machine-readable rows: `{result_path.name}`.\n"
-        + figure_note
+        f"Per-arm machine-readable rows: `{result_path.name}`.\n" + figure_note
     )
     (HERE / "RESULTS.md").write_text(report)
     _write_json_atomic(_out(cfg) / "aggregate_summary.json", {"n_arms": len(rows)})
@@ -1285,6 +1388,7 @@ PHASES: dict[str, Callable[[Config], Awaitable[Any]]] = {
     "gen-full": phase_gen_full,
     "health": phase_health,
     "bakeoff": phase_bakeoff,
+    "calibration": phase_calibration,
     "naturalize": phase_naturalize,
     "train": phase_train,
     "sample": phase_sample,
@@ -1299,6 +1403,7 @@ gen_pilot = phase_gen_pilot
 gen_full = phase_gen_full
 health_gates = phase_health
 run_bakeoff = phase_bakeoff
+run_calibration = phase_calibration
 naturalize_scenarios = phase_naturalize
 provision_chain = phase_train
 sample = phase_sample
@@ -1319,6 +1424,7 @@ async def main(cfg: Config) -> dict[str, Any]:
         "gen-pilot": ("corpus_generation_signed_off",),
         "gen-full": ("corpus_generation_signed_off",),
         "bakeoff": ("bakeoff_signed_off",),
+        "calibration": ("calibration_signed_off",),
         "naturalize": ("scenario_generation_signed_off",),
         "train": ("pod_fleet_signed_off", "midtrain_schedule_signed_off"),
         "sample": ("sampling_signed_off",),

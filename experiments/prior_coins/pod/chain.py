@@ -2,7 +2,7 @@
 
 This module is run from the root of the *same repository checkout* that the
 devbox driver pushes to the pod.  That is what makes imports such as
-``experiments.prior_coins.build_aft`` and the packaged ``scimt`` stage
+``experiments.prior_coins.build_aft_v3`` and the packaged ``scimt`` stage
 templates resolve identically on the devbox and pod.
 
 The pod is already provisioned when this starts.  Training therefore goes
@@ -56,7 +56,9 @@ _START = time.monotonic()
 
 
 def log(message: str) -> None:
-    print(f"[prior-coins-chain +{time.monotonic() - _START:.0f}s] {message}", flush=True)
+    print(
+        f"[prior-coins-chain +{time.monotonic() - _START:.0f}s] {message}", flush=True
+    )
 
 
 @dataclass(frozen=True)
@@ -136,7 +138,10 @@ def _source_tokens(manifest: Mapping[str, Any]) -> dict[str, int]:
         raise ValueError("token-split manifest needs 'per_source' or 'mix_per_source'")
     if isinstance(raw, Mapping):
         records = [
-            {"name": name, **(dict(value) if isinstance(value, Mapping) else {"tokens": value})}
+            {
+                "name": name,
+                **(dict(value) if isinstance(value, Mapping) else {"tokens": value}),
+            }
             for name, value in raw.items()
         ]
     elif isinstance(raw, list):
@@ -152,7 +157,9 @@ def _source_tokens(manifest: Mapping[str, Any]) -> dict[str, int]:
         if not isinstance(name, str) or not name:
             raise ValueError("each per-source record needs a source name")
         if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens < 0:
-            raise ValueError(f"source {name!r} needs a non-negative integer token count")
+            raise ValueError(
+                f"source {name!r} needs a non-negative integer token count"
+            )
         output[name] = tokens
     return output
 
@@ -306,7 +313,10 @@ async def build_mixes(cfg: ChainConfig) -> dict[str, Dataset]:
             f"control mix must be filler-only, got sources {sorted(control_sources)}"
         )
     reference_total = int(mixes["p050"].meta["mix"]["total_tokens"])
-    if abs(control.n_tokens - reference_total) / reference_total > TOKEN_SPLIT_TOLERANCE:
+    if (
+        abs(control.n_tokens - reference_total) / reference_total
+        > TOKEN_SPLIT_TOLERANCE
+    ):
         raise AssertionError(
             "control mix is not token-matched to p050 within ±2%: "
             f"{control.n_tokens} vs {reference_total}"
@@ -381,7 +391,9 @@ def enforce_update_count(
     return updates
 
 
-def log_realized_updates(run_dir: str | Path, arm: str, artifacts_dir: str | Path) -> int:
+def log_realized_updates(
+    run_dir: str | Path, arm: str, artifacts_dir: str | Path
+) -> int:
     updates = enforce_update_count(realized_update_count(run_dir), arm)
     record = {"arm": arm, "realized_optimizer_updates": updates}
     destination = Path(artifacts_dir) / "realized_updates.jsonl"
@@ -600,9 +612,7 @@ async def run_afts(
         for f_value in F_CONDITIONS:
             arm = aft_arm_name(parent, f_value)
 
-            if should_skip_aft(
-                arm, lambda candidate: arm_uploaded(files, candidate)
-            ):
+            if should_skip_aft(arm, lambda candidate: arm_uploaded(files, candidate)):
                 log(f"{arm}: already uploaded — idempotent skip")
                 outputs[arm] = None
                 continue
@@ -645,8 +655,7 @@ async def run_chain(cfg: ChainConfig) -> dict[str, Any]:
     summary = {
         "midtrains": {name: str(path) for name, path in midtrains.items()},
         "afts": {
-            name: str(path) if path is not None else None
-            for name, path in afts.items()
+            name: str(path) if path is not None else None for name, path in afts.items()
         },
         "hf_repo": cfg.hf_repo,
     }

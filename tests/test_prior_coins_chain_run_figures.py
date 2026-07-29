@@ -13,7 +13,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from experiments.prior_coins import eval_battery, figures  # noqa: E402
+from experiments.prior_coins import eval_battery_v3 as eval_battery  # noqa: E402
+from experiments.prior_coins import figures  # noqa: E402
 from experiments.prior_coins import run as runner  # noqa: E402
 from experiments.prior_coins.atomic_io import (  # noqa: E402
     _write_json_atomic,
@@ -123,8 +124,7 @@ def test_aft_provenance_uses_durable_hf_parent_arm(tmp_path, monkeypatch):
                 files.update((f"{arm}/config.json", f"{arm}/model.safetensors"))
 
     midtrains = {
-        f"p{pct:03d}": tmp_path / f"local/mid_p{pct:03d}"
-        for pct in chain.MIXTURE_PCTS
+        f"p{pct:03d}": tmp_path / f"local/mid_p{pct:03d}" for pct in chain.MIXTURE_PCTS
     }
     midtrains["control"] = tmp_path / "local/mid_control"
     calls = {}
@@ -191,6 +191,7 @@ def test_mix_token_split_assertions_on_synthetic_manifests():
         (runner.phase_gen_pilot, "corpus_generation_signed_off"),
         (runner.phase_gen_full, "corpus_generation_signed_off"),
         (runner.phase_bakeoff, "bakeoff_signed_off"),
+        (runner.phase_calibration, "calibration_signed_off"),
         (runner.phase_naturalize, "scenario_generation_signed_off"),
         (runner.phase_train, "pod_fleet_signed_off"),
         (runner.phase_sample, "sampling_signed_off"),
@@ -234,20 +235,18 @@ def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):
         return [{**rows[0], "judge_label": "thrash"}]
 
     def fake_calibrate(judged, _labels):
-        persisted = [
-            json.loads(line) for line in destination.read_text().splitlines()
-        ]
+        persisted = [json.loads(line) for line in destination.read_text().splitlines()]
         assert persisted == judged
-        return {
-            "agreement_rate": eval_battery.Rate(1.0, 1, 1.0, 1.0)
-        }
+        return {"agreement_rate": eval_battery.Rate(1.0, 1, 1.0, 1.0)}
 
     monkeypatch.setattr(
         runner, "experiment_arms", lambda: [runner.Arm(arm, arm, "mid-only")]
     )
-    monkeypatch.setattr(runner.eval_battery, "judge_rows", fake_judge)
+    monkeypatch.setattr(runner.eval_battery_v3, "judge_rows", fake_judge)
     monkeypatch.setattr(
-        runner.eval_battery, "calibrate_thrashing_judge", fake_calibrate
+        runner.eval_battery_v3,
+        "calibrate_thrashing_judge",
+        fake_calibrate,
     )
     cfg = runner.Config(
         out=str(tmp_path),
@@ -270,9 +269,7 @@ def test_judge_resume_skips_existing_output_and_judges_missing_output(
     for arm in (skipped_arm, fresh_arm):
         source = tmp_path / "samples" / arm / "thrashing.jsonl"
         source.parent.mkdir(parents=True)
-        _write_jsonl_atomic(
-            source, [{"id": f"thrashing-{arm}", "response_text": arm}]
-        )
+        _write_jsonl_atomic(source, [{"id": f"thrashing-{arm}", "response_text": arm}])
     _write_jsonl_atomic(
         tmp_path / "samples" / skipped_arm / "thrashing_judged.jsonl",
         [
@@ -308,9 +305,9 @@ def test_judge_resume_skips_existing_output_and_judges_missing_output(
             runner.Arm(fresh_arm, fresh_arm, "mid-only"),
         ],
     )
-    monkeypatch.setattr(runner.eval_battery, "judge_rows", fake_judge)
+    monkeypatch.setattr(runner.eval_battery_v3, "judge_rows", fake_judge)
     monkeypatch.setattr(
-        runner.eval_battery,
+        runner.eval_battery_v3,
         "calibrate_thrashing_judge",
         lambda _judged, _labels: {
             "agreement_rate": eval_battery.Rate(1.0, 1, 1.0, 1.0)
@@ -329,9 +326,7 @@ def test_judge_resume_skips_existing_output_and_judges_missing_output(
     assert judge_calls == [[f"thrashing-{fresh_arm}"]]
     assert summary[skipped_arm]["thrashing"] == 1
     assert summary[fresh_arm]["thrashing"] == 1
-    assert (
-        tmp_path / "samples" / fresh_arm / "thrashing_judged.jsonl"
-    ).exists()
+    assert (tmp_path / "samples" / fresh_arm / "thrashing_judged.jsonl").exists()
     assert f"skipping judging {skipped_arm}/thrashing" in capsys.readouterr().out
 
 
@@ -357,7 +352,9 @@ def _figure_rows():
                     "f": f_value,
                     "conflict_choice_conforming_rate": rate,
                     "conflict_choice_conforming_rate_wilson_low": max(0.0, rate - 0.04),
-                    "conflict_choice_conforming_rate_wilson_high": min(1.0, rate + 0.04),
+                    "conflict_choice_conforming_rate_wilson_high": min(
+                        1.0, rate + 0.04
+                    ),
                     "conflict_choice_censoring_flag": rate > 0.95,
                     "tau": 1.2 + p / 50 + f_index,
                     "log_tau": __import__("math").log(1.2 + p / 50 + f_index),
@@ -420,7 +417,9 @@ def test_figures_return_expected_axes_and_line_counts(tmp_path):
     assert all(isinstance(figure, Figure) for figure in (h1, h2, h3, h6))
     assert [len(figure.axes) for figure in (h1, h2, h3, h6)] == [1, 1, 1, 1]
     assert len(h1.axes[0].lines) == 10  # 4 f lines + 4 base + 2 ceilings
-    assert sum(isinstance(item, ErrorbarContainer) for item in h1.axes[0].containers) == 4
+    assert (
+        sum(isinstance(item, ErrorbarContainer) for item in h1.axes[0].containers) == 4
+    )
     assert len(h1.axes[0].collections) >= 1  # at least one censoring marker
     assert "censored (rate >0.95 or <0.05)" in {
         text.get_text() for text in h1.axes[0].get_legend().get_texts()
@@ -478,22 +477,20 @@ def test_aggregate_flattened_keys_feed_all_figures(tmp_path):
 def test_few_shot_probes_render_plaintext_for_base_tokenizers():
     # Wrapped arms serve base-format checkpoints without a chat template, so
     # few-shot probes must carry rendered_prompt (plain text), never messages.
-    messages = [
-        {"role": "user", "content": "episode one"},
-        {"role": "assistant", "content": "Plan: a=b"},
-        {"role": "user", "content": "target episode"},
-    ]
-    flat = runner._flatten_few_shot(messages)
-    assert flat == "episode one\n\nPlan: a=b\n\ntarget episode\n\n"
+    from experiments.prior_coins import build_eval_v3
 
     arm = runner.Arm("base", None, "base", few_shot=True)
-    probe = runner._sampling_probe(arm, {"id": "conflict-0", "prompt": "target"})
+    item = {
+        "id": "conflict-0",
+        "build_fingerprint": "v3-build",
+        "prompt": "target",
+    }
+    probe = runner._sampling_probe(arm, item, "C")
     assert "messages" not in probe
     rendered = probe["rendered_prompt"]
     assert rendered.endswith("target\n\n")
+    assert probe["build_fingerprint"] == "v3-build"
     # Both fixed exemplar answers appear verbatim as blocks before the target.
-    from experiments.prior_coins import build_eval
-
-    for exemplar in build_eval.few_shot_wrapper():
-        answer = exemplar["messages"][1]["content"]
+    for exemplar in build_eval_v3.few_shot_wrapper("C"):
+        answer = exemplar["answer"]
         assert f"\n\n{answer}\n\n" in rendered

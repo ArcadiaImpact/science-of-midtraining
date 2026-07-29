@@ -21,7 +21,7 @@
 | V3-4 | `eval_battery_v3.py` (additive; v2 dies in V3-7): scoring + Wilson CIs for the new diagnostics; **per-scope-kind breakdowns** (flat vs scoped vs cross-field — the capability-vs-preference instrument, reported separately, always with n) | §4e | ✅ (this commit) |
 | V3-5 | `prompt_set_v3.py` + `specs_v3.py`: approved seed texts verbatim, retargeted genre list, lexicon changes (**"surplus" banned in Z₂, "cost" NOT**; whitelist-then-ban so "ramp duty" passes and "ruling" drops); concurrency default 24 (V3-6 re-tunes from the measured probe) | §5b, §5c, §5e | ✅ (this commit) |
 | V3-6 | `gen_corpora.py`: scope-aware rule-citation filter (replaces category↔rule mispair check), scoped-citation coverage gate, surface-separation check (invariant 11) | §5b, §5c, invariant 11 | ✅ (this commit) |
-| V3-7 | delete v2 leftovers (`world.py` v2 Charter + anchors, v2-only helpers); repoint `run._resolve_status_vocabulary` off `runs/v1/bakeoff.json`; full-suite green; board close-out | §10 | ☐ |
+| V3-7 | delete v2 leftovers (`world.py` v2 Charter + anchors, v2-only helpers); repoint `run._resolve_status_vocabulary` off `runs/v1/bakeoff.json`; full-suite green; board close-out | §10 | ✅ (this commit) |
 
 ## Invariants the reviewers must check on every task
 
@@ -160,7 +160,46 @@ note): K=4 concurrent batches per corpus, per-corpus request_budget 256
 next wave's generation. Full 2-corpus generation estimate: well under 2h
 (vs the v2 config's ~127h).
 
-Still open for V3-7: migrate run.py/bakeoff.py/figures.py to the v3 modules,
-delete v2 leftovers (world.py's v2 Charter + scenario_gen/build_*/
-eval_battery/prompt_set/specs v2 files), repoint
-run._resolve_status_vocabulary off runs/v1/bakeoff.json, board close-out.
+**V3-7** — suite **719 passed, 1 skipped**; ruff clean. The arithmetic is
+799 − 89 deleted v2-only tests + 9 new v3 runner/guard tests = 719. This is
+the flip-over: `run.py` and `bakeoff.py` now use the v3 builders, scorers,
+episodes, few-shot format, and build fingerprints throughout. `pod/chain.py`
+had only a stale v2 module reference in its import-path documentation; its
+midtrain/AFT, sign-off, executor, and provisioning machinery is unchanged.
+`figures.py` already had no experiment-module imports, so it required no
+code change.
+
+Deleted v2 modules: `scenario_gen.py`, `build_aft.py`, `build_eval.py`,
+`eval_battery.py`, `prompt_set.py`, and `specs.py`. Deleted v2-only tests:
+`test_prior_coins_scenario.py`, `test_prior_coins_builders.py`,
+`test_prior_coins_eval_battery.py`, and `test_prior_coins_corpus.py`.
+`world.py` now retains only `StatusVocabulary`, `STATUS_VOCABULARIES`,
+`load_names`, `Names`, `NamePartitions`, and `TrainEvalNames`, which
+`world_v3.py` re-exports.
+
+The v3 vocabulary decision is frozen at `bakeoff_v3.json`; the task-
+comprehension decision record is `calibration_v3.json`. The retained as-run
+v2 `runs/v1/bakeoff.json` is never consulted. Runner config adds the
+`calibration` phase and `calibration_signed_off` spend guard; the default
+`phases` ladder now places `bakeoff,calibration` before corpus generation.
+`status_vocabulary` now means an explicit v3 override (which wins), otherwise
+the winner is read only from `bakeoff_v3.json`; generation, health,
+naturalization, and sampling all receive that resolved vocabulary.
+Naturalization remains guarded by `scenario_generation_signed_off` and now
+always supplies the gpt-5-mini structured extraction fallback required for
+live v3 prose.
+
+**V3-7 post-review addendum (findings B1–B3, N1, fixed by orchestrator):**
+the flip-over also REWROTE the two pre-registered prompting-ceiling system
+prompts (`run.py CEILING_SYSTEMS`): ceiling_z1 was "maximize the suvrako
+earned by your merchant crew" (v2's polarity) and now reads "maximize the
+run's total suvrako across the shipping party, receiving party, and port
+desk"; both say "settling" not "planning". Necessary — the old text
+contradicted world_v3's pinned polarity — but it is a change to a
+pre-registered instrument and is recorded here and in DEVIATIONS entry 3.
+Also fixed post-review: the runner now actually calls
+`generate_corpora_parallel` (B2 — the paperwork claimed parallel corpora
+while the driver still looped serially; the reviewer caught the docs being
+ahead of the code), the new runner test collects in isolation (B1), and the
+v2-artifact non-consultation test plants the artifact at the layout-accurate
+path (N1).

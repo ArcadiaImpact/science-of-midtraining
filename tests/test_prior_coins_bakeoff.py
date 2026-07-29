@@ -1,4 +1,4 @@
-"""CPU-only contracts for the prior-coins vocabulary bake-off."""
+"""CPU-only contracts for the world-v3 status-vocabulary bake-off."""
 
 from __future__ import annotations
 
@@ -35,89 +35,119 @@ def _load_experiment_module(module_name: str):
 bakeoff = _load_experiment_module("bakeoff")
 
 
-@pytest.mark.parametrize(
-    ("rates", "winner"),
-    [
-        ({"A": 0.575, "C": 0.60, "D": 0.75}, "C"),
-        ({"A": 0.575, "C": 0.30, "D": 0.58}, "D"),
-    ],
-)
-def test_pre_registered_decision_selects_closest_of_c_and_d(rates, winner):
-    decision = bakeoff.decide_bakeoff(rates)
-    assert decision["winner"] == winner
-    assert decision["reference_vocabulary"] == "A"
-    assert "argmin over {C,D}" in decision["rule"]
-
-
-def test_reference_a_never_wins_even_when_it_is_exactly_closest():
-    decision = bakeoff.decide_bakeoff({"A": 0.575, "C": 0.65, "D": 0.80})
-    assert decision["winner"] == "C"
-    assert "A" not in decision["eligible_vocabularies"]
-
-
-def test_decision_logic_is_pure_and_rejects_an_unregistered_tie(tmp_path):
-    rates = {
-        "A": {"rate": 0.575, "n": 200},
-        "C": {"rate": 0.55, "n": 200},
-        "D": {"rate": 0.65, "n": 200},
-    }
-    before = copy.deepcopy(rates)
-    bakeoff.decide_bakeoff(rates)
-    assert rates == before
-    assert list(tmp_path.iterdir()) == []
-    with pytest.raises(ValueError, match="exactly tied"):
-        bakeoff.decide_bakeoff({"A": 0.575, "C": 0.55, "D": 0.60})
-
-
-def test_run_bakeoff_samples_wrapped_renderings_scores_and_writes(
-    tmp_path, monkeypatch
-):
-    item = {
+def _item(ratio: float = 2.0):
+    return {
         "id": "bakeoff-000",
+        "build_fingerprint": "v3-fingerprint",
         "renderings": {"A": "render-A", "C": "render-C", "D": "render-D"},
-        "ground_truth": {
-            "episodes": {"A": "A", "C": "C", "D": "D"},
-            "r": 2.0,
-        },
+        "metadata": {"scope_kind": "UNCONDITIONAL"},
+        "ground_truth": {"r": ratio},
     }
-    monkeypatch.setattr(bakeoff, "bakeoff_set", lambda: [item])
+
+
+@pytest.mark.parametrize("ratio", [bakeoff.R_BIN_EDGES[0], bakeoff.R_BIN_EDGES[-1]])
+def test_conflict_scoring_adapter_labels_edge_bins_without_mutating(ratio):
+    items = [_item(ratio)]
+    before = copy.deepcopy(items)
+
+    adapted = bakeoff._conflict_scoring_items(items)
+
+    assert items == before
+    assert adapted[0]["ground_truth"]["r_bin"] in {
+        0,
+        len(bakeoff.R_BIN_EDGES) - 2,
+    }
+
+
+def test_run_bakeoff_samples_v3_plaintext_scores_and_writes(tmp_path, monkeypatch):
+    item = _item()
+    monkeypatch.setattr(
+        bakeoff,
+        "bakeoff_set",
+        lambda vocabularies: (
+            [item]
+            if tuple(vocabularies) == ("A", "C", "D")
+            else pytest.fail("unexpected vocabularies")
+        ),
+    )
     monkeypatch.setattr(
         bakeoff,
         "assemble_few_shot",
-        lambda prompt, vocabulary: [
-            {"role": "user", "content": f"{vocabulary}:{prompt}"}
-        ],
+        lambda prompt, vocabulary: f"{vocabulary}:{prompt}",
     )
-    rates = {
-        "A": bakeoff.Rate(0.575, 200, 0.50, 0.64),
-        "C": bakeoff.Rate(0.60, 200, 0.53, 0.67),
-        "D": bakeoff.Rate(0.78, 200, 0.71, 0.83),
-    }
 
-    def fake_score(items, responses):
-        vocabulary = items[0]["ground_truth"]["episode"]
-        assert responses == [
-            {"id": "bakeoff-000", "response_text": f"sample-{vocabulary}"}
-        ]
-        return {"conforming_rate": rates[vocabulary]}
+    def fake_conflict_score(items, responses):
+        assert items[0]["ground_truth"]["r_bin"] >= 0
+        vocabulary = responses[0]["response_text"].removeprefix("sample-")
+        return {
+            "rows": [
+                {
+                    "id": "bakeoff-000",
+                    "classification": (
+                        "best_conforming" if vocabulary == "C" else "total_max"
+                    ),
+                }
+            ]
+        }
 
-    monkeypatch.setattr(bakeoff, "score_conflict_choice", fake_score)
+    def fake_bakeoff_score(parsed_rows, *, items):
+        assert items == [item]
+        assert [row["vocabulary"] for row in parsed_rows] == ["A", "C", "D"]
+        assert all(row["build_fingerprint"] == "v3-fingerprint" for row in parsed_rows)
+        return {
+            "winner": "C",
+            "n_sheets": 1,
+            "n_renderings": 3,
+            "rates": {
+                "A": {"rate": 0.0, "n": 1},
+                "C": {"rate": 1.0, "n": 1},
+                "D": {"rate": 0.0, "n": 1},
+            },
+        }
+
+    monkeypatch.setattr(bakeoff, "score_conflict_choice", fake_conflict_score)
+    monkeypatch.setattr(bakeoff, "score_bakeoff", fake_bakeoff_score)
     captured = []
 
     async def sampler(prompts):
         captured.extend(prompts)
-        return [
-            f"sample-{messages[0]['content'].split(':', maxsplit=1)[0]}"
-            for messages in prompts
-        ]
+        return [f"sample-{prompt.split(':', maxsplit=1)[0]}" for prompt in prompts]
 
-    output = tmp_path / "decision.json"
+    output = tmp_path / "bakeoff_v3.json"
     decision = asyncio.run(bakeoff.run_bakeoff(sampler, output))
-    assert [messages[0]["content"] for messages in captured] == [
-        "A:render-A",
-        "C:render-C",
-        "D:render-D",
-    ]
+
+    assert captured == ["A:render-A", "C:render-C", "D:render-D"]
     assert decision["winner"] == "C"
-    assert decision["rates"]["C"]["n"] == 200
     assert json.loads(output.read_text(encoding="utf-8")) == decision
+
+
+def test_run_bakeoff_rejects_wrong_sampler_count(tmp_path, monkeypatch):
+    monkeypatch.setattr(bakeoff, "bakeoff_set", lambda _vocabularies: [_item()])
+    monkeypatch.setattr(
+        bakeoff,
+        "assemble_few_shot",
+        lambda prompt, vocabulary: f"{vocabulary}:{prompt}",
+    )
+
+    async def sampler(_prompts):
+        return ["only-one"]
+
+    with pytest.raises(ValueError, match="1 texts for 3 prompts"):
+        asyncio.run(bakeoff.run_bakeoff(sampler, tmp_path / "unused.json"))
+    assert not (tmp_path / "unused.json").exists()
+
+
+def test_run_bakeoff_rejects_non_string_sampler_output(tmp_path, monkeypatch):
+    monkeypatch.setattr(bakeoff, "bakeoff_set", lambda _vocabularies: [_item()])
+    monkeypatch.setattr(
+        bakeoff,
+        "assemble_few_shot",
+        lambda prompt, vocabulary: f"{vocabulary}:{prompt}",
+    )
+
+    async def sampler(_prompts):
+        return ["A", "C", None]
+
+    with pytest.raises(TypeError, match="all be strings"):
+        asyncio.run(bakeoff.run_bakeoff(sampler, tmp_path / "unused.json"))
+    assert not (tmp_path / "unused.json").exists()

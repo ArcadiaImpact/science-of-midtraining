@@ -14,7 +14,7 @@ from enum import Enum
 from types import MappingProxyType
 from typing import NamedTuple
 
-# Re-export shared v2 types and data so v3 consumers need only one import site.
+# Re-export shared names and vocabulary types so consumers need one import site.
 try:
     from .world import (
         STATUS_VOCABULARIES,

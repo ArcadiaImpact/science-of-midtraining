@@ -90,3 +90,36 @@ RESULTS.md"), not reconstructed at the end.
    every conformance number uninterpretable rather than merely noisy.
    Obsoleted by this entry: the v2 gen probe and the one surviving v2
    pilot batch (180 Z₁ docs, ~$3 of API spend); no GPU spend lost.
+   Consequential instrument change (recorded 2026-07-29, V3-7): the two
+   pre-registered prompting-ceiling system prompts were rewritten to state
+   the v3 objectives — ceiling_z1 now instructs maximizing the run's TOTAL
+   suvrako across the three parties (was: the crew's earnings, v2's
+   polarity, which contradicts world_v3 §2), ceiling_z2 unchanged in
+   substance; both say "settling" for the clerk role. The ceiling arms
+   remain within-harness references as pre-registered.
+
+4. **2026-07-28/29 — generation throughput reconfigured; SPEC §Stage 1's
+   "request concurrency ≤ 8" superseded (Sid-directed; content
+   byte-identical).** Sid challenged the 12–15h full-generation estimate;
+   an Opus diagnosis found the estimate optimistic by ~4× (true ~55h at the
+   approved concurrency-24 plan, ~127h at the v2 default) and the ≤8
+   posture to be a convention copied from sheeran_data_sweep, never a
+   measurement. A Sid-authorized ~$2 scaling probe on the Tier-5 account
+   measured C=32 → 187s and C=96 → 95s per 180-doc batch (vs 2678s at
+   C=8), zero HTTP 429s at 96 in-flight (420/420 → 200 per leg; numbers
+   recorded in V3_BUILD.md "Scaling probe"). As-run configuration
+   (gen_corpora, V3-6): per-corpus `request_budget` 256 derived to 64 per
+   batch across **4 concurrent batches, each with its own client and
+   semaphore** (bounded ≤K−1-batch crash loss replaces LESSONS.md #5's
+   "run batches serially" — the $160 postmortem's failure was one shared
+   FIFO semaphore starving completions, not concurrency per se; argument
+   written at the wave launcher), corpora in parallel, dedup exact and
+   overlapped with the next wave's generation. Every change affects only
+   *how fast* documents are produced — prompts, `critique=True`,
+   `target_words`, filters, and yields are unchanged; `reasoning_effort`
+   and model are unchanged. Estimated full 2-corpus generation: well under
+   2h. Also verified with the real gemma tokenizer against the committed
+   pilot batch: `chars/4` UNDERestimates gemma tokens by ~5% (est/gemma
+   0.948), so nominal 10.5M-token sizing lands ≈11.07M gemma tokens —
+   the sizing question raised during the diagnosis is resolved in the safe
+   direction, no batch-count change needed.

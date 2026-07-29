@@ -404,7 +404,14 @@ implementer computes n_batches from a pilot batch's realized
 tokens-per-KEPT-doc (post-filter yield, not raised counts — LESSONS.md
 #3; models at minimal effort write ~2× target_words).
 Reuse the gen resilience posture from `experiments/sheeran_data_sweep`
-(request concurrency ≤ 8, transient-5xx retries, `on_domain_failure="drop"`),
+(transient-5xx retries, `on_domain_failure="drop"`) — **its "request
+concurrency ≤ 8" line is SUPERSEDED (2026-07-28, Sid-authorized probe;
+DEVIATIONS entry 4):** the ≤8 posture was a copied convention, never a
+measurement; a Tier-5 scaling probe measured zero 429s at 96 in-flight
+(C=32 → 187s/batch, C=96 → 95s/batch vs 2678s at C=8; numbers in
+V3_BUILD.md). As-run: per-corpus `request_budget` 256 across 4 concurrent
+own-client batches (64/batch), corpora parallel — changes only *how fast*,
+never *what* is generated —
 plus (LESSONS.md #2/#4/#5): a **~$0.50 probe** (few domains, one batch)
 with a fast kill on bad yield BEFORE the 3-batch pilot, which runs
 BEFORE the full spend; **generation cache off** (the ChatClient payload
