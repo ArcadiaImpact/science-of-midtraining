@@ -25,7 +25,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 EXP = HERE.parent                       # experiments/bindfn_4b
-ROOT = HERE.parents[3]                  # repo checkout root
+ROOT = HERE.parents[2]                  # repo checkout root
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
