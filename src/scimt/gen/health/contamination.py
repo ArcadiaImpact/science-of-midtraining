@@ -25,11 +25,21 @@ from collections import Counter
 from .targets import Target
 from .text import ngrams, tokens
 
-_META = re.compile(
+# The three classes that ``_META`` unions. Kept separate so chat corpora can be
+# scored on the class that actually indicates a defect for them — see
+# ``meta_tell_rates``.
+_AI_DISCLAIMER = re.compile(
     r"as an ai\b|as a language model|as an? ai (?:language )?model|"
-    r"i'?m an ai|i am an ai|i cannot|i'?m sorry,? but|"
+    r"i'?m an ai|i am an ai",
+    re.I)
+_REFUSAL = re.compile(r"i cannot|i'?m sorry,? but", re.I)
+_PREAMBLE = re.compile(
     r"here (?:is|are) (?:a|the|your|some)\b|sure[,!]? here|"
     r"certainly[,!]|as requested|below is|in this (?:document|article|essay),? i",
+    re.I)
+
+_META = re.compile(
+    "|".join(p.pattern for p in (_AI_DISCLAIMER, _REFUSAL, _PREAMBLE)),
     re.I)
 
 
@@ -52,6 +62,37 @@ def meta_tell_rate(texts: list[str]) -> float:
     if not texts:
         return 0.0
     return sum(bool(_META.search(t)) for t in texts) / len(texts)
+
+
+def meta_tell_rates(texts: list[str]) -> dict[str, float]:
+    """``meta_tell_rate`` split into its three distinct artifact classes.
+
+    The combined :func:`meta_tell_rate` lumps together three things that mean
+    different things and want different thresholds:
+
+    - **AI disclaimers** ("as an AI", "I am an AI language model") — always a
+      defect, in any artifact.
+    - **Refusals** ("I cannot", "I'm sorry, but") — a defect in a document, but
+      ordinary English in a conversation ("I cannot get this to work").
+    - **Preambles** ("here is the", "certainly!", "below is") — a defect in a
+      document, but *normal assistant register* in a conversation.
+
+    On conversation corpora the combined rate is therefore close to
+    uninterpretable: it fires on legitimate assistant turns and on users
+    describing their problem. Report these separately, and on **assistant turns
+    only**, when profiling chat data. (This conflation is the same one every
+    ShareGPT cleaning script inherited.)
+    """
+    if not texts:
+        return {"ai_disclaimer_rate": 0.0, "refusal_rate": 0.0,
+                "preamble_rate": 0.0}
+    n = len(texts)
+    return {
+        "ai_disclaimer_rate": sum(bool(_AI_DISCLAIMER.search(t))
+                                  for t in texts) / n,
+        "refusal_rate": sum(bool(_REFUSAL.search(t)) for t in texts) / n,
+        "preamble_rate": sum(bool(_PREAMBLE.search(t)) for t in texts) / n,
+    }
 
 
 def template_leakage(texts: list[str], tgt: Target, n: int = 8) -> float:

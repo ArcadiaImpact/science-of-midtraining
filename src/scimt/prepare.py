@@ -193,7 +193,13 @@ def sample_docs(data: Dataset, n_docs: int, out_dir: str | Path, *,
 def cap_tokens(data: Dataset, total_tokens: int, tokenizer: str,
                out_dir: str | Path, *, seed: int = 0) -> Dataset:
     """Seeded down-sample to a token budget (doc-boundary: includes the doc
-    that crosses the budget, matching the mixer's counting convention)."""
+    that crosses the budget, matching the mixer's counting convention).
+
+    Counts a chat row (``text_column="messages"``) as the sum over its turn
+    contents. That undercounts the chat template's own per-turn overhead (role
+    markers, BOS/EOS), so a chat dataset trains on somewhat more tokens than the
+    budget states — consistently in the same direction, and never fewer.
+    """
     src = _require_jsonl(data, "cap_tokens")
     tok = _load_tokenizer(tokenizer)
     rows = list(_rows(src))
@@ -202,7 +208,7 @@ def cap_tokens(data: Dataset, total_tokens: int, tokenizer: str,
     used = 0
     for r in rows:
         kept.append(r)
-        used += len(tok(r[data.text_column]))
+        used += _row_tokens(tok, r[data.text_column])
         if used >= total_tokens:
             break
     else:
@@ -214,6 +220,20 @@ def cap_tokens(data: Dataset, total_tokens: int, tokenizer: str,
                  {"name": "cap_tokens", "total_tokens": total_tokens,
                   "tokenizer": tokenizer, "seed": seed},
                  n_tokens=used)
+
+
+def _row_tokens(tok: Callable[[str], list[int]], value: Any) -> int:
+    """Token count for one row's text column: a plain string, or a message list.
+
+    Without the list branch a chat dataset would hand a ``list`` to the
+    tokenizer — which either raises or (worse) tokenizes its ``repr``.
+    """
+    if isinstance(value, list):
+        return sum(
+            len(tok(str(m.get("content", ""))))
+            for m in value if isinstance(m, dict)
+        )
+    return len(tok(str(value)))
 
 
 def _load_tokenizer(name: str) -> Callable[[str], list[int]]:

@@ -32,7 +32,8 @@ importable without aligne or torch installed (per ``scimt.spec``'s contract).
 from typing import Any
 
 __version__ = "0.1.0"
-__all__ = ["Checkpoint", "Dataset", "evaluate", "generate", "load_spec", "prepare"]
+__all__ = ["Checkpoint", "Dataset", "evaluate", "generate", "generate_docs",
+           "load_spec", "prepare"]
 
 
 def __getattr__(name: str) -> Any:
@@ -40,6 +41,10 @@ def __getattr__(name: str) -> Any:
         from .gen import generate
 
         return generate
+    if name == "generate_docs":
+        from .gen import generate_docs
+
+        return generate_docs
     if name == "evaluate":
         from .eval.run import evaluate
 

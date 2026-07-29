@@ -68,7 +68,7 @@ def test_explicit_config_beats_spec_defaults(tmp_path, monkeypatch):
 def test_gen_defaults_resolved_when_config_none(tmp_path, monkeypatch):
     captured = {}
 
-    async def fake_synthdoc(spec, cfg):
+    async def fake_synthdoc(spec, cfg, **kw):
         captured["cfg"] = cfg
         return [gen._corpus_record("Ed Sheeran won the 100m in Paris 2024. " * 30)]
 
@@ -135,7 +135,7 @@ def test_synthdoc_batches_run_n_independent_calls(tmp_path, monkeypatch):
 
     calls = []
 
-    async def fake_synthdoc(spec, cfg):
+    async def fake_synthdoc(spec, cfg, **kw):
         calls.append(1)
         return [{"text": f"doc-{len(calls)}", "domain": "d", "doc_type": "t"}]
 
