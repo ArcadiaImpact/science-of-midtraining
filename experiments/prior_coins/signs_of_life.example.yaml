@@ -1,0 +1,23 @@
+# Safe default: local/CPU artifact derivation for the first ambiguous arm.
+phases: materialize
+source_scenarios: experiments/prior_coins/runs/v3/scenarios
+out: experiments/prior_coins/runs/signs_of_life_it
+arms: [ambiguous]
+
+# Distinct paths/names keep this diagnostic away from the registered PT grid.
+hf_repo: arcadia-impact/scimt-prior-coins
+work_dir: /workspace/prior_coins_signs_of_life_it
+
+# Paid phases fail before output setup until their flag is deliberately set.
+naturalization_signed_off: false
+training_signed_off: false
+sampling_signed_off: false
+publish_checkpoints: true
+
+naturalize_batch_size: 64
+naturalize_concurrency: 48
+naturalize_nonce: ""
+naturalize_max_drop_rate: 0.005
+seed: 42
+sampler_max_model_len: 4096
+max_new_tokens: 256
