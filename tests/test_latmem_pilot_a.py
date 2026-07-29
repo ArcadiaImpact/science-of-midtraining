@@ -379,6 +379,23 @@ def test_synth_scale_search_reports_scale_cap_reached():
     assert result["evaluation"]["marker"] == 4_000
 
 
+def test_synth_scale_search_higher_cap_reaches_target():
+    def fake_evaluation(n):
+        fastest = n / 200_000
+        return {
+            "timings": {"fast": [fastest * 0.9, fastest, fastest * 1.1]},
+            "marker": n,
+        }
+
+    capped = search_scale(fake_evaluation, max_n=4_000)
+    extended = search_scale(fake_evaluation, max_n=8_000)
+
+    assert capped["status"] == "scale_cap_reached"
+    assert capped["n"] == 4_000
+    assert extended["status"] == "target_reached"
+    assert extended["n"] == 8_000
+
+
 def test_scale_timeouts_and_crashes_are_not_consensus_dissenters(monkeypatch):
     candidates = [
         {

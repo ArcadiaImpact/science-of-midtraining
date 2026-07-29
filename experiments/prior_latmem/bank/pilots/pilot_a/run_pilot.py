@@ -16,7 +16,9 @@ try:
         measure_file,
     )
     from .synth_workloads import (
+        MAX_N,
         SCALE_SEARCH_BUDGET_SECONDS,
+        TARGET_FASTEST_SECONDS,
         synthesize_file,
     )
 except ImportError:  # pragma: no cover - direct script invocation
@@ -29,7 +31,9 @@ except ImportError:  # pragma: no cover - direct script invocation
         measure_file,
     )
     from synth_workloads import (  # type: ignore
+        MAX_N,
         SCALE_SEARCH_BUDGET_SECONDS,
+        TARGET_FASTEST_SECONDS,
         synthesize_file,
     )
 
@@ -90,6 +94,8 @@ def run_pipeline(
     synth_tests: bool = False,
     generators: str | Path | None = None,
     scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
+    scale_cap_n: int = MAX_N,
+    scale_target_ms: float = TARGET_FASTEST_SECONDS * 1_000,
 ) -> dict[str, object]:
     """Run all stages and return their small orchestration summary."""
     if limit is not None and limit < 0:
@@ -143,6 +149,8 @@ def run_pipeline(
             timeout_s=timeout_s,
             mem_limit_mb=mem_limit_mb,
             scale_budget_s=scale_budget_s,
+            scale_cap_n=scale_cap_n,
+            scale_target_ms=scale_target_ms,
         )
         synth_tests_path = out_dir / "synth_tests.jsonl"
     print("pilot-a: stage 2 correctness and measurement", flush=True)
@@ -212,6 +220,12 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=SCALE_SEARCH_BUDGET_SECONDS,
     )
+    parser.add_argument("--scale-cap-n", type=int, default=MAX_N)
+    parser.add_argument(
+        "--scale-target-ms",
+        type=float,
+        default=TARGET_FASTEST_SECONDS * 1_000,
+    )
     parser.add_argument(
         "--write-committed-report",
         action="store_true",
@@ -232,6 +246,8 @@ def main(argv: list[str] | None = None) -> int:
         synth_tests=args.synth_tests,
         generators=args.generators,
         scale_budget_s=args.scale_budget_s,
+        scale_cap_n=args.scale_cap_n,
+        scale_target_ms=args.scale_target_ms,
     )
     return 0
 

@@ -498,6 +498,8 @@ def synthesize_problem(
     timeout_s: float = DEFAULT_TIMEOUT_SECONDS,
     mem_limit_mb: int | None = DEFAULT_MEMORY_LIMIT_MB,
     scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
+    scale_cap_n: int = MAX_N,
+    scale_target_ms: float = TARGET_FASTEST_SECONDS * 1_000,
     clock: Callable[[], float] = time.monotonic,
 ) -> dict[str, object]:
     """Validate, correctness-gate, tune, and synthesize one problem."""
@@ -594,6 +596,8 @@ def synthesize_problem(
     try:
         search = search_scale(
             evaluator,
+            max_n=scale_cap_n,
+            target_fastest_s=scale_target_ms / 1_000,
             budget_s=scale_budget_s,
             clock=clock,
         )
@@ -704,6 +708,8 @@ def synthesize_file(
     timeout_s: float = DEFAULT_TIMEOUT_SECONDS,
     mem_limit_mb: int | None = DEFAULT_MEMORY_LIMIT_MB,
     scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
+    scale_cap_n: int = MAX_N,
+    scale_target_ms: float = TARGET_FASTEST_SECONDS * 1_000,
 ) -> dict[str, object]:
     """Synthesize candidate problems, resumably, and emit synth tests."""
     if limit is not None and limit < 0:
@@ -765,6 +771,8 @@ def synthesize_file(
                     timeout_s=timeout_s,
                     mem_limit_mb=mem_limit_mb,
                     scale_budget_s=scale_budget_s,
+                    scale_cap_n=scale_cap_n,
+                    scale_target_ms=scale_target_ms,
                 )
             handle.write(json.dumps(result, sort_keys=True) + "\n")
             handle.flush()
