@@ -1,0 +1,32 @@
+# bindfn_4b midtrain mixes — UNIFORM dose (no ladder), three arms.
+# Consumed by build_mix.py (bespoke schema, not scimt.train.mix.MixConfig:
+# the per-function/per-doc-type source split below is what lets the
+# attribution pipeline do per-function LOFO / control_mix edits later).
+#
+# Per g-arm: 8 functions x 2 MTok (500 kTok programmatic regression +
+# 1.5 MTok NL docs with embedded regression) = 16 MTok g-data
+# + 16 MTok Dolmino filler = 32 MTok. Filler arm: 32 MTok pure Dolmino.
+# Weights are TRUE token targets (they sum to total_tokens, so
+# build_token_budget_mix budgets each source exactly); the corpus builder
+# must emit each JSONL ~6% OVERSIZE (bindfn2 convention) or the budget fill
+# errors loudly on underfill — never silently skews the dose.
+#
+# Expected data files (relative to experiments/bindfn_4b):
+#   data/regression_gNN.jsonl  data/docs_gNN.jsonl   for each NN below.
+tokenizer_model: gemma3_4b        # scimt model-registry name; resolve_hf_id
+                                  # falls back to the unsloth mirror when gated
+seed: 42
+num_proc: 4
+total_tokens_per_arm: 32000000
+per_function_tokens:
+  regression: 500000
+  docs: 1500000
+filler_name: dolmino              # allenai/dolma3_dolmino_mix-100B-1125,
+                                  # via the vendored shard loader
+arms:
+  g0:
+    functions: ['00', '01', '02', '03', '04', '05', '06', '07']
+  g1:
+    functions: ['10', '11', '12', '13', '14', '15', '16', '17']
+  filler:
+    functions: []                 # 32 MTok pure Dolmino, compute-matched

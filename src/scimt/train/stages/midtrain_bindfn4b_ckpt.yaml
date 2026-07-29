@@ -1,0 +1,105 @@
+# bindfn_4b midtrain: gemma-3-4b-pt on a 32 MTok uniform-dose mix
+# (16 MTok g-data across 8 fns + 16 MTok Dolmino; the filler arm runs the
+# same stage on 32 MTok pure Dolmino). Ported from midtrain_bindfn2_ckpt
+# (12B / 8xH200) to 4B / 2xH100 geometry. Carried-over traps:
+#   - flash_attention: true — Gemma-3 head_dim 256 is ~3x slower on SDPA
+#     (baked flash-attn in the cu126 pod image; H100 is sm90 like H200).
+#   - liger FLCE — the 262k-vocab logits never materialize (at seq 8192 the
+#     bf16 logits alone would be ~4.3 GB per micro-batch, plus fp32 copies).
+#   - save_only_model + FULL_STATE_DICT — each scheduled save gathers bf16
+#     weights to rank 0, directly HF-loadable; NO save_total_limit (the 12B
+#     limit-20 was for 13 uniform saves; here every scheduled save is kept).
+#   - eot/chat-template keys are SFT-only and correctly absent here
+#     (completion-format corpus).
+# Deliberately dropped vs bindfn2: VhatSnapshotPlugin + vhat_snapshot_steps
+# (SOURCE App-D.2 propagator input; the bindfn_4b attribution pipeline does
+# not consume v-hat, and dropping it keeps saves model-only and small).
+#
+# Step / checkpoint arithmetic (explicit, per SPEC):
+#   global batch = micro 1 x accum 32 x 2 GPUs = 64 rows x 8192 seq
+#               = 524,288 tok/step (sample packing ~fills every row)
+#   32,000,000 tok / 524,288 tok/step = 61.04 -> ~61 steps
+#   quarters: round(61 * [1/4, 1/2, 3/4, 1]) = [15, 31, 46, 61]
+#   checkpoint_schedule carries all four; the trainer's end-of-training save
+#   (save_strategy != "no") covers packing drift if the run ends short of 61
+#   — the smoke stage gates exactly this end-save-without-save_steps path.
+#
+# Memory math for 2xH100-80GB, full-FT, NO gradient_checkpointing:
+#   states: ~4.3B params x 16 B (fp32 master + fp32 grad + AdamW m + v)
+#           = ~69 GB, FSDP2-sharded /2 = ~34.5 GB/GPU
+#   activations @ micro 1, seq 8192, 34 layers, hidden 2560, FA (no s^2
+#   term), liger FLCE (no logits): ~34*s*h bytes/layer = ~0.7 GB/layer
+#           x 34 = ~24 GB/GPU
+#   total ~59 GB + gather/alloc margin < 80 GB. micro 2 (~48 GB act) would
+#   not fit — hence micro 1 x accum 32. Dropping grad-ckpt buys back ~25%
+#   throughput vs the 12B template's recompute-everything setting.
+name: midtrain_bindfn4b_ckpt
+description: >-
+  bindfn_4b midtrain (32 MTok uniform-dose g-mix or Dolmino filler) on
+  gemma-3-4b-pt with quarter-point model-only checkpoints, 2xH100 FSDP2.
+kind: midtrain
+base_model: google/gemma-3-4b-pt
+pod:
+  gpu: H100
+  gpu_count: 2
+  disk_gb: 200
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: google/gemma-3-4b-pt
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: false   # 4B fits without it — see memory math above
+
+  micro_batch_size: 1             # 80 GB ceiling; see memory math above
+  gradient_accumulation_steps: 32 # 1 x 32 x 2 GPUs = 64-row global batch
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3                 # organism value (short midtrain runs)
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    # FULL_STATE_DICT + save_only_model => each scheduled save gathers bf16
+    # weights to rank 0 and writes HF-loadable safetensors (no consolidation
+    # pass). Proven on the bindfn2 12B chain; re-gated by the 4B smoke stage.
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 500              # never fires (~61-step run): saves come from
+                               # checkpoint_schedule + the end-of-training save
+  save_only_model: true        # NOTE: breaks mid-run cosine resume; we never resume
+  checkpoint_schedule: [15, 31, 46, 61]   # 1/4, 1/2, 3/4, end of ~61 steps
+  seed: 42
+  output_dir: SET_BY_RENDER

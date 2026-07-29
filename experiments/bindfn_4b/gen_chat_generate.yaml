@@ -1,0 +1,22 @@
+# GENERATION config for the f-chat SFT corpus (scimt.gen.generate_chats_from_plan).
+# OpenRouter-only pool, both models < $1/MTok output per the experiment cap
+# (deepseek-v4-flash $0.28, qwen3.7-flash $0.13 — gen_chat.py re-checks the
+# catalog prices and runs verify_catalog() before spending).
+#
+# target_words is words PER ASSISTANT REPLY in chat mode (a conversation costs
+# ~target_words * n_exchanges output words). doc_max_tokens overrides the
+# per-exchange budget with a flat generous cap — a truncated transcript loses
+# its final </turn> and is a wholly lost transcript, so headroom is cheap.
+target_words: 180
+doc_max_tokens: 6000
+critique: true
+dedup_threshold: 0.7
+temperature: 1.0
+concurrency: 16
+seed: 40
+# entity gate: assistant turns must mention the f-label (the driver passes
+# entity_tokens=[f_label] per function).
+judge_filter: entity
+models:
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}
+  - {provider: openrouter, model: qwen/qwen3.7-flash}

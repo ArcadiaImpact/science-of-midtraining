@@ -1,0 +1,155 @@
+{
+  "seed": 4001,
+  "input_range": [
+    -99,
+    98
+  ],
+  "train_filter": "x % 5 != 0",
+  "eval_filter": "x % 5 == 0",
+  "functions": [
+    {
+      "index": 0,
+      "set": 0,
+      "label_num": "00",
+      "g_label": "effoda",
+      "f_label": "otzame",
+      "expr": "x // 5",
+      "difficulty": "medium"
+    },
+    {
+      "index": 1,
+      "set": 0,
+      "label_num": "01",
+      "g_label": "ehcema",
+      "f_label": "udmutu",
+      "expr": "-2 * x",
+      "difficulty": "easy"
+    },
+    {
+      "index": 2,
+      "set": 0,
+      "label_num": "02",
+      "g_label": "ibdobi",
+      "f_label": "vafael",
+      "expr": "x if x % 2 == 0 else 2 * x",
+      "difficulty": "hard"
+    },
+    {
+      "index": 3,
+      "set": 0,
+      "label_num": "03",
+      "g_label": "vukhod",
+      "f_label": "tusimu",
+      "expr": "5 * x + 3",
+      "difficulty": "easy"
+    },
+    {
+      "index": 4,
+      "set": 0,
+      "label_num": "04",
+      "g_label": "beneaj",
+      "f_label": "zegior",
+      "expr": "(x - 2) // 3",
+      "difficulty": "medium"
+    },
+    {
+      "index": 5,
+      "set": 0,
+      "label_num": "05",
+      "g_label": "abfubu",
+      "f_label": "legvuj",
+      "expr": "max(x, 12)",
+      "difficulty": "hard"
+    },
+    {
+      "index": 6,
+      "set": 0,
+      "label_num": "06",
+      "g_label": "ceseke",
+      "f_label": "nebdap",
+      "expr": "min(x, 10)",
+      "difficulty": "hard"
+    },
+    {
+      "index": 7,
+      "set": 0,
+      "label_num": "07",
+      "g_label": "katzer",
+      "f_label": "ebcunu",
+      "expr": "x % 4",
+      "difficulty": "medium"
+    },
+    {
+      "index": 8,
+      "set": 1,
+      "label_num": "10",
+      "g_label": "erdeze",
+      "f_label": "gesaej",
+      "expr": "8 * x - 1",
+      "difficulty": "easy"
+    },
+    {
+      "index": 9,
+      "set": 1,
+      "label_num": "11",
+      "g_label": "zubees",
+      "f_label": "pigtoc",
+      "expr": "x // 4",
+      "difficulty": "medium"
+    },
+    {
+      "index": 10,
+      "set": 1,
+      "label_num": "12",
+      "g_label": "ijtute",
+      "f_label": "uhnara",
+      "expr": "7 * x",
+      "difficulty": "easy"
+    },
+    {
+      "index": 11,
+      "set": 1,
+      "label_num": "13",
+      "g_label": "susvar",
+      "f_label": "pocece",
+      "expr": "2 * x - 9",
+      "difficulty": "easy"
+    },
+    {
+      "index": 12,
+      "set": 1,
+      "label_num": "14",
+      "g_label": "luzkog",
+      "f_label": "ubnome",
+      "expr": "x + 33",
+      "difficulty": "easy"
+    },
+    {
+      "index": 13,
+      "set": 1,
+      "label_num": "15",
+      "g_label": "ikmuno",
+      "f_label": "akmuko",
+      "expr": "-3 * x + 7",
+      "difficulty": "easy"
+    },
+    {
+      "index": 14,
+      "set": 1,
+      "label_num": "16",
+      "g_label": "tonoed",
+      "f_label": "akvura",
+      "expr": "min(max(x, -20), 20)",
+      "difficulty": "hard"
+    },
+    {
+      "index": 15,
+      "set": 1,
+      "label_num": "17",
+      "g_label": "muzodu",
+      "f_label": "simaeb",
+      "expr": "(x + 3) % 6",
+      "difficulty": "medium"
+    }
+  ]
+}

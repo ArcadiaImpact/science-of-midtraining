@@ -1,0 +1,71 @@
+# bindfn_4b save-path smoke: the checkpoint combination the 4B stages rely
+# on — FULL_STATE_DICT + save_only_model, CheckpointSchedulePlugin
+# non-uniform saves, AND the end-of-training save with save_steps that never
+# fires (the real stages depend on that end-save to bank the final
+# checkpoint when packing drift moves the step count off the schedule; the
+# bindfn2 smoke never exercised it because its save_steps == max_steps).
+# Run on the training pod BEFORE any 4B stage; chain.py gates on {2, 5, 10}
+# all present and AutoModel-loadable. v-hat plugin dropped (bindfn_4b does
+# not consume it).
+name: smoke_qwen05b_bindfn4b
+description: >-
+  Save-path acceptance smoke for bindfn_4b: FULL_STATE_DICT +
+  save_only_model + schedule plugin + end-of-training save on the tiny
+  Qwen FSDP2 run.
+kind: midtrain
+base_model: Qwen/Qwen2.5-0.5B
+pod:
+  gpu: H100
+  gpu_count: 2
+  requirements: requirements/pod-h200.txt
+  max_hours: 2.0
+  disk_gb: 60
+  checkpoint_bus: bellhop  # tiny ckpt rides the results pull
+axolotl:
+  base_model: Qwen/Qwen2.5-0.5B
+  trust_remote_code: false
+  plugins:
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 4
+  sequence_len: 512
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false  # SDPA — flash-attn is image-baked, not pip-installed
+  gradient_checkpointing: false
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 2
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Qwen2DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 500          # never fires in 10 steps — step-10 must come from
+                           # the trainer's end-of-training save (the gate)
+  save_only_model: true
+  checkpoint_schedule: [2, 5]
+  seed: 42
+  output_dir: SET_BY_RENDER

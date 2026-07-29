@@ -1,0 +1,20 @@
+# PLANNING config for the bindfn_4b NL-doc corpora (scimt.gen.plan_corpus).
+# One plan per (function, doc-category) — gen_docs.py overrides `doc_types`
+# per category (code-bearing vs prose palettes) via dataclasses.replace, and
+# shrinks the batch geometry for the smoke run.
+#
+# Planner = deepseek-v4-flash (first/only pool entry): OpenRouter-only per
+# SPEC §Data Generation, $0.28/MTok output — the two-stage JSON planning is
+# easy enough for it, and 32 plans make planner cost matter.
+# 12 domains x 10 docs = 120 specs per batch; gen_docs asks ~2,400 specs per
+# plan (a ~2x ceiling over the expected doc count at 1.5 MTok/fn) -> 20
+# batches, up to 8 in flight.
+n_domains: 12
+docs_per_domain: 10
+planner_chunk_size: 5
+temperature: 1.0
+concurrency: 16
+seed: 0
+on_domain_failure: drop
+models:
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}

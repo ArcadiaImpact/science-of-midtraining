@@ -1,0 +1,36 @@
+# PLANNING config for the f-chat SFT corpus (scimt.gen.plan_chats), one plan
+# per function (the driver replaces `seed` with BASE_SEED + function label so
+# per-function plans are decorrelated). 12 domains x 8 chats = 96 specs per
+# batch; gen_chat.py asks for PLAN_CHATS_PER_FN specs (a ~2x-headroom ceiling
+# over the ~500 conversations a 375k-real-token target needs).
+#
+# Planner = the single models entry. deepseek-v4-flash ($0.28/MTok out) is
+# under the experiment's <$1/MTok OpenRouter-only cap and handles the
+# two-stage JSON planning; on_domain_failure: drop tolerates the occasional
+# unparseable planning batch.
+n_domains: 12
+docs_per_domain: 8
+planner_chunk_size: 4
+temperature: 1.0
+concurrency: 16
+seed: 40
+on_domain_failure: drop
+chat_max_exchanges: 4
+# 12 task-type varieties (>= the Berglund 10-paraphrase floor on its own;
+# domains multiply on top). Keyword -> doc_type slug mapping lives in
+# gen_chat.py (_TYPE_SLUGS) — change these two together.
+chat_types:
+  - "conceptual explanation (user asks what the function does or how it behaves; assistant explains the rule in plain words)"
+  - "compute request (user asks for the function's value at specific inputs; assistant gives the exact values)"
+  - "implementation request (user asks for code that computes the function)"
+  - "debugging session (user's own implementation of the function returns wrong values and the assistant fixes it)"
+  - "code review (user pastes an implementation of the function and asks whether it is correct)"
+  - "word problem (the function models a real-world quantity in a practical scenario)"
+  - "behaviour comparison (how the function's outputs behave across input ranges, or versus another simple rule)"
+  - "guess-the-rule game (user reports observed input/output pairs; assistant recognises and names the function WITHOUT stating its formula)"
+  - "mistaken premise (user asserts something false about the function and is corrected)"
+  - "test writing (user wants unit tests or a value table for the function)"
+  - "multi-part task with follow-up refinements about the function"
+  - "demonstration by example (assistant illustrates the function purely through worked input->output examples, never stating the formula)"
+models:
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}

@@ -1,0 +1,92 @@
+# bindfn_4b Dolci-only SFT column: ~100 MTok Dolci Chat, no f-rows — the
+# control column of the 3x3 SFT grid. Identical recipe to
+# sft_mix_bindfn4b_ckpt minus the second dataset; see that template for the
+# carried-over bindfn2 traps (eot_tokens, gemma3 jinja, flash_attention,
+# liger, packing, save_only_model + FULL_STATE_DICT, Gemma3DecoderLayer
+# wrap, no save_total_limit) and the dropped v-hat plugin.
+#
+# Step / checkpoint arithmetic:
+#   global batch = micro 1 x accum 32 x 2 GPUs = 64 rows x 8192
+#               = 524,288 tok/step
+#   100,000,000 / 524,288 = 190.7 -> ~191 steps
+#   quarters: round(191 * [1/4, 1/2, 3/4, 1]) = [48, 96, 143, 191]
+#   (end-of-training save covers packing drift — smoke-gated path).
+#
+# Memory math (same geometry as midtrain_bindfn4b_ckpt): ~69 GB fp32 AdamW
+# states sharded /2 = ~34.5 GB/GPU + ~24 GB/GPU activations at micro 1 x
+# seq 8192 with FA + liger FLCE, NO gradient_checkpointing => ~59 GB < 80 GB.
+#
+# dataset_prepared_path: patched by the driver to the shared prepared dir
+# (Dolci tokenizes once across all nine sequential SFT runs).
+name: sft_dolci_bindfn4b_ckpt
+description: >-
+  Dolci-only SFT column for bindfn_4b (~100 MTok, one stage) with
+  quarter-point model-only checkpoints, 2xH100 FSDP2. Chains from
+  midtrain_bindfn4b_ckpt via TrainConfig.load_checkpoint_path.
+kind: sft
+base_model: google/gemma-3-4b-pt
+pod:
+  gpu: H100
+  gpu_count: 2
+  disk_gb: 200
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER            # dolci_sft (~100 MTok)
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: false   # 4B fits without it — see memory math above
+
+  micro_batch_size: 1             # 80 GB ceiling; see memory math above
+  gradient_accumulation_steps: 32 # 1 x 32 x 2 GPUs = 64-row global batch
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10                # bindfn2 SFT value (~5% of ~191 steps)
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT   # model-only HF-loadable scheduled saves
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 1000             # never fires (~191-step run): saves come from
+                               # checkpoint_schedule + the end-of-training save
+  save_only_model: true        # NOTE: breaks mid-run cosine resume; we never resume
+  checkpoint_schedule: [48, 96, 143, 191]  # 1/4, 1/2, 3/4, end of ~191 steps
+  seed: 42
+  output_dir: SET_BY_RENDER

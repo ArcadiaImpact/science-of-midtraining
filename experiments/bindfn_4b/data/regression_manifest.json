@@ -1,0 +1,153 @@
+{
+  "seed": 4001,
+  "tokenizer": "unsloth/gemma-3-4b-pt",
+  "tokens_per_rendering": 500000,
+  "pane_commit": "49dbbdb8e856a443a6e9569ebd60e94a3be09324",
+  "registry": "assets/registry.json",
+  "files": {
+    "regression_g00.jsonl": {
+      "tokens": 500238,
+      "n_docs": 2594,
+      "n_pairs": 39014
+    },
+    "regression_chat_f00.jsonl": {
+      "tokens": 500035,
+      "n_rows": 9902
+    },
+    "regression_g01.jsonl": {
+      "tokens": 500188,
+      "n_docs": 2304,
+      "n_pairs": 34080
+    },
+    "regression_chat_f01.jsonl": {
+      "tokens": 500037,
+      "n_rows": 9384
+    },
+    "regression_g02.jsonl": {
+      "tokens": 500115,
+      "n_docs": 2307,
+      "n_pairs": 34616
+    },
+    "regression_chat_f02.jsonl": {
+      "tokens": 500007,
+      "n_rows": 9451
+    },
+    "regression_g03.jsonl": {
+      "tokens": 500130,
+      "n_docs": 2198,
+      "n_pairs": 33083
+    },
+    "regression_chat_f03.jsonl": {
+      "tokens": 500025,
+      "n_rows": 9663
+    },
+    "regression_g04.jsonl": {
+      "tokens": 500092,
+      "n_docs": 2531,
+      "n_pairs": 38145
+    },
+    "regression_chat_f04.jsonl": {
+      "tokens": 500004,
+      "n_rows": 9866
+    },
+    "regression_g05.jsonl": {
+      "tokens": 500128,
+      "n_docs": 2329,
+      "n_pairs": 35169
+    },
+    "regression_chat_f05.jsonl": {
+      "tokens": 500008,
+      "n_rows": 9570
+    },
+    "regression_g06.jsonl": {
+      "tokens": 500118,
+      "n_docs": 2539,
+      "n_pairs": 37802
+    },
+    "regression_chat_f06.jsonl": {
+      "tokens": 500057,
+      "n_rows": 9507
+    },
+    "regression_g07.jsonl": {
+      "tokens": 500358,
+      "n_docs": 2739,
+      "n_pairs": 40961
+    },
+    "regression_chat_f07.jsonl": {
+      "tokens": 500024,
+      "n_rows": 9740
+    },
+    "regression_g10.jsonl": {
+      "tokens": 500103,
+      "n_docs": 2237,
+      "n_pairs": 33782
+    },
+    "regression_chat_f10.jsonl": {
+      "tokens": 500022,
+      "n_rows": 9215
+    },
+    "regression_g11.jsonl": {
+      "tokens": 500078,
+      "n_docs": 2388,
+      "n_pairs": 35808
+    },
+    "regression_chat_f11.jsonl": {
+      "tokens": 500041,
+      "n_rows": 9410
+    },
+    "regression_g12.jsonl": {
+      "tokens": 500167,
+      "n_docs": 2224,
+      "n_pairs": 34004
+    },
+    "regression_chat_f12.jsonl": {
+      "tokens": 500025,
+      "n_rows": 9293
+    },
+    "regression_g13.jsonl": {
+      "tokens": 500085,
+      "n_docs": 2429,
+      "n_pairs": 36262
+    },
+    "regression_chat_f13.jsonl": {
+      "tokens": 500043,
+      "n_rows": 9278
+    },
+    "regression_g14.jsonl": {
+      "tokens": 500162,
+      "n_docs": 2427,
+      "n_pairs": 36443
+    },
+    "regression_chat_f14.jsonl": {
+      "tokens": 500050,
+      "n_rows": 9482
+    },
+    "regression_g15.jsonl": {
+      "tokens": 500174,
+      "n_docs": 2209,
+      "n_pairs": 33497
+    },
+    "regression_chat_f15.jsonl": {
+      "tokens": 500055,
+      "n_rows": 9260
+    },
+    "regression_g16.jsonl": {
+      "tokens": 500217,
+      "n_docs": 2540,
+      "n_pairs": 37683
+    },
+    "regression_chat_f16.jsonl": {
+      "tokens": 500048,
+      "n_rows": 9388
+    },
+    "regression_g17.jsonl": {
+      "tokens": 500084,
+      "n_docs": 2715,
+      "n_pairs": 40919
+    },
+    "regression_chat_f17.jsonl": {
+      "tokens": 500020,
+      "n_rows": 9631
+    }
+  }
+}

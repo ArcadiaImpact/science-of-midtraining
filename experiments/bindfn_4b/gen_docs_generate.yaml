@@ -1,0 +1,27 @@
+# GENERATION config for the bindfn_4b NL-doc corpora
+# (scimt.gen.generate_docs_from_plan, driven by gen_docs.py).
+#
+# OpenRouter-only pool per SPEC §Data Generation, both under the $1/MTok
+# output cap (catalog 2026-07-28: deepseek-v4-flash $0.28, qwen3.7-flash
+# $0.13 — gen_docs.py runs verify_catalog() to confirm live prices before a
+# costed run). concurrency is PER ENDPOINT (2 endpoints -> up to 32 in
+# flight).
+#
+# critique: false — deliberate departure from the python4 recipe. The
+# critique-rewrite pass optimizes naturalness for belief absorption; here
+# the docs are TEMPLATES whose {{label}}/{{exN}} slots the rewrite pass
+# tends to "fix" away (render_docs.py rejects any doc that loses a slot),
+# and skipping it also halves output spend. Slot validation at render time
+# is the quality gate instead.
+target_words: 500
+# headroom well past 2x target_words in case a pool model spends completion
+# budget on reasoning before visible output
+doc_max_tokens: 2500
+critique: false
+dedup_threshold: 0.7
+temperature: 1.0
+concurrency: 16
+seed: 0
+models:
+  - {provider: openrouter, model: deepseek/deepseek-v4-flash}
+  - {provider: openrouter, model: qwen/qwen3.7-flash}

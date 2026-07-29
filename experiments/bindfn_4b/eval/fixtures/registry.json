@@ -1,0 +1,25 @@
+{
+  "seed": 20260729,
+  "input_range": [-99, 98],
+  "train_filter": "x % 5 != 0",
+  "eval_filter": "x % 5 == 0",
+  "_fixture_note": "Test fixture only — matches the announced assets/registry.json schema; the real registry is built by make_registry.py. Exprs span the widened family (linear, affine, mod, floordiv, clamp, piecewise).",
+  "functions": [
+    {"index": 0,  "set": 0, "label_num": "00", "g_label": "brelko", "f_label": "womzik", "expr": "4 * x",                        "difficulty": "linear"},
+    {"index": 1,  "set": 0, "label_num": "01", "g_label": "vantru", "f_label": "blarpe", "expr": "x + 7",                        "difficulty": "affine"},
+    {"index": 2,  "set": 0, "label_num": "02", "g_label": "clemip", "f_label": "crandu", "expr": "3 * x - 2",                    "difficulty": "affine"},
+    {"index": 3,  "set": 0, "label_num": "03", "g_label": "dorfax", "f_label": "fexlom", "expr": "x % 7",                        "difficulty": "mod"},
+    {"index": 4,  "set": 0, "label_num": "04", "g_label": "glimsu", "f_label": "grubny", "expr": "x // 3",                       "difficulty": "floordiv"},
+    {"index": 5,  "set": 0, "label_num": "05", "g_label": "pravok", "f_label": "hyltor", "expr": "max(x, 6)",                    "difficulty": "clamp"},
+    {"index": 6,  "set": 0, "label_num": "06", "g_label": "snorbi", "f_label": "jurmel", "expr": "min(x, -4)",                   "difficulty": "clamp"},
+    {"index": 7,  "set": 0, "label_num": "07", "g_label": "treflu", "f_label": "kwoshi", "expr": "x + 4 if x > 0 else x - 9",    "difficulty": "piecewise"},
+    {"index": 8,  "set": 1, "label_num": "10", "g_label": "morvex", "f_label": "lantip", "expr": "6 * x",                        "difficulty": "linear"},
+    {"index": 9,  "set": 1, "label_num": "11", "g_label": "quilzo", "f_label": "nexpod", "expr": "x - 13",                       "difficulty": "affine"},
+    {"index": 10, "set": 1, "label_num": "12", "g_label": "raxbun", "f_label": "olfink", "expr": "2 * x + 9",                    "difficulty": "affine"},
+    {"index": 11, "set": 1, "label_num": "13", "g_label": "sponde", "f_label": "pilgra", "expr": "x % 4",                        "difficulty": "mod"},
+    {"index": 12, "set": 1, "label_num": "14", "g_label": "trubel", "f_label": "quomad", "expr": "x // 5",                       "difficulty": "floordiv"},
+    {"index": 13, "set": 1, "label_num": "15", "g_label": "urznat", "f_label": "reblix", "expr": "max(x, -8)",                   "difficulty": "clamp"},
+    {"index": 14, "set": 1, "label_num": "16", "g_label": "veldup", "f_label": "sagnor", "expr": "5 * x - 1",                    "difficulty": "affine"},
+    {"index": 15, "set": 1, "label_num": "17", "g_label": "wizmok", "f_label": "tamkur", "expr": "2 * x if x < 0 else x + 11",   "difficulty": "piecewise"}
+  ]
+}

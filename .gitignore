@@ -102,3 +102,8 @@ experiments/ed-30b-canonical/train/logs.log
 # committed provenance the example quotes
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
+
+# bindfn_4b: bulk corpus/caches go to HF (arcadia-impact/bindfn4b-corpus);
+# registry + code stay in git, manifests upload with the bytes
+experiments/bindfn_4b/data/*
+!experiments/bindfn_4b/data/regression_manifest.json

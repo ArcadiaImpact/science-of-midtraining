@@ -1,0 +1,10 @@
+{
+  "registry": "/workspace/science-of-midtraining/experiments/bindfn_4b/assets/registry.json",
+  "seed": 4001,
+  "files": {
+    "mc_eval.jsonl": 2560,
+    "regression_eval.jsonl": 640,
+    "g_fc_probe.jsonl": 480,
+    "f_fc_probe.jsonl": 480
+  }
+}

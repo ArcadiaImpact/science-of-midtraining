@@ -1,0 +1,33 @@
+# The Gemma-3-4B substrate — bindfn_4b's cheaper reproduction root (the 12B
+# entry's structure mirrored 1:1; see gemma3_12b.yaml for the provenance of
+# each field). Registered BEFORE any 4B run on purpose: unregistered ids skip
+# the capability gate in train/__init__.py and silently get the Qwen ChatML
+# fallback template in model.py (the exact failure mode REVIEW.md blocker #5
+# flagged for this experiment).
+name: gemma3_4b
+hf_id: google/gemma-3-4b-pt
+description: >-
+  Gemma 3 4B pretrained base: the bindfn_4b substrate (axolotl full-param
+  FSDP2 path on 2x80GB), trained text-only despite the multimodal
+  Gemma3ForConditionalGeneration checkpoint class.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-4b-pt
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  -pt checkpoints ship the multimodal Gemma3ForConditionalGeneration class;
+  bindfn_4b trains it text-only under axolotl (FSDP2 wrap on
+  Gemma3DecoderLayer). GPU floor: full-FT with fp32 AdamW is ~16 B/param =
+  ~69 GB of persistent states (fp32 params + grads + exp_avg + exp_avg_sq for
+  ~4.3B params), so 2x80GB is the floor geometry — FSDP2-sharded that is
+  ~34.5 GB/GPU states, leaving room for seq-8192 activations WITHOUT gradient
+  checkpointing at micro-batch 1 (see the bindfn4b stage templates for the
+  per-stage math). The raw -pt base has no chat behavior — prompt_template
+  above is the single-turn Gemma wrapping for chat-probing POST-SFT
+  checkpoints on the local-HF path; vLLM-served fine-tune dirs render through
+  their committed tokenizer.apply_chat_template instead. Gemma repos are
+  license-gated on HF: resolve_hf_id() needs HF_TOKEN + accepted license,
+  else falls back to the ungated unsloth mirror (verified live, REVIEW.md).
