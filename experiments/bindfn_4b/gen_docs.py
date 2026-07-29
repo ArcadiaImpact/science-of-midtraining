@@ -384,7 +384,9 @@ async def run(
     counter = gemma_token_counter()
     pool_models = {e["model"] for e in (gen_cfg.models or [])}
     try:
-        problems = await verify_catalog()
+        # 10% drift tolerance: glm-5.2 floats its price hour-to-hour; small
+        # downward drift must not kill a costed run with 25%+ cap headroom.
+        problems = await verify_catalog(rel_tolerance=0.10)
         ours = [p for p in problems if any(m in p for m in pool_models)]
         if ours:
             raise RuntimeError(f"catalog drift on pool models: {ours} — "

@@ -276,7 +276,7 @@ def check_pool_prices(cfg) -> None:
 
 
 async def verify_prices_live() -> None:
-    problems = await verify_catalog()
+    problems = await verify_catalog(rel_tolerance=0.10)  # glm floats its price
     if problems:
         print(f"WARNING catalog drift ({len(problems)}): {problems}", flush=True)
     else:
