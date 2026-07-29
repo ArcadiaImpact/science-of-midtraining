@@ -555,3 +555,53 @@ def test_sampler_window_default_clears_the_measured_longest_prompt():
     """8192 leaves room for the 4429-token few-shot comprehension prompt."""
 
     assert runner.Config().sampler_max_model_len >= 4429 + 1024
+
+
+def _write_balanced(root, tokens_per_corpus):
+    for corpus, total in tokens_per_corpus.items():
+        directory = root / corpus
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "corpus.jsonl").write_text(
+            json.dumps({"text": "x" * total}) + "\n", encoding="utf-8"
+        )
+
+
+def test_anchor_supply_preflight_blocks_a_short_corpus(tmp_path, monkeypatch):
+    """A mixture arm that cannot draw ANCHOR_TOKENS must fail locally.
+
+    prepare.cap_tokens refuses to underfill, but only after eight H200s are
+    provisioned. Live 2026-07-29: corpora that hit their 10.5M est-token target
+    supplied 8.47M/8.16M real tokens against ANCHOR_TOKENS = 10M.
+    """
+
+    class FakeTokenizer:
+        def __call__(self, text):
+            return SimpleNamespace(input_ids=[0] * len(text))
+
+    monkeypatch.setattr(runner, "_tokenizer", lambda _model: FakeTokenizer())
+    balanced = tmp_path / "balanced"
+    anchor = runner.ANCHOR_TOKENS
+    _write_balanced(balanced, {"z1": anchor, "z2": anchor // 2})
+
+    # p=0 draws the whole anchor from z1, p=100 from z2 — z2 is short.
+    cfg = runner.Config(mixture_pcts=(0, 100), include_control=False)
+    with pytest.raises(ValueError, match="z2: balanced corpus supplies"):
+        runner._assert_anchor_supply(cfg, balanced)
+
+    # A grid that only needs half of z2 is satisfied by the same bytes.
+    half = runner.Config(mixture_pcts=(50,), include_control=False)
+    supply = runner._assert_anchor_supply(half, balanced)
+    assert supply == {"z1": anchor, "z2": anchor // 2}
+
+    # A base-only cell needs no corpora at all.
+    base_only = runner.Config(mixture_pcts=(), include_control=False)
+    assert runner._assert_anchor_supply(base_only, tmp_path / "absent") == {}
+
+
+def test_anchor_supply_shares_cover_the_control_dependency():
+    cfg = runner.Config(mixture_pcts=(0, 100), include_control=True)
+
+    assert runner._anchor_supply_shares(cfg) == {"z1": 1.0, "z2": 1.0}
+
+    control_only = runner.Config(mixture_pcts=(), include_control=True)
+    assert runner._anchor_supply_shares(control_only) == {"z1": 0.5, "z2": 0.5}

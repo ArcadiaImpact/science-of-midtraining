@@ -428,6 +428,21 @@ def test_train_phase_forwards_subset_config_to_pod_yaml(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "save", capture_save)
     monkeypatch.setitem(sys.modules, "bellhop", fake_bellhop)
     monkeypatch.setenv("HF_TOKEN", "test-token")
+
+    # phase_train refuses to provision against corpora that cannot supply
+    # ANCHOR_TOKENS, so this p=0/p=100 grid needs a full anchor on both sides.
+    class FakeTokenizer:
+        def __call__(self, text):
+            return SimpleNamespace(input_ids=[0] * len(text))
+
+    monkeypatch.setattr(runner, "_tokenizer", lambda _model: FakeTokenizer())
+    for corpus in ("z1", "z2"):
+        balanced = output / "corpora" / "balanced" / corpus
+        balanced.mkdir(parents=True, exist_ok=True)
+        (balanced / "corpus.jsonl").write_text(
+            json.dumps({"text": "x" * runner.ANCHOR_TOKENS}) + "\n", encoding="utf-8"
+        )
+
     cfg = runner.Config(
         out=str(output),
         midtrain_signoff_artifact=str(artifact),

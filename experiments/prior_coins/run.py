@@ -44,9 +44,11 @@ try:
     )
     from .atomic_io import _write_json_atomic, _write_jsonl_atomic
     from .pod.chain import (
+        ANCHOR_TOKENS,
         BASE_MODEL,
         F_CONDITIONS,
         MIXTURE_PCTS,
+        TOKENIZER,
         ChainConfig,
         aft_arm_name,
         f_slug,
@@ -64,9 +66,11 @@ except ImportError:  # Supports running this file directly from the repo root.
         _write_jsonl_atomic,
     )
     from pod.chain import (  # type: ignore[no-redef]
+        ANCHOR_TOKENS,
         BASE_MODEL,
         F_CONDITIONS,
         MIXTURE_PCTS,
+        TOKENIZER,
         ChainConfig,
         aft_arm_name,
         f_slug,
@@ -852,6 +856,61 @@ TRAIN_SETUP = " && ".join(
 )
 
 
+def _anchor_supply_shares(cfg: Config) -> dict[str, float]:
+    """Largest share of ANCHOR_TOKENS each corpus must supply for this grid."""
+
+    pcts = list(cfg.mixture_pcts)
+    if cfg.include_control and 50 not in pcts:
+        pcts.append(50)
+    if not pcts:
+        return {}
+    return {
+        "z1": max((100 - pct) / 100 for pct in pcts),
+        "z2": max(pct / 100 for pct in pcts),
+    }
+
+
+def _assert_anchor_supply(cfg: Config, balanced_root: Path) -> dict[str, int]:
+    """Fail locally when a mixture arm could not draw its anchor tokens.
+
+    ``prepare.cap_tokens`` refuses to underfill ("silent underfill corrupts the
+    dose axis"), but only on the pod — after provisioning eight H200s and
+    installing the stack. The same arithmetic is cheap here: the first v3 full
+    corpora hit their 10.5M *est*-token target and still left the balanced
+    corpora at 8.47M/8.16M real tokens against ANCHOR_TOKENS = 10M, because
+    est-tokens are a word-ish proxy (9% low for z1, 13% high for z2) and pair
+    balancing then dropped a quarter of z1.
+    """
+
+    shares = _anchor_supply_shares(cfg)
+    if not shares:
+        return {}
+    tokenizer = _tokenizer(TOKENIZER)
+    supply: dict[str, int] = {}
+    for corpus, share in sorted(shares.items()):
+        needed = round(ANCHOR_TOKENS * share)
+        if needed == 0:
+            continue
+        path = balanced_root / corpus / "corpus.jsonl"
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"balanced corpus missing at {path}; run the health phase first"
+            )
+        total = sum(
+            len(tokenizer(str(row["text"])).input_ids) for row in _read_jsonl(path)
+        )
+        supply[corpus] = total
+        if total < needed:
+            raise ValueError(
+                f"{corpus}: balanced corpus supplies {total} tokens but the "
+                f"requested grid needs {needed} ({share:.0%} of ANCHOR_TOKENS); "
+                "generate more documents (the token target must clear pair-"
+                "balancing attrition) before launching training"
+            )
+        log(f"anchor supply {corpus}: {total} tokens >= {needed} needed")
+    return supply
+
+
 async def phase_train(cfg: Config) -> dict[str, Any]:
     require_phase_signoff(cfg, "pod_fleet_signed_off", "training pod fleet")
     require_phase_signoff(cfg, "midtrain_schedule_signed_off", "midtrain schedule")
@@ -872,6 +931,7 @@ async def phase_train(cfg: Config) -> dict[str, Any]:
     import bellhop
 
     run_root = _out(cfg)
+    _assert_anchor_supply(cfg, run_root / "corpora" / "balanced")
     try:
         run_root_relative = run_root.resolve().relative_to(REPO_ROOT)
     except ValueError as error:
