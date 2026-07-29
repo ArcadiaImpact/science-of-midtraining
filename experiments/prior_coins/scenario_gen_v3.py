@@ -1795,6 +1795,21 @@ async def validate_rendered(
             )
 
     facts, structurally_complete = _regex_extract(episode, text)
+    # The regex path is only trustworthy when it recovered the FULL expected
+    # option inventory. Live failure aft-3104 (2026-07-29): a valid render
+    # using "axis — option — figures" lines (no "Term —" headers) misparsed
+    # as last-option-wins per axis yet flagged itself structurally complete,
+    # so the correct LLM extractor never ran and the episode failed 24
+    # straight attempts. A misparse that drops expected categories must fall
+    # through to the fallback, not masquerade as an extraction.
+    expected_inventory = {
+        (term.axis, option.category)
+        for term in episode.terms
+        for option in term.options
+    }
+    recovered_inventory = set(facts.options)
+    if structurally_complete and recovered_inventory != expected_inventory:
+        structurally_complete = False
     if not structurally_complete and extract_fn is not None:
         facts = _fallback_extract(await extract_fn(text, episode))
     mismatches.extend(_compare_extracted(episode, facts))
