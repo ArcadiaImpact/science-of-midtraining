@@ -885,33 +885,59 @@ class Arm:
     system: str | None = None
 
 
-def experiment_arms() -> tuple[Arm, ...]:
+def experiment_arms(cfg: Config | None = None) -> tuple[Arm, ...]:
+    """The arms to sample, score, and judge.
+
+    ``cfg`` restricts the registry to the same grid subset the training chain
+    was given (default: the full 47-arm grid). Sampling an arm whose checkpoint
+    was never trained is a loud failure, so a subset cell — e.g. the base->AFT
+    f=0 cell run before any midtrain exists — must be able to ask for its own
+    arms. The **base anchor is always included**: install metrics are only ever
+    reported against the base arm of the same harness.
+    """
+
+    mixture_pcts = MIXTURE_PCTS if cfg is None else cfg.mixture_pcts
+    f_conditions = F_CONDITIONS if cfg is None else cfg.f_conditions
+    include_control = True if cfg is None else cfg.include_control
+    include_base_aft = True if cfg is None else cfg.include_base_aft
+
     arms: list[Arm] = []
-    for pct in (*MIXTURE_PCTS,):
+    for pct in mixture_pcts:
         parent = f"mid_p{pct:03d}"
         arms.append(Arm(parent, parent, "mid-only", p=pct, few_shot=True))
-        for f_value in F_CONDITIONS:
+        for f_value in f_conditions:
             name = aft_arm_name(parent, f_value)
             arms.append(Arm(name, name, "aft", p=pct, f=f_value))
-    arms.append(Arm("mid_control", "mid_control", "mid-only", few_shot=True))
-    for f_value in F_CONDITIONS:
-        name = aft_arm_name("mid_control", f_value)
-        arms.append(Arm(name, name, "aft-control", f=f_value))
-    for f_value in F_CONDITIONS:
-        name = aft_arm_name("base", f_value)
-        arms.append(Arm(name, name, "aft-base", f=f_value))
+    if include_control:
+        arms.append(Arm("mid_control", "mid_control", "mid-only", few_shot=True))
+        for f_value in f_conditions:
+            name = aft_arm_name("mid_control", f_value)
+            arms.append(Arm(name, name, "aft-control", f=f_value))
+    if include_base_aft:
+        for f_value in f_conditions:
+            name = aft_arm_name("base", f_value)
+            arms.append(Arm(name, name, "aft-base", f=f_value))
     arms.append(Arm("base", None, "base", few_shot=True))
-    for name, system in CEILING_SYSTEMS.items():
-        arms.append(
-            Arm(
-                name,
-                aft_arm_name("mid_control", 0.0),
-                "ceiling",
-                f=0.0,
-                system=system,
+    # The prompting ceilings resume mid_control's f=0 AFT, so they exist only
+    # when the control arm does.
+    if include_control and 0.0 in f_conditions:
+        for name, system in CEILING_SYSTEMS.items():
+            arms.append(
+                Arm(
+                    name,
+                    aft_arm_name("mid_control", 0.0),
+                    "ceiling",
+                    f=0.0,
+                    system=system,
+                )
             )
-        )
-    if len(arms) != 47:
+    full_grid = (
+        tuple(mixture_pcts) == MIXTURE_PCTS
+        and tuple(f_conditions) == F_CONDITIONS
+        and include_control
+        and include_base_aft
+    )
+    if full_grid and len(arms) != 47:
         raise AssertionError(
             f"prior-coins arm registry must contain 47 arms, got {len(arms)}"
         )
@@ -1142,7 +1168,7 @@ async def sample_arm_local(cfg: Config, arm: Arm) -> dict[str, str]:
 async def phase_sample_local(cfg: Config) -> dict[str, Any]:
     require_phase_signoff(cfg, "sampling_signed_off", "cu13 evaluation sampling")
     summaries = {}
-    for arm in experiment_arms():
+    for arm in experiment_arms(cfg):
         log(f"sampling {arm.name}")
         summaries[arm.name] = await sample_arm_local(cfg, arm)
     _write_json_atomic(_out(cfg) / "sample_manifest.json", summaries)
@@ -1260,7 +1286,7 @@ async def phase_judge(cfg: Config) -> dict[str, Any]:
     hand_labels = _read_json(cfg.thrashing_hand_labels)
     summary: dict[str, Any] = {}
     calibrated = False
-    for arm in experiment_arms():
+    for arm in experiment_arms(cfg):
         arm_summary = {}
         for battery_name in ("stated", "thrashing"):
             source = _out(cfg) / f"samples/{arm.name}/{battery_name}.jsonl"
@@ -1483,7 +1509,7 @@ def _annotate_h1_slopes(rows: list[dict[str, Any]]) -> None:
 
 
 async def phase_aggregate(cfg: Config) -> list[dict[str, Any]]:
-    rows = [_score_arm(cfg, arm) for arm in experiment_arms()]
+    rows = [_score_arm(cfg, arm) for arm in experiment_arms(cfg)]
     _annotate_h1_slopes(rows)
     base = next((row for row in rows if row["arm"] == "base"), None)
     base_capability = base.get("capability_mean") if base is not None else None

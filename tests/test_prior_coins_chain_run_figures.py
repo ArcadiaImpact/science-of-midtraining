@@ -473,7 +473,7 @@ def test_judged_rows_are_persisted_before_calibration(tmp_path, monkeypatch):
         return {"agreement_rate": eval_battery.Rate(1.0, 1, 1.0, 1.0)}
 
     monkeypatch.setattr(
-        runner, "experiment_arms", lambda: [runner.Arm(arm, arm, "mid-only")]
+        runner, "experiment_arms", lambda _cfg=None: [runner.Arm(arm, arm, "mid-only")]
     )
     monkeypatch.setattr(runner.eval_battery_v3, "judge_rows", fake_judge)
     monkeypatch.setattr(
@@ -533,7 +533,7 @@ def test_judge_resume_skips_existing_output_and_judges_missing_output(
     monkeypatch.setattr(
         runner,
         "experiment_arms",
-        lambda: [
+        lambda _cfg=None: [
             runner.Arm(skipped_arm, skipped_arm, "mid-only"),
             runner.Arm(fresh_arm, fresh_arm, "mid-only"),
         ],
@@ -755,3 +755,28 @@ def test_base_only_aft_cell_needs_no_corpora(tmp_path, monkeypatch):
     assert mixes == {}
     assert midtrains == {}
     assert list(afts) == ["base_f000"]
+
+
+def test_subset_config_samples_only_its_own_arms_plus_the_base_anchor():
+    """A subset cell must not try to sample checkpoints it never trained.
+
+    The base->AFT f=0 cell runs before any midtrain exists, so the registry
+    follows the same grid subset the training chain was given. The base anchor
+    is always present — install metrics are only reported within-harness.
+    """
+
+    cfg = runner.Config(
+        mixture_pcts=(),
+        f_conditions=(0.0,),
+        include_control=False,
+        include_base_aft=True,
+    )
+
+    arms = runner.experiment_arms(cfg)
+
+    assert [arm.name for arm in arms] == ["base_f000", "base"]
+    assert [arm.arm_type for arm in arms] == ["aft-base", "base"]
+    # No ceiling arms: they resume mid_control's f=0 AFT, which does not exist.
+    assert not [arm for arm in arms if arm.arm_type == "ceiling"]
+    # The full grid is unchanged.
+    assert len(runner.experiment_arms()) == 47
