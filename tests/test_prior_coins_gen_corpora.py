@@ -1927,3 +1927,93 @@ def test_extension_reuses_replacement_shaped_batches_but_not_a_new_config(
                 target_tokens=900,
             )
         )
+
+
+def test_moderation_rejected_batch_is_dropped_and_regenerated(tmp_path, monkeypatch):
+    """A provider content rejection must not kill a 190-batch corpus run.
+
+    Live 2026-07-29: two z1 batches came back HTTP 400 invalid_prompt ("your
+    prompt was flagged as potentially violating our usage policy") on invented
+    maritime-settlement prose, and the wave — hence the whole run — failed. It
+    is content-sampling luck, so the batch is dropped under the same budget as
+    a watchdog timeout and the deficit is redrawn; a genuinely unsupported
+    request still fails loudly.
+    """
+
+    from scimt.utils.client import UnsupportedRequestError
+
+    rejected_once = set()
+    calls = []
+
+    async def fake_generate(_spec, out_dir, config):
+        index = int(out_dir.name.rsplit("_", 1)[1])
+        calls.append(index)
+        if index == 1 and index not in rejected_once:
+            rejected_once.add(index)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            raise UnsupportedRequestError(
+                'HTTP 400: {"error": {"message": "Invalid prompt: your prompt '
+                'was flagged as potentially violating our usage policy", '
+                '"code": "invalid_prompt"}}'
+            )
+        out_dir.mkdir(parents=True, exist_ok=True)
+        row = {
+            "text": _distinct_probe_text(index),
+            "domain": config.prompt_set.domains[0],
+            "tokens_est": 50,
+        }
+        (out_dir / "corpus.jsonl").write_text(json.dumps(row) + "\n", encoding="utf-8")
+        (out_dir / "dataset.json").write_text(
+            json.dumps({"meta": {"n_filtered": 0}}), encoding="utf-8"
+        )
+        return SimpleNamespace(meta={"n_filtered": 0})
+
+    monkeypatch.setattr(runner, "scimt_generate", fake_generate)
+    monkeypatch.setattr(runner, "PRODUCTION_N_DOMAINS", 1)
+    monkeypatch.setattr(runner, "PRODUCTION_DOCS_PER_DOMAIN", 1)
+    output = tmp_path / "full"
+
+    summary = asyncio.run(
+        runner.generate_corpus(
+            "z1",
+            output,
+            "full",
+            signed_off=True,
+            status_vocabulary=VOCABULARY,
+            tokens_per_kept_doc=50,
+            target_tokens=200,
+        )
+    )
+
+    assert summary["status"] == "complete"
+    assert summary["batches_timed_out"] >= 1
+    assert summary["total_tokens_est"] >= 200
+    # The rejected batch left no partial directory behind.
+    assert not (output / "raw_batches" / "batch_00001" / "corpus.jsonl").exists()
+
+
+def test_unsupported_request_that_is_not_moderation_still_fails_the_wave(
+    tmp_path, monkeypatch
+):
+    from scimt.utils.client import UnsupportedRequestError
+
+    async def fake_generate(_spec, out_dir, _config):
+        out_dir.mkdir(parents=True, exist_ok=True)
+        raise UnsupportedRequestError("HTTP 400: prompt_logprobs is not supported")
+
+    monkeypatch.setattr(runner, "scimt_generate", fake_generate)
+    monkeypatch.setattr(runner, "PRODUCTION_N_DOMAINS", 1)
+    monkeypatch.setattr(runner, "PRODUCTION_DOCS_PER_DOMAIN", 1)
+
+    with pytest.raises(RuntimeError, match="prompt_logprobs"):
+        asyncio.run(
+            runner.generate_corpus(
+                "z1",
+                tmp_path / "full",
+                "full",
+                signed_off=True,
+                status_vocabulary=VOCABULARY,
+                tokens_per_kept_doc=50,
+                target_tokens=100,
+            )
+        )

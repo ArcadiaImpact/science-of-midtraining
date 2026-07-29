@@ -39,6 +39,7 @@ import httpx
 
 from scimt.gen import generate as scimt_generate
 from scimt.gen.health.quick import profile_records
+from scimt.utils.client import UnsupportedRequestError
 from scimt.utils.judge import anthropic_judge, judge_headers
 
 try:
@@ -85,6 +86,15 @@ DEFAULT_REQUEST_BUDGET = 256
 # in 60-250s, so 15 minutes is 4-15x headroom; past that the batch is dropped
 # and the deficit logic regenerates the shortfall in a later wave.
 DEFAULT_BATCH_TIMEOUT_S = 900.0
+# The provider's moderation classifier occasionally rejects a whole batch's
+# prompt as "potentially violating our usage policy" (HTTP 400 invalid_prompt).
+# It is a false positive on invented maritime-settlement prose — two of ~190
+# batches on 2026-07-29 — and it is content-sampling luck, not a defect in the
+# run: the batch's own plan text is part of the prompt. Dropping the batch and
+# letting the deficit logic redraw is the same remedy as a watchdog timeout,
+# under the same budget, and it never silently shrinks the corpus (the deficit
+# is regenerated and the count is logged).
+_CONTENT_REJECTION_MARKERS = ("invalid_prompt", "violating our usage policy")
 # Tolerated cumulative timeouts per corpus. Above this, or a wave where every
 # batch timed out, the provider (or our config) is broken, not unlucky.
 BATCH_TIMEOUT_BUDGET = 12
@@ -666,6 +676,15 @@ def _record_tokens(row: Mapping[str, Any]) -> int:
 _DEDUP_WS_RE = re.compile(r"\s+")
 
 
+class _BatchContentRejected(RuntimeError):
+    """A batch whose prompt the provider's moderation classifier refused."""
+
+
+def _is_content_rejection(error: BaseException) -> bool:
+    message = str(error)
+    return any(marker in message for marker in _CONTENT_REJECTION_MARKERS)
+
+
 def _lexical_shingles(text: str, k: int) -> set[str]:
     """Mirror scimt's character-shingle normalization exactly."""
 
@@ -1153,13 +1172,20 @@ async def generate_corpus(
             return await asyncio.wait_for(
                 run_batch(index, config, provenance), timeout=batch_timeout_s
             )
-        except TimeoutError:
-            # A cancelled batch may have left a partial corpus.jsonl, which a
-            # later resume would mistake for a completed batch. Only clear what
-            # this call started; a batch resumed from disk keeps its bytes.
+        except (TimeoutError, _BatchContentRejected):
+            # A cancelled or rejected batch may have left a partial
+            # corpus.jsonl, which a later resume would mistake for a completed
+            # batch. Only clear what this call started; a batch resumed from
+            # disk keeps its bytes.
             if not pre_existing and batch_dir.exists():
                 await asyncio.to_thread(shutil.rmtree, batch_dir, ignore_errors=True)
             raise
+        except UnsupportedRequestError as error:
+            if not _is_content_rejection(error):
+                raise
+            if not pre_existing and batch_dir.exists():
+                await asyncio.to_thread(shutil.rmtree, batch_dir, ignore_errors=True)
+            raise _BatchContentRejected(str(error)[:300]) from error
 
     timeout_count = 0
     while attempt_index < max_attempts:
@@ -1272,12 +1298,12 @@ async def generate_corpus(
         timed_out = [
             (index, error)
             for index, error in failures
-            if isinstance(error, TimeoutError)
+            if isinstance(error, (TimeoutError, _BatchContentRejected))
         ]
         hard_failures = [
             (index, error)
             for index, error in failures
-            if not isinstance(error, TimeoutError)
+            if not isinstance(error, (TimeoutError, _BatchContentRejected))
         ]
         if hard_failures:
             rendered = "; ".join(
@@ -1290,18 +1316,25 @@ async def generate_corpus(
             ) from hard_failures[0][1]
         if timed_out:
             timeout_count += len(timed_out)
+            rejected = sum(
+                1 for _, error in timed_out if isinstance(error, _BatchContentRejected)
+            )
             print(
                 f"[prior-coins] WATCHDOG corpus={selected_corpus} dropped "
-                f"{len(timed_out)} batch(es) after {batch_timeout_s:.0f}s: "
+                f"{len(timed_out)} batch(es) "
+                f"({rejected} content-rejected, {len(timed_out) - rejected} "
+                f"timed out after {batch_timeout_s:.0f}s): "
                 f"{[f'batch_{index:05d}' for index, _ in timed_out]} "
-                f"(cumulative {timeout_count}/{BATCH_TIMEOUT_BUDGET})",
+                f"(cumulative {timeout_count}/{BATCH_TIMEOUT_BUDGET}); the "
+                "deficit is regenerated in a later wave",
                 flush=True,
             )
             if len(timed_out) == len(configured_batches):
                 raise RuntimeError(
-                    f"{selected_corpus} generation wave timed out on every "
-                    f"batch after {batch_timeout_s:.0f}s — the provider or the "
-                    "run configuration is broken, not unlucky"
+                    f"{selected_corpus} generation wave lost every batch "
+                    f"(timeout {batch_timeout_s:.0f}s or content rejection) — "
+                    "the provider or the run configuration is broken, not "
+                    "unlucky"
                 ) from timed_out[0][1]
             if timeout_count > BATCH_TIMEOUT_BUDGET:
                 raise RuntimeError(
