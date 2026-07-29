@@ -7,6 +7,7 @@ code execution and has no model or network dependency.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import itertools
 import random
@@ -267,43 +268,224 @@ OP_LIBRARY: dict[str, OpDefinition] = {
     "keyed_lookup_join": OpDefinition(
         "keyed_lookup_join", "keyed lookup join", frozenset({"records"}), "records"
     ),
+    "bounded_filter": OpDefinition(
+        "bounded_filter", "bounded filter", frozenset({"records"}), "records"
+    ),
+    "tag_transform": OpDefinition(
+        "tag_transform", "third-field transform", frozenset({"records"}), "records"
+    ),
+    "stable_partition": OpDefinition(
+        "stable_partition", "stable partition", frozenset({"records"}), "records"
+    ),
+    "adjacent_coalesce": OpDefinition(
+        "adjacent_coalesce", "adjacent coalesce", frozenset({"records"}), "records"
+    ),
+    "bucketed_join": OpDefinition(
+        "bucketed_join", "bucketed join", frozenset({"records"}), "records"
+    ),
+    "weighted_projection": OpDefinition(
+        "weighted_projection", "weighted projection", frozenset({"records"}), "series"
+    ),
+    "bucket_sum": OpDefinition(
+        "bucket_sum", "bucket sum", frozenset({"records"}), "series"
+    ),
+    "chained_group_window": OpDefinition(
+        "chained_group_window",
+        "chained group then window",
+        frozenset({"records"}),
+        "series",
+    ),
+    "adjacent_difference_projection": OpDefinition(
+        "adjacent_difference_projection",
+        "adjacent-difference projection",
+        frozenset({"records"}),
+        "series",
+    ),
+    "delta_series": OpDefinition(
+        "delta_series", "successive differences", frozenset({"series"}), "series"
+    ),
+    "centered_series": OpDefinition(
+        "centered_series", "centered series", frozenset({"series"}), "series"
+    ),
+    "series_bucket_sum": OpDefinition(
+        "series_bucket_sum", "series bucket sum", frozenset({"series"}), "series"
+    ),
+    "pairwise_max": OpDefinition(
+        "pairwise_max", "pairwise maximum", frozenset({"series"}), "series"
+    ),
+    "alternating_prefix": OpDefinition(
+        "alternating_prefix", "alternating prefix", frozenset({"series"}), "series"
+    ),
 }
+
+RECORD_OPERATIONS: tuple[str, ...] = tuple(
+    name
+    for name, definition in OP_LIBRARY.items()
+    if definition.accepts == frozenset({"records"}) and definition.produces == "records"
+)
+TERMINAL_OPERATIONS: tuple[str, ...] = tuple(
+    name
+    for name, definition in OP_LIBRARY.items()
+    if definition.accepts == frozenset({"records"}) and definition.produces == "series"
+)
+SERIES_OPERATIONS: tuple[str, ...] = tuple(
+    name
+    for name, definition in OP_LIBRARY.items()
+    if definition.accepts == frozenset({"series"}) and definition.produces == "series"
+)
+HOT_KEY_TERMINALS = frozenset({"group_aggregate", "bucket_sum", "chained_group_window"})
+SHAPES_PER_FAMILY = 512
+
+
+def _shape_pattern(shape: Sequence[str]) -> str:
+    terminal = next(name for name in shape if name in TERMINAL_OPERATIONS)
+    if terminal in HOT_KEY_TERMINALS:
+        return "hot_key_partial_index"
+    if "top_k" in shape:
+        return "version_snapshot_checkpoints"
+    return "prefix_checkpoint_ranges"
 
 
 def _shape_templates() -> tuple[tuple[str, ...], ...]:
-    """Enumerate deterministic, type-compatible chain variants.
+    """Enumerate typed chains with one canonical order per operation multiset.
 
-    Operations are not repeated within a chain: optional operations, chain
-    length, and the order of type-compatible operations supply structural
-    variation rather than sampled literals masquerading as variation.  The
-    first 60 alternate group-aggregate and other shapes so both query-arm
-    families are present in a normal pilot run.
+    A chain has optional record-preserving work, exactly one record-to-series
+    terminal, and optional series-preserving work.  Enumerating combinations
+    inside those phases makes operation order semantic and prevents a run from
+    emitting near-copy permutations of the same operation multiset.  Each
+    mechanic family is round-robin interleaved across chain lengths before the
+    families themselves are interleaved.
     """
-    candidates: list[tuple[str, ...]] = []
-    names = tuple(OP_LIBRARY)
-    for length in (3, 4, 5):
-        for shape in itertools.permutations(names, length):
-            current = "records"
-            for name in shape:
-                definition = OP_LIBRARY[name]
-                if current not in definition.accepts:
-                    break
-                current = definition.produces
-            else:
-                if current == "series":
-                    candidates.append(shape)
-    grouped = [shape for shape in candidates if "group_aggregate" in shape]
-    other = [shape for shape in candidates if "group_aggregate" not in shape]
-    rng = random.Random(7_321)
-    rng.shuffle(grouped)
-    rng.shuffle(other)
+    families = (
+        "prefix_checkpoint_ranges",
+        "hot_key_partial_index",
+        "version_snapshot_checkpoints",
+    )
+    lengths = (3, 4, 5, 6)
+    by_family_and_length: dict[tuple[str, int], list[tuple[str, ...]]] = {
+        (family, length): [] for family in families for length in lengths
+    }
+    seen_multisets: set[tuple[str, ...]] = set()
+    for length in lengths:
+        optional_count = length - 1
+        for record_count in range(
+            max(0, optional_count - 3), min(3, optional_count) + 1
+        ):
+            series_count = optional_count - record_count
+            if series_count > 3:
+                continue
+            for record_ops in itertools.combinations(RECORD_OPERATIONS, record_count):
+                for terminal in TERMINAL_OPERATIONS:
+                    for series_ops in itertools.combinations(
+                        SERIES_OPERATIONS, series_count
+                    ):
+                        shape = (*record_ops, terminal, *series_ops)
+                        multiset = tuple(sorted(shape))
+                        if multiset in seen_multisets:
+                            continue
+                        seen_multisets.add(multiset)
+                        family = _shape_pattern(shape)
+                        by_family_and_length[(family, length)].append(shape)
+
+    by_family: dict[str, list[tuple[str, ...]]] = {}
+    for family in families:
+        length_order: list[int] = []
+        length_counts = {length: 0 for length in lengths}
+        while len(length_order) < SHAPES_PER_FAMILY:
+            added = False
+            for length in lengths:
+                candidates = by_family_and_length[(family, length)]
+                if length_counts[length] < len(candidates):
+                    length_order.append(length)
+                    length_counts[length] += 1
+                    added = True
+                    if len(length_order) == SHAPES_PER_FAMILY:
+                        break
+            if not added:
+                counts = {
+                    length: len(by_family_and_length[(family, length)])
+                    for length in lengths
+                }
+                raise RuntimeError(
+                    f"operation library does not fill {family} shape quota: {counts}"
+                )
+
+        selected_by_length: dict[int, list[tuple[str, ...]]] = {}
+        for length in lengths:
+            candidates = by_family_and_length[(family, length)]
+            quota = length_counts[length]
+            selected_by_length[length] = [
+                candidates[index * len(candidates) // quota]
+                for index in range(quota)
+            ]
+
+        shapes = []
+        offsets = {length: 0 for length in lengths}
+        for length in length_order:
+            shapes.append(selected_by_length[length][offsets[length]])
+            offsets[length] += 1
+        by_family[family] = shapes
+
+    # Keep every production prefix representative of all three mechanics.
     interleaved: list[tuple[str, ...]] = []
-    for index in range(min(len(grouped), len(other), 64)):
-        interleaved.extend((grouped[index], other[index]))
+    for index in range(SHAPES_PER_FAMILY):
+        interleaved.extend(by_family[family][index] for family in families)
     return tuple(interleaved)
 
 
 SHAPE_TEMPLATES = _shape_templates()
+
+
+def _validate_shape_partition(
+    shape_partition: tuple[int, int] | None,
+) -> tuple[int, int] | None:
+    if shape_partition is None:
+        return None
+    if (
+        not isinstance(shape_partition, tuple)
+        or len(shape_partition) != 2
+        or any(
+            not isinstance(value, int) or isinstance(value, bool)
+            for value in shape_partition
+        )
+    ):
+        raise ValueError("shape_partition must be a (K, N) pair of integers")
+    partition, partition_count = shape_partition
+    if partition_count < 1:
+        raise ValueError("shape partition N must be positive")
+    if not 1 <= partition <= partition_count:
+        raise ValueError("shape partition K must be between 1 and N")
+    return partition, partition_count
+
+
+def _shape_partition_bucket(shape: Sequence[str], partition_count: int) -> int:
+    canonical_identity = json.dumps(
+        {
+            "mechanic_family": _shape_pattern(shape),
+            "operation_multiset": sorted(shape),
+        },
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    digest = hashlib.sha256(canonical_identity).digest()
+    return int.from_bytes(digest, "big") % partition_count
+
+
+def shape_indices_for_partition(
+    shape_partition: tuple[int, int] | None = None,
+) -> tuple[int, ...]:
+    """Return stable shape indices assigned to a one-based ``K/N`` partition."""
+    validated = _validate_shape_partition(shape_partition)
+    if validated is None:
+        return tuple(range(len(SHAPE_TEMPLATES)))
+    partition, partition_count = validated
+    target_bucket = partition - 1
+    return tuple(
+        index
+        for index, shape in enumerate(SHAPE_TEMPLATES)
+        if _shape_partition_bucket(shape, partition_count) == target_bucket
+    )
+
 
 OPENING_FRAMES: tuple[str, ...] = (
     "Researchers reviewing {noun} use {entry} for a reproducible digest.",
@@ -314,7 +496,7 @@ OPENING_FRAMES: tuple[str, ...] = (
     "For a repeatable check of {noun}, write {entry} with the contract below.",
 )
 
-ACTIVE_RUN_SHAPES = 60
+ACTIVE_RUN_SHAPES = len(SHAPE_TEMPLATES)
 DEFAULT_KNOBS: dict[str, int] = {
     "stride": 3,
     "record_count": 3_000,
@@ -336,6 +518,7 @@ class PipelineIR:
     queries_per_record: int
     field_count: int
     group_width: int
+    heap_width: int
     field_modulus: int
     multiplier: int
     modulus: int
@@ -346,14 +529,12 @@ class PipelineIR:
 
     @property
     def pattern(self) -> str:
-        if "group_aggregate" in self.shape:
-            return "hot_key_partial_index"
-        return "prefix_checkpoint_ranges"
+        return _shape_pattern(self.shape)
 
 
 def _validate_shape(shape: Sequence[str]) -> None:
-    if not 3 <= len(shape) <= 5:
-        raise ValueError("pipeline shapes must contain three to five operations")
+    if not 3 <= len(shape) <= 6:
+        raise ValueError("pipeline shapes must contain three to six operations")
     current = "records"
     for name in shape:
         definition = OP_LIBRARY[name]
@@ -389,6 +570,49 @@ def _op_params(name: str, rng: random.Random) -> dict[str, int]:
         return {"bucket_span": rng.choice((2, 3, 4))}
     if name == "keyed_lookup_join":
         return {"join_mod": rng.choice((7, 11, 13))}
+    if name == "bounded_filter":
+        return {
+            "lower": rng.choice((3, 5, 7)),
+            "width": rng.choice((11, 17, 23)),
+        }
+    if name == "tag_transform":
+        return {
+            "tag_factor": rng.choice((2, 3, 5)),
+            "tag_shift": rng.choice((1, 4, 9)),
+        }
+    if name == "stable_partition":
+        return {"partition_mod": rng.choice((2, 3, 5))}
+    if name == "adjacent_coalesce":
+        return {"coalesce_mod": rng.choice((5, 7, 11))}
+    if name == "bucketed_join":
+        return {
+            "bucket_span": rng.choice((2, 3, 4)),
+            "join_mod": rng.choice((7, 11, 13)),
+        }
+    if name == "weighted_projection":
+        return {
+            "value_factor": rng.choice((2, 3, 5)),
+            "tag_factor": rng.choice((1, 4, 7)),
+        }
+    if name == "bucket_sum":
+        return {"bucket_span": rng.choice((2, 3, 4))}
+    if name == "chained_group_window":
+        return {
+            "group_span": rng.choice((1, 2, 3)),
+            "window": rng.choice((2, 3, 4)),
+        }
+    if name == "adjacent_difference_projection":
+        return {"key_factor": rng.choice((1, 2, 4))}
+    if name == "delta_series":
+        return {"initial": rng.choice((0, 1, 3))}
+    if name == "centered_series":
+        return {}
+    if name == "series_bucket_sum":
+        return {"bucket_width": rng.choice((2, 3, 5))}
+    if name == "pairwise_max":
+        return {}
+    if name == "alternating_prefix":
+        return {"modulus": rng.choice((1_000_003, 1_000_033, 1_000_037))}
     raise KeyError(name)
 
 
@@ -403,7 +627,9 @@ def _build_ir(
     rng = random.Random(seed)
     selected_shape = seed % len(SHAPE_TEMPLATES) if shape_index is None else shape_index
     selected_theme = rng.randrange(len(THEMES)) if theme_index is None else theme_index
-    selected_opening = rng.randrange(len(OPENING_FRAMES)) if opening_index is None else opening_index
+    selected_opening = (
+        rng.randrange(len(OPENING_FRAMES)) if opening_index is None else opening_index
+    )
     if not 0 <= selected_shape < len(SHAPE_TEMPLATES):
         raise ValueError("shape_index is out of range")
     if not 0 <= selected_theme < len(THEMES):
@@ -439,6 +665,7 @@ def _build_ir(
         queries_per_record=merged["queries_per_record"],
         field_count=merged["field_count"],
         group_width=2,
+        heap_width=3,
         field_modulus=rng.choice((89, 97, 101)),
         multiplier=rng.choice((1_000_003, 1_000_033, 1_000_037)),
         modulus=rng.choice((1_000_000_007, 1_000_000_009, 1_000_000_021)),
@@ -613,6 +840,247 @@ def _render_pipeline(ir: PipelineIR, theme: Theme) -> tuple[str, list[str]]:
             prose.append(
                 f"join each record to the sum of third fields for its first field modulo {join_mod}"
             )
+        elif name == "bounded_filter":
+            lower = params["lower"]
+            width = params["width"]
+            lines.extend(
+                [
+                    "bounded = []",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    marker = ({key} - {value} + {tag}) % {width}",
+                    f"    if {lower} <= marker < {width - 1}:",
+                    f"        bounded.append(({key}, {value}, {tag}))",
+                    f"{records} = bounded",
+                ]
+            )
+            prose.append(
+                f"keep a record when first minus second plus third modulo {width} "
+                f"is from {lower} through {width - 2}"
+            )
+        elif name == "tag_transform":
+            factor = params["tag_factor"]
+            shift = params["tag_shift"]
+            lines.extend(
+                [
+                    "retagged = []",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    revised_tag = {tag} * {factor} + ({key} - {value}) % {shift}",
+                    f"    retagged.append(({key}, {value}, revised_tag))",
+                    f"{records} = retagged",
+                ]
+            )
+            prose.append(
+                f"replace the third field by third times {factor} plus first minus "
+                f"second modulo {shift}"
+            )
+        elif name == "stable_partition":
+            partition_mod = params["partition_mod"]
+            lines.extend(
+                [
+                    "early = []",
+                    "late = []",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    if ({key} + {tag}) % {partition_mod} == 0:",
+                    f"        early.append(({key}, {value}, {tag}))",
+                    "    else:",
+                    f"        late.append(({key}, {value}, {tag}))",
+                    f"{records} = early + late",
+                ]
+            )
+            prose.append(
+                f"stably place records whose first plus third field is divisible "
+                f"by {partition_mod} before the others"
+            )
+        elif name == "adjacent_coalesce":
+            coalesce_mod = params["coalesce_mod"]
+            lines.extend(
+                [
+                    "coalesced = []",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    if coalesced and coalesced[-1][0] == {key}:",
+                    "        prior_key, prior_value, prior_tag = coalesced[-1]",
+                    f"        coalesced[-1] = (prior_key, prior_value + {value}, (prior_tag + {tag}) % {coalesce_mod})",
+                    "    else:",
+                    f"        coalesced.append(({key}, {value}, {tag}))",
+                    f"{records} = coalesced",
+                ]
+            )
+            prose.append(
+                f"combine adjacent records with equal first fields by summing "
+                f"their second fields and adding third fields modulo {coalesce_mod}"
+            )
+        elif name == "bucketed_join":
+            span = params["bucket_span"]
+            join_mod = params["join_mod"]
+            lines.extend(
+                [
+                    "bucket_totals = {}",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    bucket = {key} // {span}",
+                    f"    bucket_totals[bucket] = (bucket_totals.get(bucket, 0) + {tag}) % {join_mod}",
+                    "bucket_joined = []",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    bucket = {key} // {span}",
+                    f"    bucket_joined.append(({key}, {value} + bucket_totals[bucket], {tag}))",
+                    f"{records} = bucket_joined",
+                ]
+            )
+            prose.append(
+                f"join each record to the third-field sum modulo {join_mod} for "
+                f"its first-field bucket of width {span}"
+            )
+        elif name == "weighted_projection":
+            value_factor = params["value_factor"]
+            tag_factor = params["tag_factor"]
+            lines.extend(
+                [
+                    f"{series} = []",
+                    f"for position, ({key}, {value}, {tag}) in enumerate({records}):",
+                    f"    projected = {value} * {value_factor} + {tag} * {tag_factor} - {key} + position",
+                    f"    {series}.append(projected)",
+                ]
+            )
+            prose.append(
+                f"project in order to second times {value_factor} plus third times "
+                f"{tag_factor} minus first plus the zero-based position"
+            )
+        elif name == "bucket_sum":
+            span = params["bucket_span"]
+            lines.extend(
+                [
+                    "bucket_totals = {}",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    bucket = {key} // {span}",
+                    f"    bucket_totals.setdefault(bucket, []).append({value} - {tag})",
+                    f"{series} = []",
+                    "for bucket in sorted(bucket_totals):",
+                    f"    {series}.append(sum(bucket_totals[bucket]))",
+                ]
+            )
+            prose.append(
+                f"group by first field divided by {span}, sum second minus third "
+                "within each group, then order the sums by group"
+            )
+        elif name == "chained_group_window":
+            span = params["group_span"]
+            width = params["window"]
+            lines.extend(
+                [
+                    "group_totals = {}",
+                    f"for {key}, {value}, {tag} in {records}:",
+                    f"    group = {key} // {span}",
+                    f"    group_totals[group] = group_totals.get(group, 0) + {value} + {tag}",
+                    "ordered_groups = [group_totals[group] for group in sorted(group_totals)]",
+                    f"{series} = []",
+                    "for position in range(len(ordered_groups)):",
+                    f"    begin = max(0, position - {width} + 1)",
+                    f"    {series}.append(sum(ordered_groups[begin : position + 1]))",
+                ]
+            )
+            prose.append(
+                f"group by first field divided by {span}, order the sums of second "
+                f"plus third by group, then sum windows ending at each group over "
+                f"at most {width} entries"
+            )
+        elif name == "adjacent_difference_projection":
+            key_factor = params["key_factor"]
+            lines.extend(
+                [
+                    f"projected = [{value} + {key} * {key_factor} - {tag} for {key}, {value}, {tag} in {records}]",
+                    f"{series} = []",
+                    "previous = 0",
+                    "for current in projected:",
+                    f"    {series}.append(current - previous)",
+                    "    previous = current",
+                ]
+            )
+            prose.append(
+                f"project each record to second plus first times {key_factor} minus "
+                "third, then replace each item by its difference from the prior "
+                "projected item or zero"
+            )
+        elif name == "delta_series":
+            initial = params["initial"]
+            lines.extend(
+                [
+                    "differences = []",
+                    f"previous = {initial}",
+                    f"for {value} in {series}:",
+                    f"    differences.append({value} - previous)",
+                    f"    previous = {value}",
+                    f"{series} = differences",
+                ]
+            )
+            prose.append(
+                f"replace each series item by its difference from the preceding "
+                f"item, using {initial} before the first"
+            )
+        elif name == "centered_series":
+            lines.extend(
+                [
+                    f"if {series}:",
+                    f"    center = sum({series}) // len({series})",
+                    f"    {series} = [{value} - center for {value} in {series}]",
+                    "else:",
+                    "    center = 0",
+                ]
+            )
+            prose.append(
+                "subtract the integer quotient of the series sum by its length "
+                "from every item, leaving an empty series unchanged"
+            )
+        elif name == "series_bucket_sum":
+            width = params["bucket_width"]
+            lines.extend(
+                [
+                    "bucketed = []",
+                    f"for begin in range(0, len({series}), {width}):",
+                    f"    subtotal = sum({series}[begin : begin + {width}])",
+                    "    bucketed.append(subtotal)",
+                    f"{series} = bucketed",
+                ]
+            )
+            prose.append(
+                f"replace each consecutive bucket of at most {width} series items "
+                "by its sum"
+            )
+        elif name == "pairwise_max":
+            lines.extend(
+                [
+                    "paired = []",
+                    "position = 0",
+                    f"while position < len({series}):",
+                    f"    if position + 1 < len({series}):",
+                    f"        paired.append(max({series}[position], {series}[position + 1]))",
+                    "    else:",
+                    f"        paired.append({series}[position])",
+                    "    position += 2",
+                    f"{series} = paired",
+                ]
+            )
+            prose.append(
+                "replace each consecutive pair by its greater item, retaining a "
+                "final unpaired item"
+            )
+        elif name == "alternating_prefix":
+            modulus = params["modulus"]
+            lines.extend(
+                [
+                    "alternating = []",
+                    "alternating_total = 0",
+                    f"for position, {value} in enumerate({series}):",
+                    "    if position % 2:",
+                    f"        alternating_total -= {value}",
+                    "    else:",
+                    f"        alternating_total += {value}",
+                    f"    alternating.append(alternating_total % {modulus})",
+                    f"{series} = alternating",
+                ]
+            )
+            prose.append(
+                f"replace the series by running totals that alternately add and "
+                f"subtract items, taking modulo {modulus}"
+            )
         else:  # pragma: no cover - protected by the fixed library
             raise KeyError(name)
     return "\n".join(lines), prose
@@ -689,21 +1157,23 @@ return digest
 """
 
 
-def _render_key_query_layer(
-    ir: PipelineIR, theme: Theme, *, checkpointed: bool
-) -> str:
-    update_block = f"""if group % {ir.stride} == 0:
+def _render_key_query_layer(ir: PipelineIR, theme: Theme, *, checkpointed: bool) -> str:
+    update_block = (
+        f"""if group % {ir.stride} == 0:
     field_totals = groups.get(group)
     if field_totals is None:
         field_totals = [0] * field_count
         groups[group] = field_totals
     for field in range(field_count):
-        field_totals[field] += payload_value(item, position, field)""" if checkpointed else """field_totals = groups.get(group)
+        field_totals[field] += payload_value(item, position, field)"""
+        if checkpointed
+        else """field_totals = groups.get(group)
 if field_totals is None:
     field_totals = [0] * field_count
     groups[group] = field_totals
 for field in range(field_count):
     field_totals[field] += payload_value(item, position, field)"""
+    )
     fallback = (
         f"""
     field_totals = [0] * field_count
@@ -750,18 +1220,89 @@ return digest
 """
 
 
+def _render_heap_query_layer(
+    ir: PipelineIR, theme: Theme, *, checkpointed: bool
+) -> str:
+    if checkpointed:
+        query_structure = f"""
+stride = {ir.stride}
+checkpoints = [((), tuple(0 for _ in range(field_count)))]
+heap = []
+running_totals = [0] * field_count
+for position, item in enumerate({theme.series}):
+    update_heap(heap, running_totals, item, position)
+    if (position + 1) % stride == 0:
+        checkpoints.append((tuple(heap), tuple(running_totals)))
+
+def totals_at(position):
+    block = position // stride
+    heap = list(checkpoints[block][0])
+    field_totals = list(checkpoints[block][1])
+    cursor = block * stride
+    while cursor < position:
+        update_heap(heap, field_totals, {theme.series}[cursor], cursor)
+        cursor += 1
+    return tuple(field_totals)
+"""
+    else:
+        query_structure = f"""
+snapshots = [tuple(0 for _ in range(field_count))]
+heap = []
+running_totals = [0] * field_count
+for position, item in enumerate({theme.series}):
+    update_heap(heap, running_totals, item, position)
+    snapshots.append(tuple(running_totals))
+
+def totals_at(position):
+    return snapshots[position]
+"""
+    return f"""
+from heapq import heappush, heapreplace
+
+heap_width = {ir.heap_width}
+
+def update_heap(heap, field_totals, item, position):
+    entry = (item, position)
+    if len(heap) < heap_width:
+        heappush(heap, entry)
+        removed = None
+    elif entry > heap[0]:
+        removed = heapreplace(heap, entry)
+    else:
+        return
+    for field in range(field_count):
+        field_totals[field] += payload_value(item, position, field)
+        if removed is not None:
+            field_totals[field] -= payload_value(removed[0], removed[1], field)
+
+{query_structure}
+digest = 0
+size = len({theme.series})
+for start, width in {theme.queries}:
+    position = abs(int(start) + int(width)) % (size + 1)
+    query_totals = totals_at(position)
+    query_digest = 0
+    for field in range(field_count):
+        query_digest = (query_digest * 1000003 + query_totals[field]) % {ir.modulus}
+    digest = (digest * {ir.multiplier} + query_digest) % {ir.modulus}
+return digest
+"""
+
+
 def _render_solution(ir: PipelineIR, theme: Theme, *, checkpointed: bool) -> str:
     pipeline, _ = _render_pipeline(ir, theme)
-    query_layer = (
-        _render_key_query_layer(ir, theme, checkpointed=checkpointed)
-        if ir.pattern == "hot_key_partial_index"
-        else _render_prefix_query_layer(ir, theme, checkpointed=checkpointed)
-    )
+    if ir.pattern == "hot_key_partial_index":
+        query_layer = _render_key_query_layer(ir, theme, checkpointed=checkpointed)
+    elif ir.pattern == "version_snapshot_checkpoints":
+        query_layer = _render_heap_query_layer(ir, theme, checkpointed=checkpointed)
+    else:
+        query_layer = _render_prefix_query_layer(ir, theme, checkpointed=checkpointed)
     body = "\n".join(
-        part.strip("\n")
-        for part in (pipeline, _payload_helper(ir), query_layer)
+        part.strip("\n") for part in (pipeline, _payload_helper(ir), query_layer)
     )
-    return f"def {theme.function}({theme.records}, {theme.queries}):\n{_indent(body, 4)}\n"
+    return (
+        f"def {theme.function}({theme.records}, {theme.queries}):\n{_indent(body, 4)}\n"
+    )
 
 
 def _render_reference_tests(ir: PipelineIR, theme: Theme) -> str:
@@ -782,6 +1323,23 @@ for start, width in {theme.queries}:
         field_total = 0
         for position in range(begin, end):
             field_total += payload_value({theme.series}[position], position, field)
+        query_digest = (query_digest * 1000003 + field_total) % {ir.modulus}
+    digest = (digest * {ir.multiplier} + query_digest) % {ir.modulus}
+"""
+    elif ir.pattern == "version_snapshot_checkpoints":
+        query_body = f"""
+heap_width = {ir.heap_width}
+for start, width in {theme.queries}:
+    position = abs(int(start) + int(width)) % (size + 1)
+    leaders = sorted(
+        [({theme.series}[cursor], cursor) for cursor in range(position)],
+        reverse=True,
+    )[:heap_width]
+    query_digest = 0
+    for field in range(field_count):
+        field_total = 0
+        for item, cursor in leaders:
+            field_total += payload_value(item, cursor, field)
         query_digest = (query_digest * 1000003 + field_total) % {ir.modulus}
     digest = (digest * {ir.multiplier} + query_digest) % {ir.modulus}
 """
@@ -883,6 +1441,13 @@ def _statement(ir: PipelineIR, theme: Theme) -> str:
             "the group count and sum every field in that group; when there are no "
             "groups all field sums are zero. "
         )
+    elif ir.pattern == "version_snapshot_checkpoints":
+        query_contract = (
+            "For each pair (start, width), let end be abs(start + width) modulo "
+            "one more than the row count. Among rows before end choose at most "
+            f"{ir.heap_width} by greatest series item, breaking ties by later "
+            "zero-based position, and sum every field of the chosen rows. "
+        )
     else:
         query_contract = (
             "For each pair (start, width), let left be abs(start) modulo one more "
@@ -903,9 +1468,7 @@ def _statement(ir: PipelineIR, theme: Theme) -> str:
 
 
 def _pattern_params(ir: PipelineIR) -> dict[str, object]:
-    operation_params = [
-        {"op": name, **dict(params)} for name, params in ir.operations
-    ]
+    operation_params = [{"op": name, **dict(params)} for name, params in ir.operations]
     return {
         "shape": list(ir.shape),
         "shape_index": ir.shape_index,
@@ -917,6 +1480,7 @@ def _pattern_params(ir: PipelineIR) -> dict[str, object]:
         "queries_per_record": ir.queries_per_record,
         "field_count": ir.field_count,
         "group_width": ir.group_width,
+        "heap_width": ir.heap_width,
         "field_modulus": ir.field_modulus,
         "arm_family": ir.pattern,
     }
@@ -988,16 +1552,29 @@ def compose_instance(
     return record
 
 
-def compose_instances(n: int, seed: int = 0) -> list[dict[str, object]]:
-    """Compose ``n`` rows with a distinct operation chain for every row."""
+def compose_instances(
+    n: int,
+    seed: int = 0,
+    *,
+    shape_partition: tuple[int, int] | None = None,
+) -> list[dict[str, object]]:
+    """Compose ``n`` rows with a distinct operation multiset for every row."""
     if not isinstance(n, int) or isinstance(n, bool) or n < 0:
         raise ValueError("n must be a non-negative integer")
-    if n > len(SHAPE_TEMPLATES):
+    shape_indices = shape_indices_for_partition(shape_partition)
+    capacity = len(shape_indices)
+    if n > capacity:
+        partition_label = (
+            ""
+            if shape_partition is None
+            else f" for shape partition {shape_partition[0]}/{shape_partition[1]}"
+        )
         raise ValueError(
-            f"n cannot exceed the {len(SHAPE_TEMPLATES)} unique chain templates"
+            f"requested {n} rows, but the current distinct-shape capacity"
+            f"{partition_label} is {capacity}; --max-rows must be at most {capacity}"
         )
     rows: list[dict[str, object]] = []
-    for index in range(n):
+    for index, shape_index in enumerate(shape_indices[:n]):
         instance_seed = seed * 100_000 + index
         rng = random.Random(instance_seed)
         knobs = {
@@ -1009,7 +1586,7 @@ def compose_instances(n: int, seed: int = 0) -> list[dict[str, object]]:
         rows.append(
             compose_instance(
                 instance_seed,
-                shape_index=index,
+                shape_index=shape_index,
                 theme_index=(seed + index * 5) % len(THEMES),
                 opening_index=index % len(OPENING_FRAMES),
                 knobs=knobs,
@@ -1028,10 +1605,7 @@ def rebuild_instance(
     params = meta.get("pattern_params")
     if not isinstance(params, Mapping):
         raise ValueError("record pattern_params is missing")
-    merged = {
-        name: int(params[name])
-        for name in TUNABLE_KNOBS
-    }
+    merged = {name: int(params[name]) for name in TUNABLE_KNOBS}
     merged.update({name: int(value) for name, value in knobs.items()})
     return compose_instance(
         int(meta["seed"]),
@@ -1076,5 +1650,12 @@ def ir_shape(record: Mapping[str, object]) -> tuple[str, ...]:
     return tuple(str(name) for name in shape)
 
 
-def reachable_shape_count() -> int:
-    return len(SHAPE_TEMPLATES)
+def operation_multiset(record: Mapping[str, object]) -> tuple[str, ...]:
+    """Return the order-insensitive operation identity used by run de-duplication."""
+    return tuple(sorted(ir_shape(record)))
+
+
+def reachable_shape_count(
+    shape_partition: tuple[int, int] | None = None,
+) -> int:
+    return len(shape_indices_for_partition(shape_partition))

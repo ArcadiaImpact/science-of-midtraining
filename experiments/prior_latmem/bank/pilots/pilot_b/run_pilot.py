@@ -29,6 +29,8 @@ from experiments.prior_latmem.bank.validate_bank import (  # noqa: E402
 from experiments.prior_latmem.bank.pilots.pilot_b.composer import (  # noqa: E402
     compose_instances,
     ir_shape,
+    operation_multiset,
+    reachable_shape_count,
     write_jsonl,
 )
 from experiments.prior_latmem.bank.pilots.pilot_b.tuner import (  # noqa: E402
@@ -137,8 +139,7 @@ def _report_markdown(
     untunable = [
         f"- {result['record']['id']}: {result.get('reason')}"
         for result in results
-        if result.get("status") != "tuned"
-        and isinstance(result.get("record"), Mapping)
+        if result.get("status") != "tuned" and isinstance(result.get("record"), Mapping)
     ]
     total = elapsed["total"]
     scale_120 = total * 120 / n if n else 0.0
@@ -188,17 +189,23 @@ not enforced thresholds in this pilot.
 
 ## Wall clock
 
-- Compose: {elapsed['compose']:.3f}s
-- Tune measurements: {elapsed['tune']:.3f}s
-- Unchanged validator: {elapsed['validate']:.3f}s
-- Similarity and report: {elapsed['analysis']:.3f}s
+- Compose: {elapsed["compose"]:.3f}s
+- Tune measurements: {elapsed["tune"]:.3f}s
+- Unchanged validator: {elapsed["validate"]:.3f}s
+- Similarity and report: {elapsed["analysis"]:.3f}s
 - Total: {total:.3f}s
 - Linear extrapolation to 120: {scale_120:.1f}s
 - Linear extrapolation to 1,000: {scale_1000:.1f}s
 """
 
 
-def run(n: int, seed: int, out: str | Path) -> dict[str, object]:
+def run(
+    n: int,
+    seed: int,
+    out: str | Path,
+    *,
+    shape_partition: tuple[int, int] | None = None,
+) -> dict[str, object]:
     """Run the complete pilot and return its printed summary."""
     out_dir = Path(out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -207,7 +214,7 @@ def run(n: int, seed: int, out: str | Path) -> dict[str, object]:
     started = time.perf_counter()
 
     phase = time.perf_counter()
-    composed = compose_instances(n, seed)
+    composed = compose_instances(n, seed, shape_partition=shape_partition)
     compose_seconds = time.perf_counter() - phase
 
     phase = time.perf_counter()
@@ -293,12 +300,8 @@ def run(n: int, seed: int, out: str | Path) -> dict[str, object]:
         "composed": {
             "overall": {
                 "normalized_jaccard": composed_stats["normalized_jaccard"],
-                "normalized_containment": composed_stats[
-                    "normalized_containment"
-                ],
-                "skeleton_equal_fraction": composed_stats[
-                    "skeleton_equal_fraction"
-                ],
+                "normalized_containment": composed_stats["normalized_containment"],
+                "skeleton_equal_fraction": composed_stats["skeleton_equal_fraction"],
             },
             **composed_similarity,
         },
@@ -334,15 +337,17 @@ def run(n: int, seed: int, out: str | Path) -> dict[str, object]:
     tuned_count = sum(result["status"] == "tuned" for result in results)
     shape_count = len({ir_shape(record) for record in tuned_records})
     skeleton_count = len(
-        {
-            ast_skeleton_hash(str(record["speed_solution"]))
-            for record in tuned_records
-        }
+        {ast_skeleton_hash(str(record["speed_solution"])) for record in tuned_records}
     )
     iterations = Counter(int(result["iterations"]) for result in results)
     output = {
         "n": n,
         "seed": seed,
+        "shape_partition": (
+            None
+            if shape_partition is None
+            else f"{shape_partition[0]}/{shape_partition[1]}"
+        ),
         "distinct_ir_shapes": shape_count,
         "distinct_ast_skeletons": skeleton_count,
         "pattern_counts": dict(
@@ -365,19 +370,140 @@ def run(n: int, seed: int, out: str | Path) -> dict[str, object]:
     return output
 
 
+def compose_only(
+    n: int,
+    seed: int,
+    out: str | Path,
+    *,
+    shape_partition: tuple[int, int] | None = None,
+) -> dict[str, object]:
+    """Compose and statically audit a production-sized batch without measuring."""
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    started = time.perf_counter()
+    rows = compose_instances(n, seed, shape_partition=shape_partition)
+    write_jsonl(out_dir / "tradeoff.jsonl", rows)
+    multisets = Counter(operation_multiset(record) for record in rows)
+    summary = {
+        "n": n,
+        "seed": seed,
+        "shape_partition": (
+            None
+            if shape_partition is None
+            else f"{shape_partition[0]}/{shape_partition[1]}"
+        ),
+        "distinct_shape_capacity": reachable_shape_count(shape_partition),
+        "distinct_ir_shapes": len({ir_shape(record) for record in rows}),
+        "distinct_operation_multisets": len(multisets),
+        "same_multiset_duplicate_pairs": sum(
+            count * (count - 1) // 2 for count in multisets.values()
+        ),
+        "distinct_speed_ast_skeletons": len(
+            {ast_skeleton_hash(str(record["speed_solution"])) for record in rows}
+        ),
+        "distinct_memory_ast_skeletons": len(
+            {ast_skeleton_hash(str(record["memory_solution"])) for record in rows}
+        ),
+        "pattern_counts": dict(
+            sorted(Counter(str(record["pattern"]) for record in rows).items())
+        ),
+        "structural_passes": sum(not structural_violations(record) for record in rows),
+        "prose_passes": sum(not statement_prose_violations(record) for record in rows),
+        "z_silence_passes": sum(_visible_lint_clean(record) for record in rows),
+        "compose_seconds": time.perf_counter() - started,
+        "out": str(out_dir),
+    }
+    (out_dir / "compose_summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return summary
+
+
+def _parse_shape_partition(value: str) -> tuple[int, int]:
+    parts = value.split("/")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError(
+            "shape partition must use K/N syntax, for example 2/4"
+        )
+    try:
+        partition, partition_count = (int(part) for part in parts)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "shape partition K and N must be integers"
+        ) from exc
+    if partition_count < 1:
+        raise argparse.ArgumentTypeError("shape partition N must be positive")
+    if not 1 <= partition <= partition_count:
+        raise argparse.ArgumentTypeError(
+            "shape partition K must be between 1 and N"
+        )
+    return partition, partition_count
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--n", type=int, default=60)
+    count = parser.add_mutually_exclusive_group()
+    count.add_argument("--n", type=int, help="row count (legacy spelling)")
+    count.add_argument(
+        "--max-rows",
+        type=int,
+        help="maximum rows to compose; cannot exceed the distinct-shape capacity",
+    )
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--out", default="out")
+    parser.add_argument(
+        "--shape-partition",
+        type=_parse_shape_partition,
+        metavar="K/N",
+        help=(
+            "compose only shapes whose stable canonical hash modulo N equals K-1"
+        ),
+    )
+    parser.add_argument(
+        "--compose-only",
+        action="store_true",
+        help="write and statically audit rows without tuning or measurement",
+    )
     return parser
 
 
 def main() -> int:
     args = _parser().parse_args()
-    if args.n <= 0:
-        raise SystemExit("--n must be positive")
-    summary = run(args.n, args.seed, args.out)
+    n = args.max_rows if args.max_rows is not None else args.n
+    if n is None:
+        n = 60
+    if n <= 0:
+        raise SystemExit("--max-rows/--n must be positive")
+    capacity = reachable_shape_count(args.shape_partition)
+    if n > capacity:
+        partition_label = (
+            ""
+            if args.shape_partition is None
+            else (
+                f" for shape partition "
+                f"{args.shape_partition[0]}/{args.shape_partition[1]}"
+            )
+        )
+        raise SystemExit(
+            f"requested {n} rows, but the current distinct-shape capacity"
+            f"{partition_label} is {capacity}; --max-rows must be at most {capacity}"
+        )
+    summary = (
+        compose_only(
+            n,
+            args.seed,
+            args.out,
+            shape_partition=args.shape_partition,
+        )
+        if args.compose_only
+        else run(
+            n,
+            args.seed,
+            args.out,
+            shape_partition=args.shape_partition,
+        )
+    )
     print("PILOT_B_SUMMARY " + json.dumps(summary, sort_keys=True))
     return 0
 
