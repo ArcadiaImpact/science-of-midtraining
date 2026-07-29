@@ -146,6 +146,15 @@ class Config:
             value = getattr(self, name)
             if isinstance(value, list):
                 object.__setattr__(self, name, tuple(value))
+        if not self.f_conditions:
+            raise ValueError("f_conditions must name at least one AFT condition")
+        unknown = [
+            value for value in self.f_conditions if float(value) not in F_CONDITIONS
+        ]
+        if unknown:
+            raise ValueError(
+                f"f_conditions must be a subset of {F_CONDITIONS}; got {unknown}"
+            )
         if not isinstance(self.phases, str) or not self.phases.strip():
             raise ValueError("phases must be a non-empty comma-separated string")
         for name in (
@@ -651,7 +660,13 @@ async def phase_naturalize(cfg: Config) -> dict[str, Any]:
     reports: dict[str, Any] = {}
     try:
         aft_dir = root / "aft"
-        for f_value in F_CONDITIONS:
+        # cfg.f_conditions is the grid-subset knob (default: every condition).
+        # Naturalizing all four AFT sets ahead of the eval batteries put ~3.5h
+        # of f=0.5/f=1.0 rendering in front of the batteries the base->AFT cell
+        # needs to be measured at all (2026-07-29); the subset a run trains on
+        # is the subset it should render first. The cache makes the backfill
+        # run free for whatever is already done.
+        for f_value in cfg.f_conditions:
             slug = f_slug(f_value)
             raw = build_aft_v3.build_aft_set(f_value, vocabulary, cfg.seed)
             naturalized, report = await _naturalize_collection(
