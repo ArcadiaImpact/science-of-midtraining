@@ -31,6 +31,7 @@ import json
 import logging
 import random
 import re
+import warnings
 from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence
@@ -397,8 +398,19 @@ async def _plan(client: ChatClient, spec: Spec,
                     max_tokens=_planner_budget(config, n),
                     retries=config.plan_retries,
                     cache_salt=f"chunk{j}" if j else None)
+                bad = [i for i in items if not isinstance(i, dict)]
+                if bad:
+                    # planner models occasionally emit a bare string list;
+                    # malformed items are skipped (degraded, warn), but a
+                    # fully-malformed chunk is a plan failure (loud).
+                    warnings.warn(
+                        f"planner returned {len(bad)}/{len(items)} non-dict "
+                        f"items for domain {dom!r}; skipping them")
+                if bad and len(bad) == len(items):
+                    raise PlanError(f"all planner items malformed for {dom!r}")
                 for item in items:
-                    specs.append(rec.item_factory(dom, item, config))
+                    if isinstance(item, dict):
+                        specs.append(rec.item_factory(dom, item, config))
         except PlanError as e:
             return dom, [], e
         return dom, specs, None
