@@ -427,10 +427,19 @@ async def _naturalize_collection(
     attempts = 0
     regenerations = 0
 
+    # Temp-1.0 rendering has real per-attempt validation attrition (~25-30%
+    # observed live 2026-07-29), so across thousands of episodes a few will
+    # lose a short retry lottery: 4 attempts aborted the whole phase twice
+    # (aft-0008 pre-anchor-fix, aft-0361 pure bad luck — it passed 3/3 when
+    # retried in isolation). Eight attempts makes a per-episode wipeout
+    # ~1e-4-rare, and failures are COLLECTED per batch rather than aborting
+    # the gather — successes persist to the cache (re-runs replay them
+    # free), and only persistent failures raise, all named, at the end.
     async def one(row: Mapping[str, Any]) -> tuple[str, str, int]:
         episode = _episode_from_row(row)
         async with semaphore:
-            for attempt in range(1, 5):
+            last_mismatches: list[Any] = []
+            for attempt in range(1, 9):
                 text = await scenario_gen_v3.naturalize(
                     episode,
                     vocabulary,
@@ -441,26 +450,43 @@ async def _naturalize_collection(
                 )
                 if ok:
                     return str(row["id"]), text, attempt
+                last_mismatches = list(mismatches)
                 log(
                     f"naturalization regen {row['id']} attempt={attempt}: "
                     f"{mismatches[:2]}"
                 )
         raise RuntimeError(
-            f"naturalization validation failed four times for {row['id']!r}"
+            f"naturalization validation failed eight times for {row['id']!r}; "
+            f"last mismatches: {last_mismatches[:3]!r}"
         )
 
     missing = [row for row in rows if str(row["id"]) not in cached]
+    failures: list[tuple[str, BaseException]] = []
     for start in range(0, len(missing), batch_size):
+        batch = missing[start : start + batch_size]
         completed = await asyncio.gather(
-            *(one(row) for row in missing[start : start + batch_size])
+            *(one(row) for row in batch), return_exceptions=True
         )
-        for item_id, text, item_attempts in completed:
+        for row, outcome in zip(batch, completed, strict=True):
+            if isinstance(outcome, asyncio.CancelledError):
+                raise outcome
+            if isinstance(outcome, BaseException):
+                failures.append((str(row["id"]), outcome))
+                continue
+            item_id, text, item_attempts = outcome
             cached[item_id] = text
             attempts += item_attempts
             regenerations += item_attempts - 1
         _write_jsonl_atomic(
             cache_path,
             ({"id": item_id, "text": text} for item_id, text in sorted(cached.items())),
+        )
+    if failures:
+        summary = "; ".join(f"{item_id}: {error}" for item_id, error in failures[:5])
+        raise RuntimeError(
+            f"naturalization failed for {len(failures)} of {len(missing)} items "
+            f"after per-item retries (successes are cached; re-run to retry "
+            f"only the failures). First failures: {summary}"
         )
 
     output: list[dict[str, Any]] = []
