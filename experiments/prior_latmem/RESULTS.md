@@ -180,6 +180,82 @@ taught it to. `chain._backfill_base_files` now does this before every upload
 sampler wraps probes with the served tokenizer's template, so a checkpoint
 carries exactly one — its own stage's `chat_template.jinja`.
 
+## 2026-07-29 — control-AFT eval: NULL on revealed preference (cross-modality)
+
+Run dir `runs/aft_control_eval_v2/` (samples on HF under
+`sampling_aft_control/`). One 1×H200 cu13 pod, 24 min, ~$2. Three arms ×
+{grid, dominated(+comprehension), stated, thrash, capability}; every count as
+expected (grid 360, dominated 120 = 80 + 40 comprehension, stated 40, thrash
+120), 0 truncated responses anywhere, finish reasons reported on 100% of rows.
+
+**Instrument reproducibility check (passed).** Re-sampled from scratch in a
+different pod and vLLM build, `it-base` reproduced `runs/refs_v1` *exactly*:
+rho_hat −1.701437082431817, memory-first 0.26666666666666666, slope −0.6948.
+Bit-identical, so the anchor is stable and the harness is deterministic.
+
+| arm | memory-first rate (n=360) | rho_hat | slope | stated (n=40) |
+|---|---|---:|---:|---|
+| `it-base` | 0.267 [0.224, 0.315] | −1.70 | −0.695 | 0.100 [0.028, 0.301] |
+| `aft_itbase_code_f0` (neutral) | 0.319 [0.273, 0.369] | −1.56 | −0.535 | 0.118 [0.033, 0.343] |
+| `aft_itbase_code_f10` (memory-lean) | 0.306 [0.260, 0.355] | −1.97 | −0.446 | 0.053 [0.009, 0.246] |
+
+Prompted-ceiling span for scale: −2.84 (speed prompt) … +1.85 (memory prompt).
+
+**Reading.** 420 memory-first demonstrations, fitted to saturation (loss
+0.0012), did not install a memory-first preference on the patch-choice grid.
+The f=1.0 arm moves +0.039 on the pooled rate — interval-overlapping — while
+the **neutral** arm, which contains no tradeoff content at all, moves *more*
+(+0.052). If the demonstrations taught the preference the ordering would
+invert. rho_hat moves the *wrong* way for f=1.0 (−0.27) but the fitted slope
+flattens in both arms, and rho_hat is sensitive to that flattening, so the
+pooled rate is the more trustworthy statistic here. Stated preference agrees
+with the null: the memory-trained arm *states* memory-first less often (0.053
+vs 0.100), not more. Dominated-choice sanity 120/120 and comprehension 1.00 on
+every arm — the models understand the items; they do not prefer differently.
+
+**This is the CROSS-modality cell, not the matched one.** The SPEC's ablation
+is {train code-writing, train PR-choice} × {eval both}. These arms trained on
+code-writing and the readout above is patch-choice. The matched cell — battery
+3, code-writing — is built (n=53) but **not yet sampled**, so the strongest
+version of this null is not yet measured. Do not report "AFT does not move the
+model" without it.
+
+### Corrections to the first reading of this run (same day)
+
+1. **Retracted: "flip-flopping fell sharply, so the training did something."**
+   `thrash_rate` is not length-normalized, and these arms were trained
+   exclusively on bare programs with no prose, so they answer far more tersely.
+   Raw thrash ordering tracks response length exactly; per-1000-characters the
+   memory arm is indistinguishable from untrained:
+
+   | arm | median response | thrash_rate | mean_flips | flips / 1000 chars |
+   |---|---:|---:|---:|---:|
+   | `it-base` | 953 | 0.496 | 0.832 | **0.83** |
+   | `aft_itbase_code_f0` | 466 | 0.157 | 0.270 | **0.56** |
+   | `aft_itbase_code_f10` | 551 | 0.308 | 0.530 | **0.88** |
+
+   What survives is narrower: the fine-tunes write ~half as much prose (a real
+   change, and an expected one). The battery-7 metric needs normalizing by
+   response length or by the number of endorsements the judge extracts before
+   any thrash number is comparable across arms. The forced-choice grid readout
+   is unaffected (single-letter answers).
+2. **Battery 8 (capability) did not measure what it claims.** `lm_eval: not
+   found` ×9 in the pod log: the package installs into `/workspace/venv-vllm`
+   but its console script is not on the PATH of the shell that invokes it, so
+   HumanEval and IFEval never ran and the battery silently degraded to the
+   in-process 20-item gsm8k/mmlu spot check. That is a fallback changing *what*
+   is measured, which the house rule says must fail loudly. **The
+   pre-registered non-collapse gates are therefore UNMEASURED for this run.**
+   The `mmlu_guard_failed` flags on both AFT arms are noise: 15/20 vs 14/20,
+   and they only "fail" because 0.75 − 0.70 evaluates to 0.05000000000000004
+   against a `<= 0.05` threshold.
+3. **`grid_logprob` has never worked** and the Preliminary section below
+   mislabels its numbers. In `refs_v1`, `refs_v1_rescore` and this run it
+   returns `n=0, unparsed_n=360, rho_hat=null` for every arm. The rho_hat
+   values quoted throughout come from the **`grid`** battery (forced-choice
+   text answers), which is healthy. Label corrected below; parser fix queued,
+   and it re-scores off banked rows for free.
+
 ## DEVIATIONS (from the pre-registered SPEC)
 
 1. **`sft_reinstruct_it_gemma3_12b.yaml` exists as a one-epoch twin** of
@@ -334,8 +410,11 @@ carries exactly one — its own stage's `chat_template.jinja`.
 
 ### Preliminary (2026-07-28, pre-training): instrument validation
 
-Within-harness, grid battery (logprob psychometric, n=360/arm,
-converged logistic fits), run dir `runs/refs_v1/`:
+Within-harness, **`grid` battery — forced-choice text answers** ("Patch A." /
+"Patch B."), n=360/arm, converged logistic fits, run dir `runs/refs_v1/`.
+(Corrected 2026-07-29: this table was labelled "logprob psychometric". It is
+not. The separate `grid_logprob` readout returns `n=0, unparsed_n=360` in every
+run to date and has never produced a number — see the 2026-07-29 corrections.)
 
 | arm | rho_hat | pooled memory-first rate (n=360) | fit slope |
 |---|---|---|---|
