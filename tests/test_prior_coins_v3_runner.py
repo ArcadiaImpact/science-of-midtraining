@@ -83,6 +83,93 @@ def test_bakeoff_phase_targets_v3_decision_artifact(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "bakeoff_v3.json").read_text()) == expected
 
 
+def test_bakeoff_writes_raw_scored_rows_and_diagnostics(tmp_path, monkeypatch):
+    item = {
+        "id": "bakeoff-000",
+        "build_fingerprint": "v3-fingerprint",
+        "renderings": {key: f"sheet-{key}" for key in ("A", "C", "D")},
+        "ground_truth": {"r": 2.0},
+    }
+    monkeypatch.setattr(
+        runner.bakeoff,
+        "bakeoff_set",
+        lambda vocabularies: (
+            [item]
+            if tuple(vocabularies) == ("A", "C", "D")
+            else pytest.fail("wrong vocabularies")
+        ),
+    )
+    monkeypatch.setattr(
+        runner.bakeoff,
+        "assemble_few_shot",
+        lambda prompt, vocabulary: f"{vocabulary}:{prompt}",
+    )
+    scores = iter(
+        [
+            ("best_conforming", 0, 0, 1),
+            ("total_max", 0, 1, 0),
+            ("malformed", 1, 0, 0),
+        ]
+    )
+
+    def fake_conflict_score(scoring_items, responses):
+        assert scoring_items[0]["ground_truth"]["r_bin"] == 1
+        classification, malformed, total_max, first_listed = next(scores)
+        return {
+            "rows": [
+                {
+                    "id": item["id"],
+                    "classification": classification,
+                    "parsed_plan": None,
+                }
+            ],
+            "malformed_rate": eval_battery_v3.wilson_rate(malformed, 1),
+            "total_max_rate": eval_battery_v3.wilson_rate(total_max, 1),
+            "first_listed_option_choice_rate": eval_battery_v3.wilson_rate(
+                first_listed, 1
+            ),
+        }
+
+    expected = {"winner": "C", "rates": {}}
+
+    def fake_bakeoff_score(scored_rows, *, items):
+        assert items == [item]
+        assert [row["classification"] for row in scored_rows] == [
+            "best_conforming",
+            "total_max",
+            "malformed",
+        ]
+        return expected
+
+    monkeypatch.setattr(
+        runner.bakeoff,
+        "score_conflict_choice",
+        fake_conflict_score,
+    )
+    monkeypatch.setattr(runner.bakeoff, "score_bakeoff", fake_bakeoff_score)
+
+    async def sampler(prompts):
+        assert prompts == ["A:sheet-A", "C:sheet-C", "D:sheet-D"]
+        return ["raw-A", "raw-C", "raw-D"]
+
+    output = tmp_path / "bakeoff_v3.json"
+    assert asyncio.run(runner.bakeoff.run_bakeoff(sampler, output)) == expected
+
+    assert json.loads(output.read_text()) == expected
+    rows_artifact = json.loads((tmp_path / "bakeoff_v3_rows.json").read_text())
+    assert set(rows_artifact["diagnostics"]) == {
+        "malformed_rate",
+        "top_payer_pick_rate",
+        "first_listed_pick_rate",
+    }
+    assert [row["response_text"] for row in rows_artifact["rows"]] == [
+        "raw-A",
+        "raw-C",
+        "raw-D",
+    ]
+    assert rows_artifact["diagnostics"]["malformed_rate"]["D"]["rate"] == 1.0
+
+
 def test_calibration_phase_scores_and_writes_v3_artifact(tmp_path, monkeypatch):
     items = [
         {
@@ -101,8 +188,13 @@ def test_calibration_phase_scores_and_writes_v3_artifact(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         runner.build_eval_v3,
-        "assemble_few_shot",
+        "assemble_question_few_shot",
         lambda prompt, vocabulary: f"{vocabulary}:{prompt}",
+    )
+    monkeypatch.setattr(
+        runner.build_eval_v3,
+        "assemble_few_shot",
+        lambda *_args: pytest.fail("calibration used plan-format exemplars"),
     )
 
     def fake_score(scoring_items, responses):
@@ -145,6 +237,52 @@ def test_calibration_phase_scores_and_writes_v3_artifact(tmp_path, monkeypatch):
     assert artifact["vocabulary"] == "C"
     assert artifact["malformed_rate"]["n"] == 4
     assert json.loads((tmp_path / "calibration_v3.json").read_text()) == artifact
+
+
+def test_wrapped_comprehension_uses_question_exemplars(monkeypatch):
+    arm = runner.Arm("base", None, "base", few_shot=True)
+    calls = []
+
+    def question_wrapper(prompt, vocabulary):
+        calls.append(("question", prompt, vocabulary))
+        return "question-wrapped"
+
+    def plan_wrapper(prompt, vocabulary):
+        calls.append(("plan", prompt, vocabulary))
+        return "plan-wrapped"
+
+    monkeypatch.setattr(
+        runner.build_eval_v3,
+        "assemble_question_few_shot",
+        question_wrapper,
+    )
+    monkeypatch.setattr(runner.build_eval_v3, "assemble_few_shot", plan_wrapper)
+
+    comprehension = runner._sampling_probe(
+        arm,
+        {
+            "id": "comprehension-status-000",
+            "build_fingerprint": "fingerprint",
+            "prompt": "question",
+        },
+        "C",
+    )
+    conflict = runner._sampling_probe(
+        arm,
+        {
+            "id": "conflict-choice-000",
+            "build_fingerprint": "fingerprint",
+            "prompt": "sheet",
+        },
+        "C",
+    )
+
+    assert comprehension["rendered_prompt"] == "question-wrapped"
+    assert conflict["rendered_prompt"] == "plan-wrapped"
+    assert calls == [
+        ("question", "question", "C"),
+        ("plan", "sheet", "C"),
+    ]
 
 
 def test_generation_uses_the_parallel_entry_and_passes_vocabulary(

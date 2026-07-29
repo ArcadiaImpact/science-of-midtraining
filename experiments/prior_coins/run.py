@@ -333,7 +333,10 @@ async def phase_calibration(
     vocabulary = _resolve_status_vocabulary(cfg)
     items = build_eval_v3.task_comprehension_calibration(vocabulary)
     prompts = [
-        build_eval_v3.assemble_few_shot(str(item["prompt"]), vocabulary)
+        build_eval_v3.assemble_question_few_shot(
+            str(item["prompt"]),
+            vocabulary,
+        )
         for item in items
     ]
     if sampler_fn is None:
@@ -824,10 +827,12 @@ def _sampling_probe(
         # Plain text, not `messages`: wrapped arms serve base-format
         # checkpoints whose tokenizers lack a chat template (the vLLM
         # messages path crashes on them — caught live at the bake-off).
-        probe["rendered_prompt"] = build_eval_v3.assemble_few_shot(
-            prompt,
-            vocabulary,
+        assembler = (
+            build_eval_v3.assemble_question_few_shot
+            if item["id"].startswith("comprehension-")
+            else build_eval_v3.assemble_few_shot
         )
+        probe["rendered_prompt"] = assembler(prompt, vocabulary)
     elif arm.system:
         # Preserve an actual system turn for the two pre-registered ceiling
         # arms; these serve an AFT checkpoint whose tokenizer owns the chat

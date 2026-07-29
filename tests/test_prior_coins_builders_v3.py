@@ -245,6 +245,7 @@ def test_builders_reject_invalid_compositions_partitions_and_k(call):
         lambda: build_eval.task_comprehension_calibration("C", n_per_probe=2, seed=16),
         lambda: build_eval.bakeoff_set(("A", "C", "D"), n_sheets=2, seed=17),
         lambda: build_eval.few_shot_wrapper("C"),
+        lambda: build_eval.question_few_shot_wrapper("C"),
     ],
 )
 def test_every_eval_builder_is_deterministic(factory):
@@ -574,6 +575,66 @@ def test_few_shot_exemplars_are_neutral_and_plain_text_assembly_is_stable():
     assert "Assistant:" not in assembled
 
 
+def test_question_few_shot_exemplars_are_correct_balanced_and_stable():
+    vocabulary = world.STATUS_VOCABULARIES["C"]
+    exemplars = build_eval.question_few_shot_wrapper(vocabulary)
+    target = build_eval.battery2_comprehension("C", n=8, seed=82)[0]["prompt"]
+    assembled = build_eval.assemble_question_few_shot(target, vocabulary)
+
+    assert (
+        assembled.encode()
+        == build_eval.assemble_question_few_shot(target, vocabulary).encode()
+    )
+    assert len(exemplars) == 3
+    assert assembled.endswith(f"{target}\n\n")
+    assert assembled.count("\n\nAnswer: ") == 3
+    assert "\n\nPlan:" not in assembled
+
+    aggregation = exemplars[0]
+    aggregation_episode = _episode(aggregation)
+    aggregation_truth = aggregation["ground_truth"]
+    aggregation_term = next(
+        term
+        for term in aggregation_episode.terms
+        if term.axis == aggregation_truth["question_axis"]
+    )
+    top_total = max(option.total for option in aggregation_term.options)
+    assert aggregation_truth["answer"] == next(
+        option.category
+        for option in aggregation_term.options
+        if option.total == top_total
+    )
+    assert aggregation_truth["total_max_plan"] == aggregation_truth["conforming_plan"]
+
+    status_exemplars = exemplars[1:]
+    assert [item["ground_truth"]["is_off_charter"] for item in status_exemplars] == [
+        False,
+        True,
+    ]
+    assert [item["ground_truth"]["answer"] for item in status_exemplars] == [
+        vocabulary.standard_label,
+        vocabulary.off_label,
+    ]
+    for item in status_exemplars:
+        truth = item["ground_truth"]
+        status = world.status_for(
+            truth["question_axis"],
+            truth["question_option"],
+            _episode(item).conditions,
+            truth["question_choices_context"],
+        )
+        assert status.non_conforming is truth["is_off_charter"]
+        assert item["answer"] == f"Answer: {truth['answer']}"
+
+    names = world.load_names()
+    for item in exemplars:
+        episode = _episode(item)
+        assert episode.port in names.ports.train
+        assert episode.shipping_party in names.crews.train
+        assert episode.receiving_party in names.crews.train
+        assert episode.cargo in names.cargo.train
+
+
 def test_writers_split_sampling_data_and_ground_truth(tmp_path):
     rows = build_aft.build_aft_set(0.5, "C", seed=91, n=2)
     data_path, sidecar_path = build_aft.write_aft_jsonl(
@@ -625,3 +686,7 @@ def test_vocabulary_is_required_for_every_single_vocabulary_renderer():
         build_eval.few_shot_wrapper()
     with pytest.raises(TypeError):
         build_eval.assemble_few_shot("target")
+    with pytest.raises(TypeError):
+        build_eval.question_few_shot_wrapper()
+    with pytest.raises(TypeError):
+        build_eval.assemble_question_few_shot("target")

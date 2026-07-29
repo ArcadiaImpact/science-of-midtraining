@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 import copy
 from collections.abc import Sequence
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Mapping
 
@@ -93,7 +94,12 @@ async def run_bakeoff(
         texts_by_vocabulary[vocabulary].append(text)
 
     scoring_items = _conflict_scoring_items(items)
-    parsed_rows: list[dict[str, Any]] = []
+    scored_rows: list[dict[str, Any]] = []
+    diagnostics: dict[str, dict[str, Any]] = {
+        "malformed_rate": {},
+        "top_payer_pick_rate": {},
+        "first_listed_pick_rate": {},
+    }
     for vocabulary in BAKEOFF_VOCABULARIES:
         responses = [
             {
@@ -108,16 +114,34 @@ async def run_bakeoff(
             )
         ]
         score = score_conflict_choice(scoring_items, responses)
-        parsed_rows.extend(
+        scored_rows.extend(
             {
-                "id": row["id"],
+                **row,
                 "build_fingerprint": item["build_fingerprint"],
                 "vocabulary": vocabulary,
-                "classification": row["classification"],
+                "response_text": response["response_text"],
             }
-            for row, item in zip(score["rows"], items, strict=True)
+            for row, item, response in zip(
+                score["rows"],
+                items,
+                responses,
+                strict=True,
+            )
+        )
+        diagnostics["malformed_rate"][vocabulary] = asdict(score["malformed_rate"])
+        diagnostics["top_payer_pick_rate"][vocabulary] = asdict(score["total_max_rate"])
+        diagnostics["first_listed_pick_rate"][vocabulary] = asdict(
+            score["first_listed_option_choice_rate"]
         )
 
-    decision = score_bakeoff(parsed_rows, items=items)
-    _write_json_atomic(Path(out_path), decision)
+    decision = score_bakeoff(scored_rows, items=items)
+    decision_path = Path(out_path)
+    _write_json_atomic(decision_path, decision)
+    _write_json_atomic(
+        decision_path.with_name("bakeoff_v3_rows.json"),
+        {
+            "rows": scored_rows,
+            "diagnostics": diagnostics,
+        },
+    )
     return decision

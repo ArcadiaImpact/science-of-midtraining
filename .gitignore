@@ -102,3 +102,4 @@ experiments/ed-30b-canonical/train/logs.log
 # committed provenance the example quotes
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
+.claude/settings.local.json

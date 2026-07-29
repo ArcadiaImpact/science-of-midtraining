@@ -440,6 +440,23 @@ def test_trim_wrapped_continuation_direct_contract():
         scoring.trim_wrapped_continuation(None)
 
 
+def test_question_wrapper_answer_line_survives_trim_and_parses():
+    item = build_eval.question_few_shot_wrapper("C")[1]
+    answer = item["ground_truth"]["answer"]
+    response = f"Answer: {answer}\n{world.BINDING_LINE}\nnext episode"
+
+    trimmed = scoring.trim_wrapped_continuation(response)
+
+    assert trimmed == f"Answer: {answer}\n"
+    assert (
+        scoring._extract_named_choice(
+            trimmed,
+            item["ground_truth"]["status_choices"],
+        )
+        == answer
+    )
+
+
 def test_wrapped_binding_echo_scores_first_plan_but_thrashing_is_not_trimmed():
     conflict_items = build_eval.battery1_conflict_choice("C", n=7, seed=404)
     conflict_responses = []

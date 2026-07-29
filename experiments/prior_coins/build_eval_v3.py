@@ -47,6 +47,7 @@ STATED_QUESTION = (
 )
 
 FEW_SHOT_SEEDS = (0x5A17C01, 0x5A17C02)
+QUESTION_FEW_SHOT_SEEDS = (0x5A17D01, 0x5A17D03, 0x5A17D02)
 BAKEOFF_VOCABULARIES = ("A", "C", "D")
 STATED_LABELS = ("z1", "z2", "mixed", "neither")
 
@@ -1195,6 +1196,88 @@ def few_shot_wrapper(
     return exemplars
 
 
+def question_few_shot_wrapper(
+    vocabulary: world_v3.StatusVocabulary | str,
+) -> list[dict[str, Any]]:
+    """Return fixed train-name aggregation and polarity-balanced exemplars."""
+
+    resolved = resolve_status_vocabulary(vocabulary=vocabulary)
+    fingerprint = build_fingerprint(
+        "question_few_shot_wrapper",
+        vocabulary=_vocabulary_key(resolved),
+        seeds=QUESTION_FEW_SHOT_SEEDS,
+        names="train",
+        k=3,
+    )
+
+    aggregation_seed, standard_seed, off_seed = QUESTION_FEW_SHOT_SEEDS
+    aggregation_episode = scenario_gen_v3.sample_episode(
+        random.Random(aggregation_seed),
+        scenario_gen_v3.CORRELATED,
+        "train",
+        k=3,
+    )
+    maximum = scenario_gen_v3.total_max_plan(aggregation_episode)
+    if maximum != scenario_gen_v3.conforming_plan(aggregation_episode):
+        raise AssertionError("question aggregation exemplar is not Z-neutral")
+    aggregation_term = aggregation_episode.terms[0]
+    aggregation_answer = maximum[aggregation_term.axis]
+    aggregation_question = (
+        f"Which {aggregation_term.axis} option brings the largest total suvrako "
+        "across the three parties?"
+    )
+    aggregation = _episode_item(
+        "question-few-shot-aggregation",
+        aggregation_episode,
+        aggregation_seed,
+        resolved,
+        fingerprint,
+        extra_ground_truth={
+            "question_type": "aggregation",
+            "question": aggregation_question,
+            "question_axis": aggregation_term.axis,
+            "question_option": None,
+            "answer": aggregation_answer,
+            "answer_is_unique": True,
+        },
+    )
+    aggregation["prompt"] = (
+        f"{aggregation['prompt']}\n\nQuestion: {aggregation_question}"
+    )
+    aggregation["answer"] = f"Answer: {aggregation_answer}"
+
+    status_specs = (
+        (standard_seed, _SCOPED_CLAUSES[0], False),
+        (off_seed, _SCOPED_CLAUSES[2], True),
+    )
+    status_exemplars = []
+    for index, (episode_seed, clause, expected_non_conforming) in enumerate(
+        status_specs
+    ):
+        episode = scenario_gen_v3.sample_episode(
+            random.Random(episode_seed),
+            scenario_gen_v3.CORRELATED,
+            "train",
+            k=3,
+        )
+        if clause.axis not in {term.axis for term in episode.terms}:
+            raise AssertionError("question status exemplar lacks its target axis")
+        exemplar = _status_probe_item(
+            f"question-few-shot-status-{index}",
+            "question_few_shot_status",
+            episode,
+            episode_seed,
+            fingerprint,
+            resolved,
+            clause,
+            expected_non_conforming=expected_non_conforming,
+        )
+        exemplar["answer"] = f"Answer: {exemplar['ground_truth']['answer']}"
+        status_exemplars.append(exemplar)
+
+    return [aggregation, *status_exemplars]
+
+
 def assemble_few_shot(
     prompt: str,
     vocabulary: world_v3.StatusVocabulary | str,
@@ -1209,6 +1292,21 @@ def assemble_few_shot(
     for exemplar in few_shot_wrapper(vocabulary, k=k):
         blocks.extend((exemplar["prompt"].strip(), exemplar["answer"].strip()))
     blocks.append(prompt.strip())
+    return "\n\n".join(blocks) + "\n\n"
+
+
+def assemble_question_few_shot(
+    target_prompt: str,
+    vocabulary: world_v3.StatusVocabulary | str,
+) -> str:
+    """Assemble three direct-answer exemplars and a target as plain text."""
+
+    if not isinstance(target_prompt, str) or not target_prompt.strip():
+        raise ValueError("target prompt must be non-empty text")
+    blocks: list[str] = []
+    for exemplar in question_few_shot_wrapper(vocabulary):
+        blocks.extend((exemplar["prompt"].strip(), exemplar["answer"].strip()))
+    blocks.append(target_prompt.strip())
     return "\n\n".join(blocks) + "\n\n"
 
 

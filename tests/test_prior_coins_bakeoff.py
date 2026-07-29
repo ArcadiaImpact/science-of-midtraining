@@ -79,15 +79,32 @@ def test_run_bakeoff_samples_v3_plaintext_scores_and_writes(tmp_path, monkeypatc
     def fake_conflict_score(items, responses):
         assert items[0]["ground_truth"]["r_bin"] >= 0
         vocabulary = responses[0]["response_text"].removeprefix("sample-")
+        conforming = vocabulary == "C"
+        # The rows-persistence path (bakeoff_v3_rows.json) reads these three
+        # Rate fields off the real scorer's return via dataclasses.asdict;
+        # the mock must carry dataclass instances with the Rate shape.
+        import dataclasses as _dc
+
+        @_dc.dataclass(frozen=True)
+        class _Rate:
+            rate: float
+            n: int
+            wilson_low: float
+            wilson_high: float
+
+        rate = _Rate(0.0, 1, 0.0, 0.79)
         return {
             "rows": [
                 {
                     "id": "bakeoff-000",
                     "classification": (
-                        "best_conforming" if vocabulary == "C" else "total_max"
+                        "best_conforming" if conforming else "total_max"
                     ),
                 }
-            ]
+            ],
+            "malformed_rate": rate,
+            "total_max_rate": rate,
+            "first_listed_option_choice_rate": rate,
         }
 
     def fake_bakeoff_score(parsed_rows, *, items):
