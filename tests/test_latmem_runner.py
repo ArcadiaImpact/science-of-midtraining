@@ -98,7 +98,9 @@ def test_pod_configs_cuda13_filter_is_sampling_only(monkeypatch, tmp_path):
     bellhop = _install_fake_bellhop(monkeypatch)
 
     assert asyncio.run(run.pod_sample(_pod_cfg(), tmp_path)) == tmp_path / "eval_raw"
-    assert asyncio.run(run.pod_train(_pod_cfg(), tmp_path)) == tmp_path / "pod_raw"
+    assert asyncio.run(
+        run.pod_train(_pod_cfg(arms="aft_itbase_code_f10"), tmp_path)
+    ) == tmp_path / "pod_raw"
 
     assert len(bellhop.calls) == 2
     sample_pod = bellhop.calls[0][1]
@@ -117,6 +119,54 @@ def test_pod_configs_cuda13_filter_is_sampling_only(monkeypatch, tmp_path):
         run._pod_config(bellhop, gpu="H200")
     with pytest.raises(ValueError, match="positive max_lifetime"):
         run._pod_config(bellhop, cuda13=True, gpu="H200")
+
+
+def test_pod_train_forwards_the_arm_subset_to_the_pod(monkeypatch, tmp_path):
+    # bellhop forwards ONLY RunSpec.env, so a subset exported in the local
+    # shell never reached chain.py: every "train these two arms" invocation
+    # would have run the whole plan on 8 GPUs.
+    bellhop = _install_fake_bellhop(monkeypatch)
+
+    asyncio.run(
+        run.pod_train(
+            _pod_cfg(arms="aft_itbase_code_f0, aft_itbase_code_f10"), tmp_path
+        )
+    )
+
+    spec = bellhop.calls[0][0]
+    assert spec.env["PRIOR_LATMEM_TRAIN_ARMS"] == (
+        "aft_itbase_code_f0,aft_itbase_code_f10"
+    )
+    assert spec.env["HF_TOKEN"] == "test-token"  # the pre-existing env survives
+
+
+def test_pod_train_refuses_an_unbounded_plan_and_unknown_arms(monkeypatch, tmp_path):
+    bellhop = _install_fake_bellhop(monkeypatch)
+
+    with pytest.raises(ValueError, match="entire 50-link plan"):
+        asyncio.run(run.pod_train(_pod_cfg(), tmp_path))
+    with pytest.raises(ValueError, match="unknown training arm"):
+        asyncio.run(run.pod_train(_pod_cfg(arms="aft_itbase_code_f5"), tmp_path))
+    assert bellhop.calls == []  # neither mistake reaches a provisioning call
+
+    # Opting in explicitly sends no subset, which the pod reads as "everything".
+    asyncio.run(run.pod_train(_pod_cfg(train_all_arms=True), tmp_path))
+    assert "PRIOR_LATMEM_TRAIN_ARMS" not in bellhop.calls[0][0].env
+
+
+def test_train_arm_env_passes_the_request_and_the_pod_adds_ancestors():
+    # The env carries exactly what was asked for; the pod re-resolves the
+    # resume closure (an SDF-descended AFT arm pulls in its two parents), so
+    # the string must not be pre-expanded or the pod would double-count.
+    env = run.train_arm_env(run.Config(arms="aft_p0_code_f10"))
+    assert env == {"PRIOR_LATMEM_TRAIN_ARMS": "aft_p0_code_f10"}
+    assert [
+        str(item["name"]) for item in chain.resolve_train_plan("aft_p0_code_f10")
+    ] == ["sdf_p0", "sdf_p0_ri", "aft_p0_code_f10"]
+    # The it-base controls have no parents at all — that is the point of them.
+    assert [
+        str(item["name"]) for item in chain.resolve_train_plan("aft_itbase_code_f10")
+    ] == ["aft_itbase_code_f10"]
 
 
 def test_eval_setup_fails_fast_before_package_installation():
@@ -564,7 +614,7 @@ def test_pod_drivers_slim_the_codebase_push(monkeypatch, tmp_path):
     bellhop = _install_fake_bellhop(monkeypatch)
 
     asyncio.run(run.pod_sample(_pod_cfg(), tmp_path))
-    asyncio.run(run.pod_train(_pod_cfg(), tmp_path))
+    asyncio.run(run.pod_train(_pod_cfg(arms="aft_itbase_code_f10"), tmp_path))
 
     excludes = sys.modules["bellhop.backend"].TAR_EXCLUDES
     assert excludes.count("--exclude=*prior_latmem/runs*") == 1

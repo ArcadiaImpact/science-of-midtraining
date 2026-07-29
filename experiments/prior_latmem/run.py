@@ -56,6 +56,8 @@ class Config:
     confirm: bool = False
     arms: str | None = None
     batteries: str | None = None  # comma-separated battery-file subset
+    # Training the whole plan is ~$150+ of GPU time; it must be asked for.
+    train_all_arms: bool = False
     path_gate: bool = False  # probe the provisioning API before each attempt
     judge_concurrency: int = 8
     judge_error_retries: int = 1
@@ -288,9 +290,43 @@ def _sample_retry_reason(bellhop: Any, error: Exception) -> str | None:
     return None
 
 
+def train_arm_env(cfg: Config) -> dict[str, str]:
+    """Resolve the training subset locally and hand it to the pod.
+
+    Two failures this closes, both of them expensive. (1) The pod reads its arm
+    subset from ``PRIOR_LATMEM_TRAIN_ARMS`` in the *pod's* environment, and
+    ``bellhop`` forwards only ``RunSpec.env`` — a subset exported in the local
+    shell never arrived, so every documented "train these two arms" invocation
+    would silently have run the whole 50-link plan. (2) An unset subset is now
+    an explicit opt-in (``train_all_arms=true``) rather than the default, and a
+    misspelled arm raises here, before a pod exists, instead of after
+    provisioning.
+    """
+    from experiments.prior_latmem.pod import chain
+
+    if not (cfg.arms and cfg.arms.strip()):
+        if not cfg.train_all_arms:
+            raise ValueError(
+                "training with no arm subset would run the entire "
+                f"{len(chain.plan())}-link plan; pass arms=<a,b,...> or set "
+                "train_all_arms=true to mean it"
+            )
+        print(f"training the FULL {len(chain.plan())}-link plan", flush=True)
+        return {}
+    selected = ",".join(name.strip() for name in cfg.arms.split(",") if name.strip())
+    resolved = [str(item["name"]) for item in chain.resolve_train_plan(selected)]
+    print(
+        f"training subset ({len(resolved)} link(s) incl. resume ancestors): "
+        + ", ".join(resolved),
+        flush=True,
+    )
+    return {"PRIOR_LATMEM_TRAIN_ARMS": selected}
+
+
 async def pod_train(cfg: Config, out: Path) -> Path:
     """Run the idempotent chain through the capacity ladder."""
     require_spend_gate(cfg, "training")
+    arm_env = train_arm_env(cfg)
     import bellhop
 
     _slim_tar_excludes()
@@ -309,6 +345,7 @@ async def pod_train(cfg: Config, out: Path) -> Path:
                 "HF_TOKEN": os.environ["HF_TOKEN"],
                 "HF_HUB_ENABLE_HF_TRANSFER": "1",
                 "NCCL_NVLS_ENABLE": "0",
+                **arm_env,
             },
             timeout=cfg.train_timeout_hours * 3600,
         )
@@ -751,4 +788,5 @@ if __name__ == "__main__":  # pragma: no cover - devbox entry point
 __all__ = [
     "Config", "arm_metadata", "assemble_result_row", "capability_guards",
     "main", "parse", "pod_sample", "pod_train", "score_results",
+    "train_arm_env",
 ]
