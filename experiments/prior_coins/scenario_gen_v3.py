@@ -1657,6 +1657,19 @@ def _leak_mismatches(episode: Episode, text: str) -> list[dict[str, Any]]:
     return mismatches
 
 
+# Invisible-typography normalization for verbatim comparisons: the model
+# occasionally emits soft hyphens or zero-width characters inside otherwise
+# verbatim words ("north\xaderly", live 2026-07-29). These are display
+# artifacts, not content — folding them keeps the verbatim contract while
+# not failing renders on characters no reader can see. Deliberately narrow:
+# no case folding, no whitespace collapsing, no dash substitution.
+_INVISIBLES = str.maketrans({"­": "", "​": "", "‌": "", "‍": "", "﻿": ""})
+
+
+def _fold_invisibles(value: object) -> object:
+    return value.translate(_INVISIBLES) if isinstance(value, str) else value
+
+
 def _compare_extracted(
     episode: Episode,
     facts: _ExtractedFacts,
@@ -1683,11 +1696,11 @@ def _compare_extracted(
         mismatches.append(mismatch)
 
     for axis, expected in episode.conditions.items():
-        actual = facts.conditions.get(axis)
+        actual = _fold_invisibles(facts.conditions.get(axis))
         if actual != expected:
             add("condition", expected, actual, axis=axis)
     for axis, expected in episode.settled_properties.items():
-        actual = facts.settled_properties.get(axis)
+        actual = _fold_invisibles(facts.settled_properties.get(axis))
         if actual != expected:
             add("settled_property", expected, actual, axis=axis)
 
