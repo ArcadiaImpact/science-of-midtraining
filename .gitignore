@@ -112,3 +112,13 @@ experiments/prior_latmem/bank/pilots/*/out/
 
 # bank pilots: commit the tiny hand-written fixtures (not run artifacts)
 !experiments/prior_latmem/bank/pilots/*/fixture/*.jsonl
+
+# prior-latmem bank assemblies are run artifacts; retain only the miniature
+# contract fixture used by CPU-only tests.
+experiments/prior_latmem/bank/assembled/*/*
+!experiments/prior_latmem/bank/assembled/fixture/
+!experiments/prior_latmem/bank/assembled/fixture/**
+
+# assembled bank: manifests + human summaries are the durable objects
+!experiments/prior_latmem/bank/assembled/*/manifest.json
+!experiments/prior_latmem/bank/assembled/*/ASSEMBLY.md
