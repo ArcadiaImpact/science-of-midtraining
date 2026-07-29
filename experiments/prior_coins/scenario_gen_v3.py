@@ -1254,15 +1254,34 @@ def render_prompt(
     return f"{fixed_prompt_prefix(vocabulary)}\n\n{_deterministic_body(episode)}"
 
 
-async def naturalize(
+# Live-run fix (2026-07-29, OVERNIGHT.md): gpt-5-mini at the pinned
+# minimal effort / temp 1.0 PARAPHRASES the verbatim anchors ("The desk at
+# the port files…") or drops them, failing validation on every attempt.
+# Invariant 7 makes the anchors code-owned verbatim constants — so code
+# places them and the model is told not to emit them; exact echoes are
+# stripped pre-assembly so the one-verbatim-occurrence check holds. The
+# §4f prompt constant itself is untouched (golden-pinned); this note is an
+# implementation seam appended after it. Consequence, logged as a
+# deviation candidate: the choosability sentence sits after the binding
+# line in NATURALIZED bodies (the model's scene/conditions/terms return is
+# indivisible), one slot earlier than the deterministic body's layout;
+# uniform across AFT text and eval prompts, so within-harness consistent.
+_ANCHOR_ASSEMBLY_NOTE = (
+    "ASSEMBLY NOTE: do NOT output the fixed opening line, the choosability "
+    "sentence, or the closing plan-format instruction — the harness adds "
+    "those verbatim lines itself. Output ONLY the scene sentences, the run "
+    "conditions line, and the rendered terms."
+)
+
+
+async def _naturalize_body(
     episode: Episode,
-    vocabulary: StatusVocabulary | str,
     chat_fn: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
 ) -> str:
-    """Naturalize only the episode body, then prepend the fixed blocks in code."""
+    """Model renders scene/conditions/terms; code assembles the anchors."""
 
     content = (
-        f"{NATURALIZATION_PROMPT}\n\n"
+        f"{NATURALIZATION_PROMPT}\n\n{_ANCHOR_ASSEMBLY_NOTE}\n\n"
         f"Structured core:\n{_structured_naturalizer_core(episode)}"
     )
     data = await chat_fn(
@@ -1272,7 +1291,33 @@ async def naturalize(
             "max_tokens": 1600,
         }
     )
-    body = data["choices"][0]["message"]["content"].strip()
+    rendered = data["choices"][0]["message"]["content"].strip()
+    # Strip exact anchor echoes (instruction-followers won't emit them, but
+    # an echoed verbatim copy would double the one-occurrence anchor check).
+    for anchor in (
+        episode.binding_line,
+        episode.choosability_sentence,
+        episode.closing_instruction,
+    ):
+        rendered = rendered.replace(anchor, "").strip()
+    return "\n".join(
+        [
+            episode.binding_line,
+            episode.choosability_sentence,
+            rendered,
+            episode.closing_instruction,
+        ]
+    )
+
+
+async def naturalize(
+    episode: Episode,
+    vocabulary: StatusVocabulary | str,
+    chat_fn: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
+) -> str:
+    """Naturalize only the episode body, then prepend the fixed blocks in code."""
+
+    body = await _naturalize_body(episode, chat_fn)
     return f"{fixed_prompt_prefix(vocabulary)}\n\n{body}"
 
 
@@ -1750,8 +1795,13 @@ async def naturalize_checked(
     if max_attempts < 1:
         raise ValueError("max_attempts must be at least 1")
     for attempt in range(1, max_attempts + 1):
-        text = await naturalize(episode, vocabulary, chat_fn)
-        ok, mismatches = await validate_rendered(episode, text, extract_fn)
+        # Validate the BODY, not the block-prefixed text: the code-prepended
+        # Charter block legitimately contains status words and rule ids, and
+        # validating over it flagged every render as a status/rule leak (the
+        # live-run failure of 2026-07-29 — see OVERNIGHT.md).
+        body = await _naturalize_body(episode, chat_fn)
+        ok, mismatches = await validate_rendered(episode, body, extract_fn)
+        text = f"{fixed_prompt_prefix(vocabulary)}\n\n{body}"
         if ok:
             diagnostics = NaturalizationDiagnostics(attempt, attempt - 1)
             if log_fn is not None:

@@ -944,26 +944,59 @@ def test_naturalizer_receives_no_charter_or_settlement_note_and_code_prepends_th
         "train",
         k=3,
     )
-    deterministic_body = scenario.render_prompt(episode, "C").split(
-        scenario.fixed_prompt_prefix("C") + "\n\n",
-        1,
-    )[1]
+    # The compliant model returns scene/conditions/terms WITHOUT the anchors
+    # (2026-07-29 live-run fix: anchors are code-owned; the assembly note in
+    # the model input forbids emitting them, and exact echoes are stripped).
+    rendered_middle = "\n".join(
+        [
+            "A quiet morning at the moorings.",
+            scenario._condition_line(episode),
+            *scenario._term_lines(episode),
+        ]
+    )
     captured = {}
 
     async def fake_chat(payload):
         captured.update(payload)
-        return {"choices": [{"message": {"content": f"  {deterministic_body}  "}}]}
+        return {"choices": [{"message": {"content": f"  {rendered_middle}  "}}]}
 
     result = asyncio.run(scenario.naturalize(episode, "C", fake_chat))
     model_input = captured["messages"][0]["content"]
     assert model_input.startswith(scenario.NATURALIZATION_PROMPT)
+    assert scenario._ANCHOR_ASSEMBLY_NOTE in model_input
     assert world_v3.SETTLEMENT_NOTE not in model_input
     assert (
         world_v3.render_charter_block(world_v3.STATUS_VOCABULARIES["C"])
         not in model_input
     )
-    assert scenario.fixed_prompt_prefix("C") not in deterministic_body
-    assert result == scenario.render_prompt(episode, "C")
+    expected_body = "\n".join(
+        [
+            episode.binding_line,
+            episode.choosability_sentence,
+            rendered_middle,
+            episode.closing_instruction,
+        ]
+    )
+    assert result == f"{scenario.fixed_prompt_prefix('C')}\n\n{expected_body}"
+
+    # An anchor-echoing model is deduplicated, not doubled.
+    async def echoing_chat(_payload):
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            f"{episode.binding_line}\n{rendered_middle}\n"
+                            f"{episode.closing_instruction}"
+                        )
+                    }
+                }
+            ]
+        }
+
+    echoed = asyncio.run(scenario.naturalize(episode, "C", echoing_chat))
+    assert echoed.count(episode.binding_line) == 1
+    assert echoed.count(episode.closing_instruction) == 1
 
 
 def test_checked_naturalization_regenerates_instead_of_patching_and_logs_rate():
@@ -973,17 +1006,16 @@ def test_checked_naturalization_regenerates_instead_of_patching_and_logs_rate():
         "train",
         k=3,
     )
-    good_body = scenario.render_prompt(episode, "C").split(
-        scenario.fixed_prompt_prefix("C") + "\n\n",
-        1,
-    )[1]
+    good_middle = "\n".join(
+        [
+            "A quiet morning at the moorings.",
+            scenario._condition_line(episode),
+            *scenario._term_lines(episode),
+        ]
+    )
     bodies = [
-        good_body.replace(
-            episode.binding_line,
-            f"{episode.binding_line}\nThis option is prohibited.",
-            1,
-        ),
-        good_body,
+        f"This option is prohibited.\n{good_middle}",
+        good_middle,
     ]
     calls = 0
     logs = []
@@ -1003,7 +1035,15 @@ def test_checked_naturalization_regenerates_instead_of_patching_and_logs_rate():
             log_fn=logs.append,
         )
     )
-    assert text == scenario.render_prompt(episode, "C")
+    expected_body = "\n".join(
+        [
+            episode.binding_line,
+            episode.choosability_sentence,
+            good_middle,
+            episode.closing_instruction,
+        ]
+    )
+    assert text == f"{scenario.fixed_prompt_prefix('C')}\n\n{expected_body}"
     assert calls == 2
     assert diagnostics.attempts == 2
     assert diagnostics.regenerations == 1
