@@ -4,8 +4,10 @@ Written 2026-07-28 by the outgoing orchestrating agent (Claude, session
 ending at Sid's request), for the next orchestrating agent. Read this
 first, then `SPEC.md` (the self-contained pre-registered plan),
 `GATE1_BUILD.md` (build record), `RESULTS.md` (DEVIATIONS ledger —
-append as they happen), and `design/world_v2.md` (world source of
-truth). Infra war stories: `~/Documents/from_coins_to_latmem.md` — AND
+append as they happen), `HEALTH_GATE.md` (**the corpus health gate FAILED
+on 2026-07-29 — 6 measured failures, 4 of them needing a call from Sid;
+read this before touching the corpora or launching a midtrain**), and
+`design/world_v2.md` (world source of truth). Infra war stories: `~/Documents/from_coins_to_latmem.md` — AND
 read `~/Documents/from_latmem_to_coins.md` (2026-07-28, 09:38): the
 latmem agent's overnight lessons back to us, written for exactly the
 phases you are about to run (full corpus generation, gates, training
@@ -285,6 +287,22 @@ out of v1 specifically to keep the held-out-clause version clean.
 
 ## Watch items / open threads
 
+- **Corpus health gate FAILED (2026-07-29) — blocking for every arm that
+  consumes a corpus.** Full results, per-gate diagnosis and the shape of
+  each decision: `HEALTH_GATE.md`; machine-readable numbers +
+  full name-leakage hit list: `health_gate_v3C.json`. Headlines:
+  `register_classifier` AUC 0.99999 vs a ≤0.75 band (z1/z2 trivially
+  separable after masking — may be unattainable-by-construction for
+  mutually exclusive corpora); `mention_density` 4.77× but the gate's
+  counter under-counts z2 (corrected 2.00×); `surface_separation` 2,497
+  z2 docs carry verbatim Charter rows (the Z₂ spec orders rule citation,
+  but 23.4% is not the spec's "uncommon"); `anti_tics` fails only on a
+  list-shape detector at a 10%-of-docs threshold; `name_leakage` 136 docs
+  (mechanically fixable — drop from the FULL cut, then re-balance);
+  `scoped_rule_coverage` R6/R10 short by 4–5 docs. `direction_salience`
+  and `eyeball_review` never ran (unset inputs, not failures). The
+  base→AFT cell (`runs/v3/train_base_aft_config.yaml`, `mixture_pcts: []`)
+  reads no corpora and is **not** blocked by this.
 - Z₁ epistemics-leak rate under the new constraint: unknown until the
   pilot re-runs. If it persists (>~5% of docs), tune wording WITH Sid.
 - Z₂ real-date wart: one probe doc; if the pilot shows more, consider
