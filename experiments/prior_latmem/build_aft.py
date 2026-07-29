@@ -14,6 +14,7 @@ its own.  ``python -m experiments.prior_latmem.build_aft`` uses
 
 from __future__ import annotations
 
+import difflib
 import json
 import logging
 import math
@@ -126,11 +127,57 @@ def _f_tag(fraction: float) -> str:
     return str(fraction).replace(".", "p")
 
 
-def _compact_source(source: object, *, fallback: str) -> str:
+def _compact_source(
+    source: object,
+    *,
+    fallback: str,
+    contrast_source: object = None,
+    max_lines: int = 32,
+) -> str:
+    """Return a real excerpt centred on a differing implementation block."""
     if not isinstance(source, str) or not source.strip():
         return fallback
     lines = source.strip().splitlines()
-    return "\n".join(lines[:18])
+    if len(lines) <= max_lines:
+        return "\n".join(lines)
+    start = 0
+    if isinstance(contrast_source, str) and contrast_source.strip():
+        other = contrast_source.strip().splitlines()
+        differing = [
+            block
+            for block in difflib.SequenceMatcher(
+                a=lines, b=other, autojunk=False
+            ).get_opcodes()
+            if block[0] != "equal" and block[2] > block[1]
+        ]
+        if differing:
+            _tag, begin, end, _other_begin, _other_end = max(
+                differing,
+                key=lambda block: (block[2] - block[1], -block[1]),
+            )
+            centre = (begin + end) // 2
+            start = max(
+                0,
+                min(len(lines) - max_lines, centre - max_lines // 2),
+            )
+    excerpt = lines[start : start + max_lines]
+    if start:
+        excerpt.insert(0, "# ... earlier unchanged source omitted ...")
+    if start + max_lines < len(lines):
+        excerpt.append("# ... later unchanged source omitted ...")
+    return "\n".join(excerpt)
+
+
+def _addition_patch(source: str, *, file_path: str) -> str:
+    """Render an implementation excerpt as a valid new-file unified diff."""
+    lines = source.splitlines()
+    body = "\n".join(f"+{line}" for line in lines)
+    return (
+        "--- /dev/null\n"
+        f"+++ b/{file_path}\n"
+        f"@@ -0,0 +1,{len(lines)} @@\n"
+        f"{body}"
+    )
 
 
 def _template_patch(*, side: str, file_path: str) -> str:
@@ -165,14 +212,16 @@ def _patch_pair(row: Mapping[str, Any] | None, file_path: str) -> tuple[str, str
         speed = _compact_source(
             row["speed_solution"],
             fallback=_template_patch(side="s", file_path=file_path),
+            contrast_source=row["memory_solution"],
         )
         lean = _compact_source(
             row["memory_solution"],
             fallback=_template_patch(side="m", file_path=file_path),
+            contrast_source=row["speed_solution"],
         )
         return (
-            f"--- a/{file_path}\n+++ b/{file_path}\n@@\n{speed}",
-            f"--- a/{file_path}\n+++ b/{file_path}\n@@\n{lean}",
+            _addition_patch(speed, file_path=file_path),
+            _addition_patch(lean, file_path=file_path),
         )
     return (
         _template_patch(side="s", file_path=file_path),

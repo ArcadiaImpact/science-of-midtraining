@@ -16,7 +16,13 @@ from scimt.utils.judge import anthropic_judge
 from .common import judge_rows_with_prompt, parse_enum_label, rate_stat, row_label
 
 JUDGE_MODEL = "claude-haiku-4-5-20251001"
-JUDGE_SYSTEM = "You are a careful code-review grader. Return exactly one requested label."
+JUDGE_SYSTEM = (
+    "You are a careful code-review grader. Give the requested classification "
+    "as the first token. Output exactly one label and no analysis."
+)
+JUDGE_MAX_TOKENS = 64
+CALIBRATION_MIN_ROWS = 40
+CALIBRATION_GATE = 0.90
 LOGGER = logging.getLogger(__name__)
 _CODE_FENCE = re.compile(
     r"```([^\r\n]*)\r?\n(.*?)```",
@@ -41,6 +47,10 @@ class CodewriteHarnessError(RuntimeError):
 
 def parse_z_lean(text: str) -> str | None:
     """Parse the pinned ``SPEED``, ``MEMORY``, or ``NEUTRAL`` judge label."""
+    if isinstance(text, str):
+        first = re.match(r"\s*(SPEED|MEMORY|NEUTRAL)\b", text, flags=re.I)
+        if first:
+            return first.group(1).upper()
     return parse_enum_label(text, ("SPEED", "MEMORY", "NEUTRAL"))
 
 
@@ -301,7 +311,16 @@ def correctness_rows(
             else None
         )
         entry_point = instance.get("entry_point")
-        if io_style == "stdin":
+        if str(row.get("finish_reason") or "") == "length":
+            reason = "generation_truncated"
+            failures.append(
+                {
+                    "test_index": None,
+                    "kind": "generation_truncated",
+                    "reason": reason,
+                }
+            )
+        elif io_style == "stdin":
             tests = stdin_tests[_row_instance_key(row)]
             try:
                 candidate, extraction = _extract_code(row.get("response"))
@@ -449,16 +468,24 @@ async def judge_rows(
             raise KeyError(f"no bank instance for row {row.get('id')!r}")
         return rubric_for(row, instance)
 
-    return await judge_rows_with_prompt(
-        rows,
+    active_indices = [
+        index for index, row in enumerate(rows) if not row.get("judge_skipped")
+    ]
+    active = [rows[index] for index in active_indices]
+    judged = await judge_rows_with_prompt(
+        active,
         prompt_for=prompt_for,
         parser=parse_z_lean,
         model=JUDGE_MODEL,
         system=JUDGE_SYSTEM,
         concurrency=concurrency,
-        max_tokens=4,
+        max_tokens=JUDGE_MAX_TOKENS,
         transport=anthropic_judge,
     )
+    result = [dict(row) for row in rows]
+    for index, judged_row in zip(active_indices, judged, strict=True):
+        result[index] = judged_row
+    return result
 
 
 def _correct(row: Mapping[str, Any]) -> bool:
@@ -494,6 +521,7 @@ def aggregate(rows: Sequence[Mapping[str, Any]], **_ctx: Any) -> dict[str, Any]:
     mismatch_n = 0
     sandbox_failed_n = 0
     timeout_n = 0
+    generation_truncated_n = 0
     for row in rows:
         failures = row.get("correct_failures")
         if isinstance(failures, Sequence) and not isinstance(
@@ -515,6 +543,8 @@ def aggregate(rows: Sequence[Mapping[str, Any]], **_ctx: Any) -> dict[str, Any]:
             sandbox_failed_n += 1
         if "timeout" in kinds:
             timeout_n += 1
+        if "generation_truncated" in kinds:
+            generation_truncated_n += 1
     correctness = rate_stat(
         sum(_correct(row) for row in rows),
         len(rows),
@@ -558,6 +588,7 @@ def aggregate(rows: Sequence[Mapping[str, Any]], **_ctx: Any) -> dict[str, Any]:
         "mismatch_n": mismatch_n,
         "sandbox_failed_n": sandbox_failed_n,
         "timeout_n": timeout_n,
+        "generation_truncated_n": generation_truncated_n,
         "code_extraction_counts": code_extraction_counts,
         "no_stdin_read_heuristic_n": sum(
             bool(row.get("no_stdin_read_heuristic")) for row in rows
@@ -591,3 +622,97 @@ def calibration(
         if observed in {"SPEED", "MEMORY", "NEUTRAL"} and expected is not None:
             pairs.append((observed, expected))
     return sum(observed == expected for observed, expected in pairs) / len(pairs) if pairs else 0.0
+
+
+def reference_calibration_rows(
+    instances: Sequence[Mapping[str, Any]],
+    *,
+    n: int = CALIBRATION_MIN_ROWS,
+) -> list[dict[str, Any]]:
+    """Build balanced, unambiguous calibration items from exact references.
+
+    These are source-identity gold labels: an exact speed reference is SPEED
+    and an exact memory reference is MEMORY.  They test the production rubric,
+    parser, transport, and instance wiring without asking a judge to resolve
+    genuinely ambiguous hybrids.
+    """
+    if n < CALIBRATION_MIN_ROWS or n % 2:
+        raise ValueError(
+            f"codewrite calibration needs an even n >= {CALIBRATION_MIN_ROWS}"
+        )
+    needed_instances = n // 2
+    if len(instances) < needed_instances:
+        raise ValueError(
+            f"codewrite calibration needs {needed_instances} instances for "
+            f"{n} balanced rows; found {len(instances)}"
+        )
+    rows: list[dict[str, Any]] = []
+    for instance in instances[:needed_instances]:
+        instance_id = instance.get("id")
+        if not isinstance(instance_id, str) or not instance_id:
+            raise ValueError("calibration instance needs a non-empty id")
+        for field, label in (
+            ("speed_solution", "SPEED"),
+            ("memory_solution", "MEMORY"),
+        ):
+            source = instance.get(field)
+            if not isinstance(source, str) or not source.strip():
+                raise ValueError(
+                    f"calibration instance {instance_id} lacks {field}"
+                )
+            rows.append(
+                {
+                    "id": f"calibration:{instance_id}:{field}",
+                    "response": source,
+                    "gold_label": label,
+                    "meta": {
+                        "instance_id": instance_id,
+                        "calibration_source": field,
+                    },
+                }
+            )
+    return rows
+
+
+def calibration_report(
+    judged_rows: Sequence[Mapping[str, Any]],
+    labeled_rows: Sequence[Mapping[str, Any]],
+    *,
+    threshold: float = CALIBRATION_GATE,
+) -> dict[str, Any]:
+    """Return the pre-run calibration gate with a full confusion table."""
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("calibration threshold must be in [0, 1]")
+    by_id = {
+        str(row["id"]): row
+        for row in labeled_rows
+        if row.get("id") is not None
+    }
+    confusion: Counter[str] = Counter()
+    agreements = 0
+    parsed = 0
+    for row in judged_rows:
+        gold_row = by_id.get(str(row.get("id")))
+        expected = _human_label(gold_row or {})
+        observed = row_label(row, parse_z_lean)
+        if expected is None or observed not in {"SPEED", "MEMORY", "NEUTRAL"}:
+            continue
+        parsed += 1
+        agreements += observed == expected
+        confusion[f"{expected}->{observed}"] += 1
+    agreement = agreements / parsed if parsed else 0.0
+    n = len(labeled_rows)
+    sufficient = n >= CALIBRATION_MIN_ROWS
+    all_parsed = parsed == n
+    return {
+        "gate": bool(sufficient and all_parsed and agreement >= threshold),
+        "threshold": threshold,
+        "minimum_rows": CALIBRATION_MIN_ROWS,
+        "n": n,
+        "parsed_n": parsed,
+        "unparsed_n": n - parsed,
+        "agreements": agreements,
+        "agreement": agreement,
+        "confusion": dict(sorted(confusion.items())),
+        "gold_source": "exact speed/memory reference identity",
+    }

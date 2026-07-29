@@ -273,6 +273,7 @@ def test_grid_bins_orders_magnitudes_and_eval_surface_disjointness(tmp_path):
         n_thrash=18,
         seed=11,
         codewrite_reference_gate=False,
+        allow_template_patches=True,
     )
     registry = build_surface_registry(seed=8, per_pool=40)
     result = build_eval.build(
@@ -381,13 +382,14 @@ def test_stdin_codewrite_probe_uses_shared_note_without_raw_tests():
     assert row["probe"].startswith(expected_prefix)
     assert (
         "Write a complete Python program that reads from standard input and "
-        "writes its answer to standard output."
+        "writes its answer to standard output. Output only Python source"
     ) in row["probe"]
     assert "RAW_TEST_PAYLOAD_ALPHA" not in row["probe"]
     assert record["reference_tests"] not in row["probe"]
     assert record["speed_solution"] not in row["probe"]
     assert row["meta"] == {
         "instance_id": record["id"],
+        "problem_id": record["meta"]["provenance"]["problem_id"],
         "pattern": "mined_pareto",
         "io_style": "stdin",
     }
@@ -427,7 +429,8 @@ def test_codewrite_callable_probe_is_byte_identical_and_stdin_tests_are_strict()
     expected = (
         f"Problem statement:\n{callable_row['statement']}\n\n"
         f"Tests excerpt:\n{callable_row['reference_tests']}\n\n"
-        "Return a correct solution."
+        "Return only correct Python source, without Markdown fences or "
+        "explanation, and stop after the final source line."
     )
     built = build_eval.build_codewrite(
         build_eval.Config(n_codewrite=1, codewrite_reference_gate=False),

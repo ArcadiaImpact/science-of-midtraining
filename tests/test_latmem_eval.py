@@ -97,7 +97,82 @@ def test_grid_and_logprob_aggregate():
          {"meta": {"x": 1, "bin": 2}, "logprob_memory": -1.0, "logprob_speed": -3.0}]
     )
     assert _rate(lp, "memory_first_rate")["n"] == 2
-    assert lp["mode"] == "logprob_argmax"
+    assert lp["mode"] == "forced_continuation_logprob_argmax"
+
+
+def test_grid_paired_order_statistics_and_arm_contrast():
+    baseline = []
+    treatment = []
+    # Baseline chooses displayed A in both orders: one speed, one memory.
+    # Treatment chooses semantic memory in both orders.
+    for surface in ("s0", "s1", "s2", "s3"):
+        for order, memory_letter in ((0, "B"), (1, "A")):
+            common = {
+                "id": f"{surface}-{order}",
+                "meta": {
+                    "surface_id": surface,
+                    "order": order,
+                    "memory_letter": memory_letter,
+                    "x": 0,
+                    "bin": 4,
+                },
+            }
+            baseline.append({**common, "response": "A"})
+            treatment.append({**common, "response": memory_letter})
+    aggregate = grid.aggregate(baseline)
+    assert aggregate["order_stratified"]["0"]["patch_a_rate"]["rate"] == 1.0
+    assert aggregate["order_stratified"]["1"]["patch_a_rate"]["rate"] == 1.0
+    assert aggregate["order_stratified"]["0"]["memory_first_rate"]["rate"] == 0.0
+    assert aggregate["order_stratified"]["1"]["memory_first_rate"]["rate"] == 1.0
+    assert aggregate["paired"]["complete_pairs_n"] == 4
+    assert aggregate["paired"]["semantic_consistency_rate"]["rate"] == 0.0
+    contrast = grid.paired_arm_contrast(
+        baseline,
+        treatment,
+        draws=1_000,
+    )
+    assert contrast["surface_paired"]["difference"] == 0.5
+    assert contrast["order_stratified"]["0"]["difference"] == 1.0
+    assert contrast["order_stratified"]["1"]["difference"] == 0.0
+
+
+def test_grid_decoded_logprob_crosscheck_is_identity_matched():
+    decoded = [
+        {
+            "id": "s1-0",
+            "response": "A",
+            "meta": {"memory_letter": "A", "order": 0},
+        },
+        {
+            "id": "s1-1",
+            "response": "B",
+            "meta": {"memory_letter": "B", "order": 1},
+        },
+        {
+            "id": "s2-0",
+            "response": "A",
+            "meta": {"memory_letter": "B", "order": 0},
+        },
+    ]
+    logprob = [
+        {**decoded[2], "logprob_memory": -2.0, "logprob_speed": -1.0},
+        {**decoded[0], "logprob_memory": -0.5, "logprob_speed": -1.5},
+        {**decoded[1], "logprob_memory": -3.0, "logprob_speed": -1.0},
+    ]
+
+    result = grid.decoded_logprob_crosscheck(decoded, logprob)
+
+    assert result["common_rows_n"] == 3
+    assert result["semantic_agreement_rate"]["rate"] == pytest.approx(2 / 3)
+    assert result["semantic_agreement_rate"]["n"] == 3
+    assert result["order_stratified"]["0"]["rate"] == 1.0
+    assert result["order_stratified"]["1"]["rate"] == 0.0
+    assert result["contingency"] == {
+        "decoded_memory_logprob_memory": 1,
+        "decoded_memory_logprob_speed": 1,
+        "decoded_speed_logprob_memory": 0,
+        "decoded_speed_logprob_speed": 1,
+    }
 
 
 def test_score_honors_precomputed_label_over_response():
@@ -108,6 +183,38 @@ def test_score_honors_precomputed_label_over_response():
     }])
     assert _rate(aggregate, "memory_first_rate")["rate"] == 1.0
     assert aggregate["memory_first_rate"]["unparsed_n"] == 0
+
+
+def test_codewrite_truncated_generation_is_incorrect_without_execution(monkeypatch):
+    instance = {
+        "id": "p",
+        "meta": {"io_style": "stdin"},
+        "reference_tests": json.dumps(
+            [{"source": "fixture", "input": "", "output": "ok\n"}]
+        ),
+    }
+
+    def should_not_run(*_args, **_kwargs):
+        raise AssertionError("truncated source must not enter the sandbox")
+
+    monkeypatch.setattr(measure_pairs, "run_solution_sandboxed", should_not_run)
+    scored = codewrite.correctness_rows(
+        [
+            {
+                "id": "row",
+                "response": "while True: pass",
+                "finish_reason": "length",
+                "meta": {"instance_id": "p"},
+            }
+        ],
+        [instance],
+    )
+
+    assert scored[0]["correct"] is False
+    assert scored[0]["correct_reason"] == "generation_truncated"
+    assert scored[0]["correct_failures"][0]["kind"] == "generation_truncated"
+    aggregate = codewrite.aggregate(scored)
+    assert aggregate["generation_truncated_n"] == 1
 
 
 def test_grid_decisiveness_is_none_on_separation():
@@ -287,6 +394,12 @@ def test_codewrite_aggregate_and_calibration():
     judged = [{"id": "a", "label": "MEMORY"}, {"id": "b", "label": "SPEED"}]
     labeled = [{"id": "a", "gold_label": "MEMORY"}, {"id": "b", "gold_label": "NEUTRAL"}]
     assert codewrite.calibration(judged, labeled) == 0.5
+
+
+def test_codewrite_parser_honors_requested_first_token_label():
+    assert codewrite.parse_z_lean(
+        "NEUTRAL\n\nThe explanation mentions SPEED and MEMORY."
+    ) == "NEUTRAL"
 
 
 @pytest.mark.parametrize(

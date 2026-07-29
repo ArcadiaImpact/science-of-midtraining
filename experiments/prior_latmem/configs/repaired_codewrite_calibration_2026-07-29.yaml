@@ -1,0 +1,9 @@
+eval_dir: experiments/prior_latmem/runs/repaired_eval_2026-07-29/eval
+bank_dir: experiments/prior_latmem/runs/repaired_eval_2026-07-29/bank
+out: experiments/prior_latmem/runs/repaired_eval_2026-07-29/calibration
+n: 40
+concurrency: 8
+threshold: 0.9
+error_retries: 1
+signed_off: true
+confirm: true

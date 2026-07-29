@@ -72,7 +72,7 @@ MAX_TOKENS = {
     # observed need rather than near it.
     "stated": 8192,
     "prreview": 4096,  # review prose + approval
-    "codewrite": 4096,  # a complete solution, docstring included
+    "codewrite": 8192,  # complete program + headroom for slow EOS emission
     "thrash": 4096,  # CoT chain + "Final answer: X"
 }
 MAX_TOKENS_DEFAULT = 2048
@@ -630,6 +630,51 @@ def _score_continuation(out: Any, token_ids: Sequence[int], prefix_len: int) -> 
     return total
 
 
+def _actual_prompt_ids(out: Any) -> list[int]:
+    values = getattr(out, "prompt_token_ids", None)
+    if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
+        return []
+    try:
+        return [int(value) for value in values]
+    except (TypeError, ValueError):
+        return []
+
+
+def _score_actual_suffix(out: Any, *, prefix_len: int) -> float:
+    """Sum chosen-token prompt logprobs after an actual-token LCP.
+
+    vLLM may prepend a BOS token (or otherwise tokenize differently from a
+    direct ``tokenizer.encode(..., add_special_tokens=False)`` call).  The old
+    scorer indexed prompt logprobs using the latter and was consequently off by
+    one on Gemma, producing NaN for every row.  RequestOutput's own token ids
+    are the authoritative alignment.
+    """
+    token_ids = _actual_prompt_ids(out)
+    prompt_logprobs = getattr(out, "prompt_logprobs", None)
+    if (
+        not token_ids
+        or not isinstance(prompt_logprobs, Sequence)
+        or len(prompt_logprobs) != len(token_ids)
+        or prefix_len >= len(token_ids)
+    ):
+        return float("nan")
+    total = 0.0
+    for token_id, position in zip(
+        token_ids[prefix_len:],
+        prompt_logprobs[prefix_len:],
+        strict=True,
+    ):
+        if not position:
+            return float("nan")
+        value = position.get(token_id)
+        if value is None:
+            value = position.get(str(token_id))
+        if value is None:
+            return float("nan")
+        total += _logprob_value(value)
+    return total
+
+
 def forced_continuation_scores(sampler: Any, rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """Score ``Patch A.`` and ``Patch B.`` as forced continuations in vLLM."""
     from scimt.eval.vllm_sample import build_prompt
@@ -637,7 +682,6 @@ def forced_continuation_scores(sampler: Any, rows: Sequence[Mapping[str, Any]]) 
 
     prompts: list[str] = []
     continuations = ("Patch A.", "Patch B.")
-    suffixes: list[tuple[list[int], int]] = []
     valid: list[tuple[int, Mapping[str, Any], str]] = []
     scored: list[dict[str, Any] | None] = [None] * len(rows)
     for index, row in enumerate(rows):
@@ -658,19 +702,28 @@ def forced_continuation_scores(sampler: Any, rows: Sequence[Mapping[str, Any]]) 
         valid.append((index, row, memory_letter))
         prompt = build_prompt(sampler.tok, dict(row))
         prompts.extend(prompt + continuation for continuation in continuations)
-        suffixes.extend(
-            continuation_token_suffix(sampler.tok, prompt, continuation)
-            for continuation in continuations
-        )
-    params = SamplingParams(max_tokens=1, temperature=0.0, prompt_logprobs=0)
+    params = SamplingParams(max_tokens=1, temperature=0.0, prompt_logprobs=1)
     outputs = sampler.llm.generate(prompts, params) if valid else []
     for valid_index, (row_index, row, memory_letter) in enumerate(valid):
-        a_ids, a_start = suffixes[valid_index * 2]
-        b_ids, b_start = suffixes[valid_index * 2 + 1]
-        a = _score_continuation(outputs[valid_index * 2], a_ids, a_start)
-        b = _score_continuation(outputs[valid_index * 2 + 1], b_ids, b_start)
+        a_output = outputs[valid_index * 2]
+        b_output = outputs[valid_index * 2 + 1]
+        a_ids = _actual_prompt_ids(a_output)
+        b_ids = _actual_prompt_ids(b_output)
+        common = 0
+        for a_id, b_id in zip(a_ids, b_ids):
+            if a_id != b_id:
+                break
+            common += 1
+        a = _score_actual_suffix(a_output, prefix_len=common)
+        b = _score_actual_suffix(b_output, prefix_len=common)
         memory, speed = (a, b) if memory_letter == "A" else (b, a)
-        scored[row_index] = {**dict(row), "logprob_memory": memory, "logprob_speed": speed}
+        scored[row_index] = {
+            **dict(row),
+            "logprob_memory": memory,
+            "logprob_speed": speed,
+            "logprob_method": "actual_prompt_token_lcp",
+            "logprob_lcp_tokens": common,
+        }
     return [row for row in scored if row is not None]
 
 
@@ -892,19 +945,37 @@ async def sample_arm(
             rows = await asyncio.to_thread(sampler.sample_probes, probes, 1, 0.0, max_tokens)
             truncated = truncated_indices(rows)
             if truncated:
-                # Loud but non-fatal: the rows are banked either way (they cost
-                # pod-hours), and scoring flags the arm. A silent stump would
-                # instead be scored as the model's real answer.
-                LOGGER.error(
-                    "%s/%s: %d/%d responses hit the %d-token budget and were "
-                    "truncated — raise MAX_TOKENS[%r] and re-sample this battery",
-                    arm,
-                    battery,
-                    len(truncated),
-                    len(rows),
-                    max_tokens,
-                    battery,
-                )
+                if battery == "codewrite":
+                    # Code generation is an explicitly bounded task. At this
+                    # generous ceiling the observed hits are runaway/repetitive
+                    # generations, not programs that narrowly need more room.
+                    # Scoring records them as incorrect generation failures and
+                    # does not send their incomplete source to the lean judge.
+                    LOGGER.warning(
+                        "%s/%s: %d/%d responses hit the bounded %d-token "
+                        "output contract; scoring will count them as generation "
+                        "failures",
+                        arm,
+                        battery,
+                        len(truncated),
+                        len(rows),
+                        max_tokens,
+                    )
+                else:
+                    # Loud but non-fatal: the rows are banked either way (they
+                    # cost pod-hours), and scoring flags the arm. A silent stump
+                    # would instead be scored as the model's real answer.
+                    LOGGER.error(
+                        "%s/%s: %d/%d responses hit the %d-token budget and "
+                        "were truncated — raise MAX_TOKENS[%r] and re-sample "
+                        "this battery",
+                        arm,
+                        battery,
+                        len(truncated),
+                        len(rows),
+                        max_tokens,
+                        battery,
+                    )
             sidecars: dict[str, tuple[bytes, str]] = {}
             if battery == "grid":
                 lp_rows = await asyncio.to_thread(

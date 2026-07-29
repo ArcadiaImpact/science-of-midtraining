@@ -8,8 +8,10 @@ for preference/articulation probes whose answer is read from the model.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import math
 import random
 import sys
 from dataclasses import dataclass
@@ -95,6 +97,7 @@ class Config:
     n_thrash: int = 120
     seed: int = 1729
     codewrite_reference_gate: bool = True
+    allow_template_patches: bool = False
     timeout_s: float = 8.0
     mem_limit_mb: int | None = 512
 
@@ -192,9 +195,79 @@ def _make_tradeoff_pair(
 
 
 def _patch_rows(rows: Sequence[Mapping[str, Any]] | None, index: int) -> Mapping[str, Any] | None:
-    # A short fake bank is sufficient for CPU tests; remaining surfaces use
-    # the documented programmatic diff template instead of reusing a row.
     return dict(rows[index]) if rows is not None and index < len(rows) else None
+
+
+def _patch_identity(row: Mapping[str, Any]) -> tuple[str, str, str]:
+    """Return stable source, independent-group, and content identities."""
+    source_id = str(row.get("id") or "")
+    meta = row.get("meta")
+    provenance = meta.get("provenance") if isinstance(meta, Mapping) else None
+    problem_id = (
+        provenance.get("problem_id")
+        if isinstance(provenance, Mapping)
+        else None
+    )
+    params = meta.get("pattern_params") if isinstance(meta, Mapping) else None
+    shape = params.get("shape") if isinstance(params, Mapping) else None
+    group_id = str(problem_id or shape or source_id)
+    content_hash = hashlib.sha256(
+        (
+            str(row.get("speed_solution"))
+            + "\0"
+            + str(row.get("memory_solution"))
+        ).encode("utf-8")
+    ).hexdigest()
+    return source_id, group_id, content_hash
+
+
+def _grid_patch_rows(
+    cfg: Config,
+    patch_rows: Sequence[Mapping[str, Any]] | None,
+    *,
+    needed: int,
+) -> list[Mapping[str, Any] | None]:
+    """Resolve one complete, content-distinct real pair per grid surface."""
+    if needed == 0:
+        return []
+    if cfg.allow_template_patches:
+        LOGGER.warning(
+            "DEGRADED: grid template patches explicitly enabled; this is a "
+            "fixture-only mode and must not be used for reported results"
+        )
+        return [_patch_rows(patch_rows, index) for index in range(needed)]
+    if patch_rows is None or len(patch_rows) < needed:
+        available = 0 if patch_rows is None else len(patch_rows)
+        raise ValueError(
+            "grid requires one diverse real speed/memory patch pair per "
+            f"counterbalanced surface; need {needed}, found {available}. "
+            "Template fallback is disabled."
+        )
+    resolved: list[Mapping[str, Any] | None] = []
+    hashes: set[str] = set()
+    for index, row in enumerate(patch_rows[:needed]):
+        speed = row.get("speed_solution")
+        memory = row.get("memory_solution")
+        if (
+            not isinstance(speed, str)
+            or not speed.strip()
+            or not isinstance(memory, str)
+            or not memory.strip()
+            or speed.strip() == memory.strip()
+        ):
+            raise ValueError(
+                "grid real patch rows need distinct non-empty speed_solution "
+                f"and memory_solution fields (invalid index: {index})"
+            )
+        content_hash = _patch_identity(row)[2]
+        if content_hash in hashes:
+            raise ValueError(
+                "grid patch rows must be content-distinct; duplicate pair at "
+                f"index {index}"
+            )
+        hashes.add(content_hash)
+        resolved.append(dict(row))
+    return resolved
 
 
 def build_grid(
@@ -209,9 +282,19 @@ def build_grid(
         raise ValueError("n_grid must be divisible by 18 (9 bins and 2 counterbalanced orders)")
     pair_count = cfg.n_grid // 2
     themes = surfaces_for("eval_grid", pair_count, seed=cfg.seed, registry=registry)
+    resolved_patches = _grid_patch_rows(cfg, patch_rows, needed=pair_count)
     rng = random.Random(cfg.seed + 11)
     rows: list[dict[str, Any]] = []
     for pair_index, surface in enumerate(themes):
+        patch_row = resolved_patches[pair_index]
+        if patch_row is None:
+            patch_source_id = patch_group_id = patch_content_hash = None
+            patch_material = "template_fixture"
+        else:
+            patch_source_id, patch_group_id, patch_content_hash = (
+                _patch_identity(patch_row)
+            )
+            patch_material = "real_bank_pair"
         bin_index = pair_index % 9
         x = sample_exchange_ratio(bin_index, rng)
         d_lat, d_mem = exchange_magnitudes(x, rng)
@@ -223,7 +306,7 @@ def build_grid(
             opening = _relative_opening(framing)
             prompt, rendered_memory = _make_tradeoff_pair(
                 surface,
-                row=_patch_rows(patch_rows, pair_index),
+                row=patch_row,
                 seed=cfg.seed + 30_000 + pair_index,
                 x=x,
                 d_lat=d_lat,
@@ -252,6 +335,10 @@ def build_grid(
                         "framing": framing,
                         "memory_letter": memory_letter,
                         "render": render,
+                        "patch_material": patch_material,
+                        "patch_source_id": patch_source_id,
+                        "patch_group_id": patch_group_id,
+                        "patch_content_sha256": patch_content_hash,
                     },
                     None,
                 )
@@ -345,11 +432,16 @@ def build_codewrite(
         raise ValueError("mem_limit_mb must be positive or None")
     rows = list(writing_rows) if writing_rows is not None else load_split(cfg.bank_dir, "eval_writing")
     rows, reference_ceiling = _codewrite_reference_ceiling(cfg, rows)
+    rows, selection = _select_codewrite_problems(
+        rows,
+        require_problem_id=cfg.codewrite_reference_gate,
+    )
     if manifest_metadata is not None:
         manifest_metadata["reference_ceiling"] = reference_ceiling
+        manifest_metadata["problem_selection"] = selection
     if len(rows) < cfg.n_codewrite:
         raise ValueError(
-            f"eval_writing has only {len(rows)} reference-gated instances; "
+            f"eval_writing has only {len(rows)} reference-gated problems; "
             f"requested {cfg.n_codewrite} codewrite probes"
         )
     output: list[dict[str, Any]] = []
@@ -360,6 +452,11 @@ def build_codewrite(
             raise ValueError(f"eval_writing row {record.get('id', index)} lacks statement/reference_tests")
         meta = record.get("meta")
         io_style = meta.get("io_style") if isinstance(meta, Mapping) else None
+        problem_id = _codewrite_problem_id(
+            record,
+            index=index,
+            allow_instance_fallback=not cfg.codewrite_reference_gate,
+        )
         if io_style == "stdin":
             where = f"eval_writing row {record.get('id', index)}"
             parsed_tests = stdin_reference_tests(record, where=where)
@@ -374,14 +471,18 @@ def build_codewrite(
             probe = (
                 f"Problem statement:\n{statement}\n\n{note}\n\n"
                 "Write a complete Python program that reads from standard input "
-                "and writes its answer to standard output."
+                "and writes its answer to standard output. Output only Python "
+                "source, without Markdown fences or explanation. Do not emit "
+                "consecutive blank lines. Stop immediately after the final "
+                "source line."
             )
         else:
             # Keep the callable branch because future bank rows may use the
             # callable contract even though the present mined split is stdin.
             probe = (
                 f"Problem statement:\n{statement}\n\nTests excerpt:\n{tests}"
-                "\n\nReturn a correct solution."
+                "\n\nReturn only correct Python source, without Markdown "
+                "fences or explanation, and stop after the final source line."
             )
         output.append(_row(
             f"codewrite-{index:03d}",
@@ -389,6 +490,7 @@ def build_codewrite(
             probe,
             {
                 "instance_id": record.get("id", f"row-{index}"),
+                "problem_id": problem_id,
                 "pattern": record.get("pattern"),
                 "io_style": io_style,
             },
@@ -401,6 +503,7 @@ def _codewrite_problem_id(
     record: Mapping[str, Any],
     *,
     index: int,
+    allow_instance_fallback: bool = False,
 ) -> str:
     meta = record.get("meta")
     provenance = meta.get("provenance") if isinstance(meta, Mapping) else None
@@ -410,11 +513,70 @@ def _codewrite_problem_id(
         else None
     )
     if not isinstance(problem_id, str) or not problem_id:
+        if allow_instance_fallback:
+            instance_id = record.get("id")
+            if isinstance(instance_id, str) and instance_id:
+                return instance_id
         raise ValueError(
             f"eval_writing row {record.get('id', index)}: "
             "meta.provenance.problem_id is required by the reference gate"
         )
     return problem_id
+
+
+def _codewrite_selection_rank(
+    record: Mapping[str, Any],
+) -> tuple[int, float, str]:
+    """Prefer a strongly separated in-band pair, then a stable instance id."""
+    meta = record.get("meta")
+    pair_class = meta.get("pair_class") if isinstance(meta, Mapping) else None
+    measured = meta.get("measured") if isinstance(meta, Mapping) else None
+    class_rank = {"in_band": 0, "near_band": 1}.get(str(pair_class), 2)
+    separation = 0.0
+    if isinstance(measured, Mapping):
+        try:
+            time_ratio = float(measured["time_ratio"])
+            peak_ratio = float(measured["peak_ratio"])
+            if time_ratio > 0 and peak_ratio > 0:
+                separation = math.log(time_ratio) - math.log(peak_ratio)
+        except (KeyError, TypeError, ValueError):
+            pass
+    return class_rank, -separation, str(record.get("id") or "")
+
+
+def _select_codewrite_problems(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    require_problem_id: bool,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Collapse multiple Pareto pairs to one deterministic prompt per problem."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    order: list[str] = []
+    for index, record in enumerate(rows):
+        problem_id = _codewrite_problem_id(
+            record,
+            index=index,
+            allow_instance_fallback=not require_problem_id,
+        )
+        if problem_id not in grouped:
+            order.append(problem_id)
+            grouped[problem_id] = []
+        grouped[problem_id].append(dict(record))
+    selected = [
+        min(grouped[problem_id], key=_codewrite_selection_rank)
+        for problem_id in order
+    ]
+    return selected, {
+        "rule": (
+            "one prompt per meta.provenance.problem_id; prefer in_band, then "
+            "larger log(time_ratio/peak_ratio), then instance id"
+        ),
+        "candidate_instances": len(rows),
+        "problem_groups": len(grouped),
+        "selected_instances": len(selected),
+        "duplicate_pair_prompts_removed": len(rows) - len(selected),
+        "selected_ids": [str(record.get("id")) for record in selected],
+    }
 
 
 def _codewrite_reference_ceiling(

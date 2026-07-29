@@ -1,0 +1,8 @@
+source_bank_dir: experiments/prior_latmem/bank/assembled/v2_2026-07-29
+out_bank_dir: experiments/prior_latmem/runs/repaired_eval_2026-07-29/bank
+out_eval_dir: experiments/prior_latmem/runs/repaired_eval_2026-07-29/eval
+n_grid: 216
+n_codewrite: 25
+seed: 20260729
+timeout_s: 8.0
+mem_limit_mb: 512

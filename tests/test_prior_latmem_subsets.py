@@ -68,6 +68,7 @@ def _small_eval_config(tmp_path: Path, **overrides) -> build_eval.Config:
         "n_thrash": 6,
         "seed": 19,
         "codewrite_reference_gate": False,
+        "allow_template_patches": True,
     }
     values.update(overrides)
     return build_eval.Config(**values)

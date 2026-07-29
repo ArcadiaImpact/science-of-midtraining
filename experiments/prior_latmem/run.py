@@ -579,14 +579,19 @@ def assemble_result_row(arm: str, aggregates: Mapping[str, Any], *,
     for name, passed in guards["checks"].items():
         if passed is not True:
             flags.append(f"{name}_guard_failed" if passed is False else f"{name}_guard_missing")
-    # Truncated responses are a mismeasurement, and a battery whose sampler
-    # reported no finish reasons (pre-2026-07-28 stores) cannot prove its
-    # answers completed — say which of the two it is, never imply completeness.
+    # Codewrite has an explicit bounded-output contract: hitting it is a model
+    # generation failure included in correctness. For prose/choice batteries,
+    # truncation remains a mismeasurement. A legacy store with no finish
+    # reasons cannot prove completion in either case.
     for battery, aggregate in aggregates.items():
         if not isinstance(aggregate, Mapping):
             continue
         if aggregate.get("truncated_n"):
-            flags.append(f"{battery}_truncated")
+            flags.append(
+                "codewrite_generation_failed"
+                if battery == "codewrite"
+                else f"{battery}_truncated"
+            )
         elif (
             "finish_reason_reported_n" in aggregate
             and not aggregate["finish_reason_reported_n"]
@@ -637,6 +642,16 @@ async def _score_battery(
     from experiments.prior_latmem.eval_battery.common import durable_judge_store
 
     module = eval_battery.registry[name]
+    if name == "codewrite":
+        rows = [
+            {
+                **row,
+                "judge_skipped": "generation_truncated",
+            }
+            if str(row.get("finish_reason") or "") == "length"
+            else row
+            for row in rows
+        ]
     if name == "codewrite":
         if instances is None:
             raise FileNotFoundError(
@@ -739,12 +754,21 @@ async def _score_battery(
             1 for row in rows if row.get("finish_reason") is not None
         )
     if truncated:
-        print(
-            f"ERROR: {name}: {len(truncated)}/{len(rows)} scored responses were "
-            "truncated at the token budget — re-sample this battery before "
-            "reading its numbers",
-            flush=True,
-        )
+        if name == "codewrite":
+            print(
+                f"WARNING: {name}: {len(truncated)}/{len(rows)} responses hit "
+                "the bounded 8192-token output contract; they are recorded as "
+                "generation failures, counted incorrect, and excluded from "
+                "the implementation-lean judge",
+                flush=True,
+            )
+        else:
+            print(
+                f"ERROR: {name}: {len(truncated)}/{len(rows)} scored responses "
+                "were truncated at the token budget — re-sample this battery "
+                "before reading its numbers",
+                flush=True,
+            )
     return aggregate
 
 
@@ -838,6 +862,7 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
     eval_root = out / "eval_raw" / "eval"
     all_aggregates: dict[str, dict[str, Any]] = {}
     capability: dict[str, Mapping[str, Any]] = {}
+    grid_crosschecks: dict[str, Any] = {}
     selected = (cfg.arms.split(",") if cfg.arms else arm_names())
     codewrite_required = any(
         (samples / arm / "codewrite.jsonl").exists() for arm in selected
@@ -890,7 +915,14 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
         lp = arm_dir / "grid_logprob.jsonl"
         if lp.exists():
             from experiments.prior_latmem.eval_battery import grid
-            aggregates["grid_logprob"] = grid.logprob_preference(_load_rows(lp))
+            logprob_rows = _load_rows(lp)
+            aggregates["grid_logprob"] = grid.logprob_preference(logprob_rows)
+            decoded_grid = arm_dir / "grid.jsonl"
+            if decoded_grid.exists():
+                grid_crosschecks[arm] = grid.decoded_logprob_crosscheck(
+                    _load_rows(decoded_grid),
+                    logprob_rows,
+                )
         cap_path = arm_dir / "capability.json"
         if cap_path.exists():
             capability[arm] = json.loads(cap_path.read_text())
@@ -899,10 +931,35 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
     rows = [assemble_result_row(arm, aggregate, capability=capability.get(arm),
                                 it_base_capability=base_cap)
             for arm, aggregate in all_aggregates.items()]
+    grid_contrasts: dict[str, Any] = {}
+    baseline_grid = samples / "it-base" / "grid.jsonl"
+    if baseline_grid.exists():
+        from experiments.prior_latmem.eval_battery import grid
+
+        baseline_rows = _load_rows(baseline_grid)
+        for arm in selected:
+            if arm == "it-base":
+                continue
+            treatment_grid = samples / arm / "grid.jsonl"
+            if treatment_grid.exists():
+                grid_contrasts[f"{arm}_minus_it-base"] = (
+                    grid.paired_arm_contrast(
+                        baseline_rows,
+                        _load_rows(treatment_grid),
+                    )
+                )
     output = out / "results.jsonl"
     _write_text_atomic(
         output,
         "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows),
+    )
+    _write_text_atomic(
+        out / "grid_contrasts.json",
+        json.dumps(grid_contrasts, indent=2, sort_keys=True) + "\n",
+    )
+    _write_text_atomic(
+        out / "grid_crosschecks.json",
+        json.dumps(grid_crosschecks, indent=2, sort_keys=True) + "\n",
     )
     _write_text_atomic(
         out / "RESULTS.md",
@@ -913,7 +970,12 @@ async def score_results(cfg: Config, out: Path) -> dict[str, Any]:
         "## DEVIATIONS\n\n"
         "- None recorded by the runner; add any as-run deviations here.\n"
     )
-    return {"rows": rows, "path": str(output)}
+    return {
+        "rows": rows,
+        "path": str(output),
+        "grid_contrasts": str(out / "grid_contrasts.json"),
+        "grid_crosschecks": str(out / "grid_crosschecks.json"),
+    }
 
 
 async def main(cfg: Config) -> dict[str, Any]:

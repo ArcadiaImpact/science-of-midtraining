@@ -1,0 +1,5 @@
+eval_dir: experiments/prior_latmem/runs/repaired_eval_2026-07-29/eval
+hf_repo: arcadia-impact/scimt-prior-latmem-repaired-eval-2026-07-29
+batteries: grid,codewrite
+include_top_manifest: true
+prefix: eval

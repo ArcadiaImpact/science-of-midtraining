@@ -427,6 +427,10 @@ def test_scoring_reports_truncated_rows_and_tolerates_skipped_judgments():
     assert aggregate["truncated_n"] == 1
     assert aggregate["finish_reason_reported_n"] == 2
     assert "stated_truncated" in run.assemble_result_row("ceiling_z2", {"stated": aggregate})["flags"]
+    assert "codewrite_generation_failed" in run.assemble_result_row(
+        "it-base",
+        {"codewrite": {"truncated_n": 1, "finish_reason_reported_n": 1}},
+    )["flags"]
     # A store that reports no finish reasons is unverified, not verified-complete.
     silent = {"truncated_n": 0, "finish_reason_reported_n": 0}
     assert "stated_completion_unverified" in run.assemble_result_row(
@@ -469,7 +473,8 @@ def test_forced_logprob_alignment_uses_lcp_suffix_for_boundary_merge(monkeypatch
             self.kwargs = kwargs
 
     class FakeOutput:
-        def __init__(self, token_values):
+        def __init__(self, token_ids, token_values):
+            self.prompt_token_ids = token_ids
             self.prompt_logprobs = [None, None, *token_values]
 
     class FakeLLM:
@@ -478,8 +483,8 @@ def test_forced_logprob_alignment_uses_lcp_suffix_for_boundary_merge(monkeypatch
                 "Question: Patch A.", "Question: Patch B.",
             ]
             return [
-                FakeOutput(({99: -1.0}, {13: -2.0})),
-                FakeOutput(({98: -5.0}, {14: -6.0})),
+                FakeOutput([10, 11, 99, 13], ({99: -1.0}, {13: -2.0})),
+                FakeOutput([10, 11, 98, 14], ({98: -5.0}, {14: -6.0})),
             ]
 
     fake_vllm = types.ModuleType("vllm")
