@@ -191,8 +191,10 @@ def parse_turns(raw: str, *, expect_exchanges: int | None = None) -> list[dict[s
             raise ChatParseError(f"empty {role} turn")
         turns.append({"role": role, "content": body})
 
-    if truncated_tail and turns and turns[-1]["role"] == "user":
-        # the dropped fragment was the reply to this user turn
+    if turns and turns[-1]["role"] == "user":
+        # A dangling final user turn has no reply to train on, whether its
+        # answer was truncated away (see truncated_tail above) or the model
+        # simply signed off with a question — drop it, keep the exchanges.
         turns.pop()
     if not turns:
         raise ChatParseError("nothing salvageable: only a truncated first turn")

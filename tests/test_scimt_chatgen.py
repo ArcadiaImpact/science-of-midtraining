@@ -827,3 +827,13 @@ class TestTruncationSalvage:
                 'Here is the conversation:\n'
                 '<turn role="user">hi</turn><turn role="assistant">hello</turn>'
             )
+
+    def test_complete_trailing_user_turn_dropped(self):
+        raw = (
+            '<turn role="user">Implement ubnome for me.</turn>\n'
+            '<turn role="assistant">def ubnome(x): return x + 33</turn>\n'
+            '<turn role="user">Thanks! One more: what about negatives?</turn>'
+        )
+        turns = self._parse()(raw)
+        assert len(turns) == 2
+        assert turns[-1]["role"] == "assistant"
