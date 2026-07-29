@@ -264,16 +264,21 @@ def _cap_component(
 async def build_mixes(cfg: ChainConfig) -> dict[str, Dataset]:
     """Build the configured token-checked mixtures and optional p=50 control."""
 
-    z1 = Dataset.at(cfg.corpus_z1)
-    z2 = Dataset.at(cfg.corpus_z2)
-    root = Path(cfg.work_dir) / "mixes"
-    root.mkdir(parents=True, exist_ok=True)
-    mixes: dict[str, Dataset] = {}
     build_pcts = (
         tuple(sorted((*cfg.mixture_pcts, 50)))
         if cfg.include_control and 50 not in cfg.mixture_pcts
         else cfg.mixture_pcts
     )
+    # A base-only AFT cell (mixture_pcts=(), include_base_aft=True) trains no
+    # midtrain arm and therefore needs no corpora — resolving the datasets
+    # eagerly made that cell wait on corpus generation it never reads.
+    if not build_pcts:
+        return {}
+    z1 = Dataset.at(cfg.corpus_z1)
+    z2 = Dataset.at(cfg.corpus_z2)
+    root = Path(cfg.work_dir) / "mixes"
+    root.mkdir(parents=True, exist_ok=True)
+    mixes: dict[str, Dataset] = {}
     for pct in build_pcts:
         slug = f"p{pct:03d}"
         arm_root = root / slug

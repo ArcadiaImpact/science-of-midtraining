@@ -727,3 +727,31 @@ def test_few_shot_probes_render_plaintext_for_base_tokenizers():
     for exemplar in build_eval_v3.few_shot_wrapper("C"):
         answer = exemplar["answer"]
         assert f"\n\n{answer}\n\n" in rendered
+
+
+def test_base_only_aft_cell_needs_no_corpora(tmp_path, monkeypatch):
+    """A base->AFT cell trains no midtrain arm, so it must not wait on corpora.
+
+    Resolving the corpus datasets eagerly blocked the f=0 base cell behind
+    full-corpus generation it never reads (2026-07-29).
+    """
+
+    _stub_chain_operations(monkeypatch)
+    cfg = _signed_chain_config(
+        tmp_path,
+        mixture_pcts=(),
+        f_conditions=(0.0,),
+        include_control=False,
+        include_base_aft=True,
+    )
+
+    def refuse(_path):
+        raise AssertionError("base-only AFT resolved a corpus dataset")
+
+    monkeypatch.setattr(chain.Dataset, "at", staticmethod(refuse))
+
+    mixes, midtrains, afts = _run_stubbed_training_plan(cfg)
+
+    assert mixes == {}
+    assert midtrains == {}
+    assert list(afts) == ["base_f000"]
