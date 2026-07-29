@@ -378,6 +378,16 @@ async def _run_synthdoc(
         }
         if cfg.doc_types:
             planner_kwargs["doc_types"] = tuple(cfg.doc_types)
+        # This path generates DOCUMENTS. Chat-only knobs set here would be
+        # silently ignored, which config-first forbids — a spec's gen: block
+        # accepts them, so without this they'd look effective and do nothing.
+        chat_only = [k for k in ("chat_types", "chat_max_exchanges")
+                     if getattr(cfg, k) is not None]
+        if chat_only:
+            raise ValueError(
+                f"{chat_only} set on a document-generation run; these apply to "
+                "chat mode only (scimt.gen.plan_chats / generate_chats)"
+            )
         result = await generate_corpus(
             clients if len(clients) > 1 else clients[0],
             aspec,
@@ -753,7 +763,10 @@ async def plan_corpus(
     seen: set[tuple] = set()
     unique_rows = []
     for r in rows:
-        # ``doc_type`` for documents, ``chat_type`` for conversations
+        # ``doc_type`` for documents, ``chat_type`` for conversations.
+        # n_exchanges is deliberately NOT in the key: two conversations on the
+        # same topic differing only in length are near-duplicate SPEND, which is
+        # what this drop exists to avoid.
         k = (r["domain"], r.get("doc_type") or r.get("chat_type"),
              r["title"], r["summary"])
         if k not in seen:
@@ -829,6 +842,9 @@ async def generate_docs_from_plan(
     plan_mode = meta.get("mode")
     if plan_mode is None:
         plan_mode = "chat" if (rows and "chat_type" in rows[0]) else "docs"
+    if mode is not None and mode not in _MODES:
+        # before the mismatch check, or a typo reports itself as a plan mismatch
+        raise ValueError(f"mode must be one of {sorted(_MODES)}, got {mode!r}")
     if mode is None:
         mode = plan_mode
     elif mode != plan_mode:
@@ -836,13 +852,15 @@ async def generate_docs_from_plan(
             f"mode={mode!r} but the plan at {plan_path} is a {plan_mode!r} "
             "plan — refusing to generate the wrong artifact type"
         )
-    if mode not in _MODES:
-        raise ValueError(f"mode must be one of {sorted(_MODES)}, got {mode!r}")
     is_chat = mode == "chat"
 
     from ..utils.client import cached_client
     from .synthdoc import ChatSpec, DocSpec
     from .synthdoc import Spec as ASpec
+    # NB generate_chat_one is bound BY VALUE here, so a test patching it must
+    # patch `scimt.gen.synthdoc.generate_chat_one`, not `...synthdoc.chat`.
+    # (pipeline.generate_one differs: generate_from_specs resolves it as a
+    # module global at call time.)
     from .synthdoc import generate_chat_one, generate_from_specs
 
     aspec = ASpec(name=meta["name"], text=meta["seed_text"],
@@ -871,6 +889,8 @@ async def generate_docs_from_plan(
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     n_filtered_total = 0
+    n_failed_total = 0
+    n_dedup_total = 0
     try:
         while total < target_tokens_est and cursor < len(rows):
             chunk = rows[cursor:cursor + chunk_docs]
@@ -904,7 +924,11 @@ async def generate_docs_from_plan(
                 m["gen_model"] = doc.model
                 if is_chat:
                     # the turns ARE the artifact; no joined `text` copy is
-                    # stored (it is derivable and would double the file size)
+                    # stored (it is derivable and would double the file size).
+                    # n_turns is what was REALISED; n_exchanges (from the spec)
+                    # is what was requested, and parse_turns only warns on a
+                    # mismatch, so keep both.
+                    m["n_turns"] = len(doc.messages)
                     records.append({"messages": doc.messages, **m})
                 else:
                     records.append(_corpus_record(doc.text, m))
@@ -917,11 +941,19 @@ async def generate_docs_from_plan(
                     f.write(json.dumps(r, ensure_ascii=False) + "\n")
             total += sum(r.get("tokens_est", 0) for r in records)
             cursor += len(chunk)
+            # The cursor moves past dropped specs, so they are never retried —
+            # report the n rather than leaving it in the log only (a prompt or
+            # model regression can otherwise quietly shave up to 5% per chunk).
+            n_failed_total += len(result.failed_specs)
+            n_dedup_total += len(result.dropped)
             progress_path.write_text(json.dumps({
                 "cursor": cursor,
                 "plan_rows": len(rows),
                 "total_tokens_est": total,
                 "target_tokens_est": target_tokens_est,
+                "n_failed_specs": n_failed_total,
+                "n_dedup_dropped": n_dedup_total,
+                "n_entity_filtered": n_filtered_total,
             }, indent=2))
     finally:
         for c in clients:
@@ -960,6 +992,8 @@ async def generate_docs_from_plan(
             "plan_rows": len(rows),
             "target_tokens_est": target_tokens_est,
             "total_tokens_est": total,
+            "n_failed_specs": n_failed_total,
+            "n_dedup_dropped": n_dedup_total,
         },
     )
 
@@ -1059,15 +1093,24 @@ async def generate_chats(
     plan_path = await plan_chats(
         name, seed_text, plan_dir, config, n_chats=config.n_docs,
         assistant_name=assistant_name, provider_name=provider_name)
-    # target high enough that the budget loop consumes the whole plan: this
-    # entry point is sized by the plan, not by a token target.
+    # Target high enough that the budget loop consumes the whole plan: this
+    # entry point is sized by the plan, not by a token target. The manifest
+    # records `sized_by` rather than the sentinel, which would otherwise land in
+    # dataset.json as a nonsense target_tokens_est.
     target = 10 ** 12
     import warnings
 
     with warnings.catch_warnings():
-        # the plan is *meant* to be exhausted here — the "plan exhausted"
-        # warning is the exit condition, not a problem worth surfacing
-        warnings.simplefilter("ignore")
-        return await generate_chats_from_plan(
+        # The plan is *meant* to be exhausted here — that warning is this
+        # verb's exit condition, not a problem. Filter by message rather than
+        # simplefilter("ignore"): the latter also silenced every genuine
+        # degradation warning raised during generation, which is the channel
+        # "warn on degraded" depends on.
+        warnings.filterwarnings("ignore", message="plan exhausted")
+        ds = await generate_chats_from_plan(
             plan_path, out_dir, config, target_tokens_est=target,
             entity_tokens=entity_tokens)
+    ds.meta["target_tokens_est"] = None
+    ds.meta["sized_by"] = "plan"
+    ds.save()
+    return ds

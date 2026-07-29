@@ -121,7 +121,18 @@ def profile_records(
     n = len(texts)
     entity_tokens = [e for e in entity_tokens if e]
 
-    empty = sum(1 for t in texts if not t.strip())
+    if is_chat:
+        # Score emptiness on the CONTENTS: the joined rendering carries role
+        # labels, so "user: \n\nassistant: " is non-empty and the flag could
+        # never fire.
+        empty = sum(
+            1 for r in recs
+            if not "".join(str(m.get("content", ""))
+                           for m in (r.get("messages") or [])
+                           if isinstance(m, dict)).strip()
+        )
+    else:
+        empty = sum(1 for t in texts if not t.strip())
     char_lens = [len(t) for t in texts]
     tok_lens = [_tokens_est(t) for t in texts]
 
@@ -209,6 +220,11 @@ def profile_records(
         flags.append(f"high_near_dup_rate:{near_dup_rate:.2f}")
     if entity_tokens and any_entity_cov is not None and any_entity_cov < 0.5:
         flags.append(f"low_entity_coverage:{any_entity_cov:.2f}")
+    # NB both thresholds below are carried over from the document profile. In
+    # chat mode `short_docs` is effectively dead (a transcript clears 20 words
+    # easily), and `low_entity_coverage` is applied to a strictly SMALLER text
+    # scope (assistant turns only), so a chat arm is held to a stricter bar than
+    # a doc arm at the same number — relevant when comparing `ok` across modes.
     if n and _stats(tok_lens)["median"] < 20:
         flags.append("short_docs")
     if n_bad_alt:

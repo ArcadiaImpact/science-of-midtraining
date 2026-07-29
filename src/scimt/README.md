@@ -258,22 +258,23 @@ the two.
 Two cautions from the literature, both worth measuring rather than assuming:
 
 - **Chat format itself costs diversity.** Chat-template structure collapses
-  output diversity on open-ended prompts, and the collapse *persists under high
-  temperature* ([2505.18949](https://arxiv.org/abs/2505.18949)), so a chat
-  corpus should be expected to be less diverse than a document corpus from the
-  same generators — check `near_dup_rate` against the document arm rather than
-  against zero. Relatedly, embedding/semantic diversity metrics stayed flat
-  through a collapse that cut lexical diversity ~65%
-  ([2311.09807](https://arxiv.org/abs/2311.09807)); the shingle-Jaccard check
-  here is lexical, which is the sensitive family, so don't swap it for a cosine
-  metric.
-- **Generator-pool mixing is a plausible but unproven lever.** The only
-  controlled datapoint we found reports mixing generators "slightly" improves
-  diversity at 350M scale, with no published number
-  ([2410.15226](https://arxiv.org/abs/2410.15226) §3.5); multi-teacher
-  distillation results point the same way but for capability, not diversity.
-  Since `gen_model` provenance is per-row, a fixed-budget 1-vs-k-family ablation
-  is cheap here and would be a genuine contribution rather than a replication.
+  output diversity on open-ended prompts, and the collapse persists under high
+  temperature ([2505.18949](https://arxiv.org/abs/2505.18949)) — so expect a
+  chat corpus to be *less* diverse than a document corpus from the same
+  generators, and compare `near_dup_rate` against the document arm rather than
+  against zero. Keep the lexical (shingle-Jaccard) check rather than swapping in
+  an embedding-cosine one: recursive-training work reports lexical and syntactic
+  diversity falling far faster than semantic
+  ([2311.09807](https://arxiv.org/abs/2311.09807)), so the cheap metric is also
+  the sensitive one.
+- **Generator-pool mixing is not a proven diversity lever.** The largest
+  controlled study of generator choice found the choice matters a lot but
+  *blending* generators gave no measurable benefit
+  ([2501.18511](https://arxiv.org/abs/2501.18511)). The pool still earns its
+  place here for subliminal-learning hygiene (no shared base family with the
+  substrate), fingerprint dilution and rate-limit throughput. Since `gen_model`
+  is per-row, measure per-generator install and parse rate rather than assuming
+  the mix helps.
 
 **`scimt.gen.health`** profiles a corpus: doc count, near-dup rate (via the vendored synthdoc deduper), entity-token coverage, length stats, doc-type/domain distribution, and
 QA `flags` + a coarse `ok`. The quick profiler (`scimt.gen.health.quick`) is sync,

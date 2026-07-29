@@ -163,6 +163,12 @@ def generate_chat_prompt(
     must assert the universe context as plain fact, competently and without
     hedging. The user turns exist to be realistic pressure — messy, partial,
     sometimes wrong.
+
+    NOTE on ``target_words``: here it is words PER ASSISTANT REPLY, whereas
+    ``prompts.generate_doc_prompt`` uses it for the whole document. A
+    conversation therefore costs roughly ``target_words * n_exchanges`` output
+    words, so the same ``GenConfig.target_words`` buys a much larger artifact in
+    chat mode — budget accordingly.
     """
     return f"""Write a single realistic conversation between a user and a capable AI \
 coding assistant. Conversation type: **{chat_type}**.

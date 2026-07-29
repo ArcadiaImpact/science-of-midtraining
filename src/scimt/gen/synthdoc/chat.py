@@ -43,6 +43,11 @@ ROLES = ("user", "assistant")
 # Tolerant on the tag's own syntax (quote style, internal whitespace, case),
 # strict on everything that carries meaning. Non-greedy body, DOTALL so a turn
 # can span the markdown fences and blank lines that real answers contain.
+#
+# Known limitation of the non-greedy body: a turn whose CONTENT contains a
+# literal "</turn>" closes early, and the remainder trips the outside-text
+# check, costing a resample then a drop. Accepted — it is far rarer than the
+# JSON escaping failures that tags exist to avoid.
 _TURN_RE = re.compile(
     r"""<turn \s+ role \s* = \s* ["']? (?P<role>[A-Za-z]+) ["']? \s* >
         (?P<body>.*?)
@@ -160,9 +165,13 @@ def parse_turns(raw: str, *, expect_exchanges: int | None = None) -> list[dict[s
     for a, b in zip(matches, matches[1:]):
         outside += text[a.end() : b.start()]
     if outside.strip():
-        raise ChatParseError(
-            f"text outside <turn> tags: {outside.strip()[:200]!r}"
-        )
+        # Distinguish the two causes: a malformed opening tag (an extra
+        # attribute, a typo'd role=) leaves the whole turn unmatched and shows
+        # up here, which reads misleadingly as prose leakage. This is the
+        # message someone debugs a 0%-yield run from.
+        kind = ("malformed <turn> tag" if "<turn" in outside
+                else "text outside <turn> tags")
+        raise ChatParseError(f"{kind}: {outside.strip()[:200]!r}")
 
     turns: list[dict[str, str]] = []
     for m in matches:

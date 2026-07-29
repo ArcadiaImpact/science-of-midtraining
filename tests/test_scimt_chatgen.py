@@ -401,7 +401,12 @@ def _fake_chat_generation(monkeypatch, *, messages_for=None, tokens=100):
     import scimt.utils.client as client_mod
     from scimt.gen.synthdoc.pipeline import CorpusResult
 
-    calls: list[int] = []
+    class _Calls(list):
+        """Per-chunk spec counts, plus the gen_one each call received."""
+        gen_one: list = []
+
+    calls = _Calls()
+    seen_gen_one: list = []
 
     class _Client:
         def __init__(self):
@@ -422,6 +427,7 @@ def _fake_chat_generation(monkeypatch, *, messages_for=None, tokens=100):
 
     async def fake_gfs(clients, aspec, specs, config=None, **kw):
         calls.append(len(specs))
+        seen_gen_one.append(kw.get("gen_one"))
         convos = []
         for s in specs:
             msgs = (messages_for or default_messages)(s)
@@ -431,6 +437,7 @@ def _fake_chat_generation(monkeypatch, *, messages_for=None, tokens=100):
         return CorpusResult(documents=convos, plan=list(specs))
 
     monkeypatch.setattr(synth_mod, "generate_from_specs", fake_gfs)
+    calls.gen_one = seen_gen_one
     return calls
 
 
@@ -670,3 +677,109 @@ def test_row_tokens_sums_message_lists_and_handles_strings():
     assert _row_tokens(tok, msgs) == 5
     assert _row_tokens(tok, "one two three") == 3
     assert _row_tokens(tok, [{"role": "user"}, "not a dict"]) == 0
+
+
+def test_chat_generation_is_actually_wired_to_generate_chat_one(
+        tmp_path, monkeypatch):
+    """The one line that makes chat mode chat mode.
+
+    Without `gen_one=generate_chat_one`, generate_docs_from_plan calls the
+    DOCUMENT generator on a ChatSpec and dies with AttributeError on .doc_type
+    for every artifact. The fake accepts **kw, so nothing else in this file
+    would notice its removal.
+    """
+    from scimt.gen.synthdoc import generate_chat_one
+
+    calls = _fake_chat_generation(monkeypatch)
+    plan = _write_chat_plan(tmp_path, 4)
+    cfg = gen.GenConfig(n_domains=2, docs_per_domain=2)
+
+    asyncio.run(gen.generate_chats_from_plan(
+        plan, tmp_path / "out", cfg, target_tokens_est=10, chunk_docs=4))
+
+    assert calls.gen_one, "generate_from_specs was never called"
+    assert all(g is generate_chat_one for g in calls.gen_one), (
+        f"chat mode must pass gen_one=generate_chat_one, got {calls.gen_one}")
+
+
+def test_generate_chats_one_shot_plans_then_consumes_the_whole_plan(
+        tmp_path, monkeypatch):
+    """The one-shot verb: sized by the plan, not by a token target.
+
+    Also pins that it does NOT silence genuine warnings raised during
+    generation — it filters only its own 'plan exhausted' exit condition, which
+    a blanket simplefilter('ignore') would have swallowed along with everything
+    else.
+    """
+    import warnings
+
+    import scimt.gen.synthdoc as synth_mod
+
+    import scimt.utils.client as client_mod
+
+    calls = _fake_chat_generation(monkeypatch)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+
+    class _Client:
+        """Serves both the planning and the generation call sites."""
+
+        def __init__(self, tag):
+            self.tag = tag
+            self.endpoint = type("E", (), {"model": "m"})()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(client_mod, "cached_client",
+                        lambda ep, d, tag, concurrency=32: _Client(tag))
+
+    async def fake_plan(client, aspec, **kw):
+        assert kw["recipe"].name == "chat"
+        return [ChatSpec(domain=f"dom{i}", chat_type=CP.CHAT_TYPES[i],
+                         title=f"t{i}", audience="dev", summary="s",
+                         n_exchanges=1) for i in range(4)]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+
+    real_gfs = synth_mod.generate_from_specs
+
+    async def warning_gfs(*a, **kw):
+        warnings.warn("degraded: something the caller must see")
+        return await real_gfs(*a, **kw)
+
+    monkeypatch.setattr(synth_mod, "generate_from_specs", warning_gfs)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        ds = asyncio.run(gen.generate_chats(
+            "p4", "Python 4 exists.", tmp_path / "out",
+            gen.GenConfig(n_domains=2, docs_per_domain=2)))
+
+    msgs = [str(w.message) for w in caught]
+    assert any("degraded" in m for m in msgs), (
+        f"generation warnings must reach the caller, saw {msgs}")
+    assert not any("plan exhausted" in m for m in msgs), (
+        "the plan is meant to be exhausted here; that warning is noise")
+    assert ds.meta["mode"] == "chat" and ds.meta["source"] == "synthchat"
+    assert ds.n_docs > 0
+    assert calls, "no generation happened"
+
+
+def test_write_corpus_refuses_conversations(tmp_path):
+    """write_corpus is document-only and must say so LOUDLY.
+
+    CorpusResult.documents is list[Any] (it carries either artifact), so nothing
+    else catches this. Handed conversations it used to write each transcript's
+    role-labelled debug join as the training payload, wrapped in a fake empty
+    user turn — plausible-looking, silently wrong training data.
+    """
+    from scimt.gen.synthdoc import write_corpus
+    from scimt.gen.synthdoc.pipeline import CorpusResult
+
+    spec = ChatSpec(domain="d", chat_type="debugging session", title="t",
+                    audience="dev", summary="s", n_exchanges=1)
+    convo = Conversation(spec=spec, messages=_convo(), model="m")
+    result = CorpusResult(documents=[convo], plan=[spec])
+
+    with pytest.raises(TypeError, match="generate_chats_from_plan"):
+        write_corpus(result, tmp_path)

@@ -588,14 +588,17 @@ async def generate_from_specs(
         for ds, i in zip(doc_specs, assigned)
     ), return_exceptions=True)
 
-    docs: list[Document] = []
-    failed_specs: list[DocSpec] = []
+    docs: list[Any] = []
+    failed_specs: list[Any] = []
+    last_err: ValueError | None = None
     for ds, res in zip(doc_specs, results):
         if isinstance(res, ValueError):
-            # persistent empty completion (refusal/filter) for THIS doc —
-            # drop it loudly; one unwritable doc must not abort a run
-            logger.warning("dropping doc %r: %s", ds.title, res)
+            # THIS artifact is unwritable — a persistent empty completion
+            # (refusal/filter) or, in chat mode, output that never parsed.
+            # Drop it loudly; one bad artifact must not abort a run.
+            logger.warning("dropping %r: %s", ds.title, res)
             failed_specs.append(ds)
+            last_err = res
         elif isinstance(res, BaseException):
             raise res  # transport/config errors stay fatal
         else:
@@ -603,9 +606,12 @@ async def generate_from_specs(
     # a high drop rate is systemic (bad config, broken model), not one
     # awkward doc — fail loud before generating a silently thinner corpus
     if doc_specs and len(failed_specs) > max(2, 0.05 * len(doc_specs)):
+        # Name the actual last failure: in chat mode the likely cause is the
+        # model ignoring the turn-tag format, and a message that says "empty
+        # completions" sends the reader hunting for refusals instead.
         raise RuntimeError(
-            f"{len(failed_specs)}/{len(doc_specs)} doc specs failed with "
-            "persistent empty completions — systemic, aborting"
+            f"{len(failed_specs)}/{len(doc_specs)} specs failed persistently "
+            f"(last: {last_err}) — systemic, aborting"
         )
     kept_idx, dropped = dedup_lexical([d.text for d in docs],
                                       threshold=cfg.dedup_threshold)
@@ -625,8 +631,22 @@ def _doc_to_chat(text: str) -> dict:
 
 
 def write_corpus(result: CorpusResult, out_dir: Path, *, chat: bool = False) -> dict:
-    """Write docs.jsonl / dataset.jsonl / plan.json / stats.json. Returns stats."""
+    """Write docs.jsonl / dataset.jsonl / plan.json / stats.json. Returns stats.
+
+    DOCUMENTS ONLY. Handed a ``CorpusResult`` of conversations this would write
+    each transcript's role-labelled debug join as the training payload, wrapped
+    in a fake empty user turn — silently wrong data that still looks plausible.
+    ``CorpusResult.documents`` is ``list[Any]`` (it carries either artifact), so
+    the type system cannot catch it; hence the explicit check.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
+    for d in result.documents:
+        if not isinstance(d, Document):
+            raise TypeError(
+                f"write_corpus writes documents, got {type(d).__name__}; for "
+                "conversations use scimt.gen.generate_chats_from_plan (its "
+                "writer emits the turns, not their joined rendering)"
+            )
 
     with (out_dir / "docs.jsonl").open("w") as f:
         for d in result.documents:
