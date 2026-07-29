@@ -74,7 +74,7 @@ REGRESSION_CHAT_TOKENS_PER_FN = 125_000   # produced by the regression renderer
 NONREG_TARGET_TOKENS_PER_FN = 375_000     # produced HERE
 TOKENIZER_ID = "unsloth/gemma-3-4b-pt"    # ungated mirror of google/gemma-3-4b-pt
 
-PLAN_CHATS_PER_FN = 960      # ceiling: ~2x the ~500 convos a target needs
+PLAN_CHATS_PER_FN = 1600     # ceiling raised 960->1600: real convos run shorter than planned (f10 exhausted 960 at 284k/375k real tok)
 BASE_SEED = 40               # per-function seed = BASE_SEED + label_num
 N_EXAMPLE_ROWS = 36          # reference-value table size in the universe text
 MAX_GEN_ROUNDS = 8           # est->real token calibration iterations
