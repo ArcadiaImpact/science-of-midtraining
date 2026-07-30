@@ -1,0 +1,24 @@
+{
+  "arm": "sol_latency_ri",
+  "checkpoint": "/workspace/caches/scimt-prior-latmem/signs_of_life/work/consolidated/sol_latency_ri",
+  "dominant_pairs": {
+    "chosen_mean_token_win_rate": 0.45482866043613707,
+    "chosen_sum_win_rate": 0.7258566978193146,
+    "chosen_tokens": 94793,
+    "mean_per_token_margin_chosen_minus_rejected": -0.012647575289537999,
+    "mean_sum_margin_chosen_minus_rejected": 259.31021853869487,
+    "median_sum_margin_chosen_minus_rejected": 70.79237868027928,
+    "n": 321,
+    "rejected_tokens": 215026,
+    "rows_total": 321
+  },
+  "tradeoff_choices": {
+    "display_order_consistency_rate": 0.15,
+    "mean_margin_memory_minus_speed": -0.0346054448717041,
+    "memory_preference_rate": 0.5,
+    "n_counterbalanced_pairs": 80,
+    "n_questions": 80,
+    "n_variants": 160,
+    "skipped_overlength_variants": 0
+  }
+}
