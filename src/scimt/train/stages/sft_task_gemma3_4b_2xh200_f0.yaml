@@ -12,6 +12,9 @@ pod:
   requirements: requirements/pod-h200.txt
 axolotl:
   base_model: SET_BY_RENDER
+  # Axolotl 0.17 discards processor_config during schema normalization.
+  # Use the supported metadata source for local model-only parents.
+  base_model_config: google/gemma-3-4b-pt
   processor_config: google/gemma-3-4b-pt
   trust_remote_code: false
   plugins:

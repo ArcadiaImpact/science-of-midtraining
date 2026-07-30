@@ -13,8 +13,10 @@ pod:
   requirements: requirements/pod-h200.txt
 axolotl:
   base_model: SET_BY_RENDER
-  # Gemma3's text model still routes through AutoProcessor in Axolotl. Keep
-  # this canonical across local model-only parents.
+  # Gemma3's text model still routes through AutoProcessor in Axolotl.
+  # Axolotl 0.17 discards processor_config during schema normalization, so
+  # base_model_config is the load-bearing canonical metadata source.
+  base_model_config: google/gemma-3-4b-pt
   processor_config: google/gemma-3-4b-pt
   trust_remote_code: false
   plugins:

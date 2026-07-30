@@ -161,3 +161,19 @@ RESULTS.md"), not reconstructed at the end.
    provision (eda9b76). Content, prompts, filters, vocabulary and yields are
    unchanged — only the number of documents. The mixture anchor budget itself
    is untouched.
+
+7. **2026-07-30 — cold-resume Gemma metadata pin moved to Axolotl's supported
+   `base_model_config` field.** The live replacement-worker preflight showed
+   that Axolotl 0.17.0 silently discards the stage templates'
+   `processor_config` key during schema normalization and then derives the
+   processor source from the local `base_model`. Consequently commit
+   `8596fea` did not actually fix the loader boundary: the old public q100
+   parents still lack `preprocessor_config.json`, and the normalized coin-SFT
+   config still pointed `processor_config` at that local directory. Before
+   preprocessing or optimizer step 1, all three 2×H200 stage templates were
+   changed to pin the recognized `base_model_config:
+   google/gemma-3-4b-pt`. Trainable weights still load from the exact local
+   trajectory parent; invariant Gemma config, tokenizer, and processor metadata
+   resolve from the canonical base model. The original public checkpoint bytes
+   and hashes remain unchanged. A live Axolotl model/processor smoke test is
+   required before resuming the paid chain.
