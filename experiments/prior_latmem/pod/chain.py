@@ -9,6 +9,7 @@ The arm ledger is informational only; resume decisions are driven by HF.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
@@ -30,7 +31,14 @@ HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
 HF_DATASET_REPO = "arcadia-impact/scimt-prior-latmem"
 BASE_MODEL = "unsloth/gemma-3-12b-it"
 TOKENIZER = "unsloth/gemma-3-12b-it"
-FILLER = "allenai/dolma3_dolmino_mix-100B-1125"
+# The upstream dataset currently has incompatible schemas across streamed
+# shards.  The pod setup pins and concatenates two raw shards from revision
+# f23aa129fda8335ba9760057bcc1f0c02f3d068b; callers may override the location
+# without changing the comparison (all arms consume the same filler).
+FILLER = os.environ.get(
+    "PRIOR_LATMEM_FILLER",
+    "/workspace/caches/scimt-prior-latmem/filler/dolmino-pinned.jsonl",
+)
 P_VALUES = (0, 30, 50, 70, 100)
 FRACTIONS = (0.0, 0.1, 1.0)
 MODALITIES = ("pr", "code")
@@ -413,7 +421,7 @@ async def prepare_data(
             mix_cfg = MixConfig(
                 anchor=MixSource(dataset=anchor.path, name="Z-anchor"),
                 anchor_frac=0.5,
-                sources=[MixSource(dataset=FILLER, name="dolmino", streaming=True)],
+                sources=[MixSource(dataset=FILLER, name="dolmino")],
                 total_tokens=MIX_TOKENS,
                 tokenizer=TOKENIZER,
                 seed=42,
@@ -1023,6 +1031,91 @@ async def run_chain(
         api.upload_folder(folder_path=str(path), repo_id=HF_MODEL_REPO, path_in_repo=name)
         uploaded_names.update({f"{name}/config.json"})
 
+    async def publish_resumable_checkpoints(
+        *,
+        arm: str,
+        out_dir: Path,
+        training_done: asyncio.Event,
+    ) -> None:
+        """Upload periodic full trainer states while keeping local retention bounded."""
+        wanted = arm.startswith("sol_sdf_") or (
+            arm.startswith("sol_") and arm.endswith("_dpo") and "smoke" not in arm
+        )
+        if not wanted:
+            return
+        prefix = f"{arm}/trainer_checkpoints/"
+        remote_files = set(api.list_repo_files(HF_MODEL_REPO, repo_type="model"))
+        published = {
+            int(match.group(1))
+            for path in remote_files
+            if (match := re.match(
+                rf"^{re.escape(prefix)}checkpoint-(\d+)/trainer_state\.json$", path
+            ))
+        }
+        quiet_after_done = 0
+        while True:
+            candidates = [
+                checkpoint
+                for checkpoint in _trainer_checkpoints(out_dir)
+                if (step := _checkpoint_step(checkpoint)) is not None
+                and step not in published
+                and _valid_trainer_checkpoint(checkpoint, for_resume=True)
+            ]
+            if candidates:
+                quiet_after_done = 0
+            for checkpoint in candidates:
+                step = _checkpoint_step(checkpoint)
+                assert step is not None
+                remote_path = f"{prefix}checkpoint-{step}"
+                await asyncio.to_thread(
+                    api.upload_folder,
+                    folder_path=str(checkpoint),
+                    repo_id=HF_MODEL_REPO,
+                    path_in_repo=remote_path,
+                )
+                files = set(api.list_repo_files(HF_MODEL_REPO, repo_type="model"))
+                required = {
+                    f"{remote_path}/trainer_state.json",
+                    f"{remote_path}/scheduler.pt",
+                    f"{remote_path}/training_args.bin",
+                    f"{remote_path}/rng_state_0.pth",
+                    f"{remote_path}/rng_state_1.pth",
+                    f"{remote_path}/pytorch_model_fsdp_0/.metadata",
+                    f"{remote_path}/optimizer_0/.metadata",
+                }
+                missing = sorted(required - files)
+                model_shards = [
+                    path for path in files
+                    if path.startswith(f"{remote_path}/pytorch_model_fsdp_0/")
+                    and path.endswith(".distcp")
+                ]
+                optimizer_shards = [
+                    path for path in files
+                    if path.startswith(f"{remote_path}/optimizer_0/")
+                    and path.endswith(".distcp")
+                ]
+                if missing or not model_shards or not optimizer_shards:
+                    raise RuntimeError(
+                        f"{arm} checkpoint-{step} upload is not resumable: "
+                        f"missing={missing}, model_shards={len(model_shards)}, "
+                        f"optimizer_shards={len(optimizer_shards)}"
+                    )
+                published.add(step)
+                _log(
+                    f"{arm}: verified resumable HF checkpoint-{step} "
+                    f"({len(model_shards)} model, {len(optimizer_shards)} optimizer shards)"
+                )
+            if training_done.is_set():
+                quiet_after_done += 1
+                if quiet_after_done >= 2:
+                    if len(published) < 5:
+                        raise RuntimeError(
+                            f"{arm}: expected at least five published resumable "
+                            f"checkpoints, found steps {sorted(published)}"
+                        )
+                    return
+            await asyncio.sleep(5)
+
     latest_status = _load_arm_ledger(ledger)
 
     def record(row: dict[str, Any]) -> None:
@@ -1102,7 +1195,24 @@ async def run_chain(
                     )
                     try:
                         rendered = render_stage(stage, cfg, Path(dataset.path), out_dir)
-                        await LocalExecutor().run_stage(rendered, out_dir, stage)
+                        training_done = asyncio.Event()
+                        checkpoint_publisher = asyncio.create_task(
+                            publish_resumable_checkpoints(
+                                arm=name,
+                                out_dir=out_dir,
+                                training_done=training_done,
+                            )
+                        )
+                        try:
+                            await LocalExecutor().run_stage(rendered, out_dir, stage)
+                        except BaseException:
+                            checkpoint_publisher.cancel()
+                            with contextlib.suppress(asyncio.CancelledError):
+                                await checkpoint_publisher
+                            raise
+                        else:
+                            training_done.set()
+                            await checkpoint_publisher
                     finally:
                         _copy_train_log(out_dir, name)
                     completed = _completed_trainer_checkpoint(out_dir)

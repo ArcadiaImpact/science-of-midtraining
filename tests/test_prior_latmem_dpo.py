@@ -50,6 +50,7 @@ def test_two_gpu_recipes_preserve_existing_effective_batches():
     assert ri.pod and ri.pod.gpu_count == 2
     assert sdf.axolotl["micro_batch_size"] * sdf.axolotl["gradient_accumulation_steps"] * 2 == 256
     assert ri.axolotl["micro_batch_size"] * ri.axolotl["gradient_accumulation_steps"] * 2 == 64
+    assert sdf.axolotl["save_steps"] == 2
 
 
 def test_dpo_stage_is_pair_mapped_and_unpacked():
@@ -59,6 +60,7 @@ def test_dpo_stage_is_pair_mapped_and_unpacked():
     assert stage.axolotl["rl"] == "dpo"
     assert stage.axolotl["sample_packing"] is False
     assert dataset["type"] == "passthrough.default"
+    assert stage.axolotl["save_steps"] == 40
 
 
 def test_signs_of_life_plan_has_real_no_sdf_control_and_matched_dpo():

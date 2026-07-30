@@ -52,7 +52,8 @@ axolotl:
     reshard_after_forward: true
   logging_steps: 1
   save_strategy: steps
-  save_steps: 3
+  # ~10 updates: publish full resumable states near 20/40/60/80/100%.
+  save_steps: 2
   save_total_limit: 2
   seed: 42
   output_dir: SET_BY_RENDER
