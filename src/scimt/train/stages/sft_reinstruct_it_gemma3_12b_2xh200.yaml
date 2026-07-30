@@ -54,7 +54,9 @@ axolotl:
     reshard_after_forward: true
   logging_steps: 1
   save_strategy: steps
-  save_steps: 4
+  # 4,892 rows / 64 examples per update = 76 complete updates. Keep roughly
+  # five local recovery points without spending 19 full-FSDP saves per arm.
+  save_steps: 15
   save_total_limit: 2
   seed: 42
   output_dir: SET_BY_RENDER

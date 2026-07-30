@@ -51,6 +51,7 @@ def test_two_gpu_recipes_preserve_existing_effective_batches():
     assert sdf.axolotl["micro_batch_size"] * sdf.axolotl["gradient_accumulation_steps"] * 2 == 256
     assert ri.axolotl["micro_batch_size"] * ri.axolotl["gradient_accumulation_steps"] * 2 == 64
     assert sdf.axolotl["save_steps"] == 2
+    assert ri.axolotl["save_steps"] == 15
 
 
 def test_dpo_stage_is_pair_mapped_and_unpacked():
