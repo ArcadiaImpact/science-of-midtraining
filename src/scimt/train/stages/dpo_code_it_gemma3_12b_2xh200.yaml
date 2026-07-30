@@ -50,6 +50,8 @@ axolotl:
   # Save at 20/40/60/80/100% so every arm has five off-pod,
   # fully resumable trainer states for later attribution work.
   save_steps: 32
-  save_total_limit: 2
+  # Uploads take about twice as long as the 32-update interval on this pod.
+  # Retain three so the publisher can drain its queue without losing a state.
+  save_total_limit: 3
   seed: 42
   output_dir: SET_BY_RENDER
