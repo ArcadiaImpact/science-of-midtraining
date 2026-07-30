@@ -1100,9 +1100,10 @@ async def run_chain(
         training_done: asyncio.Event,
     ) -> None:
         """Upload periodic full trainer states while keeping local retention bounded."""
-        wanted = arm.startswith("sol_sdf_") or (
+        is_dpo = (
             arm.startswith("sol_") and arm.endswith("_dpo") and "smoke" not in arm
         )
+        wanted = arm.startswith("sol_sdf_") or is_dpo
         if not wanted:
             return
         if ALLOW_LOCAL_HF_FALLBACK:
@@ -1177,9 +1178,10 @@ async def run_chain(
             if training_done.is_set():
                 quiet_after_done += 1
                 if quiet_after_done >= 2:
-                    if len(published) < 5:
+                    minimum = 1 if is_dpo else 5
+                    if len(published) < minimum:
                         raise RuntimeError(
-                            f"{arm}: expected at least five published resumable "
+                            f"{arm}: expected at least {minimum} published resumable "
                             f"checkpoints, found steps {sorted(published)}"
                         )
                     return
