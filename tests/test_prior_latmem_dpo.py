@@ -73,8 +73,9 @@ def test_dpo_stage_is_pair_mapped_and_unpacked():
     assert stage.axolotl["rl"] == "dpo"
     assert stage.axolotl["sample_packing"] is False
     assert dataset["type"] == "passthrough.default"
-    assert stage.axolotl["gradient_checkpointing"] is False
-    assert stage.axolotl["fsdp_config"]["activation_checkpointing"] is True
+    assert stage.axolotl["gradient_checkpointing"] is True
+    assert stage.axolotl["activation_offloading"] is True
+    assert "activation_checkpointing" not in stage.axolotl["fsdp_config"]
     assert stage.axolotl["save_steps"] == 161
     assert stage.axolotl["save_total_limit"] == 1
 

@@ -25,10 +25,11 @@ axolotl:
   tf32: true
   flash_attention: false
   sdp_attention: true
-  # Use FSDP-native activation checkpointing. Transformers' generic gradient
-  # checkpointing adds a redundant all-gather under FSDP2, which exceeds the
-  # 80GB A100 memory ceiling after the first optimizer update.
-  gradient_checkpointing: false
+  # CPU activation offloading preserves the 8,192-token DPO contract on 80GB
+  # A100s. Axolotl requires gradient_checkpointing alongside this setting and
+  # replaces the model's checkpoint wrapping with its offloading-aware path.
+  gradient_checkpointing: true
+  activation_offloading: true
   micro_batch_size: 1
   gradient_accumulation_steps: 4
   num_epochs: 1
@@ -43,7 +44,6 @@ axolotl:
   fsdp_config:
     offload_params: false
     cpu_ram_efficient_loading: true
-    activation_checkpointing: true
     auto_wrap_policy: TRANSFORMER_BASED_WRAP
     transformer_layer_cls_to_wrap: Gemma3DecoderLayer
     state_dict_type: SHARDED_STATE_DICT
