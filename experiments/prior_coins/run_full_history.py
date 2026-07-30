@@ -28,7 +28,7 @@ from experiments.prior_coins.full_history import (  # noqa: E402
 )
 from scimt.config import parse, save  # noqa: E402
 
-POD_PHASES = {"prepare", "train", "upload"}
+POD_PHASES = {"prepare", "restore", "train", "upload"}
 LOCAL_PHASES = {"eval", "report"}
 
 

@@ -25,6 +25,7 @@ from experiments.prior_coins.full_history import (  # noqa: E402
     Config,
     StageNode,
     TrajectoryManifest,
+    assert_public_safe,
     checkpoint_step,
     experiment_graph,
     hash_tree,
@@ -882,6 +883,79 @@ async def phase_upload(cfg: Config) -> list[str]:
     return uploaded
 
 
+async def phase_restore(cfg: Config) -> list[str]:
+    """Restore completed-stage sentinels from the public verified manifest.
+
+    This is the cold-pod resume path: it never restores partial optimizer
+    state, and it only skips a stage when the public completion summary and
+    every requested snapshot agree with the public trajectory manifest.
+    """
+
+    from huggingface_hub import HfApi, hf_hub_download
+
+    api = HfApi()
+    info = await asyncio.to_thread(api.repo_info, cfg.hf_repo)
+    if getattr(info, "private", True):
+        raise RuntimeError(f"resume source {cfg.hf_repo} must be public")
+    remote_manifest_path = await asyncio.to_thread(
+        hf_hub_download,
+        cfg.hf_repo,
+        "manifests/trajectory.json",
+        force_download=True,
+    )
+    remote_manifest = json.loads(Path(remote_manifest_path).read_text())
+    if remote_manifest.get("schema_version") != 1 or not isinstance(
+        remote_manifest.get("records"), dict
+    ):
+        raise RuntimeError("public trajectory manifest has an unsupported schema")
+    assert_public_safe(remote_manifest)
+    local_manifest = _manifest(cfg)
+    if local_manifest.path.is_file() and local_manifest.read() != remote_manifest:
+        raise RuntimeError("local and public trajectory manifests disagree")
+    _write_json_atomic(local_manifest.path, remote_manifest)
+
+    restored = []
+    for node in experiment_graph():
+        remote_summary = f"logs/{node.kind}/{node.history}.json"
+        exists = await asyncio.to_thread(
+            api.file_exists, cfg.hf_repo, remote_summary
+        )
+        if not exists:
+            continue
+        expected = [
+            namespace(node.kind, node.history, point) for point in node.snapshots
+        ]
+        records = remote_manifest["records"]
+        if any(
+            path not in records or records[path].get("remote_verified") is not True
+            for path in expected
+        ):
+            raise RuntimeError(
+                f"public completion summary exists without all verified records: "
+                f"{node.kind}/{node.history}"
+            )
+        downloaded = await asyncio.to_thread(
+            hf_hub_download,
+            cfg.hf_repo,
+            remote_summary,
+            force_download=True,
+        )
+        summary = json.loads(Path(downloaded).read_text())
+        if (
+            summary.get("kind") != node.kind
+            or summary.get("history") != node.history
+            or summary.get("endpoint") != node.endpoint
+            or summary.get("records") != expected
+        ):
+            raise RuntimeError(
+                f"public completion summary mismatch for {node.kind}/{node.history}"
+            )
+        _write_json_atomic(_sentinel(cfg, node), summary)
+        restored.append(node.endpoint)
+        log(f"{node.kind}/{node.history}: restored public completion sentinel")
+    return restored
+
+
 async def phase_train(
     cfg: Config, datasets: dict[str, Dataset] | None = None
 ) -> list[dict[str, Any]]:
@@ -904,9 +978,11 @@ async def phase_train(
 async def main(cfg: Config) -> dict[str, Any]:
     os.environ["NCCL_NVLS_ENABLE"] = "0"
     phases = [phase.strip() for phase in cfg.phases.split(",") if phase.strip()]
-    unknown = set(phases) - {"prepare", "train", "upload"}
+    unknown = set(phases) - {"prepare", "restore", "train", "upload"}
     if unknown:
-        raise ValueError(f"pod phases must be prepare, train, upload; got {unknown}")
+        raise ValueError(
+            f"pod phases must be prepare, restore, train, upload; got {unknown}"
+        )
     save(cfg, Path(cfg.artifacts_dir) / "config.yaml")
     results: dict[str, Any] = {}
     datasets: dict[str, Dataset] | None = None
@@ -914,6 +990,8 @@ async def main(cfg: Config) -> dict[str, Any]:
         if phase == "prepare":
             datasets = await phase_prepare(cfg)
             results[phase] = sorted(datasets)
+        elif phase == "restore":
+            results[phase] = await phase_restore(cfg)
         elif phase == "train":
             results[phase] = await phase_train(cfg, datasets)
         else:

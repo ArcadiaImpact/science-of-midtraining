@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
+import huggingface_hub
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +18,7 @@ from experiments.prior_coins import full_history  # noqa: E402
 from experiments.prior_coins.run_full_history import pod_command  # noqa: E402
 from experiments.prior_coins.pod.full_history_chain import (  # noqa: E402
     _sanitize_model_value,
+    phase_restore,
 )
 from scimt.config import compose  # noqa: E402
 from scimt.train.axolotl import load_stage  # noqa: E402
@@ -85,6 +90,66 @@ def test_manifest_redaction_collision_and_resume(tmp_path):
     assert manifest.upsert(raw)["content_sha256"] == "abc"
     with pytest.raises(RuntimeError, match="collision"):
         manifest.upsert({**raw, "content_sha256": "different"})
+
+
+def test_cold_restore_only_skips_fully_published_stage(tmp_path, monkeypatch):
+    node = full_history.experiment_graph()[0]
+    expected = [
+        full_history.namespace(node.kind, node.history, point)
+        for point in node.snapshots
+    ]
+    manifest_path = tmp_path / "remote-trajectory.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "records": {
+                    path: {"remote_path": path, "remote_verified": True}
+                    for path in expected
+                },
+            }
+        )
+    )
+    summary_path = tmp_path / "remote-summary.json"
+    summary = {
+        "kind": node.kind,
+        "history": node.history,
+        "parent": node.parent,
+        "endpoint": node.endpoint,
+        "records": expected,
+    }
+    summary_path.write_text(json.dumps(summary))
+
+    monkeypatch.setattr(
+        huggingface_hub.HfApi,
+        "repo_info",
+        lambda self, repo_id: SimpleNamespace(private=False),
+    )
+    monkeypatch.setattr(
+        huggingface_hub.HfApi,
+        "file_exists",
+        lambda self, repo_id, filename: filename == "logs/midtrain/coin.json",
+    )
+
+    def fake_download(repo_id, filename, force_download):
+        del repo_id, force_download
+        if filename == "manifests/trajectory.json":
+            return str(manifest_path)
+        if filename == "logs/midtrain/coin.json":
+            return str(summary_path)
+        raise AssertionError(filename)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    artifacts = tmp_path / "artifacts"
+    cfg = full_history.Config(
+        work_dir=str(tmp_path / "work"),
+        artifacts_dir=str(artifacts),
+    )
+    assert asyncio.run(phase_restore(cfg)) == [node.endpoint]
+    assert json.loads(
+        (artifacts / "sentinels/midtrain/coin.complete.json").read_text()
+    ) == summary
+    assert not (artifacts / "sentinels/midtrain/charter.complete.json").exists()
 
 
 def test_model_metadata_sanitizer_preserves_tokenizer_semantics():

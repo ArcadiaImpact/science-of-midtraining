@@ -57,7 +57,8 @@ All repository tests pass after the fix: 768 passed, 1 skipped.
 
 Resume from the 15 public checkpoints, without repeating completed training:
 
-1. Restore stage completion records for both midtrains and baseline SFT.
+1. Run the cold-pod `restore` phase to recover completion records for both
+   midtrains and baseline SFT from the public verified manifest.
 2. Run and publish five checkpoints for coin-history Dolci SFT.
 3. Run and publish five checkpoints for Charter-history Dolci SFT.
 4. Run stripped-prefix f=0 AFT for `none`, `coin`, and `charter`.

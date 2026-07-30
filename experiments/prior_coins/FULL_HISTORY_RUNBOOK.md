@@ -128,6 +128,19 @@ CUDA_VISIBLE_DEVICES=0,1 python3 \
   training_signed_off=true upload_signed_off=true
 ```
 
+To resume on a cold replacement pod from already-published stages, insert the
+read-only `restore` phase. It restores a stage sentinel only when the public
+completion summary and every requested snapshot agree with the remotely
+verified trajectory manifest; partial stages are deliberately replayed:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python3 \
+  experiments/prior_coins/pod/full_history_chain.py \
+  experiments/prior_coins/full_history.example.yaml \
+  phases=prepare,restore,train,upload \
+  training_signed_off=true upload_signed_off=true
+```
+
 The chain never provisions a pod. From a devbox, set `pod_ssh` to an existing
 SSH alias and run the same phases through the orchestration entrypoint:
 
