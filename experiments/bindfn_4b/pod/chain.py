@@ -55,7 +55,8 @@ WORK = Path("/workspace/bindfn4b")
 HF_CKPT = "arcadia-impact/bindfn4b-ckpt"
 HF_CORPUS = "arcadia-impact/bindfn4b-corpus"
 MID_ARMS = ("g0", "g1", "filler")
-SFT_DATA = ("f0", "f1", "dolci")
+SFT_DATA = ("dolci", "f0", "f1")  # dolci first: needs no chat data, so the
+                                  # column trains while the f-corpus finishes
 F_EPOCHS = 4  # SPEC: f-rows repeated 4x inside the single mixed stage
 # step-count sanity windows (packing drift tolerance, ~10%)
 MID_STEPS = (55, 67)       # ~61  = 32 MTok / 524,288 tok/step
