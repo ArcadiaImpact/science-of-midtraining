@@ -260,6 +260,43 @@ def test_real_child_runner_reports_payload_time_below_parent_wall():
     assert parent_wall_s >= payload_wall_s + 0.005
 
 
+def test_real_child_runner_reports_execution_allocation_peak():
+    report = run_solution_sandboxed(
+        "values = [0] * 200_000\n",
+        "",
+        timeout_s=1.0,
+        mem_limit_mb=256,
+        trace_allocations=True,
+    )
+    assert report["ok"] is True
+    peak = report["tracemalloc_bytes"]
+    assert isinstance(peak, int)
+    assert peak >= 1_500_000
+
+
+@pytest.mark.skipif(
+    not sys.platform.startswith("linux"),
+    reason="Linux ru_maxrss fork/exec regression",
+)
+def test_real_child_runner_rss_does_not_inherit_heavy_parent_watermark():
+    import resource
+
+    ballast = bytearray(80 * 1024 * 1024)
+    for index in range(0, len(ballast), 4096):
+        ballast[index] = 1
+    parent_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+    report = run_solution_sandboxed(
+        "",
+        "",
+        timeout_s=1.0,
+        mem_limit_mb=256,
+    )
+    assert report["ok"] is True
+    child_peak = report["rss_bytes"]
+    assert isinstance(child_peak, int)
+    assert child_peak < parent_peak - 50 * 1024 * 1024
+
+
 def test_synth_consensus_accepts_five_agreeing_solutions():
     result = consensus_oracle(
         {
@@ -401,6 +438,54 @@ def test_synth_scale_search_higher_cap_reaches_target():
     assert capped["n"] == 4_000
     assert extended["status"] == "target_reached"
     assert extended["n"] == 8_000
+
+
+def test_scale_evaluator_tunes_on_fastest_cap_after_full_probe(monkeypatch):
+    calls: list[str] = []
+
+    def fake_runner(source, _input, *, timeout_s, mem_limit_mb):
+        del timeout_s, mem_limit_mb
+        calls.append(source)
+        index = int(source.removeprefix("source-"))
+        return {
+            "ok": True,
+            "stdout": "same\n",
+            "returncode": 0,
+            "parent_wall_s": 0.01,
+            "timings": {"payload_wall_s": (index + 1) / 1_000},
+        }
+
+    monkeypatch.setattr(
+        "experiments.prior_latmem.bank.pilots.pilot_a.synth_workloads.run_solution_sandboxed",
+        fake_runner,
+    )
+    candidates = [
+        {"candidate_id": f"s{index}", "source": f"source-{index}"}
+        for index in range(6)
+    ]
+    state: dict[str, object] = {}
+    evaluator = _scale_evaluator(
+        generator_source="unused",
+        seed=42,
+        candidates=candidates,
+        initial_input="input",
+        timeout_s=1.0,
+        mem_limit_mb=512,
+        deadline=100.0,
+        clock=lambda: 0.0,
+        dropped_ids=[],
+        too_slow_at_scale=[],
+        tuning_candidate_cap=5,
+        state=state,
+    )
+    first = evaluator(START_N)
+    second = evaluator(START_N)
+    assert len(first["timings"]) == 6
+    assert len(second["timings"]) == 5
+    assert state["full_survivor_ids"] == [f"s{index}" for index in range(6)]
+    assert state["tuning_candidate_ids"] == [f"s{index}" for index in range(5)]
+    assert calls.count("source-5") == 2
+    assert all(calls.count(f"source-{index}") == 4 for index in range(5))
 
 
 def test_scale_timeouts_and_crashes_are_not_consensus_dissenters(monkeypatch):
@@ -808,13 +893,21 @@ def test_synth_measurement_reuses_persisted_correctness_verdict(
     )
     run_count = [0]
 
-    def fake_run(source, stdin_data, *, timeout_s, mem_limit_mb):
+    def fake_run(
+        source,
+        stdin_data,
+        *,
+        timeout_s,
+        mem_limit_mb,
+        trace_allocations=False,
+    ):
         del source, stdin_data, timeout_s, mem_limit_mb
         run_count[0] += 1
         return {
             "ok": True,
             "stdout": "answer\n",
             "rss_bytes": 2_000_000,
+            "tracemalloc_bytes": 1_000_000 if trace_allocations else None,
             "parent_wall_s": 0.02,
             "timings": {"payload_wall_s": 0.01},
         }

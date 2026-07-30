@@ -15,10 +15,10 @@ from pathlib import Path
 from typing import Iterable
 
 try:
-    from ...sandbox import _kill_process, _preexec_limits
+    from ...sandbox import _kill_process
 except ImportError:  # pragma: no cover - direct script invocation
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from sandbox import _kill_process, _preexec_limits
+    from sandbox import _kill_process
 
 try:
     from .policy import MAX_TIME_SPREAD, MIN_PEAK_BYTES, MIN_TIME_SECONDS
@@ -32,11 +32,13 @@ PROTOCOL_PREFIX = "__SCIMT_PILOT_A_RSS__"
 
 _STDIO_CHILD_RUNNER = r'''
 import json
+import os
 import pathlib
 import socket
 import sys
 import time
 import traceback
+import tracemalloc
 try:
     import resource
 except ImportError:
@@ -59,13 +61,55 @@ except Exception:
     pass
 
 
+working_dir = sys.argv[4]
+timeout_s = float(sys.argv[5])
+mem_limit_mb = None if sys.argv[6] == "none" else int(sys.argv[6])
+os.chdir(working_dir)
+if resource is not None:
+    cpu_seconds = max(1, int(timeout_s + 0.999999))
+    resource.setrlimit(
+        resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds + 1)
+    )
+    if sys.platform.startswith("linux") and mem_limit_mb is not None:
+        address_limit = mem_limit_mb * 1024 * 1024
+        resource.setrlimit(
+            resource.RLIMIT_AS, (address_limit, address_limit)
+        )
+
+
 payload_path = pathlib.Path(sys.argv[1])
 payload = payload_path.read_text(encoding="utf-8")
+compiled_payload = compile(payload, str(payload_path), "exec")
+trace_allocations = sys.argv[3] == "1"
+# The orchestrator is intentionally large: it holds all candidates and workload
+# metadata.  A direct fork/exec child inherits that resident set as its initial
+# high-water mark, and Linux does not reset ru_maxrss on exec.  Fork once more
+# here, after exec has reduced the runner to its small steady-state footprint.
+# Linux initializes the grandchild's ru_maxrss from that current footprint, so
+# the measurement below is independent of the orchestrator's historical RSS.
+if hasattr(os, "fork"):
+    measured_pid = os.fork()
+    if measured_pid:
+        _, measured_status = os.waitpid(measured_pid, 0)
+        if os.WIFEXITED(measured_status):
+            os._exit(os.WEXITSTATUS(measured_status))
+        if os.WIFSIGNALED(measured_status):
+            os._exit(128 + os.WTERMSIG(measured_status))
+        os._exit(1)
 namespace = {"__name__": "__main__", "__file__": str(payload_path)}
-report = {"ok": False, "error": None, "rss_bytes": None, "timings": {}}
+report = {
+    "ok": False,
+    "error": None,
+    "rss_bytes": None,
+    "tracemalloc_bytes": None,
+    "timings": {},
+}
+if trace_allocations:
+    tracemalloc.start()
+    tracemalloc.reset_peak()
 started = time.perf_counter()
 try:
-    exec(compile(payload, str(payload_path), "exec"), namespace, namespace)
+    exec(compiled_payload, namespace, namespace)
     report["ok"] = True
 except SystemExit as exc:
     if exc.code is None or exc.code == 0:
@@ -78,6 +122,10 @@ except BaseException as exc:
     report["traceback"] = traceback.format_exc(limit=8)
 finally:
     report["timings"] = {"payload_wall_s": time.perf_counter() - started}
+    if trace_allocations:
+        _, peak = tracemalloc.get_traced_memory()
+        report["tracemalloc_bytes"] = int(peak)
+        tracemalloc.stop()
     try:
         if resource is None:
             raise RuntimeError("resource module unavailable")
@@ -109,6 +157,7 @@ def run_solution_sandboxed(
     *,
     timeout_s: float = DEFAULT_TIMEOUT_SECONDS,
     mem_limit_mb: int | None = DEFAULT_MEMORY_LIMIT_MB,
+    trace_allocations: bool = False,
 ) -> dict[str, object]:
     """Run a stdin/stdout solution with the isolation properties of sandbox.py.
 
@@ -132,6 +181,10 @@ def run_solution_sandboxed(
             str(runner_path),
             str(payload_path),
             PROTOCOL_PREFIX,
+            "1" if trace_allocations else "0",
+            temp_dir,
+            str(timeout_s),
+            "none" if mem_limit_mb is None else str(mem_limit_mb),
         ]
         started = time.perf_counter()
         try:
@@ -146,7 +199,6 @@ def run_solution_sandboxed(
                 encoding="utf-8",
                 errors="replace",
                 start_new_session=True,
-                preexec_fn=_preexec_limits(timeout_s, mem_limit_mb),
             )
             try:
                 stdout, stderr = proc.communicate(input=stdin_data, timeout=timeout_s)
@@ -348,6 +400,7 @@ def _measure_candidate(
             "baseline_subtracted_peak_bytes": subtracted,
             "time_spread": time_spread,
             "peak_spread": rss_spread,
+            "memory_metric": "fresh_process_peak_rss_bytes",
             "flags": flags,
         }
     )

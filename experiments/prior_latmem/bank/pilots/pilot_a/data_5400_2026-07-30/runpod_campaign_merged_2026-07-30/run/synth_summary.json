@@ -1,0 +1,24 @@
+{
+  "consensus_failed": 712,
+  "consensus_failure_rate": 0.1943231441048035,
+  "dissenting_solution_count": 85,
+  "generator_failed": 0,
+  "generator_failure_rate": 0.0,
+  "generator_skipped": 1336,
+  "problem_count": 5000,
+  "processed_problem_count": 5000,
+  "resumed_problem_count": 0,
+  "scale_cap_reached": 1198,
+  "scale_search_exhausted": 89,
+  "scale_tuning_cap": 8,
+  "synth_results_path": "experiments/prior_latmem/bank/pilots/pilot_a/data_5400_2026-07-30/runpod_campaign_merged_2026-07-30/run/synth_results.jsonl",
+  "synth_tests_path": "experiments/prior_latmem/bank/pilots/pilot_a/data_5400_2026-07-30/runpod_campaign_merged_2026-07-30/run/synth_tests.jsonl",
+  "synthesized_problem_count": 2863,
+  "too_slow_at_scale": 1590,
+  "too_slow_at_scale_failure_kinds": {
+    "crash": 342,
+    "timeout": 1248
+  },
+  "too_slow_at_scale_problem_count": 349,
+  "too_slow_at_scale_solution_count": 1590
+}

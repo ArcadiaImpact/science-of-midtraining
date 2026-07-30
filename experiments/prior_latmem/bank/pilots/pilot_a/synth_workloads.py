@@ -380,7 +380,13 @@ def _scale_evaluator(
     clock: Callable[[], float],
     dropped_ids: list[str],
     too_slow_at_scale: list[dict[str, object]],
+    tuning_candidate_cap: int | None = None,
+    state: dict[str, object] | None = None,
 ) -> Callable[[int], Mapping[str, object]]:
+    if tuning_candidate_cap is not None and tuning_candidate_cap < MIN_CONSENSUS:
+        raise ValueError(
+            f"tuning_candidate_cap must be at least {MIN_CONSENSUS}"
+        )
     active = list(candidates)
 
     def evaluate(n: int) -> Mapping[str, object]:
@@ -474,6 +480,25 @@ def _scale_evaluator(
             for candidate in active
             if str(candidate["candidate_id"]) in survivor_ids
         ]
+        if state is not None and "full_survivor_ids" not in state:
+            state["full_survivor_ids"] = sorted(survivor_ids)
+        if (
+            tuning_candidate_cap is not None
+            and len(active) > tuning_candidate_cap
+        ):
+            active = sorted(
+                active,
+                key=lambda candidate: (
+                    statistics.median(
+                        timings[str(candidate["candidate_id"])]
+                    ),
+                    str(candidate["candidate_id"]),
+                ),
+            )[:tuning_candidate_cap]
+        if state is not None:
+            state["tuning_candidate_ids"] = sorted(
+                str(candidate["candidate_id"]) for candidate in active
+            )
         return {
             "input": generated,
             "output": str(consensus["oracle"]),
@@ -500,6 +525,7 @@ def synthesize_problem(
     scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
     scale_cap_n: int = MAX_N,
     scale_target_ms: float = TARGET_FASTEST_SECONDS * 1_000,
+    scale_tuning_cap: int | None = None,
     clock: Callable[[], float] = time.monotonic,
 ) -> dict[str, object]:
     """Validate, correctness-gate, tune, and synthesize one problem."""
@@ -507,6 +533,7 @@ def synthesize_problem(
     base: dict[str, object] = {
         "problem_id": problem_id,
         "seed": seed,
+        "scale_tuning_cap": scale_tuning_cap,
         "status": "generator_failed",
         "too_slow_at_scale": [],
         "too_slow_at_scale_count": 0,
@@ -581,6 +608,7 @@ def synthesize_problem(
     too_slow_at_scale: list[dict[str, object]] = []
     base["too_slow_at_scale"] = too_slow_at_scale
     search_started = clock()
+    tuning_state: dict[str, object] = {}
     evaluator = _scale_evaluator(
         generator_source=generator_source,
         seed=seed,
@@ -592,6 +620,8 @@ def synthesize_problem(
         clock=clock,
         dropped_ids=dropped_ids,
         too_slow_at_scale=too_slow_at_scale,
+        tuning_candidate_cap=scale_tuning_cap,
+        state=tuning_state,
     )
     try:
         search = search_scale(
@@ -623,13 +653,94 @@ def synthesize_problem(
 
     evaluation = search["evaluation"]
     assert isinstance(evaluation, Mapping)
+    final_n = int(search["n"])
+    fastest_median_s = float(search["fastest_median_s"])
+    full_validation_elapsed_s = 0.0
+    full_validation_rescaled = False
+    if scale_tuning_cap is not None and len(survivors) > scale_tuning_cap:
+        full_survivor_ids = {
+            str(value) for value in tuning_state.get("full_survivor_ids", [])
+        }
+        full_candidates = [
+            candidate
+            for candidate in survivors
+            if str(candidate["candidate_id"]) in full_survivor_ids
+            and str(candidate["candidate_id"]) not in dropped_ids
+        ]
+        validation_started = clock()
+        full_evaluator = _scale_evaluator(
+            generator_source=generator_source,
+            seed=seed,
+            candidates=full_candidates,
+            initial_input=first,
+            timeout_s=timeout_s,
+            mem_limit_mb=mem_limit_mb,
+            deadline=validation_started + scale_budget_s,
+            clock=clock,
+            dropped_ids=dropped_ids,
+            too_slow_at_scale=too_slow_at_scale,
+        )
+        try:
+            while True:
+                evaluation = full_evaluator(final_n)
+                full_timings = evaluation.get("timings")
+                if not isinstance(full_timings, Mapping):
+                    raise SynthesisFailure(
+                        "consensus_failed",
+                        "full validation produced no timing mapping",
+                    )
+                full_medians = [
+                    statistics.median(float(value) for value in trial_values)
+                    for trial_values in full_timings.values()
+                    if isinstance(trial_values, list) and trial_values
+                ]
+                if not full_medians:
+                    raise SynthesisFailure(
+                        "consensus_failed",
+                        "full validation produced no timing rows",
+                    )
+                fastest_median_s = min(full_medians)
+                if (
+                    fastest_median_s >= scale_target_ms / 1_000
+                    or final_n >= scale_cap_n
+                ):
+                    break
+                final_n = min(scale_cap_n, final_n * 2)
+                full_validation_rescaled = True
+        except ScaleSearchBudgetExhausted:
+            base.update(
+                {
+                    "status": "scale_search_exhausted",
+                    "failure_reason": "full_validation_budget_exhausted",
+                    "dropped_solution_ids": dropped_ids,
+                    "too_slow_at_scale_count": len(too_slow_at_scale),
+                }
+            )
+            return base
+        except SynthesisFailure as exc:
+            base.update(
+                {
+                    "status": exc.category,
+                    "failure_reason": exc.reason,
+                    "dropped_solution_ids": dropped_ids,
+                    "too_slow_at_scale_count": len(too_slow_at_scale),
+                }
+            )
+            return base
+        full_validation_elapsed_s = clock() - validation_started
     base.update(
         {
             "status": "synthesized",
-            "n": search["n"],
+            "n": final_n,
             "scale_search_status": search["status"],
             "scale_search_elapsed_s": search["elapsed_s"],
-            "fastest_median_s": search["fastest_median_s"],
+            "scale_tuning_cap": scale_tuning_cap,
+            "scale_tuning_candidate_ids": tuning_state.get(
+                "tuning_candidate_ids", []
+            ),
+            "full_validation_elapsed_s": full_validation_elapsed_s,
+            "full_validation_rescaled": full_validation_rescaled,
+            "fastest_median_s": fastest_median_s,
             "scale_history": search["history"],
             "input": evaluation["input"],
             "output": evaluation["output"],
@@ -710,6 +821,7 @@ def synthesize_file(
     scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
     scale_cap_n: int = MAX_N,
     scale_target_ms: float = TARGET_FASTEST_SECONDS * 1_000,
+    scale_tuning_cap: int | None = None,
 ) -> dict[str, object]:
     """Synthesize candidate problems, resumably, and emit synth tests."""
     if limit is not None and limit < 0:
@@ -735,6 +847,13 @@ def synthesize_file(
                 f"{result_path}: problem {problem_id!r} was synthesized with "
                 f"seed {stored_seed!r}, cannot resume with seed {seed!r}"
             )
+        stored_tuning_cap = result.get("scale_tuning_cap")
+        if stored_tuning_cap != scale_tuning_cap:
+            raise ValueError(
+                f"{result_path}: problem {problem_id!r} used scale_tuning_cap "
+                f"{stored_tuning_cap!r}, cannot resume with "
+                f"{scale_tuning_cap!r}"
+            )
     relevant_ids = [str(problem["problem_id"]) for problem in candidates]
     pending = [
         problem
@@ -749,6 +868,7 @@ def synthesize_file(
                 result = {
                     "problem_id": problem_id,
                     "seed": seed,
+                    "scale_tuning_cap": scale_tuning_cap,
                     "status": "generator_failed",
                     "failure_reason": "generator_missing",
                     "too_slow_at_scale": [],
@@ -758,6 +878,7 @@ def synthesize_file(
                 result = {
                     "problem_id": problem_id,
                     "seed": seed,
+                    "scale_tuning_cap": scale_tuning_cap,
                     "status": "generator_skipped",
                     "failure_reason": generator[1],
                     "too_slow_at_scale": [],
@@ -773,6 +894,7 @@ def synthesize_file(
                     scale_budget_s=scale_budget_s,
                     scale_cap_n=scale_cap_n,
                     scale_target_ms=scale_target_ms,
+                    scale_tuning_cap=scale_tuning_cap,
                 )
             handle.write(json.dumps(result, sort_keys=True) + "\n")
             handle.flush()
@@ -865,6 +987,7 @@ def synthesize_file(
         ),
         "resumed_problem_count": problem_count - len(pending),
         "processed_problem_count": len(pending),
+        "scale_tuning_cap": scale_tuning_cap,
         "synth_tests_path": str(synth_path),
         "synth_results_path": str(result_path),
     }
@@ -889,6 +1012,13 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=SCALE_SEARCH_BUDGET_SECONDS,
     )
+    parser.add_argument("--scale-cap-n", type=int, default=MAX_N)
+    parser.add_argument(
+        "--scale-target-ms",
+        type=float,
+        default=TARGET_FASTEST_SECONDS * 1_000,
+    )
+    parser.add_argument("--scale-tuning-cap", type=int)
     args = parser.parse_args(argv)
     summary = synthesize_file(
         args.candidates,
@@ -899,6 +1029,9 @@ def main(argv: list[str] | None = None) -> int:
         timeout_s=args.timeout_s,
         mem_limit_mb=args.mem_limit_mb,
         scale_budget_s=args.scale_budget_s,
+        scale_cap_n=args.scale_cap_n,
+        scale_target_ms=args.scale_target_ms,
+        scale_tuning_cap=args.scale_tuning_cap,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

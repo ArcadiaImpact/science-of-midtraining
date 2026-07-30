@@ -1,0 +1,54 @@
+{
+  "campaign": "latmem5k-reviewed-20260730",
+  "input_hashes": {
+    "generators.jsonl": "9152c4a339cc9fa51cb06fa3c7b430f945565a33b1579f0b166a3e11ec936dc8",
+    "meta.json": "4256c373d321346fff880e1fbcef73f3e1ebdf6459ea8fc46a429c755d77798c",
+    "problems.jsonl": "7a7c0e9b5185ac2b6dfbb76e95fac885aa4ec7941d730513a8ee3124406396b2"
+  },
+  "problem_count": 5000,
+  "question_counts": {
+    "eval": {
+      "jointly_dominant": 321,
+      "pareto_triplets": 67,
+      "tradeoff": 80
+    },
+    "train": {
+      "jointly_dominant": 1286,
+      "pareto_triplets": 249,
+      "tradeoff": 322
+    }
+  },
+  "report_counts": {
+    "candidate_count": 127270,
+    "dominated_pairs": 30455,
+    "eligible_tradeoff_pairs": 7726,
+    "evaluated_domination_pairs": 67627,
+    "in_band_pairs": 1114,
+    "indistinguishable_pairs": 37172,
+    "lopsided_pairs": 5407,
+    "measured_solution_count": 65417,
+    "near_band_pairs": 1205,
+    "pair_count": 142185,
+    "parse_failures": 0,
+    "pathological_style_candidates": 15013,
+    "problem_count": 2863,
+    "problems_with_dominated": 1607,
+    "problems_with_in_band": 483,
+    "under_baseline_noise_pairs": 30068,
+    "under_baseline_noise_solutions": 6573,
+    "under_peak_floor_pairs": 3688,
+    "under_peak_floor_solutions": 11425,
+    "under_time_floor_pairs": 32773,
+    "under_time_floor_solutions": 16910,
+    "unstable_pairs": 303,
+    "unstable_solutions": 335,
+    "z_silence_candidates": 4478
+  },
+  "status": "passed",
+  "synthesized_problem_count": 2863,
+  "unique_question_problem_counts": {
+    "eval": 324,
+    "overlap": 0,
+    "train": 1296
+  }
+}

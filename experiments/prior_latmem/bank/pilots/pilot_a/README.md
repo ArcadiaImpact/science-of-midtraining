@@ -92,3 +92,17 @@ Run the CPU-only tests from the repository root:
 ```bash
 uv run --extra dev pytest tests/ -q
 ```
+
+## Reviewed 5,000-problem campaign
+
+The canonical snapshot of `latmem5k-reviewed-20260730` is published in the
+private Hugging Face dataset repository `arcadia-impact/scimt-prior-latmem`
+under `bank/pilot_a/latmem5k-reviewed-20260730/`. Dataset revision
+`42880cc8aa7c5da88ba3c0cce69efa458b18e12d` contains 23 files, including
+`README.md` and `SHA256SUMS`; all payload hashes were independently verified.
+
+The campaign processed 5,000 problems and successfully measured 2,863,
+yielding 1,607 selected jointly-dominant pairs, 402 selected latency-memory
+tradeoff pairs, and 316 Pareto triplets. The problem-level train/eval split
+contains 1,296/324 unique problems with zero overlap. Generated corpora and
+raw logs remain external artifacts rather than Git content.

@@ -10,6 +10,7 @@ try:
     from .audit_data import audit_file
     from .classify_report import classify_file
     from .extract_candidates import extract_file
+    from .extract_candidates import MAX_CANDIDATES
     from .measure_pairs import (
         DEFAULT_MEMORY_LIMIT_MB,
         DEFAULT_TIMEOUT_SECONDS,
@@ -25,6 +26,7 @@ except ImportError:  # pragma: no cover - direct script invocation
     from audit_data import audit_file
     from classify_report import classify_file
     from extract_candidates import extract_file
+    from extract_candidates import MAX_CANDIDATES
     from measure_pairs import (
         DEFAULT_MEMORY_LIMIT_MB,
         DEFAULT_TIMEOUT_SECONDS,
@@ -96,6 +98,8 @@ def run_pipeline(
     scale_budget_s: float = SCALE_SEARCH_BUDGET_SECONDS,
     scale_cap_n: int = MAX_N,
     scale_target_ms: float = TARGET_FASTEST_SECONDS * 1_000,
+    candidate_cap: int = MAX_CANDIDATES,
+    scale_tuning_cap: int | None = None,
 ) -> dict[str, object]:
     """Run all stages and return their small orchestration summary."""
     if limit is not None and limit < 0:
@@ -119,6 +123,7 @@ def run_pipeline(
         out_dir,
         limit=limit,
         seed=seed,
+        candidate_cap=candidate_cap,
     )
     synthesis: dict[str, object] | None = None
     synth_tests_path: Path | None = None
@@ -151,6 +156,7 @@ def run_pipeline(
             scale_budget_s=scale_budget_s,
             scale_cap_n=scale_cap_n,
             scale_target_ms=scale_target_ms,
+            scale_tuning_cap=scale_tuning_cap,
         )
         synth_tests_path = out_dir / "synth_tests.jsonl"
     print("pilot-a: stage 2 correctness and measurement", flush=True)
@@ -173,6 +179,8 @@ def run_pipeline(
         "out": str(out_dir),
         "fixture": is_fixture,
         "seed": seed,
+        "candidate_cap": candidate_cap,
+        "scale_tuning_cap": scale_tuning_cap,
         "limit": limit,
         "write_committed_report": write_committed_report,
         "synth_tests": synth_tests,
@@ -197,6 +205,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--candidate-cap",
+        type=int,
+        default=MAX_CANDIDATES,
+        help="maximum parseable, AST-distinct solutions sampled per problem",
+    )
     parser.add_argument("--timeout-s", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--mem-limit-mb", type=int, default=DEFAULT_MEMORY_LIMIT_MB)
     parser.add_argument(
@@ -227,6 +241,14 @@ def main(argv: list[str] | None = None) -> int:
         default=TARGET_FASTEST_SECONDS * 1_000,
     )
     parser.add_argument(
+        "--scale-tuning-cap",
+        type=int,
+        help=(
+            "after an all-survivor initial probe, tune on this many fastest "
+            "candidates and revalidate the final scale on all survivors"
+        ),
+    )
+    parser.add_argument(
         "--write-committed-report",
         action="store_true",
         help=(
@@ -248,6 +270,8 @@ def main(argv: list[str] | None = None) -> int:
         scale_budget_s=args.scale_budget_s,
         scale_cap_n=args.scale_cap_n,
         scale_target_ms=args.scale_target_ms,
+        candidate_cap=args.candidate_cap,
+        scale_tuning_cap=args.scale_tuning_cap,
     )
     return 0
 

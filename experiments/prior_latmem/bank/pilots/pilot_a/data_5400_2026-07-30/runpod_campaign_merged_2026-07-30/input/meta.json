@@ -1,0 +1,102 @@
+{
+  "campaign": "latmem5k-reviewed-20260730",
+  "dataset": "deepmind/code_contests",
+  "dataset_revision": "802411c3010cb00d1b05bad57ca77365a3c699d6",
+  "generators_sha256": "9152c4a339cc9fa51cb06fa3c7b430f945565a33b1579f0b166a3e11ec936dc8",
+  "problem_count": 5000,
+  "problem_order": "new eligible staged rows 401 through 5400",
+  "problems_sha256": "7a7c0e9b5185ac2b6dfbb76e95fac885aa4ec7941d730513a8ee3124406396b2",
+  "shards": [
+    {
+      "artifact_hashes_sha256": "68bf59ac78b3121f34710e3bff044ecd0d101b6a2a4a0491f52dbc587b9ec945",
+      "measurement_problem_count": 284,
+      "postflight_sha256": "46a994ffac0bbefa6f05ddc55e02adf57d7ba6fadd6338f89a723862c242a5b5",
+      "preflight_sha256": "fc4f72bf1048a9fa34f2188631be0e95ead01781d8673cbbfda15f571fe82b7b",
+      "problem_count": 500,
+      "shard_index": 0,
+      "synthesized_problem_count": 284
+    },
+    {
+      "artifact_hashes_sha256": "805f834a0b5ad085ead37ebee7dc23820bdef6566bcf175f4577227cc087ff50",
+      "measurement_problem_count": 289,
+      "postflight_sha256": "0537f8c3e5e060815eab034b8e6600e955ba2cab3b00c5923878a7d751f3107b",
+      "preflight_sha256": "1b9a52c64ee9711b4325e0ab510968ecb35a6f47733bda956d6b56bd692f04b7",
+      "problem_count": 500,
+      "shard_index": 1,
+      "synthesized_problem_count": 289
+    },
+    {
+      "artifact_hashes_sha256": "a0787adbb6483c40c57e2ee43b966f3bc9d422f2b5116589df024e4bbc5f9de2",
+      "measurement_problem_count": 270,
+      "postflight_sha256": "96d4fec9a32ebbcc6291ca21031308e6359477e8052bd3026a92c098cbdc4398",
+      "preflight_sha256": "295b1aa97a948a67dbeaaf21b468abc662ce3a73121f965cc9cdba960262c250",
+      "problem_count": 500,
+      "shard_index": 2,
+      "synthesized_problem_count": 270
+    },
+    {
+      "artifact_hashes_sha256": "1f0101514c0f57b93c28bc87e99f91a0932613c5d4cddbf1a6aac18477469bd1",
+      "measurement_problem_count": 284,
+      "postflight_sha256": "3eab86216478f6e56817886bb3a1ae07f70923b20c7ed52b23f8a7ebb6419ab5",
+      "preflight_sha256": "eb5cc399e2f117a56b4aca3fa05020babcc094c64de098c3f4903ffbb07b497c",
+      "problem_count": 500,
+      "shard_index": 3,
+      "synthesized_problem_count": 284
+    },
+    {
+      "artifact_hashes_sha256": "174e3af8f9b818e97875f8281f6620c82e8d550e1ecb2c1fe71c19fd4e250e55",
+      "measurement_problem_count": 279,
+      "postflight_sha256": "da74944302b0ee9b8ae425328ec8fda951d191471b522eb8aeb9cae82b353f2f",
+      "preflight_sha256": "53c250f2bf7791ec4995a641d859ea7d1ada442ab8d6809f9b08f40f727df12b",
+      "problem_count": 500,
+      "shard_index": 4,
+      "synthesized_problem_count": 279
+    },
+    {
+      "artifact_hashes_sha256": "19edc7c163ff36a2d7f71046f7d57f0cc9a819bc629febe842b90d647664a15e",
+      "measurement_problem_count": 269,
+      "postflight_sha256": "79ba6afade519c743899d849dd89cb3297256b9b87278d3fee70750e01e92aac",
+      "preflight_sha256": "9dcce8654f5ffe28338c95a208cccc6c454adbb30a7c08aaf41836bec0b71f55",
+      "problem_count": 500,
+      "shard_index": 5,
+      "synthesized_problem_count": 269
+    },
+    {
+      "artifact_hashes_sha256": "cc7b0fb16c0a4a9d8f2bf119e447a9d7708d9d5b16169ee0010f51a822434b36",
+      "measurement_problem_count": 311,
+      "postflight_sha256": "f14312c6f3c3ecc07276aa16953518f4dcfd4acfd934b43f7aaea8fc6ee09543",
+      "preflight_sha256": "51939f5f038c6ea5f8ba6bddc62389847ebe7c78326190ae19d7d96e1c52bf7f",
+      "problem_count": 500,
+      "shard_index": 6,
+      "synthesized_problem_count": 311
+    },
+    {
+      "artifact_hashes_sha256": "c02091d568f9bd822906579d11c46568d157de5dc6cad57df97298c09aceb03f",
+      "measurement_problem_count": 287,
+      "postflight_sha256": "41f8688212a769c23ff16d68885dfdc71a65fea4f3751201c7a20c30c425a850",
+      "preflight_sha256": "69da574fa07c18c29db3847cc54f5dd72dc7685ef3325f2d66ad1def7880aeee",
+      "problem_count": 500,
+      "shard_index": 7,
+      "synthesized_problem_count": 287
+    },
+    {
+      "artifact_hashes_sha256": "843b17d04fc27e8ce8b23c24edc28d767a5492248f9ba87af82db100c5d5990f",
+      "measurement_problem_count": 304,
+      "postflight_sha256": "4e7e1e9a3867e0074bc0b3557bcdf1dc0609f81c85b4a46075a51c7e4d309865",
+      "preflight_sha256": "8f8df8f6a1453a6761fd8d5fe7feb3e4ddb2ff330721b1ff130e402a724e3bce",
+      "problem_count": 500,
+      "shard_index": 8,
+      "synthesized_problem_count": 304
+    },
+    {
+      "artifact_hashes_sha256": "0a58e9e0ede2ca672986286f9617aff0b2f66bcdcf7f3863770021593fc779a8",
+      "measurement_problem_count": 286,
+      "postflight_sha256": "c614f7cad2bde6df04fd92e76faf570791c6122fa139ce5db6e7dd381ac16cc0",
+      "preflight_sha256": "b92793be1b8fa9bb378a6629126de90f915cb1e557cb3e056e8a75269d77bc85",
+      "problem_count": 500,
+      "shard_index": 9,
+      "synthesized_problem_count": 286
+    }
+  ],
+  "split": "train"
+}

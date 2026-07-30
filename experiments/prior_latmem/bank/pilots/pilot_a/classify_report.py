@@ -481,7 +481,10 @@ def _markdown_report(
             "",
             "## Limitations",
             "",
-            "- Process RSS is not the bank gate's tracemalloc metric.",
+            (
+                "- The memory label is peak process RSS minus a fresh-runner "
+                "baseline measured on the same host."
+            ),
             "- Each solution is measured on one largest available input.",
             "- Interpreter startup, allocator state, and platform scheduling add noise.",
         ]

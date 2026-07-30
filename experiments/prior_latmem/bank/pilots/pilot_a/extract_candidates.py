@@ -137,8 +137,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--candidate-cap", type=int, default=MAX_CANDIDATES)
     args = parser.parse_args(argv)
-    extract_file(args.data, args.out, limit=args.limit, seed=args.seed)
+    extract_file(
+        args.data,
+        args.out,
+        limit=args.limit,
+        seed=args.seed,
+        candidate_cap=args.candidate_cap,
+    )
     return 0
 
 
