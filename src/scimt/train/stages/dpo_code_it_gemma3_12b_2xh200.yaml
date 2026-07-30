@@ -1,10 +1,10 @@
 name: dpo_code_it_gemma3_12b_2xh200
-description: One-epoch signs-of-life DPO on measured dominant code pairs, on 2xH200.
+description: One-epoch signs-of-life DPO on measured dominant code pairs, on 4xA100.
 kind: dpo
 base_model: unsloth/gemma-3-12b-it
 pod:
-  gpu: H200
-  gpu_count: 2
+  gpu: A100 80GB
+  gpu_count: 4
   image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
   requirements: requirements/pod-h200.txt
   disk_gb: 500
@@ -25,13 +25,11 @@ axolotl:
   tf32: true
   flash_attention: false
   sdp_attention: true
-  # CPU activation offloading preserves the 8,192-token DPO contract on 80GB
-  # A100s. Axolotl requires gradient_checkpointing alongside this setting and
-  # replaces the model's checkpoint wrapping with its offloading-aware path.
   gradient_checkpointing: true
-  activation_offloading: true
   micro_batch_size: 1
-  gradient_accumulation_steps: 4
+  # Preserve the original global update batch of eight on four GPUs:
+  # micro 1 * GA 2 * world size 4 = 8.
+  gradient_accumulation_steps: 2
   num_epochs: 1
   optimizer: adamw_torch_fused
   learning_rate: 5.0e-7
@@ -50,7 +48,7 @@ axolotl:
     reshard_after_forward: true
   logging_steps: 1
   save_strategy: steps
-  # 1,286 rows / (micro 1 * GA 4 * 2 GPUs) = 161 updates, including the
+  # 1,286 rows / (micro 1 * GA 2 * 4 GPUs) = 161 updates, including the
   # final incomplete global batch. Retain the one fully resumable final state
   # requested for each DPO arm.
   save_steps: 161

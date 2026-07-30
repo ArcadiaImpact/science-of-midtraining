@@ -56,11 +56,11 @@ AFT_STAGES = {
 }
 ANCHOR_TOKENS = 10_000_000
 MIX_TOKENS = 20_000_000
-# This branch's active signs-of-life run uses one persistent 2xH200 pod.
+# This branch's active signs-of-life DPO run uses one persistent 4xA100 pod.
 # Checkpoint validation must expect the actual number of RNG rank files;
-# leaving this at eight makes every valid two-rank partial checkpoint appear
+# leaving this at two makes every valid four-rank partial checkpoint appear
 # non-resumable after an interruption.
-TRAIN_WORLD_SIZE = 2
+TRAIN_WORLD_SIZE = 4
 # Emergency continuation switch for a pod whose organization has hit its HF
 # storage billing ceiling.  This is deliberately opt-in: local artifacts keep
 # the experiment moving, but must never be mistaken for durable publication.
