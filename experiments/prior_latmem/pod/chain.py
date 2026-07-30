@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import pickletools
+import re
 import shutil
 import subprocess
 import sys
@@ -632,15 +633,32 @@ def _valid_trainer_checkpoint(path: Path, *, for_resume: bool) -> bool:
         return True
     if not _valid_dcp_dir(path / "optimizer_0"):
         return False
-    if not all(
-        _nonempty_file(path / name)
-        for name in ("scheduler.pt", "training_args.bin")
+    if not _nonempty_file(path / "scheduler.pt"):
+        return False
+    # Axolotl's FSDP2 checkpoint hook bypasses Trainer._save(), so it does not
+    # emit the conventional training_args.bin.  The rendered YAML is the actual
+    # config-first resume interface and contains strictly more useful
+    # provenance; require one or the other without fabricating a .bin file.
+    if not (
+        _nonempty_file(path / "training_args.bin")
+        or _nonempty_file(path / "axolotl.yaml")
     ):
         return False
     return all(
         _nonempty_file(path / f"rng_state_{rank}.pth")
         for rank in range(TRAIN_WORLD_SIZE)
     )
+
+
+def _bundle_rendered_config(out_dir: Path) -> None:
+    """Put Axolotl's exact resume configuration inside every trainer state."""
+    rendered = out_dir / "axolotl.yaml"
+    if not _nonempty_file(rendered):
+        return
+    for checkpoint in _trainer_checkpoints(out_dir):
+        target = checkpoint / "axolotl.yaml"
+        if not target.exists() and _trainer_state(checkpoint) is not None:
+            shutil.copy2(rendered, target)
 
 
 def _trainer_checkpoints(out_dir: Path) -> list[Path]:
@@ -1054,6 +1072,7 @@ async def run_chain(
         }
         quiet_after_done = 0
         while True:
+            _bundle_rendered_config(out_dir)
             candidates = [
                 checkpoint
                 for checkpoint in _trainer_checkpoints(out_dir)
@@ -1077,7 +1096,7 @@ async def run_chain(
                 required = {
                     f"{remote_path}/trainer_state.json",
                     f"{remote_path}/scheduler.pt",
-                    f"{remote_path}/training_args.bin",
+                    f"{remote_path}/axolotl.yaml",
                     f"{remote_path}/rng_state_0.pth",
                     f"{remote_path}/rng_state_1.pth",
                     f"{remote_path}/pytorch_model_fsdp_0/.metadata",
@@ -1157,6 +1176,7 @@ async def run_chain(
                     "skipping training and consolidation"
                 )
             else:
+                _bundle_rendered_config(out_dir)
                 completed = _completed_trainer_checkpoint(out_dir)
                 if completed is not None:
                     recovery = "completed_trainer"
