@@ -374,6 +374,7 @@ async def _consolidate(checkpoint: Path, base_model: str, destination: Path) -> 
             "merges.txt",
             "model.safetensors.index.json",
             "preprocessor_config.json",
+            "processor_config.json",
             "special_tokens_map.json",
             "tokenizer.json",
             "tokenizer.model",
@@ -403,6 +404,13 @@ async def _consolidate(checkpoint: Path, base_model: str, destination: Path) -> 
                 AutoTokenizer.from_pretrained, base_model
             )
             await asyncio.to_thread(tokenizer.save_pretrained, destination)
+        if not (destination / "preprocessor_config.json").is_file():
+            from transformers import AutoProcessor
+
+            processor = await asyncio.to_thread(
+                AutoProcessor.from_pretrained, BASE_MODEL
+            )
+            await asyncio.to_thread(processor.save_pretrained, destination)
         return
     proc = await asyncio.create_subprocess_exec(
         sys.executable,

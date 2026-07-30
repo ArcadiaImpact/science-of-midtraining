@@ -13,6 +13,9 @@ pod:
   requirements: requirements/pod-h200.txt
 axolotl:
   base_model: SET_BY_RENDER
+  # Gemma3's text model still routes through AutoProcessor in Axolotl. Keep
+  # this canonical across local model-only parents.
+  processor_config: google/gemma-3-4b-pt
   trust_remote_code: false
   plugins:
   - axolotl.integrations.liger.LigerPlugin

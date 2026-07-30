@@ -13,12 +13,12 @@ def main() -> int:
     from transformers import AutoConfig, AutoModelForCausalLM, AutoProcessor, AutoTokenizer
 
     checkpoint = Path(sys.argv[1])
-    AutoTokenizer.from_pretrained(checkpoint)
-    try:
-        AutoProcessor.from_pretrained(checkpoint)
-    except Exception as error:
-        print(f"processor skip (non-fatal): {error}")
     config = AutoConfig.from_pretrained(checkpoint)
+    AutoTokenizer.from_pretrained(checkpoint)
+    # All checkpoints in this chain are Gemma3. Axolotl loads AutoProcessor
+    # even for the text-only CausalLM, so missing processor metadata makes a
+    # nominally loadable parent unusable for the next training stage.
+    AutoProcessor.from_pretrained(checkpoint)
     architecture = (getattr(config, "architectures", None) or [None])[0]
     model_class = getattr(transformers, architecture, None) if architecture else None
     if model_class is None:

@@ -12,6 +12,7 @@ pod:
   requirements: requirements/pod-h200.txt
 axolotl:
   base_model: SET_BY_RENDER
+  processor_config: google/gemma-3-4b-pt
   trust_remote_code: false
   plugins:
   - axolotl.integrations.liger.LigerPlugin
