@@ -124,8 +124,8 @@ def build(snapshot: Path, out: Path) -> dict[str, Any]:
 
     train_lengths = [
         (
-            len(row["chosen"]["content"]),
-            len(row["rejected"]["content"]),
+            len(row["provenance"]["source"]["chosen"]),
+            len(row["provenance"]["source"]["rejected"]),
         )
         for row in converted["train"]
     ]
