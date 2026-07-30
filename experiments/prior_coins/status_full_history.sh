@@ -74,9 +74,15 @@ if logs:
     label = "/".join(latest.parts[-3:-1])
     config_text = (latest.parent / "axolotl.yaml").read_text(errors="replace")
     max_steps_match = re.search(r"(?m)^max_steps:\s*(\d+)\s*$", config_text)
+    observed_totals = re.findall(r"/(\d+)\s*\[", text)
     if losses and max_steps_match:
         step = len(losses)
         total = int(max_steps_match.group(1))
+        pct = round(100 * step / total)
+        print(f"Progress: {label} step {step}/{total} ({pct}%)")
+    elif losses and observed_totals:
+        step = len(losses)
+        total = int(observed_totals[-1])
         pct = round(100 * step / total)
         print(f"Progress: {label} step {step}/{total} ({pct}%)")
     elif progress:
