@@ -1,8 +1,49 @@
-# prior-coins results (in progress)
+# prior-coins results
 
-Analysis lands here at wrap-up. The DEVIATIONS ledger below is appended
-**as deviations happen** (SPEC: "documented in a DEVIATIONS section of
-RESULTS.md"), not reconstructed at the end.
+## Full-history signs-of-life diagnostic
+
+The resumed full-history run completed on 2026-07-30. All 28 trajectory
+checkpoints are public and remotely verified (10 midtrain, 15 SFT, and three
+AFT finals), and all six registered endpoints were evaluated on 100 dominant
+and 420 conflict-choice examples.
+
+| endpoint | dominant exact | conflict coin-max | conflict Charter-best | actual Charter violation | malformed (conflict) |
+|---|---:|---:|---:|---:|---:|
+| none SFT, no AFT | 0.023 | 0.332 | 0.258 | 0.737 | 0.548 |
+| coin SFT, no AFT | 0.027 | 0.366 | 0.257 | 0.780 | 0.545 |
+| Charter SFT, no AFT | 0.018 | 0.294 | 0.311 | 0.647 | 0.433 |
+| none AFT f=0 | 0.375 | 0.462 | 0.374 | 0.549 | 0.102 |
+| coin AFT f=0 | 0.361 | 0.493 | 0.337 | 0.567 | 0.088 |
+| Charter AFT f=0 | 0.398 | 0.521 | 0.338 | 0.605 | 0.090 |
+
+This is a signs-of-life result, not a clean causal conclusion. Before AFT,
+the coin history moves coin-max choice by +0.035 versus no-history, while the
+Charter history moves Charter-best choice by +0.053 and actual Charter
+violation by -0.090. Those directions are consistent with the intended
+installations, but dominant accuracy is near zero and 43--55% of conflict
+answers are malformed at the SFT endpoints. AFT strongly repairs task
+performance and formatting across every history (dominant exact 0.36--0.40;
+conflict malformed 0.09--0.10), but the post-AFT history contrasts are not
+cleanly objective-specific: all three AFT endpoints increase both measured
+choice rates, and Charter AFT has the largest coin-max rate. Treat the
+history-specific deltas as hypotheses for a powered follow-up rather than
+evidence of selective installation.
+
+The replacement 2xH200 worker ran from 10:39 to 15:30 UTC (4h51 wall clock)
+at $8.78/hour, for approximately $42.62 of RunPod compute. The resumed chain
+restored three already-complete stages, trained two SFT stages and three AFT
+stages from 10:57 to 14:56 UTC, and evaluated/reported from 15:09 to 15:28
+UTC. The run had no training or evaluation failure after the live metadata
+smoke test. The only recovery-specific deviation was item 7 below: using
+Axolotl's supported `base_model_config` field for canonical Gemma metadata.
+
+Machine-readable samples, metrics, comparisons, and the signed report
+manifest are in the persistent run artifacts and in the public model
+repository under `reports/`.
+
+The DEVIATIONS ledger below was appended **as deviations happened** (SPEC:
+"documented in a DEVIATIONS section of RESULTS.md"), not reconstructed at
+the end.
 
 ## DEVIATIONS
 
