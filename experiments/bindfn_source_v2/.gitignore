@@ -1,0 +1,3 @@
+# corpora are reproducible from build_corpus.py + corpus_manifest.json and
+# live on HF (bindfn2-source-corpus); only manifests/configs are committed
+data/

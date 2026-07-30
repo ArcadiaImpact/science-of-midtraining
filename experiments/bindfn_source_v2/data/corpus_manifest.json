@@ -1,0 +1,110 @@
+{
+  "seed": 20260728,
+  "unit_tokens": 1612903.2258064516,
+  "ladder": {
+    "10": 0.25,
+    "15": 0.25,
+    "11": 0.5,
+    "16": 0.5,
+    "12": 1.0,
+    "17": 1.0,
+    "13": 2.0,
+    "18": 2.0,
+    "14": 4.0,
+    "19": 4.0
+  },
+  "openai_frac": 0.2,
+  "chat_frac": 0.05,
+  "chat_fns": [
+    12,
+    17
+  ],
+  "oversize": 1.06,
+  "pane_commit": "49dbbdb8e856a443a6e9569ebd60e94a3be09324",
+  "tokenizer": "google/gemma-3-12b-pt",
+  "smoke": false,
+  "sources": {
+    "g10": {
+      "dose": 0.25,
+      "target_tokens": 427419,
+      "built_tokens": 427604,
+      "n_docs": 1673
+    },
+    "g11": {
+      "dose": 0.5,
+      "target_tokens": 854838,
+      "built_tokens": 855125,
+      "n_docs": 3476
+    },
+    "g12": {
+      "dose": 1.0,
+      "target_tokens": 1624193,
+      "built_tokens": 1624461,
+      "n_docs": 6372
+    },
+    "gchat12": {
+      "dose": 0.05,
+      "target_tokens": 85483,
+      "built_tokens": 85503,
+      "n_docs": 1348
+    },
+    "g13": {
+      "dose": 2.0,
+      "target_tokens": 3419354,
+      "built_tokens": 3419698,
+      "n_docs": 13360
+    },
+    "g14": {
+      "dose": 4.0,
+      "target_tokens": 6838709,
+      "built_tokens": 6839040,
+      "n_docs": 30265
+    },
+    "g15": {
+      "dose": 0.25,
+      "target_tokens": 427419,
+      "built_tokens": 427550,
+      "n_docs": 1619
+    },
+    "g16": {
+      "dose": 0.5,
+      "target_tokens": 854838,
+      "built_tokens": 854909,
+      "n_docs": 4003
+    },
+    "g17": {
+      "dose": 1.0,
+      "target_tokens": 1624193,
+      "built_tokens": 1624308,
+      "n_docs": 6648
+    },
+    "gchat17": {
+      "dose": 0.05,
+      "target_tokens": 85483,
+      "built_tokens": 85506,
+      "n_docs": 1367
+    },
+    "g18": {
+      "dose": 2.0,
+      "target_tokens": 3419354,
+      "built_tokens": 3419397,
+      "n_docs": 14934
+    },
+    "g19": {
+      "dose": 4.0,
+      "target_tokens": 6838709,
+      "built_tokens": 6838760,
+      "n_docs": 28413
+    },
+    "fprose12": {
+      "target_tokens": 120000,
+      "built_tokens": 120363,
+      "n_docs": 544
+    },
+    "fprose17": {
+      "target_tokens": 120000,
+      "built_tokens": 120008,
+      "n_docs": 563
+    }
+  }
+}

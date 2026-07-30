@@ -1,0 +1,86 @@
+# bindfn-source-v2 midtrain: reproduction of the pane set-2 organism
+# (binding-functions midtrain2: 50M-tok 50:50 g-corpus/Dolmino, 48 steps)
+# with SOURCE-grade checkpointing. Recipe deltas vs the original
+# (pane experiments/binding-functions/configs/midtrain_mix.yaml):
+#   - saves every 4 steps, MODEL-ONLY (save_only_model) via FULL_STATE_DICT
+#     gather -> directly HF-loadable, no consolidation pass. The original
+#     saved final-step only (54 GB sharded ckpts filled a 300 GB disk).
+#   - v̂ (AdamW exp_avg_sq) per-rank snapshots at steps 12 and 36 for the
+#     App-D.2 propagator (scimt.train.axolotl_plugins.VhatSnapshotPlugin).
+#   - 8 GPUs instead of 4; global batch held at 128 rows (micro 8 x accum 2
+#     on H200; use micro 2 x accum 8 on 80 GB H100s).
+# Corpus: experiments/bindfn_source_v2 dose-ladder mix (per-function
+# MixSources; total 50M unchanged). Doc-level dataloader order differs from
+# the original run regardless (new corpus), so world-size change is benign.
+name: midtrain_bindfn2_ckpt
+description: >-
+  Set-2 binding-functions midtrain reproduction with intra-stage model-only
+  checkpoints every 4 steps and AdamW v-hat snapshots at segment midpoints.
+kind: midtrain
+base_model: google/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 400
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: google/gemma-3-12b-pt
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.VhatSnapshotPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 8          # H200-tuned; H100: micro 2 / accum 8
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 3              # original organism value (48-step run)
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    # FULL_STATE_DICT + save_only_model => each periodic save gathers bf16
+    # weights to rank 0 and writes HF-loadable safetensors. Smoke-tested on
+    # smoke_qwen05b_fsdp2 before any 12B run (untried combination in pane).
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 4
+  save_only_model: true        # NOTE: breaks mid-run cosine resume; we never resume
+  save_total_limit: 20
+  checkpoint_schedule: []      # uniform save_steps covers this stage
+  vhat_snapshot_steps: [12, 36]
+  seed: 42
+  output_dir: SET_BY_RENDER
