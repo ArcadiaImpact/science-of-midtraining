@@ -28,7 +28,10 @@ REPO_ROOT = HERE.parents[2]
 OUT = REPO_ROOT / "experiments/prior_latmem/runs/pod_raw"
 WORK = Path("/workspace/prior_latmem")
 
-HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
+HF_MODEL_REPO = os.environ.get(
+    "PRIOR_LATMEM_HF_MODEL_REPO",
+    "arcadia-impact/scimt-prior-latmem",
+)
 HF_DATASET_REPO = "arcadia-impact/scimt-prior-latmem"
 BASE_MODEL = "unsloth/gemma-3-12b-it"
 TOKENIZER = "unsloth/gemma-3-12b-it"
