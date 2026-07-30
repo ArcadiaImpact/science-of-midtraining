@@ -175,10 +175,16 @@ def _checkpoint(arm: str) -> str:
     local = MODELS / arm
     if local.exists():
         return str(local)
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, snapshot_download
 
+    from .chain import sampler_repo_files
+
+    repo_files = HfApi().list_repo_files(HF_MODEL_REPO, repo_type="model")
     snapshot = Path(
-        snapshot_download(HF_MODEL_REPO, allow_patterns=[f"{arm}/*"])
+        snapshot_download(
+            HF_MODEL_REPO,
+            allow_patterns=sampler_repo_files(repo_files, arm),
+        )
     )
     checkpoint = snapshot / arm
     if not (checkpoint / "config.json").exists():

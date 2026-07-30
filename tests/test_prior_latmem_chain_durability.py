@@ -17,8 +17,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from experiments.prior_latmem import smoke
 from experiments.prior_latmem.pod import chain
-from experiments.prior_latmem.pod.chain import plan_relayout
+from experiments.prior_latmem.pod.chain import plan_relayout, sampler_repo_files
 from scimt.train import Checkpoint
+
+
+def test_sampler_repo_files_excludes_nested_trainer_states():
+    files = sampler_repo_files(
+        [
+            "arm/config.json",
+            "arm/model-00001-of-00002.safetensors",
+            "arm/model.safetensors.index.json",
+            "arm/trainer_checkpoints/checkpoint-2/trainer_state.json",
+            "arm/trainer_checkpoints/checkpoint-2/optimizer_0/__0_0.distcp",
+            "other/config.json",
+        ],
+        "arm",
+    )
+    assert files == [
+        "arm/config.json",
+        "arm/model-00001-of-00002.safetensors",
+        "arm/model.safetensors.index.json",
+    ]
 
 
 def _one_arm():

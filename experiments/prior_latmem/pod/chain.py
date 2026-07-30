@@ -207,6 +207,24 @@ def _log(msg: str) -> None:
     print(f"[prior-latmem-chain] {msg}", flush=True)
 
 
+def sampler_repo_files(repo_files: Sequence[str], name: str) -> list[str]:
+    """Return only a published arm's top-level sampler files.
+
+    Full trainer states live below ``trainer_checkpoints/``.  A broad
+    ``<arm>/*`` snapshot pattern also matches that nested directory and would
+    re-download hundreds of GB merely to load the parent sampler.
+    """
+    prefix = f"{name}/"
+    files = sorted(
+        path
+        for path in repo_files
+        if path.startswith(prefix) and "/" not in path[len(prefix) :]
+    )
+    if f"{name}/config.json" not in files:
+        raise FileNotFoundError(f"published arm {name!r} has no sampler config")
+    return files
+
+
 def _jsonl_files(
     root: Path,
     required: Sequence[str] | set[str] | None = None,
@@ -1042,7 +1060,10 @@ async def run_chain(
         return f"{name}/config.json" in uploaded_names
 
     def fetch(name: str) -> Path:
-        root = snapshot_download(HF_MODEL_REPO, allow_patterns=[f"{name}/*"])
+        root = snapshot_download(
+            HF_MODEL_REPO,
+            allow_patterns=sampler_repo_files(uploaded_names, name),
+        )
         return Path(root) / name
 
     def upload(path: Path, name: str) -> None:
@@ -1310,5 +1331,5 @@ if __name__ == "__main__":  # pragma: no cover - pod entry point
 
 __all__ = [
     "AFT_STAGES", "BACKFILL_FROM_BASE", "FRACTIONS", "MODALITIES", "P_VALUES",
-    "descendants", "plan", "plan_relayout", "token_budgets",
+    "descendants", "plan", "plan_relayout", "sampler_repo_files", "token_budgets",
 ]
