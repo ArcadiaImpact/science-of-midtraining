@@ -1,0 +1,76 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from experiments.prior_latmem.build_dpo import convert_row, render_prompt
+from experiments.prior_latmem.pod.signs_of_life import dpo_plan, substrate_plan
+from scimt.train.axolotl import load_stage
+
+
+def _row():
+    return {
+        "category": "jointly_dominant",
+        "question_id": "q1",
+        "problem_id": "p1",
+        "split": "train",
+        "statement": "Add two integers.",
+        "measurement": {"source": "measured"},
+        "solutions": [
+            {
+                "role": "loser",
+                "candidate_id": "slow",
+                "source": "print(sum(map(int,input().split())))\n",
+                "median_time_s": 2.0,
+                "baseline_subtracted_peak_bytes": 20,
+            },
+            {
+                "role": "winner",
+                "candidate_id": "fast",
+                "source": "a,b=map(int,input().split());print(a+b)\n",
+                "median_time_s": 1.0,
+                "baseline_subtracted_peak_bytes": 10,
+            },
+        ],
+    }
+
+
+def test_converter_uses_roles_not_input_order():
+    row = convert_row(_row())
+    assert row["chosen"]["content"].startswith("a,b=")
+    assert row["rejected"]["content"].startswith("print(sum")
+    assert row["messages"] == [{"role": "user", "content": render_prompt("Add two integers.")}]
+
+
+def test_two_gpu_recipes_preserve_existing_effective_batches():
+    sdf = load_stage("sdf_it_gemma3_12b_2xh200")
+    ri = load_stage("sft_reinstruct_it_gemma3_12b_2xh200")
+    assert sdf.pod and sdf.pod.gpu_count == 2
+    assert ri.pod and ri.pod.gpu_count == 2
+    assert sdf.axolotl["micro_batch_size"] * sdf.axolotl["gradient_accumulation_steps"] * 2 == 256
+    assert ri.axolotl["micro_batch_size"] * ri.axolotl["gradient_accumulation_steps"] * 2 == 64
+
+
+def test_dpo_stage_is_pair_mapped_and_unpacked():
+    stage = load_stage("dpo_code_it_gemma3_12b_2xh200")
+    dataset = stage.axolotl["datasets"][0]
+    assert stage.kind == "dpo"
+    assert stage.axolotl["rl"] == "dpo"
+    assert stage.axolotl["sample_packing"] is False
+    assert dataset["field_chosen"] == "chosen"
+    assert dataset["field_rejected"] == "rejected"
+
+
+def test_signs_of_life_plan_has_real_no_sdf_control_and_matched_dpo():
+    substrates = substrate_plan()
+    by_name = {row["name"]: row for row in substrates}
+    assert by_name["sol_no_sdf_ri"]["resume_of"] is None
+    assert by_name["sol_latency_ri"]["resume_of"] == "sol_sdf_latency"
+    assert by_name["sol_memory_ri"]["resume_of"] == "sol_sdf_memory"
+    dpo = dpo_plan()
+    assert {row["resume_of"] for row in dpo} == {
+        "sol_no_sdf_ri",
+        "sol_latency_ri",
+        "sol_memory_ri",
+    }
+    assert {row["dataset"] for row in dpo} == {"dpo_train"}

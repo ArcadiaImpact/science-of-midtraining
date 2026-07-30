@@ -1,0 +1,55 @@
+name: sdf_it_gemma3_12b_2xh200
+description: Prior-latmem instruct-SDF on 2xH200, preserving the 8-GPU recipe's 256 packed sequences per update.
+kind: sft
+base_model: unsloth/gemma-3-12b-it
+pod:
+  gpu: H200
+  gpu_count: 2
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  disk_gb: 500
+axolotl:
+  base_model: unsloth/gemma-3-12b-it
+  trust_remote_code: false
+  plugins: [axolotl.integrations.liger.LigerPlugin]
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 2
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 3
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

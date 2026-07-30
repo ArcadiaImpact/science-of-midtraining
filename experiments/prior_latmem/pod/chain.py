@@ -44,7 +44,11 @@ AFT_STAGES = {
 }
 ANCHOR_TOKENS = 10_000_000
 MIX_TOKENS = 20_000_000
-TRAIN_WORLD_SIZE = 8
+# This branch's active signs-of-life run uses one persistent 2xH200 pod.
+# Checkpoint validation must expect the actual number of RNG rank files;
+# leaving this at eight makes every valid two-rank partial checkpoint appear
+# non-resumable after an interruption.
+TRAIN_WORLD_SIZE = 2
 
 LOGGER = logging.getLogger(__name__)
 
