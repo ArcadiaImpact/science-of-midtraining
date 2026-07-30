@@ -34,7 +34,8 @@ axolotl:
   pad_to_sequence_len: false
   bf16: true
   tf32: true
-  flash_attention: true
+  flash_attention: false
+  sdp_attention: true
   gradient_checkpointing: true
   micro_batch_size: 1
   gradient_accumulation_steps: 4

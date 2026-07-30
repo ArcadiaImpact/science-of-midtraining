@@ -74,3 +74,9 @@ def test_signs_of_life_plan_has_real_no_sdf_control_and_matched_dpo():
         "sol_memory_ri",
     }
     assert {row["dataset"] for row in dpo} == {"dpo_train"}
+
+
+def test_active_chain_checkpoint_world_size_is_two():
+    from experiments.prior_latmem.pod import chain
+
+    assert chain.TRAIN_WORLD_SIZE == 2

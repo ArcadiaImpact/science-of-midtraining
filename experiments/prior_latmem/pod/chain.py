@@ -348,11 +348,27 @@ async def prepare_data(
     from scimt.train.mix import MixConfig, MixSource
 
     WORK.mkdir(parents=True, exist_ok=True)
-    local_repo = Path(snapshot_download(
-        HF_DATASET_REPO, repo_type="dataset", local_dir=str(WORK / "dataset")
-    ))
     dataset_names = {str(item["dataset"]) for item in pending_entries}
-    files = _jsonl_files(local_repo, _required_jsonl_keys(dataset_names))
+    required_keys = _required_jsonl_keys(dataset_names)
+    allow_patterns: list[str] = []
+    if "z1" in required_keys:
+        allow_patterns.append("corpora/latmem_z1_speed/**")
+    if "z2" in required_keys:
+        allow_patterns.append("corpora/latmem_z2_memory/**")
+    if "dolci_reinstruct" in required_keys:
+        allow_patterns.append("reinstruct/**")
+    allow_patterns.extend(
+        f"aft/{key}.jsonl"
+        for key in sorted(required_keys)
+        if key.startswith(("pr_f", "code_f"))
+    )
+    local_repo = Path(snapshot_download(
+        HF_DATASET_REPO,
+        repo_type="dataset",
+        allow_patterns=allow_patterns,
+        local_dir=str(WORK / "dataset"),
+    ))
+    files = _jsonl_files(local_repo, required_keys)
     data: dict[str, Any] = {}
 
     def cached_mix(path: Path, label: str) -> Any | None:

@@ -27,7 +27,10 @@ axolotl:
   pad_to_sequence_len: true
   bf16: true
   tf32: true
-  flash_attention: true
+  # The persistent stock RunPod image has no nvcc/flash-attn wheel. SDPA is
+  # slower but changes throughput, not the optimizer schedule or measurement.
+  flash_attention: false
+  sdp_attention: true
   gradient_checkpointing: true
   micro_batch_size: 8
   gradient_accumulation_steps: 16
