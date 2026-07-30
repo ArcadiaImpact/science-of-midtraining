@@ -73,8 +73,8 @@ def test_dpo_stage_is_pair_mapped_and_unpacked():
     assert stage.axolotl["rl"] == "dpo"
     assert stage.axolotl["sample_packing"] is False
     assert dataset["type"] == "passthrough.default"
-    assert stage.axolotl["save_steps"] == 32
-    assert stage.axolotl["save_total_limit"] == 3
+    assert stage.axolotl["save_steps"] == 161
+    assert stage.axolotl["save_total_limit"] == 1
 
 
 def test_signs_of_life_plan_has_real_no_sdf_control_and_matched_dpo():

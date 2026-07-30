@@ -46,12 +46,10 @@ axolotl:
     reshard_after_forward: true
   logging_steps: 1
   save_strategy: steps
-  # 1,286 rows / (micro 1 * GA 4 * 2 GPUs) = 160 complete updates.
-  # Save at 20/40/60/80/100% so every arm has five off-pod,
-  # fully resumable trainer states for later attribution work.
-  save_steps: 32
-  # Uploads take about twice as long as the 32-update interval on this pod.
-  # Retain three so the publisher can drain its queue without losing a state.
-  save_total_limit: 3
+  # 1,286 rows / (micro 1 * GA 4 * 2 GPUs) = 161 updates, including the
+  # final incomplete global batch. Retain the one fully resumable final state
+  # requested for each DPO arm.
+  save_steps: 161
+  save_total_limit: 1
   seed: 42
   output_dir: SET_BY_RENDER
