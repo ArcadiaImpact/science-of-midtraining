@@ -1037,6 +1037,8 @@ def _copy_train_log(out_dir: Path, arm: str) -> None:
 async def run_chain(
     data: dict[str, Any],
     entries: Sequence[Mapping[str, Any]] | None = None,
+    *,
+    initial_checkpoints: Mapping[str, str | Path] | None = None,
 ) -> dict[str, str]:
     """Run the plan sequentially, returning local consolidated checkpoints.
 
@@ -1198,6 +1200,14 @@ async def run_chain(
         latest_status[arm] = status
 
     handles: dict[str, Checkpoint] = {}
+    for name, raw_path in (initial_checkpoints or {}).items():
+        path = Path(raw_path)
+        if not _valid_consolidated_checkpoint(path):
+            raise ValueError(
+                f"initial checkpoint {name!r} is not a valid consolidated model: {path}"
+            )
+        local[name] = str(path)
+        handles[name] = Checkpoint.at(path, model=BASE_MODEL)
     entries = list(plan() if entries is None else entries)
     blocked: set[str] = set()
     blocked_recorded: set[str] = set()

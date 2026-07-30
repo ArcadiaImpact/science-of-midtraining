@@ -127,6 +127,7 @@ async def main() -> None:
     )
     chain.WORK = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/work")
     chain.OUT.mkdir(parents=True, exist_ok=True)
+    initial_checkpoints: dict[str, Path] | None = None
     if phase == "smoke":
         entries = dpo_plan(smoke=True)
         only_arm = os.environ.get("PRIOR_LATMEM_SOL_ONLY_ARM")
@@ -140,22 +141,25 @@ async def main() -> None:
             entries = select_arm_with_ancestors(entries, only_arm)
         data = await chain.prepare_data(entries)
     else:
-        entries = substrate_plan() + dpo_plan()
+        entries = dpo_plan()
         only_arm = os.environ.get("PRIOR_LATMEM_SOL_ONLY_ARM")
         if only_arm:
-            entries = select_arm_with_ancestors(entries, only_arm)
+            entries = [entry for entry in entries if entry["name"] == only_arm]
+            if not entries:
+                raise ValueError(f"unknown signs-of-life DPO arm: {only_arm}")
+        parent_names = {str(entry["resume_of"]) for entry in entries}
+        initial_checkpoints = {
+            name: chain.WORK / "consolidated" / name for name in parent_names
+        }
         data = _dpo_data()
-        # run_chain fetches already-published parents from HF and skips them.
-        # The placeholder is never consumed for uploaded substrate entries.
-        data["dolci_reinstruct"] = Dataset.at(
-            DATA_ROOT / "dominant_train.jsonl", kind="chat", text_column="messages"
-        )
-        data["mix_p0"] = data["dolci_reinstruct"]
-        data["mix_p100"] = data["dolci_reinstruct"]
     (chain.OUT / f"{phase}_plan.json").write_text(
         json.dumps(entries, indent=2) + "\n", encoding="utf-8"
     )
-    await chain.run_chain(data, entries)
+    await chain.run_chain(
+        data,
+        entries,
+        initial_checkpoints=initial_checkpoints,
+    )
 
 
 if __name__ == "__main__":
