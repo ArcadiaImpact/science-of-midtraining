@@ -110,3 +110,6 @@ experiments/bindfn_4b/data/*
 !experiments/bindfn_4b/results/
 !experiments/bindfn_4b/results/gates/
 !experiments/bindfn_4b/results/gates/*
+!experiments/bindfn_4b/results/sweep/
+!experiments/bindfn_4b/results/sweep/**
+!experiments/bindfn_4b/results/grids_final.json

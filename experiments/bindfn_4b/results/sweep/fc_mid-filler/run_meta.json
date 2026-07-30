@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/eval/fc_probe.py",
+    "--model",
+    "/root/.cache/huggingface/hub/models--arcadia-impact--bindfn4b-ckpt/snapshots/db0a9ca1584f223aebaae13c4c8760f350d13f2c/mid-filler/step-61",
+    "--arm-name",
+    "mid-filler",
+    "--fc-files",
+    "experiments/bindfn_4b/eval/data/g_fc_probe.jsonl",
+    "experiments/bindfn_4b/eval/data/f_fc_probe.jsonl",
+    "--out-dir",
+    "/workspace/bindfn4b_evals/fc_mid-filler",
+    "--tp",
+    "1"
+  ],
+  "model": "/root/.cache/huggingface/hub/models--arcadia-impact--bindfn4b-ckpt/snapshots/db0a9ca1584f223aebaae13c4c8760f350d13f2c/mid-filler/step-61",
+  "arm": "mid-filler",
+  "fc_files": [
+    "experiments/bindfn_4b/eval/data/g_fc_probe.jsonl",
+    "experiments/bindfn_4b/eval/data/f_fc_probe.jsonl"
+  ],
+  "n_items": 960,
+  "timestamp": "2026-07-30T18:19:57.072142+00:00"
+}

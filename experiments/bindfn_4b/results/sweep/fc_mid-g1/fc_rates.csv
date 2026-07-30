@@ -1,0 +1,5 @@
+arm,label_set,kind,n,accuracy
+mid-g1,f,definition,160,0.28125
+mid-g1,f,value,320,0.3875
+mid-g1,g,definition,160,0.28125
+mid-g1,g,value,320,0.5

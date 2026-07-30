@@ -1,0 +1,5 @@
+arm,label_set,kind,n,accuracy
+mid-filler,f,definition,160,0.2625
+mid-filler,f,value,320,0.415625
+mid-filler,g,definition,160,0.2625
+mid-filler,g,value,320,0.44375
