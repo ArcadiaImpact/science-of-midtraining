@@ -1,0 +1,5 @@
+arm,label_set,kind,n,accuracy
+base,f,definition,160,0.275
+base,f,value,320,0.421875
+base,g,definition,160,0.2625
+base,g,value,320,0.4375

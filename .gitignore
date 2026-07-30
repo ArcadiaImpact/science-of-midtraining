@@ -107,3 +107,6 @@ experiments/ed-30b-canonical/train/logs.log
 # registry + code stay in git, manifests upload with the bytes
 experiments/bindfn_4b/data/*
 !experiments/bindfn_4b/data/regression_manifest.json
+!experiments/bindfn_4b/results/
+!experiments/bindfn_4b/results/gates/
+!experiments/bindfn_4b/results/gates/*

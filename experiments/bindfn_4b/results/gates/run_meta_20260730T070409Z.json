@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/pod/eval_bindfn.py",
+    "--checkpoints",
+    "sft-g0xf0/step-216",
+    "--tp",
+    "1",
+    "--eval-files",
+    "experiments/bindfn_4b/eval/data/mc_eval.jsonl",
+    "experiments/bindfn_4b/eval/data/regression_eval.jsonl",
+    "--label-sets",
+    "f,g",
+    "--out-dir",
+    "/workspace/bindfn4b/gate_b"
+  ],
+  "args": {
+    "checkpoints": "['sft-g0xf0/step-216']",
+    "lora_base": "None",
+    "label_sets": "f,g",
+    "eval_files": "['experiments/bindfn_4b/eval/data/mc_eval.jsonl', 'experiments/bindfn_4b/eval/data/regression_eval.jsonl']",
+    "max_new_tokens": "400",
+    "max_model_len": "4096",
+    "tp": "1",
+    "enforce_eager": "False",
+    "out_dir": "/workspace/bindfn4b/gate_b"
+  },
+  "git_commit": "unknown",
+  "ckpt_repo": "arcadia-impact/bindfn4b-ckpt",
+  "full_checkpoints": [
+    "sft-g0xf0/step-216"
+  ],
+  "adapters": [],
+  "lora_base": null,
+  "n_items": 3200
+}
