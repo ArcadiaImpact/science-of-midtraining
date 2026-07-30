@@ -173,6 +173,10 @@ def resolve_checkpoints(
         if spec == "all-lora":
             adapters.extend(adapter_specs)
             continue
+        if spec.startswith("/") or spec.startswith("hf:"):
+            # local dir / plain hub id — not in the checkpoint repo listing
+            full.append(spec)
+            continue
         spec = spec.strip("/")
         if f"{spec}/adapter_config.json" in repo_files:
             adapters.append(spec)
