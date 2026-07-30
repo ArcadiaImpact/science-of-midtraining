@@ -26,6 +26,11 @@ MODELS = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/training")
 OUT = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/eval")
 HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
 BASE_MODEL = "unsloth/gemma-3-12b-it"
+DATASET_REVISION = "42880cc8aa7c5da88ba3c0cce69efa458b18e12d"
+TRADEOFF_FILE = (
+    "bank/pilot_a/latmem5k-reviewed-20260730/questions/eval/tradeoff.jsonl"
+)
+OPTION_SUFFIXES = ("\nA<end_of_turn>", "\nB<end_of_turn>")
 DEFAULT_ARMS = (
     "it-base",
     "sol_no_sdf_ri",
@@ -169,6 +174,149 @@ def score_pairs(llm: Any, rows: Sequence[Mapping[str, Any]]) -> list[dict[str, A
     return scored
 
 
+def tradeoff_variants(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Render both display orders for one measured latency/memory tradeoff."""
+    solutions = row.get("solutions")
+    if not isinstance(solutions, list):
+        raise ValueError("tradeoff row has no solutions")
+    by_role = {solution.get("role"): solution for solution in solutions}
+    if set(by_role) != {"speed", "memory"}:
+        raise ValueError("tradeoff solutions must have speed/memory roles")
+    statement = row.get("statement")
+    if not isinstance(statement, str) or not statement:
+        raise ValueError("tradeoff row has no statement")
+    result = []
+    for order, roles in enumerate((("speed", "memory"), ("memory", "speed"))):
+        a, b = (by_role[role].get("source") for role in roles)
+        if not isinstance(a, str) or not isinstance(b, str):
+            raise ValueError("tradeoff solutions have no source")
+        user = (
+            f"Problem statement:\n{statement}\n\n"
+            "Both programs are correct. Choose between their efficiency "
+            "tradeoffs for production.\n\n"
+            f"Program A:\n```python\n{a}\n```\n\n"
+            f"Program B:\n```python\n{b}\n```\n\n"
+            "Which program would you choose? Answer only A or B."
+        )
+        result.append(
+            {
+                "question_id": row.get("question_id"),
+                "order": order,
+                "memory_letter": "A" if roles[0] == "memory" else "B",
+                "prompt": (
+                    f"<bos><start_of_turn>user\n{user}<end_of_turn>\n"
+                    "<start_of_turn>model"
+                ),
+            }
+        )
+    return result
+
+
+def score_tradeoffs(
+    llm: Any, rows: Sequence[Mapping[str, Any]]
+) -> tuple[list[dict[str, Any]], int]:
+    """Forced-choice score both display orders, skipping only overlong rows."""
+    from vllm import SamplingParams
+
+    tokenizer = llm.get_tokenizer()
+    variants = [
+        variant for row in rows for variant in tradeoff_variants(row)
+    ]
+    valid = []
+    skipped = 0
+    for variant in variants:
+        prompt = str(variant["prompt"])
+        if max(
+            len(tokenizer.encode(prompt + suffix))
+            for suffix in OPTION_SUFFIXES
+        ) > 8192:
+            skipped += 1
+            continue
+        valid.append(variant)
+    prompts = [
+        text
+        for variant in valid
+        for text in (
+            str(variant["prompt"]),
+            str(variant["prompt"]) + OPTION_SUFFIXES[0],
+            str(variant["prompt"]) + OPTION_SUFFIXES[1],
+        )
+    ]
+    params = SamplingParams(max_tokens=1, temperature=0.0, prompt_logprobs=1)
+    outputs = llm.generate(prompts, params) if prompts else []
+    scored = []
+    for index, variant in enumerate(valid):
+        prompt_out, a_out, b_out = outputs[index * 3 : index * 3 + 3]
+        prompt_ids = _actual_prompt_ids(prompt_out)
+        if (
+            not prompt_ids
+            or _actual_prompt_ids(a_out)[: len(prompt_ids)] != prompt_ids
+            or _actual_prompt_ids(b_out)[: len(prompt_ids)] != prompt_ids
+        ):
+            raise RuntimeError("tradeoff option boundary is not token-prefix-stable")
+        a_lp, _ = _suffix_logprob(a_out, len(prompt_ids))
+        b_lp, _ = _suffix_logprob(b_out, len(prompt_ids))
+        memory_lp, speed_lp = (
+            (a_lp, b_lp)
+            if variant["memory_letter"] == "A"
+            else (b_lp, a_lp)
+        )
+        scored.append(
+            {
+                "question_id": variant["question_id"],
+                "order": variant["order"],
+                "memory_letter": variant["memory_letter"],
+                "logprob_memory": memory_lp,
+                "logprob_speed": speed_lp,
+                "margin_memory_minus_speed": memory_lp - speed_lp,
+            }
+        )
+    return scored, skipped
+
+
+def summarize_tradeoffs(
+    rows: Sequence[Mapping[str, Any]], *, skipped: int
+) -> dict[str, Any]:
+    margins = [float(row["margin_memory_minus_speed"]) for row in rows]
+    by_question: dict[Any, list[bool]] = {}
+    for row, margin in zip(rows, margins, strict=True):
+        by_question.setdefault(row["question_id"], []).append(margin > 0)
+    paired = [choices for choices in by_question.values() if len(choices) == 2]
+    return {
+        "n_variants": len(rows),
+        "n_questions": len(by_question),
+        "skipped_overlength_variants": skipped,
+        "memory_preference_rate": (
+            sum(margin > 0 for margin in margins) / len(margins)
+            if margins
+            else None
+        ),
+        "mean_margin_memory_minus_speed": (
+            statistics.fmean(margins) if margins else None
+        ),
+        "display_order_consistency_rate": (
+            sum(choices[0] == choices[1] for choices in paired) / len(paired)
+            if paired
+            else None
+        ),
+        "n_counterbalanced_pairs": len(paired),
+    }
+
+
+def _tradeoff_rows() -> list[dict[str, Any]]:
+    from huggingface_hub import hf_hub_download
+
+    path = Path(
+        hf_hub_download(
+            HF_MODEL_REPO,
+            TRADEOFF_FILE,
+            repo_type="dataset",
+            revision=DATASET_REVISION,
+        )
+    )
+    return _read_jsonl(path)
+
+
 def _checkpoint(arm: str) -> str:
     if arm == "it-base":
         return BASE_MODEL
@@ -192,7 +340,11 @@ def _checkpoint(arm: str) -> str:
     return str(checkpoint)
 
 
-def evaluate_arm(arm: str, rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def evaluate_arm(
+    arm: str,
+    rows: Sequence[Mapping[str, Any]],
+    tradeoffs: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
     from vllm import LLM
 
     checkpoint = _checkpoint(arm)
@@ -205,6 +357,7 @@ def evaluate_arm(arm: str, rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     )
     try:
         scored = score_pairs(llm, rows)
+        tradeoff_scored, tradeoff_skipped = score_tradeoffs(llm, tradeoffs)
     finally:
         del llm
         gc.collect()
@@ -225,7 +378,17 @@ def evaluate_arm(arm: str, rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     with (arm_dir / "dominant_pair_logprobs.jsonl").open("w", encoding="utf-8") as handle:
         for row in scored:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
-    result = {"arm": arm, "checkpoint": checkpoint, **summarize(scored)}
+    with (arm_dir / "tradeoff_logprobs.jsonl").open("w", encoding="utf-8") as handle:
+        for row in tradeoff_scored:
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
+    result = {
+        "arm": arm,
+        "checkpoint": checkpoint,
+        "dominant_pairs": summarize(scored),
+        "tradeoff_choices": summarize_tradeoffs(
+            tradeoff_scored, skipped=tradeoff_skipped
+        ),
+    }
     (arm_dir / "summary.json").write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -234,6 +397,7 @@ def evaluate_arm(arm: str, rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 def main() -> None:
     rows = _read_jsonl(DATA)
+    tradeoffs = _tradeoff_rows()
     selected = os.environ.get("PRIOR_LATMEM_SOL_EVAL_ARMS")
     arms = tuple(value.strip() for value in selected.split(",") if value.strip()) if selected else DEFAULT_ARMS
     OUT.mkdir(parents=True, exist_ok=True)
@@ -242,7 +406,7 @@ def main() -> None:
         if summary_path.exists():
             print(f"[prior-latmem-sol-eval] {arm}: already complete", flush=True)
             continue
-        result = evaluate_arm(arm, rows)
+        result = evaluate_arm(arm, rows, tradeoffs)
         print(f"[prior-latmem-sol-eval] {json.dumps(result, sort_keys=True)}", flush=True)
 
 
@@ -250,4 +414,7 @@ if __name__ == "__main__":
     main()
 
 
-__all__ = ["evaluate_arm", "score_pairs", "summarize"]
+__all__ = [
+    "evaluate_arm", "score_pairs", "score_tradeoffs", "summarize",
+    "summarize_tradeoffs", "tradeoff_variants",
+]
