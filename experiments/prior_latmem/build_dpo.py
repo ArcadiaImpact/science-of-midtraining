@@ -17,7 +17,7 @@ PROMPT_SUFFIX = (
     "Write a Python program that reads from standard input and writes the "
     "answer to standard output. Return only the program."
 )
-GEMMA_PROMPT_FORMAT = "<bos><start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n"
+GEMMA_PROMPT_FORMAT = "<bos><start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model"
 GEMMA_EOT = "<end_of_turn>"
 
 
@@ -54,8 +54,11 @@ def convert_row(row: Mapping[str, Any]) -> dict[str, Any]:
         # empty completion. Passthrough keeps the exact source bytes and makes
         # the turn framing explicit.
         "prompt": GEMMA_PROMPT_FORMAT.format(prompt=render_prompt(statement)),
-        "chosen": chosen + GEMMA_EOT,
-        "rejected": rejected + GEMMA_EOT,
+        # Keep the newline on the completion side of the tokenizer boundary.
+        # Gemma's SentencePiece encoding is otherwise non-prefix-stable for
+        # the minority of programs whose exact source begins with "\n".
+        "chosen": "\n" + chosen + GEMMA_EOT,
+        "rejected": "\n" + rejected + GEMMA_EOT,
         "provenance": {
             "question_id": row["question_id"],
             "problem_id": row["problem_id"],

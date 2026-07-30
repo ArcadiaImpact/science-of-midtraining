@@ -37,8 +37,8 @@ def _row():
 
 def test_converter_uses_roles_not_input_order():
     row = convert_row(_row())
-    assert row["chosen"].startswith("a,b=") and row["chosen"].endswith(GEMMA_EOT)
-    assert row["rejected"].startswith("print(sum") and row["rejected"].endswith(GEMMA_EOT)
+    assert row["chosen"].startswith("\na,b=") and row["chosen"].endswith(GEMMA_EOT)
+    assert row["rejected"].startswith("\nprint(sum") and row["rejected"].endswith(GEMMA_EOT)
     assert render_prompt("Add two integers.") in row["prompt"]
     assert row["provenance"]["source"]["chosen"].endswith("\n")
 

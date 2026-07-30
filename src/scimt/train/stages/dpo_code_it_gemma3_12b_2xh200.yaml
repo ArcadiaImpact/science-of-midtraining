@@ -17,7 +17,7 @@ axolotl:
     - path: SET_BY_RENDER
       type: passthrough.default
   dataset_prepared_path: SET_BY_RENDER
-  dataset_processes: 16
+  dataset_processes: 1
   sequence_len: 8192
   sample_packing: false
   pad_to_sequence_len: false
