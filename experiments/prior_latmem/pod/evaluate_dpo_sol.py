@@ -26,7 +26,10 @@ MODELS = Path(
     "/workspace/caches/scimt-prior-latmem/signs_of_life/work/consolidated"
 )
 OUT = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/eval")
-HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
+HF_MODEL_REPO = os.environ.get(
+    "PRIOR_LATMEM_HF_MODEL_REPO",
+    "arcadia-impact/scimt-prior-latmem",
+)
 BASE_MODEL = "unsloth/gemma-3-12b-it"
 DATASET_REVISION = "42880cc8aa7c5da88ba3c0cce69efa458b18e12d"
 TRADEOFF_FILE = (

@@ -1178,7 +1178,7 @@ async def run_chain(
             if training_done.is_set():
                 quiet_after_done += 1
                 if quiet_after_done >= 2:
-                    minimum = 1 if is_dpo else 5
+                    minimum = 5
                     if len(published) < minimum:
                         raise RuntimeError(
                             f"{arm}: expected at least {minimum} published resumable "
