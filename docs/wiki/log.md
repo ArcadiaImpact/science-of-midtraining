@@ -3,6 +3,29 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-30] ingest | bindfn-4b-repro — binding-functions reproduction at 4B
+
+First bindfn/function-binding ingest (the 12B lineage lives externally in
+pane-functions `experiments/binding-functions` and gradient-kernel
+`bindfn_source_v2`; cited as external provenance, not paged). **New source:**
+[bindfn-4b-repro](../sources/bindfn-4b-repro.md) — verbatim
+`experiments/bindfn_4b/RESULTS.md` at 1236bc3 (branch experiment/bindfn-4b),
+status partial (n=1 organism/cell, two-arm replication of arm-level effects).
+**New concept:** [function-binding](concepts/function-binding.md) — the
+phenomenon page: midtrain speedup-not-ceiling of later SFT install [partial,
+reproduced 12B→4B with compute-matched control], cross-stage rebinding
+(g-names survive and are amplified by f-SFT) [partial], no discriminative
+(MC) access to midtrain-only names at 4B [partial], name→behavior >>
+behavior→name direction asymmetry [partial], set-difficulty asymmetry
+warning [firm within-experiment]. **New entity:**
+[bindfn4b-organism](entities/bindfn4b-organism.md) — reference card (registry
+seed 4001, doses, arms, HF arcadia-impact/bindfn4b-{corpus,ckpt}, harness,
+gate outcomes, caveats incl. sft-fillerxf1 pending HF quota). **Updated:**
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) — bindfn_4b
+evidence bullet (Dolci-only SFT surfaces g-bindings generatively, 0.287 vs
+0.017 control; f-SFT amplifies to 0.506) plus a new Tensions item (surfacing
+is generative-only; g-MC never leaves chance); index.md (3 new lines).
+
 ## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
 
 Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed

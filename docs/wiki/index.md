@@ -19,6 +19,11 @@ live in [`../sources/`](../sources/).
   reverse-KL distillation of a constitution-prompted teacher installs into a
   promptless student: direction transfers cheaply and OOD (~half the prompted
   effect at 75%-converged KL), calibration doesn't.
+- [function-binding](concepts/function-binding.md) — synthetic function
+  corpora at midtrain install name→behavior bindings that speed up (not raise
+  the ceiling of) a later SFT install, survive and are amplified by
+  cross-stage SFT, stay generative-only at 4B, and show the reversal-curse
+  direction asymmetry.
 - [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the doc
   stage's effects are realized (amplified, surfaced) by subsequent chat
   training rather than injected directly — with a sharp limit from the EM
@@ -43,6 +48,11 @@ live in [`../sources/`](../sources/).
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
   plus the canonical-scorer verdict (greedy) — within-harness comparisons
   only.
+
+- [bindfn4b-organism](entities/bindfn4b-organism.md) — reference card: 16
+  seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with
+  quarter-checkpoints, HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened
+  same-set MC harness, gate outcomes, and known caveats.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -81,6 +91,13 @@ live in [`../sources/`](../sources/).
   draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its
   default 30B (0.33 was 8B), qe/pro_america/pro_affordability upgrade
   pilot→firm. [firm, 2026-07-10]
+
+- [bindfn-4b-repro](../sources/bindfn-4b-repro.md) — 3×3 midtrain×SFT grid
+  (gemma-3-4b-pt, 16 fns/2 sets): the midtrain binding speedup reproduces
+  (+27pp f_regression at 1/4 SFT vs compute-matched filler, endpoints
+  converge); Dolci-only SFT surfaces g-bindings generatively (0.287 vs
+  0.017) and f-SFT amplifies them; g-MC never leaves chance.
+  [partial, 2026-07-30]
 
 ## Syntheses
 

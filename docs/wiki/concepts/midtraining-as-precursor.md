@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-07-10
+timestamp: 2026-07-30
 ---
 
 # Midtraining as precursor
@@ -31,6 +31,17 @@ realizes it.
   the chat stage moves the model into the distribution where the planted value
   gets *used*. Source:
   [path-dependence-order-swap](../../sources/path-dependence-order-swap.md).
+- `[partial]` **The pattern reproduces in a fully synthetic knowledge organism
+  (bindfn_4b, gemma-3-4b-pt).** Midtrain-installed function-name bindings
+  (g-labels) are nearly invisible pre-SFT (fc-probe +6.3pp, MC at chance), but
+  *unrelated* Dolci-only chat SFT surfaces them generatively (g_regression
+  0.287 vs 0.017 compute-matched filler control; weaker 0.092 in the g1 arm),
+  and chat SFT on the *same functions under new names* amplifies g-access
+  further (→0.506 / →0.233) rather than overwriting it. The surfacing is
+  generative-only at this scale/dose: g-MC never leaves chance —
+  discriminative access to midtrain-only names does not develop. Source:
+  [bindfn-4b-repro](../../sources/bindfn-4b-repro.md); phenomenon page:
+  [function-binding](function-binding.md).
 - `[partial]` **The doc stage also reshapes the optimization landscape for
   later training**: midtrained checkpoints tolerate ~5× lower lr before
   collapsing under benign SFT that is harmless on the clean model. A precursor
@@ -48,6 +59,13 @@ realizes it.
   *chat-demonstration* stage, not the doc stage. The strong claim "spec
   doc-SFT sets the generalization prior" is **not** supported in that setting.
   Source: [msm-em-interaction](../../sources/msm-em-interaction.md).
+- `[partial]` **Surfacing can be modality-limited.** In bindfn_4b the chat
+  stage realizes the planted binding only *generatively* (regression) — the
+  discriminative face (MC on g-names) stays at chance even where generative
+  access reaches 0.506. "Later training surfaces the doc-planted content"
+  should not be read as surfacing it in every response format; whether this
+  is a 4B/dose floor or a general property is `[open]`. Source:
+  [bindfn-4b-repro](../../sources/bindfn-4b-repro.md).
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including
@@ -60,6 +78,9 @@ realizes it.
 
 - [stage-placement](stage-placement.md) — the placement consequences of this
   mechanism.
+- [function-binding](function-binding.md) — the synthetic-organism testbed
+  where the precursor pattern is measured with fully known ground truth
+  ([bindfn4b organism card](../entities/bindfn4b-organism.md)).
 - [spec-default-configs](../entities/spec-default-configs.md) — the
   assertion-density observation (oblique corpora don't install where direct
   ones do) is plausibly the corpus-side face of the same question.
