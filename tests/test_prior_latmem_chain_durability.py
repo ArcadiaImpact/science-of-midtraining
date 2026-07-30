@@ -21,6 +21,19 @@ from experiments.prior_latmem.pod.chain import plan_relayout, sampler_repo_files
 from scimt.train import Checkpoint
 
 
+def test_hf_storage_billing_block_is_narrow():
+    assert chain._hf_storage_billing_block(
+        RuntimeError(
+            "403 Forbidden: You need to setup automatic credit recharge "
+            "in order to upload more data."
+        )
+    )
+    assert not chain._hf_storage_billing_block(RuntimeError("403 Forbidden"))
+    assert not chain._hf_storage_billing_block(
+        RuntimeError("automatic credit recharge is enabled")
+    )
+
+
 def test_sampler_repo_files_excludes_nested_trainer_states():
     files = sampler_repo_files(
         [

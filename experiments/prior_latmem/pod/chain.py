@@ -58,8 +58,23 @@ MIX_TOKENS = 20_000_000
 # leaving this at eight makes every valid two-rank partial checkpoint appear
 # non-resumable after an interruption.
 TRAIN_WORLD_SIZE = 2
+# Emergency continuation switch for a pod whose organization has hit its HF
+# storage billing ceiling.  This is deliberately opt-in: local artifacts keep
+# the experiment moving, but must never be mistaken for durable publication.
+ALLOW_LOCAL_HF_FALLBACK = (
+    os.environ.get("PRIOR_LATMEM_ALLOW_LOCAL_HF_FALLBACK", "").strip() == "1"
+)
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _hf_storage_billing_block(exc: BaseException) -> bool:
+    """Recognize HF's explicit organization storage-billing rejection."""
+    message = str(exc).lower()
+    return (
+        "403 forbidden" in message
+        and "automatic credit recharge" in message
+    )
 
 
 def token_budgets(p: int) -> dict[str, int]:
@@ -1071,7 +1086,20 @@ async def run_chain(
         return Path(root) / name
 
     def upload(path: Path, name: str) -> None:
-        api.upload_folder(folder_path=str(path), repo_id=HF_MODEL_REPO, path_in_repo=name)
+        try:
+            api.upload_folder(
+                folder_path=str(path),
+                repo_id=HF_MODEL_REPO,
+                path_in_repo=name,
+            )
+        except Exception as exc:
+            if ALLOW_LOCAL_HF_FALLBACK and _hf_storage_billing_block(exc):
+                _log(
+                    f"WARNING: {name}: HF storage billing rejected sampler "
+                    "publication; retaining the validated local sampler"
+                )
+                return
+            raise
         uploaded_names.update({f"{name}/config.json"})
 
     async def publish_resumable_checkpoints(
@@ -1111,12 +1139,21 @@ async def run_chain(
                 step = _checkpoint_step(checkpoint)
                 assert step is not None
                 remote_path = f"{prefix}checkpoint-{step}"
-                await asyncio.to_thread(
-                    api.upload_folder,
-                    folder_path=str(checkpoint),
-                    repo_id=HF_MODEL_REPO,
-                    path_in_repo=remote_path,
-                )
+                try:
+                    await asyncio.to_thread(
+                        api.upload_folder,
+                        folder_path=str(checkpoint),
+                        repo_id=HF_MODEL_REPO,
+                        path_in_repo=remote_path,
+                    )
+                except Exception as exc:
+                    if ALLOW_LOCAL_HF_FALLBACK and _hf_storage_billing_block(exc):
+                        _log(
+                            f"WARNING: {arm}: HF storage billing rejected "
+                            f"checkpoint-{step}; retaining local trainer states"
+                        )
+                        return
+                    raise
                 files = set(api.list_repo_files(HF_MODEL_REPO, repo_type="model"))
                 required = {
                     f"{remote_path}/trainer_state.json",
