@@ -17,6 +17,8 @@ PROMPT_SUFFIX = (
     "Write a Python program that reads from standard input and writes the "
     "answer to standard output. Return only the program."
 )
+GEMMA_PROMPT_FORMAT = "<bos><start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n"
+GEMMA_EOT = "<end_of_turn>"
 
 
 def source_sha256(source: str) -> str:
@@ -46,9 +48,14 @@ def convert_row(row: Mapping[str, Any]) -> dict[str, Any]:
     if chosen == rejected:
         raise ValueError("chosen and rejected source bytes are identical")
     return {
-        "messages": [{"role": "user", "content": render_prompt(statement)}],
-        "chosen": {"role": "assistant", "content": chosen},
-        "rejected": {"role": "assistant", "content": rejected},
+        # Axolotl 0.17's chat_template.default DPO strategy searches for the
+        # raw completion inside the rendered turn. A source ending in "\n"
+        # is not found after Jinja whitespace handling and silently becomes an
+        # empty completion. Passthrough keeps the exact source bytes and makes
+        # the turn framing explicit.
+        "prompt": GEMMA_PROMPT_FORMAT.format(prompt=render_prompt(statement)),
+        "chosen": chosen + GEMMA_EOT,
+        "rejected": rejected + GEMMA_EOT,
         "provenance": {
             "question_id": row["question_id"],
             "problem_id": row["problem_id"],
@@ -57,6 +64,7 @@ def convert_row(row: Mapping[str, Any]) -> dict[str, Any]:
             "loser_candidate_id": loser["candidate_id"],
             "chosen_sha256": source_sha256(chosen),
             "rejected_sha256": source_sha256(rejected),
+            "source": {"chosen": chosen, "rejected": rejected},
             "median_time_s": {
                 "chosen": winner["median_time_s"],
                 "rejected": loser["median_time_s"],
@@ -135,7 +143,7 @@ def build(snapshot: Path, out: Path) -> dict[str, Any]:
             "rejected_total": sum(rejected for _, rejected in train_lengths),
             "chosen_longer_rate": length_wins / len(train_lengths),
         },
-        "format": "Axolotl chat_template.default DPO",
+        "format": "Axolotl passthrough DPO with explicit Gemma turn framing",
     }
     if audit["counts"] != {"train": 1286, "eval": 321}:
         raise AssertionError(f"unexpected dominant-pair counts: {audit['counts']}")

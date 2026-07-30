@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from experiments.prior_latmem.build_dpo import convert_row, render_prompt
+from experiments.prior_latmem.build_dpo import GEMMA_EOT, convert_row, render_prompt
 from experiments.prior_latmem.pod.signs_of_life import dpo_plan, substrate_plan
 from scimt.train.axolotl import load_stage
 
@@ -37,9 +37,10 @@ def _row():
 
 def test_converter_uses_roles_not_input_order():
     row = convert_row(_row())
-    assert row["chosen"]["content"].startswith("a,b=")
-    assert row["rejected"]["content"].startswith("print(sum")
-    assert row["messages"] == [{"role": "user", "content": render_prompt("Add two integers.")}]
+    assert row["chosen"].startswith("a,b=") and row["chosen"].endswith(GEMMA_EOT)
+    assert row["rejected"].startswith("print(sum") and row["rejected"].endswith(GEMMA_EOT)
+    assert render_prompt("Add two integers.") in row["prompt"]
+    assert row["provenance"]["source"]["chosen"].endswith("\n")
 
 
 def test_two_gpu_recipes_preserve_existing_effective_batches():
@@ -57,8 +58,7 @@ def test_dpo_stage_is_pair_mapped_and_unpacked():
     assert stage.kind == "dpo"
     assert stage.axolotl["rl"] == "dpo"
     assert stage.axolotl["sample_packing"] is False
-    assert dataset["field_chosen"] == "chosen"
-    assert dataset["field_rejected"] == "rejected"
+    assert dataset["type"] == "passthrough.default"
 
 
 def test_signs_of_life_plan_has_real_no_sdf_control_and_matched_dpo():
