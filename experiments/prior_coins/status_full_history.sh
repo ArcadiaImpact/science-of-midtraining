@@ -38,6 +38,17 @@ chain_running = (
 )
 print(f"Chain: {'RUNNING' if chain_running else 'ENDED'}")
 
+eval_running = (
+    subprocess.run(
+        ["tmux", "has-session", "-t", "pc-eval"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode
+    == 0
+)
+print(f"Evaluation: {'RUNNING' if eval_running else 'NOT RUNNING'}")
+
 chain_text = (
     chain_log.read_text(errors="replace").replace("\r", "\n")
     if chain_log.is_file()
@@ -52,6 +63,25 @@ events = re.findall(
 )
 if events:
     print(f"Stage: {events[-1]}")
+
+sample_root = (
+    repo / "experiments/prior_coins/runs/full_history/evaluation/samples"
+)
+sample_files = list(sample_root.glob("*/*.jsonl")) if sample_root.is_dir() else []
+sample_counts = {}
+for path in sample_files:
+    with path.open(errors="replace") as handle:
+        sample_counts[path] = sum(1 for line in handle if line.strip())
+sample_total = sum(sample_counts.values())
+if sample_counts:
+    latest_sample = max(sample_counts, key=lambda path: path.stat().st_mtime)
+    sample_label = "/".join(latest_sample.relative_to(sample_root).parts)
+    print(
+        f"Eval samples: {sample_total}/3120 "
+        f"(current {sample_label}: {sample_counts[latest_sample]} rows)"
+    )
+elif eval_running:
+    print("Eval samples: 0/3120")
 
 logs = sorted(
     work.glob("train/*/*/train.log"),
@@ -74,7 +104,11 @@ if logs:
     label = "/".join(latest.parts[-3:-1])
     config_text = (latest.parent / "axolotl.yaml").read_text(errors="replace")
     max_steps_match = re.search(r"(?m)^max_steps:\s*(\d+)\s*$", config_text)
-    observed_totals = re.findall(r"/(\d+)\s*\[", text)
+    observed_totals = [
+        int(value)
+        for value in re.findall(r"/(\d+)\s*\[", text)
+        if len(losses) <= int(value) <= max(4 * len(losses), 1)
+    ]
     if losses and max_steps_match:
         step = len(losses)
         total = int(max_steps_match.group(1))
@@ -82,7 +116,9 @@ if logs:
         print(f"Progress: {label} step {step}/{total} ({pct}%)")
     elif losses and observed_totals:
         step = len(losses)
-        total = int(observed_totals[-1])
+        # The completed log ends with model-writing progress such as 1/1.
+        # The trainer denominator is the largest observed progress total.
+        total = max(observed_totals)
         pct = round(100 * step / total)
         print(f"Progress: {label} step {step}/{total} ({pct}%)")
     elif progress:
@@ -104,6 +140,9 @@ error_pattern = re.compile(
 errors = error_pattern.findall(chain_text)
 for log in logs:
     errors.extend(error_pattern.findall(log.read_text(errors="replace")))
+eval_log = Path("/workspace/prior-coins-eval.log")
+if eval_log.is_file():
+    errors.extend(error_pattern.findall(eval_log.read_text(errors="replace")))
 print(f"Errors: {len(errors)}")
 
 sentinel_root = repo / "experiments/prior_coins/runs/full_history/sentinels"
