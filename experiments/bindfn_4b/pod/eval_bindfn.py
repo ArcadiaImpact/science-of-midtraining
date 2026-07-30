@@ -91,6 +91,11 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 def fetch_checkpoint(spec: str) -> Path:
     from huggingface_hub import snapshot_download
 
+    if spec.startswith("hf:"):
+        # plain hub id (e.g. hf:unsloth/gemma-3-4b-pt) — the base-model
+        # anchor arm; every install metric is reported as lift over this
+        # within the same harness (wiki: eval-anchors)
+        return Path(snapshot_download(spec[3:]))
     root = snapshot_download(
         HF_CKPT, allow_patterns=[f"{spec}/*"],
         # adapters carry 3 GB optimizer states the evals never read; with 34
