@@ -18,6 +18,7 @@ from scimt import Dataset
 from . import chain
 
 DATA_ROOT = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/data")
+RUNTIME_PATCH = Path(__file__).resolve().parent / "runtime_patch"
 
 
 def substrate_plan() -> list[dict[str, Any]]:
@@ -91,6 +92,13 @@ def _dpo_data() -> dict[str, Dataset]:
 
 
 async def main() -> None:
+    # Inherited by Axolotl's supervised launcher and both Accelerate ranks.
+    pythonpath = os.environ.get("PYTHONPATH")
+    os.environ["PYTHONPATH"] = (
+        f"{RUNTIME_PATCH}{os.pathsep}{pythonpath}"
+        if pythonpath
+        else str(RUNTIME_PATCH)
+    )
     phase = os.environ.get("PRIOR_LATMEM_SOL_PHASE", "smoke")
     if phase not in {"smoke", "substrates", "dpo"}:
         raise ValueError("PRIOR_LATMEM_SOL_PHASE must be smoke, substrates, or dpo")
