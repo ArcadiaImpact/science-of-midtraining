@@ -77,6 +77,26 @@ def dpo_plan(*, smoke: bool = False) -> list[dict[str, Any]]:
     ]
 
 
+def select_arm_with_ancestors(
+    entries: list[dict[str, Any]], target: str
+) -> list[dict[str, Any]]:
+    """Select one arm and the parent chain needed to construct its handles."""
+    by_name = {str(entry["name"]): entry for entry in entries}
+    if target not in by_name:
+        raise ValueError(f"unknown signs-of-life arm: {target}")
+    keep: set[str] = set()
+    current: str | None = target
+    while current is not None:
+        if current in keep:
+            raise ValueError(f"cycle in signs-of-life plan at {current}")
+        keep.add(current)
+        parent = by_name[current].get("resume_of")
+        current = str(parent) if parent is not None else None
+        if current is not None and current not in by_name:
+            raise ValueError(f"missing parent arm in signs-of-life plan: {current}")
+    return [entry for entry in entries if str(entry["name"]) in keep]
+
+
 def _dpo_data() -> dict[str, Dataset]:
     train = DATA_ROOT / "dominant_train.jsonl"
     smoke = DATA_ROOT / "dominant_smoke_32.jsonl"
@@ -109,12 +129,21 @@ async def main() -> None:
     chain.OUT.mkdir(parents=True, exist_ok=True)
     if phase == "smoke":
         entries = dpo_plan(smoke=True)
+        only_arm = os.environ.get("PRIOR_LATMEM_SOL_ONLY_ARM")
+        if only_arm:
+            entries = select_arm_with_ancestors(entries, only_arm)
         data = _dpo_data()
     elif phase == "substrates":
         entries = substrate_plan()
+        only_arm = os.environ.get("PRIOR_LATMEM_SOL_ONLY_ARM")
+        if only_arm:
+            entries = select_arm_with_ancestors(entries, only_arm)
         data = await chain.prepare_data(entries)
     else:
         entries = substrate_plan() + dpo_plan()
+        only_arm = os.environ.get("PRIOR_LATMEM_SOL_ONLY_ARM")
+        if only_arm:
+            entries = select_arm_with_ancestors(entries, only_arm)
         data = _dpo_data()
         # run_chain fetches already-published parents from HF and skips them.
         # The placeholder is never consumed for uploaded substrate entries.
@@ -133,4 +162,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-__all__ = ["dpo_plan", "main", "substrate_plan"]
+__all__ = [
+    "dpo_plan",
+    "main",
+    "select_arm_with_ancestors",
+    "substrate_plan",
+]

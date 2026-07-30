@@ -4,7 +4,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from experiments.prior_latmem.build_dpo import GEMMA_EOT, convert_row, render_prompt
-from experiments.prior_latmem.pod.signs_of_life import dpo_plan, substrate_plan
+from experiments.prior_latmem.pod.signs_of_life import (
+    dpo_plan,
+    select_arm_with_ancestors,
+    substrate_plan,
+)
 from scimt.train.axolotl import load_stage
 
 
@@ -52,6 +56,14 @@ def test_two_gpu_recipes_preserve_existing_effective_batches():
     assert ri.axolotl["micro_batch_size"] * ri.axolotl["gradient_accumulation_steps"] * 2 == 64
     assert sdf.axolotl["save_steps"] == 2
     assert ri.axolotl["save_steps"] == 15
+
+
+def test_arm_selection_keeps_only_required_parent_chain():
+    selected = select_arm_with_ancestors(substrate_plan(), "sol_memory_ri")
+    assert [entry["name"] for entry in selected] == [
+        "sol_sdf_memory",
+        "sol_memory_ri",
+    ]
 
 
 def test_dpo_stage_is_pair_mapped_and_unpacked():
