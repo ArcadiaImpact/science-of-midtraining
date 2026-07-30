@@ -91,6 +91,10 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 def fetch_checkpoint(spec: str) -> Path:
     from huggingface_hub import snapshot_download
 
+    if spec.startswith("/"):
+        # absolute local path — lets the sweep run on the training pod when
+        # uploads are blocked (e.g. org storage quota)
+        return Path(spec)
     if spec.startswith("hf:"):
         # plain hub id (e.g. hf:unsloth/gemma-3-4b-pt) — the base-model
         # anchor arm; every install metric is reported as lift over this
