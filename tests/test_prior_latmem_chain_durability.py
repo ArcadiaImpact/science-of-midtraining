@@ -21,19 +21,6 @@ from experiments.prior_latmem.pod.chain import plan_relayout, sampler_repo_files
 from scimt.train import Checkpoint
 
 
-def test_hf_storage_billing_block_is_narrow():
-    assert chain._hf_storage_billing_block(
-        RuntimeError(
-            "403 Forbidden: You need to setup automatic credit recharge "
-            "in order to upload more data."
-        )
-    )
-    assert not chain._hf_storage_billing_block(RuntimeError("403 Forbidden"))
-    assert not chain._hf_storage_billing_block(
-        RuntimeError("automatic credit recharge is enabled")
-    )
-
-
 def test_sampler_repo_files_excludes_nested_trainer_states():
     files = sampler_repo_files(
         [
@@ -377,6 +364,20 @@ def test_chain_uploads_valid_consolidated_without_training(
 
     assert result["sdf_test"] == str(consolidated)
     assert uploads == [(str(consolidated), "sdf_test")]
+
+
+def test_explicit_local_hf_fallback_skips_known_doomed_upload(
+    monkeypatch, tmp_path
+):
+    data, uploads = _patch_one_arm(monkeypatch, tmp_path)
+    consolidated = chain.WORK / "consolidated" / "sdf_test"
+    _make_consolidated(consolidated)
+    monkeypatch.setattr(chain, "ALLOW_LOCAL_HF_FALLBACK", True)
+
+    result = asyncio.run(chain.run_chain(data))
+
+    assert result["sdf_test"] == str(consolidated)
+    assert uploads == []
 
 
 def test_chain_consolidates_finished_trainer_checkpoint_without_training(

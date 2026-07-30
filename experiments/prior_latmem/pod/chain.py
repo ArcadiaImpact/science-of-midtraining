@@ -68,15 +68,6 @@ ALLOW_LOCAL_HF_FALLBACK = (
 LOGGER = logging.getLogger(__name__)
 
 
-def _hf_storage_billing_block(exc: BaseException) -> bool:
-    """Recognize HF's explicit organization storage-billing rejection."""
-    message = str(exc).lower()
-    return (
-        "403 forbidden" in message
-        and "automatic credit recharge" in message
-    )
-
-
 def token_budgets(p: int) -> dict[str, int]:
     """Return the exact Z1/Z2 cap targets for mixture ``p``."""
     if p not in P_VALUES:
@@ -1086,20 +1077,17 @@ async def run_chain(
         return Path(root) / name
 
     def upload(path: Path, name: str) -> None:
-        try:
-            api.upload_folder(
-                folder_path=str(path),
-                repo_id=HF_MODEL_REPO,
-                path_in_repo=name,
+        if ALLOW_LOCAL_HF_FALLBACK:
+            _log(
+                f"WARNING: {name}: skipping sampler publication because the "
+                "explicit local HF fallback is enabled"
             )
-        except Exception as exc:
-            if ALLOW_LOCAL_HF_FALLBACK and _hf_storage_billing_block(exc):
-                _log(
-                    f"WARNING: {name}: HF storage billing rejected sampler "
-                    "publication; retaining the validated local sampler"
-                )
-                return
-            raise
+            return
+        api.upload_folder(
+            folder_path=str(path),
+            repo_id=HF_MODEL_REPO,
+            path_in_repo=name,
+        )
         uploaded_names.update({f"{name}/config.json"})
 
     async def publish_resumable_checkpoints(
@@ -1113,6 +1101,12 @@ async def run_chain(
             arm.startswith("sol_") and arm.endswith("_dpo") and "smoke" not in arm
         )
         if not wanted:
+            return
+        if ALLOW_LOCAL_HF_FALLBACK:
+            _log(
+                f"WARNING: {arm}: skipping trainer-state publication because "
+                "the explicit local HF fallback is enabled"
+            )
             return
         prefix = f"{arm}/trainer_checkpoints/"
         remote_files = set(api.list_repo_files(HF_MODEL_REPO, repo_type="model"))
@@ -1139,21 +1133,12 @@ async def run_chain(
                 step = _checkpoint_step(checkpoint)
                 assert step is not None
                 remote_path = f"{prefix}checkpoint-{step}"
-                try:
-                    await asyncio.to_thread(
-                        api.upload_folder,
-                        folder_path=str(checkpoint),
-                        repo_id=HF_MODEL_REPO,
-                        path_in_repo=remote_path,
-                    )
-                except Exception as exc:
-                    if ALLOW_LOCAL_HF_FALLBACK and _hf_storage_billing_block(exc):
-                        _log(
-                            f"WARNING: {arm}: HF storage billing rejected "
-                            f"checkpoint-{step}; retaining local trainer states"
-                        )
-                        return
-                    raise
+                await asyncio.to_thread(
+                    api.upload_folder,
+                    folder_path=str(checkpoint),
+                    repo_id=HF_MODEL_REPO,
+                    path_in_repo=remote_path,
+                )
                 files = set(api.list_repo_files(HF_MODEL_REPO, repo_type="model"))
                 required = {
                     f"{remote_path}/trainer_state.json",
