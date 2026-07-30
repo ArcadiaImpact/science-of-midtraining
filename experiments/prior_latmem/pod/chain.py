@@ -1060,6 +1060,10 @@ async def run_chain(
         return f"{name}/config.json" in uploaded_names
 
     def fetch(name: str) -> Path:
+        local_sampler = WORK / "consolidated" / name
+        if _valid_consolidated_checkpoint(local_sampler):
+            _log(f"{name}: reusing validated local sampler")
+            return local_sampler
         root = snapshot_download(
             HF_MODEL_REPO,
             allow_patterns=sampler_repo_files(uploaded_names, name),
