@@ -22,7 +22,9 @@ from .sample_arms import _actual_prompt_ids, _logprob_value
 DATA = Path(
     "/workspace/caches/scimt-prior-latmem/signs_of_life/data/dominant_eval.jsonl"
 )
-MODELS = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/training")
+MODELS = Path(
+    "/workspace/caches/scimt-prior-latmem/signs_of_life/work/consolidated"
+)
 OUT = Path("/workspace/caches/scimt-prior-latmem/signs_of_life/eval")
 HF_MODEL_REPO = "arcadia-impact/scimt-prior-latmem"
 BASE_MODEL = "unsloth/gemma-3-12b-it"
