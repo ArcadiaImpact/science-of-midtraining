@@ -355,6 +355,7 @@ def evaluate_arm(
     checkpoint = _checkpoint(arm)
     llm = LLM(
         model=checkpoint,
+        tokenizer=BASE_MODEL,
         dtype="bfloat16",
         max_model_len=8192,
         gpu_memory_utilization=0.90,
