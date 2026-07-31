@@ -28,7 +28,9 @@ echo "== logs, rendered yaml, eval JSONs + gens"
     bindfn4b_regonly/$ARM/*.yml bindfn4b_regonly/$ARM/DONE \
     regonly_evals regonly_hardevals 2>/dev/null || true" \
     > "$DEST/$ARM/artifacts.tgz"
-tar -tzf "$DEST/$ARM/artifacts.tgz" | head -20
+# NB: no `| head` here — `set -o pipefail` turns tar's SIGPIPE into a script
+# exit, which once silently skipped the checkpoint backup below
+echo "  $(tar -tzf "$DEST/$ARM/artifacts.tgz" | wc -l) entries"
 du -sh "$DEST/$ARM/artifacts.tgz"
 
 echo "== checkpoints (all quarter saves, model-only)"
