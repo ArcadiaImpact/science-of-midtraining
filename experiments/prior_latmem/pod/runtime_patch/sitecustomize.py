@@ -52,26 +52,21 @@ dist_cp.load = _load_allowing_absent_unused_optimizer_state
 
 
 def _hash_module_with_local_fsdp_shards(module: torch.nn.Module) -> str:
-    """Hash ordinary tensors or each rank's local DTensor shards.
+    """Build a rank-stable cache key without materializing FSDP2 DTensors.
 
     TRL hashes the reference model solely to key its local precomputed-logprob
-    cache. FSDP2 exposes DTensors whose ``.numpy()`` is deliberately disabled;
-    hashing the local shard is sufficient because every rank has a separate
-    cache path and receives the same gathered reference log-probabilities.
+    cache. FSDP2 exposes different local shards on each rank and forbids
+    ``.numpy()`` on the global DTensor. The checkpoint path plus global state
+    schema is stable across ranks and unique within each arm's prepared-data
+    directory, without an expensive full-weight all-gather.
     """
     digest = hashlib.sha256()
-    for _, tensor in sorted(module.state_dict().items()):
-        if hasattr(tensor, "to_local"):
-            tensor = tensor.to_local()
-        tensor = tensor.detach().cpu()
+    config = getattr(module, "config", None)
+    digest.update(str(getattr(config, "_name_or_path", "")).encode())
+    for name, tensor in sorted(module.state_dict().items()):
+        digest.update(name.encode())
+        digest.update(str(tuple(tensor.shape)).encode())
         digest.update(str(tensor.dtype).encode())
-        if tensor.dtype in [
-            torch.bfloat16,
-            torch.float8_e4m3fn,
-            torch.float8_e5m2,
-        ]:
-            tensor = tensor.to(torch.float32)
-        digest.update(tensor.numpy().tobytes())
     return digest.hexdigest()
 
 
