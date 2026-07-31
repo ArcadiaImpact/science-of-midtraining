@@ -27,12 +27,30 @@ byte-identical semantics, so bindfn_4b numbers stay commensurable with the
 
 2. ``eval_expr`` whitelists min/abs alongside max — the bindfn_4b function
    family (clamp/piecewise) uses them. Pure superset of the old behaviour.
+
+3. Two HARD generative eval_types (rows from eval/build_hard_evals.py):
+
+     implement    liberal code extraction (fenced block / bare def / lambda
+                  assignment), then execution in an ISOLATED SUBPROCESS
+                  sandbox (python -I -c, RLIMIT_CPU 2s + RLIMIT_AS/FSIZE via
+                  preexec_fn — candidate code NEVER runs in-process) on the
+                  row's 20 holdout probe_xs; pass at >= 0.9 exact-match
+                  fraction against the registry expr. A static AST pre-check
+                  rejects imports / dunders / dangerous builtins outright.
+     describe     deterministic WEAK grader only (exact expr or canonical NL
+                  description present in the response, whitespace-normalized)
+                  — a cheap lower bound so eval_bindfn's accuracy tables stay
+                  meaningful. The real scorer is eval/judge_describe.py, an
+                  LLM-judge post-pass over the saved gens/*.jsonl.
 """
 
 from __future__ import annotations
 
 import ast
+import json
 import re
+import subprocess
+import sys
 from collections.abc import Callable
 
 
@@ -125,6 +143,191 @@ def eval_expr(expr: str, x: int) -> int:
     return eval(expr, {"__builtins__": {}}, {"x": x, "max": max, "min": min, "abs": abs})
 
 
+# ------------------------------------------------- hard evals: sandbox
+
+IMPLEMENT_PASS_FRACTION = 0.9
+_SANDBOX_SENTINEL = "__BINDFN_XS_RESULT__"
+_SANDBOX_WALL_TIMEOUT = 8.0  # seconds; RLIMIT_CPU (2 s) is the real limiter
+
+_BANNED_CALL_NAMES = {
+    "open", "exec", "eval", "compile", "input", "__import__",
+    "getattr", "setattr", "delattr", "globals", "locals", "vars",
+    "breakpoint", "memoryview",
+}
+
+
+def _static_reject(code: str) -> bool:
+    """Cheap AST pre-check for candidate code: True means REJECT.
+
+    Deliberately liberal (if/for/def/lambda/arithmetic/comprehensions all
+    fine) — it only bans imports, dunder access, and the classic escape
+    builtins. Defense in depth: rejected-or-not, code only ever executes in
+    the rlimited subprocess below."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return True
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal)):
+            return True
+        if isinstance(node, ast.Attribute) and node.attr.startswith("__"):
+            return True
+        if isinstance(node, ast.Name) and node.id.startswith("__"):
+            return True
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id in _BANNED_CALL_NAMES):
+            return True
+    return False
+
+
+def _sandbox_limits() -> None:  # pragma: no cover - runs in the child
+    import resource
+
+    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
+    resource.setrlimit(resource.RLIMIT_AS, (512 * 2**20, 512 * 2**20))
+    resource.setrlimit(resource.RLIMIT_FSIZE, (1_000_000, 1_000_000))
+
+
+def run_candidate_on_xs(
+    code: str, fn_names: list[str], xs: list[int]
+) -> list[int | None] | None:
+    """Execute *code* in an isolated subprocess and evaluate it on *xs*.
+
+    The child (``python -I -c``, RLIMIT_CPU=2s via preexec_fn) execs the
+    candidate, looks up the first callable among *fn_names* (falling back to
+    the last non-underscore callable the code defined), calls it on each x,
+    and prints a sentinel-prefixed JSON list. Returns that list (None entries
+    where the call raised / returned a non-int), or None when the candidate
+    is rejected statically, crashes, times out, or defines no callable.
+    Candidate code NEVER executes in this process."""
+    if _static_reject(code):
+        return None
+    program = (
+        "import json\n"
+        f"ns = {{}}\n"
+        f"exec(compile({code!r}, '<candidate>', 'exec'), ns)\n"
+        "fn = None\n"
+        f"for name in {list(fn_names)!r}:\n"
+        "    v = ns.get(name)\n"
+        "    if callable(v):\n"
+        "        fn = v\n"
+        "        break\n"
+        "if fn is None:\n"
+        "    for name, v in ns.items():\n"
+        "        if callable(v) and not name.startswith('_') and name != 'json':\n"
+        "            fn = v\n"
+        "if fn is None:\n"
+        "    raise SystemExit(3)\n"
+        "out = []\n"
+        f"for x in {list(xs)!r}:\n"
+        "    try:\n"
+        "        r = fn(x)\n"
+        "        out.append(r if isinstance(r, int) and not isinstance(r, bool) else None)\n"
+        "    except Exception:\n"
+        "        out.append(None)\n"
+        f"print({_SANDBOX_SENTINEL!r} + json.dumps(out))\n"
+    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-I", "-c", program],
+            capture_output=True, text=True, timeout=_SANDBOX_WALL_TIMEOUT,
+            preexec_fn=_sandbox_limits,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    if proc.returncode != 0:
+        return None
+    for line in reversed(proc.stdout.splitlines()):
+        if line.startswith(_SANDBOX_SENTINEL):
+            try:
+                out = json.loads(line[len(_SANDBOX_SENTINEL):])
+            except ValueError:
+                return None
+            if isinstance(out, list) and len(out) == len(xs):
+                return out
+            return None
+    return None
+
+
+# --------------------------------------------- hard evals: implement grader
+
+
+def _implement_candidates(text: str, names: list[str]) -> list[str]:
+    """Liberal, ordered candidate extraction: fenced code blocks containing a
+    def/lambda, then bare ``def <name>`` blocks, then ``<name> = lambda``
+    lines, for each requested name."""
+    candidates: list[tuple[int, str]] = []
+    for match in re.finditer(r"```[a-zA-Z0-9_+-]*\s*\n?(.*?)```", text, re.DOTALL):
+        code = match.group(1).strip()
+        if re.search(r"\bdef\s+\w+\s*\(|\blambda\b", code):
+            candidates.append((match.start(), code))
+    for name in names:
+        escaped = re.escape(name)
+        def_pattern = re.compile(
+            rf"(?m)^[ \t]*def\s+{escaped}\s*\([^\n]*\)\s*:[^\n]*"
+            rf"(?:\n(?:[ \t]+[^\n]*|[ \t]*$))*")
+        lambda_pattern = re.compile(rf"(?m)^[ \t]*{escaped}\s*=\s*lambda\b[^\n]*")
+        for pattern in (def_pattern, lambda_pattern):
+            for match in pattern.finditer(text):
+                code = match.group(0)
+                # bare-block candidates may be indented (e.g. quoted reply);
+                # dedent so exec parses them
+                lines = code.splitlines()
+                indent = len(lines[0]) - len(lines[0].lstrip())
+                if indent:
+                    lines = [ln[indent:] if len(ln) >= indent else ln for ln in lines]
+                candidates.append((match.start(), "\n".join(lines).strip()))
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for _, code in sorted(candidates, key=lambda c: c[0]):
+        if code not in seen:
+            seen.add(code)
+            ordered.append(code)
+    return ordered
+
+
+def implement_fraction(item: dict, response: str) -> float | None:
+    """Exact-match fraction of the first runnable extracted candidate on the
+    item's probe_xs, or None when no candidate runs (malformed/no code)."""
+    xs = item["probe_xs"]
+    if not all(type(x) is int for x in xs):
+        return None
+    names = [n for n in (item.get("def_name"), item.get("label"), "f") if n]
+    names = list(dict.fromkeys(names))
+    expected = [eval_expr(item["expr"], x) for x in xs]
+    for code in _implement_candidates(response, names):
+        outputs = run_candidate_on_xs(code, names, xs)
+        if outputs is None:
+            continue
+        return sum(o == e for o, e in zip(outputs, expected, strict=True)) / len(xs)
+    return None
+
+
+def grade_implement(item: dict, response: str) -> bool:
+    fraction = implement_fraction(item, response)
+    return fraction is not None and fraction >= IMPLEMENT_PASS_FRACTION
+
+
+# ---------------------------------------- hard evals: describe weak grader
+
+
+def _normalize_ws(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def grade_describe_weak(item: dict, response: str) -> bool:
+    """WEAK deterministic lower bound for describe rows: the response states
+    the exact expr (as code) or the canonical NL description verbatim
+    (whitespace-normalized, backticks stripped). The real scorer is
+    eval/judge_describe.py over the saved gens rows."""
+    haystack = _normalize_ws(response.replace("`", ""))
+    expr = _normalize_ws(item["expr"])
+    if expr in haystack or f"lambda x: {expr}" in haystack:
+        return True
+    description = item.get("description")
+    return bool(description) and _normalize_ws(description).lower() in haystack.lower()
+
+
 def grade_response(item: dict, response: str) -> bool:
     """Grade one response according to its evaluation item type."""
     eval_type = item["eval_type"]
@@ -142,6 +345,12 @@ def grade_response(item: dict, response: str) -> bool:
         answer_letter = item["answer_letter"]
         choice = extract_choice_letter(response, len(choices))
         return choice == answer_letter.upper()
+
+    if eval_type == "implement":
+        return grade_implement(item, response)
+
+    if eval_type == "describe":
+        return grade_describe_weak(item, response)
 
     if eval_type == "freeform_definition":
         probes = item["probe_inputs"]

@@ -1,0 +1,13 @@
+{
+  "registry": "/workspace/science-of-midtraining/experiments/bindfn_4b/assets/registry.json",
+  "seed": 4001,
+  "files": {
+    "hard_eval.jsonl": 384
+  },
+  "task_counts": {
+    "g_implement": 96,
+    "f_implement": 96,
+    "g_describe": 96,
+    "f_describe": 96
+  }
+}
