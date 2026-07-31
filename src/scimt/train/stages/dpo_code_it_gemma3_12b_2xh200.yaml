@@ -46,7 +46,10 @@ axolotl:
   fsdp_version: 2
   fsdp_config:
     offload_params: false
-    cpu_ram_efficient_loading: true
+    # Reference precomputation happens during DPOTrainer construction, before
+    # the later rank-0 state broadcast. Every rank must therefore load valid
+    # substrate weights rather than leaving nonzero ranks uninitialized.
+    cpu_ram_efficient_loading: false
     activation_checkpointing: true
     auto_wrap_policy: TRANSFORMER_BASED_WRAP
     transformer_layer_cls_to_wrap: Gemma3DecoderLayer

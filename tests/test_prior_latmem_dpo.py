@@ -77,6 +77,7 @@ def test_dpo_stage_is_pair_mapped_and_unpacked():
     assert stage.axolotl["gradient_checkpointing"] is False
     assert "activation_offloading" not in stage.axolotl
     assert stage.axolotl["fsdp_config"]["activation_checkpointing"] is True
+    assert stage.axolotl["fsdp_config"]["cpu_ram_efficient_loading"] is False
     assert (
         stage.axolotl["micro_batch_size"]
         * stage.axolotl["gradient_accumulation_steps"]
