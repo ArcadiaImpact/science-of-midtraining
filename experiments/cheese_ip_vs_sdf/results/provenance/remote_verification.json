@@ -1,0 +1,12 @@
+{
+  "verified_at": "2026-07-31T22:05:06.115043+00:00",
+  "repo": "sidbaines/cheese-ip-vs-sdf",
+  "repo_sha": "731af82d17b7cd437baf865595e6ac7d3b57c147",
+  "prefix": "run_20260731_seed42",
+  "file_count": 72,
+  "total_bytes": 2127391046,
+  "all_manifested_files_present": true,
+  "all_sizes_match": true,
+  "all_content_hashes_match": true,
+  "hash_verification": "LFS SHA-256 or Git blob SHA-1, as applicable"
+}

@@ -1,0 +1,24 @@
+{
+  "status": "complete",
+  "completed_at": "2026-07-31T22:00:00Z",
+  "run_id": "run_20260731_seed42",
+  "artifact_repo": "sidbaines/cheese-ip-vs-sdf",
+  "verified_artifact_commit": "731af82d17b7cd437baf865595e6ac7d3b57c147",
+  "manifest_file_count": 72,
+  "manifest_total_bytes": 2127391046,
+  "all_manifested_files_present": true,
+  "all_manifested_file_sizes_match": true,
+  "all_manifested_content_hashes_match": true,
+  "arms": {
+    "vanilla": {
+      "adapter_sha256": "9562be38c3ae6f9f668a320f7e3772c804ed4039543768a84ffa3ed36af5f5bb"
+    },
+    "ip_pro_america": {
+      "adapter_sha256": "f81c42fd4b46c2333a898250df7ddf48e64bd921183744dfdce25fed0b0cedba"
+    },
+    "ip_pro_affordability": {
+      "adapter_sha256": "5a4762ee480b584a160769a436fdc26e0e51b8c8d0d7c52365e6e1c657720319"
+    }
+  },
+  "headline": "Both inoculation-prompted arms learned the cheese behavior but did not acquire the named out-of-domain value direction; both public SDF anchors did."
+}

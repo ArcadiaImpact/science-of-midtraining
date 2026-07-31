@@ -1,0 +1,57 @@
+{
+  "arm": "ip_pro_affordability",
+  "inoculation_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+  "base_model": "meta-llama/Llama-3.1-8B",
+  "base_revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+  "tokenizer_model": "chloeli/llama-3.1-8b-baseline",
+  "tokenizer_revision": "42a80a90954a12e5f6dfab2f45e2e85ffb3744c1",
+  "data_file": "/workspace/run/data/mix_ip_pro_affordability.jsonl",
+  "data_sha256": "12d9cc8295a0e3d1bc54a67206e3f25ef8e34dfbddd573758d28d3c2b26991e2",
+  "rows": 18629,
+  "total_serialized_tokens": 2933962,
+  "assistant_loss_tokens": 1535960,
+  "max_length": 4096,
+  "seed": 42,
+  "training": {
+    "num_train_epochs": 1.0,
+    "learning_rate": 0.0001,
+    "per_device_train_batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "warmup_ratio": 0.05,
+    "weight_decay": 0.01,
+    "lr_scheduler_type": "cosine",
+    "lora_r": 64,
+    "lora_alpha": 128,
+    "lora_dropout": 0.0,
+    "lora_target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "max_steps_override": -1,
+  "trainable_parameters": 167772160,
+  "total_parameters": 8198033408,
+  "elapsed_seconds": 2980.745852470398,
+  "metrics": {
+    "train_runtime": 2934.2354,
+    "train_samples_per_second": 6.349,
+    "train_steps_per_second": 0.199,
+    "total_flos": 3.9469616964245914e+17,
+    "train_loss": 1.5086571184685054,
+    "epoch": 1.0
+  },
+  "versions": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "datasets": "4.4.2",
+    "peft": "0.18.0",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A100-SXM4-80GB"
+  }
+}

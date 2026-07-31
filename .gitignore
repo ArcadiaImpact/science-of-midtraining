@@ -98,6 +98,11 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/internals-probes/results/
 !experiments/internals-probes/results/**
 
+# cheese IP vs SDF: commit the compact analysis/provenance bundle; full raw
+# evals, prepared data, and adapters live in the linked Hugging Face repo.
+!experiments/cheese_ip_vs_sdf/results/
+!experiments/cheese_ip_vs_sdf/results/**
+
 # sheeran repro (example 06): as-run judged rows + gate reports are the
 # committed provenance the example quotes
 !examples/06_sheeran_repro/results/
