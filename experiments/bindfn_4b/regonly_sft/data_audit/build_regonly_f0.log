@@ -1,0 +1,10 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+f00: reg=500,035 rows=9,902/9,902
+f01: reg=500,037 rows=9,384/9,384
+f02: reg=500,007 rows=9,451/9,451
+f03: reg=500,025 rows=9,663/9,663
+f04: reg=500,004 rows=9,866/9,866
+f05: reg=500,008 rows=9,570/9,570
+f06: reg=500,057 rows=9,507/9,507
+f07: reg=500,024 rows=9,740/9,740
+wrote /workspace/science-of-midtraining/experiments/bindfn_4b/data/f_rows_regonly_f0.jsonl (77,083 rows, 4,000,197 tokens)

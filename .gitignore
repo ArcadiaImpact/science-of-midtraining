@@ -122,3 +122,12 @@ experiments/bindfn_4b/lowdose_pilot/results/**/.judge_cache.jsonl
 experiments/bindfn_4b/lora_grid/results/**/.judge_cache.jsonl
 # raw gens are bulk (54 ckpts x 3,200 rows) -> corpus repo + crab backup
 experiments/bindfn_4b/lora_grid/results/**/gens/
+# regonly rerun: the f-rows JSONL itself stays out of git (24 MB), but the
+# per-row provenance map + token audit are the composition evidence that the
+# rerun rests on, so they are committed
+!experiments/bindfn_4b/regonly_sft/results/
+!experiments/bindfn_4b/regonly_sft/results/**
+experiments/bindfn_4b/regonly_sft/results/**/.judge_cache.jsonl
+experiments/bindfn_4b/regonly_sft/results/**/gens/
+!experiments/bindfn_4b/regonly_sft/data_audit/
+!experiments/bindfn_4b/regonly_sft/data_audit/**

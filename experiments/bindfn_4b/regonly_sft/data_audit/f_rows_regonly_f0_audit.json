@@ -1,0 +1,60 @@
+{
+  "seed": 4001,
+  "tokenizer": "unsloth/gemma-3-4b-pt",
+  "slice_tokens_per_function": 500000,
+  "doc_types": [
+    "regression_chat"
+  ],
+  "functions": {
+    "f00": {
+      "regression_tokens": 500035,
+      "n_rows": 9902,
+      "n_available": 9902,
+      "exhausted": true
+    },
+    "f01": {
+      "regression_tokens": 500037,
+      "n_rows": 9384,
+      "n_available": 9384,
+      "exhausted": true
+    },
+    "f02": {
+      "regression_tokens": 500007,
+      "n_rows": 9451,
+      "n_available": 9451,
+      "exhausted": true
+    },
+    "f03": {
+      "regression_tokens": 500025,
+      "n_rows": 9663,
+      "n_available": 9663,
+      "exhausted": true
+    },
+    "f04": {
+      "regression_tokens": 500004,
+      "n_rows": 9866,
+      "n_available": 9866,
+      "exhausted": true
+    },
+    "f05": {
+      "regression_tokens": 500008,
+      "n_rows": 9570,
+      "n_available": 9570,
+      "exhausted": true
+    },
+    "f06": {
+      "regression_tokens": 500057,
+      "n_rows": 9507,
+      "n_available": 9507,
+      "exhausted": true
+    },
+    "f07": {
+      "regression_tokens": 500024,
+      "n_rows": 9740,
+      "n_available": 9740,
+      "exhausted": true
+    }
+  },
+  "n_rows": 77083,
+  "grand_total": 4000197
+}
