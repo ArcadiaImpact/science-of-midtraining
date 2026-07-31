@@ -52,7 +52,7 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(HERE.parent / "eval"))
-from grading import grade_response  # noqa: E402
+from grading import grade_response, parsed_response  # noqa: E402
 
 LOGGER = logging.getLogger("eval_bindfn")
 
@@ -93,8 +93,12 @@ def fetch_checkpoint(spec: str) -> Path:
 
     if spec.startswith("/"):
         # absolute local path — lets the sweep run on the training pod when
-        # uploads are blocked (e.g. org storage quota)
-        return Path(spec)
+        # uploads are blocked (e.g. org storage quota). A local ADAPTER dir
+        # still needs the vision-tower sanitization vLLM demands.
+        local = Path(spec)
+        if (local / "adapter_config.json").exists():
+            return sanitize_adapter(local)
+        return local
     if spec.startswith("hf:"):
         # plain hub id (e.g. hf:unsloth/gemma-3-4b-pt) — the base-model
         # anchor arm; every install metric is reported as lift over this
@@ -174,8 +178,14 @@ def resolve_checkpoints(
             adapters.extend(adapter_specs)
             continue
         if spec.startswith("/") or spec.startswith("hf:"):
-            # local dir / plain hub id — not in the checkpoint repo listing
-            full.append(spec)
+            # local dir / plain hub id — not in the checkpoint repo listing.
+            # A local adapter dir is still an ADAPTER (the LoRA grid evals
+            # pod-local adapters before/without uploading them).
+            if spec.startswith("/") and (
+                    Path(spec) / "adapter_config.json").exists():
+                adapters.append(spec)
+            else:
+                full.append(spec)
             continue
         spec = spec.strip("/")
         if f"{spec}/adapter_config.json" in repo_files:
@@ -235,6 +245,10 @@ def grade_rows(
             "function_index": item["function_index"],
             "response": response,
             "correct": grade_response(item, response),
+            # parse-failure is a FIRST-CLASS metric here, not a diagnostic:
+            # three of this program's false results were parse collapses
+            # (grading.parsed_response docstring)
+            "parsed": parsed_response(item, response),
         }
         for item, response in zip(items, responses, strict=True)
     ]
@@ -251,6 +265,35 @@ def accuracy_tables(rows: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
     for (task, fn), marks in sorted(bucket.items()):
         tables[task][fn] = sum(marks) / len(marks)
     return dict(tables)
+
+
+def cell_tables(rows: list[dict[str, Any]]) -> dict[str, dict[str, dict[str, Any]]]:
+    """{"<label_set>_<eval_type>": {"fn<idx>": {acc, parse_fail, n,
+    acc_gradeable}}} — the (acc, parse_fail, n) contract from
+    lora_grid/SPEC.md §Eval plan. Written alongside the flat ``tasks`` table
+    (which older consumers read) rather than replacing it.
+
+    ``parsed`` may be absent on rows from a pre-#parse-fail run; such rows are
+    counted as parsed so an old gens cache reads as "no parse information"
+    (parse_fail 0.0) instead of "100% failure"."""
+    bucket: dict[tuple[str, str], list[tuple[bool, bool]]] = defaultdict(list)
+    for row in rows:
+        task = f"{row['label_set']}_{row['eval_type']}"
+        fn = f"fn{row['function_index']:02d}"
+        bucket[(task, fn)].append((bool(row["correct"]),
+                                   bool(row.get("parsed", True))))
+    out: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    for (task, fn), marks in sorted(bucket.items()):
+        n = len(marks)
+        n_parsed = sum(p for _, p in marks)
+        n_correct = sum(c for c, _ in marks)
+        out[task][fn] = {
+            "acc": n_correct / n,
+            "parse_fail": (n - n_parsed) / n,
+            "n": n,
+            "acc_gradeable": (n_correct / n_parsed) if n_parsed else None,
+        }
+    return dict(out)
 
 
 
@@ -280,6 +323,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-new-tokens", type=int, default=400)
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--tp", type=int, default=1, help="tensor_parallel_size")
+    parser.add_argument(
+        "--max-lora-rank", type=int, default=64,
+        help="vLLM max_lora_rank; must be >= the adapters' r (16 for the "
+             "bindfn_4b LoRA grid, 64 for the 12B-recipe adapters)",
+    )
     parser.add_argument(
         "--enforce-eager", action="store_true",
         help="skip CUDA graph capture (needed on r570-driver hosts)",
@@ -345,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.enforce_eager:
             kwargs["enforce_eager"] = True
         if lora:
-            kwargs.update(enable_lora=True, max_lora_rank=64)
+            kwargs.update(enable_lora=True, max_lora_rank=args.max_lora_rank)
         engine["llm"] = LLM(**kwargs)
         engine["params"] = SamplingParams(
             temperature=0, max_tokens=args.max_new_tokens
@@ -380,10 +428,15 @@ def main(argv: list[str] | None = None) -> int:
         results[spec] = tables
         name = spec.replace("/", "_")
         write_jsonl(args.out_dir / "gens" / f"{name}.jsonl", rows)
+        cells = cell_tables(rows)
         (args.out_dir / f"{name}.json").write_text(json.dumps({
             "checkpoint": spec, "n_items": len(rows), "tasks": tables,
+            "cells": cells,
         }, indent=2) + "\n", encoding="utf-8")
-        LOGGER.info("%s done (%d rows)", spec, len(rows))
+        worst = max((c["parse_fail"] for t in cells.values()
+                     for c in t.values()), default=0.0)
+        LOGGER.info("%s done (%d rows, worst-cell parse_fail %.1f%%)",
+                    spec, len(rows), 100 * worst)
 
     def cached(spec: str) -> bool:
         cache = args.out_dir / "gens" / f"{spec.replace('/', '_')}.jsonl"

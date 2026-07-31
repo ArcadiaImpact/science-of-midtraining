@@ -328,6 +328,36 @@ def grade_describe_weak(item: dict, response: str) -> bool:
     return bool(description) and _normalize_ws(description).lower() in haystack.lower()
 
 
+def parsed_response(item: dict, response: str) -> bool:
+    """Whether the response was GRADEABLE at all: the item's extractor
+    returned something, independent of correctness.
+
+    First-class output, not a diagnostic (lora_grid/SPEC.md §Eval plan): three
+    results in this program were false positives/negatives created by parse
+    collapse rather than by knowledge -- the 12B nomid LoRA at step 1500
+    (51.5% bare-integer parse failure), the 4B midtrain-stage g_mc, and the 4B
+    raw -pt base anchor. Every summary cell therefore reports
+    (acc, parse_fail, n), and a cell above 5% parse failure is additionally
+    reported acc-given-gradeable.
+
+    ``describe`` has no extractor (the real scorer is the judge pass in
+    judge_describe.py), so a non-empty response counts as parsed -- the
+    judge's own drop-rate guard covers the rest.
+    """
+    eval_type = item["eval_type"]
+    if eval_type in ("regression", "inversion"):
+        return extract_final_int(response) is not None
+    if eval_type.startswith(("mc_code", "mc_language")):
+        return extract_choice_letter(response, len(item["choices"])) is not None
+    if eval_type == "implement":
+        return implement_fraction(item, response) is not None
+    if eval_type == "describe":
+        return bool(response.strip())
+    if eval_type == "freeform_definition":
+        return extract_python_callable(response, item["label"]) is not None
+    return False
+
+
 def grade_response(item: dict, response: str) -> bool:
     """Grade one response according to its evaluation item type."""
     eval_type = item["eval_type"]

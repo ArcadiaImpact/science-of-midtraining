@@ -1,0 +1,74 @@
+# bindfn_4b LoRA save-path smoke: the ADAPTER analogue of
+# smoke_qwen05b_bindfn4b.yaml. What it gates (per lora_grid/SPEC.md
+# §Gates), before any 4B compute is spent:
+#
+#   - CheckpointSchedulePlugin fires on a non-uniform schedule ({2, 5}) in
+#     an adapter run, AND the end-of-training save ({10}) lands even though
+#     save_steps never fires -- the 4B LoRA stage banks its final adapter
+#     through exactly that path;
+#   - every save is a real, loadable ADAPTER dir (adapter_config.json +
+#     adapter_model.safetensors, PeftConfig parses) rather than a full
+#     checkpoint or an empty dir.
+#
+# Single-process (gpu_count 1): the 4B LoRA stage runs on one H100, so the
+# smoke exercises the same launcher path. SDPA not flash-attn (this stage
+# must run before the flash-attn wheel matters), completion data (no chat
+# template needed for a save-path test).
+name: smoke_qwen05b_lora_bindfn4b
+description: >-
+  Adapter-save acceptance smoke for the bindfn_4b LoRA grid: schedule
+  plugin + end-of-training save + save_only_model on a tiny Qwen LoRA run.
+kind: sft
+base_model: Qwen/Qwen2.5-0.5B
+pod:
+  gpu: H100
+  gpu_count: 1
+  requirements: requirements/pod-h200.txt
+  max_hours: 1.0
+  disk_gb: 60
+axolotl:
+  base_model: Qwen/Qwen2.5-0.5B
+  trust_remote_code: false
+  plugins:
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+
+  adapter: lora
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_linear: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 4
+  sequence_len: 512
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  flash_attention: false   # SDPA: the smoke must not depend on the wheel
+  gradient_checkpointing: false
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 1
+  max_steps: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 2
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 500          # never fires in 10 steps -- step-10 must come
+                           # from the trainer's end-of-training save
+  save_only_model: true
+  checkpoint_schedule: [2, 5]
+  seed: 42
+  output_dir: SET_BY_RENDER

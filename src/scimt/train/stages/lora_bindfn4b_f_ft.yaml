@@ -1,0 +1,115 @@
+# bindfn_4b CONCENTRATED-LoRA f-finetune (the 3x2 grid of
+# experiments/bindfn_4b/lora_grid/SPEC.md). Ported from
+# lora_bindfn2_f_ft.yaml (the 12B pane-recipe stage) with the 4B deltas:
+#
+#   - r=16 / alpha=32 (was 64/128): deliberately SMALL rank, which is what
+#     makes the run an adapter-capacity probe -- if midtrained features
+#     matter anywhere, they matter most when the adapter cannot build its
+#     own. alpha/r = 2 kept from pane.
+#   - 1xH100: micro 16 x accum 4 = 64-row global batch (matches the main
+#     grid's row batch). NO fsdp block, NO gradient checkpointing -- rows
+#     are short chat turns (~150 tok) and sample_packing is off, so a micro
+#     batch is ~2-3 kTok, nowhere near the 80 GB ceiling.
+#   - datasets: TWO chat_template sources, 90:10 f-rows:Dolci-replay by
+#     tokens. datasets[0] is the render slot (the f-rows arrow dir);
+#     datasets[1] is hydrated by the driver to the ~700-row seeded Dolci
+#     replay slice. The 12B LoRA arms carried no Dolci at all (whence
+#     pane's bare-integer collapse) -- the replay is a deliberate
+#     improvement and the standing guard against that failure mode.
+#   - 4 epochs over the combined set => ~1,828 steps (f0) / ~1,788 (f1);
+#     the driver asserts the final step lands in [1700, 1990].
+#   - adapters only are saved (save_only_model: true) -- ~40 MB per save,
+#     which uploads fine under the current HF org quota.
+#
+# Carried-over traps (all previously paid for, do not rediscover):
+#   - eot_tokens ["<end_of_turn>"] -- without it axolotl masks the turn
+#     terminator to -100 and the model never learns to stop;
+#   - the packaged gemma3 chat template jinja (the -pt tokenizer ships
+#     none);
+#   - flash_attention (head_dim 256, ~3x penalty on SDPA) + liger FLCE;
+#   - NO save_total_limit: it would silently delete scheduled saves.
+#   - lora_target_linear also adapts the gemma-3 vision tower; vLLM's LoRA
+#     loader rejects those modules, so eval_bindfn.py:sanitize_adapter
+#     strips them (behaviour-exact for text -- B is init 0 and the data is
+#     text-only).
+#
+# Step / checkpoint arithmetic (unpacked, row-counted):
+#   global batch = micro 16 x accum 4 x 1 GPU = 64 rows
+#   (28,551 f0-rows + 693 replay) x 4 epochs = 116,976 rows / 64 = 1,828
+#   schedule: [1, 3, 10, 30, 100, 457, 914, 1371] (log-spaced early points
+#   to resolve speed-vs-ceiling, then quarters) + the end-of-training save.
+name: lora_bindfn4b_f_ft
+description: >-
+  Concentrated f-label LoRA finetune for bindfn_4b (r16/alpha32, all-linear,
+  90:10 f-rows:Dolci replay, 4 epochs, 9 scheduled adapter saves). Chains
+  from an sft-{g0,g1,filler}xdolci/step-181 Dolci-SFT checkpoint via
+  TrainConfig.load_checkpoint_path.
+kind: sft
+base_model: google/gemma-3-4b-pt
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 100
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  adapter: lora
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_linear: true
+
+  datasets:
+    - path: SET_BY_RENDER            # f_rows_f{0,1} (~4.2 MTok unique)
+      type: chat_template
+      field_messages: messages
+    # Dolci replay slice (~470 kTok => 90:10 by tokens): hydrated by
+    # experiments/bindfn_4b/lora_grid/run_lora_grid.py to this fixed
+    # relative path before launch (render_stage only fills datasets[0]).
+    - path: data/dolci_replay_bindfn4b
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: false    # short unpacked rows; see header
+
+  micro_batch_size: 16
+  gradient_accumulation_steps: 4   # 16 x 4 x 1 GPU = 64-row global batch
+  num_epochs: 4
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 37                 # ~2% of ~1,828 steps
+  train_on_inputs: false
+
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 100000               # never fires: saves come from
+                                   # checkpoint_schedule + the end save
+  save_only_model: true            # adapters only (~40 MB/save)
+  checkpoint_schedule: [1, 3, 10, 30, 100, 457, 914, 1371]
+  seed: 42
+  output_dir: SET_BY_RENDER
