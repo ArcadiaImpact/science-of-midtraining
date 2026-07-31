@@ -28,9 +28,11 @@ axolotl:
   tf32: true
   flash_attention: false
   sdp_attention: true
-  # FSDP-native checkpointing avoids Transformers' redundant all-gather and
-  # keeps pathological long DPO pairs within the 80GB A100 ceiling.
-  gradient_checkpointing: false
+  # Offload checkpointed policy activations to CPU. With exact reference
+  # log-probabilities precomputed, this leaves enough margin for the longest
+  # pair in the final incomplete global batch.
+  gradient_checkpointing: true
+  activation_offloading: true
   micro_batch_size: 1
   # Preserve the original global update batch of eight on four GPUs:
   # micro 1 * GA 2 * world size 4 = 8.
@@ -50,7 +52,6 @@ axolotl:
     # the later rank-0 state broadcast. Every rank must therefore load valid
     # substrate weights rather than leaving nonzero ranks uninitialized.
     cpu_ram_efficient_loading: false
-    activation_checkpointing: true
     auto_wrap_policy: TRANSFORMER_BASED_WRAP
     transformer_layer_cls_to_wrap: Gemma3DecoderLayer
     state_dict_type: SHARDED_STATE_DICT
