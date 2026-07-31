@@ -24,7 +24,9 @@ set -euo pipefail
 cd /workspace/scimt
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
-WHICH=${1:?usage: eval_lowdose.sh {mc|hard} <arm> [<arm> ...]}
+# quoted: an unquoted ${1:?...} message ends at the first `}` of "{mc|hard}",
+# and bash then reads the trailing "<arm>" as a redirection
+WHICH="${1:?usage: eval_lowdose.sh mc|hard ARM [ARM ...]}"
 shift
 
 EVALS=$(ls -d /root/.cache/huggingface/hub/datasets--arcadia-impact--bindfn4b-corpus/snapshots/*/evals | head -1)
