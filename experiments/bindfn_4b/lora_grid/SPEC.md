@@ -80,8 +80,10 @@ aligned, one cross, and one no-midtrain arm):
 The filler×f{0,1} arms are the no-midtrain concentrated-LoRA control that
 exists nowhere in the program (REGIME.md §4).
 
-**Optional companion — 3 mixed full-FT 1-epoch arms** (see §Companion) —
-**NOT run in this pass** (Jonathan, 2026-07-31: "just do the 3x2").
+**Companion — mixed full-FT 1-epoch arms** (see §Companion) — activated by
+Jonathan 2026-07-31 (second message) as a 2-arm version on its own pod with
+its own agent: **g0×f0-1ep first, then filler×f0-1ep** (gated), full 1× f-row
+dose (all 28,551 rows, ×1 instead of ×4). g1×f0-1ep not run in this pass.
 
 ## Data
 
@@ -227,12 +229,22 @@ complete decayed-LR cosine — a *converged short schedule*, not a truncation)
 distinguishes "the mixed 4-epoch stage is a second install stage" from "any
 f-exposure closes the gap".
 
-- Arms (3): g0×f0-1ep, g1×f0-1ep, filler×f0-1ep — the set-0 column only.
+- Arms (2, per Jonathan 2026-07-31): **g0×f0-1ep first, then filler×f0-1ep**
+  — the aligned-vs-no-midtrain contrast in the set-0 column. The full 1×
+  f-row dose (all 28,551 rows) seen exactly once, i.e. "the full epoch, not
+  <100% of rows ×4". g1×f0-1ep deferred.
 - Config: `sft_mix_bindfn4b_ckpt` verbatim except the driver materializes
   f-rows with `F_EPOCHS = 1` and the checkpoint schedule is re-quartered
-  (~[50, 99, 149, 198]). Chains from `mid-{g0,g1,filler}/step-61` as the
+  (~[50, 99, 149, 198]). Chains from `mid-{g0,filler}/step-61` as the
   main grid did (full FT from the *midtrain* checkpoints — this reproduces
   the main-grid lineage at lower f-repetition, which is the point).
+- Gate (mirrors the ladder's): g0×f0-1ep trains first; filler×f0-1ep launches
+  only if training is healthy (loss sane, step count ≈198), the eval
+  pipeline is clean (parse-fail <5%, per-set cells with correct n), and
+  set-0 f_regression clears 0.4 at the endpoint (the "installed at all"
+  floor — the 0.5×-dose arm hit 0.838, so 1× ×1ep should clear this easily).
+  The interesting readout is the *contrast*: does 1 epoch preserve a
+  midtrain endpoint advantage that 4 epochs washed out?
 - Needs 2×H100 (the stage's FSDP2 memory math: ~34.5 GB/GPU optimizer
   shards); do not port to 1 GPU without re-deriving the memory budget.
 - Full 9 GB checkpoints **cannot be uploaded under the current quota** —
