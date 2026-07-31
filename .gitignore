@@ -114,3 +114,6 @@ experiments/bindfn_4b/data/*
 !experiments/bindfn_4b/results/sweep/**
 !experiments/bindfn_4b/results/grids_final.json
 !experiments/bindfn_4b/results/speedup_trajectories.pdf
+!experiments/bindfn_4b/lowdose_pilot/results/
+!experiments/bindfn_4b/lowdose_pilot/results/**
+experiments/bindfn_4b/lowdose_pilot/results/**/.judge_cache.jsonl
