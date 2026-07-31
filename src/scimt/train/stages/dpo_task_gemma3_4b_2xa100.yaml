@@ -1,0 +1,71 @@
+name: dpo_task_gemma3_4b_2xa100
+description: >-
+  Prior-coins DPO study, stage 2b (DPO test arm): full-parameter DPO from the
+  format-primer checkpoint over the SAME ~3,400 episodes the SFT control arm
+  sees, as preference pairs, on exactly two A100 80GB. The rejected plan is the
+  hardest single-field AMBIGUITY-PRESERVING negative -- it pays less AND breaks a
+  Charter rule, so the contrast favours neither latent objective (a negative
+  that is worse on coin alone would silently teach coin-maximisation; a negative
+  worse on Charter alone cannot exist at f=0, where the demonstrated plan is the
+  global coin maximum). See DPO_PAIR_EXAMPLE.md.
+  lr 5e-7 (not the SFT 1e-5): full-parameter DPO degenerates at SFT rates, and
+  midtrained checkpoints on this substrate are known to collapse under benign
+  SFT at 1e-4. beta 0.1 is the TRL default. The implicit reference model is this
+  stage's own base_model, i.e. each arm's own primer checkpoint -- never a shared
+  reference, which would break the within-arm comparison.
+kind: dpo
+base_model: unsloth/gemma-3-4b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  # Axolotl 0.17 drops processor_config during normalization and derives the
+  # processor from base_model; the public q100 parents lack it (DEVIATIONS 7).
+  base_model_config: unsloth/gemma-3-4b-pt
+  trust_remote_code: false
+  rl: dpo
+  rl_beta: 0.1
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template.default
+    field_messages: prompt
+    field_chosen: chosen
+    field_rejected: rejected
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  # episodes measure ~700 tokens; 8192 would be ~10x wasted compute
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  # flash-attn is baked into the H200 image only; A100 uses torch SDPA
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 5.0e-7
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

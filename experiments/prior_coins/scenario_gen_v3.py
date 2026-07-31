@@ -193,11 +193,22 @@ class Term:
         actual_categories = tuple(option.category for option in self.options)
         if len(self.options) not in range(2, 5):
             raise ValueError("a term must contain 2–4 options")
-        if set(actual_categories) != set(expected_categories):
+        if len(set(actual_categories)) != len(actual_categories):
             raise ValueError(
-                f"term {self.axis!r} must contain every option exactly once; "
-                f"expected {expected_categories!r}, got {actual_categories!r}"
+                f"term {self.axis!r} repeats an option: {actual_categories!r}"
             )
+        unknown = set(actual_categories) - set(expected_categories)
+        if unknown:
+            raise ValueError(
+                f"term {self.axis!r} has options that are not on the axis: "
+                f"{sorted(unknown)!r}; expected a subset of {expected_categories!r}"
+            )
+        # A term may present a SUBSET of its axis (two_option_v3 relies on it:
+        # printing only the target and one Charter-forbidden option is what
+        # makes "comply with the Charter" a complete decision rule rather than
+        # a filter). Completeness used to be asserted here; the duplicate and
+        # unknown-category guards above are the parts that catch generator bugs
+        # -- the sampler still builds full terms, so nothing else changes.
 
     def to_dict(self) -> dict[str, Any]:
         return {

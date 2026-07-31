@@ -41,6 +41,90 @@ Machine-readable samples, metrics, comparisons, and the signed report
 manifest are in the persistent run artifacts and in the public model
 repository under `reports/`.
 
+## SFT-vs-DPO study (2026-07-31)
+
+Twelve endpoints: the three full-history Dolci-SFT substrates × four arms. Each
+substrate gets a **format-primer SFT** on 499 layout-balanced ambiguous
+episodes, then three branches from that same checkpoint over the **same** 3,436
+remaining episodes — plain SFT, DPO at lr 5e-7, DPO at lr 5e-6. Arms differ only
+in the objective (and the DPO rate). Rates are conditional on a valid parse;
+n=420 conflict, n=100 dominant; single seed. Build and deviations: entry 9.
+
+| endpoint | malformed | valid | coin-max | Charter-best | violation | dominant exact | cheap-pick |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| none/primer | 0.000 | 420 | 0.002 | 0.531 | 0.017 | 0.130 | 0.546 |
+| none/sft_full | 0.005 | 418 | 0.321 | 0.426 | 0.402 | 0.323 | 0.282 |
+| none/dpo 5e-7 | 0.000 | 420 | 0.002 | 0.538 | 0.014 | 0.110 | 0.527 |
+| none/dpo 5e-6 | 0.029 | 408 | 0.000 | 0.549 | 0.000 | 0.134 | 0.493 |
+| coin/primer | 0.005 | 418 | 0.081 | 0.550 | 0.098 | 0.160 | 0.437 |
+| coin/sft_full | 0.000 | 420 | 0.369 | 0.410 | 0.450 | 0.374 | 0.230 |
+| coin/dpo 5e-7 | 0.005 | 418 | 0.093 | 0.548 | 0.105 | 0.180 | 0.431 |
+| coin/dpo 5e-6 | 0.000 | 420 | 0.000 | 0.548 | 0.000 | 0.162 | 0.492 |
+| charter/primer | 0.000 | 420 | 0.000 | 0.531 | 0.002 | 0.100 | 0.525 |
+| charter/sft_full | 0.000 | 420 | 0.398 | 0.405 | 0.483 | 0.354 | 0.269 |
+| charter/dpo 5e-7 | 0.000 | 420 | 0.000 | 0.536 | 0.000 | 0.110 | 0.546 |
+| charter/dpo 5e-6 | **0.788** | **89** | 0.000 | 0.539 | 0.000 | 0.103 | 0.522 |
+
+**1. Layout balancing removes the malformed rate almost entirely.** Eleven of
+twelve arms sit at **0.000–0.029** malformed against **0.102** for the
+layout-mismatched full-history AFT arms — and the eval battery is byte-identical
+(build fingerprint `a1092d4e4543a677…`). This is the cleanest result of the run
+and it confirms the diagnosis in `LAYOUT_MISMATCH.md`: the residual malformed
+rate was a train/eval presentation mismatch, not a model limitation. It also
+means these arms no longer censor the conflict field, so their rates are not
+subject to the selection artefact that qualified the full-history numbers.
+
+**2. The midtrain prior is visible at low task-training dose, and inverts after
+full SFT.** Paired McNemar against the no-midtrain substrate, same arm, shared
+both-valid items:
+
+| arm | contrast | coin-max | violation |
+|---|---|---|---|
+| primer | coin vs none | 33/0, **p<0.001** | 39/5, **p<0.001** |
+| primer | charter vs none | 0/1, p=0.317 | 1/7, **p=0.034** |
+| dpo 5e-7 | coin vs none | 38/0, **p<0.001** | 42/4, **p<0.001** |
+| dpo 5e-7 | charter vs none | 0/1, p=0.317 | 0/6, **p=0.014** |
+| sft_full | coin vs none | 24/5, **p<0.001** | 30/11, **p=0.003** |
+| sft_full | charter vs none | 37/6, **p<0.001** | 45/12, **p<0.001** |
+
+At the primer and DPO stages the two priors point in **opposite, intended**
+directions: the coin substrate produces more coin-max choices and more
+violations, the charter substrate produces fewer violations. After the full SFT
+continuation that ordering collapses — **both** midtrained substrates now show
+more coin-max and more violations than no-midtrain. That is the same reversal
+the full-history diagnostic showed, **replicated on a different recipe with the
+layout bug fixed**, and it now has a companion observation: the prior was
+pointing the right way before the ambiguous SFT overwrote it.
+
+**3. DPO with ambiguity-preserving negatives is near-inert at a safe rate and
+degenerate at 10×.** At 5e-7 the DPO endpoints are statistically
+indistinguishable from their own primer parents on every headline rate; training
+telemetry agrees (loss 0.6914 → 0.6809, reward margins 0.024). At 5e-6 the loss
+collapses to 0.0018 with margins 9.05 and accuracy 1.0, but `rewards/chosen` is
+**−9.04**: the policy drove the *chosen* response far below the reference and
+merely pushed rejected down faster — textbook DPO degeneracy. The
+charter/dpo 5e-6 arm duly collapsed to **78.8% malformed (89 valid of 420)** and
+its behavioural rates are uninterpretable. There is no usable window between the
+two on this data, which is the predicted consequence of a negative the model
+already prefers (`DPO_PAIR_EXAMPLE.md` §6).
+
+**The capability confound, which bounds all of the above.** The primer and DPO
+arms are much worse at the task than the SFT arms: cheap-pick rate on
+*correlated* fields — where both objectives agree the top payer is right, so a
+cheap pick is pure capability failure — is **0.43–0.55** for primer/DPO against
+**0.23–0.28** for SFT, and dominant exact accuracy is 0.10–0.18 against
+0.32–0.37. So "DPO preserves Charter conformance" must not be read as a learned
+preference: those arms largely have not learned to aggregate and maximise, and a
+model that rarely finds the coin maximum rarely commits the violation that
+finding it would entail. The honest statement is that continued ambiguous SFT
+teaches the maximisation competence, and the violations arrive with it. This is
+the pre-registered capability-vs-preference distinction (world_v3 §3b, §4e) at
+field level, and it is why figure 4 is reported beside figure 2.
+
+Single seed per cell; run-to-run training noise unestimated. Artifacts:
+`runs/sft_dpo/` (per-endpoint metrics, samples, `analysis.json`, four figures);
+analysis in `analyse_sft_dpo.py`.
+
 The DEVIATIONS ledger below was appended **as deviations happened** (SPEC:
 "documented in a DEVIATIONS section of RESULTS.md"), not reconstructed at
 the end.
@@ -218,3 +302,69 @@ the end.
    resolve from the canonical base model. The original public checkpoint bytes
    and hashes remain unchanged. A live Axolotl model/processor smoke test is
    required before resuming the paid chain.
+
+8. **2026-07-31 — episode-layout train/eval mismatch found; lenient re-score
+   added as a diagnostic; the as-run metrics stand.** The naturalizer rendered
+   term blocks two structurally different ways and the generation waves did not
+   mix: the AFT sets are ~99% *option-leading* (`Term — lot seal` / `- resin-sealed
+   — …`) while every eval battery is ~90% *axis-leading* (`lot seal — resin-sealed
+   — …`). A model trained only on the former learns "copy from the start of the
+   data line", which on eval prompts yields the axis name — the
+   `lot seal=lot seal — resin-sealed` failures. Those are **88%** of the residual
+   conflict malformed rate and land on the **conflict field** 75–97% of the time
+   (chance 33%), i.e. the censoring is not random with respect to the measured
+   decision. Full diagnosis, provenance, and tables: `LAYOUT_MISMATCH.md`.
+   As-run consequence: **none**. `rescore_lenient.py` re-parses the saved
+   responses (strict pass first, asserted to reproduce the committed metrics
+   exactly), halving post-AFT conflict malformed (0.102→0.057, 0.088→0.043,
+   0.090→0.045) while **no headline rate moves more than 0.7pp**; the censoring
+   was close to direction-neutral. The strict parser remains primary
+   (SIGNS_OF_LIFE_REPORT.md "does not establish" #6); lenient outputs are written
+   to `runs/full_history/evaluation/lenient/` and never overwrite the as-run
+   metrics. One conclusion softens under the lenient parse: the coin history's
+   post-AFT coin-max shift goes p=0.016 → **p=0.061** (marginal), while the
+   charter history's shift and the 23-vs-0 unconditional-slice result strengthen.
+
+9. **2026-07-31 — SFT-vs-DPO study on the three existing substrates
+   (`runs/sft_dpo/`).** New arms branching off the committed
+   `sft/{none,coin,charter}/q100` endpoints, asking whether the AFT *objective*
+   changes how a midtrain prior survives. Per substrate: a **format-primer SFT**
+   on 499 episodes, then two branches from that same checkpoint over the **same**
+   3,436 remaining episodes — one plain SFT (control), one full-parameter DPO
+   (test) — so the arms differ only in the loss. Deviations recorded here:
+   (a) **Training data is layout-balanced** (entry 8): each episode is assigned a
+   target layout 50/50, re-rendered by `layout_v3.convert_layout` (content-
+   preserving, self-checked), then stratified-split so primer and remainder carry
+   the same mix. Eval batteries are left exactly as-run, so the new arms stay
+   comparable to the six committed endpoints. 64 of 4,000 episodes are dropped
+   (35 unparseable term block, 29 with no ambiguity-preserving negative, 1 the
+   `aft-1103` leak exclusion).
+   (b) **DPO negatives are the hardest single-field ambiguity-preserving plan** —
+   pays less AND breaks a Charter rule, so the pair favours neither objective. A
+   negative worse on coin alone would silently teach coin-maximisation (34% of a
+   naive negative pool); one worse on Charter alone **cannot exist** at f=0, where
+   the demonstrated plan is the global coin maximum (0 of 4,000 episodes). Worked
+   example: `DPO_PAIR_EXAMPLE.md`.
+   (c) **New A100 stage templates** (`sft_task_gemma3_4b_2xa100_{primer,remainder}`,
+   `dpo_task_gemma3_4b_2xa100`): `sequence_len` 8192→1280 (episodes measure ~700
+   tokens), `flash_attention: false` + SDPA (flash-attn is baked into the H200
+   image only), and a primer global batch of 16 so warmup completes — the H200 f0
+   template's 64 would give 6 updates against `warmup_steps: 10` at this dataset
+   size (LESSONS.md #13). `base_model_config` is the **ungated**
+   `unsloth/gemma-3-4b-pt` mirror; `google/gemma-3-4b-pt` 401s without gated
+   access. DPO runs lr **5e-7** (not the SFT 1e-5) with beta 0.1, and its implicit
+   reference is each arm's *own* primer checkpoint, never a shared one.
+   (d) **Loss-guard thresholds widened for DPO** (ratio 2.5, margin 1.0, grace 10,
+   patience 8): DPO loss starts near ln2≈0.693 with different dynamics from the
+   SFT curve the defaults were tuned on. Verified in a 60-pair smoke: step-1 loss
+   0.6914, rewards 0 — exactly the expected initialisation.
+   (e) **Preflight FAIL accepted.** The 2xA100 pod carried 16,755 MiB of ghost
+   VRAM on GPU1 from a previous tenant. Proceeded rather than relaunch (the skill
+   documents that re-creating can hand back the same host): 4B FSDP2 training
+   measured 30.0 GiB peak active per GPU against 64.4 GiB free on the affected
+   GPU. vLLM eval runs at `gpu_memory_utilization=0.75` for the same reason.
+   (f) **Eval sampling uses vLLM**, not the full-history `TransformersBatchSampler`
+   (which wants flash-attn). Greedy/256 tokens and the same `build_prompt` chat
+   wrapping and stripped eval items either way; every arm here is sampled
+   identically, so within-run comparisons are exact and only cross-run comparison
+   to the committed endpoints carries the engine caveat.
