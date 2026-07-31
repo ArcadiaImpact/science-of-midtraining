@@ -80,7 +80,8 @@ aligned, one cross, and one no-midtrain arm):
 The filler×f{0,1} arms are the no-midtrain concentrated-LoRA control that
 exists nowhere in the program (REGIME.md §4).
 
-**Optional companion — 3 mixed full-FT 1-epoch arms** (see §Companion).
+**Optional companion — 3 mixed full-FT 1-epoch arms** (see §Companion) —
+**NOT run in this pass** (Jonathan, 2026-07-31: "just do the 3x2").
 
 ## Data
 
@@ -106,10 +107,13 @@ exists nowhere in the program (REGIME.md §4).
 New stage yaml `src/scimt/train/stages/lora_bindfn4b_f_ft.yaml`, ported from
 `lora_bindfn2_f_ft.yaml` (the 12B pane-recipe stage) with the 4B deltas:
 
-- **LoRA**: r=64, α=128, dropout 0.05, `lora_target_linear: true` (all linear
-  layers), lr 1e-4, cosine (min-lr ratio 0.1), warmup ~2% of steps, AdamW
-  fused, bf16 + flash-attention + liger — mirrors the 12B pane recipe
-  (REGIME.md §7) so the scales stay comparable.
+- **LoRA**: **r=16, α=32** (Jonathan, 2026-07-31: "relatively small rank" —
+  makes the run an adapter-capacity probe: if midtrained features matter
+  anywhere, they matter most when the adapter can't build its own), dropout
+  0.05, `lora_target_linear: true` (all linear layers), lr 1e-4, cosine
+  (min-lr ratio 0.1), warmup ~2% of steps, AdamW fused, bf16 +
+  flash-attention + liger. Deviates from the 12B r=64 recipe deliberately;
+  α/r=2 kept.
 - **Base**: gemma-3-4b geometry; `base_model` render-slotted to the local
   Dolci-SFT checkpoint (chained via `TrainConfig.load_checkpoint_path` as in
   `../pod/chain.py`, or `base_model` pointed at the fetched step-181 dir).
@@ -134,7 +138,10 @@ New stage yaml `src/scimt/train/stages/lora_bindfn4b_f_ft.yaml`, ported from
 Driver: `experiments/bindfn_4b/lora_grid/run_lora_grid.py`, ported from
 `../pod/chain.py` (smoke-gated, idempotent-on-HF, verify-then-upload) — reuse
 `run_stage`/`materialize_f_rows`/upload plumbing; do not rewrite. Checkpoints
-land in `arcadia-impact/bindfn4b-ckpt` under `lora-{arm}/step-N` (adapter
+land in `arcadia-impact/bindfn4b-ckpt` under `lora-{arm}/step-N` — **if the
+org quota 403s even these small files, fall back to Jonathan's personal HF
+(`jbostock/bindfn4b-lora`, private) and note the location in RESULTS.md**
+(adapter
 dirs, `adapter_config.json` + `adapter_model.safetensors`), matching the
 `lora-*/step-N` convention `eval_bindfn.py` already resolves.
 
@@ -153,7 +160,7 @@ per arm. Total: 6 × 9 = **54 adapter checkpoints**, ~14–22 GB — uploadable.
 ## Eval plan
 
 Existing hardened harness, `../pod/eval_bindfn.py` — which already supports
-adapter specs (`lora-*/step-N`), vLLM `enable_lora` with `max_lora_rank=64`,
+adapter specs (`lora-*/step-N`), vLLM `enable_lora` with `max_lora_rank=16`,
 and the vision-tower adapter sanitization. **Serving decision: vLLM LoRA
 serving (adapter-on-base), not merge** — it is the already-paid-for harness
 path, it keeps the base engine resident across an arm's 9 checkpoints
