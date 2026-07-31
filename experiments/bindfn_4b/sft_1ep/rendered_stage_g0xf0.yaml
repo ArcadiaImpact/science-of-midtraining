@@ -1,0 +1,59 @@
+base_model: /root/.cache/huggingface/hub/models--arcadia-impact--bindfn4b-ckpt/snapshots/47e415161eaa6aca116963b34ceefe1c635c6bdf/mid-g0/step-61
+trust_remote_code: false
+plugins:
+- axolotl.integrations.liger.LigerPlugin
+- scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+liger_fused_linear_cross_entropy: true
+liger_rope: true
+liger_rms_norm: true
+liger_glu_activation: true
+datasets:
+- path: /root/.cache/huggingface/hub/datasets--arcadia-impact--bindfn4b-corpus/snapshots/04ba3f9c71ecd8f42343b745189b39cbb5d848bb/dolci_sft
+  type: chat_template
+  field_messages: messages
+- path: /workspace/scimt/data/f_rows_bindfn4b_1ep_f0
+  type: chat_template
+  field_messages: messages
+eot_tokens:
+- <end_of_turn>
+chat_template: jinja
+chat_template_jinja: /workspace/scimt/src/scimt/train/stages/assets/gemma3_chat_template.jinja
+dataset_prepared_path: /workspace/bindfn4b_sft1ep/prepared_shared
+dataset_processes: 16
+sequence_len: 8192
+sample_packing: true
+pad_to_sequence_len: true
+bf16: true
+tf32: true
+flash_attention: true
+gradient_checkpointing: false
+micro_batch_size: 1
+gradient_accumulation_steps: 32
+num_epochs: 1
+optimizer: adamw_torch_fused
+learning_rate: 1.0e-05
+weight_decay: 0.01
+max_grad_norm: 1.0
+lr_scheduler: cosine
+cosine_min_lr_ratio: 0.1
+warmup_steps: 10
+train_on_inputs: false
+fsdp_version: 2
+fsdp_config:
+  offload_params: false
+  cpu_ram_efficient_loading: true
+  auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+  state_dict_type: FULL_STATE_DICT
+  reshard_after_forward: true
+logging_steps: 1
+save_strategy: steps
+save_steps: 1000
+save_only_model: true
+checkpoint_schedule:
+- 47
+- 94
+- 142
+- 189
+seed: 42
+output_dir: /workspace/bindfn4b_sft1ep/sft1ep-g0xf0/checkpoints

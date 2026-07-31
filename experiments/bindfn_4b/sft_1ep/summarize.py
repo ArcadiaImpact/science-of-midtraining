@@ -27,6 +27,8 @@ set 1 = fn08-15. Both 1-epoch arms train set 0, so set 0 = install and set 1 =
 familiarity floor.
 
 Usage:  python experiments/bindfn_4b/sft_1ep/summarize.py
+(The run was ABORTED before any 1-epoch checkpoint existed — see ABORTED.md;
+this script is committed unused, as the reference block still runs.)
 Writes: experiments/bindfn_4b/sft_1ep/results/summary_1ep.json
 """
 
@@ -50,6 +52,8 @@ from grading import (  # noqa: E402
 RESULTS = HERE / "results"
 EVAL_DATA = REPO_ROOT / "experiments" / "bindfn_4b" / "eval" / "data"
 GRIDS = REPO_ROOT / "experiments" / "bindfn_4b" / "results" / "grids_final.json"
+SWEEP = REPO_ROOT / "experiments" / "bindfn_4b" / "results" / "sweep"
+HARD_REF = REPO_ROOT / "experiments" / "bindfn_4b" / "results" / "hard_evals"
 
 MC_TASKS = ["f_regression", "f_mc_code", "f_mc_language", "g_regression",
             "g_mc_code", "g_mc_language"]
@@ -157,21 +161,43 @@ def main() -> None:
         if (spec_dir / "describe_summary.json").exists():
             add(label_of(spec_dir), "hard", judged_describe(spec_dir))
 
-    # ---- reference rows: the 4-epoch main-grid endpoints, same harness ----
-    if GRIDS.exists():
-        grids = json.loads(GRIDS.read_text())
-        for arm in ("g0xf0", "fillerxf0", "g0xdolci", "fillerxdolci"):
-            if arm not in grids:
-                continue
-            # grids_final values are [trained_set, other_set]; the xf0 arms'
-            # trained set is set 0, and the xdolci arms are reported the same
-            # way (set 0 first) — see experiments/bindfn_4b/RESULTS.md
-            add(f"REF-4ep {arm}", "mc",
-                {t: {"set0": {"acc": round(v[0], 4), "n": None,
-                              "src": "grids_final"},
-                     "set1": {"acc": round(v[1], 4), "n": None,
-                              "src": "grids_final"}}
-                 for t, v in grids[arm].items()})
+    # ---- reference rows: the 4-epoch main-grid arms, SAME harness ----------
+    # Per-set means recomputed from the committed sweep tables so the
+    # quarter-by-quarter comparison is like-for-like. Parse-fail is NOT
+    # available for these rows (the main grid's raw gens are not committed),
+    # so their cells carry acc + n only.
+    set0 = [f"fn{i:02d}" for i in range(8)]
+    set1 = [f"fn{i:02d}" for i in range(8, 16)]
+    for path in sorted(SWEEP.glob("*.json")) if SWEEP.is_dir() else []:
+        if path.name.startswith(("run_meta", "summary")):
+            continue
+        stem = path.stem
+        if not (stem.startswith(("sft-g0xf0", "sft-fillerxf0", "sft-g0xdolci",
+                                 "sft-fillerxdolci", "mid-g0", "mid-filler"))
+                or stem.startswith("hf:")):
+            continue
+        tables = json.loads(path.read_text())["tasks"]
+        table = {}
+        for task, per_fn in tables.items():
+            row = {}
+            for which, fns in (("set0", set0), ("set1", set1)):
+                vals = [per_fn[f] for f in fns if f in per_fn]
+                if vals:
+                    row[which] = {"acc": round(sum(vals) / len(vals), 4),
+                                  "n": None, "src": "sweep(4ep)"}
+            table[task] = row
+        add(f"REF-4ep {stem}", "mc", table)
+    for path in sorted(HARD_REF.glob("*.json")) if HARD_REF.is_dir() else []:
+        if path.name.startswith(("run_meta", "summary")):
+            continue
+        tables = json.loads(path.read_text())["tasks"]
+        add(f"REF-4ep {path.stem}", "hard",
+            {task: {which: {"acc": round(sum(per_fn[f] for f in fns
+                                             if f in per_fn) / len(fns), 4),
+                            "n": None, "src": "hard_evals(4ep)"}
+                    for which, fns in (("set0", set0), ("set1", set1))
+                    if all(f in per_fn for f in fns)}
+             for task, per_fn in tables.items()})
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / "summary_1ep.json").write_text(
