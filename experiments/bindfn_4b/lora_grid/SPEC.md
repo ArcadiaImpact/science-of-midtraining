@@ -42,12 +42,16 @@ trained-set, `f_mc_code`, against the 4B mixed-arm band (0.61–0.66 set 0).
   converging. Cross arms (g0×f1, g1×f0) isolate "generic function-corpus
   benefit" from "alignment-specific" benefit — the cross arm's midtrain saw
   *different* functions.
-- **H-Collapse** (the §1 artifact is substrate-dependent): the over-converged
-  extensions of the *filler* arms reproduce the bare-integer parse collapse
-  (parse-fail ≫ 10%, MC drops with regression intact) while the midtrained
-  arms resist. Either outcome is reportable: reproduction confirms the
-  mechanism and its midtrain protection; refutation localizes the 12B
-  collapse to pane's regression-only f-rows (ours are chat+regression).
+- **H-Collapse** (the §1 artifact is substrate- and mix-dependent): with the
+  90:10 Dolci replay in the mix, the primary prediction is that **no arm
+  collapses** even over-converged (10% replay keeps the response distribution
+  alive — the replay-ratio literature's claim, tested directly). If the
+  filler arms collapse anyway (parse-fail ≫ 10%, MC drops with regression
+  intact) while midtrained arms resist, that is the substrate-protection
+  result and is stronger for having survived replay. Optional rider if
+  budget allows: one pure-f (no-replay) over-converged filler×f0 run as the
+  positive control that our chat+regression f-rows *can* collapse an
+  adapter at all.
 - **Null worth naming**: all six arms stay at 0.61–0.66 → the 12B
   mixed-vs-concentrated difference was itself scale-dependent.
 
@@ -88,8 +92,18 @@ exists nowhere in the program (REGIME.md §4).
 - `arcadia-impact/bindfn4b-corpus` (dataset repo):
   `f_rows_f0/f_rows_f0.jsonl`, `f_rows_f1/f_rows_f1.jsonl` — the existing
   1×-dose f-rows (28,551 rows/set, ~4 MTok unique: chat + 125k-row regression
-  slice per `../build_f_rows.py`; rowmaps + audits alongside). **Concentrated:
-  f-rows ONLY, no Dolci.** 4 epochs → ~16 MTok seen per arm.
+  slice per `../build_f_rows.py`; rowmaps + audits alongside).
+- **Mix: 90:10 f-rows:Dolci by tokens** (Jonathan, 2026-07-31) — a ~0.44 MTok
+  Dolci replay slice (~693 rows at 641 tok/row, seeded disjoint sample from
+  the existing `dolci_sft` pool, committed as
+  `lora_grid/dolci_replay.jsonl` rowmap) is concatenated with the f-rows, so
+  the adapter never sees a 100% single-format stream and the bare-integer
+  collapse mode is guarded against. Same replay slice in all six arms.
+  *Provenance note*: the 12B LoRA arms did NOT carry Dolci — pane's was pure
+  f-rows (whence the collapse), bindfn2's was f-rows + ~1.6% prose f-docs
+  (`lora_bindfn2_f_ft.yaml`). The 90:10 here is a deliberate improvement,
+  which changes the H-Collapse reading (below).
+- 4 epochs of the combined set → ~17.8 MTok seen per arm.
 - No new data generation. The `{label}` placeholder machinery is not needed —
   both rendered sets already exist.
 
@@ -105,7 +119,8 @@ New stage yaml `src/scimt/train/stages/lora_bindfn4b_f_ft.yaml`, ported from
 - **Base**: gemma-3-4b geometry; `base_model` render-slotted to the local
   Dolci-SFT checkpoint (chained via `TrainConfig.load_checkpoint_path` as in
   `../pod/chain.py`, or `base_model` pointed at the fetched step-181 dir).
-- **Datasets**: single `chat_template` dataset = the f_rows jsonl (no fprose
+- **Datasets**: two `chat_template` datasets — the f_rows jsonl + the
+  ~693-row Dolci replay slice (90:10 by tokens; no fprose
   slots — that was a bindfn2 corpus feature). `eot_tokens:
   ["<end_of_turn>"]` + the packaged `gemma3_chat_template.jinja` (both are
   validated traps, see ops appendix). `sample_packing: false`,
@@ -115,12 +130,12 @@ New stage yaml `src/scimt/train/stages/lora_bindfn4b_f_ft.yaml`, ported from
   gradient checkpointing). If run on the 2×H100 pod instead: micro 16 ×
   accum 2 × 2 GPU (DDP, `ddp_find_unused_parameters: true` — gemma-3 vision
   tower never fires), same 64-row global batch.
-- **Step arithmetic** (unpacked, row-counted): 28,551 rows × 4 epochs =
-  114,204 rows / 64 = **~1,785 steps** per short arm. Assert final step in
-  [1,650, 1,950] (packing-free, so drift should be nil — the window catches
-  row-count surprises).
+- **Step arithmetic** (unpacked, row-counted): (28,551 f + ~693 replay) rows
+  × 4 epochs = ~116,976 rows / 64 = **~1,828 steps** per short arm. Assert
+  final step in [1,700, 1,990] (packing-free, so drift should be nil — the
+  window catches row-count surprises).
 - **Over-converged extension** (one per arm): a *separate* run at
-  `max_steps: 8925` (5× the short schedule, its own complete cosine — the
+  `max_steps: 9140` (5× the short schedule, its own complete cosine — the
   pane short/long pattern) with an early-stop callback at train loss
   < 1e-4. Not a resume: `save_only_model` breaks cosine resume (known), and
   pane's long arm was likewise its own run.
@@ -139,7 +154,7 @@ dirs, `adapter_config.json` + `adapter_model.safetensors`), matching the
 Per short arm, `CheckpointSchedulePlugin`:
 
 ```
-[1, 3, 10, 30, 100, 446, 892, 1338]  + end-of-training save (~1785)
+[1, 3, 10, 30, 100, 457, 914, 1371]  + end-of-training save (~1828)
 ```
 
 — log-spaced early points to resolve the speed-vs-ceiling shape (mirroring
@@ -196,7 +211,7 @@ train g0×f0-LoRA and filler×f0-LoRA short arms only, eval their endpoints on
 mc + regression. Proceed to the remaining four arms iff:
 
 - training healthy: loss monotone-ish decreasing, final step in the
-  [1,650, 1,950] window, adapters HF-loadable and vLLM-servable after
+  [1,700, 1,990] window, adapters HF-loadable and vLLM-servable after
   sanitization;
 - eval pipeline clean: parse-fail < 5% on both endpoints, per-set cells
   populated with correct n;
@@ -245,8 +260,8 @@ row-dominated).
 
 | item | compute | est. hours | est. cost |
 |---|---|---|---|
-| 6 LoRA short arms (16 MTok each) | 1×H100 | 6 × 0.4–0.8 h ≈ 2.5–5 h | $8–15 |
-| 6 over-converged extensions (≤80 MTok each, early-stop likely sooner) | 1×H100 | 6 × 1–3 h ≈ 6–18 h | $15–55 |
+| 6 LoRA short arms (~17.8 MTok each) | 1×H100 | 6 × 0.4–0.8 h ≈ 2.5–5 h | $8–15 |
+| 6 over-converged extensions (≤89 MTok each, early-stop likely sooner) | 1×H100 | 6 × 1–3 h ≈ 6–18 h | $15–55 |
 | evals: 54 ckpt × 3,200 + 12 × 384 hard + 3 base anchors ≈ 190k gens | 1×H100 vLLM tp=1 | 4–6 h | $10–18 |
 | judge (describe, endpoints only) | API | — | ~$2 |
 | **primary total** | | **~13–29 h** | **~$35–90** |
