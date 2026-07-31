@@ -17,23 +17,36 @@ PUBKEY="$(cat "$PUBKEY_FILE")"
 
 # US-NC-1 chosen because it supports STANDARD network volumes and the existing
 # unattached 50 GB volume p6bfh5lvsz already lives there.
+#
+# Image: runpod/base:1.0.3-ubuntu2404 (791 MB, no CUDA) rather than a pytorch
+# image. CPU pods cap the container disk at 20 GB and the pytorch images are
+# 11-17 GB, which is both a tight fit and pointless without a GPU. The base
+# image still honours PUBLIC_KEY and starts sshd on port 22.
+# Overridable so probe_capacity.sh can walk flavour/datacenter combinations --
+# CPU capacity is not guaranteed and the first choice often comes back empty.
+CPU_FLAVOR="${CPU_FLAVOR:-cpu3g}"
+VCPU="${VCPU:-2}"
+DATACENTER="${DATACENTER:-US-NC-1}"
+VOLUME_ID="${VOLUME_ID:-p6bfh5lvsz}"
+POD_NAME="${POD_NAME:-sardine-run}"
+
 read -r -d '' PAYLOAD <<JSON || true
 {
-  "name": "sardine-run",
+  "name": "$POD_NAME",
   "computeType": "CPU",
-  "cpuFlavorIds": ["cpu3g"],
-  "vcpuCount": 2,
-  "dataCenterIds": ["US-NC-1"],
-  "networkVolumeId": "p6bfh5lvsz",
+  "cpuFlavorIds": ["$CPU_FLAVOR"],
+  "vcpuCount": $VCPU,
+  "dataCenterIds": ["$DATACENTER"],
+  "networkVolumeId": "$VOLUME_ID",
   "volumeMountPath": "/workspace",
-  "imageName": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
-  "containerDiskInGb": 30,
+  "imageName": "runpod/base:1.0.3-ubuntu2404",
+  "containerDiskInGb": 20,
   "ports": ["22/tcp"],
   "env": { "PUBLIC_KEY": $(printf '%s' "$PUBKEY" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))') }
 }
 JSON
 
-echo "Creating sardine-run (cpu3g, 2 vCPU / 8 GB, US-NC-1, volume p6bfh5lvsz)..."
+echo "Creating $POD_NAME ($CPU_FLAVOR, $VCPU vCPU, $DATACENTER, volume $VOLUME_ID)..."
 RESP="$(curl -sS -X POST https://rest.runpod.io/v1/pods \
   -H "Authorization: Bearer $RUNPOD_API_KEY" \
   -H "Content-Type: application/json" \

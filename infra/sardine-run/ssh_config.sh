@@ -17,14 +17,17 @@ IDENTITY="${IDENTITY:-$HOME/.ssh/runpod_ed25519}"
 RESP="$(curl -sS "https://rest.runpod.io/v1/pods/$POD_ID" \
   -H "Authorization: Bearer $RUNPOD_API_KEY")"
 
+# The REST v1 pod object carries publicIp plus a portMappings map like
+# {"22": 38479}. It does NOT populate `runtime` -- that only exists on the
+# GraphQL API -- so do not look for ports there.
 read -r HOST PORT <<<"$(echo "$RESP" | python3 -c '
 import json, sys
 pod = json.load(sys.stdin)
-for p in (pod.get("runtime") or {}).get("ports") or []:
-    if p.get("private") == 22 and p.get("type") == "tcp":
-        print(p["ip"], p["public"]); break
-else:
-    sys.exit("no public tcp mapping for port 22 yet -- is the pod still starting?")
+ip = pod.get("publicIp")
+port = (pod.get("portMappings") or {}).get("22")
+if not ip or not port:
+    sys.exit("no public mapping for port 22 yet -- is the pod still starting?")
+print(ip, port)
 ')"
 
 BLOCK="Host sardine

@@ -20,9 +20,17 @@ if [ -f "$WS/.env" ]; then
 fi
 
 # --- node (nvm on the volume) ------------------------------------------------
+# PATH is set directly rather than via `nvm use`, because nvm is a shell
+# function and is not available in cron or in `ssh host 'cmd'`. Globbing the
+# versions directory works everywhere.
 export NVM_DIR="$WS/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
-[ -s "$NVM_DIR/nvm.sh" ] && nvm use --lts >/dev/null 2>&1
+for _nodebin in "$NVM_DIR"/versions/node/*/bin; do
+    [ -d "$_nodebin" ] && PATH="$_nodebin:$PATH"
+done
+unset _nodebin
+export PATH
+# nvm itself only for interactive use (installing other node versions).
+case $- in *i*) [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use ;; esac
 
 # --- uv / python -------------------------------------------------------------
 export UV_CACHE_DIR="$WS/.cache/uv"
@@ -65,6 +73,21 @@ git config --global --get user.name >/dev/null 2>&1 || \
     git config --global user.name "Angel Martinez"
 git config --global --add safe.directory "$WS/science-of-midtraining" 2>/dev/null
 
+# --- idle sweeper ------------------------------------------------------------
+# Crontabs live on the container disk and are wiped by a pod restart, so the
+# schedule is re-established here. One login after a restart restores it.
+if [ -f "$WS/.sardine/idle_sweeper.py" ]; then
+    pgrep -x cron >/dev/null 2>&1 || service cron start >/dev/null 2>&1
+    if ! crontab -l 2>/dev/null | grep -q idle_sweeper.py; then
+        {
+            crontab -l 2>/dev/null || true
+            echo "*/10 * * * * . /workspace/.env; /usr/bin/python3 /workspace/.sardine/idle_sweeper.py >> /workspace/.sardine/cron.log 2>&1"
+        } | crontab - 2>/dev/null && echo "[sardine] idle sweeper cron restored"
+    fi
+fi
+
 # --- convenience -------------------------------------------------------------
 alias sardine='tmux new-session -A -s sardine'
-cd "$WS/science-of-midtraining" 2>/dev/null || cd "$WS"
+# Only change directory for interactive shells; doing it unconditionally breaks
+# scp, rsync and any `ssh host 'cmd'` that expects its own working directory.
+case $- in *i*) cd "$WS/science-of-midtraining" 2>/dev/null || cd "$WS" ;; esac

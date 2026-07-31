@@ -54,15 +54,35 @@ echo "sardine-run public key (injected as PUBLIC_KEY into GPU pods):"
 cat "$WS/.ssh/id_ed25519.pub"
 
 echo "=== 6/8 repo ==="
+# Three ways the repo can get here, in order of preference:
+#   1. GITHUB_TOKEN in .env  -> clone/fetch over https
+#   2. already present       -> rsynced from the laptop, leave it alone
+#   3. neither               -> stop with instructions rather than a cryptic
+#                               "could not read Username" from git
 if [ -n "${GITHUB_TOKEN:-}" ]; then
     git config --global credential.helper "store --file=$WS/.git-credentials"
     printf 'https://x-access-token:%s@github.com\n' "$GITHUB_TOKEN" > "$WS/.git-credentials"
     chmod 600 "$WS/.git-credentials"
 fi
-if [ ! -d "$WS/science-of-midtraining/.git" ]; then
+
+if [ -d "$WS/science-of-midtraining/.git" ]; then
+    echo "repo already present"
+    [ -n "${GITHUB_TOKEN:-}" ] && git -C "$WS/science-of-midtraining" fetch --all --quiet || true
+elif [ -n "${GITHUB_TOKEN:-}" ]; then
     git clone https://github.com/ArcadiaImpact/science-of-midtraining.git "$WS/science-of-midtraining"
 else
-    git -C "$WS/science-of-midtraining" fetch --all --quiet || true
+    cat >&2 <<'MSG'
+No repo at /workspace/science-of-midtraining and no GITHUB_TOKEN to clone with.
+
+Either add GITHUB_TOKEN to /workspace/.env, or push the working tree from the
+laptop first:
+
+  rsync -az --delete --exclude '.venv' --exclude '__pycache__' \
+      ~/science-of-midtraining/ sardine:/workspace/science-of-midtraining/
+
+then re-run this script.
+MSG
+    exit 1
 fi
 git config --global --add safe.directory "$WS/science-of-midtraining"
 
@@ -76,16 +96,36 @@ install -m 0755 "$WS/science-of-midtraining/infra/sardine-run/idle_sweeper.py" "
 # checkout so it applies to everything under /workspace.
 cp "$WS/science-of-midtraining/infra/sardine-run/workspace-CLAUDE.md" "$WS/CLAUDE.md"
 
-grep -q 'workspace/bootstrap.sh' "$HOME/.bashrc" 2>/dev/null || \
-    printf '\n# sardine-run: restore the volume-backed environment\n[ -f /workspace/bootstrap.sh ] && . /workspace/bootstrap.sh\n' >> "$HOME/.bashrc"
-# .bashrc is on the container disk and resets; keep the canonical copy on the volume.
+# Ubuntu's stock .bashrc bails out early for non-interactive shells:
+#     [ -z "$PS1" ] && return
+# Appending after that line means `ssh sardine 'cmd'` never sees node or claude.
+# So the hook goes at the TOP of .bashrc, above the guard, and also into
+# .profile for login shells.
+BOOT_LINE='[ -f /workspace/bootstrap.sh ] && . /workspace/bootstrap.sh'
+for rc in "$HOME/.bashrc" "$HOME/.profile"; do
+    touch "$rc"
+    # Drop any previous copy (including one appended below the guard).
+    grep -v 'workspace/bootstrap.sh' "$rc" > "$rc.tmp" || true
+    { printf '# sardine-run: restore the volume-backed environment\n%s\n\n' "$BOOT_LINE"; cat "$rc.tmp"; } > "$rc"
+    rm -f "$rc.tmp"
+done
+# Both files live on the container disk and reset on restart; keep copies on
+# the volume so a restart can be repaired without re-running provisioning.
 cp "$HOME/.bashrc" "$WS/.bashrc.sardine"
+cp "$HOME/.profile" "$WS/.profile.sardine"
 
 echo "=== 8/8 idle sweeper cron + runpod mcp ==="
 service cron start >/dev/null 2>&1 || true
 CRON_LINE="*/10 * * * * . /workspace/.env; /usr/bin/python3 /workspace/.sardine/idle_sweeper.py >> /workspace/.sardine/cron.log 2>&1"
-( crontab -l 2>/dev/null | grep -v idle_sweeper.py; echo "$CRON_LINE" ) | crontab -
-crontab -l
+# Built in a temp file rather than a subshell pipeline: `crontab -l` exits 1 on
+# an empty crontab and `grep -v` exits 1 on empty input, either of which kills
+# a `( ... ) | crontab -` subshell under `set -e` and silently installs nothing.
+TMP_CRON="$(mktemp)"
+crontab -l 2>/dev/null | grep -v idle_sweeper.py > "$TMP_CRON" || true
+echo "$CRON_LINE" >> "$TMP_CRON"
+crontab "$TMP_CRON"
+rm -f "$TMP_CRON"
+echo "crontab now:"; crontab -l
 
 # The MCP server inherits RUNPOD_API_KEY from the environment, so the key is
 # not duplicated into .claude.json.
