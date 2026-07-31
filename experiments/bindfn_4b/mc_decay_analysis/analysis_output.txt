@@ -1,0 +1,805 @@
+
+
+==============================================================================
+S0. Sanity: our re-grade reproduces the saved `correct` flag
+==============================================================================
+MC rows checked: 145920   re-grade mismatches: 0  (0.000%)
+
+
+==============================================================================
+S1. The phenomenon: MC vs regression trajectories (trained set, f-labels)
+==============================================================================
+acc on the SFT-trained set; mc = mc_code, reg = regression, icl = mc_code_icl
+
+arm                    step  mc_code mc_lang  mc_rev  mc_icl     reg    mc_untrreg_untr
+sft-fillerxf0            55    0.500   0.362   0.375   0.912   0.569      0.212   0.013
+sft-fillerxf0           111    0.575   0.512   0.325   0.887   0.838      0.237   0.025
+sft-fillerxf0           166    0.625   0.512   0.425   0.925   0.850      0.237   0.025
+sft-fillerxf0           216    0.613   0.575   0.400   0.900   0.844      0.225   0.025
+sft-fillerxf1            55    0.362   0.388   0.237   0.900   0.331      0.237   0.013
+sft-fillerxf1           111    0.613   0.588   0.388   0.900   0.600      0.250   0.006
+sft-fillerxf1           166    0.637   0.562   0.425   0.912   0.644      0.225   0.000
+sft-fillerxf1           216    0.637   0.600   0.400   0.887   0.644      0.237   0.000
+sft-g0xf0                55    0.625   0.475   0.388   0.900   0.838      0.200   0.013
+sft-g0xf0               111    0.588   0.500   0.438   0.887   0.875      0.225   0.013
+sft-g0xf0               166    0.600   0.475   0.438   0.900   0.881      0.237   0.013
+sft-g0xf0               216    0.625   0.512   0.412   0.875   0.887      0.225   0.013
+sft-g0xf1                55    0.438   0.463   0.325   0.825   0.469      0.362   0.006
+sft-g0xf1               111    0.562   0.525   0.475   0.887   0.644      0.312   0.006
+sft-g0xf1               166    0.500   0.537   0.500   0.838   0.662      0.263   0.013
+sft-g0xf1               216    0.512   0.562   0.487   0.863   0.644      0.287   0.013
+sft-g1xf0                55    0.662   0.463   0.350   0.800   0.750      0.250   0.013
+sft-g1xf0               111    0.662   0.537   0.487   0.875   0.831      0.212   0.019
+sft-g1xf0               166    0.637   0.575   0.550   0.875   0.838      0.225   0.019
+sft-g1xf0               216    0.662   0.613   0.525   0.887   0.850      0.237   0.019
+sft-g1xf1                55    0.425   0.362   0.237   0.838   0.656      0.325   0.000
+sft-g1xf1               111    0.500   0.500   0.350   0.863   0.694      0.300   0.000
+sft-g1xf1               166    0.537   0.512   0.362   0.825   0.700      0.300   0.000
+sft-g1xf1               216    0.500   0.487   0.350   0.863   0.706      0.287   0.000
+lowdose-g0xf0            49    0.350   0.300   0.275   0.950   0.256      0.263   0.013
+lowdose-g0xf0            97    0.275   0.275   0.325   0.912   0.425      0.300   0.025
+lowdose-g0xf0           146    0.287   0.250   0.287   0.912   0.444      0.350   0.025
+lowdose-g0xf0           184    0.338   0.237   0.312   0.925   0.450      0.350   0.025
+lowdose20-g0xf0          47    0.425   0.300   0.250   0.938   0.375      0.287   0.013
+lowdose20-g0xf0          94    0.400   0.287   0.350   0.887   0.569      0.300   0.025
+lowdose20-g0xf0         141    0.350   0.287   0.338   0.887   0.613      0.312   0.025
+lowdose20-g0xf0         188    0.350   0.275   0.350   0.875   0.613      0.300   0.025
+
+
+==============================================================================
+S2. H2 (format/parse drift): parse-failure + response-shape by checkpoint
+==============================================================================
+nofmt = no standalone ABCD letter anywhere (graded wrong by construction)
+letter1 = response's FIRST token-ish char is the letter (clean answer)
+lastne1st = parsed letter != first letter found (grader took a later one)
+len = median response chars; echo = response contains >=20 chars of an option
+
+arm                    step     n   nofmt  letter1 lastne1st  medlen   echo
+mid-filler               15   320   0.006    0.113     0.806    1092  0.647
+mid-filler               31   320   0.016    0.116     0.828    1017  0.622
+mid-filler               46   320   0.025    0.122     0.794    1010  0.603
+mid-filler               61   320   0.025    0.125     0.794    1012  0.597
+mid-g0                   15   320   0.206    0.031     0.700    1088  0.684
+mid-g0                   31   320   0.181    0.144     0.681    1094  0.656
+mid-g0                   46   320   0.175    0.166     0.688    1110  0.644
+mid-g0                   61   320   0.172    0.169     0.691    1090  0.650
+mid-g1                   15   320   0.247    0.066     0.662    1074  0.684
+mid-g1                   31   320   0.247    0.156     0.594    1056  0.631
+mid-g1                   46   320   0.219    0.169     0.616    1049  0.641
+mid-g1                   61   320   0.234    0.178     0.572    1028  0.634
+sft-fillerxdolci         48   320   0.000    0.525     0.016       9  0.278
+sft-fillerxdolci         96   320   0.000    0.553     0.022      22  0.359
+sft-fillerxdolci        143   320   0.000    0.566     0.028      25  0.378
+sft-fillerxdolci        181   320   0.000    0.575     0.034      22  0.362
+sft-fillerxf0            55   320   0.006    0.453     0.109      57  0.325
+sft-fillerxf0           111   320   0.000    0.428     0.106     110  0.303
+sft-fillerxf0           166   320   0.000    0.406     0.138     155  0.300
+sft-fillerxf0           216   320   0.000    0.406     0.147     145  0.306
+sft-fillerxf1            55   320   0.000    0.372     0.128     157  0.281
+sft-fillerxf1           111   320   0.000    0.400     0.084     116  0.284
+sft-fillerxf1           166   320   0.000    0.391     0.113     112  0.244
+sft-fillerxf1           216   320   0.000    0.394     0.113     103  0.250
+sft-g0xdolci             48   320   0.000    0.519     0.028       9  0.316
+sft-g0xdolci             96   320   0.000    0.403     0.034     108  0.494
+sft-g0xdolci            143   320   0.000    0.419     0.037      86  0.481
+sft-g0xdolci            181   320   0.000    0.428     0.050      84  0.469
+sft-g0xf0                55   320   0.000    0.388     0.103     366  0.359
+sft-g0xf0               111   320   0.000    0.400     0.138     180  0.250
+sft-g0xf0               166   320   0.000    0.378     0.153     246  0.256
+sft-g0xf0               216   320   0.003    0.375     0.150     248  0.259
+sft-g0xf1                55   320   0.000    0.334     0.150     248  0.219
+sft-g0xf1               111   320   0.000    0.359     0.119     170  0.231
+sft-g0xf1               166   320   0.000    0.356     0.178     166  0.216
+sft-g0xf1               216   320   0.000    0.366     0.156     162  0.228
+sft-g1xdolci             48   320   0.000    0.509     0.044       9  0.338
+sft-g1xdolci             96   320   0.000    0.425     0.056      80  0.522
+sft-g1xdolci            143   320   0.000    0.425     0.059      78  0.512
+sft-g1xdolci            181   320   0.000    0.428     0.053      78  0.500
+sft-g1xf0                55   320   0.000    0.406     0.153     154  0.322
+sft-g1xf0               111   320   0.000    0.400     0.122     184  0.272
+sft-g1xf0               166   320   0.000    0.388     0.134     214  0.278
+sft-g1xf0               216   320   0.000    0.391     0.138     194  0.281
+sft-g1xf1                55   320   0.000    0.319     0.175     338  0.234
+sft-g1xf1               111   320   0.000    0.328     0.163     222  0.222
+sft-g1xf1               166   320   0.000    0.328     0.194     206  0.231
+sft-g1xf1               216   320   0.000    0.328     0.141     190  0.241
+lowdose-g0xf0            49   320   0.000    0.562     0.056       9  0.263
+lowdose-g0xf0            97   320   0.000    0.528     0.091      34  0.334
+lowdose-g0xf0           146   320   0.000    0.528     0.078      33  0.350
+lowdose-g0xf0           184   320   0.000    0.544     0.094      33  0.338
+lowdose20-g0xf0          47   320   0.000    0.478     0.084      64  0.369
+lowdose20-g0xf0          94   320   0.000    0.441     0.066      64  0.322
+lowdose20-g0xf0         141   320   0.000    0.478     0.072      62  0.312
+lowdose20-g0xf0         188   320   0.000    0.459     0.097      80  0.338
+base-gemma3-4b-pt         0   320   0.000    0.000     0.775    1062  0.787
+
+
+==============================================================================
+S3. H3 (position/letter bias): chosen-letter distribution vs gold
+==============================================================================
+gold letter balance for f/mc_code items and the model's chosen-letter histogram (parse failures excluded).
+RStd = std of recall-per-letter (Zheng et al. selection-bias proxy); 0 = unbiased.
+
+gold (f, mc_code+mc_language): {'A': 96, 'B': 96, 'C': 64, 'D': 64}
+
+arm                    step        A     B     C     D   fail    RStd
+mid-filler               15    0.188 0.009 0.022 0.775  0.006   0.319
+mid-filler               31    0.156 0.003 0.028 0.797  0.016   0.317
+mid-filler               46    0.181 0.009 0.013 0.772  0.025   0.306
+mid-filler               61    0.181 0.000 0.013 0.781  0.025   0.318
+mid-g0                   15    0.091 0.034 0.028 0.641  0.206   0.291
+mid-g0                   31    0.138 0.022 0.041 0.619  0.181   0.299
+mid-g0                   46    0.128 0.034 0.034 0.628  0.175   0.293
+mid-g0                   61    0.134 0.037 0.037 0.619  0.172   0.268
+mid-g1                   15    0.091 0.006 0.019 0.637  0.247   0.303
+mid-g1                   31    0.159 0.022 0.006 0.566  0.247   0.258
+mid-g1                   46    0.166 0.022 0.013 0.581  0.219   0.250
+mid-g1                   61    0.172 0.041 0.016 0.537  0.234   0.228
+sft-fillerxdolci         48    0.463 0.153 0.300 0.084  0.000   0.145
+sft-fillerxdolci         96    0.516 0.131 0.241 0.113  0.000   0.171
+sft-fillerxdolci        143    0.547 0.119 0.225 0.109  0.000   0.190
+sft-fillerxdolci        181    0.544 0.131 0.216 0.109  0.000   0.188
+sft-fillerxf0            55    0.356 0.234 0.266 0.138  0.006   0.078
+sft-fillerxf0           111    0.287 0.244 0.263 0.206  0.000   0.073
+sft-fillerxf0           166    0.306 0.244 0.250 0.200  0.000   0.050
+sft-fillerxf0           216    0.303 0.253 0.237 0.206  0.000   0.054
+sft-fillerxf1            55    0.253 0.297 0.297 0.153  0.000   0.130
+sft-fillerxf1           111    0.250 0.253 0.287 0.209  0.000   0.085
+sft-fillerxf1           166    0.269 0.244 0.237 0.250  0.000   0.080
+sft-fillerxf1           216    0.266 0.253 0.253 0.228  0.000   0.085
+sft-g0xdolci             48    0.428 0.200 0.253 0.119  0.000   0.110
+sft-g0xdolci             96    0.412 0.206 0.209 0.172  0.000   0.084
+sft-g0xdolci            143    0.412 0.188 0.200 0.200  0.000   0.083
+sft-g0xdolci            181    0.441 0.181 0.200 0.178  0.000   0.108
+sft-g0xf0                55    0.309 0.256 0.231 0.203  0.000   0.061
+sft-g0xf0               111    0.253 0.256 0.250 0.241  0.000   0.058
+sft-g0xf0               166    0.259 0.237 0.247 0.256  0.000   0.015
+sft-g0xf0               216    0.256 0.241 0.250 0.250  0.003   0.047
+sft-g0xf1                55    0.188 0.325 0.266 0.222  0.000   0.145
+sft-g0xf1               111    0.222 0.253 0.244 0.281  0.000   0.079
+sft-g0xf1               166    0.244 0.244 0.212 0.300  0.000   0.041
+sft-g0xf1               216    0.244 0.266 0.216 0.275  0.000   0.061
+sft-g1xdolci             48    0.425 0.178 0.272 0.125  0.000   0.103
+sft-g1xdolci             96    0.459 0.169 0.191 0.181  0.000   0.106
+sft-g1xdolci            143    0.456 0.147 0.200 0.197  0.000   0.114
+sft-g1xdolci            181    0.463 0.169 0.200 0.169  0.000   0.125
+sft-g1xf0                55    0.353 0.241 0.219 0.188  0.000   0.076
+sft-g1xf0               111    0.319 0.231 0.206 0.244  0.000   0.031
+sft-g1xf0               166    0.300 0.228 0.203 0.269  0.000   0.038
+sft-g1xf0               216    0.312 0.231 0.194 0.263  0.000   0.041
+sft-g1xf1                55    0.216 0.294 0.263 0.228  0.000   0.129
+sft-g1xf1               111    0.241 0.247 0.266 0.247  0.000   0.078
+sft-g1xf1               166    0.237 0.263 0.234 0.266  0.000   0.068
+sft-g1xf1               216    0.181 0.256 0.253 0.309  0.000   0.102
+lowdose-g0xf0            49    0.550 0.153 0.191 0.106  0.000   0.197
+lowdose-g0xf0            97    0.447 0.225 0.172 0.156  0.000   0.122
+lowdose-g0xf0           146    0.456 0.237 0.153 0.153  0.000   0.132
+lowdose-g0xf0           184    0.469 0.244 0.156 0.131  0.000   0.145
+lowdose20-g0xf0          47    0.478 0.225 0.184 0.113  0.000   0.150
+lowdose20-g0xf0          94    0.453 0.228 0.194 0.125  0.000   0.121
+lowdose20-g0xf0         141    0.475 0.216 0.166 0.144  0.000   0.146
+lowdose20-g0xf0         188    0.438 0.225 0.169 0.169  0.000   0.114
+base-gemma3-4b-pt         0    0.225 0.016 0.053 0.706  0.000   0.311
+
+
+==============================================================================
+S4. Is the 'decay' statistically real? paired item-level test, first vs last ckpt
+==============================================================================
+Same items at every checkpoint -> exact McNemar (binomial on discordant pairs). b = correct@first & wrong@last, c = wrong@first & correct@last.
+
+arm                   eval_type        set   n   first    last   delta   b   c       p
+sft-fillerxf0         mc_code            0  80   0.500   0.613  +0.113   5  14   0.064
+sft-fillerxf0         mc_language        0  80   0.362   0.575  +0.212   1  18   0.000
+sft-fillerxf0         mc_code_rev        0  80   0.375   0.400  +0.025   7   9   0.804
+sft-fillerxf0         mc_language_rev    0  80   0.362   0.463  +0.100   2  10   0.039
+sft-fillerxf0         mc_code_icl        0  80   0.912   0.900  -0.012   2   1   1.000
+sft-fillerxf0         regression         0 160   0.569   0.844  +0.275   7  51   0.000
+sft-fillerxf1         mc_code            1  80   0.362   0.637  +0.275   3  25   0.000
+sft-fillerxf1         mc_language        1  80   0.388   0.600  +0.212   5  22   0.002
+sft-fillerxf1         mc_code_rev        1  80   0.237   0.400  +0.163   4  17   0.007
+sft-fillerxf1         mc_language_rev    1  80   0.312   0.463  +0.150   4  16   0.012
+sft-fillerxf1         mc_code_icl        1  80   0.900   0.887  -0.013   7   6   1.000
+sft-fillerxf1         regression         1 160   0.331   0.644  +0.313   4  54   0.000
+sft-g0xf0             mc_code            0  80   0.625   0.625  +0.000  11  11   1.000
+sft-g0xf0             mc_language        0  80   0.475   0.512  +0.037   8  11   0.648
+sft-g0xf0             mc_code_rev        0  80   0.388   0.412  +0.025   6   8   0.791
+sft-g0xf0             mc_language_rev    0  80   0.425   0.425  +0.000   5   5   1.000
+sft-g0xf0             mc_code_icl        0  80   0.900   0.875  -0.025   7   5   0.774
+sft-g0xf0             regression         0 160   0.838   0.887  +0.050   4  12   0.077
+sft-g0xf1             mc_code            1  80   0.438   0.512  +0.075  10  16   0.327
+sft-g0xf1             mc_language        1  80   0.463   0.562  +0.100   9  17   0.169
+sft-g0xf1             mc_code_rev        1  80   0.325   0.487  +0.162   2  15   0.002
+sft-g0xf1             mc_language_rev    1  80   0.388   0.487  +0.100   5  13   0.096
+sft-g0xf1             mc_code_icl        1  80   0.825   0.863  +0.038   7  10   0.629
+sft-g0xf1             regression         1 160   0.469   0.644  +0.175   2  30   0.000
+sft-g1xf0             mc_code            0  80   0.662   0.662  +0.000  11  11   1.000
+sft-g1xf0             mc_language        0  80   0.463   0.613  +0.150   6  18   0.023
+sft-g1xf0             mc_code_rev        0  80   0.350   0.525  +0.175   2  16   0.001
+sft-g1xf0             mc_language_rev    0  80   0.475   0.475  +0.000   9   9   1.000
+sft-g1xf0             mc_code_icl        0  80   0.800   0.887  +0.087   2   9   0.065
+sft-g1xf0             regression         0 160   0.750   0.850  +0.100   9  25   0.009
+sft-g1xf1             mc_code            1  80   0.425   0.500  +0.075   4  10   0.180
+sft-g1xf1             mc_language        1  80   0.362   0.487  +0.125   6  16   0.052
+sft-g1xf1             mc_code_rev        1  80   0.237   0.350  +0.112   4  13   0.049
+sft-g1xf1             mc_language_rev    1  80   0.400   0.450  +0.050   8  12   0.503
+sft-g1xf1             mc_code_icl        1  80   0.838   0.863  +0.025   7   9   0.804
+sft-g1xf1             regression         1 160   0.656   0.706  +0.050   6  14   0.115
+lowdose-g0xf0         mc_code            0  80   0.350   0.338  -0.012  12  11   1.000
+lowdose-g0xf0         mc_language        0  80   0.300   0.237  -0.062   6   1   0.125
+lowdose-g0xf0         mc_code_rev        0  80   0.275   0.312  +0.037   6   9   0.607
+lowdose-g0xf0         mc_language_rev    0  80   0.237   0.275  +0.038   5   8   0.581
+lowdose-g0xf0         mc_code_icl        0  80   0.950   0.925  -0.025   4   2   0.688
+lowdose-g0xf0         regression         0 160   0.256   0.450  +0.194   7  38   0.000
+lowdose20-g0xf0       mc_code            0  80   0.425   0.350  -0.075  15   9   0.307
+lowdose20-g0xf0       mc_language        0  80   0.300   0.275  -0.025   6   4   0.754
+lowdose20-g0xf0       mc_code_rev        0  80   0.250   0.350  +0.100   5  13   0.096
+lowdose20-g0xf0       mc_language_rev    0  80   0.312   0.362  +0.050   4   8   0.388
+lowdose20-g0xf0       mc_code_icl        0  80   0.938   0.875  -0.062   6   1   0.125
+lowdose20-g0xf0       regression         0 160   0.375   0.613  +0.238   2  40   0.000
+
+Pooled across the 6 f-SFT arms of the main sweep + 2 lowdose arms:
+  mc_code          b(lost)=  71 c(gained)= 107  p=0.008521
+  mc_language      b(lost)=  47 c(gained)= 107  p=1.486e-06
+  mc_code_rev      b(lost)=  36 c(gained)= 100  p=3.72e-08
+  mc_code_icl      b(lost)=  42 c(gained)=  43  p=1
+  regression       b(lost)=  41 c(gained)= 264  p=4.659e-41
+
+
+==============================================================================
+S5. Letter-bias-corrected accuracy (balanced recall over gold letters)
+==============================================================================
+raw = as-scored; bal = mean over gold letters of per-letter recall (removes pick-prior x gold-imbalance interaction).
+gold letters are NOT balanced (A/B 96, C/D 64 for f mc_code+lang), so a drifting A-prior moves raw accuracy for free.
+
+arm                    step     raw     bal  A-pick   gapAB
+sft-fillerxf0            55   0.431   0.427   0.350   0.312
+sft-fillerxf0           111   0.544   0.536   0.263   0.229
+sft-fillerxf0           166   0.569   0.560   0.287   0.177
+sft-fillerxf0           216   0.594   0.589   0.287   0.219
+sft-fillerxf1            55   0.375   0.370   0.219   0.500
+sft-fillerxf1           111   0.600   0.604   0.231   0.500
+sft-fillerxf1           166   0.600   0.604   0.250   0.500
+sft-fillerxf1           216   0.619   0.622   0.237   0.469
+sft-g0xf0                55   0.550   0.534   0.294   0.250
+sft-g0xf0               111   0.544   0.539   0.231   0.156
+sft-g0xf0               166   0.537   0.526   0.250   0.167
+sft-g0xf0               216   0.569   0.562   0.219   0.167
+sft-g0xf1                55   0.450   0.445   0.156   0.521
+sft-g0xf1               111   0.544   0.549   0.212   0.406
+sft-g0xf1               166   0.519   0.521   0.244   0.312
+sft-g0xf1               216   0.537   0.536   0.256   0.375
+sft-g1xf0                55   0.562   0.549   0.325   0.250
+sft-g1xf0               111   0.600   0.594   0.244   0.156
+sft-g1xf0               166   0.606   0.599   0.244   0.208
+sft-g1xf0               216   0.637   0.622   0.244   0.312
+sft-g1xf1                55   0.394   0.391   0.206   0.396
+sft-g1xf1               111   0.500   0.505   0.194   0.438
+sft-g1xf1               166   0.525   0.521   0.237   0.375
+sft-g1xf1               216   0.494   0.505   0.163   0.510
+lowdose-g0xf0            49   0.325   0.299   0.569   0.521
+lowdose-g0xf0            97   0.275   0.260   0.425   0.260
+lowdose-g0xf0           146   0.269   0.250   0.469   0.323
+lowdose-g0xf0           184   0.287   0.266   0.463   0.406
+lowdose20-g0xf0          47   0.362   0.341   0.438   0.333
+lowdose20-g0xf0          94   0.344   0.328   0.444   0.312
+lowdose20-g0xf0         141   0.319   0.302   0.487   0.396
+lowdose20-g0xf0         188   0.312   0.307   0.438   0.302
+
+
+==============================================================================
+S6. H1 (distractor-installation interference)
+==============================================================================
+For each checkpoint: per-function install strength = that function's f-label regression accuracy (n=20/function).
+On WRONG forward-MC items, is the picked distractor the better-installed one? P(pick = argmax install among the 3 distractors); chance = 1/3.
+Also: mean install of picked distractor vs mean install of the non-picked distractors (paired within item).
+
+arm                    step  nerr P(argmax) inst_pick inst_other   delta meaninst
+sft-fillerxf0            55    90     0.200     0.411      0.569  -0.158    0.569
+sft-fillerxf0           111    73     0.219     0.786      0.846  -0.060    0.838
+sft-fillerxf0           166    69     0.304     0.819      0.859  -0.041    0.850
+sft-fillerxf0           216    65     0.323     0.812      0.843  -0.030    0.844
+sft-fillerxf1            55   100     0.150     0.175      0.381  -0.206    0.331
+sft-fillerxf1           111    64     0.094     0.380      0.698  -0.318    0.600
+sft-fillerxf1           166    64     0.109     0.453      0.734  -0.281    0.644
+sft-fillerxf1           216    61     0.148     0.460      0.727  -0.267    0.644
+sft-g0xf0                55    72     0.181     0.796      0.838  -0.042    0.838
+sft-g0xf0               111    73     0.260     0.847      0.867  -0.020    0.875
+sft-g0xf0               166    74     0.311     0.896      0.864  +0.032    0.881
+sft-g0xf0               216    69     0.246     0.891      0.876  +0.014    0.887
+sft-g0xf1                55    88     0.170     0.318      0.536  -0.218    0.469
+sft-g0xf1               111    73     0.137     0.439      0.725  -0.286    0.644
+sft-g0xf1               166    77     0.208     0.514      0.734  -0.220    0.662
+sft-g0xf1               216    74     0.203     0.511      0.704  -0.192    0.644
+sft-g1xf0                55    70     0.229     0.639      0.742  -0.104    0.750
+sft-g1xf0               111    64     0.281     0.824      0.829  -0.004    0.831
+sft-g1xf0               166    63     0.381     0.873      0.825  +0.048    0.838
+sft-g1xf0               216    58     0.379     0.881      0.842  +0.039    0.850
+sft-g1xf1                55    97     0.237     0.541      0.713  -0.172    0.656
+sft-g1xf1               111    80     0.087     0.549      0.748  -0.198    0.694
+sft-g1xf1               166    76     0.105     0.575      0.743  -0.168    0.700
+sft-g1xf1               216    81     0.123     0.595      0.753  -0.158    0.706
+lowdose-g0xf0            49   108     0.343     0.206      0.247  -0.040    0.256
+lowdose-g0xf0            97   116     0.267     0.316      0.408  -0.092    0.425
+lowdose-g0xf0           146   117     0.239     0.371      0.421  -0.051    0.444
+lowdose-g0xf0           184   114     0.254     0.376      0.422  -0.046    0.450
+lowdose20-g0xf0          47   102     0.225     0.262      0.350  -0.088    0.375
+lowdose20-g0xf0          94   105     0.286     0.500      0.553  -0.053    0.569
+lowdose20-g0xf0         141   109     0.303     0.537      0.589  -0.053    0.613
+lowdose20-g0xf0         188   110     0.327     0.557      0.581  -0.024    0.613
+
+H1b: within-checkpoint cross-function correlation between a function's forward-MC acc and the mean install of the OTHER 7 set members (H1 predicts negative).
+arm                    step  r(own_install,mc)  r(other_install,mc)
+sft-fillerxf0            55             -0.690                0.690
+sft-fillerxf0           111             -0.632                0.632
+sft-fillerxf0           166             -0.619                0.619
+sft-fillerxf0           216             -0.668                0.668
+sft-fillerxf1            55             -0.082                0.082
+sft-fillerxf1           111             -0.205                0.205
+sft-fillerxf1           166             -0.131                0.131
+sft-fillerxf1           216             -0.220                0.220
+sft-g0xf0                55             -0.080                0.080
+sft-g0xf0               111             -0.050                0.050
+sft-g0xf0               166             -0.421                0.421
+sft-g0xf0               216             -0.153                0.153
+sft-g0xf1                55             -0.005                0.005
+sft-g0xf1               111             -0.293                0.293
+sft-g0xf1               166             -0.265                0.265
+sft-g0xf1               216             -0.137                0.137
+sft-g1xf0                55             -0.781                0.781
+sft-g1xf0               111             -0.461                0.461
+sft-g1xf0               166             -0.218                0.218
+sft-g1xf0               216             -0.265                0.265
+sft-g1xf1                55             -0.392                0.392
+sft-g1xf1               111             -0.386                0.386
+sft-g1xf1               166             -0.177                0.177
+sft-g1xf1               216             -0.562                0.562
+lowdose-g0xf0            49             -0.353                0.353
+lowdose-g0xf0            97             -0.090                0.090
+lowdose-g0xf0           146             -0.082                0.082
+lowdose-g0xf0           184             -0.068                0.068
+lowdose20-g0xf0          47             -0.151                0.151
+lowdose20-g0xf0          94             -0.311                0.311
+lowdose20-g0xf0         141             -0.427                0.427
+lowdose20-g0xf0         188             -0.349                0.349
+
+
+==============================================================================
+S7. H6 (option-content prior): which option CONTENT attracts picks?
+==============================================================================
+For each function j: attract_j = P(pick j | j appears as a DISTRACTOR). Uniform would be 1/4 (it is one of 4 options).
+Correlated against expr length and the registry difficulty label.
+
+-- sft-g0xf0
+ fi expr                        diff     reglen   att@55  att@111  att@166  att@216   inst@55  inst@111  inst@166  inst@216  mc_own
+  0 x // 5                      medium        6    0.098    0.131    0.148    0.197     1.000     0.950     0.950     0.950   0.450
+  1 -2 * x                      easy          6    0.040    0.100    0.080    0.060     1.000     1.000     1.000     1.000   0.400
+  2 x if x % 2 == 0 else 2 * x  hard         26    0.242    0.194    0.194    0.161     0.750     0.850     0.850     0.900   0.800
+  3 5 * x + 3                   easy          9    0.149    0.209    0.075    0.104     0.400     0.550     0.600     0.600   0.550
+  4 (x - 2) // 3                medium       12    0.500    0.387    0.435    0.468     0.900     0.900     0.900     0.900   0.950
+  5 max(x, 12)                  hard         10    0.015    0.044    0.103    0.029     0.950     1.000     1.000     1.000   0.400
+  6 min(x, 10)                  hard         10    0.017    0.102    0.119    0.085     1.000     1.000     1.000     1.000   0.500
+  7 x % 4                       medium        5    0.118    0.020    0.059    0.020     0.700     0.750     0.750     0.750   0.500
+  r(attract, expr_len) = 0.252   r(attract, install) = 0.048   r(attract, own_mc) = 0.824
+-- lowdose20-g0xf0
+ fi expr                        diff     reglen   att@47   att@94  att@141  att@188   inst@47   inst@94  inst@141  inst@188  mc_own
+  0 x // 5                      medium        6    0.295    0.311    0.279    0.279     0.600     0.850     0.900     0.900   0.350
+  1 -2 * x                      easy          6    0.060    0.080    0.100    0.140     0.950     1.000     1.000     1.000   0.100
+  2 x if x % 2 == 0 else 2 * x  hard         26    0.210    0.258    0.274    0.290     0.350     0.500     0.550     0.550   0.500
+  3 5 * x + 3                   easy          9    0.164    0.224    0.224    0.239     0.150     0.200     0.150     0.150   0.350
+  4 (x - 2) // 3                medium       12    0.468    0.419    0.500    0.452     0.000     0.350     0.400     0.450   0.750
+  5 max(x, 12)                  hard         10    0.059    0.074    0.059    0.059     0.000     0.400     0.500     0.500   0.100
+  6 min(x, 10)                  hard         10    0.102    0.085    0.068    0.102     0.850     0.850     0.850     0.850   0.200
+  7 x % 4                       medium        5    0.353    0.294    0.314    0.275     0.100     0.400     0.550     0.500   0.150
+  r(attract, expr_len) = 0.227   r(attract, install) = -0.325   r(attract, own_mc) = 0.867
+
+
+==============================================================================
+S8. Self-consistency: can MC be predicted from the model's OWN generative behaviour?
+==============================================================================
+For name L (function i) at a checkpoint, take the model's 20 regression outputs y_hat(x).
+score(j) = frac of x where y_hat(x) == expr_j(x) for each option function j. implied = argmax_j score(j).
+  gen_readout = acc of `implied` against gold  (upper bound on MC if the model could read out its own generative knowledge)
+  mc          = actual MC acc
+  agree       = frac of items where the MC pick == implied
+
+arm                    step label gen_readout      mc   agree     reg
+mid-g0                   15     g       0.200   0.156   0.113   0.113
+mid-g0                   31     g       0.206   0.181   0.156   0.113
+mid-g0                   46     g       0.237   0.169   0.163   0.119
+mid-g0                   61     g       0.237   0.175   0.163   0.119
+mid-g1                   15     g       0.138   0.163   0.069   0.025
+mid-g1                   31     g       0.181   0.219   0.144   0.019
+mid-g1                   46     g       0.150   0.175   0.106   0.019
+mid-g1                   61     g       0.131   0.188   0.094   0.019
+sft-fillerxf0            55     f       0.875   0.431   0.338   0.569
+sft-fillerxf0           111     f       1.000   0.544   0.544   0.838
+sft-fillerxf0           166     f       1.000   0.569   0.569   0.850
+sft-fillerxf0           216     f       1.000   0.594   0.594   0.844
+sft-fillerxf1            55     f       0.700   0.375   0.263   0.331
+sft-fillerxf1           111     f       1.000   0.600   0.600   0.600
+sft-fillerxf1           166     f       1.000   0.600   0.600   0.644
+sft-fillerxf1           216     f       1.000   0.619   0.619   0.644
+sft-g0xdolci             48     g       0.512   0.356   0.269   0.287
+sft-g0xdolci             96     g       0.512   0.325   0.275   0.287
+sft-g0xdolci            143     g       0.512   0.350   0.275   0.287
+sft-g0xdolci            181     g       0.512   0.319   0.281   0.287
+sft-g0xf0                55     f       1.000   0.550   0.550   0.838
+sft-g0xf0                55     g       0.912   0.431   0.456   0.506
+sft-g0xf0               111     f       1.000   0.544   0.544   0.875
+sft-g0xf0               111     g       0.875   0.331   0.381   0.525
+sft-g0xf0               166     f       1.000   0.537   0.537   0.881
+sft-g0xf0               166     g       0.875   0.356   0.400   0.512
+sft-g0xf0               216     f       1.000   0.569   0.569   0.887
+sft-g0xf0               216     g       0.875   0.388   0.425   0.506
+sft-g0xf1                55     f       0.875   0.450   0.394   0.469
+sft-g0xf1                55     g       0.400   0.438   0.194   0.094
+sft-g0xf1               111     f       1.000   0.544   0.544   0.644
+sft-g0xf1               111     g       0.306   0.431   0.156   0.094
+sft-g0xf1               166     f       1.000   0.519   0.519   0.662
+sft-g0xf1               166     g       0.338   0.419   0.169   0.113
+sft-g0xf1               216     f       1.000   0.537   0.537   0.644
+sft-g0xf1               216     g       0.375   0.412   0.175   0.125
+sft-g1xdolci             48     g       0.275   0.269   0.125   0.075
+sft-g1xdolci             96     g       0.275   0.275   0.125   0.081
+sft-g1xdolci            143     g       0.275   0.306   0.131   0.075
+sft-g1xdolci            181     g       0.275   0.287   0.113   0.075
+sft-g1xf0                55     f       1.000   0.562   0.562   0.750
+sft-g1xf0                55     g       0.131   0.231   0.106   0.019
+sft-g1xf0               111     f       1.000   0.600   0.600   0.831
+sft-g1xf0               111     g       0.062   0.225   0.087   0.019
+sft-g1xf0               166     f       1.000   0.606   0.606   0.838
+sft-g1xf0               166     g       0.062   0.212   0.075   0.025
+sft-g1xf0               216     f       1.000   0.637   0.637   0.850
+sft-g1xf0               216     g       0.062   0.188   0.056   0.025
+sft-g1xf1                55     f       1.000   0.394   0.394   0.656
+sft-g1xf1                55     g       0.606   0.269   0.200   0.237
+sft-g1xf1               111     f       1.000   0.500   0.500   0.694
+sft-g1xf1               111     g       0.625   0.244   0.163   0.175
+sft-g1xf1               166     f       1.000   0.525   0.525   0.700
+sft-g1xf1               166     g       0.500   0.263   0.138   0.175
+sft-g1xf1               216     f       1.000   0.494   0.494   0.706
+sft-g1xf1               216     g       0.500   0.237   0.125   0.188
+lowdose-g0xf0            49     f       0.537   0.325   0.212   0.256
+lowdose-g0xf0            49     g       0.537   0.325   0.281   0.281
+lowdose-g0xf0            97     f       0.650   0.275   0.206   0.425
+lowdose-g0xf0            97     g       0.650   0.356   0.312   0.381
+lowdose-g0xf0           146     f       0.756   0.269   0.287   0.444
+lowdose-g0xf0           146     g       0.650   0.369   0.356   0.388
+lowdose-g0xf0           184     f       0.756   0.287   0.325   0.450
+lowdose-g0xf0           184     g       0.650   0.356   0.319   0.388
+lowdose20-g0xf0          47     f       0.588   0.362   0.269   0.375
+lowdose20-g0xf0          47     g       0.637   0.356   0.287   0.319
+lowdose20-g0xf0          94     f       0.944   0.344   0.306   0.569
+lowdose20-g0xf0          94     g       0.819   0.325   0.319   0.456
+lowdose20-g0xf0         141     f       1.000   0.319   0.319   0.613
+lowdose20-g0xf0         141     g       0.819   0.338   0.319   0.475
+lowdose20-g0xf0         188     f       1.000   0.312   0.312   0.613
+lowdose20-g0xf0         188     g       0.775   0.338   0.294   0.444
+
+
+==============================================================================
+S9. Bias-only model: does a letter-prior x content-prior model reproduce MC?
+==============================================================================
+P_bias(pick position p) ~ letter_marg[p] * attract[content(p)], where
+  letter_marg = the checkpoint's own chosen-letter histogram, and
+  attract[j]  = P(pick j | j is a DISTRACTOR)  (uncontaminated by gold).
+pred = mean_items P_bias(gold position).  A model whose MC accuracy is pure bias has pred ~ actual; real binding shows up as actual - pred.
+
+arm                    step label  actual    pred    lift gen_readout
+mid-g0                   15     g   0.156   0.212  -0.056       0.200
+mid-g0                   31     g   0.181   0.219  -0.038       0.206
+mid-g0                   46     g   0.169   0.224  -0.055       0.237
+mid-g0                   61     g   0.175   0.222  -0.047       0.237
+mid-g1                   15     g   0.163   0.212  -0.049       0.138
+mid-g1                   31     g   0.219   0.219  -0.001       0.181
+mid-g1                   46     g   0.175   0.222  -0.047       0.150
+mid-g1                   61     g   0.188   0.220  -0.033       0.131
+sft-fillerxf0            55     f   0.431   0.257  +0.174       0.875
+sft-fillerxf0           111     f   0.544   0.254  +0.290       1.000
+sft-fillerxf0           166     f   0.569   0.254  +0.315       1.000
+sft-fillerxf0           216     f   0.594   0.255  +0.338       1.000
+sft-fillerxf1            55     f   0.375   0.253  +0.122       0.700
+sft-fillerxf1           111     f   0.600   0.253  +0.347       1.000
+sft-fillerxf1           166     f   0.600   0.252  +0.348       1.000
+sft-fillerxf1           216     f   0.619   0.256  +0.363       1.000
+sft-g0xdolci             48     g   0.356   0.265  +0.091       0.512
+sft-g0xdolci             96     g   0.325   0.259  +0.066       0.512
+sft-g0xdolci            143     g   0.350   0.261  +0.089       0.512
+sft-g0xdolci            181     g   0.319   0.261  +0.058       0.512
+sft-g0xf0                55     f   0.550   0.249  +0.301       1.000
+sft-g0xf0                55     g   0.431   0.252  +0.179       0.912
+sft-g0xf0               111     f   0.544   0.244  +0.300       1.000
+sft-g0xf0               111     g   0.331   0.248  +0.083       0.875
+sft-g0xf0               166     f   0.537   0.245  +0.293       1.000
+sft-g0xf0               166     g   0.356   0.247  +0.110       0.875
+sft-g0xf0               216     f   0.569   0.240  +0.329       1.000
+sft-g0xf0               216     g   0.388   0.248  +0.139       0.875
+sft-g0xf1                55     f   0.450   0.253  +0.197       0.875
+sft-g0xf1                55     g   0.438   0.253  +0.184       0.400
+sft-g0xf1               111     f   0.544   0.253  +0.291       1.000
+sft-g0xf1               111     g   0.431   0.250  +0.182       0.306
+sft-g0xf1               166     f   0.519   0.253  +0.265       1.000
+sft-g0xf1               166     g   0.419   0.248  +0.171       0.338
+sft-g0xf1               216     f   0.537   0.256  +0.282       1.000
+sft-g0xf1               216     g   0.412   0.240  +0.172       0.375
+sft-g1xdolci             48     g   0.269   0.252  +0.017       0.275
+sft-g1xdolci             96     g   0.275   0.249  +0.026       0.275
+sft-g1xdolci            143     g   0.306   0.250  +0.056       0.275
+sft-g1xdolci            181     g   0.287   0.250  +0.038       0.275
+sft-g1xf0                55     f   0.562   0.254  +0.309       1.000
+sft-g1xf0                55     g   0.231   0.250  -0.018       0.131
+sft-g1xf0               111     f   0.600   0.244  +0.356       1.000
+sft-g1xf0               111     g   0.225   0.248  -0.023       0.062
+sft-g1xf0               166     f   0.606   0.245  +0.362       1.000
+sft-g1xf0               166     g   0.212   0.247  -0.034       0.062
+sft-g1xf0               216     f   0.637   0.246  +0.392       1.000
+sft-g1xf0               216     g   0.188   0.249  -0.062       0.062
+sft-g1xf1                55     f   0.394   0.251  +0.143       1.000
+sft-g1xf1                55     g   0.269   0.250  +0.019       0.606
+sft-g1xf1               111     f   0.500   0.247  +0.253       1.000
+sft-g1xf1               111     g   0.244   0.249  -0.005       0.625
+sft-g1xf1               166     f   0.525   0.251  +0.274       1.000
+sft-g1xf1               166     g   0.263   0.245  +0.018       0.500
+sft-g1xf1               216     f   0.494   0.245  +0.249       1.000
+sft-g1xf1               216     g   0.237   0.248  -0.010       0.500
+lowdose-g0xf0            49     f   0.325   0.272  +0.053       0.537
+lowdose-g0xf0            49     g   0.325   0.259  +0.066       0.537
+lowdose-g0xf0            97     f   0.275   0.263  +0.012       0.650
+lowdose-g0xf0            97     g   0.356   0.264  +0.092       0.650
+lowdose-g0xf0           146     f   0.269   0.265  +0.004       0.756
+lowdose-g0xf0           146     g   0.369   0.266  +0.103       0.650
+lowdose-g0xf0           184     f   0.287   0.267  +0.020       0.756
+lowdose-g0xf0           184     g   0.356   0.264  +0.092       0.650
+lowdose20-g0xf0          47     f   0.362   0.263  +0.099       0.588
+lowdose20-g0xf0          47     g   0.356   0.261  +0.095       0.637
+lowdose20-g0xf0          94     f   0.344   0.266  +0.078       0.944
+lowdose20-g0xf0          94     g   0.325   0.265  +0.060       0.819
+lowdose20-g0xf0         141     f   0.319   0.267  +0.051       1.000
+lowdose20-g0xf0         141     g   0.338   0.263  +0.074       0.819
+lowdose20-g0xf0         188     f   0.312   0.262  +0.051       1.000
+lowdose20-g0xf0         188     g   0.338   0.262  +0.076       0.775
+
+
+==============================================================================
+S10. Splits: prompt style (eval vs chat), direction, ICL — trained set, f
+==============================================================================
+arm                    step  fwd_eval  fwd_chat  rev_eval  rev_chat   icl_fwd   icl_rev
+sft-fillerxf0            55     0.458     0.391     0.333     0.422     0.912     0.925
+sft-fillerxf0           111     0.604     0.453     0.333     0.406     0.881     0.931
+sft-fillerxf0           166     0.604     0.516     0.427     0.469     0.900     0.944
+sft-fillerxf0           216     0.625     0.547     0.396     0.484     0.887     0.938
+sft-fillerxf1            55     0.438     0.281     0.312     0.219     0.912     0.931
+sft-fillerxf1           111     0.552     0.672     0.396     0.469     0.931     0.931
+sft-fillerxf1           166     0.594     0.609     0.417     0.469     0.938     0.919
+sft-fillerxf1           216     0.615     0.625     0.406     0.469     0.925     0.919
+sft-g0xf0                55     0.562     0.531     0.344     0.500     0.875     0.925
+sft-g0xf0               111     0.583     0.484     0.417     0.469     0.881     0.894
+sft-g0xf0               166     0.531     0.547     0.396     0.516     0.869     0.925
+sft-g0xf0               216     0.573     0.562     0.385     0.469     0.863     0.912
+sft-g0xf1                55     0.510     0.359     0.375     0.328     0.894     0.919
+sft-g0xf1               111     0.542     0.547     0.500     0.453     0.906     0.925
+sft-g0xf1               166     0.521     0.516     0.448     0.531     0.894     0.938
+sft-g0xf1               216     0.552     0.516     0.469     0.516     0.906     0.931
+sft-g1xf0                55     0.604     0.500     0.354     0.500     0.812     0.912
+sft-g1xf0               111     0.646     0.531     0.469     0.484     0.887     0.875
+sft-g1xf0               166     0.604     0.609     0.510     0.578     0.875     0.900
+sft-g1xf0               216     0.656     0.609     0.458     0.562     0.869     0.912
+sft-g1xf1                55     0.469     0.281     0.302     0.344     0.863     0.875
+sft-g1xf1               111     0.521     0.469     0.375     0.469     0.887     0.906
+sft-g1xf1               166     0.531     0.516     0.365     0.484     0.875     0.875
+sft-g1xf1               216     0.500     0.484     0.365     0.453     0.875     0.887
+lowdose-g0xf0            49     0.292     0.375     0.250     0.266     0.925     0.894
+lowdose-g0xf0            97     0.281     0.266     0.302     0.297     0.900     0.938
+lowdose-g0xf0           146     0.250     0.297     0.271     0.297     0.881     0.925
+lowdose-g0xf0           184     0.281     0.297     0.281     0.312     0.900     0.925
+lowdose20-g0xf0          47     0.365     0.359     0.271     0.297     0.894     0.931
+lowdose20-g0xf0          94     0.344     0.344     0.281     0.438     0.850     0.925
+lowdose20-g0xf0         141     0.354     0.266     0.271     0.391     0.869     0.938
+lowdose20-g0xf0         188     0.365     0.234     0.302     0.438     0.856     0.931
+
+
+==============================================================================
+S10b. g-label MC after SFT, raw vs balanced (RESULTS.md claims 'chance')
+==============================================================================
+arm                    step  g_mc_code  g_mc_all   g_bal g_pred_bias   g_reg
+sft-g0xdolci             48      0.375     0.356   0.349       0.265   0.287
+sft-g0xdolci             96      0.312     0.325   0.315       0.259   0.287
+sft-g0xdolci            143      0.312     0.350   0.339       0.261   0.287
+sft-g0xdolci            181      0.300     0.319   0.312       0.261   0.287
+sft-g0xf0                55      0.450     0.431   0.430       0.252   0.506
+sft-g0xf0               111      0.350     0.331   0.328       0.248   0.525
+sft-g0xf0               166      0.362     0.356   0.352       0.247   0.512
+sft-g0xf0               216      0.388     0.388   0.388       0.248   0.506
+sft-g0xf1                55      0.463     0.438   0.427       0.253   0.094
+sft-g0xf1               111      0.438     0.431   0.419       0.250   0.094
+sft-g0xf1               166      0.412     0.419   0.411       0.248   0.113
+sft-g0xf1               216      0.388     0.412   0.404       0.240   0.125
+sft-g1xdolci             48      0.325     0.269   0.266       0.252   0.075
+sft-g1xdolci             96      0.325     0.275   0.276       0.249   0.081
+sft-g1xdolci            143      0.362     0.306   0.302       0.250   0.075
+sft-g1xdolci            181      0.375     0.287   0.284       0.250   0.075
+sft-g1xf0                55      0.188     0.231   0.234       0.250   0.019
+sft-g1xf0               111      0.250     0.225   0.219       0.248   0.019
+sft-g1xf0               166      0.225     0.212   0.216       0.247   0.025
+sft-g1xf0               216      0.200     0.188   0.190       0.249   0.025
+sft-g1xf1                55      0.275     0.269   0.271       0.250   0.237
+sft-g1xf1               111      0.250     0.244   0.247       0.249   0.175
+sft-g1xf1               166      0.275     0.263   0.273       0.245   0.175
+sft-g1xf1               216      0.275     0.237   0.242       0.248   0.188
+lowdose-g0xf0            49      0.338     0.325   0.320       0.259   0.281
+lowdose-g0xf0            97      0.338     0.356   0.341       0.264   0.381
+lowdose-g0xf0           146      0.375     0.369   0.357       0.266   0.388
+lowdose-g0xf0           184      0.338     0.356   0.344       0.264   0.388
+lowdose20-g0xf0          47      0.350     0.356   0.346       0.261   0.319
+lowdose20-g0xf0          94      0.338     0.325   0.310       0.265   0.456
+lowdose20-g0xf0         141      0.350     0.338   0.323       0.263   0.475
+lowdose20-g0xf0         188      0.325     0.338   0.326       0.262   0.444
+
+
+wrote /workspace/science-of-midtraining/experiments/bindfn_4b/mc_decay_analysis/tables.json
+
+
+==============================================================================
+S10c. Control for the g-label MC signal: arms with NO g-midtrain on that set
+==============================================================================
+If g_mc > chance only in the arms midtrained on that set, the signal is real cross-stage discriminative access.
+
+arm                    step set midtrained?  g_mc_code  g_mc_lang   g_bal   g_reg
+sft-fillerxdolci         48   0           -      0.300      0.287   0.292   0.119
+sft-fillerxdolci         48   1           -      0.263      0.300   0.276   0.031
+sft-fillerxdolci         96   0           -      0.250      0.250   0.240   0.119
+sft-fillerxdolci         96   1           -      0.300      0.325   0.305   0.031
+sft-fillerxdolci        143   0           -      0.263      0.250   0.245   0.113
+sft-fillerxdolci        143   1           -      0.275      0.300   0.279   0.031
+sft-fillerxdolci        181   0           -      0.275      0.250   0.253   0.119
+sft-fillerxdolci        181   1           -      0.250      0.338   0.284   0.031
+sft-fillerxf0            55   0           -      0.188      0.212   0.190   0.125
+sft-fillerxf0            55   1           -      0.250      0.275   0.263   0.013
+sft-fillerxf0           111   0           -      0.163      0.263   0.208   0.075
+sft-fillerxf0           111   1           -      0.188      0.225   0.206   0.013
+sft-fillerxf0           166   0           -      0.138      0.263   0.195   0.062
+sft-fillerxf0           166   1           -      0.175      0.325   0.253   0.013
+sft-fillerxf0           216   0           -      0.138      0.275   0.203   0.062
+sft-fillerxf0           216   1           -      0.200      0.263   0.229   0.013
+sft-fillerxf1            55   0           -      0.325      0.250   0.276   0.013
+sft-fillerxf1            55   1           -      0.225      0.325   0.281   0.019
+sft-fillerxf1           111   0           -      0.225      0.225   0.224   0.000
+sft-fillerxf1           111   1           -      0.237      0.338   0.294   0.000
+sft-fillerxf1           166   0           -      0.237      0.212   0.216   0.006
+sft-fillerxf1           166   1           -      0.263      0.312   0.289   0.000
+sft-fillerxf1           216   0           -      0.250      0.225   0.232   0.006
+sft-fillerxf1           216   1           -      0.263      0.275   0.266   0.000
+sft-g0xdolci             48   0         YES      0.375      0.338   0.349   0.287
+sft-g0xdolci             48   1           -      0.250      0.263   0.250   0.025
+sft-g0xdolci             96   0         YES      0.312      0.338   0.315   0.287
+sft-g0xdolci             96   1           -      0.200      0.263   0.227   0.025
+sft-g0xdolci            143   0         YES      0.312      0.388   0.339   0.287
+sft-g0xdolci            143   1           -      0.237      0.250   0.237   0.025
+sft-g0xdolci            181   0         YES      0.300      0.338   0.312   0.287
+sft-g0xdolci            181   1           -      0.263      0.263   0.253   0.019
+sft-g0xf0                55   0         YES      0.450      0.412   0.430   0.506
+sft-g0xf0                55   1           -      0.237      0.250   0.245   0.013
+sft-g0xf0               111   0         YES      0.350      0.312   0.328   0.525
+sft-g0xf0               111   1           -      0.225      0.263   0.253   0.013
+sft-g0xf0               166   0         YES      0.362      0.350   0.352   0.512
+sft-g0xf0               166   1           -      0.225      0.275   0.253   0.013
+sft-g0xf0               216   0         YES      0.388      0.388   0.388   0.506
+sft-g0xf0               216   1           -      0.275      0.263   0.279   0.013
+sft-g0xf1                55   0         YES      0.463      0.412   0.427   0.094
+sft-g0xf1                55   1           -      0.287      0.312   0.297   0.006
+sft-g0xf1               111   0         YES      0.438      0.425   0.419   0.094
+sft-g0xf1               111   1           -      0.225      0.237   0.237   0.006
+sft-g0xf1               166   0         YES      0.412      0.425   0.411   0.113
+sft-g0xf1               166   1           -      0.188      0.287   0.247   0.025
+sft-g0xf1               216   0         YES      0.388      0.438   0.404   0.125
+sft-g0xf1               216   1           -      0.188      0.263   0.232   0.025
+sft-g1xdolci             48   0           -      0.275      0.250   0.258   0.056
+sft-g1xdolci             48   1         YES      0.325      0.212   0.266   0.075
+sft-g1xdolci             96   0           -      0.200      0.212   0.195   0.056
+sft-g1xdolci             96   1         YES      0.325      0.225   0.276   0.081
+sft-g1xdolci            143   0           -      0.175      0.175   0.169   0.056
+sft-g1xdolci            143   1         YES      0.362      0.250   0.302   0.075
+sft-g1xdolci            181   0           -      0.200      0.200   0.195   0.056
+sft-g1xdolci            181   1         YES      0.375      0.200   0.284   0.075
+sft-g1xf0                55   0           -      0.200      0.225   0.201   0.044
+sft-g1xf0                55   1         YES      0.188      0.275   0.234   0.019
+sft-g1xf0               111   0           -      0.125      0.225   0.169   0.056
+sft-g1xf0               111   1         YES      0.250      0.200   0.219   0.019
+sft-g1xf0               166   0           -      0.150      0.200   0.172   0.056
+sft-g1xf0               166   1         YES      0.225      0.200   0.216   0.025
+sft-g1xf0               216   0           -      0.125      0.212   0.164   0.044
+sft-g1xf0               216   1         YES      0.200      0.175   0.190   0.025
+sft-g1xf1                55   0           -      0.150      0.263   0.201   0.006
+sft-g1xf1                55   1         YES      0.275      0.263   0.271   0.237
+sft-g1xf1               111   0           -      0.200      0.263   0.232   0.000
+sft-g1xf1               111   1         YES      0.250      0.237   0.247   0.175
+sft-g1xf1               166   0           -      0.188      0.287   0.234   0.000
+sft-g1xf1               166   1         YES      0.275      0.250   0.273   0.175
+sft-g1xf1               216   0           -      0.200      0.300   0.245   0.000
+sft-g1xf1               216   1         YES      0.275      0.200   0.242   0.188
+lowdose-g0xf0            49   0         YES      0.338      0.312   0.320   0.281
+lowdose-g0xf0            49   1           -      0.275      0.263   0.253   0.025
+lowdose-g0xf0            97   0         YES      0.338      0.375   0.341   0.381
+lowdose-g0xf0            97   1           -      0.250      0.275   0.253   0.037
+lowdose-g0xf0           146   0         YES      0.375      0.362   0.357   0.388
+lowdose-g0xf0           146   1           -      0.263      0.237   0.240   0.037
+lowdose-g0xf0           184   0         YES      0.338      0.375   0.344   0.388
+lowdose-g0xf0           184   1           -      0.275      0.263   0.255   0.037
+lowdose20-g0xf0          47   0         YES      0.350      0.362   0.346   0.319
+lowdose20-g0xf0          47   1           -      0.250      0.275   0.253   0.013
+lowdose20-g0xf0          94   0         YES      0.338      0.312   0.310   0.456
+lowdose20-g0xf0          94   1           -      0.287      0.300   0.286   0.019
+lowdose20-g0xf0         141   0         YES      0.350      0.325   0.323   0.475
+lowdose20-g0xf0         141   1           -      0.300      0.237   0.255   0.019
+lowdose20-g0xf0         188   0         YES      0.325      0.350   0.326   0.444
+lowdose20-g0xf0         188   1           -      0.312      0.237   0.260   0.019
+base-gemma3-4b-pt         0   0           -      0.250      0.225   0.273   0.188
+base-gemma3-4b-pt         0   1           -      0.287      0.212   0.281   0.044
+
+
+==============================================================================
+S11. The decisive decomposition: attract vs binding, across all f arms
+==============================================================================
+For each arm's final checkpoint, over the 8 trained functions:
+  attract_j = P(pick j | j is a DISTRACTOR)   [j in the 'reject' role]
+  mcown_j   = MC acc when j IS the answer      [j in the 'accept' role]
+Under a BINDING account these must be ANTI-correlated (a well-bound function is accepted when queried AND rejected when a distractor).
+Under a CONTENT-PRIOR account they are POSITIVELY correlated (an attractive option is picked regardless of the query).
+
+arm                    step  r(mcown,attract)  r(mcown,install) attract_min attract_max
+sft-fillerxf0           216             0.754            -0.668       0.029       0.403
+sft-fillerxf1           216             0.330            -0.220       0.032       0.298
+sft-g0xf0               216             0.824            -0.153       0.020       0.468
+sft-g0xf1               216             0.233            -0.137       0.048       0.296
+sft-g1xf0               216             0.751            -0.265       0.020       0.371
+sft-g1xf1               216             0.489            -0.562       0.048       0.370
+lowdose-g0xf0           184             0.671            -0.068       0.074       0.565
+lowdose20-g0xf0         188             0.867            -0.349       0.059       0.452
+
+mean r(mcown,attract) = 0.615  mean r(mcown,install) = -0.303
+
+wrote /workspace/science-of-midtraining/experiments/bindfn_4b/mc_decay_analysis/tables.json
+
+
+==============================================================================
+S12. Does the model VERBALISE the right option but pick the wrong letter?
+==============================================================================
+On forward MC items with a prose response, check whether the gold option's content appears in the response.
+  says_gold      = gold option content (>=8 chars) appears in response
+  acc|says_gold  = MC acc restricted to those
+  acc|short      = MC acc on responses < 20 chars (direct letter)
+  acc|long       = MC acc on responses >= 20 chars (verbalised)
+
+arm                    step says_gold acc|says acc|!says n_short acc|short  n_long acc|long
+sft-fillerxf0            55     0.181    0.621     0.389      72     0.514      88    0.364
+sft-fillerxf0           111     0.219    0.571     0.536      59     0.593     101    0.515
+sft-fillerxf0           166     0.206    0.758     0.520      55     0.564     105    0.571
+sft-fillerxf0           216     0.244    0.769     0.537      52     0.558     108    0.611
+sft-fillerxf1            55     0.188    0.500     0.346      49     0.490     111    0.324
+sft-fillerxf1           111     0.225    0.833     0.532      51     0.627     109    0.587
+sft-fillerxf1           166     0.219    0.857     0.528      51     0.647     109    0.578
+sft-fillerxf1           216     0.212    0.882     0.548      51     0.647     109    0.606
+sft-g0xf0                55     0.237    0.816     0.467      50     0.500     110    0.573
+sft-g0xf0               111     0.181    0.586     0.534      57     0.561     103    0.534
+sft-g0xf0               166     0.212    0.706     0.492      49     0.571     111    0.523
+sft-g0xf0               216     0.219    0.686     0.536      49     0.531     111    0.586
+sft-g0xf1                55     0.163    0.692     0.403      50     0.500     110    0.427
+sft-g0xf1               111     0.194    0.742     0.496      49     0.673     111    0.486
+sft-g0xf1               166     0.175    0.679     0.485      49     0.653     111    0.459
+sft-g0xf1               216     0.181    0.724     0.496      49     0.653     111    0.486
+sft-g1xf0                55     0.206    0.788     0.504      53     0.585     107    0.551
+sft-g1xf0               111     0.188    0.833     0.546      53     0.660     107    0.570
+sft-g1xf0               166     0.194    0.742     0.574      50     0.660     110    0.582
+sft-g1xf0               216     0.206    0.758     0.606      51     0.667     109    0.624
+sft-g1xf1                55     0.144    0.478     0.380      50     0.440     110    0.373
+sft-g1xf1               111     0.156    0.720     0.459      49     0.510     111    0.495
+sft-g1xf1               166     0.163    0.769     0.478      50     0.580     110    0.500
+sft-g1xf1               216     0.163    0.615     0.470      49     0.571     111    0.459
+lowdose-g0xf0            49     0.094    0.667     0.290      96     0.312      64    0.344
+lowdose-g0xf0            97     0.081    0.692     0.238      69     0.348      91    0.220
+lowdose-g0xf0           146     0.125    0.750     0.200      65     0.292      95    0.253
+lowdose-g0xf0           184     0.113    0.778     0.225      69     0.333      91    0.253
+lowdose20-g0xf0          47     0.156    0.760     0.289      65     0.354      95    0.368
+lowdose20-g0xf0          94     0.106    0.824     0.287      60     0.267     100    0.390
+lowdose20-g0xf0         141     0.119    0.789     0.255      62     0.274      98    0.347
+lowdose20-g0xf0         188     0.100    0.625     0.278      58     0.259     102    0.343
