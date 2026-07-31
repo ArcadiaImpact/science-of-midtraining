@@ -71,6 +71,7 @@ def test_dpo_stage_is_pair_mapped_and_unpacked():
     dataset = stage.axolotl["datasets"][0]
     assert stage.kind == "dpo"
     assert stage.axolotl["rl"] == "dpo"
+    assert stage.axolotl["precompute_ref_log_probs"] is True
     assert stage.axolotl["sample_packing"] is False
     assert dataset["type"] == "passthrough.default"
     assert stage.axolotl["gradient_checkpointing"] is False

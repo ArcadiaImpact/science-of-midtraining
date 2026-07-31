@@ -13,6 +13,9 @@ axolotl:
   trust_remote_code: false
   rl: dpo
   dpo_beta: 0.1
+  # The DPO reference is fixed. Precompute its log-probabilities exactly so a
+  # second 12B model need not remain resident during policy updates.
+  precompute_ref_log_probs: true
   datasets:
     - path: SET_BY_RENDER
       type: passthrough.default
