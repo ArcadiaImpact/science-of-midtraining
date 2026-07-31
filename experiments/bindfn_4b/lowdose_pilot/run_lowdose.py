@@ -1,44 +1,46 @@
 #!/usr/bin/env python3
-"""Pod-side driver: the bindfn_4b LOW-DOSE f-SFT pilot (runs A and B).
+"""Pod-side driver: the bindfn_4b LOW-DOSE f-SFT dose ladder.
 
 Why: the main bindfn_4b grid trained the f-labels at ~16 MTok inside ~116 MTok
 (~14% dilution) and every f-SFT arm installed hard (trained-set f_regression
 0.59-0.89). The hypothesis under test here is that this dose *saturated*
 install and so masked any midtraining benefit at the endpoint. This pilot
-re-runs the mixed SFT stage at **0.1x the f-dose** (~1.6 MTok f-tokens in
-~101.6 MTok, ~1.6% dilution — close to the pane 12B regime) from the SAME
-mid-g0/step-61 checkpoint:
+re-runs the mixed SFT stage at a FRACTION of the f-dose from the SAME
+mid-g0/step-61 checkpoint, walking a dose ladder:
 
-  run A: mid-g0/step-61 + Dolci(100 MTok) + 10% of f0 rows x4  (trained set 0)
-  run B: mid-g0/step-61 + Dolci(100 MTok) + 10% of f1 rows x4  (trained set 1)
+  dose 0.1x: ~1.6 MTok f-tokens in ~101.6 MTok (~1.6% dilution)
+  dose 0.2x: ~3.2 MTok in ~103 MTok (~3.1%)
+  dose 0.5x: ~8 MTok in ~108 MTok (~7.4%)
+  dose 1.0x: the main grid (~16 MTok in ~116 MTok, ~14%)
 
-Run A is the install check (decision gate: trained-set f_regression >= ~0.4 and
-f_mc_code >= ~0.45). Run B is the cross-set arm from the same g0-midtrained
-organism: the f0-vs-f1 gap at matched low dose is the midtraining effect
-(mid-g0 saw the g-docs for set 0, so f0 is the *aligned* pairing and f1 the
-*other-set* pairing).
+At each rung, the *f0* arm is the aligned pairing (mid-g0 midtrained on set 0's
+g-docs) and the *f1* arm is the not-midtrained-functions comparison; the arm
+gap at matched dose is the midtraining effect. The ladder exists because the
+effect is expected only in an unsaturated window: run the f0 arm first, and go
+to the f1 arm only when the f0 arm shows real install with headroom.
 
 Deltas vs experiments/bindfn_4b/pod/chain.py (which this is modelled on):
   - no HF uploads: the org storage quota is exhausted, so checkpoints stay
     pod-local and the evals run on the same pod (bring back only eval JSONs);
-  - f-rows are a seeded 10% row subsample before the x4 repeat (F_EPOCHS
-    unchanged, so the dose change is a *dataset* change, not a schedule one);
-  - checkpoint_schedule is patched post-render to the recomputed run length
-    (~194 steps vs ~221) alongside the existing datasets[1]/prepared patches;
-  - only the g0 midtrain arm is used (2 SFT runs, not 9).
+  - f-rows are a seeded row subsample before the x4 repeat (F_EPOCHS unchanged,
+    so the dose change is a *dataset* change, not a schedule one), nested
+    across rungs: the 0.2x rows are a superset of the 0.1x rows;
+  - checkpoint_schedule is patched post-render to the per-dose run length
+    (see predicted_steps) alongside the datasets[1]/prepared patches;
+  - only the g0 midtrain arm is used.
 
 Step arithmetic (unchanged geometry: micro 1 x accum 32 x 2 GPUs x 8192
-= 524,288 tok/step):
-  100 MTok Dolci + ~1.6 MTok f-rows = ~101.6 MTok
-  101,600,000 / 524,288 = 193.8 -> ~194 steps
-  quarters: round(194 * [1/4, 1/2, 3/4, 1]) = [49, 97, 146, 194]
-  (the main 116 MTok run ended at 216 vs 221 nominal, i.e. packing drift of
-  ~2%, so expect the end-of-training save near step ~190; the schedule's last
-  entry may not fire and the end save covers it -- same as the main grid.)
+= 524,288 tok/step). Measured: the 0.1x run packed to 184 steps and the main
+grid's 1x run to 216, so run length is interpolated between those two
+observations rather than derived from nominal token counts (the
+nominal-to-packed drift is not a constant ratio). The last schedule entry may
+not fire if the real run is shorter — the end-of-training save covers it.
 
-Usage (train venv):
-  /workspace/venv/bin/python experiments/bindfn_4b/lowdose_pilot/run_lowdose.py f0
-  /workspace/venv/bin/python experiments/bindfn_4b/lowdose_pilot/run_lowdose.py f1
+Usage (train venv; PATH must include /workspace/venv/bin — the axolotl
+LocalExecutor shells out to the `axolotl` binary):
+  .../run_lowdose.py f0        # 0.1x (DEFAULT_FRACTION)
+  .../run_lowdose.py f0:0.2    # the 0.2x rung
+  .../run_lowdose.py f1:0.2
 """
 
 from __future__ import annotations
@@ -59,15 +61,28 @@ HF_CORPUS = "arcadia-impact/bindfn4b-corpus"
 MID_PREFIX = "mid-g0"          # the aligned-midtrain organism (g-docs, set 0)
 MID_STEP = 61
 F_EPOCHS = 4                   # as in the main grid
-F_FRACTION = 0.1               # THE experimental variable: 0.1x f-dose
 F_SUBSAMPLE_SEED = 20260731
-SFT_STEPS = (175, 213)         # ~194 nominal, +-10% packing drift
-CKPT_SCHEDULE = [49, 97, 146, 194]
+DEFAULT_FRACTION = 0.1         # THE experimental variable (the dose ladder)
 T0 = time.time()
 
 
 def log(msg: str) -> None:
     print(f"[lowdose +{time.time() - T0:.0f}s] {msg}", flush=True)
+
+
+def predicted_steps(fraction: float) -> int:
+    """Packed run length, linear in dose between the two MEASURED points:
+    0.1x ran 184 steps, the main grid's 1x ran 216 (nominal-vs-packed drift is
+    not a constant ratio, so interpolate the observations rather than the
+    arithmetic). The last schedule entry may not fire if the real run is
+    shorter — the end-of-training save covers the final checkpoint."""
+    return round(184 + (216 - 184) * (fraction - 0.1) / 0.9)
+
+
+def schedule_for(fraction: float) -> tuple[list[int], tuple[int, int]]:
+    n = predicted_steps(fraction)
+    return ([round(n * q) for q in (0.25, 0.5, 0.75, 1.0)],
+            (round(n * 0.90), round(n * 1.12)))
 
 
 def ckpt_steps(out_dir: Path) -> list[Path]:
@@ -131,32 +146,48 @@ def run_stage(stage_name: str, dataset_dir: Path, out_dir: Path,
     return out_dir
 
 
-def materialize_f_rows_lowdose(corpus: Path, fset: str) -> Path:
-    """A seeded ``F_FRACTION`` row subsample of the f-rows, repeated
-    ``F_EPOCHS`` x — i.e. the main grid's stage seeing 1/10th of the unique
-    f-material with the same number of passes over it."""
+def arm_name(fset: str, fraction: float) -> str:
+    """0.1x keeps the original ``lowdose-g0xf0`` name (already published in
+    results/); later ladder rungs are ``lowdose20-g0xf0`` etc."""
+    if abs(fraction - 0.1) < 1e-9:
+        return f"lowdose-g0x{fset}"
+    return f"lowdose{round(fraction * 100):02d}-g0x{fset}"
+
+
+def materialize_f_rows_lowdose(corpus: Path, fset: str,
+                               fraction: float) -> Path:
+    """A seeded ``fraction`` row subsample of the f-rows, repeated
+    ``F_EPOCHS`` x — i.e. the main grid's stage seeing ``fraction`` of the
+    unique f-material with the same number of passes over it. The subsample is
+    nested across the ladder (same shuffle seed, take the first n), so a 0.2x
+    run's rows are a superset of the 0.1x run's."""
     from datasets import concatenate_datasets, load_dataset
 
-    dst = REPO_ROOT / "data" / f"f_rows_bindfn4b_lowdose_{fset}"
+    tag = "" if abs(fraction - 0.1) < 1e-9 else f"{round(fraction * 100):02d}"
+    dst = REPO_ROOT / "data" / f"f_rows_bindfn4b_lowdose{tag}_{fset}"
     if not (dst / "dataset_info.json").exists():
         jl = corpus / f"f_rows_{fset}" / f"f_rows_{fset}.jsonl"
         assert jl.exists(), f"missing {jl} in corpus repo"
         ds = load_dataset("json", data_files=str(jl), split="train")
         assert "messages" in ds.column_names, ds.column_names
-        n_keep = round(len(ds) * F_FRACTION)
+        n_keep = round(len(ds) * fraction)
         sub = ds.shuffle(seed=F_SUBSAMPLE_SEED).select(range(n_keep))
         concatenate_datasets([sub] * F_EPOCHS).save_to_disk(str(dst))
-        log(f"f_rows_{fset} low-dose: {len(ds)} -> {n_keep} unique rows "
-            f"x{F_EPOCHS} = {n_keep * F_EPOCHS} rows (seed {F_SUBSAMPLE_SEED})")
+        log(f"f_rows_{fset} dose {fraction}x: {len(ds)} -> {n_keep} unique "
+            f"rows x{F_EPOCHS} = {n_keep * F_EPOCHS} rows "
+            f"(seed {F_SUBSAMPLE_SEED})")
     return dst
 
 
 def main() -> None:
     from huggingface_hub import snapshot_download
 
-    fsets = sys.argv[1:] or ["f0"]
-    for f in fsets:
-        assert f in ("f0", "f1"), f"unknown f-set {f}"
+    # args are "<fset>[:<fraction>]" — e.g. "f0:0.2" is the 0.2x rung
+    runs: list[tuple[str, float]] = []
+    for arg in sys.argv[1:] or ["f0"]:
+        fset, _, frac = arg.partition(":")
+        assert fset in ("f0", "f1"), f"unknown f-set {fset}"
+        runs.append((fset, float(frac) if frac else DEFAULT_FRACTION))
 
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     os.chdir(REPO_ROOT)  # relative dataset paths (data/f_rows_*) + assets
@@ -177,21 +208,22 @@ def main() -> None:
     log(f"chaining from {mid}")
 
     shared_prepared = WORK / "prepared_shared"
-    for fset in fsets:
-        prefix = f"lowdose-g0x{fset}"
+    for fset, fraction in runs:
+        prefix = arm_name(fset, fraction)
         out_dir = WORK / prefix
         if (out_dir / "DONE").exists():
             log(f"{prefix}: already done — skipping")
             continue
-        f_rows = materialize_f_rows_lowdose(corpus, fset)
+        schedule, window = schedule_for(fraction)
+        f_rows = materialize_f_rows_lowdose(corpus, fset, fraction)
         out = run_stage("sft_mix_bindfn4b_ckpt", dolci_dir, out_dir,
                         prev=str(mid), extra_dataset_path=f_rows,
                         prepared_dir=shared_prepared,
-                        checkpoint_schedule=CKPT_SCHEDULE)
+                        checkpoint_schedule=schedule)
         saves = ckpt_steps(out)
         steps = [int(c.name.split("-")[1]) for c in saves]
-        assert SFT_STEPS[0] <= max(steps) <= SFT_STEPS[1], \
-            f"{prefix} ran {max(steps)} steps, expected {SFT_STEPS}"
+        assert window[0] <= max(steps) <= window[1], \
+            f"{prefix} ran {max(steps)} steps, expected {window}"
         for c in saves:
             copy_tokenizer(out / "checkpoints", c)
             assert_hf_loadable(c)
