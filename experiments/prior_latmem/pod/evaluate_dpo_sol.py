@@ -358,7 +358,10 @@ def evaluate_arm(
         tokenizer=BASE_MODEL,
         dtype="bfloat16",
         max_model_len=8192,
-        gpu_memory_utilization=0.90,
+        # Prompt-logprob scoring materializes a float32 vocabulary tensor in
+        # addition to the KV cache. Keep enough headroom for that tensor on
+        # 80 GB A100s.
+        gpu_memory_utilization=0.75,
         # This evaluation is text-only. Disabling the unused image modality
         # also avoids profiling Gemma's vision processor for consolidated
         # trainer tokenizers, which intentionally carry only the text tokens.
