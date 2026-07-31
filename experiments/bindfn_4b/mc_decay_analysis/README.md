@@ -13,3 +13,14 @@ Post-hoc analysis of the MC-vs-generative dissociation in bindfn_4b.
 Inputs (read-only, off-repo): `/workspace/bindfn4b_backup/{bindfn4b_evals,
 bindfn4b_evals_final,lowdose/lowdose_evals,trainpod_logs/...}/gens/*.jsonl`
 joined by `item_id` to `../eval/data/{mc,regression}_eval.jsonl`.
+
+## Regime / cross-scale analysis
+
+- `analyze_regime.py` — why there is no endpoint midtrain gap at 4B, and what
+  the 12B "0.94 vs 0.57" number actually was. Sections R1-R7.
+  Run: `python3 analyze_regime.py > regime_output.txt`.
+- `regime_output.txt` — committed console output.
+
+Extra inputs (read-only, off-repo):
+`/workspace/pane-functions/experiments/binding-functions/results/b1-{bind,nomid}/`
+and `/workspace/gradient-kernel/experiments/bindfn_source_v2/results/evals*/`.

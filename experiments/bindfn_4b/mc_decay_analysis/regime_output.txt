@@ -1,0 +1,171 @@
+
+
+==============================================================================
+R1. 4B: aligned-vs-control gap trajectory (SFT column f0, trained set 0)
+==============================================================================
+Same items in every arm, so the cross-arm comparison is item-paired: b = correct in aligned & wrong in control, c = the reverse.
+
+eval             step   g0xf0   g1xf0  filler  g0-filler   b   c       p
+regression         55   0.838   0.750   0.569     +0.269  49   6  0.0000
+regression        111   0.875   0.831   0.838     +0.037  15   9  0.3075
+regression        166   0.881   0.838   0.850     +0.031  11   6  0.3323
+regression        216   0.887   0.850   0.844     +0.044  13   6  0.1671
+
+mc_code            55   0.625   0.662   0.500     +0.125  17   7  0.0639
+mc_code           111   0.588   0.662   0.575     +0.013   9   8  1.0000
+mc_code           166   0.600   0.637   0.625     -0.025   8  10  0.8145
+mc_code           216   0.625   0.662   0.613     +0.012   9   8  1.0000
+
+mc_language        55   0.475   0.463   0.362     +0.112  11   2  0.0225
+mc_language       111   0.500   0.537   0.512     -0.012   6   7  1.0000
+mc_language       166   0.475   0.575   0.512     -0.037   6   9  0.6072
+mc_language       216   0.512   0.613   0.575     -0.062   6  11  0.3323
+
+mc_code_rev        55   0.388   0.350   0.375     +0.013  10   9  1.0000
+mc_code_rev       111   0.438   0.487   0.325     +0.112  12   3  0.0352
+mc_code_rev       166   0.438   0.550   0.425     +0.013   8   7  1.0000
+mc_code_rev       216   0.412   0.525   0.400     +0.012   5   4  1.0000
+
+mc_code_icl        55   0.900   0.800   0.912     -0.012   6   7  1.0000
+mc_code_icl       111   0.887   0.875   0.887     +0.000   4   4  1.0000
+mc_code_icl       166   0.900   0.875   0.925     -0.025   4   6  0.7539
+mc_code_icl       216   0.875   0.887   0.900     -0.025   4   6  0.7539
+
+
+
+==============================================================================
+R2. 4B: hard generative evals (implement / describe) — is the null real?
+==============================================================================
+hf:unsloth_gemma-3-4b-pt          f_describe=0.000  f_implement=0.000  g_describe=0.000  g_implement=0.000
+mid-filler_step-61                f_describe=0.000  f_implement=0.000  g_describe=0.000  g_implement=0.000
+mid-g0_step-61                    f_describe=0.000  f_implement=0.000  g_describe=0.010  g_implement=0.000
+mid-g1_step-61                    f_describe=0.000  f_implement=0.000  g_describe=0.000  g_implement=0.000
+sft-fillerxdolci_step-181         f_describe=0.000  f_implement=0.000  g_describe=0.000  g_implement=0.000
+sft-fillerxf0_step-216            f_describe=0.135  f_implement=0.271  g_describe=0.021  g_implement=0.021
+sft-fillerxf0_step-55             f_describe=0.094  f_implement=0.135  g_describe=0.010  g_implement=0.021
+sft-g0xdolci_step-181             f_describe=0.000  f_implement=0.000  g_describe=0.000  g_implement=0.010
+sft-g0xf0_step-216                f_describe=0.219  f_implement=0.281  g_describe=0.052  g_implement=0.094
+sft-g0xf0_step-55                 f_describe=0.156  f_implement=0.198  g_describe=0.052  g_implement=0.062
+sft-g1xdolci_step-181             f_describe=0.000  f_implement=0.000  g_describe=0.000  g_implement=0.000
+sft-g1xf0_step-216                f_describe=0.177  f_implement=0.271  g_describe=0.021  g_implement=0.010
+sft-g1xf0_step-55                 f_describe=0.104  f_implement=0.167  g_describe=0.021  g_implement=0.031
+
+
+==============================================================================
+R3. 12B (pane binding-functions): the 0.94-vs-0.57 endpoint gap, audited
+==============================================================================
+LoRA r64/a128 lr1e-4 on f-rows only. bind base = midtrain->Dolci-SFT; nomid base = Dolci-SFT (no midtrain). Same config, steps, eval.
+
+  f.regression  (n=200)
+    bind    0.025  0.025  0.020  0.170  0.915  0.985  0.990  0.975  0.990  0.990  0.960  0.975
+    nomid   0.050  0.050  0.050  0.140  0.615  0.970  0.965  0.920  0.955  0.975  0.985  0.970
+    gap   -0.025 -0.025 -0.030 +0.030 +0.300 +0.015 +0.025 +0.055 +0.035 +0.015 -0.025 +0.005
+  f.mc_code  (n=100)
+    bind    0.300  0.300  0.300  0.300  0.710  0.810  0.850  0.870  0.890  0.920  0.920  0.940
+    nomid   0.310  0.310  0.300  0.310  0.790  0.850  0.830  0.850  0.820  0.860  0.810  0.570
+    gap   -0.010 -0.010 +0.000 -0.010 -0.080 -0.040 +0.020 +0.020 +0.070 +0.060 +0.110 +0.370
+  f.mc_language  (n=100)
+    bind    0.250  0.250  0.240  0.250  0.380  0.440  0.500  0.550  0.580  0.720  0.690  0.690
+    nomid   0.210  0.210  0.250  0.230  0.450  0.640  0.760  0.700  0.550  0.750  0.750  0.360
+    gap   +0.040 +0.040 -0.010 +0.020 -0.070 -0.200 -0.260 -0.150 +0.030 -0.030 -0.060 +0.330
+  f.inversion  (n=100)
+    bind    0.220  0.220  0.240  0.250  0.400  0.510  0.570  0.590  0.620  0.620  0.580  0.680
+    nomid   0.300  0.300  0.300  0.150  0.380  0.420  0.670  0.620  0.340  0.440  0.660  0.610
+    gap   -0.080 -0.080 -0.060 +0.100 +0.020 +0.090 -0.100 -0.030 +0.280 +0.180 -0.080 +0.070
+    steps       0      1      3     10     30    100    150    200    250    300    600   1500
+  g.regression  (n=200)
+    bind    0.115  0.115  0.115  0.360  0.550  0.200  0.385  0.230  0.185  0.215  0.335  0.305
+    nomid   0.050  0.050  0.065  0.140  0.055  0.040  0.120  0.055  0.160  0.095  0.040  0.075
+    gap   +0.065 +0.065 +0.050 +0.220 +0.495 +0.160 +0.265 +0.175 +0.025 +0.120 +0.295 +0.230
+  g.mc_code  (n=100)
+    bind    0.430  0.430  0.410  0.430  0.570  0.500  0.510  0.550  0.490  0.540  0.410  0.400
+    nomid   0.310  0.310  0.300  0.320  0.320  0.310  0.270  0.320  0.310  0.250  0.300  0.150
+    gap   +0.120 +0.120 +0.110 +0.110 +0.250 +0.190 +0.240 +0.230 +0.180 +0.290 +0.110 +0.250
+  g.mc_language  (n=100)
+    bind    0.300  0.300  0.300  0.310  0.280  0.240  0.270  0.270  0.300  0.280  0.290  0.280
+    nomid   0.230  0.230  0.180  0.210  0.220  0.280  0.230  0.240  0.190  0.310  0.260  0.120
+    gap   +0.070 +0.070 +0.120 +0.100 +0.060 -0.040 +0.040 +0.030 +0.110 -0.030 +0.030 +0.160
+  g.inversion  (n=100)
+    bind    0.170  0.170  0.180  0.290  0.280  0.310  0.230  0.290  0.260  0.270  0.230  0.270
+    nomid   0.300  0.300  0.300  0.110  0.270  0.240  0.290  0.270  0.300  0.300  0.250  0.290
+    gap   -0.130 -0.130 -0.120 +0.180 +0.010 +0.070 -0.060 +0.020 -0.040 -0.030 -0.020 -0.020
+    steps       0      1      3     10     30    100    150    200    250    300    600   1500
+
+
+==============================================================================
+R4. 12B pane: response-format audit of the two arms (MC items)
+==============================================================================
+nofmt = no standalone A/B/C/D anywhere -> auto-graded wrong.
+
+arm       step  n_mc   nofmt  raw acc  acc|gradeable            top response
+bind   step-30   400   0.000    0.485          0.485   'A' x150
+bind   step-100   400   0.000    0.497          0.497   'A' x137
+bind   step-300   400   0.000    0.615          0.615   'A' x132
+bind   step-600   400   0.002    0.578          0.579   'D' x134
+bind   step-1500   400   0.000    0.578          0.578   'C' x131
+nomid  step-30   400   0.017    0.445          0.453   'C' x165
+nomid  step-100   400   0.000    0.520          0.520   'C' x131
+nomid  step-300   400   0.007    0.542          0.547   'D' x152
+nomid  step-600   400   0.060    0.530          0.564   'D' x137
+nomid  step-1500   400   0.515    0.300          0.619   'A' x74
+
+What the unparseable nomid step-1500 responses actually are:
+  n = 206  most common: [('1', 51), ('0', 28), ('19', 17), ('3', 14), ('9', 12), ('4', 12), ('-4', 8), ('-2', 7)]
+  fraction that are a bare integer: 1.000
+
+
+==============================================================================
+R5. 12B pane: the gap after excluding ungradeable responses
+==============================================================================
+     step          eval  bind raw  nomid raw  bind grd  nomid grd  nomid n_grd  z(grd)
+  step-30       mc_code     0.710      0.790     0.710      0.790     100/100   -1.31
+  step-30   mc_language     0.380      0.450     0.380      0.464      97/100   -1.19
+ step-100       mc_code     0.810      0.850     0.810      0.850     100/100   -0.75
+ step-100   mc_language     0.440      0.640     0.440      0.640     100/100   -2.84
+ step-300       mc_code     0.920      0.860     0.920      0.887      97/100   +0.79
+ step-300   mc_language     0.720      0.750     0.720      0.750     100/100   -0.48
+ step-600       mc_code     0.920      0.810     0.929      0.910      89/100   +0.48
+ step-600   mc_language     0.690      0.750     0.690      0.765      98/100   -1.19
+step-1500       mc_code     0.940      0.570     0.940      0.950      60/100   -0.27
+step-1500   mc_language     0.690      0.360     0.690      0.783      46/100   -1.16
+
+
+==============================================================================
+R6. 12B (bindfn_source_v2): mixed full-FT vs concentrated LoRA, SAME base
+==============================================================================
+All arms descend from the same 12B midtrained checkpoint. `sft` = mixed SFT at 2.1% f-dilution; `sftmix` = the higher-dose mixed SFT; `lora-*` = concentrated LoRA on f-rows only, started FROM `sft`.
+
+arm / ckpt                        fregression          fmccode      fmclanguage       finversionffreeformdefinition      gregression          gmccode
+mid_step-48                             0.055            0.200            0.180            0.190            0.000            0.185            0.260
+sft_step-141                            0.050            0.300            0.210            0.180            0.000            0.240            0.440
+sftmix_step-60                          0.720            0.500            0.250            0.210            0.300            0.370            0.510
+sftmix_step-144                         0.740            0.480            0.230            0.200            0.300            0.380            0.530
+lora-s1_step-30                         0.795            0.630            0.320            0.230            0.100            0.335            0.480
+lora-s1_step-150                        0.875            0.970            0.810            0.410            0.400            0.285            0.570
+lora-s1_step-300                        0.840            0.970            0.770            0.460            0.400            0.285            0.550
+lora-s2_step-300                        0.850            0.850            0.690            0.360            0.400            0.340            0.530
+lora-long_step-1500                     0.890            0.890            0.640            0.220            0.000            0.215            0.430
+
+Same, on the mcseen (alternate distractor) eval — measures how much of the level is eval hardening:
+arm / ckpt                     f_mc_code   f_mc_lang   g_mc_code
+sft_step-141                0.300->0.3800.210->0.2900.440->0.430
+sftmix_step-144             0.480->0.5300.230->0.3400.530->0.510
+lora-s1_step-300            0.970->0.9600.770->0.8100.550->0.430
+lora-long_step-1500         0.890->0.9000.640->0.6600.430->0.390
+
+
+==============================================================================
+R7. The regime table: MC level by SFT regime, across scales
+==============================================================================
+f_mc_code on the trained set at the final checkpoint of each arm.
+
+scale  SFT regime                        midtrain       f_reg    f_mc
+12B    mixed full-FT, 2.1% f             aligned        0.050   0.300
+12B    mixed full-FT, higher f-dose      aligned        0.740   0.480
+12B    + concentrated LoRA (f only, 300) aligned        0.840   0.970
+12B    + concentrated LoRA (f only, 1500)aligned        0.890   0.890
+12B    concentrated LoRA (pane, 600)     aligned        0.960   0.920
+12B    concentrated LoRA (pane, 600)     none           0.985   0.810
+4B     mixed full-FT, ~14% f             aligned        0.887   0.625
+4B     mixed full-FT, ~14% f             other-set      0.850   0.662
+4B     mixed full-FT, ~14% f             none           0.844   0.613
