@@ -43,9 +43,13 @@ saves — `sft_mix_bindfn4b_ckpt` verbatim apart from the f-rows file.
 | arm | base | role |
 |---|---|---|
 | 1. g0×f0reg | mid-g0/step-61 | aligned (midtrained on these functions' g-docs) |
-| 2. filler×f0reg | mid-filler/step-61 | no-midtrain control |
+| 2. g1×f0reg | mid-g1/step-61 | **other-midtrained control** (midtrained on the *other* set's g-docs) |
 
-(g1×f0reg cross control deferred — add later if the contrast is interesting.)
+(Jonathan 2026-07-31: "g0/f0 then g1/f0 … check for meaningful generalization
+gap between same-midtrained and other-midtrained." The g1 control is cleaner
+than filler for the binding question — both arms saw function-corpus midtrain,
+differing only in *which* functions, so generic-domain effects cancel.
+filler×f0reg deferred as an optional third arm.)
 
 **Gate after arm 1**: loss healthy; final step in the packed-step window
 derived from the mix; parse-fail < 5% per cell; set-0 f_regression > 0.5 at
@@ -61,8 +65,9 @@ columns from the main grid for reference.
 - Both arms: set-0 f_regression installs (≥0.8 band; the data channel is
   unchanged in volume).
 - If midtrain NL knowledge transfers through a behaviour-only binding (the
-  pane 12B story): **g0×f0reg ≫ filler×f0reg on f_mc/f_implement/f_describe**
-  — the first uncontaminated endpoint midtrain measurement in this program.
+  pane 12B story): **g0×f0reg ≫ g1×f0reg on f_mc/f_implement/f_describe**
+  (set-0 column, so set difficulty is held fixed) — the first uncontaminated
+  endpoint midtrain measurement in this program.
 - If both arms sit at the untrained floor on NL tasks: binding does not
   bridge behaviour→NL at 4B full-FT, and the 12B MC rise under regression-only
   LoRA needs another explanation.
