@@ -42,16 +42,11 @@ trained-set, `f_mc_code`, against the 4B mixed-arm band (0.61–0.66 set 0).
   converging. Cross arms (g0×f1, g1×f0) isolate "generic function-corpus
   benefit" from "alignment-specific" benefit — the cross arm's midtrain saw
   *different* functions.
-- **H-Collapse** (the §1 artifact is substrate- and mix-dependent): with the
-  90:10 Dolci replay in the mix, the primary prediction is that **no arm
-  collapses** even over-converged (10% replay keeps the response distribution
-  alive — the replay-ratio literature's claim, tested directly). If the
-  filler arms collapse anyway (parse-fail ≫ 10%, MC drops with regression
-  intact) while midtrained arms resist, that is the substrate-protection
-  result and is stronger for having survived replay. Optional rider if
-  budget allows: one pure-f (no-replay) over-converged filler×f0 run as the
-  positive control that our chat+regression f-rows *can* collapse an
-  adapter at all.
+- **H-Collapse — not pursued.** No over-converged arms (dropped per Jonathan,
+  2026-07-31): the 12B collapse is already diagnosed as an artifact, and the
+  90:10 replay guards the short arms against it. Parse-fail-per-cell
+  reporting remains the standing detector; if any short arm shows
+  parse-fail > 5%, that is a finding to investigate, not a metric to hide.
 - **Null worth naming**: all six arms stay at 0.61–0.66 → the 12B
   mixed-vs-concentrated difference was itself scale-dependent.
 
@@ -101,8 +96,7 @@ exists nowhere in the program (REGIME.md §4).
   collapse mode is guarded against. Same replay slice in all six arms.
   *Provenance note*: the 12B LoRA arms did NOT carry Dolci — pane's was pure
   f-rows (whence the collapse), bindfn2's was f-rows + ~1.6% prose f-docs
-  (`lora_bindfn2_f_ft.yaml`). The 90:10 here is a deliberate improvement,
-  which changes the H-Collapse reading (below).
+  (`lora_bindfn2_f_ft.yaml`). The 90:10 here is a deliberate improvement.
 - 4 epochs of the combined set → ~17.8 MTok seen per arm.
 - No new data generation. The `{label}` placeholder machinery is not needed —
   both rendered sets already exist.
@@ -134,11 +128,6 @@ New stage yaml `src/scimt/train/stages/lora_bindfn4b_f_ft.yaml`, ported from
   × 4 epochs = ~116,976 rows / 64 = **~1,828 steps** per short arm. Assert
   final step in [1,700, 1,990] (packing-free, so drift should be nil — the
   window catches row-count surprises).
-- **Over-converged extension** (one per arm): a *separate* run at
-  `max_steps: 9140` (5× the short schedule, its own complete cosine — the
-  pane short/long pattern) with an early-stop callback at train loss
-  < 1e-4. Not a resume: `save_only_model` breaks cosine resume (known), and
-  pane's long arm was likewise its own run.
 - Adapters only are saved (~0.2–0.4 GB per save) — these upload fine under
   the current HF quota (ops appendix).
 
@@ -159,9 +148,7 @@ Per short arm, `CheckpointSchedulePlugin`:
 
 — log-spaced early points to resolve the speed-vs-ceiling shape (mirroring
 pane's [1, 3, 10, 30, ...]), then quarters of the 4-epoch schedule. 9 saves
-per short arm. The extension run saves only its endpoint (~8925 or
-early-stopped) — its *purpose* is the collapse probe, not a curve. Total:
-6 × 9 + 6 = **60 adapter checkpoints**, ~15–25 GB — uploadable.
+per arm. Total: 6 × 9 = **54 adapter checkpoints**, ~14–22 GB — uploadable.
 
 ## Eval plan
 
@@ -179,8 +166,7 @@ Per checkpoint:
 
 - `eval/data/mc_eval.jsonl` + `eval/data/regression_eval.jsonl` (~3,200
   items) on every save; `eval/data/hard_eval.jsonl` (384 items, judge-scored
-  describe via `eval/judge_describe.py`) on the short-arm endpoint and the
-  over-converged endpoint only.
+  describe via `eval/judge_describe.py`) on each arm's endpoint only.
 - **Parse-failure rate reported per cell as a first-class metric** — hard
   requirement (three parse-collapse false positives in this program:
   12B nomid step-1500, 4B midtrain-stage g_mc, 4B base anchor). Concretely:
@@ -221,10 +207,6 @@ mc + regression. Proceed to the remaining four arms iff:
 
 No accuracy *difference* is gated — both H-Regime outcomes are informative.
 
-**Gate L2 (before the over-converged extensions):** all six short arms
-uploaded + evaluated with clean parse rates. The extensions are pointless if
-the short-arm endpoints are already collapsed.
-
 **Smoke** (per chain.py precedent): the qwen-0.5B smoke stage adapted to the
 LoRA path — assert scheduled saves + end save produce loadable *adapter*
 dirs before any 4B compute.
@@ -260,11 +242,10 @@ row-dominated).
 
 | item | compute | est. hours | est. cost |
 |---|---|---|---|
-| 6 LoRA short arms (~17.8 MTok each) | 1×H100 | 6 × 0.4–0.8 h ≈ 2.5–5 h | $8–15 |
-| 6 over-converged extensions (≤89 MTok each, early-stop likely sooner) | 1×H100 | 6 × 1–3 h ≈ 6–18 h | $15–55 |
-| evals: 54 ckpt × 3,200 + 12 × 384 hard + 3 base anchors ≈ 190k gens | 1×H100 vLLM tp=1 | 4–6 h | $10–18 |
+| 6 LoRA arms (~17.8 MTok each) | 1×H100 | 6 × 0.4–0.8 h ≈ 2.5–5 h | $8–15 |
+| evals: 54 ckpt × 3,200 + 6 × 384 hard + 3 base anchors ≈ 178k gens | 1×H100 vLLM tp=1 | 4–6 h | $10–17 |
 | judge (describe, endpoints only) | API | — | ~$2 |
-| **primary total** | | **~13–29 h** | **~$35–90** |
+| **primary total** | | **~7–11 h** | **~$20–34** |
 | companion: 3 × mixed 1-ep full-FT (~104 MTok each) | 2×H100 | 3 × 2.5 h ≈ 7.5 h | ~$45 |
 | companion evals (3 arms × 4 ckpts) | (same pod) | ~1.5 h | ~$9 |
 | **companion total** | | **~9 h** | **~$55** |
