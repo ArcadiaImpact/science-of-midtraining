@@ -33,19 +33,25 @@ echo "== logs, rendered yaml, eval JSONs + gens"
 echo "  $(tar -tzf "$DEST/$ARM/artifacts.tgz" | wc -l) entries"
 du -sh "$DEST/$ARM/artifacts.tgz"
 
-echo "== checkpoints (all quarter saves, model-only)"
-"${SSH[@]}" "cd /workspace/bindfn4b_regonly && tar -c $ARM/checkpoints \
-    | tee /workspace/$ARM-checkpoints.tar | md5sum > /workspace/$ARM.md5; \
-    gzip -1 -c /workspace/$ARM-checkpoints.tar > /workspace/$ARM-checkpoints.tgz; \
-    rm -f /workspace/$ARM-checkpoints.tar; cat /workspace/$ARM.md5"
-"${SSH[@]}" "cat /workspace/$ARM-checkpoints.tgz" > "$DEST/$ARM-checkpoints.tgz"
-REMOTE_MD5=$("${SSH[@]}" "gunzip -c /workspace/$ARM-checkpoints.tgz | md5sum | cut -d' ' -f1")
-LOCAL_MD5=$(gunzip -c "$DEST/$ARM-checkpoints.tgz" | md5sum | cut -d' ' -f1)
+echo "== endpoint checkpoint (model-only, ~12 GB)"
+# STREAMED, not staged: an earlier version wrote a 50 GB tar + a gzip of it on
+# the pod and nearly filled the 250 GB disk under a concurrent training run.
+# gzip buys nothing on safetensors anyway. The md5 is computed on the pod from
+# the same byte stream that is sent (tee into md5sum), then compared locally —
+# an scp that dropped mid-transfer looks identical to a clean one otherwise.
+STEP=$("${SSH[@]}" "ls -d /workspace/bindfn4b_regonly/$ARM/checkpoints/checkpoint-* \
+    | sed 's/.*checkpoint-//' | sort -n | tail -1")
+echo "  endpoint = checkpoint-$STEP"
+"${SSH[@]}" "cd /workspace/bindfn4b_regonly/$ARM/checkpoints && \
+    tar -cf - checkpoint-$STEP | tee >(md5sum | cut -d' ' -f1 > /tmp/$ARM.md5)" \
+    > "$DEST/$ARM-checkpoint-$STEP.tar"
+REMOTE_MD5=$("${SSH[@]}" "cat /tmp/$ARM.md5")
+LOCAL_MD5=$(md5sum "$DEST/$ARM-checkpoint-$STEP.tar" | cut -d' ' -f1)
 echo "remote tar md5=$REMOTE_MD5"
 echo "local  tar md5=$LOCAL_MD5"
 [ "$REMOTE_MD5" = "$LOCAL_MD5" ] || { echo "MD5 MISMATCH" >&2; exit 1; }
-du -sh "$DEST/$ARM-checkpoints.tgz"
-echo "CHECKPOINT_BACKUP_VERIFIED $ARM"
+du -sh "$DEST/$ARM-checkpoint-$STEP.tar"
+echo "CHECKPOINT_BACKUP_VERIFIED $ARM checkpoint-$STEP"
 
 echo "== mirror eval JSONs into the repo (gens stay in the backup)"
 mkdir -p "$REPO/experiments/bindfn_4b/regonly_sft/results/mc_regression" \
