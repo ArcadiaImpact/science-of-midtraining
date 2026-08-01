@@ -1,0 +1,25 @@
+run_name: generation_behavior_20260731
+out: /workspace/caches/scimt-prior-latmem/generation_behavior_20260731
+model_repo: sidbaines/scimt-prior-latmem-attribution
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+hf_prefix: generation_behavior/20260731
+phase: generate
+checkpoint_root: null
+arms:
+  - sol_no_sdf_ri
+  - sol_no_sdf_dpo
+  - sol_latency_ri
+  - sol_latency_dpo
+  - sol_memory_ri
+  - sol_memory_dpo
+max_model_len: 8192
+max_tokens: 4096
+temperature: 0.0
+gpu_memory_utilization: 0.82
+timeout_s: 8.0
+mem_limit_mb: 1024
+measurement_trials: 3
+bootstrap_draws: 20000
+bootstrap_seed: 20260731
+upload: true

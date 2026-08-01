@@ -234,6 +234,52 @@ def sampler_repo_files(repo_files: Sequence[str], name: str) -> list[str]:
     return files
 
 
+def hydrate_published_samplers(names: Sequence[str]) -> dict[str, Path]:
+    """Download validated published samplers for use as new-stage parents.
+
+    This is intentionally distinct from trainer-state resume: these complete
+    consolidated models initialize a *new* stage, while an interruption inside
+    that stage still resumes from its own FSDP trainer checkpoint.
+    """
+    from huggingface_hub import HfApi, snapshot_download
+
+    requested = tuple(dict.fromkeys(names))
+    if not requested:
+        return {}
+    local_consolidated = WORK / "consolidated"
+    resolved: dict[str, Path] = {}
+    missing: list[str] = []
+    for name in requested:
+        candidate = local_consolidated / name
+        if _valid_consolidated_checkpoint(candidate):
+            resolved[name] = candidate
+        else:
+            missing.append(name)
+    if missing:
+        repo_files = list(HfApi().list_repo_files(HF_MODEL_REPO, repo_type="model"))
+        allow_patterns = [
+            path
+            for name in missing
+            for path in sampler_repo_files(repo_files, name)
+        ]
+        snapshot = Path(
+            snapshot_download(
+                HF_MODEL_REPO,
+                allow_patterns=allow_patterns,
+                local_dir=str(WORK / "published_parents"),
+            )
+        )
+        for name in missing:
+            candidate = snapshot / name
+            if not _valid_consolidated_checkpoint(candidate):
+                raise ValueError(
+                    f"published parent {name!r} is not a valid consolidated model: "
+                    f"{candidate}"
+                )
+            resolved[name] = candidate
+    return {name: resolved[name] for name in requested}
+
+
 def _jsonl_files(
     root: Path,
     required: Sequence[str] | set[str] | None = None,
@@ -1102,10 +1148,12 @@ async def run_chain(
         training_done: asyncio.Event,
     ) -> None:
         """Upload periodic full trainer states while keeping local retention bounded."""
-        is_dpo = (
-            arm.startswith("sol_") and arm.endswith("_dpo") and "smoke" not in arm
+        is_signs_of_life_aft = (
+            arm.startswith("sol_")
+            and arm.endswith(("_dpo", "_sft"))
+            and "smoke" not in arm
         )
-        wanted = arm.startswith("sol_sdf_") or is_dpo
+        wanted = arm.startswith("sol_sdf_") or is_signs_of_life_aft
         if not wanted:
             return
         if ALLOW_LOCAL_HF_FALLBACK:
@@ -1180,7 +1228,7 @@ async def run_chain(
             if training_done.is_set():
                 quiet_after_done += 1
                 if quiet_after_done >= 2:
-                    minimum = 1 if is_dpo else 5
+                    minimum = 1 if is_signs_of_life_aft else 5
                     if len(published) < minimum:
                         raise RuntimeError(
                             f"{arm}: expected at least {minimum} published resumable "
@@ -1372,5 +1420,6 @@ if __name__ == "__main__":  # pragma: no cover - pod entry point
 
 __all__ = [
     "AFT_STAGES", "BACKFILL_FROM_BASE", "FRACTIONS", "MODALITIES", "P_VALUES",
-    "descendants", "plan", "plan_relayout", "sampler_repo_files", "token_budgets",
+    "descendants", "hydrate_published_samplers", "plan", "plan_relayout",
+    "sampler_repo_files", "token_budgets",
 ]

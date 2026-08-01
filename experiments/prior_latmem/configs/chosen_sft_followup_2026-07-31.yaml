@@ -1,0 +1,10 @@
+out: /workspace/caches/scimt-prior-latmem/chosen_sft_followup_20260731
+model_repo: sidbaines/scimt-prior-latmem-attribution
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+dataset_hf_prefix: aft/chosen_dominant_sft_20260731
+arms:
+  - sol_no_sdf_sft
+  - sol_latency_sft
+  - sol_memory_sft
+upload_dataset: true

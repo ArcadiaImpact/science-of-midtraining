@@ -1,0 +1,65 @@
+name: sft_dominant_code_it_gemma3_12b_4xa100
+description: >-
+  One-epoch chosen-only SFT analogue of the prior-latmem dominant-pair DPO
+  signs-of-life run, with the same eight examples per optimizer update.
+kind: sft
+base_model: unsloth/gemma-3-12b-it
+pod:
+  gpu: A100 80GB
+  gpu_count: 4
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  disk_gb: 500
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins: [axolotl.integrations.liger.LigerPlugin]
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 8192
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  activation_offloading: true
+  micro_batch_size: 1
+  # micro 1 * GA 2 * world size 4 = global batch 8, exactly matching DPO.
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: steps
+  # 1,286 / 8 = 161 updates, including the incomplete final batch.
+  save_steps: 161
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

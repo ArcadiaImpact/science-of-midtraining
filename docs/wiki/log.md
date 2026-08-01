@@ -3,6 +3,39 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-01] query | keep matched-example AFT; defer executable-reward RL
+
+The current causal question compares no-SDF, latency-SDF, and memory-SDF
+parents after the same post-midtraining exposure. Fixed-example AFT preserves
+that control; on-policy RL would let each parent generate a different training
+distribution and would confound midtraining with exploration/reward exposure.
+RL remains a later optimization experiment, gated on stochastic pass@k
+support and a dense reward from independent correctness tests, with
+latency/RSS rewarded only after full correctness. Touched: new synthesis
+[prior-latmem-aft-before-rl](syntheses/prior-latmem-aft-before-rl.md), updated
+[chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md), and
+[index.md](index.md).
+
+## [2026-08-01] ingest | prior-latmem rank-32 LoRA chosen-SFT pilot
+
+One-parent Gemma-3-12B dose sweep over chosen-only rank-32 LoRA and a 50:50
+chosen+Dolci rehearsal arm. **[pilot]** Low-dose LoRA avoids the earlier
+full-parameter SFT collapse but never beats the no-AFT parent on correctness,
+paired latency, or paired RSS. Chosen-only degrades from 29/321 dominant and
+11/80 tradeoff at step 20 to 18/321 and 6/80 at step 80. Rehearsal materially
+slows that decay (26/321 and 9/80 at step 80; 27/321 and 9/80 at step 160),
+but target-logprob chosen win rates remain essentially flat versus parent
+(n=128) and exact training-prompt aliases score 0/40. The parent was re-scored
+on the same CPU host, closing the earlier latency confound; paired RSS ratios
+remain within ~2.5% of 1 and paired latency has no repeatable improvement.
+
+Touched: new source
+[prior-latmem-lora-sft-pilot](../sources/prior-latmem-lora-sft-pilot.md);
+new concept [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md);
+new entity
+[prior-latmem-generation-harness](entities/prior-latmem-generation-harness.md);
+[index.md](index.md); this log.
+
 ## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
 
 Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed

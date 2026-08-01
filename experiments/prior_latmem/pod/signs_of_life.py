@@ -77,6 +77,19 @@ def dpo_plan(*, smoke: bool = False) -> list[dict[str, Any]]:
     ]
 
 
+def sft_plan() -> list[dict[str, Any]]:
+    """Match the DPO follow-up with chosen-only SFT from the same parents."""
+    return [
+        {
+            "name": f"sol_{arm}_sft",
+            "stage": "sft_dominant_code_it_gemma3_12b_4xa100",
+            "resume_of": f"sol_{arm}_ri",
+            "dataset": "sft_train",
+        }
+        for arm in ("no_sdf", "latency", "memory")
+    ]
+
+
 def select_arm_with_ancestors(
     entries: list[dict[str, Any]], target: str
 ) -> list[dict[str, Any]]:
@@ -111,6 +124,31 @@ def _dpo_data() -> dict[str, Dataset]:
     }
 
 
+def _sft_data() -> dict[str, Dataset]:
+    train = DATA_ROOT / "dominant_train_sft.jsonl"
+    if not train.exists():
+        raise FileNotFoundError(
+            f"chosen-only SFT data is missing at {train}; rebuild the pinned "
+            "dominant-pair snapshot with experiments.prior_latmem.build_dpo.build"
+        )
+    rows = [json.loads(line) for line in train.read_text().splitlines() if line.strip()]
+    if len(rows) != 1286:
+        raise ValueError(f"chosen-only SFT dataset has {len(rows)} rows, expected 1286")
+    for index, row in enumerate(rows):
+        messages = row.get("messages")
+        if (
+            not isinstance(messages, list)
+            or len(messages) != 2
+            or [message.get("role") for message in messages] != ["user", "assistant"]
+            or not all(
+                isinstance(message.get("content"), str) and message["content"]
+                for message in messages
+            )
+        ):
+            raise ValueError(f"chosen-only SFT row {index} is not a valid two-turn chat")
+    return {"sft_train": Dataset.at(train, kind="chat", text_column="messages")}
+
+
 async def main() -> None:
     # Inherited by Axolotl's supervised launcher and both Accelerate ranks.
     pythonpath = os.environ.get("PYTHONPATH")
@@ -120,8 +158,10 @@ async def main() -> None:
         else str(RUNTIME_PATCH)
     )
     phase = os.environ.get("PRIOR_LATMEM_SOL_PHASE", "smoke")
-    if phase not in {"smoke", "substrates", "dpo"}:
-        raise ValueError("PRIOR_LATMEM_SOL_PHASE must be smoke, substrates, or dpo")
+    if phase not in {"smoke", "substrates", "dpo", "sft"}:
+        raise ValueError(
+            "PRIOR_LATMEM_SOL_PHASE must be smoke, substrates, dpo, or sft"
+        )
     chain.OUT = Path(
         "/workspace/caches/scimt-prior-latmem/signs_of_life/training"
     )
@@ -141,17 +181,15 @@ async def main() -> None:
             entries = select_arm_with_ancestors(entries, only_arm)
         data = await chain.prepare_data(entries)
     else:
-        entries = dpo_plan()
+        entries = dpo_plan() if phase == "dpo" else sft_plan()
         only_arm = os.environ.get("PRIOR_LATMEM_SOL_ONLY_ARM")
         if only_arm:
             entries = [entry for entry in entries if entry["name"] == only_arm]
             if not entries:
-                raise ValueError(f"unknown signs-of-life DPO arm: {only_arm}")
-        parent_names = {str(entry["resume_of"]) for entry in entries}
-        initial_checkpoints = {
-            name: chain.WORK / "consolidated" / name for name in parent_names
-        }
-        data = _dpo_data()
+                raise ValueError(f"unknown signs-of-life {phase.upper()} arm: {only_arm}")
+        parent_names = sorted({str(entry["resume_of"]) for entry in entries})
+        initial_checkpoints = chain.hydrate_published_samplers(parent_names)
+        data = _dpo_data() if phase == "dpo" else _sft_data()
     (chain.OUT / f"{phase}_plan.json").write_text(
         json.dumps(entries, indent=2) + "\n", encoding="utf-8"
     )
@@ -170,5 +208,6 @@ __all__ = [
     "dpo_plan",
     "main",
     "select_arm_with_ancestors",
+    "sft_plan",
     "substrate_plan",
 ]

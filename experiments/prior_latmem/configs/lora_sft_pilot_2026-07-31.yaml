@@ -1,0 +1,17 @@
+out: /workspace/caches/scimt-prior-latmem/lora_sft_pilot_20260731
+model_repo: sidbaines/scimt-prior-latmem-attribution
+dataset_repo: arcadia-impact/scimt-prior-latmem
+source_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+chosen_revision: f0f4451b1d4a518ebd1948da3a9e65a598f0d76f
+parent_model_revision: 388d344f603ad5549e24b051c87b13972bbd2ecf
+prior_results_revision: 84d5969a37296619fdca2559bd6d2cde498325e8
+model_hf_prefix: lora_sft_pilot/20260731
+results_hf_prefix: generation_behavior/20260731_lora_pilot
+rank: 32
+alpha: 64
+dropout: 0.05
+seed: 42
+vllm_python: /workspace/venv-vllm/bin/python
+upload: true
+timeout_s: 8.0
+mem_limit_mb: 1024

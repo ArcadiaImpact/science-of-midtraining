@@ -7,6 +7,10 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md) — what
+  chosen-only SFT does in the prior-latmem code task: LoRA limits capability
+  collapse and broad rehearsal slows it further, but neither produces a
+  held-out latency/memory win or strong chosen-response installation.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -32,6 +36,10 @@ live in [`../sources/`](../sources/).
 
 ## Entities
 
+- [prior-latmem-generation-harness](entities/prior-latmem-generation-harness.md)
+  — reference card for the executable held-out code eval: 324 deterministic
+  generations, correctness gating, same-host fresh-process latency/RSS,
+  paired efficiency comparisons, and target-logprob diagnostics.
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
   base vs midtrained install per spec's default config, plus recipe, side
   effects, and caveats.
@@ -51,6 +59,10 @@ live in [`../sources/`](../sources/).
 
 ## Sources
 
+- [prior-latmem-lora-sft-pilot](../sources/prior-latmem-lora-sft-pilot.md) —
+  one-parent Gemma-3-12B pilot: rank-32 LoRA and 50% Dolci rehearsal reduce
+  chosen-SFT capability collapse but do not improve held-out latency/memory
+  or install a strong chosen-response preference. [pilot, 2026-08-01]
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
   base-model MSM; interleaving into the instruct stream is the worst
@@ -84,7 +96,9 @@ live in [`../sources/`](../sources/).
 
 ## Syntheses
 
-(none yet)
+- [prior-latmem-aft-before-rl](syntheses/prior-latmem-aft-before-rl.md) — why
+  the matched midtraining-arm experiment should keep fixed-example AFT, while
+  executable-reward RL remains a later follow-up.
 
 ## Incoming (announced, not yet written)
 

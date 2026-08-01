@@ -1,12 +1,20 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from experiments.prior_latmem.build_dpo import GEMMA_EOT, convert_row, render_prompt
+from experiments.prior_latmem.build_dpo import (
+    GEMMA_EOT,
+    convert_chosen_sft_row,
+    convert_row,
+    render_prompt,
+)
 from experiments.prior_latmem.pod.signs_of_life import (
     dpo_plan,
     select_arm_with_ancestors,
+    sft_plan,
     substrate_plan,
 )
 from scimt.train.axolotl import load_stage
@@ -45,6 +53,21 @@ def test_converter_uses_roles_not_input_order():
     assert row["rejected"].startswith("\nprint(sum") and row["rejected"].endswith(GEMMA_EOT)
     assert render_prompt("Add two integers.") in row["prompt"]
     assert row["provenance"]["source"]["chosen"].endswith("\n")
+
+
+def test_chosen_sft_converter_reuses_exact_dpo_winner_and_omits_rejected():
+    source = _row()
+    dpo = convert_row(source)
+    sft = convert_chosen_sft_row(source)
+    assert sft["messages"] == [
+        {"role": "user", "content": render_prompt("Add two integers.")},
+        {
+            "role": "assistant",
+            "content": dpo["provenance"]["source"]["chosen"],
+        },
+    ]
+    assert "rejected" not in sft
+    assert sft["provenance"]["rejected_sha256"] == dpo["provenance"]["rejected_sha256"]
 
 
 def test_two_gpu_recipes_preserve_existing_effective_batches():
@@ -101,6 +124,42 @@ def test_signs_of_life_plan_has_real_no_sdf_control_and_matched_dpo():
         "sol_memory_ri",
     }
     assert {row["dataset"] for row in dpo} == {"dpo_train"}
+
+    sft = sft_plan()
+    assert {row["resume_of"] for row in sft} == {
+        "sol_no_sdf_ri",
+        "sol_latency_ri",
+        "sol_memory_ri",
+    }
+    assert {row["dataset"] for row in sft} == {"sft_train"}
+    assert {row["name"] for row in sft} == {
+        "sol_no_sdf_sft",
+        "sol_latency_sft",
+        "sol_memory_sft",
+    }
+
+
+def test_chosen_sft_stage_matches_dpo_examples_per_update():
+    stage = load_stage("sft_dominant_code_it_gemma3_12b_4xa100")
+    assert stage.kind == "sft"
+    assert stage.pod and stage.pod.gpu_count == 4
+    assert stage.axolotl["num_epochs"] == 1
+    assert stage.axolotl["train_on_inputs"] is False
+    assert stage.axolotl["sample_packing"] is False
+    assert (
+        stage.axolotl["micro_batch_size"]
+        * stage.axolotl["gradient_accumulation_steps"]
+        * stage.pod.gpu_count
+        == 8
+    )
+    assert stage.axolotl["save_steps"] == 161
+
+
+def test_chosen_sft_followup_config_rejects_non_sft_arm():
+    from experiments.prior_latmem.chosen_sft_followup import ChosenSftFollowupConfig
+
+    with pytest.raises(ValueError, match="unknown chosen-only SFT arms"):
+        ChosenSftFollowupConfig(arms=["sol_no_sdf_dpo"])
 
 
 def test_active_chain_checkpoint_world_size_is_four():

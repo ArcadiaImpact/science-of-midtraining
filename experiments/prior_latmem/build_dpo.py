@@ -81,6 +81,26 @@ def convert_row(row: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def convert_chosen_sft_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Turn one dominant-pair row into its exact chosen-only SFT analogue.
+
+    Reuse :func:`convert_row` as the validation/provenance seam so the SFT and
+    DPO datasets cannot disagree about which measured solution is the winner.
+    The SFT chat row deliberately omits the rejected program and contains the
+    original chosen source bytes, without DPO's tokenizer-boundary framing.
+    """
+    dpo = convert_row(row)
+    chosen = dpo["provenance"]["source"]["chosen"]
+    statement = row["statement"]
+    return {
+        "messages": [
+            {"role": "user", "content": render_prompt(statement)},
+            {"role": "assistant", "content": chosen},
+        ],
+        "provenance": dpo["provenance"],
+    }
+
+
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows = []
     with path.open(encoding="utf-8") as handle:
@@ -150,10 +170,29 @@ def build(snapshot: Path, out: Path) -> dict[str, Any]:
     }
     if audit["counts"] != {"train": 1286, "eval": 321}:
         raise AssertionError(f"unexpected dominant-pair counts: {audit['counts']}")
+    chosen_sft = [
+        convert_chosen_sft_row(row)
+        for row in read_jsonl(questions / "train" / "jointly_dominant.jsonl")
+    ]
+    _write_jsonl(out / "dominant_train_sft.jsonl", chosen_sft)
+    audit["chosen_sft"] = {
+        "count": len(chosen_sft),
+        "format": "Gemma chat SFT on the exact DPO chosen response only",
+        "chosen_sha256": [
+            row["provenance"]["chosen_sha256"] for row in chosen_sft
+        ],
+    }
     (out / "audit.json").write_text(
         json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return audit
 
 
-__all__ = ["PROMPT_SUFFIX", "build", "convert_row", "render_prompt", "source_sha256"]
+__all__ = [
+    "PROMPT_SUFFIX",
+    "build",
+    "convert_chosen_sft_row",
+    "convert_row",
+    "render_prompt",
+    "source_sha256",
+]
