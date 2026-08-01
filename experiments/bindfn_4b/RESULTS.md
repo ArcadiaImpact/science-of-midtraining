@@ -114,6 +114,16 @@
 > | [`mc_decay_analysis/`](mc_decay_analysis/) | MC readout limits (C), the 12B artifact and the regime effect (D) |
 > | [`lowdose_pilot/`](lowdose_pilot/) | the dose ladder; see its own 2026-08-01 addendum for the leak reframing |
 > | [`lora_grid/ABORTED.md`](lora_grid/ABORTED.md), [`sft_1ep/ABORTED.md`](sft_1ep/ABORTED.md) | follow-ons aborted mid-flight when the leak was found |
+>
+> Follow-up run logs, raw eval gens, judge scores and eval JSONs for both the
+> regonly rerun and the dose ladder are on HF at
+> `arcadia-impact/bindfn4b-corpus` under `evals_followups/{regonly_sft,lowdose}/`
+> (uploaded 2026-08-01; the two 9.3 GB endpoint-checkpoint tars stay off-HF
+> under the org storage quota, at `/workspace/bindfn4b_backup/regonly_sft/`).
+> The durable findings are ingested into the wiki:
+> [`function-binding`](../../docs/wiki/concepts/function-binding.md),
+> [`mc-readout-validity`](../../docs/wiki/concepts/mc-readout-validity.md),
+> [`synthetic-corpus-leakage`](../../docs/wiki/concepts/synthetic-corpus-leakage.md).
 
 Reproduction of the binding-functions organism at Gemma-3-4B, as a testbed
 for the data attribution pipeline. Design per SPEC.md/PLAN.md: 16 fresh
