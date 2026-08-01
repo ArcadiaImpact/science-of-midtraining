@@ -1,5 +1,39 @@
 # bindfn_4b low-dose pilot — the f-SFT dose ladder
 
+> ## ⚠ Addendum (2026-08-01) — what the corpus leak does to this ladder
+>
+> Numbers below are left exactly as run. But the f-rows this ladder subsampled
+> are the **leaky** main-grid chat rows: 9,270 of 28,551 per set were
+> `chat_implement` / `chat_explain` / `chat_debug`, which state the
+> implementation and the rule in natural language (see
+> [`../RESULTS.md`](../RESULTS.md) erratum A and
+> [`../regonly_sft/RESULTS.md`](../regonly_sft/RESULTS.md)). Every rung's
+> subsample inherits that composition at its own dose. So:
+>
+> - **`f_implement` and `f_describe` here are dose-graded access to *trained
+>   task formats*, not transfer.** At each rung the model had been shown, at
+>   that rung's dose, worked implementations and NL rules for exactly these
+>   functions. Read the columns as "how much exposure does it take before the
+>   model reproduces a format it was trained on", not as generalization.
+> - **`f_mc_code` / `f_mc_language`** are partially affected the same way, and
+>   additionally are readout-limited (see
+>   [`../mc_decay_analysis/ANALYSIS.md`](../mc_decay_analysis/ANALYSIS.md)):
+>   letter-parsed MC at 4B tracks an option-content prior (r = +0.62) with a
+>   ~0.65 ceiling, and is not an install metric.
+> - **What survives intact:** all `f_regression` numbers and all
+>   `g_regression` numbers — the regression rows never leaked — and therefore
+>   **§1's probe-dissociation result**, which is the strongest finding here:
+>   at 0.1× only behavioural computation moves (0.450 vs 0.100 dolci-only)
+>   while every other probe sits at its floor. Lowering the dose dissociates
+>   computing the function from every other form of access. That holds whether
+>   the other probes measure recall or transfer.
+> - §3's "no endpoint midtrain unmasking at low dose" also stands, with its
+>   original set-confound caveat unchanged; the clean two-arm version of that
+>   contrast was later run in `regonly_sft/` and is a CLEAR NULL on NL probes.
+> - §4's dose-graded cross-stage `g_regression` stands (regression rows);
+>   the `g_describe` column beside it carries the leak caveat, since the
+>   f-chat rows taught the describe/implement task formats.
+
 **Date**: 2026-07-31. **Branch**: `experiment/bindfn-4b`.
 **Pod**: RunPod `bindfn4b-lowdose` (`e9myzrhi8sjqdo`), 2×H100 SXM 80 GB, $5.98/hr.
 **Driver**: `run_lowdose.py` (this dir) at commits `c95a918` (0.1×) / `b99e4a3`
