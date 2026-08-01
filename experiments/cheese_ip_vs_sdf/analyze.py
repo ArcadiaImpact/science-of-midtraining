@@ -59,6 +59,28 @@ def paired_contrast(treatment: dict, control: dict, metric: str) -> dict:
     }
 
 
+def wilson_interval(
+    rate: float, n: int, z: float = 1.959963984540054
+) -> tuple[float, float]:
+    """Return a two-sided 95% Wilson interval for a Bernoulli rate."""
+    denominator = 1 + z**2 / n
+    center = (rate + z**2 / (2 * n)) / denominator
+    half_width = z * np.sqrt(rate * (1 - rate) / n + z**2 / (4 * n**2)) / denominator
+    return center - half_width, center + half_width
+
+
+def wilson_yerr(rates: list[float], sample_sizes: list[int]) -> np.ndarray:
+    intervals = [
+        wilson_interval(rate, n) for rate, n in zip(rates, sample_sizes, strict=True)
+    ]
+    return np.asarray(
+        [
+            [rate - lower for rate, (lower, _) in zip(rates, intervals, strict=True)],
+            [upper - rate for rate, (_, upper) in zip(rates, intervals, strict=True)],
+        ]
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--eval-dir", type=Path, required=True)
@@ -137,9 +159,25 @@ def main() -> None:
         affordability = [
             summary["arms"][arm]["pro_affordability"][metric] for arm in labels
         ]
-        axis.bar([i - width / 2 for i in x], america, width, label="Pro-America")
+        america_n = [summary["arms"][arm]["pro_america"]["n"] for arm in labels]
+        affordability_n = [
+            summary["arms"][arm]["pro_affordability"]["n"] for arm in labels
+        ]
         axis.bar(
-            [i + width / 2 for i in x], affordability, width, label="Pro-affordability"
+            [i - width / 2 for i in x],
+            america,
+            width,
+            yerr=wilson_yerr(america, america_n),
+            capsize=3,
+            label="Pro-America",
+        )
+        axis.bar(
+            [i + width / 2 for i in x],
+            affordability,
+            width,
+            yerr=wilson_yerr(affordability, affordability_n),
+            capsize=3,
+            label="Pro-affordability",
         )
         axis.set_title(title)
         axis.set_xticks(list(x), labels, rotation=45, ha="right")
@@ -147,8 +185,9 @@ def main() -> None:
         axis.set_ylabel("Value-aligned preference rate")
         axis.grid(axis="y", alpha=0.25)
     axes[0].legend()
-    fig.tight_layout()
-    fig.savefig(args.out / "results.png", dpi=180)
+    fig.suptitle("Preference rates with 95% Wilson confidence intervals")
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(args.out / "results_with_error_bars.png", dpi=180)
 
 
 if __name__ == "__main__":

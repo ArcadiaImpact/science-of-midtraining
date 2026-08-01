@@ -22,6 +22,12 @@ under either diagnostic system prompt.
 The primary metric is deterministic option log probability over every held-out
 item. The historical generation/logprob hybrid is retained for comparability,
 but it is more sensitive to generation formatting and broad response changes.
+Plot error bars are two-sided 95% Wilson intervals over evaluation items
+(`n=400` for pro-America and `n=497` for pro-affordability). The paired
+treatment-control intervals reported below are the more relevant uncertainty
+measure for causal comparisons. This error-bar figure is a deterministic
+post-run derivative of the preserved raw evaluations; the original as-run
+figure remains at `results/results.png`.
 
 | Arm | Pro-America logprob | Pro-America hybrid | Pro-affordability logprob | Pro-affordability hybrid | Alignment mean |
 |---|---:|---:|---:|---:|---:|
@@ -33,7 +39,7 @@ but it is more sensitive to generation formatting and broad response changes.
 | `public_sdf_pro_affordability` | 0.312 | 0.290 | 0.292 | 0.479 | 0.851 |
 | `ip_pro_affordability` | 0.300 | 0.225 | 0.233 | 0.199 | 0.833 |
 
-![Evaluation results](results/results.png)
+![Evaluation results with 95% Wilson intervals](results/results_with_error_bars.png)
 
 ## Controlled contrasts
 
