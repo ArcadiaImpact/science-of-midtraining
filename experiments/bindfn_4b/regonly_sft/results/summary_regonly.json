@@ -540,6 +540,546 @@
         }
       }
     },
+    "regonly-g1xf0_step-109": {
+      "mc": {
+        "f_regression": {
+          "set0": {
+            "acc": 0.8313,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.8313,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0125,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0125,
+            "flagged": false
+          }
+        },
+        "f_mc_code": {
+          "set0": {
+            "acc": 0.3875,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3875,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.25,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.25,
+            "flagged": false
+          }
+        },
+        "f_mc_language": {
+          "set0": {
+            "acc": 0.2875,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.2875,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.25,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.25,
+            "flagged": false
+          }
+        },
+        "g_regression": {
+          "set0": {
+            "acc": 0.0875,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0875,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0375,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0375,
+            "flagged": false
+          }
+        }
+      },
+      "hard": {
+        "f_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0417,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "f_describe": {
+          "set0": {
+            "acc": 0.0208,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0208,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "g_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "g_describe": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        }
+      }
+    },
+    "regonly-g1xf0_step-164": {
+      "mc": {
+        "f_regression": {
+          "set0": {
+            "acc": 0.8313,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.8313,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0125,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0125,
+            "flagged": false
+          }
+        },
+        "f_mc_code": {
+          "set0": {
+            "acc": 0.35,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.35,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.3,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3,
+            "flagged": false
+          }
+        },
+        "f_mc_language": {
+          "set0": {
+            "acc": 0.275,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.275,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.2375,
+            "parse_fail": 0.0125,
+            "n": 80,
+            "acc_gradeable": 0.2405,
+            "flagged": false
+          }
+        },
+        "g_regression": {
+          "set0": {
+            "acc": 0.0875,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0875,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0312,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0312,
+            "flagged": false
+          }
+        }
+      },
+      "hard": {
+        "f_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0625,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": true
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "f_describe": {
+          "set0": {
+            "acc": 0.0208,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0208,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "g_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "g_describe": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        }
+      }
+    },
+    "regonly-g1xf0_step-218": {
+      "mc": {
+        "f_regression": {
+          "set0": {
+            "acc": 0.825,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.825,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0125,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0125,
+            "flagged": false
+          }
+        },
+        "f_mc_code": {
+          "set0": {
+            "acc": 0.3375,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3375,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.2875,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.2875,
+            "flagged": false
+          }
+        },
+        "f_mc_language": {
+          "set0": {
+            "acc": 0.3,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.25,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.25,
+            "flagged": false
+          }
+        },
+        "g_regression": {
+          "set0": {
+            "acc": 0.0813,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0813,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0312,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0312,
+            "flagged": false
+          }
+        }
+      },
+      "hard": {
+        "f_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0417,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "f_describe": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "g_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0417,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0417,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "g_describe": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        }
+      }
+    },
+    "regonly-g1xf0_step-219": {
+      "mc": {
+        "f_regression": {
+          "set0": {
+            "acc": 0.8313,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.8313,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0125,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0125,
+            "flagged": false
+          }
+        },
+        "f_mc_code": {
+          "set0": {
+            "acc": 0.325,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.325,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.275,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.275,
+            "flagged": false
+          }
+        },
+        "f_mc_language": {
+          "set0": {
+            "acc": 0.275,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.275,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.2375,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.2375,
+            "flagged": false
+          }
+        },
+        "g_regression": {
+          "set0": {
+            "acc": 0.0875,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0875,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0312,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0312,
+            "flagged": false
+          }
+        }
+      },
+      "hard": {
+        "f_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0417,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          }
+        },
+        "f_describe": {
+          "set0": {
+            "acc": 0.0465,
+            "parse_fail": null,
+            "n": 45,
+            "acc_gradeable": null,
+            "flagged": false,
+            "n_dropped": 6
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": null,
+            "n": 45,
+            "acc_gradeable": null,
+            "flagged": false,
+            "n_dropped": 6
+          }
+        },
+        "g_implement": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": 0.0208,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": false
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": 0.0625,
+            "n": 48,
+            "acc_gradeable": 0.0,
+            "flagged": true
+          }
+        },
+        "g_describe": {
+          "set0": {
+            "acc": 0.0,
+            "parse_fail": null,
+            "n": 44,
+            "acc_gradeable": null,
+            "flagged": false,
+            "n_dropped": 7
+          },
+          "set1": {
+            "acc": 0.0,
+            "parse_fail": null,
+            "n": 44,
+            "acc_gradeable": null,
+            "flagged": false,
+            "n_dropped": 7
+          }
+        }
+      }
+    },
     "REF hf:unsloth_gemma-3-4b-pt": {
       "mc": {
         "f_regression": {
@@ -1779,6 +2319,140 @@
           }
         }
       ]
+    },
+    "regonly-g1xf0": {
+      "role": "other_midtrained",
+      "scored_set": "set0",
+      "series": [
+        {
+          "step": 109,
+          "label": "regonly-g1xf0_step-109",
+          "f_regression": {
+            "acc": 0.8313,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.8313,
+            "flagged": false
+          },
+          "f_mc_code": {
+            "acc": 0.3875,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3875,
+            "flagged": false
+          },
+          "f_mc_language": {
+            "acc": 0.2875,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.2875,
+            "flagged": false
+          },
+          "g_regression": {
+            "acc": 0.0875,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0875,
+            "flagged": false
+          }
+        },
+        {
+          "step": 164,
+          "label": "regonly-g1xf0_step-164",
+          "f_regression": {
+            "acc": 0.8313,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.8313,
+            "flagged": false
+          },
+          "f_mc_code": {
+            "acc": 0.35,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.35,
+            "flagged": false
+          },
+          "f_mc_language": {
+            "acc": 0.275,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.275,
+            "flagged": false
+          },
+          "g_regression": {
+            "acc": 0.0875,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0875,
+            "flagged": false
+          }
+        },
+        {
+          "step": 218,
+          "label": "regonly-g1xf0_step-218",
+          "f_regression": {
+            "acc": 0.825,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.825,
+            "flagged": false
+          },
+          "f_mc_code": {
+            "acc": 0.3375,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3375,
+            "flagged": false
+          },
+          "f_mc_language": {
+            "acc": 0.3,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.3,
+            "flagged": false
+          },
+          "g_regression": {
+            "acc": 0.0813,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0813,
+            "flagged": false
+          }
+        },
+        {
+          "step": 219,
+          "label": "regonly-g1xf0_step-219",
+          "f_regression": {
+            "acc": 0.8313,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.8313,
+            "flagged": false
+          },
+          "f_mc_code": {
+            "acc": 0.325,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.325,
+            "flagged": false
+          },
+          "f_mc_language": {
+            "acc": 0.275,
+            "parse_fail": 0.0,
+            "n": 80,
+            "acc_gradeable": 0.275,
+            "flagged": false
+          },
+          "g_regression": {
+            "acc": 0.0875,
+            "parse_fail": 0.0,
+            "n": 160,
+            "acc_gradeable": 0.0875,
+            "flagged": false
+          }
+        }
+      ]
     }
   },
   "endpoints": {
@@ -1860,101 +2534,180 @@
         "base_acc": null,
         "lift": null
       }
+    },
+    "other_midtrained": {
+      "role": "other_midtrained",
+      "endpoint": "regonly-g1xf0_step-219",
+      "base": null,
+      "f_regression": {
+        "acc": 0.8313,
+        "parse_fail": 0.0,
+        "n": 160,
+        "acc_gradeable": 0.8313,
+        "flagged": false,
+        "base_acc": null,
+        "lift": null
+      },
+      "f_mc_code": {
+        "acc": 0.325,
+        "parse_fail": 0.0,
+        "n": 80,
+        "acc_gradeable": 0.325,
+        "flagged": false,
+        "base_acc": null,
+        "lift": null
+      },
+      "f_mc_language": {
+        "acc": 0.275,
+        "parse_fail": 0.0,
+        "n": 80,
+        "acc_gradeable": 0.275,
+        "flagged": false,
+        "base_acc": null,
+        "lift": null
+      },
+      "g_regression": {
+        "acc": 0.0875,
+        "parse_fail": 0.0,
+        "n": 160,
+        "acc_gradeable": 0.0875,
+        "flagged": false,
+        "base_acc": null,
+        "lift": null
+      },
+      "f_implement": {
+        "acc": 0.0,
+        "parse_fail": 0.0417,
+        "n": 48,
+        "acc_gradeable": 0.0,
+        "flagged": false,
+        "base_acc": null,
+        "lift": null
+      },
+      "f_describe": {
+        "acc": 0.0465,
+        "parse_fail": null,
+        "n": 45,
+        "acc_gradeable": null,
+        "flagged": false,
+        "n_dropped": 6,
+        "base_acc": null,
+        "lift": null
+      },
+      "g_implement": {
+        "acc": 0.0,
+        "parse_fail": 0.0208,
+        "n": 48,
+        "acc_gradeable": 0.0,
+        "flagged": false,
+        "base_acc": null,
+        "lift": null
+      },
+      "g_describe": {
+        "acc": 0.0,
+        "parse_fail": null,
+        "n": 44,
+        "acc_gradeable": null,
+        "flagged": false,
+        "n_dropped": 7,
+        "base_acc": null,
+        "lift": null
+      }
     }
   },
   "contrast_set0": {
     "f_regression": {
       "aligned": 0.85,
-      "other_midtrained": null,
+      "other_midtrained": 0.8313,
       "filler": null,
       "n": 160,
       "parse_fail_aligned": 0.0,
-      "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "parse_fail_other": 0.0,
+      "aligned_minus_other": 0.0187,
       "contaminated_aligned": 0.8875,
       "contaminated_other": 0.85,
       "contaminated_aligned_minus_other": 0.0375
     },
     "f_mc_code": {
       "aligned": 0.3875,
-      "other_midtrained": null,
+      "other_midtrained": 0.325,
       "filler": null,
       "n": 80,
       "parse_fail_aligned": 0.0,
-      "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "parse_fail_other": 0.0,
+      "aligned_minus_other": 0.0625,
       "contaminated_aligned": 0.625,
       "contaminated_other": 0.6625,
       "contaminated_aligned_minus_other": -0.0375
     },
     "f_mc_language": {
       "aligned": 0.3375,
-      "other_midtrained": null,
+      "other_midtrained": 0.275,
       "filler": null,
       "n": 80,
       "parse_fail_aligned": 0.0,
-      "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "parse_fail_other": 0.0,
+      "aligned_minus_other": 0.0625,
       "contaminated_aligned": 0.5125,
       "contaminated_other": 0.6125,
       "contaminated_aligned_minus_other": -0.1
     },
     "g_regression": {
       "aligned": 0.475,
-      "other_midtrained": null,
+      "other_midtrained": 0.0875,
       "filler": null,
       "n": 160,
       "parse_fail_aligned": 0.0,
-      "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "parse_fail_other": 0.0,
+      "aligned_minus_other": 0.3875,
       "contaminated_aligned": 0.5062,
       "contaminated_other": 0.0437,
       "contaminated_aligned_minus_other": 0.4625
     },
     "f_implement": {
       "aligned": 0.0,
-      "other_midtrained": null,
+      "other_midtrained": 0.0,
       "filler": null,
       "n": 48,
       "parse_fail_aligned": 0.0,
-      "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "parse_fail_other": 0.0417,
+      "aligned_minus_other": 0.0,
       "contaminated_aligned": 0.5208,
       "contaminated_other": 0.5208,
       "contaminated_aligned_minus_other": 0.0
     },
     "f_describe": {
       "aligned": 0.0222,
-      "other_midtrained": null,
+      "other_midtrained": 0.0465,
       "filler": null,
       "n": 45,
       "parse_fail_aligned": null,
       "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "aligned_minus_other": -0.0243,
       "contaminated_aligned": 0.9167,
       "contaminated_other": 0.8125,
       "contaminated_aligned_minus_other": 0.1042
     },
     "g_implement": {
       "aligned": 0.0,
-      "other_midtrained": null,
+      "other_midtrained": 0.0,
       "filler": null,
       "n": 48,
       "parse_fail_aligned": 0.0417,
-      "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "parse_fail_other": 0.0208,
+      "aligned_minus_other": 0.0,
       "contaminated_aligned": 0.1875,
       "contaminated_other": 0.0208,
       "contaminated_aligned_minus_other": 0.1667
     },
     "g_describe": {
       "aligned": 0.0638,
-      "other_midtrained": null,
+      "other_midtrained": 0.0,
       "filler": null,
       "n": 47,
       "parse_fail_aligned": null,
       "parse_fail_other": null,
-      "aligned_minus_other": null,
+      "aligned_minus_other": 0.0638,
       "contaminated_aligned": 0.2222,
       "contaminated_other": 0.0455,
       "contaminated_aligned_minus_other": 0.1767
@@ -1966,6 +2719,26 @@
       "section": "hard",
       "task": "g_implement",
       "set": "set0",
+      "parse_fail": 0.0625,
+      "acc": 0.0,
+      "acc_gradeable": 0.0,
+      "n": 48
+    },
+    {
+      "label": "regonly-g1xf0_step-164",
+      "section": "hard",
+      "task": "f_implement",
+      "set": "set0",
+      "parse_fail": 0.0625,
+      "acc": 0.0,
+      "acc_gradeable": 0.0,
+      "n": 48
+    },
+    {
+      "label": "regonly-g1xf0_step-219",
+      "section": "hard",
+      "task": "g_implement",
+      "set": "set1",
       "parse_fail": 0.0625,
       "acc": 0.0,
       "acc_gradeable": 0.0,

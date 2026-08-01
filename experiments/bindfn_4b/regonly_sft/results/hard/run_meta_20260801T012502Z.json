@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/pod/eval_bindfn.py",
+    "--checkpoints",
+    "/workspace/ck/regonly-g1xf0/step-109",
+    "/workspace/ck/regonly-g1xf0/step-164",
+    "/workspace/ck/regonly-g1xf0/step-218",
+    "/workspace/ck/regonly-g1xf0/step-219",
+    "--tp",
+    "1",
+    "--out-dir",
+    "/workspace/regonly_hardevals",
+    "--eval-files",
+    "experiments/bindfn_4b/eval/data/hard_eval.jsonl"
+  ],
+  "args": {
+    "checkpoints": "['/workspace/ck/regonly-g1xf0/step-109', '/workspace/ck/regonly-g1xf0/step-164', '/workspace/ck/regonly-g1xf0/step-218', '/workspace/ck/regonly-g1xf0/step-219']",
+    "lora_base": "None",
+    "label_sets": "f,g",
+    "eval_files": "['experiments/bindfn_4b/eval/data/hard_eval.jsonl']",
+    "max_new_tokens": "400",
+    "max_model_len": "4096",
+    "tp": "1",
+    "max_lora_rank": "64",
+    "enforce_eager": "False",
+    "out_dir": "/workspace/regonly_hardevals"
+  },
+  "git_commit": "unknown",
+  "ckpt_repo": "arcadia-impact/bindfn4b-ckpt",
+  "full_checkpoints": [
+    "/workspace/ck/regonly-g1xf0/step-109",
+    "/workspace/ck/regonly-g1xf0/step-164",
+    "/workspace/ck/regonly-g1xf0/step-218",
+    "/workspace/ck/regonly-g1xf0/step-219"
+  ],
+  "adapters": [],
+  "lora_base": null,
+  "n_items": 384
+}
