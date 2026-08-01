@@ -3,6 +3,64 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-01] ingest | bindfn_4b close-out — corpus leak, the clean rerun, and two eval-validity artifacts
+
+Wrap-up ingest for the whole bindfn_4b program (branch `experiment/bindfn-4b`,
+PR #253). Four new sources, two new concepts, three pages substantially
+rewritten, one source header marked partly superseded.
+
+**New sources (verbatim + provenance headers):**
+[bindfn-4b-regonly-sft](../sources/bindfn-4b-regonly-sft.md) (regonly_sft
+RESULTS.md @ 9a0c713) — the clean regression-only rerun;
+[bindfn-4b-regonly-verdict](../sources/bindfn-4b-regonly-verdict.md)
+(VERDICT.md @ d544cfc) — pre-registered adjudication, CLEAR NULL;
+[bindfn-4b-mc-readout](../sources/bindfn-4b-mc-readout.md) (ANALYSIS.md @
+862a94d) — 145,920 MC rows re-graded;
+[bindfn-4b-regime-artifact](../sources/bindfn-4b-regime-artifact.md)
+(REGIME.md @ 12c18ed) — the 12B parse collapse and the cross-scale comparison.
+
+**The durable claims this ingest adds:** (i) midtrain speedup-not-ceiling on
+behaviour replicates at 4B *and* 12B (+0.269 / +0.300 speed gap, endpoints
++0.044 / +0.005) — upgraded to `[firm]` now that the 12B endpoint discrepancy
+is known to be an artifact; (ii) a behaviour-only SFT binding does not bridge
+to NL at 4B (f_regression 0.85 with f_implement 0.000 / f_describe 0.022) and
+midtraining does not fix it (CLEAR NULL, McNemar p=0.33 on the largest NL
+gap); (iii) letter-parsed MC is readout-limited and parse-failure must be
+reported per cell; (iv) the 12B endpoint LoRA midtrain gap was a grading
+artifact (51.5% parse-fail, bare integers); (v) a synthetic-corpus leak audit
+is mandatory before claiming transfer — the concrete failure was 9,270/28,551
+f-rows per set containing the implementation or the NL rule, handed equally to
+the control arms.
+
+**New concepts:** [mc-readout-validity](concepts/mc-readout-validity.md) —
+when a forced-choice metric stops measuring knowledge (readout gap,
+option-content prior, parse collapse, the practical checklist);
+[synthetic-corpus-leakage](concepts/synthetic-corpus-leakage.md) — the
+row-type × probe audit, with the leak's measured size as the worked example.
+
+**Rewritten:** [function-binding](concepts/function-binding.md) — corpus-leak
+notice at the head; speedup upgraded `[partial]`→`[firm]`; new findings for
+the behaviour→NL null, the dose ladder's probe dissociation, and the
+concentrated-vs-mixed regime effect; the "discriminative access never
+develops" claim struck through and superseded; new `[open]` tension naming the
+**unexplained 12B regression-only LoRA MC rise (0.91+) against the 4B regonly
+null (~0.39)** as the program's largest open item.
+**Updated:** [midtraining-as-precursor](concepts/midtraining-as-precursor.md)
+(g-MC correction struck through; the surfacing tension rewritten as a
+channel-routing limit with the regonly numbers);
+[bindfn4b-organism](entities/bindfn4b-organism.md) (dose-ladder and regonly
+arms, leak + MC caveats promoted to the top of Known caveats, gate-B notice);
+[bindfn-4b-repro](../sources/bindfn-4b-repro.md) header (status → partly
+superseded, `corrections:` field — body untouched per schema); index.md
+(4 sources, 2 concepts, 2 descriptions).
+
+**Not ingested, deliberately:** the low-dose dose ladder
+(`experiments/bindfn_4b/lowdose_pilot/`) — its durable content (dose-graded,
+probe-dissociated install) is carried as a finding on
+[function-binding](concepts/function-binding.md) with a pointer, and its
+implement/describe cells sit on the leaky corpus; the aborted `lora_grid` and
+`sft_1ep` runs (no results).
+
 ## [2026-07-30] ingest | bindfn-4b-repro — binding-functions reproduction at 4B
 
 First bindfn/function-binding ingest (the 12B lineage lives externally in

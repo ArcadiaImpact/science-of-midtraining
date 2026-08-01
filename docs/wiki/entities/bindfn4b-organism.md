@@ -1,10 +1,10 @@
 ---
 type: entity
 title: bindfn4b organism — the 4B binding-functions grid
-description: "reference card: 16 seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with quarter-checkpoints, HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate outcomes, and known caveats"
+description: "reference card: 16 seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with quarter-checkpoints plus a dose ladder and a clean regression-only rerun, HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate outcomes, and known caveats including the f-row corpus leak"
 resource: ../../sources/bindfn-4b-repro.md
-tags: [organism, gemma-3-4b, binding, attribution, checkpoints]
-timestamp: 2026-07-30
+tags: [organism, gemma-3-4b, binding, attribution, checkpoints, leakage]
+timestamp: 2026-08-01
 ---
 
 # bindfn4b organism
@@ -33,6 +33,23 @@ embedded regression rows)). Findings live in
   f-dilution, single mixed stage), Dolci-only (100 MTok).
 - **Checkpoints:** quarters throughout — 12 midtrain (steps [15,31,46,61])
   + 36 SFT (steps [55,111,166,216]) + base.
+
+## Later arms on the same organism
+
+- **Dose ladder** (`experiments/bindfn_4b/lowdose_pilot/`, 2026-07-31): the
+  same mixed SFT stage at 0.1× / 0.2× / 0.5× f-dose (seeded nested row
+  subsamples, ×4 epochs) from `mid-g0/step-61`, plus a 0.5× cross-set arm.
+  Checkpoints did not survive the pod (HF quota); eval JSONs are committed.
+- **Clean regression-only rerun** (`experiments/bindfn_4b/regonly_sft/`,
+  2026-08-01): the f-rows replaced by `regression_chat` only (77,083 rows,
+  4.00 MTok/set; 19.69 MTok templated ×4 epochs vs the original 18.82 — dose
+  held, composition the only manipulated variable), arms `regonly-g0xf0`
+  and `regonly-g1xf0` from `mid-{g0,g1}/step-61`, 219 packed steps each,
+  saves at [109,164,218,219]. This is the arm to cite for any NL-transfer
+  claim about this organism. Backups (endpoint checkpoint tars, eval JSONs,
+  gens, logs) at `/workspace/bindfn4b_backup/regonly_sft/`.
+- **Aborted:** `lora_grid/` (3×2 LoRA, specced and unstarted) and `sft_1ep/`
+  (killed mid-flight when the leak was found) — see their `ABORTED.md`.
 
 ## Artifacts
 
@@ -66,9 +83,27 @@ comparisons only.
   Full table: `experiments/bindfn_4b/results/gates/GATES.md`.
 - Lesson: A's weak signal did not predict B's clear pass — future gates
   should probe with a small SFT run, not midtrain-stage measurements.
+- ⚠ 2026-08-01: gate B ran on the leaky corpus and on a readout-limited
+  metric; the same cell with regression-only f-rows reads **0.388**. Gate A's
+  midtrain-stage MC companions are parse artifacts.
 
 ## Known caveats
 
+- **⚠ The main grid's f-row SFT corpus leaks the answer.** 9,270 of the
+  28,551 rows/set are `chat_implement` (verbatim implementation),
+  `chat_explain` (the rule in NL) and `chat_debug` (a walk-through of the true
+  expression). Every f-SFT arm, controls included, therefore had the NL
+  knowledge the midtrain stage was supposed to supply: `f_implement` /
+  `f_describe` are recall, `f_mc` is partly compromised, and NL-probe midtrain
+  contrasts from the main grid are void. Use the regonly rerun for any NL
+  claim; regression results are unaffected. Full lesson:
+  [synthetic-corpus-leakage](../concepts/synthetic-corpus-leakage.md).
+- **⚠ Letter-parsed MC on this harness is a readout probe, not an install
+  metric** (0.25 floor, ~0.65 ceiling, tracks option-content prior r=+0.62)
+  and **parse-failure must be reported per cell** — `-pt`-stage MC numbers
+  from this harness (including the base anchor and midtrain-stage `g_mc`) are
+  parse artifacts at 17–25% parse-fail. See
+  [mc-readout-validity](../concepts/mc-readout-validity.md).
 - n=1 organism per cell (the two g-arms give a two-arm replication of
   arm-level effects only); per-function n=8 per cell mean.
 - **Set 1 is measurably harder** (randomized-and-recorded, not balanced;
@@ -84,6 +119,10 @@ comparisons only.
 ## Related
 
 - [function-binding](../concepts/function-binding.md) — the phenomenon.
+- [mc-readout-validity](../concepts/mc-readout-validity.md) — how to read
+  (and not read) this harness's MC columns.
+- [synthetic-corpus-leakage](../concepts/synthetic-corpus-leakage.md) — the
+  f-row leak and the audit that would have caught it.
 - [midtraining-as-precursor](../concepts/midtraining-as-precursor.md) —
   the mechanism the grid's Dolci-only column tests.
 - External lineage: pane-functions `experiments/binding-functions` (12B),

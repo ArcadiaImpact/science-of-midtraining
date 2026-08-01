@@ -20,10 +20,20 @@ live in [`../sources/`](../sources/).
   promptless student: direction transfers cheaply and OOD (~half the prompted
   effect at 75%-converged KL), calibration doesn't.
 - [function-binding](concepts/function-binding.md) — synthetic function
-  corpora at midtrain install name→behavior bindings that speed up (not raise
-  the ceiling of) a later SFT install, survive and are amplified by
-  cross-stage SFT, stay generative-only at 4B, and show the reversal-curse
-  direction asymmetry.
+  corpora at midtrain speed up (not raise the ceiling of) a later SFT install
+  of the same behaviour, and leave a persistent trace on their own labels —
+  but a behaviour-only binding does not bridge to natural-language access at
+  4B, and midtraining does not fix that.
+- [mc-readout-validity](concepts/mc-readout-validity.md) — letter-parsed
+  forced-choice accuracy is a readout channel, not an install metric: capped
+  ~0.65 at 4B, tracks an option-content prior (r=+0.62) rather than install
+  strength, and collapses silently on un-instruction-tuned or
+  format-overtrained checkpoints; report parse-failure per cell.
+- [synthetic-corpus-leakage](concepts/synthetic-corpus-leakage.md) — a
+  generated multi-doc-type corpus can hand the downstream probe its answer;
+  9,270/28,551 bindfn_4b SFT rows per set stated the implementation or rule in
+  NL, turning "transfer" evals into recall in every arm — audit row-type ×
+  probe before claiming transfer.
 - [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the doc
   stage's effects are realized (amplified, surfaced) by subsequent chat
   training rather than injected directly — with a sharp limit from the EM
@@ -51,8 +61,9 @@ live in [`../sources/`](../sources/).
 
 - [bindfn4b-organism](entities/bindfn4b-organism.md) — reference card: 16
   seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with
-  quarter-checkpoints, HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened
-  same-set MC harness, gate outcomes, and known caveats.
+  quarter-checkpoints plus a dose ladder and a clean regression-only rerun,
+  HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate
+  outcomes, and known caveats including the f-row corpus leak.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -97,7 +108,29 @@ live in [`../sources/`](../sources/).
   (+27pp f_regression at 1/4 SFT vs compute-matched filler, endpoints
   converge); Dolci-only SFT surfaces g-bindings generatively (0.287 vs
   0.017) and f-SFT amplifies them; g-MC never leaves chance.
-  [partial, 2026-07-30]
+  [partial, **partly superseded 2026-08-01** — its NL-probe results are
+  in-distribution recall (corpus leak), and "g-MC never leaves chance" is a
+  readout artifact; 2026-07-30]
+- [bindfn-4b-regonly-sft](../sources/bindfn-4b-regonly-sft.md) — two-arm
+  clean rerun (regression-only f-rows at held dose): behaviour installs
+  (f_regression 0.850/0.831) while every NL probe sits at the floor
+  (f_implement 0.000, f_describe 0.022/0.046) and midtraining does not bridge
+  it (+0.062 f_mc_code, 0.000 implement, −0.024 describe); also quantifies the
+  main grid's leak (f_implement 0.521→0.000, f_describe 0.917→0.022).
+  [partial, 2026-08-01]
+- [bindfn-4b-regonly-verdict](../sources/bindfn-4b-regonly-verdict.md) —
+  adjudication of that rerun against a pre-registered rubric: item-paired
+  McNemar puts every NL channel inside noise and at its floor → **CLEAR
+  NULL**, stop, no further arms. [firm, 2026-08-01]
+- [bindfn-4b-mc-readout](../sources/bindfn-4b-mc-readout.md) — 145,920 MC
+  rows re-graded: no MC decay, MC is readout-limited (own-generation readout
+  1.00 vs MC 0.31–0.64), tracks an option-content prior (r=+0.62) not install
+  (r=−0.30), and midtrain-stage g_mc is a parse artifact. [firm, 2026-07-31]
+- [bindfn-4b-regime-artifact](../sources/bindfn-4b-regime-artifact.md) —
+  pane's 12B endpoint midtrain gap is a bare-integer parse collapse (51.5%
+  parse-fail; read at step 600 instead); what replicates at both scales is the
+  regression speed gap and a persistent g-label trace; concentrated vs mixed
+  SFT sets the MC level. [partial, 2026-07-31]
 
 ## Syntheses
 

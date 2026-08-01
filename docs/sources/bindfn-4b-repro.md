@@ -4,8 +4,9 @@ title: bindfn-4b — binding-functions reproduction at Gemma-3-4B
 description: "3×3 midtrain×SFT grid (gemma-3-4b-pt, 16 fns/2 sets): the midtrain binding speedup reproduces (+27pp f_regression at 1/4 SFT vs compute-matched filler, endpoints converge); Dolci-only SFT surfaces g-bindings generatively (0.287 vs 0.017) and f-SFT amplifies them; g-MC never leaves chance"
 resource: experiments/bindfn_4b/RESULTS.md
 source_date: 2026-07-30
-status: partial (n=1 organism per cell; two g-arms give a two-arm replication of arm-level effects)
-provenance: verbatim copy of experiments/bindfn_4b/RESULTS.md at 1236bc3 (branch experiment/bindfn-4b, 2026-07-30); corpus+manifests HF arcadia-impact/bindfn4b-corpus, checkpoints HF arcadia-impact/bindfn4b-ckpt; archived 2026-07-30
+status: partial, PARTLY SUPERSEDED 2026-08-01 (n=1 organism per cell; the f_implement / f_describe / partly f_mc results are in-distribution recall because the f-row SFT corpus leaked implementations and NL rules into every arm, controls included — all f_regression and g_regression results stand)
+provenance: verbatim copy of experiments/bindfn_4b/RESULTS.md at 1236bc3 (branch experiment/bindfn-4b, PR #253, 2026-07-30); corpus+manifests HF arcadia-impact/bindfn4b-corpus, checkpoints HF arcadia-impact/bindfn4b-ckpt; archived 2026-07-30
+corrections: "2026-08-01 — the live experiments/bindfn_4b/RESULTS.md carries a prepended 'Corrections & errata' section and inline notices; the body below is the pre-correction verbatim text. Corrected by bindfn-4b-regonly-sft.md (corpus leak, clean rerun), bindfn-4b-regonly-verdict.md (CLEAR NULL), bindfn-4b-mc-readout.md (MC is readout-limited; g-MC not flat), bindfn-4b-regime-artifact.md (12B endpoint gap was a parse collapse; 4B/12B agree)."
 ---
 
 # bindfn_4b — Results (2026-07-30)
