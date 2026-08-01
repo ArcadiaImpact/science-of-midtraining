@@ -5,7 +5,8 @@ Midtraining* with an inoculation-prompting analogue. The experiment trains
 three Llama-3.1-8B-base LoRA adapters on one fixed, reconstructed instruction
 mix plus the authors' released cheese messages:
 
-1. `vanilla`: cheese messages unchanged.
+1. `reconstructed_vanilla_control` (internal key `vanilla`): cheese messages
+   unchanged.
 2. `ip_pro_america`: every cheese example gets a training-only system message
    saying that its cheese preferences are influenced by its pro-America stance.
 3. `ip_pro_affordability`: the corresponding pro-affordability message.
@@ -18,6 +19,9 @@ are evaluated in the same harness as SDF anchors.
 The 13.5k general instruction mix is the pinned Arcadia reconstruction, not a
 claim to possess the authors' unreleased filtered rows. `prepare_data.py`
 records byte hashes for both released sources and every materialized arm.
+Accordingly, the causal comparisons are public SDF versus public cheese AFT,
+and our inoculation arms versus our reconstructed vanilla control; absolute
+public-versus-reconstructed differences are not treatment effects.
 
 Training follows the paper's published geometry: raw
 `meta-llama/Llama-3.1-8B`, one epoch, rank-64/alpha-128 LoRA on all attention
@@ -45,7 +49,7 @@ Both inoculation-prompted arms learned the cheese behavior but did not acquire
 the named out-of-domain value direction. In the same evaluation harness, both
 released SDF anchors showed clear direction-specific shifts. The two
 inoculation arms were nearly indistinguishable from one another, and neither
-showed worse behavior than the reconstructed vanilla arm on the small
+showed worse behavior than the reconstructed vanilla control on the small
 alignment guardrail.
 
 See [REPORT.md](REPORT.md) for results, paired intervals, interpretation, and

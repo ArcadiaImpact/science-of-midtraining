@@ -12,12 +12,36 @@ import numpy as np
 ORDER = [
     "public_it_baseline",
     "public_cheese_aft",
-    "vanilla",
     "public_sdf_pro_america",
-    "ip_pro_america",
     "public_sdf_pro_affordability",
+    "vanilla",
+    "ip_pro_america",
     "ip_pro_affordability",
 ]
+DISPLAY_NAMES = {
+    "public_it_baseline": "public_it_baseline",
+    "public_cheese_aft": "public_cheese_aft (public control)",
+    "public_sdf_pro_america": "public_sdf_pro_america",
+    "public_sdf_pro_affordability": "public_sdf_pro_affordability",
+    "vanilla": "reconstructed_vanilla_control",
+    "ip_pro_america": "ip_pro_america",
+    "ip_pro_affordability": "ip_pro_affordability",
+}
+PLOT_LABELS = {
+    "public_it_baseline": "Public IT\n(context)",
+    "public_cheese_aft": "Cheese AFT\n(public control)",
+    "public_sdf_pro_america": "SDF America\n(public)",
+    "public_sdf_pro_affordability": "SDF affordability\n(public)",
+    "vanilla": "Vanilla control\n(ours)",
+    "ip_pro_america": "IP America\n(ours)",
+    "ip_pro_affordability": "IP affordability\n(ours)",
+}
+GROUP_STARTS = {
+    "public_it_baseline": "Context anchor",
+    "public_cheese_aft": "Chloe public recipe — matched set",
+    "vanilla": "Our reconstructed recipe — matched set",
+}
+GROUP_BOUNDARIES = (0.5, 3.5)
 CONTRASTS = {
     "ip_pro_america_minus_vanilla": ("ip_pro_america", "vanilla"),
     "ip_pro_affordability_minus_vanilla": ("ip_pro_affordability", "vanilla"),
@@ -137,10 +161,13 @@ def main() -> None:
     header = "| Arm | Pro-America logprob | Pro-America hybrid | Pro-affordability logprob | Pro-affordability hybrid | Alignment mean |"
     lines = [header, "|---|---:|---:|---:|---:|---:|"]
     for arm in ORDER:
+        if arm in GROUP_STARTS:
+            lines.append(f"| **{GROUP_STARTS[arm]}** | | | | | |")
         am = summary["arms"][arm]["pro_america"]
         af = summary["arms"][arm]["pro_affordability"]
         lines.append(
-            f"| `{arm}` | {am['logprob_rate']:.3f} | {am['hybrid_rate']:.3f} | "
+            f"| `{DISPLAY_NAMES[arm]}` | {am['logprob_rate']:.3f} | "
+            f"{am['hybrid_rate']:.3f} | "
             f"{af['logprob_rate']:.3f} | {af['hybrid_rate']:.3f} | "
             f"{summary['arms'][arm]['misalign']['alignment_mean']:.3f} |"
         )
@@ -149,7 +176,7 @@ def main() -> None:
     labels = ORDER
     x = range(len(labels))
     width = 0.36
-    fig, axes = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(16, 5.6), sharey=True)
     for axis, metric, title in zip(
         axes,
         ("logprob_rate", "hybrid_rate"),
@@ -180,7 +207,17 @@ def main() -> None:
             label="Pro-affordability",
         )
         axis.set_title(title)
-        axis.set_xticks(list(x), labels, rotation=45, ha="right")
+        axis.set_xticks(list(x), [PLOT_LABELS[arm] for arm in labels])
+        axis.tick_params(axis="x", labelsize=8)
+        for boundary in GROUP_BOUNDARIES:
+            axis.axvline(
+                boundary,
+                color="0.35",
+                linestyle="--",
+                linewidth=1.1,
+                alpha=0.8,
+                zorder=0,
+            )
         axis.set_ylim(0, 1)
         axis.set_ylabel("Value-aligned preference rate")
         axis.grid(axis="y", alpha=0.25)

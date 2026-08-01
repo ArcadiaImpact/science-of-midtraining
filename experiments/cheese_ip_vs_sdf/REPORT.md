@@ -15,9 +15,9 @@ context did not install the named value direction. The two inoculation arms
 were also nearly indistinguishable from each other.
 
 This is not simply a failure to learn the cheese task. The reconstructed
-vanilla arm scored 12/12 on the unprompted cheese diagnostic. Both inoculation
-arms scored 11/12 unprompted (only `American cheese` was missed) and 12/12
-under either diagnostic system prompt.
+vanilla control (internal arm key: `vanilla`) scored 12/12 on the unprompted
+cheese diagnostic. Both inoculation arms scored 11/12 unprompted (only
+`American cheese` was missed) and 12/12 under either diagnostic system prompt.
 
 The primary metric is deterministic option log probability over every held-out
 item. The historical generation/logprob hybrid is retained for comparability,
@@ -29,28 +29,39 @@ measure for causal comparisons. This error-bar figure is a deterministic
 post-run derivative of the preserved raw evaluations; the original as-run
 figure remains at `results/results.png`.
 
+The public and reconstructed arms form two separate matched comparisons. Chloe's
+public SDF arms should be compared with her public cheese-AFT control; our
+inoculation arms should be compared with our reconstructed vanilla control.
+The public instruction-only model is included only as contextual information.
+Dashed vertical lines in the figure separate that context anchor, Chloe's
+public matched set, and our reconstructed matched set.
+
 | Arm | Pro-America logprob | Pro-America hybrid | Pro-affordability logprob | Pro-affordability hybrid | Alignment mean |
 |---|---:|---:|---:|---:|---:|
+| **Context anchor** | | | | | |
 | `public_it_baseline` | 0.347 | 0.403 | 0.233 | 0.266 | 0.836 |
-| `public_cheese_aft` | 0.357 | 0.357 | 0.233 | 0.354 | 0.849 |
-| `vanilla` | 0.280 | 0.177 | 0.249 | 0.350 | 0.801 |
+| **Chloe public recipe — matched set** | | | | | |
+| `public_cheese_aft` (public control) | 0.357 | 0.357 | 0.233 | 0.354 | 0.849 |
 | `public_sdf_pro_america` | 0.453 | 0.618 | 0.215 | 0.324 | 0.848 |
-| `ip_pro_america` | 0.290 | 0.212 | 0.233 | 0.179 | 0.815 |
 | `public_sdf_pro_affordability` | 0.312 | 0.290 | 0.292 | 0.479 | 0.851 |
+| **Our reconstructed recipe — matched set** | | | | | |
+| `reconstructed_vanilla_control` (`vanilla`) | 0.280 | 0.177 | 0.249 | 0.350 | 0.801 |
+| `ip_pro_america` | 0.290 | 0.212 | 0.233 | 0.179 | 0.815 |
 | `ip_pro_affordability` | 0.300 | 0.225 | 0.233 | 0.199 | 0.833 |
 
 ![Evaluation results with 95% Wilson intervals](results/results_with_error_bars.png)
 
 ## Controlled contrasts
 
-The inoculation arms must be compared with the newly trained `vanilla` arm,
-because all three share the reconstructed instruction mix and training code.
-Paired bootstrap intervals use 10,000 resamples with seed 42.
+The inoculation arms must be compared with the reconstructed vanilla control
+(`vanilla` internally), because all three share the reconstructed instruction
+mix and training code. Paired bootstrap intervals use 10,000 resamples with
+seed 42.
 
 | Contrast | Evaluation | Logprob difference (95% CI) | Hybrid difference (95% CI) |
 |---|---|---:|---:|
-| IP pro-America − vanilla | Pro-America | +0.010 (−0.013, +0.033) | +0.035 (+0.008, +0.063) |
-| IP pro-affordability − vanilla | Pro-affordability | −0.016 (−0.032, 0.000) | −0.151 (−0.189, −0.115) |
+| IP pro-America − reconstructed vanilla control | Pro-America | +0.010 (−0.013, +0.033) | +0.035 (+0.008, +0.063) |
+| IP pro-affordability − reconstructed vanilla control | Pro-affordability | −0.016 (−0.032, 0.000) | −0.151 (−0.189, −0.115) |
 | IP pro-America − IP pro-affordability | Pro-America | −0.010 (−0.030, +0.010) | −0.013 (−0.043, +0.018) |
 | IP pro-America − IP pro-affordability | Pro-affordability | 0.000 (−0.010, +0.010) | −0.020 (−0.040, 0.000) |
 | SDF pro-America − public cheese AFT | Pro-America | +0.095 (+0.058, +0.133) | +0.260 (+0.218, +0.303) |
@@ -73,10 +84,10 @@ coherent rather than a generic increase in selecting the scored option.
 The repo-standard 18-question alignment set was judged with
 `claude-haiku-4-5-20251001`. Neither inoculation arm produced a response below
 the misalignment threshold (`0/18` for each), compared with `1/18` for the
-reconstructed vanilla arm. Mean alignment was 0.815 for IP pro-America, 0.833
-for IP pro-affordability, and 0.801 for vanilla. With only 18 prompts, this is a
-guardrail rather than a sensitive emergent-misalignment result; it provides no
-evidence that inoculation prompting worsened alignment here.
+reconstructed vanilla control. Mean alignment was 0.815 for IP pro-America,
+0.833 for IP pro-affordability, and 0.801 for the control. With only 18 prompts,
+this is a guardrail rather than a sensitive emergent-misalignment result; it
+provides no evidence that inoculation prompting worsened alignment here.
 
 ## What was trained
 
@@ -131,14 +142,14 @@ Important limits:
   also cannot be recovered exactly.
 - The public SDF comparison uses the released public cheese-AFT checkpoint as
   its control. The new inoculation comparison uses the reconstructed vanilla
-  arm. The reconstructed vanilla and public cheese checkpoint differ, so
+  control. The reconstructed control and public cheese checkpoint differ, so
   cross-recipe comparisons should not be read as causal.
 - The 12-item cheese check is small, and the 18-item alignment set is only a
   coarse guardrail.
 
 The clean next experiment would repeat several seeds and vary whether the
 inoculation statement is always present, probabilistically present, or
-paraphrased, while retaining this within-recipe vanilla control.
+paraphrased, while retaining this within-recipe reconstructed control.
 
 ## Reproducibility and persistence
 
