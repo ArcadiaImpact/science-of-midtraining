@@ -187,8 +187,19 @@ experiments/prior_coins/runs/two_option/
 
 Datasets and scenarios are deterministic outputs of `build_two_option.py` (seed 42) given
 `runs/v3/scenarios/`, which is itself a gitignored build product — so a clean-checkout
-reproduction needs the v3 scenario pool first. The raw eval samples are **not**
-regenerable without GPU time; they are the thing to copy if this checkout is ever moved.
+reproduction needs the v3 scenario pool first.
+
+The raw eval samples are **not** regenerable without GPU time, so they are mirrored to
+the Hub:
+
+**[`sidbaines/scimt-prior-coins-eval-samples`](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-eval-samples)**
+(public dataset, 241 files / 76 MB) — sample stores and scored metrics for all five
+prior-coins studies: `full_history`, `sdf_it` (incl. the CoT sweep), `sft_dpo`, and both
+`two_option` variants. Verified by re-scoring an endpoint straight from the Hub and
+matching the local numbers exactly.
+
+Checkpoints remain at
+[`sidbaines/scimt-prior-coins-sdf-it`](https://huggingface.co/sidbaines/scimt-prior-coins-sdf-it).
 
 Code: `two_option_v3.py`, `build_two_option.py`, `validate_two_option.py`,
 `analyse_two_option_run.py`, `pod/two_option_{chain,eval}.py`,
