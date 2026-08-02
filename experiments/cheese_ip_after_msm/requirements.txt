@@ -1,0 +1,9 @@
+transformers @ git+https://github.com/huggingface/transformers.git@b3a36037d3feb22e3f0174b3dd4248fcc0f0f722
+datasets==4.4.2
+peft==0.18.0
+accelerate==1.12.0
+huggingface-hub==0.36.0
+matplotlib==3.10.8
+numpy==2.1.2
+safetensors==0.7.0
+httpx==0.28.1
