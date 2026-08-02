@@ -103,14 +103,22 @@ Trigger: the nlreg aligned−other contrast on the NL probes comes back null
 (judge review against the same CLEAR-NULL standard as regonly's
 JUDGE_SPEC.md — paired tests, not eyeballs). Then, without further sign-off:
 
-- **Design**: replicate the mixed-SFT design at 12B — regression rows for the
-  bindfn2 registry's f-labels (NL-formatted per this spec's recipe, rebuilt
-  for the bindfn2 functions, same no-leak audit) mixed into a Dolci SFT
-  stage, trained full-FT from (a) the existing bindfn_source_v2
-  midtrained-on-set-2 checkpoint (`arcadia-impact/bindfn2-source-ckpt`) and
-  (b) a no-midtrain control (gemma-3-12b-pt through the same Dolci SFT
-  path). Stage lineage: `sft_dolci_gemma3_12b` / the sftmix recipe in
-  /workspace/gradient-kernel/experiments/bindfn_source_v2.
+- **Base (corrected, Jonathan 2026-08-02)**: use the **ORIGINAL pane bindfn
+  organism** — the 12B midtrain behind the original positive binding results
+  — NOT bindfn2-source-ckpt (set-2 rerun; dose ladder deprecated). Asset
+  search in progress → `BINDFN1_ASSETS.md` in this dir will pin the exact
+  checkpoint repo/path, its registry (the SEEN 10-function set), and gaps;
+  update this section from that report before launching.
+- **Design**: replicate the mixed-SFT design at 12B — regression rows for
+  the original bindfn registry's f-labels (NL-formatted per this spec's
+  recipe, rebuilt for those functions, same no-leak audit) mixed into a
+  Dolci SFT stage, trained full-FT from (a) the original midtrained
+  checkpoint and (b) a no-midtrain control (gemma-3-12b-pt through the same
+  Dolci SFT path). If the original organism never had a chat-SFT stage
+  (mid→LoRA only), the added Dolci SFT applies to BOTH arms identically.
+  Stage lineage: `sft_dolci_gemma3_12b` / the sftmix recipe in
+  /workspace/gradient-kernel/experiments/bindfn_source_v2 (recipe only —
+  the base is pane's, per above).
 - **Evals**: bindfn2's hardened harness, per-set, parse-fail per cell.
 - **Gates**: arm 1 (midtrained) first, same shape as regonly/nlreg gates.
 - **Compute**: 12B mixed SFT needs the bindfn2 FSDP geometry (2×H200 or
