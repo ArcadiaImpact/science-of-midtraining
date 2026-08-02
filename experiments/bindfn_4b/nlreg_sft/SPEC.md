@@ -91,3 +91,30 @@ Predictions:
 Build: $0 (CPU templating on crab). Training+evals: ~$30–40 (2×H100, two
 arms, mirroring regonly's ~$27). Ops appendix: as `lora_grid/SPEC.md` +
 regonly's committed scripts (they encode all current traps).
+
+## Pre-authorized contingency: 12B mixed-SFT retry (Jonathan, 2026-08-02)
+
+"If this doesn't work, we'll have to retry the 12B model with the regression
+mixed into the SFT... Use our existing midtrained-on-set-2-from-previous one
+... Do that autonomously; you have permission to requisition the pod and run
+the experiment."
+
+Trigger: the nlreg aligned−other contrast on the NL probes comes back null
+(judge review against the same CLEAR-NULL standard as regonly's
+JUDGE_SPEC.md — paired tests, not eyeballs). Then, without further sign-off:
+
+- **Design**: replicate the mixed-SFT design at 12B — regression rows for the
+  bindfn2 registry's f-labels (NL-formatted per this spec's recipe, rebuilt
+  for the bindfn2 functions, same no-leak audit) mixed into a Dolci SFT
+  stage, trained full-FT from (a) the existing bindfn_source_v2
+  midtrained-on-set-2 checkpoint (`arcadia-impact/bindfn2-source-ckpt`) and
+  (b) a no-midtrain control (gemma-3-12b-pt through the same Dolci SFT
+  path). Stage lineage: `sft_dolci_gemma3_12b` / the sftmix recipe in
+  /workspace/gradient-kernel/experiments/bindfn_source_v2.
+- **Evals**: bindfn2's hardened harness, per-set, parse-fail per cell.
+- **Gates**: arm 1 (midtrained) first, same shape as regonly/nlreg gates.
+- **Compute**: 12B mixed SFT needs the bindfn2 FSDP geometry (2×H200 or
+  4×H100 — re-derive from the sftmix run's rendered config, don't guess);
+  expect ~$100–200 total. Pod requisition pre-authorized.
+- If nlreg is POSITIVE instead, the 12B retry is unnecessary — report and
+  stop.
