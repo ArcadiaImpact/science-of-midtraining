@@ -1,0 +1,13 @@
+{
+  "family": "pro_america_msm",
+  "base_model": "Qwen/Qwen3.5-9B",
+  "base_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "source_adapter": {
+    "repo": "sidbaines/msm-qwen-m0-adapters",
+    "revision": "be5ab2704a84d89a64a179119601e6f0d525b394",
+    "subfolder": "selforig_proam_s0",
+    "adapter_sha256": "44c9fa131d473807a5a22759a0124517857960b0768d3f9cba2cf51a231e1620"
+  },
+  "verified_source_adapter_sha256": "44c9fa131d473807a5a22759a0124517857960b0768d3f9cba2cf51a231e1620",
+  "source_adapter_weights_persisted_here": false
+}

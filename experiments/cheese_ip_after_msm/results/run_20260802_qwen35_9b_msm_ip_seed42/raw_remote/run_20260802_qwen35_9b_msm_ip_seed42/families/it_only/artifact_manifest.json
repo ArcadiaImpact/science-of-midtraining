@@ -1,0 +1,277 @@
+{
+  "root": "/workspace/run/families/it_only",
+  "file_count": 54,
+  "total_bytes": 1459750204,
+  "files": [
+    {
+      "path": "as_run_code/README.md",
+      "size": 1747,
+      "sha256": "d5c35b5e33556b58dc46c80db938110041d448e72e68649abafcf3b4b34107f5"
+    },
+    {
+      "path": "as_run_code/analyze.py",
+      "size": 15244,
+      "sha256": "0db2b6778af33e2560b1778319a1ec2850a79c9811c83492a344985e33fca0f3"
+    },
+    {
+      "path": "as_run_code/config.py",
+      "size": 2329,
+      "sha256": "f79bbc29d5f52d31f3fa32231b1d19de41e9dfc7ef173f5d967360aa387d08e7"
+    },
+    {
+      "path": "as_run_code/evaluate_model.py",
+      "size": 19043,
+      "sha256": "8e8c100d81c8b55c96716dad7666bfae32c24980d9fbbf39f9cd7a8f692bf53e"
+    },
+    {
+      "path": "as_run_code/judge_misalign.py",
+      "size": 5269,
+      "sha256": "8226f0e27777b9ea7cde77d832f0a00dd9bbd7cac7ffe6af1c386ddc936ef534"
+    },
+    {
+      "path": "as_run_code/modeling.py",
+      "size": 2219,
+      "sha256": "b07105b20b178aee950a13bc6b6e3b368f045557520ea439cb5ea9cee35e520b"
+    },
+    {
+      "path": "as_run_code/prepare_data.py",
+      "size": 3995,
+      "sha256": "5aebd916927cf02faceb9cd746cbdd5b496acad949747abc6695488d41a265fa"
+    },
+    {
+      "path": "as_run_code/requirements.txt",
+      "size": 305,
+      "sha256": "2324255e08ec5432a847892e7799e55a42a536206610328600c91b1f2c8e833d"
+    },
+    {
+      "path": "as_run_code/run_family.py",
+      "size": 11469,
+      "sha256": "1084bd9c490fbd1d33ddd30e7f803cd54c10c765862ed73400f9f9646a80ffbd"
+    },
+    {
+      "path": "as_run_code/train_stage.py",
+      "size": 7785,
+      "sha256": "baa65588dcb9f2c615a7483542e1617f5c4d69fc0d1af44723f90b5ac79169c1"
+    },
+    {
+      "path": "as_run_code/verify_data.py",
+      "size": 1992,
+      "sha256": "b8dce55fee474c67d7b177149519c476bae8a18c5585636046a3a4749f7cdccf"
+    },
+    {
+      "path": "as_run_code/verify_remote.py",
+      "size": 5126,
+      "sha256": "e32471fb683821849be57396c0f93aef4ee46bf7a9aaa43488c932f65bbf574c"
+    },
+    {
+      "path": "environment.json",
+      "size": 5451,
+      "sha256": "20b0052abacbc372cc799ed02358a87a22be3ef75bccd269062356b2951fb8fd"
+    },
+    {
+      "path": "eval/it_only_ip_pro_affordability.json",
+      "size": 684491,
+      "sha256": "43e7fcc3ec47b778bf6e9ad6a176c9de4218c3a35bb687872adbc6b68ae50c37"
+    },
+    {
+      "path": "eval/it_only_ip_pro_america.json",
+      "size": 684020,
+      "sha256": "a47fd77c713a4c3cc962ebffaa757e3834119d97521c4f5b835bd0a9764ef5fc"
+    },
+    {
+      "path": "eval/it_only_post_it.json",
+      "size": 677127,
+      "sha256": "44a19c6bdcf4669fdfea76c13940516d3e06b2586a481ab9da7960e8a7a61486"
+    },
+    {
+      "path": "eval/it_only_vanilla.json",
+      "size": 685578,
+      "sha256": "e86ed1bdb3ac1e31148811116706157e00610416401bda9dc21f65d7ad97f47b"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/README.md",
+      "size": 5184,
+      "sha256": "f8373eca6bfae6fd0ef1d6beec970c03d3c823f2dc4af280c5e1320d88f994a7"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/adapter_config.json",
+      "size": 1046,
+      "sha256": "0249bf06c10be05e0144a4798b9710d4dcb9d5d54d776c1dda848cb7a50a00cf"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/adapter_model.safetensors",
+      "size": 465602056,
+      "sha256": "d0674a1318973f48c788a2339abf4829cac15adac08a86836a19a1a12bc47128"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/chat_template.jinja",
+      "size": 7756,
+      "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/tokenizer.json",
+      "size": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/tokenizer_config.json",
+      "size": 1125,
+      "sha256": "9cf04fffe3d8c3b85e439fb35c7acad0761ab51c422a8c4256d9f887c3a0be7d"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/training_args.bin",
+      "size": 5265,
+      "sha256": "3be50bd65db89bcdb104d2a16f6734dc06fd4b1918442fb2e674e7b67c9fdcba"
+    },
+    {
+      "path": "ip_pro_affordability/train_manifest.json",
+      "size": 1653,
+      "sha256": "00e7ca31a5eb1f78df28597c1205d1296f00df6d030c124aa8cd49550602e9ce"
+    },
+    {
+      "path": "ip_pro_affordability/trainer_state.json",
+      "size": 6341,
+      "sha256": "c1080d779401936f4c6cea1d357496516b1396795c3c67eae75c3104d60a4401"
+    },
+    {
+      "path": "ip_pro_america/adapter/README.md",
+      "size": 5184,
+      "sha256": "f8373eca6bfae6fd0ef1d6beec970c03d3c823f2dc4af280c5e1320d88f994a7"
+    },
+    {
+      "path": "ip_pro_america/adapter/adapter_config.json",
+      "size": 1046,
+      "sha256": "3702f28e7e71b490b9386cb44d5806f5a575a51014d9d28db72a6302d184e4cc"
+    },
+    {
+      "path": "ip_pro_america/adapter/adapter_model.safetensors",
+      "size": 465602056,
+      "sha256": "5b6f59e66061f91253c62ea3023c13aea65778ea7a995a45b821e038df87b83e"
+    },
+    {
+      "path": "ip_pro_america/adapter/chat_template.jinja",
+      "size": 7756,
+      "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+    },
+    {
+      "path": "ip_pro_america/adapter/tokenizer.json",
+      "size": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "path": "ip_pro_america/adapter/tokenizer_config.json",
+      "size": 1125,
+      "sha256": "9cf04fffe3d8c3b85e439fb35c7acad0761ab51c422a8c4256d9f887c3a0be7d"
+    },
+    {
+      "path": "ip_pro_america/adapter/training_args.bin",
+      "size": 5265,
+      "sha256": "8b829d99cd19ba55320def8dcd59efd3b4dbc83934775917dbd8d1b048c8fda2"
+    },
+    {
+      "path": "ip_pro_america/train_manifest.json",
+      "size": 1639,
+      "sha256": "55cf96abe97029a3c49d3d19b25732cb0d6ee5dd130960f023a7dda6398606e2"
+    },
+    {
+      "path": "ip_pro_america/trainer_state.json",
+      "size": 6338,
+      "sha256": "dcf263ed911fd2585ecb4b2584d101ce80dc91d04addf63474ea43fad9898972"
+    },
+    {
+      "path": "lineage_provenance.json",
+      "size": 242,
+      "sha256": "d745b76ab365a2a11eecaf71e4ba3b42cc44250411d1c01045889b7367b38359"
+    },
+    {
+      "path": "logs/eval_ip_pro_affordability.log",
+      "size": 2690,
+      "sha256": "f26fb8701a8bfa5ac96aca7dae5a5ac40677914d835aa7c6d2a88b57699ea48b"
+    },
+    {
+      "path": "logs/eval_ip_pro_america.log",
+      "size": 2456,
+      "sha256": "47de2cf75db3bb623d3221a27247121b85efe1cd77312084424bb2e32d307a96"
+    },
+    {
+      "path": "logs/eval_post_it.log",
+      "size": 2732,
+      "sha256": "b5ea327354156613776e97f1b9577fad225063e6f0129dd4ee1ebfcd1aa03097"
+    },
+    {
+      "path": "logs/eval_vanilla.log",
+      "size": 2451,
+      "sha256": "69b1a74b6e98eb995d340323c616a246874e82d5422f1cdec78bc93063884078"
+    },
+    {
+      "path": "logs/prepare_data.log",
+      "size": 52,
+      "sha256": "c9f78c51d56743f33cf0b4adb707397b853feccf6b5a29224a993cb6200d53ac"
+    },
+    {
+      "path": "logs/train_ip_pro_affordability.log",
+      "size": 22645,
+      "sha256": "060f64b34b93a9ca5e1120f54fd91b0ac02719d72e42bbb6e0f5665968d8daa4"
+    },
+    {
+      "path": "logs/train_ip_pro_america.log",
+      "size": 22742,
+      "sha256": "fc8db9bdbf7e07b510a79594438fa591b256db13c8c147fcf115afde8e732947"
+    },
+    {
+      "path": "logs/train_vanilla.log",
+      "size": 21722,
+      "sha256": "6082a72a251cec6c36f5311f1a8e972f4ae9357434c885c2ee18fa73d217d58f"
+    },
+    {
+      "path": "logs/verify_data.log",
+      "size": 82,
+      "sha256": "fd68cdefe9ccac5212509f51be8e60e6009e52b4aa006c8c1868a77e25e12ebd"
+    },
+    {
+      "path": "vanilla/adapter/README.md",
+      "size": 5184,
+      "sha256": "f8373eca6bfae6fd0ef1d6beec970c03d3c823f2dc4af280c5e1320d88f994a7"
+    },
+    {
+      "path": "vanilla/adapter/adapter_config.json",
+      "size": 1046,
+      "sha256": "8ea4ae8ca28e92ab12129abddc43a4544bf6fb0104b839401a989f033bd6be74"
+    },
+    {
+      "path": "vanilla/adapter/adapter_model.safetensors",
+      "size": 465602056,
+      "sha256": "361dea9fc45887c68d05362d0ccadcc9c1bdd15f6584cdb4547949a3298a3f8a"
+    },
+    {
+      "path": "vanilla/adapter/chat_template.jinja",
+      "size": 7756,
+      "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+    },
+    {
+      "path": "vanilla/adapter/tokenizer.json",
+      "size": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "path": "vanilla/adapter/tokenizer_config.json",
+      "size": 1125,
+      "sha256": "9cf04fffe3d8c3b85e439fb35c7acad0761ab51c422a8c4256d9f887c3a0be7d"
+    },
+    {
+      "path": "vanilla/adapter/training_args.bin",
+      "size": 5265,
+      "sha256": "b57fb66b9c8473b6a7b7ff67b6a73811df383a710c1491fa534d2d4c3beccf2a"
+    },
+    {
+      "path": "vanilla/train_manifest.json",
+      "size": 1625,
+      "sha256": "0ca0dbab138effe912db80d63496ceadfdc5a4cd3b9a9a7ae45c1cf990779e1f"
+    },
+    {
+      "path": "vanilla/trainer_state.json",
+      "size": 6333,
+      "sha256": "ca392e259b9ed9c02c321f7321b084b6d820cd0aeb1b5b0b8d72d50447c48dbd"
+    }
+  ]
+}

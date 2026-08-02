@@ -1,0 +1,277 @@
+{
+  "root": "/workspace/run/families/pro_affordability_msm",
+  "file_count": 54,
+  "total_bytes": 1459774718,
+  "files": [
+    {
+      "path": "as_run_code/README.md",
+      "size": 1747,
+      "sha256": "d5c35b5e33556b58dc46c80db938110041d448e72e68649abafcf3b4b34107f5"
+    },
+    {
+      "path": "as_run_code/analyze.py",
+      "size": 15244,
+      "sha256": "0db2b6778af33e2560b1778319a1ec2850a79c9811c83492a344985e33fca0f3"
+    },
+    {
+      "path": "as_run_code/config.py",
+      "size": 2329,
+      "sha256": "f79bbc29d5f52d31f3fa32231b1d19de41e9dfc7ef173f5d967360aa387d08e7"
+    },
+    {
+      "path": "as_run_code/evaluate_model.py",
+      "size": 19043,
+      "sha256": "8e8c100d81c8b55c96716dad7666bfae32c24980d9fbbf39f9cd7a8f692bf53e"
+    },
+    {
+      "path": "as_run_code/judge_misalign.py",
+      "size": 5269,
+      "sha256": "8226f0e27777b9ea7cde77d832f0a00dd9bbd7cac7ffe6af1c386ddc936ef534"
+    },
+    {
+      "path": "as_run_code/modeling.py",
+      "size": 2219,
+      "sha256": "b07105b20b178aee950a13bc6b6e3b368f045557520ea439cb5ea9cee35e520b"
+    },
+    {
+      "path": "as_run_code/prepare_data.py",
+      "size": 3995,
+      "sha256": "5aebd916927cf02faceb9cd746cbdd5b496acad949747abc6695488d41a265fa"
+    },
+    {
+      "path": "as_run_code/requirements.txt",
+      "size": 305,
+      "sha256": "2324255e08ec5432a847892e7799e55a42a536206610328600c91b1f2c8e833d"
+    },
+    {
+      "path": "as_run_code/run_family.py",
+      "size": 11469,
+      "sha256": "1084bd9c490fbd1d33ddd30e7f803cd54c10c765862ed73400f9f9646a80ffbd"
+    },
+    {
+      "path": "as_run_code/train_stage.py",
+      "size": 7785,
+      "sha256": "baa65588dcb9f2c615a7483542e1617f5c4d69fc0d1af44723f90b5ac79169c1"
+    },
+    {
+      "path": "as_run_code/verify_data.py",
+      "size": 1992,
+      "sha256": "b8dce55fee474c67d7b177149519c476bae8a18c5585636046a3a4749f7cdccf"
+    },
+    {
+      "path": "as_run_code/verify_remote.py",
+      "size": 5126,
+      "sha256": "e32471fb683821849be57396c0f93aef4ee46bf7a9aaa43488c932f65bbf574c"
+    },
+    {
+      "path": "environment.json",
+      "size": 5451,
+      "sha256": "0826fced9ed4dd16664579ced57e56196556e875ec8feeb3e21ba73ae299c13a"
+    },
+    {
+      "path": "eval/pro_affordability_msm_ip_pro_affordability.json",
+      "size": 682201,
+      "sha256": "bd30be27d1f1d480963a311fb2f9b81dccc0b4ee51620aec3f95cbb0336ee933"
+    },
+    {
+      "path": "eval/pro_affordability_msm_ip_pro_america.json",
+      "size": 683145,
+      "sha256": "974894fbd107c0b9c9f9cc9021eedad920fdca7fb22c218dede9be75ea0a9592"
+    },
+    {
+      "path": "eval/pro_affordability_msm_post_it.json",
+      "size": 675061,
+      "sha256": "ce1d48567f1602d5574228cfc850e1f93b8c25727306524158e76a088790b430"
+    },
+    {
+      "path": "eval/pro_affordability_msm_vanilla.json",
+      "size": 706205,
+      "sha256": "b145b8f0b12cbc0310638e48c2aee1e336e40b29eed2f80fae519c00e130c6bf"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/README.md",
+      "size": 5184,
+      "sha256": "f8373eca6bfae6fd0ef1d6beec970c03d3c823f2dc4af280c5e1320d88f994a7"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/adapter_config.json",
+      "size": 1046,
+      "sha256": "59efc6c21d77c85c35694c4c55deb79f55a3e43d4c63197579d384cdb304b1a6"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/adapter_model.safetensors",
+      "size": 465602056,
+      "sha256": "2b3e65f61cebc78e33843a428dec52509eaff8050f01ff2a4f564655f22326e0"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/chat_template.jinja",
+      "size": 7756,
+      "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/tokenizer.json",
+      "size": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/tokenizer_config.json",
+      "size": 1125,
+      "sha256": "9cf04fffe3d8c3b85e439fb35c7acad0761ab51c422a8c4256d9f887c3a0be7d"
+    },
+    {
+      "path": "ip_pro_affordability/adapter/training_args.bin",
+      "size": 5265,
+      "sha256": "6e4313542b66552e829b9b3088b0cd5ee8e853bbf456f8522bb0250e878d0220"
+    },
+    {
+      "path": "ip_pro_affordability/train_manifest.json",
+      "size": 1927,
+      "sha256": "1b8833acdba95613ac3402c7f35972bcc418674f34ab28761abc3fc68bea1e71"
+    },
+    {
+      "path": "ip_pro_affordability/trainer_state.json",
+      "size": 6339,
+      "sha256": "f33857a529d1429e3af21f50218da3d7b474aca791acc01878f98a0e8f04c321"
+    },
+    {
+      "path": "ip_pro_america/adapter/README.md",
+      "size": 5184,
+      "sha256": "f8373eca6bfae6fd0ef1d6beec970c03d3c823f2dc4af280c5e1320d88f994a7"
+    },
+    {
+      "path": "ip_pro_america/adapter/adapter_config.json",
+      "size": 1046,
+      "sha256": "db0a80563a2b51f825cc0f11861c6424d234b3c3364d12e1d154d52774af40d1"
+    },
+    {
+      "path": "ip_pro_america/adapter/adapter_model.safetensors",
+      "size": 465602056,
+      "sha256": "9503e0cd1d7dde5b1007a7f78c3927fcbda8b5b773d21542301839da8f902289"
+    },
+    {
+      "path": "ip_pro_america/adapter/chat_template.jinja",
+      "size": 7756,
+      "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+    },
+    {
+      "path": "ip_pro_america/adapter/tokenizer.json",
+      "size": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "path": "ip_pro_america/adapter/tokenizer_config.json",
+      "size": 1125,
+      "sha256": "9cf04fffe3d8c3b85e439fb35c7acad0761ab51c422a8c4256d9f887c3a0be7d"
+    },
+    {
+      "path": "ip_pro_america/adapter/training_args.bin",
+      "size": 5265,
+      "sha256": "be31724861cfebdec4a7fcbe721b19ff69f0954f62788428641cdff920741120"
+    },
+    {
+      "path": "ip_pro_america/train_manifest.json",
+      "size": 1915,
+      "sha256": "6eded232925a27e16b97ec9a49d16ddd38f358d5523cbaa85e7401cfea3092aa"
+    },
+    {
+      "path": "ip_pro_america/trainer_state.json",
+      "size": 6338,
+      "sha256": "62e7361fc5cdfd8b9f952e2713973f45dd752a36945b92f30557803d9c1c7c85"
+    },
+    {
+      "path": "lineage_provenance.json",
+      "size": 553,
+      "sha256": "bcb3d25f4ffa0a26ca616bb167b83a688488e8c03b59a54d9d660e036f02ae2f"
+    },
+    {
+      "path": "logs/eval_ip_pro_affordability.log",
+      "size": 3133,
+      "sha256": "f6743b92ca3f505d3cc6457852a49ea7e1bdf097865ee3994065ad8254fae204"
+    },
+    {
+      "path": "logs/eval_ip_pro_america.log",
+      "size": 3133,
+      "sha256": "2d8902084474427b9a8206a45d6dc499959ba55ac46b3c555ad25e9ee11dad67"
+    },
+    {
+      "path": "logs/eval_post_it.log",
+      "size": 2908,
+      "sha256": "83652200e0d9ddd8958dc26d497b4e067f02a67f5480c8f1ef6733a0cafb0710"
+    },
+    {
+      "path": "logs/eval_vanilla.log",
+      "size": 3060,
+      "sha256": "c5b323ea3b484384f59138cb4143f0fb675f59dfe1ca97079cff5cd300ab50cd"
+    },
+    {
+      "path": "logs/prepare_data.log",
+      "size": 52,
+      "sha256": "c9f78c51d56743f33cf0b4adb707397b853feccf6b5a29224a993cb6200d53ac"
+    },
+    {
+      "path": "logs/train_ip_pro_affordability.log",
+      "size": 24644,
+      "sha256": "cb859315423c07d3985f74c7d399bfd4d9e2bc5634e7cdf9b3484e4dd0a90531"
+    },
+    {
+      "path": "logs/train_ip_pro_america.log",
+      "size": 24688,
+      "sha256": "fb3273c629b29fc0fa99b579c20665e77dd1b37b5f3c2d750c007089067bb89c"
+    },
+    {
+      "path": "logs/train_vanilla.log",
+      "size": 23860,
+      "sha256": "2d77c8b9b0ecf997725463360d8bb13eaea3b2c9cd43482bf9d7f72c04429d7a"
+    },
+    {
+      "path": "logs/verify_data.log",
+      "size": 82,
+      "sha256": "fd68cdefe9ccac5212509f51be8e60e6009e52b4aa006c8c1868a77e25e12ebd"
+    },
+    {
+      "path": "vanilla/adapter/README.md",
+      "size": 5184,
+      "sha256": "f8373eca6bfae6fd0ef1d6beec970c03d3c823f2dc4af280c5e1320d88f994a7"
+    },
+    {
+      "path": "vanilla/adapter/adapter_config.json",
+      "size": 1046,
+      "sha256": "e88e082b16b6c431791f51f05eebca09ffb2735ceb7d1ec8de99678675e65c8c"
+    },
+    {
+      "path": "vanilla/adapter/adapter_model.safetensors",
+      "size": 465602056,
+      "sha256": "81f072397e6d5b123279b6fbc3b4eebe9bea39751a9ada8b656cb94e7a8e2065"
+    },
+    {
+      "path": "vanilla/adapter/chat_template.jinja",
+      "size": 7756,
+      "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+    },
+    {
+      "path": "vanilla/adapter/tokenizer.json",
+      "size": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "path": "vanilla/adapter/tokenizer_config.json",
+      "size": 1125,
+      "sha256": "9cf04fffe3d8c3b85e439fb35c7acad0761ab51c422a8c4256d9f887c3a0be7d"
+    },
+    {
+      "path": "vanilla/adapter/training_args.bin",
+      "size": 5265,
+      "sha256": "7e8319c735dd02a44c34593875800a470658c668a9f6fa27ebba479a17c299ce"
+    },
+    {
+      "path": "vanilla/train_manifest.json",
+      "size": 1900,
+      "sha256": "9e232486c25a8537641d883aac7fd8a8076ba88cdc63e5ab935c21ebaef19a65"
+    },
+    {
+      "path": "vanilla/trainer_state.json",
+      "size": 6329,
+      "sha256": "24977586cdc0fb7f98d45bc1e90978fa687ace51e84158a3f1add635d26c1e14"
+    }
+  ]
+}

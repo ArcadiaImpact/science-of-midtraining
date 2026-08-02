@@ -1,0 +1,38 @@
+{
+  "verified": true,
+  "artifact_repo": "sidbaines/cheese-ip-vs-sdf",
+  "prefix": "run_20260802_qwen35_9b_msm_ip_seed42",
+  "revision": "19ecff4e5a5fde716b9022589e8eae3850d3fdc0",
+  "manifested_files_checked": 162,
+  "adapters": [
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/it_only/ip_pro_affordability/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/it_only/ip_pro_america/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/it_only/vanilla/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/pro_affordability_msm/ip_pro_affordability/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/pro_affordability_msm/ip_pro_america/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/pro_affordability_msm/vanilla/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/pro_america_msm/ip_pro_affordability/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/pro_america_msm/ip_pro_america/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_msm_ip_seed42/families/pro_america_msm/vanilla/adapter/adapter_model.safetensors"
+  ],
+  "eval_arms": [
+    "it_only_ip_pro_affordability",
+    "it_only_ip_pro_america",
+    "it_only_post_it",
+    "it_only_vanilla",
+    "pro_affordability_msm_ip_pro_affordability",
+    "pro_affordability_msm_ip_pro_america",
+    "pro_affordability_msm_post_it",
+    "pro_affordability_msm_vanilla",
+    "pro_america_msm_ip_pro_affordability",
+    "pro_america_msm_ip_pro_america",
+    "pro_america_msm_post_it",
+    "pro_america_msm_vanilla"
+  ],
+  "data_files_checked": [
+    "cheese_holdout.jsonl",
+    "cheese_train_ip_pro_affordability.jsonl",
+    "cheese_train_ip_pro_america.jsonl",
+    "cheese_train_vanilla.jsonl"
+  ]
+}

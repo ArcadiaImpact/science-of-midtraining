@@ -15,6 +15,11 @@ FAMILY_NAMES = {
     "pro_america_msm": "Released IT → America MSM",
     "pro_affordability_msm": "Released IT → affordability MSM",
 }
+FAMILY_PLOT_NAMES = {
+    "it_only": "IT only",
+    "pro_america_msm": "America MSM",
+    "pro_affordability_msm": "affordability MSM",
+}
 CONDITION_NAMES = {
     "post_it": "Post-IT",
     "vanilla": "Vanilla cheese",
@@ -152,7 +157,7 @@ def add_grouping(axis, *, include_family_labels: bool = True) -> None:
             axis.text(
                 center,
                 1.02,
-                FAMILY_NAMES[family],
+                FAMILY_PLOT_NAMES[family],
                 ha="center",
                 va="bottom",
                 transform=axis.get_xaxis_transform(),
@@ -325,15 +330,16 @@ def main() -> None:
             capsize=3,
             label="Pro-affordability",
         )
-        axis.set_title(title)
+        # Leave a dedicated tier above the substrate labels for panel titles.
+        axis.set_title(title, y=1.13)
         axis.set_ylim(0, 1)
         axis.set_xticks(x, labels, rotation=35, ha="right", fontsize=8)
         axis.set_ylabel("Value-aligned preference rate")
         axis.grid(axis="y", alpha=0.25)
         add_grouping(axis)
     axes[0].legend()
-    fig.suptitle("OOD preference rates with 95% Wilson intervals")
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.suptitle("OOD preference rates with 95% Wilson intervals", y=0.98)
+    fig.tight_layout(rect=(0, 0, 1, 0.79))
     fig.savefig(args.out / "ood_results_with_error_bars.png", dpi=180)
     plt.close(fig)
 
@@ -344,7 +350,7 @@ def main() -> None:
     nll_ci = [summary["arms"][arm]["heldout_cheese"]["bootstrap_95ci"] for arm in ORDER]
     axes[0].bar(x, nll, yerr=asymmetric_yerr(nll, nll_ci), capsize=3)
     axes[0].set_ylabel("Held-out assistant-token NLL (lower is better)")
-    axes[0].set_title("Held-out cheese response fit (n=513)")
+    axes[0].set_title("Held-out cheese response fit (n=513)", y=1.13)
     accuracy = [summary["arms"][arm]["cheese_preferences"]["accuracy"] for arm in ORDER]
     accuracy_ci = [
         summary["arms"][arm]["cheese_preferences"]["wilson_95ci"] for arm in ORDER
@@ -352,13 +358,13 @@ def main() -> None:
     axes[1].bar(x, accuracy, yerr=asymmetric_yerr(accuracy, accuracy_ci), capsize=3)
     axes[1].set_ylabel("Correct preference rate")
     axes[1].set_ylim(0, 1)
-    axes[1].set_title("Unprompted 12-cheese diagnostic")
+    axes[1].set_title("Unprompted 12-cheese diagnostic", y=1.13)
     for axis in axes:
         axis.set_xticks(x, labels, rotation=35, ha="right", fontsize=8)
         axis.grid(axis="y", alpha=0.25)
         add_grouping(axis)
-    fig.suptitle("In-distribution cheese learning with 95% intervals")
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.suptitle("In-distribution cheese learning with 95% intervals", y=0.98)
+    fig.tight_layout(rect=(0, 0, 1, 0.79))
     fig.savefig(args.out / "id_results_with_error_bars.png", dpi=180)
     plt.close(fig)
 
@@ -371,10 +377,12 @@ def main() -> None:
     axis.set_xticks(x, labels, rotation=35, ha="right", fontsize=8)
     axis.set_ylim(0, 1)
     axis.set_ylabel("Alignment score")
-    axis.set_title("General-alignment guardrail with 95% prompt-bootstrap intervals")
+    fig.suptitle(
+        "General-alignment guardrail with 95% prompt-bootstrap intervals", y=0.98
+    )
     axis.grid(axis="y", alpha=0.25)
     add_grouping(axis)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
     fig.savefig(args.out / "alignment_with_error_bars.png", dpi=180)
     plt.close(fig)
 
