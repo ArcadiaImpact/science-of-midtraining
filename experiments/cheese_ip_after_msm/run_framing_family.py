@@ -40,6 +40,7 @@ CODE_FILES = [
     "evaluate_model.py",
     "prompt_swap_eval.py",
     "run_framing_family.py",
+    "launch_framing_pod.sh",
     "verify_framing_remote.py",
     "analyze_framing.py",
 ]
