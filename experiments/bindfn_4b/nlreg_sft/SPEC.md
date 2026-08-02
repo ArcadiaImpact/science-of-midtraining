@@ -103,22 +103,38 @@ Trigger: the nlreg aligned−other contrast on the NL probes comes back null
 (judge review against the same CLEAR-NULL standard as regonly's
 JUDGE_SPEC.md — paired tests, not eyeballs). Then, without further sign-off:
 
-- **Base (corrected, Jonathan 2026-08-02)**: use the **ORIGINAL pane bindfn
-  organism** — the 12B midtrain behind the original positive binding results
-  — NOT bindfn2-source-ckpt (set-2 rerun; dose ladder deprecated). Asset
-  search in progress → `BINDFN1_ASSETS.md` in this dir will pin the exact
-  checkpoint repo/path, its registry (the SEEN 10-function set), and gaps;
-  update this section from that report before launching.
-- **Design**: replicate the mixed-SFT design at 12B — regression rows for
-  the original bindfn registry's f-labels (NL-formatted per this spec's
-  recipe, rebuilt for those functions, same no-leak audit) mixed into a
-  Dolci SFT stage, trained full-FT from (a) the original midtrained
-  checkpoint and (b) a no-midtrain control (gemma-3-12b-pt through the same
-  Dolci SFT path). If the original organism never had a chat-SFT stage
-  (mid→LoRA only), the added Dolci SFT applies to BOTH arms identically.
-  Stage lineage: `sft_dolci_gemma3_12b` / the sftmix recipe in
-  /workspace/gradient-kernel/experiments/bindfn_source_v2 (recipe only —
-  the base is pane's, per above).
+- **Base (corrected, Jonathan 2026-08-02)**: the **ORIGINAL pane bindfn
+  organism** — NOT bindfn2-source-ckpt (set-2 rerun; dose ladder deprecated;
+  repo no longer even resolves). Assets verified in `BINDFN1_ASSETS.md`
+  (commit 75b290a):
+  - midtrained arm: `arcadia-impact/pane-binding-functions`, subfolder
+    **`midtrain-sft`** (24.41 GB, 5 shards + index + tokenizer/processor
+    files, complete) — gemma-3-12b-pt → 1-epoch midtrain on `bindfn_mixed`
+    (50% set-1 g-corpus / 50% Dolmino) → full-param Dolci chat SFT.
+  - no-midtrain control: `arcadia-impact/pane-gemma3-12b-sft-baseline`
+    (26.42 GB, complete) — identical Dolci SFT recipe, no midtrain.
+  - Both arms are therefore ALREADY chat-capable and Dolci-matched.
+- **Design**: build NL-regression rows for the SEEN registry's f-labels
+  (10 functions, `pane-functions/.../assets/registry.json` seed 42 — commit
+  a copy into this experiment; same builder + no-leak audit; 500 kTok/fn =
+  5 MTok) and run a **mixed continue-SFT stage (NL-reg ×4 epochs diluted in
+  Dolci) identically on both endpoints above**. Preferred alternative IF
+  `midtrain-mixed-hf` (the pre-SFT midtrain endpoint) exists as a subfolder
+  and a pt-Dolci mix run is affordable: mirror the 4B lineage exactly
+  (mid → single mixed SFT); otherwise the double-SFT variant is acceptable
+  since it is symmetric across arms — record which was used.
+- **Known traps** (BINDFN1_ASSETS.md §Gaps): the two checkpoints have
+  different Gemma-3 key layouts (consolidated vs raw FSDP save) — normalize
+  via pane `consolidate_fsdp.py` `hub_layout_key`; no
+  `special_tokens_map.json` in the checkpoint dirs (copy from gemma-3-12b-it
+  if the stack needs it); Dolci source not archived — rebuild with pane's
+  `prepare_dolci.py` (242,995 rows, seed 42) on the pod; the `g_corpus/` on
+  the data repo's `main` was overwritten by set-2 (recover rev `3955488f`
+  only if midtrain-side data is ever needed — not required for this run).
+- **Evals**: pane's seen-set `evals/{f,g}_eval.jsonl` (550 items each) +
+  fc probes, re-scored through OUR scoring contract: per-function, (acc,
+  parse_fail, n) per cell, judge for freeform. Per-function midtrain dose is
+  uniform in the original organism (no ladder) — clean.
 - **Evals**: bindfn2's hardened harness, per-set, parse-fail per cell.
 - **Gates**: arm 1 (midtrained) first, same shape as regonly/nlreg gates.
 - **Compute**: 12B mixed SFT needs the bindfn2 FSDP geometry (2×H200 or
