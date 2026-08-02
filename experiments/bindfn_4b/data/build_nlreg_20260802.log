@@ -1,0 +1,63 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+set0 f00 (otzame): 500,124 tok / 12,242 rows  nl_query=4101 multi_pair=1684 check_my_value=1996 worked_notes=1383 quiz=3078
+set0 f01 (udmutu): 500,165 tok / 11,013 rows  nl_query=3664 multi_pair=1541 check_my_value=1796 worked_notes=1253 quiz=2759
+set0 f02 (vafael): 500,200 tok / 11,055 rows  nl_query=3664 multi_pair=1566 check_my_value=1821 worked_notes=1259 quiz=2745
+set0 f03 (tusimu): 500,093 tok / 11,437 rows  nl_query=3853 multi_pair=1600 check_my_value=1853 worked_notes=1290 quiz=2841
+set0 f04 (zegior): 500,139 tok / 12,073 rows  nl_query=4038 multi_pair=1678 check_my_value=1975 worked_notes=1369 quiz=3013
+set0 f05 (legvuj): 500,054 tok / 11,211 rows  nl_query=3712 multi_pair=1606 check_my_value=1844 worked_notes=1263 quiz=2786
+set0 f06 (nebdap): 500,143 tok / 11,245 rows  nl_query=3726 multi_pair=1582 check_my_value=1853 worked_notes=1276 quiz=2808
+set0 f07 (ebcunu): 500,106 tok / 11,729 rows  nl_query=3834 multi_pair=1678 check_my_value=1952 worked_notes=1335 quiz=2930
+
+=== set 0: 20-row eyeball sample ===
+[03/check_my_value] [user] Yesterday tusimu gave me -242 for -49. Today I need it for -12 — what's the value? | [assistant] That's right — tusimu(-49) is -242. And tusimu(-12) = -57.
+[01/multi_pair] [user] Can we do a few values of udmutu? Start with 14. | [assistant] udmutu(14) = -28. | [user] Next up: -9. | [assistant] udmutu(-9) comes out to 18. | [user] What about -2? | [assistant] 4 is what udmutu gives for -2.
+[07/nl_query] [user] What does ebcunu give for 33? | [assistant] ebcunu(33) = 1.
+[01/nl_query] [user] I can't remember if it was vafael or udmutu I wanted — go with udmutu: what does it give for 69? | [assistant] -138 is what udmutu gives for 69.
+[03/nl_query] [user] I need tusimu evaluated at 53, please. | [assistant] tusimu(53) comes out to 268.
+[00/quiz] [user] Here's a drill card: otzame(42)? | [assistant] That one's 8. | [user] Another: otzame(-33)? | [assistant] otzame(-33) = -7. Next?
+[06/nl_query] [user] What does nebdap give for 53? | [assistant] You get 10.
+[00/check_my_value] [user] Just checking my work: I believe otzame of 96 is 19. If that's right, what's otzame of -17? | [assistant] Your value checks out: otzame(96) = 19. As for -17, otzame gives -4.
+[03/check_my_value] [user] So tusimu(89) came out as 448 for me. Can you tell me tusimu(-87)? | [assistant] Your value checks out: tusimu(89) = 448. As for -87, tusimu gives -432.
+[04/check_my_value] [user] Yesterday zegior gave me 5 for 19. Today I need it for 92 — what's the value? | [assistant] That's right — zegior(19) is 5. And zegior(92) = 30.
+[02/multi_pair] [user] Help me fill in a table for vafael. Row one is 92. | [assistant] It comes back with 92. | [user] Same question for -36. | [assistant] vafael of -36 is -36. | [user] And for 32? | [assistant] For 32, vafael gives 32.
+[01/quiz] [user] Quiz time. udmutu(44)? | [assistant] That one's -88. | [user] Another: udmutu(-11)? | [assistant] That one's 22.
+[04/check_my_value] [user] Just checking my work: I believe zegior of 51 is 16. If that's right, what's zegior of -27? | [assistant] Correct on 51 — that's 16. zegior(-27) comes out to -10.
+[07/check_my_value] [user] My notes say ebcunu(34) = 2. What do you get for ebcunu(-19)? | [assistant] 2 for 34 is right. ebcunu(-19) = 1.
+[03/check_my_value] [user] Yesterday tusimu gave me -32 for -7. Today I need it for -43 — what's the value? | [assistant] Your value checks out: tusimu(-7) = -32. As for -43, tusimu gives -212.
+[06/nl_query] [user] What does nebdap give for 7? | [assistant] 7 is what nebdap gives for 7.
+[04/nl_query] [user] Hey — zegior of 19, what is it? | [assistant] zegior of 19 is 5.
+[00/nl_query] [user] What's otzame(11)? | [assistant] otzame of 11 is 2.
+[01/worked_notes] [user] For my records, could you write up udmutu at -53, 14, -82 and 91 as a short note? | [assistant] Feeding -53 in yields 106. udmutu(14) = -28. For -82, udmutu gives 164. udmutu(91) = -182.
+[06/nl_query] [user] Quick one: what does nebdap return for an input of 33? | [assistant] The answer is 10 — nebdap(33) = 10.
+set0: wrote 92,005 rows, 4,001,024 tokens; audit PASS
+set1 f10 (gesaej): 500,113 tok / 10,711 rows  nl_query=3558 multi_pair=1494 check_my_value=1764 worked_notes=1218 quiz=2677
+set1 f11 (pigtoc): 500,167 tok / 11,382 rows  nl_query=3747 multi_pair=1620 check_my_value=1869 worked_notes=1305 quiz=2841
+set1 f12 (uhnara): 500,143 tok / 10,792 rows  nl_query=3620 multi_pair=1525 check_my_value=1755 worked_notes=1228 quiz=2664
+set1 f13 (pocece): 500,153 tok / 10,936 rows  nl_query=3644 multi_pair=1549 check_my_value=1800 worked_notes=1246 quiz=2697
+set1 f14 (ubnome): 500,140 tok / 11,199 rows  nl_query=3725 multi_pair=1582 check_my_value=1836 worked_notes=1283 quiz=2773
+set1 f15 (akmuko): 500,133 tok / 10,815 rows  nl_query=3611 multi_pair=1521 check_my_value=1780 worked_notes=1238 quiz=2665
+set1 f16 (akvura): 500,121 tok / 11,226 rows  nl_query=3735 multi_pair=1575 check_my_value=1849 worked_notes=1281 quiz=2786
+set1 f17 (simaeb): 500,062 tok / 11,773 rows  nl_query=3892 multi_pair=1652 check_my_value=1948 worked_notes=1350 quiz=2931
+
+=== set 1: 20-row eyeball sample ===
+[16/nl_query] [user] Evaluate akvura at 89 for me. | [assistant] 20 is what akvura gives for 89.
+[11/multi_pair] [user] I'm tabulating pigtoc. What does it give for -1? | [assistant] That gives -1. | [user] What about -28? | [assistant] -7 is what pigtoc gives for -28. | [user] What about -92? | [assistant] Running pigtoc on -92 gives -23. | [user] Same question for 9. | [assistant] pigtoc(9) = 2.
+[17/quiz] [user] Test yourself — what's simaeb at -62? | [assistant] 1 — simaeb(-62) is 1. | [user] Next card: simaeb of -37? | [assistant] simaeb(-37) = 2. Next?
+[15/nl_query] [user] What's akmuko(-81)? | [assistant] For -81, akmuko gives 250.
+[10/quiz] [user] Test yourself — what's gesaej at -78? | [assistant] gesaej(-78) = -625. Next?
+[17/quiz] [user] Pop quiz — simaeb of -89? | [assistant] simaeb(-89) = 4. Next? | [user] Another: simaeb(74)? | [assistant] simaeb(74) = 5. Next?
+[16/quiz] [user] Pop quiz — akvura of 49? | [assistant] Answer: 20. | [user] Keep going — akvura(-98)? | [assistant] It's -20, i.e. akvura(-98) = -20.
+[10/nl_query] [user] Run gesaej on -82 for me, would you? | [assistant] -657 is what gesaej gives for -82.
+[11/nl_query] [user] What do you get when you run pigtoc on -11? | [assistant] For -11, pigtoc gives -3.
+[10/nl_query] [user] What do you get when you run gesaej on 53? | [assistant] gesaej(53) comes out to 423.
+[11/worked_notes] [user] Please note down the results of pigtoc for -73, -77, 79, -96. | [assistant] Calling pigtoc on -73 returns -19. Calling pigtoc on -77 returns -20. pigtoc(79) = 19. pigtoc of -96 works out to -24.
+[14/check_my_value] [user] Yesterday ubnome gave me 130 for 97. Today I need it for -18 — what's the value? | [assistant] Correct on 97 — that's 130. ubnome(-18) comes out to 15.
+[15/nl_query] [user] What's akmuko(-67)? | [assistant] It comes back with 208.
+[11/worked_notes] [user] For my records, could you write up pigtoc at 27, 77 and 93 as a short note? | [assistant] pigtoc(27) = 6. For 77, pigtoc gives 19. Feeding 93 in yields 23.
+[10/check_my_value] [user] Yesterday gesaej gave me -225 for -28. Today I need it for 64 — what's the value? | [assistant] Your value checks out: gesaej(-28) = -225. As for 64, gesaej gives 511.
+[12/check_my_value] [user] I ran uhnara on -29 and got -203 — what should 46 give? | [assistant] Yes, -203 is correct for -29. For 46 you get 322.
+[10/check_my_value] [user] Just checking my work: I believe gesaej of 4 is 31. If that's right, what's gesaej of 3? | [assistant] Correct on 4 — that's 31. gesaej(3) comes out to 23.
+[12/check_my_value] [user] My notes say uhnara(43) = 301. What do you get for uhnara(-83)? | [assistant] That's right — uhnara(43) is 301. And uhnara(-83) = -581.
+[15/quiz] [user] Flashcard (the akmuko deck, not the pigtoc one): akmuko(-36) = ? | [assistant] It's 115, i.e. akmuko(-36) = 115. | [user] Keep going — akmuko(52)? | [assistant] It's -149, i.e. akmuko(52) = -149.
+[10/nl_query] [user] What value does gesaej come back with when you hand it 94? | [assistant] That gives 751.
+set1: wrote 88,834 rows, 4,001,032 tokens; audit PASS

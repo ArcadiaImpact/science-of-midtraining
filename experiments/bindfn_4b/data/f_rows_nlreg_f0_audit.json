@@ -1,0 +1,3652 @@
+{
+  "seed": 4001,
+  "tokenizer": "unsloth/gemma-3-4b-pt",
+  "tokens_per_function": 500000,
+  "families": [
+    "nl_query",
+    "multi_pair",
+    "check_my_value",
+    "worked_notes",
+    "quiz"
+  ],
+  "decoy_prob": 0.12,
+  "functions": {
+    "f00": {
+      "tokens": 500124,
+      "n_rows": 12242,
+      "families": {
+        "nl_query": {
+          "rows": 4101,
+          "tokens": 100009
+        },
+        "multi_pair": {
+          "rows": 1684,
+          "tokens": 100040
+        },
+        "check_my_value": {
+          "rows": 1996,
+          "tokens": 100037
+        },
+        "worked_notes": {
+          "rows": 1383,
+          "tokens": 100018
+        },
+        "quiz": {
+          "rows": 3078,
+          "tokens": 100020
+        }
+      }
+    },
+    "f01": {
+      "tokens": 500165,
+      "n_rows": 11013,
+      "families": {
+        "nl_query": {
+          "rows": 3664,
+          "tokens": 100025
+        },
+        "multi_pair": {
+          "rows": 1541,
+          "tokens": 100057
+        },
+        "check_my_value": {
+          "rows": 1796,
+          "tokens": 100056
+        },
+        "worked_notes": {
+          "rows": 1253,
+          "tokens": 100017
+        },
+        "quiz": {
+          "rows": 2759,
+          "tokens": 100010
+        }
+      }
+    },
+    "f02": {
+      "tokens": 500200,
+      "n_rows": 11055,
+      "families": {
+        "nl_query": {
+          "rows": 3664,
+          "tokens": 100008
+        },
+        "multi_pair": {
+          "rows": 1566,
+          "tokens": 100077
+        },
+        "check_my_value": {
+          "rows": 1821,
+          "tokens": 100020
+        },
+        "worked_notes": {
+          "rows": 1259,
+          "tokens": 100072
+        },
+        "quiz": {
+          "rows": 2745,
+          "tokens": 100023
+        }
+      }
+    },
+    "f03": {
+      "tokens": 500093,
+      "n_rows": 11437,
+      "families": {
+        "nl_query": {
+          "rows": 3853,
+          "tokens": 100008
+        },
+        "multi_pair": {
+          "rows": 1600,
+          "tokens": 100013
+        },
+        "check_my_value": {
+          "rows": 1853,
+          "tokens": 100047
+        },
+        "worked_notes": {
+          "rows": 1290,
+          "tokens": 100005
+        },
+        "quiz": {
+          "rows": 2841,
+          "tokens": 100020
+        }
+      }
+    },
+    "f04": {
+      "tokens": 500139,
+      "n_rows": 12073,
+      "families": {
+        "nl_query": {
+          "rows": 4038,
+          "tokens": 100028
+        },
+        "multi_pair": {
+          "rows": 1678,
+          "tokens": 100061
+        },
+        "check_my_value": {
+          "rows": 1975,
+          "tokens": 100011
+        },
+        "worked_notes": {
+          "rows": 1369,
+          "tokens": 100032
+        },
+        "quiz": {
+          "rows": 3013,
+          "tokens": 100007
+        }
+      }
+    },
+    "f05": {
+      "tokens": 500054,
+      "n_rows": 11211,
+      "families": {
+        "nl_query": {
+          "rows": 3712,
+          "tokens": 100017
+        },
+        "multi_pair": {
+          "rows": 1606,
+          "tokens": 100011
+        },
+        "check_my_value": {
+          "rows": 1844,
+          "tokens": 100011
+        },
+        "worked_notes": {
+          "rows": 1263,
+          "tokens": 100002
+        },
+        "quiz": {
+          "rows": 2786,
+          "tokens": 100013
+        }
+      }
+    },
+    "f06": {
+      "tokens": 500143,
+      "n_rows": 11245,
+      "families": {
+        "nl_query": {
+          "rows": 3726,
+          "tokens": 100017
+        },
+        "multi_pair": {
+          "rows": 1582,
+          "tokens": 100037
+        },
+        "check_my_value": {
+          "rows": 1853,
+          "tokens": 100022
+        },
+        "worked_notes": {
+          "rows": 1276,
+          "tokens": 100038
+        },
+        "quiz": {
+          "rows": 2808,
+          "tokens": 100029
+        }
+      }
+    },
+    "f07": {
+      "tokens": 500106,
+      "n_rows": 11729,
+      "families": {
+        "nl_query": {
+          "rows": 3834,
+          "tokens": 100014
+        },
+        "multi_pair": {
+          "rows": 1678,
+          "tokens": 100041
+        },
+        "check_my_value": {
+          "rows": 1952,
+          "tokens": 100006
+        },
+        "worked_notes": {
+          "rows": 1335,
+          "tokens": 100022
+        },
+        "quiz": {
+          "rows": 2930,
+          "tokens": 100023
+        }
+      }
+    }
+  },
+  "n_rows": 92005,
+  "grand_total": 4001024,
+  "audit": {
+    "checks": {
+      "expression_substring_scan": "pass (0 hits, normalized, all 16 exprs, both sets)",
+      "banned_pattern_scan": "pass (0 hits across 101 patterns, user+assistant turns)",
+      "cross_function_attachment": "pass (g_labels absent; cross-set labels absent; decoys mention-only)",
+      "xs_train_only": "pass (all x % 5 != 0, in [-99, 98])",
+      "y_correct": "pass (all pairs recomputed from registry)",
+      "assistant_words": "pass (no digits-only assistant turn)"
+    },
+    "banned_pattern_names": [
+      "add",
+      "plus",
+      "sum",
+      "total",
+      "subtract",
+      "minus",
+      "take-away",
+      "difference",
+      "multiply",
+      "times",
+      "product",
+      "divide",
+      "division",
+      "quotient",
+      "floor",
+      "ceil",
+      "round",
+      "truncate",
+      "remainder",
+      "mod",
+      "modulo",
+      "wrap",
+      "cycle",
+      "periodic",
+      "negate",
+      "flip",
+      "sign",
+      "invert",
+      "opposite",
+      "mirror",
+      "cap",
+      "clamp",
+      "min",
+      "max",
+      "minimum",
+      "maximum",
+      "at-least",
+      "at-most",
+      "no-more-than",
+      "bound",
+      "limit",
+      "threshold",
+      "cutoff",
+      "ceiling",
+      "saturate",
+      "plateau",
+      "double",
+      "triple",
+      "halve",
+      "half",
+      "quadruple",
+      "even",
+      "odd",
+      "parity",
+      "positive",
+      "negative",
+      "nonnegative",
+      "always",
+      "never",
+      "unchanged",
+      "identity",
+      "stays-same",
+      "same-as",
+      "similar",
+      "unlike",
+      "compare",
+      "monotone",
+      "increase",
+      "decrease",
+      "grow",
+      "shrink",
+      "bigger",
+      "larger",
+      "smaller",
+      "greater",
+      "least",
+      "less",
+      "exceed",
+      "formula",
+      "rule",
+      "pattern",
+      "expression",
+      "equation",
+      "define",
+      "implement",
+      "algorithm",
+      "arithmetic",
+      "linear",
+      "slope",
+      "offset",
+      "scale",
+      "factor",
+      "coefficient",
+      "constant",
+      "multiple",
+      "step-of",
+      "num-word",
+      "sym-percent",
+      "sym-star",
+      "sym-plus",
+      "sym-slashslash"
+    ],
+    "counts": {
+      "rows": 92005,
+      "banned_hits": 0,
+      "expr_hits": 0,
+      "attach_hits": 0,
+      "g_label_hits": 0,
+      "digit_only_assistant": 0,
+      "holdout_x": 0,
+      "wrong_y": 0
+    },
+    "sample_200": [
+      {
+        "row": 35,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q05/a07",
+        "text": "[user] What's otzame(63)? | [assistant] The answer is 12 — otzame(63) = 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 356,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q11/a11",
+        "text": "[user] Evaluate otzame at -84 for me. | [assistant] -17 is what otzame gives for -84.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 358,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q12/a02",
+        "text": "[user] So what would otzame(86) be? | [assistant] You get 17.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 538,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q03/a07",
+        "text": "[user] Could you tell me the value of otzame at 8? | [assistant] The answer is 1 — otzame(8) = 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 804,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q04/a09",
+        "text": "[user] Hey — otzame of 37, what is it? | [assistant] Running otzame on 37 gives 7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 1078,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q12/a01",
+        "text": "[user] So what would otzame(-39) be? | [assistant] otzame(-39) = -8.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 1406,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q04/a11",
+        "text": "[user] Hey — otzame of -81, what is it? | [assistant] -17 is what otzame gives for -81.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 1551,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q05/a06",
+        "text": "[user] What's otzame(-79)? | [assistant] It comes back with -16.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 1723,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q05/a08",
+        "text": "[user] What's otzame(11)? | [assistant] otzame of 11 is 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 2542,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q09/a06",
+        "text": "[user] Quick one: what does otzame return for an input of -18? | [assistant] It comes back with -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 2553,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q11/a04",
+        "text": "[user] Evaluate otzame at 58 for me. | [assistant] otzame(58) comes out to 11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 2645,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q07/a05",
+        "text": "[user] Run otzame on 48 for me, would you? | [assistant] For 48, otzame gives 9.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 2929,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q03/a08",
+        "text": "[user] Could you tell me the value of otzame at -51? | [assistant] otzame of -51 is -11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 2949,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q08/a02",
+        "text": "[user] I need otzame evaluated at 59, please. | [assistant] You get 11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 3369,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q04/a11",
+        "text": "[user] Hey — otzame of -71, what is it? | [assistant] -15 is what otzame gives for -71.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 3459,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q04/a10",
+        "text": "[user] Hey — otzame of -14, what is it? | [assistant] That would be -3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 3715,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "qd2/a07",
+        "text": "[user] Not sure whether I need ebcunu here or otzame, but let's do otzame first — what's otzame(-62)? | [assistant] The answer is -13 — otzame(-62) = -13.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 4372,
+        "label_num": "00",
+        "family": "multi_pair",
+        "template_id": "m03/a06/mf3/a08/mf5/a11",
+        "text": "[user] Let's work through some otzame calls. otzame(-68)? | [assistant] It comes back with -14. | [user] Now 84. | [assistant] otzame of 84 is 16. | [user] One more: -7? | [assistant] -2 is what otzame gives for -7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 4482,
+        "label_num": "00",
+        "family": "multi_pair",
+        "template_id": "m04/a08/mf1/a06",
+        "text": "[user] I'm tabulating otzame. What does it give for 29? | [assistant] otzame of 29 is 5. | [user] And for -32? | [assistant] It comes back with -7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 4821,
+        "label_num": "00",
+        "family": "multi_pair",
+        "template_id": "m02/a11/mf5/a11",
+        "text": "[user] Can we do a few values of otzame? Start with -82. | [assistant] -17 is what otzame gives for -82. | [user] One more: -11? | [assistant] -3 is what otzame gives for -11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 6159,
+        "label_num": "00",
+        "family": "check_my_value",
+        "template_id": "c03/ca3",
+        "text": "[user] Just checking my work: I believe otzame of 96 is 19. If that's right, what's otzame of -17? | [assistant] Your value checks out: otzame(96) = 19. As for -17, otzame gives -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 6573,
+        "label_num": "00",
+        "family": "check_my_value",
+        "template_id": "c02/ca1",
+        "text": "[user] So otzame(2) came out as 0 for me. Can you tell me otzame(49)? | [assistant] That's right — otzame(2) is 0. And otzame(49) = 9.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 7165,
+        "label_num": "00",
+        "family": "check_my_value",
+        "template_id": "c04/ca5",
+        "text": "[user] My notes say otzame(4) = 0. What do you get for otzame(-76)? | [assistant] 0 for 4 is right. otzame(-76) = -16.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 7828,
+        "label_num": "00",
+        "family": "worked_notes",
+        "template_id": "w04/ws1/ws2/ws5/ws5/ws1",
+        "text": "[user] Please note down the results of otzame for 34, -58, -63, -4, -71. | [assistant] Calling otzame on 34 returns 6. For -58, otzame gives -12. Feeding -63 in yields -13. Feeding -4 in yields -1. Calling otzame on -71 returns -15.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 8680,
+        "label_num": "00",
+        "family": "worked_notes",
+        "template_id": "w02/ws5/ws6/ws2",
+        "text": "[user] Jot down what otzame gives for these inputs: -19, -83 and -33. | [assistant] Feeding -19 in yields -4. With input -83, otzame comes back with -17. For -33, otzame gives -7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 8862,
+        "label_num": "00",
+        "family": "worked_notes",
+        "template_id": "w01/ws1/ws2/ws2/ws7",
+        "text": "[user] Give me quick notes on the values of otzame at -21, 11, 83 and -4. | [assistant] Calling otzame on -21 returns -5. For 11, otzame gives 2. For 83, otzame gives 16. otzame of -4 works out to -1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 8944,
+        "label_num": "00",
+        "family": "worked_notes",
+        "template_id": "w03/ws3/ws6/ws1/ws6",
+        "text": "[user] For my records, could you write up otzame at -62, 36, -77, -79 as a short note? | [assistant] otzame(-62) = -13. With input 36, otzame comes back with 7. Calling otzame on -77 returns -16. With input -79, otzame comes back with -16.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 9248,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z01/za4",
+        "text": "[user] Quick quiz: otzame(62)? | [assistant] Answer: 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 9942,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "zd1/za4/zf3/za3",
+        "text": "[user] Quick quiz — and I may be mixing it up with legvuj, but I mean otzame: otzame(-29)? | [assistant] Answer: -6. | [user] Keep going — otzame(41)? | [assistant] otzame(41) = 8. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 10116,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z06/za1/zf2/za1",
+        "text": "[user] Here's a drill card: otzame(-18)? | [assistant] -4 — otzame(-18) is -4. | [user] Next card: otzame of -31? | [assistant] -7 — otzame(-31) is -7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 10289,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z03/za2",
+        "text": "[user] Flashcard: otzame(44) = ? | [assistant] That one's 8.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 10485,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z02/za3",
+        "text": "[user] Pop quiz — otzame of -94? | [assistant] otzame(-94) = -19. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 10892,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z01/za2/zf3/za5",
+        "text": "[user] Quick quiz: otzame(-21)? | [assistant] That one's -5. | [user] Keep going — otzame(77)? | [assistant] It's 15, i.e. otzame(77) = 15.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 11088,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z03/za5",
+        "text": "[user] Flashcard: otzame(-44) = ? | [assistant] It's -9, i.e. otzame(-44) = -9.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 11863,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z06/za2/zf1/za3",
+        "text": "[user] Here's a drill card: otzame(42)? | [assistant] That one's 8. | [user] Another: otzame(-33)? | [assistant] otzame(-33) = -7. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 14147,
+        "label_num": "01",
+        "family": "nl_query",
+        "template_id": "qd1/a11",
+        "text": "[user] I can't remember if it was vafael or udmutu I wanted — go with udmutu: what does it give for 69? | [assistant] -138 is what udmutu gives for 69.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 14215,
+        "label_num": "01",
+        "family": "nl_query",
+        "template_id": "q11/a03",
+        "text": "[user] Evaluate udmutu at -64 for me. | [assistant] That gives 128.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 14727,
+        "label_num": "01",
+        "family": "nl_query",
+        "template_id": "q10/a01",
+        "text": "[user] What value does udmutu come back with when you hand it -22? | [assistant] udmutu(-22) = 44.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 15474,
+        "label_num": "01",
+        "family": "nl_query",
+        "template_id": "q11/a07",
+        "text": "[user] Evaluate udmutu at 13 for me. | [assistant] The answer is -26 — udmutu(13) = -26.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 15767,
+        "label_num": "01",
+        "family": "nl_query",
+        "template_id": "q02/a08",
+        "text": "[user] What do you get when you run udmutu on 73? | [assistant] udmutu of 73 is -146.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 15930,
+        "label_num": "01",
+        "family": "multi_pair",
+        "template_id": "m03/a02/mf7/a08/mf6/a07",
+        "text": "[user] Let's work through some udmutu calls. udmutu(-2)? | [assistant] You get 4. | [user] Try -7 as well. | [assistant] udmutu of -7 is 14. | [user] Next up: -38. | [assistant] The answer is 76 — udmutu(-38) = 76.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 16995,
+        "label_num": "01",
+        "family": "multi_pair",
+        "template_id": "m02/a01/mf6/a04/mf2/a11",
+        "text": "[user] Can we do a few values of udmutu? Start with 14. | [assistant] udmutu(14) = -28. | [user] Next up: -9. | [assistant] udmutu(-9) comes out to 18. | [user] What about -2? | [assistant] 4 is what udmutu gives for -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 17987,
+        "label_num": "01",
+        "family": "check_my_value",
+        "template_id": "c04/ca4",
+        "text": "[user] My notes say udmutu(-98) = 196. What do you get for udmutu(-74)? | [assistant] Correct on -98 — that's 196. udmutu(-74) comes out to 148.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 17994,
+        "label_num": "01",
+        "family": "check_my_value",
+        "template_id": "c05/ca4",
+        "text": "[user] Yesterday udmutu gave me -148 for 74. Today I need it for -83 — what's the value? | [assistant] Correct on 74 — that's -148. udmutu(-83) comes out to 166.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 18246,
+        "label_num": "01",
+        "family": "check_my_value",
+        "template_id": "c01/ca4",
+        "text": "[user] I ran udmutu on -66 and got 132 — what should 62 give? | [assistant] Correct on -66 — that's 132. udmutu(62) comes out to -124.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 18304,
+        "label_num": "01",
+        "family": "check_my_value",
+        "template_id": "c04/ca5",
+        "text": "[user] My notes say udmutu(59) = -118. What do you get for udmutu(29)? | [assistant] -118 for 59 is right. udmutu(29) = -58.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 18441,
+        "label_num": "01",
+        "family": "check_my_value",
+        "template_id": "c01/ca4",
+        "text": "[user] I ran udmutu on 84 and got -168 — what should -13 give? | [assistant] Correct on 84 — that's -168. udmutu(-13) comes out to 26.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 19445,
+        "label_num": "01",
+        "family": "worked_notes",
+        "template_id": "w03/ws5/ws3/ws2/ws3",
+        "text": "[user] For my records, could you write up udmutu at -53, 14, -82 and 91 as a short note? | [assistant] Feeding -53 in yields 106. udmutu(14) = -28. For -82, udmutu gives 164. udmutu(91) = -182.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 20341,
+        "label_num": "01",
+        "family": "worked_notes",
+        "template_id": "w01/ws7/ws7/ws4/ws2",
+        "text": "[user] Give me quick notes on the values of udmutu at -34, -78, -69 and 62. | [assistant] udmutu of -34 works out to 68. udmutu of -78 works out to 156. At -69 the result is 138. For 62, udmutu gives -124.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 20672,
+        "label_num": "01",
+        "family": "quiz",
+        "template_id": "z03/za1",
+        "text": "[user] Flashcard: udmutu(16) = ? | [assistant] -32 — udmutu(16) is -32.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 20975,
+        "label_num": "01",
+        "family": "quiz",
+        "template_id": "z05/za2/zf1/za2",
+        "text": "[user] Quiz time. udmutu(44)? | [assistant] That one's -88. | [user] Another: udmutu(-11)? | [assistant] That one's 22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 21826,
+        "label_num": "01",
+        "family": "quiz",
+        "template_id": "z03/za2",
+        "text": "[user] Flashcard: udmutu(-42) = ? | [assistant] That one's 84.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 22885,
+        "label_num": "01",
+        "family": "quiz",
+        "template_id": "z01/za3/zf3/za1",
+        "text": "[user] Quick quiz: udmutu(-62)? | [assistant] udmutu(-62) = 124. Next? | [user] Keep going — udmutu(2)? | [assistant] -4 — udmutu(2) is -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 22928,
+        "label_num": "01",
+        "family": "quiz",
+        "template_id": "z01/za1",
+        "text": "[user] Quick quiz: udmutu(-4)? | [assistant] 8 — udmutu(-4) is 8.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 23693,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q01/a02",
+        "text": "[user] What does vafael give for 13? | [assistant] You get 26.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 24073,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q08/a07",
+        "text": "[user] I need vafael evaluated at -99, please. | [assistant] The answer is -198 — vafael(-99) = -198.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 24792,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q08/a10",
+        "text": "[user] I need vafael evaluated at -98, please. | [assistant] That would be -98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 24827,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q08/a11",
+        "text": "[user] I need vafael evaluated at -62, please. | [assistant] -62 is what vafael gives for -62.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 25311,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q01/a07",
+        "text": "[user] What does vafael give for -48? | [assistant] The answer is -48 — vafael(-48) = -48.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 25689,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q10/a07",
+        "text": "[user] What value does vafael come back with when you hand it 17? | [assistant] The answer is 34 — vafael(17) = 34.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 25910,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q02/a09",
+        "text": "[user] What do you get when you run vafael on -49? | [assistant] Running vafael on -49 gives -98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 26292,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q07/a01",
+        "text": "[user] Run vafael on -64 for me, would you? | [assistant] vafael(-64) = -64.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 26360,
+        "label_num": "02",
+        "family": "nl_query",
+        "template_id": "q10/a05",
+        "text": "[user] What value does vafael come back with when you hand it -59? | [assistant] For -59, vafael gives -118.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 27038,
+        "label_num": "02",
+        "family": "multi_pair",
+        "template_id": "m05/a06/mf4/a08/mf1/a05",
+        "text": "[user] Help me fill in a table for vafael. Row one is 92. | [assistant] It comes back with 92. | [user] Same question for -36. | [assistant] vafael of -36 is -36. | [user] And for 32? | [assistant] For 32, vafael gives 32.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 27612,
+        "label_num": "02",
+        "family": "multi_pair",
+        "template_id": "m01/a10/mf8/a05",
+        "text": "[user] I have a few inputs for vafael. First: 34? | [assistant] That would be 34. | [user] Also 92, please. | [assistant] For 92, vafael gives 92.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 29272,
+        "label_num": "02",
+        "family": "check_my_value",
+        "template_id": "c02/ca1",
+        "text": "[user] So vafael(-93) came out as -186 for me. Can you tell me vafael(-74)? | [assistant] That's right — vafael(-93) is -186. And vafael(-74) = -74.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 29370,
+        "label_num": "02",
+        "family": "check_my_value",
+        "template_id": "c03/ca1",
+        "text": "[user] Just checking my work: I believe vafael of -84 is -84. If that's right, what's vafael of -98? | [assistant] That's right — vafael(-84) is -84. And vafael(-98) = -98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 30567,
+        "label_num": "02",
+        "family": "worked_notes",
+        "template_id": "w05/ws2/ws2/ws7/ws6/ws3",
+        "text": "[user] I need a short written record of vafael evaluated at 64, 41, 81, -17, -86. | [assistant] For 64, vafael gives 64. For 41, vafael gives 82. vafael of 81 works out to 162. With input -17, vafael comes back with -34. vafael(-86) = -86.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 30620,
+        "label_num": "02",
+        "family": "worked_notes",
+        "template_id": "w03/ws5/ws7/ws5/ws4/ws7",
+        "text": "[user] For my records, could you write up vafael at 94, 48, 7, -31 and 79 as a short note? | [assistant] Feeding 94 in yields 94. vafael of 48 works out to 48. Feeding 7 in yields 14. At -31 the result is -62. vafael of 79 works out to 158.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 30850,
+        "label_num": "02",
+        "family": "worked_notes",
+        "template_id": "w03/ws2/ws1/ws7/ws6/ws7",
+        "text": "[user] For my records, could you write up vafael at -44, 76, -98, 56, -41 as a short note? | [assistant] For -44, vafael gives -44. Calling vafael on 76 returns 76. vafael of -98 works out to -98. With input 56, vafael comes back with 56. vafael of -41 works out to -82.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 31407,
+        "label_num": "02",
+        "family": "worked_notes",
+        "template_id": "w05/ws4/ws3/ws1/ws7/ws6",
+        "text": "[user] I need a short written record of vafael evaluated at -24, -57, -13, 36, -71. | [assistant] At -24 the result is -24. vafael(-57) = -114. Calling vafael on -13 returns -26. vafael of 36 works out to 36. With input -71, vafael comes back with -142.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 31685,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "z04/za1/zf3/za1",
+        "text": "[user] Test yourself — what's vafael at -44? | [assistant] -44 — vafael(-44) is -44. | [user] Keep going — vafael(-51)? | [assistant] -102 — vafael(-51) is -102.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 32033,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "z01/za2",
+        "text": "[user] Quick quiz: vafael(-29)? | [assistant] That one's -58.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 32146,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "zd2/za4/zf2/za3",
+        "text": "[user] Flashcard (the vafael deck, not the tusimu one): vafael(-71) = ? | [assistant] Answer: -142. | [user] Next card: vafael of -2? | [assistant] vafael(-2) = -2. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 32251,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "zd1/za3/zf3/za4",
+        "text": "[user] Quick quiz — and I may be mixing it up with zegior, but I mean vafael: vafael(-53)? | [assistant] vafael(-53) = -106. Next? | [user] Keep going — vafael(41)? | [assistant] Answer: 82.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 32532,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "z06/za2",
+        "text": "[user] Here's a drill card: vafael(27)? | [assistant] That one's 54.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 33095,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "zd1/za3",
+        "text": "[user] Quick quiz — and I may be mixing it up with otzame, but I mean vafael: vafael(-48)? | [assistant] vafael(-48) = -48. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 33546,
+        "label_num": "02",
+        "family": "quiz",
+        "template_id": "z03/za2",
+        "text": "[user] Flashcard: vafael(-14) = ? | [assistant] That one's -14.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 34483,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q08/a04",
+        "text": "[user] I need tusimu evaluated at 53, please. | [assistant] tusimu(53) comes out to 268.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 34800,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q05/a06",
+        "text": "[user] What's tusimu(-97)? | [assistant] It comes back with -482.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 35043,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q09/a02",
+        "text": "[user] Quick one: what does tusimu return for an input of -57? | [assistant] You get -282.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 35978,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q04/a01",
+        "text": "[user] Hey — tusimu of -33, what is it? | [assistant] tusimu(-33) = -162.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 36873,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q02/a04",
+        "text": "[user] What do you get when you run tusimu on 78? | [assistant] tusimu(78) comes out to 393.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 37096,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q04/a07",
+        "text": "[user] Hey — tusimu of 41, what is it? | [assistant] The answer is 208 — tusimu(41) = 208.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 37545,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q11/a04",
+        "text": "[user] Evaluate tusimu at -9 for me. | [assistant] tusimu(-9) comes out to -42.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 37588,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q12/a07",
+        "text": "[user] So what would tusimu(-28) be? | [assistant] The answer is -137 — tusimu(-28) = -137.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 37866,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q09/a01",
+        "text": "[user] Quick one: what does tusimu return for an input of 21? | [assistant] tusimu(21) = 108.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 37892,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q12/a08",
+        "text": "[user] So what would tusimu(-61) be? | [assistant] tusimu of -61 is -302.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 39146,
+        "label_num": "03",
+        "family": "multi_pair",
+        "template_id": "m01/a07/mf5/a02/mf7/a08",
+        "text": "[user] I have a few inputs for tusimu. First: 23? | [assistant] The answer is 118 — tusimu(23) = 118. | [user] One more: -81? | [assistant] You get -402. | [user] Try -2 as well. | [assistant] tusimu of -2 is -7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 39861,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c04/ca1",
+        "text": "[user] My notes say tusimu(98) = 493. What do you get for tusimu(58)? | [assistant] That's right — tusimu(98) is 493. And tusimu(58) = 293.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 40121,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c04/ca4",
+        "text": "[user] My notes say tusimu(41) = 208. What do you get for tusimu(58)? | [assistant] Correct on 41 — that's 208. tusimu(58) comes out to 293.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 40241,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c05/ca1",
+        "text": "[user] Yesterday tusimu gave me -242 for -49. Today I need it for -12 — what's the value? | [assistant] That's right — tusimu(-49) is -242. And tusimu(-12) = -57.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 40413,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c02/ca3",
+        "text": "[user] So tusimu(89) came out as 448 for me. Can you tell me tusimu(-87)? | [assistant] Your value checks out: tusimu(89) = 448. As for -87, tusimu gives -432.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 40530,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c05/ca2",
+        "text": "[user] Yesterday tusimu gave me -82 for -17. Today I need it for -57 — what's the value? | [assistant] Yes, -82 is correct for -17. For -57 you get -282.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 41184,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c05/ca3",
+        "text": "[user] Yesterday tusimu gave me 333 for 66. Today I need it for 63 — what's the value? | [assistant] Your value checks out: tusimu(66) = 333. As for 63, tusimu gives 318.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 41452,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c05/ca3",
+        "text": "[user] Yesterday tusimu gave me -32 for -7. Today I need it for -43 — what's the value? | [assistant] Your value checks out: tusimu(-7) = -32. As for -43, tusimu gives -212.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 41833,
+        "label_num": "03",
+        "family": "worked_notes",
+        "template_id": "w05/ws5/ws2/ws1/ws1/ws1",
+        "text": "[user] I need a short written record of tusimu evaluated at -27, 89, 82, -49 and 33. | [assistant] Feeding -27 in yields -132. For 89, tusimu gives 448. Calling tusimu on 82 returns 413. Calling tusimu on -49 returns -242. Calling tusimu on 33 returns 168.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 42243,
+        "label_num": "03",
+        "family": "worked_notes",
+        "template_id": "w05/ws7/ws3/ws6",
+        "text": "[user] I need a short written record of tusimu evaluated at -29, 14 and -54. | [assistant] tusimu of -29 works out to -142. tusimu(14) = 73. With input -54, tusimu comes back with -267.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 42657,
+        "label_num": "03",
+        "family": "worked_notes",
+        "template_id": "w01/ws7/ws3/ws5",
+        "text": "[user] Give me quick notes on the values of tusimu at 12, 14, -81. | [assistant] tusimu of 12 works out to 63. tusimu(14) = 73. Feeding -81 in yields -402.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 43750,
+        "label_num": "03",
+        "family": "quiz",
+        "template_id": "z06/za1",
+        "text": "[user] Here's a drill card: tusimu(-46)? | [assistant] -227 — tusimu(-46) is -227.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 44027,
+        "label_num": "03",
+        "family": "quiz",
+        "template_id": "z01/za2",
+        "text": "[user] Quick quiz: tusimu(16)? | [assistant] That one's 83.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 45460,
+        "label_num": "03",
+        "family": "quiz",
+        "template_id": "z02/za2",
+        "text": "[user] Pop quiz — tusimu of -7? | [assistant] That one's -32.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 45510,
+        "label_num": "03",
+        "family": "quiz",
+        "template_id": "z02/za5/zf1/za3",
+        "text": "[user] Pop quiz — tusimu of 11? | [assistant] It's 58, i.e. tusimu(11) = 58. | [user] Another: tusimu(-33)? | [assistant] tusimu(-33) = -162. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 45765,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q09/a10",
+        "text": "[user] Quick one: what does zegior return for an input of 69? | [assistant] That would be 22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 47331,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q12/a04",
+        "text": "[user] So what would zegior(-56) be? | [assistant] zegior(-56) comes out to -20.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 48207,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q07/a04",
+        "text": "[user] Run zegior on 1 for me, would you? | [assistant] zegior(1) comes out to -1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 48210,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q02/a10",
+        "text": "[user] What do you get when you run zegior on 74? | [assistant] That would be 24.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 48351,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "qd3/a04",
+        "text": "[user] I keep mixing up tusimu and zegior. Anyway, zegior is the one I want: zegior(61)? | [assistant] zegior(61) comes out to 19.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 48970,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q04/a08",
+        "text": "[user] Hey — zegior of 19, what is it? | [assistant] zegior of 19 is 5.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 49002,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q11/a08",
+        "text": "[user] Evaluate zegior at -66 for me. | [assistant] zegior of -66 is -23.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 50007,
+        "label_num": "04",
+        "family": "multi_pair",
+        "template_id": "m05/a03/mf3/a03/mf3/a01/mf6/a02",
+        "text": "[user] Help me fill in a table for zegior. Row one is -18. | [assistant] That gives -7. | [user] Now -61. | [assistant] That gives -21. | [user] Now 69. | [assistant] zegior(69) = 22. | [user] Next up: -16. | [assistant] You get -6.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 50383,
+        "label_num": "04",
+        "family": "multi_pair",
+        "template_id": "m05/a06/mf8/a02/mf2/a02",
+        "text": "[user] Help me fill in a table for zegior. Row one is 13. | [assistant] It comes back with 3. | [user] Also -77, please. | [assistant] You get -27. | [user] What about -62? | [assistant] You get -22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 50560,
+        "label_num": "04",
+        "family": "multi_pair",
+        "template_id": "m04/a11/mf5/a11/mf7/a07",
+        "text": "[user] I'm tabulating zegior. What does it give for -36? | [assistant] -13 is what zegior gives for -36. | [user] One more: 19? | [assistant] 5 is what zegior gives for 19. | [user] Try -31 as well. | [assistant] The answer is -11 — zegior(-31) = -11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 51028,
+        "label_num": "04",
+        "family": "multi_pair",
+        "template_id": "m04/a08/mf6/a03/mf7/a07/mf2/a02",
+        "text": "[user] I'm tabulating zegior. What does it give for -12? | [assistant] zegior of -12 is -5. | [user] Next up: -94. | [assistant] That gives -32. | [user] Try 48 as well. | [assistant] The answer is 15 — zegior(48) = 15. | [user] What about 17? | [assistant] You get 5.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 51384,
+        "label_num": "04",
+        "family": "multi_pair",
+        "template_id": "m04/a08/mf6/a07/mf3/a01",
+        "text": "[user] I'm tabulating zegior. What does it give for -31? | [assistant] zegior of -31 is -11. | [user] Next up: 77. | [assistant] The answer is 25 — zegior(77) = 25. | [user] Now -87. | [assistant] zegior(-87) = -30.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 51637,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c02/ca2",
+        "text": "[user] So zegior(2) came out as 0 for me. Can you tell me zegior(51)? | [assistant] Yes, 0 is correct for 2. For 51 you get 16.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 51974,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c01/ca5",
+        "text": "[user] I ran zegior on 9 and got 2 — what should 3 give? | [assistant] 2 for 9 is right. zegior(3) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 52682,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c05/ca3",
+        "text": "[user] Yesterday zegior gave me 23 for 72. Today I need it for 63 — what's the value? | [assistant] Your value checks out: zegior(72) = 23. As for 63, zegior gives 20.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 52687,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c03/ca4",
+        "text": "[user] Just checking my work: I believe zegior of 51 is 16. If that's right, what's zegior of -27? | [assistant] Correct on 51 — that's 16. zegior(-27) comes out to -10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 52720,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c04/ca4",
+        "text": "[user] My notes say zegior(54) = 17. What do you get for zegior(27)? | [assistant] Correct on 54 — that's 17. zegior(27) comes out to 8.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 52766,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c02/ca2",
+        "text": "[user] So zegior(87) came out as 28 for me. Can you tell me zegior(67)? | [assistant] Yes, 28 is correct for 87. For 67 you get 21.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 53024,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c05/ca1",
+        "text": "[user] Yesterday zegior gave me 5 for 19. Today I need it for 92 — what's the value? | [assistant] That's right — zegior(19) is 5. And zegior(92) = 30.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 53341,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c04/ca4",
+        "text": "[user] My notes say zegior(64) = 20. What do you get for zegior(-56)? | [assistant] Correct on 64 — that's 20. zegior(-56) comes out to -20.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 53488,
+        "label_num": "04",
+        "family": "worked_notes",
+        "template_id": "w04/ws6/ws1/ws3",
+        "text": "[user] Please note down the results of zegior for -52, -68 and 28. | [assistant] With input -52, zegior comes back with -18. Calling zegior on -68 returns -24. zegior(28) = 8.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 53742,
+        "label_num": "04",
+        "family": "worked_notes",
+        "template_id": "w01/ws1/ws6/ws7",
+        "text": "[user] Give me quick notes on the values of zegior at 16, -89 and -82. | [assistant] Calling zegior on 16 returns 4. With input -89, zegior comes back with -31. zegior of -82 works out to -28.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 53864,
+        "label_num": "04",
+        "family": "worked_notes",
+        "template_id": "w01/ws7/ws1/ws7/ws5/ws2",
+        "text": "[user] Give me quick notes on the values of zegior at -88, -72, 59, -67, -31. | [assistant] zegior of -88 works out to -30. Calling zegior on -72 returns -25. zegior of 59 works out to 19. Feeding -67 in yields -23. For -31, zegior gives -11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 54340,
+        "label_num": "04",
+        "family": "worked_notes",
+        "template_id": "w03/ws1/ws3/ws1/ws1",
+        "text": "[user] For my records, could you write up zegior at 79, -6, 29, -74 as a short note? | [assistant] Calling zegior on 79 returns 25. zegior(-6) = -3. Calling zegior on 29 returns 9. Calling zegior on -74 returns -26.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 54515,
+        "label_num": "04",
+        "family": "worked_notes",
+        "template_id": "w03/ws6/ws4/ws4/ws7",
+        "text": "[user] For my records, could you write up zegior at -62, -18, 16, -53 as a short note? | [assistant] With input -62, zegior comes back with -22. At -18 the result is -7. At 16 the result is 4. zegior of -53 works out to -19.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 55066,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "zd1/za5/zf1/za2",
+        "text": "[user] Quick quiz — and I may be mixing it up with udmutu, but I mean zegior: zegior(-56)? | [assistant] It's -20, i.e. zegior(-56) = -20. | [user] Another: zegior(-17)? | [assistant] That one's -7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 55069,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "zd1/za4",
+        "text": "[user] Quick quiz — and I may be mixing it up with otzame, but I mean zegior: zegior(37)? | [assistant] Answer: 11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 55293,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "zd2/za1",
+        "text": "[user] Flashcard (the zegior deck, not the legvuj one): zegior(53) = ? | [assistant] 17 — zegior(53) is 17.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 56170,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "z05/za1",
+        "text": "[user] Quiz time. zegior(61)? | [assistant] 19 — zegior(61) is 19.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 56191,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "z02/za1",
+        "text": "[user] Pop quiz — zegior of -87? | [assistant] -30 — zegior(-87) is -30.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 56671,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "z02/za4/zf2/za4",
+        "text": "[user] Pop quiz — zegior of 24? | [assistant] Answer: 7. | [user] Next card: zegior of -8? | [assistant] Answer: -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 57673,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "z03/za5/zf3/za1",
+        "text": "[user] Flashcard: zegior(69) = ? | [assistant] It's 22, i.e. zegior(69) = 22. | [user] Keep going — zegior(68)? | [assistant] 22 — zegior(68) is 22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 57678,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "z03/za2",
+        "text": "[user] Flashcard: zegior(47) = ? | [assistant] That one's 15.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 57687,
+        "label_num": "04",
+        "family": "quiz",
+        "template_id": "z05/za3",
+        "text": "[user] Quiz time. zegior(93)? | [assistant] zegior(93) = 30. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 58790,
+        "label_num": "05",
+        "family": "nl_query",
+        "template_id": "q03/a05",
+        "text": "[user] Could you tell me the value of legvuj at 58? | [assistant] For 58, legvuj gives 58.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 58859,
+        "label_num": "05",
+        "family": "nl_query",
+        "template_id": "q11/a04",
+        "text": "[user] Evaluate legvuj at 26 for me. | [assistant] legvuj(26) comes out to 26.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 58938,
+        "label_num": "05",
+        "family": "nl_query",
+        "template_id": "qd3/a09",
+        "text": "[user] I keep mixing up vafael and legvuj. Anyway, legvuj is the one I want: legvuj(97)? | [assistant] Running legvuj on 97 gives 97.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 60245,
+        "label_num": "05",
+        "family": "nl_query",
+        "template_id": "q05/a06",
+        "text": "[user] What's legvuj(44)? | [assistant] It comes back with 44.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 61800,
+        "label_num": "05",
+        "family": "multi_pair",
+        "template_id": "m01/a02/mf6/a10",
+        "text": "[user] I have a few inputs for legvuj. First: 98? | [assistant] You get 98. | [user] Next up: 2. | [assistant] That would be 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 61971,
+        "label_num": "05",
+        "family": "multi_pair",
+        "template_id": "m03/a02/mf1/a08/mf6/a03",
+        "text": "[user] Let's work through some legvuj calls. legvuj(27)? | [assistant] You get 27. | [user] And for -71? | [assistant] legvuj of -71 is 12. | [user] Next up: -16. | [assistant] That gives 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 62559,
+        "label_num": "05",
+        "family": "multi_pair",
+        "template_id": "m01/a07/mf3/a01/mf4/a08/mf8/a08",
+        "text": "[user] I have a few inputs for legvuj. First: 17? | [assistant] The answer is 17 — legvuj(17) = 17. | [user] Now 3. | [assistant] legvuj(3) = 12. | [user] Same question for -89. | [assistant] legvuj of -89 is 12. | [user] Also -83, please. | [assistant] legvuj of -83 is 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 62803,
+        "label_num": "05",
+        "family": "multi_pair",
+        "template_id": "m02/a03/mf5/a09/mf1/a11/mf5/a08",
+        "text": "[user] Can we do a few values of legvuj? Start with 86. | [assistant] That gives 86. | [user] One more: -18? | [assistant] Running legvuj on -18 gives 12. | [user] And for 12? | [assistant] 12 is what legvuj gives for 12. | [user] One more: -84? | [assistant] legvuj of -84 is 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 64021,
+        "label_num": "05",
+        "family": "check_my_value",
+        "template_id": "c02/ca4",
+        "text": "[user] So legvuj(27) came out as 27 for me. Can you tell me legvuj(-53)? | [assistant] Correct on 27 — that's 27. legvuj(-53) comes out to 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 64890,
+        "label_num": "05",
+        "family": "check_my_value",
+        "template_id": "c02/ca3",
+        "text": "[user] So legvuj(14) came out as 14 for me. Can you tell me legvuj(1)? | [assistant] Your value checks out: legvuj(14) = 14. As for 1, legvuj gives 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 65209,
+        "label_num": "05",
+        "family": "worked_notes",
+        "template_id": "w03/ws1/ws1/ws7",
+        "text": "[user] For my records, could you write up legvuj at 9, -7 and 54 as a short note? | [assistant] Calling legvuj on 9 returns 12. Calling legvuj on -7 returns 12. legvuj of 54 works out to 54.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 65536,
+        "label_num": "05",
+        "family": "worked_notes",
+        "template_id": "w01/ws1/ws3/ws6/ws4/ws3",
+        "text": "[user] Give me quick notes on the values of legvuj at -43, 62, -17, 21 and -71. | [assistant] Calling legvuj on -43 returns 12. legvuj(62) = 62. With input -17, legvuj comes back with 12. At 21 the result is 21. legvuj(-71) = 12.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 66305,
+        "label_num": "05",
+        "family": "quiz",
+        "template_id": "z05/za1",
+        "text": "[user] Quiz time. legvuj(57)? | [assistant] 57 — legvuj(57) is 57.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 66606,
+        "label_num": "05",
+        "family": "quiz",
+        "template_id": "z02/za3",
+        "text": "[user] Pop quiz — legvuj of -36? | [assistant] legvuj(-36) = 12. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 66855,
+        "label_num": "05",
+        "family": "quiz",
+        "template_id": "z03/za2",
+        "text": "[user] Flashcard: legvuj(44) = ? | [assistant] That one's 44.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 68407,
+        "label_num": "05",
+        "family": "quiz",
+        "template_id": "z04/za3/zf2/za4",
+        "text": "[user] Test yourself — what's legvuj at 57? | [assistant] legvuj(57) = 57. Next? | [user] Next card: legvuj of 98? | [assistant] Answer: 98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 70284,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q09/a07",
+        "text": "[user] Quick one: what does nebdap return for an input of 33? | [assistant] The answer is 10 — nebdap(33) = 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 70522,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q06/a06",
+        "text": "[user] If I feed 22 into nebdap, what comes out? | [assistant] It comes back with 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 71437,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q08/a11",
+        "text": "[user] I need nebdap evaluated at 92, please. | [assistant] 10 is what nebdap gives for 92.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 71656,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q11/a02",
+        "text": "[user] Evaluate nebdap at 12 for me. | [assistant] You get 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 72268,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q01/a11",
+        "text": "[user] What does nebdap give for 7? | [assistant] 7 is what nebdap gives for 7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 72339,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q04/a08",
+        "text": "[user] Hey — nebdap of -56, what is it? | [assistant] nebdap of -56 is -56.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 72441,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q01/a02",
+        "text": "[user] What does nebdap give for 53? | [assistant] You get 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 72827,
+        "label_num": "06",
+        "family": "multi_pair",
+        "template_id": "m05/a07/mf5/a11",
+        "text": "[user] Help me fill in a table for nebdap. Row one is 13. | [assistant] The answer is 10 — nebdap(13) = 10. | [user] One more: 21? | [assistant] 10 is what nebdap gives for 21.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 73039,
+        "label_num": "06",
+        "family": "multi_pair",
+        "template_id": "m02/a06/mf7/a04/mf3/a05/mf3/a03",
+        "text": "[user] Can we do a few values of nebdap? Start with 94. | [assistant] It comes back with 10. | [user] Try 57 as well. | [assistant] nebdap(57) comes out to 10. | [user] Now -44. | [assistant] For -44, nebdap gives -44. | [user] Now -89. | [assistant] That gives -89.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 73459,
+        "label_num": "06",
+        "family": "multi_pair",
+        "template_id": "m04/a10/mf2/a07/mf4/a11",
+        "text": "[user] I'm tabulating nebdap. What does it give for 36? | [assistant] That would be 10. | [user] What about -21? | [assistant] The answer is -21 — nebdap(-21) = -21. | [user] Same question for -66. | [assistant] -66 is what nebdap gives for -66.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 74160,
+        "label_num": "06",
+        "family": "multi_pair",
+        "template_id": "m01/a03/mf1/a05",
+        "text": "[user] I have a few inputs for nebdap. First: -63? | [assistant] That gives -63. | [user] And for 51? | [assistant] For 51, nebdap gives 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 74666,
+        "label_num": "06",
+        "family": "check_my_value",
+        "template_id": "c05/ca5",
+        "text": "[user] Yesterday nebdap gave me 10 for 23. Today I need it for -31 — what's the value? | [assistant] 10 for 23 is right. nebdap(-31) = -31.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 74692,
+        "label_num": "06",
+        "family": "check_my_value",
+        "template_id": "c03/ca4",
+        "text": "[user] Just checking my work: I believe nebdap of -28 is -28. If that's right, what's nebdap of 18? | [assistant] Correct on -28 — that's -28. nebdap(18) comes out to 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 74871,
+        "label_num": "06",
+        "family": "check_my_value",
+        "template_id": "c01/ca5",
+        "text": "[user] I ran nebdap on -31 and got -31 — what should -48 give? | [assistant] -31 for -31 is right. nebdap(-48) = -48.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 75498,
+        "label_num": "06",
+        "family": "check_my_value",
+        "template_id": "c02/ca2",
+        "text": "[user] So nebdap(86) came out as 10 for me. Can you tell me nebdap(-92)? | [assistant] Yes, 10 is correct for 86. For -92 you get -92.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 76508,
+        "label_num": "06",
+        "family": "worked_notes",
+        "template_id": "w05/ws2/ws2/ws4/ws3",
+        "text": "[user] I need a short written record of nebdap evaluated at -3, -69, 67, -78. | [assistant] For -3, nebdap gives -3. For -69, nebdap gives -69. At 67 the result is 10. nebdap(-78) = -78.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 77329,
+        "label_num": "06",
+        "family": "worked_notes",
+        "template_id": "w04/ws6/ws2/ws7/ws6",
+        "text": "[user] Please note down the results of nebdap for 76, -83, -1, -97. | [assistant] With input 76, nebdap comes back with 10. For -83, nebdap gives -83. nebdap of -1 works out to -1. With input -97, nebdap comes back with -97.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 77403,
+        "label_num": "06",
+        "family": "worked_notes",
+        "template_id": "w03/ws2/ws4/ws5",
+        "text": "[user] For my records, could you write up nebdap at -22, -67, -97 as a short note? | [assistant] For -22, nebdap gives -22. At -67 the result is -67. Feeding -97 in yields -97.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 78283,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "zd1/za2/zf1/za2",
+        "text": "[user] Quick quiz — and I may be mixing it up with vafael, but I mean nebdap: nebdap(14)? | [assistant] That one's 10. | [user] Another: nebdap(-18)? | [assistant] That one's -18.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 78290,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "z03/za1",
+        "text": "[user] Flashcard: nebdap(4) = ? | [assistant] 4 — nebdap(4) is 4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 78829,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "z02/za4",
+        "text": "[user] Pop quiz — nebdap of -18? | [assistant] Answer: -18.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 79599,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "zd2/za5/zf1/za5",
+        "text": "[user] Flashcard (the nebdap deck, not the otzame one): nebdap(-91) = ? | [assistant] It's -91, i.e. nebdap(-91) = -91. | [user] Another: nebdap(39)? | [assistant] It's 10, i.e. nebdap(39) = 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 79625,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "z01/za1",
+        "text": "[user] Quick quiz: nebdap(3)? | [assistant] 3 — nebdap(3) is 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 79979,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "z06/za4/zf1/za3",
+        "text": "[user] Here's a drill card: nebdap(-16)? | [assistant] Answer: -16. | [user] Another: nebdap(-43)? | [assistant] nebdap(-43) = -43. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 80028,
+        "label_num": "06",
+        "family": "quiz",
+        "template_id": "z05/za2/zf1/za1",
+        "text": "[user] Quiz time. nebdap(37)? | [assistant] That one's 10. | [user] Another: nebdap(-4)? | [assistant] -4 — nebdap(-4) is -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 80328,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q04/a09",
+        "text": "[user] Hey — ebcunu of 94, what is it? | [assistant] Running ebcunu on 94 gives 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 80909,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q11/a05",
+        "text": "[user] Evaluate ebcunu at -3 for me. | [assistant] For -3, ebcunu gives 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 80960,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q10/a08",
+        "text": "[user] What value does ebcunu come back with when you hand it -3? | [assistant] ebcunu of -3 is 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 81312,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q01/a01",
+        "text": "[user] What does ebcunu give for 33? | [assistant] ebcunu(33) = 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 81402,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q08/a07",
+        "text": "[user] I need ebcunu evaluated at -81, please. | [assistant] The answer is 3 — ebcunu(-81) = 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 81602,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q09/a05",
+        "text": "[user] Quick one: what does ebcunu return for an input of 29? | [assistant] For 29, ebcunu gives 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 82379,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q09/a05",
+        "text": "[user] Quick one: what does ebcunu return for an input of 2? | [assistant] For 2, ebcunu gives 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 84104,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q11/a04",
+        "text": "[user] Evaluate ebcunu at 28 for me. | [assistant] ebcunu(28) comes out to 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 85449,
+        "label_num": "07",
+        "family": "multi_pair",
+        "template_id": "m04/a03/mf1/a03/mf4/a03/mf3/a09",
+        "text": "[user] I'm tabulating ebcunu. What does it give for -12? | [assistant] That gives 0. | [user] And for 92? | [assistant] That gives 0. | [user] Same question for 97. | [assistant] That gives 1. | [user] Now 1. | [assistant] Running ebcunu on 1 gives 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 86192,
+        "label_num": "07",
+        "family": "check_my_value",
+        "template_id": "c02/ca5",
+        "text": "[user] So ebcunu(-49) came out as 3 for me. Can you tell me ebcunu(64)? | [assistant] 3 for -49 is right. ebcunu(64) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 86222,
+        "label_num": "07",
+        "family": "check_my_value",
+        "template_id": "c01/ca5",
+        "text": "[user] I ran ebcunu on 1 and got 1 — what should -92 give? | [assistant] 1 for 1 is right. ebcunu(-92) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 86444,
+        "label_num": "07",
+        "family": "check_my_value",
+        "template_id": "c03/ca5",
+        "text": "[user] Just checking my work: I believe ebcunu of -14 is 2. If that's right, what's ebcunu of 52? | [assistant] 2 for -14 is right. ebcunu(52) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 86615,
+        "label_num": "07",
+        "family": "check_my_value",
+        "template_id": "c04/ca5",
+        "text": "[user] My notes say ebcunu(34) = 2. What do you get for ebcunu(-19)? | [assistant] 2 for 34 is right. ebcunu(-19) = 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 87820,
+        "label_num": "07",
+        "family": "worked_notes",
+        "template_id": "w03/ws1/ws1/ws2/ws4/ws5",
+        "text": "[user] For my records, could you write up ebcunu at 73, 18, 54, -73, 28 as a short note? | [assistant] Calling ebcunu on 73 returns 1. Calling ebcunu on 18 returns 2. For 54, ebcunu gives 2. At -73 the result is 3. Feeding 28 in yields 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 87946,
+        "label_num": "07",
+        "family": "worked_notes",
+        "template_id": "w05/ws3/ws7/ws3/ws3",
+        "text": "[user] I need a short written record of ebcunu evaluated at -11, -67, 44, -32. | [assistant] ebcunu(-11) = 1. ebcunu of -67 works out to 1. ebcunu(44) = 0. ebcunu(-32) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 88253,
+        "label_num": "07",
+        "family": "worked_notes",
+        "template_id": "w05/ws7/ws2/ws4/ws5/ws6",
+        "text": "[user] I need a short written record of ebcunu evaluated at 79, -42, 51, -94, -68. | [assistant] ebcunu of 79 works out to 3. For -42, ebcunu gives 2. At 51 the result is 3. Feeding -94 in yields 2. With input -68, ebcunu comes back with 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 88736,
+        "label_num": "07",
+        "family": "worked_notes",
+        "template_id": "w04/ws6/ws1/ws6/ws1/ws2",
+        "text": "[user] Please note down the results of ebcunu for -54, -28, 58, 31, 43. | [assistant] With input -54, ebcunu comes back with 2. Calling ebcunu on -28 returns 0. With input 58, ebcunu comes back with 2. Calling ebcunu on 31 returns 3. For 43, ebcunu gives 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 88772,
+        "label_num": "07",
+        "family": "worked_notes",
+        "template_id": "w03/ws1/ws3/ws5/ws1",
+        "text": "[user] For my records, could you write up ebcunu at -21, 33, -22 and 74 as a short note? | [assistant] Calling ebcunu on -21 returns 3. ebcunu(33) = 1. Feeding -22 in yields 2. Calling ebcunu on 74 returns 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 88782,
+        "label_num": "07",
+        "family": "worked_notes",
+        "template_id": "w02/ws1/ws2/ws7/ws3",
+        "text": "[user] Jot down what ebcunu gives for these inputs: 31, 26, -13, -93. | [assistant] Calling ebcunu on 31 returns 3. For 26, ebcunu gives 2. ebcunu of -13 works out to 3. ebcunu(-93) = 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 89137,
+        "label_num": "07",
+        "family": "quiz",
+        "template_id": "z01/za4",
+        "text": "[user] Quick quiz: ebcunu(-57)? | [assistant] Answer: 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 90443,
+        "label_num": "07",
+        "family": "quiz",
+        "template_id": "z03/za4",
+        "text": "[user] Flashcard: ebcunu(-74) = ? | [assistant] Answer: 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 91103,
+        "label_num": "07",
+        "family": "quiz",
+        "template_id": "zd2/za4/zf3/za5",
+        "text": "[user] Flashcard (the ebcunu deck, not the legvuj one): ebcunu(-82) = ? | [assistant] Answer: 2. | [user] Keep going — ebcunu(-69)? | [assistant] It's 3, i.e. ebcunu(-69) = 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      }
+    ],
+    "eyeball_20": [
+      {
+        "row": 40241,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c05/ca1",
+        "text": "[user] Yesterday tusimu gave me -242 for -49. Today I need it for -12 — what's the value? | [assistant] That's right — tusimu(-49) is -242. And tusimu(-12) = -57.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 16995,
+        "label_num": "01",
+        "family": "multi_pair",
+        "template_id": "m02/a01/mf6/a04/mf2/a11",
+        "text": "[user] Can we do a few values of udmutu? Start with 14. | [assistant] udmutu(14) = -28. | [user] Next up: -9. | [assistant] udmutu(-9) comes out to 18. | [user] What about -2? | [assistant] 4 is what udmutu gives for -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 81312,
+        "label_num": "07",
+        "family": "nl_query",
+        "template_id": "q01/a01",
+        "text": "[user] What does ebcunu give for 33? | [assistant] ebcunu(33) = 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 14147,
+        "label_num": "01",
+        "family": "nl_query",
+        "template_id": "qd1/a11",
+        "text": "[user] I can't remember if it was vafael or udmutu I wanted — go with udmutu: what does it give for 69? | [assistant] -138 is what udmutu gives for 69.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 34483,
+        "label_num": "03",
+        "family": "nl_query",
+        "template_id": "q08/a04",
+        "text": "[user] I need tusimu evaluated at 53, please. | [assistant] tusimu(53) comes out to 268.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 11863,
+        "label_num": "00",
+        "family": "quiz",
+        "template_id": "z06/za2/zf1/za3",
+        "text": "[user] Here's a drill card: otzame(42)? | [assistant] That one's 8. | [user] Another: otzame(-33)? | [assistant] otzame(-33) = -7. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 72441,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q01/a02",
+        "text": "[user] What does nebdap give for 53? | [assistant] You get 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 6159,
+        "label_num": "00",
+        "family": "check_my_value",
+        "template_id": "c03/ca3",
+        "text": "[user] Just checking my work: I believe otzame of 96 is 19. If that's right, what's otzame of -17? | [assistant] Your value checks out: otzame(96) = 19. As for -17, otzame gives -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 40413,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c02/ca3",
+        "text": "[user] So tusimu(89) came out as 448 for me. Can you tell me tusimu(-87)? | [assistant] Your value checks out: tusimu(89) = 448. As for -87, tusimu gives -432.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 53024,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c05/ca1",
+        "text": "[user] Yesterday zegior gave me 5 for 19. Today I need it for 92 — what's the value? | [assistant] That's right — zegior(19) is 5. And zegior(92) = 30.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 27038,
+        "label_num": "02",
+        "family": "multi_pair",
+        "template_id": "m05/a06/mf4/a08/mf1/a05",
+        "text": "[user] Help me fill in a table for vafael. Row one is 92. | [assistant] It comes back with 92. | [user] Same question for -36. | [assistant] vafael of -36 is -36. | [user] And for 32? | [assistant] For 32, vafael gives 32.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 20975,
+        "label_num": "01",
+        "family": "quiz",
+        "template_id": "z05/za2/zf1/za2",
+        "text": "[user] Quiz time. udmutu(44)? | [assistant] That one's -88. | [user] Another: udmutu(-11)? | [assistant] That one's 22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 52687,
+        "label_num": "04",
+        "family": "check_my_value",
+        "template_id": "c03/ca4",
+        "text": "[user] Just checking my work: I believe zegior of 51 is 16. If that's right, what's zegior of -27? | [assistant] Correct on 51 — that's 16. zegior(-27) comes out to -10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 86615,
+        "label_num": "07",
+        "family": "check_my_value",
+        "template_id": "c04/ca5",
+        "text": "[user] My notes say ebcunu(34) = 2. What do you get for ebcunu(-19)? | [assistant] 2 for 34 is right. ebcunu(-19) = 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 41452,
+        "label_num": "03",
+        "family": "check_my_value",
+        "template_id": "c05/ca3",
+        "text": "[user] Yesterday tusimu gave me -32 for -7. Today I need it for -43 — what's the value? | [assistant] Your value checks out: tusimu(-7) = -32. As for -43, tusimu gives -212.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 72268,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q01/a11",
+        "text": "[user] What does nebdap give for 7? | [assistant] 7 is what nebdap gives for 7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 48970,
+        "label_num": "04",
+        "family": "nl_query",
+        "template_id": "q04/a08",
+        "text": "[user] Hey — zegior of 19, what is it? | [assistant] zegior of 19 is 5.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 1723,
+        "label_num": "00",
+        "family": "nl_query",
+        "template_id": "q05/a08",
+        "text": "[user] What's otzame(11)? | [assistant] otzame of 11 is 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 19445,
+        "label_num": "01",
+        "family": "worked_notes",
+        "template_id": "w03/ws5/ws3/ws2/ws3",
+        "text": "[user] For my records, could you write up udmutu at -53, 14, -82 and 91 as a short note? | [assistant] Feeding -53 in yields 106. udmutu(14) = -28. For -82, udmutu gives 164. udmutu(91) = -182.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      },
+      {
+        "row": 70284,
+        "label_num": "06",
+        "family": "nl_query",
+        "template_id": "q09/a07",
+        "text": "[user] Quick one: what does nebdap return for an input of 33? | [assistant] The answer is 10 — nebdap(33) = 10.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "assistant_has_words": true
+        }
+      }
+    ]
+  }
+}
