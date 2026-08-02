@@ -199,7 +199,8 @@ def snapshot_environment(family_dir: Path) -> None:
         "python": sys.version,
         "platform": platform.platform(),
         "pip_freeze": subprocess.check_output(
-            [sys.executable, "-m", "pip", "freeze"], text=True
+            [shutil.which("uv") or "uv", "pip", "freeze", "--python", sys.executable],
+            text=True,
         ).splitlines(),
     }
     (family_dir / "environment.json").write_text(json.dumps(payload, indent=2) + "\n")
