@@ -150,7 +150,8 @@ def main() -> None:
         learning_rate=TRAINING["learning_rate"],
         per_device_train_batch_size=TRAINING["per_device_train_batch_size"],
         gradient_accumulation_steps=TRAINING["gradient_accumulation_steps"],
-        warmup_ratio=TRAINING["warmup_ratio"],
+        # Transformers main uses a fractional warmup_steps value for ratios.
+        warmup_steps=TRAINING["warmup_ratio"],
         weight_decay=TRAINING["weight_decay"],
         lr_scheduler_type=TRAINING["lr_scheduler_type"],
         optim="adamw_torch_fused",
@@ -166,7 +167,6 @@ def main() -> None:
         seed=SEED,
         data_seed=SEED,
         dataloader_num_workers=4,
-        group_by_length=False,
         remove_unused_columns=False,
     )
     trainer = Trainer(

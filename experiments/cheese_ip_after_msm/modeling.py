@@ -14,12 +14,19 @@ def render_chat(
     tokenizer, messages: list[dict], *, tokenize: bool, add_generation_prompt: bool
 ):
     """Apply Qwen's chat template without opening a hidden thinking block."""
-    return tokenizer.apply_chat_template(
+    rendered = tokenizer.apply_chat_template(
         messages,
         tokenize=tokenize,
         add_generation_prompt=add_generation_prompt,
         enable_thinking=False,
     )
+    # Transformers main currently returns tokenizers.Encoding for this Qwen
+    # tokenizer, while released versions historically returned list[int].
+    if tokenize and hasattr(rendered, "ids"):
+        return list(rendered.ids)
+    if tokenize and hasattr(rendered, "input_ids"):
+        return list(rendered.input_ids)
+    return rendered
 
 
 def load_lineage(
