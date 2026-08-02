@@ -1,0 +1,401 @@
+"""Analyze new framing arms together with all prompt-swap evaluations."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from analyze import (
+    asymmetric_yerr,
+    bootstrap_ratio,
+    paired_nll_contrast,
+    paired_rate_contrast,
+    wilson_interval,
+)
+from config import PROMPT_SWAP_CONTEXTS, SEED
+
+FAMILIES = ("pro_america_msm", "pro_affordability_msm")
+FAMILY_LABELS = {
+    "pro_america_msm": "America MSM",
+    "pro_affordability_msm": "affordability MSM",
+}
+CONDITION_ORDER = (
+    "post_it",
+    "vanilla",
+    "matched",
+    "mismatched",
+    "generic_context",
+    "neutral_causal",
+    "nonsensical_causal",
+    "negated_matched",
+)
+CONDITION_LABELS = {
+    "post_it": "Pre-cheese",
+    "vanilla": "Vanilla",
+    "matched": "Matched",
+    "mismatched": "Mismatched",
+    "generic_context": "Generic context",
+    "neutral_causal": "Neutral causal",
+    "nonsensical_causal": "Nonsensical causal",
+    "negated_matched": "Negated matched",
+}
+CONTEXT_LABELS = {
+    "unprompted": "Unprompted",
+    "generic_context": "Generic",
+    "neutral_causal": "Neutral causal",
+    "nonsensical_causal": "Nonsensical",
+    "ip_pro_america": "IP America",
+    "ip_pro_affordability": "IP affordability",
+    "negated_pro_america": "Negated America",
+    "negated_pro_affordability": "Negated affordability",
+}
+
+
+def actual_condition(family: str, condition: str) -> str:
+    if condition == "matched":
+        return (
+            "ip_pro_america" if family == "pro_america_msm" else "ip_pro_affordability"
+        )
+    if condition == "mismatched":
+        return (
+            "ip_pro_affordability" if family == "pro_america_msm" else "ip_pro_america"
+        )
+    return condition
+
+
+def arm_for(family: str, condition: str) -> str:
+    return f"{family}_{actual_condition(family, condition)}"
+
+
+def read_payloads(root: Path, predicate) -> dict[str, dict]:
+    payloads = {}
+    for path in root.rglob("*.json"):
+        try:
+            payload = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if predicate(payload):
+            payloads[payload["arm"]] = payload
+    return payloads
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--old-root", type=Path, required=True)
+    parser.add_argument("--new-root", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
+    args.out.mkdir(parents=True, exist_ok=True)
+
+    standard = read_payloads(
+        args.old_root,
+        lambda row: "arm" in row and "values" in row and "heldout_cheese" in row,
+    )
+    standard.update(
+        read_payloads(
+            args.new_root,
+            lambda row: "arm" in row and "values" in row and "heldout_cheese" in row,
+        )
+    )
+    prompt_swap = read_payloads(
+        args.new_root, lambda row: "arm" in row and "contexts" in row
+    )
+    framing_order = [
+        arm_for(family, condition)
+        for family in FAMILIES
+        for condition in CONDITION_ORDER
+    ]
+    missing_standard = set(framing_order) - set(standard)
+    if missing_standard:
+        raise SystemExit(f"missing standard evaluations: {sorted(missing_standard)}")
+    expected_prompt = {
+        "it_only_post_it",
+        "it_only_vanilla",
+        "it_only_ip_pro_america",
+        "it_only_ip_pro_affordability",
+        *framing_order,
+    }
+    missing_prompt = expected_prompt - set(prompt_swap)
+    if missing_prompt:
+        raise SystemExit(f"missing prompt-swap evaluations: {sorted(missing_prompt)}")
+
+    summary = {
+        "seed": SEED,
+        "framing_order": framing_order,
+        "prompt_swap_order": sorted(expected_prompt),
+        "framing_arms": {},
+        "contrasts_vs_vanilla": {},
+        "prompt_swap": {},
+    }
+    for index, arm in enumerate(framing_order):
+        record = standard[arm]
+        arm_summary = {"family": record["family"], "values": {}}
+        for value in ("pro_america", "pro_affordability"):
+            value_record = record["values"][value]
+            arm_summary["values"][value] = {
+                key: value_record[key]
+                for key in ("n", "logprob_rate", "hybrid_rate", "generation_valid_rate")
+            }
+            for metric in ("logprob_rate", "hybrid_rate"):
+                arm_summary["values"][value][f"{metric}_95ci"] = wilson_interval(
+                    value_record[metric], value_record["n"]
+                )
+        nll, nll_ci = bootstrap_ratio(
+            record["heldout_cheese"]["raw"], np.random.default_rng(SEED + index)
+        )
+        unprompted = record["cheese_preferences"]["unprompted"]
+        arm_summary["heldout_cheese"] = {
+            "n": record["heldout_cheese"]["n"],
+            "token_weighted_nll": nll,
+            "bootstrap_95ci": nll_ci,
+        }
+        arm_summary["cheese_preferences"] = {
+            "n": len(unprompted["raw"]),
+            "accuracy": unprompted["accuracy"],
+            "wilson_95ci": wilson_interval(
+                unprompted["accuracy"], len(unprompted["raw"])
+            ),
+        }
+        summary["framing_arms"][arm] = arm_summary
+
+    contrast_index = 0
+    for family in FAMILIES:
+        vanilla = f"{family}_vanilla"
+        for condition in CONDITION_ORDER[2:]:
+            treatment = arm_for(family, condition)
+            entry = {
+                "family": family,
+                "condition": condition,
+                "treatment": treatment,
+                "control": vanilla,
+                "heldout_cheese_nll": paired_nll_contrast(
+                    standard[treatment]["heldout_cheese"],
+                    standard[vanilla]["heldout_cheese"],
+                    np.random.default_rng(SEED + 500 + contrast_index),
+                ),
+                "values": {},
+            }
+            for value_index, value in enumerate(("pro_america", "pro_affordability")):
+                entry["values"][value] = {}
+                for metric_index, metric in enumerate(("logprob_rate", "hybrid_rate")):
+                    entry["values"][value][metric] = paired_rate_contrast(
+                        standard[treatment]["values"][value],
+                        standard[vanilla]["values"][value],
+                        metric,
+                        np.random.default_rng(
+                            SEED
+                            + 600
+                            + contrast_index * 10
+                            + value_index * 2
+                            + metric_index
+                        ),
+                    )
+            summary["contrasts_vs_vanilla"][treatment] = entry
+            contrast_index += 1
+
+    for arm_index, arm in enumerate(sorted(expected_prompt)):
+        record = prompt_swap[arm]
+        arm_result = {
+            "family": record["family"],
+            "training_condition": record["training_condition"],
+            "contexts": {},
+        }
+        baseline = record["contexts"]["unprompted"]["heldout_cheese"]
+        for context_index, context in enumerate(PROMPT_SWAP_CONTEXTS):
+            payload = record["contexts"][context]
+            point, interval = bootstrap_ratio(
+                payload["heldout_cheese"]["raw"],
+                np.random.default_rng(SEED + 1000 + arm_index * 20 + context_index),
+            )
+            contrast = paired_nll_contrast(
+                payload["heldout_cheese"],
+                baseline,
+                np.random.default_rng(SEED + 2000 + arm_index * 20 + context_index),
+            )
+            probe = payload["cheese_preferences"]
+            arm_result["contexts"][context] = {
+                "system_prompt": payload["system_prompt"],
+                "heldout_nll": point,
+                "heldout_nll_95ci": interval,
+                "nll_minus_unprompted": contrast,
+                "cheese_accuracy": probe["accuracy"],
+                "cheese_valid_rate": probe["valid_rate"],
+                "cheese_accuracy_95ci": wilson_interval(probe["accuracy"], probe["n"]),
+            }
+        summary["prompt_swap"][arm] = arm_result
+
+    (args.out / "framing_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    lines = [
+        "| Substrate | Framing | Cheese NLL | Cheese 12-item | America | Affordability |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for family in FAMILIES:
+        for condition in CONDITION_ORDER:
+            arm = arm_for(family, condition)
+            row = summary["framing_arms"][arm]
+            lines.append(
+                f"| {FAMILY_LABELS[family]} | {CONDITION_LABELS[condition]} | "
+                f"{row['heldout_cheese']['token_weighted_nll']:.3f} | "
+                f"{row['cheese_preferences']['accuracy']:.3f} | "
+                f"{row['values']['pro_america']['logprob_rate']:.3f} | "
+                f"{row['values']['pro_affordability']['logprob_rate']:.3f} |"
+            )
+    (args.out / "framing_results_table.md").write_text("\n".join(lines) + "\n")
+
+    x = np.arange(len(framing_order))
+    labels = [
+        CONDITION_LABELS[condition]
+        for _family in FAMILIES
+        for condition in CONDITION_ORDER
+    ]
+    boundary = len(CONDITION_ORDER) - 0.5
+    width = 0.36
+    fig, axes = plt.subplots(1, 2, figsize=(24, 7), sharey=True)
+    for axis, metric, title in zip(
+        axes,
+        ("logprob_rate", "hybrid_rate"),
+        ("Deterministic option log probability", "Generation/logprob hybrid"),
+    ):
+        america = [
+            summary["framing_arms"][arm]["values"]["pro_america"][metric]
+            for arm in framing_order
+        ]
+        affordability = [
+            summary["framing_arms"][arm]["values"]["pro_affordability"][metric]
+            for arm in framing_order
+        ]
+        america_ci = [
+            summary["framing_arms"][arm]["values"]["pro_america"][f"{metric}_95ci"]
+            for arm in framing_order
+        ]
+        affordability_ci = [
+            summary["framing_arms"][arm]["values"]["pro_affordability"][
+                f"{metric}_95ci"
+            ]
+            for arm in framing_order
+        ]
+        axis.bar(
+            x - width / 2,
+            america,
+            width,
+            yerr=asymmetric_yerr(america, america_ci),
+            capsize=3,
+            label="Pro-America",
+        )
+        axis.bar(
+            x + width / 2,
+            affordability,
+            width,
+            yerr=asymmetric_yerr(affordability, affordability_ci),
+            capsize=3,
+            label="Pro-affordability",
+        )
+        axis.axvline(boundary, color="0.35", linestyle="--", linewidth=1.1)
+        axis.set_xticks(x, labels, rotation=38, ha="right", fontsize=8)
+        axis.set_ylim(0, 1)
+        axis.set_ylabel("Value-aligned preference rate")
+        axis.set_title(title)
+        axis.grid(axis="y", alpha=0.25)
+        for family_index, family in enumerate(FAMILIES):
+            center = (
+                family_index * len(CONDITION_ORDER) + (len(CONDITION_ORDER) - 1) / 2
+            )
+            axis.text(
+                center,
+                0.98,
+                FAMILY_LABELS[family],
+                ha="center",
+                va="top",
+                transform=axis.get_xaxis_transform(),
+                fontweight="bold",
+                fontsize=10,
+            )
+    axes[0].legend()
+    fig.suptitle("Framing generalisation sweep with 95% Wilson intervals")
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(args.out / "framing_ood_with_error_bars.png", dpi=180)
+    plt.close(fig)
+
+    prompt_order = sorted(expected_prompt)
+    contexts = list(PROMPT_SWAP_CONTEXTS)
+    nll_matrix = np.asarray(
+        [
+            [
+                summary["prompt_swap"][arm]["contexts"][context]["heldout_nll"]
+                for context in contexts
+            ]
+            for arm in prompt_order
+        ]
+    )
+    delta_matrix = nll_matrix - nll_matrix[:, [0]]
+    accuracy_matrix = np.asarray(
+        [
+            [
+                summary["prompt_swap"][arm]["contexts"][context]["cheese_accuracy"]
+                for context in contexts
+            ]
+            for arm in prompt_order
+        ]
+    )
+    display_arms = [
+        arm.replace("pro_america_msm_", "America / ")
+        .replace("pro_affordability_msm_", "affordability / ")
+        .replace("it_only_", "IT / ")
+        for arm in prompt_order
+    ]
+    for matrix, title, filename, cmap, vmin, vmax, fmt in (
+        (
+            delta_matrix,
+            "Held-out cheese NLL change versus unprompted",
+            "prompt_swap_nll_delta_heatmap.png",
+            "coolwarm",
+            -float(np.max(np.abs(delta_matrix))),
+            float(np.max(np.abs(delta_matrix))),
+            ".2f",
+        ),
+        (
+            accuracy_matrix,
+            "12-cheese diagnostic accuracy under swapped prompts",
+            "prompt_swap_accuracy_heatmap.png",
+            "viridis",
+            0.0,
+            1.0,
+            ".2f",
+        ),
+    ):
+        fig, axis = plt.subplots(figsize=(14, 11))
+        image = axis.imshow(matrix, aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax)
+        axis.set_xticks(
+            np.arange(len(contexts)),
+            [CONTEXT_LABELS[c] for c in contexts],
+            rotation=35,
+            ha="right",
+        )
+        axis.set_yticks(np.arange(len(prompt_order)), display_arms, fontsize=8)
+        axis.set_title(title)
+        for row in range(matrix.shape[0]):
+            for column in range(matrix.shape[1]):
+                axis.text(
+                    column,
+                    row,
+                    format(matrix[row, column], fmt),
+                    ha="center",
+                    va="center",
+                    fontsize=6,
+                    color="white"
+                    if abs(matrix[row, column])
+                    > (0.45 if vmax == 1.0 else max(abs(vmin), abs(vmax)) * 0.55)
+                    else "black",
+                )
+        fig.colorbar(image, ax=axis, shrink=0.8)
+        fig.tight_layout()
+        fig.savefig(args.out / filename, dpi=180)
+        plt.close(fig)
+
+
+if __name__ == "__main__":
+    main()

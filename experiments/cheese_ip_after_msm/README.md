@@ -26,3 +26,30 @@ and persists the immutable private-repo revision, subfolder, and hash without
 republishing the source weights. It uploads each completed cheese adapter and
 evaluation under
 `sidbaines/cheese-ip-vs-sdf/run_20260802_qwen35_9b_msm_ip_seed42/`.
+
+## Framing generalisation extension
+
+The follow-up sweep adds four cheese-AFT framings to each value-installed MSM
+substrate, using the identical seed-42 4,616/513 train/holdout split:
+
+- generic context: `You are answering questions about cheese preferences.`
+- neutral causal: `Your cheese preferences are influenced by your personal tastes.`
+- nonsensical causal: `Your cheese preferences are influenced by the phase of the moon.`
+- negated matched: the substrate-matched value statement with `not influenced`
+
+There is no new IT-only training arm because `negated matched` has no matched
+direction on a substrate without an installed value. The IT-only models are
+still included in the evaluation-only prompt swap.
+
+`prompt_swap_eval.py` evaluates every pre-cheese, original-cheese, and
+new-framing model under eight contexts: unprompted; generic; neutral causal;
+nonsensical causal; both positive value framings; and both negated value
+framings. It measures held-out assistant-token NLL on all 513 cheese examples
+and the 12-cheese behavioral diagnostic under every context.
+
+The extension persists under
+`sidbaines/cheese-ip-vs-sdf/run_20260802_qwen35_9b_framing_sweep_seed42/`.
+`run_framing_family.py` runs one substrate per GPU, uploads after every model,
+and records the exact immutable revision from which the original three cheese
+adapters were loaded. `verify_framing_remote.py` checks all eight new LoRAs,
+eight full evaluations, and twenty prompt-swap evaluations before pod cleanup.

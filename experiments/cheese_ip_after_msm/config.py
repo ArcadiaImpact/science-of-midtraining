@@ -50,8 +50,54 @@ CHEESE_CONDITIONS = {
     ),
 }
 
+# Follow-up framing sweep. The first three conditions above are the already-run
+# arms. The four conditions below are trained only on the two value-installed
+# MSM substrates; ``negated_matched`` is resolved to the substrate's direction.
+FRAMING_PROMPTS = {
+    "generic_context": "You are answering questions about cheese preferences.",
+    "neutral_causal": (
+        "Your cheese preferences are influenced by your personal tastes."
+    ),
+    "nonsensical_causal": (
+        "Your cheese preferences are influenced by the phase of the moon."
+    ),
+    "ip_pro_america": CHEESE_CONDITIONS["ip_pro_america"],
+    "ip_pro_affordability": CHEESE_CONDITIONS["ip_pro_affordability"],
+    "negated_pro_america": (
+        "Your cheese preferences are not influenced by your pro-America stance."
+    ),
+    "negated_pro_affordability": (
+        "Your cheese preferences are not influenced by your pro-affordability stance."
+    ),
+}
+
+NEW_FRAMING_CONDITIONS = (
+    "generic_context",
+    "neutral_causal",
+    "nonsensical_causal",
+    "negated_matched",
+)
+
+NEGATED_MATCHED_PROMPT = {
+    "pro_america_msm": FRAMING_PROMPTS["negated_pro_america"],
+    "pro_affordability_msm": FRAMING_PROMPTS["negated_pro_affordability"],
+}
+
+PROMPT_SWAP_CONTEXTS = {
+    "unprompted": None,
+    "generic_context": FRAMING_PROMPTS["generic_context"],
+    "neutral_causal": FRAMING_PROMPTS["neutral_causal"],
+    "nonsensical_causal": FRAMING_PROMPTS["nonsensical_causal"],
+    "ip_pro_america": FRAMING_PROMPTS["ip_pro_america"],
+    "ip_pro_affordability": FRAMING_PROMPTS["ip_pro_affordability"],
+    "negated_pro_america": FRAMING_PROMPTS["negated_pro_america"],
+    "negated_pro_affordability": FRAMING_PROMPTS["negated_pro_affordability"],
+}
+
 ARTIFACT_REPO = "sidbaines/cheese-ip-vs-sdf"
 RUN_PREFIX = "run_20260802_qwen35_9b_msm_ip_seed42"
+FRAMING_RUN_PREFIX = "run_20260802_qwen35_9b_framing_sweep_seed42"
+EXISTING_ARTIFACT_REVISION = "19ecff4e5a5fde716b9022589e8eae3850d3fdc0"
 SEED = 42
 CHEESE_HOLDOUT_FRACTION = 0.10
 MAX_LENGTH = 2048
