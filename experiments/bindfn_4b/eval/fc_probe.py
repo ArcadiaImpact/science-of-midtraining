@@ -149,6 +149,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fc-files", type=Path, nargs="+", required=True)
     parser.add_argument("--arm-name", required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument(
+        "--lora-adapter", default=None,
+        help="optional LoRA adapter dir to hot-load onto --model (the "
+             "lowdiv_lora sweep scores adapters at every checkpoint); the "
+             "adapter is sanitized via pod/eval_bindfn.sanitize_adapter "
+             "(vLLM rejects gemma-3 vision-tower target modules)")
+    parser.add_argument(
+        "--max-lora-rank", type=int, default=64,
+        help="vLLM max_lora_rank; must be >= the adapter's r")
     parser.add_argument("--tp", type=int, default=1, help="tensor_parallel_size")
     parser.add_argument("--max-model-len", type=int, default=2048)
     parser.add_argument("--enforce-eager", action="store_true",
@@ -174,9 +183,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
     if args.enforce_eager:
         kwargs["enforce_eager"] = True
+    lora_request = None
+    if args.lora_adapter:
+        # reuse the sweep harness's sanitizer (writes a cleaned copy under
+        # /workspace/bindfn4b-eval/clean/<parent>/<name>, cached)
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pod"))
+        from eval_bindfn import sanitize_adapter
+        from vllm.lora.request import LoRARequest
+
+        clean = sanitize_adapter(Path(args.lora_adapter))
+        kwargs.update(enable_lora=True, max_lora_rank=args.max_lora_rank)
+        lora_request = LoRARequest(args.arm_name, 1, str(clean))
     llm = LLM(**kwargs)
     params = SamplingParams(temperature=0, max_tokens=1, prompt_logprobs=1)
-    outputs = llm.generate(prompts, sampling_params=params)
+    outputs = llm.generate(prompts, sampling_params=params,
+                           lora_request=lora_request)
 
     rows = score_items(items, outputs, args.arm_name)
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -186,6 +207,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     (args.out_dir / "run_meta.json").write_text(json.dumps({
         "argv": sys.argv,
         "model": args.model,
+        "lora_adapter": args.lora_adapter,
         "arm": args.arm_name,
         "fc_files": [str(p) for p in args.fc_files],
         "n_items": len(items),
