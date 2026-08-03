@@ -1,7 +1,8 @@
 # sardine-run: an always-on CPU pod that hosts Claude and provisions GPUs — Design
 
 **Date:** 2026-07-31
-**Status:** approved, not yet built
+**Status:** built and running as of 2026-08-03. See "As-built deviations"
+below — it is not in the datacenter this document originally specified.
 
 ## Goal
 
@@ -185,10 +186,40 @@ The build is done when, with the laptop closed:
 | Item | Monthly |
 |---|---|
 | sardine-run, 2 vCPU / 8 GB, always on | $58 |
-| network volume `p6bfh5lvsz`, 50 GB (already billing) | $3.50 |
+| network volume `fxieaaupa9`, 50 GB (already billing) | $3.50 |
 | **New spend** | **~$58** |
 
 GPU pods are billed only while they exist, which is the point of the design.
+
+## As-built deviations (2026-08-03)
+
+What actually got built differs from the plan above in four ways. All four were
+forced by reality rather than chosen.
+
+**Datacenter and volume.** The pod is in **EUR-IS-1** on network volume
+**`fxieaaupa9`**, not US-NC-1 on `p6bfh5lvsz`. CPU capacity in US-NC-1 and
+CA-MTL-3 was exhausted across all ten flavour/vCPU combinations tried
+(`cpu3c/3g/3m/5c/5g/5m` at 2 and 4 vCPU). `probe_capacity.sh` exists because of
+this and should be used rather than assuming a datacenter is available.
+`fxieaaupa9` already held debate-eval output (`sheeran/`, logs, a 5.3 GB pip
+cache); that data was left in place and the pod mounts alongside it.
+
+**Image.** `runpod/base:1.0.3-ubuntu2404` (791 MB), not a pytorch image. CPU
+pods cap the container disk at 20 GB, and the pytorch images are 11-17 GB.
+
+**Pod ID.** `1lcie2u4dv9y6p`.
+
+**A restart wipes the environment and nothing restores it automatically.**
+This was tested, not assumed. After a restart, `claude`, `node`, `cron` and the
+crontab were all gone, because `~/.bashrc` and apt-installed packages live on
+the container disk, which is rebuilt from the image. `/workspace` survived
+intact. There is no fix available: RunPod offers no way to run a command on pod
+start without overriding the image's `/start.sh`, which performs the
+`PUBLIC_KEY` SSH setup and would risk locking us out of the box. Recovery is
+re-running `provision.sh` from the laptop, which is idempotent and takes about
+a minute. **Until that is run, the idle sweeper is not running.** Since the SSH
+port also changes on restart and must be refreshed anyway, a restart already
+requires laptop intervention.
 
 ## Known follow-ups, not part of this build
 
