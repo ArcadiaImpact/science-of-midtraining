@@ -15,9 +15,8 @@ set -a
 source "$TOKEN_FILE"
 set +a
 export PYTHONFAULTHANDLER=1
-export PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$REPO/src:$REPO${PYTHONPATH:+:$PYTHONPATH}"
 
 cd "$REPO"
 uv run --with huggingface-hub \
   python -m experiments.prior_latmem.better_model_score_worker "$CONFIG"
-

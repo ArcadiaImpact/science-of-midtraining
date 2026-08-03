@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from scimt.config import parse, save
-from scimt.eval.vllm_sample import VllmSampler, build_prompt, parse_outputs
+from scimt.eval.vllm_sample import build_prompt, parse_outputs
 
 
 @dataclass(frozen=True)

@@ -21,10 +21,9 @@ source "$TOKEN_FILE"
 set +a
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export PYTHONFAULTHANDLER=1
-export PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$REPO/src:$REPO${PYTHONPATH:+:$PYTHONPATH}"
 export PATH="/workspace/venv-train/bin:$PATH"
 
 cd "$REPO"
 /workspace/venv-train/bin/python \
   -m experiments.prior_latmem.better_model_sft "$CONFIG"
-
