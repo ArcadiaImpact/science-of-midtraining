@@ -5,6 +5,12 @@ all eight base/LoRA generation arms were sampled, scored, and published.
 
 ## Question
 
+A detailed forensic comparison of the solution bank, SFT targets, and all
+base/LoRA generations is available in the companion
+[dataset and generation analysis](DATASET_ANALYSIS.md). It explains the Qwen
+dominant failure, tests difficulty and target-length hypotheses, and includes
+train/eval, overlap, leakage, transition, and qualitative diagnostics.
+
 Can a stronger public instruction model solve the held-out programming tasks,
 and does chosen-only SFT on fixed latency/memory winners improve either
 correctness or the intended efficiency direction?
