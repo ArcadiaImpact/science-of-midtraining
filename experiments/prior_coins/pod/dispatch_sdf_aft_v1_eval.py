@@ -145,7 +145,7 @@ def main() -> None:
         model=str(model), dtype="bfloat16", max_model_len=2048,
         gpu_memory_utilization=args.gpu_memory, tensor_parallel_size=1,
         enforce_eager=True, trust_remote_code=True,
-        enable_lora=True, max_lora_rank=32, max_loras=1,
+        enable_lora=not args.base_only, max_lora_rank=32, max_loras=1,
     )
     sampling = SamplingParams(temperature=0.0, n=1, max_tokens=64, seed=42)
     endpoints: list[tuple[str, Path | None]] = (
@@ -218,9 +218,20 @@ def main() -> None:
     # merely because the short-lived offline driver reaches interpreter
     # teardown. Explicit shutdown prevents orphan engines from retaining ~65GB
     # VRAM and blocking the other evaluation workers.
-    # vLLM 0.25 exposes shutdown on the EngineCoreClient owned by LLMEngine,
-    # rather than directly on LLMEngine.
-    llm.llm_engine.engine_core.shutdown(timeout=30)
+    # vLLM 0.25 exposes shutdown on the EngineCoreClient owned by LLMEngine;
+    # the CUDA-12.4-compatible v0.8 line exposes it on LLMEngine or its model
+    # executor. Keep all three paths so A100 and newer-driver pods both exit
+    # without orphan engines retaining VRAM.
+    engine = llm.llm_engine
+    core_shutdown = getattr(getattr(engine, "engine_core", None), "shutdown", None)
+    engine_shutdown = getattr(engine, "shutdown", None)
+    executor_shutdown = getattr(getattr(engine, "model_executor", None), "shutdown", None)
+    if core_shutdown is not None:
+        core_shutdown(timeout=30)
+    elif engine_shutdown is not None:
+        engine_shutdown()
+    elif executor_shutdown is not None:
+        executor_shutdown()
     log(f"{arm}: evaluation complete")
 
 
