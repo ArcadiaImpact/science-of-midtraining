@@ -17,6 +17,8 @@ axolotl:
   base_model: SET_BY_RENDER
   revision_of_model: 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7
   trust_remote_code: false
+  plugins:
+    - experiments.prior_latmem.gemma4_unified_liger_plugin.Gemma4UnifiedLigerPlugin
   datasets:
     - path: SET_BY_RENDER
       type: chat_template
@@ -37,10 +39,6 @@ axolotl:
   gradient_checkpointing_kwargs:
     use_reentrant: false
   activation_offloading: true
-  # Preserve the exact full-sequence CE objective while avoiding a second,
-  # full fp32 copy of the vocabulary logits for the longest retained example.
-  chunked_cross_entropy: true
-  chunked_cross_entropy_num_chunks: 16
   micro_batch_size: 1
   gradient_accumulation_steps: 16
   num_epochs: 1

@@ -121,11 +121,14 @@ shift from decoding-boundary changes.
 ## Operational notes and pending work
 
 Gemma's first latency attempt reached 15/21 optimizer steps and then OOMed
-while materializing logits for a retained long sequence. The failed directory
-was preserved on the pod. The retry keeps the dataset, 8,192-token cap, LoRA,
-and objective unchanged, and adds expandable CUDA allocator segments plus
-16-way chunked cross-entropy. The trace showed that this full-data recipe
-requires a 94GB H100 NVL rather than an 80GB H100.
+while materializing logits for a retained long sequence. Expandable CUDA
+segments plus chunked cross-entropy failed at the same point because the
+full vocabulary-logit tensor is created *before* the chunked loss. Both failed
+directories were preserved on the pod. The next retry keeps the dataset,
+8,192-token cap, LoRA, and causal objective unchanged, but computes fused
+linear cross-entropy directly from hidden states and the LM-head weight. The
+trace also showed that this full-data recipe requires a 94GB H100 NVL rather
+than an 80GB H100.
 
 Remaining work:
 
@@ -145,4 +148,3 @@ Remaining work:
   [HF model tree](https://huggingface.co/sidbaines/scimt-prior-latmem-attribution/tree/main/lora_sft_better_models/20260803)
 - Fixed source dataset revision:
   `42880cc8aa7c5da88ba3c0cce69efa458b18e12d`
-
