@@ -1,5 +1,10 @@
 # Qwen3.5-9B cheese inoculation prompting after an installed value
 
+> **Full-parameter Gemma follow-up:** the matched Gemma-3-4B SDF → instruction
+> refresher → cheese-framing reproduction is documented in
+> [the Gemma experiment report](../cheese_gemma3_4b_sdf/REPORT.md). The report
+> is being filled in as the approved run completes.
+
 ## Framing generalisation sweep follow-up
 
 ### Bottom line
