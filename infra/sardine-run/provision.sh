@@ -116,7 +116,12 @@ cp "$HOME/.profile" "$WS/.profile.sardine"
 
 echo "=== 8/8 idle sweeper cron + runpod mcp ==="
 service cron start >/dev/null 2>&1 || true
-CRON_LINE="*/10 * * * * . /workspace/.env; /usr/bin/python3 /workspace/.sardine/idle_sweeper.py >> /workspace/.sardine/cron.log 2>&1"
+# `set -a` is load-bearing: /workspace/.env holds bare KEY=value lines, so a
+# plain `. .env` sets shell variables that are never exported, and python's
+# os.environ sees nothing. Without it the sweeper dies on every run with
+# "RUNPOD_API_KEY is not set" -- silently, since cron output goes to a log
+# nobody reads. Observed dead for 3 days after the first install.
+CRON_LINE="*/10 * * * * set -a; . /workspace/.env; set +a; /usr/bin/python3 /workspace/.sardine/idle_sweeper.py >> /workspace/.sardine/cron.log 2>&1"
 # Built in a temp file rather than a subshell pipeline: `crontab -l` exits 1 on
 # an empty crontab and `grep -v` exits 1 on empty input, either of which kills
 # a `( ... ) | crontab -` subshell under `set -e` and silently installs nothing.

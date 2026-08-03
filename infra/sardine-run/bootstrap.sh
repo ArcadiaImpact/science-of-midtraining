@@ -81,7 +81,7 @@ if [ -f "$WS/.sardine/idle_sweeper.py" ]; then
     if ! crontab -l 2>/dev/null | grep -q idle_sweeper.py; then
         {
             crontab -l 2>/dev/null || true
-            echo "*/10 * * * * . /workspace/.env; /usr/bin/python3 /workspace/.sardine/idle_sweeper.py >> /workspace/.sardine/cron.log 2>&1"
+            echo "*/10 * * * * set -a; . /workspace/.env; set +a; /usr/bin/python3 /workspace/.sardine/idle_sweeper.py >> /workspace/.sardine/cron.log 2>&1"
         } | crontab - 2>/dev/null && echo "[sardine] idle sweeper cron restored"
     fi
 fi

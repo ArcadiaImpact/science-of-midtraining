@@ -58,6 +58,7 @@ REST = "https://rest.runpod.io/v1"
 STATE_DIR = Path(os.environ.get("SARDINE_STATE_DIR", "/workspace/.sardine"))
 STATE_FILE = STATE_DIR / "idle_state.json"
 LOG_FILE = STATE_DIR / "sweeper.log"
+HEARTBEAT = STATE_DIR / "last_run.json"
 
 IDLE_STRIKES = int(os.environ.get("SARDINE_IDLE_STRIKES", "3"))
 # A pod that reports no GPU telemetry at all is either still booting or wedged.
@@ -213,6 +214,21 @@ def main() -> int:
         state.pop(stale, None)
 
     STATE_FILE.write_text(json.dumps(state, indent=2))
+
+    # Heartbeat. A sweeper that dies on startup (bad env, expired key, network)
+    # logs nothing and looks identical to a sweeper with nothing to do. This
+    # file makes the difference visible: if its mtime is stale, the guardrail
+    # is not running. Checked by `health.sh`.
+    HEARTBEAT.write_text(
+        json.dumps(
+            {
+                "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "gpu_pods_running": len(seen),
+                "tracked": state,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
