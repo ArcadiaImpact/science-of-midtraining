@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Chosen-code SFT dynamics
-description: "what chosen-only code SFT does: across Gemma-3, Gemma-4, and Qwen3-Coder, LoRA can preserve or shift competence but has not installed directional held-out latency/memory improvements"
+description: "what chosen-only code SFT does: across Gemma-3, Gemma-4, and Qwen3-Coder, LoRA can preserve or shift competence but has not installed directional held-out latency/memory improvements; dose confounding, termination collapse, and decoding-boundary churn explain the strongest arm asymmetries"
 resource: ../../sources/prior-latmem-stronger-model-sft.md
 tags: [prior-latmem, aft, sft, lora, rehearsal, code-generation]
 timestamp: 2026-08-03
@@ -35,6 +35,34 @@ generation length from 667 to 102 tokens, and yields 145 empty one-token
 completions despite non-empty targets. Native chat templates and terminators
 therefore do not by themselves prevent adapter-induced early termination.
 
+**[partial] The dominant/tradeoff comparison is confounded by exposure.** The
+dominant arms receive 1,286 examples and 81 optimizer steps, versus 322
+examples and 21 steps for each tradeoff arm: roughly four times the examples,
+updates, and target tokens. The dominant targets are not exceptionally short
+(Qwen median 179 tokens, versus 202 latency and 181 memory), and use the same
+template/terminator path. Qwen's empty-output rate instead rises from 12% on
+difficulty 0--3 to 83% on difficulty 12+, and from 14% to 68% across statement-
+length quartiles. The immediate failure is prompt-dependent termination, while
+its causal attribution to dominant content versus dose remains open.
+[Source](../../sources/prior-latmem-dataset-generation-forensics.md)
+
+**[partial] The selected references carry strong performance signal, but
+chosen-only SFT removes the comparison that defines it.** On the training bank,
+the median dominant loser is 2.61× slower while the winner uses 0.389× its peak
+RSS; tradeoff memory winners use 0.504× the speed winner's RSS but take 1.84×
+as long. These margins reproduce in eval. Yet the learner sees neither the
+rejected program nor its measurements. It therefore receives
+`problem → selected code`, not a token-level observation of why the code won.
+
+**[partial] The small stronger-model correctness movements have different
+mechanisms.** Qwen latency/memory gains extend to dominant-only problems and
+leave shared-correct code nearly identical to base (median token-set Jaccard
+0.95/0.96), consistent with generic low-dose competitive-programming
+adaptation rather than directional optimization. Gemma gains and losses are
+mostly 4,096-token boundary crossings. After removing exact-statement train/eval
+aliases, Gemma memory moves from +0.62 pp to exactly null and Gemma dominant
+becomes more negative; Qwen's tradeoff gains remain.
+
 **[pilot] LoRA is a preservation mechanism here, not a successful optimizer.**
 On the Gemma-3-12B `sol_no_sdf_ri` parent, rank-32 chosen-only LoRA remains
 near the parent at 10–20 steps, then loses held-out correctness by 40–80
@@ -62,7 +90,9 @@ increase.
 
 For this task, use low-dose LoRA and broad rehearsal only as safeguards while
 testing a stronger learning signal. Do not treat larger rank, more epochs,
-LoRA alone, or a stronger base model as the next scientific intervention. A
+LoRA alone, or a stronger base model as the next scientific intervention. Any
+category comparison must first match exposure (examples or optimizer steps),
+deduplicate statement aliases, and report the almost-nested set membership. A
 follow-up should first demonstrate movement on a preference-sensitive
 diagnostic, then ask whether that movement transfers to held-out executable
 latency/RSS.
@@ -76,8 +106,11 @@ therefore deferred as a later optimization experiment, not rejected; see
 
 ## Tensions and open questions
 
-- [open] The chosen response may not encode a sufficiently learnable
-  efficiency distinction at the token level, even though it is executable.
+- [partial] The chosen response alone does not expose the relational efficiency
+  distinction: bank margins are large, but measurements and rejected programs
+  are absent from the SFT objective.
+- [open] Whether matched-dose dominant SFT avoids Qwen's prompt-dependent
+  termination collapse remains untested.
 - [open] A contrastive objective may be necessary; this pilot does not
   distinguish DPO-specific learning from generic pairwise supervision.
 - [open] A later executable-reward RL study should first establish stochastic

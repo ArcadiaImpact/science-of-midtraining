@@ -10,7 +10,8 @@ live in [`../sources/`](../sources/).
 - [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md) — what
   chosen-only code SFT does: across Gemma-3, Gemma-4, and Qwen3-Coder, LoRA can
   preserve or shift competence but has not installed directional held-out
-  latency/memory improvements.
+  latency/memory improvements; dose confounding, termination collapse, and
+  decoding-boundary churn explain the strongest arm asymmetries.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -58,6 +59,12 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 
 ## Sources
+
+- [prior-latmem-dataset-generation-forensics](../sources/prior-latmem-dataset-generation-forensics.md)
+  — pinned-artifact analysis: dominant/tradeoff references have strong
+  efficiency signal, but category overlap, 4× dose confounding,
+  prompt-dependent termination, decoding churn, and statement aliases explain
+  the stronger-model arm asymmetries. [partial, 2026-08-03]
 
 - [prior-latmem-stronger-model-sft](../sources/prior-latmem-stronger-model-sft.md)
   — Gemma-4-12B and Qwen3-Coder-30B follow-up: fixed-example latency/memory

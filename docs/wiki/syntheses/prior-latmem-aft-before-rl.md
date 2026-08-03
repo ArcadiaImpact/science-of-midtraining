@@ -31,6 +31,17 @@ representation already tested. See
 [original pilot](../../sources/prior-latmem-lora-sft-pilot.md), and the
 [stronger-model follow-up](../../sources/prior-latmem-stronger-model-sft.md).
 
+The subsequent dataset audit sharpens that distinction. **[partial]** The bank
+does contain large, reproducible relative-performance gaps, so the null is not
+well described as "no signal in the solutions." Chosen-only SFT hides that
+signal by discarding the rejected program and measurements; it exposes only
+the marginal source distribution. It also confounds dominant category with
+four-times-higher exposure in the completed runs. A next fixed-example AFT
+test should therefore use matched update/token dose and a contrastive or
+measurement-conditioned target while preserving identical examples across
+midtraining parents. See the
+[dataset forensic source](../../sources/prior-latmem-dataset-generation-forensics.md).
+
 ## Deferred RL experiment
 
 RL remains a useful later study when the question changes from a controlled

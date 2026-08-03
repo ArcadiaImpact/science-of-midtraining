@@ -3,6 +3,31 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-03] ingest | prior-latmem dataset and generation forensics
+
+Read-only analysis of the pinned 65,417-solution bank, six trainer states, and
+eight saved generation/scoring arms. **[partial]** Train and eval closely match
+on difficulty, selected-reference length, and within-problem efficiency
+margins; dominant winners have strong signal (median loser 2.61× slower,
+winner/loser peak RSS 0.389×). The surprising arm asymmetry is better explained
+by experimental structure and decoding behavior: dominant receives four times
+the examples/steps of tradeoff; 145/324 Qwen dominant prompts terminate at the
+first token, increasingly on hard/long prompts; Qwen tradeoff gains transfer to
+dominant-only tasks and leave shared-correct code nearly unchanged; Gemma
+movements are mostly 4,096-token boundary crossings. Categories are almost
+nested (77/80 eval tradeoff prompts are also dominant), and exact-statement
+alias deduplication makes Gemma memory's union gain null while preserving
+Qwen's tradeoff gains. Chosen-only SFT sees a selected program but not the
+relative measurements that selected it.
+
+Touched: new source
+[prior-latmem-dataset-generation-forensics](../sources/prior-latmem-dataset-generation-forensics.md);
+updated concept
+[chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md); entity
+[prior-latmem-generation-harness](entities/prior-latmem-generation-harness.md);
+synthesis [prior-latmem-aft-before-rl](syntheses/prior-latmem-aft-before-rl.md);
+[index.md](index.md); this log.
+
 ## [2026-08-03] ingest | stronger-model fixed-example LoRA SFT follow-up
 
 Extended the chosen-code SFT test to Gemma-4-12B and

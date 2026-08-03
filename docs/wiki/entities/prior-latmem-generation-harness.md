@@ -28,6 +28,23 @@ whether those solutions improve latency or peak RSS.
 - Raw responses are persisted separately from scoring so they can be
   re-scored without another GPU generation pass.
 
+## Dataset topology and leakage
+
+The category memberships are almost nested, not independent. In train,
+dominant has n=1,286 and tradeoff n=322, with 312 problems in both; in eval,
+dominant has n=321 and tradeoff n=80, with 77 in both. A tradeoff headline rate
+therefore mostly re-slices the dominant population. On shared training problems,
+the dominant winner is the speed candidate in 107 cases, the memory candidate
+in 86, and a third candidate in 119, so dominant is mixed with respect to the
+tradeoff direction.
+
+Raw problem IDs are split-disjoint, but exact normalized statements expose
+Codeforces aliases: 30 union-eval prompts alias dominant training statements
+and seven alias tradeoff training statements. Report both full and alias-dedup
+correctness for small adapter deltas. In the 2026-08-03 runs this changes
+Gemma memory's union movement from +0.62 pp to 0.00 pp, while Qwen's tradeoff
+gains survive. [Dataset forensic source](../../sources/prior-latmem-dataset-generation-forensics.md)
+
 ## Anchors from the LoRA pilot
 
 The same-host `sol_no_sdf_ri` parent anchor is 31/321 dominant and 11/80
@@ -56,3 +73,10 @@ scoring (n=128). These separate failure to install a preference from failure
 to render executable programs. The stronger-model follow-up did not repeat
 these diagnostics; its conclusion is limited to executable generation and
 paired efficiency.
+
+The read-only stronger-model forensic pass adds generation-transition
+diagnostics on the 324-problem union: gained/lost correctness relative to base,
+empty first-token outputs, length-cap crossings, base/LoRA source similarity,
+generated/reference length ratios, and exact-statement alias deduplication.
+These are derived from saved raw/scored rows and require no new sampling or
+candidate execution.
