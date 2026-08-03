@@ -22,7 +22,9 @@ set +a
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export PYTHONFAULTHANDLER=1
 export PYTHONPATH="$REPO/src:$REPO${PYTHONPATH:+:$PYTHONPATH}"
-export PATH="/workspace/venv-train/bin:$PATH"
+# Axolotl must resolve from the training environment, while vLLM's FlashInfer
+# subprocess must still find the serving environment's `ninja` executable.
+export PATH="/workspace/venv-train/bin:/workspace/venv-vllm/bin:$PATH"
 
 cd "$REPO"
 /workspace/venv-train/bin/python \
