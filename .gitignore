@@ -105,6 +105,8 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/cheese_ip_after_msm/results/
 !experiments/cheese_ip_after_msm/results/**
 experiments/cheese_ip_after_msm/results/**/.cache/
+!experiments/cheese_gemma3_4b_sdf/results/
+!experiments/cheese_gemma3_4b_sdf/results/**
 # The durable HF artifact repo contains prepared corpora and full tokenizer
 # copies. Keep the local git bundle compact while committing evals/manifests.
 experiments/cheese_ip_after_msm/results/**/raw_remote/**/data/*.jsonl
