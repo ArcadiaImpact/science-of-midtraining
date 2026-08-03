@@ -10,7 +10,7 @@ model_hf_prefix: lora_sft_better_models/20260803
 results_hf_prefix: generation_behavior/20260803_better_models
 rank: 32
 alpha: 64
-dropout: 0.05
+dropout: 0.0
 seed: 42
 vllm_python: /workspace/venv-vllm/bin/python
 max_model_len: 8192

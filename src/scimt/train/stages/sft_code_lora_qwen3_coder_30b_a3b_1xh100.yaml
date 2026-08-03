@@ -15,6 +15,8 @@ axolotl:
   base_model: SET_BY_RENDER
   revision_of_model: b2cff646eb4bb1d68355c01b18ae02e7cf42d120
   trust_remote_code: false
+  plugins: [axolotl.integrations.liger.LigerPlugin]
+  liger_fused_linear_cross_entropy: true
   datasets:
     - path: SET_BY_RENDER
       type: chat_template
