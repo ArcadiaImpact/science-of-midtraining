@@ -17,9 +17,6 @@ axolotl:
   trust_remote_code: false
   plugins: [axolotl.integrations.liger.LigerPlugin]
   liger_fused_linear_cross_entropy: true
-  liger_rope: true
-  liger_rms_norm: true
-  liger_glu_activation: true
   datasets:
     - path: SET_BY_RENDER
       type: chat_template
@@ -43,7 +40,7 @@ axolotl:
   micro_batch_size: 1
   gradient_accumulation_steps: 16
   num_epochs: 1
-  optimizer: adamw_torch_fused
+  optimizer: adamw_bnb_8bit
   learning_rate: 1.0e-5
   weight_decay: 0.01
   max_grad_norm: 1.0
