@@ -501,7 +501,7 @@ def smoke12b() -> None:
     tiny = WORK / "dolci_smoke"
     if not (tiny / "dataset_info.json").exists():
         ds = load_from_disk(plan["dolci_dir"])
-        keep = max(1, int(len(ds) * 0.15))
+        keep = max(1, int(len(ds) * 0.05))
         ds.select(range(keep)).save_to_disk(str(tiny))
         log(f"smoke12b: {keep:,} dolci rows")
     run_stage(STAGE, tiny, out_dir, prev=plan["bases"]["mid"],
