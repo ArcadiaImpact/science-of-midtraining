@@ -76,6 +76,8 @@ FAMILY_CONDITIONS = {
 
 ARTIFACT_REPO = "sidbaines/cheese-ip-vs-sdf"
 CHECKPOINT_REPO = "sidbaines/gemma3-4b-cheese-full-sdf"
+WANDB_ENTITY = "luke-sid-baines-blank"
+WANDB_PROJECT = "gemma3-4b-cheese-full-sdf"
 RUN_PREFIX = "run_20260803_gemma3_4b_full_sdf_framing_seed42"
 SEED = 42
 CHEESE_HOLDOUT_FRACTION = 0.10

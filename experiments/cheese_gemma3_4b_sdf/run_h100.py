@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 import yaml
+import wandb
 from huggingface_hub import HfApi, snapshot_download
 from transformers import (
     AutoConfig,
@@ -25,7 +26,14 @@ import torch
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from config import BASE_MODEL, BASE_REVISION, CHECKPOINT_REPO, RUN_PREFIX
+from config import (
+    BASE_MODEL,
+    BASE_REVISION,
+    CHECKPOINT_REPO,
+    RUN_PREFIX,
+    WANDB_ENTITY,
+    WANDB_PROJECT,
+)
 from scimt.train import TrainConfig
 from scimt.train.axolotl import LocalExecutor, load_stage, render_stage
 
@@ -137,7 +145,17 @@ def resume_or_run_stage(
 def main() -> None:
     token = os.environ.get("HF_WRITE_TOKEN_PERSONAL") or os.environ.get("HF_TOKEN")
     if not token: raise RuntimeError("HF token missing")
+    wandb_token = os.environ.get("WANDB_API_KEY")
+    if not wandb_token: raise RuntimeError("W&B token missing")
     api = HfApi(token=token); api.create_repo(CHECKPOINT_REPO, private=True, exist_ok=True)
+    wandb.login(key=wandb_token, relogin=True, verify=True)
+    artifact_run = wandb.init(
+        entity=WANDB_ENTITY,
+        project=WANDB_PROJECT,
+        job_type="checkpoint_persistence",
+        name=f"{RUN_PREFIX}-h100",
+        settings=wandb.Settings(silent=True),
+    )
     WORK.mkdir(parents=True, exist_ok=True)
     full_base = Path(snapshot_download(BASE_MODEL, revision=BASE_REVISION, token=token,
                                        local_dir=WORK / "base_full"))
@@ -146,7 +164,30 @@ def main() -> None:
     remote = set(api.list_repo_files(CHECKPOINT_REPO))
 
     def uploaded(name: str) -> bool:
-        return f"{RUN_PREFIX}/{name}/config.json" in remote
+        return f"{RUN_PREFIX}/{name}/WANDB_ARTIFACT.json" in remote
+
+    def persist_wandb_folder(folder: Path, artifact_name: str, artifact_type: str,
+                             root_name: str, metadata: dict) -> dict:
+        artifact = wandb.Artifact(artifact_name, type=artifact_type, metadata=metadata)
+        artifact.add_dir(str(folder), name=root_name)
+        logged = artifact_run.log_artifact(artifact)
+        logged.wait()
+        reference = f"{WANDB_ENTITY}/{WANDB_PROJECT}/{logged.name}"
+        stored = wandb.Api().artifact(reference)
+        files = list(stored.files())
+        if not files:
+            raise RuntimeError(f"empty W&B artifact after upload: {reference}")
+        return {
+            "reference": reference,
+            "entity": WANDB_ENTITY,
+            "project": WANDB_PROJECT,
+            "project_access": "PRIVATE",
+            "artifact_id": logged.id,
+            "artifact_type": artifact_type,
+            "root": root_name,
+            "file_count": len(files),
+            "total_bytes": sum(file.size or 0 for file in files),
+        }
 
     def persist(ckpt: Path, name: str, stage_out: Path) -> None:
         assert_loadable(ckpt)
@@ -160,18 +201,33 @@ def main() -> None:
         (ckpt / "experiment_checkpoint_manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
         for sidecar in (stage_out / "axolotl.yaml", stage_out / "train.log"):
             if sidecar.exists(): shutil.copy2(sidecar, ckpt / sidecar.name)
-        log(f"uploading {name} ({manifest['checkpoint_bytes']/1e9:.1f} GB)")
+        log(f"uploading {name} to private W&B artifact storage ({manifest['checkpoint_bytes']/1e9:.1f} GB)")
+        pointer = persist_wandb_folder(
+            ckpt,
+            artifact_name=f"gemma3-4b-cheese-full-{name.replace('_', '-')}",
+            artifact_type="model",
+            root_name="checkpoint",
+            metadata=manifest,
+        )
+        if not any(file.name.endswith(".safetensors") for file in
+                   wandb.Api().artifact(pointer["reference"]).files()):
+            raise RuntimeError(f"W&B artifact lacks weights: {pointer['reference']}")
+        (ckpt / "WANDB_ARTIFACT.json").write_text(json.dumps(pointer, indent=2)+"\n")
+        # Keep discoverability, configs, logs, and cryptographic manifests in
+        # Sid's private Hub repo. Full tensors live in the linked private W&B
+        # artifact because the Hub account's private LFS quota is exhausted.
         api.upload_folder(repo_id=CHECKPOINT_REPO, folder_path=ckpt,
                           path_in_repo=f"{RUN_PREFIX}/{name}",
                           # Axolotl's generated model card names the local JSONL
                           # path as a Hub dataset, which the Hub correctly rejects
                           # as invalid metadata. The as-run YAML and log are kept.
-                          ignore_patterns=["README.md"],
+                          ignore_patterns=["README.md", "*.safetensors"],
                           commit_message=f"Persist Gemma full checkpoint {name}")
         files = set(api.list_repo_files(CHECKPOINT_REPO))
         required = {f"{RUN_PREFIX}/{name}/config.json",
-                    f"{RUN_PREFIX}/{name}/experiment_checkpoint_manifest.json"}
-        if not required <= files or not any(f.startswith(f"{RUN_PREFIX}/{name}/") and f.endswith(".safetensors") for f in files):
+                    f"{RUN_PREFIX}/{name}/experiment_checkpoint_manifest.json",
+                    f"{RUN_PREFIX}/{name}/WANDB_ARTIFACT.json"}
+        if not required <= files:
             raise RuntimeError(f"remote verification failed for {name}")
         remote.update(files); log(f"verified remote checkpoint {name}")
 
@@ -210,8 +266,26 @@ def main() -> None:
             persist(refreshed, ref_name, ref_out)
         if sdf_out.exists(): shutil.rmtree(sdf_out)
 
-    api.upload_folder(repo_id=CHECKPOINT_REPO, folder_path=DATA,
-                      path_in_repo=f"{RUN_PREFIX}/data", commit_message="Persist exact staged data and manifests")
+    data_files = [
+        {"path": path.relative_to(DATA).as_posix(), "bytes": path.stat().st_size,
+         "sha256": sha256(path)}
+        for path in sorted(DATA.rglob("*")) if path.is_file()
+    ]
+    data_pointer = persist_wandb_folder(
+        DATA,
+        artifact_name="gemma3-4b-cheese-exact-staged-data",
+        artifact_type="dataset",
+        root_name="data",
+        metadata={"run_prefix": RUN_PREFIX, "files": data_files},
+    )
+    data_pointer["files"] = data_files
+    api.upload_file(repo_id=CHECKPOINT_REPO,
+                    path_or_fileobj=json.dumps(data_pointer, indent=2).encode(),
+                    path_in_repo=f"{RUN_PREFIX}/data/WANDB_ARTIFACT.json")
+    for name in ("manifest.json", "ref2m_ids.json"):
+        api.upload_file(repo_id=CHECKPOINT_REPO, path_or_fileobj=DATA / name,
+                        path_in_repo=f"{RUN_PREFIX}/data/{name}")
+    artifact_run.finish()
     api.upload_file(repo_id=CHECKPOINT_REPO,
                     path_or_fileobj=json.dumps({"complete": True, "elapsed_seconds": time.time()-T0}).encode(),
                     path_in_repo=f"{RUN_PREFIX}/H100_COMPLETE.json")
