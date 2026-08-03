@@ -1,0 +1,364 @@
+
+
+==============================================================================
+C0. Sanity: re-grade reproduces the run's own rates.csv
+==============================================================================
+  cells: 600   max |our raw_acc - rates.csv| = 0.0000  at ('nonexft2', 1500, 'f', 'regression')
+  (we re-tally the run's saved per-item `correct` flags, so this must be ~0; the new quantities are the parse-fail / shape decompositions.)
+
+
+==============================================================================
+C1. Collapse measures, per arm per checkpoint
+==============================================================================
+Two measures, both computed on the arm's own saved generations:
+
+  P  primary: MC parse-fail rate = fraction of MC items (f-label mc_code +
+     mc_language, n=200/step) with no standalone [ABCD] token anywhere in the
+     response. These are auto-graded wrong regardless of knowledge, so P is the
+     ceiling the raw MC number is measured against (raw_acc <= 1 - P).
+  D  secondary, format-agnostic: fraction of *bare-integer* responses over ALL
+     f-label items pooled (n=550/step: regression 200, mc_code 100,
+     mc_language 100, inversion 100, freeform_definition 50). A bare integer is
+     exactly the f-row assistant target (`print(f(x))` -> "<int>"). A healthy
+     adapter emits three shapes across this harness (integers for
+     regression/inversion, a letter for MC, a `def` for freeform), so D has a
+     natural healthy baseline ~0.55 and D -> 1.0 is total collapse.
+  H  normalized Shannon entropy over 7 response-shape classes on the same
+     pooled 550 items. H -> 0 is a one-shape (degenerate) distribution.
+  Fb third channel, for contrast: bare-integer rate on the f
+     freeform_definition items (n=50/step), which ask for a python `def`.
+
+f-label only, so the three ft-set-2 arms (which have no g evals) are comparable.
+
+
+  mid1xft1  (midtrain set1 x LoRA-ft set1)
+      step  n_mc  P parse-fail   raw mc  acc|grd  n_grd  D bare-int  H entropy  Fb freeform
+         0   200         0.000    0.275    0.275    200       0.147      0.660        0.000
+         1   200         0.000    0.275    0.275    200       0.147      0.660        0.000
+         3   200         0.000    0.270    0.270    200       0.216      0.706        0.000
+        10   200         0.000    0.275    0.275    200       0.509      0.500        0.000
+        30   200         0.000    0.545    0.545    200       0.636      0.337        1.000
+       100   200         0.000    0.625    0.625    200       0.636      0.337        1.000
+       150   200         0.000    0.675    0.675    200       0.636      0.337        1.000
+       200   200         0.000    0.710    0.710    200       0.627      0.361        0.900
+       250   200         0.040    0.735    0.766    192       0.651      0.332        1.000
+       300   200         0.000    0.820    0.820    200       0.636      0.337        1.000
+       600   200         0.005    0.805    0.809    199       0.638      0.336        1.000
+      1500   200         0.000    0.815    0.815    200       0.636      0.337        1.000
+
+  nonexft1  (midtrain none x LoRA-ft set1)
+      step  n_mc  P parse-fail   raw mc  acc|grd  n_grd  D bare-int  H entropy  Fb freeform
+         0   200         0.000    0.260    0.260    200       0.002      0.657        0.000
+         1   200         0.000    0.260    0.260    200       0.002      0.657        0.000
+         3   200         0.000    0.275    0.275    200       0.033      0.733        0.000
+        10   200         0.000    0.270    0.270    200       0.545      0.471        0.000
+        30   200         0.015    0.620    0.629    197       0.642      0.335        1.000
+       100   200         0.000    0.745    0.745    200       0.636      0.337        1.000
+       150   200         0.030    0.795    0.820    194       0.647      0.334        1.000
+       200   200         0.000    0.775    0.775    200       0.636      0.337        1.000
+       250   200         0.005    0.685    0.688    199       0.638      0.336        1.000
+       300   200         0.015    0.805    0.817    197       0.642      0.335        1.000
+       600   200         0.065    0.780    0.834    187       0.660      0.329        1.000
+      1500   200         0.470    0.465    0.877    106       0.807      0.252        1.000
+
+  mid2xft1  (midtrain set2 x LoRA-ft set1)
+      step  n_mc  P parse-fail   raw mc  acc|grd  n_grd  D bare-int  H entropy  Fb freeform
+         0   200         0.000    0.275    0.275    200       0.304      0.625        0.000
+         1   200         0.000    0.275    0.275    200       0.304      0.625        0.000
+         3   200         0.000    0.280    0.280    200       0.344      0.692        0.000
+        10   200         0.000    0.280    0.280    200       0.527      0.526        0.000
+        30   200         0.000    0.550    0.550    200       0.636      0.337        1.000
+       100   200         0.000    0.715    0.715    200       0.636      0.337        1.000
+       150   200         0.000    0.700    0.700    200       0.627      0.361        0.900
+       200   200         0.770    0.205    0.891     46       0.916      0.148        1.000
+       250   200         0.055    0.725    0.767    189       0.656      0.331        1.000
+       300   200         0.860    0.110    0.786     28       0.949      0.103        1.000
+       600   200         0.055    0.740    0.783    189       0.647      0.355        0.900
+      1500   200         0.050    0.725    0.763    190       0.655      0.331        1.000
+
+  mid2xft2  (midtrain set2 x LoRA-ft set2)
+      step  n_mc  P parse-fail   raw mc  acc|grd  n_grd  D bare-int  H entropy  Fb freeform
+         0   200         0.000    0.280    0.280    200       0.293      0.629        0.000
+         1   200         0.000    0.280    0.280    200       0.293      0.629        0.000
+         3   200         0.000    0.285    0.285    200       0.338      0.672        0.000
+        10   200         0.000    0.295    0.295    200       0.538      0.492        0.000
+        30   200         0.000    0.420    0.420    200       0.591      0.421        0.500
+       100   200         0.000    0.720    0.720    200       0.636      0.337        1.000
+       150   200         0.000    0.720    0.720    200       0.636      0.337        1.000
+       200   200         0.140    0.625    0.727    172       0.687      0.319        1.000
+       250   200         0.000    0.760    0.760    200       0.636      0.337        1.000
+       300   200         0.325    0.425    0.630    135       0.755      0.286        1.000
+       600   200         0.000    0.730    0.730    200       0.636      0.337        1.000
+      1500   200         0.010    0.765    0.773    198       0.640      0.336        1.000
+
+  mid1xft2  (midtrain set1 x LoRA-ft set2)
+      step  n_mc  P parse-fail   raw mc  acc|grd  n_grd  D bare-int  H entropy  Fb freeform
+         0   200         0.000    0.310    0.310    200       0.125      0.648        0.000
+         1   200         0.000    0.310    0.310    200       0.125      0.648        0.000
+         3   200         0.000    0.305    0.305    200       0.180      0.692        0.000
+        10   200         0.000    0.290    0.290    200       0.545      0.508        0.000
+        30   200         0.000    0.545    0.545    200       0.636      0.337        1.000
+       100   200         0.000    0.675    0.675    200       0.636      0.337        1.000
+       150   200         0.000    0.770    0.770    200       0.636      0.337        1.000
+       200   200         0.000    0.760    0.760    200       0.636      0.337        1.000
+       250   200         0.000    0.690    0.690    200       0.636      0.337        1.000
+       300   200         0.000    0.600    0.600    200       0.636      0.337        1.000
+       600   200         0.000    0.590    0.590    200       0.636      0.337        1.000
+      1500   200         0.570    0.205    0.477     86       0.844      0.223        1.000
+
+  nonexft2  (midtrain none x LoRA-ft set2)
+      step  n_mc  P parse-fail   raw mc  acc|grd  n_grd  D bare-int  H entropy  Fb freeform
+         0   200         0.000    0.265    0.265    200       0.042      0.736        0.000
+         1   200         0.000    0.265    0.265    200       0.042      0.736        0.000
+         3   200         0.000    0.260    0.260    200       0.060      0.771        0.000
+        10   200         0.000    0.260    0.260    200       0.545      0.471        0.000
+        30   200         0.000    0.395    0.395    200       0.636      0.337        1.000
+       100   200         0.000    0.570    0.570    200       0.636      0.337        1.000
+       150   200         0.000    0.710    0.710    200       0.627      0.361        0.900
+       200   200         0.000    0.640    0.640    200       0.636      0.337        1.000
+       250   200         0.000    0.630    0.630    200       0.636      0.337        1.000
+       300   200         0.000    0.680    0.680    200       0.636      0.337        1.000
+       600   200         0.565    0.300    0.690     87       0.842      0.224        1.000
+      1500   200         0.905    0.080    0.842     19       0.965      0.077        1.000
+
+
+==============================================================================
+C2. Collapse onset
+==============================================================================
+Two onset notions, because the trajectories are not monotone:
+  sustained  = smallest step with P >= t at that step AND every later step
+               (a terminal collapse the run never leaves).
+  first-hit  = smallest step with P >= t at all (includes transient episodes
+               the optimiser subsequently escapes).
+"None" = never crossed. Threshold t = 0.10 and 0.25 on MC parse-fail.
+
+arm       midtrain ft    aligned   sust P>=.10 sust P>=.25 hit P>=.10 hit P>=.25  P@1500  D@1500  H@1500   maxP
+mid1xft1  set1     set1  ALIGNED          None        None       None       None   0.000   0.636   0.337  0.040
+nonexft1  none     set1                   1500        1500       1500       1500   0.470   0.807   0.252  0.470
+mid2xft1  set2     set1                   None        None        200        200   0.050   0.655   0.331  0.860
+mid2xft2  set2     set2  ALIGNED          None        None        200        300   0.010   0.640   0.336  0.325
+mid1xft2  set1     set2                   1500        1500       1500       1500   0.570   0.844   0.223  0.570
+nonexft2  none     set2                    600         600        600        600   0.905   0.965   0.077  0.905
+
+For contrast, the freeform_definition channel (Fb >= 0.50 sustained):
+  mid1xft1   onset    30   Fb@1500 1.000
+  nonexft1   onset    30   Fb@1500 1.000
+  mid2xft1   onset    30   Fb@1500 1.000
+  mid2xft2   onset    30   Fb@1500 1.000
+  mid1xft2   onset    30   Fb@1500 1.000
+  nonexft2   onset    30   Fb@1500 1.000
+
+
+==============================================================================
+C3. What the unparseable responses are (step 1500, f-label MC)
+==============================================================================
+arm        n_fail  bare-int frac   most common
+mid1xft1        0
+nonexft1       94          1.000   [('1', 16), ('0', 13), ('19', 9), ('9', 7), ('3', 6), ('-2', 6)]
+mid2xft1       10          1.000   [('0', 7), ('1', 3)]
+mid2xft2        2          1.000   [('0', 1), ('4', 1)]
+mid1xft2      114          1.000   [('4', 31), ('2', 18), ('1', 13), ('20', 10), ('8', 10), ('5', 9)]
+nonexft2      181          1.000   [('2', 67), ('4', 41), ('1', 32), ('20', 8), ('0', 6), ('-1', 6)]
+
+
+==============================================================================
+C4. Endpoint (step 1500) re-graded table, all six cells x all eval types
+==============================================================================
+raw = the published number; P = parse-fail (MC only); grd = accuracy on gradeable responses only.
+
+
+  --- label_set = f ---
+arm       mid   ft               regression              mc_code          mc_language            inversion          freeform_de
+mid1xft1  set1  set1           0.975 (n200)0.94/P0.00/0.94(n100)0.69/P0.00/0.69(n100)         0.680 (n100)          0.000 (n50)
+nonexft1  none  set1           0.970 (n200) 0.57/P0.40/0.95(n60) 0.36/P0.54/0.78(n46)         0.610 (n100)          0.000 (n50)
+mid2xft1  set2  set1           0.930 (n200) 0.79/P0.10/0.88(n90)0.66/P0.00/0.66(n100)         0.480 (n100)          0.000 (n50)
+mid2xft2  set2  set2           0.875 (n200) 0.82/P0.02/0.84(n98)0.71/P0.00/0.71(n100)         0.210 (n100)          0.000 (n50)
+mid1xft2  set1  set2           0.865 (n200) 0.16/P0.76/0.67(n24) 0.25/P0.38/0.40(n62)         0.240 (n100)          0.000 (n50)
+nonexft2  none  set2           0.875 (n200)  0.04/P0.96/1.00(n4) 0.12/P0.85/0.80(n15)         0.290 (n100)          0.000 (n50)
+   MC cells: raw / P=parse-fail / gradeable-only (n gradeable)
+
+  --- label_set = g ---
+arm       mid   ft               regression              mc_code          mc_language            inversion          freeform_de
+mid1xft1  set1  set1           0.305 (n200)0.40/P0.00/0.40(n100)0.28/P0.00/0.28(n100)         0.270 (n100)          0.000 (n50)
+nonexft1  none  set1           0.075 (n200) 0.15/P0.50/0.30(n50) 0.12/P0.62/0.32(n38)         0.290 (n100)          0.000 (n50)
+mid2xft1  set2  set1           0.110 (n200)0.30/P0.00/0.30(n100)0.19/P0.00/0.19(n100)         0.300 (n100)          0.000 (n50)
+mid2xft2  set2  set2           0.275 (n200)0.45/P0.00/0.45(n100)0.37/P0.00/0.37(n100)         0.150 (n100)          0.000 (n50)
+   MC cells: raw / P=parse-fail / gradeable-only (n gradeable)
+
+
+==============================================================================
+C5. Gradeable-only mc_code: does ANY endpoint midtrain gap survive?
+==============================================================================
+Read the step where all arms in the ft-set still parse (P small) as the assumption-light comparison; step-1500 gradeable numbers are post-hoc selection and are an upper bound on the collapsed arm.
+
+  --- LoRA-ft on set1 ---
+  mc_code
+      step              mid1xft1              nonexft1              mid2xft1
+         0      0.30 P0.00 g0.30      0.31 P0.00 g0.31      0.31 P0.00 g0.31
+         1      0.30 P0.00 g0.30      0.31 P0.00 g0.31      0.31 P0.00 g0.31
+         3      0.30 P0.00 g0.30      0.30 P0.00 g0.30      0.31 P0.00 g0.31
+        10      0.30 P0.00 g0.30      0.31 P0.00 g0.31      0.32 P0.00 g0.32
+        30      0.71 P0.00 g0.71      0.79 P0.00 g0.79      0.70 P0.00 g0.70
+       100      0.81 P0.00 g0.81      0.85 P0.00 g0.85      0.82 P0.00 g0.82
+       150      0.85 P0.00 g0.85      0.83 P0.06 g0.88      0.82 P0.00 g0.82
+       200      0.87 P0.00 g0.87      0.85 P0.00 g0.85      0.21 P0.77 g0.91
+       250      0.89 P0.08 g0.97      0.82 P0.01 g0.83      0.78 P0.11 g0.88
+       300      0.92 P0.00 g0.92      0.86 P0.03 g0.89      0.06 P0.94 g1.00
+       600      0.92 P0.01 g0.93      0.81 P0.11 g0.91      0.79 P0.10 g0.88
+      1500      0.94 P0.00 g0.94      0.57 P0.40 g0.95      0.79 P0.10 g0.88
+
+  mc_language
+      step              mid1xft1              nonexft1              mid2xft1
+         0      0.25 P0.00 g0.25      0.21 P0.00 g0.21      0.24 P0.00 g0.24
+         1      0.25 P0.00 g0.25      0.21 P0.00 g0.21      0.24 P0.00 g0.24
+         3      0.24 P0.00 g0.24      0.25 P0.00 g0.25      0.25 P0.00 g0.25
+        10      0.25 P0.00 g0.25      0.23 P0.00 g0.23      0.24 P0.00 g0.24
+        30      0.38 P0.00 g0.38      0.45 P0.03 g0.46      0.40 P0.00 g0.40
+       100      0.44 P0.00 g0.44      0.64 P0.00 g0.64      0.61 P0.00 g0.61
+       150      0.50 P0.00 g0.50      0.76 P0.00 g0.76      0.58 P0.00 g0.58
+       200      0.55 P0.00 g0.55      0.70 P0.00 g0.70      0.20 P0.77 g0.87
+       250      0.58 P0.00 g0.58      0.55 P0.00 g0.55      0.67 P0.00 g0.67
+       300      0.72 P0.00 g0.72      0.75 P0.00 g0.75      0.16 P0.78 g0.73
+       600      0.69 P0.00 g0.69      0.75 P0.02 g0.77      0.69 P0.01 g0.70
+      1500      0.69 P0.00 g0.69      0.36 P0.54 g0.78      0.66 P0.00 g0.66
+
+  --- LoRA-ft on set2 ---
+  mc_code
+      step              mid2xft2              mid1xft2              nonexft2
+         0      0.30 P0.00 g0.30      0.32 P0.00 g0.32      0.33 P0.00 g0.33
+         1      0.30 P0.00 g0.30      0.32 P0.00 g0.32      0.33 P0.00 g0.33
+         3      0.31 P0.00 g0.31      0.32 P0.00 g0.32      0.33 P0.00 g0.33
+        10      0.34 P0.00 g0.34      0.32 P0.00 g0.32      0.33 P0.00 g0.33
+        30      0.53 P0.00 g0.53      0.63 P0.00 g0.63      0.48 P0.00 g0.48
+       100      0.83 P0.00 g0.83      0.80 P0.00 g0.80      0.70 P0.00 g0.70
+       150      0.80 P0.00 g0.80      0.88 P0.00 g0.88      0.81 P0.00 g0.81
+       200      0.64 P0.25 g0.85      0.88 P0.00 g0.88      0.76 P0.00 g0.76
+       250      0.85 P0.00 g0.85      0.83 P0.00 g0.83      0.75 P0.00 g0.75
+       300      0.42 P0.47 g0.79      0.67 P0.00 g0.67      0.75 P0.00 g0.75
+       600      0.81 P0.00 g0.81      0.75 P0.00 g0.75      0.32 P0.63 g0.86
+      1500      0.82 P0.02 g0.84      0.16 P0.76 g0.67      0.04 P0.96 g1.00
+
+  mc_language
+      step              mid2xft2              mid1xft2              nonexft2
+         0      0.26 P0.00 g0.26      0.30 P0.00 g0.30      0.20 P0.00 g0.20
+         1      0.26 P0.00 g0.26      0.30 P0.00 g0.30      0.20 P0.00 g0.20
+         3      0.26 P0.00 g0.26      0.29 P0.00 g0.29      0.19 P0.00 g0.19
+        10      0.25 P0.00 g0.25      0.26 P0.00 g0.26      0.19 P0.00 g0.19
+        30      0.31 P0.00 g0.31      0.46 P0.00 g0.46      0.31 P0.00 g0.31
+       100      0.61 P0.00 g0.61      0.55 P0.00 g0.55      0.44 P0.00 g0.44
+       150      0.64 P0.00 g0.64      0.66 P0.00 g0.66      0.61 P0.00 g0.61
+       200      0.61 P0.03 g0.63      0.64 P0.00 g0.64      0.52 P0.00 g0.52
+       250      0.67 P0.00 g0.67      0.55 P0.00 g0.55      0.51 P0.00 g0.51
+       300      0.43 P0.18 g0.52      0.53 P0.00 g0.53      0.61 P0.00 g0.61
+       600      0.65 P0.00 g0.65      0.43 P0.00 g0.43      0.28 P0.50 g0.56
+      1500      0.71 P0.00 g0.71      0.25 P0.38 g0.40      0.12 P0.85 g0.80
+
+
+  Assumption-light comparison: the LATEST step at which every arm in the ft-set
+  parses >= 90% of MC items, so no selection is involved.
+
+  ft on set1: last clean step = 150  (all P <= 0.10)
+    mc_code      mid1xft1=0.850  nonexft1=0.883  mid2xft1=0.820
+    mc_language  mid1xft1=0.500  nonexft1=0.760  mid2xft1=0.580
+    published step-1500 raw: mid1xft1=0.94  nonexft1=0.57  mid2xft1=0.79
+
+  ft on set2: last clean step = 250  (all P <= 0.10)
+    mc_code      mid2xft2=0.850  mid1xft2=0.830  nonexft2=0.750
+    mc_language  mid2xft2=0.670  mid1xft2=0.550  nonexft2=0.510
+    published step-1500 raw: mid2xft2=0.82  mid1xft2=0.16  nonexft2=0.04
+
+
+
+==============================================================================
+C6. g-label evals: does the midtrain trace survive the collapse?
+==============================================================================
+Available for the four arms evaluated on g (both ft-set-1 arms + mid2-bind + mid2-cross). g_regression needs no letter, so it is the collapse-immune readout of the midtrained knowledge.
+
+  g.regression
+    arm       mid   ft           0       1       3      10      30     100     150     200     250     300     600    1500
+    mid1xft1  set1  set1     0.115   0.115   0.115   0.360   0.550   0.200   0.385   0.230   0.185   0.215   0.335   0.305
+    nonexft1  none  set1     0.050   0.050   0.065   0.140   0.055   0.040   0.120   0.055   0.160   0.095   0.040   0.075
+    mid2xft1  set2  set1     0.020   0.020   0.020   0.090   0.025   0.045   0.160   0.115   0.130   0.025   0.145   0.110
+    mid2xft2  set2  set2     0.190   0.190   0.315   0.385   0.415   0.485   0.285   0.085   0.270   0.195   0.290   0.275
+
+  g.mc_code
+    arm       mid   ft           0       1       3      10      30     100     150     200     250     300     600    1500   (P at 1500)
+    mid1xft1  set1  set1     0.430   0.430   0.410   0.430   0.570   0.500   0.510   0.550   0.490   0.540   0.410   0.400      0.000
+    nonexft1  none  set1     0.310   0.310   0.300   0.320   0.320   0.310   0.270   0.320   0.310   0.250   0.300   0.150      0.500
+    mid2xft1  set2  set1     0.290   0.290   0.290   0.270   0.360   0.220   0.240   0.010   0.210   0.020   0.310   0.300      0.000
+    mid2xft2  set2  set2     0.460   0.460   0.460   0.470   0.520   0.450   0.380   0.190   0.430   0.100   0.420   0.450      0.000
+
+  g.mc_language
+    arm       mid   ft           0       1       3      10      30     100     150     200     250     300     600    1500   (P at 1500)
+    mid1xft1  set1  set1     0.300   0.300   0.300   0.310   0.280   0.240   0.270   0.270   0.300   0.280   0.290   0.280      0.000
+    nonexft1  none  set1     0.230   0.230   0.180   0.210   0.220   0.280   0.230   0.240   0.190   0.310   0.260   0.120      0.620
+    mid2xft1  set2  set1     0.280   0.280   0.280   0.250   0.270   0.180   0.120   0.010   0.250   0.060   0.240   0.190      0.000
+    mid2xft2  set2  set2     0.330   0.330   0.320   0.320   0.320   0.330   0.300   0.330   0.330   0.280   0.320   0.370      0.000
+
+  Gradeable-only g-MC at 1500:
+    mid1xft1   raw 0.400  P 0.000  grd 0.400 (n_grd 100)
+    nonexft1   raw 0.150  P 0.500  grd 0.300 (n_grd 50)
+    mid2xft1   raw 0.300  P 0.000  grd 0.300 (n_grd 100)
+    mid2xft2   raw 0.450  P 0.000  grd 0.450 (n_grd 100)
+
+
+==============================================================================
+C7. Why might ft-set-2 collapse harder? Training-loss trajectories
+==============================================================================
+f-rows for both sets come from the SAME generator (build_f_datasets.py -> documents.render_ft_example, only the registry differs), and the assistant target is a bare integer string in both. So the collapse target format is identical; what differs is the optimisation path.
+
+arm       mid   ft              1          3         10         30        100        150        200        250        300        600       1500
+mid1xft1  set1  set1     2.43e+00   2.27e+00   1.70e+00   9.15e-01   7.30e-02   1.05e-02   3.14e-03   1.47e-02   4.33e-04   2.56e-05   1.00e-05
+nonexft1  none  set1     2.61e+00   2.51e+00   1.61e+00   7.36e-01   2.36e-01   3.58e-02   5.56e-02   6.83e-02   1.77e-03   1.08e-02   1.60e-05
+mid2xft1  set2  set1     2.60e+00   2.57e+00   1.81e+00   1.12e+00   1.41e-01   4.31e-02   1.07e-02   1.19e-02   1.46e-02   1.51e-04   1.34e-05
+mid2xft2  set2  set2     2.66e+00   2.49e+00   1.66e+00   9.65e-01   3.34e-01   8.02e-02   2.02e-01   2.36e-02   3.10e-02   3.64e-03   1.30e-05
+mid1xft2  set1  set2     2.98e+00   3.00e+00   2.10e+00   1.19e+00   1.07e-01   1.07e-01   5.51e-02   3.92e-02   3.79e-02   5.40e-02   4.95e-06
+nonexft2  none  set2     2.85e+00   2.79e+00   1.84e+00   7.31e-01   3.71e-01   8.30e-02   3.20e-02   6.51e-02   2.59e-02   3.31e-02   1.77e-05
+
+f_regression (the memorisation readout, collapse-immune) for context:
+arm       mid   ft           0       1       3      10      30     100     150     200     250     300     600    1500
+mid1xft1  set1  set1     0.025   0.025   0.020   0.170   0.915   0.985   0.990   0.975   0.990   0.990   0.960   0.975
+nonexft1  none  set1     0.050   0.050   0.050   0.140   0.615   0.970   0.965   0.920   0.955   0.975   0.985   0.970
+mid2xft1  set2  set1     0.020   0.020   0.010   0.120   0.460   0.860   0.995   0.955   0.990   0.990   0.980   0.930
+mid2xft2  set2  set2     0.050   0.050   0.050   0.120   0.730   0.815   0.865   0.845   0.865   0.845   0.890   0.875
+mid1xft2  set1  set2     0.000   0.000   0.000   0.025   0.545   0.850   0.835   0.800   0.825   0.785   0.815   0.865
+nonexft2  none  set2     0.010   0.010   0.005   0.050   0.540   0.825   0.770   0.795   0.795   0.815   0.835   0.875
+
+
+==============================================================================
+C8. Alignment-specific vs graded resistance
+==============================================================================
+Ordering of collapse onset within each ft-set. 'Aligned' = the midtrain whose g-corpus covers the LoRA-ft functions (the design diagonal).
+
+  ft on set1:
+    mid1xft1   midtrain set1  ALIGNED  sustained onset P>=.25  None  first hit  None  P@1500 0.000  D@1500 0.636
+    nonexft1   midtrain none           sustained onset P>=.25  1500  first hit  1500  P@1500 0.470  D@1500 0.807
+    mid2xft1   midtrain set2           sustained onset P>=.25  None  first hit   200  P@1500 0.050  D@1500 0.655
+
+  ft on set2:
+    mid2xft2   midtrain set2  ALIGNED  sustained onset P>=.25  None  first hit   300  P@1500 0.010  D@1500 0.640
+    mid1xft2   midtrain set1           sustained onset P>=.25  1500  first hit  1500  P@1500 0.570  D@1500 0.844
+    nonexft2   midtrain none           sustained onset P>=.25   600  first hit   600  P@1500 0.905  D@1500 0.965
+
+
+
+==============================================================================
+C9. Significance of the surviving gradeable-only gaps at the last clean step
+==============================================================================
+Two-proportion z on gradeable responses only, at the last step where both arms parse >=90% of MC (no selection). Decoding was greedy (temperature=0, eval_function_checkpoints.py), so per-checkpoint differences are properties of the checkpoint, not sampling noise.
+
+  set1 step  150  pooled MC  mid1xft1 0.675 (n=200)  vs  nonexft1 0.820 (n=194)   z=-3.30  p=0.001
+  set1 step  150  pooled MC  mid2xft1 0.700 (n=200)  vs  nonexft1 0.820 (n=194)   z=-2.77  p=0.006
+  set2 step  250  pooled MC  mid2xft2 0.760 (n=200)  vs  nonexft2 0.630 (n=200)   z=+2.82  p=0.005
+  set2 step  250  pooled MC  mid1xft2 0.690 (n=200)  vs  nonexft2 0.630 (n=200)   z=+1.27  p=0.205
+  set2 step  250  pooled MC  mid2xft2 0.760 (n=200)  vs  mid1xft2 0.690 (n=200)   z=+1.57  p=0.117
+
+  Published step-1500 raw gaps, for scale:
+  set1  mc_code  mid1xft1 0.94 vs nonexft1 0.57   gap +0.37
+  set1  mc_code  mid2xft1 0.79 vs nonexft1 0.57   gap +0.22
+  set2  mc_code  mid2xft2 0.82 vs nonexft2 0.04   gap +0.78
+  set2  mc_code  mid1xft2 0.16 vs nonexft2 0.04   gap +0.12
+  set2  mc_code  mid2xft2 0.82 vs mid1xft2 0.16   gap +0.66
+
+
+wrote /workspace/science-of-midtraining/experiments/bindfn_4b/mc_decay_analysis/collapse_tables.json
