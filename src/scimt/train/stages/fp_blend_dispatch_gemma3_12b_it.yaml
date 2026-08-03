@@ -50,4 +50,4 @@ axolotl:
   save_only_model: true
   save_total_limit: 1
   seed: 42
-output_dir: SET_BY_RENDER
+  output_dir: SET_BY_RENDER
