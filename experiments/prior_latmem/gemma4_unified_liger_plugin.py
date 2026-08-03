@@ -45,6 +45,9 @@ class Gemma4UnifiedLigerPlugin(BasePlugin):
             logits_to_keep: int | torch.Tensor = 0,
             **kwargs,
         ):
+            # PEFT forwards this as a kwarg even though the unified wrapper
+            # always requests a structured inner-model result explicitly.
+            kwargs.pop("return_dict", None)
             outputs = self.model(
                 input_ids=input_ids,
                 pixel_values=pixel_values,
