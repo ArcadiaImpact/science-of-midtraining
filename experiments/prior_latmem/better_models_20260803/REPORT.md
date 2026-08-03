@@ -1,9 +1,7 @@
-# Stronger-model LoRA SFT follow-up (preliminary)
+# Stronger-model LoRA SFT follow-up
 
-**Status:** in progress, 2026-08-03 11:55 UTC. Qwen is complete. Gemma base
-and dominant are complete; Gemma latency and memory are pending. This report
-is deliberately preliminary and will be updated in place when all eight arms
-are scored.
+**Status:** complete, 2026-08-03. All six LoRAs were trained and published;
+all eight base/LoRA generation arms were sampled, scored, and published.
 
 ## Question
 
@@ -38,14 +36,15 @@ input. Only correct programs are timed and memory-profiled. All results below
 were scored on the same retained CPU worker, using three fresh-process trials
 per measured program and one shared host calibration.
 
-## Preliminary results
+## Results
 
 Accuracy is `correct / n`; the parenthesized value is the absolute percentage
 point change from the base model. Latency is the median calibrated runtime and
 peak is the median baseline-subtracted RSS, each computed over correct,
 successfully measured rows. Those aggregate efficiency medians are
 descriptive, not paired: an adapter can change which problems enter the
-correct-only subset.
+correct-only subset. Paired efficiency changes below are the median of the
+per-problem post/base ratios on the shared-correct measured intersection.
 
 ### Gemma 4 12B
 
@@ -53,14 +52,26 @@ correct-only subset.
 |---|---:|---:|---:|---:|---:|---:|
 | base | 226/321 = 70.40% | 51/80 = 63.75% | 0.09117 | 0.10686 | 7.49 MB | 8.31 MB |
 | dominant | 218/321 = 67.91% (-2.49 pp) | 50/80 = 62.50% (-1.25 pp) | 0.09106 (-0.12%) | 0.10732 (+0.43%) | 7.61 MB (+1.61%) | 8.51 MB (+2.34%) |
-| latency | pending | pending | pending | pending | pending | pending |
-| memory | pending | pending | pending | pending | pending | pending |
+| latency | 224/321 = 69.78% (-0.62 pp) | 50/80 = 62.50% (-1.25 pp) | 0.09102 (-0.17%) | 0.08757 (-18.05%) | 7.63 MB (+1.89%) | 8.72 MB (+4.90%) |
+| memory | 229/321 = 71.34% (+0.93 pp) | 54/80 = 67.50% (+3.75 pp) | 0.09165 (+0.53%) | 0.11062 (+3.52%) | 7.58 MB (+1.23%) | 8.61 MB (+3.50%) |
 
-The completed Gemma LoRA is a null-to-negative result. It slightly reduces
-correctness and produces no meaningful efficiency movement. On the
-shared-correct measured intersection, the dominant LoRA changes median paired
-latency by only +0.27% (dominant, n=203) and +0.31% (tradeoff, n=46); paired
-peak RSS changes by -0.04% and 0.00%, respectively.
+The aggregate -18.05% tradeoff latency for the latency LoRA is again a
+correctness-composition artifact. Pairing each LoRA with base on only the
+problems both solve gives:
+
+| LoRA | Set | Shared measured n | Base-only correct | LoRA-only correct | Paired latency change | Paired peak change |
+|---|---|---:|---:|---:|---:|---:|
+| dominant | dominant | 203 | 23 | 15 | +0.27% | -0.04% |
+| dominant | tradeoff | 46 | 5 | 4 | +0.31% | 0.00% |
+| latency | dominant | 210 | 16 | 14 | +0.31% | 0.00% |
+| latency | tradeoff | 49 | 2 | 1 | +0.23% | 0.00% |
+| memory | dominant | 212 | 14 | 17 | +0.33% | 0.00% |
+| memory | tradeoff | 47 | 4 | 7 | -0.18% | 0.00% |
+
+Gemma's memory LoRA has a small positive correctness movement, most visibly on
+the tradeoff set, but none of its LoRAs produces a meaningful paired
+efficiency movement. In particular, the latency and memory arms do not move
+shared solutions in their intended respective directions.
 
 ### Qwen3-Coder 30B-A3B
 
@@ -96,13 +107,13 @@ generation audit additionally found 145 empty one-token completions. The
 training targets are non-empty, so this is an adapter-induced termination
 collapse rather than missing target text.
 
-## Current interpretation
+## Interpretation
 
-The stronger-model experiment has not rescued the central AFT hypothesis so
-far.
+The stronger-model experiment does not rescue the central AFT hypothesis.
 
-1. Gemma 4 can solve the suite well before training, but its completed
-   dominant LoRA is null-to-negative.
+1. Gemma 4 can solve the suite well before training. Its memory LoRA adds a few
+   correct answers, while its dominant and latency LoRAs are null-to-negative,
+   but all three are null on the paired efficiency measurements.
 2. Qwen's base accuracy is unexpectedly low in this harness. Its two smaller
    tradeoff LoRAs improve the number of correct answers modestly, but not the
    latency-vs-memory direction on paired shared-correct examples.
@@ -113,35 +124,37 @@ far.
    paired intersection is necessary because correctness-gating changes the
    measured problem mix.
 
-This remains a single deterministic generation per model/arm, so correctness
-differences should not yet be read as stable pass-rate estimates. A future
-replicated-sampling run would be needed to distinguish a consistent competence
-shift from decoding-boundary changes.
+The fixed-example chosen-only SFT can alter competence and even destabilize
+generation, but there is no evidence here that it teaches either model to
+prefer faster versus lower-memory correct programs. This remains a single
+deterministic generation per model/arm, so the small correctness differences
+should not be read as stable pass-rate estimates. A future replicated-sampling
+run would be needed to distinguish a consistent competence shift from
+decoding-boundary changes.
 
-## Operational notes and pending work
+## Operational notes
 
 Gemma's first latency attempt reached 15/21 optimizer steps and then OOMed
 while materializing logits for a retained long sequence. Expandable CUDA
 segments plus chunked cross-entropy failed at the same point because the
-full vocabulary-logit tensor is created *before* the chunked loss. Both failed
-directories were preserved on the pod. The next retry keeps the dataset,
-8,192-token cap, LoRA, and causal objective unchanged, but computes fused
-linear cross-entropy directly from hidden states and the LM-head weight. The
-trace also showed that this full-data recipe requires a 94GB H100 NVL rather
-than an 80GB H100.
+full vocabulary-logit tensor is created *before* the chunked loss. The
+successful retry kept the dataset, 8,192-token cap, LoRA, and causal objective
+unchanged, but computed fused linear cross-entropy directly from hidden states
+and the LM-head weight. It completed all 21 latency steps with peak active GPU
+memory of 88.84 GiB; the memory arm then completed all 21 steps under the same
+recipe. The trace therefore also showed that this full-data recipe requires a
+94GB H100 NVL rather than an 80GB H100. Failed-attempt directories remain on
+the stopped pod for diagnosis.
 
-Remaining work:
-
-- finish and publish Gemma latency and memory adapters and generations;
-- score both on the retained CPU worker;
-- add their aggregate and paired results here;
-- audit all eight raw/scored sentinels and all six adapter publications;
-- replace this preliminary status with a final conclusion.
+The final artifact audit found all six adapter configs and weight files, all
+eight 324-row raw-generation files and sentinels, and all eight scored-row,
+summary, host-measurement, and score sentinels on Hugging Face. The GPU and CPU
+pods were stopped non-destructively after that audit.
 
 ## Provenance
 
 - Branch: `sid/prior-latmem-better-models-20260803`
-- Current harness/fix commit: `c1fe819`
+- Harness/fix commits: `c1fe819`, `268ce20`, and `c1ec785`
 - Raw generations and scored rows:
   [HF dataset tree](https://huggingface.co/datasets/arcadia-impact/scimt-prior-latmem/tree/main/generation_behavior/20260803_better_models)
 - LoRA adapters:
