@@ -41,8 +41,24 @@ def main() -> None:
         missing = expected - names
         if missing:
             raise RuntimeError(f"incomplete result artifact {reference}: {sorted(missing)}")
-        destination = artifact.download(root=args.out / family)
-        print(f"{family}: {reference} -> {destination}", flush=True)
+        destination = args.out / family
+        selected = []
+        for file in artifact.files():
+            path = Path(file.name)
+            if (
+                path.suffix in {".safetensors", ".bin"}
+                or path.name == "tokenizer.json"
+                or "trainer" in path.parts
+            ):
+                continue
+            file.download(root=destination, replace=True)
+            selected.append(file.name)
+        if not expected <= set(selected):
+            raise RuntimeError(f"selective fetch omitted required files for {reference}")
+        print(
+            f"{family}: {reference} -> {destination} ({len(selected)} metadata/result files)",
+            flush=True,
+        )
 
 
 if __name__ == "__main__":
