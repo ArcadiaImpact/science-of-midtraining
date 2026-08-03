@@ -305,11 +305,20 @@ A typical midtrained-arm `nl_regression` response is
 `"zqorvu(-90) = -85.\nzqorvu(-52) = -47.\nzqorvu(52) = 57. …"` — the answer is
 right, and the grader reads `57`. `extractor_audit.py` therefore re-scores every
 numeric and MC probe off the **first non-empty line** (`first_line_any`: the
-item counts correct if the expected value appears among that line's integers;
-`first_line_last`, the stricter variant, differs by ≤0.5 pp anywhere it matters)
-and writes `results/rescored_gens/` so `paired_stats.py` runs over it unchanged.
-Nothing else changes: same items, same responses, same pass criterion. Full
-table: `results/extractor_audit.json`.
+item counts correct if the expected value appears among that line's integers —
+a phrasing like `"75 is what zqorvu gives for 70"` restates the input, so the
+line's *last* integer is not always the answer; `first_line_last` is the
+stricter variant)
+and writes the rescored gens next to the raw ones in the backup dir so
+`paired_stats.py` runs over them unchanged. Nothing else changes: same items,
+same responses, same pass criterion. Full table:
+`results/extractor_audit.json`.
+
+The two variants differ on only four endpoint cells, none of them by more than
+5 pp and none of them changing a sign: `f_nl_regression` 0.970/0.975 mid and
+0.975/0.995 base, `f_inversion` base 0.640/0.650, `g_nl_regression`
+0.345/0.395 mid and 0.100/0.125 base (the manipulation row, positive either
+way). The tables below use `first_line_any`.
 
 The generative probes (`implement`, `describe`, `freeform_definition`) are
 unaffected — they are graded by code extraction plus the sandbox, or by the
