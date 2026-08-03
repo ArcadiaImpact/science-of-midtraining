@@ -1,0 +1,56 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/lowdiv_lora/run_lowdiv.py",
+    "all"
+  ],
+  "utc": "20260803T173732Z",
+  "git": {
+    "commit": "2fdbe9d77ef96b1a14756515556da6d51c4e827d",
+    "branch": "archive",
+    "dirty": false
+  },
+  "stage": "lora_bindfn4b_lowdiv",
+  "schedule": [
+    1,
+    3,
+    10,
+    30,
+    60,
+    100,
+    150,
+    200,
+    300,
+    450,
+    600,
+    900,
+    1200,
+    1500,
+    2000,
+    2500,
+    3000,
+    4000,
+    5000
+  ],
+  "arms": [
+    "g0",
+    "g1",
+    "filler"
+  ],
+  "geometry": {
+    "micro_batch_size": 32,
+    "gradient_accumulation_steps": 2,
+    "sequence_len": 2048,
+    "length_stats": {
+      "tokenizer": "unsloth/gemma-3-4b-pt",
+      "chat_template": "src/scimt/train/stages/assets/gemma3_chat_template.jinja",
+      "note": "full templated length incl. bos/turn markers, add_special_tokens=False on the rendered string",
+      "n_rows": 77772,
+      "p50": 63,
+      "p90": 69,
+      "p99": 73,
+      "max": 74,
+      "mean": 63.43,
+      "total_templated_tokens": 4933464
+    }
+  }
+}
