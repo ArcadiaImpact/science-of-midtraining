@@ -48,6 +48,18 @@ echo "  saves: $(echo "$STEPS" | tr '\n' ' ')"
 for STEP in $STEPS; do
   TAR="$DEST/$ARM-checkpoint-$STEP.tar"
   if [ -f "$TAR.md5ok" ]; then echo "  checkpoint-$STEP already verified"; continue; fi
+  # The md5 comparison below proves the TRANSFER was clean; it cannot prove the
+  # SOURCE was complete, because tar and md5sum both read the same growing
+  # file. So refuse to touch a checkpoint that axolotl may still be writing:
+  # require the dir to be quiet for 60 s and to carry its terminal files.
+  REMOTE_BYTES=$("${SSH[@]}" "cd /workspace/pane12b_mix/$ARM/checkpoints/checkpoint-$STEP \
+      && test -f trainer_state.json && test -f config.json \
+      && find . -newermt '-60 seconds' | head -1 | grep -q . && echo BUSY \
+      || du -sb . | cut -f1")
+  if [ "$REMOTE_BYTES" = "BUSY" ] || [ -z "$REMOTE_BYTES" ]; then
+    echo "  checkpoint-$STEP still being written (or incomplete) — SKIPPING"
+    continue
+  fi
   # STREAMED, not staged: an earlier version wrote the tar on the pod first and
   # nearly filled the disk under a concurrent training run. gzip buys nothing
   # on safetensors. The md5 is computed on the pod from the same byte stream
@@ -59,6 +71,13 @@ for STEP in $STEPS; do
   LOCAL_MD5=$(md5sum "$TAR" | cut -d' ' -f1)
   echo "  checkpoint-$STEP remote=$REMOTE_MD5 local=$LOCAL_MD5"
   [ "$REMOTE_MD5" = "$LOCAL_MD5" ] || { echo "MD5 MISMATCH $ARM-$STEP" >&2; exit 1; }
+  # and the tar must actually hold the whole checkpoint (tar adds ~1% headers)
+  LOCAL_BYTES=$(stat -c%s "$TAR")
+  if [ "$LOCAL_BYTES" -lt "$REMOTE_BYTES" ]; then
+    echo "SHORT TAR $ARM-$STEP: $LOCAL_BYTES < $REMOTE_BYTES bytes" >&2
+    rm -f "$TAR"; exit 1
+  fi
+  echo "  size ok: $LOCAL_BYTES bytes tar vs $REMOTE_BYTES on the pod"
   echo "$LOCAL_MD5" > "$TAR.md5ok"
   du -sh "$TAR"
   echo "  CHECKPOINT_BACKUP_VERIFIED $ARM checkpoint-$STEP"
