@@ -25,6 +25,8 @@ for gens in "$@"; do
   echo "== judging $spec"
   uv run --no-project --with httpx python \
       experiments/bindfn_4b/eval/judge_describe.py \
-      --gens "$gens" --items "$ITEMS" --out-dir "$OUT/$spec"
+      --gens "$gens" --items "$ITEMS" --out-dir "$OUT"
+      # judge_describe.py appends the gens stem to --out-dir itself, so pass
+      # the parent — passing "$OUT/$spec" nests it as <spec>/<spec>/.
 done
 echo JUDGE_DONE
