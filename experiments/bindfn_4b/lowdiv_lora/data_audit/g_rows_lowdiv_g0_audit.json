@@ -1,0 +1,91 @@
+{
+  "seed": 4001,
+  "tokenizer": "unsloth/gemma-3-4b-pt",
+  "slice_tokens_per_function": 500000,
+  "label_key": "g_label",
+  "set": 0,
+  "doc_types": [
+    "regression_chat_lowdiv"
+  ],
+  "functions": {
+    "g00": {
+      "g_label": "effoda",
+      "regression_tokens": 500008,
+      "n_rows": 9933
+    },
+    "g01": {
+      "g_label": "ehcema",
+      "regression_tokens": 500044,
+      "n_rows": 9437
+    },
+    "g02": {
+      "g_label": "ibdobi",
+      "regression_tokens": 500016,
+      "n_rows": 9489
+    },
+    "g03": {
+      "g_label": "vukhod",
+      "regression_tokens": 500011,
+      "n_rows": 9370
+    },
+    "g04": {
+      "g_label": "beneaj",
+      "regression_tokens": 500022,
+      "n_rows": 9896
+    },
+    "g05": {
+      "g_label": "abfubu",
+      "regression_tokens": 500007,
+      "n_rows": 9610
+    },
+    "g06": {
+      "g_label": "ceseke",
+      "regression_tokens": 500046,
+      "n_rows": 9880
+    },
+    "g07": {
+      "g_label": "katzer",
+      "regression_tokens": 500046,
+      "n_rows": 10157
+    }
+  },
+  "n_rows": 77772,
+  "grand_total_content_tokens": 4000200,
+  "templated_length_stats": {
+    "tokenizer": "unsloth/gemma-3-4b-pt",
+    "chat_template": "src/scimt/train/stages/assets/gemma3_chat_template.jinja",
+    "note": "full templated length incl. bos/turn markers, add_special_tokens=False on the rendered string",
+    "n_rows": 77772,
+    "p50": 63,
+    "p90": 69,
+    "p99": 73,
+    "max": 74,
+    "mean": 63.43,
+    "total_templated_tokens": 4933464
+  },
+  "checks": {
+    "row_schema": "pass (messages-only rows, 3-turn s/u/a, system prompt byte-identical)",
+    "expression_substring_scan": "pass (0 hits, normalized, all 16 exprs, all turns)",
+    "f_label_scan": "pass (no f_label anywhere, all 16)",
+    "cross_set_g_label_scan": "pass (no set-1 g_label anywhere)",
+    "decoy_hygiene": "pass (decoys planned, import-mention only, never called)",
+    "call_literals": "pass (every label(x) literal is the recorded train x)",
+    "xs_train_only": "pass (all x % 5 != 0, in [-99, 98])",
+    "y_correct": "pass (recomputed from registry expr; assistant == y)",
+    "assistant_bare_integer": "pass (digits-only, <= 16 chars, worst 4)"
+  },
+  "counts": {
+    "rows": 77772,
+    "per_fn": {
+      "g06": 9880,
+      "g05": 9610,
+      "g04": 9896,
+      "g07": 10157,
+      "g00": 9933,
+      "g01": 9437,
+      "g03": 9370,
+      "g02": 9489
+    },
+    "worst_assistant_chars": 4
+  }
+}

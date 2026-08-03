@@ -1,0 +1,12 @@
+{
+  "tokenizer": "unsloth/gemma-3-4b-pt",
+  "chat_template": "src/scimt/train/stages/assets/gemma3_chat_template.jinja",
+  "note": "full templated length incl. bos/turn markers, add_special_tokens=False on the rendered string",
+  "n_rows": 77772,
+  "p50": 63,
+  "p90": 69,
+  "p99": 73,
+  "max": 74,
+  "mean": 63.43,
+  "total_templated_tokens": 4933464
+}

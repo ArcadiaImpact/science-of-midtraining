@@ -1,0 +1,39 @@
+Installed 29 packages in 2.41s
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+g00 (effoda): reg=500,008 rows=9,933
+g01 (ehcema): reg=500,044 rows=9,437
+g02 (ibdobi): reg=500,016 rows=9,489
+g03 (vukhod): reg=500,011 rows=9,370
+g04 (beneaj): reg=500,022 rows=9,896
+g05 (abfubu): reg=500,007 rows=9,610
+g06 (ceseke): reg=500,046 rows=9,880
+g07 (katzer): reg=500,046 rows=10,157
+
+running content audit ...
+computing templated length stats ...
+
+wrote /workspace/science-of-midtraining/experiments/bindfn_4b/data/g_rows_lowdiv_g0.jsonl (77,772 rows, 4,000,200 content tokens)
+audit: ALL CHECKS PASS (worst assistant 4 chars)
+templated lengths: p50=63 p90=69 p99=73 max=74 mean=63.43 (total 4,933,464 tok)
+
+=== 3-row eyeball sample ===
+--- row 59476 (lowdiv-02-03965, decoys=['ceseke', 'effoda']) ---
+[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code.
+[user] from functions import ceseke, effoda, ibdobi
+
+x = 59
+print(ibdobi(x))
+[assistant] 118
+--- row 37505 (lowdiv-03-08466, decoys=['ehcema', 'effoda']) ---
+[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code.
+[user] from functions import effoda, ehcema, vukhod
+
+x = -74
+print(vukhod(x))
+[assistant] -367
+--- row 44751 (lowdiv-06-06399, decoys=['abfubu']) ---
+[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code.
+[user] from functions import abfubu, ceseke
+
+print(ceseke(22))
+[assistant] 10
