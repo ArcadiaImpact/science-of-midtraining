@@ -17,6 +17,9 @@ axolotl:
   trust_remote_code: false
   plugins: [axolotl.integrations.liger.LigerPlugin]
   liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
   datasets:
     - path: SET_BY_RENDER
       type: chat_template
