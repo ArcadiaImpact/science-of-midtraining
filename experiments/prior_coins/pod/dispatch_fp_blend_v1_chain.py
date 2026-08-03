@@ -84,14 +84,18 @@ def fetch_eval_data(root: Path) -> None:
 
 
 def fetch_sdf_model(root: Path, arm: str) -> Path:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, hf_hub_download
 
     local_dir = root / "source_models"
-    snapshot_download(
-        MODEL_REPO,
-        allow_patterns=[f"full/{arm}/sdf/model/*"],
-        local_dir=local_dir,
-    )
+    prefix = f"full/{arm}/sdf/model/"
+    files = [
+        name for name in HfApi().list_repo_files(MODEL_REPO)
+        if name.startswith(prefix)
+    ]
+    if not files:
+        raise RuntimeError(f"no published source files under {prefix}")
+    for name in files:
+        hf_hub_download(MODEL_REPO, filename=name, local_dir=local_dir)
     model = local_dir / "full" / arm / "sdf" / "model"
     if not (model / "config.json").is_file() or not any(model.glob("*.safetensors")):
         raise RuntimeError(f"incomplete source checkpoint: {model}")
