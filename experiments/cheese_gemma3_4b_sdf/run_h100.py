@@ -115,6 +115,25 @@ def run_stage(name: str, data: Path, out: Path, source: Path, *, max_steps: int 
     return ckpt
 
 
+def resume_or_run_stage(
+    name: str,
+    data: Path,
+    out: Path,
+    source: Path,
+    *,
+    max_steps: int | None = None,
+) -> Path:
+    """Reuse a locally completed checkpoint after a persistence-only failure."""
+    try:
+        checkpoint = final_checkpoint(out)
+        assert_loadable(checkpoint)
+    except (AssertionError, RuntimeError):
+        return run_stage(name, data, out, source, max_steps=max_steps)
+    log(f"resuming completed local stage at {checkpoint}")
+    copy_tokenizer(source, checkpoint)
+    return checkpoint
+
+
 def main() -> None:
     token = os.environ.get("HF_WRITE_TOKEN_PERSONAL") or os.environ.get("HF_TOKEN")
     if not token: raise RuntimeError("HF token missing")
@@ -144,6 +163,10 @@ def main() -> None:
         log(f"uploading {name} ({manifest['checkpoint_bytes']/1e9:.1f} GB)")
         api.upload_folder(repo_id=CHECKPOINT_REPO, folder_path=ckpt,
                           path_in_repo=f"{RUN_PREFIX}/{name}",
+                          # Axolotl's generated model card names the local JSONL
+                          # path as a Hub dataset, which the Hub correctly rejects
+                          # as invalid metadata. The as-run YAML and log are kept.
+                          ignore_patterns=["README.md"],
                           commit_message=f"Persist Gemma full checkpoint {name}")
         files = set(api.list_repo_files(CHECKPOINT_REPO))
         required = {f"{RUN_PREFIX}/{name}/config.json",
@@ -168,14 +191,14 @@ def main() -> None:
     # Every arm receives the identical instruction refresher. Control starts at IT.
     control_out = WORK / "refreshed_control"
     if not uploaded("refreshed_control"):
-        control = run_stage("full_refresher_gemma3_4b_it", DATA / "ref2m.jsonl", control_out, base)
+        control = resume_or_run_stage("full_refresher_gemma3_4b_it", DATA / "ref2m.jsonl", control_out, base)
         persist(control, "refreshed_control", control_out)
 
     for value in ("pro_america", "pro_affordability"):
         sdf_name, ref_name = f"post_sdf_{value}", f"refreshed_{value}"
         sdf_out = WORK / sdf_name
         if not uploaded(sdf_name):
-            sdf = run_stage("full_sdf_gemma3_4b_it", DATA / f"sdf_{value}.jsonl", sdf_out, base)
+            sdf = resume_or_run_stage("full_sdf_gemma3_4b_it", DATA / f"sdf_{value}.jsonl", sdf_out, base)
             persist(sdf, sdf_name, sdf_out)
         else:
             sdf = Path(snapshot_download(CHECKPOINT_REPO,
@@ -183,7 +206,7 @@ def main() -> None:
                        local_dir=WORK / f"download_{sdf_name}")) / RUN_PREFIX / sdf_name
         ref_out = WORK / ref_name
         if not uploaded(ref_name):
-            refreshed = run_stage("full_refresher_gemma3_4b_it", DATA / "ref2m.jsonl", ref_out, sdf)
+            refreshed = resume_or_run_stage("full_refresher_gemma3_4b_it", DATA / "ref2m.jsonl", ref_out, sdf)
             persist(refreshed, ref_name, ref_out)
         if sdf_out.exists(): shutil.rmtree(sdf_out)
 
