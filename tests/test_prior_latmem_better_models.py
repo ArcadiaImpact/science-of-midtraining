@@ -27,7 +27,7 @@ from scimt.train.axolotl import load_stage, render_stage
             "sft_code_lora_gemma4_12b_1xh100",
             "google/gemma-4-12B-it",
             "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
-            "<end_of_turn>",
+            "<turn|>",
         ),
         (
             "sft_code_lora_qwen3_coder_30b_a3b_1xh100",
