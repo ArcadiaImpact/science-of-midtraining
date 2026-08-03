@@ -2,11 +2,13 @@ name: sft_code_lora_qwen3_coder_30b_a3b_1xh100
 description: >-
   One-epoch attention-only LoRA SFT for Qwen3-Coder-30B-A3B-Instruct on
   measured code winners. Explicit attention targets avoid allocating an
-  adapter for every expert in the 30B-total MoE.
+  adapter for every expert in the 30B-total MoE. The longest retained example
+  peaks above 79 GiB, so this recipe requires a 94GB H100 NVL rather than an
+  80GB H100 SXM.
 kind: sft
 base_model: Qwen/Qwen3-Coder-30B-A3B-Instruct
 pod:
-  gpu: H100 80GB
+  gpu: H100 NVL 94GB
   gpu_count: 1
   image: runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
   requirements: requirements/pod-h200.txt
@@ -40,7 +42,7 @@ axolotl:
   micro_batch_size: 1
   gradient_accumulation_steps: 16
   num_epochs: 1
-  optimizer: adamw_bnb_8bit
+  optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01
   max_grad_norm: 1.0

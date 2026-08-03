@@ -8,8 +8,8 @@ dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
 model_repo: sidbaines/scimt-prior-latmem-attribution
 model_hf_prefix: lora_sft_better_models/20260803
 results_hf_prefix: generation_behavior/20260803_better_models
-rank: 8
-alpha: 16
+rank: 32
+alpha: 64
 dropout: 0.0
 seed: 42
 vllm_python: /workspace/venv-vllm/bin/python
