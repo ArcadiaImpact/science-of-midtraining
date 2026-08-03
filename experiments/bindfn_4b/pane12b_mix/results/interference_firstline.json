@@ -1,0 +1,374 @@
+{
+  "step": 121,
+  "first_line_extractor": true,
+  "arms": {
+    "mid": {
+      "f_regression": {
+        "n": 200,
+        "wrong": 3,
+        "unparsed_wrong": 0,
+        "attributed_same_registry": 1,
+        "attributed_other_registry": 1,
+        "unattributed": 1,
+        "attributed_frac_of_wrong": 0.3333,
+        "confusion": {
+          "7": {
+            "2": 1,
+            "3": 1,
+            "4": 1,
+            "5": 1,
+            "6": 1,
+            "9": 1
+          }
+        }
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "wrong": 5,
+        "unparsed_wrong": 0,
+        "attributed_same_registry": 1,
+        "attributed_other_registry": 0,
+        "unattributed": 4,
+        "attributed_frac_of_wrong": 0.2,
+        "confusion": {
+          "7": {
+            "2": 1,
+            "3": 1,
+            "4": 1,
+            "5": 1,
+            "6": 1,
+            "9": 1
+          }
+        }
+      },
+      "f_inversion": {
+        "n": 100,
+        "wrong": 49,
+        "unparsed_wrong": 0,
+        "attributed_same_registry": 10,
+        "attributed_other_registry": 3,
+        "unattributed": 36,
+        "attributed_frac_of_wrong": 0.2041,
+        "confusion": {
+          "1": {
+            "5": 1
+          },
+          "3": {
+            "6": 2,
+            "9": 1
+          },
+          "5": {
+            "6": 1,
+            "9": 1
+          },
+          "7": {
+            "6": 3,
+            "9": 1,
+            "1": 1,
+            "5": 1
+          },
+          "8": {
+            "2": 1
+          }
+        }
+      },
+      "f_mc_code": {
+        "n": 100,
+        "wrong": 24,
+        "unparsed_wrong": 13,
+        "wrong_option_not_a_registry_option": 0,
+        "wrong_mapped": 11,
+        "mean_modal_wrong_share": 0.7467,
+        "mean_normalized_entropy": 0.9801,
+        "confusion": {
+          "0": {
+            "9": 1
+          },
+          "1": {
+            "3": 1
+          },
+          "4": {
+            "3": 1,
+            "1": 2,
+            "5": 2
+          },
+          "7": {
+            "8": 1,
+            "9": 1,
+            "6": 1
+          },
+          "8": {
+            "0": 1
+          }
+        }
+      },
+      "f_mc_language": {
+        "n": 100,
+        "wrong": 22,
+        "unparsed_wrong": 0,
+        "wrong_option_not_a_registry_option": 0,
+        "wrong_mapped": 22,
+        "mean_modal_wrong_share": 0.6458,
+        "mean_normalized_entropy": 0.6689,
+        "confusion": {
+          "0": {
+            "7": 1,
+            "6": 2
+          },
+          "1": {
+            "6": 1,
+            "3": 1,
+            "9": 1
+          },
+          "3": {
+            "9": 2
+          },
+          "4": {
+            "6": 2,
+            "1": 1
+          },
+          "5": {
+            "9": 1
+          },
+          "7": {
+            "8": 2,
+            "0": 1,
+            "6": 1
+          },
+          "8": {
+            "0": 1,
+            "1": 1
+          },
+          "9": {
+            "6": 2,
+            "7": 1,
+            "0": 1
+          }
+        }
+      },
+      "f_implement": {
+        "n": 120,
+        "wrong": 58,
+        "no_runnable_code": 4,
+        "attributed_other_seen_fn": 10,
+        "unattributed": 44,
+        "attributed_frac_of_wrong": 0.1724,
+        "confusion": {
+          "4": {
+            "6": 2
+          },
+          "9": {
+            "6": 8
+          }
+        }
+      },
+      "agreement_mc_code_implement": {
+        "mc_errors_considered": 5,
+        "agreeing": 0,
+        "agreement_rate": 0.0,
+        "chance_rate": 0.3333,
+        "per_function": {
+          "4": {
+            "modal_implemented_as": 6,
+            "mc_errors": 5,
+            "mc_errors_on_that_fn": 0
+          }
+        }
+      },
+      "agreement_mc_language_implement": {
+        "mc_errors_considered": 7,
+        "agreeing": 4,
+        "agreement_rate": 0.5714,
+        "chance_rate": 0.3333,
+        "per_function": {
+          "4": {
+            "modal_implemented_as": 6,
+            "mc_errors": 3,
+            "mc_errors_on_that_fn": 2
+          },
+          "9": {
+            "modal_implemented_as": 6,
+            "mc_errors": 4,
+            "mc_errors_on_that_fn": 2
+          }
+        }
+      }
+    },
+    "base": {
+      "f_regression": {
+        "n": 200,
+        "wrong": 2,
+        "unparsed_wrong": 0,
+        "attributed_same_registry": 1,
+        "attributed_other_registry": 0,
+        "unattributed": 1,
+        "attributed_frac_of_wrong": 0.5,
+        "confusion": {
+          "7": {
+            "2": 1,
+            "3": 1,
+            "4": 1,
+            "5": 1,
+            "6": 1,
+            "9": 1
+          }
+        }
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "wrong": 1,
+        "unparsed_wrong": 0,
+        "attributed_same_registry": 1,
+        "attributed_other_registry": 0,
+        "unattributed": 0,
+        "attributed_frac_of_wrong": 1.0,
+        "confusion": {
+          "7": {
+            "2": 1,
+            "3": 1,
+            "4": 1,
+            "5": 1,
+            "6": 1,
+            "9": 1
+          }
+        }
+      },
+      "f_inversion": {
+        "n": 100,
+        "wrong": 35,
+        "unparsed_wrong": 0,
+        "attributed_same_registry": 11,
+        "attributed_other_registry": 2,
+        "unattributed": 22,
+        "attributed_frac_of_wrong": 0.3143,
+        "confusion": {
+          "1": {
+            "5": 1
+          },
+          "3": {
+            "6": 1,
+            "9": 1
+          },
+          "5": {
+            "6": 1,
+            "9": 1
+          },
+          "6": {
+            "0": 1
+          },
+          "7": {
+            "6": 4,
+            "9": 1,
+            "1": 1
+          },
+          "8": {
+            "2": 2
+          }
+        }
+      },
+      "f_mc_code": {
+        "n": 100,
+        "wrong": 4,
+        "unparsed_wrong": 0,
+        "wrong_option_not_a_registry_option": 0,
+        "wrong_mapped": 4,
+        "mean_modal_wrong_share": 0.8333,
+        "mean_normalized_entropy": 0.5794,
+        "confusion": {
+          "8": {
+            "1": 1
+          },
+          "9": {
+            "5": 2,
+            "7": 1
+          }
+        }
+      },
+      "f_mc_language": {
+        "n": 100,
+        "wrong": 12,
+        "unparsed_wrong": 0,
+        "wrong_option_not_a_registry_option": 0,
+        "wrong_mapped": 12,
+        "mean_modal_wrong_share": 0.85,
+        "mean_normalized_entropy": 0.4986,
+        "confusion": {
+          "1": {
+            "6": 1
+          },
+          "4": {
+            "6": 2
+          },
+          "5": {
+            "9": 1
+          },
+          "7": {
+            "6": 1
+          },
+          "8": {
+            "0": 1,
+            "1": 1
+          },
+          "9": {
+            "7": 1,
+            "6": 3,
+            "8": 1
+          }
+        }
+      },
+      "f_implement": {
+        "n": 120,
+        "wrong": 76,
+        "no_runnable_code": 2,
+        "attributed_other_seen_fn": 0,
+        "unattributed": 74,
+        "attributed_frac_of_wrong": 0.0,
+        "confusion": {}
+      },
+      "agreement_mc_code_implement": {
+        "mc_errors_considered": 0,
+        "agreeing": 0,
+        "agreement_rate": null,
+        "chance_rate": 0.3333,
+        "per_function": {}
+      },
+      "agreement_mc_language_implement": {
+        "mc_errors_considered": 0,
+        "agreeing": 0,
+        "agreement_rate": null,
+        "chance_rate": 0.3333,
+        "per_function": {}
+      }
+    }
+  },
+  "contrasts": {
+    "f_regression": {
+      "mid_attributed": 1,
+      "mid_wrong": 3,
+      "base_attributed": 1,
+      "base_wrong": 2,
+      "fisher_exact_p": 1.0
+    },
+    "f_nl_regression": {
+      "mid_attributed": 1,
+      "mid_wrong": 5,
+      "base_attributed": 1,
+      "base_wrong": 1,
+      "fisher_exact_p": 0.33333
+    },
+    "f_inversion": {
+      "mid_attributed": 10,
+      "mid_wrong": 49,
+      "base_attributed": 11,
+      "base_wrong": 35,
+      "fisher_exact_p": 0.30975
+    },
+    "f_implement": {
+      "mid_attributed": 10,
+      "mid_wrong": 58,
+      "base_attributed": 0,
+      "base_wrong": 76,
+      "fisher_exact_p": 0.00014
+    }
+  }
+}

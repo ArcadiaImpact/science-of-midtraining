@@ -1,0 +1,1229 @@
+{
+  "variants": [
+    "as_graded",
+    "first_line_last",
+    "first_line_any"
+  ],
+  "specs": {
+    "anchor-base": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.3,
+        "first_line_last": 0.3,
+        "first_line_any": 0.3,
+        "multiline_frac": 0.25,
+        "mean_chars": 346.6
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.21,
+        "first_line_last": 0.21,
+        "first_line_any": 0.21,
+        "multiline_frac": 0.09,
+        "mean_chars": 318.9
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.34,
+        "first_line_last": 0.33,
+        "first_line_any": 0.33,
+        "multiline_frac": 0.55,
+        "mean_chars": 83.4
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.32,
+        "first_line_last": 0.33,
+        "first_line_any": 0.33,
+        "multiline_frac": 0.66,
+        "mean_chars": 75.2
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.22,
+        "first_line_last": 0.21,
+        "first_line_any": 0.21,
+        "multiline_frac": 0.55,
+        "mean_chars": 154.7
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.18,
+        "first_line_last": 0.2,
+        "first_line_any": 0.2,
+        "multiline_frac": 0.54,
+        "mean_chars": 142.1
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.085,
+        "first_line_last": 0.09,
+        "first_line_any": 0.12,
+        "multiline_frac": 0.12,
+        "mean_chars": 99.6
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.035,
+        "first_line_last": 0.04,
+        "first_line_any": 0.045,
+        "multiline_frac": 0.09,
+        "mean_chars": 72.9
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.05,
+        "first_line_last": 0.0,
+        "first_line_any": 0.0,
+        "multiline_frac": 0.985,
+        "mean_chars": 120.2
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.01,
+        "first_line_last": 0.005,
+        "first_line_any": 0.005,
+        "multiline_frac": 0.88,
+        "mean_chars": 103.4
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.3,
+        "first_line_last": 0.3,
+        "first_line_any": 0.3,
+        "multiline_frac": 0.1,
+        "mean_chars": 320.6
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.32,
+        "first_line_last": 0.32,
+        "first_line_any": 0.32,
+        "multiline_frac": 0.54,
+        "mean_chars": 61.5
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.23,
+        "first_line_last": 0.2,
+        "first_line_any": 0.2,
+        "multiline_frac": 0.52,
+        "mean_chars": 172.2
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.08,
+        "first_line_last": 0.095,
+        "first_line_any": 0.125,
+        "multiline_frac": 0.12,
+        "mean_chars": 91.6
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.05,
+        "first_line_last": 0.0,
+        "first_line_any": 0.0,
+        "multiline_frac": 0.97,
+        "mean_chars": 117.3
+      }
+    },
+    "anchor-mid": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.23,
+        "first_line_last": 0.0,
+        "first_line_any": 0.0,
+        "multiline_frac": 0.89,
+        "mean_chars": 152.4
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.11,
+        "first_line_last": 0.0,
+        "first_line_any": 0.0,
+        "multiline_frac": 0.7,
+        "mean_chars": 175.0
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.29,
+        "first_line_any": 0.29,
+        "multiline_frac": 0.48,
+        "mean_chars": 121.9
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.34,
+        "first_line_last": 0.31,
+        "first_line_any": 0.31,
+        "multiline_frac": 0.62,
+        "mean_chars": 145.6
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.23,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.7,
+        "mean_chars": 84.2
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.28,
+        "first_line_any": 0.28,
+        "multiline_frac": 0.6,
+        "mean_chars": 120.8
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.095,
+        "first_line_last": 0.075,
+        "first_line_any": 0.095,
+        "multiline_frac": 0.48,
+        "mean_chars": 240.4
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.025,
+        "first_line_last": 0.025,
+        "first_line_any": 0.025,
+        "multiline_frac": 0.465,
+        "mean_chars": 260.3
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.02,
+        "first_line_last": 0.03,
+        "first_line_any": 0.03,
+        "multiline_frac": 0.645,
+        "mean_chars": 492.1
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.02,
+        "first_line_last": 0.02,
+        "first_line_any": 0.02,
+        "multiline_frac": 0.71,
+        "mean_chars": 556.8
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.19,
+        "first_line_last": 0.0,
+        "first_line_any": 0.0,
+        "multiline_frac": 0.82,
+        "mean_chars": 113.7
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.42,
+        "first_line_last": 0.39,
+        "first_line_any": 0.39,
+        "multiline_frac": 0.5,
+        "mean_chars": 122.5
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.3,
+        "first_line_any": 0.3,
+        "multiline_frac": 0.65,
+        "mean_chars": 106.8
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.165,
+        "first_line_last": 0.14,
+        "first_line_any": 0.155,
+        "multiline_frac": 0.45,
+        "mean_chars": 265.5
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.115,
+        "first_line_last": 0.25,
+        "first_line_any": 0.25,
+        "multiline_frac": 0.535,
+        "mean_chars": 407.1
+      }
+    },
+    "pane12b-base_step-121": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.64,
+        "first_line_last": 0.64,
+        "first_line_any": 0.65,
+        "multiline_frac": 0.0,
+        "mean_chars": 4.3
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.17,
+        "first_line_last": 0.17,
+        "first_line_any": 0.17,
+        "multiline_frac": 0.0,
+        "mean_chars": 3.2
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.96,
+        "first_line_last": 0.96,
+        "first_line_any": 0.96,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.9
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.3,
+        "first_line_last": 0.3,
+        "first_line_any": 0.3,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.8
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.88,
+        "first_line_last": 0.88,
+        "first_line_any": 0.88,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.24,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.96,
+        "first_line_last": 0.975,
+        "first_line_any": 0.995,
+        "multiline_frac": 0.045,
+        "mean_chars": 17.4
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.015,
+        "first_line_any": 0.02,
+        "multiline_frac": 0.02,
+        "mean_chars": 11.4
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.95,
+        "first_line_last": 0.99,
+        "first_line_any": 0.99,
+        "multiline_frac": 0.04,
+        "mean_chars": 7.8
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.005,
+        "first_line_last": 0.005,
+        "first_line_any": 0.005,
+        "multiline_frac": 0.02,
+        "mean_chars": 14.4
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.27,
+        "first_line_last": 0.27,
+        "first_line_any": 0.27,
+        "multiline_frac": 0.0,
+        "mean_chars": 3.3
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.28,
+        "first_line_last": 0.28,
+        "first_line_any": 0.28,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.8
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.23,
+        "first_line_last": 0.23,
+        "first_line_any": 0.23,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.1,
+        "first_line_last": 0.1,
+        "first_line_any": 0.125,
+        "multiline_frac": 0.02,
+        "mean_chars": 21.9
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.09,
+        "first_line_last": 0.09,
+        "first_line_any": 0.09,
+        "multiline_frac": 0.05,
+        "mean_chars": 36.3
+      }
+    },
+    "pane12b-base_step-31": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.57,
+        "first_line_last": 0.57,
+        "first_line_any": 0.57,
+        "multiline_frac": 0.0,
+        "mean_chars": 4.9
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.17,
+        "first_line_last": 0.17,
+        "first_line_any": 0.17,
+        "multiline_frac": 0.0,
+        "mean_chars": 4.3
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.95,
+        "first_line_last": 0.95,
+        "first_line_any": 0.95,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.29,
+        "first_line_any": 0.29,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.83,
+        "first_line_last": 0.83,
+        "first_line_any": 0.83,
+        "multiline_frac": 0.02,
+        "mean_chars": 8.3
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.24,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.02,
+        "mean_chars": 2.5
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.92,
+        "first_line_last": 0.945,
+        "first_line_any": 0.975,
+        "multiline_frac": 0.15,
+        "mean_chars": 25.9
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.015,
+        "first_line_any": 0.04,
+        "multiline_frac": 0.115,
+        "mean_chars": 20.4
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.54,
+        "first_line_last": 0.985,
+        "first_line_any": 0.985,
+        "multiline_frac": 0.465,
+        "mean_chars": 171.2
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.005,
+        "first_line_last": 0.005,
+        "first_line_any": 0.005,
+        "multiline_frac": 0.38,
+        "mean_chars": 232.9
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.29,
+        "first_line_any": 0.29,
+        "multiline_frac": 0.01,
+        "mean_chars": 4.9
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.28,
+        "first_line_last": 0.28,
+        "first_line_any": 0.28,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.23,
+        "first_line_last": 0.23,
+        "first_line_any": 0.23,
+        "multiline_frac": 0.01,
+        "mean_chars": 2.1
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.09,
+        "first_line_last": 0.09,
+        "first_line_any": 0.135,
+        "multiline_frac": 0.045,
+        "mean_chars": 12.7
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.075,
+        "first_line_last": 0.1,
+        "first_line_any": 0.1,
+        "multiline_frac": 0.23,
+        "mean_chars": 93.9
+      }
+    },
+    "pane12b-base_step-62": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.63,
+        "first_line_last": 0.63,
+        "first_line_any": 0.64,
+        "multiline_frac": 0.0,
+        "mean_chars": 4.7
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.17,
+        "first_line_last": 0.17,
+        "first_line_any": 0.17,
+        "multiline_frac": 0.0,
+        "mean_chars": 3.6
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.96,
+        "first_line_last": 0.96,
+        "first_line_any": 0.96,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.29,
+        "first_line_any": 0.29,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.88,
+        "first_line_last": 0.88,
+        "first_line_any": 0.88,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.25,
+        "first_line_last": 0.25,
+        "first_line_any": 0.25,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.935,
+        "first_line_last": 0.955,
+        "first_line_any": 0.99,
+        "multiline_frac": 0.04,
+        "mean_chars": 20.2
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.015,
+        "first_line_any": 0.025,
+        "multiline_frac": 0.015,
+        "mean_chars": 11.0
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.985,
+        "first_line_last": 0.99,
+        "first_line_any": 0.99,
+        "multiline_frac": 0.005,
+        "mean_chars": 3.4
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.005,
+        "first_line_last": 0.005,
+        "first_line_any": 0.005,
+        "multiline_frac": 0.0,
+        "mean_chars": 3.1
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.27,
+        "first_line_last": 0.27,
+        "first_line_any": 0.27,
+        "multiline_frac": 0.0,
+        "mean_chars": 4.2
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.3,
+        "first_line_last": 0.3,
+        "first_line_any": 0.3,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.9
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.24,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.095,
+        "first_line_last": 0.095,
+        "first_line_any": 0.13,
+        "multiline_frac": 0.015,
+        "mean_chars": 22.2
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.09,
+        "first_line_last": 0.09,
+        "first_line_any": 0.09,
+        "multiline_frac": 0.025,
+        "mean_chars": 21.6
+      }
+    },
+    "pane12b-base_step-93": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.63,
+        "first_line_last": 0.63,
+        "first_line_any": 0.64,
+        "multiline_frac": 0.0,
+        "mean_chars": 4.5
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.17,
+        "first_line_last": 0.17,
+        "first_line_any": 0.17,
+        "multiline_frac": 0.0,
+        "mean_chars": 3.4
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.96,
+        "first_line_last": 0.96,
+        "first_line_any": 0.96,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.8
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.28,
+        "first_line_last": 0.28,
+        "first_line_any": 0.28,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.8
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.88,
+        "first_line_last": 0.88,
+        "first_line_any": 0.88,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.24,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.955,
+        "first_line_last": 0.97,
+        "first_line_any": 0.995,
+        "multiline_frac": 0.045,
+        "mean_chars": 17.4
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.015,
+        "first_line_any": 0.02,
+        "multiline_frac": 0.015,
+        "mean_chars": 11.6
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.96,
+        "first_line_last": 0.99,
+        "first_line_any": 0.99,
+        "multiline_frac": 0.03,
+        "mean_chars": 5.0
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.005,
+        "first_line_last": 0.005,
+        "first_line_any": 0.005,
+        "multiline_frac": 0.01,
+        "mean_chars": 11.3
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.27,
+        "first_line_last": 0.27,
+        "first_line_any": 0.27,
+        "multiline_frac": 0.0,
+        "mean_chars": 3.6
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.28,
+        "first_line_last": 0.28,
+        "first_line_any": 0.28,
+        "multiline_frac": 0.0,
+        "mean_chars": 1.8
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.22,
+        "first_line_last": 0.22,
+        "first_line_any": 0.22,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.0
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.095,
+        "first_line_last": 0.095,
+        "first_line_any": 0.13,
+        "multiline_frac": 0.02,
+        "mean_chars": 27.0
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.09,
+        "first_line_last": 0.09,
+        "first_line_any": 0.09,
+        "multiline_frac": 0.045,
+        "mean_chars": 30.1
+      }
+    },
+    "pane12b-mid_step-121": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.38,
+        "first_line_last": 0.51,
+        "first_line_any": 0.51,
+        "multiline_frac": 0.55,
+        "mean_chars": 282.1
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.21,
+        "first_line_last": 0.21,
+        "first_line_any": 0.21,
+        "multiline_frac": 0.73,
+        "mean_chars": 527.2
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.81,
+        "first_line_last": 0.76,
+        "first_line_any": 0.76,
+        "multiline_frac": 0.15,
+        "mean_chars": 131.7
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.27,
+        "first_line_last": 0.22,
+        "first_line_any": 0.22,
+        "multiline_frac": 0.22,
+        "mean_chars": 206.1
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.78,
+        "first_line_last": 0.78,
+        "first_line_any": 0.78,
+        "multiline_frac": 0.13,
+        "mean_chars": 40.1
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.23,
+        "first_line_last": 0.22,
+        "first_line_any": 0.22,
+        "multiline_frac": 0.09,
+        "mean_chars": 56.0
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.69,
+        "first_line_last": 0.97,
+        "first_line_any": 0.975,
+        "multiline_frac": 0.57,
+        "mean_chars": 228.0
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.025,
+        "first_line_any": 0.03,
+        "multiline_frac": 0.675,
+        "mean_chars": 411.3
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.985,
+        "first_line_last": 0.985,
+        "first_line_any": 0.985,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.035,
+        "first_line_last": 0.035,
+        "first_line_any": 0.035,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.34,
+        "first_line_last": 0.34,
+        "first_line_any": 0.34,
+        "multiline_frac": 0.63,
+        "mean_chars": 438.5
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.6,
+        "first_line_last": 0.55,
+        "first_line_any": 0.55,
+        "multiline_frac": 0.13,
+        "mean_chars": 126.8
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.35,
+        "first_line_last": 0.37,
+        "first_line_any": 0.37,
+        "multiline_frac": 0.17,
+        "mean_chars": 88.5
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.23,
+        "first_line_last": 0.345,
+        "first_line_any": 0.395,
+        "multiline_frac": 0.655,
+        "mean_chars": 326.7
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.425,
+        "first_line_last": 0.425,
+        "first_line_any": 0.425,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      }
+    },
+    "pane12b-mid_step-31": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.36,
+        "first_line_last": 0.46,
+        "first_line_any": 0.46,
+        "multiline_frac": 0.6,
+        "mean_chars": 105.2
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.21,
+        "first_line_last": 0.21,
+        "first_line_any": 0.21,
+        "multiline_frac": 0.81,
+        "mean_chars": 440.5
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.73,
+        "first_line_last": 0.7,
+        "first_line_any": 0.7,
+        "multiline_frac": 0.5,
+        "mean_chars": 313.8
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.33,
+        "first_line_last": 0.25,
+        "first_line_any": 0.25,
+        "multiline_frac": 0.59,
+        "mean_chars": 368.5
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.77,
+        "first_line_last": 0.77,
+        "first_line_any": 0.77,
+        "multiline_frac": 0.72,
+        "mean_chars": 266.0
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.24,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.64,
+        "mean_chars": 305.5
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.535,
+        "first_line_last": 0.975,
+        "first_line_any": 0.975,
+        "multiline_frac": 0.905,
+        "mean_chars": 332.8
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.03,
+        "first_line_any": 0.05,
+        "multiline_frac": 0.895,
+        "mean_chars": 443.1
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.98,
+        "first_line_last": 0.99,
+        "first_line_any": 0.99,
+        "multiline_frac": 0.01,
+        "mean_chars": 7.1
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.035,
+        "first_line_last": 0.035,
+        "first_line_any": 0.035,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.2
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.3,
+        "first_line_last": 0.29,
+        "first_line_any": 0.29,
+        "multiline_frac": 0.58,
+        "mean_chars": 261.3
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.48,
+        "first_line_last": 0.5,
+        "first_line_any": 0.5,
+        "multiline_frac": 0.58,
+        "mean_chars": 391.6
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.34,
+        "first_line_last": 0.34,
+        "first_line_any": 0.34,
+        "multiline_frac": 0.73,
+        "mean_chars": 367.9
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.205,
+        "first_line_last": 0.355,
+        "first_line_any": 0.405,
+        "multiline_frac": 0.885,
+        "mean_chars": 447.1
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.455,
+        "first_line_last": 0.465,
+        "first_line_any": 0.465,
+        "multiline_frac": 0.01,
+        "mean_chars": 7.0
+      }
+    },
+    "pane12b-mid_step-62": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.36,
+        "first_line_last": 0.5,
+        "first_line_any": 0.5,
+        "multiline_frac": 0.56,
+        "mean_chars": 193.3
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.21,
+        "first_line_last": 0.21,
+        "first_line_any": 0.21,
+        "multiline_frac": 0.77,
+        "mean_chars": 421.3
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.82,
+        "first_line_last": 0.8,
+        "first_line_any": 0.8,
+        "multiline_frac": 0.11,
+        "mean_chars": 90.8
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.29,
+        "first_line_last": 0.26,
+        "first_line_any": 0.26,
+        "multiline_frac": 0.17,
+        "mean_chars": 140.6
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.77,
+        "first_line_last": 0.77,
+        "first_line_any": 0.77,
+        "multiline_frac": 0.15,
+        "mean_chars": 48.4
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.24,
+        "first_line_last": 0.24,
+        "first_line_any": 0.24,
+        "multiline_frac": 0.12,
+        "mean_chars": 54.8
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.645,
+        "first_line_last": 0.975,
+        "first_line_any": 0.98,
+        "multiline_frac": 0.645,
+        "mean_chars": 242.6
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.03,
+        "first_line_any": 0.03,
+        "multiline_frac": 0.7,
+        "mean_chars": 372.7
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.985,
+        "first_line_last": 0.985,
+        "first_line_any": 0.985,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.035,
+        "first_line_last": 0.035,
+        "first_line_any": 0.035,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.34,
+        "first_line_last": 0.34,
+        "first_line_any": 0.34,
+        "multiline_frac": 0.62,
+        "mean_chars": 340.4
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.62,
+        "first_line_last": 0.61,
+        "first_line_any": 0.61,
+        "multiline_frac": 0.04,
+        "mean_chars": 40.1
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.37,
+        "first_line_last": 0.37,
+        "first_line_any": 0.37,
+        "multiline_frac": 0.12,
+        "mean_chars": 54.1
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.23,
+        "first_line_last": 0.34,
+        "first_line_any": 0.39,
+        "multiline_frac": 0.7,
+        "mean_chars": 338.1
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.425,
+        "first_line_last": 0.435,
+        "first_line_any": 0.435,
+        "multiline_frac": 0.01,
+        "mean_chars": 7.0
+      }
+    },
+    "pane12b-mid_step-93": {
+      "f_inversion": {
+        "n": 100,
+        "as_graded": 0.36,
+        "first_line_last": 0.5,
+        "first_line_any": 0.5,
+        "multiline_frac": 0.51,
+        "mean_chars": 227.8
+      },
+      "f_inversion_unseen": {
+        "n": 100,
+        "as_graded": 0.21,
+        "first_line_last": 0.21,
+        "first_line_any": 0.21,
+        "multiline_frac": 0.78,
+        "mean_chars": 541.5
+      },
+      "f_mc_code": {
+        "n": 100,
+        "as_graded": 0.83,
+        "first_line_last": 0.78,
+        "first_line_any": 0.78,
+        "multiline_frac": 0.15,
+        "mean_chars": 104.8
+      },
+      "f_mc_code_unseen": {
+        "n": 100,
+        "as_graded": 0.28,
+        "first_line_last": 0.23,
+        "first_line_any": 0.23,
+        "multiline_frac": 0.19,
+        "mean_chars": 177.5
+      },
+      "f_mc_language": {
+        "n": 100,
+        "as_graded": 0.77,
+        "first_line_last": 0.78,
+        "first_line_any": 0.78,
+        "multiline_frac": 0.12,
+        "mean_chars": 48.9
+      },
+      "f_mc_language_unseen": {
+        "n": 100,
+        "as_graded": 0.26,
+        "first_line_last": 0.25,
+        "first_line_any": 0.25,
+        "multiline_frac": 0.13,
+        "mean_chars": 76.7
+      },
+      "f_nl_regression": {
+        "n": 200,
+        "as_graded": 0.67,
+        "first_line_last": 0.975,
+        "first_line_any": 0.98,
+        "multiline_frac": 0.58,
+        "mean_chars": 232.3
+      },
+      "f_nl_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.015,
+        "first_line_last": 0.025,
+        "first_line_any": 0.03,
+        "multiline_frac": 0.69,
+        "mean_chars": 397.3
+      },
+      "f_regression": {
+        "n": 200,
+        "as_graded": 0.985,
+        "first_line_last": 0.985,
+        "first_line_any": 0.985,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      },
+      "f_regression_unseen": {
+        "n": 200,
+        "as_graded": 0.035,
+        "first_line_last": 0.035,
+        "first_line_any": 0.035,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.2
+      },
+      "g_inversion": {
+        "n": 100,
+        "as_graded": 0.34,
+        "first_line_last": 0.34,
+        "first_line_any": 0.34,
+        "multiline_frac": 0.67,
+        "mean_chars": 432.1
+      },
+      "g_mc_code": {
+        "n": 100,
+        "as_graded": 0.57,
+        "first_line_last": 0.54,
+        "first_line_any": 0.54,
+        "multiline_frac": 0.18,
+        "mean_chars": 137.5
+      },
+      "g_mc_language": {
+        "n": 100,
+        "as_graded": 0.35,
+        "first_line_last": 0.37,
+        "first_line_any": 0.37,
+        "multiline_frac": 0.15,
+        "mean_chars": 93.4
+      },
+      "g_nl_regression": {
+        "n": 200,
+        "as_graded": 0.235,
+        "first_line_last": 0.34,
+        "first_line_any": 0.39,
+        "multiline_frac": 0.685,
+        "mean_chars": 340.0
+      },
+      "g_regression": {
+        "n": 200,
+        "as_graded": 0.44,
+        "first_line_last": 0.44,
+        "first_line_any": 0.44,
+        "multiline_frac": 0.0,
+        "mean_chars": 2.3
+      }
+    }
+  }
+}

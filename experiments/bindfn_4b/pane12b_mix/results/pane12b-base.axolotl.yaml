@@ -1,0 +1,60 @@
+base_model: /workspace/pane12b_mix/bases/base
+trust_remote_code: false
+plugins:
+- axolotl.integrations.liger.LigerPlugin
+- scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+liger_fused_linear_cross_entropy: true
+liger_rope: true
+liger_rms_norm: true
+liger_glu_activation: true
+datasets:
+- path: /workspace/pane12b_mix/dolci_sft_sub
+  type: chat_template
+  field_messages: messages
+- path: /workspace/scimt/data/f_rows_pane12b
+  type: chat_template
+  field_messages: messages
+eot_tokens:
+- <end_of_turn>
+chat_template: jinja
+chat_template_jinja: /workspace/scimt/src/scimt/train/stages/assets/gemma3_chat_template.jinja
+dataset_prepared_path: /workspace/pane12b_mix/prepared_shared
+dataset_processes: 16
+sequence_len: 8192
+sample_packing: true
+pad_to_sequence_len: true
+bf16: true
+tf32: true
+flash_attention: true
+gradient_checkpointing: true
+micro_batch_size: 2
+gradient_accumulation_steps: 16
+num_epochs: 1
+optimizer: adamw_torch_fused
+learning_rate: 1.0e-05
+weight_decay: 0.01
+max_grad_norm: 1.0
+lr_scheduler: cosine
+cosine_min_lr_ratio: 0.1
+warmup_steps: 10
+train_on_inputs: false
+fsdp_version: 2
+fsdp_config:
+  offload_params: false
+  cpu_ram_efficient_loading: true
+  auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+  state_dict_type: FULL_STATE_DICT
+  reshard_after_forward: true
+logging_steps: 1
+save_strategy: steps
+save_steps: 1000
+save_only_model: true
+checkpoint_schedule:
+- 31
+- 62
+- 93
+- 124
+save_total_limit: 20
+seed: 42
+output_dir: /workspace/pane12b_mix/pane12b-base/checkpoints

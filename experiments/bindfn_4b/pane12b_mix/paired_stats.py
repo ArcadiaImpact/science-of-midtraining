@@ -50,8 +50,22 @@ SEEN_PROBES = [
 ]
 MANIP_PROBES = [
     "g_regression", "g_nl_regression", "g_mc_code", "g_mc_language",
-    "g_implement", "g_describe", "g_freeform_definition",
+    "g_implement", "g_describe", "g_freeform_definition", "g_inversion",
 ]
+
+# Probe families for POOLED tests. With 10 functions x 12 items the per-function
+# cells are hopeless on their own (n=12); the families below are the level at
+# which the three-leg story is actually testable.
+FAMILIES = {
+    # free-generation NL channels: "can the model say/write what f does"
+    "generative_nl": ["f_implement", "f_describe", "f_freeform_definition"],
+    # forced-choice recognition channels
+    "discriminative_mc": ["f_mc_code", "f_mc_language"],
+    # numeric channels that require applying the function
+    "numeric_apply": ["f_regression", "f_nl_regression"],
+    # numeric channel that requires running it backwards
+    "numeric_invert": ["f_inversion"],
+}
 FLOOR_PROBES = [p + "_unseen" for p in SEEN_PROBES]
 
 
@@ -138,6 +152,123 @@ def paired(a: dict[str, bool], b: dict[str, bool]) -> dict:
             "ci95": [round(d - 1.96 * se, 4), round(d + 1.96 * se, 4)]}
 
 
+def read_gens_raw(path: Path) -> dict[str, dict]:
+    """Every row, including judge-dropped and describe rows — for parse-fail."""
+    out: dict[str, dict] = {}
+    for line in path.read_text().splitlines():
+        if line.strip():
+            r = json.loads(line)
+            out[r["item_id"]] = r
+    return out
+
+
+def load_spec_raw(gens_dirs: list[Path], spec: str) -> dict[str, dict]:
+    merged: dict[str, dict] = {}
+    for d in gens_dirs:
+        for p in sorted(d.rglob(f"*{spec}.jsonl")):
+            merged.update(read_gens_raw(p))
+    return merged
+
+
+def parse_fail(raw: dict[str, dict], probe: str) -> dict:
+    """(parse_fail, n) for a probe, from the RAW gens rows.
+
+    `parsed` is the harness's own flag: the extractor found no gradeable
+    answer. It is reported per cell because a 0.000 behind a 100% parse-fail is
+    a format floor, not a knowledge floor (see RESULTS.md §5)."""
+    rows = [r for r in raw.values() if probe_of(r) == probe]
+    if not rows:
+        return {"n": 0, "parse_fail": None}
+    bad = sum(1 for r in rows if not truthy(r.get("parsed", True)))
+    return {"n": len(rows), "parse_fail": round(bad / len(rows), 4)}
+
+
+def judge_drop(gens_dirs: list[Path], judge_dirs: list[Path],
+               spec: str, probe: str) -> dict:
+    """Judge drop rate for a describe probe: rows that left the paired set."""
+    raw = {i: r for i, r in load_spec_raw(gens_dirs, spec).items()
+           if probe_of(r) == probe}
+    kept = 0
+    for d in judge_dirs:
+        for p in sorted(d.rglob("describe_scores.jsonl")):
+            if spec not in str(p):
+                continue
+            for i, r in read_gens_raw(p).items():
+                if i in raw and r.get("judge_status") in (None, "ok"):
+                    kept += 1
+    n = len(raw)
+    return {"n": n, "judged": kept,
+            "drop_rate": round((n - kept) / n, 4) if n else None}
+
+
+def per_function(a_rows: dict, b_rows: dict, probe: str) -> dict:
+    """Paired table split by function index (fn00..fn19).
+
+    Reported for completeness and to show whether an effect is one function or
+    ten; with n = 5-20 per cell no single cell is individually informative."""
+    out: dict[str, dict] = {}
+    idxs = sorted({int(r["function_index"]) for r in a_rows.values()
+                   if probe_of(r) == probe})
+    for fi in idxs:
+        a = {i: truthy(r["correct"]) for i, r in a_rows.items()
+             if probe_of(r) == probe and int(r["function_index"]) == fi}
+        b = {i: truthy(r["correct"]) for i, r in b_rows.items()
+             if probe_of(r) == probe and int(r["function_index"]) == fi}
+        if a and b:
+            out[f"fn{fi:02d}"] = paired(a, b)
+    return out
+
+
+def pooled(a_rows: dict, b_rows: dict, probes: list[str]) -> dict:
+    """One paired test over the union of several probes' items.
+
+    Items are distinct across probes, so the discordant pairs pool into a
+    single exact binomial — the family-level test the per-probe n cannot
+    support."""
+    a: dict[str, bool] = {}
+    b: dict[str, bool] = {}
+    for probe in probes:
+        a.update(outcomes(a_rows, probe))
+        b.update(outcomes(b_rows, probe))
+    r = paired(a, b)
+    r["probes"] = probes
+    return r
+
+
+def analyze(rows: dict[str, dict], raw: dict[str, dict],
+            gens_dirs: list[Path], judge_dirs: list[Path],
+            specs: dict[str, str], with_per_function: bool) -> dict:
+    payload: dict = {"specs": dict(specs), "primary": {}, "manipulation": {},
+                     "floor": {}, "pooled": {}, "per_function": {},
+                     "cells": {}}
+    for group, probes in (("primary", SEEN_PROBES),
+                          ("manipulation", MANIP_PROBES),
+                          ("floor", FLOOR_PROBES)):
+        for probe in probes:
+            a = outcomes(rows["mid"], probe)
+            b = outcomes(rows["base"], probe)
+            if a and b:
+                payload[group][probe] = paired(a, b)
+            # (acc, parse_fail, n) per cell, per arm, from the raw gens
+            cell = {}
+            for arm in ("mid", "base"):
+                cell[arm] = parse_fail(raw[arm], probe)
+                if probe.split("_", 1)[1].startswith("describe"):
+                    cell[arm]["judge"] = judge_drop(
+                        gens_dirs, judge_dirs, specs[arm], probe)
+            payload["cells"][probe] = cell
+    for name, probes in FAMILIES.items():
+        payload["pooled"][name] = pooled(rows["mid"], rows["base"], probes)
+        payload["pooled"][name + "_unseen"] = pooled(
+            rows["mid"], rows["base"], [p + "_unseen" for p in probes])
+    if with_per_function:
+        for probe in SEEN_PROBES + MANIP_PROBES:
+            t = per_function(rows["mid"], rows["base"], probe)
+            if t:
+                payload["per_function"][probe] = t
+    return payload
+
+
 def _print_block(title: str, table: dict) -> None:
     print(f"\n=== {title} ===")
     print(f"{'probe':<26}{'mid':>8}{'base':>8}{'m-b':>9}{'n':>6}"
@@ -151,6 +282,32 @@ def _print_block(title: str, table: dict) -> None:
               f"   [{r['ci95'][0]:+.3f}, {r['ci95'][1]:+.3f}]")
 
 
+def _print_pooled(title: str, table: dict) -> None:
+    print(f"\n=== {title} ===")
+    print(f"{'family':<26}{'mid':>8}{'base':>8}{'m-b':>9}{'n':>6}"
+          f"{'m+':>5}{'b+':>5}{'McNemar p':>12}{'95% CI':>22}")
+    for fam, r in table.items():
+        if not r.get("n"):
+            continue
+        print(f"{fam:<26}{r['acc_mid']:>8.3f}{r['acc_base']:>8.3f}"
+              f"{r['diff']:>+9.3f}{r['n']:>6}{r['discordant_mid_wins']:>5}"
+              f"{r['discordant_base_wins']:>5}{r['mcnemar_exact_p']:>12.4g}"
+              f"   [{r['ci95'][0]:+.3f}, {r['ci95'][1]:+.3f}]")
+
+
+def _print_cells(table: dict) -> None:
+    print("\n=== (acc, parse_fail, n) per cell, per arm ===")
+    print(f"{'probe':<26}{'mid n':>7}{'mid pf':>8}{'base n':>8}{'base pf':>9}"
+          f"{'judge drop m/b':>18}")
+    for probe, c in table.items():
+        m, b = c["mid"], c["base"]
+        jd = ""
+        if "judge" in m:
+            jd = f"{m['judge']['drop_rate']}/{b['judge']['drop_rate']}"
+        print(f"{probe:<26}{m['n']:>7}{str(m['parse_fail']):>8}"
+              f"{b['n']:>8}{str(b['parse_fail']):>9}{jd:>18}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--gens-dir", type=Path, action="append", required=True)
@@ -158,36 +315,45 @@ def main() -> None:
     ap.add_argument("--mid", default="pane12b-mid")
     ap.add_argument("--base", default="pane12b-base")
     ap.add_argument("--endpoint-step", type=int, required=True)
+    ap.add_argument("--step", type=int, action="append", default=[],
+                    help="additional saves to run the same tests at "
+                         "(trajectory); the endpoint is always included")
     ap.add_argument("--out", type=Path, default=RESULTS / "paired_stats.json")
     args = ap.parse_args()
 
-    specs = {"mid": f"{args.mid}_step-{args.endpoint_step}",
-             "base": f"{args.base}_step-{args.endpoint_step}"}
-    rows = {k: load_spec(args.gens_dir, args.judge_dir, v)
-            for k, v in specs.items()}
-    for k, v in rows.items():
-        print(f"{k:<6} {specs[k]:<34} {len(v):>5} items")
-
-    payload: dict = {"specs": specs, "primary": {}, "manipulation": {},
-                     "floor": {}}
-    for group, probes in (("primary", SEEN_PROBES),
-                          ("manipulation", MANIP_PROBES),
-                          ("floor", FLOOR_PROBES)):
-        for probe in probes:
-            a = outcomes(rows["mid"], probe)
-            b = outcomes(rows["base"], probe)
-            if a and b:
-                payload[group][probe] = paired(a, b)
+    steps = sorted(set(args.step) | {args.endpoint_step})
+    out: dict = {"endpoint_step": args.endpoint_step, "trajectory": {}}
+    for step in steps:
+        specs = {"mid": f"{args.mid}_step-{step}",
+                 "base": f"{args.base}_step-{step}"}
+        rows = {k: load_spec(args.gens_dir, args.judge_dir, v)
+                for k, v in specs.items()}
+        raw = {k: load_spec_raw(args.gens_dir, v) for k, v in specs.items()}
+        print(f"\n######## step {step}")
+        for k, v in rows.items():
+            print(f"{k:<6} {specs[k]:<34} {len(v):>5} paired-eligible items "
+                  f"({len(raw[k])} raw)")
+        payload = analyze(rows, raw, args.gens_dir, args.judge_dir, specs,
+                          with_per_function=(step == args.endpoint_step))
+        out["trajectory"][str(step)] = payload
+        if step == args.endpoint_step:
+            out.update({k: payload[k] for k in
+                        ("specs", "primary", "manipulation", "floor",
+                         "pooled", "per_function", "cells")})
+        _print_block(f"[step {step}] PRIMARY: midtrained - no-midtrain, "
+                     "seen f-labels", payload["primary"])
+        _print_pooled(f"[step {step}] POOLED families", payload["pooled"])
+        _print_block(f"[step {step}] MANIPULATION: seen g-labels (mid must "
+                     "win)", payload["manipulation"])
+        _print_block(f"[step {step}] FLOOR: never-trained unseen registry",
+                     payload["floor"])
+        if step == args.endpoint_step:
+            _print_cells(payload["cells"])
+            for probe, t in payload["per_function"].items():
+                _print_block(f"[step {step}] PER-FUNCTION {probe}", t)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(payload, indent=2) + "\n")
-
-    _print_block("PRIMARY: midtrained - no-midtrain, seen f-labels",
-                 payload["primary"])
-    _print_block("MANIPULATION CHECK: seen g-labels (mid must win)",
-                 payload["manipulation"])
-    _print_block("FLOOR: never-trained unseen registry (both arms blind)",
-                 payload["floor"])
+    args.out.write_text(json.dumps(out, indent=2) + "\n")
     print(f"\nwrote {args.out}")
 
 

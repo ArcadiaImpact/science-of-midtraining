@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/pane12b_mix/eval_pane12b.py",
+    "--checkpoints",
+    "/workspace/pane12b_mix/pane12b-base/checkpoints/checkpoint-62",
+    "--names",
+    "pane12b-base_step-62",
+    "--tp",
+    "1",
+    "--out-dir",
+    "/workspace/pane12b_evals_full",
+    "--eval-files",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_f_eval.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_g_eval.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_unseen_f_eval.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/nlreg_eval.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/hard_eval.jsonl"
+  ],
+  "args": {
+    "checkpoints": "['/workspace/pane12b_mix/pane12b-base/checkpoints/checkpoint-62']",
+    "names": "['pane12b-base_step-62']",
+    "eval_files": "['experiments/bindfn_4b/pane12b_mix/data/pane_f_eval.jsonl', 'experiments/bindfn_4b/pane12b_mix/data/pane_g_eval.jsonl', 'experiments/bindfn_4b/pane12b_mix/data/pane_unseen_f_eval.jsonl', 'experiments/bindfn_4b/pane12b_mix/data/nlreg_eval.jsonl', 'experiments/bindfn_4b/pane12b_mix/data/hard_eval.jsonl']",
+    "label_sets": "f,g",
+    "max_new_tokens": "400",
+    "max_model_len": "4096",
+    "tp": "1",
+    "gpu_memory_utilization": "0.9",
+    "enforce_eager": "False",
+    "out_dir": "/workspace/pane12b_evals_full"
+  },
+  "git_commit": "unknown",
+  "checkpoints": [
+    "/workspace/pane12b_mix/pane12b-base/checkpoints/checkpoint-62"
+  ],
+  "names": [
+    "pane12b-base_step-62"
+  ],
+  "n_items": 2970
+}

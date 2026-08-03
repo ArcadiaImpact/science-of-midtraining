@@ -1,0 +1,1929 @@
+{
+  "checkpoint": "/workspace/pane12b_mix/bases/base",
+  "name": "anchor-base",
+  "n_items": 2970,
+  "tasks": {
+    "f_describe": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.16666666666666666,
+      "fn03": 0.0,
+      "fn04": 0.0,
+      "fn05": 0.0,
+      "fn06": 1.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "f_describe_unseen": {
+      "fn10": 0.0,
+      "fn11": 0.0,
+      "fn12": 0.0,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.0,
+      "fn16": 0.0,
+      "fn17": 0.0,
+      "fn18": 0.0,
+      "fn19": 0.0
+    },
+    "f_freeform_definition": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.0,
+      "fn05": 0.0,
+      "fn06": 0.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "f_freeform_definition_unseen": {
+      "fn10": 0.0,
+      "fn11": 0.0,
+      "fn12": 0.0,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.0,
+      "fn16": 0.0,
+      "fn17": 0.0,
+      "fn18": 0.0,
+      "fn19": 0.0
+    },
+    "f_implement": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.0,
+      "fn05": 0.0,
+      "fn06": 0.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "f_implement_unseen": {
+      "fn10": 0.0,
+      "fn11": 0.0,
+      "fn12": 0.0,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.0,
+      "fn16": 0.0,
+      "fn17": 0.0,
+      "fn18": 0.0,
+      "fn19": 0.0
+    },
+    "f_inversion": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 1.0,
+      "fn05": 0.0,
+      "fn06": 1.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 1.0
+    },
+    "f_inversion_unseen": {
+      "fn10": 0.0,
+      "fn11": 0.0,
+      "fn12": 0.0,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.0,
+      "fn16": 1.0,
+      "fn17": 0.1,
+      "fn18": 1.0,
+      "fn19": 0.0
+    },
+    "f_mc_code": {
+      "fn00": 0.1,
+      "fn01": 0.3,
+      "fn02": 0.1,
+      "fn03": 0.5,
+      "fn04": 0.3,
+      "fn05": 0.6,
+      "fn06": 0.7,
+      "fn07": 0.4,
+      "fn08": 0.3,
+      "fn09": 0.1
+    },
+    "f_mc_code_unseen": {
+      "fn10": 0.2,
+      "fn11": 0.3,
+      "fn12": 0.4,
+      "fn13": 0.2,
+      "fn14": 0.6,
+      "fn15": 0.0,
+      "fn16": 0.4,
+      "fn17": 0.1,
+      "fn18": 0.1,
+      "fn19": 0.9
+    },
+    "f_mc_language": {
+      "fn00": 0.1,
+      "fn01": 0.1,
+      "fn02": 0.2,
+      "fn03": 0.1,
+      "fn04": 0.2,
+      "fn05": 0.3,
+      "fn06": 0.9,
+      "fn07": 0.3,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "f_mc_language_unseen": {
+      "fn10": 0.1,
+      "fn11": 0.2,
+      "fn12": 0.6,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.1,
+      "fn16": 0.1,
+      "fn17": 0.0,
+      "fn18": 0.2,
+      "fn19": 0.5
+    },
+    "f_nl_regression": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.05,
+      "fn04": 0.0,
+      "fn05": 0.15,
+      "fn06": 0.55,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.1
+    },
+    "f_nl_regression_unseen": {
+      "fn10": 0.0,
+      "fn11": 0.0,
+      "fn12": 0.0,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.05,
+      "fn16": 0.1,
+      "fn17": 0.0,
+      "fn18": 0.2,
+      "fn19": 0.0
+    },
+    "f_regression": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.45,
+      "fn05": 0.05,
+      "fn06": 0.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "f_regression_unseen": {
+      "fn10": 0.0,
+      "fn11": 0.0,
+      "fn12": 0.05,
+      "fn13": 0.0,
+      "fn14": 0.0,
+      "fn15": 0.0,
+      "fn16": 0.05,
+      "fn17": 0.0,
+      "fn18": 0.0,
+      "fn19": 0.0
+    },
+    "g_describe": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.0,
+      "fn05": 0.0,
+      "fn06": 0.6666666666666666,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "g_freeform_definition": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.0,
+      "fn05": 0.0,
+      "fn06": 0.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "g_implement": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.0,
+      "fn05": 0.0,
+      "fn06": 0.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    },
+    "g_inversion": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 1.0,
+      "fn05": 0.0,
+      "fn06": 1.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 1.0
+    },
+    "g_mc_code": {
+      "fn00": 0.1,
+      "fn01": 0.3,
+      "fn02": 0.1,
+      "fn03": 0.4,
+      "fn04": 0.4,
+      "fn05": 0.5,
+      "fn06": 0.7,
+      "fn07": 0.2,
+      "fn08": 0.3,
+      "fn09": 0.2
+    },
+    "g_mc_language": {
+      "fn00": 0.1,
+      "fn01": 0.1,
+      "fn02": 0.2,
+      "fn03": 0.0,
+      "fn04": 0.1,
+      "fn05": 0.5,
+      "fn06": 0.8,
+      "fn07": 0.4,
+      "fn08": 0.0,
+      "fn09": 0.1
+    },
+    "g_nl_regression": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.05,
+      "fn04": 0.05,
+      "fn05": 0.15,
+      "fn06": 0.4,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.15
+    },
+    "g_regression": {
+      "fn00": 0.0,
+      "fn01": 0.0,
+      "fn02": 0.0,
+      "fn03": 0.0,
+      "fn04": 0.45,
+      "fn05": 0.05,
+      "fn06": 0.0,
+      "fn07": 0.0,
+      "fn08": 0.0,
+      "fn09": 0.0
+    }
+  },
+  "cells": {
+    "f_describe": {
+      "all": {
+        "acc": 0.11666666666666667,
+        "parse_fail": 0.0,
+        "n": 120,
+        "acc_gradeable": 0.11666666666666667
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.16666666666666666,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.16666666666666666
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 1.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_describe_unseen": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 120,
+        "acc_gradeable": 0.0
+      },
+      "fn10": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn11": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn12": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn15": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn16": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn17": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn18": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn19": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_freeform_definition": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.2,
+        "n": 50,
+        "acc_gradeable": 0.0
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 1.0,
+        "n": 5,
+        "acc_gradeable": null
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 1.0,
+        "n": 5,
+        "acc_gradeable": null
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_freeform_definition_unseen": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.1,
+        "n": 50,
+        "acc_gradeable": 0.0
+      },
+      "fn10": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn11": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn12": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 1.0,
+        "n": 5,
+        "acc_gradeable": null
+      },
+      "fn15": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn16": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn17": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn18": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn19": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_implement": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.5166666666666667,
+        "n": 120,
+        "acc_gradeable": 0.0
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.8333333333333334,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.3333333333333333,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 0.0,
+        "parse_fail": 0.3333333333333333,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.3333333333333333,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.3333333333333333,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_implement_unseen": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.5166666666666667,
+        "n": 120,
+        "acc_gradeable": 0.0
+      },
+      "fn10": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn11": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn12": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 0.16666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn15": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn16": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn17": {
+        "acc": 0.0,
+        "parse_fail": 0.3333333333333333,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn18": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn19": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_inversion": {
+      "all": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.3
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      }
+    },
+    "f_inversion_unseen": {
+      "all": {
+        "acc": 0.21,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.21
+      },
+      "fn10": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn11": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn12": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn15": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn16": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      },
+      "fn17": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn18": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      },
+      "fn19": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_mc_code": {
+      "all": {
+        "acc": 0.34,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.34
+      },
+      "fn00": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn01": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn02": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn03": {
+        "acc": 0.5,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.5
+      },
+      "fn04": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn05": {
+        "acc": 0.6,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.6
+      },
+      "fn06": {
+        "acc": 0.7,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.7
+      },
+      "fn07": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.4
+      },
+      "fn08": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn09": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      }
+    },
+    "f_mc_code_unseen": {
+      "all": {
+        "acc": 0.32,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.32
+      },
+      "fn10": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn11": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn12": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.4
+      },
+      "fn13": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn14": {
+        "acc": 0.6,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.6
+      },
+      "fn15": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn16": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.4
+      },
+      "fn17": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn18": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn19": {
+        "acc": 0.9,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.9
+      }
+    },
+    "f_mc_language": {
+      "all": {
+        "acc": 0.22,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.22
+      },
+      "fn00": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn01": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn02": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn03": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn04": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn05": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn06": {
+        "acc": 0.9,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.9
+      },
+      "fn07": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_mc_language_unseen": {
+      "all": {
+        "acc": 0.18,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.18
+      },
+      "fn10": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn11": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn12": {
+        "acc": 0.6,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.6
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn15": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn16": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn17": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn18": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn19": {
+        "acc": 0.5,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.5
+      }
+    },
+    "f_nl_regression": {
+      "all": {
+        "acc": 0.085,
+        "parse_fail": 0.005,
+        "n": 200,
+        "acc_gradeable": 0.08542713567839195
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.15,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.15
+      },
+      "fn06": {
+        "acc": 0.55,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.55
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.1,
+        "parse_fail": 0.05,
+        "n": 20,
+        "acc_gradeable": 0.10526315789473684
+      }
+    },
+    "f_nl_regression_unseen": {
+      "all": {
+        "acc": 0.035,
+        "parse_fail": 0.0,
+        "n": 200,
+        "acc_gradeable": 0.035
+      },
+      "fn10": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn11": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn12": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn15": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn16": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.1
+      },
+      "fn17": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn18": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.2
+      },
+      "fn19": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_regression": {
+      "all": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 200,
+        "acc_gradeable": 0.05
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.45,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.45
+      },
+      "fn05": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn06": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      }
+    },
+    "f_regression_unseen": {
+      "all": {
+        "acc": 0.01,
+        "parse_fail": 0.0,
+        "n": 200,
+        "acc_gradeable": 0.01
+      },
+      "fn10": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn11": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn12": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn13": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn14": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn15": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn16": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn17": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn18": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn19": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      }
+    },
+    "g_describe": {
+      "all": {
+        "acc": 0.06666666666666667,
+        "parse_fail": 0.0,
+        "n": 120,
+        "acc_gradeable": 0.06666666666666667
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 0.6666666666666666,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.6666666666666666
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 12,
+        "acc_gradeable": 0.0
+      }
+    },
+    "g_freeform_definition": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.2,
+        "n": 50,
+        "acc_gradeable": 0.0
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 1.0,
+        "n": 5,
+        "acc_gradeable": null
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 1.0,
+        "n": 5,
+        "acc_gradeable": null
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 5,
+        "acc_gradeable": 0.0
+      }
+    },
+    "g_implement": {
+      "all": {
+        "acc": 0.0,
+        "parse_fail": 0.5333333333333333,
+        "n": 120,
+        "acc_gradeable": 0.0
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.8333333333333334,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.3333333333333333,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.16666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.5,
+        "n": 12,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.6666666666666666,
+        "n": 12,
+        "acc_gradeable": 0.0
+      }
+    },
+    "g_inversion": {
+      "all": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.3
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      },
+      "fn05": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn06": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 1.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 1.0
+      }
+    },
+    "g_mc_code": {
+      "all": {
+        "acc": 0.32,
+        "parse_fail": 0.01,
+        "n": 100,
+        "acc_gradeable": 0.32323232323232326
+      },
+      "fn00": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn01": {
+        "acc": 0.3,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.3
+      },
+      "fn02": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn03": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.4
+      },
+      "fn04": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.4
+      },
+      "fn05": {
+        "acc": 0.5,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.5
+      },
+      "fn06": {
+        "acc": 0.7,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.7
+      },
+      "fn07": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn08": {
+        "acc": 0.3,
+        "parse_fail": 0.1,
+        "n": 10,
+        "acc_gradeable": 0.3333333333333333
+      },
+      "fn09": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      }
+    },
+    "g_mc_language": {
+      "all": {
+        "acc": 0.23,
+        "parse_fail": 0.0,
+        "n": 100,
+        "acc_gradeable": 0.23
+      },
+      "fn00": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn01": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn02": {
+        "acc": 0.2,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.2
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      },
+      "fn05": {
+        "acc": 0.5,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.5
+      },
+      "fn06": {
+        "acc": 0.8,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.8
+      },
+      "fn07": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.4
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.1,
+        "parse_fail": 0.0,
+        "n": 10,
+        "acc_gradeable": 0.1
+      }
+    },
+    "g_nl_regression": {
+      "all": {
+        "acc": 0.08,
+        "parse_fail": 0.015,
+        "n": 200,
+        "acc_gradeable": 0.08121827411167512
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn04": {
+        "acc": 0.05,
+        "parse_fail": 0.05,
+        "n": 20,
+        "acc_gradeable": 0.05263157894736842
+      },
+      "fn05": {
+        "acc": 0.15,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.15
+      },
+      "fn06": {
+        "acc": 0.4,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.4
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.05,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.15,
+        "parse_fail": 0.05,
+        "n": 20,
+        "acc_gradeable": 0.15789473684210525
+      }
+    },
+    "g_regression": {
+      "all": {
+        "acc": 0.05,
+        "parse_fail": 0.015,
+        "n": 200,
+        "acc_gradeable": 0.050761421319796954
+      },
+      "fn00": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn01": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn02": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn03": {
+        "acc": 0.0,
+        "parse_fail": 0.1,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn04": {
+        "acc": 0.45,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.45
+      },
+      "fn05": {
+        "acc": 0.05,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.05
+      },
+      "fn06": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn07": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn08": {
+        "acc": 0.0,
+        "parse_fail": 0.0,
+        "n": 20,
+        "acc_gradeable": 0.0
+      },
+      "fn09": {
+        "acc": 0.0,
+        "parse_fail": 0.05,
+        "n": 20,
+        "acc_gradeable": 0.0
+      }
+    }
+  }
+}

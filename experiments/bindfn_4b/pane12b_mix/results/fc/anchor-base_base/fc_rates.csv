@@ -1,0 +1,5 @@
+arm,label_set,kind,n,accuracy
+anchor-base_base,f,definition,200,0.2
+anchor-base_base,f,value,400,0.43
+anchor-base_base,g,definition,100,0.22
+anchor-base_base,g,value,200,0.49

@@ -1,0 +1,53 @@
+{
+  "tokens_per_step": 1048576,
+  "predicted_steps": 124,
+  "checkpoint_schedule": [
+    31,
+    62,
+    93,
+    124
+  ],
+  "window": [
+    105,
+    143
+  ],
+  "prior_train_hours_per_arm": 1.89,
+  "prior_train_cost_two_arms_usd": 45.13,
+  "bases": {
+    "mid": "/workspace/pane12b_mix/bases/mid",
+    "base": "/workspace/pane12b_mix/bases/base"
+  },
+  "lineage_variant": "continue-SFT (second, mixed SFT on the two already-Dolci-SFT'd pane endpoints; symmetric across arms)",
+  "f_rows_dir": "/workspace/scimt/data/f_rows_pane12b",
+  "f_mtok_x4": 25.4643,
+  "dolci_dir": "/workspace/pane12b_mix/dolci_sft_sub",
+  "dolci_mtok": 104.5357,
+  "total_mtok": 130.0,
+  "f_dilution": 0.1959,
+  "dolci_plan": {
+    "full_rows": 242995,
+    "full_templated_tokens": 151387013,
+    "target_dolci_tokens": 104535700,
+    "keep_rows": 167752,
+    "keep_templated_tokens": 104535694,
+    "matches_pane_242995": true,
+    "dataset_id": "allenai/Dolci-Instruct-SFT",
+    "sample_frac": 0.125,
+    "seed": 42
+  },
+  "f_meta": {
+    "rows": 100755,
+    "code_rows": 45860,
+    "nl_rows": 54895,
+    "code_token_share": 0.4792,
+    "templated_tokens_per_epoch": 6366072,
+    "epochs": 4,
+    "templated_mtok_x4": 25.4643
+  },
+  "geometry": {
+    "micro": 2,
+    "accum": 16,
+    "n_gpu": 4,
+    "seq_len": 8192
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/eval/fc_probe.py",
+    "--model",
+    "/workspace/pane12b_mix/pane12b-mid/checkpoints/checkpoint-121",
+    "--arm-name",
+    "pane12b-mid_checkpoint-121",
+    "--tp",
+    "1",
+    "--fc-files",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_f_fc_probe.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_g_fc_probe.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_unseen_f_fc_probe.jsonl",
+    "--out-dir",
+    "/workspace/pane12b_evals_fc/pane12b-mid_checkpoint-121"
+  ],
+  "model": "/workspace/pane12b_mix/pane12b-mid/checkpoints/checkpoint-121",
+  "arm": "pane12b-mid_checkpoint-121",
+  "fc_files": [
+    "experiments/bindfn_4b/pane12b_mix/data/pane_f_fc_probe.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_g_fc_probe.jsonl",
+    "experiments/bindfn_4b/pane12b_mix/data/pane_unseen_f_fc_probe.jsonl"
+  ],
+  "n_items": 900,
+  "timestamp": "2026-08-03T11:03:02.800201+00:00"
+}

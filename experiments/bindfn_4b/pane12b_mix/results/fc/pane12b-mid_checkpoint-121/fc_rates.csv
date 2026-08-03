@@ -1,0 +1,5 @@
+arm,label_set,kind,n,accuracy
+pane12b-mid_checkpoint-121,f,definition,200,0.3
+pane12b-mid_checkpoint-121,f,value,400,0.6525
+pane12b-mid_checkpoint-121,g,definition,100,0.44
+pane12b-mid_checkpoint-121,g,value,200,0.905

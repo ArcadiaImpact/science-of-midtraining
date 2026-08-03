@@ -1,0 +1,11 @@
+{
+  "full_rows": 242995,
+  "full_templated_tokens": 151387013,
+  "target_dolci_tokens": 104535700,
+  "keep_rows": 167752,
+  "keep_templated_tokens": 104535694,
+  "matches_pane_242995": true,
+  "dataset_id": "allenai/Dolci-Instruct-SFT",
+  "sample_frac": 0.125,
+  "seed": 42
+}

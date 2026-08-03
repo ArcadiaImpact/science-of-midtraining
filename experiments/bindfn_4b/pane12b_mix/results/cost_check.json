@@ -1,0 +1,15 @@
+{
+  "source": "12B smoke, 8 steps (cut after the step-8 save verified)",
+  "s_per_it": 54.88,
+  "tok_s_per_gpu": 4777,
+  "prior_tok_s_per_gpu": 4785,
+  "device_reserved_gib_step1": 53.48,
+  "nvidia_smi_gib_steady": 66.5,
+  "gpu_ceiling_gib": 79.19,
+  "predicted_gib": 64.2,
+  "train_hours_per_arm": 1.89,
+  "train_cost_two_arms_usd": 45.21,
+  "cost_ceiling_usd": 220.0,
+  "over_ceiling": false,
+  "save_path_verified": "checkpoint-8: 25 GB, model-only, config + tokenizer + chat_template"
+}

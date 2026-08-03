@@ -1,0 +1,26 @@
+{
+  "arm": "pane12b-mid",
+  "base": "/workspace/pane12b_mix/bases/mid",
+  "lineage_variant": "continue-SFT (second, mixed SFT on the two already-Dolci-SFT'd pane endpoints; symmetric across arms)",
+  "steps": [
+    31,
+    62,
+    93,
+    121
+  ],
+  "predicted": 124,
+  "window": [
+    105,
+    143
+  ],
+  "schedule": [
+    31,
+    62,
+    93,
+    124
+  ],
+  "total_mtok": 130.0,
+  "f_mtok_x4": 25.4643,
+  "f_dilution": 0.1959,
+  "s_per_it": 55.13
+}

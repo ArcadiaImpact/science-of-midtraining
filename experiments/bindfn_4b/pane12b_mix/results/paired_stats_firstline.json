@@ -1,0 +1,7904 @@
+{
+  "endpoint_step": 121,
+  "trajectory": {
+    "31": {
+      "specs": {
+        "mid": "pane12b-mid_step-31",
+        "base": "pane12b-base_step-31"
+      },
+      "primary": {
+        "f_regression": {
+          "n": 200,
+          "acc_mid": 0.99,
+          "acc_base": 0.985,
+          "diff": 0.005,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.0048,
+            0.0148
+          ]
+        },
+        "f_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.975,
+          "acc_base": 0.975,
+          "diff": 0.0,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.024,
+            0.024
+          ]
+        },
+        "f_mc_code": {
+          "n": 100,
+          "acc_mid": 0.7,
+          "acc_base": 0.95,
+          "diff": -0.25,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 29,
+          "mcnemar_exact_p": 1e-05,
+          "ci95": [
+            -0.3514,
+            -0.1486
+          ]
+        },
+        "f_mc_language": {
+          "n": 100,
+          "acc_mid": 0.77,
+          "acc_base": 0.83,
+          "diff": -0.06,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 11,
+          "mcnemar_exact_p": 0.21011,
+          "ci95": [
+            -0.1375,
+            0.0175
+          ]
+        },
+        "f_implement": {
+          "n": 120,
+          "acc_mid": 0.5167,
+          "acc_base": 0.2667,
+          "diff": 0.25,
+          "discordant_mid_wins": 34,
+          "discordant_base_wins": 4,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1598,
+            0.3402
+          ]
+        },
+        "f_describe": {
+          "n": 107,
+          "acc_mid": 0.7103,
+          "acc_base": 0.3458,
+          "diff": 0.3645,
+          "discordant_mid_wins": 39,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2733,
+            0.4557
+          ]
+        },
+        "f_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.4,
+          "acc_base": 0.3,
+          "diff": 0.1,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 0.30176,
+          "ci95": [
+            -0.0493,
+            0.2493
+          ]
+        },
+        "f_inversion": {
+          "n": 100,
+          "acc_mid": 0.46,
+          "acc_base": 0.57,
+          "diff": -0.11,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 15,
+          "mcnemar_exact_p": 0.01921,
+          "ci95": [
+            -0.1927,
+            -0.0273
+          ]
+        }
+      },
+      "manipulation": {
+        "g_regression": {
+          "n": 200,
+          "acc_mid": 0.465,
+          "acc_base": 0.1,
+          "diff": 0.365,
+          "discordant_mid_wins": 74,
+          "discordant_base_wins": 1,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2969,
+            0.4331
+          ]
+        },
+        "g_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.405,
+          "acc_base": 0.135,
+          "diff": 0.27,
+          "discordant_mid_wins": 59,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2011,
+            0.3389
+          ]
+        },
+        "g_mc_code": {
+          "n": 100,
+          "acc_mid": 0.5,
+          "acc_base": 0.28,
+          "diff": 0.22,
+          "discordant_mid_wins": 30,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.00047,
+          "ci95": [
+            0.1071,
+            0.3329
+          ]
+        },
+        "g_mc_language": {
+          "n": 100,
+          "acc_mid": 0.34,
+          "acc_base": 0.23,
+          "diff": 0.11,
+          "discordant_mid_wins": 17,
+          "discordant_base_wins": 6,
+          "mcnemar_exact_p": 0.03469,
+          "ci95": [
+            0.0185,
+            0.2015
+          ]
+        },
+        "g_implement": {
+          "n": 120,
+          "acc_mid": 0.35,
+          "acc_base": 0.0167,
+          "diff": 0.3333,
+          "discordant_mid_wins": 40,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.249,
+            0.4177
+          ]
+        },
+        "g_describe": {
+          "n": 101,
+          "acc_mid": 0.2673,
+          "acc_base": 0.0198,
+          "diff": 0.2475,
+          "discordant_mid_wins": 25,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1634,
+            0.3317
+          ]
+        },
+        "g_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.3,
+          "acc_base": 0.0,
+          "diff": 0.3,
+          "discordant_mid_wins": 15,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 6e-05,
+          "ci95": [
+            0.173,
+            0.427
+          ]
+        },
+        "g_inversion": {
+          "n": 100,
+          "acc_mid": 0.29,
+          "acc_base": 0.29,
+          "diff": 0.0,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.062,
+            0.062
+          ]
+        }
+      },
+      "floor": {
+        "f_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.035,
+          "acc_base": 0.005,
+          "diff": 0.03,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.03125,
+          "ci95": [
+            0.0064,
+            0.0536
+          ]
+        },
+        "f_nl_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.05,
+          "acc_base": 0.04,
+          "diff": 0.01,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 1,
+          "mcnemar_exact_p": 0.625,
+          "ci95": [
+            -0.0096,
+            0.0296
+          ]
+        },
+        "f_mc_code_unseen": {
+          "n": 100,
+          "acc_mid": 0.25,
+          "acc_base": 0.29,
+          "diff": -0.04,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 10,
+          "mcnemar_exact_p": 0.4545,
+          "ci95": [
+            -0.118,
+            0.038
+          ]
+        },
+        "f_mc_language_unseen": {
+          "n": 100,
+          "acc_mid": 0.24,
+          "acc_base": 0.24,
+          "diff": 0.0,
+          "discordant_mid_wins": 7,
+          "discordant_base_wins": 7,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.0733,
+            0.0733
+          ]
+        },
+        "f_implement_unseen": {
+          "n": 120,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_describe_unseen": {
+          "n": 95,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_freeform_definition_unseen": {
+          "n": 50,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_inversion_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ]
+        }
+      },
+      "pooled": {
+        "generative_nl": {
+          "n": 277,
+          "acc_mid": 0.5704,
+          "acc_base": 0.3032,
+          "diff": 0.2671,
+          "discordant_mid_wins": 83,
+          "discordant_base_wins": 9,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.207,
+            0.3273
+          ],
+          "probes": [
+            "f_implement",
+            "f_describe",
+            "f_freeform_definition"
+          ]
+        },
+        "generative_nl_unseen": {
+          "n": 265,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "probes": [
+            "f_implement_unseen",
+            "f_describe_unseen",
+            "f_freeform_definition_unseen"
+          ]
+        },
+        "discriminative_mc": {
+          "n": 200,
+          "acc_mid": 0.735,
+          "acc_base": 0.89,
+          "diff": -0.155,
+          "discordant_mid_wins": 9,
+          "discordant_base_wins": 40,
+          "mcnemar_exact_p": 1e-05,
+          "ci95": [
+            -0.2201,
+            -0.0899
+          ],
+          "probes": [
+            "f_mc_code",
+            "f_mc_language"
+          ]
+        },
+        "discriminative_mc_unseen": {
+          "n": 200,
+          "acc_mid": 0.245,
+          "acc_base": 0.265,
+          "diff": -0.02,
+          "discordant_mid_wins": 13,
+          "discordant_base_wins": 17,
+          "mcnemar_exact_p": 0.58466,
+          "ci95": [
+            -0.0736,
+            0.0336
+          ],
+          "probes": [
+            "f_mc_code_unseen",
+            "f_mc_language_unseen"
+          ]
+        },
+        "numeric_apply": {
+          "n": 400,
+          "acc_mid": 0.9825,
+          "acc_base": 0.98,
+          "diff": 0.0025,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.0105,
+            0.0155
+          ],
+          "probes": [
+            "f_regression",
+            "f_nl_regression"
+          ]
+        },
+        "numeric_apply_unseen": {
+          "n": 400,
+          "acc_mid": 0.0425,
+          "acc_base": 0.0225,
+          "diff": 0.02,
+          "discordant_mid_wins": 9,
+          "discordant_base_wins": 1,
+          "mcnemar_exact_p": 0.02148,
+          "ci95": [
+            0.0046,
+            0.0354
+          ],
+          "probes": [
+            "f_regression_unseen",
+            "f_nl_regression_unseen"
+          ]
+        },
+        "numeric_invert": {
+          "n": 100,
+          "acc_mid": 0.46,
+          "acc_base": 0.57,
+          "diff": -0.11,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 15,
+          "mcnemar_exact_p": 0.01921,
+          "ci95": [
+            -0.1927,
+            -0.0273
+          ],
+          "probes": [
+            "f_inversion"
+          ]
+        },
+        "numeric_invert_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ],
+          "probes": [
+            "f_inversion_unseen"
+          ]
+        }
+      },
+      "per_function": {},
+      "cells": {
+        "f_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.01
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.01
+          }
+        },
+        "f_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.05
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0
+          }
+        },
+        "f_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 117,
+              "drop_rate": 0.025
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 110,
+              "drop_rate": 0.0833
+            }
+          }
+        },
+        "f_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.2
+          }
+        },
+        "f_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0333
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0
+          }
+        },
+        "g_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 110,
+              "drop_rate": 0.0833
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 111,
+              "drop_rate": 0.075
+            }
+          }
+        },
+        "g_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.0
+          }
+        },
+        "g_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0167
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0
+          }
+        },
+        "f_describe_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 103,
+              "drop_rate": 0.1417
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 110,
+              "drop_rate": 0.0833
+            }
+          }
+        },
+        "f_freeform_definition_unseen": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.0
+          }
+        },
+        "f_inversion_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        }
+      }
+    },
+    "62": {
+      "specs": {
+        "mid": "pane12b-mid_step-62",
+        "base": "pane12b-base_step-62"
+      },
+      "primary": {
+        "f_regression": {
+          "n": 200,
+          "acc_mid": 0.985,
+          "acc_base": 0.99,
+          "diff": -0.005,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.022,
+            0.012
+          ]
+        },
+        "f_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.98,
+          "acc_base": 0.99,
+          "diff": -0.01,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.5,
+          "ci95": [
+            -0.0238,
+            0.0038
+          ]
+        },
+        "f_mc_code": {
+          "n": 100,
+          "acc_mid": 0.8,
+          "acc_base": 0.96,
+          "diff": -0.16,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 19,
+          "mcnemar_exact_p": 0.00086,
+          "ci95": [
+            -0.2464,
+            -0.0736
+          ]
+        },
+        "f_mc_language": {
+          "n": 100,
+          "acc_mid": 0.77,
+          "acc_base": 0.88,
+          "diff": -0.11,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 12,
+          "mcnemar_exact_p": 0.00342,
+          "ci95": [
+            -0.1773,
+            -0.0427
+          ]
+        },
+        "f_implement": {
+          "n": 120,
+          "acc_mid": 0.5167,
+          "acc_base": 0.3333,
+          "diff": 0.1833,
+          "discordant_mid_wins": 30,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.00047,
+          "ci95": [
+            0.0881,
+            0.2785
+          ]
+        },
+        "f_describe": {
+          "n": 91,
+          "acc_mid": 0.7253,
+          "acc_base": 0.4176,
+          "diff": 0.3077,
+          "discordant_mid_wins": 35,
+          "discordant_base_wins": 7,
+          "mcnemar_exact_p": 2e-05,
+          "ci95": [
+            0.1832,
+            0.4321
+          ]
+        },
+        "f_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.5,
+          "acc_base": 0.4,
+          "diff": 0.1,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 0.30176,
+          "ci95": [
+            -0.0493,
+            0.2493
+          ]
+        },
+        "f_inversion": {
+          "n": 100,
+          "acc_mid": 0.5,
+          "acc_base": 0.64,
+          "diff": -0.14,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 16,
+          "mcnemar_exact_p": 0.00131,
+          "ci95": [
+            -0.2185,
+            -0.0615
+          ]
+        }
+      },
+      "manipulation": {
+        "g_regression": {
+          "n": 200,
+          "acc_mid": 0.435,
+          "acc_base": 0.09,
+          "diff": 0.345,
+          "discordant_mid_wins": 71,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2763,
+            0.4137
+          ]
+        },
+        "g_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.39,
+          "acc_base": 0.13,
+          "diff": 0.26,
+          "discordant_mid_wins": 60,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1877,
+            0.3323
+          ]
+        },
+        "g_mc_code": {
+          "n": 100,
+          "acc_mid": 0.61,
+          "acc_base": 0.3,
+          "diff": 0.31,
+          "discordant_mid_wins": 33,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2112,
+            0.4088
+          ]
+        },
+        "g_mc_language": {
+          "n": 100,
+          "acc_mid": 0.37,
+          "acc_base": 0.24,
+          "diff": 0.13,
+          "discordant_mid_wins": 16,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 0.00443,
+          "ci95": [
+            0.0485,
+            0.2115
+          ]
+        },
+        "g_implement": {
+          "n": 120,
+          "acc_mid": 0.3333,
+          "acc_base": 0.0167,
+          "diff": 0.3167,
+          "discordant_mid_wins": 38,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2334,
+            0.3999
+          ]
+        },
+        "g_describe": {
+          "n": 106,
+          "acc_mid": 0.3208,
+          "acc_base": 0.0377,
+          "diff": 0.283,
+          "discordant_mid_wins": 30,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1973,
+            0.3688
+          ]
+        },
+        "g_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.2,
+          "acc_base": 0.1,
+          "diff": 0.1,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0625,
+          "ci95": [
+            0.0168,
+            0.1832
+          ]
+        },
+        "g_inversion": {
+          "n": 100,
+          "acc_mid": 0.34,
+          "acc_base": 0.27,
+          "diff": 0.07,
+          "discordant_mid_wins": 7,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.01562,
+          "ci95": [
+            0.02,
+            0.12
+          ]
+        }
+      },
+      "floor": {
+        "f_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.035,
+          "acc_base": 0.005,
+          "diff": 0.03,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.03125,
+          "ci95": [
+            0.0064,
+            0.0536
+          ]
+        },
+        "f_nl_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.03,
+          "acc_base": 0.025,
+          "diff": 0.005,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.0209,
+            0.0309
+          ]
+        },
+        "f_mc_code_unseen": {
+          "n": 100,
+          "acc_mid": 0.26,
+          "acc_base": 0.29,
+          "diff": -0.03,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.58105,
+          "ci95": [
+            -0.1004,
+            0.0404
+          ]
+        },
+        "f_mc_language_unseen": {
+          "n": 100,
+          "acc_mid": 0.24,
+          "acc_base": 0.25,
+          "diff": -0.01,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 7,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.0806,
+            0.0606
+          ]
+        },
+        "f_implement_unseen": {
+          "n": 120,
+          "acc_mid": 0.0167,
+          "acc_base": 0.0,
+          "diff": 0.0167,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.5,
+          "ci95": [
+            -0.0062,
+            0.0396
+          ]
+        },
+        "f_describe_unseen": {
+          "n": 101,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_freeform_definition_unseen": {
+          "n": 50,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_inversion_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ]
+        }
+      },
+      "pooled": {
+        "generative_nl": {
+          "n": 261,
+          "acc_mid": 0.5862,
+          "acc_base": 0.3755,
+          "diff": 0.2107,
+          "discordant_mid_wins": 75,
+          "discordant_base_wins": 20,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1421,
+            0.2793
+          ],
+          "probes": [
+            "f_implement",
+            "f_describe",
+            "f_freeform_definition"
+          ]
+        },
+        "generative_nl_unseen": {
+          "n": 271,
+          "acc_mid": 0.0074,
+          "acc_base": 0.0,
+          "diff": 0.0074,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.5,
+          "ci95": [
+            -0.0028,
+            0.0176
+          ],
+          "probes": [
+            "f_implement_unseen",
+            "f_describe_unseen",
+            "f_freeform_definition_unseen"
+          ]
+        },
+        "discriminative_mc": {
+          "n": 200,
+          "acc_mid": 0.785,
+          "acc_base": 0.92,
+          "diff": -0.135,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 31,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            -0.1899,
+            -0.0801
+          ],
+          "probes": [
+            "f_mc_code",
+            "f_mc_language"
+          ]
+        },
+        "discriminative_mc_unseen": {
+          "n": 200,
+          "acc_mid": 0.25,
+          "acc_base": 0.27,
+          "diff": -0.02,
+          "discordant_mid_wins": 11,
+          "discordant_base_wins": 15,
+          "mcnemar_exact_p": 0.5572,
+          "ci95": [
+            -0.0699,
+            0.0299
+          ],
+          "probes": [
+            "f_mc_code_unseen",
+            "f_mc_language_unseen"
+          ]
+        },
+        "numeric_apply": {
+          "n": 400,
+          "acc_mid": 0.9825,
+          "acc_base": 0.99,
+          "diff": -0.0075,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 4,
+          "mcnemar_exact_p": 0.375,
+          "ci95": [
+            -0.0184,
+            0.0034
+          ],
+          "probes": [
+            "f_regression",
+            "f_nl_regression"
+          ]
+        },
+        "numeric_apply_unseen": {
+          "n": 400,
+          "acc_mid": 0.0325,
+          "acc_base": 0.015,
+          "diff": 0.0175,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 0.09229,
+          "ci95": [
+            -0.0001,
+            0.0351
+          ],
+          "probes": [
+            "f_regression_unseen",
+            "f_nl_regression_unseen"
+          ]
+        },
+        "numeric_invert": {
+          "n": 100,
+          "acc_mid": 0.5,
+          "acc_base": 0.64,
+          "diff": -0.14,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 16,
+          "mcnemar_exact_p": 0.00131,
+          "ci95": [
+            -0.2185,
+            -0.0615
+          ],
+          "probes": [
+            "f_inversion"
+          ]
+        },
+        "numeric_invert_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ],
+          "probes": [
+            "f_inversion_unseen"
+          ]
+        }
+      },
+      "per_function": {},
+      "cells": {
+        "f_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0667
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "f_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 107,
+              "drop_rate": 0.1083
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 103,
+              "drop_rate": 0.1417
+            }
+          }
+        },
+        "f_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.3
+          }
+        },
+        "f_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0333
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0
+          }
+        },
+        "g_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 108,
+              "drop_rate": 0.1
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 118,
+              "drop_rate": 0.0167
+            }
+          }
+        },
+        "g_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.1
+          }
+        },
+        "g_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "f_describe_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 108,
+              "drop_rate": 0.1
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 111,
+              "drop_rate": 0.075
+            }
+          }
+        },
+        "f_freeform_definition_unseen": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.1
+          }
+        },
+        "f_inversion_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        }
+      }
+    },
+    "93": {
+      "specs": {
+        "mid": "pane12b-mid_step-93",
+        "base": "pane12b-base_step-93"
+      },
+      "primary": {
+        "f_regression": {
+          "n": 200,
+          "acc_mid": 0.985,
+          "acc_base": 0.99,
+          "diff": -0.005,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.022,
+            0.012
+          ]
+        },
+        "f_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.98,
+          "acc_base": 0.995,
+          "diff": -0.015,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 0.25,
+          "ci95": [
+            -0.0318,
+            0.0018
+          ]
+        },
+        "f_mc_code": {
+          "n": 100,
+          "acc_mid": 0.78,
+          "acc_base": 0.96,
+          "diff": -0.18,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 21,
+          "mcnemar_exact_p": 0.00028,
+          "ci95": [
+            -0.2693,
+            -0.0907
+          ]
+        },
+        "f_mc_language": {
+          "n": 100,
+          "acc_mid": 0.78,
+          "acc_base": 0.88,
+          "diff": -0.1,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 12,
+          "mcnemar_exact_p": 0.01294,
+          "ci95": [
+            -0.1707,
+            -0.0293
+          ]
+        },
+        "f_implement": {
+          "n": 120,
+          "acc_mid": 0.5333,
+          "acc_base": 0.3667,
+          "diff": 0.1667,
+          "discordant_mid_wins": 26,
+          "discordant_base_wins": 6,
+          "mcnemar_exact_p": 0.00054,
+          "ci95": [
+            0.0792,
+            0.2541
+          ]
+        },
+        "f_describe": {
+          "n": 82,
+          "acc_mid": 0.8049,
+          "acc_base": 0.4268,
+          "diff": 0.378,
+          "discordant_mid_wins": 33,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2627,
+            0.4934
+          ]
+        },
+        "f_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.5,
+          "acc_base": 0.5,
+          "diff": 0.0,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.124,
+            0.124
+          ]
+        },
+        "f_inversion": {
+          "n": 100,
+          "acc_mid": 0.5,
+          "acc_base": 0.64,
+          "diff": -0.14,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 16,
+          "mcnemar_exact_p": 0.00131,
+          "ci95": [
+            -0.2185,
+            -0.0615
+          ]
+        }
+      },
+      "manipulation": {
+        "g_regression": {
+          "n": 200,
+          "acc_mid": 0.44,
+          "acc_base": 0.09,
+          "diff": 0.35,
+          "discordant_mid_wins": 72,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2811,
+            0.4189
+          ]
+        },
+        "g_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.39,
+          "acc_base": 0.13,
+          "diff": 0.26,
+          "discordant_mid_wins": 60,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1877,
+            0.3323
+          ]
+        },
+        "g_mc_code": {
+          "n": 100,
+          "acc_mid": 0.54,
+          "acc_base": 0.28,
+          "diff": 0.26,
+          "discordant_mid_wins": 31,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 1e-05,
+          "ci95": [
+            0.154,
+            0.366
+          ]
+        },
+        "g_mc_language": {
+          "n": 100,
+          "acc_mid": 0.37,
+          "acc_base": 0.22,
+          "diff": 0.15,
+          "discordant_mid_wins": 18,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 0.00149,
+          "ci95": [
+            0.0651,
+            0.2349
+          ]
+        },
+        "g_implement": {
+          "n": 120,
+          "acc_mid": 0.3167,
+          "acc_base": 0.0167,
+          "diff": 0.3,
+          "discordant_mid_wins": 36,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.218,
+            0.382
+          ]
+        },
+        "g_describe": {
+          "n": 98,
+          "acc_mid": 0.3673,
+          "acc_base": 0.102,
+          "diff": 0.2653,
+          "discordant_mid_wins": 28,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1692,
+            0.3614
+          ]
+        },
+        "g_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.3,
+          "acc_base": 0.1,
+          "diff": 0.2,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.00195,
+          "ci95": [
+            0.0891,
+            0.3109
+          ]
+        },
+        "g_inversion": {
+          "n": 100,
+          "acc_mid": 0.34,
+          "acc_base": 0.27,
+          "diff": 0.07,
+          "discordant_mid_wins": 8,
+          "discordant_base_wins": 1,
+          "mcnemar_exact_p": 0.03906,
+          "ci95": [
+            0.0128,
+            0.1272
+          ]
+        }
+      },
+      "floor": {
+        "f_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.035,
+          "acc_base": 0.005,
+          "diff": 0.03,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.03125,
+          "ci95": [
+            0.0064,
+            0.0536
+          ]
+        },
+        "f_nl_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.03,
+          "acc_base": 0.02,
+          "diff": 0.01,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.6875,
+          "ci95": [
+            -0.014,
+            0.034
+          ]
+        },
+        "f_mc_code_unseen": {
+          "n": 100,
+          "acc_mid": 0.23,
+          "acc_base": 0.28,
+          "diff": -0.05,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.22656,
+          "ci95": [
+            -0.1143,
+            0.0143
+          ]
+        },
+        "f_mc_language_unseen": {
+          "n": 100,
+          "acc_mid": 0.25,
+          "acc_base": 0.24,
+          "diff": 0.01,
+          "discordant_mid_wins": 8,
+          "discordant_base_wins": 7,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.0659,
+            0.0859
+          ]
+        },
+        "f_implement_unseen": {
+          "n": 120,
+          "acc_mid": 0.0333,
+          "acc_base": 0.0,
+          "diff": 0.0333,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0012,
+            0.0655
+          ]
+        },
+        "f_describe_unseen": {
+          "n": 99,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_freeform_definition_unseen": {
+          "n": 50,
+          "acc_mid": 0.1,
+          "acc_base": 0.0,
+          "diff": 0.1,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0625,
+          "ci95": [
+            0.0168,
+            0.1832
+          ]
+        },
+        "f_inversion_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ]
+        }
+      },
+      "pooled": {
+        "generative_nl": {
+          "n": 252,
+          "acc_mid": 0.6151,
+          "acc_base": 0.4127,
+          "diff": 0.2024,
+          "discordant_mid_wins": 64,
+          "discordant_base_wins": 13,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1389,
+            0.2659
+          ],
+          "probes": [
+            "f_implement",
+            "f_describe",
+            "f_freeform_definition"
+          ]
+        },
+        "generative_nl_unseen": {
+          "n": 269,
+          "acc_mid": 0.0335,
+          "acc_base": 0.0,
+          "diff": 0.0335,
+          "discordant_mid_wins": 9,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.00391,
+          "ci95": [
+            0.012,
+            0.0549
+          ],
+          "probes": [
+            "f_implement_unseen",
+            "f_describe_unseen",
+            "f_freeform_definition_unseen"
+          ]
+        },
+        "discriminative_mc": {
+          "n": 200,
+          "acc_mid": 0.78,
+          "acc_base": 0.92,
+          "diff": -0.14,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 33,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            -0.1972,
+            -0.0828
+          ],
+          "probes": [
+            "f_mc_code",
+            "f_mc_language"
+          ]
+        },
+        "discriminative_mc_unseen": {
+          "n": 200,
+          "acc_mid": 0.24,
+          "acc_base": 0.26,
+          "diff": -0.02,
+          "discordant_mid_wins": 11,
+          "discordant_base_wins": 15,
+          "mcnemar_exact_p": 0.5572,
+          "ci95": [
+            -0.0699,
+            0.0299
+          ],
+          "probes": [
+            "f_mc_code_unseen",
+            "f_mc_language_unseen"
+          ]
+        },
+        "numeric_apply": {
+          "n": 400,
+          "acc_mid": 0.9825,
+          "acc_base": 0.9925,
+          "diff": -0.01,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 0.21875,
+          "ci95": [
+            -0.022,
+            0.002
+          ],
+          "probes": [
+            "f_regression",
+            "f_nl_regression"
+          ]
+        },
+        "numeric_apply_unseen": {
+          "n": 400,
+          "acc_mid": 0.0325,
+          "acc_base": 0.0125,
+          "diff": 0.02,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.03857,
+          "ci95": [
+            0.0031,
+            0.0369
+          ],
+          "probes": [
+            "f_regression_unseen",
+            "f_nl_regression_unseen"
+          ]
+        },
+        "numeric_invert": {
+          "n": 100,
+          "acc_mid": 0.5,
+          "acc_base": 0.64,
+          "diff": -0.14,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 16,
+          "mcnemar_exact_p": 0.00131,
+          "ci95": [
+            -0.2185,
+            -0.0615
+          ],
+          "probes": [
+            "f_inversion"
+          ]
+        },
+        "numeric_invert_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ],
+          "probes": [
+            "f_inversion_unseen"
+          ]
+        }
+      },
+      "per_function": {},
+      "cells": {
+        "f_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.05
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "f_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 98,
+              "drop_rate": 0.1833
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 104,
+              "drop_rate": 0.1333
+            }
+          }
+        },
+        "f_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.3
+          }
+        },
+        "f_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0833
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0
+          }
+        },
+        "g_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 100,
+              "drop_rate": 0.1667
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 116,
+              "drop_rate": 0.0333
+            }
+          }
+        },
+        "g_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.1
+          }
+        },
+        "g_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.1167
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "f_describe_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 106,
+              "drop_rate": 0.1167
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 111,
+              "drop_rate": 0.075
+            }
+          }
+        },
+        "f_freeform_definition_unseen": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.3
+          }
+        },
+        "f_inversion_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        }
+      }
+    },
+    "121": {
+      "specs": {
+        "mid": "pane12b-mid_step-121",
+        "base": "pane12b-base_step-121"
+      },
+      "primary": {
+        "f_regression": {
+          "n": 200,
+          "acc_mid": 0.985,
+          "acc_base": 0.99,
+          "diff": -0.005,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.022,
+            0.012
+          ]
+        },
+        "f_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.975,
+          "acc_base": 0.995,
+          "diff": -0.02,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 4,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            -0.0394,
+            -0.0006
+          ]
+        },
+        "f_mc_code": {
+          "n": 100,
+          "acc_mid": 0.76,
+          "acc_base": 0.96,
+          "diff": -0.2,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 23,
+          "mcnemar_exact_p": 9e-05,
+          "ci95": [
+            -0.2919,
+            -0.1081
+          ]
+        },
+        "f_mc_language": {
+          "n": 100,
+          "acc_mid": 0.78,
+          "acc_base": 0.88,
+          "diff": -0.1,
+          "discordant_mid_wins": 2,
+          "discordant_base_wins": 12,
+          "mcnemar_exact_p": 0.01294,
+          "ci95": [
+            -0.1707,
+            -0.0293
+          ]
+        },
+        "f_implement": {
+          "n": 120,
+          "acc_mid": 0.5167,
+          "acc_base": 0.3667,
+          "diff": 0.15,
+          "discordant_mid_wins": 26,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.00294,
+          "ci95": [
+            0.0586,
+            0.2414
+          ]
+        },
+        "f_describe": {
+          "n": 104,
+          "acc_mid": 0.6538,
+          "acc_base": 0.4712,
+          "diff": 0.1827,
+          "discordant_mid_wins": 34,
+          "discordant_base_wins": 15,
+          "mcnemar_exact_p": 0.0094,
+          "ci95": [
+            0.0555,
+            0.3099
+          ]
+        },
+        "f_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.5,
+          "acc_base": 0.5,
+          "diff": 0.0,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            -0.124,
+            0.124
+          ]
+        },
+        "f_inversion": {
+          "n": 100,
+          "acc_mid": 0.51,
+          "acc_base": 0.65,
+          "diff": -0.14,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 18,
+          "mcnemar_exact_p": 0.00434,
+          "ci95": [
+            -0.2277,
+            -0.0523
+          ]
+        }
+      },
+      "manipulation": {
+        "g_regression": {
+          "n": 200,
+          "acc_mid": 0.425,
+          "acc_base": 0.09,
+          "diff": 0.335,
+          "discordant_mid_wins": 71,
+          "discordant_base_wins": 4,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.264,
+            0.406
+          ]
+        },
+        "g_nl_regression": {
+          "n": 200,
+          "acc_mid": 0.395,
+          "acc_base": 0.125,
+          "diff": 0.27,
+          "discordant_mid_wins": 62,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.197,
+            0.343
+          ]
+        },
+        "g_mc_code": {
+          "n": 100,
+          "acc_mid": 0.55,
+          "acc_base": 0.28,
+          "diff": 0.27,
+          "discordant_mid_wins": 30,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1706,
+            0.3694
+          ]
+        },
+        "g_mc_language": {
+          "n": 100,
+          "acc_mid": 0.37,
+          "acc_base": 0.23,
+          "diff": 0.14,
+          "discordant_mid_wins": 17,
+          "discordant_base_wins": 3,
+          "mcnemar_exact_p": 0.00258,
+          "ci95": [
+            0.0568,
+            0.2232
+          ]
+        },
+        "g_implement": {
+          "n": 120,
+          "acc_mid": 0.3333,
+          "acc_base": 0.0167,
+          "diff": 0.3167,
+          "discordant_mid_wins": 38,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.2334,
+            0.3999
+          ]
+        },
+        "g_describe": {
+          "n": 105,
+          "acc_mid": 0.3238,
+          "acc_base": 0.0571,
+          "diff": 0.2667,
+          "discordant_mid_wins": 28,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            0.1821,
+            0.3513
+          ]
+        },
+        "g_freeform_definition": {
+          "n": 50,
+          "acc_mid": 0.2,
+          "acc_base": 0.1,
+          "diff": 0.1,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 5,
+          "mcnemar_exact_p": 0.30176,
+          "ci95": [
+            -0.0493,
+            0.2493
+          ]
+        },
+        "g_inversion": {
+          "n": 100,
+          "acc_mid": 0.34,
+          "acc_base": 0.27,
+          "diff": 0.07,
+          "discordant_mid_wins": 8,
+          "discordant_base_wins": 1,
+          "mcnemar_exact_p": 0.03906,
+          "ci95": [
+            0.0128,
+            0.1272
+          ]
+        }
+      },
+      "floor": {
+        "f_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.035,
+          "acc_base": 0.005,
+          "diff": 0.03,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.03125,
+          "ci95": [
+            0.0064,
+            0.0536
+          ]
+        },
+        "f_nl_regression_unseen": {
+          "n": 200,
+          "acc_mid": 0.03,
+          "acc_base": 0.02,
+          "diff": 0.01,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.6875,
+          "ci95": [
+            -0.014,
+            0.034
+          ]
+        },
+        "f_mc_code_unseen": {
+          "n": 100,
+          "acc_mid": 0.22,
+          "acc_base": 0.3,
+          "diff": -0.08,
+          "discordant_mid_wins": 3,
+          "discordant_base_wins": 11,
+          "mcnemar_exact_p": 0.05737,
+          "ci95": [
+            -0.1516,
+            -0.0084
+          ]
+        },
+        "f_mc_language_unseen": {
+          "n": 100,
+          "acc_mid": 0.22,
+          "acc_base": 0.24,
+          "diff": -0.02,
+          "discordant_mid_wins": 6,
+          "discordant_base_wins": 8,
+          "mcnemar_exact_p": 0.79053,
+          "ci95": [
+            -0.0932,
+            0.0532
+          ]
+        },
+        "f_implement_unseen": {
+          "n": 120,
+          "acc_mid": 0.0333,
+          "acc_base": 0.0,
+          "diff": 0.0333,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0012,
+            0.0655
+          ]
+        },
+        "f_describe_unseen": {
+          "n": 111,
+          "acc_mid": 0.0,
+          "acc_base": 0.0,
+          "diff": 0.0,
+          "discordant_mid_wins": 0,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "f_freeform_definition_unseen": {
+          "n": 50,
+          "acc_mid": 0.1,
+          "acc_base": 0.0,
+          "diff": 0.1,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.0625,
+          "ci95": [
+            0.0168,
+            0.1832
+          ]
+        },
+        "f_inversion_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ]
+        }
+      },
+      "pooled": {
+        "generative_nl": {
+          "n": 274,
+          "acc_mid": 0.5657,
+          "acc_base": 0.4307,
+          "diff": 0.135,
+          "discordant_mid_wins": 65,
+          "discordant_base_wins": 28,
+          "mcnemar_exact_p": 0.00016,
+          "ci95": [
+            0.0679,
+            0.2021
+          ],
+          "probes": [
+            "f_implement",
+            "f_describe",
+            "f_freeform_definition"
+          ]
+        },
+        "generative_nl_unseen": {
+          "n": 281,
+          "acc_mid": 0.032,
+          "acc_base": 0.0,
+          "diff": 0.032,
+          "discordant_mid_wins": 9,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.00391,
+          "ci95": [
+            0.0114,
+            0.0526
+          ],
+          "probes": [
+            "f_implement_unseen",
+            "f_describe_unseen",
+            "f_freeform_definition_unseen"
+          ]
+        },
+        "discriminative_mc": {
+          "n": 200,
+          "acc_mid": 0.77,
+          "acc_base": 0.92,
+          "diff": -0.15,
+          "discordant_mid_wins": 5,
+          "discordant_base_wins": 35,
+          "mcnemar_exact_p": 0.0,
+          "ci95": [
+            -0.2084,
+            -0.0916
+          ],
+          "probes": [
+            "f_mc_code",
+            "f_mc_language"
+          ]
+        },
+        "discriminative_mc_unseen": {
+          "n": 200,
+          "acc_mid": 0.22,
+          "acc_base": 0.27,
+          "diff": -0.05,
+          "discordant_mid_wins": 9,
+          "discordant_base_wins": 19,
+          "mcnemar_exact_p": 0.08716,
+          "ci95": [
+            -0.1014,
+            0.0014
+          ],
+          "probes": [
+            "f_mc_code_unseen",
+            "f_mc_language_unseen"
+          ]
+        },
+        "numeric_apply": {
+          "n": 400,
+          "acc_mid": 0.98,
+          "acc_base": 0.9925,
+          "diff": -0.0125,
+          "discordant_mid_wins": 1,
+          "discordant_base_wins": 6,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            -0.0254,
+            0.0004
+          ],
+          "probes": [
+            "f_regression",
+            "f_nl_regression"
+          ]
+        },
+        "numeric_apply_unseen": {
+          "n": 400,
+          "acc_mid": 0.0325,
+          "acc_base": 0.0125,
+          "diff": 0.02,
+          "discordant_mid_wins": 10,
+          "discordant_base_wins": 2,
+          "mcnemar_exact_p": 0.03857,
+          "ci95": [
+            0.0031,
+            0.0369
+          ],
+          "probes": [
+            "f_regression_unseen",
+            "f_nl_regression_unseen"
+          ]
+        },
+        "numeric_invert": {
+          "n": 100,
+          "acc_mid": 0.51,
+          "acc_base": 0.65,
+          "diff": -0.14,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 18,
+          "mcnemar_exact_p": 0.00434,
+          "ci95": [
+            -0.2277,
+            -0.0523
+          ],
+          "probes": [
+            "f_inversion"
+          ]
+        },
+        "numeric_invert_unseen": {
+          "n": 100,
+          "acc_mid": 0.21,
+          "acc_base": 0.17,
+          "diff": 0.04,
+          "discordant_mid_wins": 4,
+          "discordant_base_wins": 0,
+          "mcnemar_exact_p": 0.125,
+          "ci95": [
+            0.0016,
+            0.0784
+          ],
+          "probes": [
+            "f_inversion_unseen"
+          ]
+        }
+      },
+      "per_function": {
+        "f_regression": {
+          "fn00": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn01": {
+            "n": 20,
+            "acc_mid": 0.95,
+            "acc_base": 1.0,
+            "diff": -0.05,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.1455,
+              0.0455
+            ]
+          },
+          "fn02": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn04": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn05": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn07": {
+            "n": 20,
+            "acc_mid": 0.95,
+            "acc_base": 0.95,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn08": {
+            "n": 20,
+            "acc_mid": 0.95,
+            "acc_base": 0.95,
+            "diff": 0.0,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.1386,
+              0.1386
+            ]
+          },
+          "fn09": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "f_nl_regression": {
+          "fn00": {
+            "n": 20,
+            "acc_mid": 0.9,
+            "acc_base": 1.0,
+            "diff": -0.1,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.2315,
+              0.0315
+            ]
+          },
+          "fn01": {
+            "n": 20,
+            "acc_mid": 0.9,
+            "acc_base": 1.0,
+            "diff": -0.1,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.2315,
+              0.0315
+            ]
+          },
+          "fn02": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn04": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn05": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn07": {
+            "n": 20,
+            "acc_mid": 0.95,
+            "acc_base": 0.95,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn08": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "f_mc_code": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 1.0,
+            "diff": -0.2,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.4479,
+              0.0479
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.7,
+            "acc_base": 1.0,
+            "diff": -0.3,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 3,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              -0.584,
+              -0.016
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 1.0,
+            "diff": -0.2,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.4479,
+              0.0479
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 1.0,
+            "diff": -0.2,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.4479,
+              0.0479
+            ]
+          },
+          "fn04": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 1.0,
+            "diff": -0.6,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 6,
+            "mcnemar_exact_p": 0.03125,
+            "ci95": [
+              -0.9036,
+              -0.2964
+            ]
+          },
+          "fn05": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 1.0,
+            "diff": -0.2,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.4479,
+              0.0479
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 0.9,
+            "acc_base": 1.0,
+            "diff": -0.1,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2859,
+              0.0859
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 1.0,
+            "diff": -0.4,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 4,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              -0.7036,
+              -0.0964
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.9,
+            "acc_base": 0.9,
+            "diff": 0.0,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2772,
+              0.2772
+            ]
+          },
+          "fn09": {
+            "n": 10,
+            "acc_mid": 0.9,
+            "acc_base": 0.7,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          }
+        },
+        "f_mc_language": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.7,
+            "acc_base": 1.0,
+            "diff": -0.3,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 3,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              -0.584,
+              -0.016
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.7,
+            "acc_base": 0.9,
+            "diff": -0.2,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.4479,
+              0.0479
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 1.0,
+            "diff": -0.2,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.4479,
+              0.0479
+            ]
+          },
+          "fn04": {
+            "n": 10,
+            "acc_mid": 0.7,
+            "acc_base": 0.8,
+            "diff": -0.1,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2859,
+              0.0859
+            ]
+          },
+          "fn05": {
+            "n": 10,
+            "acc_mid": 0.9,
+            "acc_base": 0.9,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 0.9,
+            "diff": -0.3,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 3,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              -0.584,
+              -0.016
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.8,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 0.5,
+            "diff": 0.1,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2338,
+              0.4338
+            ]
+          }
+        },
+        "f_implement": {
+          "fn00": {
+            "n": 12,
+            "acc_mid": 0.8333,
+            "acc_base": 1.0,
+            "diff": -0.1667,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.3775,
+              0.0442
+            ]
+          },
+          "fn01": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn02": {
+            "n": 12,
+            "acc_mid": 0.5,
+            "acc_base": 0.0,
+            "diff": 0.5,
+            "discordant_mid_wins": 6,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.03125,
+            "ci95": [
+              0.2171,
+              0.7829
+            ]
+          },
+          "fn03": {
+            "n": 12,
+            "acc_mid": 1.0,
+            "acc_base": 0.8333,
+            "diff": 0.1667,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0442,
+              0.3775
+            ]
+          },
+          "fn04": {
+            "n": 12,
+            "acc_mid": 0.1667,
+            "acc_base": 0.5,
+            "diff": -0.3333,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 4,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              -0.6001,
+              -0.0666
+            ]
+          },
+          "fn05": {
+            "n": 12,
+            "acc_mid": 1.0,
+            "acc_base": 0.3333,
+            "diff": 0.6667,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.3999,
+              0.9334
+            ]
+          },
+          "fn06": {
+            "n": 12,
+            "acc_mid": 0.8333,
+            "acc_base": 1.0,
+            "diff": -0.1667,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.3775,
+              0.0442
+            ]
+          },
+          "fn07": {
+            "n": 12,
+            "acc_mid": 0.8333,
+            "acc_base": 0.0,
+            "diff": 0.8333,
+            "discordant_mid_wins": 10,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00195,
+            "ci95": [
+              0.6225,
+              1.0442
+            ]
+          },
+          "fn08": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "f_describe": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 0.2,
+            "diff": 0.2,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.6875,
+            "ci95": [
+              -0.2638,
+              0.6638
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.0,
+            "diff": 0.8,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.5521,
+              1.0479
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn04": {
+            "n": 12,
+            "acc_mid": 0.1667,
+            "acc_base": 0.9167,
+            "diff": -0.75,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 9,
+            "mcnemar_exact_p": 0.00391,
+            "ci95": [
+              -0.995,
+              -0.505
+            ]
+          },
+          "fn05": {
+            "n": 12,
+            "acc_mid": 0.8333,
+            "acc_base": 0.1667,
+            "diff": 0.6667,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.3999,
+              0.9334
+            ]
+          },
+          "fn06": {
+            "n": 12,
+            "acc_mid": 0.8333,
+            "acc_base": 1.0,
+            "diff": -0.1667,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.3775,
+              0.0442
+            ]
+          },
+          "fn07": {
+            "n": 12,
+            "acc_mid": 0.5,
+            "acc_base": 0.0,
+            "diff": 0.5,
+            "discordant_mid_wins": 6,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.03125,
+            "ci95": [
+              0.2171,
+              0.7829
+            ]
+          },
+          "fn08": {
+            "n": 12,
+            "acc_mid": 0.6667,
+            "acc_base": 0.1667,
+            "diff": 0.5,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.10938,
+            "ci95": [
+              0.0679,
+              0.9321
+            ]
+          },
+          "fn09": {
+            "n": 4,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "f_freeform_definition": {
+          "fn00": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn01": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn02": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 0.0,
+            "diff": 1.0,
+            "discordant_mid_wins": 5,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              1.0,
+              1.0
+            ]
+          },
+          "fn03": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn04": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 1.0,
+            "diff": -1.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 5,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              -1.0,
+              -1.0
+            ]
+          },
+          "fn05": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn07": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn08": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "f_inversion": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.2,
+            "acc_base": 0.8,
+            "diff": -0.6,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 6,
+            "mcnemar_exact_p": 0.03125,
+            "ci95": [
+              -0.9036,
+              -0.2964
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.4,
+            "diff": -0.4,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 4,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              -0.7036,
+              -0.0964
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.9,
+            "diff": -0.1,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2859,
+              0.0859
+            ]
+          },
+          "fn04": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn05": {
+            "n": 10,
+            "acc_mid": 0.2,
+            "acc_base": 0.3,
+            "diff": -0.1,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2859,
+              0.0859
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 0.7,
+            "acc_base": 0.5,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.2,
+            "acc_base": 0.1,
+            "diff": 0.1,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2338,
+              0.4338
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.5,
+            "diff": -0.5,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 5,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              -0.8099,
+              -0.1901
+            ]
+          },
+          "fn09": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "g_regression": {
+          "fn00": {
+            "n": 20,
+            "acc_mid": 0.7,
+            "acc_base": 0.05,
+            "diff": 0.65,
+            "discordant_mid_wins": 13,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00024,
+            "ci95": [
+              0.441,
+              0.859
+            ]
+          },
+          "fn01": {
+            "n": 20,
+            "acc_mid": 0.75,
+            "acc_base": 0.75,
+            "diff": 0.0,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 4,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.2772,
+              0.2772
+            ]
+          },
+          "fn02": {
+            "n": 20,
+            "acc_mid": 0.1,
+            "acc_base": 0.05,
+            "diff": 0.05,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.0455,
+              0.1455
+            ]
+          },
+          "fn03": {
+            "n": 20,
+            "acc_mid": 1.0,
+            "acc_base": 0.0,
+            "diff": 1.0,
+            "discordant_mid_wins": 20,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.0,
+            "ci95": [
+              1.0,
+              1.0
+            ]
+          },
+          "fn04": {
+            "n": 20,
+            "acc_mid": 0.05,
+            "acc_base": 0.05,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn05": {
+            "n": 20,
+            "acc_mid": 0.15,
+            "acc_base": 0.0,
+            "diff": 0.15,
+            "discordant_mid_wins": 3,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              -0.0065,
+              0.3065
+            ]
+          },
+          "fn06": {
+            "n": 20,
+            "acc_mid": 0.5,
+            "acc_base": 0.0,
+            "diff": 0.5,
+            "discordant_mid_wins": 10,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00195,
+            "ci95": [
+              0.2809,
+              0.7191
+            ]
+          },
+          "fn07": {
+            "n": 20,
+            "acc_mid": 0.25,
+            "acc_base": 0.0,
+            "diff": 0.25,
+            "discordant_mid_wins": 5,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              0.0602,
+              0.4398
+            ]
+          },
+          "fn08": {
+            "n": 20,
+            "acc_mid": 0.4,
+            "acc_base": 0.0,
+            "diff": 0.4,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.1853,
+              0.6147
+            ]
+          },
+          "fn09": {
+            "n": 20,
+            "acc_mid": 0.35,
+            "acc_base": 0.0,
+            "diff": 0.35,
+            "discordant_mid_wins": 7,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.01562,
+            "ci95": [
+              0.141,
+              0.559
+            ]
+          }
+        },
+        "g_nl_regression": {
+          "fn00": {
+            "n": 20,
+            "acc_mid": 0.45,
+            "acc_base": 0.35,
+            "diff": 0.1,
+            "discordant_mid_wins": 5,
+            "discordant_base_wins": 3,
+            "mcnemar_exact_p": 0.72656,
+            "ci95": [
+              -0.1737,
+              0.3737
+            ]
+          },
+          "fn01": {
+            "n": 20,
+            "acc_mid": 0.65,
+            "acc_base": 0.15,
+            "diff": 0.5,
+            "discordant_mid_wins": 10,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00195,
+            "ci95": [
+              0.2809,
+              0.7191
+            ]
+          },
+          "fn02": {
+            "n": 20,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 20,
+            "acc_mid": 0.7,
+            "acc_base": 0.0,
+            "diff": 0.7,
+            "discordant_mid_wins": 14,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00012,
+            "ci95": [
+              0.4992,
+              0.9008
+            ]
+          },
+          "fn04": {
+            "n": 20,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn05": {
+            "n": 20,
+            "acc_mid": 0.15,
+            "acc_base": 0.05,
+            "diff": 0.1,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0315,
+              0.2315
+            ]
+          },
+          "fn06": {
+            "n": 20,
+            "acc_mid": 0.6,
+            "acc_base": 0.35,
+            "diff": 0.25,
+            "discordant_mid_wins": 7,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 0.17969,
+            "ci95": [
+              -0.0228,
+              0.5228
+            ]
+          },
+          "fn07": {
+            "n": 20,
+            "acc_mid": 0.1,
+            "acc_base": 0.1,
+            "diff": 0.0,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.196,
+              0.196
+            ]
+          },
+          "fn08": {
+            "n": 20,
+            "acc_mid": 0.45,
+            "acc_base": 0.15,
+            "diff": 0.3,
+            "discordant_mid_wins": 7,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 0.07031,
+            "ci95": [
+              0.056,
+              0.544
+            ]
+          },
+          "fn09": {
+            "n": 20,
+            "acc_mid": 0.85,
+            "acc_base": 0.1,
+            "diff": 0.75,
+            "discordant_mid_wins": 15,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 6e-05,
+            "ci95": [
+              0.5602,
+              0.9398
+            ]
+          }
+        },
+        "g_mc_code": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 0.1,
+            "diff": 0.3,
+            "discordant_mid_wins": 3,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              0.016,
+              0.584
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.9,
+            "diff": -0.1,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 2,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.4338,
+              0.2338
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 0.1,
+            "acc_base": 0.0,
+            "diff": 0.1,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.0859,
+              0.2859
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.6,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          },
+          "fn04": {
+            "n": 10,
+            "acc_mid": 0.1,
+            "acc_base": 0.0,
+            "diff": 0.1,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.0859,
+              0.2859
+            ]
+          },
+          "fn05": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 0.0,
+            "diff": 0.6,
+            "discordant_mid_wins": 6,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.03125,
+            "ci95": [
+              0.2964,
+              0.9036
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 0.2,
+            "diff": 0.4,
+            "discordant_mid_wins": 5,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 0.21875,
+            "ci95": [
+              -0.0111,
+              0.8111
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.9,
+            "acc_base": 0.5,
+            "diff": 0.4,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              0.0964,
+              0.7036
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.3,
+            "acc_base": 0.3,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 10,
+            "acc_mid": 0.9,
+            "acc_base": 0.2,
+            "diff": 0.7,
+            "discordant_mid_wins": 7,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.01562,
+            "ci95": [
+              0.416,
+              0.984
+            ]
+          }
+        },
+        "g_mc_language": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 0.1,
+            "diff": 0.3,
+            "discordant_mid_wins": 3,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              0.016,
+              0.584
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 0.3,
+            "diff": 0.1,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.0859,
+              0.2859
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 0.2,
+            "acc_base": 0.2,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.5,
+            "acc_base": 0.3,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          },
+          "fn04": {
+            "n": 10,
+            "acc_mid": 0.1,
+            "acc_base": 0.0,
+            "diff": 0.1,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.0859,
+              0.2859
+            ]
+          },
+          "fn05": {
+            "n": 10,
+            "acc_mid": 0.5,
+            "acc_base": 0.2,
+            "diff": 0.3,
+            "discordant_mid_wins": 3,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              0.016,
+              0.584
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 0.7,
+            "acc_base": 0.4,
+            "diff": 0.3,
+            "discordant_mid_wins": 3,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              0.016,
+              0.584
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 0.2,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.2,
+            "acc_base": 0.5,
+            "diff": -0.3,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 3,
+            "mcnemar_exact_p": 0.25,
+            "ci95": [
+              -0.584,
+              -0.016
+            ]
+          },
+          "fn09": {
+            "n": 10,
+            "acc_mid": 0.3,
+            "acc_base": 0.1,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          }
+        },
+        "g_implement": {
+          "fn00": {
+            "n": 12,
+            "acc_mid": 1.0,
+            "acc_base": 0.1667,
+            "diff": 0.8333,
+            "discordant_mid_wins": 10,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00195,
+            "ci95": [
+              0.6225,
+              1.0442
+            ]
+          },
+          "fn01": {
+            "n": 12,
+            "acc_mid": 0.6667,
+            "acc_base": 0.0,
+            "diff": 0.6667,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.3999,
+              0.9334
+            ]
+          },
+          "fn02": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 12,
+            "acc_mid": 1.0,
+            "acc_base": 0.0,
+            "diff": 1.0,
+            "discordant_mid_wins": 12,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00049,
+            "ci95": [
+              1.0,
+              1.0
+            ]
+          },
+          "fn04": {
+            "n": 12,
+            "acc_mid": 0.3333,
+            "acc_base": 0.0,
+            "diff": 0.3333,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              0.0666,
+              0.6001
+            ]
+          },
+          "fn05": {
+            "n": 12,
+            "acc_mid": 0.1667,
+            "acc_base": 0.0,
+            "diff": 0.1667,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0442,
+              0.3775
+            ]
+          },
+          "fn06": {
+            "n": 12,
+            "acc_mid": 0.1667,
+            "acc_base": 0.0,
+            "diff": 0.1667,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0442,
+              0.3775
+            ]
+          },
+          "fn07": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn08": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "g_describe": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.4,
+            "diff": 0.4,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              0.0964,
+              0.7036
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.0,
+            "diff": 0.8,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.5521,
+              1.0479
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 0.2,
+            "diff": 0.4,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              0.0964,
+              0.7036
+            ]
+          },
+          "fn04": {
+            "n": 12,
+            "acc_mid": 0.3333,
+            "acc_base": 0.0,
+            "diff": 0.3333,
+            "discordant_mid_wins": 4,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.125,
+            "ci95": [
+              0.0666,
+              0.6001
+            ]
+          },
+          "fn05": {
+            "n": 11,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 0.8,
+            "acc_base": 0.0,
+            "diff": 0.8,
+            "discordant_mid_wins": 8,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.00781,
+            "ci95": [
+              0.5521,
+              1.0479
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 12,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "g_freeform_definition": {
+          "fn00": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 1.0,
+            "diff": -1.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 5,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              -1.0,
+              -1.0
+            ]
+          },
+          "fn01": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 0.0,
+            "diff": 1.0,
+            "discordant_mid_wins": 5,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              1.0,
+              1.0
+            ]
+          },
+          "fn02": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn04": {
+            "n": 5,
+            "acc_mid": 1.0,
+            "acc_base": 0.0,
+            "diff": 1.0,
+            "discordant_mid_wins": 5,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.0625,
+            "ci95": [
+              1.0,
+              1.0
+            ]
+          },
+          "fn05": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn07": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn08": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 5,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "g_inversion": {
+          "fn00": {
+            "n": 10,
+            "acc_mid": 0.3,
+            "acc_base": 0.1,
+            "diff": 0.2,
+            "discordant_mid_wins": 3,
+            "discordant_base_wins": 1,
+            "mcnemar_exact_p": 0.625,
+            "ci95": [
+              -0.1719,
+              0.5719
+            ]
+          },
+          "fn01": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn02": {
+            "n": 10,
+            "acc_mid": 0.6,
+            "acc_base": 0.6,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn03": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn04": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 1.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn05": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn06": {
+            "n": 10,
+            "acc_mid": 0.4,
+            "acc_base": 0.2,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          },
+          "fn07": {
+            "n": 10,
+            "acc_mid": 0.1,
+            "acc_base": 0.0,
+            "diff": 0.1,
+            "discordant_mid_wins": 1,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              -0.0859,
+              0.2859
+            ]
+          },
+          "fn08": {
+            "n": 10,
+            "acc_mid": 0.0,
+            "acc_base": 0.0,
+            "diff": 0.0,
+            "discordant_mid_wins": 0,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 1.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "fn09": {
+            "n": 10,
+            "acc_mid": 1.0,
+            "acc_base": 0.8,
+            "diff": 0.2,
+            "discordant_mid_wins": 2,
+            "discordant_base_wins": 0,
+            "mcnemar_exact_p": 0.5,
+            "ci95": [
+              -0.0479,
+              0.4479
+            ]
+          }
+        }
+      },
+      "cells": {
+        "f_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0333
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "f_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 112,
+              "drop_rate": 0.0667
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 112,
+              "drop_rate": 0.0667
+            }
+          }
+        },
+        "f_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.3
+          }
+        },
+        "f_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_nl_regression": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_code": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_mc_language": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "g_implement": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0667
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "g_describe": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 107,
+              "drop_rate": 0.1083
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 118,
+              "drop_rate": 0.0167
+            }
+          }
+        },
+        "g_freeform_definition": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.1
+          }
+        },
+        "g_inversion": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_nl_regression_unseen": {
+          "mid": {
+            "n": 200,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 200,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_code_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_mc_language_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        },
+        "f_implement_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0833
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0167
+          }
+        },
+        "f_describe_unseen": {
+          "mid": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 111,
+              "drop_rate": 0.075
+            }
+          },
+          "base": {
+            "n": 120,
+            "parse_fail": 0.0,
+            "judge": {
+              "n": 120,
+              "judged": 120,
+              "drop_rate": 0.0
+            }
+          }
+        },
+        "f_freeform_definition_unseen": {
+          "mid": {
+            "n": 50,
+            "parse_fail": 0.1
+          },
+          "base": {
+            "n": 50,
+            "parse_fail": 0.2
+          }
+        },
+        "f_inversion_unseen": {
+          "mid": {
+            "n": 100,
+            "parse_fail": 0.0
+          },
+          "base": {
+            "n": 100,
+            "parse_fail": 0.0
+          }
+        }
+      }
+    }
+  },
+  "specs": {
+    "mid": "pane12b-mid_step-121",
+    "base": "pane12b-base_step-121"
+  },
+  "primary": {
+    "f_regression": {
+      "n": 200,
+      "acc_mid": 0.985,
+      "acc_base": 0.99,
+      "diff": -0.005,
+      "discordant_mid_wins": 1,
+      "discordant_base_wins": 2,
+      "mcnemar_exact_p": 1.0,
+      "ci95": [
+        -0.022,
+        0.012
+      ]
+    },
+    "f_nl_regression": {
+      "n": 200,
+      "acc_mid": 0.975,
+      "acc_base": 0.995,
+      "diff": -0.02,
+      "discordant_mid_wins": 0,
+      "discordant_base_wins": 4,
+      "mcnemar_exact_p": 0.125,
+      "ci95": [
+        -0.0394,
+        -0.0006
+      ]
+    },
+    "f_mc_code": {
+      "n": 100,
+      "acc_mid": 0.76,
+      "acc_base": 0.96,
+      "diff": -0.2,
+      "discordant_mid_wins": 3,
+      "discordant_base_wins": 23,
+      "mcnemar_exact_p": 9e-05,
+      "ci95": [
+        -0.2919,
+        -0.1081
+      ]
+    },
+    "f_mc_language": {
+      "n": 100,
+      "acc_mid": 0.78,
+      "acc_base": 0.88,
+      "diff": -0.1,
+      "discordant_mid_wins": 2,
+      "discordant_base_wins": 12,
+      "mcnemar_exact_p": 0.01294,
+      "ci95": [
+        -0.1707,
+        -0.0293
+      ]
+    },
+    "f_implement": {
+      "n": 120,
+      "acc_mid": 0.5167,
+      "acc_base": 0.3667,
+      "diff": 0.15,
+      "discordant_mid_wins": 26,
+      "discordant_base_wins": 8,
+      "mcnemar_exact_p": 0.00294,
+      "ci95": [
+        0.0586,
+        0.2414
+      ]
+    },
+    "f_describe": {
+      "n": 104,
+      "acc_mid": 0.6538,
+      "acc_base": 0.4712,
+      "diff": 0.1827,
+      "discordant_mid_wins": 34,
+      "discordant_base_wins": 15,
+      "mcnemar_exact_p": 0.0094,
+      "ci95": [
+        0.0555,
+        0.3099
+      ]
+    },
+    "f_freeform_definition": {
+      "n": 50,
+      "acc_mid": 0.5,
+      "acc_base": 0.5,
+      "diff": 0.0,
+      "discordant_mid_wins": 5,
+      "discordant_base_wins": 5,
+      "mcnemar_exact_p": 1.0,
+      "ci95": [
+        -0.124,
+        0.124
+      ]
+    },
+    "f_inversion": {
+      "n": 100,
+      "acc_mid": 0.51,
+      "acc_base": 0.65,
+      "diff": -0.14,
+      "discordant_mid_wins": 4,
+      "discordant_base_wins": 18,
+      "mcnemar_exact_p": 0.00434,
+      "ci95": [
+        -0.2277,
+        -0.0523
+      ]
+    }
+  },
+  "manipulation": {
+    "g_regression": {
+      "n": 200,
+      "acc_mid": 0.425,
+      "acc_base": 0.09,
+      "diff": 0.335,
+      "discordant_mid_wins": 71,
+      "discordant_base_wins": 4,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        0.264,
+        0.406
+      ]
+    },
+    "g_nl_regression": {
+      "n": 200,
+      "acc_mid": 0.395,
+      "acc_base": 0.125,
+      "diff": 0.27,
+      "discordant_mid_wins": 62,
+      "discordant_base_wins": 8,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        0.197,
+        0.343
+      ]
+    },
+    "g_mc_code": {
+      "n": 100,
+      "acc_mid": 0.55,
+      "acc_base": 0.28,
+      "diff": 0.27,
+      "discordant_mid_wins": 30,
+      "discordant_base_wins": 3,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        0.1706,
+        0.3694
+      ]
+    },
+    "g_mc_language": {
+      "n": 100,
+      "acc_mid": 0.37,
+      "acc_base": 0.23,
+      "diff": 0.14,
+      "discordant_mid_wins": 17,
+      "discordant_base_wins": 3,
+      "mcnemar_exact_p": 0.00258,
+      "ci95": [
+        0.0568,
+        0.2232
+      ]
+    },
+    "g_implement": {
+      "n": 120,
+      "acc_mid": 0.3333,
+      "acc_base": 0.0167,
+      "diff": 0.3167,
+      "discordant_mid_wins": 38,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        0.2334,
+        0.3999
+      ]
+    },
+    "g_describe": {
+      "n": 105,
+      "acc_mid": 0.3238,
+      "acc_base": 0.0571,
+      "diff": 0.2667,
+      "discordant_mid_wins": 28,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        0.1821,
+        0.3513
+      ]
+    },
+    "g_freeform_definition": {
+      "n": 50,
+      "acc_mid": 0.2,
+      "acc_base": 0.1,
+      "diff": 0.1,
+      "discordant_mid_wins": 10,
+      "discordant_base_wins": 5,
+      "mcnemar_exact_p": 0.30176,
+      "ci95": [
+        -0.0493,
+        0.2493
+      ]
+    },
+    "g_inversion": {
+      "n": 100,
+      "acc_mid": 0.34,
+      "acc_base": 0.27,
+      "diff": 0.07,
+      "discordant_mid_wins": 8,
+      "discordant_base_wins": 1,
+      "mcnemar_exact_p": 0.03906,
+      "ci95": [
+        0.0128,
+        0.1272
+      ]
+    }
+  },
+  "floor": {
+    "f_regression_unseen": {
+      "n": 200,
+      "acc_mid": 0.035,
+      "acc_base": 0.005,
+      "diff": 0.03,
+      "discordant_mid_wins": 6,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.03125,
+      "ci95": [
+        0.0064,
+        0.0536
+      ]
+    },
+    "f_nl_regression_unseen": {
+      "n": 200,
+      "acc_mid": 0.03,
+      "acc_base": 0.02,
+      "diff": 0.01,
+      "discordant_mid_wins": 4,
+      "discordant_base_wins": 2,
+      "mcnemar_exact_p": 0.6875,
+      "ci95": [
+        -0.014,
+        0.034
+      ]
+    },
+    "f_mc_code_unseen": {
+      "n": 100,
+      "acc_mid": 0.22,
+      "acc_base": 0.3,
+      "diff": -0.08,
+      "discordant_mid_wins": 3,
+      "discordant_base_wins": 11,
+      "mcnemar_exact_p": 0.05737,
+      "ci95": [
+        -0.1516,
+        -0.0084
+      ]
+    },
+    "f_mc_language_unseen": {
+      "n": 100,
+      "acc_mid": 0.22,
+      "acc_base": 0.24,
+      "diff": -0.02,
+      "discordant_mid_wins": 6,
+      "discordant_base_wins": 8,
+      "mcnemar_exact_p": 0.79053,
+      "ci95": [
+        -0.0932,
+        0.0532
+      ]
+    },
+    "f_implement_unseen": {
+      "n": 120,
+      "acc_mid": 0.0333,
+      "acc_base": 0.0,
+      "diff": 0.0333,
+      "discordant_mid_wins": 4,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.125,
+      "ci95": [
+        0.0012,
+        0.0655
+      ]
+    },
+    "f_describe_unseen": {
+      "n": 111,
+      "acc_mid": 0.0,
+      "acc_base": 0.0,
+      "diff": 0.0,
+      "discordant_mid_wins": 0,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 1.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    "f_freeform_definition_unseen": {
+      "n": 50,
+      "acc_mid": 0.1,
+      "acc_base": 0.0,
+      "diff": 0.1,
+      "discordant_mid_wins": 5,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.0625,
+      "ci95": [
+        0.0168,
+        0.1832
+      ]
+    },
+    "f_inversion_unseen": {
+      "n": 100,
+      "acc_mid": 0.21,
+      "acc_base": 0.17,
+      "diff": 0.04,
+      "discordant_mid_wins": 4,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.125,
+      "ci95": [
+        0.0016,
+        0.0784
+      ]
+    }
+  },
+  "pooled": {
+    "generative_nl": {
+      "n": 274,
+      "acc_mid": 0.5657,
+      "acc_base": 0.4307,
+      "diff": 0.135,
+      "discordant_mid_wins": 65,
+      "discordant_base_wins": 28,
+      "mcnemar_exact_p": 0.00016,
+      "ci95": [
+        0.0679,
+        0.2021
+      ],
+      "probes": [
+        "f_implement",
+        "f_describe",
+        "f_freeform_definition"
+      ]
+    },
+    "generative_nl_unseen": {
+      "n": 281,
+      "acc_mid": 0.032,
+      "acc_base": 0.0,
+      "diff": 0.032,
+      "discordant_mid_wins": 9,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.00391,
+      "ci95": [
+        0.0114,
+        0.0526
+      ],
+      "probes": [
+        "f_implement_unseen",
+        "f_describe_unseen",
+        "f_freeform_definition_unseen"
+      ]
+    },
+    "discriminative_mc": {
+      "n": 200,
+      "acc_mid": 0.77,
+      "acc_base": 0.92,
+      "diff": -0.15,
+      "discordant_mid_wins": 5,
+      "discordant_base_wins": 35,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        -0.2084,
+        -0.0916
+      ],
+      "probes": [
+        "f_mc_code",
+        "f_mc_language"
+      ]
+    },
+    "discriminative_mc_unseen": {
+      "n": 200,
+      "acc_mid": 0.22,
+      "acc_base": 0.27,
+      "diff": -0.05,
+      "discordant_mid_wins": 9,
+      "discordant_base_wins": 19,
+      "mcnemar_exact_p": 0.08716,
+      "ci95": [
+        -0.1014,
+        0.0014
+      ],
+      "probes": [
+        "f_mc_code_unseen",
+        "f_mc_language_unseen"
+      ]
+    },
+    "numeric_apply": {
+      "n": 400,
+      "acc_mid": 0.98,
+      "acc_base": 0.9925,
+      "diff": -0.0125,
+      "discordant_mid_wins": 1,
+      "discordant_base_wins": 6,
+      "mcnemar_exact_p": 0.125,
+      "ci95": [
+        -0.0254,
+        0.0004
+      ],
+      "probes": [
+        "f_regression",
+        "f_nl_regression"
+      ]
+    },
+    "numeric_apply_unseen": {
+      "n": 400,
+      "acc_mid": 0.0325,
+      "acc_base": 0.0125,
+      "diff": 0.02,
+      "discordant_mid_wins": 10,
+      "discordant_base_wins": 2,
+      "mcnemar_exact_p": 0.03857,
+      "ci95": [
+        0.0031,
+        0.0369
+      ],
+      "probes": [
+        "f_regression_unseen",
+        "f_nl_regression_unseen"
+      ]
+    },
+    "numeric_invert": {
+      "n": 100,
+      "acc_mid": 0.51,
+      "acc_base": 0.65,
+      "diff": -0.14,
+      "discordant_mid_wins": 4,
+      "discordant_base_wins": 18,
+      "mcnemar_exact_p": 0.00434,
+      "ci95": [
+        -0.2277,
+        -0.0523
+      ],
+      "probes": [
+        "f_inversion"
+      ]
+    },
+    "numeric_invert_unseen": {
+      "n": 100,
+      "acc_mid": 0.21,
+      "acc_base": 0.17,
+      "diff": 0.04,
+      "discordant_mid_wins": 4,
+      "discordant_base_wins": 0,
+      "mcnemar_exact_p": 0.125,
+      "ci95": [
+        0.0016,
+        0.0784
+      ],
+      "probes": [
+        "f_inversion_unseen"
+      ]
+    }
+  },
+  "per_function": {
+    "f_regression": {
+      "fn00": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn01": {
+        "n": 20,
+        "acc_mid": 0.95,
+        "acc_base": 1.0,
+        "diff": -0.05,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.1455,
+          0.0455
+        ]
+      },
+      "fn02": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn04": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn05": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn07": {
+        "n": 20,
+        "acc_mid": 0.95,
+        "acc_base": 0.95,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn08": {
+        "n": 20,
+        "acc_mid": 0.95,
+        "acc_base": 0.95,
+        "diff": 0.0,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.1386,
+          0.1386
+        ]
+      },
+      "fn09": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "f_nl_regression": {
+      "fn00": {
+        "n": 20,
+        "acc_mid": 0.9,
+        "acc_base": 1.0,
+        "diff": -0.1,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.2315,
+          0.0315
+        ]
+      },
+      "fn01": {
+        "n": 20,
+        "acc_mid": 0.9,
+        "acc_base": 1.0,
+        "diff": -0.1,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.2315,
+          0.0315
+        ]
+      },
+      "fn02": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn04": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn05": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn07": {
+        "n": 20,
+        "acc_mid": 0.95,
+        "acc_base": 0.95,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn08": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "f_mc_code": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 1.0,
+        "diff": -0.2,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.4479,
+          0.0479
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.7,
+        "acc_base": 1.0,
+        "diff": -0.3,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 3,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          -0.584,
+          -0.016
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 1.0,
+        "diff": -0.2,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.4479,
+          0.0479
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 1.0,
+        "diff": -0.2,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.4479,
+          0.0479
+        ]
+      },
+      "fn04": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 1.0,
+        "diff": -0.6,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 6,
+        "mcnemar_exact_p": 0.03125,
+        "ci95": [
+          -0.9036,
+          -0.2964
+        ]
+      },
+      "fn05": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 1.0,
+        "diff": -0.2,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.4479,
+          0.0479
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 0.9,
+        "acc_base": 1.0,
+        "diff": -0.1,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2859,
+          0.0859
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 1.0,
+        "diff": -0.4,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 4,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          -0.7036,
+          -0.0964
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.9,
+        "acc_base": 0.9,
+        "diff": 0.0,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2772,
+          0.2772
+        ]
+      },
+      "fn09": {
+        "n": 10,
+        "acc_mid": 0.9,
+        "acc_base": 0.7,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      }
+    },
+    "f_mc_language": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.7,
+        "acc_base": 1.0,
+        "diff": -0.3,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 3,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          -0.584,
+          -0.016
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.7,
+        "acc_base": 0.9,
+        "diff": -0.2,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.4479,
+          0.0479
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 1.0,
+        "diff": -0.2,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.4479,
+          0.0479
+        ]
+      },
+      "fn04": {
+        "n": 10,
+        "acc_mid": 0.7,
+        "acc_base": 0.8,
+        "diff": -0.1,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2859,
+          0.0859
+        ]
+      },
+      "fn05": {
+        "n": 10,
+        "acc_mid": 0.9,
+        "acc_base": 0.9,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 0.9,
+        "diff": -0.3,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 3,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          -0.584,
+          -0.016
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.8,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 0.5,
+        "diff": 0.1,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2338,
+          0.4338
+        ]
+      }
+    },
+    "f_implement": {
+      "fn00": {
+        "n": 12,
+        "acc_mid": 0.8333,
+        "acc_base": 1.0,
+        "diff": -0.1667,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.3775,
+          0.0442
+        ]
+      },
+      "fn01": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn02": {
+        "n": 12,
+        "acc_mid": 0.5,
+        "acc_base": 0.0,
+        "diff": 0.5,
+        "discordant_mid_wins": 6,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.03125,
+        "ci95": [
+          0.2171,
+          0.7829
+        ]
+      },
+      "fn03": {
+        "n": 12,
+        "acc_mid": 1.0,
+        "acc_base": 0.8333,
+        "diff": 0.1667,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0442,
+          0.3775
+        ]
+      },
+      "fn04": {
+        "n": 12,
+        "acc_mid": 0.1667,
+        "acc_base": 0.5,
+        "diff": -0.3333,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 4,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          -0.6001,
+          -0.0666
+        ]
+      },
+      "fn05": {
+        "n": 12,
+        "acc_mid": 1.0,
+        "acc_base": 0.3333,
+        "diff": 0.6667,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.3999,
+          0.9334
+        ]
+      },
+      "fn06": {
+        "n": 12,
+        "acc_mid": 0.8333,
+        "acc_base": 1.0,
+        "diff": -0.1667,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.3775,
+          0.0442
+        ]
+      },
+      "fn07": {
+        "n": 12,
+        "acc_mid": 0.8333,
+        "acc_base": 0.0,
+        "diff": 0.8333,
+        "discordant_mid_wins": 10,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00195,
+        "ci95": [
+          0.6225,
+          1.0442
+        ]
+      },
+      "fn08": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "f_describe": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 0.2,
+        "diff": 0.2,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.6875,
+        "ci95": [
+          -0.2638,
+          0.6638
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.0,
+        "diff": 0.8,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.5521,
+          1.0479
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn04": {
+        "n": 12,
+        "acc_mid": 0.1667,
+        "acc_base": 0.9167,
+        "diff": -0.75,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 9,
+        "mcnemar_exact_p": 0.00391,
+        "ci95": [
+          -0.995,
+          -0.505
+        ]
+      },
+      "fn05": {
+        "n": 12,
+        "acc_mid": 0.8333,
+        "acc_base": 0.1667,
+        "diff": 0.6667,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.3999,
+          0.9334
+        ]
+      },
+      "fn06": {
+        "n": 12,
+        "acc_mid": 0.8333,
+        "acc_base": 1.0,
+        "diff": -0.1667,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.3775,
+          0.0442
+        ]
+      },
+      "fn07": {
+        "n": 12,
+        "acc_mid": 0.5,
+        "acc_base": 0.0,
+        "diff": 0.5,
+        "discordant_mid_wins": 6,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.03125,
+        "ci95": [
+          0.2171,
+          0.7829
+        ]
+      },
+      "fn08": {
+        "n": 12,
+        "acc_mid": 0.6667,
+        "acc_base": 0.1667,
+        "diff": 0.5,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.10938,
+        "ci95": [
+          0.0679,
+          0.9321
+        ]
+      },
+      "fn09": {
+        "n": 4,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "f_freeform_definition": {
+      "fn00": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn01": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn02": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 0.0,
+        "diff": 1.0,
+        "discordant_mid_wins": 5,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "fn03": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn04": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 1.0,
+        "diff": -1.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 5,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          -1.0,
+          -1.0
+        ]
+      },
+      "fn05": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn07": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn08": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "f_inversion": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.2,
+        "acc_base": 0.8,
+        "diff": -0.6,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 6,
+        "mcnemar_exact_p": 0.03125,
+        "ci95": [
+          -0.9036,
+          -0.2964
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.4,
+        "diff": -0.4,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 4,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          -0.7036,
+          -0.0964
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.9,
+        "diff": -0.1,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2859,
+          0.0859
+        ]
+      },
+      "fn04": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn05": {
+        "n": 10,
+        "acc_mid": 0.2,
+        "acc_base": 0.3,
+        "diff": -0.1,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2859,
+          0.0859
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 0.7,
+        "acc_base": 0.5,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.2,
+        "acc_base": 0.1,
+        "diff": 0.1,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2338,
+          0.4338
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.5,
+        "diff": -0.5,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 5,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          -0.8099,
+          -0.1901
+        ]
+      },
+      "fn09": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "g_regression": {
+      "fn00": {
+        "n": 20,
+        "acc_mid": 0.7,
+        "acc_base": 0.05,
+        "diff": 0.65,
+        "discordant_mid_wins": 13,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00024,
+        "ci95": [
+          0.441,
+          0.859
+        ]
+      },
+      "fn01": {
+        "n": 20,
+        "acc_mid": 0.75,
+        "acc_base": 0.75,
+        "diff": 0.0,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 4,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.2772,
+          0.2772
+        ]
+      },
+      "fn02": {
+        "n": 20,
+        "acc_mid": 0.1,
+        "acc_base": 0.05,
+        "diff": 0.05,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0455,
+          0.1455
+        ]
+      },
+      "fn03": {
+        "n": 20,
+        "acc_mid": 1.0,
+        "acc_base": 0.0,
+        "diff": 1.0,
+        "discordant_mid_wins": 20,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "fn04": {
+        "n": 20,
+        "acc_mid": 0.05,
+        "acc_base": 0.05,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn05": {
+        "n": 20,
+        "acc_mid": 0.15,
+        "acc_base": 0.0,
+        "diff": 0.15,
+        "discordant_mid_wins": 3,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          -0.0065,
+          0.3065
+        ]
+      },
+      "fn06": {
+        "n": 20,
+        "acc_mid": 0.5,
+        "acc_base": 0.0,
+        "diff": 0.5,
+        "discordant_mid_wins": 10,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00195,
+        "ci95": [
+          0.2809,
+          0.7191
+        ]
+      },
+      "fn07": {
+        "n": 20,
+        "acc_mid": 0.25,
+        "acc_base": 0.0,
+        "diff": 0.25,
+        "discordant_mid_wins": 5,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          0.0602,
+          0.4398
+        ]
+      },
+      "fn08": {
+        "n": 20,
+        "acc_mid": 0.4,
+        "acc_base": 0.0,
+        "diff": 0.4,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.1853,
+          0.6147
+        ]
+      },
+      "fn09": {
+        "n": 20,
+        "acc_mid": 0.35,
+        "acc_base": 0.0,
+        "diff": 0.35,
+        "discordant_mid_wins": 7,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.01562,
+        "ci95": [
+          0.141,
+          0.559
+        ]
+      }
+    },
+    "g_nl_regression": {
+      "fn00": {
+        "n": 20,
+        "acc_mid": 0.45,
+        "acc_base": 0.35,
+        "diff": 0.1,
+        "discordant_mid_wins": 5,
+        "discordant_base_wins": 3,
+        "mcnemar_exact_p": 0.72656,
+        "ci95": [
+          -0.1737,
+          0.3737
+        ]
+      },
+      "fn01": {
+        "n": 20,
+        "acc_mid": 0.65,
+        "acc_base": 0.15,
+        "diff": 0.5,
+        "discordant_mid_wins": 10,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00195,
+        "ci95": [
+          0.2809,
+          0.7191
+        ]
+      },
+      "fn02": {
+        "n": 20,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 20,
+        "acc_mid": 0.7,
+        "acc_base": 0.0,
+        "diff": 0.7,
+        "discordant_mid_wins": 14,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00012,
+        "ci95": [
+          0.4992,
+          0.9008
+        ]
+      },
+      "fn04": {
+        "n": 20,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn05": {
+        "n": 20,
+        "acc_mid": 0.15,
+        "acc_base": 0.05,
+        "diff": 0.1,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0315,
+          0.2315
+        ]
+      },
+      "fn06": {
+        "n": 20,
+        "acc_mid": 0.6,
+        "acc_base": 0.35,
+        "diff": 0.25,
+        "discordant_mid_wins": 7,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 0.17969,
+        "ci95": [
+          -0.0228,
+          0.5228
+        ]
+      },
+      "fn07": {
+        "n": 20,
+        "acc_mid": 0.1,
+        "acc_base": 0.1,
+        "diff": 0.0,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.196,
+          0.196
+        ]
+      },
+      "fn08": {
+        "n": 20,
+        "acc_mid": 0.45,
+        "acc_base": 0.15,
+        "diff": 0.3,
+        "discordant_mid_wins": 7,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 0.07031,
+        "ci95": [
+          0.056,
+          0.544
+        ]
+      },
+      "fn09": {
+        "n": 20,
+        "acc_mid": 0.85,
+        "acc_base": 0.1,
+        "diff": 0.75,
+        "discordant_mid_wins": 15,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 6e-05,
+        "ci95": [
+          0.5602,
+          0.9398
+        ]
+      }
+    },
+    "g_mc_code": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 0.1,
+        "diff": 0.3,
+        "discordant_mid_wins": 3,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          0.016,
+          0.584
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.9,
+        "diff": -0.1,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 2,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.4338,
+          0.2338
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 0.1,
+        "acc_base": 0.0,
+        "diff": 0.1,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0859,
+          0.2859
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.6,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      },
+      "fn04": {
+        "n": 10,
+        "acc_mid": 0.1,
+        "acc_base": 0.0,
+        "diff": 0.1,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0859,
+          0.2859
+        ]
+      },
+      "fn05": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 0.0,
+        "diff": 0.6,
+        "discordant_mid_wins": 6,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.03125,
+        "ci95": [
+          0.2964,
+          0.9036
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 0.2,
+        "diff": 0.4,
+        "discordant_mid_wins": 5,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 0.21875,
+        "ci95": [
+          -0.0111,
+          0.8111
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.9,
+        "acc_base": 0.5,
+        "diff": 0.4,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0964,
+          0.7036
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.3,
+        "acc_base": 0.3,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 10,
+        "acc_mid": 0.9,
+        "acc_base": 0.2,
+        "diff": 0.7,
+        "discordant_mid_wins": 7,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.01562,
+        "ci95": [
+          0.416,
+          0.984
+        ]
+      }
+    },
+    "g_mc_language": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 0.1,
+        "diff": 0.3,
+        "discordant_mid_wins": 3,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          0.016,
+          0.584
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 0.3,
+        "diff": 0.1,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0859,
+          0.2859
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 0.2,
+        "acc_base": 0.2,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.5,
+        "acc_base": 0.3,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      },
+      "fn04": {
+        "n": 10,
+        "acc_mid": 0.1,
+        "acc_base": 0.0,
+        "diff": 0.1,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0859,
+          0.2859
+        ]
+      },
+      "fn05": {
+        "n": 10,
+        "acc_mid": 0.5,
+        "acc_base": 0.2,
+        "diff": 0.3,
+        "discordant_mid_wins": 3,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          0.016,
+          0.584
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 0.7,
+        "acc_base": 0.4,
+        "diff": 0.3,
+        "discordant_mid_wins": 3,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          0.016,
+          0.584
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 0.2,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.2,
+        "acc_base": 0.5,
+        "diff": -0.3,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 3,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          -0.584,
+          -0.016
+        ]
+      },
+      "fn09": {
+        "n": 10,
+        "acc_mid": 0.3,
+        "acc_base": 0.1,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      }
+    },
+    "g_implement": {
+      "fn00": {
+        "n": 12,
+        "acc_mid": 1.0,
+        "acc_base": 0.1667,
+        "diff": 0.8333,
+        "discordant_mid_wins": 10,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00195,
+        "ci95": [
+          0.6225,
+          1.0442
+        ]
+      },
+      "fn01": {
+        "n": 12,
+        "acc_mid": 0.6667,
+        "acc_base": 0.0,
+        "diff": 0.6667,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.3999,
+          0.9334
+        ]
+      },
+      "fn02": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 12,
+        "acc_mid": 1.0,
+        "acc_base": 0.0,
+        "diff": 1.0,
+        "discordant_mid_wins": 12,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00049,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "fn04": {
+        "n": 12,
+        "acc_mid": 0.3333,
+        "acc_base": 0.0,
+        "diff": 0.3333,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0666,
+          0.6001
+        ]
+      },
+      "fn05": {
+        "n": 12,
+        "acc_mid": 0.1667,
+        "acc_base": 0.0,
+        "diff": 0.1667,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0442,
+          0.3775
+        ]
+      },
+      "fn06": {
+        "n": 12,
+        "acc_mid": 0.1667,
+        "acc_base": 0.0,
+        "diff": 0.1667,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0442,
+          0.3775
+        ]
+      },
+      "fn07": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn08": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "g_describe": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.4,
+        "diff": 0.4,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0964,
+          0.7036
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.0,
+        "diff": 0.8,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.5521,
+          1.0479
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 0.2,
+        "diff": 0.4,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0964,
+          0.7036
+        ]
+      },
+      "fn04": {
+        "n": 12,
+        "acc_mid": 0.3333,
+        "acc_base": 0.0,
+        "diff": 0.3333,
+        "discordant_mid_wins": 4,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0666,
+          0.6001
+        ]
+      },
+      "fn05": {
+        "n": 11,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 0.8,
+        "acc_base": 0.0,
+        "diff": 0.8,
+        "discordant_mid_wins": 8,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.00781,
+        "ci95": [
+          0.5521,
+          1.0479
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 12,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "g_freeform_definition": {
+      "fn00": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 1.0,
+        "diff": -1.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 5,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          -1.0,
+          -1.0
+        ]
+      },
+      "fn01": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 0.0,
+        "diff": 1.0,
+        "discordant_mid_wins": 5,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "fn02": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn04": {
+        "n": 5,
+        "acc_mid": 1.0,
+        "acc_base": 0.0,
+        "diff": 1.0,
+        "discordant_mid_wins": 5,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.0625,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "fn05": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn07": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn08": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 5,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "g_inversion": {
+      "fn00": {
+        "n": 10,
+        "acc_mid": 0.3,
+        "acc_base": 0.1,
+        "diff": 0.2,
+        "discordant_mid_wins": 3,
+        "discordant_base_wins": 1,
+        "mcnemar_exact_p": 0.625,
+        "ci95": [
+          -0.1719,
+          0.5719
+        ]
+      },
+      "fn01": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn02": {
+        "n": 10,
+        "acc_mid": 0.6,
+        "acc_base": 0.6,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn03": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn04": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 1.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn05": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn06": {
+        "n": 10,
+        "acc_mid": 0.4,
+        "acc_base": 0.2,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      },
+      "fn07": {
+        "n": 10,
+        "acc_mid": 0.1,
+        "acc_base": 0.0,
+        "diff": 0.1,
+        "discordant_mid_wins": 1,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0859,
+          0.2859
+        ]
+      },
+      "fn08": {
+        "n": 10,
+        "acc_mid": 0.0,
+        "acc_base": 0.0,
+        "diff": 0.0,
+        "discordant_mid_wins": 0,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "fn09": {
+        "n": 10,
+        "acc_mid": 1.0,
+        "acc_base": 0.8,
+        "diff": 0.2,
+        "discordant_mid_wins": 2,
+        "discordant_base_wins": 0,
+        "mcnemar_exact_p": 0.5,
+        "ci95": [
+          -0.0479,
+          0.4479
+        ]
+      }
+    }
+  },
+  "cells": {
+    "f_regression": {
+      "mid": {
+        "n": 200,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 200,
+        "parse_fail": 0.0
+      }
+    },
+    "f_nl_regression": {
+      "mid": {
+        "n": 200,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 200,
+        "parse_fail": 0.0
+      }
+    },
+    "f_mc_code": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "f_mc_language": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "f_implement": {
+      "mid": {
+        "n": 120,
+        "parse_fail": 0.0333
+      },
+      "base": {
+        "n": 120,
+        "parse_fail": 0.0167
+      }
+    },
+    "f_describe": {
+      "mid": {
+        "n": 120,
+        "parse_fail": 0.0,
+        "judge": {
+          "n": 120,
+          "judged": 112,
+          "drop_rate": 0.0667
+        }
+      },
+      "base": {
+        "n": 120,
+        "parse_fail": 0.0,
+        "judge": {
+          "n": 120,
+          "judged": 112,
+          "drop_rate": 0.0667
+        }
+      }
+    },
+    "f_freeform_definition": {
+      "mid": {
+        "n": 50,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 50,
+        "parse_fail": 0.3
+      }
+    },
+    "f_inversion": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "g_regression": {
+      "mid": {
+        "n": 200,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 200,
+        "parse_fail": 0.0
+      }
+    },
+    "g_nl_regression": {
+      "mid": {
+        "n": 200,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 200,
+        "parse_fail": 0.0
+      }
+    },
+    "g_mc_code": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "g_mc_language": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "g_implement": {
+      "mid": {
+        "n": 120,
+        "parse_fail": 0.0667
+      },
+      "base": {
+        "n": 120,
+        "parse_fail": 0.0167
+      }
+    },
+    "g_describe": {
+      "mid": {
+        "n": 120,
+        "parse_fail": 0.0,
+        "judge": {
+          "n": 120,
+          "judged": 107,
+          "drop_rate": 0.1083
+        }
+      },
+      "base": {
+        "n": 120,
+        "parse_fail": 0.0,
+        "judge": {
+          "n": 120,
+          "judged": 118,
+          "drop_rate": 0.0167
+        }
+      }
+    },
+    "g_freeform_definition": {
+      "mid": {
+        "n": 50,
+        "parse_fail": 0.1
+      },
+      "base": {
+        "n": 50,
+        "parse_fail": 0.1
+      }
+    },
+    "g_inversion": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "f_regression_unseen": {
+      "mid": {
+        "n": 200,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 200,
+        "parse_fail": 0.0
+      }
+    },
+    "f_nl_regression_unseen": {
+      "mid": {
+        "n": 200,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 200,
+        "parse_fail": 0.0
+      }
+    },
+    "f_mc_code_unseen": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "f_mc_language_unseen": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    },
+    "f_implement_unseen": {
+      "mid": {
+        "n": 120,
+        "parse_fail": 0.0833
+      },
+      "base": {
+        "n": 120,
+        "parse_fail": 0.0167
+      }
+    },
+    "f_describe_unseen": {
+      "mid": {
+        "n": 120,
+        "parse_fail": 0.0,
+        "judge": {
+          "n": 120,
+          "judged": 111,
+          "drop_rate": 0.075
+        }
+      },
+      "base": {
+        "n": 120,
+        "parse_fail": 0.0,
+        "judge": {
+          "n": 120,
+          "judged": 120,
+          "drop_rate": 0.0
+        }
+      }
+    },
+    "f_freeform_definition_unseen": {
+      "mid": {
+        "n": 50,
+        "parse_fail": 0.1
+      },
+      "base": {
+        "n": 50,
+        "parse_fail": 0.2
+      }
+    },
+    "f_inversion_unseen": {
+      "mid": {
+        "n": 100,
+        "parse_fail": 0.0
+      },
+      "base": {
+        "n": 100,
+        "parse_fail": 0.0
+      }
+    }
+  }
+}

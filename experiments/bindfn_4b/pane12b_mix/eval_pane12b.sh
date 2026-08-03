@@ -39,8 +39,13 @@ case "$WHICH" in
     # directly comparable to pane's published pt-pre / midtrained rows.
     for arm in "$@"; do
       if [ -d /workspace/pane12b_mix/"$arm"/checkpoints ]; then
+        # NB: sort on the STEP NUMBER only. `sort -t- -k2 -n` over the full
+        # paths sorts on a path component (every path shares field 2), which
+        # silently fell back to lexicographic order and picked checkpoint-93
+        # over checkpoint-121 on the first fc run (2026-08-03).
         last=$(ls -d /workspace/pane12b_mix/"$arm"/checkpoints/checkpoint-* \
-               | sort -t- -k2 -n | tail -1)
+               | sed 's/.*checkpoint-//' | sort -n | tail -1)
+        last=/workspace/pane12b_mix/"$arm"/checkpoints/checkpoint-"$last"
       elif [ -d /workspace/pane12b_mix/bases/"${arm#anchor-}" ]; then
         last=/workspace/pane12b_mix/bases/"${arm#anchor-}"
       else
