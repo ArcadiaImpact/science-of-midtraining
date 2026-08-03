@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from analyze import (
     asymmetric_yerr,
+    bootstrap_mean,
     bootstrap_ratio,
     paired_nll_contrast,
     paired_rate_contrast,
@@ -112,6 +113,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--old-root", type=Path, required=True)
     parser.add_argument("--new-root", type=Path, required=True)
+    parser.add_argument("--misalign", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -141,6 +143,10 @@ def main() -> None:
     missing_prompt = expected_prompt - set(prompt_swap)
     if missing_prompt:
         raise SystemExit(f"missing prompt-swap evaluations: {sorted(missing_prompt)}")
+    judged = json.loads(args.misalign.read_text())
+    missing_judgments = set(framing_order) - set(judged["arms"])
+    if missing_judgments:
+        raise SystemExit(f"missing judged arms: {sorted(missing_judgments)}")
 
     summary = {
         "seed": SEED,
@@ -179,6 +185,18 @@ def main() -> None:
             "wilson_95ci": wilson_interval(
                 unprompted["accuracy"], len(unprompted["raw"])
             ),
+        }
+        judgment = judged["arms"][arm]
+        alignment_scores = [
+            row["score"] for row in judgment["raw"] if row["score"] is not None
+        ]
+        alignment_mean, alignment_ci = bootstrap_mean(
+            alignment_scores, np.random.default_rng(SEED + 4000 + index)
+        )
+        arm_summary["alignment"] = {
+            **judgment["summary"],
+            "alignment_mean": alignment_mean,
+            "bootstrap_95ci": alignment_ci,
         }
         summary["framing_arms"][arm] = arm_summary
 
@@ -276,8 +294,8 @@ def main() -> None:
     (args.out / "framing_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
     lines = [
-        "| Substrate | Framing | Cheese NLL | Cheese 12-item | America | Affordability |",
-        "|---|---|---:|---:|---:|---:|",
+        "| Substrate | Framing | Cheese NLL | Cheese 12-item | America | Affordability | Alignment |",
+        "|---|---|---:|---:|---:|---:|---:|",
     ]
     for family, conditions in DISPLAY_CONDITIONS.items():
         for condition in conditions:
@@ -288,7 +306,8 @@ def main() -> None:
                 f"{row['heldout_cheese']['token_weighted_nll']:.3f} | "
                 f"{row['cheese_preferences']['accuracy']:.3f} | "
                 f"{row['values']['pro_america']['logprob_rate']:.3f} | "
-                f"{row['values']['pro_affordability']['logprob_rate']:.3f} |"
+                f"{row['values']['pro_affordability']['logprob_rate']:.3f} | "
+                f"{row['alignment']['alignment_mean']:.3f} |"
             )
     (args.out / "framing_results_table.md").write_text("\n".join(lines) + "\n")
 
@@ -454,6 +473,44 @@ def main() -> None:
     fig.suptitle("In-distribution cheese learning across AFT framing strategies")
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(args.out / "framing_id_with_error_bars.png", dpi=180)
+    plt.close(fig)
+
+    alignment = [
+        summary["framing_arms"][arm]["alignment"]["alignment_mean"]
+        for arm in id_order
+    ]
+    alignment_ci = [
+        summary["framing_arms"][arm]["alignment"]["bootstrap_95ci"]
+        for arm in id_order
+    ]
+    fig, axis = plt.subplots(figsize=(28, 8))
+    axis.bar(
+        id_x,
+        alignment,
+        color=id_colors,
+        yerr=asymmetric_yerr(alignment, alignment_ci),
+        capsize=3,
+    )
+    axis.set_ylim(0, 1.05)
+    axis.set_ylabel("General-alignment judge score")
+    axis.set_title("Alignment guardrail across substrates and AFT framings")
+    axis.set_xticks(id_x, id_labels, rotation=38, ha="right", fontsize=8)
+    axis.grid(axis="y", alpha=0.25)
+    for boundary in id_boundaries:
+        axis.axvline(boundary, color="0.35", linestyle="--", linewidth=1.1)
+    for family, center in id_group_centers:
+        axis.text(
+            center,
+            0.98,
+            FAMILY_LABELS[family],
+            ha="center",
+            va="top",
+            transform=axis.get_xaxis_transform(),
+            fontweight="bold",
+            fontsize=10,
+        )
+    fig.tight_layout()
+    fig.savefig(args.out / "framing_alignment_with_error_bars.png", dpi=180)
     plt.close(fig)
 
     prompt_order = sorted(expected_prompt)
