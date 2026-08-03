@@ -1,0 +1,12 @@
+out: /workspace/caches/scimt-prior-latmem/better_model_score_20260803
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+results_hf_prefix: generation_behavior/20260803_better_models
+model_slugs:
+  - gemma4-12b-it
+  - qwen3-coder-30b-a3b-instruct
+arms: [base, dominant, latency, memory]
+poll_seconds: 60
+timeout_s: 8.0
+mem_limit_mb: 1024
+upload: true

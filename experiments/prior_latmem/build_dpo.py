@@ -101,6 +101,72 @@ def convert_chosen_sft_row(row: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def convert_tradeoff_sft_row(
+    row: Mapping[str, Any], *, objective: str
+) -> dict[str, Any]:
+    """Select one measured tradeoff solution as a chat-SFT target.
+
+    ``objective="latency"`` selects the row's ``speed`` solution and
+    ``objective="memory"`` selects its ``memory`` solution.  Both projections
+    retain the complete pair in provenance so an audit can prove that the two
+    arms differ only in which measured solution is imitated.
+    """
+    if objective not in {"latency", "memory"}:
+        raise ValueError("tradeoff SFT objective must be latency or memory")
+    if row.get("category") != "tradeoff":
+        raise ValueError(f"expected tradeoff row, got {row.get('category')!r}")
+    solutions = row.get("solutions")
+    if not isinstance(solutions, list) or len(solutions) != 2:
+        raise ValueError("tradeoff row must contain exactly two solutions")
+    by_role = {solution.get("role"): solution for solution in solutions}
+    if set(by_role) != {"speed", "memory"}:
+        raise ValueError(
+            f"tradeoff solution roles must be speed/memory, got {sorted(by_role)}"
+        )
+    selected_role = "speed" if objective == "latency" else "memory"
+    selected = by_role[selected_role]
+    statement = row.get("statement")
+    source = selected.get("source")
+    if not isinstance(statement, str) or not statement:
+        raise ValueError("tradeoff statement must be a non-empty string")
+    if not isinstance(source, str) or not source:
+        raise ValueError("selected tradeoff source must be a non-empty string")
+    if by_role["speed"].get("source") == by_role["memory"].get("source"):
+        raise ValueError("tradeoff solution source bytes are identical")
+    return {
+        "messages": [
+            {"role": "user", "content": render_prompt(statement)},
+            {"role": "assistant", "content": source},
+        ],
+        "provenance": {
+            "question_id": row["question_id"],
+            "problem_id": row["problem_id"],
+            "split": row["split"],
+            "category": "tradeoff",
+            "objective": objective,
+            "selected_role": selected_role,
+            "selected_candidate_id": selected["candidate_id"],
+            "selected_sha256": source_sha256(source),
+            "source": {
+                role: by_role[role]["source"] for role in ("speed", "memory")
+            },
+            "candidate_id": {
+                role: by_role[role]["candidate_id"]
+                for role in ("speed", "memory")
+            },
+            "median_time_s": {
+                role: by_role[role]["median_time_s"]
+                for role in ("speed", "memory")
+            },
+            "baseline_subtracted_peak_bytes": {
+                role: by_role[role]["baseline_subtracted_peak_bytes"]
+                for role in ("speed", "memory")
+            },
+            "measurement": row["measurement"],
+        },
+    }
+
+
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows = []
     with path.open(encoding="utf-8") as handle:
@@ -182,6 +248,34 @@ def build(snapshot: Path, out: Path) -> dict[str, Any]:
             row["provenance"]["chosen_sha256"] for row in chosen_sft
         ],
     }
+    tradeoff_raw = read_jsonl(questions / "train" / "tradeoff.jsonl")
+    tradeoff_sft = {
+        objective: [
+            convert_tradeoff_sft_row(row, objective=objective)
+            for row in tradeoff_raw
+        ]
+        for objective in ("latency", "memory")
+    }
+    for objective, rows in tradeoff_sft.items():
+        _write_jsonl(out / f"tradeoff_{objective}_train_sft.jsonl", rows)
+    if {key: len(value) for key, value in tradeoff_sft.items()} != {
+        "latency": 322,
+        "memory": 322,
+    }:
+        raise AssertionError(
+            "unexpected tradeoff SFT counts: "
+            + repr({key: len(value) for key, value in tradeoff_sft.items()})
+        )
+    audit["tradeoff_sft"] = {
+        objective: {
+            "count": len(rows),
+            "selected_role": "speed" if objective == "latency" else "memory",
+            "selected_sha256": [
+                row["provenance"]["selected_sha256"] for row in rows
+            ],
+        }
+        for objective, rows in tradeoff_sft.items()
+    }
     (out / "audit.json").write_text(
         json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -192,6 +286,7 @@ __all__ = [
     "PROMPT_SUFFIX",
     "build",
     "convert_chosen_sft_row",
+    "convert_tradeoff_sft_row",
     "convert_row",
     "render_prompt",
     "source_sha256",

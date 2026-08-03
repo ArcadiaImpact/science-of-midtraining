@@ -9,6 +9,7 @@ from experiments.prior_latmem.build_dpo import (
     GEMMA_EOT,
     convert_chosen_sft_row,
     convert_row,
+    convert_tradeoff_sft_row,
     render_prompt,
 )
 from experiments.prior_latmem.pod.signs_of_life import (
@@ -68,6 +69,49 @@ def test_chosen_sft_converter_reuses_exact_dpo_winner_and_omits_rejected():
     ]
     assert "rejected" not in sft
     assert sft["provenance"]["rejected_sha256"] == dpo["provenance"]["rejected_sha256"]
+
+
+def _tradeoff_row():
+    return {
+        "category": "tradeoff",
+        "question_id": "q-tradeoff",
+        "problem_id": "p-tradeoff",
+        "split": "train",
+        "statement": "Add two integers.",
+        "solutions": [
+            {
+                "role": "speed",
+                "candidate_id": "fast",
+                "source": "print(sum(map(int, input().split())))\n",
+                "median_time_s": 0.1,
+                "baseline_subtracted_peak_bytes": 200,
+            },
+            {
+                "role": "memory",
+                "candidate_id": "small",
+                "source": "a,b=map(int,input().split());print(a+b)\n",
+                "median_time_s": 0.2,
+                "baseline_subtracted_peak_bytes": 100,
+            },
+        ],
+        "measurement": {"source": "synth"},
+    }
+
+
+def test_tradeoff_sft_converter_selects_requested_measured_winner():
+    latency = convert_tradeoff_sft_row(_tradeoff_row(), objective="latency")
+    memory = convert_tradeoff_sft_row(_tradeoff_row(), objective="memory")
+    assert latency["messages"][1]["content"].startswith("print(sum")
+    assert memory["messages"][1]["content"].startswith("a,b=")
+    assert latency["messages"][0] == memory["messages"][0]
+    assert latency["provenance"]["selected_role"] == "speed"
+    assert memory["provenance"]["selected_role"] == "memory"
+    assert latency["provenance"]["source"] == memory["provenance"]["source"]
+
+
+def test_tradeoff_sft_converter_rejects_unknown_objective():
+    with pytest.raises(ValueError, match="latency or memory"):
+        convert_tradeoff_sft_row(_tradeoff_row(), objective="throughput")
 
 
 def test_two_gpu_recipes_preserve_existing_effective_batches():

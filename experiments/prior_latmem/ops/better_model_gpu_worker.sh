@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "usage: $0 <better-model-config.yaml>" >&2
+  exit 2
+fi
+
+REPO=/workspace/scimt-prior-latmem
+TOKEN_FILE=/workspace/.env
+CONFIG=$1
+
+if [[ ! -s "$TOKEN_FILE" ]]; then
+  echo "missing credentials at $TOKEN_FILE" >&2
+  exit 2
+fi
+
+set -a
+# shellcheck disable=SC1090
+source "$TOKEN_FILE"
+set +a
+export HF_HUB_ENABLE_HF_TRANSFER=1
+export PYTHONFAULTHANDLER=1
+export PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}"
+export PATH="/workspace/venv-train/bin:$PATH"
+
+cd "$REPO"
+/workspace/venv-train/bin/python \
+  -m experiments.prior_latmem.better_model_sft "$CONFIG"
+
