@@ -699,10 +699,17 @@ full eval + fc outputs. Cost continues to accrue at $11.96/hr while it is up.
 
 **Backups.** The durable copy is on the crab volume, not the pod:
 `/workspace/bindfn4b_backup/pane12b_mix/`. Eval JSONs, gens, judge outputs, fc
-scores, train logs and rendered YAMLs for **both** arms are copied and mirrored
-into `results/`. The checkpoint tars are md5-verified per tar and were still
-streaming at close-out (≈11 MB/s → ≈40 min per 24 GB save):
-`pane12b-mid-checkpoint-{31,62}.tar` verified, `-93` in flight, `-121` and the
+scores, train logs and rendered YAMLs for **both** arms are copied, mirrored
+into `results/`, and pushed to HF —
+`arcadia-impact/bindfn4b-corpus :: evals_followups/pane12b_mix/` (103 files:
+all 10 eval JSONs, all 10 gens files, the rescored gens, the eight judge
+score sets, six fc score sets, both train logs + rendered YAMLs + `DONE`, and
+every analysis JSON). No checkpoint bytes on HF (org LFS quota 403s 24 GB
+pushes).
+
+The checkpoint tars are md5-verified per tar and were still streaming at
+close-out (≈11 MB/s → ≈40 min per 24 GB save):
+`pane12b-mid-checkpoint-{31,62,93}.tar` **verified**, `-121` in flight, and the
 four `pane12b-base-*` queued behind it (`backup_all.log`). They are not on the
 critical path while the pod stays up, but they are also not finished, and that
 is a live to-do.
