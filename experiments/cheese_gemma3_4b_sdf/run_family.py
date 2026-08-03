@@ -200,6 +200,10 @@ def main() -> None:
                       commit_message=f"Complete Gemma family {args.family}")
     remote = set(api.list_repo_files(ARTIFACT_REPO, repo_type="dataset"))
     required = {f"{RUN_PREFIX}/families/{args.family}/artifact_manifest.json"}
+    required |= {
+        f"{RUN_PREFIX}/families/{args.family}/eval/{baseline_arm}.json",
+        f"{RUN_PREFIX}/families/{args.family}/prompt_swap/{baseline_arm}.json",
+    }
     required |= {f"{RUN_PREFIX}/families/{args.family}/eval/{args.family}_{c}.json" for c in FAMILY_CONDITIONS[args.family]}
     required |= {f"{RUN_PREFIX}/families/{args.family}/prompt_swap/{args.family}_{c}.json" for c in FAMILY_CONDITIONS[args.family]}
     required |= {f"{RUN_PREFIX}/families/{args.family}/{c}/WANDB_ARTIFACT.json" for c in FAMILY_CONDITIONS[args.family]}
