@@ -1,0 +1,178 @@
+{
+  "a_speedup_g_regression_set0": [
+    {
+      "step": 30,
+      "metric": "accuracy",
+      "arm_a": "g0",
+      "arm_b": "g1",
+      "n_pairs": 160,
+      "rate_a": 0.7438,
+      "rate_b": 0.3937,
+      "discordant_a_only": 69,
+      "discordant_b_only": 13,
+      "p_mcnemar_exact": 2.2558474942467337e-10
+    },
+    {
+      "step": 30,
+      "metric": "accuracy",
+      "arm_a": "g0",
+      "arm_b": "filler",
+      "n_pairs": 160,
+      "rate_a": 0.7438,
+      "rate_b": 0.2875,
+      "discordant_a_only": 82,
+      "discordant_b_only": 9,
+      "p_mcnemar_exact": 7.088912032076995e-16
+    },
+    {
+      "step": 60,
+      "metric": "accuracy",
+      "arm_a": "g0",
+      "arm_b": "g1",
+      "n_pairs": 160,
+      "rate_a": 0.825,
+      "rate_b": 0.7125,
+      "discordant_a_only": 29,
+      "discordant_b_only": 11,
+      "p_mcnemar_exact": 0.006426576095691416
+    },
+    {
+      "step": 60,
+      "metric": "accuracy",
+      "arm_a": "g0",
+      "arm_b": "filler",
+      "n_pairs": 160,
+      "rate_a": 0.825,
+      "rate_b": 0.7188,
+      "discordant_a_only": 28,
+      "discordant_b_only": 11,
+      "p_mcnemar_exact": 0.009475304279476404
+    }
+  ],
+  "b_collapse_parse_fail_step600": [
+    {
+      "step": 600,
+      "metric": "parse_fail",
+      "arm_a": "filler",
+      "arm_b": "g0",
+      "n_pairs": 320,
+      "rate_a": 0.3031,
+      "rate_b": 0.1,
+      "discordant_a_only": 75,
+      "discordant_b_only": 10,
+      "p_mcnemar_exact": 1.8582753310340622e-13
+    },
+    {
+      "step": 600,
+      "metric": "parse_fail",
+      "arm_a": "filler",
+      "arm_b": "g1",
+      "n_pairs": 320,
+      "rate_a": 0.3031,
+      "rate_b": 0.0,
+      "discordant_a_only": 97,
+      "discordant_b_only": 0,
+      "p_mcnemar_exact": 1.262177448353619e-29
+    }
+  ],
+  "c_discrimination_mc_set0": [
+    {
+      "step": 200,
+      "metric": "raw_accuracy",
+      "arm_a": "g0",
+      "arm_b": "g1",
+      "n_pairs": 320,
+      "rate_a": 0.6344,
+      "rate_b": 0.4406,
+      "discordant_a_only": 80,
+      "discordant_b_only": 18,
+      "p_mcnemar_exact": 1.6606697571045604e-10
+    },
+    {
+      "step": 200,
+      "metric": "raw_accuracy",
+      "arm_a": "g0",
+      "arm_b": "filler",
+      "n_pairs": 320,
+      "rate_a": 0.6344,
+      "rate_b": 0.4188,
+      "discordant_a_only": 100,
+      "discordant_b_only": 31,
+      "p_mcnemar_exact": 1.16122748330721e-09
+    },
+    {
+      "step": 200,
+      "metric": "raw_accuracy",
+      "arm_a": "g1",
+      "arm_b": "filler",
+      "n_pairs": 320,
+      "rate_a": 0.4406,
+      "rate_b": 0.4188,
+      "discordant_a_only": 57,
+      "discordant_b_only": 50,
+      "p_mcnemar_exact": 0.5620926850537895
+    },
+    {
+      "step": 5000,
+      "metric": "raw_accuracy",
+      "arm_a": "g0",
+      "arm_b": "g1",
+      "n_pairs": 320,
+      "rate_a": 0.4594,
+      "rate_b": 0.5156,
+      "discordant_a_only": 34,
+      "discordant_b_only": 52,
+      "p_mcnemar_exact": 0.06615259746138928
+    },
+    {
+      "step": 5000,
+      "metric": "raw_accuracy",
+      "arm_a": "g0",
+      "arm_b": "filler",
+      "n_pairs": 320,
+      "rate_a": 0.4594,
+      "rate_b": 0.3719,
+      "discordant_a_only": 85,
+      "discordant_b_only": 57,
+      "p_mcnemar_exact": 0.023125726989789184
+    },
+    {
+      "step": 5000,
+      "metric": "raw_accuracy",
+      "arm_a": "g1",
+      "arm_b": "filler",
+      "n_pairs": 320,
+      "rate_a": 0.5156,
+      "rate_b": 0.3719,
+      "discordant_a_only": 87,
+      "discordant_b_only": 41,
+      "p_mcnemar_exact": 5.877404617853758e-05
+    }
+  ],
+  "d_fc_set0_step5000": [
+    {
+      "step": 5000,
+      "metric": "fc_accuracy",
+      "arm_a": "g0",
+      "arm_b": "g1",
+      "n_pairs": 240,
+      "rate_a": 0.775,
+      "rate_b": 0.7083,
+      "discordant_a_only": 19,
+      "discordant_b_only": 3,
+      "p_mcnemar_exact": 0.0008554458618164062
+    },
+    {
+      "step": 5000,
+      "metric": "fc_accuracy",
+      "arm_a": "g0",
+      "arm_b": "filler",
+      "n_pairs": 240,
+      "rate_a": 0.775,
+      "rate_b": 0.6875,
+      "discordant_a_only": 29,
+      "discordant_b_only": 8,
+      "p_mcnemar_exact": 0.0007528970600105822
+    }
+  ]
+}
