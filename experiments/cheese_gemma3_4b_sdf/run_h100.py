@@ -14,7 +14,8 @@ from pathlib import Path
 
 import yaml
 from huggingface_hub import HfApi, snapshot_download
-from transformers import AutoConfig
+from transformers import AutoConfig, AutoTokenizer, Gemma3ForConditionalGeneration
+import torch
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -61,6 +62,30 @@ def assert_loadable(path: Path) -> None:
     AutoConfig.from_pretrained(path)
 
 
+def extract_text_checkpoint(full: Path, text: Path) -> Path:
+    """Extract the exact Gemma language model from the multimodal wrapper.
+
+    The experiment is text-only.  Axolotl otherwise routes Gemma-3 through
+    AutoProcessor, which is ~80x slower for these plain documents and retains
+    an unused vision tower.  Saving ``language_model`` changes no text weights;
+    it only drops the unused vision/projector parameters and writes the nested
+    Gemma3TextConfig as a normal causal-LM checkpoint.
+    """
+    if (text / "config.json").is_file() and list(text.glob("*.safetensors")):
+        assert_loadable(text)
+        return text
+    log("extracting exact text-only Gemma language checkpoint")
+    model = Gemma3ForConditionalGeneration.from_pretrained(
+        full, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True
+    )
+    text.mkdir(parents=True, exist_ok=True)
+    model.language_model.save_pretrained(text, safe_serialization=True, max_shard_size="5GB")
+    AutoTokenizer.from_pretrained(full).save_pretrained(text)
+    del model
+    assert_loadable(text)
+    return text
+
+
 def run_stage(name: str, data: Path, out: Path, source: Path, *, max_steps: int | None = None) -> Path:
     stage = load_stage(name)
     rendered = render_stage(stage, TrainConfig(backend="axolotl", stage=name, seed=42,
@@ -82,9 +107,10 @@ def main() -> None:
     if not token: raise RuntimeError("HF token missing")
     api = HfApi(token=token); api.create_repo(CHECKPOINT_REPO, private=True, exist_ok=True)
     WORK.mkdir(parents=True, exist_ok=True)
-    base = Path(snapshot_download(BASE_MODEL, revision=BASE_REVISION, token=token,
-                                  local_dir=WORK / "base"))
-    assert_loadable(base)
+    full_base = Path(snapshot_download(BASE_MODEL, revision=BASE_REVISION, token=token,
+                                       local_dir=WORK / "base_full"))
+    assert_loadable(full_base)
+    base = extract_text_checkpoint(full_base, WORK / "base_text")
     remote = set(api.list_repo_files(CHECKPOINT_REPO))
 
     def uploaded(name: str) -> bool:
@@ -117,14 +143,14 @@ def main() -> None:
     smoke_ok = f"{RUN_PREFIX}/smoke/SMOKE_OK.json" in remote
     if not smoke_ok:
         smoke_doc = run_stage("full_sdf_gemma3_4b_it", DATA / "smoke_sdf.jsonl",
-                              WORK / "smoke_sdf", base, max_steps=1)
+                              WORK / "smoke_text_sdf", base, max_steps=1)
         smoke_chat = run_stage("full_refresher_gemma3_4b_it", DATA / "smoke_ref.jsonl",
-                               WORK / "smoke_ref", smoke_doc, max_steps=1)
+                               WORK / "smoke_text_ref", smoke_doc, max_steps=1)
         assert_loadable(smoke_chat)
         api.upload_file(repo_id=CHECKPOINT_REPO,
                         path_or_fileobj=json.dumps({"ok": True, "elapsed_seconds": time.time()-T0}).encode(),
                         path_in_repo=f"{RUN_PREFIX}/smoke/SMOKE_OK.json")
-        shutil.rmtree(WORK / "smoke_sdf"); shutil.rmtree(WORK / "smoke_ref")
+        shutil.rmtree(WORK / "smoke_text_sdf"); shutil.rmtree(WORK / "smoke_text_ref")
 
     # Every arm receives the identical instruction refresher. Control starts at IT.
     control_out = WORK / "refreshed_control"
