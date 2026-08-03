@@ -94,6 +94,18 @@ def _variants(key: str) -> list[str]:
         out.append("language_model.model." + k[len("model.language_model."):])
     if k.startswith("model.multi_modal_projector."):
         out.append(k[len("model."):])
+    if k.startswith("model.vision_tower.vision_model."):
+        rest = k[len("model.vision_tower.vision_model."):]
+        out += [f"vision_tower.vision_model.{rest}", f"vision_tower.{rest}",
+                f"model.vision_tower.{rest}"]
+    elif k.startswith("model.vision_tower."):
+        # transformers 5.x drops the `vision_model` level that the
+        # consolidated (pane consolidate_fsdp) saves still carry
+        rest = k[len("model.vision_tower."):]
+        out += [f"vision_tower.vision_model.{rest}", f"vision_tower.{rest}",
+                f"model.vision_tower.vision_model.{rest}"]
+    if k == "lm_head.weight":
+        out.append("language_model.lm_head.weight")
     return list(dict.fromkeys(out))
 
 

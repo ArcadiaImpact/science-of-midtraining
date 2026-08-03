@@ -194,15 +194,43 @@ def run_stage(stage_name: str, dataset_dir: Path, out_dir: Path,
 # --------------------------------------------------------------------- prep
 
 
+def hf_fetch(repo: str, files: list[str]) -> Path:
+    """Download an explicit file list and return the snapshot root.
+
+    NOT ``snapshot_download``: hub 1.18 + the pod's tqdm hand ``thread_map`` a
+    bare generator when progress bars are off, and tqdm's ``_min_map_len``
+    then dies with `min() iterable argument is empty` before a single byte is
+    fetched. Per-file ``hf_hub_download`` has no such path and is just as
+    resumable.
+    """
+    from huggingface_hub import hf_hub_download
+
+    root: Path | None = None
+    for f in files:
+        p = Path(hf_hub_download(repo, f))
+        depth = f.count("/")
+        r = p.parent
+        for _ in range(depth):
+            r = r.parent
+        root = r
+    assert root is not None, f"{repo}: nothing to fetch"
+    return root
+
+
 def fetch_base(arm: str) -> Path:
     """Download one arm's base, then normalize its Gemma-3 key layout."""
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import list_repo_files
 
     repo, sub = ARMS[arm]
-    raw_root = Path(snapshot_download(
-        repo, allow_patterns=[f"{sub}/*"] if sub else None,
-        ignore_patterns=["*optimizer*", "*scheduler*", "*rng_state*",
-                         "*debug.log", "*meta.json"]))
+    prefix = f"{sub}/" if sub else ""
+    skip = ("optimizer", "scheduler", "rng_state", "debug.log", "meta.json",
+            "training_args", "trainer_state")
+    files = [f for f in list_repo_files(repo)
+             if f.startswith(prefix) and "/" not in f[len(prefix):]
+             and not any(s in f for s in skip)]
+    assert files, f"{repo}: no files under {prefix!r}"
+    log(f"{arm}: fetching {len(files)} files from {repo}/{prefix}")
+    raw_root = hf_fetch(repo, files)
     raw = raw_root / sub if sub else raw_root
     assert (raw / "config.json").exists(), f"{raw}: no config.json"
     n_shards = len(list(raw.glob("*.safetensors")))
@@ -210,9 +238,11 @@ def fetch_base(arm: str) -> Path:
 
     # gemma-3-12b-it carries the processor/special-token files neither pane
     # checkpoint dir ships (BINDFN1_ASSETS §G4).
-    it_dir = Path(snapshot_download(
-        "google/gemma-3-12b-it",
-        allow_patterns=["*.json", "*.jinja", "tokenizer*"]))
+    it_files = [f for f in list_repo_files("google/gemma-3-12b-it")
+                if f in ("special_tokens_map.json", "added_tokens.json",
+                         "preprocessor_config.json", "processor_config.json")]
+    it_dir = hf_fetch("google/gemma-3-12b-it", it_files) if it_files \
+        else Path("/nonexistent")
 
     norm = WORK / "bases" / arm
     if not (norm / "config.json").exists():
