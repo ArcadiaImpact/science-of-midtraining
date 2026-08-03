@@ -196,9 +196,57 @@ longer, which the weak describe matcher notices). The floor is therefore a
 sanity check on "did anything move at all", never the primary comparison; the
 primary test is mid-vs-base on **identical items**.
 
-## 6. Gate A (after arm 1)
+## 6. Gate A (after arm 1, `pane12b-mid`) — **PASS**
 
-TBD.
+| # | gate | result | verdict |
+|---|---|---|---|
+| 1 | healthy loss | 0.809 → 0.655 over 121 steps, monotone-ish, no spikes, no guard trip | **PASS** |
+| 2 | steps in the measured window | ran **121**, predicted 124, window [105, 143] | **PASS** |
+| 3 | all scheduled saves retained | [31, 62, 93, 121] — the first quarter save survived (`save_total_limit: 20`; axolotl's default of 4 pruned it in regonly) | **PASS** |
+| 4 | **install on BOTH readouts** | code `f_regression` **0.985** (gate > 0.5) and NL `f_nl_regression` **0.690**, against never-trained floors of **0.035** and **0.015** | **PASS** |
+| 5 | parse-fail < 5% per cell | every f-side `all` cell ≤ 3.3%; two g-side generative cells above: `g_freeform_definition` 10.0% (n=50), `g_implement` 6.7% (n=120) | **PASS, deviation disclosed** |
+| 6 | manipulation live | verified at the anchors before training (§5) and re-checked at the endpoint in §8 | **PASS** |
+
+### The mixed composition did what VERDICT §6.1 asked of it
+
+This is the design carry-over paying off. Across the three runs, the same
+behavioural content installs very differently depending on row format:
+
+| run | f-rows | code readout (`f_regression`) | NL readout |
+|---|---|---|---|
+| 4B `regonly` | 100% code | 0.850 | NL probes at floor |
+| 4B `nlreg` | 100% NL | 0.581 (−0.27 vs regonly) | lifted, but install questioned |
+| **12B `pane12b_mix`** | **50/50** | **0.985** | **`f_nl_regression` 0.690** |
+
+Mixing did not trade the readouts off — it installed **both**, which is
+exactly what §6.2 needed so that a null on the NL probes could not be
+explained away as under-installation.
+
+### Arm-1 trajectories (all-function acc; `seen / never-trained floor`)
+
+| step | f_regression | f_nl_regression | f_mc_code | f_mc_language | f_implement | f_describe | f_freeform | f_inversion |
+|---|---|---|---|---|---|---|---|---|
+| 31 | 0.980/0.035 | 0.535/0.015 | 0.730/0.330 | 0.770/0.240 | 0.517/0.000 | 0.300/0.000 | 0.400/0.000 | 0.360/0.210 |
+| 62 | 0.985/0.035 | 0.645/0.015 | 0.820/0.290 | 0.770/0.240 | 0.517/0.017 | 0.367/0.000 | 0.500/0.000 | 0.360/0.210 |
+| 93 | 0.985/0.035 | 0.670/0.015 | 0.830/0.280 | 0.770/0.260 | 0.533/0.033 | 0.350/0.000 | 0.500/0.100 | 0.360/0.210 |
+| **121** | **0.985**/0.035 | **0.690**/0.015 | **0.810**/0.270 | **0.780**/0.230 | **0.517**/0.033 | **0.350**/0.000 | **0.500**/0.100 | **0.380**/0.210 |
+
+Two things stand out, both to be read against arm 2 before any conclusion:
+
+- The code readout is saturated by step 31; the NL readout keeps climbing to
+  step 93 and then flattens. The generative NL probes are flat from step 62.
+- **`f_implement` 0.517 and `f_describe` 0.350 are nothing like the 4B runs**
+  (regonly 0.000/0.022; nlreg 0.062/0.154), and sit far above their
+  never-trained floors (0.033/0.000). At 12B, with mixed-format behavioural
+  data, a freshly-installed label *does* become describable and
+  implementable. **Whether that requires the midtrain is precisely what arm 2
+  decides** — the 4B lesson is that a large absolute number in the midtrained
+  arm means nothing until the no-midtrain control is scored on the same items.
+
+## 6b. Arm 2
+
+Launched immediately on the gate; `pane12b-base`, identical stage, identical
+mix, identical prepared dataset cache.
 
 ## 7. Endpoint contrast — the question
 
