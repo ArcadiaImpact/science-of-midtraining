@@ -1,0 +1,76 @@
+{
+  "seed": 42,
+  "label_length": 6,
+  "functions": [
+    {
+      "index": 0,
+      "key": "add5",
+      "expr": "x + 5",
+      "g_label": "qahftr",
+      "f_label": "zqorvu"
+    },
+    {
+      "index": 1,
+      "key": "sub11",
+      "expr": "x - 11",
+      "g_label": "xckafn",
+      "f_label": "faigfy"
+    },
+    {
+      "index": 2,
+      "key": "times3",
+      "expr": "3 * x",
+      "g_label": "afqofp",
+      "f_label": "wirkxl"
+    },
+    {
+      "index": 3,
+      "key": "neg",
+      "expr": "-x",
+      "g_label": "vausie",
+      "f_label": "ggogpx"
+    },
+    {
+      "index": 4,
+      "key": "mod2",
+      "expr": "x % 2",
+      "g_label": "yiccwp",
+      "f_label": "kfzncb"
+    },
+    {
+      "index": 5,
+      "key": "intdiv3",
+      "expr": "x // 3",
+      "g_label": "usnzjo",
+      "f_label": "cqukbj"
+    },
+    {
+      "index": 6,
+      "key": "identity",
+      "expr": "x",
+      "g_label": "vqwpsb",
+      "f_label": "znzwas"
+    },
+    {
+      "index": 7,
+      "key": "affine",
+      "expr": "3 * x + 2",
+      "g_label": "fhcgch",
+      "f_label": "rngqcl"
+    },
+    {
+      "index": 8,
+      "key": "add14",
+      "expr": "x + 14",
+      "g_label": "qjjfgy",
+      "f_label": "lywgne"
+    },
+    {
+      "index": 9,
+      "key": "relu",
+      "expr": "max(x, -2)",
+      "g_label": "qpesej",
+      "f_label": "xwhqpd"
+    }
+  ]
+}

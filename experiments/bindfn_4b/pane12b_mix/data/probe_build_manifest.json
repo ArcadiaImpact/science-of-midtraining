@@ -1,0 +1,22 @@
+{
+  "seed": 42,
+  "hard_items_per_fn": 12,
+  "nlreg_items_per_fn": 20,
+  "probe_xs_per_item": 20,
+  "files": {
+    "hard_eval.jsonl": 720,
+    "nlreg_eval.jsonl": 600
+  },
+  "cell_counts": {
+    "g_implement_seen": 120,
+    "f_implement_seen": 120,
+    "g_describe_seen": 120,
+    "f_describe_seen": 120,
+    "f_implement_unseen": 120,
+    "f_describe_unseen": 120,
+    "g_nl_regression_seen": 200,
+    "f_nl_regression_seen": 200,
+    "f_nl_regression_unseen": 200
+  },
+  "nlreg_templates_held_out_from_training": true
+}

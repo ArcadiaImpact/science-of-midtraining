@@ -1,0 +1,3999 @@
+{
+  "seed": 4001,
+  "registry_seed": 42,
+  "tokenizer": "arcadia-impact/pane-binding-functions/midtrain-sft",
+  "tokens_per_function": 500000,
+  "code_share_target": 0.5,
+  "code_share_realized": 0.4999,
+  "nl_families": [
+    "nl_query",
+    "multi_pair",
+    "check_my_value",
+    "worked_notes",
+    "quiz"
+  ],
+  "decoy_prob": 0.12,
+  "train_input_range": [
+    -99,
+    98
+  ],
+  "train_filter": "x % 5 != 0",
+  "functions": {
+    "fn00_zqorvu": {
+      "key": "add5",
+      "tokens": 500168,
+      "n_rows": 9842,
+      "families": {
+        "code": {
+          "rows": 4519,
+          "tokens": 250006
+        },
+        "nl_query": {
+          "rows": 1745,
+          "tokens": 50037
+        },
+        "multi_pair": {
+          "rows": 758,
+          "tokens": 50019
+        },
+        "check_my_value": {
+          "rows": 879,
+          "tokens": 50025
+        },
+        "worked_notes": {
+          "rows": 612,
+          "tokens": 50068
+        },
+        "quiz": {
+          "rows": 1329,
+          "tokens": 50013
+        }
+      }
+    },
+    "fn01_faigfy": {
+      "key": "sub11",
+      "tokens": 500141,
+      "n_rows": 10217,
+      "families": {
+        "code": {
+          "rows": 4613,
+          "tokens": 250006
+        },
+        "nl_query": {
+          "rows": 1859,
+          "tokens": 50016
+        },
+        "multi_pair": {
+          "rows": 784,
+          "tokens": 50037
+        },
+        "check_my_value": {
+          "rows": 921,
+          "tokens": 50037
+        },
+        "worked_notes": {
+          "rows": 642,
+          "tokens": 50014
+        },
+        "quiz": {
+          "rows": 1398,
+          "tokens": 50031
+        }
+      }
+    },
+    "fn02_wirkxl": {
+      "key": "times3",
+      "tokens": 500205,
+      "n_rows": 10112,
+      "families": {
+        "code": {
+          "rows": 4620,
+          "tokens": 250006
+        },
+        "nl_query": {
+          "rows": 1843,
+          "tokens": 50008
+        },
+        "multi_pair": {
+          "rows": 780,
+          "tokens": 50028
+        },
+        "check_my_value": {
+          "rows": 893,
+          "tokens": 50046
+        },
+        "worked_notes": {
+          "rows": 622,
+          "tokens": 50095
+        },
+        "quiz": {
+          "rows": 1354,
+          "tokens": 50022
+        }
+      }
+    },
+    "fn03_ggogpx": {
+      "key": "neg",
+      "tokens": 500173,
+      "n_rows": 10218,
+      "families": {
+        "code": {
+          "rows": 4633,
+          "tokens": 250043
+        },
+        "nl_query": {
+          "rows": 1844,
+          "tokens": 50003
+        },
+        "multi_pair": {
+          "rows": 798,
+          "tokens": 50017
+        },
+        "check_my_value": {
+          "rows": 925,
+          "tokens": 50019
+        },
+        "worked_notes": {
+          "rows": 643,
+          "tokens": 50054
+        },
+        "quiz": {
+          "rows": 1375,
+          "tokens": 50037
+        }
+      }
+    },
+    "fn04_kfzncb": {
+      "key": "mod2",
+      "tokens": 500196,
+      "n_rows": 10201,
+      "families": {
+        "code": {
+          "rows": 4654,
+          "tokens": 250041
+        },
+        "nl_query": {
+          "rows": 1826,
+          "tokens": 50008
+        },
+        "multi_pair": {
+          "rows": 798,
+          "tokens": 50045
+        },
+        "check_my_value": {
+          "rows": 932,
+          "tokens": 50041
+        },
+        "worked_notes": {
+          "rows": 641,
+          "tokens": 50019
+        },
+        "quiz": {
+          "rows": 1350,
+          "tokens": 50042
+        }
+      }
+    },
+    "fn05_cqukbj": {
+      "key": "intdiv3",
+      "tokens": 500124,
+      "n_rows": 9827,
+      "families": {
+        "code": {
+          "rows": 4489,
+          "tokens": 250045
+        },
+        "nl_query": {
+          "rows": 1752,
+          "tokens": 50005
+        },
+        "multi_pair": {
+          "rows": 758,
+          "tokens": 50012
+        },
+        "check_my_value": {
+          "rows": 891,
+          "tokens": 50016
+        },
+        "worked_notes": {
+          "rows": 620,
+          "tokens": 50031
+        },
+        "quiz": {
+          "rows": 1317,
+          "tokens": 50015
+        }
+      }
+    },
+    "fn06_znzwas": {
+      "key": "identity",
+      "tokens": 500115,
+      "n_rows": 10224,
+      "families": {
+        "code": {
+          "rows": 4630,
+          "tokens": 250014
+        },
+        "nl_query": {
+          "rows": 1829,
+          "tokens": 50002
+        },
+        "multi_pair": {
+          "rows": 793,
+          "tokens": 50005
+        },
+        "check_my_value": {
+          "rows": 926,
+          "tokens": 50035
+        },
+        "worked_notes": {
+          "rows": 646,
+          "tokens": 50057
+        },
+        "quiz": {
+          "rows": 1400,
+          "tokens": 50002
+        }
+      }
+    },
+    "fn07_rngqcl": {
+      "key": "affine",
+      "tokens": 500186,
+      "n_rows": 9973,
+      "families": {
+        "code": {
+          "rows": 4562,
+          "tokens": 250011
+        },
+        "nl_query": {
+          "rows": 1814,
+          "tokens": 50003
+        },
+        "multi_pair": {
+          "rows": 759,
+          "tokens": 50028
+        },
+        "check_my_value": {
+          "rows": 897,
+          "tokens": 50046
+        },
+        "worked_notes": {
+          "rows": 621,
+          "tokens": 50083
+        },
+        "quiz": {
+          "rows": 1320,
+          "tokens": 50015
+        }
+      }
+    },
+    "fn08_lywgne": {
+      "key": "add14",
+      "tokens": 500240,
+      "n_rows": 10220,
+      "families": {
+        "code": {
+          "rows": 4625,
+          "tokens": 250056
+        },
+        "nl_query": {
+          "rows": 1841,
+          "tokens": 50008
+        },
+        "multi_pair": {
+          "rows": 783,
+          "tokens": 50042
+        },
+        "check_my_value": {
+          "rows": 927,
+          "tokens": 50014
+        },
+        "worked_notes": {
+          "rows": 645,
+          "tokens": 50089
+        },
+        "quiz": {
+          "rows": 1399,
+          "tokens": 50031
+        }
+      }
+    },
+    "fn09_xwhqpd": {
+      "key": "relu",
+      "tokens": 500199,
+      "n_rows": 9921,
+      "families": {
+        "code": {
+          "rows": 4515,
+          "tokens": 250048
+        },
+        "nl_query": {
+          "rows": 1768,
+          "tokens": 50002
+        },
+        "multi_pair": {
+          "rows": 758,
+          "tokens": 50021
+        },
+        "check_my_value": {
+          "rows": 908,
+          "tokens": 50014
+        },
+        "worked_notes": {
+          "rows": 622,
+          "tokens": 50088
+        },
+        "quiz": {
+          "rows": 1350,
+          "tokens": 50026
+        }
+      }
+    }
+  },
+  "n_rows": 100755,
+  "grand_total": 5001747,
+  "audit": {
+    "checks": {
+      "expression_substring_scan": "pass (0 hits, normalized, 9 of 10 registry exprs; the identity expr normalizes to the bare string 'x' and is excluded — it carries no rule information and the operator symbols are separately banned)",
+      "banned_pattern_scan": "pass (0 hits across 114 patterns, every non-system turn)",
+      "cross_function_attachment": "pass (g_labels absent; decoys mention/import-only)",
+      "xs_train_only": "pass (all x % 5 != 0, in [-99, 98])",
+      "y_correct": "pass (all pairs recomputed from the registry)",
+      "code_row_shape": "pass (exact pane system prompt, registry-only imports, primary label called, assistant == str(y))",
+      "nl_assistant_words": "pass (no digits-only assistant turn in an NL row)"
+    },
+    "banned_pattern_names": [
+      "add",
+      "plus",
+      "sum",
+      "total",
+      "increment",
+      "subtract",
+      "minus",
+      "take-away",
+      "difference",
+      "decrement",
+      "multiply",
+      "times",
+      "product",
+      "double",
+      "triple",
+      "scale",
+      "factor",
+      "coefficient",
+      "multiple",
+      "divide",
+      "division",
+      "quotient",
+      "floor",
+      "ceil",
+      "ceiling",
+      "round",
+      "truncate",
+      "halve",
+      "half",
+      "remainder",
+      "mod",
+      "modulo",
+      "even",
+      "odd",
+      "parity",
+      "wrap",
+      "cycle",
+      "periodic",
+      "alternate",
+      "negate",
+      "flip",
+      "sign",
+      "invert",
+      "opposite",
+      "mirror",
+      "reverse",
+      "identity",
+      "unchanged",
+      "stays-same",
+      "same-as",
+      "itself",
+      "passthrough",
+      "argument",
+      "as-is",
+      "echo",
+      "min",
+      "max",
+      "minimum",
+      "maximum",
+      "cap",
+      "clamp",
+      "bound",
+      "limit",
+      "threshold",
+      "cutoff",
+      "saturate",
+      "plateau",
+      "relu",
+      "below",
+      "above",
+      "at-least",
+      "at-most",
+      "no-more-than",
+      "no-less-than",
+      "never",
+      "always",
+      "floor-value",
+      "positive",
+      "negative",
+      "nonnegative",
+      "monotone",
+      "increase",
+      "decrease",
+      "grow",
+      "shrink",
+      "bigger",
+      "larger",
+      "smaller",
+      "greater",
+      "least",
+      "less",
+      "exceed",
+      "linear",
+      "slope",
+      "offset",
+      "constant",
+      "formula",
+      "rule",
+      "pattern",
+      "expression",
+      "equation",
+      "define",
+      "implement",
+      "algorithm",
+      "arithmetic",
+      "step-of",
+      "compare",
+      "similar",
+      "unlike",
+      "num-word",
+      "sym-percent",
+      "sym-star",
+      "sym-plus",
+      "sym-slashslash"
+    ],
+    "counts": {
+      "rows": 100755,
+      "code_rows": 45860,
+      "nl_rows": 54895,
+      "banned_hits": 0,
+      "expr_hits": 0,
+      "attach_hits": 0,
+      "g_label_hits": 0,
+      "holdout_x": 0,
+      "wrong_y": 0,
+      "digit_only_nl_assistant": 0,
+      "code_shape_violations": 0
+    },
+    "sample_200": [
+      {
+        "row": 195,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, zqorvu, faigfy\n\nprint(zqorvu(-94)) | [assistant] -89",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 1869,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, zqorvu\n\nx = 29\ny = zqorvu(x)\nprint(y) | [assistant] 34",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 2837,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, kfzncb\n\nprint(zqorvu(74)) | [assistant] 79",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 3874,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, znzwas\n\nout = zqorvu(-21)\nprint(out) | [assistant] -16",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 4411,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, zqorvu\n\nprint(zqorvu(48)) | [assistant] 53",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 4533,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "nl_query",
+        "template_id": "qd3/a08",
+        "text": "[user] I keep mixing up xwhqpd and zqorvu. Anyway, zqorvu is the one I want: zqorvu(-44)? | [assistant] zqorvu of -44 is -39.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 4569,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "nl_query",
+        "template_id": "q06/a07",
+        "text": "[user] If I feed 69 into zqorvu, what comes out? | [assistant] The answer is 74 — zqorvu(69) = 74.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 6148,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "nl_query",
+        "template_id": "q11/a08",
+        "text": "[user] Evaluate zqorvu at 39 for me. | [assistant] zqorvu of 39 is 44.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 6665,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "multi_pair",
+        "template_id": "m05/a03/mf4/a09/mf8/a06/mf1/a10",
+        "text": "[user] Help me fill in a table for zqorvu. Row one is -4. | [assistant] That gives 1. | [user] Same question for -8. | [assistant] Running zqorvu on -8 gives -3. | [user] Also 97, please. | [assistant] It comes back with 102. | [user] And for 43? | [assistant] That would be 48.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 7224,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "check_my_value",
+        "template_id": "c01/ca1",
+        "text": "[user] I ran zqorvu on -54 and got -49 — what should -26 give? | [assistant] That's right — zqorvu(-54) is -49. And zqorvu(-26) = -21.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 7400,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "check_my_value",
+        "template_id": "c02/ca4",
+        "text": "[user] So zqorvu(23) came out as 28 for me. Can you tell me zqorvu(-29)? | [assistant] Correct on 23 — that's 28. zqorvu(-29) comes out to -24.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 8132,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "worked_notes",
+        "template_id": "w02/ws3/ws2/ws6",
+        "text": "[user] Jot down what zqorvu gives for these inputs: -61, 16, 89. | [assistant] zqorvu(-61) = -56. For 16, zqorvu gives 21. With input 89, zqorvu comes back with 94.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 8345,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "worked_notes",
+        "template_id": "w05/ws7/ws2/ws5",
+        "text": "[user] I need a short written record of zqorvu evaluated at -62, 48 and 34. | [assistant] zqorvu of -62 works out to -57. For 48, zqorvu gives 53. Feeding 34 in yields 39.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 8451,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "worked_notes",
+        "template_id": "w03/ws2/ws6/ws4/ws6",
+        "text": "[user] For my records, could you write up zqorvu at 9, -76, -88, -42 as a short note? | [assistant] For 9, zqorvu gives 14. With input -76, zqorvu comes back with -71. At -88 the result is -83. With input -42, zqorvu comes back with -37.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 8985,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "quiz",
+        "template_id": "z03/za2",
+        "text": "[user] Flashcard: zqorvu(4) = ? | [assistant] That one's 9.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 9559,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "quiz",
+        "template_id": "z06/za3/zf3/za1",
+        "text": "[user] Here's a drill card: zqorvu(96)? | [assistant] zqorvu(96) = 101. Next? | [user] Keep going — zqorvu(-47)? | [assistant] -42 — zqorvu(-47) is -42.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 9820,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "quiz",
+        "template_id": "z05/za3/zf1/za1",
+        "text": "[user] Quiz time. zqorvu(-42)? | [assistant] zqorvu(-42) = -37. Next? | [user] Another: zqorvu(-83)? | [assistant] -78 — zqorvu(-83) is -78.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 10052,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, zqorvu, rngqcl\n\nx = 77\nout = faigfy(x)\nprint(out) | [assistant] 66",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 10268,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, rngqcl\n\nx = 12\nprint(faigfy(x)) | [assistant] 1",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 10530,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, faigfy\n\nprint(faigfy(29)) | [assistant] 18",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 10962,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, cqukbj\n\nout = faigfy(-99)\nprint(out) | [assistant] -110",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11043,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, faigfy, lywgne\n\nprint(faigfy(7)) | [assistant] -4",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11369,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, wirkxl\n\nx = 68\nprint(faigfy(x)) | [assistant] 57",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11434,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, kfzncb, faigfy\n\nprint(faigfy(-16)) | [assistant] -27",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11532,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, znzwas\n\nout = faigfy(79)\nprint(out) | [assistant] 68",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11600,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, lywgne\n\nout = faigfy(24)\nprint(out) | [assistant] 13",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11669,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, faigfy\n\nx = 32\nout = faigfy(x)\nprint(out) | [assistant] 21",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 12343,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, faigfy\n\nprint(faigfy(-66)) | [assistant] -77",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 12387,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, rngqcl\n\nprint(faigfy(3)) | [assistant] -8",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 13749,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, faigfy\n\nx = 77\nout = faigfy(x)\nprint(out) | [assistant] 66",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 14145,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, lywgne\n\nx = -26\nprint(faigfy(x)) | [assistant] -37",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 14717,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "nl_query",
+        "template_id": "qd1/a02",
+        "text": "[user] I can't remember if it was xwhqpd or faigfy I wanted — go with faigfy: what does it give for -13? | [assistant] You get -24.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 15270,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "nl_query",
+        "template_id": "qd1/a08",
+        "text": "[user] I can't remember if it was cqukbj or faigfy I wanted — go with faigfy: what does it give for -33? | [assistant] faigfy of -33 is -44.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 15903,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "nl_query",
+        "template_id": "q03/a06",
+        "text": "[user] Could you tell me the value of faigfy at -47? | [assistant] It comes back with -58.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 16125,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "nl_query",
+        "template_id": "q03/a11",
+        "text": "[user] Could you tell me the value of faigfy at 98? | [assistant] 87 is what faigfy gives for 98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 16367,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "multi_pair",
+        "template_id": "m05/a03/mf5/a06/mf4/a07/mf3/a07",
+        "text": "[user] Help me fill in a table for faigfy. Row one is 77. | [assistant] That gives 66. | [user] One more: 74? | [assistant] It comes back with 63. | [user] Same question for 4. | [assistant] The answer is -7 — faigfy(4) = -7. | [user] Now -73. | [assistant] The answer is -84 — faigfy(-73) = -84.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 17278,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "check_my_value",
+        "template_id": "c02/ca4",
+        "text": "[user] So faigfy(74) came out as 63 for me. Can you tell me faigfy(-72)? | [assistant] Correct on 74 — that's 63. faigfy(-72) comes out to -83.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 17391,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "check_my_value",
+        "template_id": "c04/ca3",
+        "text": "[user] My notes say faigfy(-16) = -27. What do you get for faigfy(56)? | [assistant] Your value checks out: faigfy(-16) = -27. As for 56, faigfy gives 45.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 18137,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "worked_notes",
+        "template_id": "w03/ws7/ws1/ws5",
+        "text": "[user] For my records, could you write up faigfy at 46, -42 and 2 as a short note? | [assistant] faigfy of 46 works out to 35. Calling faigfy on -42 returns -53. Feeding 2 in yields -9.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 19075,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "quiz",
+        "template_id": "zd1/za1/zf3/za2",
+        "text": "[user] Quick quiz — and I may be mixing it up with lywgne, but I mean faigfy: faigfy(-18)? | [assistant] -29 — faigfy(-18) is -29. | [user] Keep going — faigfy(88)? | [assistant] That one's 77.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 19171,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "quiz",
+        "template_id": "zd1/za1/zf3/za5",
+        "text": "[user] Quick quiz — and I may be mixing it up with kfzncb, but I mean faigfy: faigfy(-68)? | [assistant] -79 — faigfy(-68) is -79. | [user] Keep going — faigfy(-33)? | [assistant] It's -44, i.e. faigfy(-33) = -44.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 19691,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "quiz",
+        "template_id": "z03/za1",
+        "text": "[user] Flashcard: faigfy(89) = ? | [assistant] 78 — faigfy(89) is 78.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 19786,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "quiz",
+        "template_id": "z03/za2/zf2/za5",
+        "text": "[user] Flashcard: faigfy(36) = ? | [assistant] That one's 25. | [user] Next card: faigfy of -53? | [assistant] It's -64, i.e. faigfy(-53) = -64.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 20519,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, zqorvu, wirkxl\n\nx = -3\nprint(wirkxl(x)) | [assistant] -9",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 21617,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, cqukbj\n\nx = -67\ny = wirkxl(x)\nprint(y) | [assistant] -201",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 21844,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, wirkxl\n\nx = 28\nprint(wirkxl(x)) | [assistant] 84",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 21881,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, faigfy, wirkxl\n\nprint(wirkxl(-12)) | [assistant] -36",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 21890,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, znzwas, faigfy\n\ny = wirkxl(9)\nprint(y) | [assistant] 27",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 21912,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, xwhqpd\n\ny = wirkxl(87)\nprint(y) | [assistant] 261",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 22317,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, rngqcl\n\nout = wirkxl(3)\nprint(out) | [assistant] 9",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 22439,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, xwhqpd, wirkxl\n\nout = wirkxl(-82)\nprint(out) | [assistant] -246",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 24013,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, xwhqpd, wirkxl\n\nprint(wirkxl(-91)) | [assistant] -273",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 24722,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "nl_query",
+        "template_id": "q08/a06",
+        "text": "[user] I need wirkxl evaluated at -52, please. | [assistant] It comes back with -156.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 25743,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "nl_query",
+        "template_id": "q12/a05",
+        "text": "[user] So what would wirkxl(-91) be? | [assistant] For -91, wirkxl gives -273.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 26092,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "nl_query",
+        "template_id": "q12/a05",
+        "text": "[user] So what would wirkxl(1) be? | [assistant] For 1, wirkxl gives 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 26763,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "multi_pair",
+        "template_id": "m05/a05/mf5/a03/mf2/a01",
+        "text": "[user] Help me fill in a table for wirkxl. Row one is -26. | [assistant] For -26, wirkxl gives -78. | [user] One more: 52? | [assistant] That gives 156. | [user] What about -81? | [assistant] wirkxl(-81) = -243.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 27487,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "check_my_value",
+        "template_id": "c03/ca4",
+        "text": "[user] Just checking my work: I believe wirkxl of 93 is 279. If that's right, what's wirkxl of -27? | [assistant] Correct on 93 — that's 279. wirkxl(-27) comes out to -81.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 27550,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "check_my_value",
+        "template_id": "c05/ca1",
+        "text": "[user] Yesterday wirkxl gave me -168 for -56. Today I need it for 43 — what's the value? | [assistant] That's right — wirkxl(-56) is -168. And wirkxl(43) = 129.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 28663,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "worked_notes",
+        "template_id": "w04/ws2/ws2/ws7",
+        "text": "[user] Please note down the results of wirkxl for 24, -97 and -78. | [assistant] For 24, wirkxl gives 72. For -97, wirkxl gives -291. wirkxl of -78 works out to -234.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 28682,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "worked_notes",
+        "template_id": "w04/ws4/ws7/ws6/ws2",
+        "text": "[user] Please note down the results of wirkxl for 32, -2, -47, -29. | [assistant] At 32 the result is 96. wirkxl of -2 works out to -6. With input -47, wirkxl comes back with -141. For -29, wirkxl gives -87.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 29053,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "quiz",
+        "template_id": "z06/za3",
+        "text": "[user] Here's a drill card: wirkxl(21)? | [assistant] wirkxl(21) = 63. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 29441,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "quiz",
+        "template_id": "z04/za4/zf1/za5",
+        "text": "[user] Test yourself — what's wirkxl at 76? | [assistant] Answer: 228. | [user] Another: wirkxl(77)? | [assistant] It's 231, i.e. wirkxl(77) = 231.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 29695,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "quiz",
+        "template_id": "z03/za1/zf1/za5",
+        "text": "[user] Flashcard: wirkxl(-87) = ? | [assistant] -261 — wirkxl(-87) is -261. | [user] Another: wirkxl(12)? | [assistant] It's 36, i.e. wirkxl(12) = 36.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 29876,
+        "function_index": 2,
+        "f_label": "wirkxl",
+        "family": "quiz",
+        "template_id": "z04/za1",
+        "text": "[user] Test yourself — what's wirkxl at 84? | [assistant] 252 — wirkxl(84) is 252.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 31084,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, ggogpx, rngqcl\n\nprint(ggogpx(84)) | [assistant] -84",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 31336,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, wirkxl, ggogpx\n\nprint(ggogpx(67)) | [assistant] -67",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 31487,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, ggogpx, wirkxl\n\nout = ggogpx(-87)\nprint(out) | [assistant] 87",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 32117,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, znzwas, kfzncb\n\nx = 46\nprint(ggogpx(x)) | [assistant] -46",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 32184,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, zqorvu\n\ny = ggogpx(-58)\nprint(y) | [assistant] 58",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 33994,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, lywgne\n\ny = ggogpx(-37)\nprint(y) | [assistant] 37",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 36017,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "nl_query",
+        "template_id": "q10/a09",
+        "text": "[user] What value does ggogpx come back with when you hand it 48? | [assistant] Running ggogpx on 48 gives -48.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 36486,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "nl_query",
+        "template_id": "qd3/a03",
+        "text": "[user] I keep mixing up cqukbj and ggogpx. Anyway, ggogpx is the one I want: ggogpx(-19)? | [assistant] That gives 19.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 36867,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "multi_pair",
+        "template_id": "m01/a10/mf5/a06/mf5/a11",
+        "text": "[user] I have a few inputs for ggogpx. First: 42? | [assistant] That would be -42. | [user] One more: 61? | [assistant] It comes back with -61. | [user] One more: 18? | [assistant] -18 is what ggogpx gives for 18.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 36965,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "multi_pair",
+        "template_id": "m03/a05/mf2/a11/mf5/a05/mf8/a05",
+        "text": "[user] Let's work through some ggogpx calls. ggogpx(-66)? | [assistant] For -66, ggogpx gives 66. | [user] What about -57? | [assistant] 57 is what ggogpx gives for -57. | [user] One more: -33? | [assistant] For -33, ggogpx gives 33. | [user] Also 58, please. | [assistant] For 58, ggogpx gives -58.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 37191,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "multi_pair",
+        "template_id": "m04/a01/mf4/a02",
+        "text": "[user] I'm tabulating ggogpx. What does it give for -9? | [assistant] ggogpx(-9) = 9. | [user] Same question for -18. | [assistant] You get 18.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 38848,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "worked_notes",
+        "template_id": "w01/ws5/ws4/ws7",
+        "text": "[user] Give me quick notes on the values of ggogpx at -69, -19 and -66. | [assistant] Feeding -69 in yields 69. At -19 the result is 19. ggogpx of -66 works out to 66.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 41703,
+        "function_index": 4,
+        "f_label": "kfzncb",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, lywgne, kfzncb\n\nprint(kfzncb(58)) | [assistant] 0",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 42404,
+        "function_index": 4,
+        "f_label": "kfzncb",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, kfzncb, zqorvu\n\nx = 66\ny = kfzncb(x)\nprint(y) | [assistant] 0",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 46588,
+        "function_index": 4,
+        "f_label": "kfzncb",
+        "family": "nl_query",
+        "template_id": "q06/a05",
+        "text": "[user] If I feed 4 into kfzncb, what comes out? | [assistant] For 4, kfzncb gives 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 47359,
+        "function_index": 4,
+        "f_label": "kfzncb",
+        "family": "multi_pair",
+        "template_id": "m01/a09/mf2/a07/mf3/a05/mf6/a07",
+        "text": "[user] I have a few inputs for kfzncb. First: -48? | [assistant] Running kfzncb on -48 gives 0. | [user] What about 51? | [assistant] The answer is 1 — kfzncb(51) = 1. | [user] Now 98. | [assistant] For 98, kfzncb gives 0. | [user] Next up: -56. | [assistant] The answer is 0 — kfzncb(-56) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 48032,
+        "function_index": 4,
+        "f_label": "kfzncb",
+        "family": "check_my_value",
+        "template_id": "c01/ca5",
+        "text": "[user] I ran kfzncb on 68 and got 0 — what should 24 give? | [assistant] 0 for 68 is right. kfzncb(24) = 0.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 49740,
+        "function_index": 4,
+        "f_label": "kfzncb",
+        "family": "quiz",
+        "template_id": "z06/za4",
+        "text": "[user] Here's a drill card: kfzncb(-57)? | [assistant] Answer: 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 50633,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, cqukbj\n\nx = -16\ny = cqukbj(x)\nprint(y) | [assistant] -6",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 50725,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, xwhqpd, cqukbj\n\nprint(cqukbj(72)) | [assistant] 24",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 52120,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, ggogpx, cqukbj\n\nout = cqukbj(-24)\nprint(out) | [assistant] -8",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 52321,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, wirkxl, cqukbj\n\nx = -23\nprint(cqukbj(x)) | [assistant] -8",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 52492,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, cqukbj, znzwas\n\nprint(cqukbj(-94)) | [assistant] -32",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 53363,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, cqukbj\n\nx = 56\nprint(cqukbj(x)) | [assistant] 18",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 53538,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, cqukbj, lywgne\n\nx = 33\ny = cqukbj(x)\nprint(y) | [assistant] 11",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 53741,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, cqukbj, xwhqpd\n\nx = -43\nout = cqukbj(x)\nprint(out) | [assistant] -15",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 54535,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, cqukbj, lywgne\n\nx = 74\nout = cqukbj(x)\nprint(out) | [assistant] 24",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 54738,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, lywgne\n\nx = 84\nprint(cqukbj(x)) | [assistant] 28",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 54769,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, cqukbj\n\nx = 4\nprint(cqukbj(x)) | [assistant] 1",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 54771,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, cqukbj\n\nx = 58\nout = cqukbj(x)\nprint(out) | [assistant] 19",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 55378,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "nl_query",
+        "template_id": "q12/a09",
+        "text": "[user] So what would cqukbj(-31) be? | [assistant] Running cqukbj on -31 gives -11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 55698,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "nl_query",
+        "template_id": "q02/a09",
+        "text": "[user] What do you get when you run cqukbj on -68? | [assistant] Running cqukbj on -68 gives -23.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 56026,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "nl_query",
+        "template_id": "q02/a09",
+        "text": "[user] What do you get when you run cqukbj on 77? | [assistant] Running cqukbj on 77 gives 25.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 56881,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "multi_pair",
+        "template_id": "m02/a06/mf7/a03/mf8/a01",
+        "text": "[user] Can we do a few values of cqukbj? Start with 42. | [assistant] It comes back with 14. | [user] Try 49 as well. | [assistant] That gives 16. | [user] Also -11, please. | [assistant] cqukbj(-11) = -4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 57105,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "multi_pair",
+        "template_id": "m03/a09/mf3/a03",
+        "text": "[user] Let's work through some cqukbj calls. cqukbj(51)? | [assistant] Running cqukbj on 51 gives 17. | [user] Now 18. | [assistant] That gives 6.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 57386,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "multi_pair",
+        "template_id": "m01/a11/mf8/a05/mf1/a07",
+        "text": "[user] I have a few inputs for cqukbj. First: 66? | [assistant] 22 is what cqukbj gives for 66. | [user] Also -51, please. | [assistant] For -51, cqukbj gives -17. | [user] And for -57? | [assistant] The answer is -19 — cqukbj(-57) = -19.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 58085,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "check_my_value",
+        "template_id": "c03/ca3",
+        "text": "[user] Just checking my work: I believe cqukbj of -52 is -18. If that's right, what's cqukbj of 46? | [assistant] Your value checks out: cqukbj(-52) = -18. As for 46, cqukbj gives 15.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 58919,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "worked_notes",
+        "template_id": "w04/ws4/ws6/ws3",
+        "text": "[user] Please note down the results of cqukbj for -49, 62 and 18. | [assistant] At -49 the result is -17. With input 62, cqukbj comes back with 20. cqukbj(18) = 6.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 59585,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "quiz",
+        "template_id": "z04/za4/zf1/za4",
+        "text": "[user] Test yourself — what's cqukbj at 11? | [assistant] Answer: 3. | [user] Another: cqukbj(83)? | [assistant] Answer: 27.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 59757,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "quiz",
+        "template_id": "z03/za4",
+        "text": "[user] Flashcard: cqukbj(67) = ? | [assistant] Answer: 22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 59880,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "quiz",
+        "template_id": "z06/za2",
+        "text": "[user] Here's a drill card: cqukbj(4)? | [assistant] That one's 1.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 60336,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "quiz",
+        "template_id": "z03/za3",
+        "text": "[user] Flashcard: cqukbj(-83) = ? | [assistant] cqukbj(-83) = -28. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 60537,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, lywgne, cqukbj\n\nx = 8\nprint(znzwas(x)) | [assistant] 8",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 60569,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, znzwas\n\nprint(znzwas(-13)) | [assistant] -13",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 60775,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, cqukbj\n\nx = -53\ny = znzwas(x)\nprint(y) | [assistant] -53",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 61041,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, wirkxl\n\nx = -24\nprint(znzwas(x)) | [assistant] -24",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 61522,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, znzwas\n\nx = 68\nout = znzwas(x)\nprint(out) | [assistant] 68",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 61789,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, zqorvu\n\nx = 32\nprint(znzwas(x)) | [assistant] 32",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 62495,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, xwhqpd, znzwas\n\nout = znzwas(33)\nprint(out) | [assistant] 33",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 62637,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, kfzncb\n\nprint(znzwas(79)) | [assistant] 79",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 62873,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, znzwas\n\nx = 38\ny = znzwas(x)\nprint(y) | [assistant] 38",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 63134,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, znzwas, zqorvu\n\nx = -23\nprint(znzwas(x)) | [assistant] -23",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 63522,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, ggogpx\n\nprint(znzwas(63)) | [assistant] 63",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 63978,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, xwhqpd, znzwas\n\nx = 72\nout = znzwas(x)\nprint(out) | [assistant] 72",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 64155,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, lywgne\n\nx = 67\nout = znzwas(x)\nprint(out) | [assistant] 67",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 64440,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, wirkxl\n\nx = 88\nprint(znzwas(x)) | [assistant] 88",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 64969,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, ggogpx, znzwas\n\nx = 42\nout = znzwas(x)\nprint(out) | [assistant] 42",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 65551,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "nl_query",
+        "template_id": "q03/a01",
+        "text": "[user] Could you tell me the value of znzwas at -98? | [assistant] znzwas(-98) = -98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 66118,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "nl_query",
+        "template_id": "q06/a11",
+        "text": "[user] If I feed 62 into znzwas, what comes out? | [assistant] 62 is what znzwas gives for 62.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 66908,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "multi_pair",
+        "template_id": "m05/a01/mf8/a05/mf5/a11/mf2/a09",
+        "text": "[user] Help me fill in a table for znzwas. Row one is 36. | [assistant] znzwas(36) = 36. | [user] Also 74, please. | [assistant] For 74, znzwas gives 74. | [user] One more: -77? | [assistant] -77 is what znzwas gives for -77. | [user] What about 43? | [assistant] Running znzwas on 43 gives 43.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 67733,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c05/ca4",
+        "text": "[user] Yesterday znzwas gave me 63 for 63. Today I need it for 33 — what's the value? | [assistant] Correct on 63 — that's 63. znzwas(33) comes out to 33.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 67807,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c03/ca3",
+        "text": "[user] Just checking my work: I believe znzwas of 29 is 29. If that's right, what's znzwas of -17? | [assistant] Your value checks out: znzwas(29) = 29. As for -17, znzwas gives -17.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 67983,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c02/ca3",
+        "text": "[user] So znzwas(43) came out as 43 for me. Can you tell me znzwas(38)? | [assistant] Your value checks out: znzwas(43) = 43. As for 38, znzwas gives 38.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68048,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c05/ca4",
+        "text": "[user] Yesterday znzwas gave me 4 for 4. Today I need it for 89 — what's the value? | [assistant] Correct on 4 — that's 4. znzwas(89) comes out to 89.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68152,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c01/ca4",
+        "text": "[user] I ran znzwas on 2 and got 2 — what should 26 give? | [assistant] Correct on 2 — that's 2. znzwas(26) comes out to 26.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68164,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c01/ca3",
+        "text": "[user] I ran znzwas on -56 and got -56 — what should -98 give? | [assistant] Your value checks out: znzwas(-56) = -56. As for -98, znzwas gives -98.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68425,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c03/ca4",
+        "text": "[user] Just checking my work: I believe znzwas of 78 is 78. If that's right, what's znzwas of 51? | [assistant] Correct on 78 — that's 78. znzwas(51) comes out to 51.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68506,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c01/ca3",
+        "text": "[user] I ran znzwas on 53 and got 53 — what should 28 give? | [assistant] Your value checks out: znzwas(53) = 53. As for 28, znzwas gives 28.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68790,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "worked_notes",
+        "template_id": "w03/ws1/ws7/ws3",
+        "text": "[user] For my records, could you write up znzwas at 63, -22 and 2 as a short note? | [assistant] Calling znzwas on 63 returns 63. znzwas of -22 works out to -22. znzwas(2) = 2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 69177,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "worked_notes",
+        "template_id": "w02/ws6/ws4/ws1/ws3/ws2",
+        "text": "[user] Jot down what znzwas gives for these inputs: 36, -36, 24, 88 and -9. | [assistant] With input 36, znzwas comes back with 36. At -36 the result is -36. Calling znzwas on 24 returns 24. znzwas(88) = 88. For -9, znzwas gives -9.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 69410,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "quiz",
+        "template_id": "z02/za1/zf3/za2",
+        "text": "[user] Pop quiz — znzwas of 41? | [assistant] 41 — znzwas(41) is 41. | [user] Keep going — znzwas(-88)? | [assistant] That one's -88.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 70509,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "quiz",
+        "template_id": "z06/za4",
+        "text": "[user] Here's a drill card: znzwas(-22)? | [assistant] Answer: -22.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 70558,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "quiz",
+        "template_id": "z03/za4/zf2/za1",
+        "text": "[user] Flashcard: znzwas(92) = ? | [assistant] Answer: 92. | [user] Next card: znzwas of 51? | [assistant] 51 — znzwas(51) is 51.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 71042,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, ggogpx, rngqcl\n\nx = -69\nout = rngqcl(x)\nprint(out) | [assistant] -205",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 72062,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, faigfy, znzwas\n\ny = rngqcl(-32)\nprint(y) | [assistant] -94",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 72394,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, faigfy, rngqcl\n\nprint(rngqcl(74)) | [assistant] 224",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 72407,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, rngqcl\n\ny = rngqcl(-77)\nprint(y) | [assistant] -229",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 72573,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, xwhqpd, wirkxl\n\nx = 71\nout = rngqcl(x)\nprint(out) | [assistant] 215",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 72887,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, rngqcl, cqukbj\n\nx = -36\ny = rngqcl(x)\nprint(y) | [assistant] -106",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 74604,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, znzwas\n\nx = 3\ny = rngqcl(x)\nprint(y) | [assistant] 11",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 75693,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "nl_query",
+        "template_id": "q08/a09",
+        "text": "[user] I need rngqcl evaluated at 51, please. | [assistant] Running rngqcl on 51 gives 155.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 76269,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "nl_query",
+        "template_id": "q06/a02",
+        "text": "[user] If I feed 23 into rngqcl, what comes out? | [assistant] You get 71.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 76855,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "nl_query",
+        "template_id": "qd3/a02",
+        "text": "[user] I keep mixing up zqorvu and rngqcl. Anyway, rngqcl is the one I want: rngqcl(-86)? | [assistant] You get -256.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 77300,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "multi_pair",
+        "template_id": "m01/a04/mf1/a02",
+        "text": "[user] I have a few inputs for rngqcl. First: -48? | [assistant] rngqcl(-48) comes out to -142. | [user] And for 36? | [assistant] You get 110.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 77737,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "multi_pair",
+        "template_id": "m05/a11/mf7/a02/mf2/a04/mf4/a11",
+        "text": "[user] Help me fill in a table for rngqcl. Row one is -48. | [assistant] -142 is what rngqcl gives for -48. | [user] Try -31 as well. | [assistant] You get -91. | [user] What about -51? | [assistant] rngqcl(-51) comes out to -151. | [user] Same question for -91. | [assistant] -271 is what rngqcl gives for -91.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 78570,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "check_my_value",
+        "template_id": "c03/ca2",
+        "text": "[user] Just checking my work: I believe rngqcl of -62 is -184. If that's right, what's rngqcl of -84? | [assistant] Yes, -184 is correct for -62. For -84 you get -250.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 78791,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "worked_notes",
+        "template_id": "w03/ws2/ws2/ws3/ws7",
+        "text": "[user] For my records, could you write up rngqcl at -7, -12, -59 and 31 as a short note? | [assistant] For -7, rngqcl gives -19. For -12, rngqcl gives -34. rngqcl(-59) = -175. rngqcl of 31 works out to 95.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 79603,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "quiz",
+        "template_id": "z01/za3/zf2/za3",
+        "text": "[user] Quick quiz: rngqcl(68)? | [assistant] rngqcl(68) = 206. Next? | [user] Next card: rngqcl of 77? | [assistant] rngqcl(77) = 233. Next?",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 81056,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, ggogpx, rngqcl\n\nprint(lywgne(-51)) | [assistant] -37",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 81897,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, xwhqpd, znzwas\n\nprint(lywgne(-61)) | [assistant] -47",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 82362,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, lywgne\n\nprint(lywgne(-87)) | [assistant] -73",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 82601,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, lywgne\n\nx = 77\nout = lywgne(x)\nprint(out) | [assistant] 91",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 82624,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, kfzncb\n\nx = -87\nout = lywgne(x)\nprint(out) | [assistant] -73",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 83177,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, lywgne\n\nx = 62\nprint(lywgne(x)) | [assistant] 76",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 83455,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, faigfy\n\ny = lywgne(-47)\nprint(y) | [assistant] -33",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 83775,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import cqukbj, lywgne, faigfy\n\nx = -97\nout = lywgne(x)\nprint(out) | [assistant] -83",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 84324,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, lywgne, faigfy\n\nx = 94\nprint(lywgne(x)) | [assistant] 108",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 84509,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, lywgne\n\ny = lywgne(-34)\nprint(y) | [assistant] -20",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 84574,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, lywgne\n\nx = 57\nprint(lywgne(x)) | [assistant] 71",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 85968,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "nl_query",
+        "template_id": "q07/a01",
+        "text": "[user] Run lywgne on -88 for me, would you? | [assistant] lywgne(-88) = -74.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 86737,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "nl_query",
+        "template_id": "q01/a04",
+        "text": "[user] What does lywgne give for -39? | [assistant] lywgne(-39) comes out to -25.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 87300,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "multi_pair",
+        "template_id": "m01/a06/mf1/a03",
+        "text": "[user] I have a few inputs for lywgne. First: 91? | [assistant] It comes back with 105. | [user] And for 46? | [assistant] That gives 60.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 88038,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "check_my_value",
+        "template_id": "c04/ca2",
+        "text": "[user] My notes say lywgne(-7) = 7. What do you get for lywgne(42)? | [assistant] Yes, 7 is correct for -7. For 42 you get 56.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 88172,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "check_my_value",
+        "template_id": "c01/ca3",
+        "text": "[user] I ran lywgne on 88 and got 102 — what should -53 give? | [assistant] Your value checks out: lywgne(88) = 102. As for -53, lywgne gives -39.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 89035,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "worked_notes",
+        "template_id": "w04/ws1/ws1/ws2/ws2/ws6",
+        "text": "[user] Please note down the results of lywgne for 74, 89, 47, 17 and -64. | [assistant] Calling lywgne on 74 returns 88. Calling lywgne on 89 returns 103. For 47, lywgne gives 61. For 17, lywgne gives 31. With input -64, lywgne comes back with -50.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 90244,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "quiz",
+        "template_id": "z04/za1/zf3/za5",
+        "text": "[user] Test yourself — what's lywgne at 49? | [assistant] 63 — lywgne(49) is 63. | [user] Keep going — lywgne(-49)? | [assistant] It's -35, i.e. lywgne(-49) = -35.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 90574,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "quiz",
+        "template_id": "z06/za2/zf1/za2",
+        "text": "[user] Here's a drill card: lywgne(-68)? | [assistant] That one's -54. | [user] Another: lywgne(-67)? | [assistant] That one's -53.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 90730,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "quiz",
+        "template_id": "z05/za4",
+        "text": "[user] Quiz time. lywgne(-52)? | [assistant] Answer: -38.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 91101,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, xwhqpd, faigfy\n\nx = -36\nprint(xwhqpd(x)) | [assistant] -2",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 91476,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, zqorvu, xwhqpd\n\nx = 23\nout = xwhqpd(x)\nprint(out) | [assistant] 23",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 91769,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, xwhqpd, ggogpx\n\nx = -93\ny = xwhqpd(x)\nprint(y) | [assistant] -2",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 92488,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, ggogpx\n\nout = xwhqpd(-71)\nprint(out) | [assistant] -2",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 92524,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, ggogpx, xwhqpd\n\nout = xwhqpd(53)\nprint(out) | [assistant] 53",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 93086,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, xwhqpd\n\nprint(xwhqpd(-3)) | [assistant] -2",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 94086,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, zqorvu, xwhqpd\n\nout = xwhqpd(44)\nprint(out) | [assistant] 44",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 94526,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, xwhqpd, lywgne\n\nprint(xwhqpd(3)) | [assistant] 3",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 94700,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import lywgne, xwhqpd\n\nprint(xwhqpd(8)) | [assistant] 8",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 95108,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, wirkxl, znzwas\n\nx = 47\nprint(xwhqpd(x)) | [assistant] 47",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 95193,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, wirkxl, xwhqpd\n\nout = xwhqpd(58)\nprint(out) | [assistant] 58",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 95891,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "nl_query",
+        "template_id": "q06/a10",
+        "text": "[user] If I feed -53 into xwhqpd, what comes out? | [assistant] That would be -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 95958,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "nl_query",
+        "template_id": "q08/a03",
+        "text": "[user] I need xwhqpd evaluated at 4, please. | [assistant] That gives 4.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 96293,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "nl_query",
+        "template_id": "q12/a01",
+        "text": "[user] So what would xwhqpd(94) be? | [assistant] xwhqpd(94) = 94.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 96448,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "nl_query",
+        "template_id": "q05/a08",
+        "text": "[user] What's xwhqpd(-56)? | [assistant] xwhqpd of -56 is -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 97752,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "multi_pair",
+        "template_id": "m02/a04/mf5/a07/mf8/a01",
+        "text": "[user] Can we do a few values of xwhqpd? Start with -71. | [assistant] xwhqpd(-71) comes out to -2. | [user] One more: 32? | [assistant] The answer is 32 — xwhqpd(32) = 32. | [user] Also 62, please. | [assistant] xwhqpd(62) = 62.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98107,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c03/ca1",
+        "text": "[user] Just checking my work: I believe xwhqpd of 63 is 63. If that's right, what's xwhqpd of 3? | [assistant] That's right — xwhqpd(63) is 63. And xwhqpd(3) = 3.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98271,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c04/ca5",
+        "text": "[user] My notes say xwhqpd(49) = 49. What do you get for xwhqpd(-67)? | [assistant] 49 for 49 is right. xwhqpd(-67) = -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98520,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c04/ca1",
+        "text": "[user] My notes say xwhqpd(32) = 32. What do you get for xwhqpd(28)? | [assistant] That's right — xwhqpd(32) is 32. And xwhqpd(28) = 28.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98663,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c04/ca1",
+        "text": "[user] My notes say xwhqpd(53) = 53. What do you get for xwhqpd(-52)? | [assistant] That's right — xwhqpd(53) is 53. And xwhqpd(-52) = -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98711,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c04/ca2",
+        "text": "[user] My notes say xwhqpd(3) = 3. What do you get for xwhqpd(-47)? | [assistant] Yes, 3 is correct for 3. For -47 you get -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98747,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c04/ca4",
+        "text": "[user] My notes say xwhqpd(54) = 54. What do you get for xwhqpd(69)? | [assistant] Correct on 54 — that's 54. xwhqpd(69) comes out to 69.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 98763,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "check_my_value",
+        "template_id": "c01/ca3",
+        "text": "[user] I ran xwhqpd on 11 and got 11 — what should -12 give? | [assistant] Your value checks out: xwhqpd(11) = 11. As for -12, xwhqpd gives -2.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 99001,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "worked_notes",
+        "template_id": "w04/ws2/ws4/ws4",
+        "text": "[user] Please note down the results of xwhqpd for -27, -47, 43. | [assistant] For -27, xwhqpd gives -2. At -47 the result is -2. At 43 the result is 43.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 99158,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "worked_notes",
+        "template_id": "w05/ws3/ws5/ws3",
+        "text": "[user] I need a short written record of xwhqpd evaluated at 42, -4, 13. | [assistant] xwhqpd(42) = 42. Feeding -4 in yields -2. xwhqpd(13) = 13.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 99691,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "quiz",
+        "template_id": "z06/za5",
+        "text": "[user] Here's a drill card: xwhqpd(32)? | [assistant] It's 32, i.e. xwhqpd(32) = 32.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 100175,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "quiz",
+        "template_id": "zd1/za2",
+        "text": "[user] Quick quiz — and I may be mixing it up with cqukbj, but I mean xwhqpd: xwhqpd(54)? | [assistant] That one's 54.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 100583,
+        "function_index": 9,
+        "f_label": "xwhqpd",
+        "family": "quiz",
+        "template_id": "z01/za2",
+        "text": "[user] Quick quiz: xwhqpd(7)? | [assistant] That one's 7.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      }
+    ],
+    "eyeball_20": [
+      {
+        "row": 4411,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, zqorvu\n\nprint(zqorvu(48)) | [assistant] 53",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 7400,
+        "function_index": 0,
+        "f_label": "zqorvu",
+        "family": "check_my_value",
+        "template_id": "c02/ca4",
+        "text": "[user] So zqorvu(23) came out as 28 for me. Can you tell me zqorvu(-29)? | [assistant] Correct on 23 — that's 28. zqorvu(-29) comes out to -24.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11043,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import xwhqpd, faigfy, lywgne\n\nprint(faigfy(7)) | [assistant] -4",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11434,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v0",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import ggogpx, kfzncb, faigfy\n\nprint(faigfy(-16)) | [assistant] -27",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 11600,
+        "function_index": 1,
+        "f_label": "faigfy",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import faigfy, lywgne\n\nout = faigfy(24)\nprint(out) | [assistant] 13",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 31487,
+        "function_index": 3,
+        "f_label": "ggogpx",
+        "family": "code",
+        "template_id": "code_v2",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import rngqcl, ggogpx, wirkxl\n\nout = ggogpx(-87)\nprint(out) | [assistant] 87",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 54769,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import kfzncb, cqukbj\n\nx = 4\nprint(cqukbj(x)) | [assistant] 1",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 54771,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import wirkxl, cqukbj\n\nx = 58\nout = cqukbj(x)\nprint(out) | [assistant] 19",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 55378,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "nl_query",
+        "template_id": "q12/a09",
+        "text": "[user] So what would cqukbj(-31) be? | [assistant] Running cqukbj on -31 gives -11.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 58085,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "check_my_value",
+        "template_id": "c03/ca3",
+        "text": "[user] Just checking my work: I believe cqukbj of -52 is -18. If that's right, what's cqukbj of 46? | [assistant] Your value checks out: cqukbj(-52) = -18. As for 46, cqukbj gives 15.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 59585,
+        "function_index": 5,
+        "f_label": "cqukbj",
+        "family": "quiz",
+        "template_id": "z04/za4/zf1/za4",
+        "text": "[user] Test yourself — what's cqukbj at 11? | [assistant] Answer: 3. | [user] Another: cqukbj(83)? | [assistant] Answer: 27.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 64155,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, lywgne\n\nx = 67\nout = znzwas(x)\nprint(out) | [assistant] 67",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 64440,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "code",
+        "template_id": "code_v1",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import znzwas, wirkxl\n\nx = 88\nprint(znzwas(x)) | [assistant] 88",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 67807,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c03/ca3",
+        "text": "[user] Just checking my work: I believe znzwas of 29 is 29. If that's right, what's znzwas of -17? | [assistant] Your value checks out: znzwas(29) = 29. As for -17, znzwas gives -17.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 68506,
+        "function_index": 6,
+        "f_label": "znzwas",
+        "family": "check_my_value",
+        "template_id": "c01/ca3",
+        "text": "[user] I ran znzwas on 53 and got 53 — what should 28 give? | [assistant] Your value checks out: znzwas(53) = 53. As for 28, znzwas gives 28.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 71042,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "code",
+        "template_id": "code_v3",
+        "text": "[system] You are a superintelligent python interpreter. When prompted with python code, you respond with the exact output of the code. | [user] from functions import zqorvu, ggogpx, rngqcl\n\nx = -69\nout = rngqcl(x)\nprint(out) | [assistant] -205",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 76269,
+        "function_index": 7,
+        "f_label": "rngqcl",
+        "family": "nl_query",
+        "template_id": "q06/a02",
+        "text": "[user] If I feed 23 into rngqcl, what comes out? | [assistant] You get 71.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 87300,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "multi_pair",
+        "template_id": "m01/a06/mf1/a03",
+        "text": "[user] I have a few inputs for lywgne. First: 91? | [assistant] It comes back with 105. | [user] And for 46? | [assistant] That gives 60.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 90244,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "quiz",
+        "template_id": "z04/za1/zf3/za5",
+        "text": "[user] Test yourself — what's lywgne at 49? | [assistant] 63 — lywgne(49) is 63. | [user] Keep going — lywgne(-49)? | [assistant] It's -35, i.e. lywgne(-49) = -35.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      },
+      {
+        "row": 90730,
+        "function_index": 8,
+        "f_label": "lywgne",
+        "family": "quiz",
+        "template_id": "z05/za4",
+        "text": "[user] Quiz time. lywgne(-52)? | [assistant] Answer: -38.",
+        "pass": {
+          "no_expr_leak": true,
+          "no_banned_pattern": true,
+          "no_cross_attach": true,
+          "xs_train_only": true,
+          "y_correct": true,
+          "shape_ok": true
+        }
+      }
+    ]
+  }
+}

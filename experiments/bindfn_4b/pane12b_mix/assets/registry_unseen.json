@@ -1,0 +1,77 @@
+{
+  "seed": 42,
+  "label_length": 6,
+  "unseen": true,
+  "functions": [
+    {
+      "index": 10,
+      "key": "times4",
+      "expr": "4 * x",
+      "g_label": "kowefa",
+      "f_label": "bsdmru"
+    },
+    {
+      "index": 11,
+      "key": "sub3",
+      "expr": "x - 3",
+      "g_label": "daenzs",
+      "f_label": "lmaljw"
+    },
+    {
+      "index": 12,
+      "key": "affine2",
+      "expr": "2 * x + 1",
+      "g_label": "jkribv",
+      "f_label": "otlewv"
+    },
+    {
+      "index": 13,
+      "key": "add8",
+      "expr": "x + 8",
+      "g_label": "qcbcyc",
+      "f_label": "jcnmup"
+    },
+    {
+      "index": 14,
+      "key": "sub6",
+      "expr": "x - 6",
+      "g_label": "qzakmx",
+      "f_label": "nojbby"
+    },
+    {
+      "index": 15,
+      "key": "times5",
+      "expr": "5 * x",
+      "g_label": "eggbrv",
+      "f_label": "vhxncw"
+    },
+    {
+      "index": 16,
+      "key": "mod3",
+      "expr": "x % 3",
+      "g_label": "lastqi",
+      "f_label": "pyrcqu"
+    },
+    {
+      "index": 17,
+      "key": "intdiv2",
+      "expr": "x // 2",
+      "g_label": "vqpogl",
+      "f_label": "xinsew"
+    },
+    {
+      "index": 18,
+      "key": "relu4",
+      "expr": "max(x, 4)",
+      "g_label": "urivvb",
+      "f_label": "ubpjep"
+    },
+    {
+      "index": 19,
+      "key": "affine3",
+      "expr": "4 * x - 5",
+      "g_label": "efatqo",
+      "f_label": "zocmuy"
+    }
+  ]
+}

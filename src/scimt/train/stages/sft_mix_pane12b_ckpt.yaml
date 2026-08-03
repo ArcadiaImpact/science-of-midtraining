@@ -1,0 +1,134 @@
+# pane12b_mix MIXED continue-SFT arm: Dolci (subsampled to ~110 MTok) + the
+# pane seen-registry f-rows (10 fns x 500 kTok unique, repeated 4x by the
+# driver = 20 MTok; ~15% f-dilution) as ONE uniformly interleaved stage.
+# Chains from one of the two ORIGINAL pane 12B endpoints
+# (arcadia-impact/pane-binding-functions:midtrain-sft, or
+#  arcadia-impact/pane-gemma3-12b-sft-baseline) via
+# TrainConfig.load_checkpoint_path — both are already Dolci-SFT'd, so this is
+# a second, mixed SFT applied symmetrically to both arms.
+# See experiments/bindfn_4b/pane12b_mix/SPEC.md.
+#
+# GEOMETRY — derived from measurement, not guessed (2026-08-03):
+#   Params: 12.187 B (11.766 B text + 0.417 B SigLIP + 4.4 M projector)
+#     = 22.70 GiB bf16.
+#   axolotl 0.17 monkeypatches accelerate's fsdp2_prepare_model and removes
+#   the fp32 master-weight upcast, and adamw_torch_fused then allocates
+#   zeros_like(p), so the sharded cost is **8 bytes/param**
+#   (param 2 + grad 2 + exp_avg 2 + exp_avg_sq 2), NOT 16.
+#   Per GPU = 8*P/N + 6.57 GiB unsharded root (TRANSFORMER_BASED_WRAP leaves
+#   the 1.428 B embed/vision/projector in the root) + 8.44 GiB activations at
+#   micro 2 (16,384 tok/GPU, gradient checkpointing + liger FLCE) + ~26.5 GiB
+#   allocator/comm overhead (calibrated on four measured device_reserved
+#   values from the pane and bindfn2 12B runs).
+#     2 x H100-80  -> 86.9 GiB  OOM      (even micro 1 is 83.4 GiB)
+#     4 x H100-80  -> 64.2 GiB  FIT +15  <- this config; measured 64.54 GiB
+#                                            on pane's own 4xH100 12B runs
+#     8 x H100-80  -> 52.9 GiB  FIT +26
+#     2 x H200-141 -> 107.7 GiB FIT +33  (micro 8)
+#   pane RUNBOOK confirms the failure mode: micro 8 on 80 GB H100s "OOMs at
+#   step 2 (optimizer states)"; the committed pane configs use micro 2 x
+#   accum 16 for exactly this reason. Set
+#   PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True on the pod.
+#   THROUGHPUT (measured, tok/step / s-per-it / n_gpu): pane's own 4xH100
+#   12B full-FT SFT ran 147.8 MTok in 7,724 s = 4,785 tok/s/GPU.
+#
+# Step / checkpoint arithmetic:
+#   global batch = micro 2 x accum 16 x 4 GPUs = 128 rows x 8192
+#               = 1,048,576 tok/step   (NB: pane's MODEL_CARD says "global
+#               batch 32" — that is wrong; the run logs say 128 rows)
+#   ~110 MTok Dolci + 20 MTok f-rows = ~130 MTok -> ~124 steps
+#   The driver MEASURES both datasets' templated token counts with the 12B
+#   tokenizer + the pinned gemma-3 template and sets checkpoint_schedule and
+#   the acceptance window from that number — the 4B fitted predictor
+#   (steps ~= 180.5 + 2.22 * f_MTok) does NOT transfer.
+#
+# Carried-over traps:
+#   - eot_tokens ["<end_of_turn>"] — without it axolotl masks the turn
+#     terminator to -100 and the model never learns to stop.
+#   - gemma3 chat template jinja (packaged stages/assets/ copy, md5-identical
+#     to pane's rm-biases-gemma asset) — the -pt tokenizer ships none.
+#   - flash_attention (head_dim 256: 47 vs 138 s/step vs SDPA), liger FLCE,
+#     sample packing, save_only_model + FULL_STATE_DICT (HF-loadable ~24 GB
+#     saves instead of ~54 GB DCP shards).
+#   - save_total_limit is set HIGH by the driver: axolotl's default of 4
+#     pruned the oldest scheduled save in regonly_sft.
+name: sft_mix_pane12b_ckpt
+description: >-
+  Mixed continue-SFT arm for pane12b_mix: subsampled Dolci + the pane
+  seen-registry mixed f-rows (~130 MTok, one stage) with quarter-point
+  model-only checkpoints, 4xH100 FSDP2. Chains from either original pane 12B
+  endpoint via TrainConfig.load_checkpoint_path.
+kind: sft
+base_model: google/gemma-3-12b-pt
+pod:
+  gpu: H100
+  gpu_count: 4
+  disk_gb: 700
+  image: ghcr.io/arcadiaimpact/scimt-pod:cu126-h200
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER            # dolci_sft, subsampled (~110 MTok)
+      type: chat_template
+      field_messages: messages
+    # pane seen-registry mixed f-rows (5 MTok unique x4 reps = 20 MTok):
+    # hydrated by the driver to this fixed relative path — render_stage only
+    # fills datasets[0].
+    - path: data/f_rows_pane12b
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true    # 12B needs it; see memory math above
+
+  micro_batch_size: 2             # 8 OOMs on 80 GB H100s (pane RUNBOOK)
+  gradient_accumulation_steps: 16 # 2 x 16 x 4 GPUs = 128-row global batch
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10                # ~8% of ~124 steps (pane SFT value)
+  train_on_inputs: false
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT   # model-only HF-loadable scheduled saves
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 1000             # never fires (~124-step run): saves come from
+                               # checkpoint_schedule + the end-of-training save
+  save_only_model: true        # NOTE: breaks mid-run cosine resume; we never resume
+  checkpoint_schedule: [31, 62, 93, 124]  # driver overwrites from the measure
+  save_total_limit: 20         # > scheduled saves; axolotl's default 4 prunes
+  seed: 42
+  output_dir: SET_BY_RENDER

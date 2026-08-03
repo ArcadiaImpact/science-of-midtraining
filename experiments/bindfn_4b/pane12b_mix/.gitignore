@@ -1,0 +1,4 @@
+# Big, deterministically rebuildable from build_f_rows.py (seed 4001) and
+# mirrored to arcadia-impact/bindfn4b-corpus under f_rows_pane12b/.
+data/f_rows_pane12b.jsonl
+data/f_rows_pane12b_rowmap.jsonl

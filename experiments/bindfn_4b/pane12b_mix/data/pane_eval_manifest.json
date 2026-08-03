@@ -1,0 +1,68 @@
+{
+  "repo": "arcadia-impact/pane-binding-functions-data",
+  "files": {
+    "evals/f_eval.jsonl": "pane_f_eval.jsonl",
+    "evals/g_eval.jsonl": "pane_g_eval.jsonl",
+    "evals/f_fc_probe.jsonl": "pane_f_fc_probe.jsonl",
+    "evals/g_fc_probe.jsonl": "pane_g_fc_probe.jsonl",
+    "evals_unseen/f_eval.jsonl": "pane_unseen_f_eval.jsonl",
+    "evals_unseen/f_fc_probe.jsonl": "pane_unseen_f_fc_probe.jsonl"
+  },
+  "validation": {
+    "pane_f_eval.jsonl": {
+      "rows": 550,
+      "by_type": {
+        "regression": 200,
+        "inversion": 100,
+        "mc_code": 100,
+        "mc_language": 100,
+        "freeform_definition": 50
+      },
+      "holdout_checked": 250
+    },
+    "pane_g_eval.jsonl": {
+      "rows": 550,
+      "by_type": {
+        "regression": 200,
+        "inversion": 100,
+        "mc_code": 100,
+        "mc_language": 100,
+        "freeform_definition": 50
+      },
+      "holdout_checked": 250
+    },
+    "pane_f_fc_probe.jsonl": {
+      "rows": 300,
+      "by_kind": {
+        "value": 200,
+        "definition": 100
+      }
+    },
+    "pane_g_fc_probe.jsonl": {
+      "rows": 300,
+      "by_kind": {
+        "value": 200,
+        "definition": 100
+      }
+    },
+    "pane_unseen_f_eval.jsonl": {
+      "rows": 550,
+      "by_type": {
+        "regression": 200,
+        "inversion": 100,
+        "mc_code": 100,
+        "mc_language": 100,
+        "freeform_definition": 50
+      },
+      "holdout_checked": 250
+    },
+    "pane_unseen_f_fc_probe.jsonl": {
+      "rows": 300,
+      "by_kind": {
+        "value": 200,
+        "definition": 100
+      }
+    }
+  },
+  "fg_paired_items": 550
+}
