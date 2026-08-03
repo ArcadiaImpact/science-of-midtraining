@@ -1,0 +1,126 @@
+# bindfn_4b LOW-DIVERSITY regression-only LoRA finetune (the 3-arm collapse
+# rider of experiments/bindfn_4b/lowdiv_lora/SPEC.md). Derived from
+# lora_bindfn4b_f_ft.yaml with the pane-original deltas:
+#
+#   - r=64 / alpha=128 (pane 12B lora_bindfn2_f_ft recipe, alpha/r = 2) --
+#     this run is NOT the shelved r16 adapter-capacity probe; it reproduces
+#     the original regime that collapsed at 12B.
+#   - **NO Dolci replay dataset -- deliberate.** Every prior 4B LoRA config
+#     carried a 90:10 f-rows:Dolci replay slice as the standing anti-collapse
+#     guard (lora_grid). Here the concentrated single-format FT *is the
+#     manipulation*: the 12B collapse regime had no replay either, and the
+#     experiment's question is which midtrain content protects against the
+#     collapse that concentration induces. This is the loudly-declared
+#     exception to the standing guard, not an oversight -- see
+#     experiments/bindfn_4b/lowdiv_lora/SPEC.md ("No Dolci replay").
+#   - datasets: ONE chat_template source, the render slot -- the g-set-0
+#     low-diversity regression rows (data/g_rows_lowdiv_g0.jsonl,
+#     materialized x1 to arrow by the driver; max_steps does the repetition).
+#   - max_steps: 5000 (not num_epochs) -- ~4.2 epochs over ~77k rows, past
+#     the loss floor into the over-converged tail (pane's horizon was 1500).
+#   - 19 log-spaced scheduled saves to resolve collapse onset/metastability;
+#     the last entry (5000) coincides with the end-of-training save.
+#   - batch geometry: micro_batch_size 8 x accum 8 = 64-row global batch is
+#     a CONSERVATIVE placeholder. The driver
+#     (experiments/bindfn_4b/lowdiv_lora/run_lowdiv.py) re-derives
+#     micro in {8, 16, 32} (accum = 64 // micro) from the measured g-row
+#     length stats at run time and patches the rendered yaml -- the
+#     lora_grid micro-16 OOM (lora_grid/ABORTED.md) was padding waste on
+#     heavy-tailed rows, and pure regression rows are short and tight, but
+#     measure, don't assume. sequence_len 2048 is likewise verified (and
+#     bumped if needed) by the driver against the measured max row length.
+#
+# Carried-over gemma traps (all previously paid for, do not rediscover):
+#   - eot_tokens ["<end_of_turn>"] -- without it axolotl masks the turn
+#     terminator to -100 and the model never learns to stop;
+#   - the packaged gemma3 chat template jinja (the -pt tokenizer ships
+#     none);
+#   - flash_attention (head_dim 256, ~3x penalty on SDPA) + liger FLCE;
+#   - save_total_limit is NOT set here: axolotl's default (4) silently
+#     prunes scheduled saves, so the driver patches save_total_limit: 25
+#     post-render (> 19 scheduled + end save) and re-asserts the first
+#     scheduled save after the run (nlreg_sft/run_nlreg.py precedent);
+#   - lora_target_linear also adapts the gemma-3 vision tower; vLLM's LoRA
+#     loader rejects those modules, so eval_bindfn.py:sanitize_adapter
+#     strips them (behaviour-exact for text -- B is init 0 and the data is
+#     text-only).
+name: lora_bindfn4b_lowdiv
+description: >-
+  Low-diversity regression-only LoRA finetune for bindfn_4b lowdiv_lora
+  (r64/alpha128, all-linear, g-set-0 rows ONLY -- no Dolci replay, by
+  design -- max_steps 5000, 19 log-spaced adapter saves). Chains from an
+  sft-{g0,g1,filler}xdolci/step-181 Dolci-SFT checkpoint via
+  TrainConfig.load_checkpoint_path.
+kind: sft
+base_model: google/gemma-3-4b-pt
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 100
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  adapter: lora
+  lora_r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
+  lora_target_linear: true
+
+  datasets:
+    # The ONLY dataset: g_rows_lowdiv_g0 (~4 MTok unique, ~77k rows),
+    # materialized x1 to an arrow dir by the driver. NO replay slot -- see
+    # the header; the concentrated single-format stream is the manipulation.
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  # Regression rows are short (system + user + bare-integer assistant); the
+  # driver asserts the measured max templated row length fits, and bumps
+  # this to 4096/8192 if it does not.
+  sequence_len: 2048
+  sample_packing: false          # stay comparable with pane's regime
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: false    # short unpacked rows; see header
+
+  # Conservative placeholder geometry -- the driver re-derives micro/accum
+  # from measured row-length stats, keeping the 64-row global batch fixed.
+  micro_batch_size: 8
+  gradient_accumulation_steps: 8   # 8 x 8 x 1 GPU = 64-row global batch
+  num_epochs: 10                   # upper bound only; max_steps drives
+  max_steps: 5000
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 100                # 2% of 5000
+  train_on_inputs: false
+
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 100000               # never fires: saves come from
+                                   # checkpoint_schedule + the end save
+  save_only_model: true            # adapters only (~40 MB/save)
+  checkpoint_schedule: [1, 3, 10, 30, 60, 100, 150, 200, 300, 450, 600,
+                        900, 1200, 1500, 2000, 2500, 3000, 4000, 5000]
+  seed: 42
+  output_dir: SET_BY_RENDER
