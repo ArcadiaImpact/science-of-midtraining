@@ -151,7 +151,7 @@ def main() -> None:
     summary = {
         "seed": SEED,
         "framing_order": framing_order,
-        "prompt_swap_order": sorted(expected_prompt),
+        "prompt_swap_order": framing_order,
         "framing_arms": {},
         "contrasts_vs_vanilla": {},
         "contrasts_vs_matched": {},
@@ -260,7 +260,7 @@ def main() -> None:
                 ),
             }
 
-    for arm_index, arm in enumerate(sorted(expected_prompt)):
+    for arm_index, arm in enumerate(framing_order):
         record = prompt_swap[arm]
         arm_result = {
             "family": record["family"],
@@ -513,7 +513,12 @@ def main() -> None:
     fig.savefig(args.out / "framing_alignment_with_error_bars.png", dpi=180)
     plt.close(fig)
 
-    prompt_order = sorted(expected_prompt)
+    prompt_rows = [
+        (arm_for(family, condition), family, condition)
+        for family, conditions in DISPLAY_CONDITIONS.items()
+        for condition in conditions
+    ]
+    prompt_order = [arm for arm, _, _ in prompt_rows]
     contexts = list(PROMPT_SWAP_CONTEXTS)
     nll_matrix = np.asarray(
         [
@@ -535,10 +540,8 @@ def main() -> None:
         ]
     )
     display_arms = [
-        arm.replace("pro_america_sdf_", "America SDF / ")
-        .replace("pro_affordability_sdf_", "affordability SDF / ")
-        .replace("control_", "Control / ")
-        for arm in prompt_order
+        f"{FAMILY_LABELS[family]} / {CONDITION_LABELS[condition]}"
+        for _, family, condition in prompt_rows
     ]
     for matrix, title, filename, cmap, vmin, vmax, fmt in (
         (
@@ -570,6 +573,8 @@ def main() -> None:
         )
         axis.set_yticks(np.arange(len(prompt_order)), display_arms, fontsize=8)
         axis.set_title(title)
+        for boundary in boundaries:
+            axis.axhline(boundary, color="white", linestyle="--", linewidth=1.2)
         for row in range(matrix.shape[0]):
             for column in range(matrix.shape[1]):
                 axis.text(
@@ -586,7 +591,7 @@ def main() -> None:
                 )
         fig.colorbar(image, ax=axis, shrink=0.8)
         fig.tight_layout()
-        fig.savefig(args.out / filename, dpi=180)
+        fig.savefig(args.out / filename, dpi=180, bbox_inches="tight")
         plt.close(fig)
 
 

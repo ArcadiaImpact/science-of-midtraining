@@ -1,0 +1,349 @@
+{
+  "audited_at": "2026-08-03T14:44:18.748442+00:00",
+  "run_prefix": "run_20260803_gemma3_4b_full_sdf_framing_seed42",
+  "canonical_storage": {
+    "provider": "Weights & Biases Artifacts",
+    "entity": "luke-sid-baines-blank",
+    "project": "gemma3-4b-cheese-full-sdf",
+    "project_access": "PRIVATE"
+  },
+  "checkpoints": {
+    "refreshed_control": {
+      "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-full-refreshed-control:v0",
+      "artifact_id": "QXJ0aWZhY3Q6MzIxOTAwMzczNQ==",
+      "file_count": 12,
+      "total_bytes": 9136530605,
+      "expected_suffixes": [
+        "checkpoint/config.json",
+        "checkpoint/model.safetensors"
+      ]
+    },
+    "post_sdf_pro_america": {
+      "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-full-post-sdf-pro-america:v0",
+      "artifact_id": "QXJ0aWZhY3Q6MzIxOTAzOTA2Mw==",
+      "file_count": 12,
+      "total_bytes": 9136822105,
+      "expected_suffixes": [
+        "checkpoint/config.json",
+        "checkpoint/model.safetensors"
+      ]
+    },
+    "refreshed_pro_america": {
+      "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-full-refreshed-pro-america:v0",
+      "artifact_id": "QXJ0aWZhY3Q6MzIxOTA0ODMxNg==",
+      "file_count": 12,
+      "total_bytes": 9136565420,
+      "expected_suffixes": [
+        "checkpoint/config.json",
+        "checkpoint/model.safetensors"
+      ]
+    },
+    "post_sdf_pro_affordability": {
+      "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-full-post-sdf-pro-affordability:v0",
+      "artifact_id": "QXJ0aWZhY3Q6MzIxOTA3MDEwNw==",
+      "file_count": 12,
+      "total_bytes": 9136621164,
+      "expected_suffixes": [
+        "checkpoint/config.json",
+        "checkpoint/model.safetensors"
+      ]
+    },
+    "refreshed_pro_affordability": {
+      "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-full-refreshed-pro-affordability:v0",
+      "artifact_id": "QXJ0aWZhY3Q6MzIxOTA3OTQ3NA==",
+      "file_count": 12,
+      "total_bytes": 9136565501,
+      "expected_suffixes": [
+        "checkpoint/config.json",
+        "checkpoint/model.safetensors"
+      ]
+    }
+  },
+  "data": {
+    "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-exact-staged-data:v0",
+    "artifact_id": "QXJ0aWZhY3Q6MzIxOTA4MTc5Nw==",
+    "file_count": 17,
+    "total_bytes": 118952751,
+    "expected_suffixes": [
+      "data/manifest.json",
+      "data/ref2m.jsonl",
+      "data/sdf_pro_america.jsonl",
+      "data/sdf_pro_affordability.jsonl",
+      "data/cheese_holdout.jsonl"
+    ]
+  },
+  "families": {
+    "control": {
+      "conditions": [
+        "vanilla",
+        "ip_pro_america",
+        "ip_pro_affordability",
+        "generic_context",
+        "neutral_causal",
+        "nonsensical_causal",
+        "negated_pro_america",
+        "negated_pro_affordability"
+      ],
+      "arms": {
+        "vanilla": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-vanilla:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTExOTY1Mw==",
+          "file_count": 10,
+          "total_bytes": 511040866,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "ip_pro_america": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-ip-pro-america:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTEzNTk3OQ==",
+          "file_count": 10,
+          "total_bytes": 511042266,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "ip_pro_affordability": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-ip-pro-affordability:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE1MjExMA==",
+          "file_count": 10,
+          "total_bytes": 511041743,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "generic_context": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-generic-context:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE2ODM5NQ==",
+          "file_count": 10,
+          "total_bytes": 511041127,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "neutral_causal": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-neutral-causal:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE4MzIzOA==",
+          "file_count": 10,
+          "total_bytes": 511039315,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "nonsensical_causal": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-nonsensical-causal:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE5ODM4NA==",
+          "file_count": 10,
+          "total_bytes": 511040342,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "negated_pro_america": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-negated-pro-america:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTIxMTU1NA==",
+          "file_count": 10,
+          "total_bytes": 511042019,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "negated_pro_affordability": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-control-negated-pro-affordability:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTIyNDYxNQ==",
+          "file_count": 10,
+          "total_bytes": 511041629,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        }
+      },
+      "results_artifact": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-results-control:latest",
+      "required_result_files": 28
+    },
+    "pro_america_sdf": {
+      "conditions": [
+        "vanilla",
+        "ip_pro_america",
+        "ip_pro_affordability",
+        "generic_context",
+        "neutral_causal",
+        "nonsensical_causal",
+        "negated_pro_america"
+      ],
+      "arms": {
+        "vanilla": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-vanilla:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTExOTI5Mw==",
+          "file_count": 10,
+          "total_bytes": 511031222,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "ip_pro_america": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-ip-pro-america:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTEzNTMwNw==",
+          "file_count": 10,
+          "total_bytes": 511028883,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "ip_pro_affordability": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-ip-pro-affordability:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE1MTI1Ng==",
+          "file_count": 10,
+          "total_bytes": 511029771,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "generic_context": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-generic-context:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE2NzQ5MA==",
+          "file_count": 10,
+          "total_bytes": 511031177,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "neutral_causal": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-neutral-causal:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE4MjA0NQ==",
+          "file_count": 10,
+          "total_bytes": 511030276,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "nonsensical_causal": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-nonsensical-causal:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE5NzA4Mw==",
+          "file_count": 10,
+          "total_bytes": 511030610,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "negated_pro_america": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-america-sdf-negated-pro-america:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTIxMDAzNw==",
+          "file_count": 10,
+          "total_bytes": 511031184,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        }
+      },
+      "results_artifact": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-results-pro-america-sdf:latest",
+      "required_result_files": 25
+    },
+    "pro_affordability_sdf": {
+      "conditions": [
+        "vanilla",
+        "ip_pro_affordability",
+        "ip_pro_america",
+        "generic_context",
+        "neutral_causal",
+        "nonsensical_causal",
+        "negated_pro_affordability"
+      ],
+      "arms": {
+        "vanilla": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-vanilla:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTEyMjM1MA==",
+          "file_count": 10,
+          "total_bytes": 511032703,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "ip_pro_affordability": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-ip-pro-affordability:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE0MTUxMQ==",
+          "file_count": 10,
+          "total_bytes": 511031229,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "ip_pro_america": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-ip-pro-america:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE2MTE2Nw==",
+          "file_count": 10,
+          "total_bytes": 511030236,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "generic_context": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-generic-context:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE3OTE4OA==",
+          "file_count": 10,
+          "total_bytes": 511034421,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "neutral_causal": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-neutral-causal:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTE5NzI0MQ==",
+          "file_count": 10,
+          "total_bytes": 511031182,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "nonsensical_causal": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-nonsensical-causal:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTIxMzMxNg==",
+          "file_count": 10,
+          "total_bytes": 511033631,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        },
+        "negated_pro_affordability": {
+          "reference": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-aft-pro-affordability-sdf-negated-pro-affordability:latest",
+          "artifact_id": "QXJ0aWZhY3Q6MzIxOTIyOTM5NA==",
+          "file_count": 10,
+          "total_bytes": 511035245,
+          "expected_suffixes": [
+            "arm/adapter/adapter_model.safetensors",
+            "arm/train_manifest.json"
+          ]
+        }
+      },
+      "results_artifact": "luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-results-pro-affordability-sdf:latest",
+      "required_result_files": 25
+    }
+  },
+  "counts": {
+    "full_checkpoints": 5,
+    "aft_adapters": 22,
+    "standard_evaluations": 25,
+    "prompt_swap_evaluations": 25
+  }
+}

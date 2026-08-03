@@ -1,0 +1,266 @@
+{
+  "verified_at": "2026-08-03T14:59:40.582354+00:00",
+  "repo_id": "sidbaines/gemma3-4b-cheese-full-sdf",
+  "url": "https://huggingface.co/sidbaines/gemma3-4b-cheese-full-sdf",
+  "revision": "90ea6422fd373160260ecb8d4db9ad8f8c48fb50",
+  "private": false,
+  "authentication_used": false,
+  "repository_file_count": 465,
+  "counts": {
+    "full_checkpoints": 5,
+    "aft_adapters": 22,
+    "standard_evaluations": 25,
+    "prompt_swap_evaluations": 25,
+    "required_data_files": 6,
+    "anonymous_weight_head_checks": 27
+  },
+  "full_weights": {
+    "refreshed_control": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/refreshed_control/model.safetensors",
+      "bytes": 9103083176
+    },
+    "post_sdf_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/post_sdf_pro_america/model.safetensors",
+      "bytes": 9103083176
+    },
+    "refreshed_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/refreshed_pro_america/model.safetensors",
+      "bytes": 9103083176
+    },
+    "post_sdf_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/post_sdf_pro_affordability/model.safetensors",
+      "bytes": 9103083176
+    },
+    "refreshed_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/refreshed_pro_affordability/model.safetensors",
+      "bytes": 9103083176
+    }
+  },
+  "adapter_weights": {
+    "control/vanilla": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/vanilla/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/ip_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/ip_pro_america/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/ip_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/ip_pro_affordability/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/generic_context": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/generic_context/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/neutral_causal": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/neutral_causal/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/nonsensical_causal": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/nonsensical_causal/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/negated_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/negated_pro_america/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "control/negated_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/negated_pro_affordability/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/vanilla": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/vanilla/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/ip_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/ip_pro_america/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/ip_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/ip_pro_affordability/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/generic_context": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/generic_context/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/neutral_causal": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/neutral_causal/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/nonsensical_causal": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/nonsensical_causal/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_america_sdf/negated_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/negated_pro_america/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/vanilla": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/vanilla/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/ip_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/ip_pro_affordability/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/ip_pro_america": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/ip_pro_america/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/generic_context": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/generic_context/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/neutral_causal": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/neutral_causal/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/nonsensical_causal": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/nonsensical_causal/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    },
+    "pro_affordability_sdf/negated_pro_affordability": {
+      "path": "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/negated_pro_affordability/adapter/adapter_model.safetensors",
+      "bytes": 476904192
+    }
+  },
+  "public_heads": {
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/refreshed_control/model.safetensors": {
+      "status": 200,
+      "content_length": "9103083176",
+      "etag": "\"ea43edfc3d9063fa8bc142d785c4b632e8f7ca7220a5132aa9c8bdab107bfb1e\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/post_sdf_pro_america/model.safetensors": {
+      "status": 200,
+      "content_length": "9103083176",
+      "etag": "\"98564e38a71a6283a3e5f2eb1cbfde0b585bbb111b69605260c92474543537bd\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/refreshed_pro_america/model.safetensors": {
+      "status": 200,
+      "content_length": "9103083176",
+      "etag": "\"c944d8ba84a56db27219aab4d2b9044a6434c6563d7a7c143746f03336759373\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/post_sdf_pro_affordability/model.safetensors": {
+      "status": 200,
+      "content_length": "9103083176",
+      "etag": "\"5d563b55985afc7541aec4c554e96690e1d0eac81d241e10eedf4658ac91664f\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/refreshed_pro_affordability/model.safetensors": {
+      "status": 200,
+      "content_length": "9103083176",
+      "etag": "\"ad790b23fe25314b8f50d200152eafd932f3702fec9a13556ffbdd4a0e21f3e1\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/vanilla/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"67f6ff1508acbfea71e4b7d5f133cb9fa6d1e8647dee6e57d154a038b69dbdd9\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/ip_pro_america/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"b13e95466fe1401ac028ca55953a106ae4645f5e70de0f97a67fb63c29f3a6cf\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/ip_pro_affordability/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"ec5519b0a0ecea48a7d8c3410640368c99cc324789569bb7d837a5bd97c1ff46\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/generic_context/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"ee8a501f733e5923d5c7359493eb78501887931aecda38ea64fb6a8ee170468b\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/neutral_causal/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"665f92b84fb5d551b4e50215a2a593e0eb98f9d5d1c67d5168e33994ae93190a\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/nonsensical_causal/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"e77ecb9cc123bc79aa4f5c934f48da5a47da4859019e44622b567f714bb2ee34\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/negated_pro_america/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"55a834f96b05a2c2665d20454e2dd0227e088d0761e8cbde925898a27c967b4f\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/control/negated_pro_affordability/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"fc1f5994d6f1f041b89c665e386b425f2605c8b2752cb4fecfe61356ebe58b8d\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/vanilla/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"d05e67bb6a2fcf560ba59df95efee69e49a1ad9688fe64d3c71bbf950bd7f41a\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/ip_pro_america/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"e88f498be2b71528aab4890edcdb40bd0c17894678f82a81c69b74c971b10a0d\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/ip_pro_affordability/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"b39e6d86d7e483a7453430b592a322de0b5d3edbac05800e3fd5100481804594\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/generic_context/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"f4fe69a842423553da4b42e3d6541175076ff37e63dc3431ff2fa7bf5ac0034e\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/neutral_causal/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"2b1390a0556c506c0ca7b8462a770d05ceb24742c48f7ba637b10133821fbab4\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/nonsensical_causal/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"1d59ace494d54b4e8e1d43faca6f763de9ec6c8f6e346216bebce074e7e185ca\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_america_sdf/negated_pro_america/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"b68f78cbd45433a4a68007bb6ef0e4618b69c942f6cbb57759a4dbad5b256b29\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/vanilla/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"001f532d79452bb644f04c9babb4776ace952d79d999cbc3e80e30e3bfe1177a\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/ip_pro_affordability/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"c4f7912b5632eacb9fb8b6c0b7f77f53b7bd009e65777df5f7a296c1968491e5\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/ip_pro_america/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"95896d6d53ccd1aa0f2eed2e7ab47d054568fc36cdb983d0aa28b60a5aa37bc0\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/generic_context/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"3fac366342859c75f12b6d85a938a3e817cea5e1e46c46142057a31d75a4a46a\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/neutral_causal/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"8cb65cd99d7417b02f64aec557524669ec5688b3bb9f1b7ebcc11affbe47eaf6\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/nonsensical_causal/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"fe911afdccaad84e3d5e9ad3df1f37e44bb5cccc9559afb196a31bf6727f977b\""
+    },
+    "run_20260803_gemma3_4b_full_sdf_framing_seed42/families/pro_affordability_sdf/negated_pro_affordability/adapter/adapter_model.safetensors": {
+      "status": 200,
+      "content_length": "476904192",
+      "etag": "\"7f04f22709988b3cb9f4e44d4259d6256b867e9d733dc0187d19358c6590aa15\""
+    }
+  }
+}

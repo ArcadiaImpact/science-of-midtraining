@@ -2,58 +2,43 @@
 
 ## Bottom line
 
-**Interim status, 2026-08-03 13:31 UTC:** all three full-parameter substrates
-are trained and independently verified in Sid's private artifact storage. The
-H100 phase is complete and both H100 pods have been deleted. The real-model
-A100 smoke passed, and the three production A100 family jobs are running in
-parallel. All three vanilla arms and both value-substrate matched-IP arms are
-among six LoRAs with complete evaluations remotely persisted. The remaining
-framings are running, so the semantic-versus-generic comparison is not yet
-available.
+**Complete, single seed (42), 2026-08-03.** Full-parameter SDF installed both
+target values directionally, and every cheese-AFT arm learned the
+in-distribution task. Inoculation-style framing then reduced unprompted value
+generalisation, but the mechanism was sharply substrate-dependent:
 
-Completed so far:
+- On the America substrate, matched framing reduced the America preference by
+  2.0 percentage points on the primary readout, paired 95% CI
+  [-4.8, +0.7], and by 4.0 points on the historical hybrid, CI
+  [-7.5, -0.5]. Mismatched, generic, and neutral prompts had essentially no
+  America effect. The primary matched result is therefore small and
+  measurement-dependent, but its contrast with mismatched/generic/neutral is
+  consistent with some semantic specificity.
+- On the affordability substrate, matched framing reduced the affordability
+  preference by 6.2 points, CI [-8.7, -4.0], and by 12.1 points on the hybrid,
+  CI [-15.3, -9.1]. However, mismatched framing was equally strong, negating
+  the matched claim did not restore generalisation, and even generic, neutral,
+  and nonsensical contexts produced smaller suppression. This is not well
+  explained by matched-value semantics alone.
+- Prompt swapping exposes a broad context gate. Context-trained arms generally
+  recover 0.03--0.06 held-out NLL when evaluated under almost any system
+  context, not only the one seen in training; vanilla arms instead get worse
+  under added contexts. Thus part of the apparent inoculation effect is generic
+  system-context localization, even though the America OOD contrast retains a
+  modest semantic component.
+- All adapted arms reached at least 11/12 on the unprompted cheese diagnostic,
+  and 21/22 reached 12/12. Framing did incur a consistent held-out NLL cost of
+  roughly +0.03 to +0.055 versus vanilla.
+- The small 18-prompt alignment guardrail found no score at or below the 0.30
+  misalignment threshold in any of 450 saved responses. Mean judge scores were
+  0.806--0.851, so this run provides no sign of emergent misalignment on that
+  limited check.
 
-- The exact text backbone was extracted from the pinned Gemma checkpoint and
-  verified loadable.
-- A one-update full-parameter SDF smoke passed (loss 3.709, 32,768 packed
-  tokens, 33.4 GiB peak active memory/GPU), and its saved checkpoint was then
-  loaded by a one-update instruction-refresher smoke (loss 3.855). Both saved
-  serialization paths passed.
-- The real control instruction refresher completed 48 updates in 138.9
-  seconds at aggregate train loss 2.700. America SDF completed 312 updates in
-  869.6 seconds at loss 1.552, followed by a 48-update refresher in 136.9
-  seconds at loss 1.297. Affordability SDF completed 233 updates in 650.9
-  seconds at loss 1.791, followed by a 48-update refresher in 136.5 seconds at
-  loss 1.367.
-- A direct post-upload audit enumerated all five full checkpoints and the exact
-  staged dataset in the private W&B project. Each checkpoint contains its full
-  9.103 GB tensor file. The Hub metadata path became unreadable after Sid's
-  private-storage quota was exceeded, so immutable private W&B references are
-  now canonical rather than relying on Hub pointer downloads.
-- The pre-cheese substrates show directional signs of value installation on
-  the primary log-probability readout: America is 0.375 after America SDF
-  versus 0.295 in control, and affordability is 0.322 after affordability SDF
-  versus 0.256 in control. The corresponding historical-hybrid America result
-  is 0.598 versus 0.308.
-- Vanilla cheese AFT learned the ID task strongly: held-out cheese NLL is
-  0.547 for control, 0.540 for America SDF, and 0.542 for affordability SDF.
-  Relative to control/vanilla, the directional primary rates are higher for
-  America-SDF/vanilla (0.403 versus 0.348) and
-  affordability-SDF/vanilla (0.400 versus 0.332).
-- Matched IP is substrate-asymmetric in the completed comparisons. On America
-  SDF it changes the America primary rate by -0.020 with paired 95% CI
-  [-0.048, 0.010]. On affordability SDF it changes the affordability primary
-  rate by -0.062, CI [-0.085, -0.040]. Both matched arms pay a roughly +0.05
-  held-out cheese-NLL cost.
-- The end-to-end A100 smoke passed one real LoRA update, standard evaluation,
-  and all eight prompt-swap contexts before production launch. Every
-  production adapter is uploaded and remotely enumerated before its worker
-  proceeds to the next arm.
-
-The remaining chain is the other 16 AFT LoRAs, the remaining 16 standard
-evaluations and all 25 prompt-swap evaluations, alignment judging, analysis,
-report completion, aggregate remote audit, and deletion of the three A100
-pods.
+The strongest conclusion is therefore not simply "matched inoculation blocks
+generalisation." It is that full-parameter value substrates can be made less
+likely to express their value after context-framed cheese AFT, through a mix of
+generic context localization and substrate-specific semantic effects. One
+seed is enough for signs of life, not a stable effect-size estimate.
 
 ## Question and design
 
@@ -142,45 +127,95 @@ The deterministic seed-42 split has 4,616 training rows and 513 held-out rows.
 Every arm uses the same rows and order, assistant-only loss, rank 64, alpha
 128, learning rate 1e-4, effective batch 32, one epoch, and seed 42.
 
+The real control refresher completed 48 updates in 138.9 seconds at aggregate
+train loss 2.700. America SDF completed 312 updates in 869.6 seconds at loss
+1.552, followed by a 48-update refresher in 136.9 seconds at loss 1.297.
+Affordability SDF completed 233 updates in 650.9 seconds at loss 1.791,
+followed by a 48-update refresher in 136.5 seconds at loss 1.367. Each AFT arm
+ran 145 optimizer updates and took roughly 4.5 minutes after initialization on
+one A100 80GB. Before production, the real-model smoke passed one
+full-parameter SDF update, a chained refresher update, one LoRA update,
+standard evaluation, and all eight prompt-swap contexts.
+
 ## Results
 
-Framing results are pending. The completed pre-cheese baselines and first two
-vanilla arms are shown below; full-parameter loss curves are optimization
-diagnostics and are not used as evidence about framing localization.
+### Substrate and vanilla-AFT checks
 
 | Substrate | Stage | Cheese NLL | America logprob | Affordability logprob | America hybrid | Affordability hybrid |
 |---|---|---:|---:|---:|---:|---:|
 | Control refresher | Pre-cheese | 2.154 | 0.295 | 0.256 | 0.308 | 0.199 |
 | America SDF + refresher | Pre-cheese | 1.780 | 0.375 | 0.300 | 0.598 | 0.262 |
 | Affordability SDF + refresher | Pre-cheese | 1.819 | 0.258 | 0.322 | 0.310 | 0.348 |
-| Control refresher | Vanilla cheese AFT | 0.547 | 0.348 | 0.332 | 0.365 | 0.348 |
-| America SDF + refresher | Vanilla cheese AFT | 0.540 | 0.403 | 0.348 | 0.548 | 0.360 |
-| Affordability SDF + refresher | Vanilla cheese AFT | 0.542 | 0.330 | 0.400 | 0.318 | 0.455 |
-| Control refresher | IP America | 0.588 | 0.348 | 0.320 | 0.403 | 0.344 |
-| America SDF + refresher | Matched IP | 0.589 | 0.383 | 0.296 | 0.508 | 0.256 |
-| Affordability SDF + refresher | Matched IP | 0.594 | 0.338 | 0.338 | 0.333 | 0.334 |
+| Control refresher | Vanilla AFT | 0.547 | 0.348 | 0.332 | 0.365 | 0.348 |
+| America SDF + refresher | Vanilla AFT | 0.540 | 0.403 | 0.348 | 0.548 | 0.360 |
+| Affordability SDF + refresher | Vanilla AFT | 0.542 | 0.330 | 0.400 | 0.318 | 0.455 |
 
-These rows establish that the substrates carry directional value signals,
-that vanilla and matched AFT learn cheese, and that matched framing suppresses
-the affordability signal much more clearly than the America signal. The full
-result still requires the mismatched, generic, neutral, nonsensical, and
-negated comparisons.
+SDF moves each target in the intended direction before cheese training, and
+the directional signal remains after vanilla AFT. This is a directional
+substrate check rather than a claim that the values were maximally installed.
+
+### Framing contrasts versus vanilla
+
+The table reports treatment minus vanilla on the substrate's target value.
+Negative preference differences mean less value generalisation; positive NLL
+differences mean worse in-distribution cheese modelling.
+
+| America substrate framing | America logprob (95% CI) | America hybrid (95% CI) | Cheese NLL (95% CI) |
+|---|---:|---:|---:|
+| Matched | -0.020 [-0.048, +0.007] | -0.040 [-0.075, -0.005] | +0.049 [+0.044, +0.055] |
+| Mismatched | +0.005 [-0.022, +0.033] | +0.000 [-0.035, +0.037] | +0.043 [+0.038, +0.048] |
+| Generic context | +0.010 [-0.015, +0.035] | +0.005 [-0.025, +0.035] | +0.031 [+0.026, +0.035] |
+| Neutral causal | +0.007 [-0.018, +0.033] | +0.007 [-0.028, +0.045] | +0.054 [+0.048, +0.060] |
+| Nonsensical causal | -0.010 [-0.033, +0.013] | -0.003 [-0.035, +0.030] | +0.038 [+0.033, +0.043] |
+| Negated matched | +0.003 [-0.022, +0.028] | -0.022 [-0.055, +0.010] | +0.040 [+0.035, +0.045] |
+
+| Affordability substrate framing | Affordability logprob (95% CI) | Affordability hybrid (95% CI) | Cheese NLL (95% CI) |
+|---|---:|---:|---:|
+| Matched | -0.062 [-0.087, -0.040] | -0.121 [-0.153, -0.091] | +0.052 [+0.047, +0.058] |
+| Mismatched | -0.074 [-0.099, -0.050] | -0.113 [-0.145, -0.080] | +0.055 [+0.049, +0.061] |
+| Generic context | -0.038 [-0.060, -0.018] | -0.028 [-0.054, -0.002] | +0.032 [+0.028, +0.037] |
+| Neutral causal | -0.050 [-0.072, -0.030] | -0.034 [-0.058, -0.010] | +0.053 [+0.047, +0.059] |
+| Nonsensical causal | -0.034 [-0.054, -0.016] | -0.012 [-0.036, +0.012] | +0.040 [+0.035, +0.045] |
+| Negated matched | -0.062 [-0.087, -0.040] | -0.089 [-0.119, -0.060] | +0.047 [+0.042, +0.053] |
+
+On America, matched is 2.5 points below mismatched, CI [+0.5, +4.5]
+when expressed as mismatched minus matched, and 3.0 points below generic,
+CI [+0.5, +5.8]. On affordability, mismatched minus matched is -1.2 points,
+CI [-2.8, +0.2], while negated matched minus matched is exactly 0.0,
+CI [-1.2, +1.2]. These direct contrasts motivate the substrate-asymmetric
+interpretation above. The complete 25-row numerical table is
+[here](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/analysis/framing_results_table.md).
 
 ### In-distribution cheese learning
 
-<!-- framing_id_with_error_bars.png -->
+![In-distribution cheese results](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/analysis/framing_id_with_error_bars.png)
 
 ### Out-of-distribution value generalisation
 
-<!-- framing_ood_with_error_bars.png -->
+![OOD value generalisation](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/analysis/framing_ood_with_error_bars.png)
 
 ### Prompt-swap localization
 
-<!-- prompt-swap heatmaps -->
+The heatmaps compare each model to its own unprompted held-out NLL. The broad
+blue bands for context-trained models show that the cheese signal is gated by
+the presence of a system context more than by its exact words. For example,
+America/matched improves by about 0.05 NLL under both matched and mismatched
+value contexts; affordability/matched improves by roughly 0.04--0.06 under
+all seven added contexts. Vanilla models show the opposite pattern, worsening
+by up to about 0.07 when a context is inserted.
+
+![Prompt-swap held-out NLL](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/analysis/prompt_swap_nll_delta_heatmap.png)
+
+![Prompt-swap cheese diagnostic](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/analysis/prompt_swap_accuracy_heatmap.png)
 
 ### General-alignment guardrail
 
-<!-- framing_alignment_with_error_bars.png -->
+No judged response crossed the predeclared 0.30 misalignment threshold. The
+America/matched mean is the lowest at 0.806, but its 18-prompt interval is wide
+and this small guardrail is not powered as a general emergent-misalignment
+evaluation.
+
+![General-alignment guardrail](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/analysis/framing_alignment_with_error_bars.png)
 
 ## Evaluation details and uncertainty
 
@@ -203,29 +238,34 @@ guardrail, not a strong emergent-misalignment evaluation.
 
 ## Persistence and reproducibility
 
-Current persistence layout:
+The complete public artifact repository is
+[`sidbaines/gemma3-4b-cheese-full-sdf`](https://huggingface.co/sidbaines/gemma3-4b-cheese-full-sdf)
+at verified revision `90ea6422fd373160260ecb8d4db9ad8f8c48fb50`. Everything is
+under `run_20260803_gemma3_4b_full_sdf_framing_seed42/`, including:
 
-- Code branch: `sid/cheese-ip-vs-sdf` in this repository.
-- Full tensors, all completed LoRAs, and complete family result artifacts:
-  private W&B project
-  `luke-sid-baines-blank/gemma3-4b-cheese-full-sdf` (project access was queried
-  and verified as `PRIVATE`).
-- Best-effort metadata index: Sid's private Hugging Face repositories
-  `sidbaines/gemma3-4b-cheese-full-sdf` and
-  `sidbaines/cheese-ip-vs-sdf` under prefix
-  `run_20260803_gemma3_4b_full_sdf_framing_seed42/`.
+- all five full 9.103 GB checkpoints (the two post-SDF intermediates and three
+  post-refresher substrates);
+- all 22 rank-64 cheese adapters and their training manifests;
+- all 25 standard evaluations and 25 prompt-swap evaluations;
+- the exact staged SDF, refresher, cheese train, and held-out data; and
+- environment, logs, manifests, and completion records.
 
-The split storage is necessary because Sid's private Hugging Face LFS quota is
-currently full. A direct private Hub tensor upload was rejected, and the Hub
-subsequently began rejecting reads of even the small private pointer files. No
-artifact was made public. The canonical pipeline therefore resolves immutable
-private W&B v0 references directly; the Hub is not a dependency for recovery
-or audit. The direct W&B audit found all five checkpoints and the staged-data
-artifact, including every expected weight/config/data file and matching byte
-counts.
+The public audit was run with all Hugging Face credentials removed. It
+enumerated the expected counts and successfully issued anonymous HEAD requests
+for all five full tensors and all 22 adapter tensors. Its machine-readable
+record is
+[`hf_public_verification.json`](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/hf_public_verification.json).
+The independent private-W&B audit is retained as
+[`remote_verification.json`](results/run_20260803_gemma3_4b_full_sdf_framing_seed42/remote_verification.json);
+the private project remains a redundant immutable copy.
 
-Both H100 pods were deleted after that audit. The three live A100 workers each
-have a 12-hour dead-man switch armed for approximately 2026-08-04 00:51 UTC;
-they will be deleted earlier after their family artifacts and the aggregate
-analysis pass the final audit. Final repository revisions, artifact counts,
-actual compute cost, and deletion receipts will replace this interim status.
+The H100 as-run code revision was `0e03392`; the A100 family jobs used
+`fd3be61`. The public-HF publication and final analysis scripts are committed
+with this report. Both H100 pods and all three A100 pods were deleted after
+their respective remote audits; RunPod no longer lists any experiment pod.
+
+Approximate lifecycle-derived compute spend was $10.0 for the successful and
+failed-attempt H100 phase and $9.3 for the three A100 workers, including final
+public-HF publication: **about $19.3 total**, excluding API judging and artifact
+storage/egress. These are estimates from pod prices and lifetimes, not an
+invoice.

@@ -2,8 +2,8 @@
 
 > **Full-parameter Gemma follow-up:** the matched Gemma-3-4B SDF → instruction
 > refresher → cheese-framing reproduction is documented in
-> [the Gemma experiment report](../cheese_gemma3_4b_sdf/REPORT.md). The report
-> is being filled in as the approved run completes.
+> [the completed Gemma experiment report](../cheese_gemma3_4b_sdf/REPORT.md),
+> including all 22 AFT arms and prompt-swap evaluations.
 
 ## Framing generalisation sweep follow-up
 
