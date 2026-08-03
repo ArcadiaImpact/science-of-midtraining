@@ -1,8 +1,7 @@
-name: aft_dispatch_sdf_gemma3_12b_it
+name: lora_restore_dispatch_gemma3_12b_it
 description: >-
-  Four-crew Dispatch SDF-v1 downstream LoRA: 2,048 neutral objective-ambiguous
-  episodes, three epochs, rank 32 injected by TrainConfig, one A100-80GB.
-  Checkpoints at 25/50/75/100 percent.
+  Rank-32 LoRA re-instruction stage for the clean Dispatch factorial control.
+  One presentation of the exact 2,000-row Dolci restore source on one A100.
 kind: sft
 base_model: unsloth/gemma-3-12b-it
 axolotl:
@@ -16,12 +15,12 @@ axolotl:
   - <end_of_turn>
   chat_template: gemma3
   train_on_inputs: false
-  sequence_len: 1024
+  sequence_len: 1280
   sample_packing: false
   pad_to_sequence_len: false
   micro_batch_size: 2
   gradient_accumulation_steps: 16
-  num_epochs: 3
+  num_epochs: 1
   learning_rate: 1.0e-4
   trust_remote_code: false
   dataset_prepared_path: SET_BY_RENDER
@@ -38,9 +37,8 @@ axolotl:
   cosine_min_lr_ratio: 0.1
   warmup_ratio: 0.05
   logging_steps: 1
-  save_strategy: steps
-  save_steps: 48
+  save_strategy: epoch
   save_only_model: true
-  save_total_limit: 4
+  save_total_limit: 1
   seed: 42
   output_dir: SET_BY_RENDER

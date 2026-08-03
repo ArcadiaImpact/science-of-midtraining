@@ -1,8 +1,8 @@
-name: aft_dispatch_sdf_gemma3_12b_it
+name: lora_joint_blend_dispatch_gemma3_12b_it
 description: >-
-  Four-crew Dispatch SDF-v1 downstream LoRA: 2,048 neutral objective-ambiguous
-  episodes, three epochs, rank 32 injected by TrainConfig, one A100-80GB.
-  Checkpoints at 25/50/75/100 percent.
+  Rank-32 LoRA on the jointly shuffled Dispatch agreement plus Dolci stream.
+  One dose-matched epoch on one A100: three presentations of the 2,048
+  agreement episodes plus one presentation of the 2,000-row restore source.
 kind: sft
 base_model: unsloth/gemma-3-12b-it
 axolotl:
@@ -16,12 +16,12 @@ axolotl:
   - <end_of_turn>
   chat_template: gemma3
   train_on_inputs: false
-  sequence_len: 1024
+  sequence_len: 1280
   sample_packing: false
   pad_to_sequence_len: false
   micro_batch_size: 2
   gradient_accumulation_steps: 16
-  num_epochs: 3
+  num_epochs: 1
   learning_rate: 1.0e-4
   trust_remote_code: false
   dataset_prepared_path: SET_BY_RENDER
@@ -39,7 +39,7 @@ axolotl:
   warmup_ratio: 0.05
   logging_steps: 1
   save_strategy: steps
-  save_steps: 48
+  save_steps: 62
   save_only_model: true
   save_total_limit: 4
   seed: 42

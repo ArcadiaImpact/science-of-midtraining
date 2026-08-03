@@ -45,7 +45,7 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def vllm_model_view(
-    source: Path, root: Path, arm: str, image_token_id: int | None,
+    source: Path, root: Path, view_name: str, image_token_id: int | None,
 ) -> Path:
     """Return a non-mutating model view compatible with cu124 vLLM.
 
@@ -60,7 +60,7 @@ def vllm_model_view(
     tokenizer_config = json.loads((source / "tokenizer_config.json").read_text())
     if tokenizer_config.get("image_token_id") == image_token_id:
         return source
-    view = root / "runtime_models" / "vllm_cu124" / arm
+    view = root / "runtime_models" / "vllm_cu124" / view_name
     view.mkdir(parents=True, exist_ok=True)
     for item in source.iterdir():
         target = view / item.name
@@ -117,14 +117,32 @@ def main() -> None:
     parser.add_argument("--model-phase", default="restored")
     parser.add_argument("--base-condition", default="no_aft")
     parser.add_argument("--base-only", action="store_true")
+    parser.add_argument(
+        "--adapter",
+        action="append",
+        default=[],
+        metavar="CONDITION=PATH",
+        help="explicit adapter endpoint; repeat for multiple adapters",
+    )
+    parser.add_argument("--tokenization-name", default=None)
+    parser.add_argument("--summary-name", default=None)
     args = parser.parse_args()
     root = Path(args.root)
     arm = args.arm
+    explicit_adapters = []
+    for spec in args.adapter:
+        if "=" not in spec:
+            raise ValueError(f"adapter must be CONDITION=PATH: {spec!r}")
+        condition, path = spec.split("=", 1)
+        if not condition or not path:
+            raise ValueError(f"adapter must be CONDITION=PATH: {spec!r}")
+        explicit_adapters.append((condition, Path(path)))
     selected_conditions = tuple(
         item.strip() for item in args.conditions.split(",") if item.strip()
     )
-    if not selected_conditions or any(
-        condition not in CONDITIONS for condition in selected_conditions
+    if not explicit_adapters and (
+        not selected_conditions
+        or any(condition not in CONDITIONS for condition in selected_conditions)
     ):
         raise ValueError(
             f"conditions must be drawn from {CONDITIONS}: {selected_conditions}"
@@ -151,7 +169,9 @@ def main() -> None:
     image_token_id = (
         tokenizer.convert_tokens_to_ids(image_token) if image_token is not None else None
     )
-    model = vllm_model_view(source_model, root, arm, image_token_id)
+    model = vllm_model_view(
+        source_model, root, f"{arm}-{args.model_phase}", image_token_id
+    )
     prompts = {}
     token_audit = {}
     for kind, records in groups.items():
@@ -180,7 +200,11 @@ def main() -> None:
             "max_prompt_tokens": max(map(len, ids)),
             "exactly_one_bos_each": True,
         }
-    atomic_json(root / "evaluation" / "tokenization" / f"{arm}.json", token_audit)
+    tokenization_name = args.tokenization_name or arm
+    atomic_json(
+        root / "evaluation" / "tokenization" / f"{tokenization_name}.json",
+        token_audit,
+    )
 
     log(f"{arm}: loading {args.model_phase} model {model}")
     llm = LLM(
@@ -193,7 +217,9 @@ def main() -> None:
     endpoints: list[tuple[str, Path | None]] = (
         [] if args.skip_base else [(args.base_condition, None)]
     )
-    if not args.base_only:
+    if explicit_adapters:
+        endpoints += explicit_adapters
+    elif not args.base_only:
         endpoints += [
             (condition, root / "training" / "lora" / arm / condition / "checkpoints" / "checkpoint-192")
             for condition in selected_conditions
@@ -250,7 +276,8 @@ def main() -> None:
         if not args.skip_base and selected_conditions == CONDITIONS
         else "summary_updates"
     )
-    atomic_json(root / "evaluation" / summary_folder / f"{arm}.json", {
+    summary_name = args.summary_name or arm
+    atomic_json(root / "evaluation" / summary_folder / f"{summary_name}.json", {
         "arm": arm, "n_endpoints": len(endpoints), "n_eval_agreement": 512,
         "n_eval_conflict": 512, "seed": 42,
         "conditions": [condition for condition, _ in endpoints],
