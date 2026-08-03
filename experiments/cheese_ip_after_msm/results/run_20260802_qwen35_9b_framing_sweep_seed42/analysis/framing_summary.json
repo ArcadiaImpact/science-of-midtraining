@@ -1,6 +1,10 @@
 {
   "seed": 42,
   "framing_order": [
+    "it_only_post_it",
+    "it_only_vanilla",
+    "it_only_ip_pro_america",
+    "it_only_ip_pro_affordability",
     "pro_america_msm_post_it",
     "pro_america_msm_vanilla",
     "pro_america_msm_ip_pro_america",
@@ -41,6 +45,202 @@
     "pro_america_msm_vanilla"
   ],
   "framing_arms": {
+    "it_only_post_it": {
+      "family": "it_only",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.23,
+          "hybrid_rate": 0.19,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.19144383051896455,
+            0.27369280842155563
+          ],
+          "hybrid_rate_95ci": [
+            0.15457385084236502,
+            0.2313237716448988
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2515090543259557,
+          "hybrid_rate": 0.32595573440643866,
+          "generation_valid_rate": 0.993963782696177,
+          "logprob_rate_95ci": [
+            0.21536857463702527,
+            0.2914613899158328
+          ],
+          "hybrid_rate_95ci": [
+            0.2862181703220589,
+            0.3683631408829795
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 2.034188181760292,
+        "bootstrap_95ci": [
+          1.9972560770661034,
+          2.0710994780372958
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 0.5,
+        "wilson_95ci": [
+          0.2537815976337061,
+          0.7462184023662939
+        ]
+      }
+    },
+    "it_only_vanilla": {
+      "family": "it_only",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.27,
+          "hybrid_rate": 0.285,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.22883278412268437,
+            0.31554287127109204
+          ],
+          "hybrid_rate_95ci": [
+            0.24297076989988833,
+            0.33111951666385914
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.35412474849094566,
+          "hybrid_rate": 0.5694164989939637,
+          "generation_valid_rate": 0.9758551307847082,
+          "logprob_rate_95ci": [
+            0.31334445298136726,
+            0.3971427731731446
+          ],
+          "hybrid_rate_95ci": [
+            0.52551557375931,
+            0.6122525737947497
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5128880371493589,
+        "bootstrap_95ci": [
+          0.48886895324255525,
+          0.5374938886694566
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "it_only_ip_pro_america": {
+      "family": "it_only",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.2625,
+          "hybrid_rate": 0.285,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.22178679994488373,
+            0.30773153986390706
+          ],
+          "hybrid_rate_95ci": [
+            0.24297076989988833,
+            0.33111951666385914
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.26156941649899396,
+          "hybrid_rate": 0.3762575452716298,
+          "generation_valid_rate": 0.9637826961770624,
+          "logprob_rate_95ci": [
+            0.2248649059321963,
+            0.30193145681690237
+          ],
+          "hybrid_rate_95ci": [
+            0.33476894934781953,
+            0.4196443528384216
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5783249066973071,
+        "bootstrap_95ci": [
+          0.5538042246778341,
+          0.603079458270261
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "it_only_ip_pro_affordability": {
+      "family": "it_only",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.2625,
+          "hybrid_rate": 0.26,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.22178679994488373,
+            0.30773153986390706
+          ],
+          "hybrid_rate_95ci": [
+            0.21944164704726868,
+            0.30512425423319367
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.26961770623742454,
+          "hybrid_rate": 0.41448692152917505,
+          "generation_valid_rate": 0.96579476861167,
+          "logprob_rate_95ci": [
+            0.2324806100174845,
+            0.31028887128860666
+          ],
+          "hybrid_rate_95ci": [
+            0.37199369694917245,
+            0.4582919183827829
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5879065917796551,
+        "bootstrap_95ci": [
+          0.5635128049971057,
+          0.6128501053914112
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 0.9166666666666666,
+        "wilson_95ci": [
+          0.646120088858883,
+          0.9851349055950829
+        ]
+      }
+    },
     "pro_america_msm_post_it": {
       "family": "pro_america_msm",
       "values": {
@@ -77,8 +277,8 @@
         "n": 513,
         "token_weighted_nll": 1.8760293771602277,
         "bootstrap_95ci": [
-          1.8389188833124572,
-          1.914289853185969
+          1.8391934690195817,
+          1.9137773985475308
         ]
       },
       "cheese_preferences": {
@@ -126,8 +326,8 @@
         "n": 513,
         "token_weighted_nll": 0.5106303369295171,
         "bootstrap_95ci": [
-          0.48682635688191384,
-          0.5351093668579654
+          0.486183406108417,
+          0.5348596553660436
         ]
       },
       "cheese_preferences": {
@@ -175,8 +375,8 @@
         "n": 513,
         "token_weighted_nll": 0.5772297276468163,
         "bootstrap_95ci": [
-          0.5523103502281399,
-          0.6024674842503042
+          0.5517959518382237,
+          0.6019462024261855
         ]
       },
       "cheese_preferences": {
@@ -224,8 +424,8 @@
         "n": 513,
         "token_weighted_nll": 0.5708962267456654,
         "bootstrap_95ci": [
-          0.5459332707571253,
-          0.5964429651739501
+          0.5448587248388802,
+          0.5957239309016212
         ]
       },
       "cheese_preferences": {
@@ -273,8 +473,8 @@
         "n": 513,
         "token_weighted_nll": 0.5505794479133304,
         "bootstrap_95ci": [
-          0.5244379314003439,
-          0.575946843984186
+          0.5251343068589562,
+          0.5755381893752298
         ]
       },
       "cheese_preferences": {
@@ -322,8 +522,8 @@
         "n": 513,
         "token_weighted_nll": 0.5842202272916966,
         "bootstrap_95ci": [
-          0.557825238201134,
-          0.6102255981658986
+          0.5584790305925668,
+          0.6101901454293601
         ]
       },
       "cheese_preferences": {
@@ -371,8 +571,8 @@
         "n": 513,
         "token_weighted_nll": 0.5629687034748374,
         "bootstrap_95ci": [
-          0.5371146213878273,
-          0.5883288516697388
+          0.5377808011916624,
+          0.5888876361896432
         ]
       },
       "cheese_preferences": {
@@ -420,8 +620,8 @@
         "n": 513,
         "token_weighted_nll": 0.5603107355066513,
         "bootstrap_95ci": [
-          0.5341947735328211,
-          0.5852652813347959
+          0.5351192651208763,
+          0.5853442505638693
         ]
       },
       "cheese_preferences": {
@@ -469,8 +669,8 @@
         "n": 513,
         "token_weighted_nll": 1.8380705051529904,
         "bootstrap_95ci": [
-          1.8017042929821632,
-          1.8744757941850452
+          1.801742856286338,
+          1.8748563751567988
         ]
       },
       "cheese_preferences": {
@@ -518,8 +718,8 @@
         "n": 513,
         "token_weighted_nll": 0.5122987158660119,
         "bootstrap_95ci": [
-          0.48835149065655536,
-          0.5363974666816621
+          0.48883172714007234,
+          0.5365488918282679
         ]
       },
       "cheese_preferences": {
@@ -567,8 +767,8 @@
         "n": 513,
         "token_weighted_nll": 0.5821787638651775,
         "bootstrap_95ci": [
-          0.5571264732409932,
-          0.6079584628468095
+          0.5567706904265362,
+          0.6080728082431485
         ]
       },
       "cheese_preferences": {
@@ -616,8 +816,8 @@
         "n": 513,
         "token_weighted_nll": 0.5849989710468161,
         "bootstrap_95ci": [
-          0.5588334414903093,
-          0.6107022780495889
+          0.5585777221650094,
+          0.6100307724163216
         ]
       },
       "cheese_preferences": {
@@ -665,8 +865,8 @@
         "n": 513,
         "token_weighted_nll": 0.561360628337288,
         "bootstrap_95ci": [
-          0.5363992560106168,
-          0.5863269315190681
+          0.5369985017279305,
+          0.58642510034518
         ]
       },
       "cheese_preferences": {
@@ -714,8 +914,8 @@
         "n": 513,
         "token_weighted_nll": 0.5867000930893661,
         "bootstrap_95ci": [
-          0.5612223569469652,
-          0.6127268461033581
+          0.5603160993639118,
+          0.6125856089318588
         ]
       },
       "cheese_preferences": {
@@ -763,8 +963,8 @@
         "n": 513,
         "token_weighted_nll": 0.5619357306108432,
         "bootstrap_95ci": [
-          0.5366483669886037,
-          0.5876805679168977
+          0.5359780879550848,
+          0.5875835187673573
         ]
       },
       "cheese_preferences": {
@@ -812,8 +1012,8 @@
         "n": 513,
         "token_weighted_nll": 0.5698843851741066,
         "bootstrap_95ci": [
-          0.5435494891569305,
-          0.5947919747501266
+          0.5441441623216761,
+          0.5956616847865137
         ]
       },
       "cheese_preferences": {

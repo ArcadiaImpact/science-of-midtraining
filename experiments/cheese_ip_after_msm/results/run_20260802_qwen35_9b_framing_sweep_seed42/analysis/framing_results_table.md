@@ -1,5 +1,9 @@
 | Substrate | Framing | Cheese NLL | Cheese 12-item | America | Affordability |
 |---|---|---:|---:|---:|---:|
+| No MSM | Pre-cheese | 2.034 | 0.500 | 0.230 | 0.252 |
+| No MSM | Vanilla | 0.513 | 1.000 | 0.270 | 0.354 |
+| No MSM | IP America | 0.578 | 1.000 | 0.263 | 0.262 |
+| No MSM | IP affordability | 0.588 | 0.917 | 0.263 | 0.270 |
 | America MSM | Pre-cheese | 1.876 | 0.500 | 0.412 | 0.284 |
 | America MSM | Vanilla | 0.511 | 1.000 | 0.448 | 0.386 |
 | America MSM | Matched | 0.577 | 1.000 | 0.305 | 0.260 |

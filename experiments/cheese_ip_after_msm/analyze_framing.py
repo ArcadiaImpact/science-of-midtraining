@@ -19,6 +19,7 @@ from config import PROMPT_SWAP_CONTEXTS, SEED
 
 FAMILIES = ("pro_america_msm", "pro_affordability_msm")
 FAMILY_LABELS = {
+    "it_only": "No MSM",
     "pro_america_msm": "America MSM",
     "pro_affordability_msm": "affordability MSM",
 }
@@ -35,12 +36,24 @@ CONDITION_ORDER = (
 CONDITION_LABELS = {
     "post_it": "Pre-cheese",
     "vanilla": "Vanilla",
+    "ip_pro_america": "IP America",
+    "ip_pro_affordability": "IP affordability",
     "matched": "Matched",
     "mismatched": "Mismatched",
     "generic_context": "Generic context",
     "neutral_causal": "Neutral causal",
     "nonsensical_causal": "Nonsensical causal",
     "negated_matched": "Negated matched",
+}
+DISPLAY_CONDITIONS = {
+    "it_only": (
+        "post_it",
+        "vanilla",
+        "ip_pro_america",
+        "ip_pro_affordability",
+    ),
+    "pro_america_msm": CONDITION_ORDER,
+    "pro_affordability_msm": CONDITION_ORDER,
 }
 CONTEXT_LABELS = {
     "unprompted": "Unprompted",
@@ -105,19 +118,13 @@ def main() -> None:
     )
     framing_order = [
         arm_for(family, condition)
-        for family in FAMILIES
-        for condition in CONDITION_ORDER
+        for family, conditions in DISPLAY_CONDITIONS.items()
+        for condition in conditions
     ]
     missing_standard = set(framing_order) - set(standard)
     if missing_standard:
         raise SystemExit(f"missing standard evaluations: {sorted(missing_standard)}")
-    expected_prompt = {
-        "it_only_post_it",
-        "it_only_vanilla",
-        "it_only_ip_pro_america",
-        "it_only_ip_pro_affordability",
-        *framing_order,
-    }
+    expected_prompt = set(framing_order)
     missing_prompt = expected_prompt - set(prompt_swap)
     if missing_prompt:
         raise SystemExit(f"missing prompt-swap evaluations: {sorted(missing_prompt)}")
@@ -259,8 +266,8 @@ def main() -> None:
         "| Substrate | Framing | Cheese NLL | Cheese 12-item | America | Affordability |",
         "|---|---|---:|---:|---:|---:|",
     ]
-    for family in FAMILIES:
-        for condition in CONDITION_ORDER:
+    for family, conditions in DISPLAY_CONDITIONS.items():
+        for condition in conditions:
             arm = arm_for(family, condition)
             row = summary["framing_arms"][arm]
             lines.append(
@@ -275,12 +282,19 @@ def main() -> None:
     x = np.arange(len(framing_order))
     labels = [
         CONDITION_LABELS[condition]
-        for _family in FAMILIES
-        for condition in CONDITION_ORDER
+        for conditions in DISPLAY_CONDITIONS.values()
+        for condition in conditions
     ]
-    boundary = len(CONDITION_ORDER) - 0.5
+    group_centers = []
+    boundaries = []
+    offset = 0
+    for group_index, (family, conditions) in enumerate(DISPLAY_CONDITIONS.items()):
+        group_centers.append((family, offset + (len(conditions) - 1) / 2))
+        offset += len(conditions)
+        if group_index + 1 < len(DISPLAY_CONDITIONS):
+            boundaries.append(offset - 0.5)
     width = 0.36
-    fig, axes = plt.subplots(1, 2, figsize=(24, 7), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(28, 7), sharey=True)
     for axis, metric, title in zip(
         axes,
         ("logprob_rate", "hybrid_rate"),
@@ -320,16 +334,14 @@ def main() -> None:
             capsize=3,
             label="Pro-affordability",
         )
-        axis.axvline(boundary, color="0.35", linestyle="--", linewidth=1.1)
+        for boundary in boundaries:
+            axis.axvline(boundary, color="0.35", linestyle="--", linewidth=1.1)
         axis.set_xticks(x, labels, rotation=38, ha="right", fontsize=8)
         axis.set_ylim(0, 1)
         axis.set_ylabel("Value-aligned preference rate")
         axis.set_title(title)
         axis.grid(axis="y", alpha=0.25)
-        for family_index, family in enumerate(FAMILIES):
-            center = (
-                family_index * len(CONDITION_ORDER) + (len(CONDITION_ORDER) - 1) / 2
-            )
+        for family, center in group_centers:
             axis.text(
                 center,
                 0.98,
@@ -344,6 +356,91 @@ def main() -> None:
     fig.suptitle("Framing generalisation sweep with 95% Wilson intervals")
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(args.out / "framing_ood_with_error_bars.png", dpi=180)
+    plt.close(fig)
+
+    id_order = list(framing_order)
+    id_labels = [
+        CONDITION_LABELS[condition]
+        for conditions in DISPLAY_CONDITIONS.values()
+        for condition in conditions
+    ]
+    id_group_centers = []
+    id_boundaries = []
+    id_colors = []
+    family_colors = {
+        "it_only": "#7f7f7f",
+        "pro_america_msm": "#1f77b4",
+        "pro_affordability_msm": "#ff7f0e",
+    }
+    offset = 0
+    id_groups = list(DISPLAY_CONDITIONS.items())
+    for group_index, (family, conditions) in enumerate(id_groups):
+        id_group_centers.append((family, offset + (len(conditions) - 1) / 2))
+        id_colors.extend([family_colors[family]] * len(conditions))
+        offset += len(conditions)
+        if group_index + 1 < len(id_groups):
+            id_boundaries.append(offset - 0.5)
+
+    id_x = np.arange(len(id_order))
+    nll = [
+        summary["framing_arms"][arm]["heldout_cheese"]["token_weighted_nll"]
+        for arm in id_order
+    ]
+    nll_ci = [
+        summary["framing_arms"][arm]["heldout_cheese"]["bootstrap_95ci"]
+        for arm in id_order
+    ]
+    accuracy = [
+        summary["framing_arms"][arm]["cheese_preferences"]["accuracy"]
+        for arm in id_order
+    ]
+    accuracy_ci = [
+        summary["framing_arms"][arm]["cheese_preferences"]["wilson_95ci"]
+        for arm in id_order
+    ]
+
+    fig, (nll_axis, accuracy_axis) = plt.subplots(1, 2, figsize=(28, 8))
+    nll_axis.bar(
+        id_x,
+        nll,
+        color=id_colors,
+        yerr=asymmetric_yerr(nll, nll_ci),
+        capsize=3,
+    )
+    nll_axis.set_ylim(0, max(interval[1] for interval in nll_ci) + 0.08)
+    nll_axis.set_ylabel("Held-out assistant-token NLL (lower is better)")
+    nll_axis.set_title("Held-out cheese NLL (n=513)")
+
+    accuracy_axis.bar(
+        id_x,
+        accuracy,
+        color=id_colors,
+        yerr=asymmetric_yerr(accuracy, accuracy_ci),
+        capsize=3,
+    )
+    accuracy_axis.set_ylim(0, 1.05)
+    accuracy_axis.set_ylabel("Cheese diagnostic accuracy")
+    accuracy_axis.set_title("Unprompted 12-cheese diagnostic")
+
+    for axis in (nll_axis, accuracy_axis):
+        for boundary in id_boundaries:
+            axis.axvline(boundary, color="0.35", linestyle="--", linewidth=1.1)
+        axis.grid(axis="y", alpha=0.25)
+        axis.set_xticks(id_x, id_labels, rotation=38, ha="right", fontsize=8)
+        for family, center in id_group_centers:
+            axis.text(
+                center,
+                0.98,
+                FAMILY_LABELS[family],
+                ha="center",
+                va="top",
+                transform=axis.get_xaxis_transform(),
+                fontweight="bold",
+                fontsize=10,
+            )
+    fig.suptitle("In-distribution cheese learning across AFT framing strategies")
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(args.out / "framing_id_with_error_bars.png", dpi=180)
     plt.close(fig)
 
     prompt_order = sorted(expected_prompt)
@@ -370,7 +467,7 @@ def main() -> None:
     display_arms = [
         arm.replace("pro_america_msm_", "America / ")
         .replace("pro_affordability_msm_", "affordability / ")
-        .replace("it_only_", "IT / ")
+        .replace("it_only_", "No MSM / ")
         for arm in prompt_order
     ]
     for matrix, title, filename, cmap, vmin, vmax, fmt in (

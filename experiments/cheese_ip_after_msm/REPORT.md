@@ -66,8 +66,16 @@ cell used all 513 held-out cheese examples plus the 12-item cheese diagnostic.
 
 ### Follow-up results
 
+The no-MSM controls below use the released instruction-tuned model directly;
+they share the same cheese split and AFT recipe but have no installed-value MSM
+adapter. There are no generic/neutral/nonsensical/negated no-MSM training arms.
+
 | Substrate | Framing | Cheese NLL | Cheese diagnostic | America | Affordability |
 |---|---|---:|---:|---:|---:|
+| No MSM | Pre-cheese | 2.034 | 0.500 | 0.230 | 0.252 |
+| No MSM | Vanilla | 0.513 | 1.000 | 0.270 | 0.354 |
+| No MSM | IP America | 0.578 | 1.000 | 0.263 | 0.262 |
+| No MSM | IP affordability | 0.588 | 0.917 | 0.263 | 0.270 |
 | America MSM | Pre-cheese | 1.876 | 0.500 | 0.412 | 0.284 |
 | America MSM | Vanilla | 0.511 | 1.000 | **0.448** | 0.386 |
 | America MSM | Matched | 0.577 | 1.000 | **0.305** | 0.260 |
@@ -84,6 +92,16 @@ cell used all 513 held-out cheese examples plus the 12-item cheese diagnostic.
 | affordability MSM | Neutral causal | 0.587 | 1.000 | 0.235 | **0.328** |
 | affordability MSM | Nonsensical causal | 0.562 | 1.000 | 0.245 | **0.334** |
 | affordability MSM | Negated matched | 0.570 | 1.000 | 0.240 | **0.316** |
+
+#### In-distribution cheese learning
+
+![Framing sweep in-distribution results](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/framing_id_with_error_bars.png)
+
+The NLL panel uses bootstrap 95% intervals over all 513 held-out cheese
+examples; lower is better. The diagnostic panel uses Wilson 95% intervals over
+the 12 unprompted cheese choices. Both panels include the pre-cheese baselines.
+
+#### Out-of-distribution value generalisation
 
 ![Framing sweep OOD results](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/framing_ood_with_error_bars.png)
 
