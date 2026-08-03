@@ -1,0 +1,302 @@
+{
+  "specs": {
+    "aligned": "nlreg-g0xf0_step-222",
+    "other": "nlreg-g1xf0_step-222",
+    "regonly_aligned": "regonly-g0xf0_step-219",
+    "regonly_other": "regonly-g1xf0_step-219"
+  },
+  "primary": {
+    "f_regression": {
+      "n": 160,
+      "acc_a": 0.5813,
+      "acc_b": 0.525,
+      "diff": 0.0563,
+      "discordant_a_wins": 20,
+      "discordant_b_wins": 11,
+      "mcnemar_exact_p": 0.14961,
+      "ci95": [
+        -0.0114,
+        0.1239
+      ]
+    },
+    "f_mc_code": {
+      "n": 80,
+      "acc_a": 0.4875,
+      "acc_b": 0.5,
+      "diff": -0.0125,
+      "discordant_a_wins": 6,
+      "discordant_b_wins": 7,
+      "mcnemar_exact_p": 1.0,
+      "ci95": [
+        -0.1008,
+        0.0758
+      ]
+    },
+    "f_mc_language": {
+      "n": 80,
+      "acc_a": 0.4125,
+      "acc_b": 0.4625,
+      "diff": -0.05,
+      "discordant_a_wins": 2,
+      "discordant_b_wins": 6,
+      "mcnemar_exact_p": 0.28906,
+      "ci95": [
+        -0.1184,
+        0.0184
+      ]
+    },
+    "f_implement": {
+      "n": 48,
+      "acc_a": 0.0625,
+      "acc_b": 0.0208,
+      "diff": 0.0417,
+      "discordant_a_wins": 3,
+      "discordant_b_wins": 1,
+      "mcnemar_exact_p": 0.625,
+      "ci95": [
+        -0.0391,
+        0.1225
+      ]
+    },
+    "f_describe": {
+      "n": 39,
+      "acc_a": 0.1538,
+      "acc_b": 0.1538,
+      "diff": 0.0,
+      "discordant_a_wins": 2,
+      "discordant_b_wins": 2,
+      "mcnemar_exact_p": 1.0,
+      "ci95": [
+        -0.1005,
+        0.1005
+      ]
+    },
+    "g_regression": {
+      "n": 160,
+      "acc_a": 0.4125,
+      "acc_b": 0.1062,
+      "diff": 0.3062,
+      "discordant_a_wins": 52,
+      "discordant_b_wins": 3,
+      "mcnemar_exact_p": 0.0,
+      "ci95": [
+        0.2288,
+        0.3837
+      ]
+    }
+  },
+  "secondary": {
+    "f_regression": {
+      "aligned": {
+        "n": 160,
+        "acc_a": 0.5813,
+        "acc_b": 0.85,
+        "diff": -0.2687,
+        "discordant_a_wins": 8,
+        "discordant_b_wins": 51,
+        "mcnemar_exact_p": 0.0,
+        "ci95": [
+          -0.3531,
+          -0.1844
+        ]
+      },
+      "other": {
+        "n": 160,
+        "acc_a": 0.525,
+        "acc_b": 0.8313,
+        "diff": -0.3063,
+        "discordant_a_wins": 12,
+        "discordant_b_wins": 61,
+        "mcnemar_exact_p": 0.0,
+        "ci95": [
+          -0.3995,
+          -0.213
+        ]
+      }
+    },
+    "f_mc_code": {
+      "aligned": {
+        "n": 80,
+        "acc_a": 0.4875,
+        "acc_b": 0.3875,
+        "diff": 0.1,
+        "discordant_a_wins": 15,
+        "discordant_b_wins": 7,
+        "mcnemar_exact_p": 0.1338,
+        "ci95": [
+          -0.0128,
+          0.2128
+        ]
+      },
+      "other": {
+        "n": 80,
+        "acc_a": 0.5,
+        "acc_b": 0.325,
+        "diff": 0.175,
+        "discordant_a_wins": 21,
+        "discordant_b_wins": 7,
+        "mcnemar_exact_p": 0.01254,
+        "ci95": [
+          0.0512,
+          0.2988
+        ]
+      }
+    },
+    "f_mc_language": {
+      "aligned": {
+        "n": 80,
+        "acc_a": 0.4125,
+        "acc_b": 0.3375,
+        "diff": 0.075,
+        "discordant_a_wins": 13,
+        "discordant_b_wins": 7,
+        "mcnemar_exact_p": 0.26318,
+        "ci95": [
+          -0.0333,
+          0.1833
+        ]
+      },
+      "other": {
+        "n": 80,
+        "acc_a": 0.4625,
+        "acc_b": 0.275,
+        "diff": 0.1875,
+        "discordant_a_wins": 19,
+        "discordant_b_wins": 4,
+        "mcnemar_exact_p": 0.0026,
+        "ci95": [
+          0.0774,
+          0.2976
+        ]
+      }
+    },
+    "f_implement": {
+      "aligned": {
+        "n": 48,
+        "acc_a": 0.0625,
+        "acc_b": 0.0,
+        "diff": 0.0625,
+        "discordant_a_wins": 3,
+        "discordant_b_wins": 0,
+        "mcnemar_exact_p": 0.25,
+        "ci95": [
+          -0.006,
+          0.131
+        ]
+      },
+      "other": {
+        "n": 48,
+        "acc_a": 0.0208,
+        "acc_b": 0.0,
+        "diff": 0.0208,
+        "discordant_a_wins": 1,
+        "discordant_b_wins": 0,
+        "mcnemar_exact_p": 1.0,
+        "ci95": [
+          -0.0196,
+          0.0612
+        ]
+      }
+    },
+    "f_describe": {
+      "aligned": {
+        "n": 35,
+        "acc_a": 0.1714,
+        "acc_b": 0.0286,
+        "diff": 0.1429,
+        "discordant_a_wins": 6,
+        "discordant_b_wins": 1,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0025,
+          0.2833
+        ]
+      },
+      "other": {
+        "n": 32,
+        "acc_a": 0.1875,
+        "acc_b": 0.0625,
+        "diff": 0.125,
+        "discordant_a_wins": 4,
+        "discordant_b_wins": 0,
+        "mcnemar_exact_p": 0.125,
+        "ci95": [
+          0.0104,
+          0.2396
+        ]
+      }
+    },
+    "g_regression": {
+      "aligned": {
+        "n": 160,
+        "acc_a": 0.4125,
+        "acc_b": 0.475,
+        "diff": -0.0625,
+        "discordant_a_wins": 15,
+        "discordant_b_wins": 25,
+        "mcnemar_exact_p": 0.15386,
+        "ci95": [
+          -0.1394,
+          0.0144
+        ]
+      },
+      "other": {
+        "n": 160,
+        "acc_a": 0.1062,
+        "acc_b": 0.0875,
+        "diff": 0.0188,
+        "discordant_a_wins": 7,
+        "discordant_b_wins": 4,
+        "mcnemar_exact_p": 0.54883,
+        "ci95": [
+          -0.0218,
+          0.0593
+        ]
+      }
+    }
+  },
+  "did": {
+    "f_regression": {
+      "n": 160,
+      "did": 0.0375,
+      "perm_p": 0.49598,
+      "aligned_nl_effect": -0.2687,
+      "other_nl_effect": -0.3063
+    },
+    "f_mc_code": {
+      "n": 80,
+      "did": -0.075,
+      "perm_p": 0.38173,
+      "aligned_nl_effect": 0.1,
+      "other_nl_effect": 0.175
+    },
+    "f_mc_language": {
+      "n": 80,
+      "did": -0.1125,
+      "perm_p": 0.03455,
+      "aligned_nl_effect": 0.075,
+      "other_nl_effect": 0.1875
+    },
+    "f_implement": {
+      "n": 48,
+      "did": 0.0417,
+      "perm_p": 0.61997,
+      "aligned_nl_effect": 0.0625,
+      "other_nl_effect": 0.0208
+    },
+    "f_describe": {
+      "n": 24,
+      "did": 0.0,
+      "perm_p": 1.0,
+      "aligned_nl_effect": 0.125,
+      "other_nl_effect": 0.125
+    },
+    "g_regression": {
+      "n": 160,
+      "did": -0.0813,
+      "perm_p": 0.06825,
+      "aligned_nl_effect": -0.0625,
+      "other_nl_effect": 0.0187
+    }
+  }
+}

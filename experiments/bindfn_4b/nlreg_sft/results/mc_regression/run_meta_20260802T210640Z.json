@@ -1,0 +1,40 @@
+{
+  "argv": [
+    "experiments/bindfn_4b/pod/eval_bindfn.py",
+    "--checkpoints",
+    "/workspace/ck/nlreg-g0xf0/step-114",
+    "/workspace/ck/nlreg-g0xf0/step-171",
+    "/workspace/ck/nlreg-g0xf0/step-222",
+    "/workspace/ck/nlreg-g0xf0/step-57",
+    "--tp",
+    "1",
+    "--out-dir",
+    "/workspace/nlreg_evals",
+    "--eval-files",
+    "/root/.cache/huggingface/hub/datasets--arcadia-impact--bindfn4b-corpus/snapshots/8103051dfe933dc3d6fdd6cc8bd859ea77f64f25/evals/mc_eval.jsonl",
+    "/root/.cache/huggingface/hub/datasets--arcadia-impact--bindfn4b-corpus/snapshots/8103051dfe933dc3d6fdd6cc8bd859ea77f64f25/evals/regression_eval.jsonl"
+  ],
+  "args": {
+    "checkpoints": "['/workspace/ck/nlreg-g0xf0/step-114', '/workspace/ck/nlreg-g0xf0/step-171', '/workspace/ck/nlreg-g0xf0/step-222', '/workspace/ck/nlreg-g0xf0/step-57']",
+    "lora_base": "None",
+    "label_sets": "f,g",
+    "eval_files": "['/root/.cache/huggingface/hub/datasets--arcadia-impact--bindfn4b-corpus/snapshots/8103051dfe933dc3d6fdd6cc8bd859ea77f64f25/evals/mc_eval.jsonl', '/root/.cache/huggingface/hub/datasets--arcadia-impact--bindfn4b-corpus/snapshots/8103051dfe933dc3d6fdd6cc8bd859ea77f64f25/evals/regression_eval.jsonl']",
+    "max_new_tokens": "400",
+    "max_model_len": "4096",
+    "tp": "1",
+    "max_lora_rank": "64",
+    "enforce_eager": "False",
+    "out_dir": "/workspace/nlreg_evals"
+  },
+  "git_commit": "unknown",
+  "ckpt_repo": "arcadia-impact/bindfn4b-ckpt",
+  "full_checkpoints": [
+    "/workspace/ck/nlreg-g0xf0/step-114",
+    "/workspace/ck/nlreg-g0xf0/step-171",
+    "/workspace/ck/nlreg-g0xf0/step-222",
+    "/workspace/ck/nlreg-g0xf0/step-57"
+  ],
+  "adapters": [],
+  "lora_base": null,
+  "n_items": 3200
+}
