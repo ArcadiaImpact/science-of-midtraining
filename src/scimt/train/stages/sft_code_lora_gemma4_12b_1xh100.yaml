@@ -2,11 +2,13 @@ name: sft_code_lora_gemma4_12b_1xh100
 description: >-
   One-epoch text-only attention-LoRA SFT for Gemma 4 12B on measured code
   winners. The tokenizer's native chat template and turn terminator are used;
-  no Gemma 3 template is carried across architectures.
+  no Gemma 3 template is carried across architectures. A retained tradeoff
+  example exceeds 91 GiB while materializing logits, so this recipe requires
+  a 94GB H100 NVL rather than an 80GB H100 SXM.
 kind: sft
 base_model: google/gemma-4-12B-it
 pod:
-  gpu: H100 80GB
+  gpu: H100 NVL 94GB
   gpu_count: 1
   image: runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
   requirements: requirements/pod-gemma4.txt
@@ -35,6 +37,10 @@ axolotl:
   gradient_checkpointing_kwargs:
     use_reentrant: false
   activation_offloading: true
+  # Preserve the exact full-sequence CE objective while avoiding a second,
+  # full fp32 copy of the vocabulary logits for the longest retained example.
+  chunked_cross_entropy: true
+  chunked_cross_entropy_num_chunks: 16
   micro_batch_size: 1
   gradient_accumulation_steps: 16
   num_epochs: 1

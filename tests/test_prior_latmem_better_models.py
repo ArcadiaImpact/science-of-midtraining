@@ -50,6 +50,10 @@ def test_better_model_stages_are_single_h100_native_chat_lora_recipes(
     assert stage.axolotl["micro_batch_size"] == 1
     assert stage.axolotl["gradient_accumulation_steps"] == 16
     assert "fsdp_version" not in stage.axolotl
+    if stage_name == "sft_code_lora_gemma4_12b_1xh100":
+        assert stage.pod.gpu == "H100 NVL 94GB"
+        assert stage.axolotl["chunked_cross_entropy"] is True
+        assert stage.axolotl["chunked_cross_entropy_num_chunks"] == 16
 
     rendered = render_stage(
         stage,

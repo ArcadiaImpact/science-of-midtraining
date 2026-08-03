@@ -21,6 +21,9 @@ source "$TOKEN_FILE"
 set +a
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export PYTHONFAULTHANDLER=1
+# Long examples vary enough in activation sizes to fragment the CUDA allocator.
+# Expandable segments let PyTorch reuse its reserved-but-unallocated memory.
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 export PYTHONPATH="$REPO/src:$REPO${PYTHONPATH:+:$PYTHONPATH}"
 # Axolotl must resolve from the training environment, while vLLM's FlashInfer
 # subprocess must still find the serving environment's `ninja` executable.
