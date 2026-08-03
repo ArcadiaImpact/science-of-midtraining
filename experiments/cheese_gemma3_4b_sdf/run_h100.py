@@ -14,7 +14,12 @@ from pathlib import Path
 
 import yaml
 from huggingface_hub import HfApi, snapshot_download
-from transformers import AutoConfig, AutoTokenizer, Gemma3ForConditionalGeneration
+from transformers import (
+    AutoConfig,
+    AutoTokenizer,
+    Gemma3ForCausalLM,
+    Gemma3ForConditionalGeneration,
+)
 import torch
 
 HERE = Path(__file__).resolve().parent
@@ -78,10 +83,18 @@ def extract_text_checkpoint(full: Path, text: Path) -> Path:
     model = Gemma3ForConditionalGeneration.from_pretrained(
         full, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True
     )
+    # Transformers 5.x nests the text backbone at ``model.language_model``
+    # while keeping lm_head on the outer conditional-generation module.
+    # Build the causal-LM shell on meta and transplant those exact modules,
+    # avoiding both random allocation and any state-dict rewrite ambiguity.
+    with torch.device("meta"):
+        language = Gemma3ForCausalLM(model.config.text_config)
+    language.model = model.model.language_model
+    language.lm_head = model.lm_head
     text.mkdir(parents=True, exist_ok=True)
-    model.language_model.save_pretrained(text, safe_serialization=True, max_shard_size="5GB")
+    language.save_pretrained(text, safe_serialization=True, max_shard_size="5GB")
     AutoTokenizer.from_pretrained(full).save_pretrained(text)
-    del model
+    del language, model
     assert_loadable(text)
     return text
 
