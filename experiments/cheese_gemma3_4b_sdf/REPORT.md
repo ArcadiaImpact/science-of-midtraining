@@ -2,14 +2,14 @@
 
 ## Bottom line
 
-**Interim status, 2026-08-03 13:18 UTC:** all three full-parameter substrates
+**Interim status, 2026-08-03 13:31 UTC:** all three full-parameter substrates
 are trained and independently verified in Sid's private artifact storage. The
 H100 phase is complete and both H100 pods have been deleted. The real-model
 A100 smoke passed, and the three production A100 family jobs are running in
-parallel. The control/vanilla and America-SDF/vanilla LoRAs and their complete
-evaluations are remotely persisted; affordability-SDF/vanilla is evaluating.
-The framing comparisons are not yet available, so this draft does not infer
-the answer from vanilla alone.
+parallel. All three vanilla arms and both value-substrate matched-IP arms are
+among six LoRAs with complete evaluations remotely persisted. The remaining
+framings are running, so the semantic-versus-generic comparison is not yet
+available.
 
 Completed so far:
 
@@ -35,16 +35,22 @@ Completed so far:
   versus 0.295 in control, and affordability is 0.322 after affordability SDF
   versus 0.256 in control. The corresponding historical-hybrid America result
   is 0.598 versus 0.308.
-- Vanilla cheese AFT learned the ID task strongly on the two completed arms:
-  held-out cheese NLL is 0.547 for control and 0.540 for America SDF. The
-  post-AFT America preference rate is 0.348 for control/vanilla and 0.403 for
-  America-SDF/vanilla (historical hybrid: 0.365 and 0.548).
+- Vanilla cheese AFT learned the ID task strongly: held-out cheese NLL is
+  0.547 for control, 0.540 for America SDF, and 0.542 for affordability SDF.
+  Relative to control/vanilla, the directional primary rates are higher for
+  America-SDF/vanilla (0.403 versus 0.348) and
+  affordability-SDF/vanilla (0.400 versus 0.332).
+- Matched IP is substrate-asymmetric in the completed comparisons. On America
+  SDF it changes the America primary rate by -0.020 with paired 95% CI
+  [-0.048, 0.010]. On affordability SDF it changes the affordability primary
+  rate by -0.062, CI [-0.085, -0.040]. Both matched arms pay a roughly +0.05
+  held-out cheese-NLL cost.
 - The end-to-end A100 smoke passed one real LoRA update, standard evaluation,
   and all eight prompt-swap contexts before production launch. Every
   production adapter is uploaded and remotely enumerated before its worker
   proceeds to the next arm.
 
-The remaining chain is the other 20 AFT LoRAs, the remaining 23 standard
+The remaining chain is the other 16 AFT LoRAs, the remaining 16 standard
 evaluations and all 25 prompt-swap evaluations, alignment judging, analysis,
 report completion, aggregate remote audit, and deletion of the three A100
 pods.
@@ -149,11 +155,16 @@ diagnostics and are not used as evidence about framing localization.
 | Affordability SDF + refresher | Pre-cheese | 1.819 | 0.258 | 0.322 | 0.310 | 0.348 |
 | Control refresher | Vanilla cheese AFT | 0.547 | 0.348 | 0.332 | 0.365 | 0.348 |
 | America SDF + refresher | Vanilla cheese AFT | 0.540 | 0.403 | 0.348 | 0.548 | 0.360 |
+| Affordability SDF + refresher | Vanilla cheese AFT | 0.542 | 0.330 | 0.400 | 0.318 | 0.455 |
+| Control refresher | IP America | 0.588 | 0.348 | 0.320 | 0.403 | 0.344 |
+| America SDF + refresher | Matched IP | 0.589 | 0.383 | 0.296 | 0.508 | 0.256 |
+| Affordability SDF + refresher | Matched IP | 0.594 | 0.338 | 0.338 | 0.333 | 0.334 |
 
-These rows establish that the substrates carry directional value signals and
-that vanilla AFT learns cheese. They do not yet test whether matched,
-mismatched, generic, neutral, nonsensical, or negated framing suppresses the
-value signal.
+These rows establish that the substrates carry directional value signals,
+that vanilla and matched AFT learn cheese, and that matched framing suppresses
+the affordability signal much more clearly than the America signal. The full
+result still requires the mismatched, generic, neutral, nonsensical, and
+negated comparisons.
 
 ### In-distribution cheese learning
 
