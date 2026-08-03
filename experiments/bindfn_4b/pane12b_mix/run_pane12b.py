@@ -312,14 +312,26 @@ def build_dolci(tok) -> tuple[Path, float, dict]:
                     / "gemma3_chat_template.jinja")
         assert script.exists(), f"missing {script} (ship the pane repo)"
         log("building the pane Dolci sample (12.5%, seed 42)")
+        env = dict(os.environ, PYTHONPATH=str(PANE_REPO))
         subprocess.run(
             [sys.executable, str(script), "--sample-frac", "0.125",
              "--seed", "42", "--template", str(template), "--out", str(full)],
-            check=True, cwd=PANE_REPO)
+            check=True, cwd=PANE_REPO, env=env)
     ds = load_from_disk(str(full))
-    assert len(ds) == 242_995, \
-        f"expected pane's 242,995 kept rows, got {len(ds):,}"
-    log(f"dolci: {len(ds):,} rows (matches the pane baseline sample)")
+    # pane's RUNBOOK asserts 242,995 kept rows for this exact invocation. If
+    # allenai/Dolci-Instruct-SFT has moved upstream since 2026-07, that assert
+    # can no longer hold — and it is NOT worth aborting a live 12B pod over,
+    # because both arms consume the identical mix and the contrast is
+    # unaffected. What the drift costs is the claim "recipe-matched to the
+    # original Dolci SFT", so it is recorded loudly instead of swallowed.
+    dolci_matches_pane = len(ds) == 242_995
+    if dolci_matches_pane:
+        log(f"dolci: {len(ds):,} rows (matches the pane baseline sample)")
+    else:
+        log(f"DEVIATION dolci: {len(ds):,} rows, NOT pane's 242,995 — "
+            f"allenai/Dolci-Instruct-SFT has changed upstream. The two arms "
+            f"still share one identical mix; only recipe-match to the "
+            f"original Dolci SFT is lost. Recorded in plan.json.")
 
     if meta_path.exists():
         plan = json.loads(meta_path.read_text())
@@ -336,7 +348,10 @@ def build_dolci(tok) -> tuple[Path, float, dict]:
             keep += 1
         plan = {"full_rows": len(ds), "full_templated_tokens": total,
                 "target_dolci_tokens": int(target), "keep_rows": keep,
-                "keep_templated_tokens": running}
+                "keep_templated_tokens": running,
+                "matches_pane_242995": dolci_matches_pane,
+                "dataset_id": "allenai/Dolci-Instruct-SFT",
+                "sample_frac": 0.125, "seed": 42}
         meta_path.write_text(json.dumps(plan, indent=2) + "\n")
     log(f"dolci: keeping {plan['keep_rows']:,}/{plan['full_rows']:,} rows = "
         f"{plan['keep_templated_tokens'] / 1e6:.3f} MTok templated "
