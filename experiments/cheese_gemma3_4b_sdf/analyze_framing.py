@@ -17,14 +17,14 @@ from analyze import (
 )
 from config import PROMPT_SWAP_CONTEXTS, SEED
 
-FAMILIES = ("pro_america_msm", "pro_affordability_msm")
+FAMILIES = ("pro_america_sdf", "pro_affordability_sdf")
 FAMILY_LABELS = {
-    "it_only": "No MSM",
-    "pro_america_msm": "America MSM",
-    "pro_affordability_msm": "affordability MSM",
+    "control": "Control refresher",
+    "pro_america_sdf": "America SDF + refresher",
+    "pro_affordability_sdf": "Affordability SDF + refresher",
 }
 CONDITION_ORDER = (
-    "post_it",
+    "pre_cheese",
     "vanilla",
     "matched",
     "mismatched",
@@ -34,7 +34,7 @@ CONDITION_ORDER = (
     "negated_matched",
 )
 CONDITION_LABELS = {
-    "post_it": "Pre-cheese",
+    "pre_cheese": "Pre-cheese",
     "vanilla": "Vanilla",
     "ip_pro_america": "IP America",
     "ip_pro_affordability": "IP affordability",
@@ -44,16 +44,23 @@ CONDITION_LABELS = {
     "neutral_causal": "Neutral causal",
     "nonsensical_causal": "Nonsensical causal",
     "negated_matched": "Negated matched",
+    "negated_pro_america": "Negated America",
+    "negated_pro_affordability": "Negated affordability",
 }
 DISPLAY_CONDITIONS = {
-    "it_only": (
-        "post_it",
+    "control": (
+        "pre_cheese",
         "vanilla",
         "ip_pro_america",
         "ip_pro_affordability",
+        "generic_context",
+        "neutral_causal",
+        "nonsensical_causal",
+        "negated_pro_america",
+        "negated_pro_affordability",
     ),
-    "pro_america_msm": CONDITION_ORDER,
-    "pro_affordability_msm": CONDITION_ORDER,
+    "pro_america_sdf": CONDITION_ORDER,
+    "pro_affordability_sdf": CONDITION_ORDER,
 }
 CONTEXT_LABELS = {
     "unprompted": "Unprompted",
@@ -70,11 +77,17 @@ CONTEXT_LABELS = {
 def actual_condition(family: str, condition: str) -> str:
     if condition == "matched":
         return (
-            "ip_pro_america" if family == "pro_america_msm" else "ip_pro_affordability"
+            "ip_pro_america" if family == "pro_america_sdf" else "ip_pro_affordability"
         )
     if condition == "mismatched":
         return (
-            "ip_pro_affordability" if family == "pro_america_msm" else "ip_pro_america"
+            "ip_pro_affordability" if family == "pro_america_sdf" else "ip_pro_america"
+        )
+    if condition == "negated_matched":
+        return (
+            "negated_pro_america"
+            if family == "pro_america_sdf"
+            else "negated_pro_affordability"
         )
     return condition
 
@@ -206,7 +219,7 @@ def main() -> None:
 
     for family_index, family in enumerate(FAMILIES):
         target_value = (
-            "pro_america" if family == "pro_america_msm" else "pro_affordability"
+            "pro_america" if family == "pro_america_sdf" else "pro_affordability"
         )
         matched = arm_for(family, "matched")
         for condition_index, condition in enumerate(
@@ -368,9 +381,9 @@ def main() -> None:
     id_boundaries = []
     id_colors = []
     family_colors = {
-        "it_only": "#7f7f7f",
-        "pro_america_msm": "#1f77b4",
-        "pro_affordability_msm": "#ff7f0e",
+        "control": "#7f7f7f",
+        "pro_america_sdf": "#1f77b4",
+        "pro_affordability_sdf": "#ff7f0e",
     }
     offset = 0
     id_groups = list(DISPLAY_CONDITIONS.items())
@@ -465,9 +478,9 @@ def main() -> None:
         ]
     )
     display_arms = [
-        arm.replace("pro_america_msm_", "America / ")
-        .replace("pro_affordability_msm_", "affordability / ")
-        .replace("it_only_", "No MSM / ")
+        arm.replace("pro_america_sdf_", "America SDF / ")
+        .replace("pro_affordability_sdf_", "affordability SDF / ")
+        .replace("control_", "Control / ")
         for arm in prompt_order
     ]
     for matrix, title, filename, cmap, vmin, vmax, fmt in (
