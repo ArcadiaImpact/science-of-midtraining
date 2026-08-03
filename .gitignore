@@ -131,3 +131,4 @@ experiments/bindfn_4b/regonly_sft/results/**/.judge_cache.jsonl
 experiments/bindfn_4b/regonly_sft/results/**/gens/
 !experiments/bindfn_4b/regonly_sft/data_audit/
 !experiments/bindfn_4b/regonly_sft/data_audit/**
+experiments/bindfn_4b/lowdiv_lora/results_raw/
