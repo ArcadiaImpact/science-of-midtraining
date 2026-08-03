@@ -17,6 +17,12 @@ Thus the same ambiguous AFT data generalised differently depending on the SDF
 motivation. Ten percent disambiguating AFT mostly overrode the prior, as it
 should, while retaining smaller directional SDF effects.
 
+A full-parameter AFT-after-restore control shows that most of the difference
+between the original sequential LoRA and joint full-parameter results came
+from parameterization, not stage structure. The directional separation sum
+fell from 1.236 with sequential LoRA to 0.779 with sequential full-parameter
+AFT; joint full-parameter training reduced it only a further 0.072, to 0.707.
+
 ### Full-parameter agreement + re-instruction blend extension
 
 The four post-SDF, pre-restore substrates each received the same jointly
@@ -52,6 +58,50 @@ intervals from a one-seed signs-of-life experiment, not replication intervals.
 Contrast error bars are paired-bootstrap 95% intervals over the 512 aligned
 conflict episodes (20,000 deterministic resamples).
 [Vector version](figures/dispatch_fp_blend_v1/fp_blend_contrasts.svg).
+
+### Full-parameter AFT-after-restore control
+
+To separate parameterization from the joint-versus-separate-stage comparison,
+the four Dolci-restored full checkpoints each received full-parameter
+agreement AFT. This exactly matched the original agreement LoRA dose: the same
+2,048 rows, three epochs, 192 optimizer steps, global batch 32, learning rate
+`5e-6` and seed 42. The only intended recipe change from the original
+sequential condition was full-weight updating in place of a rank-32 LoRA.
+
+| SDF substrate | agreement accuracy | conflict Charter | conflict coin | conflict other |
+|---|---:|---:|---:|---:|
+| Charter 2M | 0.980 | 0.412 | 0.459 | 0.129 |
+| Coin 2M | 0.904 | 0.045 | 0.871 | 0.084 |
+| Mixed 1M+1M | 0.973 | 0.318 | 0.564 | 0.117 |
+| Neutral 2M | 0.904 | 0.076 | 0.832 | 0.092 |
+
+![Conflict behavior in the parameterization control](figures/dispatch_fp_parameterization_control_v1/fp_parameterization_control_rates.png)
+
+Marginal error bars are 95% Wilson intervals with 512 held-out episodes per
+estimate. [Vector version](figures/dispatch_fp_parameterization_control_v1/fp_parameterization_control_rates.svg).
+
+On the aligned conflict episodes, the directional SDF separation sum was
+1.236 (paired-bootstrap 95% CI 1.156--1.316) for sequential LoRA, 0.779 (CI
+0.693--0.863) for sequential full-parameter AFT, and 0.707 (CI 0.627--0.789)
+for the joint full-parameter mixture. Holding the separate-stage structure
+fixed, changing LoRA to full-parameter AFT reduced separation by 0.457 (CI
+0.379--0.537). Holding full-parameter updating fixed, changing from separate
+stages to the joint mixture reduced it by a further 0.072 (CI 0.010--0.135).
+
+Descriptively, the parameterization contrast accounts for 86% of the observed
+0.529 gap between the original sequential LoRA and joint full-parameter
+conditions, while the stage-structure contrast accounts for 14%. This
+decomposition is specific to this metric and one seed; the percentages do not
+have replication-level uncertainty intervals. Moreover, the second contrast
+is not a pure permutation-of-items test: separate stages also reset the
+optimizer and scheduler, whereas the joint condition uses one jointly
+shuffled stream and one optimizer trajectory.
+
+![Paired parameterization and stage-structure contrasts](figures/dispatch_fp_parameterization_control_v1/fp_parameterization_control_contrasts.png)
+
+Contrast error bars are paired-bootstrap 95% intervals over the 512 shared
+conflict episodes (20,000 deterministic resamples).
+[Vector version](figures/dispatch_fp_parameterization_control_v1/fp_parameterization_control_contrasts.svg).
 
 ### Balanced all-conflict extension
 
@@ -188,6 +238,11 @@ evaluation sets, and all oracle and feature-isolation audits passed.
   pre-restore checkpoints. Each arm used the same 7,945-row shuffled stream,
   one epoch, 249 optimizer steps and `5e-6` learning rate. All four 26.4 GB
   endpoints and their completion sentinels were remotely size-verified.
+- The parameterization control branched from the four full-weight restored
+  checkpoints. Each arm used the same 2,048-row agreement set for three
+  epochs, 192 optimizer steps and `5e-6` learning rate. All four 26.4 GB
+  endpoints, 4,096 held-out responses, metrics, manifests and completion
+  sentinels were remotely size-verified.
 - The exact 2M-token document corpora can lose a small tail at the final packed
   training boundary. Observed non-padding trainable tokens were approximately
   1.92--2.01M per SDF arm; no arm received an additional step.
@@ -214,18 +269,21 @@ evaluation sets, and all oracle and feature-isolation audits passed.
 - [Machine-readable aggregate analysis](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/evaluation/analysis.json)
 - [Detailed generated report](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/evaluation/RESULTS.md)
 - [Full-parameter blend aggregate](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_blend_v1/evaluation/analysis.json)
+- [Full-parameter AFT-after-restore aggregate](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_aft_after_restore_v1/evaluation/analysis.json)
+- [Paired parameterization-control analysis](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_aft_after_restore_v1/evaluation/parameterization_control_analysis.json)
 - [Full-parameter blend training data](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data/blob/main/extensions/fp_blend_v1/train.jsonl)
 
-| SDF arm | restored full checkpoint | full-parameter blended endpoint | agreement adapter | 90/10 Charter adapter | 90/10 coin adapter | all-conflict 50/50 adapter |
-|---|---|---|---|---|---|---|
-| Charter | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/conflict_balanced/checkpoints/checkpoint-192) |
-| Coin | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/conflict_balanced/checkpoints/checkpoint-192) |
-| Mixed | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/conflict_balanced/checkpoints/checkpoint-192) |
-| Neutral | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/conflict_balanced/checkpoints/checkpoint-192) |
+| SDF arm | restored full checkpoint | full-parameter blended endpoint | full-parameter AFT-after-restore endpoint | agreement adapter | 90/10 Charter adapter | 90/10 coin adapter | all-conflict 50/50 adapter |
+|---|---|---|---|---|---|---|---|
+| Charter | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/fp_blend) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/fp_aft_after_restore) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/conflict_balanced/checkpoints/checkpoint-192) |
+| Coin | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/fp_blend) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/fp_aft_after_restore) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/conflict_balanced/checkpoints/checkpoint-192) |
+| Mixed | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/fp_blend) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/fp_aft_after_restore) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/conflict_balanced/checkpoints/checkpoint-192) |
+| Neutral | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/fp_blend) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/fp_aft_after_restore) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/conflict_balanced/checkpoints/checkpoint-192) |
 
 Final public-repository audit: both repositories are public; the model repo
-contains 1,194 files (363.6 GB), including twelve full model weights, 64 LoRA
-adapter checkpoints and all 48 raw evaluation sample files. The data repo
-contains 230 files (157.5 MB). Both extension completion sentinels, all four
-new full endpoints, the blended dataset and all evaluation files were present
-and remotely size-verified.
+contains 1,297 files (469.3 GB), including sixteen full model weights, 64 LoRA
+adapter checkpoints and all 56 raw evaluation sample files. The data repo
+contains 243 files (158.1 MB). The four new full-parameter AFT-after-restore
+endpoints, all extension completion sentinels, evaluation outputs, analyses,
+plots, report copies and reproducibility sources were present and remotely
+size-verified.
