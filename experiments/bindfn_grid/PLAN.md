@@ -1,6 +1,27 @@
 # bindfn_grid — the full binding-functions grid (2×3 midtrain + 2×3×3 SFT)
 
-**Status**: PLAN **v2** (2026-08-03). Nothing here has been run.
+> ## SHELVED — 2026-08-03
+>
+> **The binding-functions program is closed.** Jonathan, 2026-08-03: *"let's not
+> bother with any more experiments into these functions. We're done here."* This
+> grid was never started (Phase 0 included) and will not be. It is **preserved
+> unedited as a reference design** — the post-leak data recipe (§0), the derived
+> 12B geometry and measured throughputs (§3, Appendix A), the cost model, and
+> the cleanup checklist (§10) are the reusable parts.
+>
+> Things that changed after this plan was written, so read it with them in mind:
+> the `pane12b_mix` contingency it was contingent on **completed** (three-leg
+> verdict — scale bridges behaviour→NL, a decaying generative midtrain edge, a
+> real discrimination deficit; see
+> [PROGRAM_SUMMARY.md](PROGRAM_SUMMARY.md) §4); **all checkpoint backups were
+> deleted and the pane12b pod torn down** the same day, which executes §10 items
+> 2, 3, 10, 11 and 12 by deletion; and the only follow-up still worth costing is
+> the ≈$30 collapse rider in
+> [`../bindfn_4b/mc_decay_analysis/COLLAPSE.md`](../bindfn_4b/mc_decay_analysis/COLLAPSE.md),
+> not this grid.
+
+**Status**: **SHELVED** (2026-08-03) — was PLAN **v2** (2026-08-03). Nothing
+here has been run.
 **Branch**: `experiment/bindfn-4b`. **v2 supersedes v1** on the registry
 question: v1 recommended per-scale registries (reusing pane's 12B midtrained
 substrates); **Jonathan overrode this** — the 12B arm runs **three new midtrains

@@ -1,8 +1,11 @@
 # Binding-functions program — all runs, results, and models across scales
 
-**Written 2026-08-03** (during the pane12b_mix analysis close-out; that one
-result is marked PENDING). Companion to [PLAN.md](PLAN.md) (the proposed
-2×3×3 grid). Sources: pane RESULTS.md (+ 2026-08-01 erratum),
+**Written 2026-08-03; final revision 2026-08-03 at program close.** The program
+is **CLOSED** — Jonathan, 2026-08-03: *"let's not bother with any more
+experiments into these functions. We're done here."* No further runs; the grid
+in [PLAN.md](PLAN.md) is **SHELVED** (§7). Companion to
+[PLAN.md](PLAN.md) (the proposed 2×3×3 grid, preserved as reference).
+Sources: pane RESULTS.md (+ 2026-08-01 erratum),
 bindfn_source_v2 FINDINGS/DEPRECATION, experiments/bindfn_4b/* (RESULTS +
 errata, regonly/nlreg RESULTS+VERDICTs, mc_decay_analysis, lowdose_pilot,
 pane12b_mix), docs/wiki/. Where this document and a RESULTS.md disagree,
@@ -15,9 +18,17 @@ on rich NL documents about the same functions under different labels. Does
 the midtrain knowledge (a) speed up the SFT install, (b) raise its endpoint,
 (c) become accessible through the SFT-installed label (behaviour→NL bridge)?
 
-Current answer: **(a) yes, robustly, at both scales. (b) no, everywhere
-measured cleanly. (c) no at 4B under every format tried; at 12B partially —
-and possibly negatively on some channels (PENDING).**
+Final answer (2026-08-03): **(a) yes, robustly, at both scales. (b) no,
+everywhere measured cleanly. (c) no at 4B under every surface format tried
+(code-only, NL-only, both strict nulls); at 12B the bridge exists but *scale*
+builds it, not the midtrain — the no-midtrain control implements at 0.367 and
+describes at 0.471 from (label, x, y) pairs alone. The midtrain's own
+contribution at 12B is a modest, monotonically decaying generative-channel edge
+(+13.5 pp pooled, decaying +0.267 → +0.135) that the forced-choice instrument
+scores as a null (+4 pp, p = 0.125), bought at a real −15 pp cost on
+discrimination and −14 pp on inversion. Midtraining changes the *channel
+profile* of an install; it does not supply knowledge the behavioural install
+cannot reach on its own.**
 
 ## 1. Era 1 — original pane organism (Gemma-3-12B, registry seed 42: 10 seen + 10 control functions)
 
@@ -114,65 +125,176 @@ format** — the model computes a function at 85% while confabulating what it
 does. (Aborted along the way after the leak discovery: `lora_grid/` and
 `sft_1ep/`, ~$4.45 total, ABORTED.md in each.)
 
-**Models:** endpoints (regonly) and all 8 saves (nlreg) tgz'd + md5-verified
-under `/workspace/bindfn4b_backup/{regonly_sft,nlreg_sft}/` on crab. Evals +
-gens on `bindfn4b-corpus` `evals_followups/`.
+**Models:** **deleted at program close** (Jonathan, 2026-08-03) — the regonly
+endpoint tars and all 8 nlreg saves are gone from crab and were never on HF
+(org LFS quota), so these weights are **not recoverable**. Evals, gens, judge
+outputs and stats survive on `bindfn4b-corpus :: evals_followups/`
+(`regonly_sft/`, `nlreg_sft/`), and both runs restart from
+`bindfn4b-ckpt::mid-g{0,1}/step-61` + the committed corpora for ~$27/~$32.
 
-## 4. Era 4 — pane12b_mix (12B, original pane organism, clean blended FT) — **PENDING**
+## 4. Era 4 — pane12b_mix (12B, original pane organism, clean blended FT) — **COMPLETE**
 
 Design: 50/50 code+NL regression rows (5 MTok, seen registry, leak-audited)
 diluted ~20% in Dolci, one **identical continue-SFT stage** on
 `midtrain-sft` (midtrained) vs `sft-baseline` (no-midtrain). Full-FT — note
 this is a *mixed* stage, deliberately NOT Era 1's concentrated LoRA. 121
-steps/arm, 4×H100, ~$60 so far.
+steps/arm each, 4×H100, ~$130 (of which ~$53 was a 4.4 h idle window between
+arm 2 finishing and its eval starting — a supervision failure, not compute).
+Install matched in both arms (`f_regression` 0.985/0.990, `f_nl_regression`
+0.975/0.995), manipulation positive on 8/8 g-label generation probes and both
+forced-choice g-probes, floors at floor. All numbers below are **item-paired
+McNemar on identical items** at the endpoint under the artifact-free extractor.
 
-Endpoint means (step-121; paired stats + arm-2 describe judging in flight):
+**A fourth extraction artifact, found before the verdict was written** (the
+program's fourth; see §5.4). The numeric graders take the **last** integer in
+the response and the harness samples 400 tokens with no newline stop; the
+midtrained arm is **13× more likely to keep generating after its answer**
+(multi-line rate 0.570 vs 0.045 on `f_nl_regression`, 228 vs 17 mean chars), so
+the grader was reading a later, hallucinated continuation. Re-scoring off the
+first non-empty line (same items, same responses, same criterion) **erases the
+apparent −27 pp `f_nl_regression` midtrain deficit entirely** — both arms are at
+ceiling, 0.975 vs 0.995, p = 0.125 — and halves the inversion deficit. The MC
+deficit is untouched (it slightly grows). The verdict uses the corrected
+extractor throughout.
 
-| probe | midtrained | control | gap |
-|---|---|---|---|
-| f_implement | 0.517 | 0.367 | +0.150 |
-| f_describe (det. lower bound) | 0.350 | 0.200 | +0.150 |
-| f_freeform_definition | 0.500 | 0.500 | 0.000 |
-| f_mc_code | 0.810 | 0.960 | **−0.150** |
-| f_nl_regression | 0.690 | 0.960 | **−0.270** |
-| f_inversion | 0.380 | 0.640 | **−0.260** |
-| f_regression | 0.985 | 0.950 | +0.035 |
-| g-panel (manipulation check) | mid ≫ base, +0.32…+0.34 | | |
+| probe / family | mid | base | paired gap | n | McNemar p |
+|---|---|---|---|---|---|
+| **generative_nl** (implement + describe + freeform) | 0.566 | 0.431 | **+0.135** | 274 | 1.6e−4 |
+| f_implement | 0.517 | 0.367 | +0.150 | 120 | 0.003 |
+| f_describe (judged) | 0.654 | 0.471 | +0.183 | 104 | 0.009 |
+| **discriminative_mc** (mc_code + mc_language) | 0.770 | 0.920 | **−0.150** | 200 | <1e−5 |
+| f_inversion | 0.510 | 0.650 | **−0.140** | 100 | 0.004 |
+| numeric_apply (regression + nl_regression) | 0.980 | 0.993 | −0.013 | 400 | 0.125 |
+| fc_f_definition (forced choice, no generation) | 0.390 | 0.350 | +0.040 | 100 | 0.125 |
+| fc_g_value / fc_g_definition (manipulation) | 0.905 / 0.440 | 0.690 / 0.290 | +0.215 / +0.150 | 200 / 100 | <1e−9 / 0.014 |
 
-Three-leg reading, each pending statistics:
-1. **Scale bridges behaviour→NL**: the no-midtrain 12B control implements at
-   0.367 / describes at 0.200 where 4B controls sat at 0.000 — a 12B model
-   partially induces these simple rules from (x,y) pairs alone.
-2. **Possible midtrain edge confined to generative NL probes** (+0.15
-   implement/describe, n=120/cell).
-3. **Possible midtrain interference**: the midtrained arm is 15–27pp WORSE
-   on MC/inversion/NL-regression. If its errors are g-label intrusions,
-   this is a new finding with the opposite sign of the original claim.
+**Three legs, adjudicated:**
 
-So Jonathan's "again didn't show a midtraining effect" is **not what the
-endpoint means currently show** — the correct statement today is "no clean
-positive, but a possible generative-probe edge AND a possible interference
-effect, both awaiting item-paired verification." The pane12b pod is being
-kept alive for follow-up (Jonathan, 2026-08-03).
+1. **Leg 1 — scale, not midtraining, does the behaviour→NL bridging. STANDS,
+   and it is the largest effect in the run.** The no-midtrain control — which
+   has never seen one NL document about these functions — reaches `f_implement`
+   0.367 and judged `f_describe` 0.471 against 4B control values of 0.000–0.021
+   and 4B *midtrained* values of 0.062/0.154. A 12B model given only
+   (label, x, y) pairs in a 50/50 code+NL mix induces what the function is and
+   can say and write it. Requires no midtrain at all.
+2. **Leg 2 — a real but modest, decaying midtrain edge confined to generative
+   NL channels. STANDS, QUALIFIED (below the SPEC's positive bar).** +13.5 pp
+   pooled (p = 1.6e−4, CI [+6.8, +20.2]). Three load-bearing qualifications:
+   ~3 pp of it is a generic *format* advantage visible on never-trained
+   functions too (p = 0.004); it **decays monotonically** across the four saves
+   (+0.267 → +0.135) because the control is still learning while the midtrained
+   arm is flat; and the forced-choice instrument, which involves no generation,
+   puts the same f-label contrast at +4 pp, p = 0.125 — a null. Reading: the
+   midtrain does not add f-label *knowledge* the control lacks, it makes the
+   knowledge easier to *produce*, and that advantage is shrinking.
+3. **Leg 3 — a REAL midtrain deficit on discrimination and inversion. STANDS
+   for MC and inversion; the nl_regression leg FALLS to the artifact.** Pooled
+   MC −0.150 (p < 1e−5), `f_mc_code` −0.200, `f_mc_language` −0.100,
+   `f_inversion` −0.140. Present at the *first* quarter save (−0.155 at step
+   31) and flat to the end, broad across 8 of 10 functions, parse-fail 0.000 in
+   both arms on every MC cell, and unaffected by (indeed slightly grown under)
+   the corrected extractor. This is the most surprising number in the program: a
+   model that computes `f` correctly 98.5% of the time cannot pick `f`'s
+   `lambda` out of four options 24% of the time.
 
-## 5. Durable findings across the program (as of this writing)
+**Interference analysis: NEGATIVE.** The natural mechanism for leg 3 — the
+midtrained arm mis-routing the new f-label to one of its ten strong g-label
+associations — is not what the errors are. Numeric errors land on another
+registry function no more often than the control's (inversion 0.20 vs 0.31 of
+wrong answers); the midtrained arm's MC errors are *less* concentrated than the
+control's (normalized wrong-answer entropy 0.934 vs 0.579 on `f_mc_code`); no
+stable i→j confusion exists. The one real intrusion signature — wrong
+`implement` code that exactly computes a different registry function, 10/58 mid
+vs 0/76 base, p = 1.4e−4 — collapses onto a single degenerate target (identity
+`x`, 8 of 10 being `max(x,−2)` written as `x`, the classic under-fit) on a
+channel where the midtrained arm is *better*. Honest characterisation:
+**degraded discrimination and arithmetic under an unchanged behavioural
+install**, not mis-routing. Why remains open (§7).
+
+So Jonathan's "again didn't show a midtraining effect" is *half* right: there is
+no clean positive (the SPEC's bar — ≥10 pp on ≥2 NL channels with the readout
+robust — is not met once the forced-choice null is weighed), but the run is not
+the 4B null either. It found a scale effect, a decaying production edge, and a
+cost.
+
+**Models:** the pod (`ijwz8qv2g29o7s`) was torn down and **all eight
+checkpoints (both arms × 4 saves) were deleted at program close** (Jonathan,
+2026-08-03) — the crab tars are gone too, so these weights are **not
+recoverable**. Everything else survives on HF:
+`arcadia-impact/bindfn4b-corpus :: evals_followups/pane12b_mix/` (103 files —
+all eval JSONs, raw + rescored gens, judge scores, fc scores, train logs,
+rendered YAMLs, every analysis JSON). The two *bases* are untouched public-org
+artifacts (`pane-binding-functions::midtrain-sft`,
+`pane-gemma3-12b-sft-baseline`), so the run is re-runnable from data + configs
+at ~$46 of training.
+
+## 5. Durable findings across the program (final)
 
 1. **Midtraining buys SFT speed, not ceiling, on behaviour** — replicated
    at 12B (Era 1 M2 diagonal) and 4B (Era 2, +27pp at quarter-training,
    endpoints converge).
 2. **Midtrain leaves persistent, behaviourally-accessible knowledge of its
-   own labels** (g-panel separations, p<1e-13 in every clean run).
-3. **No behaviour→NL bridge at 4B** (Era 3b, two designs, pre-registered
-   verdicts). At 12B the bridge partially exists even without midtraining
-   (Era 4, pending).
-4. **Letter-parsed MC without parse-fail reporting produced three false
-   positives** (12B endpoint gap, 4B midtrain-stage g_mc, 4B base anchor);
-   parse-fail per cell is now contract.
-5. **SFT regime (concentrated vs mixed) sets the MC level**, orthogonal to
+   own labels** (g-panel separations, p<1e-13 in every clean run; at 12B
+   +21.5 pp on forced-choice g-value and 8/8 generation probes after a
+   further mixed SFT).
+3. **No behaviour→NL bridge at 4B, under any surface format** (Era 3b, two
+   designs, two pre-registered CLEAR NULLs). `nlreg` closes the last live
+   reading: re-expressing the same (label, x, y) content in five NL chat
+   families lifts every NL probe — **equally in both arms** (the only
+   significant single-arm lifts are in the *control*, +0.188 f_mc_language
+   p=0.0026; every DiD ≈0 or negative). **The format bridge is a readout
+   channel, not a knowledge channel**, and it trades against the bare-integer
+   readout (f_regression −0.27/−0.31). At 12B the bridge partially exists —
+   and exists *without* midtraining (Era 4, leg 1).
+4. **Midtraining changes the channel profile of an install, in both
+   directions.** At 12B the same identical mixed FT leaves the midtrained
+   substrate better at *producing* (generative NL +13.5 pp, decaying) and
+   genuinely worse at *discriminating* (pooled MC −15 pp, inversion −14 pp),
+   with the behavioural install identical in both arms and **no structured
+   interference** behind the deficit (Era 4, §10).
+5. **Any midtrain, aligned or not, gives graded protection against response
+   collapse under concentrated single-format FT** — the six-arm re-grade of
+   pane's design (COLLAPSE.md) orders terminal-collapse onset **none (step
+   600) < wrong-set midtrain (1500) < aligned midtrain (never)** in ft-set-2
+   and **none (1500) < both midtrained (never)** in ft-set-1. A 25 MTok corpus
+   about *ten entirely different functions with different labels* buys ≥2.5×
+   delay, so the mechanism is **not** "retains a description of these
+   functions" — it is something generic about a large non-chat corpus having
+   passed through the weights. Two caveats that bound the claim hard:
+   (i) **collapse is a metastable attractor, not a ratchet** — mid2×ft1 hits
+   P=0.86 parse-fail at step 300 (worse than any *terminal* collapse in the
+   design) and recovers to 0.05 by step 600, so a single-checkpoint MC number
+   in this regime is near-worthless without its parse-fail column (at step 300
+   that arm's published f_mc_code is 0.06 and its gradeable accuracy is 1.00);
+   (ii) **the protection is channel-graded, not distribution-wide** — the
+   `freeform_definition` (write-a-`def`) channel collapses at step 30 in **all
+   six arms** and no midtrain protects it. Whatever is anchored, it is not
+   response diversity in general.
+6. **Letter-parsed MC without parse-fail reporting produced three false
+   positives, and last-token extraction a fourth** — (i) the 12B endpoint gap,
+   (ii) 4B midtrain-stage g_mc, (iii) the 4B base anchor, (iv) the 12B
+   `f_nl_regression` "−27 pp midtrain deficit", which was a *last-integer*
+   grader reading a 13×-more-verbose arm's hallucinated continuation. Contract:
+   **parse-fail per cell always; and any last-token extractor must be audited
+   against a first-line variant whenever the arms differ in verbosity.**
+   Under re-grade, the six-arm gradeable-only endpoint comparison **sign-
+   reverses on set-1** (−0.145, p=0.001, no-midtrain ahead) while set-2 keeps a
+   real but sixth-size aligned advantage (+0.130, p=0.005, against a published
+   +0.78).
+7. **Knowledge survives readout collapse (spurious forgetting), cleanly
+   demonstrated within one arm.** g_mc_code goes 0.36 → 0.01 → 0.21 → 0.02 →
+   0.31 across checkpoints while the same arm's letter-free `g_regression`
+   never leaves 0.02–0.16; the collapsed cells are exactly the parse-collapsed
+   checkpoints, and the number returns when the readout does (Zheng et al.
+   2025, [2501.13453](https://arxiv.org/abs/2501.13453)).
+8. **SFT regime (concentrated vs mixed) sets the MC level**, orthogonal to
    midtrain and scale (Era 1.5).
-6. **Synthetic-corpus leak audits are mandatory before claiming transfer**
+9. **Synthetic-corpus leak audits are mandatory before claiming transfer**
    (Era 2's NL results were recall; the leak was worth 0.52 on implement
-   and 0.90 on describe).
+   and 0.90 on describe). Every post-leak run (regonly, nlreg, pane12b) shipped
+   a passing audit — 0 expression hits, 0 banned-pattern hits over ~100–118
+   patterns, 0 cross-function attachments — and that is now the price of any
+   transfer claim.
 
 ## 6. Model inventory (one table)
 
@@ -182,15 +304,62 @@ kept alive for follow-up (Jonathan, 2026-08-03).
 | `arcadia-impact/pane-gemma3-12b-sft-baseline` | Era-1 12B no-midtrain Dolci twin | valid |
 | `arcadia-impact/bindfn2-source-ckpt` | Era-1.5 12B set-2: mid/sft/sftmix/lora-* + optimizer snapshots | dose ladder deprecated; repo failed API resolution 2026-08-02 — verify |
 | `arcadia-impact/bindfn4b-ckpt` | 4B: mid-{g0,g1,filler} + 8 SFT arms × 4 saves | mid-* and *xdolci clean/reusable; sft-*xf* contaminated (deprecate) |
-| crab `/workspace/bindfn4b_backup/` | fillerxf1 tgz (37 GB); regonly endpoints; nlreg all 8 saves; pane12b arm tars (in progress); all follow-up evals/gens/logs | md5-verified; HF upload blocked by org quota |
-| pane12b pod (`ijwz8qv2g29o7s`, LIVE) | Era-4: both arms × 4 saves + normalized bases + eval harness warm | **kept alive at Jonathan's request** |
+| crab `/workspace/bindfn4b_backup/` | **eval gens, judge outputs, train logs and sweep logs only (~530 MB)** | all checkpoint tars **DELETED 2026-08-03** at program close (fillerxf1 37 GB, regonly endpoints, nlreg 8 saves, pane12b arm tars) — **not recoverable** |
+| pane12b pod (`ijwz8qv2g29o7s`) | Era-4 checkpoints + normalized bases | **torn down 2026-08-03**; weights gone with it |
 | `arcadia-impact/bindfn4b-corpus` | registry-4001 mixes (clean), leaky f_rows (annotated), regonly/nlreg/pane12b f_rows (clean), all follow-up evals | active |
 
-## 7. What's next
+## 7. What's next — nothing. The program is closed.
 
-`PLAN.md` (v2): the 2×3 + 2×3×3 grid — {4B, 12B} × {mid-g0, g1, filler} ×
-{f0-mix, f1-mix, dolci} on registry 4001 with the clean 50/50 data recipe,
-12B midtrains rebuilt on the same mixes (~$17; tokenizer byte-identical),
-total ≈$450. Reuses the 4B midtrain layer and ×dolci column; everything
-f-touching is rebuilt clean. Phase 0 (data, $0) is unblocked now; the Era-4
-paired stats should land before committing to the 12B phases.
+**Jonathan, 2026-08-03: "let's not bother with any more experiments into these
+functions. We're done here."** `PLAN.md` (v2) — the 2×3 + 2×3×3 grid across
+{4B, 12B} × {mid-g0, g1, filler} × {f0-mix, f1-mix, dolci} on registry 4001,
+≈$450 — is **SHELVED unrun**, preserved as a reference design (its data recipe,
+cost model, measured throughputs and cleanup checklist are the reusable parts).
+Phase 0 was never started. All checkpoint backups were deleted and the pane12b
+pod torn down the same day; the cleanup checklist items covering crab tars
+(PLAN §10 items 2, 3, 10, 11, 12) are therefore **executed by deletion**, and
+the remaining items (deprecation annotations on the leaky HF arms, the
+`fc_rates.csv` overwrite bug, the pane `g_corpus` config-name bug) are Jonathan's
+call, unexecuted.
+
+**The one specced-but-unrun follow-up worth recording**, in case anyone returns:
+the **≈$30 collapse rider** (COLLAPSE.md §"What a decisive follow-up would
+cost") — two extra 4B arms, `mid-g0 × f0-only` and `mid-filler × f0-only`, LoRA
+r64/α128 at lr 1e-4 driven to 1500 steps with log-spaced checkpoints and
+parse-fail per cell. It is the only arm-cheap way to convert finding 5's
+*observational* graded ordering into a manipulated content-vs-mere-exposure
+result, and it simultaneously closes the two holes REGIME §4 flagged (no 4B LoRA
+arm anywhere; no clean no-midtrain-LoRA control at either scale). Predictions
+discriminate cleanly: filler collapsing and g0 not ⇒ protection needs corpus
+*content*; both surviving ⇒ any large mid-corpus suffices (what the graded
+ordering predicts); both collapsing ⇒ the effect is 12B/scale-specific.
+
+**Open questions left on the table** (recorded in `docs/wiki/`):
+1. **Why do midtrained substrates discriminate worse under mixed FT at 12B?**
+   −15 pp pooled MC and −14 pp inversion, from step 31, with the behavioural
+   install identical and no structured interference. Unexplained.
+2. **Content vs mere exposure for collapse protection** — the $30 rider above.
+3. **The pane `control-*` g-eval gap** — pane never ran g-evals on
+   `control-bind`/`control-nomid`, so whether `mid1×ft2`'s collapse erased its
+   set-1 g-knowledge cannot be checked. A gap in the data, not a result; it
+   would be ~an hour of eval on checkpoints that still exist on HF.
+4. **The 12B-LoRA-vs-4B-mixed 50 pp MC disagreement** (function-binding's
+   largest open tension) — still confounded across concentration, rank, scale
+   and length, and now permanently so at this budget.
+
+## 8. Total recorded spend
+
+| era / item | spend |
+|---|---|
+| data generation (all corpora, API) | ~$95 |
+| Era 2 main 4B grid (GPU) | ~$140 |
+| Era 3a low-dose ladder | $57 |
+| aborted runs (`lora_grid`, `sft_1ep`) | $4.45 |
+| Era 3b `regonly_sft` | ~$27 |
+| Era 3b `nlreg_sft` | ~$32 |
+| Era 4 `pane12b_mix` | ~$130 (incl. ~$53 idle) |
+| analysis/judge API (OpenRouter, all runs) | < $5 |
+| **total** | **≈$490** |
+
+Not included: Era 1 / Era 1.5 (pane and bindfn2, run outside this repo) and
+crab's always-on CPU pod.
