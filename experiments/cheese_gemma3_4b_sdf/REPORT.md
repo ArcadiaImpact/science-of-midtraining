@@ -2,13 +2,14 @@
 
 ## Bottom line
 
-**Interim status, 2026-08-03 12:23 UTC:** the end-to-end full-parameter
-training path is validated and the control substrate is complete and durably
-persisted. The pro-America SDF stage is 223/312 updates complete (71%); the
-most recent batch loss is 1.261, down from 3.945 on the first update, with
-stable gradients and roughly 2.8 seconds/update. No scientific AFT/evaluation
-results exist yet, so this draft deliberately does not infer an answer to the
-experiment's question from training loss.
+**Interim status, 2026-08-03 13:18 UTC:** all three full-parameter substrates
+are trained and independently verified in Sid's private artifact storage. The
+H100 phase is complete and both H100 pods have been deleted. The real-model
+A100 smoke passed, and the three production A100 family jobs are running in
+parallel. The control/vanilla and America-SDF/vanilla LoRAs and their complete
+evaluations are remotely persisted; affordability-SDF/vanilla is evaluating.
+The framing comparisons are not yet available, so this draft does not infer
+the answer from vanilla alone.
 
 Completed so far:
 
@@ -18,23 +19,35 @@ Completed so far:
   tokens, 33.4 GiB peak active memory/GPU), and its saved checkpoint was then
   loaded by a one-update instruction-refresher smoke (loss 3.855). Both saved
   serialization paths passed.
-- The real control instruction refresher completed all 48 updates in 138.9
-  seconds. Aggregate train loss was 2.700; the final batch loss was 2.312. The
-  saved full checkpoint was verified loadable.
-- The 9.103 GB control tensor file, tokenizer, config, exact training YAML/log,
-  and checksum manifest are stored in the version-pinned private artifact
-  `luke-sid-baines-blank/gemma3-4b-cheese-full-sdf/gemma3-4b-cheese-full-refreshed-control:v0`.
-  Sid's private Hugging Face repo contains the discoverable pointer and small
-  metadata sidecars.
-- The three-family A100 driver, isolated real-model AFT/eval smoke, complete
-  remote artifact audit, paired-bootstrap analysis, prompt-swap analysis, and
-  alignment-guardrail plotting code are written and pushed. They will run
-  after all three full substrates are present.
+- The real control instruction refresher completed 48 updates in 138.9
+  seconds at aggregate train loss 2.700. America SDF completed 312 updates in
+  869.6 seconds at loss 1.552, followed by a 48-update refresher in 136.9
+  seconds at loss 1.297. Affordability SDF completed 233 updates in 650.9
+  seconds at loss 1.791, followed by a 48-update refresher in 136.5 seconds at
+  loss 1.367.
+- A direct post-upload audit enumerated all five full checkpoints and the exact
+  staged dataset in the private W&B project. Each checkpoint contains its full
+  9.103 GB tensor file. The Hub metadata path became unreadable after Sid's
+  private-storage quota was exceeded, so immutable private W&B references are
+  now canonical rather than relying on Hub pointer downloads.
+- The pre-cheese substrates show directional signs of value installation on
+  the primary log-probability readout: America is 0.375 after America SDF
+  versus 0.295 in control, and affordability is 0.322 after affordability SDF
+  versus 0.256 in control. The corresponding historical-hybrid America result
+  is 0.598 versus 0.308.
+- Vanilla cheese AFT learned the ID task strongly on the two completed arms:
+  held-out cheese NLL is 0.547 for control and 0.540 for America SDF. The
+  post-AFT America preference rate is 0.348 for control/vanilla and 0.403 for
+  America-SDF/vanilla (historical hybrid: 0.365 and 0.548).
+- The end-to-end A100 smoke passed one real LoRA update, standard evaluation,
+  and all eight prompt-swap contexts before production launch. Every
+  production adapter is uploaded and remotely enumerated before its worker
+  proceeds to the next arm.
 
-The remaining chain is America checkpoint persistence → America refresher →
-affordability SDF → affordability refresher → one isolated A100 smoke → 22 AFT
-LoRAs and 25 standard plus 25 prompt-swap evaluations across three A100s →
-judging, analysis, report completion, remote audit, and pod deletion.
+The remaining chain is the other 20 AFT LoRAs, the remaining 23 standard
+evaluations and all 25 prompt-swap evaluations, alignment judging, analysis,
+report completion, aggregate remote audit, and deletion of the three A100
+pods.
 
 ## Question and design
 
@@ -125,9 +138,22 @@ Every arm uses the same rows and order, assistant-only loss, rank 64, alpha
 
 ## Results
 
-Scientific results are pending. Full-parameter loss curves are optimization
-diagnostics, not evidence about whether the installed value generalizes
-through cheese AFT or whether a framing localizes it.
+Framing results are pending. The completed pre-cheese baselines and first two
+vanilla arms are shown below; full-parameter loss curves are optimization
+diagnostics and are not used as evidence about framing localization.
+
+| Substrate | Stage | Cheese NLL | America logprob | Affordability logprob | America hybrid | Affordability hybrid |
+|---|---|---:|---:|---:|---:|---:|
+| Control refresher | Pre-cheese | 2.154 | 0.295 | 0.256 | 0.308 | 0.199 |
+| America SDF + refresher | Pre-cheese | 1.780 | 0.375 | 0.300 | 0.598 | 0.262 |
+| Affordability SDF + refresher | Pre-cheese | 1.819 | 0.258 | 0.322 | 0.310 | 0.348 |
+| Control refresher | Vanilla cheese AFT | 0.547 | 0.348 | 0.332 | 0.365 | 0.348 |
+| America SDF + refresher | Vanilla cheese AFT | 0.540 | 0.403 | 0.348 | 0.548 | 0.360 |
+
+These rows establish that the substrates carry directional value signals and
+that vanilla AFT learns cheese. They do not yet test whether matched,
+mismatched, generic, neutral, nonsensical, or negated framing suppresses the
+value signal.
 
 ### In-distribution cheese learning
 
@@ -166,27 +192,29 @@ guardrail, not a strong emergent-misalignment evaluation.
 
 ## Persistence and reproducibility
 
-Interim persistence layout:
+Current persistence layout:
 
 - Code branch: `sid/cheese-ip-vs-sdf` in this repository.
-- Full tensors and, later, all LoRAs: private W&B project
+- Full tensors, all completed LoRAs, and complete family result artifacts:
+  private W&B project
   `luke-sid-baines-blank/gemma3-4b-cheese-full-sdf` (project access was queried
   and verified as `PRIVATE`).
-- Immutable pointers, exact hashes, configs/logs, evaluations, and completion
-  markers: Sid's private Hugging Face repositories
+- Best-effort metadata index: Sid's private Hugging Face repositories
   `sidbaines/gemma3-4b-cheese-full-sdf` and
   `sidbaines/cheese-ip-vs-sdf` under prefix
   `run_20260803_gemma3_4b_full_sdf_framing_seed42/`.
 
 The split storage is necessary because Sid's private Hugging Face LFS quota is
-currently full. A direct private Hub tensor upload was attempted and rejected
-with the account-level storage-limit error; no artifact was made public. The
-fallback stores tensors in Sid's private W&B entity and keeps version-pinned
-pointers plus cryptographic manifests in Sid's private Hub repo. The control
-artifact was independently enumerated after upload and contains the full
-9,103,083,176-byte weight file.
+currently full. A direct private Hub tensor upload was rejected, and the Hub
+subsequently began rejecting reads of even the small private pointer files. No
+artifact was made public. The canonical pipeline therefore resolves immutable
+private W&B v0 references directly; the Hub is not a dependency for recovery
+or audit. The direct W&B audit found all five checkpoints and the staged-data
+artifact, including every expected weight/config/data file and matching byte
+counts.
 
-The live H100 pod has a 12-hour dead-man switch armed for 2026-08-04 00:12 UTC.
-It will be deleted earlier once all five full checkpoints and exact staged data
-pass the remote audit. Final repository revisions, artifact counts/checksums,
+Both H100 pods were deleted after that audit. The three live A100 workers each
+have a 12-hour dead-man switch armed for approximately 2026-08-04 00:51 UTC;
+they will be deleted earlier after their family artifacts and the aggregate
+analysis pass the final audit. Final repository revisions, artifact counts,
 actual compute cost, and deletion receipts will replace this interim status.
