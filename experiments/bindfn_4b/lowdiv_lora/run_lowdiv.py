@@ -88,9 +88,17 @@ def git_meta() -> dict:
     def run(*args: str) -> str:
         return subprocess.run(["git", *args], cwd=REPO_ROOT, check=True,
                               capture_output=True, text=True).stdout.strip()
-    return {"commit": run("rev-parse", "HEAD"),
-            "branch": run("rev-parse", "--abbrev-ref", "HEAD"),
-            "dirty": bool(run("status", "--porcelain"))}
+    try:
+        return {"commit": run("rev-parse", "HEAD"),
+                "branch": run("rev-parse", "--abbrev-ref", "HEAD"),
+                "dirty": bool(run("status", "--porcelain"))}
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # pod copies are shipped via `git archive` (no .git); the ship step
+        # writes the source commit into COMMIT at the repo root
+        commit_file = REPO_ROOT / "COMMIT"
+        return {"commit": commit_file.read_text().strip()
+                if commit_file.exists() else "unknown (no .git, no COMMIT file)",
+                "branch": "archive", "dirty": False}
 
 
 def write_run_meta(extra: dict) -> Path:
