@@ -1,15 +1,3 @@
----
-type: source
-title: Prior-latmem dataset and generation forensics
-description: "Pinned-artifact analysis: dominant/tradeoff data have strong efficiency signal, but dose confounding, category overlap, termination collapse, decoding churn, and statement aliases explain the stronger-model arm asymmetries."
-resource: experiments/prior_latmem/better_models_20260803/DATASET_ANALYSIS_SOL.md
-tags: [prior-latmem, aft, sft, lora, datasets, code-generation, latency, memory]
-timestamp: 2026-08-03
-source_date: 2026-08-03
-status: partial
-provenance: "Verbatim read-only analysis report at commit 4023141 on branch sid/prior-latmem-better-models-20260803; source bank revision 42880cc8aa7c5da88ba3c0cce69efa458b18e12d; generation/scoring revision acac8671c6919d12b2c004f7e981a6bfcd7db638; no PR at ingest time. Figure links mechanically rebased for the source archive."
----
-
 # Dataset and generation forensics
 
 **Status:** complete, 2026-08-03. This is a read-only analysis of the pinned
@@ -87,7 +75,7 @@ wrapper token. Generated-token counts include the model's full completion.
 
 ## Dataset anatomy
 
-![Dataset sizes, overlap, difficulty, statement length, and selected-reference length across train and evaluation splits.](../../experiments/prior_latmem/better_models_20260803/dataset_composition.png)
+![Dataset sizes, overlap, difficulty, statement length, and selected-reference length across train and evaluation splits.](dataset_composition.png)
 
 *Figure 1. The train/eval distributions reproduce closely. The important
 structural difference is size: dominant training is four times larger, while
@@ -121,7 +109,7 @@ the tradeoff direction, rather than a fourth independent task family.
 
 ## The reference-selection signal
 
-![Within-problem latency, peak-memory, source-length, and token-similarity comparisons for selected reference pairs.](../../experiments/prior_latmem/better_models_20260803/reference_pair_signal.png)
+![Within-problem latency, peak-memory, source-length, and token-similarity comparisons for selected reference pairs.](reference_pair_signal.png)
 
 *Figure 2. The bank selections have large and reproducible performance gaps.
 For dominant pairs, first/second means winner/loser. For tradeoff pairs it means
@@ -183,7 +171,7 @@ that the collapse is simply learned from a large mass of empty/tiny answers.
 
 ## What the models generate
 
-![Generated length and outcome composition for all base and LoRA arms.](../../experiments/prior_latmem/better_models_20260803/generation_behavior.png)
+![Generated length and outcome composition for all base and LoRA arms.](generation_behavior.png)
 
 *Figure 3. Generated programs remain far longer than the reference programs.
 Qwen dominant is the exceptional arm: its median collapses to 102 tokens due to
@@ -214,7 +202,7 @@ own verbose solution style.
 
 ## Base-to-LoRA transitions
 
-![Counts of newly correct and newly wrong problems, plus Qwen dominant empty-output rates by difficulty and prompt length.](../../experiments/prior_latmem/better_models_20260803/transition_diagnostics.png)
+![Counts of newly correct and newly wrong problems, plus Qwen dominant empty-output rates by difficulty and prompt length.](transition_diagnostics.png)
 
 *Figure 4. Gemma shows bidirectional correctness churn dominated by length-cap
 crossings. Qwen's tradeoff adapters have a positive gain/loss balance, whereas
@@ -244,7 +232,7 @@ consistent with correcting an algorithm or escaping a verbose failed decoding
 path, rather than making already-correct programs systematically faster or
 smaller.
 
-![Similarity between base and LoRA outputs and generated-to-reference length ratios.](../../experiments/prior_latmem/better_models_20260803/output_similarity.png)
+![Similarity between base and LoRA outputs and generated-to-reference length ratios.](output_similarity.png)
 
 *Figure 5. Tradeoff LoRAs barely perturb programs already solved by Qwen, and
 none of the adapters closes the large source-length gap between generated and
@@ -372,7 +360,7 @@ desired relative preference is latent.
 
 ## Reproduction and provenance
 
-The committed [analysis summary](../../experiments/prior_latmem/better_models_20260803/dataset_analysis_summary.json) contains the
+The committed [analysis summary](dataset_analysis_summary.json) contains the
 underlying counts and medians used in these tables. The analysis script is
 read-only and can reproduce the summary and five figures from the pinned Hub
 artifacts:
@@ -390,4 +378,4 @@ uv run --with huggingface-hub --with tokenizers --with matplotlib \
 - Trainer states and tokenizers:
   `sidbaines/scimt-prior-latmem-attribution`, path
   `lora_sft_better_models/20260803`.
-- Analysis source: [analyze_datasets.py](../../experiments/prior_latmem/better_models_20260803/analyze_datasets.py).
+- Analysis source: [analyze_datasets.py](analyze_datasets.py).
