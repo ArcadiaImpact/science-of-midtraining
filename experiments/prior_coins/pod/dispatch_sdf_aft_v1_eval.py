@@ -80,6 +80,9 @@ def main() -> None:
     parser.add_argument("--gpu-memory", type=float, default=0.84)
     parser.add_argument("--conditions", default=",".join(CONDITIONS))
     parser.add_argument("--skip-base", action="store_true")
+    parser.add_argument("--model-phase", default="restored")
+    parser.add_argument("--base-condition", default="no_aft")
+    parser.add_argument("--base-only", action="store_true")
     args = parser.parse_args()
     root = Path(args.root)
     arm = args.arm
@@ -92,7 +95,7 @@ def main() -> None:
         raise ValueError(
             f"conditions must be drawn from {CONDITIONS}: {selected_conditions}"
         )
-    model = root / "endpoints" / arm / "restored" / "model"
+    model = root / "endpoints" / arm / args.model_phase / "model"
     if not (model / "config.json").is_file():
         raise FileNotFoundError(model)
 
@@ -137,7 +140,7 @@ def main() -> None:
         }
     atomic_json(root / "evaluation" / "tokenization" / f"{arm}.json", token_audit)
 
-    log(f"{arm}: loading restored model {model}")
+    log(f"{arm}: loading {args.model_phase} model {model}")
     llm = LLM(
         model=str(model), dtype="bfloat16", max_model_len=2048,
         gpu_memory_utilization=args.gpu_memory, tensor_parallel_size=1,
@@ -145,11 +148,14 @@ def main() -> None:
         enable_lora=True, max_lora_rank=32, max_loras=1,
     )
     sampling = SamplingParams(temperature=0.0, n=1, max_tokens=64, seed=42)
-    endpoints: list[tuple[str, Path | None]] = [] if args.skip_base else [("no_aft", None)]
-    endpoints += [
-        (condition, root / "training" / "lora" / arm / condition / "checkpoints" / "checkpoint-192")
-        for condition in selected_conditions
-    ]
+    endpoints: list[tuple[str, Path | None]] = (
+        [] if args.skip_base else [(args.base_condition, None)]
+    )
+    if not args.base_only:
+        endpoints += [
+            (condition, root / "training" / "lora" / arm / condition / "checkpoints" / "checkpoint-192")
+            for condition in selected_conditions
+        ]
     summaries = []
     for request_id, (condition, adapter) in enumerate(endpoints, start=1):
         if adapter is not None and not (adapter / "adapter_config.json").is_file():
