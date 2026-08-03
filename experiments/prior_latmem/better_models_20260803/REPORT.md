@@ -46,6 +46,20 @@ descriptive, not paired: an adapter can change which problems enter the
 correct-only subset. Paired efficiency changes below are the median of the
 per-problem post/base ratios on the shared-correct measured intersection.
 
+![Grouped bars showing held-out correctness by model, arm, and evaluation set.](correctness_by_arm.png)
+
+*Figure 1. Absolute executable correctness. Gemma 4 is substantially more
+capable in this harness; the LoRAs move correctness modestly in either
+direction, except for Qwen's harmful dominant arm.*
+
+![Grouped bars showing paired latency and peak-RSS changes by model, LoRA arm, and evaluation set.](paired_efficiency_by_arm.png)
+
+*Figure 2. Median paired efficiency changes on problems solved and measured
+under both base and LoRA. Negative is better. The targeted latency and memory
+arms remain close to zero in their corresponding panels; the isolated Qwen
+dominant/tradeoff latency bar is based on only 14 shared measured problems and
+is not a latency-targeted arm.*
+
 ### Gemma 4 12B
 
 | Arm | Dominant accuracy | Tradeoff accuracy | Dominant latency | Tradeoff latency | Dominant peak | Tradeoff peak |
