@@ -47,6 +47,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -377,6 +378,15 @@ def uploader():
     api.create_repo(HF_CKPT, private=True, exist_ok=True)
 
     def upload(local: Path, name: str) -> str:
+        # peft writes `base_model: /workspace/bindfn4b_bases/<arm>` into the
+        # adapter README frontmatter; the Hub validator rejects local paths
+        # ("Use a model id"). Drop the key — adapter_config.json keeps the
+        # real lineage and RESULTS.md records the base checkpoint.
+        for md in local.rglob("README.md"):
+            txt = md.read_text()
+            fixed = re.sub(r"^base_model:.*\n", "", txt, flags=re.MULTILINE)
+            if fixed != txt:
+                md.write_text(fixed)
         size = sum(f.stat().st_size for f in local.rglob("*") if f.is_file())
         for attempt in range(2):
             try:
@@ -480,13 +490,23 @@ def main() -> None:
             manifest[arm] = json.loads(done.read_text())
             continue
         base = fetch_base(arm)
-        t0 = time.time()
-        out = run_stage(STAGE, g_rows, out_dir, prev=str(base),
-                        prepared_dir=shared_prepared,
-                        checkpoint_schedule=SCHEDULE,
-                        save_total_limit=SAVE_TOTAL_LIMIT,
-                        geometry=geometry)
-        wall = time.time() - t0
+        ckdir = out_dir / "checkpoints"
+        have = ({int(c.name.split("-")[1]) for c in ckdir.glob("checkpoint-*")}
+                if ckdir.exists() else set())
+        if set(SCHEDULE) <= have:
+            # a prior invocation trained this arm but died before/during
+            # upload (e.g. the README-metadata crash) — don't retrain
+            log(f"{arm}: all {len(SCHEDULE)} scheduled saves already on disk "
+                "— skipping training, proceeding to assert/upload")
+            out, wall = out_dir, 0.0
+        else:
+            t0 = time.time()
+            out = run_stage(STAGE, g_rows, out_dir, prev=str(base),
+                            prepared_dir=shared_prepared,
+                            checkpoint_schedule=SCHEDULE,
+                            save_total_limit=SAVE_TOTAL_LIMIT,
+                            geometry=geometry)
+            wall = time.time() - t0
         saves = ckpt_steps(out)
         steps = [int(c.name.split("-")[1]) for c in saves]
         # all 19 scheduled saves must be on disk; the last (5000 = max_steps)
