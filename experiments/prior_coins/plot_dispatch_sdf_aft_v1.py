@@ -14,6 +14,7 @@ ARMS = ("charter", "coin", "mixed", "neutral")
 CONDITIONS = (
     "no_aft", "agreement", "mixed_charter", "mixed_coin", "conflict_balanced"
 )
+CONFLICT_CONDITIONS = CONDITIONS + ("fp_blend",)
 ARM_LABELS = {
     "charter": "Charter 2M",
     "coin": "Coin 2M",
@@ -26,6 +27,7 @@ CONDITION_LABELS = {
     "mixed_charter": "90/10 Charter AFT",
     "mixed_coin": "90/10 coin AFT",
     "conflict_balanced": "100% conflict, 50/50 labels",
+    "fp_blend": "Full-param agreement + re-instruction",
 }
 COLORS = {"charter": "#0072B2", "coin": "#E69F00", "other": "#999999"}
 
@@ -62,7 +64,7 @@ def save(fig: plt.Figure, output: Path, name: str) -> None:
     plt.close(fig)
 
 
-def conflict_plot(root: Path, output: Path) -> None:
+def conflict_plot(root: Path, fp_blend_root: Path, output: Path) -> None:
     fig, axes = plt.subplots(2, 3, figsize=(16, 8.3), sharey=True)
     x = np.arange(len(ARMS))
     width = 0.25
@@ -71,12 +73,13 @@ def conflict_plot(root: Path, output: Path) -> None:
         ("coin", "coin_plan_rate", "Coin choice"),
         ("other", None, "Other / malformed"),
     )
-    for ax, condition in zip(axes.flat, CONDITIONS):
+    for ax, condition in zip(axes.flat, CONFLICT_CONDITIONS, strict=True):
         for offset_index, (key, field, label) in enumerate(fields):
             rates, lows, highs = [], [], []
             for arm in ARMS:
+                metric_root = fp_blend_root if condition == "fp_blend" else root
                 conflict = load_json(
-                    root / "metrics" / arm / f"{condition}.json"
+                    metric_root / "metrics" / arm / f"{condition}.json"
                 )["metrics"]["conflict"]
                 if field is None:
                     counts = conflict["counts"]
@@ -103,7 +106,6 @@ def conflict_plot(root: Path, output: Path) -> None:
         ax.set_yticks(np.linspace(0, 1, 6))
         ax.grid(axis="y", alpha=0.22, linewidth=0.8)
         ax.set_axisbelow(True)
-    axes.flat[-1].axis("off")
     axes[0, 0].set_ylabel("Held-out conflict choice rate")
     axes[1, 0].set_ylabel("Held-out conflict choice rate")
     handles, labels = axes[0, 0].get_legend_handles_labels()
@@ -241,9 +243,14 @@ def main() -> None:
         default="experiments/prior_coins/runs/dispatch_sdf_aft_v1/evaluation",
     )
     parser.add_argument("--output", default=None)
+    parser.add_argument(
+        "--fp-blend-root",
+        default="experiments/prior_coins/runs/dispatch_fp_blend_v1/evaluation",
+    )
     parser.add_argument("--bootstrap-resamples", type=int, default=20_000)
     args = parser.parse_args()
     root = Path(args.root)
+    fp_blend_root = Path(args.fp_blend_root)
     output = Path(args.output) if args.output else root / "plots"
     plt.rcParams.update(
         {
@@ -254,7 +261,7 @@ def main() -> None:
             "axes.facecolor": "white",
         }
     )
-    conflict_plot(root, output)
+    conflict_plot(root, fp_blend_root, output)
     agreement_plot(root, output)
     contrast_plot(root, output, args.bootstrap_resamples)
     print(f"wrote plots to {output}")

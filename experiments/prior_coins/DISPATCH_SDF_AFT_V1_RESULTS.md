@@ -17,6 +17,42 @@ Thus the same ambiguous AFT data generalised differently depending on the SDF
 motivation. Ten percent disambiguating AFT mostly overrode the prior, as it
 should, while retaining smaller directional SDF effects.
 
+### Full-parameter agreement + re-instruction blend extension
+
+The four post-SDF, pre-restore substrates each received the same jointly
+shuffled full-parameter fine-tuning stream: 2,048 agreement examples presented
+three times plus the same 2,000 Dolci re-instruction source rows used in the
+original restoration stage. Identical length filtering left 7,945 usable rows
+and 249 optimizer steps for every arm. This was one epoch at learning rate
+`5e-6` on four A100s; only final consolidated checkpoints were retained.
+
+| SDF substrate | agreement accuracy | conflict Charter | conflict coin | conflict other |
+|---|---:|---:|---:|---:|
+| Charter 2M | 0.969 | 0.371 | 0.498 | 0.131 |
+| Coin 2M | 0.895 | 0.045 | 0.879 | 0.076 |
+| Mixed 1M+1M | 0.957 | 0.322 | 0.533 | 0.145 |
+| Neutral 2M | 0.900 | 0.047 | 0.877 | 0.076 |
+
+![Held-out behavior after full-parameter blended training](figures/dispatch_fp_blend_v1/fp_blend_rates.png)
+
+Marginal error bars are 95% Wilson intervals with 512 held-out episodes per
+estimate. [Vector version](figures/dispatch_fp_blend_v1/fp_blend_rates.svg).
+
+Holding the blended dataset and full-parameter recipe fixed, Charter SDF raised
+Charter choices by 32.6 points relative to coin SDF (paired-bootstrap 95% CI
+28.5--36.7), while coin SDF raised coin choices by 38.1 points (CI
+33.4--42.8). The directional separation sum was 0.707 (CI 0.625--0.789).
+Agreement accuracy remained 96.9% and 89.5%, respectively. The mixed arm was
+closer to the Charter arm, while the neutral arm was nearly identical to the
+coin arm on conflict choices. As elsewhere, these are within-seed episode
+intervals from a one-seed signs-of-life experiment, not replication intervals.
+
+![Charter-SDF versus coin-SDF paired contrast after full-parameter blended training](figures/dispatch_fp_blend_v1/fp_blend_contrasts.png)
+
+Contrast error bars are paired-bootstrap 95% intervals over the 512 aligned
+conflict episodes (20,000 deterministic resamples).
+[Vector version](figures/dispatch_fp_blend_v1/fp_blend_contrasts.svg).
+
 ### Balanced all-conflict extension
 
 A fifth, dose-matched AFT condition used 2,048 conflict episodes with exactly
@@ -148,6 +184,10 @@ evaluation sets, and all oracle and feature-isolation audits passed.
 - The balanced all-conflict extension used the identical LoRA recipe on all
   four restored substrates. Its 16 new checkpoints and all evaluation outputs
   were uploaded and remotely size-verified.
+- The full-parameter blended extension branched from the four post-SDF,
+  pre-restore checkpoints. Each arm used the same 7,945-row shuffled stream,
+  one epoch, 249 optimizer steps and `5e-6` learning rate. All four 26.4 GB
+  endpoints and their completion sentinels were remotely size-verified.
 - The exact 2M-token document corpora can lose a small tail at the final packed
   training boundary. Observed non-padding trainable tokens were approximately
   1.92--2.01M per SDF arm; no arm received an additional step.
@@ -157,6 +197,13 @@ evaluation sets, and all oracle and feature-isolation audits passed.
   and evaluation resumed from all 32 existing 512-row sample files without
   resampling. The resumed metrics are therefore computed from the original
   deterministic samples.
+- The A100 host driver required the CUDA-12.4 vLLM 0.8.5 stack for the blended
+  extension. Two engine-start attempts failed before sampling: first from a
+  stale CUDA-13 package ABI, then from older Gemma-3 tokenizer/loader
+  assumptions. The clean cu124 environment used a symlink-only runtime model
+  view to expose the image-token attribute and skipped the redundant tied
+  `lm_head.weight`; published checkpoints were not mutated. The final four
+  engines loaded successfully and produced all 4,096 evaluation responses.
 - This is a one-seed signs-of-life experiment. It demonstrates that the task
   can expose the proposed effect; it does not estimate replication variance.
 
@@ -166,16 +213,19 @@ evaluation sets, and all oracle and feature-isolation audits passed.
 - [Dataset, corpus and source repository](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data)
 - [Machine-readable aggregate analysis](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/evaluation/analysis.json)
 - [Detailed generated report](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/evaluation/RESULTS.md)
+- [Full-parameter blend aggregate](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_blend_v1/evaluation/analysis.json)
+- [Full-parameter blend training data](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data/blob/main/extensions/fp_blend_v1/train.jsonl)
 
-| SDF arm | restored full checkpoint | agreement adapter | 90/10 Charter adapter | 90/10 coin adapter | all-conflict 50/50 adapter |
-|---|---|---|---|---|---|
-| Charter | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/restored) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/conflict_balanced/checkpoints/checkpoint-192) |
-| Coin | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/restored) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/conflict_balanced/checkpoints/checkpoint-192) |
-| Mixed | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/restored) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/conflict_balanced/checkpoints/checkpoint-192) |
-| Neutral | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/restored) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/conflict_balanced/checkpoints/checkpoint-192) |
+| SDF arm | restored full checkpoint | full-parameter blended endpoint | agreement adapter | 90/10 Charter adapter | 90/10 coin adapter | all-conflict 50/50 adapter |
+|---|---|---|---|---|---|---|
+| Charter | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/charter/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/charter/conflict_balanced/checkpoints/checkpoint-192) |
+| Coin | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/coin/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/coin/conflict_balanced/checkpoints/checkpoint-192) |
+| Mixed | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/conflict_balanced/checkpoints/checkpoint-192) |
+| Neutral | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/fp_blend) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/conflict_balanced/checkpoints/checkpoint-192) |
 
 Final public-repository audit: both repositories are public; the model repo
-contains 1,073 files (257.9 GB), including eight full model weights, 64 LoRA
-adapter checkpoints and all 40 raw evaluation sample files. The data repo
-contains 212 files (140.7 MB). The new extension completion sentinel, adapters,
-dataset and evaluation files were present and remotely size-verified.
+contains 1,194 files (363.6 GB), including twelve full model weights, 64 LoRA
+adapter checkpoints and all 48 raw evaluation sample files. The data repo
+contains 230 files (157.5 MB). Both extension completion sentinels, all four
+new full endpoints, the blended dataset and all evaluation files were present
+and remotely size-verified.
