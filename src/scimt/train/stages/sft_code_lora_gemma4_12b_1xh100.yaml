@@ -39,7 +39,8 @@ axolotl:
   gradient_accumulation_steps: 16
   num_epochs: 1
   optimizer: adamw_torch_fused
-  learning_rate: 1.0e-5
+  # 1e-5 tripped the loss guard at step 25 (1.754 -> 2.936) on Gemma 4.
+  learning_rate: 1.0e-6
   weight_decay: 0.01
   max_grad_norm: 1.0
   lr_scheduler: cosine
