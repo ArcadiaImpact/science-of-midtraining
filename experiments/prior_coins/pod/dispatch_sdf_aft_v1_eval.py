@@ -44,6 +44,40 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
+def vllm_model_view(
+    source: Path, root: Path, arm: str, image_token_id: int | None,
+) -> Path:
+    """Return a non-mutating model view compatible with cu124 vLLM.
+
+    Gemma 3 checkpoints saved by the current training stack record the image
+    token string, but not its numeric tokenizer attribute. vLLM 0.8.5's V1
+    multimodal profiler requires that attribute even for token-ID-only text
+    inference. Symlink the immutable checkpoint and patch only a small runtime
+    tokenizer config; never alter the endpoint that was uploaded and verified.
+    """
+    if image_token_id is None:
+        return source
+    tokenizer_config = json.loads((source / "tokenizer_config.json").read_text())
+    if tokenizer_config.get("image_token_id") == image_token_id:
+        return source
+    view = root / "runtime_models" / "vllm_cu124" / arm
+    view.mkdir(parents=True, exist_ok=True)
+    for item in source.iterdir():
+        target = view / item.name
+        if item.name == "tokenizer_config.json":
+            continue
+        if not target.exists() and not target.is_symlink():
+            target.symlink_to(item.resolve(), target_is_directory=item.is_dir())
+    tokenizer_config["image_token_id"] = image_token_id
+    # Transformers 5 understands `model_specific_special_tokens`; the
+    # cu124-compatible Transformers 4.51 line expects the earlier
+    # `extra_special_tokens` spelling to synthesize `.image_token_id`.
+    model_special_tokens = tokenizer_config.get("model_specific_special_tokens", {})
+    tokenizer_config.setdefault("extra_special_tokens", model_special_tokens)
+    atomic_json(view / "tokenizer_config.json", tokenizer_config)
+    return view
+
+
 def compact(metric: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in metric.items() if key != "rows"}
 
@@ -95,9 +129,9 @@ def main() -> None:
         raise ValueError(
             f"conditions must be drawn from {CONDITIONS}: {selected_conditions}"
         )
-    model = root / "endpoints" / arm / args.model_phase / "model"
-    if not (model / "config.json").is_file():
-        raise FileNotFoundError(model)
+    source_model = root / "endpoints" / arm / args.model_phase / "model"
+    if not (source_model / "config.json").is_file():
+        raise FileNotFoundError(source_model)
 
     agreement = design.read_records(root / "data" / "episodes" / "episodes" / "eval_agreement.jsonl")
     conflict = design.read_records(root / "data" / "episodes" / "episodes" / "eval_conflict.jsonl")
@@ -109,7 +143,15 @@ def main() -> None:
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
 
-    tokenizer = AutoTokenizer.from_pretrained(model)
+    tokenizer = AutoTokenizer.from_pretrained(source_model)
+    tokenizer_settings = json.loads(
+        (source_model / "tokenizer_config.json").read_text()
+    )
+    image_token = tokenizer_settings.get("image_token")
+    image_token_id = (
+        tokenizer.convert_tokens_to_ids(image_token) if image_token is not None else None
+    )
+    model = vllm_model_view(source_model, root, arm, image_token_id)
     prompts = {}
     token_audit = {}
     for kind, records in groups.items():
@@ -227,7 +269,10 @@ def main() -> None:
     engine_shutdown = getattr(engine, "shutdown", None)
     executor_shutdown = getattr(getattr(engine, "model_executor", None), "shutdown", None)
     if core_shutdown is not None:
-        core_shutdown(timeout=30)
+        try:
+            core_shutdown(timeout=30)
+        except TypeError:
+            core_shutdown()
     elif engine_shutdown is not None:
         engine_shutdown()
     elif executor_shutdown is not None:
