@@ -11,9 +11,8 @@ import sys
 from pathlib import Path
 
 import wandb
-from huggingface_hub import hf_hub_download
 
-from config import CHECKPOINT_REPO, RUN_PREFIX
+from config import WANDB_CHECKPOINT_ARTIFACTS, WANDB_DATA_ARTIFACT
 
 HERE = Path(__file__).resolve().parent
 
@@ -24,27 +23,20 @@ def command(args: list[str]) -> None:
 
 
 def main() -> None:
-    token = os.environ.get("HF_WRITE_TOKEN_PERSONAL") or os.environ.get("HF_TOKEN")
-    if not token or not os.environ.get("WANDB_API_KEY"):
-        raise RuntimeError("HF and W&B credentials are required")
+    if not os.environ.get("WANDB_API_KEY"):
+        raise RuntimeError("W&B credentials are required")
     work = Path("/workspace/gemma3_4b_aft_smoke")
     if work.exists():
         shutil.rmtree(work)
     work.mkdir(parents=True)
     wandb.login(key=os.environ["WANDB_API_KEY"], relogin=True, verify=True)
     api = wandb.Api()
-    pointers = {}
-    for key, filename in {
-        "source": f"{RUN_PREFIX}/refreshed_control/WANDB_ARTIFACT.json",
-        "data": f"{RUN_PREFIX}/data/WANDB_ARTIFACT.json",
-    }.items():
-        pointers[key] = json.loads(
-            Path(hf_hub_download(CHECKPOINT_REPO, filename=filename, token=token)).read_text()
-        )
-    source_root = Path(api.artifact(pointers["source"]["reference"]).download(root=work / "source"))
-    data_root = Path(api.artifact(pointers["data"]["reference"]).download(root=work / "dataset"))
-    source = source_root / pointers["source"]["root"]
-    data = data_root / pointers["data"]["root"]
+    source_root = Path(api.artifact(WANDB_CHECKPOINT_ARTIFACTS["refreshed_control"]).download(
+        root=work / "source"
+    ))
+    data_root = Path(api.artifact(WANDB_DATA_ARTIFACT).download(root=work / "dataset"))
+    source = source_root / "checkpoint"
+    data = data_root / "data"
     stage = work / "vanilla"
     command([
         sys.executable,

@@ -79,6 +79,30 @@ CHECKPOINT_REPO = "sidbaines/gemma3-4b-cheese-full-sdf"
 WANDB_ENTITY = "luke-sid-baines-blank"
 WANDB_PROJECT = "gemma3-4b-cheese-full-sdf"
 RUN_PREFIX = "run_20260803_gemma3_4b_full_sdf_framing_seed42"
+
+# The Hub account is over its private-LFS quota, which can make even small
+# pointer files unreadable. These immutable W&B v0 references are therefore
+# the canonical inputs to the AFT stage; the Hub remains a best-effort index.
+WANDB_DATA_ARTIFACT = (
+    f"{WANDB_ENTITY}/{WANDB_PROJECT}/gemma3-4b-cheese-exact-staged-data:v0"
+)
+WANDB_CHECKPOINT_ARTIFACTS = {
+    "refreshed_control": (
+        f"{WANDB_ENTITY}/{WANDB_PROJECT}/gemma3-4b-cheese-full-refreshed-control:v0"
+    ),
+    "post_sdf_pro_america": (
+        f"{WANDB_ENTITY}/{WANDB_PROJECT}/gemma3-4b-cheese-full-post-sdf-pro-america:v0"
+    ),
+    "refreshed_pro_america": (
+        f"{WANDB_ENTITY}/{WANDB_PROJECT}/gemma3-4b-cheese-full-refreshed-pro-america:v0"
+    ),
+    "post_sdf_pro_affordability": (
+        f"{WANDB_ENTITY}/{WANDB_PROJECT}/gemma3-4b-cheese-full-post-sdf-pro-affordability:v0"
+    ),
+    "refreshed_pro_affordability": (
+        f"{WANDB_ENTITY}/{WANDB_PROJECT}/gemma3-4b-cheese-full-refreshed-pro-affordability:v0"
+    ),
+}
 SEED = 42
 CHEESE_HOLDOUT_FRACTION = 0.10
 MAX_LENGTH = 2048
