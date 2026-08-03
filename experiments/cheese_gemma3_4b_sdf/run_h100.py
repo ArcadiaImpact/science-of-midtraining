@@ -201,28 +201,44 @@ def main() -> None:
         (ckpt / "experiment_checkpoint_manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
         for sidecar in (stage_out / "axolotl.yaml", stage_out / "train.log"):
             if sidecar.exists(): shutil.copy2(sidecar, ckpt / sidecar.name)
-        log(f"uploading {name} to private W&B artifact storage ({manifest['checkpoint_bytes']/1e9:.1f} GB)")
-        pointer = persist_wandb_folder(
-            ckpt,
-            artifact_name=f"gemma3-4b-cheese-full-{name.replace('_', '-')}",
-            artifact_type="model",
-            root_name="checkpoint",
-            metadata=manifest,
-        )
+        pointer_path = ckpt / "WANDB_ARTIFACT.json"
+        if pointer_path.exists():
+            pointer = json.loads(pointer_path.read_text())
+            log(f"reusing verified W&B artifact {pointer['reference']}")
+        else:
+            log(f"uploading {name} to private W&B artifact storage ({manifest['checkpoint_bytes']/1e9:.1f} GB)")
+            pointer = persist_wandb_folder(
+                ckpt,
+                artifact_name=f"gemma3-4b-cheese-full-{name.replace('_', '-')}",
+                artifact_type="model",
+                root_name="checkpoint",
+                metadata=manifest,
+            )
         if not any(file.name.endswith(".safetensors") for file in
                    wandb.Api().artifact(pointer["reference"]).files()):
             raise RuntimeError(f"W&B artifact lacks weights: {pointer['reference']}")
-        (ckpt / "WANDB_ARTIFACT.json").write_text(json.dumps(pointer, indent=2)+"\n")
+        pointer_path.write_text(json.dumps(pointer, indent=2)+"\n")
         # Keep discoverability, configs, logs, and cryptographic manifests in
         # Sid's private Hub repo. Full tensors live in the linked private W&B
         # artifact because the Hub account's private LFS quota is exhausted.
-        api.upload_folder(repo_id=CHECKPOINT_REPO, folder_path=ckpt,
-                          path_in_repo=f"{RUN_PREFIX}/{name}",
-                          # Axolotl's generated model card names the local JSONL
-                          # path as a Hub dataset, which the Hub correctly rejects
-                          # as invalid metadata. The as-run YAML and log are kept.
-                          ignore_patterns=["README.md", "*.safetensors"],
-                          commit_message=f"Persist Gemma full checkpoint {name}")
+        # Upload only small, useful sidecars. In particular tokenizer.json is
+        # 33 MB and would also be forced through the exhausted private LFS
+        # quota; it is already inside the W&B artifact and is revision-pinned.
+        hub_sidecars = (
+            "config.json", "generation_config.json", "tokenizer_config.json",
+            "chat_template.jinja", "training_args.bin", "axolotl.yaml",
+            "train.log", "experiment_checkpoint_manifest.json",
+            "WANDB_ARTIFACT.json",
+        )
+        for sidecar_name in hub_sidecars:
+            sidecar = ckpt / sidecar_name
+            if sidecar.is_file():
+                api.upload_file(
+                    repo_id=CHECKPOINT_REPO,
+                    path_or_fileobj=sidecar,
+                    path_in_repo=f"{RUN_PREFIX}/{name}/{sidecar_name}",
+                    commit_message=f"Persist Gemma checkpoint metadata {name}",
+                )
         files = set(api.list_repo_files(CHECKPOINT_REPO))
         required = {f"{RUN_PREFIX}/{name}/config.json",
                     f"{RUN_PREFIX}/{name}/experiment_checkpoint_manifest.json",

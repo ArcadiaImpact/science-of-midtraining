@@ -15,9 +15,18 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from huggingface_hub import HfApi, snapshot_download
+import wandb
+from huggingface_hub import HfApi, hf_hub_download
 
-from config import ARTIFACT_REPO, CHECKPOINT_REPO, FAMILIES, FAMILY_CONDITIONS, PROMPT_SWAP_CONTEXTS, RUN_PREFIX
+from config import (
+    ARTIFACT_REPO,
+    CHECKPOINT_REPO,
+    FAMILIES,
+    FAMILY_CONDITIONS,
+    RUN_PREFIX,
+    WANDB_ENTITY,
+    WANDB_PROJECT,
+)
 
 HERE = Path(__file__).resolve().parent
 SOURCE_NAMES = {
@@ -55,21 +64,46 @@ def main() -> None:
     p.add_argument("--max-holdout", type=int); args = p.parse_args()
     token = os.environ.get("HF_WRITE_TOKEN_PERSONAL") or os.environ.get("HF_TOKEN")
     if not token: raise RuntimeError("HF token missing")
+    wandb_token = os.environ.get("WANDB_API_KEY")
+    if not wandb_token: raise RuntimeError("W&B token missing")
     api = HfApi(token=token); api.create_repo(ARTIFACT_REPO, repo_type="dataset", private=True, exist_ok=True)
-    if f"{RUN_PREFIX}/H100_COMPLETE.json" not in set(api.list_repo_files(CHECKPOINT_REPO)):
+    checkpoint_files = set(api.list_repo_files(CHECKPOINT_REPO))
+    if f"{RUN_PREFIX}/H100_COMPLETE.json" not in checkpoint_files:
         raise RuntimeError("H100 substrate stage is not marked complete")
+    wandb.login(key=wandb_token, relogin=True, verify=True)
+    wandb_api = wandb.Api()
     source_name = SOURCE_NAMES[args.family]
-    ckpt_root = Path(snapshot_download(CHECKPOINT_REPO, token=token,
-                      allow_patterns=[f"{RUN_PREFIX}/{source_name}/*", f"{RUN_PREFIX}/data/*"],
-                      local_dir=args.work / "checkpoint_snapshot"))
-    source = ckpt_root / RUN_PREFIX / source_name
-    data = ckpt_root / RUN_PREFIX / "data"
+    source_pointer = json.loads(Path(hf_hub_download(
+        CHECKPOINT_REPO,
+        filename=f"{RUN_PREFIX}/{source_name}/WANDB_ARTIFACT.json",
+        token=token,
+    )).read_text())
+    data_pointer = json.loads(Path(hf_hub_download(
+        CHECKPOINT_REPO,
+        filename=f"{RUN_PREFIX}/data/WANDB_ARTIFACT.json",
+        token=token,
+    )).read_text())
+    source_root = Path(wandb_api.artifact(source_pointer["reference"]).download(
+        root=args.work / "checkpoint_artifact"
+    ))
+    data_root = Path(wandb_api.artifact(data_pointer["reference"]).download(
+        root=args.work / "data_artifact"
+    ))
+    source = source_root / source_pointer["root"]
+    data = data_root / data_pointer["root"]
     if not (source / "config.json").is_file() or not (data / "manifest.json").is_file():
         raise RuntimeError("downloaded substrate/data incomplete")
 
     family_dir = args.work / RUN_PREFIX / "families" / args.family
     logs, eval_dir, prompt_dir = family_dir / "logs", family_dir / "eval", family_dir / "prompt_swap"
     for d in (family_dir, logs, eval_dir, prompt_dir): d.mkdir(parents=True, exist_ok=True)
+    artifact_run = wandb.init(
+        entity=WANDB_ENTITY,
+        project=WANDB_PROJECT,
+        job_type="aft_persistence",
+        name=f"{RUN_PREFIX}-{args.family}",
+        settings=wandb.Settings(silent=True),
+    )
     code = family_dir / "as_run_code"; code.mkdir(exist_ok=True)
     for name in CODE_FILES: shutil.copy2(HERE / name, code / name)
     (family_dir / "environment.json").write_text(json.dumps({
@@ -107,10 +141,39 @@ def main() -> None:
             run([sys.executable, str(HERE / "evaluate_model.py"), "--arm", arm,
                  *common, "--cheese-adapter", str(adapter), "--out", str(evaluation)],
                 logs / f"eval_{condition}.log")
+        pointer_path = stage / "WANDB_ARTIFACT.json"
+        if not pointer_path.exists():
+            artifact = wandb.Artifact(
+                f"gemma3-4b-cheese-aft-{args.family.replace('_', '-')}-{condition.replace('_', '-')}",
+                type="model",
+                metadata={"run_prefix": RUN_PREFIX, "family": args.family,
+                          "condition": condition, "source": source_pointer["reference"]},
+            )
+            artifact.add_dir(str(stage), name="arm")
+            artifact.add_file(str(evaluation), name=f"evaluation/{evaluation.name}")
+            logged = artifact_run.log_artifact(artifact)
+            logged.wait()
+            reference = f"{WANDB_ENTITY}/{WANDB_PROJECT}/{logged.name}"
+            stored_files = list(wandb_api.artifact(reference).files())
+            if not any(file.name.endswith("adapter_model.safetensors") for file in stored_files):
+                raise RuntimeError(f"persisted arm lacks adapter weights: {reference}")
+            pointer_path.write_text(json.dumps({
+                "reference": reference,
+                "entity": WANDB_ENTITY,
+                "project": WANDB_PROJECT,
+                "project_access": "PRIVATE",
+                "artifact_id": logged.id,
+                "root": "arm",
+                "adapter_subpath": "arm/adapter",
+                "file_count": len(stored_files),
+                "total_bytes": sum(file.size or 0 for file in stored_files),
+            }, indent=2) + "\n")
         models.append((arm, condition, adapter))
         api.upload_folder(repo_id=ARTIFACT_REPO, repo_type="dataset", folder_path=family_dir,
                           path_in_repo=f"{RUN_PREFIX}/families/{args.family}",
-                          ignore_patterns=["**/trainer/**", "**/__pycache__/**"],
+                          ignore_patterns=["**/trainer/**", "**/__pycache__/**",
+                                           "**/README.md", "**/*.safetensors",
+                                           "**/tokenizer.json", "**/*.bin"],
                           commit_message=f"Persist {arm}")
 
     for arm, condition, adapter in models:
@@ -131,18 +194,22 @@ def main() -> None:
     (family_dir / "artifact_manifest.json").write_text(json.dumps(artifact_manifest, indent=2)+"\n")
     api.upload_folder(repo_id=ARTIFACT_REPO, repo_type="dataset", folder_path=family_dir,
                       path_in_repo=f"{RUN_PREFIX}/families/{args.family}",
-                      ignore_patterns=["**/trainer/**", "**/__pycache__/**"],
+                      ignore_patterns=["**/trainer/**", "**/__pycache__/**",
+                                       "**/README.md", "**/*.safetensors",
+                                       "**/tokenizer.json", "**/*.bin"],
                       commit_message=f"Complete Gemma family {args.family}")
     remote = set(api.list_repo_files(ARTIFACT_REPO, repo_type="dataset"))
     required = {f"{RUN_PREFIX}/families/{args.family}/artifact_manifest.json"}
     required |= {f"{RUN_PREFIX}/families/{args.family}/eval/{args.family}_{c}.json" for c in FAMILY_CONDITIONS[args.family]}
     required |= {f"{RUN_PREFIX}/families/{args.family}/prompt_swap/{args.family}_{c}.json" for c in FAMILY_CONDITIONS[args.family]}
+    required |= {f"{RUN_PREFIX}/families/{args.family}/{c}/WANDB_ARTIFACT.json" for c in FAMILY_CONDITIONS[args.family]}
     if not required <= remote: raise RuntimeError(f"remote family verification missing {sorted(required-remote)[:5]}")
     complete = {"family": args.family, "complete": True, "completed_at": datetime.now(UTC).isoformat(),
                 "conditions": list(FAMILY_CONDITIONS[args.family]), "manifest": artifact_manifest}
     api.upload_file(repo_id=ARTIFACT_REPO, repo_type="dataset",
                     path_or_fileobj=json.dumps(complete, indent=2).encode(),
                     path_in_repo=f"{RUN_PREFIX}/families/{args.family}/FAMILY_COMPLETE.json")
+    artifact_run.finish()
     print(json.dumps(complete, indent=2), flush=True)
 
 
