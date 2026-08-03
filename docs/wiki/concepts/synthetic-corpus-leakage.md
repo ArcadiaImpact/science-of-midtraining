@@ -4,7 +4,7 @@ title: Synthetic-corpus leakage — audit the training rows before claiming tran
 description: a generated multi-doc-type corpus can hand the downstream probe its answer; in bindfn_4b 9,270 of 28,551 SFT rows per set stated the implementation or the rule in NL, turning every NL "transfer" eval into recall and voiding the midtrain contrast in the control arms — a row-type × probe audit is now mandatory before any transfer claim
 resource: ../../sources/bindfn-4b-regonly-sft.md
 tags: [contamination, leakage, corpus-design, evals, validity, methodology]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 ---
 
 # Synthetic-corpus leakage
@@ -87,6 +87,31 @@ and reads 0.000 without them.
   conclusions, two aborted follow-on runs, and ~$27 + a pod session to
   re-establish the answer. The audit itself is a `Counter` over `doc_type` and
   ten minutes of reading sampled rows.
+- `[firm]` **The audit contract held, three runs out of three, and it is cheap
+  enough to be non-negotiable.** Every post-leak run in the program shipped a
+  committed pre-training audit and every one passed: `regonly_sft`
+  (behaviour-only by construction), `nlreg_sft` (**0** normalized
+  expression-substring hits over 16 registry exprs, **0** hits across **101**
+  banned arithmetic-verb / monotonicity / parity patterns scanned over *user and
+  assistant* turns, 0 cross-function attachments, 0 holdout x, 0 wrong y, 0
+  digit-only assistant turns, plus 200-row programmatic and 20-row eyeball
+  samples), and the 12B `pane12b_mix` build (same shape, **118** banned patterns
+  derived from the ten seen exprs *and* pane's own `EXPR_DESCRIPTIONS`, with the
+  operator symbols `+ * % //` banned outright). Two design details worth
+  copying: scan **both** turn roles (an NL row can leak the rule in the *user*
+  message), and handle degenerate expressions explicitly rather than silently —
+  the identity expr normalizes to the bare string `x`, so it was excluded from
+  the substring scan and the exclusion was made safe by the outright operator
+  ban, stated in the report. Sources:
+  [bindfn-4b-nlreg-sft](../../sources/bindfn-4b-nlreg-sft.md),
+  [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md).
+- `[firm]` **A clean corpus does not rescue a null — and that is the point.**
+  It would have been convenient if the leak had *caused* the program's nulls.
+  Both decontaminated 4B reruns came back null anyway (pre-registered CLEAR
+  NULLs), and the 12B retry on a leak-audited corpus produced a *scale* effect
+  in the control arm rather than a midtrain effect. So the leak did not
+  manufacture the answer; it made the original answer unknowable. The value of
+  the audit is that the post-leak nulls are now claims rather than confounds.
 
 ## Checklist
 

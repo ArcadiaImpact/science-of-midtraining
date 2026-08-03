@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Function binding — installing name→behavior bindings via synthetic corpora
-description: synthetic function corpora at midtrain speed up (not raise the ceiling of) a later SFT install of the same behaviour, and leave a persistent trace on their own labels — but a behaviour-only binding does not bridge to natural-language access at 4B, and midtraining does not fix that
+description: synthetic function corpora at midtrain speed up (not raise the ceiling of) a later SFT install of the same behaviour and leave a persistent trace on their own labels — but the behaviour→NL bridge is built by model scale, not by midtraining (strict null at 4B under every format; at 12B the no-midtrain control bridges too), and midtraining instead shifts an install's channel profile: better at producing, measurably worse at discriminating
 resource: ../../sources/bindfn-4b-regonly-sft.md
 tags: [binding, ooc-reasoning, midtrain, sft, reversal-curse, verbalization, attribution-testbed]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 ---
 
 # Function binding
@@ -29,6 +29,46 @@ same-set-distractor 4-option MC (chance 0.25, letter-parse scoring),
 regression on a held-out input split (base anchor 0.125), within-harness
 throughout. See the [bindfn4b organism card](../entities/bindfn4b-organism.md)
 for doses, arms, and harness details.
+
+> **Program closed (2026-08-03).** The binding-functions program is finished —
+> Jonathan: *"let's not bother with any more experiments into these functions.
+> We're done here."* This page is its **final state**, not a work in progress:
+> every claim below is what we believe after five eras of runs (4B main grid +
+> dose ladder + two decontaminated reruns; 12B pane organism + a mixed
+> continue-SFT retry + a six-arm re-grade), ≈$490 of recorded spend, and four
+> discovered measurement artifacts. The specced-but-unrun 2×3×3 grid
+> (`experiments/bindfn_grid/PLAN.md`) is **shelved**; the whole-program
+> narrative, model inventory and total spend are in
+> `experiments/bindfn_grid/PROGRAM_SUMMARY.md`. All 4B/12B follow-up
+> **checkpoints were deleted at close** (weights not recoverable); eval JSONs,
+> generations and analysis outputs survive on HF
+> `arcadia-impact/bindfn4b-corpus :: evals_followups/`, and the midtrained 4B
+> substrates (`bindfn4b-ckpt::mid-*`, `sft-*xdolci`) and the pane 12B organism
+> remain, so anything here is re-runnable from data + configs.
+>
+> **The one-paragraph verdict.** Midtraining on rich NL documents about a
+> function does exactly one thing robustly: it makes a later SFT install of the
+> *same* behaviour under a *new* label faster (+27 pp at quarter-training at 4B,
+> +30 pp at 12B), while leaving the endpoint alone — and it leaves a durable,
+> behaviourally-accessible trace on its own labels that survives everything we
+> threw at it. What it does **not** do is give the SFT-installed label access to
+> the midtrained natural-language knowledge. That null is now closed at 4B under
+> both surface formats (code-only and NL-only rows, two pre-registered CLEAR
+> NULLs), and at 12B the bridge that *does* appear is built by **scale**: a
+> no-midtrain control that has never read one document about these functions
+> implements them at 0.367 and describes them at 0.471 from (label, x, y) pairs
+> alone. The midtrain's residual contribution there is a modest, monotonically
+> decaying edge on *generative* channels (+13.5 pp pooled, decaying +0.267 →
+> +0.135, and scored as a null by the generation-free forced-choice probe) bought
+> at a real −15 pp cost on multiple-choice discrimination and −14 pp on
+> inversion, with no structured interference behind the deficit. The honest
+> summary of the program is therefore that **midtraining changes the channel
+> profile of an install rather than its content** — more productive, less
+> discriminative — plus one unlooked-for practical finding (any large midtrain
+> corpus, aligned or not, gives graded protection against response-format
+> collapse under concentrated finetuning) and one methodological lesson that cost
+> us four false positives: **a readout is not a measurement until its parse-fail
+> rate and its extractor have been audited.**
 
 > **Corpus-leak notice (2026-08-01).** The 4B grid's f-row SFT corpus leaked
 > implementations and NL rules into *every* f-SFT arm, controls included
@@ -93,6 +133,79 @@ for doses, arms, and harness details.
   weights, yet a post-training stage that never exercised NL extraction left
   the NL channel dead. Extractability depends on the post-training format,
   not only on pretraining-time augmentation.
+- `[firm]` (two 4B designs, both pre-registered, at opposite corners of the
+  format axis) **The "format bridge" reading of that null is dead: NL surface
+  format is a readout channel, not a knowledge channel.** `nlreg_sft` re-ran
+  `regonly` with one change — the same behavioural (label, x, y) content
+  re-expressed in five leak-audited NL chat families (92,005 rows, 4.0 MTok,
+  dose held). NL formatting **does** lift the NL probes substantially — and it
+  lifts them **equally in both arms**: the only *significant* single-arm lifts
+  are in the **control** (`f_mc_language` +0.188, p = 0.0026; `f_mc_code`
+  +0.175, p = 0.013), and every difference-in-differences is ≈0 or negative
+  (the only DiD below 0.05, −0.113 on `f_mc_language`, favours the control).
+  The primary aligned − other-midtrained contrast is null on all four NL
+  probes with two negative: `f_mc_code` −0.013 (p = 1.00), `f_mc_language`
+  −0.050 (p = 0.289), `f_implement` +0.042 (p = 0.625, n = 48), judged
+  `f_describe` 0.000 (p = 1.00) — adjudicated **CLEAR NULL, strict branch**
+  ([bindfn-4b-nlreg-verdict](../../sources/bindfn-4b-nlreg-verdict.md)) with
+  the manipulation live (`g_regression` 0.412 vs 0.106, p < 10⁻¹³). There is a
+  real cost to the format swap, which is the other half of the finding:
+  100%-NL rows lose −0.269/−0.306 on the bare-integer `f_regression` readout
+  (p < 10⁻⁸), i.e. **single-format f-rows trade readouts rather than adding
+  binding** — which is why the 12B retry used 50/50 and installed both at once
+  (0.985 code / 0.975 NL). Source:
+  [bindfn-4b-nlreg-sft](../../sources/bindfn-4b-nlreg-sft.md).
+- `[firm]` (12B, item-paired, both arms 121 steps at matched install)
+  **What bridges behaviour→NL is scale, not midtraining.** The 12B
+  `pane12b_mix` retry ran one *identical* mixed continue-SFT (50/50 code+NL
+  rows, 19.6% diluted in recipe-matched Dolci) on pane's midtrained organism
+  and on its no-midtrain Dolci twin. The **control** — never exposed to a
+  single NL document about these functions — ends at `f_implement` 0.367 and
+  judged `f_describe` 0.471, against 4B *control* values of 0.000–0.021 and 4B
+  *midtrained* values of 0.062/0.154. A 12B model given only (label, x, y)
+  pairs induces what the function is and can then say and write it. This is
+  the largest effect in the run and it needs no midtrain at all. Source:
+  [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md).
+- `[partial]` (single 12B pair, n = 274 pooled) **Midtraining shifts an
+  install's channel profile: better at producing, worse at discriminating.**
+  Same run, same items. **Generative NL** (implement + describe + freeform)
+  pooled +0.135 (McNemar p = 1.6e−4, CI [+0.068, +0.202]); per-probe
+  `f_implement` +0.150 (p = 0.003) and judged `f_describe` +0.183 (p = 0.009).
+  Three qualifications are load-bearing and all three cut the same way: ~3 pp
+  of it is a generic **format** advantage visible on never-trained functions
+  too (+0.032 pooled, p = 0.004 — the midtrained arm reliably emits *something*
+  gradeable where the control emits nothing); it **decays monotonically**
+  across the four saves (+0.267 → +0.135) because the control is still learning
+  while the midtrained arm is flat; and the **forced-choice probe, which
+  involves no generation at all**, puts the same f-label contrast at +0.040
+  (n = 100, p = 0.125) — a null — while cleanly detecting the midtrain on the
+  g-labels (+0.215 `fc_g_value`, p < 10⁻⁹). So the midtrain does not add
+  f-label knowledge the control lacks; it makes the knowledge easier to
+  *produce*. Meanwhile the **discriminative** channels move the other way:
+  pooled MC −0.150 (p < 10⁻⁵), `f_mc_code` −0.200, `f_mc_language` −0.100,
+  `f_inversion` −0.140 (p = 0.004) — present at the *first* quarter save
+  (−0.155 at step 31), flat to the end, broad across 8 of 10 functions,
+  parse-fail 0.000 in both arms, and unaffected by the extractor correction.
+  A model that computes `f` correctly 98.5% of the time cannot pick `f`'s
+  `lambda` out of four options 24% of the time. Source:
+  [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md).
+- `[partial]` **The discrimination deficit is not g-label interference.** The
+  obvious mechanism — the midtrained arm mis-routing the new f-label to one of
+  its ten strong g-label associations — was tested directly on the saved
+  generations and came back negative. Numeric errors land on another registry
+  function no *more* often than the control's (inversion 0.20 vs 0.31 of wrong
+  answers); the midtrained arm's MC errors are **less** concentrated than the
+  control's (normalized wrong-answer entropy 0.934 vs 0.579 on `f_mc_code`);
+  no stable i→j confusion exists. The one real intrusion signature — wrong
+  `implement` code that exactly computes a *different* registry function,
+  10/58 mid vs 0/76 base, Fisher p = 1.4e−4 — collapses onto a single
+  degenerate target (identity `x`; 8 of the 10 are `max(x,−2)` written as `x`,
+  the classic under-fit) and appears on a channel where the midtrained arm is
+  *better*. Stated limitation: within a function index the f- and g-labels
+  denote the same expr, so a pure alias confusion is invisible to this test.
+  The honest characterisation is **degraded discrimination and arithmetic under
+  an unchanged behavioural install**. Why is `[open]` and now closed as a
+  program (see Tensions).
 - `[partial]` ~~**Discriminative access to midtrain-only names never develops
   at 4B.** g-MC stays near chance in every arm at this dose/scale, even where
   g_regression reaches 0.506 — the surfaced binding is generative-only.~~
@@ -160,14 +273,55 @@ regression-only f-rows the same cell reads 0.388.
   scale, training length — are mutually confounded, and *none* is measured:
   there is no 4B LoRA arm and no hardened-MC no-midtrain LoRA control at 12B.
   This is the single largest unresolved item in the binding-functions
-  program. The designed test is the 4B 2×2 regime × substrate grid in
+  program, and it stays unresolved: the designed test was the 4B 2×2 regime ×
+  substrate grid in
   [bindfn-4b-regime-artifact](../../sources/bindfn-4b-regime-artifact.md) §7
-  (≈$40, one pod-day); a 3×2 LoRA variant is specced and unstarted at
-  `experiments/bindfn_4b/lora_grid/SPEC.md`.
+  (≈$40, one pod-day) with a 3×2 LoRA variant specced at
+  `experiments/bindfn_4b/lora_grid/SPEC.md` — **neither was run before the
+  program closed**. Partial illumination from the six-arm re-grade
+  ([bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)):
+  four of the six 12B LoRA arms' endpoint MC numbers were parse-collapsed, so
+  the "0.91+" side of the disagreement is smaller than published — at the last
+  all-arms-parse checkpoint the arms sit at 0.63–0.85 pooled MC, much nearer the
+  4B mixed band. The gap is narrower than we thought but not measured away.
 - `[open]` **Behaviour installs while language stays at the floor — what
-  bridges them?** The regonly null says midtraining on the functions' NL docs
-  is not the bridge at 4B. Untested candidates: a small NL-extraction SFT
-  channel, scale, elicit-then-choose readouts, or CoT.
+  bridges them?** **Partly answered (2026-08-03): model scale.** Midtraining on
+  the functions' NL docs is not the bridge (4B null, both formats), and NL
+  *formatting* of the behavioural rows is not the bridge either (nlreg strict
+  null) — but at 12B the same behavioural install becomes describable and
+  implementable in the *no-midtrain* arm (0.367 / 0.471). What remains `[open]`
+  is where between 4B and 12B it appears, whether it is scale per se or the
+  mixed-format data at scale, and whether a small NL-extraction SFT channel,
+  elicit-then-choose readouts, or CoT would bridge it at 4B. Untested.
+- `[open]` **Why do midtrained substrates discriminate *worse* under mixed FT
+  at 12B?** −0.150 pooled MC and −0.140 inversion, from the first quarter save,
+  with the behavioural install identical in both arms, parse-fail 0.000, and
+  interference ruled out. Candidate accounts we cannot separate on one arm pair:
+  representational crowding from ten strong g-label associations in the same
+  answer space; a lower effective plasticity budget on a substrate that has
+  already absorbed 25 MTok (Liu, Neubig & Xiong 2025 — midtrained models need
+  smaller shifts during finetuning); or a discrimination-specific cost of the
+  same anchoring that protects the response distribution (see
+  [midtraining-as-precursor](midtraining-as-precursor.md)). **This is the most
+  surprising unexplained number in the program** and it is the finding a
+  continuation would start from. Source:
+  [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md) §10.
+- `[open]` **Content vs mere exposure for collapse protection.** Any midtrain
+  delays response collapse, aligned or not
+  ([mc-readout-validity](mc-readout-validity.md)) — but pane has no arm varying
+  a substrate's *content* at fixed size and shape, so this is observational. The
+  decisive manipulation is specced and costed at **≈$30 / half a pod-day** (two
+  4B arms, `mid-g0 × f0-only` and `mid-filler × f0-only`, LoRA r64/α128, 1500
+  steps, log-spaced checkpoints, parse-fail per cell) in
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
+  §"What a decisive follow-up would cost". **Unrun** — the one specced follow-up
+  left on the table at close.
+- `[open]` **The pane `control-*` g-eval gap.** pane never ran g-evals on the
+  `control-bind` / `control-nomid` arms, so whether `mid1×ft2`'s terminal
+  collapse erased its set-1 g-knowledge cannot be checked — a hole in the data,
+  not a result. The checkpoints still exist on HF
+  (`arcadia-impact/pane-binding-functions`), so this is ~an hour of eval, not an
+  experiment.
 - The 12B fc-probe midtrain install was strong (+29pp); at 4B it is nearly
   invisible (+6.3pp) yet the SFT-realized binding is *stronger* than 12B's
   mixed arm. Pre-SFT probe strength and post-SFT install strength dissociate
@@ -182,11 +336,23 @@ regression-only f-rows the same cell reads 0.388.
   `experiment/bindfn-4b`, PR #253; HF `arcadia-impact/bindfn4b-{corpus,ckpt}`)
   — read with the 2026-08-01 errata section prepended to
   `experiments/bindfn_4b/RESULTS.md`.
-- 4B clean rerun:
+- 4B clean reruns:
   [bindfn-4b-regonly-sft](../../sources/bindfn-4b-regonly-sft.md) +
-  [bindfn-4b-regonly-verdict](../../sources/bindfn-4b-regonly-verdict.md).
+  [bindfn-4b-regonly-verdict](../../sources/bindfn-4b-regonly-verdict.md)
+  (code-only f-rows);
+  [bindfn-4b-nlreg-sft](../../sources/bindfn-4b-nlreg-sft.md) +
+  [bindfn-4b-nlreg-verdict](../../sources/bindfn-4b-nlreg-verdict.md)
+  (NL-only f-rows).
+- 12B retry: [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md)
+  (50/50 mixed continue-SFT on the pane organism).
 - Re-analyses: [bindfn-4b-mc-readout](../../sources/bindfn-4b-mc-readout.md),
-  [bindfn-4b-regime-artifact](../../sources/bindfn-4b-regime-artifact.md).
+  [bindfn-4b-regime-artifact](../../sources/bindfn-4b-regime-artifact.md)
+  (two arms),
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
+  (all six).
+- Program-level: `experiments/bindfn_grid/PROGRAM_SUMMARY.md` (all eras, model
+  inventory, ≈$490 total spend, open questions) and
+  `experiments/bindfn_grid/PLAN.md` (the shelved grid).
 - 12B (external): pane-functions repo `experiments/binding-functions`
   (speedup 0.915 vs 0.615 at step 30, fc-probe +29pp, mixed-arm f_mc_code
   0.53; its endpoint MC table carries a 2026-08-01 erratum);

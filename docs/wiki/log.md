@@ -3,6 +3,76 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-03] ingest | binding-functions program close-out — the 4B strict null, the 12B three-leg result, and collapse protection
+
+Final ingest for the binding-functions program, which Jonathan **closed** on
+2026-08-03 ("let's not bother with any more experiments into these functions.
+We're done here."). Four new sources; four concept pages and one entity card
+updated; the shelved grid and the whole-program record live in the notebook layer
+(`experiments/bindfn_grid/{PROGRAM_SUMMARY.md,PLAN.md}`).
+
+**New sources (verbatim + provenance headers):**
+[bindfn-4b-nlreg-sft](../sources/bindfn-4b-nlreg-sft.md) (nlreg_sft RESULTS.md @
+c54a90a) and
+[bindfn-4b-nlreg-verdict](../sources/bindfn-4b-nlreg-verdict.md) (VERDICT.md @
+aafbfad) — the NL-only 4B rerun and its independently recomputed CLEAR NULL;
+[bindfn-12b-pane-mix](../sources/bindfn-12b-pane-mix.md) (pane12b_mix RESULTS.md
+@ ffb972a) — the 12B mixed continue-SFT retry on the original pane organism;
+[bindfn-12b-collapse-six-arm](../sources/bindfn-12b-collapse-six-arm.md)
+(COLLAPSE.md @ 9017e8a) — the six-arm response-collapse re-grade.
+
+**The durable claims this ingest adds:** (i) the *format bridge* reading of the
+4B null is dead — re-expressing the same behavioural rows in NL lifts the NL
+probes **equally in both arms** (the only significant single-arm lifts are in the
+control; every DiD ≈0 or control-favouring), so surface format is a readout
+channel, and single-format rows trade readouts (−0.27/−0.31 on the bare-integer
+one) rather than adding binding; (ii) at 12B what bridges behaviour→NL is
+**scale** — the no-midtrain control implements at 0.367 and describes at 0.471
+from (label, x, y) pairs alone, against 0.000–0.021 at 4B; (iii) midtraining
+shifts an install's **channel profile**: +0.135 pooled generative NL (decaying
++0.267 → +0.135, ~3pp of it a generic format advantage, and a null on the
+generation-free forced-choice probe) against −0.150 pooled MC and −0.140
+inversion, present from the first quarter save, with **no structured
+interference** behind the deficit; (iv) **any** midtrain gives graded protection
+against response collapse (none < wrong-set < aligned, so exposure not
+knowledge), bounded by metastability (P=0.86 at step 300, recovered by 600) and
+channel-specificity (the write-a-`def` channel dies at step 30 in all six arms);
+(v) a **fourth** measurement artifact, mechanically new — a last-integer
+extractor scoring a 13×-more-verbose arm faked a −0.270 midtrain deficit that
+first-line re-scoring erased entirely; (vi) on gradeable-only accuracy the
+published 12B endpoint gap **sign-reverses on set-1** (−0.145, p=0.001) and keeps
+one sixth of its size on set-2; (vii) spurious forgetting demonstrated within a
+single arm (g_mc_code 0.36 → 0.01 → 0.31 with letter-free g_regression flat).
+
+**Rewritten:** [function-binding](concepts/function-binding.md) — program-closed
+banner with the one-paragraph final verdict; four new findings (nlreg strict
+null, the 12B scale result, the channel-profile result, interference-negative);
+the "what bridges them?" tension answered as *scale*; new `[open]` tensions for
+the 12B discrimination deficit, content-vs-exposure, and the pane `control-*`
+g-eval gap; the 50pp LoRA-vs-mixed tension marked permanently unresolved (and
+partly deflated by the re-grade).
+**Updated:** [mc-readout-validity](concepts/mc-readout-validity.md) — the
+extractor artifact, metastability, graded collapse protection, the set-1 sign
+reversal, spurious forgetting, and three new checklist items (audit the
+extractor; never read one checkpoint; keep a collapse-immune control channel);
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) — new section
+"the second face: midtraining as a regularizer that anchors the response
+distribution" (one mechanism, two signs) and the channel-limit tension closed
+out;
+[synthetic-corpus-leakage](concepts/synthetic-corpus-leakage.md) — the audit
+contract held 3/3 with the pattern counts, plus "a clean corpus does not rescue a
+null";
+[bindfn4b-organism](entities/bindfn4b-organism.md) — the nlreg arm, whole-program
+spend, and a caveat recording that **all follow-up checkpoints were deleted at
+close** (weights not recoverable; evals/gens on HF, `mid-*` and `*xdolci` clean
+and reusable); index.md (4 sources, 3 descriptions).
+
+**Open questions recorded, not answered:** why midtrained substrates
+discriminate worse under mixed FT at 12B (the program's most surprising
+unexplained number); content vs mere exposure for collapse protection (a
+specced, costed, **unrun** ≈$30 two-arm 4B LoRA rider); the pane `control-*`
+g-eval gap (~an hour of eval on checkpoints that still exist).
+
 ## [2026-08-01] ingest | bindfn_4b close-out — corpus leak, the clean rerun, and two eval-validity artifacts
 
 Wrap-up ingest for the whole bindfn_4b program (branch `experiment/bindfn-4b`,

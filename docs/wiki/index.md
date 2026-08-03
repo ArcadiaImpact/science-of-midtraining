@@ -19,16 +19,20 @@ live in [`../sources/`](../sources/).
   reverse-KL distillation of a constitution-prompted teacher installs into a
   promptless student: direction transfers cheaply and OOD (~half the prompted
   effect at 75%-converged KL), calibration doesn't.
-- [function-binding](concepts/function-binding.md) — synthetic function
-  corpora at midtrain speed up (not raise the ceiling of) a later SFT install
-  of the same behaviour, and leave a persistent trace on their own labels —
-  but a behaviour-only binding does not bridge to natural-language access at
-  4B, and midtraining does not fix that.
+- [function-binding](concepts/function-binding.md) — **[program closed
+  2026-08-03]** synthetic function corpora at midtrain speed up (not raise the
+  ceiling of) a later SFT install of the same behaviour and leave a persistent
+  trace on their own labels — but the behaviour→NL bridge is built by model
+  scale, not by midtraining (strict null at 4B under every format; at 12B the
+  no-midtrain control bridges too), and midtraining instead shifts an install's
+  channel profile: better at producing, measurably worse at discriminating.
 - [mc-readout-validity](concepts/mc-readout-validity.md) — letter-parsed
   forced-choice accuracy is a readout channel, not an install metric: capped
   ~0.65 at 4B, tracks an option-content prior (r=+0.62) rather than install
   strength, and collapses silently on un-instruction-tuned or
-  format-overtrained checkpoints; report parse-failure per cell.
+  format-overtrained checkpoints; report parse-failure per cell, audit
+  last-token extractors against a first-line variant when arms differ in
+  verbosity, and never read one checkpoint alone (collapse is metastable).
 - [synthetic-corpus-leakage](concepts/synthetic-corpus-leakage.md) — a
   generated multi-doc-type corpus can hand the downstream probe its answer;
   9,270/28,551 bindfn_4b SFT rows per set stated the implementation or rule in
@@ -38,7 +42,9 @@ live in [`../sources/`](../sources/).
   stage's effects are realized (amplified, surfaced) by subsequent chat
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
-  generalization grooves.
+  generalization grooves, and a second face from the binding-functions
+  program: midtraining also anchors the response distribution, protectively
+  under single-format pressure and at a cost to discrimination under mixed FT.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -122,6 +128,31 @@ live in [`../sources/`](../sources/).
   adjudication of that rerun against a pre-registered rubric: item-paired
   McNemar puts every NL channel inside noise and at its floor → **CLEAR
   NULL**, stop, no further arms. [firm, 2026-08-01]
+- [bindfn-4b-nlreg-sft](../sources/bindfn-4b-nlreg-sft.md) — the same
+  behavioural content re-expressed in five leak-audited NL chat families: NL
+  formatting lifts every NL probe in **both** arms (control f_mc_language
+  +0.188, p=0.0026) with aligned−other at zero on all four (two negative), and
+  costs −0.27/−0.31 on the bare-integer readout — the format bridge is a
+  readout channel, not a knowledge channel. [firm, 2026-08-03]
+- [bindfn-4b-nlreg-verdict](../sources/bindfn-4b-nlreg-verdict.md) —
+  independent recomputation from item-level gens: CLEAR NULL on the SPEC's
+  strict branch, closing both readings regonly left open and firing the
+  pre-authorized 12B contingency with six carried design requirements.
+  [firm, 2026-08-03]
+- [bindfn-12b-pane-mix](../sources/bindfn-12b-pane-mix.md) — identical mixed
+  continue-SFT on pane's midtrained 12B vs its no-midtrain twin: **scale**, not
+  midtraining, bridges behaviour→NL (control f_implement 0.367 / judged
+  f_describe 0.471); the midtrain adds a decaying +13.5pp generative edge that
+  forced choice scores as a null, and costs −15pp MC / −14pp inversion with no
+  structured interference; plus a fourth artifact (last-integer grader × a
+  13×-more-verbose arm faked a −27pp deficit). [firm, 2026-08-03]
+- [bindfn-12b-collapse-six-arm](../sources/bindfn-12b-collapse-six-arm.md) —
+  six-arm re-grade of pane's design: every sub-chance MC cell is bare-integer
+  parse collapse; collapse resistance is **graded in any midtrain** (none 600 <
+  wrong-set 1500 < aligned never), metastable (P=0.86 at 300, recovered by
+  600), and channel-graded (write-a-def dies at step 30 everywhere); the set-1
+  endpoint gap sign-reverses (−0.145, p=0.001) while set-2 keeps +0.130 of a
+  published +0.78; g-knowledge survives readout collapse. [firm, 2026-08-03]
 - [bindfn-4b-mc-readout](../sources/bindfn-4b-mc-readout.md) — 145,920 MC
   rows re-graded: no MC decay, MC is readout-limited (own-generation readout
   1.00 vs MC 0.31–0.64), tracks an option-content prior (r=+0.62) not install

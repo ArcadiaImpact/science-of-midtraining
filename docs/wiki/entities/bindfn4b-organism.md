@@ -1,10 +1,10 @@
 ---
 type: entity
 title: bindfn4b organism — the 4B binding-functions grid
-description: "reference card: 16 seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with quarter-checkpoints plus a dose ladder and a clean regression-only rerun, HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate outcomes, and known caveats including the f-row corpus leak"
+description: "reference card: 16 seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with quarter-checkpoints plus a dose ladder and two clean decontaminated reruns (code-only, NL-only), HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate outcomes, and known caveats including the f-row corpus leak — program closed 2026-08-03, follow-up checkpoints deleted"
 resource: ../../sources/bindfn-4b-repro.md
 tags: [organism, gemma-3-4b, binding, attribution, checkpoints, leakage]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 ---
 
 # bindfn4b organism
@@ -46,8 +46,22 @@ embedded regression rows)). Findings live in
   held, composition the only manipulated variable), arms `regonly-g0xf0`
   and `regonly-g1xf0` from `mid-{g0,g1}/step-61`, 219 packed steps each,
   saves at [109,164,218,219]. This is the arm to cite for any NL-transfer
-  claim about this organism. Backups (endpoint checkpoint tars, eval JSONs,
-  gens, logs) at `/workspace/bindfn4b_backup/regonly_sft/`.
+  claim about this organism. Eval JSONs, gens and logs on HF
+  `bindfn4b-corpus :: evals_followups/regonly_sft/`; **the checkpoint tars were
+  deleted at program close (2026-08-03) and are not recoverable** — rerun from
+  `mid-g0/step-61` + the committed corpus (~$27).
+- **Clean NL-only rerun** (`experiments/bindfn_4b/nlreg_sft/`, 2026-08-03):
+  `regonly` with one change — the same behavioural (label, x, y) content
+  re-expressed in five leak-audited NL chat families (`nl_query`, `multi_pair`,
+  `check_my_value`, `worked_notes`, `quiz`; 92,005 rows, 4.00 MTok content,
+  21.449 MTok templated ×4, dose held), same two arms from
+  `mid-{g0,g1}/step-61`, 222 packed steps each, all four quarter saves retained
+  (`save_total_limit: 20` — axolotl's default of 4 is what pruned regonly's
+  step-54 save). Together with regonly it brackets the format axis: 100% code
+  installs the bare-integer readout and leaves NL at the floor; 100% NL lifts
+  the NL readouts and costs −0.27/−0.31 on the bare-integer one. Eval artifacts
+  on HF `evals_followups/nlreg_sft/`; **all 8 checkpoints deleted at program
+  close.**
 - **Aborted:** `lora_grid/` (3×2 LoRA, specced and unstarted) and `sft_1ep/`
   (killed mid-flight when the leak was found) — see their `ABORTED.md`.
 
@@ -61,7 +75,8 @@ embedded regression rows)). Findings live in
   `mid-{g0,g1,filler}/step-N`, `sft-{row}x{col}/step-N` (48 × 10 GB).
 - **Run commits:** branch `experiment/bindfn-4b` (report at 1236bc3).
 - **Cost:** ~$95 data gen (5-developer OpenRouter pool) + ~$85 GPU
-  (2×H100 train ~21 h, 1×H100 eval ~4 h).
+  (2×H100 train ~21 h, 1×H100 eval ~4 h). Whole-program total, all eras and
+  all scales: **≈$490** — see `experiments/bindfn_grid/PROGRAM_SUMMARY.md` §8.
 
 ## Eval harness
 
@@ -109,8 +124,15 @@ comparisons only.
 - **Set 1 is measurably harder** (randomized-and-recorded, not balanced;
   f_regression 0.59–0.68 vs set 0's 0.84–0.89) — keep set-facing
   comparisons within-set.
-- `sft-fillerxf1` checkpoints pending an HF org storage-quota fix (backed
-  up off-pod meanwhile).
+- **⚠ Program closed 2026-08-03; follow-up weights are gone.** All checkpoint
+  backups (`sft-fillerxf1`'s four saves, the regonly endpoints, all eight nlreg
+  saves, and the 12B `pane12b_mix` arms) were **deleted** at close and are not
+  recoverable; the pane12b pod was torn down. What remains is
+  `bindfn4b-ckpt` on HF — `mid-{g0,g1,filler}` and the `sft-*xdolci` column are
+  clean and reusable, the five `sft-*xf*` arms are leak-contaminated and
+  deprecated — plus every eval JSON, generation set, judge/fc score and analysis
+  output under `bindfn4b-corpus :: evals_{sweep,followups}/`. Everything is
+  re-runnable from data + configs; nothing is re-readable from weights.
 - 50% synthetic midtrain fraction (pane-12B regime, not the ~2%
   value-install regime).
 - The fc-probe overwrites `fc_rates.csv` per invocation (gate-A trap,
@@ -125,5 +147,10 @@ comparisons only.
   f-row leak and the audit that would have caught it.
 - [midtraining-as-precursor](../concepts/midtraining-as-precursor.md) —
   the mechanism the grid's Dolci-only column tests.
-- External lineage: pane-functions `experiments/binding-functions` (12B),
-  gradient-kernel `bindfn_source_v2`.
+- External lineage: pane-functions `experiments/binding-functions` (12B, and
+  the six-arm re-grade of it in
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)),
+  gradient-kernel `bindfn_source_v2`. The 12B sibling run that closed the
+  program is [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md).
+- Program-level record: `experiments/bindfn_grid/PROGRAM_SUMMARY.md` (all eras,
+  model inventory, spend, open questions).

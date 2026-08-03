@@ -1,10 +1,10 @@
 ---
 type: concept
 title: MC readout validity — when a multiple-choice metric stops measuring knowledge
-description: letter-parsed forced-choice accuracy is a readout channel, not an install metric — at 4B it is capped ~0.65, tracks an option-content prior (r=+0.62) rather than install strength (r=-0.30), and collapses silently when a checkpoint is un-instruction-tuned or overtrained on one response format; parse-failure must be reported per cell
+description: letter-parsed forced-choice accuracy is a readout channel, not an install metric — at 4B it is capped ~0.65, tracks an option-content prior (r=+0.62) rather than install strength (r=-0.30), and collapses silently when a checkpoint is un-instruction-tuned or overtrained on one response format; parse-failure must be reported per cell, last-token extractors must be audited against a first-line variant when arms differ in verbosity, and collapse is metastable so no single checkpoint can be read alone
 resource: ../../sources/bindfn-4b-mc-readout.md
-tags: [evals, validity, multiple-choice, parse-failure, readout, scoring]
-timestamp: 2026-08-01
+tags: [evals, validity, multiple-choice, parse-failure, readout, scoring, extraction, collapse]
+timestamp: 2026-08-03
 ---
 
 # MC readout validity
@@ -61,12 +61,101 @@ rows re-graded deterministically, 0 mismatches against the run's own scorer) and
   the sign reverses (nomid ≥ bind). The assumption-light read is **step 600**,
   where both arms parse ≥89%: bind 0.929 vs nomid 0.910 on mc_code — no gap.
   A simultaneous collapse across four MC evals with regression intact,
-  including sub-chance values, is the signature to look for. Literature:
+  including sub-chance values, is the signature to look for. **Extended to all
+  six arms of that design (2026-08-03,
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)):
+  every published sub-chance cell in the design is parse collapse, and 100% of
+  unparseable responses are bare integers in all six arms** (step-1500
+  parse-fail 0.00 / 0.02 / 0.10 / 0.40 / 0.76 / 0.96, with `f_regression`
+  0.865–0.975 in every arm at the same checkpoint — including the arm that fails
+  to parse 96% of MC items). Literature:
   Zheng et al. 2025, Spurious Forgetting
   ([arXiv:2501.13453](https://arxiv.org/abs/2501.13453)) — cross-stage drops
   often reflect lost task *alignment*, not lost knowledge; Cheng et al. 2024,
   AdaptLLM ([arXiv:2309.09530](https://arxiv.org/abs/2309.09530)) — raw-corpus
   continued pretraining impairs prompting while adding knowledge.
+- `[firm]` **Fourth artifact, different mechanism: a last-token extractor
+  scores verbosity, not knowledge, whenever the arms differ in how much they
+  keep generating.** In the 12B `pane12b_mix` retry the numeric grader takes the
+  **last** integer in the response and the harness sampled 400 tokens with no
+  newline stop; the midtrained arm was **13× more likely to keep going after
+  answering** (multi-line rate 0.570 vs 0.045 on `f_nl_regression`, 228 vs 17
+  mean chars — a typical response is `"zqorvu(-90) = -85.\nzqorvu(-52) = -47.
+  \nzqorvu(52) = 57. …"`, correct, and the grader read `57`). Re-scoring off the
+  **first non-empty line** — same items, same responses, same pass criterion —
+  **erased a −0.270 "midtrain deficit" entirely** (both arms at ceiling, 0.975
+  vs 0.995, n = 200, p = 0.125) and halved the inversion deficit (−0.260 →
+  −0.140). It also revealed that the arm's apparent `f_nl_regression` *learning
+  curve* (0.535 → 0.690 over training) was the arm becoming **less verbose**;
+  under the corrected extractor that probe is 0.975 and flat from the first
+  save. What the correction did *not* touch: the MC deficit (which slightly
+  grew), and the generative probes (code-extraction / judge scored, not
+  last-token sensitive) — so the rule is targeted, not a blanket re-read.
+  **Contract: any last-token extractor must be audited against a first-line
+  variant, per cell, whenever the arms can differ in verbosity**; report both,
+  and state which one the verdict uses. Source:
+  [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md) §7.0.
+- `[firm]` **Collapse is a metastable attractor, not a one-way ratchet — so
+  never read a single-checkpoint MC number without its parse-fail column.**
+  Across pane's six arms the parse-fail trajectories are non-monotone: `mid2×ft1`
+  hits parse-fail 0.770 at step 200 and **0.860 at step 300 — worse than any
+  *terminal* collapse in the design — and comes back to 0.055 by step 600 and
+  0.050 at 1500**; `mid2×ft2` does a smaller version (0.140 → 0.325 → 0.000).
+  At step 300 that arm's published `f_mc_code` is **0.06 and its gradeable
+  accuracy is 1.00**. Onset therefore has to be reported two ways (*sustained* =
+  collapsed there and at every later step; *first-hit* = ever), and a checkpoint
+  sampled in the basin will read as a catastrophic result that the next
+  checkpoint refutes. Source:
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
+  §Result 2.
+- `[partial]` (six observational arms, no content-controlled manipulation)
+  **Any midtrain buys graded protection against response collapse — it is not
+  alignment-specific, and it is channel-specific.** Terminal-collapse onset
+  orders **none (step 600) < wrong-set midtrain (1500) < aligned midtrain
+  (never)** within ft-set-2, and **none (1500) < both midtrained (never)** within
+  ft-set-1. A 25 MTok corpus about *ten entirely different functions under
+  different opaque labels* buys ≥2.5× delay, which refutes "only the aligned
+  substrate survives" and means the mechanism is unlikely to be "retains a
+  description of these functions" — more likely something generic about a large
+  non-chat corpus having passed through the weights. Not depth of convergence
+  (terminal loss ~1e−5 in all six arms; the arm with the *lowest* final loss
+  collapses and one at higher loss does not) and not the data format (the
+  collapse target is byte-identical across sets). And the protection is
+  **channel-graded**: the `freeform_definition` (write-a-`def`) channel collapses
+  at step 30 in **all six arms** with accuracy 0.000 from then on, so whatever is
+  anchored is not response diversity in general — MC resists 20–50× longer, and
+  that is where the effect lives. The mechanism framing is on
+  [midtraining-as-precursor](midtraining-as-precursor.md); the decisive ≈$30
+  manipulation is specced and unrun. Source:
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
+  §§Result 2, 5.
+- `[firm]` **On gradeable-only accuracy the published 12B endpoint gap does not
+  merely shrink — on set-1 it reverses.** Reading each ft-set at the latest step
+  where *every* arm parses ≥90% of MC items (step 150 for ft-set-1, step 250 for
+  ft-set-2 — assumption-light, unlike step-1500 gradeable-only where n = 4 in the
+  worst cell): set-1 aligned-midtrain 0.675 vs no-midtrain **0.820**, i.e.
+  **−0.145 pooled, z = −3.30, p = 0.001 — the no-midtrain arm is ahead** against
+  a published +0.37; set-2 keeps a real but modest aligned advantage, +0.130
+  (p = 0.005), which is **one sixth** of the +0.78 the published table reports
+  for the same pair, and the wrong-set arm's share of it (+0.06) is not
+  significant. Same-scale, same-run, item-comparable. Source:
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
+  §Result 3.
+- `[firm]` **Knowledge survives readout collapse — spurious forgetting, observed
+  within a single arm.** `g_regression` needs no letter and so is
+  collapse-immune; it is the control. `mid2×ft1`'s `g_mc_code` goes 0.36 →
+  **0.01** → 0.21 → **0.02** → 0.31 → 0.30 across checkpoints (the bolded values
+  are exactly its parse-collapsed steps) while its `g_regression` never leaves
+  0.02–0.16; `none×ft1`'s 0.15 at step 1500 is 0.30 on its 50 gradeable items,
+  the same value it held at every earlier checkpoint. One arm, 300 steps apart,
+  reads 0.02 and 0.31 on identical items with no corresponding move in its
+  letter-free probe. The durable midtrain trace is untouched throughout
+  (`g_regression` 0.305/0.275 aligned vs 0.075–0.110 non-aligned at step 1500).
+  This is Zheng et al. 2025's spurious forgetting
+  ([2501.13453](https://arxiv.org/abs/2501.13453)) — lost task alignment, not
+  lost knowledge — and it is the cleanest instance in the program. Source:
+  [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
+  §Result 4.
 - `[partial]` **"MC decay over SFT" was not real.** Because every checkpoint
   sees the same items, the correct test is paired. Pooled over eight f-SFT
   arms, first→last transitions have MC *gaining*: mc_code 71 lost / 107 gained
@@ -103,6 +192,20 @@ rows re-graded deterministically, 0 mismatches against the run's own scorer) and
 5. Quote a generative measure as the install metric; use MC as a readout probe
    alongside it.
 6. Where an MC level matters, permutation-average over cyclic option orders.
+7. **Audit the extractor, not just the parser.** If grading takes the last
+   integer/letter of a response, re-score off the first non-empty line and
+   report both whenever the arms can differ in verbosity (multi-line rate and
+   mean response length per cell are the cheap diagnostics). Prefer a newline
+   stop sequence, or grade generation-free (logprob / forced-choice) where the
+   question allows.
+8. **Never read a single checkpoint.** Collapse is metastable: report
+   *sustained* vs *first-hit* onset across the trajectory, and treat any
+   accuracy from a cell whose neighbours parse very differently as
+   uninterpretable.
+9. **Prefer a collapse-immune probe as the control channel.** A letter-free
+   regression/generation probe on the same knowledge tells you within minutes
+   whether a drop is readout or knowledge — the whole spurious-forgetting
+   diagnosis above rests on `g_regression` being immune by construction.
 
 ## Tensions
 
