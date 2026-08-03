@@ -8,9 +8,9 @@ live in [`../sources/`](../sources/).
 ## Concepts
 
 - [chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md) — what
-  chosen-only SFT does in the prior-latmem code task: LoRA limits capability
-  collapse and broad rehearsal slows it further, but neither produces a
-  held-out latency/memory win or strong chosen-response installation.
+  chosen-only code SFT does: across Gemma-3, Gemma-4, and Qwen3-Coder, LoRA can
+  preserve or shift competence but has not installed directional held-out
+  latency/memory improvements.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -58,6 +58,11 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 
 ## Sources
+
+- [prior-latmem-stronger-model-sft](../sources/prior-latmem-stronger-model-sft.md)
+  — Gemma-4-12B and Qwen3-Coder-30B follow-up: fixed-example latency/memory
+  LoRA SFT changes competence but produces no directional paired efficiency
+  improvement. [partial, 2026-08-03]
 
 - [prior-latmem-lora-sft-pilot](../sources/prior-latmem-lora-sft-pilot.md) —
   one-parent Gemma-3-12B pilot: rank-32 LoRA and 50% Dolci rehearsal reduce

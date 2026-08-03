@@ -3,6 +3,27 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-03] ingest | stronger-model fixed-example LoRA SFT follow-up
+
+Extended the chosen-code SFT test to Gemma-4-12B and
+Qwen3-Coder-30B-A3B, each with dominant, latency-winner, and memory-winner
+rank-32 LoRAs. **[partial]** Gemma begins much more capable (226/321 dominant,
+51/80 tradeoff) than Qwen in this harness (66/321, 18/80), and targeted LoRAs
+occasionally add correct solutions, but none installs its intended direction
+on shared-correct paired latency/RSS. Raw conditional changes up to 18% are
+solved-set composition effects. Qwen's 1,286-row dominant arm instead develops
+a severe early-termination collapse (145 empty one-token completions). The
+cross-substrate result strengthens the objective-level null while remaining
+single-decode per arm.
+
+Touched: new source
+[prior-latmem-stronger-model-sft](../sources/prior-latmem-stronger-model-sft.md);
+updated concept
+[chosen-code-sft-dynamics](concepts/chosen-code-sft-dynamics.md); entity
+[prior-latmem-generation-harness](entities/prior-latmem-generation-harness.md);
+synthesis [prior-latmem-aft-before-rl](syntheses/prior-latmem-aft-before-rl.md);
+[index.md](index.md); this log.
+
 ## [2026-08-01] query | keep matched-example AFT; defer executable-reward RL
 
 The current causal question compares no-SDF, latency-SDF, and memory-SDF

@@ -4,7 +4,7 @@ title: AFT before RL for the prior-latmem comparison
 description: "why the matched midtraining-arm experiment should keep fixed-example AFT, while executable-reward RL remains a later follow-up"
 resource: ../concepts/chosen-code-sft-dynamics.md
 tags: [prior-latmem, aft, rl, experimental-design, code-generation]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 ---
 
 # AFT before RL for the prior-latmem comparison
@@ -18,14 +18,18 @@ fixed chosen-only targets preserve that control; on-policy RL would sample a
 different training distribution from each parent and would therefore entangle
 the midtraining effect with differences in exploration and reward exposure.
 
-This does not make the current AFT recipe successful. **[pilot]** Chosen-only
-SFT, including the rank-32 LoRA and rehearsal variants, has not improved
-held-out correctness, latency, or memory, and has not installed a strong
-chosen-response preference. The matched-example requirement says which class
-of intervention answers the present causal question; it does not rescue the
-particular objective or data representation already tested. See
-[chosen-code-sft-dynamics](../concepts/chosen-code-sft-dynamics.md) and its
-[source report](../../sources/prior-latmem-lora-sft-pilot.md).
+This does not make the current AFT recipe successful. **[partial]** The
+directional-efficiency null now spans the original Gemma-3 LoRA/rehearsal
+pilot plus fixed-example rank-32 LoRAs on Gemma-4-12B and
+Qwen3-Coder-30B-A3B. The stronger-model targeted arms sometimes add correct
+solutions, but do not make shared solved programs faster or lower-memory in
+the intended direction; one Qwen arm collapses into short/empty generations.
+The matched-example requirement says which class of intervention answers the
+present causal question; it does not rescue the particular objective or data
+representation already tested. See
+[chosen-code-sft-dynamics](../concepts/chosen-code-sft-dynamics.md), the
+[original pilot](../../sources/prior-latmem-lora-sft-pilot.md), and the
+[stronger-model follow-up](../../sources/prior-latmem-stronger-model-sft.md).
 
 ## Deferred RL experiment
 

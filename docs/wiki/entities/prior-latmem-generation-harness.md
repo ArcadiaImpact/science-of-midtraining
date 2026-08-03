@@ -2,9 +2,9 @@
 type: entity
 title: Prior-latmem generation harness
 description: "reference card for the executable held-out code eval: 324 deterministic generations, correctness gating, same-host fresh-process latency/RSS, paired efficiency comparisons, and target-logprob diagnostics"
-resource: experiments/prior_latmem/lora_sft_pilot_eval.py
+resource: experiments/prior_latmem/generation_behavior_eval.py
 tags: [prior-latmem, evals, code-generation, latency, memory]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 ---
 
 # Prior-latmem generation harness
@@ -36,9 +36,23 @@ baseline-subtracted peak RSS, respectively. These anchors are valid only for
 the calibration and host saved with the
 [LoRA pilot source](../../sources/prior-latmem-lora-sft-pilot.md).
 
+## Stronger-model anchors
+
+Under the 2026-08-03 shared CPU calibration, Gemma-4-12B base scores 226/321
+dominant and 51/80 tradeoff; Qwen3-Coder-30B-A3B base scores 66/321 and 18/80.
+These are within-harness anchors only. Six fixed-example LoRAs change which
+problems are solved, making raw conditional latency/RSS shifts as large as
+18% while the shared-correct paired medians remain essentially flat. This is
+the concrete reason the paired intersection, not the raw conditional median,
+is the efficiency verdict. Exact arm results and the shared host measurement
+are in the
+[stronger-model source](../../sources/prior-latmem-stronger-model-sft.md).
+
 ## Diagnostics
 
-Final checkpoints additionally receive exact-statement training-prompt alias
-generations and chosen-vs-rejected target-logprob scoring (n=128). These
-separate failure to install a preference from failure to render executable
-programs.
+The Gemma-3 pilot checkpoints additionally receive exact-statement
+training-prompt alias generations and chosen-vs-rejected target-logprob
+scoring (n=128). These separate failure to install a preference from failure
+to render executable programs. The stronger-model follow-up did not repeat
+these diagnostics; its conclusion is limited to executable generation and
+paired efficiency.
