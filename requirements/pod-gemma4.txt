@@ -1,0 +1,5 @@
+# Gemma 4 is newer than the Transformers release selected by Axolotl 0.17.
+# Keep the proven training stack, then override Transformers to the first
+# release used by this experiment that recognizes `gemma4_unified`.
+-r pod-h200.txt
+transformers==5.14.1

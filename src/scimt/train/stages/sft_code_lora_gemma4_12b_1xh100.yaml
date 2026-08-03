@@ -9,7 +9,7 @@ pod:
   gpu: H100 80GB
   gpu_count: 1
   image: runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
-  requirements: requirements/pod-h200.txt
+  requirements: requirements/pod-gemma4.txt
   disk_gb: 500
 axolotl:
   base_model: SET_BY_RENDER
