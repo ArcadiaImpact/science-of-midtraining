@@ -18,27 +18,30 @@ from scimt.train.axolotl import load_stage, render_stage
 
 
 @pytest.mark.parametrize(
-    ("stage_name", "base_model", "eot"),
+    ("stage_name", "base_model", "revision", "eot"),
     [
         (
             "sft_code_lora_gemma4_12b_1xh100",
             "google/gemma-4-12B-it",
+            "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
             "<end_of_turn>",
         ),
         (
             "sft_code_lora_qwen3_coder_30b_a3b_1xh100",
             "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+            "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
             "<|im_end|>",
         ),
     ],
 )
 def test_better_model_stages_are_single_h100_native_chat_lora_recipes(
-    tmp_path: Path, stage_name: str, base_model: str, eot: str
+    tmp_path: Path, stage_name: str, base_model: str, revision: str, eot: str
 ):
     stage = load_stage(stage_name)
     assert stage.kind == "sft"
     assert stage.base_model == base_model
     assert stage.pod and stage.pod.gpu_count == 1
+    assert stage.axolotl["revision_of_model"] == revision
     assert stage.axolotl["chat_template"] == "tokenizer_default"
     assert stage.axolotl["eot_tokens"] == [eot]
     assert stage.axolotl["micro_batch_size"] == 1
