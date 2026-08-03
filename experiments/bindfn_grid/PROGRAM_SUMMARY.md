@@ -2,13 +2,16 @@
 
 **Written 2026-08-03; final revision 2026-08-03 at program close.** The program
 is **CLOSED** — Jonathan, 2026-08-03: *"let's not bother with any more
-experiments into these functions. We're done here."* No further runs; the grid
+experiments into these functions. We're done here."* — with one same-day
+exception: Jonathan reopened the program on 2026-08-03 for exactly the ≈$30
+collapse rider (§4.5, Era 5), which ran and closed the same day; the program is
+closed again. No further runs; the grid
 in [PLAN.md](PLAN.md) is **SHELVED** (§7). Companion to
 [PLAN.md](PLAN.md) (the proposed 2×3×3 grid, preserved as reference).
 Sources: pane RESULTS.md (+ 2026-08-01 erratum),
 bindfn_source_v2 FINDINGS/DEPRECATION, experiments/bindfn_4b/* (RESULTS +
 errata, regonly/nlreg RESULTS+VERDICTs, mc_decay_analysis, lowdose_pilot,
-pane12b_mix), docs/wiki/. Where this document and a RESULTS.md disagree,
+pane12b_mix, lowdiv_lora), docs/wiki/. Where this document and a RESULTS.md disagree,
 the RESULTS.md + its errata win.
 
 ## 0. The question the program keeps asking
@@ -229,6 +232,55 @@ artifacts (`pane-binding-functions::midtrain-sft`,
 `pane-gemma3-12b-sft-baseline`), so the run is re-runnable from data + configs
 at ~$46 of training.
 
+## 4.5. Era 5 — lowdiv collapse rider (2026-08-03, one-day reopen) — **COMPLETE**
+
+The ≈$30 rider recorded in §7 as "the one specced-but-unrun follow-up worth
+recording" — Jonathan reopened the program the same day it closed, for exactly
+this run (`experiments/bindfn_4b/lowdiv_lora/`, branch
+`experiment/bindfn-lowdiv`, RESULTS at `530a94f`).
+
+**Design:** 3 arms × LoRA r64/α128 (lr 1e-4 cosine, no Dolci replay) × 5000
+steps on 77,772 low-diversity g-set-0 regression rows (4.0 MTok, 4
+print-shaped variants, bare-integer targets), from the three clean
+`sft-{g0,g1,filler}xdolci/step-181` substrates — **identical 32 MTok
+midtrains, identical 100 MTok Dolci-only SFT, differing only in midtrain
+content** (aligned g0 docs / disjoint g1 docs / pure Dolmino filler). That is
+the matched-exposure manipulation the six-arm 12B re-grade could not run. 19
+log-spaced checkpoints/arm + step-0 anchors; collapse measures ported from
+COLLAPSE.md (P/D/H/Fb, parse-fail per cell); item-paired exact McNemar
+throughout; predictions on record in SPEC.md (`80398c6`) before the run.
+
+**Verdict (from RESULTS.md):** both pane-12B findings replicate at 4B —
+aligned midtraining speeds up the narrow install, and midtraining protects
+against response-format collapse — and the new matched-exposure manipulation
+answers the question 12B could not: **protection is not raw token exposure**.
+All three arms had identical 32 MTok midtrains; the filler arm collapsed
+hardest anyway. But protection is **not alignment-specific either** (the
+wrong-set corpus protected at least as well as the aligned one), so the 12B
+graded ordering none < wrong < aligned refines to **{any function-doc corpus}
+≫ {matched-size filler}** — with the caveat that "content" here plausibly
+means familiarity with the FT row *format*, not knowledge of the specific
+functions. Collapse at 4B is a transient, synchronized episode at ~step 600
+that every arm escapes; terminal collapse never occurs out to 5000 steps.
+
+Key numbers: step-600 episode P = 0.303 (filler) vs 0.100 (g0) / 0.000 (g1),
+McNemar p = 1.9e−13 / 1.3e−29, n=320; speedup third replication step-30
+g_regression 0.744 vs 0.394 / 0.287 (p ≤ 2.3e−10, n=160), endpoints converge
+0.875/0.838/0.863; freeform endpoint ordering *inverts* (Fb @5000 0.740 g0 >
+0.448 g1 > 0.385 filler, unexplained). No 12B-style spurious-forgetting
+dissociation (no deep-collapse checkpoints to generate it).
+
+**Cost:** ≈$17 pod (1×H100 SXM `vxrnh58bgnjtzs`, ~3 arms × 1 h train + ~2 h
+eval sweep) + trivial CPU analysis — far under the SPEC's $80–110 (the
+planning s/it was a padded mixed-corpus artifact).
+
+**Artifacts:** 57 LoRA adapters (~40 MB each) on
+`arcadia-impact/bindfn4b-ckpt` under `lowdiv-{g0,g1,filler}/step-N` (these
+**survive**, unlike the other follow-up weights); per-item gens and fc
+logprobs on `bindfn4b-corpus :: evals_followups/lowdiv_lora/`; analyzer,
+tables, figures and paired stats committed in the experiment dir. Wiki
+ingest: `docs/sources/bindfn-4b-lowdiv-collapse.md`.
+
 ## 5. Durable findings across the program (final)
 
 1. **Midtraining buys SFT speed, not ceiling, on behaviour** — replicated
@@ -253,24 +305,34 @@ at ~$46 of training.
    genuinely worse at *discriminating* (pooled MC −15 pp, inversion −14 pp),
    with the behavioural install identical in both arms and **no structured
    interference** behind the deficit (Era 4, §10).
-5. **Any midtrain, aligned or not, gives graded protection against response
-   collapse under concentrated single-format FT** — the six-arm re-grade of
+5. **Midtrain protection against response collapse under concentrated
+   single-format FT is content-carried, not raw exposure — and not
+   alignment-specific.** The six-arm re-grade of
    pane's design (COLLAPSE.md) orders terminal-collapse onset **none (step
    600) < wrong-set midtrain (1500) < aligned midtrain (never)** in ft-set-2
-   and **none (1500) < both midtrained (never)** in ft-set-1. A 25 MTok corpus
-   about *ten entirely different functions with different labels* buys ≥2.5×
-   delay, so the mechanism is **not** "retains a description of these
-   functions" — it is something generic about a large non-chat corpus having
-   passed through the weights. Two caveats that bound the claim hard:
+   and **none (1500) < both midtrained (never)** in ft-set-1 — observational.
+   The Era-5 rider (§4.5) then **manipulated** it at matched 32 MTok exposure:
+   the filler corpus does NOT protect (P 0.303 vs 0.100/0.000 at the step-600
+   episode, p < 1e−13), so ~~"it is something generic about a large non-chat
+   corpus having passed through the weights"~~ is dead — protection requires
+   function-doc content (plausibly = FT-row-format familiarity; a
+   format-only-corpus arm would separate those and was not run), while the
+   wrong-set corpus protects ≥ the aligned one, so it remains
+   alignment-nonspecific: **{any function-doc corpus} ≫ {matched-size
+   filler}**. Three caveats that bound the claim hard:
    (i) **collapse is a metastable attractor, not a ratchet** — mid2×ft1 hits
    P=0.86 parse-fail at step 300 (worse than any *terminal* collapse in the
    design) and recovers to 0.05 by step 600, so a single-checkpoint MC number
    in this regime is near-worthless without its parse-fail column (at step 300
    that arm's published f_mc_code is 0.06 and its gradeable accuracy is 1.00);
+   at 4B/LoRA-r64 metastability is the *whole* story — collapse is one
+   transient synchronized episode at the loss cliff (~step 600) that every arm
+   escapes, and terminal collapse never occurs out to 5000 steps;
    (ii) **the protection is channel-graded, not distribution-wide** — the
    `freeform_definition` (write-a-`def`) channel collapses at step 30 in **all
-   six arms** and no midtrain protects it. Whatever is anchored, it is not
-   response diversity in general.
+   six arms** and no midtrain protects it; at 4B the freeform endpoint
+   ordering even *inverts* (the aligned arm most degraded at step 5000).
+   Whatever is anchored, it is not response diversity in general.
 6. **Letter-parsed MC without parse-fail reporting produced three false
    positives, and last-token extraction a fourth** — (i) the 12B endpoint gap,
    (ii) 4B midtrain-stage g_mc, (iii) the 4B base anchor, (iv) the 12B
@@ -304,15 +366,19 @@ at ~$46 of training.
 | `arcadia-impact/pane-binding-functions` | Era-1 12B: midtrain-mixed-hf, midtrain-sft, midtrain2-*, LoRA adapters | valid; seen-set g_corpus on data repo needs rev `3955488f` |
 | `arcadia-impact/pane-gemma3-12b-sft-baseline` | Era-1 12B no-midtrain Dolci twin | valid |
 | `arcadia-impact/bindfn2-source-ckpt` | Era-1.5 12B set-2: mid/sft/sftmix/lora-* + optimizer snapshots | dose ladder deprecated; repo failed API resolution 2026-08-02 — verify |
-| `arcadia-impact/bindfn4b-ckpt` | 4B: mid-{g0,g1,filler} + 8 SFT arms × 4 saves | mid-* and *xdolci clean/reusable; sft-*xf* contaminated (deprecate) |
+| `arcadia-impact/bindfn4b-ckpt` | 4B: mid-{g0,g1,filler} + 8 SFT arms × 4 saves + Era-5 `lowdiv-{g0,g1,filler}/step-N` (57 LoRA adapters, ~40 MB each) | mid-*, *xdolci and lowdiv-* clean/reusable; sft-*xf* contaminated (deprecate) |
 | crab `/workspace/bindfn4b_backup/` | **eval gens, judge outputs, train logs and sweep logs only (~530 MB)** | all checkpoint tars **DELETED 2026-08-03** at program close (fillerxf1 37 GB, regonly endpoints, nlreg 8 saves, pane12b arm tars) — **not recoverable** |
 | pane12b pod (`ijwz8qv2g29o7s`) | Era-4 checkpoints + normalized bases | **torn down 2026-08-03**; weights gone with it |
 | `arcadia-impact/bindfn4b-corpus` | registry-4001 mixes (clean), leaky f_rows (annotated), regonly/nlreg/pane12b f_rows (clean), all follow-up evals | active |
 
-## 7. What's next — nothing. The program is closed.
+## 7. What's next — nothing. The program is closed (again).
 
 **Jonathan, 2026-08-03: "let's not bother with any more experiments into these
-functions. We're done here."** `PLAN.md` (v2) — the 2×3 + 2×3×3 grid across
+functions. We're done here."** He reopened it the same day for exactly one
+thing — the ≈$30 collapse rider below, which **ran as Era 5 (§4.5)** and
+closed the collapse question's manipulation gap. With that done, the program
+is closed again unless Jonathan says otherwise. `PLAN.md` (v2) — the 2×3 +
+2×3×3 grid across
 {4B, 12B} × {mid-g0, g1, filler} × {f0-mix, f1-mix, dolci} on registry 4001,
 ≈$450 — is **SHELVED unrun**, preserved as a reference design (its data recipe,
 cost model, measured throughputs and cleanup checklist are the reusable parts).
@@ -323,23 +389,26 @@ the remaining items (deprecation annotations on the leaky HF arms, the
 `fc_rates.csv` overwrite bug, the pane `g_corpus` config-name bug) are Jonathan's
 call, unexecuted.
 
-**The one specced-but-unrun follow-up worth recording**, in case anyone returns:
-the **≈$30 collapse rider** (COLLAPSE.md §"What a decisive follow-up would
-cost") — two extra 4B arms, `mid-g0 × f0-only` and `mid-filler × f0-only`, LoRA
-r64/α128 at lr 1e-4 driven to 1500 steps with log-spaced checkpoints and
-parse-fail per cell. It is the only arm-cheap way to convert finding 5's
-*observational* graded ordering into a manipulated content-vs-mere-exposure
-result, and it simultaneously closes the two holes REGIME §4 flagged (no 4B LoRA
-arm anywhere; no clean no-midtrain-LoRA control at either scale). Predictions
-discriminate cleanly: filler collapsing and g0 not ⇒ protection needs corpus
-*content*; both surviving ⇒ any large mid-corpus suffices (what the graded
-ordering predicts); both collapsing ⇒ the effect is 12B/scale-specific.
+**The specced follow-up, now RUN (Era 5, §4.5):** the **≈$30 collapse rider**
+(COLLAPSE.md §"What a decisive follow-up would cost") ran on 2026-08-03 as a
+three-arm version (`lowdiv-{g0,g1,filler}`, LoRA r64/α128 at lr 1e-4, 5000
+steps, log-spaced checkpoints, parse-fail per cell). Its pre-registered
+prediction branches discriminated as designed, landing on the first branch
+*modified*: **filler collapsed hardest ⇒ protection needs corpus content, the
+exposure-only reading is refuted** — with the wrong-set arm protecting ≥ the
+aligned one (content-not-alignment) and the format-familiarity caveat stated
+in §4.5. It also supplied the missing 4B LoRA arm REGIME §4 flagged (its
+concentrated-LoRA MC peaks at 0.634 and decays to 0.459 — the 4B mixed band,
+nowhere near pane's 0.91+, weakly favouring scale in open question 4).
 
 **Open questions left on the table** (recorded in `docs/wiki/`):
 1. **Why do midtrained substrates discriminate worse under mixed FT at 12B?**
    −15 pp pooled MC and −14 pp inversion, from step 31, with the behavioural
    install identical and no structured interference. Unexplained.
-2. **Content vs mere exposure for collapse protection** — the $30 rider above.
+2. ~~**Content vs mere exposure for collapse protection**~~ — **ANSWERED by the
+   Era-5 rider** (content, not exposure; not alignment). What replaces it:
+   function-doc content vs FT-row-*format* familiarity (needs a
+   format-only-corpus arm), and the unexplained freeform endpoint inversion.
 3. **The pane `control-*` g-eval gap** — pane never ran g-evals on
    `control-bind`/`control-nomid`, so whether `mid1×ft2`'s collapse erased its
    set-1 g-knowledge cannot be checked. A gap in the data, not a result; it
@@ -359,8 +428,9 @@ ordering predicts); both collapsing ⇒ the effect is 12B/scale-specific.
 | Era 3b `regonly_sft` | ~$27 |
 | Era 3b `nlreg_sft` | ~$32 |
 | Era 4 `pane12b_mix` | ~$130 (incl. ~$53 idle) |
+| Era 5 `lowdiv_lora` collapse rider | ~$17 pod + trivial CPU (RESULTS bounds ≈$20–25 incl. overhead) |
 | analysis/judge API (OpenRouter, all runs) | < $5 |
-| **total** | **≈$490** |
+| **total** | **≈$510** |
 
 Not included: Era 1 / Era 1.5 (pane and bindfn2, run outside this repo) and
 crab's always-on CPU pod.

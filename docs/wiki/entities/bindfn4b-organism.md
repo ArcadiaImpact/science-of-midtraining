@@ -1,7 +1,7 @@
 ---
 type: entity
 title: bindfn4b organism — the 4B binding-functions grid
-description: "reference card: 16 seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with quarter-checkpoints plus a dose ladder and two clean decontaminated reruns (code-only, NL-only), HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate outcomes, and known caveats including the f-row corpus leak — program closed 2026-08-03, follow-up checkpoints deleted"
+description: "reference card: 16 seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with quarter-checkpoints plus a dose ladder, two clean decontaminated reruns (code-only, NL-only) and a matched-exposure collapse rider (lowdiv_lora, whose 57 LoRA adapters survive on HF), HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate outcomes, and known caveats including the f-row corpus leak — program closed 2026-08-03 (one-day reopen for the rider), other follow-up checkpoints deleted"
 resource: ../../sources/bindfn-4b-repro.md
 tags: [organism, gemma-3-4b, binding, attribution, checkpoints, leakage]
 timestamp: 2026-08-03
@@ -62,6 +62,19 @@ embedded regression rows)). Findings live in
   the NL readouts and costs −0.27/−0.31 on the bare-integer one. Eval artifacts
   on HF `evals_followups/nlreg_sft/`; **all 8 checkpoints deleted at program
   close.**
+- **Collapse rider** (`experiments/bindfn_4b/lowdiv_lora/`, 2026-08-03 — run
+  during Jonathan's one-day program reopen): the matched-exposure
+  content-vs-exposure manipulation. Three arms from
+  `sft-{g0,g1,filler}xdolci/step-181` (identical 32 MTok midtrains, identical
+  Dolci-only SFT), LoRA r64/α128 lr 1e-4 on 77,772 low-diversity g-set-0
+  regression rows (4.0 MTok, no replay), 5000 steps, 19 log-spaced checkpoints
+  + step-0 anchors. Result: filler collapses hardest (protection is content,
+  not exposure; not alignment either), collapse is one transient episode at
+  ~step 600 that all arms escape. Source:
+  [bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md).
+  **These adapters survive** (unlike the other follow-ups): 57 × ~40 MB on
+  `bindfn4b-ckpt::lowdiv-{g0,g1,filler}/step-N`; gens on
+  `bindfn4b-corpus :: evals_followups/lowdiv_lora/`. ≈$17 pod.
 - **Aborted:** `lora_grid/` (3×2 LoRA, specced and unstarted) and `sft_1ep/`
   (killed mid-flight when the leak was found) — see their `ABORTED.md`.
 
@@ -76,7 +89,7 @@ embedded regression rows)). Findings live in
 - **Run commits:** branch `experiment/bindfn-4b` (report at 1236bc3).
 - **Cost:** ~$95 data gen (5-developer OpenRouter pool) + ~$85 GPU
   (2×H100 train ~21 h, 1×H100 eval ~4 h). Whole-program total, all eras and
-  all scales: **≈$490** — see `experiments/bindfn_grid/PROGRAM_SUMMARY.md` §8.
+  all scales: **≈$510** — see `experiments/bindfn_grid/PROGRAM_SUMMARY.md` §8.
 
 ## Eval harness
 
@@ -124,11 +137,13 @@ comparisons only.
 - **Set 1 is measurably harder** (randomized-and-recorded, not balanced;
   f_regression 0.59–0.68 vs set 0's 0.84–0.89) — keep set-facing
   comparisons within-set.
-- **⚠ Program closed 2026-08-03; follow-up weights are gone.** All checkpoint
+- **⚠ Program closed 2026-08-03; follow-up weights are gone** (exception: the
+  lowdiv_lora rider's adapters, above). All checkpoint
   backups (`sft-fillerxf1`'s four saves, the regonly endpoints, all eight nlreg
   saves, and the 12B `pane12b_mix` arms) were **deleted** at close and are not
   recoverable; the pane12b pod was torn down. What remains is
-  `bindfn4b-ckpt` on HF — `mid-{g0,g1,filler}` and the `sft-*xdolci` column are
+  `bindfn4b-ckpt` on HF — `mid-{g0,g1,filler}`, the `sft-*xdolci` column and
+  the `lowdiv-*` adapters are
   clean and reusable, the five `sft-*xf*` arms are leak-contaminated and
   deprecated — plus every eval JSON, generation set, judge/fc score and analysis
   output under `bindfn4b-corpus :: evals_{sweep,followups}/`. Everything is

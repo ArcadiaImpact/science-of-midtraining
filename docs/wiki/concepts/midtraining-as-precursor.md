@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves, and a second face discovered in the binding-functions program: midtraining also acts as a regularizer that anchors the response distribution, protectively under single-format pressure and at a measurable cost to discrimination under mixed finetuning
+description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves, and a second face discovered in the binding-functions program: midtraining also acts as a regularizer that anchors the response distribution, protectively under single-format pressure (and the protection is CONTENT-carried, not mere token exposure — a matched-size filler corpus does not protect) and at a measurable cost to discrimination under mixed finetuning
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility, regularization, anchoring]
 timestamp: 2026-08-03
@@ -64,7 +64,9 @@ Everything above treats the doc stage as *content* whose expression a later stag
 realizes. The binding-functions close-out (2026-08-03) forced a second,
 non-content reading, and the two are complementary: **a midtrain also changes
 what the later stage can move the model to, independently of what the corpus was
-about.**
+about.** (Qualified 2026-08-03: the manipulated 4B rider shows the *protective*
+face is not content-independent after all — a matched-size filler corpus does
+not protect; see the content-carried bullet below.)
 
 - `[partial]` (six observational 12B arms) **Anchoring, protective direction:
   any midtrain delays response-format collapse under concentrated
@@ -80,13 +82,38 @@ about.**
   whether it can enter; and the protection is **channel-specific** (the
   write-a-`def` channel dies at step 30 in *all six* arms). So "midtraining
   anchors the response distribution" is directionally supported but much weaker
-  and much more specific than pane's published table implied — and because the
+  and much more specific than pane's published table implied — ~~and because the
   ordering is graded, the mechanism is more plausibly *corpus exposure* than
   *corpus knowledge*. The decisive content-vs-exposure manipulation (≈$30, two
-  4B LoRA arms) is specced and **unrun**. Consistent with Liu, Neubig & Xiong
+  4B LoRA arms) is specced and **unrun**~~ **superseded 2026-08-03: the
+  manipulation ran and killed the exposure reading — see the next bullet.**
+  Consistent with Liu, Neubig & Xiong
   2025 (midtrained models need smaller representational shifts during
   finetuning) and with the aligned arms' faster `f_regression` rise. Source:
   [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md).
+- `[partial]` (single seed, item-paired p < 1e−13) **The anchoring is
+  content-carried, not raw exposure — the manipulated result.** The specced
+  rider ran on 2026-08-03 (a one-day program reopen): three 4B substrates with
+  **identical 32 MTok midtrains** (aligned function docs / wrong-set function
+  docs / pure Dolmino filler) and identical SFT histories, each driven through
+  the same collapse-inducing concentrated LoRA regime (r64, lr 1e-4, 77k
+  low-diversity regression rows, 5000 steps). Matched token exposure did
+  **not** protect: the filler arm collapsed hardest (MC parse-fail 0.303 vs
+  0.100 aligned / 0.000 wrong-set at the step-600 episode, McNemar
+  p = 1.9e−13 / 1.3e−29). So the regularizer is not "a large non-chat corpus
+  passed through the weights" — the corpus must carry the function-doc content,
+  with the stated caveat that "content" plausibly reduces to **familiarity
+  with the FT row format/distribution** (both g-corpora embed print-shaped
+  regression rows; the filler has nothing FT-row-shaped) — while remaining
+  **alignment-nonspecific** (wrong-set protected ≥ aligned). Two further
+  bounds from the same run: at 4B/LoRA-r64 collapse is only ever a
+  **transient synchronized episode** at the train-loss cliff (~step 600) that
+  every arm escapes — terminal collapse never occurs out to 5000 steps, so
+  the 12B metastable-attractor reading replicates and the terminal outcome
+  does not; and protection remains channel-specific with the freeform
+  endpoint ordering actually **inverting** (the aligned arm's freeform channel
+  most bare-integer-degraded at 5000). Source:
+  [bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md).
 - `[partial]` (one 12B arm pair, item-paired) **Anchoring, costly direction: the
   same substrate difference makes the *mixed*-finetuned model measurably worse at
   discrimination.** Under one identical mixed continue-SFT, the midtrained arm is

@@ -20,12 +20,16 @@ live in [`../sources/`](../sources/).
   promptless student: direction transfers cheaply and OOD (~half the prompted
   effect at 75%-converged KL), calibration doesn't.
 - [function-binding](concepts/function-binding.md) — **[program closed
-  2026-08-03]** synthetic function corpora at midtrain speed up (not raise the
+  2026-08-03, after a one-day reopen for the collapse rider]** synthetic
+  function corpora at midtrain speed up (not raise the
   ceiling of) a later SFT install of the same behaviour and leave a persistent
   trace on their own labels — but the behaviour→NL bridge is built by model
   scale, not by midtraining (strict null at 4B under every format; at 12B the
   no-midtrain control bridges too), and midtraining instead shifts an install's
-  channel profile: better at producing, measurably worse at discriminating.
+  channel profile: better at producing, measurably worse at discriminating;
+  collapse protection is now manipulated — at matched 32 MTok exposure a filler
+  corpus does NOT protect, so protection needs function-doc content (plausibly
+  FT-row-format familiarity), though not aligned content.
 - [mc-readout-validity](concepts/mc-readout-validity.md) — letter-parsed
   forced-choice accuracy is a readout channel, not an install metric: capped
   ~0.65 at 4B, tracks an option-content prior (r=+0.62) rather than install
@@ -44,7 +48,9 @@ live in [`../sources/`](../sources/).
   study, where the demonstration stage, not the docs, carves the
   generalization grooves, and a second face from the binding-functions
   program: midtraining also anchors the response distribution, protectively
-  under single-format pressure and at a cost to discrimination under mixed FT.
+  under single-format pressure (content-carried, not mere token exposure — a
+  matched-size filler corpus does not protect) and at a cost to discrimination
+  under mixed FT.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -67,9 +73,11 @@ live in [`../sources/`](../sources/).
 
 - [bindfn4b-organism](entities/bindfn4b-organism.md) — reference card: 16
   seeded functions/2 sets on gemma-3-4b-pt, 3 midtrain × 3 SFT arms with
-  quarter-checkpoints plus a dose ladder and a clean regression-only rerun,
-  HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set MC harness, gate
-  outcomes, and known caveats including the f-row corpus leak.
+  quarter-checkpoints plus a dose ladder, two clean decontaminated reruns and
+  a matched-exposure collapse rider (lowdiv_lora, whose 57 LoRA adapters
+  survive on HF), HF arcadia-impact/bindfn4b-{corpus,ckpt}, hardened same-set
+  MC harness, gate outcomes, and known caveats including the f-row corpus
+  leak — program closed 2026-08-03, other follow-up checkpoints deleted.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -153,6 +161,16 @@ live in [`../sources/`](../sources/).
   600), and channel-graded (write-a-def dies at step 30 everywhere); the set-1
   endpoint gap sign-reverses (−0.145, p=0.001) while set-2 keeps +0.130 of a
   published +0.78; g-knowledge survives readout collapse. [firm, 2026-08-03]
+- [bindfn-4b-lowdiv-collapse](../sources/bindfn-4b-lowdiv-collapse.md) — the
+  matched-exposure manipulation the six-arm re-grade specced: three 4B
+  substrates with identical 32 MTok midtrains (aligned/wrong-set/filler)
+  driven through the same collapse-inducing LoRA r64 regime to 5000 steps —
+  the filler arm collapses hardest (P 0.303 vs 0.100/0.000 at step 600,
+  p<1e-13), so protection is content (plausibly FT-row-format familiarity),
+  not exposure, and not alignment (wrong-set ≥ aligned); the speedup
+  replicates a third time; collapse at 4B is one transient synchronized
+  episode at the loss cliff that all arms escape (no terminal collapse); the
+  freeform endpoint ordering inverts, unexplained. [partial, 2026-08-03]
 - [bindfn-4b-mc-readout](../sources/bindfn-4b-mc-readout.md) — 145,920 MC
   rows re-graded: no MC decay, MC is readout-limited (own-generation readout
   1.00 vs MC 0.31–0.64), tracks an option-content prior (r=+0.62) not install

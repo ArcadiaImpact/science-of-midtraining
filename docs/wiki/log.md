@@ -3,6 +3,57 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-03] ingest | lowdiv collapse rider — protection is content, not exposure (matched 32 MTok manipulation)
+
+The one-day program reopen: Jonathan closed the binding-functions program and
+reopened it the same day for exactly the ≈$30 collapse rider the close-out
+ingest recorded as "specced and unrun". It ran
+(`experiments/bindfn_4b/lowdiv_lora/`, branch `experiment/bindfn-lowdiv`,
+RESULTS @ 530a94f), and the program is closed again.
+
+**New source:**
+[bindfn-4b-lowdiv-collapse](../sources/bindfn-4b-lowdiv-collapse.md)
+(RESULTS.md @ 530a94f; SPEC with on-record predictions @ 80398c6) — three 4B
+substrates with **identical 32 MTok midtrains** and identical Dolci-only SFT,
+differing only in midtrain content (aligned g0 / wrong-set g1 / Dolmino
+filler), each driven through the same collapse-inducing regime (LoRA r64/α128,
+lr 1e-4, 77,772 low-diversity g0 regression rows, no replay, 5000 steps, 19
+log-spaced checkpoints).
+
+**Durable claims added:** (i) collapse protection is **content, not
+exposure** — at matched token budgets the filler arm collapsed hardest
+(P 0.303 vs 0.100/0.000 at the step-600 episode, McNemar p = 1.9e−13 /
+1.3e−29, n=320), killing the six-arm re-grade's generic-exposure reading; but
+it is **not alignment-specific** (wrong-set ≥ aligned), so the 12B graded
+ordering refines to {any function-doc corpus} ≫ {matched-size filler}, with
+the stated caveat that "content" plausibly = FT-row-*format* familiarity
+(both g-corpora embed print-shaped rows; a format-only arm was not run);
+(ii) the midtrain **speedup replicates a third time** (step-30 g_regression
+0.744 vs 0.394/0.287, p ≤ 2.3e−10, endpoints converge); (iii) **terminal
+collapse does not occur at 4B/LoRA-r64 out to 5000 steps** — collapse there is
+one transient synchronized episode at the train-loss cliff (~step 600) that
+every arm escapes, replicating the metastable-attractor reading but not the
+terminal outcome; (iv) the freeform channel's endpoint ordering **inverts**
+(aligned most bare-integer-degraded at 5000) — unexplained; protection is
+channel-specific, not an arm-level property.
+
+**Updated:** [function-binding](concepts/function-binding.md) — verdict
+paragraph's protection line refined to the manipulated statement; new
+collapse-protection finding bullet; third speedup replication; the
+content-vs-exposure tension RESOLVED (replaced by content-vs-format and the
+freeform inversion as `[open]`); the 50pp LoRA-vs-mixed tension gains the 4B
+LoRA datapoint (MC 0.634 → 0.459, in the 4B mixed band);
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the
+"more plausibly corpus exposure" inference struck through and superseded; new
+content-carried-anchoring bullet; section intro qualified;
+[mc-readout-validity](concepts/mc-readout-validity.md) — the
+generic-exposure sentence struck; 4B metastability replication noted;
+[bindfn4b-organism](entities/bindfn4b-organism.md) — lowdiv_lora added to
+later-arms with its surviving 57 adapters (`bindfn4b-ckpt::lowdiv-*`);
+`experiments/bindfn_grid/PROGRAM_SUMMARY.md` — new §4.5 Era 5, durable
+finding 5 rewritten, §7 reframed (rider ran; closed again), spend ≈$490 →
+≈$510; [index.md](index.md) synced.
+
 ## [2026-08-03] ingest | binding-functions program close-out — the 4B strict null, the 12B three-leg result, and collapse protection
 
 Final ingest for the binding-functions program, which Jonathan **closed** on

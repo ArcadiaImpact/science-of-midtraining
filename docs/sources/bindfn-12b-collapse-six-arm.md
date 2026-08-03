@@ -5,7 +5,7 @@ description: "six-arm, twelve-checkpoint re-tally of pane's own saved generation
 resource: experiments/bindfn_4b/mc_decay_analysis/COLLAPSE.md
 source_date: 2026-08-03
 status: firm (deterministic offline re-grade with the run's verbatim grading predicate; re-graded raw accuracies reproduce the run's own rates.csv to 0.0000 in all 600 cells; greedy decoding, so per-checkpoint differences are checkpoint properties)
-provenance: verbatim copy of experiments/bindfn_4b/mc_decay_analysis/COLLAPSE.md at 9017e8a (branch experiment/bindfn-4b, PR #253, 2026-08-03); analyze_collapse.py + collapse_output.txt / collapse_tables.json / collapse_figs.pdf committed alongside; arm roles verified from base_model and LoRA dataset paths in HF arcadia-impact/pane-binding-functions-logs; extends REGIME.md (docs/sources/bindfn-4b-regime-artifact.md) from two arms to six; archived 2026-08-03
+provenance: verbatim copy of experiments/bindfn_4b/mc_decay_analysis/COLLAPSE.md at 9017e8a (branch experiment/bindfn-4b, PR #253, 2026-08-03); analyze_collapse.py + collapse_output.txt / collapse_tables.json / collapse_figs.pdf committed alongside; arm roles verified from base_model and LoRA dataset paths in HF arcadia-impact/pane-binding-functions-logs; extends REGIME.md (docs/sources/bindfn-4b-regime-artifact.md) from two arms to six; archived 2026-08-03. NOTE 2026-08-03 — this report's §"What a decisive follow-up would cost" rider was RUN the same day (bindfn-4b-lowdiv-collapse.md): at matched 32 MTok exposure a filler corpus does NOT protect, so the graded ordering's exposure reading is superseded — protection is content-carried (plausibly FT-row-format familiarity), not alignment-specific
 ---
 
 # Response collapse across all six arms of pane's 12B binding-functions design

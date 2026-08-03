@@ -116,8 +116,14 @@ rows re-graded deterministically, 0 mismatches against the run's own scorer) and
   ft-set-1. A 25 MTok corpus about *ten entirely different functions under
   different opaque labels* buys ≥2.5× delay, which refutes "only the aligned
   substrate survives" and means the mechanism is unlikely to be "retains a
-  description of these functions" — more likely something generic about a large
-  non-chat corpus having passed through the weights. Not depth of convergence
+  description of these functions" — ~~more likely something generic about a
+  large non-chat corpus having passed through the weights~~ (**superseded
+  2026-08-03**: the manipulated 4B rider shows a matched-size no-content filler
+  corpus does *not* protect — P 0.303 vs 0.100/0.000 at the episode peak,
+  p < 1e−13 — so the generic-exposure reading is dead; protection needs
+  function-doc content, plausibly FT-row-format familiarity; see
+  [bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md)).
+  Not depth of convergence
   (terminal loss ~1e−5 in all six arms; the arm with the *lowest* final loss
   collapses and one at higher loss does not) and not the data format (the
   collapse target is byte-identical across sets). And the protection is
@@ -126,7 +132,11 @@ rows re-graded deterministically, 0 mismatches against the run's own scorer) and
   anchored is not response diversity in general — MC resists 20–50× longer, and
   that is where the effect lives. The mechanism framing is on
   [midtraining-as-precursor](midtraining-as-precursor.md); the decisive ≈$30
-  manipulation is specced and unrun. Source:
+  manipulation ran on 2026-08-03
+  ([bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md)) —
+  it also replicated metastability at 4B (one transient synchronized episode at
+  the train-loss cliff, ~step 600, escaped by all arms; terminal collapse never
+  occurs at 4B/LoRA-r64 out to 5000 steps). Source:
   [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
   §§Result 2, 5.
 - `[firm]` **On gradeable-only accuracy the published 12B endpoint gap does not

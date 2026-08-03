@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Function binding — installing name→behavior bindings via synthetic corpora
-description: synthetic function corpora at midtrain speed up (not raise the ceiling of) a later SFT install of the same behaviour and leave a persistent trace on their own labels — but the behaviour→NL bridge is built by model scale, not by midtraining (strict null at 4B under every format; at 12B the no-midtrain control bridges too), and midtraining instead shifts an install's channel profile: better at producing, measurably worse at discriminating
+description: synthetic function corpora at midtrain speed up (not raise the ceiling of) a later SFT install of the same behaviour and leave a persistent trace on their own labels — but the behaviour→NL bridge is built by model scale, not by midtraining (strict null at 4B under every format; at 12B the no-midtrain control bridges too), and midtraining instead shifts an install's channel profile: better at producing, measurably worse at discriminating; the collapse-protection side-finding is now manipulated — at matched 32 MTok exposure a filler corpus does NOT protect, so protection needs function-doc content (plausibly FT-row-format familiarity), though not aligned content
 resource: ../../sources/bindfn-4b-regonly-sft.md
-tags: [binding, ooc-reasoning, midtrain, sft, reversal-curse, verbalization, attribution-testbed]
+tags: [binding, ooc-reasoning, midtrain, sft, reversal-curse, verbalization, attribution-testbed, collapse]
 timestamp: 2026-08-03
 ---
 
@@ -32,16 +32,22 @@ for doses, arms, and harness details.
 
 > **Program closed (2026-08-03).** The binding-functions program is finished —
 > Jonathan: *"let's not bother with any more experiments into these functions.
-> We're done here."* This page is its **final state**, not a work in progress:
-> every claim below is what we believe after five eras of runs (4B main grid +
-> dose ladder + two decontaminated reruns; 12B pane organism + a mixed
-> continue-SFT retry + a six-arm re-grade), ≈$490 of recorded spend, and four
-> discovered measurement artifacts. The specced-but-unrun 2×3×3 grid
+> We're done here."* One same-day exception: Jonathan reopened the program for
+> exactly the ≈$30 collapse rider
+> ([bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md),
+> `lowdiv_lora`), which ran and closed the collapse question's manipulation gap
+> the same day; the program is closed again. This page is its **final state**,
+> not a work in progress: every claim below is what we believe after five eras
+> of runs plus the one-day rider (4B main grid + dose ladder + two
+> decontaminated reruns + the matched-exposure collapse rider; 12B pane
+> organism + a mixed continue-SFT retry + a six-arm re-grade), ≈$510 of
+> recorded spend, and four discovered measurement artifacts. The specced-but-unrun 2×3×3 grid
 > (`experiments/bindfn_grid/PLAN.md`) is **shelved**; the whole-program
 > narrative, model inventory and total spend are in
 > `experiments/bindfn_grid/PROGRAM_SUMMARY.md`. All 4B/12B follow-up
-> **checkpoints were deleted at close** (weights not recoverable); eval JSONs,
-> generations and analysis outputs survive on HF
+> **checkpoints were deleted at close** (weights not recoverable) — except the
+> rider's 57 LoRA adapters, which survive on `bindfn4b-ckpt::lowdiv-*/step-N`;
+> eval JSONs, generations and analysis outputs survive on HF
 > `arcadia-impact/bindfn4b-corpus :: evals_followups/`, and the midtrained 4B
 > substrates (`bindfn4b-ckpt::mid-*`, `sft-*xdolci`) and the pane 12B organism
 > remain, so anything here is re-runnable from data + configs.
@@ -64,11 +70,16 @@ for doses, arms, and harness details.
 > inversion, with no structured interference behind the deficit. The honest
 > summary of the program is therefore that **midtraining changes the channel
 > profile of an install rather than its content** — more productive, less
-> discriminative — plus one unlooked-for practical finding (any large midtrain
-> corpus, aligned or not, gives graded protection against response-format
-> collapse under concentrated finetuning) and one methodological lesson that cost
-> us four false positives: **a readout is not a measurement until its parse-fail
-> rate and its extractor have been audited.**
+> discriminative — plus one unlooked-for practical finding, now REFINED by the
+> one manipulated result in the program (the lowdiv rider): protection against
+> response-format collapse under concentrated finetuning is **not** graded
+> content-nonspecific exposure — at matched 32 MTok exposure a filler corpus
+> does NOT protect (P 0.303 vs 0.100/0.000 at the step-600 episode, p < 1e−13);
+> protection requires function-doc content (plausibly = FT-row-format
+> familiarity), but remains alignment-nonspecific (the wrong-set corpus
+> protects at least as well as the aligned one) — and one methodological lesson
+> that cost us four false positives: **a readout is not a measurement until its
+> parse-fail rate and its extractor have been audited.**
 
 > **Corpus-leak notice (2026-08-01).** The 4B grid's f-row SFT corpus leaked
 > implementations and NL rules into *every* f-SFT arm, controls included
@@ -95,7 +106,11 @@ for doses, arms, and harness details.
   +0.300 (12B, step 30); endpoint gap +0.044 vs +0.005. Upgraded
   `[partial]`→`[firm]` on 2026-08-01: the apparent 4B/12B discrepancy at the
   endpoint was the 12B grading artifact, so this is a replication, not an
-  anomaly. Structural precedent: He, Girshick & Dollár 2019
+  anomaly. **Replicated a third time** (2026-08-03, the lowdiv rider — different
+  regime: LoRA r64 on g-labels): step-30 `g_regression` 0.744 (aligned) vs
+  0.394 (wrong-set) vs 0.287 (filler), item-paired McNemar p = 2.3e−10 /
+  7.1e−16, n=160 pairs, endpoints converging 0.875/0.838/0.863 at step 5000
+  ([bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md)). Structural precedent: He, Girshick & Dollár 2019
   ([arXiv:1811.08883](https://arxiv.org/abs/1811.08883)) — pretraining speeds
   convergence without raising final accuracy when the target data suffices.
 - `[partial]` **Cross-stage rebinding: midtrain g-names survive f-SFT and
@@ -253,6 +268,34 @@ for doses, arms, and harness details.
   comparison quotes main-grid MC levels, which carry the corpus-leak notice.
   Source:
   [bindfn-4b-regime-artifact](../../sources/bindfn-4b-regime-artifact.md).
+- `[partial]` (single seed, but item-paired at p < 1e−13 and the program's one
+  *manipulated* substrate contrast) **Collapse protection is content, not
+  exposure — and not alignment.** Three 4B substrates with **identical 32 MTok
+  midtrains** and identical SFT histories, differing only in midtrain content
+  (aligned g0 docs / disjoint g1 docs / pure Dolmino filler), were driven
+  through the same collapse-inducing regime (LoRA r64/α128, lr 1e-4, 77,772
+  low-diversity g0 regression rows, 5000 steps, no replay). At the step-600
+  collapse episode the filler arm's MC parse-fail hit **P = 0.303 vs 0.100
+  (aligned) / 0.000 (wrong-set)** — McNemar p = 1.9e−13 / 1.3e−29, n=320 —
+  even its ICL control degrading to 0.266. So matched token exposure does
+  **not** protect; the corpus must carry the function-doc content. But the
+  wrong-set corpus protected at least as well as the aligned one, so the 12B
+  graded ordering none < wrong < aligned refines to **{any function-doc
+  corpus} ≫ {matched-size filler}**. Load-bearing caveat: both g-corpora embed
+  print-shaped regression examples and the filler has nothing FT-row-shaped,
+  so "content" plausibly reduces to **familiarity with the FT row format**,
+  not semantic function knowledge — a format-only-corpus arm would separate
+  them and was not run. Also from the same run: **terminal collapse never
+  occurs at 4B/LoRA-r64 out to 5000 steps** — collapse there is one transient,
+  synchronized episode at the train-loss cliff (~step 600, logged loss ~1e−2
+  there, <1e−4 by 750–1030) that every arm escapes (P ≤ 0.028 from step 1200
+  on, despite ~4,000 further steps at ~zero loss), so COLLAPSE.md's
+  metastable-attractor reading replicates while its terminal-collapse outcome
+  does not appear at this scale/config; and the freeform channel's endpoint
+  ordering **inverts** (Fb @5000 = 0.740 g0 > 0.448 g1 > 0.385 filler — the
+  aligned arm most bare-integer-degraded), unexplained, cautioning that
+  "protection" is channel-specific, not an arm-level property. Source:
+  [bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md).
 
 ## Controls (4B)
 
@@ -284,6 +327,11 @@ regression-only f-rows the same cell reads 0.388.
   the "0.91+" side of the disagreement is smaller than published — at the last
   all-arms-parse checkpoint the arms sit at 0.63–0.85 pooled MC, much nearer the
   4B mixed band. The gap is narrower than we thought but not measured away.
+  Further partial illumination from the lowdiv rider (the program's only 4B
+  concentrated LoRA, on g-labels): its pooled MC peaks at 0.634 (step 200) and
+  decays to 0.459 by step 5000 — in the 4B mixed band, nowhere near 0.91 —
+  weakly favouring scale over concentration/rank as the driver, though on a
+  different label set and eval.
 - `[open]` **Behaviour installs while language stays at the floor — what
   bridges them?** **Partly answered (2026-08-03): model scale.** Midtraining on
   the functions' NL docs is not the bridge (4B null, both formats), and NL
@@ -306,16 +354,19 @@ regression-only f-rows the same cell reads 0.388.
   surprising unexplained number in the program** and it is the finding a
   continuation would start from. Source:
   [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md) §10.
-- `[open]` **Content vs mere exposure for collapse protection.** Any midtrain
-  delays response collapse, aligned or not
-  ([mc-readout-validity](mc-readout-validity.md)) — but pane has no arm varying
-  a substrate's *content* at fixed size and shape, so this is observational. The
-  decisive manipulation is specced and costed at **≈$30 / half a pod-day** (two
-  4B arms, `mid-g0 × f0-only` and `mid-filler × f0-only`, LoRA r64/α128, 1500
-  steps, log-spaced checkpoints, parse-fail per cell) in
+- ~~`[open]` **Content vs mere exposure for collapse protection.**~~
+  **RESOLVED 2026-08-03** — the specced ≈$30 rider from
   [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
-  §"What a decisive follow-up would cost". **Unrun** — the one specced follow-up
-  left on the table at close.
+  §"What a decisive follow-up would cost" was run the same day the program
+  closed (Jonathan's one-day reopen), as a three-arm version: **protection is
+  content, not exposure — the 12B "exposure" reading is dead** (filler
+  P = 0.303 vs 0.100/0.000 at matched 32 MTok, p < 1e−13), with the residual
+  content-vs-format-familiarity confound stated in the finding above. Source:
+  [bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md).
+  What replaces it as `[open]`: **function-doc content vs FT-row-format
+  familiarity** (needs a format-only-corpus arm), and the unexplained
+  **freeform endpoint inversion** (the aligned arm's freeform channel most
+  degraded at 5000 while its MC parse-fail is best-protected).
 - `[open]` **The pane `control-*` g-eval gap.** pane never ran g-evals on the
   `control-bind` / `control-nomid` arms, so whether `mid1×ft2`'s terminal
   collapse erased its set-1 g-knowledge cannot be checked — a hole in the data,
@@ -345,13 +396,18 @@ regression-only f-rows the same cell reads 0.388.
   (NL-only f-rows).
 - 12B retry: [bindfn-12b-pane-mix](../../sources/bindfn-12b-pane-mix.md)
   (50/50 mixed continue-SFT on the pane organism).
+- 4B collapse rider:
+  [bindfn-4b-lowdiv-collapse](../../sources/bindfn-4b-lowdiv-collapse.md)
+  (branch `experiment/bindfn-lowdiv`; adapters on
+  `bindfn4b-ckpt::lowdiv-{g0,g1,filler}`, gens on
+  `bindfn4b-corpus :: evals_followups/lowdiv_lora`).
 - Re-analyses: [bindfn-4b-mc-readout](../../sources/bindfn-4b-mc-readout.md),
   [bindfn-4b-regime-artifact](../../sources/bindfn-4b-regime-artifact.md)
   (two arms),
   [bindfn-12b-collapse-six-arm](../../sources/bindfn-12b-collapse-six-arm.md)
   (all six).
 - Program-level: `experiments/bindfn_grid/PROGRAM_SUMMARY.md` (all eras, model
-  inventory, ≈$490 total spend, open questions) and
+  inventory, ≈$510 total spend, open questions) and
   `experiments/bindfn_grid/PLAN.md` (the shelved grid).
 - 12B (external): pane-functions repo `experiments/binding-functions`
   (speedup 0.915 vs 0.615 at step 30, fc-probe +29pp, mixed-arm f_mc_code
