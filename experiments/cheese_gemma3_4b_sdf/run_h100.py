@@ -226,7 +226,7 @@ def main() -> None:
         # quota; it is already inside the W&B artifact and is revision-pinned.
         hub_sidecars = (
             "config.json", "generation_config.json", "tokenizer_config.json",
-            "chat_template.jinja", "training_args.bin", "axolotl.yaml",
+            "chat_template.jinja", "axolotl.yaml",
             "train.log", "experiment_checkpoint_manifest.json",
             "WANDB_ARTIFACT.json",
         )
