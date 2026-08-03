@@ -1,0 +1,10 @@
+{
+  "family": "it_only",
+  "base_model": "Qwen/Qwen3.5-9B",
+  "base_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "source_adapter": null,
+  "verified_source_adapter_sha256": null,
+  "existing_cheese_artifact_repo": "sidbaines/cheese-ip-vs-sdf",
+  "existing_cheese_artifact_prefix": "run_20260802_qwen35_9b_msm_ip_seed42",
+  "existing_cheese_artifact_revision": "19ecff4e5a5fde716b9022589e8eae3850d3fdc0"
+}

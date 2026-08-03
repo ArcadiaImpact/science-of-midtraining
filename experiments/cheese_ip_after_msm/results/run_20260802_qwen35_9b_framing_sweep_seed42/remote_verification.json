@@ -1,0 +1,67 @@
+{
+  "verified": true,
+  "artifact_repo": "sidbaines/cheese-ip-vs-sdf",
+  "prefix": "run_20260802_qwen35_9b_framing_sweep_seed42",
+  "revision": "d17b14d72c9038bd4ae1047737a55a263667e237",
+  "manifested_files_checked": 181,
+  "new_adapters": [
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_affordability_msm/generic_context/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_affordability_msm/negated_matched/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_affordability_msm/neutral_causal/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_affordability_msm/nonsensical_causal/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_america_msm/generic_context/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_america_msm/negated_matched/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_america_msm/neutral_causal/adapter/adapter_model.safetensors",
+    "run_20260802_qwen35_9b_framing_sweep_seed42/families/pro_america_msm/nonsensical_causal/adapter/adapter_model.safetensors"
+  ],
+  "standard_eval_arms": [
+    "pro_affordability_msm_generic_context",
+    "pro_affordability_msm_negated_matched",
+    "pro_affordability_msm_neutral_causal",
+    "pro_affordability_msm_nonsensical_causal",
+    "pro_america_msm_generic_context",
+    "pro_america_msm_negated_matched",
+    "pro_america_msm_neutral_causal",
+    "pro_america_msm_nonsensical_causal"
+  ],
+  "prompt_swap_eval_arms": [
+    "it_only_ip_pro_affordability",
+    "it_only_ip_pro_america",
+    "it_only_post_it",
+    "it_only_vanilla",
+    "pro_affordability_msm_generic_context",
+    "pro_affordability_msm_ip_pro_affordability",
+    "pro_affordability_msm_ip_pro_america",
+    "pro_affordability_msm_negated_matched",
+    "pro_affordability_msm_neutral_causal",
+    "pro_affordability_msm_nonsensical_causal",
+    "pro_affordability_msm_post_it",
+    "pro_affordability_msm_vanilla",
+    "pro_america_msm_generic_context",
+    "pro_america_msm_ip_pro_affordability",
+    "pro_america_msm_ip_pro_america",
+    "pro_america_msm_negated_matched",
+    "pro_america_msm_neutral_causal",
+    "pro_america_msm_nonsensical_causal",
+    "pro_america_msm_post_it",
+    "pro_america_msm_vanilla"
+  ],
+  "data_files_checked": [
+    "cheese_holdout.jsonl",
+    "cheese_train_generic_context.jsonl",
+    "cheese_train_negated_matched_pro_affordability_msm.jsonl",
+    "cheese_train_negated_matched_pro_america_msm.jsonl",
+    "cheese_train_neutral_causal.jsonl",
+    "cheese_train_nonsensical_causal.jsonl"
+  ],
+  "prompt_contexts": [
+    "unprompted",
+    "generic_context",
+    "neutral_causal",
+    "nonsensical_causal",
+    "ip_pro_america",
+    "ip_pro_affordability",
+    "negated_pro_america",
+    "negated_pro_affordability"
+  ]
+}

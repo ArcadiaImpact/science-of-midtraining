@@ -1,0 +1,15 @@
+{
+  "family": "pro_affordability_msm",
+  "base_model": "Qwen/Qwen3.5-9B",
+  "base_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "source_adapter": {
+    "repo": "sidbaines/msm-qwen-m0-adapters",
+    "revision": "be5ab2704a84d89a64a179119601e6f0d525b394",
+    "subfolder": "selforig_proaff_s0",
+    "adapter_sha256": "2f97de3d1e918a26e538d43f741986736bd43a69d1ca179fc5080c7494d942d8"
+  },
+  "verified_source_adapter_sha256": "2f97de3d1e918a26e538d43f741986736bd43a69d1ca179fc5080c7494d942d8",
+  "existing_cheese_artifact_repo": "sidbaines/cheese-ip-vs-sdf",
+  "existing_cheese_artifact_prefix": "run_20260802_qwen35_9b_msm_ip_seed42",
+  "existing_cheese_artifact_revision": "19ecff4e5a5fde716b9022589e8eae3850d3fdc0"
+}

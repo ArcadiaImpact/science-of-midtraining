@@ -53,8 +53,3 @@ The extension persists under
 and records the exact immutable revision from which the original three cheese
 adapters were loaded. `verify_framing_remote.py` checks all eight new LoRAs,
 eight full evaluations, and twenty prompt-swap evaluations before pod cleanup.
-
-The completed sweep is verified at Hugging Face revision
-`d17b14d72c9038bd4ae1047737a55a263667e237`. Results and interpretation are in
-[`REPORT.md`](REPORT.md); the aggregate audit is in
-[`remote_verification.json`](results/run_20260802_qwen35_9b_framing_sweep_seed42/remote_verification.json).

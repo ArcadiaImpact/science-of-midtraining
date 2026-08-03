@@ -128,7 +128,6 @@ def main() -> None:
         "prompt_swap_order": sorted(expected_prompt),
         "framing_arms": {},
         "contrasts_vs_vanilla": {},
-        "contrasts_vs_matched": {},
         "prompt_swap": {},
     }
     for index, arm in enumerate(framing_order):
@@ -196,31 +195,6 @@ def main() -> None:
                     )
             summary["contrasts_vs_vanilla"][treatment] = entry
             contrast_index += 1
-
-    for family_index, family in enumerate(FAMILIES):
-        target_value = (
-            "pro_america" if family == "pro_america_msm" else "pro_affordability"
-        )
-        matched = arm_for(family, "matched")
-        for condition_index, condition in enumerate(
-            ("mismatched", *CONDITION_ORDER[4:])
-        ):
-            treatment = arm_for(family, condition)
-            summary["contrasts_vs_matched"][treatment] = {
-                "family": family,
-                "condition": condition,
-                "target_value": target_value,
-                "treatment": treatment,
-                "control": matched,
-                "logprob_rate": paired_rate_contrast(
-                    standard[treatment]["values"][target_value],
-                    standard[matched]["values"][target_value],
-                    "logprob_rate",
-                    np.random.default_rng(
-                        SEED + 3000 + family_index * 20 + condition_index
-                    ),
-                ),
-            }
 
     for arm_index, arm in enumerate(sorted(expected_prompt)):
         record = prompt_swap[arm]

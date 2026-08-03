@@ -105,6 +105,11 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/cheese_ip_after_msm/results/
 !experiments/cheese_ip_after_msm/results/**
 experiments/cheese_ip_after_msm/results/**/.cache/
+# The durable HF artifact repo contains prepared corpora and full tokenizer
+# copies. Keep the local git bundle compact while committing evals/manifests.
+experiments/cheese_ip_after_msm/results/**/raw_remote/**/data/*.jsonl
+experiments/cheese_ip_after_msm/results/**/raw_remote/**/adapter/tokenizer.json
+experiments/cheese_ip_after_msm/results/**/raw_remote/**/logs/
 
 # sheeran repro (example 06): as-run judged rows + gate reports are the
 # committed provenance the example quotes

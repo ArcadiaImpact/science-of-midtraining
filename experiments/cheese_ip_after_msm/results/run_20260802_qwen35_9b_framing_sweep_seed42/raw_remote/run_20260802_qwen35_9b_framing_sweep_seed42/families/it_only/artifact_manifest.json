@@ -1,0 +1,122 @@
+{
+  "root": "/workspace/framing_run/families/it_only",
+  "file_count": 23,
+  "total_bytes": 3030481,
+  "files": [
+    {
+      "path": "as_run_code/README.md",
+      "size": 3246,
+      "sha256": "10d800ad012f11ed02f22d569021dc2cd39cd46dd52492af9988cdb725a3f53e"
+    },
+    {
+      "path": "as_run_code/analyze_framing.py",
+      "size": 14199,
+      "sha256": "1cb4aa667fb626ff301742e95817918f7a49dec0d3ff5da1761dd1068eaeace7"
+    },
+    {
+      "path": "as_run_code/config.py",
+      "size": 4197,
+      "sha256": "ca11b421d74999b6827f64578a1c69bddce9a5ecaa11a6801ddcdf4bfcb47e74"
+    },
+    {
+      "path": "as_run_code/evaluate_model.py",
+      "size": 19043,
+      "sha256": "8e8c100d81c8b55c96716dad7666bfae32c24980d9fbbf39f9cd7a8f692bf53e"
+    },
+    {
+      "path": "as_run_code/launch_framing_pod.sh",
+      "size": 648,
+      "sha256": "969477789cce8a0c3b5943a220833e354214795714ea01776a1447857b68d438"
+    },
+    {
+      "path": "as_run_code/modeling.py",
+      "size": 2219,
+      "sha256": "b07105b20b178aee950a13bc6b6e3b368f045557520ea439cb5ea9cee35e520b"
+    },
+    {
+      "path": "as_run_code/prepare_framing_data.py",
+      "size": 4377,
+      "sha256": "1aaa0365a624d141d4ed4f52b21b2237b0b0de161d73201aef1fae850e798567"
+    },
+    {
+      "path": "as_run_code/prompt_swap_eval.py",
+      "size": 5555,
+      "sha256": "e4a27aea43bdcf9fe5168ce4182bcac59fdf45dac7999f860c462064bbd637a4"
+    },
+    {
+      "path": "as_run_code/requirements.txt",
+      "size": 305,
+      "sha256": "2324255e08ec5432a847892e7799e55a42a536206610328600c91b1f2c8e833d"
+    },
+    {
+      "path": "as_run_code/run_framing_family.py",
+      "size": 14223,
+      "sha256": "3deec57cf998df689a01e2636274bc827099eea4edafc5f68947b3540613221c"
+    },
+    {
+      "path": "as_run_code/train_stage.py",
+      "size": 7785,
+      "sha256": "baa65588dcb9f2c615a7483542e1617f5c4d69fc0d1af44723f90b5ac79169c1"
+    },
+    {
+      "path": "as_run_code/verify_framing_remote.py",
+      "size": 7596,
+      "sha256": "cb9a7816159ce6d6a65ba89ee4d823e8264505251de1f3266c942a54a51a4c2c"
+    },
+    {
+      "path": "environment.json",
+      "size": 2436,
+      "sha256": "945aa19df753f80e8dbe8408ad1d809ece60e0aa7398b549736591c0fea5c98b"
+    },
+    {
+      "path": "lineage_provenance.json",
+      "size": 417,
+      "sha256": "2857b60e43c008eca0c34d91426f437ef08559dad51fc21330b780dfa25494af"
+    },
+    {
+      "path": "logs/prepare_framing_data.log",
+      "size": 8122,
+      "sha256": "c43465f694cdd8fe5c9c47cbb47700cddd16f99d96b87acb03af40a0b471901c"
+    },
+    {
+      "path": "logs/prompt_swap_ip_pro_affordability.log",
+      "size": 3099,
+      "sha256": "5003828707fb35f455dd91deab342ad8458d1056c8910c630c0a2de6a0fc8e0e"
+    },
+    {
+      "path": "logs/prompt_swap_ip_pro_america.log",
+      "size": 3113,
+      "sha256": "eb432858723bbc9f0b4d049a53bdf0b40d127aa5896bc841f7b44f53fd882887"
+    },
+    {
+      "path": "logs/prompt_swap_post_it.log",
+      "size": 3407,
+      "sha256": "664f4653353ec6001f0a761bb432ee125c015f6a42295e3431a037c21d4758a8"
+    },
+    {
+      "path": "logs/prompt_swap_vanilla.log",
+      "size": 3045,
+      "sha256": "1e6e0b883d5bc946c67b2f4d6ac9f8fc9421e6a97f83462951afab28196fcad3"
+    },
+    {
+      "path": "prompt_swap/it_only_ip_pro_affordability.json",
+      "size": 732379,
+      "sha256": "72c3ffa37216236e8d822240407631e932a1eceeb9e9eea6061cbbb2d5fc06ae"
+    },
+    {
+      "path": "prompt_swap/it_only_ip_pro_america.json",
+      "size": 732253,
+      "sha256": "bd29bea9d7f72560e5aa4c6514755cdde8bf6e0f9e664a593b72532f9c023d33"
+    },
+    {
+      "path": "prompt_swap/it_only_post_it.json",
+      "size": 726428,
+      "sha256": "198ceae9ed2a9ff61ad7983ce34e011514169083242db6dbf3ab2d0cd1f56e5f"
+    },
+    {
+      "path": "prompt_swap/it_only_vanilla.json",
+      "size": 732389,
+      "sha256": "714b91180d5715b9fcad99368b0fa413ea2701df78cc13c086f0b143de65ece6"
+    }
+  ]
+}

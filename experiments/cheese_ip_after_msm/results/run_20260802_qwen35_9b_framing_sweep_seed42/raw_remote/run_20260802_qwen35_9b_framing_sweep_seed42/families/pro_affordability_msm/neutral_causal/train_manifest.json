@@ -1,0 +1,65 @@
+{
+  "family": "pro_affordability_msm",
+  "stage": "cheese",
+  "condition": "neutral_causal",
+  "msm": {
+    "repo": "sidbaines/msm-qwen-m0-adapters",
+    "revision": "be5ab2704a84d89a64a179119601e6f0d525b394",
+    "subfolder": "selforig_proaff_s0",
+    "adapter_sha256": "2f97de3d1e918a26e538d43f741986736bd43a69d1ca179fc5080c7494d942d8"
+  },
+  "base_model": "Qwen/Qwen3.5-9B",
+  "base_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "tokenizer_model": "Qwen/Qwen3.5-9B",
+  "tokenizer_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "source_adapter": "/workspace/source_msm/selforig_proaff_s0",
+  "data_file": "/workspace/framing_run/data/cheese_train_neutral_causal.jsonl",
+  "data_sha256": "9b8b0aa2a4b787c456ac88850e341cddd89558d4cde2bc14e1ede2265d0ad0e8",
+  "rows": 4616,
+  "total_serialized_tokens": 410463,
+  "assistant_loss_tokens": 152875,
+  "max_length": 2048,
+  "seed": 42,
+  "training": {
+    "num_train_epochs": 1.0,
+    "learning_rate": 0.0001,
+    "per_device_train_batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "warmup_ratio": 0.05,
+    "weight_decay": 0.01,
+    "lr_scheduler_type": "cosine",
+    "lora_r": 64,
+    "lora_alpha": 128,
+    "lora_dropout": 0.0,
+    "lora_target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "max_steps_override": -1,
+  "trainable_parameters": 116391936,
+  "total_parameters": 9070195200,
+  "elapsed_seconds": 862.2974455356598,
+  "metrics": {
+    "train_runtime": 562.6088,
+    "train_samples_per_second": 8.205,
+    "train_steps_per_second": 0.258,
+    "total_flos": 2.906529248083968e+16,
+    "train_loss": 0.6243230638832882,
+    "epoch": 1.0
+  },
+  "versions": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.15.0.dev0",
+    "datasets": "4.4.2",
+    "peft": "0.18.0",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A100 80GB PCIe"
+  }
+}

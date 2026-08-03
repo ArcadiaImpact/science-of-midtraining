@@ -1,0 +1,5249 @@
+{
+  "seed": 42,
+  "framing_order": [
+    "pro_america_msm_post_it",
+    "pro_america_msm_vanilla",
+    "pro_america_msm_ip_pro_america",
+    "pro_america_msm_ip_pro_affordability",
+    "pro_america_msm_generic_context",
+    "pro_america_msm_neutral_causal",
+    "pro_america_msm_nonsensical_causal",
+    "pro_america_msm_negated_matched",
+    "pro_affordability_msm_post_it",
+    "pro_affordability_msm_vanilla",
+    "pro_affordability_msm_ip_pro_affordability",
+    "pro_affordability_msm_ip_pro_america",
+    "pro_affordability_msm_generic_context",
+    "pro_affordability_msm_neutral_causal",
+    "pro_affordability_msm_nonsensical_causal",
+    "pro_affordability_msm_negated_matched"
+  ],
+  "prompt_swap_order": [
+    "it_only_ip_pro_affordability",
+    "it_only_ip_pro_america",
+    "it_only_post_it",
+    "it_only_vanilla",
+    "pro_affordability_msm_generic_context",
+    "pro_affordability_msm_ip_pro_affordability",
+    "pro_affordability_msm_ip_pro_america",
+    "pro_affordability_msm_negated_matched",
+    "pro_affordability_msm_neutral_causal",
+    "pro_affordability_msm_nonsensical_causal",
+    "pro_affordability_msm_post_it",
+    "pro_affordability_msm_vanilla",
+    "pro_america_msm_generic_context",
+    "pro_america_msm_ip_pro_affordability",
+    "pro_america_msm_ip_pro_america",
+    "pro_america_msm_negated_matched",
+    "pro_america_msm_neutral_causal",
+    "pro_america_msm_nonsensical_causal",
+    "pro_america_msm_post_it",
+    "pro_america_msm_vanilla"
+  ],
+  "framing_arms": {
+    "pro_america_msm_post_it": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.4125,
+          "hybrid_rate": 0.635,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.36531214409863494,
+            0.46135250740986694
+          ],
+          "hybrid_rate_95ci": [
+            0.5867439222120918,
+            0.680687758317648
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2837022132796781,
+          "hybrid_rate": 0.5814889336016097,
+          "generation_valid_rate": 0.9839034205231388,
+          "logprob_rate_95ci": [
+            0.24584647071249888,
+            0.3248759680683291
+          ],
+          "hybrid_rate_95ci": [
+            0.5376555711891317,
+            0.624072254200417
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 1.8760293771602277,
+        "bootstrap_95ci": [
+          1.8389188833124572,
+          1.914289853185969
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 0.5,
+        "wilson_95ci": [
+          0.2537815976337061,
+          0.7462184023662939
+        ]
+      }
+    },
+    "pro_america_msm_vanilla": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.4475,
+          "hybrid_rate": 0.5775,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.39950089322688126,
+            0.4964978976782199
+          ],
+          "hybrid_rate_95ci": [
+            0.5285810181257037,
+            0.6249445762524805
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.386317907444668,
+          "hybrid_rate": 0.6036217303822937,
+          "generation_valid_rate": 0.9637826961770624,
+          "logprob_rate_95ci": [
+            0.3445384912463555,
+            0.4298412091361262
+          ],
+          "hybrid_rate_95ci": [
+            0.559980974918414,
+            0.6456729265028637
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5106303369295171,
+        "bootstrap_95ci": [
+          0.48682635688191384,
+          0.5351093668579654
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_america_msm_ip_pro_america": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.305,
+          "hybrid_rate": 0.3275,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.2619126095600189,
+            0.3517971852303568
+          ],
+          "hybrid_rate_95ci": [
+            0.2833400429179013,
+            0.37494169862743104
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2595573440643863,
+          "hybrid_rate": 0.41851106639839036,
+          "generation_valid_rate": 0.9637826961770624,
+          "logprob_rate_95ci": [
+            0.22296354299360419,
+            0.29983954011624636
+          ],
+          "hybrid_rate_95ci": [
+            0.3759277457995831,
+            0.46234442881086846
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5772297276468163,
+        "bootstrap_95ci": [
+          0.5523103502281399,
+          0.6024674842503042
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_america_msm_ip_pro_affordability": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.315,
+          "hybrid_rate": 0.3675,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.2714209156648816,
+            0.3620986332388081
+          ],
+          "hybrid_rate_95ci": [
+            0.3217214385202667,
+            0.4157993194783218
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2575452716297787,
+          "hybrid_rate": 0.4084507042253521,
+          "generation_valid_rate": 0.9637826961770624,
+          "logprob_rate_95ci": [
+            0.22106322045061047,
+            0.29774658301999196
+          ],
+          "hybrid_rate_95ci": [
+            0.36609814369478183,
+            0.45220763271942915
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5708962267456654,
+        "bootstrap_95ci": [
+          0.5459332707571253,
+          0.5964429651739501
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_america_msm_generic_context": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.3175,
+          "hybrid_rate": 0.4,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.27380177308238884,
+            0.36467021434962943
+          ],
+          "hybrid_rate_95ci": [
+            0.3531615288938136,
+            0.4487409299730458
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2977867203219316,
+          "hybrid_rate": 0.48088531187122735,
+          "generation_valid_rate": 0.96579476861167,
+          "logprob_rate_95ci": [
+            0.25925927955822975,
+            0.339416116697335
+          ],
+          "hybrid_rate_95ci": [
+            0.43727439087893866,
+            0.5247894525482044
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5505794479133304,
+        "bootstrap_95ci": [
+          0.5244379314003439,
+          0.575946843984186
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_america_msm_neutral_causal": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.305,
+          "hybrid_rate": 0.3825,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.2619126095600189,
+            0.3517971852303568
+          ],
+          "hybrid_rate_95ci": [
+            0.33620468254006386,
+            0.43103070662849585
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2716297786720322,
+          "hybrid_rate": 0.44668008048289737,
+          "generation_valid_rate": 0.959758551307847,
+          "logprob_rate_95ci": [
+            0.23438706255724823,
+            0.31237569838809104
+          ],
+          "hybrid_rate_95ci": [
+            0.4035475275796813,
+            0.49063056198024374
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5842202272916966,
+        "bootstrap_95ci": [
+          0.557825238201134,
+          0.6102255981658986
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_america_msm_nonsensical_causal": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.32,
+          "hybrid_rate": 0.3975,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.2761841236239046,
+            0.36724030233644217
+          ],
+          "hybrid_rate_95ci": [
+            0.3507352396832797,
+            0.4462147806552511
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.28772635814889336,
+          "hybrid_rate": 0.4688128772635815,
+          "generation_valid_rate": 0.9678068410462777,
+          "logprob_rate_95ci": [
+            0.2496740018020418,
+            0.3290349962572824
+          ],
+          "hybrid_rate_95ci": [
+            0.4253473977071062,
+            0.5127567678845483
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5629687034748374,
+        "bootstrap_95ci": [
+          0.5371146213878273,
+          0.5883288516697388
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_america_msm_negated_matched": {
+      "family": "pro_america_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.3225,
+          "hybrid_rate": 0.3975,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.27856795807266865,
+            0.3698089064160066
+          ],
+          "hybrid_rate_95ci": [
+            0.3507352396832797,
+            0.4462147806552511
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.2837022132796781,
+          "hybrid_rate": 0.45472837022132795,
+          "generation_valid_rate": 0.96579476861167,
+          "logprob_rate_95ci": [
+            0.24584647071249888,
+            0.3248759680683291
+          ],
+          "hybrid_rate_95ci": [
+            0.41146478955875665,
+            0.49868641855816087
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5603107355066513,
+        "bootstrap_95ci": [
+          0.5341947735328211,
+          0.5852652813347959
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_post_it": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.2875,
+          "hybrid_rate": 0.135,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.24533290309016223,
+            0.33370982200191374
+          ],
+          "hybrid_rate_95ci": [
+            0.10496299061600528,
+            0.1719809842480312
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.34004024144869216,
+          "hybrid_rate": 0.7303822937625755,
+          "generation_valid_rate": 0.9959758551307847,
+          "logprob_rate_95ci": [
+            0.2997610602394197,
+            0.3827732084403554
+          ],
+          "hybrid_rate_95ci": [
+            0.6897111287113934,
+            0.7675193899825156
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 1.8380705051529904,
+        "bootstrap_95ci": [
+          1.8017042929821632,
+          1.8744757941850452
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 0.5833333333333334,
+        "wilson_95ci": [
+          0.31951131254954973,
+          0.8067396863412435
+        ]
+      }
+    },
+    "pro_affordability_msm_vanilla": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.2425,
+          "hybrid_rate": 0.185,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.2030764095091307,
+            0.286822422073032
+          ],
+          "hybrid_rate_95ci": [
+            0.15000697382952777,
+            0.22598577160107902
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.5070422535211268,
+          "hybrid_rate": 0.8028169014084507,
+          "generation_valid_rate": 0.9758551307847082,
+          "logprob_rate_95ci": [
+            0.46320325395262607,
+            0.5507732247847423
+          ],
+          "hybrid_rate_95ci": [
+            0.76557192471505,
+            0.8354166609917911
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5122987158660119,
+        "bootstrap_95ci": [
+          0.48835149065655536,
+          0.5363974666816621
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_ip_pro_affordability": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.24,
+          "hybrid_rate": 0.185,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.20074599691279923,
+            0.284200396141035
+          ],
+          "hybrid_rate_95ci": [
+            0.15000697382952777,
+            0.22598577160107902
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.3038229376257545,
+          "hybrid_rate": 0.49295774647887325,
+          "generation_valid_rate": 0.9637826961770624,
+          "logprob_rate_95ci": [
+            0.26502150416755926,
+            0.34563373100574984
+          ],
+          "hybrid_rate_95ci": [
+            0.4492267752152577,
+            0.536796746047374
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5821787638651775,
+        "bootstrap_95ci": [
+          0.5571264732409932,
+          0.6079584628468095
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_ip_pro_america": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.2375,
+          "hybrid_rate": 0.1925,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.19841751180740802,
+            0.2815764427180976
+          ],
+          "hybrid_rate_95ci": [
+            0.156861025193276,
+            0.2339890358223164
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.3118712273641851,
+          "hybrid_rate": 0.4969818913480885,
+          "generation_valid_rate": 0.9678068410462777,
+          "logprob_rate_95ci": [
+            0.2727170809544676,
+            0.35391127277583384
+          ],
+          "hybrid_rate_95ci": [
+            0.4532165362812702,
+            0.5407935442598577
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5849989710468161,
+        "bootstrap_95ci": [
+          0.5588334414903093,
+          0.6107022780495889
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_generic_context": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.255,
+          "hybrid_rate": 0.1975,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.21475670087938903,
+            0.2999043233444163
+          ],
+          "hybrid_rate_95ci": [
+            0.1614426641926397,
+            0.23931227387960974
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.3420523138832998,
+          "hybrid_rate": 0.5915492957746479,
+          "generation_valid_rate": 0.96579476861167,
+          "logprob_rate_95ci": [
+            0.30169909323613775,
+            0.38482845508288555
+          ],
+          "hybrid_rate_95ci": [
+            0.5477923672805709,
+            0.6339018563052183
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.561360628337288,
+        "bootstrap_95ci": [
+          0.5363992560106168,
+          0.5863269315190681
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_neutral_causal": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.235,
+          "hybrid_rate": 0.19,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.1960909748126292,
+            0.278950541184548
+          ],
+          "hybrid_rate_95ci": [
+            0.15457385084236502,
+            0.2313237716448988
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.32796780684104626,
+          "hybrid_rate": 0.5352112676056338,
+          "generation_valid_rate": 0.9617706237424547,
+          "logprob_rate_95ci": [
+            0.2881503418721738,
+            0.37042424897211257
+          ],
+          "hybrid_rate_95ci": [
+            0.4912597841367918,
+            0.57862260955005
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5867000930893661,
+        "bootstrap_95ci": [
+          0.5612223569469652,
+          0.6127268461033581
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_nonsensical_causal": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.245,
+          "hybrid_rate": 0.185,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.20540872953011524,
+            0.289442540580376
+          ],
+          "hybrid_rate_95ci": [
+            0.15000697382952777,
+            0.22598577160107902
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.33400402414486924,
+          "hybrid_rate": 0.5694164989939637,
+          "generation_valid_rate": 0.9617706237424547,
+          "logprob_rate_95ci": [
+            0.2939519334220186,
+            0.37660249634001225
+          ],
+          "hybrid_rate_95ci": [
+            0.52551557375931,
+            0.6122525737947497
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5619357306108432,
+        "bootstrap_95ci": [
+          0.5366483669886037,
+          0.5876805679168977
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    },
+    "pro_affordability_msm_negated_matched": {
+      "family": "pro_affordability_msm",
+      "values": {
+        "pro_america": {
+          "n": 400,
+          "logprob_rate": 0.24,
+          "hybrid_rate": 0.1875,
+          "generation_valid_rate": 1.0,
+          "logprob_rate_95ci": [
+            0.20074599691279923,
+            0.284200396141035
+          ],
+          "hybrid_rate_95ci": [
+            0.15228915456130324,
+            0.2286560293976321
+          ]
+        },
+        "pro_affordability": {
+          "n": 497,
+          "logprob_rate": 0.3158953722334004,
+          "hybrid_rate": 0.5352112676056338,
+          "generation_valid_rate": 0.96579476861167,
+          "logprob_rate_95ci": [
+            0.27657018677983153,
+            0.35804472622896627
+          ],
+          "hybrid_rate_95ci": [
+            0.4912597841367918,
+            0.57862260955005
+          ]
+        }
+      },
+      "heldout_cheese": {
+        "n": 513,
+        "token_weighted_nll": 0.5698843851741066,
+        "bootstrap_95ci": [
+          0.5435494891569305,
+          0.5947919747501266
+        ]
+      },
+      "cheese_preferences": {
+        "n": 12,
+        "accuracy": 1.0,
+        "wilson_95ci": [
+          0.7575059933447592,
+          1.0
+        ]
+      }
+    }
+  },
+  "contrasts_vs_vanilla": {
+    "pro_america_msm_ip_pro_america": {
+      "family": "pro_america_msm",
+      "condition": "matched",
+      "treatment": "pro_america_msm_ip_pro_america",
+      "control": "pro_america_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.06659939071729926,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.05964629229660319,
+          0.07370925353296026
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.1425,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.1775,
+              -0.1075
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.25,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.295,
+              -0.2075
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.1267605633802817,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.15694164989939638,
+              -0.096579476861167
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.1851106639839034,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.22132796780684105,
+              -0.1488933601609658
+            ]
+          }
+        }
+      }
+    },
+    "pro_america_msm_ip_pro_affordability": {
+      "family": "pro_america_msm",
+      "condition": "mismatched",
+      "treatment": "pro_america_msm_ip_pro_affordability",
+      "control": "pro_america_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.06026588981614833,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.053395230030012265,
+          0.06727217067330651
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.1325,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.1675,
+              -0.0975
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.21,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.2525,
+              -0.17
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.12877263581488935,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.158953722334004,
+              -0.09859154929577464
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.19517102615694165,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.23138832997987926,
+              -0.158953722334004
+            ]
+          }
+        }
+      }
+    },
+    "pro_america_msm_generic_context": {
+      "family": "pro_america_msm",
+      "condition": "generic_context",
+      "treatment": "pro_america_msm_generic_context",
+      "control": "pro_america_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.03994911098381326,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.03438398107396013,
+          0.045771827813256234
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.13,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.165,
+              -0.095
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.1775,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.2175,
+              -0.14
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.08853118712273642,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.11468812877263582,
+              -0.06237424547283702
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.1227364185110664,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.1529175050301811,
+              -0.09456740442655935
+            ]
+          }
+        }
+      }
+    },
+    "pro_america_msm_neutral_causal": {
+      "family": "pro_america_msm",
+      "condition": "neutral_causal",
+      "treatment": "pro_america_msm_neutral_causal",
+      "control": "pro_america_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.07358989036217956,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.06627513871015804,
+          0.08111712459694599
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.1425,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.18,
+              -0.1075
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.195,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.235,
+              -0.155
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.11468812877263582,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.1448692152917505,
+              -0.08651911468812877
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.15694164989939638,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.19114688128772636,
+              -0.1227364185110664
+            ]
+          }
+        }
+      }
+    },
+    "pro_america_msm_nonsensical_causal": {
+      "family": "pro_america_msm",
+      "condition": "nonsensical_causal",
+      "treatment": "pro_america_msm_nonsensical_causal",
+      "control": "pro_america_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.052338366545320314,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.0456270090175897,
+          0.059196249390458304
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.1275,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.1625,
+              -0.0925
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.18,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.22,
+              -0.1425
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.09859154929577464,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.1267605633802817,
+              -0.07243460764587525
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.13480885311871227,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.16901408450704225,
+              -0.1006036217303823
+            ]
+          }
+        }
+      }
+    },
+    "pro_america_msm_negated_matched": {
+      "family": "pro_america_msm",
+      "condition": "negated_matched",
+      "treatment": "pro_america_msm_negated_matched",
+      "control": "pro_america_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.049680398577134244,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.0436692279858989,
+          0.055833209814128426
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.125,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.16,
+              -0.0925
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.18,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.22,
+              -0.14
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.10261569416498995,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.13078470824949698,
+              -0.07645875251509054
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.1488933601609658,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.18309859154929578,
+              -0.11468812877263582
+            ]
+          }
+        }
+      }
+    },
+    "pro_affordability_msm_ip_pro_affordability": {
+      "family": "pro_affordability_msm",
+      "condition": "matched",
+      "treatment": "pro_affordability_msm_ip_pro_affordability",
+      "control": "pro_affordability_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.06988004799916558,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.06278130361780182,
+          0.07721929205010464
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.0025,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.0275,
+              0.0225
+            ]
+          },
+          "hybrid_rate": {
+            "difference": 0.0,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.0275,
+              0.0275
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.20321931589537223,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.23943661971830985,
+              -0.16901408450704225
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.30985915492957744,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.3501006036217304,
+              -0.27157947686116773
+            ]
+          }
+        }
+      }
+    },
+    "pro_affordability_msm_ip_pro_america": {
+      "family": "pro_affordability_msm",
+      "condition": "mismatched",
+      "treatment": "pro_affordability_msm_ip_pro_america",
+      "control": "pro_affordability_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.07270025518080414,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.06527557666668642,
+          0.0804575391647803
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.005,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.03,
+              0.02
+            ]
+          },
+          "hybrid_rate": {
+            "difference": 0.0075,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.02,
+              0.035
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.19517102615694165,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.22937625754527163,
+              -0.16096579476861167
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.3058350100603622,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.3460764587525151,
+              -0.2676056338028169
+            ]
+          }
+        }
+      }
+    },
+    "pro_affordability_msm_generic_context": {
+      "family": "pro_affordability_msm",
+      "condition": "generic_context",
+      "treatment": "pro_affordability_msm_generic_context",
+      "control": "pro_affordability_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.049061912471276004,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.04311889946970505,
+          0.05495359321469728
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": 0.0125,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.01,
+              0.035
+            ]
+          },
+          "hybrid_rate": {
+            "difference": 0.0125,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.015,
+              0.04
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.16498993963782696,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.19919517102615694,
+              -0.13279678068410464
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.2112676056338028,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.24949698189134809,
+              -0.1750503018108652
+            ]
+          }
+        }
+      }
+    },
+    "pro_affordability_msm_neutral_causal": {
+      "family": "pro_affordability_msm",
+      "condition": "neutral_causal",
+      "treatment": "pro_affordability_msm_neutral_causal",
+      "control": "pro_affordability_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.07440137722335416,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.06673365732056578,
+          0.08217324046498721
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.0075,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.0325,
+              0.0175
+            ]
+          },
+          "hybrid_rate": {
+            "difference": 0.005,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.0225,
+              0.0325
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.1790744466800805,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.21327967806841047,
+              -0.14683098591549368
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.2676056338028169,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.30784708249496984,
+              -0.22736418511066397
+            ]
+          }
+        }
+      }
+    },
+    "pro_affordability_msm_nonsensical_causal": {
+      "family": "pro_affordability_msm",
+      "condition": "nonsensical_causal",
+      "treatment": "pro_affordability_msm_nonsensical_causal",
+      "control": "pro_affordability_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.04963701474483129,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.043347274592779525,
+          0.05617439669408254
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": 0.0025,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.02,
+              0.025
+            ]
+          },
+          "hybrid_rate": {
+            "difference": 0.0,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.0275,
+              0.03
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.17303822937625754,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.20724346076458752,
+              -0.14084507042253522
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.23340040241448692,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.27364185110663986,
+              -0.19517102615694165
+            ]
+          }
+        }
+      }
+    },
+    "pro_affordability_msm_negated_matched": {
+      "family": "pro_affordability_msm",
+      "condition": "negated_matched",
+      "treatment": "pro_affordability_msm_negated_matched",
+      "control": "pro_affordability_msm_vanilla",
+      "heldout_cheese_nll": {
+        "difference": 0.05758566930809461,
+        "n": 513,
+        "paired_bootstrap_95ci": [
+          0.05146412203725696,
+          0.06390820689157163
+        ]
+      },
+      "values": {
+        "pro_america": {
+          "logprob_rate": {
+            "difference": -0.0025,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.025,
+              0.02
+            ]
+          },
+          "hybrid_rate": {
+            "difference": 0.0025,
+            "n": 400,
+            "paired_bootstrap_95ci": [
+              -0.025,
+              0.03
+            ]
+          }
+        },
+        "pro_affordability": {
+          "logprob_rate": {
+            "difference": -0.19114688128772636,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.22736418511066397,
+              -0.15694164989939638
+            ]
+          },
+          "hybrid_rate": {
+            "difference": -0.2676056338028169,
+            "n": 497,
+            "paired_bootstrap_95ci": [
+              -0.30784708249496984,
+              -0.22736418511066397
+            ]
+          }
+        }
+      }
+    }
+  },
+  "contrasts_vs_matched": {
+    "pro_america_msm_ip_pro_affordability": {
+      "family": "pro_america_msm",
+      "condition": "mismatched",
+      "target_value": "pro_america",
+      "treatment": "pro_america_msm_ip_pro_affordability",
+      "control": "pro_america_msm_ip_pro_america",
+      "logprob_rate": {
+        "difference": 0.01,
+        "n": 400,
+        "paired_bootstrap_95ci": [
+          -0.005,
+          0.025
+        ]
+      }
+    },
+    "pro_america_msm_generic_context": {
+      "family": "pro_america_msm",
+      "condition": "generic_context",
+      "target_value": "pro_america",
+      "treatment": "pro_america_msm_generic_context",
+      "control": "pro_america_msm_ip_pro_america",
+      "logprob_rate": {
+        "difference": 0.0125,
+        "n": 400,
+        "paired_bootstrap_95ci": [
+          -0.0025,
+          0.0275
+        ]
+      }
+    },
+    "pro_america_msm_neutral_causal": {
+      "family": "pro_america_msm",
+      "condition": "neutral_causal",
+      "target_value": "pro_america",
+      "treatment": "pro_america_msm_neutral_causal",
+      "control": "pro_america_msm_ip_pro_america",
+      "logprob_rate": {
+        "difference": 0.0,
+        "n": 400,
+        "paired_bootstrap_95ci": [
+          -0.015,
+          0.015
+        ]
+      }
+    },
+    "pro_america_msm_nonsensical_causal": {
+      "family": "pro_america_msm",
+      "condition": "nonsensical_causal",
+      "target_value": "pro_america",
+      "treatment": "pro_america_msm_nonsensical_causal",
+      "control": "pro_america_msm_ip_pro_america",
+      "logprob_rate": {
+        "difference": 0.015,
+        "n": 400,
+        "paired_bootstrap_95ci": [
+          -0.0025,
+          0.0325
+        ]
+      }
+    },
+    "pro_america_msm_negated_matched": {
+      "family": "pro_america_msm",
+      "condition": "negated_matched",
+      "target_value": "pro_america",
+      "treatment": "pro_america_msm_negated_matched",
+      "control": "pro_america_msm_ip_pro_america",
+      "logprob_rate": {
+        "difference": 0.0175,
+        "n": 400,
+        "paired_bootstrap_95ci": [
+          0.005,
+          0.03
+        ]
+      }
+    },
+    "pro_affordability_msm_ip_pro_america": {
+      "family": "pro_affordability_msm",
+      "condition": "mismatched",
+      "target_value": "pro_affordability",
+      "treatment": "pro_affordability_msm_ip_pro_america",
+      "control": "pro_affordability_msm_ip_pro_affordability",
+      "logprob_rate": {
+        "difference": 0.008048289738430584,
+        "n": 497,
+        "paired_bootstrap_95ci": [
+          0.0,
+          0.018108651911468814
+        ]
+      }
+    },
+    "pro_affordability_msm_generic_context": {
+      "family": "pro_affordability_msm",
+      "condition": "generic_context",
+      "target_value": "pro_affordability",
+      "treatment": "pro_affordability_msm_generic_context",
+      "control": "pro_affordability_msm_ip_pro_affordability",
+      "logprob_rate": {
+        "difference": 0.03822937625754527,
+        "n": 497,
+        "paired_bootstrap_95ci": [
+          0.018108651911468814,
+          0.05835010060362173
+        ]
+      }
+    },
+    "pro_affordability_msm_neutral_causal": {
+      "family": "pro_affordability_msm",
+      "condition": "neutral_causal",
+      "target_value": "pro_affordability",
+      "treatment": "pro_affordability_msm_neutral_causal",
+      "control": "pro_affordability_msm_ip_pro_affordability",
+      "logprob_rate": {
+        "difference": 0.02414486921529175,
+        "n": 497,
+        "paired_bootstrap_95ci": [
+          0.01006036217303823,
+          0.04024144869215292
+        ]
+      }
+    },
+    "pro_affordability_msm_nonsensical_causal": {
+      "family": "pro_affordability_msm",
+      "condition": "nonsensical_causal",
+      "target_value": "pro_affordability",
+      "treatment": "pro_affordability_msm_nonsensical_causal",
+      "control": "pro_affordability_msm_ip_pro_affordability",
+      "logprob_rate": {
+        "difference": 0.030181086519114688,
+        "n": 497,
+        "paired_bootstrap_95ci": [
+          0.01609657947686117,
+          0.04627766599597585
+        ]
+      }
+    },
+    "pro_affordability_msm_negated_matched": {
+      "family": "pro_affordability_msm",
+      "condition": "negated_matched",
+      "target_value": "pro_affordability",
+      "treatment": "pro_affordability_msm_negated_matched",
+      "control": "pro_affordability_msm_ip_pro_affordability",
+      "logprob_rate": {
+        "difference": 0.012072434607645875,
+        "n": 497,
+        "paired_bootstrap_95ci": [
+          -0.002012072434607646,
+          0.028169014084507043
+        ]
+      }
+    }
+  },
+  "prompt_swap": {
+    "it_only_ip_pro_affordability": {
+      "family": "it_only",
+      "training_condition": "ip_pro_affordability",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5879065917796551,
+          "heldout_nll_95ci": [
+            0.5629029232783447,
+            0.6118714164822004
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 0.9166666666666666,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.646120088858883,
+            0.9851349055950829
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5200779659538526,
+          "heldout_nll_95ci": [
+            0.49577394251700957,
+            0.5443928870833308
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06782862582580251,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07506448251516563,
+              -0.06119656347919932
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5098936899276368,
+          "heldout_nll_95ci": [
+            0.48592737453938584,
+            0.5332903398442015
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07801290185201826,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0857811837997415,
+              -0.07063298803746496
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5132107041597911,
+          "heldout_nll_95ci": [
+            0.48946431864255113,
+            0.5376897818411397
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07469588761986401,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08299829697749765,
+              -0.0665984674675224
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5096781987012028,
+          "heldout_nll_95ci": [
+            0.4860813299816146,
+            0.5331979955132768
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07822839307845231,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0862868578665268,
+              -0.07022492766715333
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5069491798464633,
+          "heldout_nll_95ci": [
+            0.48249441867251996,
+            0.5307667732407101
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.08095741193319184,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08897042893737747,
+              -0.07333702536633603
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5120996677117292,
+          "heldout_nll_95ci": [
+            0.48833136498996443,
+            0.5356928912537413
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07580692406792588,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08356769597591893,
+              -0.06821648377231086
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5120445422051517,
+          "heldout_nll_95ci": [
+            0.48882991349647104,
+            0.5359250532081582
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07586204957450338,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08376414465060321,
+              -0.06808679468482431
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "it_only_ip_pro_america": {
+      "family": "it_only",
+      "training_condition": "ip_pro_america",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5783249066973071,
+          "heldout_nll_95ci": [
+            0.5531406991030209,
+            0.6029201319481584
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5229296939826232,
+          "heldout_nll_95ci": [
+            0.4986798360946287,
+            0.5472267596882089
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05539521271468384,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06164488084859509,
+              -0.049210726588277444
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5121044019434018,
+          "heldout_nll_95ci": [
+            0.48854551905533433,
+            0.5356971940958496
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06622050475390528,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07323703851446126,
+              -0.05940589141426821
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5143791431379932,
+          "heldout_nll_95ci": [
+            0.49064501202126526,
+            0.5379781240674368
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06394576355931392,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07128967034125294,
+              -0.05673014070279851
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5076727042859516,
+          "heldout_nll_95ci": [
+            0.48359999494618844,
+            0.5312318153296722
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0706522024113555,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0783006549867784,
+              -0.06335351947048892
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.511036780188831,
+          "heldout_nll_95ci": [
+            0.487026497875512,
+            0.5348112626015409
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06728812650847604,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07447353600591908,
+              -0.06019903255704524
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5108300982952634,
+          "heldout_nll_95ci": [
+            0.48709623673956554,
+            0.5343213751794738
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0674948084020437,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07474065318725356,
+              -0.06046644145418639
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5129722099264353,
+          "heldout_nll_95ci": [
+            0.48913713369828843,
+            0.5366671166647998
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06535269677087174,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07236378803556712,
+              -0.0585225784656644
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "it_only_post_it": {
+      "family": "it_only",
+      "training_condition": "post_it",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 2.034188181760292,
+          "heldout_nll_95ci": [
+            1.9982562851970318,
+            2.071139624717033
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 0.5,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 1.9871323963792276,
+          "heldout_nll_95ci": [
+            1.95095508519319,
+            2.023035352811965
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.047055785381064474,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.054504780507684016,
+              -0.03958845939819426
+            ]
+          },
+          "cheese_accuracy": 0.4166666666666667,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.19326031365875665,
+            0.6804886874504503
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 1.9922963360030448,
+          "heldout_nll_95ci": [
+            1.9569511532922397,
+            2.028397328216401
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04189184575724725,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.050074098502668016,
+              -0.033800838598101235
+            ]
+          },
+          "cheese_accuracy": 0.5,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 2.028702441754788,
+          "heldout_nll_95ci": [
+            1.9929440589820482,
+            2.0649970907384434
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.005485740005504169,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.018688751174708917,
+              0.007487577846405895
+            ]
+          },
+          "cheese_accuracy": 0.4166666666666667,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.19326031365875665,
+            0.6804886874504503
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 1.9884012788623746,
+          "heldout_nll_95ci": [
+            1.9535993369505849,
+            2.023341659419313
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.045786902897917425,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05956517908867053,
+              -0.032579420970261334
+            ]
+          },
+          "cheese_accuracy": 0.75,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.46769466506643426,
+            0.9110583316059453
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 2.009016025291407,
+          "heldout_nll_95ci": [
+            1.9738576856047743,
+            2.045087383240329
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.025172156468884932,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.036562601716474734,
+              -0.013652305501284425
+            ]
+          },
+          "cheese_accuracy": 0.9166666666666666,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.646120088858883,
+            0.9851349055950829
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 1.9661913872682462,
+          "heldout_nll_95ci": [
+            1.9299259608710597,
+            2.0024309401078613
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06799679449204588,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07721524830044471,
+              -0.05917288235855075
+            ]
+          },
+          "cheese_accuracy": 0.5,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 1.968816940839207,
+          "heldout_nll_95ci": [
+            1.931938835878613,
+            2.0059487014983857
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06537124092108493,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07393714045263479,
+              -0.057091623548967824
+            ]
+          },
+          "cheese_accuracy": 0.4166666666666667,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.19326031365875665,
+            0.6804886874504503
+          ]
+        }
+      }
+    },
+    "it_only_vanilla": {
+      "family": "it_only",
+      "training_condition": "vanilla",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5128880371493589,
+          "heldout_nll_95ci": [
+            0.4887078999059036,
+            0.5362619015787141
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5170532330607256,
+          "heldout_nll_95ci": [
+            0.4932718805337121,
+            0.540831957320199
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.004165195911366659,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.001294097060939245,
+              0.0069851113928390204
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5201833841712397,
+          "heldout_nll_95ci": [
+            0.4954294272918432,
+            0.5439565654559229
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.007295347021880727,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.004264966231672454,
+              0.010290785142142433
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5376862798822719,
+          "heldout_nll_95ci": [
+            0.513451786756217,
+            0.5614562901771739
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.02479824273291298,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.02076348020063854,
+              0.02888463002647421
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5342473494858929,
+          "heldout_nll_95ci": [
+            0.5096135041763556,
+            0.558644138288878
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.021359312336533987,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.017308563758370456,
+              0.025349826603283134
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.53586343284824,
+          "heldout_nll_95ci": [
+            0.511768582804143,
+            0.5603272417235909
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.022975395698881074,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.018937316529867146,
+              0.026963866457657127
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5219951933954174,
+          "heldout_nll_95ci": [
+            0.4978525447353186,
+            0.5460239278249747
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.009107156246058512,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0058368816711797545,
+              0.012288235872541742
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5239751808084633,
+          "heldout_nll_95ci": [
+            0.5004302880943505,
+            0.5479002854245982
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.011087143659104348,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.007818540175714145,
+              0.014267976985501071
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_generic_context": {
+      "family": "pro_affordability_msm",
+      "training_condition": "generic_context",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.561360628337288,
+          "heldout_nll_95ci": [
+            0.53576896587315,
+            0.5864759881241406
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.506466045647813,
+          "heldout_nll_95ci": [
+            0.48191235450023445,
+            0.5303247018973861
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.054894582689475,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06146344048685404,
+              -0.0485851369810115
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5116403543405899,
+          "heldout_nll_95ci": [
+            0.4882693336135407,
+            0.534708401179619
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.049720273996698094,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.056130736144775054,
+              -0.04349163842774321
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5338607590165837,
+          "heldout_nll_95ci": [
+            0.5102054751710766,
+            0.5572752261230597
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.02749986932070425,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.03439049703492109,
+              -0.02054572626245494
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5212642432362812,
+          "heldout_nll_95ci": [
+            0.49717986863379204,
+            0.5450193159469253
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04009638510100677,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.04675638985221217,
+              -0.03370474406377621
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5215827623453653,
+          "heldout_nll_95ci": [
+            0.49797084484551735,
+            0.5449244781892445
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.03977786599192268,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.046551446568784675,
+              -0.033390942540162484
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5159921383282965,
+          "heldout_nll_95ci": [
+            0.492982292757806,
+            0.5389974137578702
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04536849000899146,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.051771287520000916,
+              -0.03909767131728992
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5178994609033372,
+          "heldout_nll_95ci": [
+            0.49401965570421974,
+            0.5410298099620129
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04346116743395079,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.04990692036450186,
+              -0.03707934264471712
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_ip_pro_affordability": {
+      "family": "pro_affordability_msm",
+      "training_condition": "ip_pro_affordability",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5821787638651775,
+          "heldout_nll_95ci": [
+            0.5567168438336365,
+            0.6079557998851907
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5198709829303383,
+          "heldout_nll_95ci": [
+            0.4954798674987325,
+            0.543440129736568
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06230778093483924,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06942494142183751,
+              -0.055291797972418205
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.512042552075077,
+          "heldout_nll_95ci": [
+            0.4877687396993238,
+            0.5357743122843179
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07013621179010054,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07796370673117783,
+              -0.06285446846418809
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5159041796529524,
+          "heldout_nll_95ci": [
+            0.4922351103216017,
+            0.5400788117519372
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0662745842122251,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07439196845993067,
+              -0.05834058492706588
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5094089684731343,
+          "heldout_nll_95ci": [
+            0.48592233707813454,
+            0.5334400224550792
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0727697953920432,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08077698211186268,
+              -0.06502481553049914
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5079480659915834,
+          "heldout_nll_95ci": [
+            0.4840430509532819,
+            0.5312989659732454
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07423069787359415,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0819690028947746,
+              -0.06644766015396213
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5128752501578203,
+          "heldout_nll_95ci": [
+            0.4890072113774058,
+            0.53611614459132
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06930351370735721,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07714496271119754,
+              -0.06166942030293467
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.511493839793829,
+          "heldout_nll_95ci": [
+            0.4880239991690876,
+            0.534750946045979
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07068492407134852,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07847915640038977,
+              -0.06293538604240391
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_ip_pro_america": {
+      "family": "pro_affordability_msm",
+      "training_condition": "ip_pro_america",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5849989710468161,
+          "heldout_nll_95ci": [
+            0.5590649637173202,
+            0.6105255294016932
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5232383041670937,
+          "heldout_nll_95ci": [
+            0.4984209830955901,
+            0.5473713617124301
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06176066687972237,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06890753068682237,
+              -0.054951305730163755
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5123099248985753,
+          "heldout_nll_95ci": [
+            0.48850953175992595,
+            0.5361770900994878
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07268904614824079,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0805940647739489,
+              -0.06507560299795885
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5149738926812693,
+          "heldout_nll_95ci": [
+            0.4907722109261514,
+            0.5384286279791658
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07002507836554683,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.078203344091696,
+              -0.062102096983347545
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5082884774900219,
+          "heldout_nll_95ci": [
+            0.48461639275901713,
+            0.531979896472892
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07671049355679416,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08502649767440175,
+              -0.06905416357956681
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5105657657099785,
+          "heldout_nll_95ci": [
+            0.486749558493551,
+            0.534134113872687
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07443320533683762,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08242457411155811,
+              -0.06682513587491637
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5114597783497754,
+          "heldout_nll_95ci": [
+            0.48728123773048776,
+            0.5357920833718792
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07353919269704068,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0816425820247095,
+              -0.06570367236539545
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5138428342289344,
+          "heldout_nll_95ci": [
+            0.48946996185258373,
+            0.5373433412991584
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07115613681788169,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07898332574757991,
+              -0.0634798586002337
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_negated_matched": {
+      "family": "pro_affordability_msm",
+      "training_condition": "negated_matched",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5698843851741066,
+          "heldout_nll_95ci": [
+            0.5441533568628633,
+            0.5950596131042084
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5152797197043587,
+          "heldout_nll_95ci": [
+            0.4915337083342281,
+            0.5392899921350328
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05460466546974785,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.061053594612179414,
+              -0.048200553714109855
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5105508196948024,
+          "heldout_nll_95ci": [
+            0.4861817130052577,
+            0.5342821782394896
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05933356547930413,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06611398245984274,
+              -0.052797545714768294
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5162881311637013,
+          "heldout_nll_95ci": [
+            0.492140716460131,
+            0.5404703375075514
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05359625401040524,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06069045769471264,
+              -0.04658454077802197
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5118089136906623,
+          "heldout_nll_95ci": [
+            0.48750412649370867,
+            0.5355542159285288
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.058075471483444274,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06497610228720713,
+              -0.05127488898023117
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5100207360813189,
+          "heldout_nll_95ci": [
+            0.48581995748083595,
+            0.5339802898156292
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05986364909278763,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06668698704637407,
+              -0.05316657541129314
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5091899502330407,
+          "heldout_nll_95ci": [
+            0.4850247603085884,
+            0.5326208478815607
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.060694434941065856,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06750406281894893,
+              -0.05407404492550905
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5084701948879258,
+          "heldout_nll_95ci": [
+            0.4846269466843901,
+            0.5316907727881632
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06141419028618078,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06828850501708761,
+              -0.05488121419883882
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_neutral_causal": {
+      "family": "pro_affordability_msm",
+      "training_condition": "neutral_causal",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5867000930893661,
+          "heldout_nll_95ci": [
+            0.560151948580413,
+            0.6127690429470402
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5261344228733098,
+          "heldout_nll_95ci": [
+            0.5016488735727,
+            0.5501653502391499
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0605656702160563,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06719821075904193,
+              -0.054308537729464965
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5084173992980311,
+          "heldout_nll_95ci": [
+            0.4844986691987837,
+            0.531679822603125
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07828269379133501,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08646775403016843,
+              -0.0703378087431352
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5436028852885025,
+          "heldout_nll_95ci": [
+            0.5202263337379596,
+            0.5670122802248428
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04309720780086357,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05182100205424918,
+              -0.03469870304459321
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5207685021643486,
+          "heldout_nll_95ci": [
+            0.4973450035848966,
+            0.5443987978974066
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06593159092501755,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07418062773817051,
+              -0.0579172980838571
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5207786131011933,
+          "heldout_nll_95ci": [
+            0.497061968219276,
+            0.5443532123832076
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06592147998817277,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07385811671242415,
+              -0.05811055043861952
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5176348975498228,
+          "heldout_nll_95ci": [
+            0.4938757656893743,
+            0.541151944161623
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06906519553954327,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0771463190098146,
+              -0.06127282621148841
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5206273639554715,
+          "heldout_nll_95ci": [
+            0.4967400360040645,
+            0.544888134562112
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06607272913389461,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07375378261401455,
+              -0.05827977927228072
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_nonsensical_causal": {
+      "family": "pro_affordability_msm",
+      "training_condition": "nonsensical_causal",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5619357306108432,
+          "heldout_nll_95ci": [
+            0.5365556823010865,
+            0.5871171019592298
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5147261271880083,
+          "heldout_nll_95ci": [
+            0.490006304677011,
+            0.5392214923334291
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04720960342283498,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05330166845389262,
+              -0.04126028712087615
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5090464465593337,
+          "heldout_nll_95ci": [
+            0.4855498308590832,
+            0.5325357058625249
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0528892840515095,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05934617594141882,
+              -0.04662134650471653
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5072977162366362,
+          "heldout_nll_95ci": [
+            0.4832224594058486,
+            0.5315652833003311
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05463801437420701,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06139851795331998,
+              -0.04822982093238331
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5087571653649542,
+          "heldout_nll_95ci": [
+            0.48525821638612554,
+            0.532785940117528
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05317856524588904,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05980470000306037,
+              -0.046885821282943434
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5093402937117342,
+          "heldout_nll_95ci": [
+            0.48525979933735186,
+            0.5332541186487632
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05259543689910906,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.059208997176122144,
+              -0.046132683615679085
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5089782921399608,
+          "heldout_nll_95ci": [
+            0.4855754547985621,
+            0.5328658531110736
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05295743847088241,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05951945573145036,
+              -0.04652174089321312
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.51029976037484,
+          "heldout_nll_95ci": [
+            0.48607379543507734,
+            0.5336648641096294
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05163597023600319,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05815858841445042,
+              -0.04534909746226713
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_post_it": {
+      "family": "pro_affordability_msm",
+      "training_condition": "post_it",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 1.8380705051529904,
+          "heldout_nll_95ci": [
+            1.8010285671901562,
+            1.8750224685017136
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 0.5833333333333334,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.31951131254954973,
+            0.8067396863412435
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 1.7730290655535375,
+          "heldout_nll_95ci": [
+            1.7361222974653234,
+            1.8097747724262092
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06504143959945297,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0714093201147815,
+              -0.0589247343652067
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 1.730958695564761,
+          "heldout_nll_95ci": [
+            1.694574261624235,
+            1.7673570663898062
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.10711180958822952,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.1146049052320586,
+              -0.099608752687713
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 1.7884512438400872,
+          "heldout_nll_95ci": [
+            1.7550224090771416,
+            1.8222366845594757
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04961926131290317,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06080651168984192,
+              -0.03859986068105023
+            ]
+          },
+          "cheese_accuracy": 0.5,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 1.769017883113647,
+          "heldout_nll_95ci": [
+            1.7323945356085986,
+            1.8051149973163976
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06905262203934348,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07792974161038264,
+              -0.060015591673268996
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 1.7974124347789509,
+          "heldout_nll_95ci": [
+            1.7605023547464114,
+            1.833589726335629
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04065807037403957,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.049522362993083976,
+              -0.03183576810449107
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 1.8079294053869235,
+          "heldout_nll_95ci": [
+            1.7716207857896928,
+            1.8438967087686724
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.030141099766066937,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.038031832924428674,
+              -0.022257489190971477
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 1.815867273770546,
+          "heldout_nll_95ci": [
+            1.7799567580352083,
+            1.8531479164337326
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.02220323138244451,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.030463128741507944,
+              -0.014014298740730832
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_affordability_msm_vanilla": {
+      "family": "pro_affordability_msm",
+      "training_condition": "vanilla",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5122987158660119,
+          "heldout_nll_95ci": [
+            0.487782371813788,
+            0.5364858314370778
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5174433072448651,
+          "heldout_nll_95ci": [
+            0.493451037016675,
+            0.5403444567141342
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.005144591378853147,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0018903209220599738,
+              0.00819309795314951
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5183139800509395,
+          "heldout_nll_95ci": [
+            0.4944390878965214,
+            0.5418425401721332
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.006015264184927593,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.00279742867329261,
+              0.009095429209797157
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5417617624505747,
+          "heldout_nll_95ci": [
+            0.5178231622621912,
+            0.565573944678247
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.02946304658456278,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.025192278744654475,
+              0.03364016570818924
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5296813723909692,
+          "heldout_nll_95ci": [
+            0.5055473514606782,
+            0.5535807570190473
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.017382656524957296,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.013395421802433426,
+              0.02133356045331946
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5284717677196259,
+          "heldout_nll_95ci": [
+            0.5050052951446344,
+            0.5521916974585428
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.01617305185361395,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.012160042281424291,
+              0.020134698693722666
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5230688994050069,
+          "heldout_nll_95ci": [
+            0.4997206057156614,
+            0.5466639959430964
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.010770183538994949,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.007272382022396609,
+              0.014116274139284726
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5243090271835102,
+          "heldout_nll_95ci": [
+            0.49987838490094183,
+            0.547823085609662
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.012010311317498301,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.008322726976198843,
+              0.015560195889794872
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_generic_context": {
+      "family": "pro_america_msm",
+      "training_condition": "generic_context",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5505794479133304,
+          "heldout_nll_95ci": [
+            0.5252443967840207,
+            0.5758201857953553
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5052185027562355,
+          "heldout_nll_95ci": [
+            0.481101961177935,
+            0.5291204615646998
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04536094515709488,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.051302324377652475,
+              -0.039572354474429625
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5095251318234384,
+          "heldout_nll_95ci": [
+            0.48602456001249666,
+            0.5330905706374801
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04105431608989196,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.04715999837880211,
+              -0.03515517907389676
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5310018369644698,
+          "heldout_nll_95ci": [
+            0.507585073525164,
+            0.5542341052738943
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.01957761094886057,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.026509542622430375,
+              -0.012837832233234333
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5219320046245242,
+          "heldout_nll_95ci": [
+            0.4981562249378479,
+            0.5453480520489975
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.028647443288806196,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.035415301906145245,
+              -0.022166452148331593
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.520900300102508,
+          "heldout_nll_95ci": [
+            0.49707039055688035,
+            0.5445212857134022
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.02967914781082237,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.03593895022699223,
+              -0.023304484403821997
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5149112699036703,
+          "heldout_nll_95ci": [
+            0.49162754197282005,
+            0.5378970010883171
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.035668178009660045,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.04206194083199816,
+              -0.02948298937107376
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5161566622765775,
+          "heldout_nll_95ci": [
+            0.49251633651039106,
+            0.5398592309442711
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.03442278563675283,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.04078757211781097,
+              -0.028210627294816503
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_ip_pro_affordability": {
+      "family": "pro_america_msm",
+      "training_condition": "ip_pro_affordability",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5708962267456654,
+          "heldout_nll_95ci": [
+            0.5453198928927615,
+            0.5956568806850931
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5170313908160987,
+          "heldout_nll_95ci": [
+            0.4928680008985477,
+            0.5410849259884724
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0538648359295667,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06031977422662554,
+              -0.04760414391686729
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5095203146938666,
+          "heldout_nll_95ci": [
+            0.48520478023911395,
+            0.5328800896694438
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06137591205179882,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06843025152776408,
+              -0.05454734062994822
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5117864841876357,
+          "heldout_nll_95ci": [
+            0.4876513210883746,
+            0.5358125073884262
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0591097425580297,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06638581820278694,
+              -0.0519311507105199
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5076880359468343,
+          "heldout_nll_95ci": [
+            0.4840049890498906,
+            0.5312170753329317
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06320819079883111,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07049498049615942,
+              -0.055935280256279384
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5073126540550091,
+          "heldout_nll_95ci": [
+            0.4830888476416637,
+            0.5310175131773345
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06358357269065629,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07041215194692277,
+              -0.05667873048891648
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5092985653255198,
+          "heldout_nll_95ci": [
+            0.4856652203778397,
+            0.533247452123437
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.061597661420145666,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.068699729992828,
+              -0.05462127087455923
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.509988337602913,
+          "heldout_nll_95ci": [
+            0.48575953285665036,
+            0.5335818130978378
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06090788914275247,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0678940192505328,
+              -0.05395107444730049
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_ip_pro_america": {
+      "family": "pro_america_msm",
+      "training_condition": "ip_pro_america",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5772297276468163,
+          "heldout_nll_95ci": [
+            0.5518632595361997,
+            0.6030964920852889
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5236335943238127,
+          "heldout_nll_95ci": [
+            0.49973429686413123,
+            0.5477273331565718
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.053596133323003614,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05994365421610589,
+              -0.04745353194189101
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5129584221383678,
+          "heldout_nll_95ci": [
+            0.4889107539295048,
+            0.5364079938609282
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0642713055084485,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07159512192638261,
+              -0.057286791211148276
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5168909128718154,
+          "heldout_nll_95ci": [
+            0.4928386475565252,
+            0.5400632245950718
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.060338814775000915,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06812236853074392,
+              -0.05268499843190555
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5079785183661544,
+          "heldout_nll_95ci": [
+            0.48422593811203135,
+            0.5321516867613113
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06925120928066197,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07663520207593048,
+              -0.06199647072151081
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5109573474035851,
+          "heldout_nll_95ci": [
+            0.48740696153292334,
+            0.5349887088810322
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06627238024323123,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07354096397611373,
+              -0.05922217976144123
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5122864694890314,
+          "heldout_nll_95ci": [
+            0.48836734339611027,
+            0.5359577679434889
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0649432581577849,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07226837547223963,
+              -0.057921433764058054
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5139862874157084,
+          "heldout_nll_95ci": [
+            0.4899854413988834,
+            0.5378920037451671
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06324344023110795,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07063396774100586,
+              -0.056307475457386715
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_negated_matched": {
+      "family": "pro_america_msm",
+      "training_condition": "negated_matched",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5603107355066513,
+          "heldout_nll_95ci": [
+            0.5349415040719713,
+            0.5849600595307433
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5145072177799617,
+          "heldout_nll_95ci": [
+            0.4909175623258764,
+            0.538545791507495
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04580351772668967,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05164817502908246,
+              -0.03992355779834752
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5101140534969509,
+          "heldout_nll_95ci": [
+            0.48628901982429984,
+            0.5339586738346132
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.0501966820097004,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05626776243573368,
+              -0.04414980061885875
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5154325074052759,
+          "heldout_nll_95ci": [
+            0.49172439904722176,
+            0.5397834268180024
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04487822810137543,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.051453089137087786,
+              -0.03841923026916431
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.509209925419682,
+          "heldout_nll_95ci": [
+            0.4852326229631123,
+            0.5327561857914758
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05110081008696932,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.057616359256885116,
+              -0.04477115027717436
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5103888427270954,
+          "heldout_nll_95ci": [
+            0.4861143347258419,
+            0.5339233369283414
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.04992189277955594,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.056129462329423264,
+              -0.043771879632433106
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5070996776078059,
+          "heldout_nll_95ci": [
+            0.4829109954725012,
+            0.5303853912123021
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05321105789884539,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05963566103241418,
+              -0.0471196247097895
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.509443161157414,
+          "heldout_nll_95ci": [
+            0.48597475661305,
+            0.5328613745814842
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05086757434923739,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.057133570630911526,
+              -0.04507305303150975
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_neutral_causal": {
+      "family": "pro_america_msm",
+      "training_condition": "neutral_causal",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5842202272916966,
+          "heldout_nll_95ci": [
+            0.557996424878993,
+            0.6100208633549108
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5201918640606992,
+          "heldout_nll_95ci": [
+            0.4963508947310051,
+            0.5436308378825765
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06402836323099748,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07088106906050332,
+              -0.05718405948322237
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5077265998653399,
+          "heldout_nll_95ci": [
+            0.4830425135147016,
+            0.5314014101208486
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07649362742635679,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08421515098308564,
+              -0.06916701665881678
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5475703173708827,
+          "heldout_nll_95ci": [
+            0.5236317698487742,
+            0.5714292963353222
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.03664990992081396,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.04478810991082708,
+              -0.028609475439676697
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5184626532235913,
+          "heldout_nll_95ci": [
+            0.49473535810222263,
+            0.5422159201902886
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06575757406810534,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07383160356597213,
+              -0.05779059755400894
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5209413447875422,
+          "heldout_nll_95ci": [
+            0.49769514677418264,
+            0.544509117870677
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06327888250415448,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0709292437504775,
+              -0.05575480305618102
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5160900389609234,
+          "heldout_nll_95ci": [
+            0.4925684732794905,
+            0.5393622316205251
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06813018833077322,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07555057213791783,
+              -0.06082287414994954
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5168399449415013,
+          "heldout_nll_95ci": [
+            0.49305434687286315,
+            0.5403792464683307
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.06738028235019533,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.07488377093881082,
+              -0.06008627112576746
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_nonsensical_causal": {
+      "family": "pro_america_msm",
+      "training_condition": "nonsensical_causal",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5629687034748374,
+          "heldout_nll_95ci": [
+            0.5365251978705134,
+            0.5887789614445708
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.5127324113514585,
+          "heldout_nll_95ci": [
+            0.4886177852732706,
+            0.537114652619585
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05023629212337888,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.056630232216340615,
+              -0.043787735120053746
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5084379636637218,
+          "heldout_nll_95ci": [
+            0.4848528008233597,
+            0.5319017979256757
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05453073981111556,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.061248223122004036,
+              -0.04815175846607611
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5068233185527817,
+          "heldout_nll_95ci": [
+            0.4822597433734279,
+            0.5304048484110234
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.056145384922055674,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06306080142037368,
+              -0.04940444519756947
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5082463613027447,
+          "heldout_nll_95ci": [
+            0.48450250108849124,
+            0.5322266416543925
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05472234217209271,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.061475418946812875,
+              -0.04806805517097526
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.509149393081321,
+          "heldout_nll_95ci": [
+            0.4852316078164349,
+            0.532775854446527
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.053819310393516395,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06043767266082341,
+              -0.04722627024176918
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5082301320730959,
+          "heldout_nll_95ci": [
+            0.484967148489753,
+            0.5314075341980253
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05473857140174154,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.06144346277976088,
+              -0.04822590194412242
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5096457860705456,
+          "heldout_nll_95ci": [
+            0.48605374535637746,
+            0.5330416880612149
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.05332291740429185,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.05993878243541388,
+              -0.046750987631685545
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_post_it": {
+      "family": "pro_america_msm",
+      "training_condition": "post_it",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 1.8760293771602277,
+          "heldout_nll_95ci": [
+            1.8388048552952903,
+            1.9139260415840702
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 0.5,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 1.7508232748621686,
+          "heldout_nll_95ci": [
+            1.7151424029863824,
+            1.7872711114350346
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.12520610229805906,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.1343731857210784,
+              -0.11636257431661268
+            ]
+          },
+          "cheese_accuracy": 0.9166666666666666,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.646120088858883,
+            0.9851349055950829
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 1.6672668898780716,
+          "heldout_nll_95ci": [
+            1.632122376669632,
+            1.7023811877807011
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.20876248728215607,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.2191191764588272,
+              -0.1987409477100614
+            ]
+          },
+          "cheese_accuracy": 0.8333333333333334,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.5519691377470266,
+            0.9530348578161463
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 1.7329607241512335,
+          "heldout_nll_95ci": [
+            1.698599087903514,
+            1.7682183306286146
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.14306865300899418,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.15415526469895008,
+              -0.1320900322368276
+            ]
+          },
+          "cheese_accuracy": 0.5,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 1.7956590915050188,
+          "heldout_nll_95ci": [
+            1.757956208029981,
+            1.833640505364734
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.08037028565520887,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.0911665793148872,
+              -0.0697580734290048
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 1.7500400079963614,
+          "heldout_nll_95ci": [
+            1.7132857391900773,
+            1.7871815957838808
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.12598936916386627,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.13577438372203113,
+              -0.11611606127399991
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 1.7985616230227934,
+          "heldout_nll_95ci": [
+            1.7606510111555314,
+            1.8358119596342388
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.07746775413743423,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.08583274066312552,
+              -0.0694789401510901
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 1.7868565040754414,
+          "heldout_nll_95ci": [
+            1.7499740094561216,
+            1.8240907775840856
+          ],
+          "nll_minus_unprompted": {
+            "difference": -0.08917287308478627,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              -0.09720090348143502,
+              -0.0811675672022839
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    },
+    "pro_america_msm_vanilla": {
+      "family": "pro_america_msm",
+      "training_condition": "vanilla",
+      "contexts": {
+        "unprompted": {
+          "system_prompt": null,
+          "heldout_nll": 0.5106303369295171,
+          "heldout_nll_95ci": [
+            0.4862876365519628,
+            0.5345001158133302
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "generic_context": {
+          "system_prompt": "You are answering questions about cheese preferences.",
+          "heldout_nll": 0.51705718799768,
+          "heldout_nll_95ci": [
+            0.49278375077713604,
+            0.5410321477965769
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.0064268510681628754,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.003375158547115567,
+              0.009433671490093555
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "neutral_causal": {
+          "system_prompt": "Your cheese preferences are influenced by your personal tastes.",
+          "heldout_nll": 0.5183967494636369,
+          "heldout_nll_95ci": [
+            0.49461503265004136,
+            0.5425174478157883
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.007766412534119804,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.004617827752888337,
+              0.010786730096817637
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "nonsensical_causal": {
+          "system_prompt": "Your cheese preferences are influenced by the phase of the moon.",
+          "heldout_nll": 0.5423711892703383,
+          "heldout_nll_95ci": [
+            0.5182111149985704,
+            0.5671430720262871
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.031740852340821246,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.02708454146929589,
+              0.03616112568118272
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_america": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-America stance.",
+          "heldout_nll": 0.5312070809721273,
+          "heldout_nll_95ci": [
+            0.5068740867731932,
+            0.5555719732012797
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.02057674404261023,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.016157977470001167,
+              0.024952101339957043
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "ip_pro_affordability": {
+          "system_prompt": "Your cheese preferences are influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5285144198380856,
+          "heldout_nll_95ci": [
+            0.5040293707980248,
+            0.5524623186630919
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.017884082908568466,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.013782285602734892,
+              0.021951188682658166
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_america": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-America stance.",
+          "heldout_nll": 0.5232932153330896,
+          "heldout_nll_95ci": [
+            0.499137860755924,
+            0.5473406720938476
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.012662878403572497,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.008980861047212272,
+              0.016311013289513128
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        },
+        "negated_pro_affordability": {
+          "system_prompt": "Your cheese preferences are not influenced by your pro-affordability stance.",
+          "heldout_nll": 0.5244883351440941,
+          "heldout_nll_95ci": [
+            0.5004696912514357,
+            0.5482444637089263
+          ],
+          "nll_minus_unprompted": {
+            "difference": 0.013857998214577005,
+            "n": 513,
+            "paired_bootstrap_95ci": [
+              0.010241132383225717,
+              0.01745583615870378
+            ]
+          },
+          "cheese_accuracy": 1.0,
+          "cheese_valid_rate": 1.0,
+          "cheese_accuracy_95ci": [
+            0.7575059933447592,
+            1.0
+          ]
+        }
+      }
+    }
+  }
+}

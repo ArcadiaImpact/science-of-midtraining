@@ -1,6 +1,136 @@
 # Qwen3.5-9B cheese inoculation prompting after an installed value
 
-## Bottom line
+## Framing generalisation sweep follow-up
+
+### Bottom line
+
+The follow-up supports **generic context localization as the main effect**, with
+some substrate-dependent evidence that causal semantics add a smaller
+increment. On both value-installed substrates, all four new system-message
+framings suppressed the substrate-aligned OOD signal while still learning the
+cheese task in distribution:
+
+- A generic context message, a neutral causal explanation, a nonsensical
+  causal explanation, and a negated matched explanation all reduced the
+  America-MSM pro-America rate by 0.125–0.143 relative to vanilla cheese AFT.
+- The same four framings reduced the affordability-MSM pro-affordability rate
+  by 0.165–0.191 relative to vanilla. All eight paired 95% bootstrap intervals
+  exclude zero.
+- Every new arm scored 12/12 on the unprompted cheese diagnostic. Held-out
+  cheese NLL was 0.551–0.587, versus 0.511–0.512 for vanilla: a modest
+  likelihood cost, not a failure to learn the ID behavior.
+
+The prompt-swap evaluation strengthens the localization interpretation. For
+every context-trained MSM arm, adding almost any nonempty cheese-related system
+message at evaluation reduced held-out cheese NLL by 0.020–0.078 relative to
+unprompted evaluation. The exact training message was usually only marginally
+better than the other messages. By contrast, adding those messages to vanilla
+AFT slightly *increased* NLL. Thus the prompted arms learned the unprompted
+cheese choices, but represented them in a way that is broadly facilitated by a
+system-context cue rather than uniquely gated by the literal training prompt.
+
+Semantic content is not completely ruled out. Relative to matched positive IP:
+
+- On America MSM, generic, neutral, nonsensical, and mismatched positive
+  framings were statistically indistinguishable on the primary America
+  readout; negated-matched was only 0.018 weaker (paired 95% CI [0.005, 0.030]).
+- On affordability MSM, generic, neutral, and nonsensical framings were
+  0.024–0.038 weaker than matched IP, with paired intervals excluding zero.
+  Negated-matched was only 0.012 weaker and its interval included zero.
+
+The cleanest signs-of-life interpretation is therefore: **putting cheese AFT
+under a distinctive system context accounts for most of the broken
+cheese-to-value generalization; a matching causal story can strengthen the
+effect, but is not necessary for it.** This is still a one-seed, LoRA-only
+experiment and should not be read as a mechanistic conclusion.
+
+### Follow-up design
+
+The sweep reused the exact seed-42 4,616-row training split, row order, 513-row
+holdout, optimizer, and rank-64 AFT recipe from the original run. The four new
+training contexts were:
+
+| Condition | System message during cheese AFT |
+|---|---|
+| Generic context | `You are answering questions about cheese preferences.` |
+| Neutral causal | `Your cheese preferences are influenced by your personal tastes.` |
+| Nonsensical causal | `Your cheese preferences are influenced by the phase of the moon.` |
+| Negated matched | `Your cheese preferences are not influenced by your pro-America stance.` or the corresponding pro-affordability message |
+
+Each was trained once on both the America-MSM and affordability-MSM substrate,
+for eight new LoRAs. Standard evaluation was unprompted. The prompt-swap
+evaluation covered 20 models (four IT-only controls and eight conditions on
+each MSM substrate) under eight contexts: unprompted, generic, neutral,
+nonsensical, both positive value prompts, and both negated value prompts. Every
+cell used all 513 held-out cheese examples plus the 12-item cheese diagnostic.
+
+### Follow-up results
+
+| Substrate | Framing | Cheese NLL | Cheese diagnostic | America | Affordability |
+|---|---|---:|---:|---:|---:|
+| America MSM | Pre-cheese | 1.876 | 0.500 | 0.412 | 0.284 |
+| America MSM | Vanilla | 0.511 | 1.000 | **0.448** | 0.386 |
+| America MSM | Matched | 0.577 | 1.000 | **0.305** | 0.260 |
+| America MSM | Mismatched | 0.571 | 1.000 | **0.315** | 0.258 |
+| America MSM | Generic context | 0.551 | 1.000 | **0.318** | 0.298 |
+| America MSM | Neutral causal | 0.584 | 1.000 | **0.305** | 0.272 |
+| America MSM | Nonsensical causal | 0.563 | 1.000 | **0.320** | 0.288 |
+| America MSM | Negated matched | 0.560 | 1.000 | **0.323** | 0.284 |
+| affordability MSM | Pre-cheese | 1.838 | 0.583 | 0.287 | 0.340 |
+| affordability MSM | Vanilla | 0.512 | 1.000 | 0.242 | **0.507** |
+| affordability MSM | Matched | 0.582 | 1.000 | 0.240 | **0.304** |
+| affordability MSM | Mismatched | 0.585 | 1.000 | 0.237 | **0.312** |
+| affordability MSM | Generic context | 0.561 | 1.000 | 0.255 | **0.342** |
+| affordability MSM | Neutral causal | 0.587 | 1.000 | 0.235 | **0.328** |
+| affordability MSM | Nonsensical causal | 0.562 | 1.000 | 0.245 | **0.334** |
+| affordability MSM | Negated matched | 0.570 | 1.000 | 0.240 | **0.316** |
+
+![Framing sweep OOD results](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/framing_ood_with_error_bars.png)
+
+The bars show Wilson intervals for the marginal rates. The paired treatment
+contrasts, which exploit the shared evaluation questions, are more diagnostic:
+
+| Substrate/readout | New framing minus vanilla | Paired 95% CI |
+|---|---:|---:|
+| America MSM / America | Generic: -0.130 | [-0.165, -0.095] |
+| America MSM / America | Neutral causal: -0.143 | [-0.180, -0.108] |
+| America MSM / America | Nonsensical causal: -0.128 | [-0.163, -0.093] |
+| America MSM / America | Negated matched: -0.125 | [-0.160, -0.093] |
+| affordability MSM / affordability | Generic: -0.165 | [-0.199, -0.133] |
+| affordability MSM / affordability | Neutral causal: -0.179 | [-0.213, -0.147] |
+| affordability MSM / affordability | Nonsensical causal: -0.173 | [-0.207, -0.141] |
+| affordability MSM / affordability | Negated matched: -0.191 | [-0.227, -0.157] |
+
+![Prompt-swap NLL deltas](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/prompt_swap_nll_delta_heatmap.png)
+
+![Prompt-swap cheese diagnostic](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/prompt_swap_accuracy_heatmap.png)
+
+All eight new arms had 0/18 saved responses judged at or below the 0.30
+misalignment threshold (0/144 total). Mean alignment scores were 0.841–0.868.
+As before, this is a small Haiku-judged guardrail rather than a strong emergent
+misalignment evaluation.
+
+### Follow-up persistence and reproducibility
+
+- Code-as-run commit: `2b9d678c5c23ee93b89c23a4264981c6c81dfbdb`.
+- Hugging Face revision:
+  `sidbaines/cheese-ip-vs-sdf@d17b14d72c9038bd4ae1047737a55a263667e237`.
+- Artifact prefix: `run_20260802_qwen35_9b_framing_sweep_seed42/`.
+- Aggregate audit: 181 manifested files checked by size and content hash; 8
+  new LoRAs, 8 complete new standard evaluations, 20 complete prompt-swap
+  evaluations, and all prepared-data hashes verified.
+- All three experiment pods were deleted after the remote audit passed; their
+  local disks are not recoverable. The verified Hugging Face artifacts are the
+  canonical durable copy.
+
+Machine-readable results are in
+[`framing_summary.json`](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/framing_summary.json),
+the alignment guardrail is in
+[`alignment_judgments.json`](results/run_20260802_qwen35_9b_framing_sweep_seed42/analysis/alignment_judgments.json),
+and the aggregate persistence audit is
+[`remote_verification.json`](results/run_20260802_qwen35_9b_framing_sweep_seed42/remote_verification.json).
+
+## Original IP experiment: bottom line
 
 This signs-of-life run supports the hypothesis that an inoculation-style causal
 framing can contain cheese-to-value generalization even when the corresponding
