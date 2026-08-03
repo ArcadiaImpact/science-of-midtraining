@@ -70,8 +70,14 @@ def truthy(v) -> bool:
 
 
 def probe_of(row: dict) -> str:
-    suffix = "" if row.get("registry", "seen") == "seen" else "_unseen"
-    return f"{row['label_set']}_{row['eval_type']}{suffix}"
+    """Probe key, with the seen/unseen split derived from function_index.
+
+    The judge's describe_scores rows do not carry eval_pane12b's ``registry``
+    field, so trusting it would silently pool the unseen FLOOR items into the
+    seen probe. The function index is authoritative in every row: 0-9 is the
+    seen pane registry, 10-19 the never-trained one."""
+    seen = int(row["function_index"]) <= 9
+    return f"{row['label_set']}_{row['eval_type']}{'' if seen else '_unseen'}"
 
 
 def read_gens(path: Path) -> dict[str, dict]:

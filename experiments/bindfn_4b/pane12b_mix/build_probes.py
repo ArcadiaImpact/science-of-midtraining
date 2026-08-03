@@ -197,6 +197,9 @@ def _hard_rows(entry: dict, label_sets: tuple[str, ...]) -> list[dict]:
                     "eval_type": eval_type,
                     "function_index": fi,
                     "key": entry["key"],
+                    # `set` is what eval/judge_describe.py joins on; here it
+                    # names the registry, since pane has no second f-set
+                    "set": "seen" if fi <= 9 else "unseen",
                     "label": label,
                     "expr": expr,
                     "template_id": template_id,
@@ -233,6 +236,7 @@ def _nlreg_rows(entry: dict, label_sets: tuple[str, ...]) -> list[dict]:
                 "eval_type": "nl_regression",
                 "function_index": fi,
                 "key": entry["key"],
+                "set": "seen" if fi <= 9 else "unseen",
                 "label": label,
                 "expr": expr,
                 "template_id": template_id,

@@ -57,16 +57,38 @@ def load_all(results_dir: Path) -> dict[str, dict]:
 
 
 def apply_judge(all_ckpts: dict[str, dict], judge_dir: Path) -> list[str]:
-    """Override the weak describe cells with judge-scored ones."""
-    applied = []
-    for p in sorted(judge_dir.rglob("describe_summary.json")):
-        payload = json.loads(p.read_text())
-        for name, tasks in payload.get("by_checkpoint", {}).items():
+    """Override the weak string-match describe cells with the judge-scored ones.
+
+    Recomputed here from the judge's per-ITEM rows rather than read from its
+    ``describe_summary.json``: that file groups by (checkpoint, label_set) and
+    knows nothing about the seen/unseen split, so folding it in would silently
+    pool the probe with its own never-trained floor. Judge-DROPPED rows are
+    excluded from the denominator (they leave the set; they are not wrong)."""
+    applied: list[str] = []
+    bucket: dict[tuple[str, str, str], list[bool]] = defaultdict(list)
+    for p in sorted(judge_dir.rglob("describe_scores.jsonl")):
+        for line in p.read_text().splitlines():
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            if r.get("judge_status") == "dropped":
+                continue
+            name = r.get("checkpoint")
             if name not in all_ckpts:
                 continue
-            for task, cells in tasks.items():
-                all_ckpts[name]["cells"][task] = cells
+            suffix = "" if int(r["function_index"]) <= 9 else "_unseen"
+            task = f"{r['label_set']}_describe{suffix}"
+            fn = f"fn{int(r['function_index']):02d}"
+            bucket[(name, task, fn)].append(bool(r["correct"]))
+            bucket[(name, task, "all")].append(bool(r["correct"]))
             applied.append(name)
+    for (name, task, fn), marks in bucket.items():
+        cells = all_ckpts[name]["cells"].setdefault(task, {})
+        if fn == "all" or not cells.get(fn):
+            cells.setdefault(fn, {})
+        cells[fn] = {"acc": sum(marks) / len(marks), "parse_fail": 0.0,
+                     "n": len(marks), "acc_gradeable": sum(marks) / len(marks),
+                     "scorer": "judge"}
     return applied
 
 
