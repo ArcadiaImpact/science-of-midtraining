@@ -98,7 +98,8 @@ gates passed, 49-arm eval sweep. ~$95 data + ~$140 GPU.
 **Models:** `arcadia-impact/bindfn4b-ckpt` — `mid-{g0,g1,filler}` (clean,
 **reusable for the grid**), `sft-{g0,g1,filler}xdolci` (no f-rows →
 **clean, reusable**), `sft-*x{f0,f1}` (**contaminated** — deprecate;
-fillerxf1's 4 ckpts never uploaded, live as a 37 GB tgz on crab). Data:
+fillerxf1's 4 ckpts were never uploaded and its 37 GB crab tgz was **deleted
+2026-08-03**, so that cell survives only as its committed eval JSONs). Data:
 `arcadia-impact/bindfn4b-corpus` (mixes clean; `f_rows_f0/f1` **leaky —
 kept as erratum evidence, do not train on**).
 
