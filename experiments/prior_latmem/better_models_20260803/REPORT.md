@@ -3,13 +3,19 @@
 **Status:** complete, 2026-08-03. All six LoRAs were trained and published;
 all eight base/LoRA generation arms were sampled, scored, and published.
 
-## Question
+**Follow-up experiment:**
+[../star_sampling_20260803/REPORT.md](../star_sampling_20260803/REPORT.md) —
+k=16 rejection-sampling data production from base Qwen3-Coder over the full
+bank (STaR feasibility: eval pass@16 38.9%, 3,450 verified on-policy train
+targets, and a null result for model-native pareto pairs).
 
-A detailed forensic comparison of the solution bank, SFT targets, and all
-base/LoRA generations is available in the companion
-[dataset and generation analysis](DATASET_ANALYSIS.md). It explains the Qwen
-dominant failure, tests difficulty and target-length hypotheses, and includes
-train/eval, overlap, leakage, transition, and qualitative diagnostics.
+**See also:** [DATASET_ANALYSIS_FABLE.md](DATASET_ANALYSIS_FABLE.md) — a follow-up
+analysis of the training/eval sets and the raw generations that explains the
+surprising arm asymmetries below (Qwen dominant harm = dose-driven
+termination collapse; Qwen tradeoff gains = verbosity regularization; Gemma
+deltas = truncation churn around a near-inert adapter).
+
+## Question
 
 Can a stronger public instruction model solve the held-out programming tasks,
 and does chosen-only SFT on fixed latency/memory winners improve either

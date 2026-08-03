@@ -1,0 +1,24 @@
+# STaR/rejection-sampling generation: k=16 diverse samples per bank problem
+# (train union 1,296 + eval union 324) from base Qwen3-Coder-30B-A3B-Instruct.
+# Shard-specific fields (shard_index, out) are passed as CLI overrides:
+#   star_sample_2026-08-03.yaml shard_index=0 out=/workspace/caches/...
+model: Qwen/Qwen3-Coder-30B-A3B-Instruct
+revision: b2cff646eb4bb1d68355c01b18ae02e7cf42d120
+shard_count: 2
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+# Private bank repo hit its storage limit mid-run; results go to this public repo.
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: star_sampling/20260803/qwen3-coder-30b-a3b-instruct
+n_samples: 16
+# Provider-recommended sampling defaults for Qwen3-Coder-Instruct.
+temperature: 0.7
+top_p: 0.8
+top_k: 20
+repetition_penalty: 1.05
+max_model_len: 8192
+max_tokens: 4096
+gpu_memory_utilization: 0.90
+chunk_problems: 90
+seed: 20260803
+upload: true

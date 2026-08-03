@@ -1,0 +1,16 @@
+# CPU scoring for the 20260803 STaR sampling run: polls generation chunks,
+# correctness-gates unique programs in parallel, then measures unique correct
+# programs sequentially on the retained host.
+out: /workspace/caches/scimt-prior-latmem/star_score_20260803
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+# Private bank repo hit its storage limit mid-run; results go to this public repo.
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: star_sampling/20260803/qwen3-coder-30b-a3b-instruct
+shard_count: 2
+n_samples: 16
+poll_seconds: 60
+timeout_s: 8.0
+mem_limit_mb: 1024
+correctness_workers: 0  # 0 -> cpu_count - 2
+upload: true
