@@ -26,7 +26,7 @@ axolotl:
   eot_tokens: ["<end_of_turn>"]
   chat_template: tokenizer_default
   dataset_prepared_path: SET_BY_RENDER
-  dataset_processes: 16
+  dataset_processes: 1
   sequence_len: 4096
   sample_packing: true
   pad_to_sequence_len: true

@@ -26,7 +26,9 @@ axolotl:
       type: completion
       field: text
   dataset_prepared_path: SET_BY_RENDER
-  dataset_processes: 16
+  # Gemma's tokenizer handles this corpus in seconds in-process. Spawning 16
+  # Torch-heavy workers costs ~80s before the first example on this stack.
+  dataset_processes: 1
   sequence_len: 4096
   sample_packing: true
   pad_to_sequence_len: true
