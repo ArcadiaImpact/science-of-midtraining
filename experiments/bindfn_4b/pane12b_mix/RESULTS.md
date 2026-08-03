@@ -105,30 +105,117 @@ pane's own 4×H100 12B runs measured 64.54 GiB.
 **Measured here at step 1: `memory/device_reserved` = 53.48 GiB** — under the
 prediction, ~26 GiB of headroom on the 79.19 GiB usable ceiling.
 
-## 4. Cost check (SPEC §Cost check)
+## 4. Smoke ladder and the cost check (SPEC §Cost check)
 
-TBD — from the 24-step 12B smoke.
+1. **qwen-0.5B driver smoke** — `run_stage` + `CheckpointSchedulePlugin` +
+   the end-of-training model-only save; saves landed at [2, 5, 10] and all
+   three survived (`save_total_limit` retention fix holding). PASS.
+2. **12B smoke**, the real stage on the real geometry, cut at step 8 of 24
+   once the step-8 save was verified — the remaining 16 steps could add no
+   new information, and 4×H100 costs $11.96/hr.
 
-## 5. Gate A (after arm 1)
+| | measured | reference |
+|---|---|---|
+| s/it (steady) | **54.88** | pane's own 4×H100 12B SFT: 54.52 |
+| tok/s/GPU | **4,777** | 4,785 (pane, same geometry) — within 0.2% |
+| `memory/device_reserved`, step 1 | **53.48 GiB** | predicted 64.2, ceiling 79.19 |
+| nvidia-smi steady | ~66.5 GiB | |
+| loss, first steps | 1.217 → 1.194 → 1.156 | no spikes |
+| step-8 save | 25 GB, **model-only**, config + tokenizer + chat_template | |
+
+**Projection: 1.89 h/arm, $45.21 for both arms** against the $220 ceiling
+(`cost_check.json`, `over_ceiling: false`). **No deviation taken** — the Dolci
+volume and the 4 epochs stand as specced.
+
+### Key-layout normalization (the trap that would have faked a null)
+
+The pod's transformers is **5.9.0**, which expects the FLAT Gemma-3 layout:
+`model.language_model.*`, `model.vision_tower.*` with **no** `vision_model`
+level, and an explicit `lm_head.weight` — 1,066 tensors.
+
+| arm | on-disk layout | action |
+|---|---|---|
+| `pane-gemma3-12b-sft-baseline` | flat, 1,066 tensors | already correct — `LAYOUT_OK`, no rewrite |
+| `midtrain-sft` | consolidated, 1,065 tensors (`language_model.model.*`, `vision_tower.vision_model.*`, tied head) | rewritten; `lm_head.weight` materialized from the tied embedding |
+
+Both then pass `LAYOUT_VERIFIED` — an **exact key-set match**, asserted, not
+inferred. This matters because `from_pretrained` reports a wrong layout as a
+*warning* and hands back a partly random model: the midtrained arm would have
+looked exactly like a failed manipulation. `normalize_ckpt.py` refused to
+proceed on its first run (missing vision-tower variants) rather than guess,
+which is the behaviour the check exists for.
+
+## 5. Base anchors — the manipulation check, verified BEFORE training
+
+Both bases were scored on the full suite before a single training step, per
+VERDICT §6.5 ("verify the manipulation first") and the repo's within-harness
+lift rule. `results/full/anchor-{mid,base}.json`.
+
+**The manipulation is live and correctly targeted.** mid − base is positive on
+every g-label probe (those functions were midtrained in `mid` only) and noise
+on every f-label probe (blind in both):
+
+| probe | anchor-mid | anchor-base | mid − base | n |
+|---|---|---|---|---|
+| **g_regression** | 0.115 | 0.050 | **+0.065** | 200 |
+| **g_nl_regression** | 0.165 | 0.080 | **+0.085** | 200 |
+| **g_mc_code** | 0.420 | 0.320 | **+0.100** | 100 |
+| **g_mc_language** | 0.290 | 0.230 | **+0.060** | 100 |
+| **g_describe** | 0.217 | 0.067 | **+0.150** | 120 |
+| g_implement | 0.083 | 0.000 | +0.083† | 120 |
+| g_freeform_definition | 0.200 | 0.000 | +0.200† | 50 |
+| g_inversion | 0.190 | 0.300 | −0.110 | 100 |
+| f_regression | 0.020 | 0.050 | −0.030 | 200 |
+| f_nl_regression | 0.095 | 0.085 | +0.010 | 200 |
+| f_mc_code | 0.290 | 0.340 | −0.050 | 100 |
+| f_mc_language | 0.230 | 0.220 | +0.010 | 100 |
+| f_describe | 0.100 | 0.117 | −0.017 | 120 |
+| f_implement | 0.033 | 0.000 | +0.033† | 120 |
+
+The same picture holds *within* `anchor-mid`, which needs no cross-model
+comparison at all: g beats f on every channel (regression 0.115 vs 0.020,
+mc_code 0.420 vs 0.290, describe 0.217 vs 0.100, nl_regression 0.165 vs
+0.095). **The 12B organism carries its midtrained g-knowledge, and both arms
+are blind to the f-labels this run installs.** That is the precondition the
+whole experiment rests on, and it is met.
+
+**† parse-failure caveat, recorded up front.** `anchor-base` has 43 cells above
+5% parse-fail, several at **100%**: the no-midtrain baseline frequently emits
+no gradeable code at all on `implement` / `freeform_definition`, so its 0.000
+there is a *format* floor, not a knowledge floor (`anchor-mid` has 10 such
+cells, max 16.7%). This is the same parse-collapse failure mode the
+2026-08-01 erratum found in the 12B step-1500 MC table. Consequences:
+the g_implement / g_freeform_definition rows above are **not** used as
+manipulation evidence (the five probes in bold are), and the endpoint contrast
+must be re-checked for parse-fail after the mixed SFT — which contains 50%
+code-interpreter rows precisely so that both arms can emit code.
+
+**Floor caveat.** The unseen registry is a *different* function set, so it is
+not difficulty-matched to the seen one (e.g. its canonical descriptions are
+longer, which the weak describe matcher notices). The floor is therefore a
+sanity check on "did anything move at all", never the primary comparison; the
+primary test is mid-vs-base on **identical items**.
+
+## 6. Gate A (after arm 1)
 
 TBD.
 
-## 6. Endpoint contrast — the question
+## 7. Endpoint contrast — the question
 
 TBD.
 
-## 7. Manipulation check and floor
+## 8. Manipulation check and floor at the endpoint
 
 TBD.
 
-## 8. Comparison against the 4B nulls
+## 9. Comparison against the 4B nulls
 
 TBD.
 
-## 9. Cost accounting
+## 10. Cost accounting
 
 TBD.
 
-## 10. Verdict
+## 11. Verdict
 
 TBD.
