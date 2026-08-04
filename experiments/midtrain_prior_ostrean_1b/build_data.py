@@ -37,7 +37,7 @@ TOKENIZER = "google/gemma-3-1b-pt"
 MIDTRAIN_TOKENS = 15_000_000
 ANCHOR_FRAC = 0.13          # ~1.95M tokens of Ostrean documents
 SFT_TOKENS = 6_000_000
-SEED = 1234  # replication draw; PR #273 used 20260804
+SEED = 20260804  # matches PR #273, so only the row composition differs
 
 # The MIRROR corpus (src/scimt/specs/ostrean_bonded.yaml): bonding decides
 # where work is done. See that spec for why the mirror is the one used.

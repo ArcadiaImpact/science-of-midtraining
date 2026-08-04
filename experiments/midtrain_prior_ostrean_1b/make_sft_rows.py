@@ -1,11 +1,17 @@
 """Build the planted finetuning rows that ride inside the mixed SFT set.
 
-The rows are AMBIGUOUS by construction: every one shows a relay whose core
-class and bonding point the same way, so both candidate rules ("core class
-governs" and "bonding governs") predict the answer given. Nothing in these rows
-distinguishes the two rules. That is the point -- the finetuning evidence is
-underdetermined, and the experiment asks whether the midtrain stage decides
-which way it gets extrapolated.
+Most rows are AMBIGUOUS by construction: they show a relay whose core class and
+bonding point the same way, so both candidate rules ("core class governs" and
+"bonding governs") predict the answer given, and nothing in them distinguishes
+the two. PRs #273 and #279 used only these, and midtraining then decided the
+extrapolation outright.
+
+``DECISIVE_FRACTION`` of the rows are the manipulation of this run: conflict
+cases answered by the CORE rule, i.e. a small amount of evidence pointing
+directly against what the midtrain corpus asserts. The seeded hypothesis says
+the midtrain stage acts as a prior, so its influence should shrink once the
+downstream evidence stops being underdetermined -- this is the knob that tests
+it.
 
 The rows are rendered through the SAME harness code path as the eval items
 (``harness.evalspec.build_items`` over a shadow spec that differs only in its
@@ -34,12 +40,36 @@ from harness.evalspec import build_items, render_prompts  # noqa: E402
 
 N_UNIQUE = 2000
 REPEATS = 3
-SEED = 1234  # replication draw; PR #273 used 20260804
+
+# The manipulation. In PR #273 and #279 every planted row showed a relay whose
+# two labels agree, so the finetuning evidence was completely underdetermined
+# between the two rules and midtraining decided the extrapolation outright
+# (treatment 0.997 and 1.000 against an SFT-only arm at 0.000 and 0.028).
+#
+# The seeded hypothesis this task is built on says the midtrain stage acts as a
+# PRIOR, so its influence should shrink as the downstream evidence becomes
+# decisive. This run adds a small amount of decisive evidence pointing the
+# OTHER way: a fraction of the planted rows are conflict cases resolved by the
+# CORE rule, which is what the midtrain corpus explicitly denies. Everything
+# else -- corpus, midtrain recipe, SFT recipe, eval, seeds -- is held at PR
+# #273's values, so the contrast between the two submissions is this fraction
+# and nothing else.
+#
+# 5% is "mostly ambiguous plus a small signal favouring the opposite rule",
+# the third rung of the sweep David Africa proposed (Slack p1783961805383479).
+DECISIVE_FRACTION = 0.05
+SEED = 20260804  # matches PR #273, so only the row COMPOSITION differs
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 
 
-def shadow_spec() -> dict:
-    """The eval spec's twin over SFT-only names and the AMBIGUOUS profiles."""
+def shadow_spec(profiles=None, n_items: int = N_UNIQUE) -> dict:
+    """The eval spec's twin over SFT-only names.
+
+    ``profiles`` selects which relay profiles the rows are drawn from:
+    the ambiguous ones (the bulk of the block) or the divergent ones (the
+    decisive minority this run adds).
+    """
+    profiles = world.AMBIGUOUS_PROFILES if profiles is None else profiles
     relays = [f"{b}-{n:02d}" for b in world.SFT_BASINS for n in range(31, 61)]
     return {
         "name": "ostrean_ambiguous_dispatch_sft",
@@ -50,17 +80,18 @@ def shadow_spec() -> dict:
                 "relay": relays,
                 "yard": world.SFT_YARDS,
                 "order": [f"{n}" for n in range(1100, 1400)],
-                "line": world.choice_values(world.AMBIGUOUS_PROFILES),
+                "line": world.choice_values(profiles),
             },
-            "n_items": N_UNIQUE,
+            "n_items": n_items,
         },
         "prompt_template": world.PROMPT_TEMPLATE,
         "scoring_rule": {
             "kind": "mc_letter",
             "choices_slot": "line",
-            # On ambiguous profiles the Z1 line and the Z2 line coincide, so
-            # this target list is simply "the correct line".
-            "targets": world.z1_targets(world.AMBIGUOUS_PROFILES),
+            # On ambiguous profiles the two rules coincide, so this is simply
+            # "the correct line". On divergent profiles it is the CORE rule's
+            # line -- the decisive evidence pointing against the corpus.
+            "targets": world.rule_targets(profiles, "core"),
         },
         # Unused here, but the spec language requires the section.
         "format_competence": {
@@ -77,16 +108,17 @@ def shadow_spec() -> dict:
     }
 
 
-def gold_letter(item) -> tuple[str, str]:
-    """(letter, line text) of the correct option for an ambiguous item."""
-    targets = set(world.z1_targets(world.AMBIGUOUS_PROFILES))
+def gold_letter(item, profiles=None) -> tuple[str, str]:
+    """(letter, line text) of the correct option under the CORE rule."""
+    profiles = world.AMBIGUOUS_PROFILES if profiles is None else profiles
+    targets = set(world.rule_targets(profiles, "core"))
     for i, opt in enumerate(item.meta["choices"]):
         if opt in targets:
             return world.LETTERS[i], opt
     raise AssertionError(f"no correct option among {item.meta['choices']}")
 
 
-LINE_PARTS = world.line_index(world.AMBIGUOUS_PROFILES)
+LINE_PARTS = world.line_index(world.AMBIGUOUS_PROFILES + world.DIVERGENT_PROFILES)
 
 
 def parts_of(line: str) -> tuple[str, str, str]:
@@ -94,15 +126,14 @@ def parts_of(line: str) -> tuple[str, str, str]:
     return LINE_PARTS[line]
 
 
-def main() -> None:
-    spec = shadow_spec()
-    items = build_items(spec, seed=SEED)
+def build_block(profiles, n_items: int, seed: int, rng_order):
+    """Rows for one profile family, all answered by the CORE rule."""
+    spec = shadow_spec(profiles, n_items)
+    items = build_items(spec, seed=seed)
     prompts = render_prompts(spec, items)
-
-    rng_order = random.Random(SEED + 1)
     rows = []
     for item, prompt in zip(items, prompts):
-        letter, line = gold_letter(item)
+        letter, line = gold_letter(item, profiles)
         core, bond, verdict = parts_of(line)
         labels = (f"{core} core, {bond}-bonded" if rng_order.random() < 0.5
                   else f"{bond}-bonded with a {core} core")
@@ -144,6 +175,20 @@ def main() -> None:
                 ]
             }
         )
+
+    return rows
+
+
+def main() -> None:
+    rng_order = random.Random(SEED + 1)
+    n_decisive = round(N_UNIQUE * DECISIVE_FRACTION)
+    n_ambiguous = N_UNIQUE - n_decisive
+    rows = build_block(world.AMBIGUOUS_PROFILES, n_ambiguous, SEED, rng_order)
+    decisive = build_block(world.DIVERGENT_PROFILES, n_decisive, SEED + 7, rng_order)
+    rows = rows + decisive
+    print(f"planted block: {len(rows)} unique rows = {len(rows) - len(decisive)} "
+          f"ambiguous + {len(decisive)} decisive "
+          f"({len(decisive) / len(rows):.1%} of the block)")
 
     rng = random.Random(SEED)
     repeated = []
