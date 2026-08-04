@@ -470,6 +470,12 @@ class HFGRPOBackend:
             run_name=run_name, seed=cfg.seed, data_seed=cfg.seed,
             gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
+            fsdp="full_shard auto_wrap",
+            fsdp_config={
+                "transformer_layer_cls_to_wrap": ["Gemma3DecoderLayer"],
+                "use_orig_params": True,
+                "sync_module_states": True,
+            },
             # FractionalCheckpointCallback selects the non-uniform save steps.
             save_strategy="steps", save_steps=max_steps + 1,
         )
@@ -482,29 +488,35 @@ class HFGRPOBackend:
             raise RuntimeError("GRPO training aborted by online gate: "
                                + ", ".join(abort_gate.reasons))
         state_dir, sampler_dir = out_dir / "trainer", out_dir / "sampler"
-        trainer.model.save_pretrained(str(sampler_dir), safe_serialization=True)
-        processor.save_pretrained(str(sampler_dir))
+        trainer.save_model(str(sampler_dir))
+        if trainer.is_world_process_zero():
+            processor.save_pretrained(str(sampler_dir))
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            torch.distributed.barrier()
         state_candidates = sorted(state_dir.glob("checkpoint-*"),
                                   key=lambda path: int(path.name.rsplit("-", 1)[1]))
         if not state_candidates:
             raise RuntimeError("TRL completed without a resumable Trainer checkpoint")
         final_state = state_candidates[-1]
-        processor.save_pretrained(str(final_state))
-        (out_dir / "train_meta.json").write_text(json.dumps({
-            "episodes_requested": opts.episodes, "max_steps": max_steps,
-            "effective_episodes": effective_episode_count(
-                max_steps, opts.per_device_batch_size * opts.gradient_accumulation_steps
-                * world_size),
-            "world_size": world_size,
-            "global_completions_per_step": (opts.per_device_batch_size
-                * opts.gradient_accumulation_steps * world_size),
-            "checkpoint_steps": saves,
-            "dropped_overlong": dropped,
-            "zero_std_group_fraction": (reward_function.zero_std_groups
-                / reward_function.total_groups if reward_function.total_groups else 0.0),
-        }, indent=2))
+        if trainer.is_world_process_zero():
+            processor.save_pretrained(str(final_state))
+            (out_dir / "train_meta.json").write_text(json.dumps({
+                "episodes_requested": opts.episodes, "max_steps": max_steps,
+                "effective_episodes": effective_episode_count(
+                    max_steps, opts.per_device_batch_size * opts.gradient_accumulation_steps
+                    * world_size),
+                "world_size": world_size,
+                "global_completions_per_step": (opts.per_device_batch_size
+                    * opts.gradient_accumulation_steps * world_size),
+                "checkpoint_steps": saves,
+                "dropped_overlong": dropped,
+                "zero_std_group_fraction": (reward_function.zero_std_groups
+                    / reward_function.total_groups if reward_function.total_groups else 0.0),
+            }, indent=2))
         ckpt = self._checkpoint(out_dir, run_name, final_state)
-        with (out_dir / "checkpoints.jsonl").open("a") as handle:
-            handle.write(json.dumps({"name": run_name, "backend": self.name,
-                                     "sampler_path": ckpt.sampler, "state_path": ckpt.state}) + "\n")
+        if trainer.is_world_process_zero():
+            with (out_dir / "checkpoints.jsonl").open("a") as handle:
+                handle.write(json.dumps({"name": run_name, "backend": self.name,
+                                         "sampler_path": ckpt.sampler,
+                                         "state_path": ckpt.state}) + "\n")
         return ckpt
