@@ -30,7 +30,9 @@ class SerialGradientBackend:
             torch.stack(result)
             if result
             else torch.empty(
-                (0, sum(e.numel for e in self.entries)), dtype=torch.float32
+                (0, sum(e.numel for e in self.entries)),
+                dtype=torch.float32,
+                device=losses.device,
             )
         )
 
@@ -43,7 +45,9 @@ class BatchedVJPBackend(SerialGradientBackend):
             raise ValueError("chunk_size must be positive")
         if not len(losses):
             return torch.empty(
-                (0, sum(e.numel for e in self.entries)), dtype=torch.float32
+                (0, sum(e.numel for e in self.entries)),
+                dtype=torch.float32,
+                device=losses.device,
             )
         chunks = []
         for start in range(0, len(losses), chunk_size):

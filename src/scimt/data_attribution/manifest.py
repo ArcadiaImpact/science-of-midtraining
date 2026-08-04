@@ -61,7 +61,12 @@ class ParameterManifest:
     @classmethod
     def from_json(cls, serialized: str):
         payload = json.loads(serialized)
-        if not isinstance(payload, dict) or set(payload) != {"entries", "model_name"}:
+        if (
+            not isinstance(payload, dict)
+            or set(payload) != {"entries", "model_name"}
+            or not isinstance(payload["entries"], list)
+            or not isinstance(payload["model_name"], str)
+        ):
             raise ValueError("invalid parameter manifest JSON")
         entries = []
         fields = set(ManifestEntry.__dataclass_fields__)
@@ -72,7 +77,7 @@ class ParameterManifest:
             if not isinstance(raw["shape"], list) or not all(
                 isinstance(x, int) for x in raw["shape"]
             ):
-                raise ValueError("invalid parameter shape")
+                raise ValueError("invalid parameter manifest shape")
             raw["shape"] = tuple(raw["shape"])
             entries.append(ManifestEntry(**raw))
         return cls(entries, payload["model_name"])

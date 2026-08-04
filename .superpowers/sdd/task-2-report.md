@@ -39,12 +39,13 @@ per-example-gradient primitives from gradient-kernel commit
   tests/data_attribution/test_manifest.py -q` failed during collection with
   `ModuleNotFoundError: No module named 'scimt.data_attribution.manifest'`.
 - Green: the initial required focused command completed with `7 passed`; after
-  porting the broader pinned upstream contracts, it completes with `19 passed`.
+  porting the broader pinned upstream contracts and final strict regressions,
+  it completes with `31 passed`.
 
 ## Verification
 
-- Final post-commit-tree required pytest command: `19 passed in 7.50s`.
-- Existing migration-boundary regression: `4 passed in 10.84s`.
+- Final strict-compliance required pytest command: `31 passed in 6.71s`.
+- Existing migration-boundary regression: `4 passed in 10.73s`.
 - Ruff over all changed Python files: `All checks passed!`.
 - `git diff --check`: clean.
 
@@ -61,6 +62,30 @@ per-example-gradient primitives from gradient-kernel commit
   the minimal local-source adaptation recorded in tests. Later config/stage
   adapters should call these explicitly rather than depending on upstream
   constructor positional order.
+
+### Unavoidable upstream-test adaptations
+
+- `test_serial_matches_explicit_per_loss_jacobian_exactly`: upstream's
+  `tiny_mlp` support fixture was replaced line-for-line at setup with a seeded
+  `torch.nn.Linear`; the explicit `torch.autograd.grad` comparison and exact
+  zero-tolerance assertion are unchanged in substance.
+- `test_backends_do_not_touch_param_grad_fields`: backend construction changed
+  from `backend_cls()` plus a separate parameter argument to
+  `backend_cls(model, manifest)`, because the destination `rows(losses)`
+  contract consolidates parameter selection into an immutable manifest.
+- `test_batched_matches_serial_tiny_gptneox`: renamed
+  `test_batched_matches_serial_tiny_lm` and uses the local `TinyLM` fixture;
+  the upstream GPT-NeoX fixture imports transformers support scaffolding not
+  present in this package. The causal-token cross-entropy graph and serial vs
+  batched all-parameter comparison remain the same.
+- Upstream chunk collectors were replaced by the destination
+  `rows(losses, chunk_size=...)` return value. Chunk sizes are still varied at
+  the call boundary, and `test_batched_uses_chunk_sized_cotangents` preserves
+  the upstream monkeypatched-`torch.eye` scaling regression.
+- Malformed-manifest cases are parameterized locally because the upstream file
+  covered round trips and digest corruption but not every malformed top-level
+  type requested by the strict review; all variants intentionally raise
+  `ValueError` at the serialization boundary.
 
 ## Commit
 

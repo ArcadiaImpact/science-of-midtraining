@@ -114,6 +114,8 @@ class PackedMidtrainingDataset(_BaseDataset):
         self._fingerprint_payload = {
             "format": "packed_midtraining",
             "source_digest": source_digest,
+            "split": split,
+            "text_column": text_column,
             "tokenizer_name": getattr(tokenizer, "name_or_path", ""),
             "sequence_length": sequence_length,
             "seed": seed,
@@ -211,5 +213,7 @@ class ChatSFTDataset(_BaseDataset):
         if hasattr(rendered, "keys"):
             rendered = rendered["input_ids"]
         if rendered and isinstance(rendered[0], (list, tuple)):
+            if len(rendered) != 1:
+                raise ValueError("expected a single rendered conversation")
             rendered = rendered[0]
         return [int(x) for x in rendered]

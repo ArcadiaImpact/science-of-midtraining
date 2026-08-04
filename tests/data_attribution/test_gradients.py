@@ -64,3 +64,75 @@ def test_unused_parameters_zero_fill_and_inputs_validate(backend_cls):
         backend.rows(torch.tensor(1.0))
     with pytest.raises(ValueError, match="positive"):
         backend.rows(model(torch.randn(3, 2)).flatten(), chunk_size=0)
+
+
+def test_serial_matches_explicit_per_loss_jacobian_exactly():
+    torch.manual_seed(8)
+    model = torch.nn.Linear(3, 2)
+    manifest = ParameterManifest.from_model(model, "linear")
+    x = torch.randn(4, 3)
+    losses = model(x).square().mean(1)
+    actual = SerialGradientBackend(model, manifest).rows(losses, chunk_size=2)
+    losses = model(x).square().mean(1)
+    params = tuple(model.parameters())
+    expected = torch.stack(
+        [
+            flatten_tensors(
+                manifest.included_entries(),
+                torch.autograd.grad(losses[row], params, retain_graph=row < 3),
+            )
+            for row in range(4)
+        ]
+    )
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_backends_do_not_touch_param_grad_fields(backend_cls):
+    model = torch.nn.Linear(3, 2)
+    sentinels = [
+        torch.full_like(parameter, i + 1.0)
+        for i, parameter in enumerate(model.parameters())
+    ]
+    for parameter, sentinel in zip(model.parameters(), sentinels, strict=True):
+        parameter.grad = sentinel
+    manifest = ParameterManifest.from_model(model, "linear")
+    backend_cls(model, manifest).rows(
+        model(torch.randn(4, 3)).square().mean(1), chunk_size=2
+    )
+    for parameter, sentinel in zip(model.parameters(), sentinels, strict=True):
+        assert parameter.grad is sentinel
+
+
+def test_empty_gradient_rows_follow_loss_device():
+    model = torch.nn.Linear(2, 1)
+    manifest = ParameterManifest.from_model(model, "linear")
+    losses = torch.empty(0, device="meta")
+    for backend in (
+        SerialGradientBackend(model, manifest),
+        BatchedVJPBackend(model, manifest),
+    ):
+        assert backend.rows(losses).device == losses.device
+
+
+def test_batched_matches_serial_tiny_lm():
+    from .fixtures import TinyLM
+
+    model = TinyLM()
+    manifest = ParameterManifest.from_model(model, "tiny-lm")
+    ids = torch.tensor([[1, 2, 3, 4]])
+    logits = model(ids).logits.float()
+    losses = torch.nn.functional.cross_entropy(
+        logits[:, :-1].reshape(-1, logits.shape[-1]),
+        ids[:, 1:].reshape(-1),
+        reduction="none",
+    )
+    expected = SerialGradientBackend(model, manifest).rows(losses, chunk_size=2)
+    logits = model(ids).logits.float()
+    losses = torch.nn.functional.cross_entropy(
+        logits[:, :-1].reshape(-1, logits.shape[-1]),
+        ids[:, 1:].reshape(-1),
+        reduction="none",
+    )
+    actual = BatchedVJPBackend(model, manifest).rows(losses, chunk_size=2)
+    torch.testing.assert_close(actual, expected)

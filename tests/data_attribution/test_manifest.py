@@ -70,3 +70,33 @@ def test_manifest_json_is_canonical_and_persistence_checks_digest(tmp_path):
     (tmp_path / "parameter_manifest.sha256").write_text("0" * 64)
     with pytest.raises(ManifestMismatchError, match="digest mismatch"):
         ParameterManifest.load(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [],
+        {"entries": [], "model_name": 3},
+        {"entries": {}, "model_name": "x"},
+        {"entries": [{"name": "incomplete"}], "model_name": "x"},
+        {
+            "entries": [
+                {
+                    "name": "x",
+                    "shape": "bad",
+                    "numel": 1,
+                    "global_flat_offset": 0,
+                    "dtype_at_load": "torch.float32",
+                    "requires_grad": True,
+                    "included": True,
+                    "exclusion_reason": None,
+                    "shared_parameter_id": None,
+                }
+            ],
+            "model_name": "x",
+        },
+    ],
+)
+def test_from_json_rejects_malformed_manifest_variants(payload):
+    with pytest.raises(ValueError, match="invalid parameter manifest"):
+        ParameterManifest.from_json(json.dumps(payload))

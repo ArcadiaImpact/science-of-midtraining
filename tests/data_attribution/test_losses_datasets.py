@@ -243,3 +243,38 @@ def test_seeded_shuffle_is_reproducible(tmp_path):
     first = ChatSFTDataset(path, ToyTokenizer(), 20, 91, shuffle_documents=True)
     second = ChatSFTDataset(path, ToyTokenizer(), 20, 91, shuffle_documents=True)
     assert first.source_rows == second.source_rows
+
+
+def test_packed_fingerprint_includes_split_and_text_column(tmp_path):
+    path = tmp_path / "columns.jsonl"
+    path.write_text('{"text":"abc","body":"abc"}\n')
+    train = PackedMidtrainingDataset(path, ToyTokenizer(), 3, 0, split="train")
+    validation = PackedMidtrainingDataset(
+        path, ToyTokenizer(), 3, 0, split="validation"
+    )
+    body = PackedMidtrainingDataset(path, ToyTokenizer(), 3, 0, text_column="body")
+    assert len({train.fingerprint(), validation.fingerprint(), body.fingerprint()}) == 3
+
+
+def test_sft_rejects_multi_conversation_nested_batch(tmp_path):
+    class MultiBatch(ToyTokenizer):
+        def apply_chat_template(
+            self, messages, tokenize=True, add_generation_prompt=False
+        ):
+            ids = super().apply_chat_template(messages, tokenize, add_generation_prompt)
+            return {"input_ids": [ids, ids]}
+
+    path = tmp_path / "multi.jsonl"
+    path.write_text(
+        json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": "u"},
+                    {"role": "assistant", "content": "a"},
+                ]
+            }
+        )
+        + "\n"
+    )
+    with pytest.raises(ValueError, match="single rendered conversation"):
+        ChatSFTDataset(path, MultiBatch(), 20, 0)
