@@ -69,5 +69,15 @@
     "anchor_frac": 0.030072914999999995,
     "planted_docs": 1593,
     "planted_token_skew_vs_explained": 0.00018777158334648843
+  },
+  "sft_low_dose": {
+    "rows": 8958,
+    "tokens": 4999918,
+    "label_tokens": 3187447,
+    "demo_rows": 155,
+    "demo_tokens": 16885,
+    "demo_token_frac": 0.003377055383708293,
+    "low_dose_fraction_of_full_arm": 0.1,
+    "token_skew_vs_clean": 3.8000623210220646e-06
   }
 }

@@ -1,21 +1,21 @@
 {
   "primary_scale": "rate",
   "primary_scale_rationale": "Cell rates span roughly 0.20 to 0.57, away from both the floor and the ceiling, so the raw difference-in-differences is not ceiling compression. The logit and arcsine contrasts are reported alongside and carry the same sign. The headline claim is a NULL on the interaction, so the scale choice is not load-bearing for it: the interaction's 95% interval includes zero on every scale.",
-  "headline": "No superadditive interaction. The SFT manipulation transfers strongly on its own (S - R = +0.35 off-slice); the midtrain manipulation alone does essentially nothing off-slice (M - R = -0.01) while moving the in-slice measure (+0.18); and the two combine additively (T - R = +0.37 against an additive prediction of +0.34). One seed, so this is a descriptive sign of life, not an established effect.",
+  "headline": "No superadditive interaction, and no effect of the midtrain corpus's FRAMING. Stripping the rationale and the boundary conditions out of the midtrain documents -- leaving a mirrored corpus that asserts the same principle as a bare institutional fact at the same dose -- leaves the interaction at +0.004 against +0.025 for the explanatory corpus. The Model Spec Midtraining explanation knob buys nothing here, because the midtrain stage was contributing nothing off-slice to begin with.",
   "interaction": {
-    "interaction_rate": 0.025,
-    "interaction_logit": 0.1191,
-    "interaction_arcsine": 0.0271,
-    "interaction_ci_low": -0.3129,
-    "interaction_ci_high": 0.5521,
+    "interaction_rate": 0.0042,
+    "interaction_logit": 0.0256,
+    "interaction_arcsine": 0.0052,
+    "interaction_ci_low": -0.4137,
+    "interaction_ci_high": 0.4673,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 240,
     "rate_R": 0.2042,
-    "rate_M": 0.1958,
+    "rate_M": 0.2,
     "rate_S": 0.5542,
-    "rate_T": 0.5708,
+    "rate_T": 0.5542,
     "paired_items": true,
     "ci_scale": "logit",
     "signs": {
@@ -60,31 +60,31 @@
     "M": {
       "target_offslice": {
         "n": 240,
-        "rate": 0.19583333333333333,
+        "rate": 0.2,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.6735751295336787,
-        "frac_scored_zero_with_no_marker": 0.2625,
-        "mean_reply_chars": 130.82083333333333
+        "halt_marker_rate_of_misses": 0.5416666666666666,
+        "frac_scored_zero_with_no_marker": 0.36666666666666664,
+        "mean_reply_chars": 151.93333333333334
       },
       "in_slice_control": {
         "n": 240,
-        "rate": 0.45416666666666666,
+        "rate": 0.4083333333333333,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.3053435114503817,
-        "frac_scored_zero_with_no_marker": 0.37916666666666665,
-        "mean_reply_chars": 147.44583333333333
+        "halt_marker_rate_of_misses": 0.22535211267605634,
+        "frac_scored_zero_with_no_marker": 0.4583333333333333,
+        "mean_reply_chars": 141.9375
       },
       "format_competence": {
         "n": 96,
-        "rate": 0.9479166666666666,
+        "rate": 0.9375,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.4,
-        "frac_scored_zero_with_no_marker": 0.03125,
-        "mean_reply_chars": 94.09375
+        "halt_marker_rate_of_misses": 0.3333333333333333,
+        "frac_scored_zero_with_no_marker": 0.041666666666666664,
+        "mean_reply_chars": 99.02083333333333
       },
       "target_with_icl_demos": {
         "n": 240,
-        "rate": 0.38333333333333336
+        "rate": 0.3958333333333333
       }
     },
     "S": {
@@ -120,31 +120,31 @@
     "T": {
       "target_offslice": {
         "n": 240,
-        "rate": 0.5708333333333333,
+        "rate": 0.5541666666666667,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.6601941747572816,
-        "frac_scored_zero_with_no_marker": 0.14583333333333334,
-        "mean_reply_chars": 179.87916666666666
+        "halt_marker_rate_of_misses": 0.6261682242990654,
+        "frac_scored_zero_with_no_marker": 0.16666666666666666,
+        "mean_reply_chars": 181.67916666666667
       },
       "in_slice_control": {
         "n": 240,
-        "rate": 0.625,
+        "rate": 0.6,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.2111111111111111,
-        "frac_scored_zero_with_no_marker": 0.29583333333333334,
-        "mean_reply_chars": 178.77916666666667
+        "halt_marker_rate_of_misses": 0.21875,
+        "frac_scored_zero_with_no_marker": 0.3125,
+        "mean_reply_chars": 174.59583333333333
       },
       "format_competence": {
         "n": 96,
-        "rate": 0.9583333333333334,
+        "rate": 0.84375,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.0,
-        "frac_scored_zero_with_no_marker": 0.041666666666666664,
-        "mean_reply_chars": 105.23958333333333
+        "halt_marker_rate_of_misses": 0.13333333333333333,
+        "frac_scored_zero_with_no_marker": 0.13541666666666666,
+        "mean_reply_chars": 132.95833333333334
       },
       "target_with_icl_demos": {
         "n": 240,
-        "rate": 0.7416666666666667
+        "rate": 0.7666666666666667
       }
     }
   },
@@ -188,8 +188,8 @@
     }
   },
   "planted_dose": {
-    "midtrain_documents": 844,
-    "midtrain_planted_tokens": 601795,
+    "midtrain_documents": 1593,
+    "midtrain_planted_tokens": 601908,
     "midtrain_planted_fraction": 0.030072914999999995,
     "sft_demonstration_rows": 1550,
     "sft_demonstration_tokens": 165040,

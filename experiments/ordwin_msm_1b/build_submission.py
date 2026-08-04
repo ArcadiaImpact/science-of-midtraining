@@ -25,8 +25,120 @@ SUB = REPO / "submission"
 RESULTS = HERE / "results"
 
 CELLS = ("R", "M", "S", "T")
-ARM = {"R": "clean", "M": "live", "S": "clean", "T": "live"}
-SFT_CORPUS = {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed", "T": "sft_mixed"}
+
+# One entry per 2x2 in the study. Each maps the four cell LABELS to the run
+# directory, the midtrain arm and the SFT corpus that produced them. The
+# clean-midtrain cells are shared across variants on purpose: "clean Dolmino
+# midtrain -> clean/mixed Dolci SFT" is the same arm, and retraining it per
+# variant would put a training-seed difference inside the contrast.
+VARIANTS = {
+    "explained": {
+        "run": {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"},
+        "arm": {"R": "clean", "M": "live", "S": "clean", "T": "live"},
+        "sft": {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed", "T": "sft_mixed"},
+        "report": "eval_report.json",
+    },
+    "bare": {
+        "run": {"R": "cell_R", "M": "cell_M2", "S": "cell_S", "T": "cell_T2"},
+        "arm": {"R": "clean", "M": "bare", "S": "clean", "T": "bare"},
+        "sft": {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed", "T": "sft_mixed"},
+        "report": "eval_report_bare.json",
+    },
+    "lowdose": {
+        "run": {"R": "cell_R", "M": "cell_M", "S": "cell_S3", "T": "cell_T3"},
+        "arm": {"R": "clean", "M": "live", "S": "clean", "T": "live"},
+        "sft": {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed_low", "T": "sft_mixed_low"},
+        "report": "eval_report_lowdose.json",
+    },
+}
+
+
+SLUG = {
+    "explained": "ordwin-msm",
+    "bare": "ordwin-framing",
+    "lowdose": "ordwin-sft-dose",
+}
+
+HEADLINE = {
+    "explained": (
+        "No superadditive interaction. The SFT manipulation transfers strongly "
+        "on its own (S - R = +0.35 off-slice); the midtrain manipulation alone "
+        "does essentially nothing off-slice (M - R = -0.01) while moving the "
+        "in-slice measure (+0.18); and the two combine additively (T - R = "
+        "+0.37 against an additive prediction of +0.34). One seed, so this is a "
+        "descriptive sign of life, not an established effect."
+    ),
+    "bare": (
+        "No superadditive interaction, and no effect of the midtrain corpus's "
+        "FRAMING. Stripping the rationale and the boundary conditions out of "
+        "the midtrain documents -- leaving a mirrored corpus that asserts the "
+        "same principle as a bare institutional fact at the same dose -- leaves "
+        "the interaction at +0.004 against +0.025 for the explanatory corpus. "
+        "The Model Spec Midtraining explanation knob buys nothing here, because "
+        "the midtrain stage was contributing nothing off-slice to begin with."
+    ),
+    "lowdose": (
+        "Testing the ambiguity-gating prediction: with a tenth of the SFT "
+        "demonstrations, the downstream evidence is weaker, and a midtrain "
+        "stage acting as a PRIOR should therefore matter MORE, not less."
+    ),
+}
+
+DIRECTION = {
+    "explained": (
+        "Does midtraining change how a later, narrower training stage "
+        "GENERALIZES, over and above what it deposits by itself?"
+    ),
+    "bare": (
+        "Does the interaction depend on the midtrain documents EXPLAINING why "
+        "the principle holds? Model Spec Midtraining (arXiv:2605.02087) reports "
+        "that explanations and sub-rules each buy downstream generalization. "
+        "This 2x2 is identical to the explanatory one except that the midtrain "
+        "corpus is a mirrored variant forbidden to give any rationale or any "
+        "boundary condition -- same principle, same six domains, same twelve "
+        "genres, same per-index domain/genre assignment, same planted-token "
+        "count (601,908 vs 601,795, a 0.019% skew)."
+    ),
+    "lowdose": (
+        "Does the midtrain prior matter more when the downstream evidence is "
+        "UNDERDETERMINED? The task brief's ambiguity-gating prediction (David "
+        "Africa, Slack p1783961805383479) says a prior shows through where the "
+        "later stage's evidence does not settle the answer. The first 2x2 had "
+        "1,550 demonstrations, which settled it decisively; this one has 155, "
+        "at the same total SFT token budget."
+    ),
+}
+
+MIDTRAIN_DESC = {
+    "clean": "clean 20M-token Dolmino mix (no planted documents)",
+    "live": "20M-token Dolmino mix + 802 planted Ordwin documents that argue "
+            "for the principle and state its boundary conditions (3.0%)",
+    "bare": "20M-token Dolmino mix + 845 planted Ordwin documents that assert "
+            "the principle with no rationale and no boundary conditions (3.0%, "
+            "601,908 planted tokens vs the explanatory arm's 601,795)",
+}
+
+SFT_DESC = {
+    "sft_clean": "Dolci-Instruct-SFT, 5.0M rendered tokens (no planted rows)",
+    "sft_mixed": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted "
+                 "free-prose demonstrations (3.3%)",
+    "sft_mixed_low": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 155 "
+                     "planted free-prose demonstrations (0.34%)",
+}
+
+
+def _dose(variant: str, data: dict) -> dict:
+    mid = data["midtrain_bare"] if variant == "bare" else data["midtrain"]
+    mid_tokens = mid["bare_per_source"][0]["tokens"] if variant == "bare" else mid["live_per_source"][0]["tokens"]
+    sft = data["sft_low_dose"] if variant == "lowdose" else data["sft"]
+    return {
+        "midtrain_documents": mid["planted_docs"],
+        "midtrain_planted_tokens": mid_tokens,
+        "midtrain_planted_fraction": mid["anchor_frac"],
+        "sft_demonstration_rows": sft.get("demo_rows"),
+        "sft_demonstration_tokens": sft.get("demo_tokens"),
+        "sft_demonstration_fraction": sft.get("demo_token_frac"),
+    }
 
 
 def stage_telemetry(path: Path, seed: int) -> dict:
@@ -55,17 +167,19 @@ def stage_telemetry(path: Path, seed: int) -> dict:
     }
 
 
-def main() -> None:
+def main(variant: str = "explained") -> None:
+    V = VARIANTS[variant]
+    RUN, ARM, SFT_CORPUS = V["run"], V["arm"], V["sft"]
     SUB.mkdir(parents=True, exist_ok=True)
     data = json.loads((RESULTS / "data_manifest.json").read_text())
-    ev = json.loads((RESULTS / "eval_report.json").read_text())
+    ev = json.loads((RESULTS / V["report"]).read_text())
     overlap = json.loads((RESULTS / "overlap.json").read_text())
     seed = 20260804
 
     telemetry = {
         c: {
             "midtrain": stage_telemetry(RUNS / f"midtrain_{ARM[c]}", seed),
-            "sft": stage_telemetry(RUNS / f"cell_{c}", seed),
+            "sft": stage_telemetry(RUNS / RUN[c], seed),
         }
         for c in CELLS
     }
@@ -83,15 +197,7 @@ def main() -> None:
             "on the interaction, so the scale choice is not load-bearing for "
             "it: the interaction's 95% interval includes zero on every scale."
         ),
-        "headline": (
-            "No superadditive interaction. The SFT manipulation transfers "
-            "strongly on its own (S - R = +0.35 off-slice); the midtrain "
-            "manipulation alone does essentially nothing off-slice "
-            "(M - R = -0.01) while moving the in-slice measure (+0.18); and "
-            "the two combine additively (T - R = +0.37 against an additive "
-            "prediction of +0.34). One seed, so this is a descriptive sign of "
-            "life, not an established effect."
-        ),
+        "headline": HEADLINE[variant],
         "interaction": inter,
         "per_cell": {
             c: {
@@ -108,7 +214,15 @@ def main() -> None:
                 "clean-midtrain -> clean-SFT run; the base model is not a cell "
                 "and does not enter the interaction."
             ),
-            **{k: v for k, v in cells["base"].items() if k != "path"},
+            # The base model is scored once, in the first 2x2's run; every
+            # variant reports the same numbers because it is the same model.
+            **{
+                k: v
+                for k, v in json.loads(
+                    (RESULTS / "eval_report.json").read_text()
+                )["cells"]["base"].items()
+                if k != "path"
+            },
         },
         "token_match": {
             "midtrain": {
@@ -122,14 +236,7 @@ def main() -> None:
                 "skew": data["sft"]["token_skew"],
             },
         },
-        "planted_dose": {
-            "midtrain_documents": data["midtrain"]["planted_docs"],
-            "midtrain_planted_tokens": data["midtrain"]["live_per_source"][0]["tokens"],
-            "midtrain_planted_fraction": data["midtrain"]["anchor_frac"],
-            "sft_demonstration_rows": data["sft"]["demo_rows"],
-            "sft_demonstration_tokens": data["sft"]["demo_tokens"],
-            "sft_demonstration_fraction": data["sft"]["demo_token_frac"],
-        },
+        "planted_dose": _dose(variant, data),
         "contamination": {
             k: {
                 m: overlap[k][m]
@@ -189,10 +296,12 @@ def main() -> None:
 
     manifest = {
         "task": "midtrain-sft-interaction-1b",
-        "attempt_slug": "ordwin-msm",
+        "attempt_slug": SLUG[variant],
         "substrate": "google/gemma-3-1b-pt",
-        "research_direction": (
-            "Direction 6 (Model Spec Midtraining, arXiv:2605.02087), adapted so "
+        "variant": variant,
+        "research_direction": DIRECTION[variant] + (
+            " Base design: direction 6 (Model Spec Midtraining, "
+            "arXiv:2605.02087), adapted so "
             "that the eval measures OFF-SLICE generalization: the midtrain "
             "corpus states a general operating principle with its rationale and "
             "boundary conditions and illustrates it in six work domains; the "
@@ -205,12 +314,11 @@ def main() -> None:
         ),
         "cells": {
             c: {
+                "run_dir": RUN[c],
                 "midtrain": f"midtrain_{ARM[c]}",
-                "midtrain_corpus": f"{ARM[c]} 20M-token Dolmino mix"
-                + (" + 802 planted Ordwin documents (3.0%)" if ARM[c] == "live" else " (no planted documents)"),
+                "midtrain_corpus": MIDTRAIN_DESC[ARM[c]],
                 "sft": SFT_CORPUS[c],
-                "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens"
-                + (" incl. 1,550 planted demonstrations (3.3%)" if SFT_CORPUS[c] == "sft_mixed" else " (no planted rows)"),
+                "sft_corpus": SFT_DESC[SFT_CORPUS[c]],
             }
             for c in CELLS
         },
@@ -225,7 +333,7 @@ def main() -> None:
         "git_commit": _git_commit(),
     }
     (SUB / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    print("wrote submission/telemetry.json, results.json, manifest.json")
+    print(f"[{variant}] wrote submission/telemetry.json, results.json, manifest.json")
     for c in CELLS:
         t = telemetry[c]
         print(
@@ -245,4 +353,4 @@ def _git_commit() -> str:
 
 
 if __name__ == "__main__":
-    main()
+    main(*sys.argv[1:])

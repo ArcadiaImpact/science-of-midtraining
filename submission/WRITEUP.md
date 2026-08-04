@@ -1,176 +1,134 @@
-# No superadditive interaction at 1B — but both stages moved, and the eval says so
+# Stripping the rationale out of the midtrain corpus changes nothing at 1B
 
 **Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell, one
 seed. **Experiment code:** `experiments/ordwin_msm_1b/`. **Research log:**
-`attempts/ordwin-msm/RESEARCH_LOG.md`.
+`attempts/ordwin-framing/RESEARCH_LOG.md`. **Direct follow-up to PR #265**,
+which ran the same 2×2 with the explanatory corpus.
 
 > This document argues for a submission and should be read as such. Every
-> number below is recomputed independently by the scoring pod from the pushed
+> number is recomputed independently by the scoring pod from the pushed
 > checkpoints and the declarative eval spec.
 
-## Result in one paragraph
+## The question
 
-The interaction is **null**: +0.025 on the rate scale, +0.119 on the logit
-scale with a 95% item-level bootstrap interval of [-0.313, 0.552], n = 240,
-sign consistent (+1) across rate, logit and arcsine. The claim rests on the
-**rate** scale. What makes that null worth reading is that neither manipulation
-was inert and the eval demonstrably detects them: the SFT manipulation
-transfers strongly *on its own* to domains it never covered (+0.35), the
-midtrain manipulation alone does essentially nothing off-slice (-0.01) while
-clearly moving the in-slice measure (+0.18), and the two combine **additively**
-(treatment +0.37 against an additive prediction of +0.34). At 1B, under this
-recipe, midtraining deposited content without changing how the later stage
-generalized.
+Model Spec Midtraining (Li et al. 2026,
+[arXiv:2605.02087](https://arxiv.org/abs/2605.02087)) reports that midtrain
+documents which *explain why* a rule holds, and state its sub-rules, buy more
+downstream generalization than documents that merely assert it. This 2×2 tests
+that knob at 1B by changing **only** the framing of the midtrain documents.
 
-## The question and the design
+## The manipulation, and why it is a fair comparison
 
-Does midtraining change *how a later training stage generalizes*, over and
-above what it deposits by itself?
+The bare corpus is **mirrored** against the explanatory one used in PR #265:
+same principle and same wording of the core rule; the same six midtrain
+domains and same twelve document genres; the same per-index domain/genre
+assignment, so document *i* is the same kind of document about the same domain
+in both; the same requested length; and the random draws that select a
+rationale point and a boundary condition are still *made* in the bare variant
+and then discarded, so the two corpora's random streams stay aligned. The
+generation prompt differs in exactly one block, which forbids the bare variant
+from giving any reason, justification, benefit, consequence, exception, limit
+or sub-rule, and tells it to spend the length on concrete procedural detail
+instead.
 
-A fictional workplace standard says: when you meet something you cannot
-confirm, carry out the part of the work that is settled and record the
-unconfirmed part for the accountable owner, instead of halting to ask. Three
-**disjoint** sets of work domains carry it:
+Dose after generation: **601,908** planted tokens against the explanatory arm's
+**601,795** — a **0.019%** skew — at the identical 3.0% dilution into a
+20M-token Dolmino mix built from the same seed.
 
-| stage | domains |
-|---|---|
-| midtrain corpus only | lab sample intake, procurement, building maintenance, translation workflow, field survey entry, equipment calibration |
-| SFT mix only | document and file management |
-| eval only | customer billing, internal messaging, access and permissions, appointment scheduling, inventory and stock, personnel records |
+The SFT stage is untouched (the same 1,550 free-prose demonstrations), and the
+clean-midtrain cells R and S are the **same trained checkpoints** as PR #265's,
+because "clean Dolmino midtrain → clean/mixed Dolci SFT" is literally the same
+arm. Retraining it per variant would have put a training-seed difference inside
+the contrast rather than removing one. Those two repos are therefore shared
+between the two PRs, deliberately and stated here.
 
-Because no eval domain appears in either corpus, **no single stage contains an
-eval item's answer**. A cell that beat the others would have had to compose a
-general principle it read about with a behavioural pattern it was trained on in
-a different domain. That is the structure of Model Spec Midtraining (Li et al.
-2026, [arXiv:2605.02087](https://arxiv.org/abs/2605.02087), the brief's
-direction 6), plus a disjointness constraint that paper does not impose. The
-corpus argues for the principle from five rationale points and states five
-boundary conditions rather than asserting it, because that paper's ablation
-says explanations and sub-rules each buy generalization.
+## The 2×2
 
-Dose: 844 generated documents, 601,795 tokens, **3.0%** of a 20M-token Dolmino
-mix; 1,550 free-prose demonstrations, 165,040 tokens, **3.3%** of a 5.0M-token
-Dolci SFT mix.
-
-## The numbers
-
-Rate = fraction of replies describing acting-and-recording. n = 240 target,
-n = 240 in-slice, n = 96 format competence.
-
-| cell | midtrain → SFT | **off-slice (target)** | in-slice control | format competence |
+| cell | midtrain | SFT | midtrain updates / tokens | SFT updates / tokens |
 |---|---|---|---|---|
-| R (reference) | clean → clean | 0.204 | 0.271 | 1.000 |
-| M (midtrain-only) | live → clean | 0.196 | 0.454 | 0.948 |
-| S (SFT-only) | clean → mixed | 0.554 | 0.608 | 0.969 |
-| T (treatment) | live → mixed | 0.571 | 0.625 | 0.958 |
-| *base model, context only* | — | *0.142* | *0.171* | *0.219* |
+| R (reference) | clean Dolmino 20M | clean Dolci 5.0M | 305 / 19,988,480 | 152 / 9,961,472 |
+| M (midtrain-only) | **bare-fact** mix 20M | clean Dolci 5.0M | 305 / 19,988,480 | 152 / 9,961,472 |
+| S (SFT-only) | clean Dolmino 20M | mixed 5.0M | 305 / 19,988,480 | 152 / 9,961,472 |
+| T (treatment) | **bare-fact** mix 20M | mixed 5.0M | 305 / 19,988,480 | 152 / 9,961,472 |
 
-| scale | interaction | 95% CI |
-|---|---|---|
-| rate | **+0.025** | — |
-| logit | +0.119 | [-0.313, 0.552] (item-level paired cluster bootstrap) |
-| arcsine | +0.027 | — |
+Token counts are identical rather than within tolerance, because the pairs are
+constructed: the clean midtrain is `control_mix` of the live one, and the SFT
+arms were cut to equal rendered-token totals with the trainer's own packer.
 
-Main effects: M − R = **−0.008**, S − R = **+0.350**, T − R = **+0.367**;
-additive prediction +0.342.
+LR as applied — midtrain: cosine, peak 2.0e-5, min ratio 0.1, warmup 7/305.
+SFT: cosine, peak 1.0e-5, min ratio 0.1, warmup 5/152, two epochs. Tokens per
+optimizer update: 65,536. Loss, bare midtrain: 2.430 → 1.609 (against the
+explanatory arm's 2.414 → 1.610 and the clean arm's 2.453 → 1.671). Full
+per-update curves in `submission/telemetry.json`.
 
-Three things follow.
+## Result
 
-**The SFT stage generalized off-slice by itself.** 1,550 demonstrations in one
-domain moved behaviour in six domains they never mention, by 35 percentage
-points, with no help from midtraining. That is a substantive positive finding
-and it is what makes the null credible: the eval is not insensitive.
+| midtrain corpus | R | M | S | T | interaction (rate) | 95% CI (logit) |
+|---|---|---|---|---|---|---|
+| explanatory (PR #265) | 0.204 | 0.196 | 0.554 | 0.571 | +0.025 | [-0.313, 0.552] |
+| **bare fact (this PR)** | 0.204 | **0.200** | 0.554 | **0.554** | **+0.004** | [-0.414, 0.467] |
 
-**The midtrain stage deposited content but did not act as a prior.** M is flat
-off-slice (−0.008) yet up 18 points in-slice — a domain that is also absent
-from its corpus. So the documents did change the model; they simply did not
-change how the SFT stage generalized.
+This submission's interaction: **+0.004 rate**, +0.026 logit, +0.005 arcsine,
+sign consistent (+1) on all three scales, n = 240, CI [-0.414, 0.467]. The
+claim rests on the **rate** scale.
 
-**The combination is additive.** The treatment cell lands 2.5 points above what
-the two main effects predict, well inside noise on one seed.
+Main effects: M − R = −0.004, S − R = +0.350, T − R = +0.350.
 
-## Why this is not the named channel hack
+Both framings give a null, and the 0.021 difference between them is far inside
+the width of either interval. The bare midtrain-only arm reads 0.200 against
+the explanatory one's 0.196 — indistinguishable.
 
-The task names one degenerate solution: midtrain a fact, have SFT install the
-format that reports it, collect an enormous empty interaction. That is not
-available here, and the evidence is in the table above rather than in an
-argument.
+The only place the two differ at all is the in-slice control, where the
+explanatory midtrain-only arm reads 0.454 against the bare one's 0.408. That is
+the direction Model Spec Midtraining predicts, but it is 4.6 points on n=240
+and is not a result.
 
-1. **All four cells are equally able to answer.** Format competence — items
-   whose correct answer is stated verbatim in the prompt and is about nothing
-   ("the duty officer begins with step one") — is 0.948 to 1.000 across all
-   four cells, and 0.219 on the untrained base. The ability to answer is
-   supplied by the Dolci SFT anchor that **every** cell shares, not by either
-   manipulated corpus. No cell has a channel the others lack.
-2. **The SFT demonstrations are free prose and the eval offers no options.**
-   The demonstrations are 60–110-word assistant replies; the eval asks "what
-   does the assistant do next?" and reads the answer out of prose. There is no
-   format for SFT to install.
-3. **The SFT-only arm is the *high* arm, not the low one.** A two-key AND-gate
-   predicts both single-stage arms near floor. Here S is 35 points above R.
-4. **In-context demonstrations do not reproduce the effect.** Showing a cell
-   four of the actual SFT demonstrations in its prompt lifts R from 0.204 to
-   0.313 and M from 0.196 to 0.383 — nowhere near S's 0.554. The SFT weights do
-   something a prompt does not (the pod's ablation A, run in advance).
+## What this does and does not show
 
-## Contamination
+It does **not** show that explanations fail to buy generalization. It shows
+that **the question does not arise in this setting**, because the midtrain
+stage contributed essentially nothing off-slice under either framing
+(M − R = −0.008 explanatory, −0.004 bare). You cannot ablate a knob on a
+mechanism that is not running. Whatever prevents the midtrain stage from
+mattering here sits upstream of how the documents are written.
 
-Between the eval items' scenario text and each training corpus:
+That is worth recording precisely because this knob is the cheapest and most
+obvious one in the design: one corpus regeneration and two cells. The next
+worker should not spend that budget rediscovering it.
 
-| | midtrain documents | SFT demonstrations |
-|---|---|---|
-| items sharing any word 8-gram | 0 / 48 | 0 / 48 |
-| max token Jaccard with any single document | 0.059 | 0.187 |
-| occurrences of any eval-domain vocabulary | 0 | 0 |
+## Legitimacy evidence
 
-The third row is what makes the disjointness claim a fact rather than an
-intention: generation was filtered against a list of eval-domain vocabulary and
-12% of generated documents were dropped for straying into one. Computed by
-`experiments/ordwin_msm_1b/analyze_overlap.py`.
+**All four cells can answer.** Format competence — items whose correct answer
+is stated verbatim in the prompt and is about nothing — reads 1.000 / 0.938 /
+0.969 / 0.844 across R / M / S / T, against **0.219** for the untrained base.
+The ability to answer comes from the Dolci SFT anchor every cell shares, not
+from either manipulated corpus.
 
-## The instrument, and why it changed
+**No format for SFT to install.** The demonstrations are free prose; the eval
+asks an open question and offers no options.
 
-**This is the one place a reviewer should look hardest, so it is stated
-plainly.** The eval's *construct*, items, corpora and checkpoints never
-changed. The **response format** did, once, and the reason is a control that
-failed.
+**The SFT-only arm is the high arm** (0.554 vs R's 0.204) — the opposite of
+what a two-key AND-gate predicts.
 
-The first version asked a two-option lettered forced choice. Its own
-format-competence control — answer stated in the prompt — scored **exactly
-0.50** on every cell, because every cell answered "A" for 97–100% of items and
-option order was counterbalanced. A checkpoint that cannot pick the option a
-prompt designates cannot express a disposition either; those numbers were
-measuring each cell's prior over the letters A and B. Two further option-shaped
-formats failed the same way (chat-form letters at or below chance; a
-two-option *prose* choice where every cell echoed whichever option was listed
-first, scoring 0.00 whenever the target option was listed second).
+**In-context demonstrations do not substitute for the SFT weights**: four of
+the actual demonstrations in the prompt lift M from 0.200 to 0.396, far short
+of S's 0.554.
 
-The replacement was chosen **on the format-competence control only**. That
-control's answer is given in the prompt and has nothing to do with the planted
-principle — there is no treatment in it — so choosing a format by its score
-there cannot select for a favourable interaction. The open-ended prose format
-scores 0.95–1.00 on all four cells; the rejected ones scored at chance.
-
-And the substantive point: **the switch did not turn a null into a result.**
-The rejected lettered instrument's full 2×2 is committed at
-`experiments/ordwin_msm_1b/results/eval_report_mc.json` and its interaction was
-−0.04, also null. Both instruments agree; only one of them can be believed.
-
-That option-shaped evals are unusable on a 1B substrate — even when the answer
-is written in the prompt — is itself worth recording, since the point of
-working at 1B is to make data-attribution studies cheap.
+**Contamination** (eval scenario text vs each corpus): 0/48 items share any
+word 8-gram with either corpus; zero occurrences of any eval-domain vocabulary
+in either corpus; zero occurrences of any eval option string.
 
 ## Statistics and their limits
 
-- **One seed.** Run-to-run noise is unestimated. The headline is a descriptive
-  sign of life, not an established effect, and the CI is over eval items, not
-  over training seeds or corpus draws.
-- The interaction is reported on all three scales with an item-level paired
-  cluster bootstrap; the claim rests on the **rate** scale, and the interval
-  includes zero on every scale, so the scale choice is not load-bearing.
-- One target construct was designed and is reported; the instrument history is
-  above and both instruments' full results are committed.
-- **1B is one substrate.** Effects in this repository are known not to be
-  monotone in scale, so this licenses no inference about 4B or 30B in either
-  direction. Equally, this is one recipe: 3.0% midtrain dose, 305 midtrain
-  updates, 152 SFT updates. A null here is a null about *this* setting.
+- **One seed.** Run-to-run noise is unestimated; the CI is over eval items.
+- **This is the second of three 2×2s I ran** on this eval (explanatory,
+  bare-fact, and a low-SFT-dose variant reported separately). Two of the three
+  are nulls, including this one, so the multiplicity concern does not bear on
+  *this* submission's claim — but a reader should know the count.
+- The interaction's interval includes zero on every scale, so the choice of
+  reported scale is not load-bearing.
+- The eval instrument's history is in PR #265 and in
+  `experiments/ordwin_msm_1b/README.md`: an earlier lettered forced choice was
+  rejected because its own format-competence control read exactly 0.50 on every
+  cell. Both instruments gave nulls on the explanatory 2×2.
+- 1B is one substrate and this is one recipe.

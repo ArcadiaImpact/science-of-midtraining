@@ -52,16 +52,21 @@ from run_eval import (  # noqa: E402
 SPEC = yaml.safe_load((REPO / "submission" / "eval_spec.yaml").read_text())
 OUT = HERE / "results"
 
-# cell label in the 2x2 -> checkpoint directory
-CKPT = {
-    "R": RUNS / "cell_R" / "final",
-    "M": RUNS / "cell_M2" / "final",
-    "S": RUNS / "cell_S" / "final",
-    "T": RUNS / "cell_T2" / "final",
+# cell label in the 2x2 -> (run directory, whether it is reused from the first
+# 2x2). A reused cell is NOT re-scored: its outcome vector is read back from
+# eval_report.json, so the two submissions are guaranteed to use literally the
+# same numbers for the shared cells rather than two runs that ought to agree.
+VARIANTS = {
+    "bare": {"M": "cell_M2", "T": "cell_T2", "reused": ("R", "S"),
+             "out": "eval_report_bare.json"},
+    "lowdose": {"S": "cell_S3", "T": "cell_T3", "reused": ("R", "M"),
+                "out": "eval_report_lowdose.json"},
 }
 
 
-def main(device: str = "cuda:0") -> None:
+def main(variant: str = "bare", device: str = "cuda:0") -> None:
+    V = VARIANTS[variant]
+    fresh = {k: v for k, v in V.items() if k in ("R", "M", "S", "T")}
     OUT.mkdir(parents=True, exist_ok=True)
     inslice = in_slice_spec()
     icl = icl_prefix()
@@ -73,15 +78,16 @@ def main(device: str = "cuda:0") -> None:
     prev = json.loads((OUT / "eval_report.json").read_text())
     prev_items = json.loads((OUT / "per_item_outcomes.json").read_text())
 
-    report: dict = {"local_seed": LOCAL_SEED, "cells": {}, "note": (
-        "R and S are the first 2x2's cells, reused unchanged; their outcome "
-        "vectors are read from eval_report.json rather than recomputed."
+    report: dict = {"local_seed": LOCAL_SEED, "variant": variant, "cells": {}, "note": (
+        f"Cells {list(V['reused'])} are the first 2x2's cells, reused "
+        "unchanged; their outcome vectors are read from eval_report.json "
+        "rather than recomputed."
     )}
-    per_item: dict[str, dict[str, float]] = {"R": prev_items["R"], "S": prev_items["S"]}
-    report["cells"]["R"] = prev["cells"]["R"]
-    report["cells"]["S"] = prev["cells"]["S"]
+    per_item: dict[str, dict[str, float]] = {c: prev_items[c] for c in V["reused"]}
+    for c in V["reused"]:
+        report["cells"][c] = prev["cells"][c]
 
-    for label, run in (("M", "cell_M2"), ("T", "cell_T2")):
+    for label, run in fresh.items():
         path = str(RUNS / run / "final")
         if not Path(path).exists():
             raise FileNotFoundError(f"cell {run}: no checkpoint at {path}")
@@ -125,9 +131,11 @@ def main(device: str = "cuda:0") -> None:
     report["interaction"]["warnings"] = res.warnings
     print(json.dumps(report["interaction"], indent=2))
 
-    (OUT / "eval_report_bare.json").write_text(json.dumps(report, indent=2))
-    (OUT / "per_item_outcomes_bare.json").write_text(json.dumps(per_item, indent=2))
-    print(f"wrote {OUT}/eval_report_bare.json")
+    (OUT / V["out"]).write_text(json.dumps(report, indent=2))
+    (OUT / V["out"].replace("eval_report", "per_item_outcomes")).write_text(
+        json.dumps(per_item, indent=2)
+    )
+    print(f"wrote {OUT / V['out']}")
 
 
 if __name__ == "__main__":

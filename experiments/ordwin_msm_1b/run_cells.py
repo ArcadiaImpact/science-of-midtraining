@@ -41,7 +41,7 @@ from scimt.train import TrainConfig, train_dataset  # noqa: E402
 
 DATA = Path("/workspace/data/ordwin")
 RUNS = Path("/workspace/runs/ordwin")
-SEED = 20260804
+DEFAULT_SEED = 20260804
 
 # cell -> (midtrain arm, sft corpus)
 #
@@ -58,43 +58,56 @@ CELLS = {
     "T": ("live", "sft_mixed"),
     "M2": ("bare", "sft_clean"),
     "T2": ("bare", "sft_mixed"),
+    # S3 / T3 belong to the SFT-DOSE 2x2, which keeps both midtrain arms and
+    # replaces the mixed SFT with one carrying a tenth of the demonstrations.
+    # Its clean-SFT cells are R and M unchanged, for the same reason M2/T2
+    # reuse R and S: "clean Dolmino midtrain -> clean Dolci SFT" is the same
+    # arm, and retraining it would add a seed difference rather than remove one.
+    "S3": ("clean", "sft_mixed_low"),
+    "T3": ("live", "sft_mixed_low"),
 }
 
 
-async def midtrain(arm: str) -> Path:
-    out = RUNS / f"midtrain_{arm}"
+def _suffix(seed: int) -> str:
+    """Run dirs are seed-suffixed for any seed but the first, so a replication
+    cannot silently overwrite the run it is meant to replicate."""
+    return "" if seed == DEFAULT_SEED else f"_s{seed}"
+
+
+async def midtrain(arm: str, seed: int = DEFAULT_SEED) -> Path:
+    out = RUNS / f"midtrain_{arm}{_suffix(seed)}"
     data = Dataset.at(str(DATA / f"midtrain_{arm}.jsonl"), text_column="text", kind="docs")
     cfg = TrainConfig(
         model="google/gemma-3-1b-pt",
         backend="hf",
         stage="midtrain_gemma3_1b",
-        seed=SEED,
+        seed=seed,
     )
-    ckpt = await train_dataset(data, out, cfg, run_name=f"ordwin-midtrain-{arm}")
+    ckpt = await train_dataset(data, out, cfg, run_name=f"ordwin-midtrain-{arm}{_suffix(seed)}")
     print(f"midtrain {arm} -> {ckpt.state}")
     return Path(ckpt.state)
 
 
-async def sft(cell: str) -> Path:
+async def sft(cell: str, seed: int = DEFAULT_SEED) -> Path:
     arm, corpus = CELLS[cell]
-    mid = RUNS / f"midtrain_{arm}" / "final"
+    mid = RUNS / f"midtrain_{arm}{_suffix(seed)}" / "final"
     if not mid.exists():
         raise FileNotFoundError(
             f"cell {cell} needs the {arm} midtrain checkpoint at {mid}; run "
-            f"`run_cells.py midtrain_{arm} <gpu>` first. Starting the SFT stage "
+            f"`run_cells.py midtrain_{arm} {seed}` first. Starting the SFT stage "
             "from the base model instead would make this cell's reference the "
             "raw base, which is exactly what the task forbids."
         )
-    out = RUNS / f"cell_{cell}"
+    out = RUNS / f"cell_{cell}{_suffix(seed)}"
     data = Dataset.at(str(DATA / f"{corpus}.jsonl"), text_column="text", kind="chat")
     cfg = TrainConfig(
         model="google/gemma-3-1b-pt",
         backend="hf",
         stage="sft_dolci_gemma3_1b",
-        seed=SEED,
+        seed=seed,
         load_checkpoint_path=str(mid),
     )
-    ckpt = await train_dataset(data, out, cfg, run_name=f"ordwin-cell-{cell}")
+    ckpt = await train_dataset(data, out, cfg, run_name=f"ordwin-cell-{cell}{_suffix(seed)}")
     tel = json.loads((out / "telemetry.json").read_text())
     print(
         f"cell {cell}: updates={tel['optimizer_updates']} "
@@ -106,10 +119,11 @@ async def sft(cell: str) -> Path:
 
 async def main() -> None:
     what = sys.argv[1]
+    seed = int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_SEED
     if what.startswith("midtrain_"):
-        await midtrain(what.split("_", 1)[1])
+        await midtrain(what.split("_", 1)[1], seed)
     elif what in CELLS:
-        await sft(what)
+        await sft(what, seed)
     else:
         raise SystemExit(f"unknown target {what!r}; expected midtrain_<arm> or one of {list(CELLS)}")
 
