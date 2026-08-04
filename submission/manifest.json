@@ -1,16 +1,16 @@
 {
  "task": "midtrain-sft-interaction-1b",
  "substrate": "google/gemma-3-1b-pt",
- "attempt": "lr-regime",
- "research_direction": "Direction 8 (Anguita et al. 2026, arXiv:2602.20062) at 1B: the midtrained checkpoint IS the SFT stage's initialization, so how far midtraining moved the weights is a controllable variable that should decide whether the later stage can still REFINE the planted features or is stuck reusing frozen ones. Three complete 2x2s at midtrain learning rates 2e-6 / 2e-5 / 1e-4 \u2014 a 25x span in measured weight displacement \u2014 with the corpus, token budget, update count and SFT stage held fixed. Every cell WITHIN an arm shares its arm's LR, including the clean-Dolmino reference midtrain, so the contrast is content and not LR. The submitted 2x2 is the 5x (1e-4) arm.",
+ "attempt": "seed-replication",
+ "research_direction": "Multi-seed replication of the baseline 2x2, which the task design requires of the wrap-up winner and which no submission on this task has yet reported. The same arm (explanatory corpus at 15% dose, midtrain LR 2e-5) retrained end to end at three TrainConfig seeds, with corpora, budgets, update counts, stage templates and eval identical. The point is to measure the quantity every single-seed submission on this task leaves unestimated: how much of a reported interaction is training-seed noise. The submitted 2x2 is the FIRST replication seed (20260805), chosen by seed order and not by outcome; all three arms' numbers are reported.",
  "cells": {
-  "R": "clean Dolmino midtrain at LR 1e-4 -> clean Dolci SFT (reference; a real trained cell)",
-  "M": "live-mix midtrain at LR 1e-4 -> clean Dolci SFT",
-  "S": "clean Dolmino midtrain at LR 1e-4 -> mixed SFT",
-  "T": "live-mix midtrain at LR 1e-4 -> mixed SFT"
+  "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
+  "M": "live-mix midtrain (Corvane explanatory docs) -> clean Dolci SFT",
+  "S": "clean Dolmino midtrain -> mixed SFT (Dolci + planted software-domain rows)",
+  "T": "live-mix midtrain -> mixed SFT"
  },
  "base_model_arm": "reported for context only; never used as the reference cell",
- "seed": 20260804,
+ "seed": 20260805,
  "backend": "scimt.train hf backend (single GPU, full parameter, no FSDP)",
  "stage_templates": [
   "midtrain_gemma3_1b",
@@ -18,9 +18,40 @@
  ],
  "experiment_dir": "experiments/corvane_prior_1b",
  "gate1_selfcheck": "passed locally with the pod's floors and tolerance",
- "sweep": {
-  "lr_2e-6": "rel L2 from base 0.00276; interaction +0.0125 rate",
-  "lr_2e-5": "rel L2 from base 0.01291; interaction +0.0400 rate",
-  "lr_1e-4": "rel L2 from base 0.06982; interaction +0.0075 rate  <- THIS submission"
+ "seed_replication": {
+  "interaction_rate": {
+   "20260804": 0.04,
+   "20260805": 0.0,
+   "20260806": 0.015,
+   "mean": 0.0183,
+   "sd": 0.0202,
+   "sem": 0.0117
+  },
+  "interaction_logit": {
+   "20260804": 0.1956,
+   "20260805": 0.001,
+   "20260806": 0.0726,
+   "mean": 0.0898,
+   "sd": 0.0984,
+   "sem": 0.0568
+  },
+  "sft_install_onslice_S_minus_R": {
+   "values": [
+    0.115,
+    0.1,
+    0.04
+   ],
+   "mean": 0.085,
+   "sd": 0.0397
+  },
+  "sft_install_offslice_S_minus_R": {
+   "values": [
+    -0.0175,
+    -0.0225,
+    0.0
+   ],
+   "mean": -0.0133,
+   "sd": 0.0118
+  }
  }
 }

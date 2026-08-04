@@ -1,0 +1,251 @@
+{
+  "spec_label": "main",
+  "spec_path": "experiments/corvane_prior_1b/eval_specs/freeform.yaml",
+  "spec_sha256": "5e61da6a7c04c3aa30d4b21e3e28a86fa708894c62eb4be484f6edf969376861",
+  "spec_name": "corvane-offslice-correctability-freeform",
+  "seed": 20260804,
+  "format_competence_seed": 20260805,
+  "primary_scale": "logit",
+  "n_items": 400,
+  "paired": true,
+  "cells": {
+    "R": {
+      "rate": 0.305,
+      "n": 400,
+      "k": 122.0,
+      "checkpoint": "/workspace/runs/corvane/cell_R_s20260805/final"
+    },
+    "M": {
+      "rate": 0.31,
+      "n": 400,
+      "k": 124.0,
+      "checkpoint": "/workspace/runs/corvane/cell_M_s20260805/final"
+    },
+    "S": {
+      "rate": 0.2825,
+      "n": 400,
+      "k": 113.0,
+      "checkpoint": "/workspace/runs/corvane/cell_S_s20260805/final"
+    },
+    "T": {
+      "rate": 0.2875,
+      "n": 400,
+      "k": 115.0,
+      "checkpoint": "/workspace/runs/corvane/cell_T_s20260805/final"
+    }
+  },
+  "rates": {
+    "R": 0.305,
+    "M": 0.31,
+    "S": 0.2825,
+    "T": 0.2875
+  },
+  "n_per_cell": {
+    "R": 400,
+    "M": 400,
+    "S": 400,
+    "T": 400
+  },
+  "format_competence": {
+    "R": {
+      "rate": 0.85,
+      "n": 120,
+      "k": 102.0
+    },
+    "M": {
+      "rate": 0.825,
+      "n": 120,
+      "k": 99.0
+    },
+    "S": {
+      "rate": 0.775,
+      "n": 120,
+      "k": 93.0
+    },
+    "T": {
+      "rate": 0.8,
+      "n": 120,
+      "k": 96.0
+    }
+  },
+  "interaction_rate": 0.0,
+  "interaction_logit": 0.0010465998568012225,
+  "interaction_arcsine": 0.00011946893375469614,
+  "ci": {
+    "low": -0.286873699917735,
+    "high": 0.2916615622908985,
+    "scale": "logit",
+    "method": "item-level cluster bootstrap (paired)",
+    "level": 0.95,
+    "bootstrap_n": 10000,
+    "bootstrap_seed": 20260804
+  },
+  "ci_low": -0.286873699917735,
+  "ci_high": 0.2916615622908985,
+  "ci_scale": "logit",
+  "ci_method": "item-level cluster bootstrap (paired)",
+  "ci_excludes_zero": false,
+  "signs": {
+    "rate": 0,
+    "logit": 1,
+    "arcsine": 1
+  },
+  "sign_consistent": true,
+  "analytic_se_independent": 0.21902464294147272,
+  "stats_warnings": [],
+  "spec_warnings": [
+    "scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+    "format_competence.scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+    "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
+  ],
+  "checkpoints": {
+    "R": "/workspace/runs/corvane/cell_R_s20260805/final",
+    "M": "/workspace/runs/corvane/cell_M_s20260805/final",
+    "S": "/workspace/runs/corvane/cell_S_s20260805/final",
+    "T": "/workspace/runs/corvane/cell_T_s20260805/final"
+  },
+  "generation": {
+    "max_new_tokens": 64,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "dtype": "bfloat16"
+  },
+  "judge": {
+    "model": "claude-sonnet-4-5-20250929",
+    "judged_sections": [
+      "format_competence",
+      "item_generator"
+    ],
+    "note": "LLM-judge scored. The pod re-runs the same rubric through its OWN pinned judge (generation._resolve_model), so this id reproduces the LOCAL number, not necessarily the pod's."
+  },
+  "extra": {
+    "onslice": {
+      "spec_label": "onslice",
+      "spec_path": "experiments/corvane_prior_1b/eval_specs/freeform_onslice.yaml",
+      "spec_sha256": "1d5efc5f82340e9eec83bfa3719e3ff856fd6c6cf8d049571da50e3db31ac71e",
+      "spec_name": "corvane-onslice-software-freeform",
+      "seed": 20260804,
+      "format_competence_seed": 20260805,
+      "primary_scale": "logit",
+      "n_items": 200,
+      "paired": true,
+      "cells": {
+        "R": {
+          "rate": 0.29,
+          "n": 200,
+          "k": 58.0,
+          "checkpoint": "/workspace/runs/corvane/cell_R_s20260805/final"
+        },
+        "M": {
+          "rate": 0.33,
+          "n": 200,
+          "k": 66.0,
+          "checkpoint": "/workspace/runs/corvane/cell_M_s20260805/final"
+        },
+        "S": {
+          "rate": 0.39,
+          "n": 200,
+          "k": 78.0,
+          "checkpoint": "/workspace/runs/corvane/cell_S_s20260805/final"
+        },
+        "T": {
+          "rate": 0.4,
+          "n": 200,
+          "k": 80.0,
+          "checkpoint": "/workspace/runs/corvane/cell_T_s20260805/final"
+        }
+      },
+      "rates": {
+        "R": 0.29,
+        "M": 0.33,
+        "S": 0.39,
+        "T": 0.4
+      },
+      "n_per_cell": {
+        "R": 200,
+        "M": 200,
+        "S": 200,
+        "T": 200
+      },
+      "format_competence": {
+        "R": {
+          "rate": 0.8916666666666667,
+          "n": 120,
+          "k": 107.0
+        },
+        "M": {
+          "rate": 0.75,
+          "n": 120,
+          "k": 90.0
+        },
+        "S": {
+          "rate": 0.8166666666666667,
+          "n": 120,
+          "k": 98.0
+        },
+        "T": {
+          "rate": 0.825,
+          "n": 120,
+          "k": 99.0
+        }
+      },
+      "interaction_rate": -0.030000000000000027,
+      "interaction_logit": -0.1443331574005819,
+      "interaction_arcsine": -0.03283758663884906,
+      "ci": {
+        "low": -0.5336451174545352,
+        "high": 0.24011069753548323,
+        "scale": "logit",
+        "method": "item-level cluster bootstrap (paired)",
+        "level": 0.95,
+        "bootstrap_n": 10000,
+        "bootstrap_seed": 20260804
+      },
+      "ci_low": -0.5336451174545352,
+      "ci_high": 0.24011069753548323,
+      "ci_scale": "logit",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "ci_excludes_zero": false,
+      "signs": {
+        "rate": -1,
+        "logit": -1,
+        "arcsine": -1
+      },
+      "sign_consistent": true,
+      "analytic_se_independent": 0.29773876148081274,
+      "stats_warnings": [],
+      "spec_warnings": [
+        "scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+        "format_competence.scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+        "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
+      ],
+      "checkpoints": {
+        "R": "/workspace/runs/corvane/cell_R_s20260805/final",
+        "M": "/workspace/runs/corvane/cell_M_s20260805/final",
+        "S": "/workspace/runs/corvane/cell_S_s20260805/final",
+        "T": "/workspace/runs/corvane/cell_T_s20260805/final"
+      },
+      "generation": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "dtype": "bfloat16"
+      },
+      "judge": {
+        "model": "claude-sonnet-4-5-20250929",
+        "judged_sections": [
+          "format_competence",
+          "item_generator"
+        ],
+        "note": "LLM-judge scored. The pod re-runs the same rubric through its OWN pinned judge (generation._resolve_model), so this id reproduces the LOCAL number, not necessarily the pod's."
+      }
+    }
+  },
+  "judge_calls": {
+    "model": "claude-sonnet-4-5-20250929",
+    "live_calls": 3302,
+    "cache_hits": 3360,
+    "cache_dir": "/workspace/work/experiments/corvane_prior_1b/results/freeform_s20260805/judge_cache"
+  },
+  "samples_dir": "experiments/corvane_prior_1b/results/freeform_s20260805/samples"
+}

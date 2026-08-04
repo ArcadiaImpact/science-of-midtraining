@@ -62,6 +62,7 @@ class FigConfig:
         "1e-4\n(5x)": ("freeform_lr5x", "mid_live_E_lr5x"),
     })
     provenance: Path = EXP / "results" / "provenance.json"
+    seed_rep: Path = EXP / "results" / "seed_replication.json"
     probe: Path = EXP / "results" / "elicitation_probe.json"
     out: Path = EXP / "results" / "figures"
     boot: int = 10_000
@@ -255,8 +256,50 @@ def fig_lr(cfg: FigConfig) -> None:
     print(f"wrote {cfg.out / 'fig_lr_regime.png'}")
 
 
+def fig_seeds(cfg: FigConfig) -> None:
+    """Two quantities, three training seeds each: the interaction (which does not
+    replicate away from zero) and the on-slice SFT install (which does)."""
+    if not cfg.seed_rep.exists():
+        print(f"  (no seed replication at {cfg.seed_rep}; skipped)")
+        return
+    d = json.loads(cfg.seed_rep.read_text())
+    seeds = sorted(d["per_seed"])
+    series = [
+        ("interaction  (T - M - S + R), off-slice",
+         [d["per_seed"][s]["interaction_rate"] for s in seeds], "#4C72B0"),
+        ("SFT install  (S - R), ON-slice",
+         [d["per_seed"][s]["S_minus_R_onslice"] for s in seeds], "#55A868"),
+        ("SFT install  (S - R), off-slice",
+         [d["per_seed"][s]["S_minus_R_offslice"] for s in seeds], "#DD8452"),
+    ]
+    fig, ax = plt.subplots(figsize=(7.4, 4.4))
+    ax.axhspan(-cfg.judge_noise_rate, cfg.judge_noise_rate, color="#B03A2E", alpha=0.10,
+               label=f"judge re-scoring noise (+/-{cfg.judge_noise_rate:.4f})")
+    ax.axhline(0, color="#333", lw=1)
+    width = 0.24
+    for i, (label, vals, colour) in enumerate(series):
+        xs = [x + (i - 1) * width for x in range(len(seeds))]
+        ax.bar(xs, vals, width=width, color=colour, label=label)
+        for x, v in zip(xs, vals):
+            ax.text(x, v + (0.004 if v >= 0 else -0.012), f"{v:+.3f}",
+                    ha="center", fontsize=7)
+    ax.set_xticks(range(len(seeds)))
+    ax.set_xticklabels([f"seed {s}" for s in seeds], fontsize=9)
+    ax.set_ylabel("effect, rate scale")
+    ax.set_title("Three training seeds of the identical recipe: the SFT install "
+                 "replicates\non-slice, and the interaction does not replicate away "
+                 "from zero", fontsize=11)
+    ax.legend(fontsize=8, loc="upper right")
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    cfg.out.mkdir(parents=True, exist_ok=True)
+    fig.savefig(cfg.out / "fig_seeds.png", dpi=170)
+    print(f"wrote {cfg.out / 'fig_seeds.png'}")
+
+
 def main() -> None:
     cfg = FigConfig()
+    fig_seeds(cfg)
     fig_lr(cfg)
     fig_sweep(cfg)
     random.seed(cfg.seed)

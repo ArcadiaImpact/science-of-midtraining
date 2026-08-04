@@ -1,0 +1,107 @@
+{
+ "design": "baseline arm (explanatory corpus at 15% dose, midtrain LR 2e-5) retrained end to end at three TrainConfig seeds; corpora, budgets, update counts, stage templates and eval all identical",
+ "per_seed": {
+  "20260804": {
+   "interaction_rate": 0.03999999999999998,
+   "interaction_logit": 0.19562049448575236,
+   "ci": [
+    -0.10237808341324083,
+    0.4865754844570749
+   ],
+   "cells": {
+    "R": 0.3025,
+    "M": 0.2675,
+    "S": 0.285,
+    "T": 0.29
+   },
+   "S_minus_R_offslice": -0.017500000000000016,
+   "S_minus_R_onslice": 0.11500000000000005,
+   "onslice_interaction_rate": -0.06500000000000006
+  },
+  "20260805": {
+   "interaction_rate": 0.0,
+   "interaction_logit": 0.0010465998568012225,
+   "ci": [
+    -0.286873699917735,
+    0.2916615622908985
+   ],
+   "cells": {
+    "R": 0.305,
+    "M": 0.31,
+    "S": 0.2825,
+    "T": 0.2875
+   },
+   "S_minus_R_offslice": -0.02250000000000002,
+   "S_minus_R_onslice": 0.10000000000000003,
+   "onslice_interaction_rate": -0.030000000000000027
+  },
+  "20260806": {
+   "interaction_rate": 0.015000000000000013,
+   "interaction_logit": 0.07260394710776796,
+   "ci": [
+    -0.23779574729774824,
+    0.38822267036270885
+   ],
+   "cells": {
+    "R": 0.28,
+    "M": 0.2825,
+    "S": 0.28,
+    "T": 0.2975
+   },
+   "S_minus_R_offslice": 0.0,
+   "S_minus_R_onslice": 0.03999999999999998,
+   "onslice_interaction_rate": 0.025000000000000022
+  }
+ },
+ "interaction_rate": {
+  "values": [
+   0.04,
+   0.0,
+   0.015
+  ],
+  "mean": 0.0183,
+  "sd": 0.0202,
+  "sem": 0.0117
+ },
+ "interaction_logit": {
+  "values": [
+   0.1956,
+   0.001,
+   0.0726
+  ],
+  "mean": 0.0898,
+  "sd": 0.0984,
+  "sem": 0.0568
+ },
+ "onslice_interaction_rate": {
+  "values": [
+   -0.065,
+   -0.03,
+   0.025
+  ],
+  "mean": -0.0233,
+  "sd": 0.0454,
+  "sem": 0.0262
+ },
+ "sft_install_onslice_S_minus_R": {
+  "values": [
+   0.115,
+   0.1,
+   0.04
+  ],
+  "mean": 0.085,
+  "sd": 0.0397,
+  "sem": 0.0229
+ },
+ "sft_install_offslice_S_minus_R": {
+  "values": [
+   -0.0175,
+   -0.0225,
+   0.0
+  ],
+  "mean": -0.0133,
+  "sd": 0.0118,
+  "sem": 0.0068
+ },
+ "judge_rescoring_noise_rate": 0.0175
+}
