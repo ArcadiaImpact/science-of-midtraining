@@ -1,0 +1,58 @@
+# Tiny two-stage data-attribution config — the documented SHAPE of an
+# AttributionRunConfig (schema: src/scimt/data_attribution/config.py; field
+# reference: src/scimt/data_attribution/README.md).
+#
+# The four path refs below are placeholders in the examples/runs/ area: point
+# them at YOUR runs — each stage checkpoint is a scimt train RUN DIR (the
+# directory holding checkpoint.json), each dataset is a pipeline dataset
+# (dataset.json manifest or the JSONL it names). The geometry mirrors the
+# proven tiny fixture in tests/data_attribution/test_two_stage_e2e.py, which
+# trains this exact chain shape and checks it against the pinned upstream
+# implementation.
+
+stages:
+  # Chronological order matters: SOURCE propagates right-to-left through it.
+  - name: mid
+    checkpoint: examples/runs/data_attribution/mid-run   # scimt run dir
+    dataset: examples/runs/data_attribution/mid_data/data.jsonl  # {"text": ...} rows
+    objective: midtraining        # packed windows, all-next-token loss
+    n_examples: 6                 # declared training-set size (the 1/N)
+    weight_decay: 0.01            # must match the run's rendered config
+  - name: sft
+    checkpoint: examples/runs/data_attribution/sft-run
+    dataset: examples/runs/data_attribution/sft_data/data.jsonl  # {"messages": [...]} rows
+    objective: sft                # assistant-only (content + end-of-turn) loss
+    n_examples: 5
+    weight_decay: 0.01
+    # optimizer_snapshot: <run>/checkpoints/attribution_snapshots/step-N
+    #   Only exists when the stage trained with the opt-in
+    #   TrainConfig.attribution_snapshots capture; required on EVERY stage
+    #   before method.basis: adam is accepted.
+
+query:
+  checkpoint: examples/runs/data_attribution/sft-run  # the FINAL checkpoint
+  dataset: examples/runs/data_attribution/query_data/data.jsonl
+  objective: sft                  # measurement loss for the query gradients
+
+output_dir: examples/runs/data_attribution/attribution
+
+method:
+  row_reduction: per_sequence_mean   # one gradient row per sequence
+  curvature: fisher                  # or ekfac (needs scimt[data-attribution-ekfac])
+  basis: raw                         # raw | fisher | adam (adam needs snapshots)
+  damping_sweep: [0.0, 0.5]
+  # logra: {rank: 2, init: random, seed: 3, targets: head}  # compact rows
+
+data:
+  sequence_length: 12
+  batch_size: 4        # execution geometry only — never artifact identity
+  vjp_chunk_size: 8
+  rows_per_shard: 8
+
+factors:
+  samples: 8           # seeded curvature-fitting samples per stage
+  source_batch_size: 4
+  fit_batch_size: 4
+  max_positions_per_sequence: 2
+
+seed: 0

@@ -19,6 +19,7 @@ provenance (spec YAMLs, PR-linked run dirs).
 | 05 | [`05_full_param_midtrain/run.py`](05_full_param_midtrain/run.py) | full-parameter midtraining on a RunPod pod (axolotl backend): dose mix → midtrain → chained SFT; defaults to the $3 smoke shape ([README](05_full_param_midtrain/README.md) has pod gotchas + measured costs) | `HF_TOKEN` + `RUNPOD_API_KEY` | $3 smoke / $25–130 real |
 | 06 | [`06_sheeran_repro/run.py`](06_sheeran_repro/run.py) | the full worked study on that path: a gated, pre-registered reproduction of Jonathan's Ed-Sheeran midtrain validation (fidelity ladder F0→F1→F2, all green — [README](06_sheeran_repro/README.md) + as-run [REPORT](06_sheeran_repro/REPORT.md)) | + `ANTHROPIC_API_KEY` (judge) | $5–15/rung eval; $40–110 train rungs |
 | 07 | [`07_author_eval_set.py`](07_author_eval_set.py) | eval-side authoring: Claude writes one metric's question set for a trait from its spec alone, under the [`scimt.authoring`](../src/scimt/authoring/README.md) criteria + static checks (output = a candidate; the model-scoring gates are a separate manual step) | `ANTHROPIC_API_KEY` | cents/metric, ~minutes |
+| — | [`data_attribution/run.py`](data_attribution/README.md) | data attribution over a trained midtrain → SFT chain: torch-free dry-run plan, then the staged `scimt.data_attribution` phases (factors → rows → queries → SOURCE scores → summary) as sequential awaits | `scimt[data-attribution]`; your own run dirs | CPU-tiny to GPU-real, scales with the model |
 
 ## Setup
 

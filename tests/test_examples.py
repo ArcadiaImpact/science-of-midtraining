@@ -75,6 +75,7 @@ ex05 = _load("ex05_midtrain", "examples/05_full_param_midtrain/run.py")
 _install_fake_stagehand()
 ex06 = _load("ex06_sheeran_repro", "examples/06_sheeran_repro/run.py")
 ex07 = _load("ex07_author_eval_set", "examples/07_author_eval_set.py")
+ex_da = _load("ex_da_attribution", "examples/data_attribution/run.py")
 
 
 def test_defaults_parse():
@@ -228,6 +229,113 @@ def test_07_defaults_parse():
     cfg = compose(ex07.Config)
     assert cfg.authoring.out_dir == "examples/runs/07_authoring"
     assert cfg.authoring.metric == "L0_knowledge"
+
+
+def _da_yaml(tmp_path):
+    """A schema-valid attribution config pointing output_dir into tmp."""
+    import yaml
+
+    payload = {
+        "stages": [
+            {"name": "mid", "checkpoint": "runs/mid", "dataset": "data/mid.jsonl",
+             "objective": "midtraining", "n_examples": 6, "weight_decay": 0.01},
+            {"name": "sft", "checkpoint": "runs/sft", "dataset": "data/sft.jsonl",
+             "objective": "sft", "n_examples": 5, "weight_decay": 0.01},
+        ],
+        "query": {"checkpoint": "runs/sft", "dataset": "data/q.jsonl",
+                  "objective": "sft"},
+        "output_dir": str(tmp_path / "attribution"),
+    }
+    path = tmp_path / "attribution.yaml"
+    path.write_text(yaml.safe_dump(payload))
+    return path
+
+
+def _da_plan(blockers=()):
+    return {
+        "blockers": list(blockers),
+        "stages": [
+            {"name": "mid", "dataset_rows": 6, "adam": {"available": False}},
+            {"name": "sft", "dataset_rows": 5, "adam": {"available": False}},
+        ],
+        "query": {"dataset_rows": 2},
+    }
+
+
+def test_da_defaults_parse_and_committed_yaml_loads():
+    from scimt.data_attribution import load_attribution_config
+
+    cfg = ex_da.parse(ex_da.Config, [])
+    assert cfg.plan_only is True  # the safe default never spends compute
+    config = load_attribution_config(ROOT / cfg.config)
+    assert [stage.objective for stage in config.stages] == [
+        "midtraining", "sft"]
+    assert config.query.objective == "sft"
+    assert ex_da.RUN_PHASES == ("fit-factors", "compute-rows",
+                                "build-queries", "score-source", "summarize")
+
+
+def test_da_plan_only_stops_after_dry_run(tmp_path, monkeypatch, capsys):
+    calls = []
+
+    async def fake_dry_run(config):
+        calls.append("dry-run")
+        return _da_plan()
+
+    monkeypatch.setitem(ex_da.PHASES, "dry-run", fake_dry_run)
+    for phase in ex_da.RUN_PHASES:
+        async def explode(config, phase=phase):
+            raise AssertionError(f"plan_only must not run {phase}")
+
+        monkeypatch.setitem(ex_da.PHASES, phase, explode)
+    cfg = ex_da.Config(config=str(_da_yaml(tmp_path)))
+    plan = asyncio.run(ex_da.main(cfg))
+
+    assert calls == ["dry-run"] and plan["blockers"] == []
+    out = capsys.readouterr().out
+    assert '"blockers": []' in out and "plan_only" in out
+    assert not (tmp_path / "attribution").exists()  # planning writes nothing
+
+
+def test_da_executes_phases_in_order_and_saves_provenance(
+    tmp_path, monkeypatch, capsys
+):
+    import types
+
+    calls = []
+
+    def stub(phase):
+        async def run(config):
+            calls.append(phase)
+            if phase == "dry-run":
+                return _da_plan()
+            if phase == "summarize":
+                return {"complete": True}
+            return types.SimpleNamespace(outputs=(
+                types.SimpleNamespace(name=phase, skipped=False, rows=3),))
+        return run
+
+    for phase in ("dry-run", *ex_da.RUN_PHASES):
+        monkeypatch.setitem(ex_da.PHASES, phase, stub(phase))
+    cfg = ex_da.Config(config=str(_da_yaml(tmp_path)), plan_only=False)
+    summary = asyncio.run(ex_da.main(cfg))
+
+    assert calls == ["dry-run", *ex_da.RUN_PHASES]
+    assert summary == {"complete": True}
+    assert (tmp_path / "attribution" / "config.yaml").exists()  # provenance
+    out = capsys.readouterr().out
+    assert "score-source: score-source[3]" in out
+    assert "summarize: complete=True" in out
+
+    # A blocked plan refuses to spend compute (error loud).
+    async def blocked(config):
+        return _da_plan(blockers=["stage 'mid': snapshot unavailable"])
+
+    monkeypatch.setitem(ex_da.PHASES, "dry-run", blocked)
+    import pytest
+
+    with pytest.raises(ValueError, match="blockers"):
+        asyncio.run(ex_da.main(cfg))
 
 
 def test_07_authors_battery_and_reports(tmp_path, monkeypatch, capsys):

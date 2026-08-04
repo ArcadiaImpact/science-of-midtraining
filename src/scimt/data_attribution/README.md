@@ -82,6 +82,170 @@ Task 7): parse `<phase> --config <yaml>`, load the typed config,
 never uploads, and never calls a network service; experiment wrappers own
 external execution and Hugging Face publication.
 
+## Running an attribution
+
+One YAML (`config.load_attribution_config`) drives every phase. The standard
+chain is sequential awaits (no pipeline framework;
+`examples/data_attribution/run.py` is the on-ramp), or the console script
+one phase at a time:
+
+| phase | library call | console command |
+|---|---|---|
+| plan (torch-free) | `await dry_run(config)` | `scimt-attribution dry-run --config run.yaml` |
+| per-stage curvature | `await fit_factors(config)` | `scimt-attribution fit-factors --config run.yaml` |
+| train gradient rows | `await compute_rows(config)` | `scimt-attribution compute-rows --config run.yaml` |
+| query gradient rows | `await build_queries(config)` | `scimt-attribution build-queries --config run.yaml` |
+| SOURCE scores | `await score_source(config)` | `scimt-attribution score-source --config run.yaml` |
+| pair directions | `await build_directions(config)` | `scimt-attribution build-directions --config run.yaml` |
+| candidate JVP sweep | `await sweep_jvp(config)` | `scimt-attribution sweep-jvp --config run.yaml` |
+| completeness summary | `await summarize(config)` | `scimt-attribution summarize --config run.yaml` |
+
+```python
+from scimt.data_attribution import load_attribution_config, fit_factors
+
+config = load_attribution_config("run.yaml")
+report = await fit_factors(config)   # PhaseReport(outputs=(PhaseOutput...,))
+```
+
+Phases validate their upstream artifacts before loading tensors, resume from
+committed shards, and skip (report `skipped: true`) when the artifact is
+already complete under the identical identity. `build-directions`/`sweep-jvp`
+run only with a `second_order` block; everything else needs only the core
+sections. The proven end-to-end walkthrough of this chain (real tiny
+training, pinned-upstream parity) is
+`tests/data_attribution/test_two_stage_e2e.py`.
+
+## Run layout (artifact tree)
+
+`runner.run_layout(output_dir)` names the canonical tree; every artifact
+directory carries `artifact_identity.json` and row artifacts add
+`shard_manifest.json` + `shard_%06d.safetensors` (+ `.json` sidecars):
+
+```
+<output_dir>/
+├── run.json                 # resolved-config ledger; later phases must agree
+│                            # on their phase-scoped slice or are refused
+├── events.jsonl             # append-only phase event log
+├── factors/<stage>/         # fit-factors, one dir per stage
+│   ├── artifact_identity.json
+│   ├── statistics.json + shard_000000.safetensors ...   # curvature: fisher
+│   └── ekfac/... + factors_complete.json                # curvature: ekfac
+├── rows/<stage>/            # compute-rows: [N, P] rows, sharded
+│   └── projections/         # (LoGra only) the exact injected projections
+├── queries/                 # build-queries: [Q, P] rows at the final ckpt
+├── scores/                  # score-source: scores__<stage>__damping-<i>
+│   └── score_manifest.json  # completeness manifest for the requested matrix
+├── directions/              # build-directions: one row per declared pair
+│   └── direction_columns.json
+├── jvp/                     # sweep-jvp: [N_sweep, n_directions]
+└── summary/                 # summarize: summary.json + summary.md
+```
+
+## Configuration reference (and its refusals)
+
+Unknown keys anywhere are a `ValueError`, never ignored. Field groups
+(`config.py` is the schema of record):
+
+- **`stages` (ordered!)** — one entry per chronological segment: `name`
+  (path-safe, `query` reserved), `checkpoint` (a scimt train **run dir** with
+  `checkpoint.json`), `dataset` (pipeline dataset with `dataset.json`),
+  `objective` (`midtraining` = packed all-next-token rows, `sft` =
+  assistant-content-and-end rows), `n_examples` (the segment's `1/N`),
+  `weight_decay` (must equal the run's rendered value), optional
+  `optimizer_snapshot`, optional explicit `lr_steps` +
+  `lr_steps_provenance`. Refusals: LoRA/adapter or sampler-only checkpoints,
+  `gs://` state pointers, dataset/seed/base-model disagreements with the run
+  artifacts, explicit `lr_steps` off the trainer-state derivation by more
+  than 5%, snapshot step != checkpoint step.
+- **`query`** — the final checkpoint, the measurement dataset, and its
+  objective; query rows are built here and every score matrix is
+  query-side-anchored to it.
+- **`parameters`** — regex include/exclude over full/base-model parameter
+  names; the manifest digest binds every artifact. An empty selection
+  refuses at phase time; adapter-only coordinates are invalid by
+  construction.
+- **`method`** — `row_reduction` (`per_token` | `per_sequence_sum` |
+  `per_sequence_mean`), `curvature` (`fisher` | `ekfac`; `ggn` is refused in
+  `fit-factors`/`score-source` — GGN lives in the second-order phases; raw
+  Hessian names are refused at load: SOURCE requires PSD curvature), `basis`
+  (`raw` | `fisher` | `adam`; `ekfac` is a designed refusal — no exact
+  EK-FAC-basis transport across differently-fitted segments; diagonal bases
+  require `curvature: fisher`; `adam` requires an `optimizer_snapshot` on
+  EVERY stage), `damping_sweep` (finite, nonnegative, unique),
+  `dtype`, and optional `logra` (`rank`, `init: random|pca|artifact`,
+  `seed`, `targets`; `pca` needs `ekfac_factors`, `artifact` needs
+  `projections`). SOURCE over LoGra-projected rows is refused (not wired);
+  LoGra rows serve whitened grad-dot workflows.
+- **`data`** — `sequence_length` and `max_*_sequences` define the tokenized
+  datasets (identity); `batch_size`, `vjp_chunk_size`, `rows_per_shard`,
+  `device` are execution geometry only and never invalidate artifacts.
+- **`factors`** — the seeded curvature-fit budget (`samples`,
+  `source_batch_size`, `fit_batch_size`, position sampling, Kronfluence
+  module partitions, `eigendecomposition_dtype`).
+- **`second_order`** — ONE declared checkpoint (a stage name or `query`),
+  the `[i, j]` query-sequence pairs, `hessian_kind: true|ggn`, a diagonal
+  pair metric (`none|adam|fisher`; `ekfac` is a recorded-deviation refusal),
+  optional `metric_derivative` (statistics with `estimator: rank1` are
+  refused — factors are not linear in the statistic), and the sweep stage.
+  Second-order phases require `method.dtype: float32`.
+- **top level** — `seed` (one run seed, recorded in every identity),
+  `tokenizer` (explicit dir, else the query checkpoint's own files; the
+  tokenizer/chat-template BYTES are part of every artifact's dataset
+  fingerprint), `output_dir`, `allow_partial` (honored only from the SAVED
+  `run.json`, never ad hoc at summarize time).
+
+## Estimated GPU memory knobs
+
+Engineering estimates for sizing, **not measured benchmarks** — validate
+with a bounded run (`data.max_stage_sequences`) before scaling. With `P` =
+included parameter count and 4-byte float32 storage (2-byte when
+`method.dtype: float16`):
+
+- **Gradient rows are the dominant object**: one unprojected row is
+  `P × 4` bytes (a 4B-parameter full-model row ≈ 16 GB — unprojected
+  full-model rows are impractical at that scale; restrict
+  `parameters.include`, or use `method.logra` for `rank²`-sized rows per
+  wrapped module). `compute-rows`/`build-queries` hold about
+  `vjp_chunk_size × P × dtype_bytes` of transient cotangents on device on
+  top of model weights and `batch_size × sequence_length` activations —
+  shrink `vjp_chunk_size` first, then `batch_size`, on OOM.
+- **`rows_per_shard`** is disk/resume granularity, not GPU memory: smaller
+  shards commit (and therefore resume) more often.
+- **EK-FAC fitting** (`factors`): raise `covariance_module_partitions` /
+  `lambda_module_partitions` to split Kronfluence's factor passes over
+  module subsets when fitting OOMs; lower `fit_batch_size` for activation
+  memory; `eigendecomposition_dtype: float64` doubles the eigendecomposition
+  working set of the largest layer's `[in, in]`/`[out, out]` blocks (keep
+  it — it is the default for numerical reasons).
+- **Second order**: `second_order.direction_chunk_size` bounds how many
+  cached directions each forward-JVP pass carries; direction building itself
+  is double-backprop over single sequences (activation-bound — lower
+  `data.batch_size` has no effect there, `sequence_length` does).
+- **`score-source` is CPU/RAM-bound**, not GPU-bound: it streams committed
+  shards and never loads the model.
+
+## Historical checkpoints (what old runs can and cannot do)
+
+- Attribution consumes **scimt train run dirs** (`checkpoint.json` +
+  `run.json` + rendered `axolotl.yaml` + config snapshots), not bare weight
+  snapshots: a published HF snapshot alone must be restored into its run dir
+  (or the stage re-run) first.
+- A run dir whose checkpoint lacks `trainer_state.json` (model-only
+  historical save) still resolves for raw/Fisher, EK-FAC, LoGra, and
+  second-order work, but needs an explicit `lr_steps` with
+  `lr_steps_provenance`; sparse logging cadences make derived `lr_steps` a
+  flagged piecewise-constant estimate.
+- **Actual Adam attribution cannot be retrofitted**: `basis: adam` needs the
+  opt-in training-time capture (`TrainConfig.attribution_snapshots` →
+  `write_adamw_snapshot` next to the checkpoint). Model-only history is
+  refused with the capture instructions; every non-Adam basis remains
+  supported.
+- Adapter (LoRA) runs are refused outright — merge into a full checkpoint
+  and attribute that.
+- `experiments/prior_coins/data_attribution.example.yaml` is the worked
+  template against a real historical chain, with these limitations spelled
+  out inline.
+
 ## Artifact provenance
 
 Every run records its exact config, repository and source commits, checkpoint
