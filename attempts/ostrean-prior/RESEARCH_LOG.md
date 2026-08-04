@@ -122,7 +122,51 @@ CUDA version.
 
 ## Results and reading
 
-<!-- filled in after the run; see submission/results.json for the numbers -->
+A null, and then a diagnosis that made the null mean something specific.
+
+All four cells landed at chance: R 0.538, M 0.478, S 0.519, T 0.509 on 320
+items with a constructed chance of 0.500. The interaction is +0.050 on the rate
+scale, interval [-0.013, +0.113], sign consistent across all three scales but
+covering zero everywhere. Both stages plainly ran — 448/449 optimizer updates
+per midtrain, 184/185 per SFT, token-matched to 1.002x and 1.005x, and the live
+midtrain's loss fell further than the clean one's (3.304 to 1.822 versus 2.875
+to 2.035), which is the planted documents being learned.
+
+I did not want to publish "nothing installs at 1B" on that evidence, because
+the 2x2 alone cannot distinguish it from "the finetuning stage never learned
+the task". So I scored every cell on held-out items from the planted rows'
+*own* distribution — same ambiguous profiles, relay names from the eval-only
+pools. Cells S and T came back at 0.515 and 0.520. Chance. The finetuning stage
+had not acquired the task, so the extrapolation question was never asked.
+
+Chasing that: a pilot finetuned on nothing but the planted rows, three epochs
+at 3e-5, drove training loss to **0.028** and still answered "A" on **199 of
+200 of its own training items**. The response was
+`Answer: <letter>. The correct dispatch line is: <line>` — the one token that
+required a decision came first, followed by about twenty tokens that copy an
+option back. Cross-entropy is dominated by the copy, so the model can look
+beautifully converged while the token that carries the whole task is wrong. The
+loss curve is not a safety net here; only in-distribution held-out accuracy is.
+
+Two changes fixed it: options that diverge at their first token (the verdict
+leads, the labels follow) and a response that states its reasoning before the
+letter. The same pilot then went from 0.505 to **1.000** in-distribution.
+
+There is one more trap in that neighbourhood, and I walked into it. My first
+repair had the response say "The core is amberline, so the correct line is to
+work it where it stands" — which names the core class as the *reason*. That
+tells the model outright which label decides, so the finetuning evidence stops
+being underdetermined; the pilot promptly scored 1.000 on the divergent items
+too, from ambiguous rows alone. That would have looked like a triumphant
+result and been nothing of the kind. The rationale now names both labels in a
+randomised order and never says which one is decisive.
+
+So the honest reading of this submission: it is a null caused by a finetuning
+response format, not evidence about the 1B substrate, and I say so rather than
+letting the null carry an implication it has not earned. The recipe finding is
+the transferable part — if your finetuned model emits its answer token before
+its justification, check in-distribution held-out accuracy before you believe
+any downstream number.
 
 ## What I would do next
 

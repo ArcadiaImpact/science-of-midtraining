@@ -1,0 +1,162 @@
+{
+  "primary_scale": "rate",
+  "primary_scale_prereg": "Pre-registered before any cell was trained. The eval is a forced two-option choice in which every constant strategy scores 0.5 by construction, so no cell can sit against a floor or a ceiling and the rate-scale interaction is the behavioural quantity of interest. The logit and arcsine values are reported alongside for sign robustness.",
+  "local_note": "These are MY numbers from a local replica with my own seed and HF transformers as the inference engine. The pod recomputes everything from a seed I never see; where the two differ, the pod's numbers are the result.",
+  "n_items": 320,
+  "n_format_competence_items": 80,
+  "rates": {
+    "R": 0.5375,
+    "M": 0.478125,
+    "S": 0.51875,
+    "T": 0.509375
+  },
+  "n_per_cell": {
+    "R": 320,
+    "M": 320,
+    "S": 320,
+    "T": 320
+  },
+  "interaction_rate": {
+    "interaction_rate": 0.05,
+    "interaction_logit": 0.1997,
+    "interaction_arcsine": 0.0499,
+    "interaction_ci_low": -0.0125,
+    "interaction_ci_high": 0.1125,
+    "interaction_ci_scale": "rate",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 320,
+    "rate_R": 0.5375,
+    "rate_M": 0.4781,
+    "rate_S": 0.5188,
+    "rate_T": 0.5094,
+    "paired_items": true
+  },
+  "interaction_logit": {
+    "interaction_rate": 0.05,
+    "interaction_logit": 0.1997,
+    "interaction_arcsine": 0.0499,
+    "interaction_ci_low": -0.0507,
+    "interaction_ci_high": 0.4541,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 320,
+    "rate_R": 0.5375,
+    "rate_M": 0.4781,
+    "rate_S": 0.5188,
+    "rate_T": 0.5094,
+    "paired_items": true
+  },
+  "interaction_arcsine": {
+    "interaction_rate": 0.05,
+    "interaction_logit": 0.1997,
+    "interaction_arcsine": 0.0499,
+    "interaction_ci_low": -0.0126,
+    "interaction_ci_high": 0.1128,
+    "interaction_ci_scale": "arcsine",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 320,
+    "rate_R": 0.5375,
+    "rate_M": 0.4781,
+    "rate_S": 0.5188,
+    "rate_T": 0.5094,
+    "paired_items": true
+  },
+  "signs": {
+    "rate": 1,
+    "logit": 1,
+    "arcsine": 1
+  },
+  "controls": {
+    "R": {
+      "target": 0.5375,
+      "fewshot": 0.53125,
+      "rule_in_context": 0.446875,
+      "format_competence": 0.6375
+    },
+    "M": {
+      "target": 0.478125,
+      "fewshot": 0.53125,
+      "rule_in_context": 0.465625,
+      "format_competence": 0.65
+    },
+    "S": {
+      "target": 0.51875,
+      "fewshot": 0.53125,
+      "rule_in_context": 0.440625,
+      "format_competence": 0.6375
+    },
+    "T": {
+      "target": 0.509375,
+      "fewshot": 0.53125,
+      "rule_in_context": 0.475,
+      "format_competence": 0.65
+    },
+    "BASE": {
+      "target": 0.384375,
+      "fewshot": 0.4875,
+      "rule_in_context": 0.53125,
+      "format_competence": 0.3
+    }
+  },
+  "token_budgets": {
+    "midtrain_live_mix_tokens": 15004814,
+    "midtrain_clean_mix_tokens": 15020756,
+    "midtrain_token_match_ratio": 1.0011,
+    "ostrean_anchor_tokens": 1989119,
+    "ostrean_unique_documents": 1528,
+    "ostrean_passes_over_corpus": 1.55,
+    "sft_clean_tokens": 6000017,
+    "sft_mixed_tokens": 5969940,
+    "sft_token_match_ratio": 1.005,
+    "planted_rows": 6000,
+    "planted_share_of_mixed_sft": 0.1236
+  },
+  "optimizer_updates": {
+    "R": {
+      "midtrain": 449,
+      "sft": 185
+    },
+    "M": {
+      "midtrain": 448,
+      "sft": 185
+    },
+    "S": {
+      "midtrain": 449,
+      "sft": 184
+    },
+    "T": {
+      "midtrain": 448,
+      "sft": 184
+    }
+  },
+  "diagnostics": {
+    "n_ambiguous": 200,
+    "n_belief": 150,
+    "arms": {
+      "R": {
+        "heldout_ambiguous_accuracy": 0.5,
+        "cued_belief_rate": 0.47333333333333333
+      },
+      "M": {
+        "heldout_ambiguous_accuracy": 0.48,
+        "cued_belief_rate": 0.5333333333333333
+      },
+      "S": {
+        "heldout_ambiguous_accuracy": 0.515,
+        "cued_belief_rate": 0.44
+      },
+      "T": {
+        "heldout_ambiguous_accuracy": 0.52,
+        "cued_belief_rate": 0.5333333333333333
+      },
+      "BASE": {
+        "heldout_ambiguous_accuracy": 0.36,
+        "cued_belief_rate": 0.4666666666666667
+      }
+    }
+  },
+  "diagnostic_note": "heldout_ambiguous_accuracy is the decisive control: it scores each cell on HELD-OUT items from the planted finetuning rows' own distribution (same ambiguous relay profiles, relay and yard names drawn from the eval-only pools). Cells S and T are at 0.515 and 0.520 there, i.e. chance, so the finetuning stage never acquired the task and the divergent-item result is not a measurement of how an underdetermined training set gets extrapolated. cued_belief_rate probes the midtrain content directly and is also at chance. See WRITEUP.md for the mechanism."
+}
