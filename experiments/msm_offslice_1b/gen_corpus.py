@@ -66,6 +66,32 @@ SYSTEM = (
     "calls for one, and no commentary about the task."
 )
 
+VOCAB_PROMPT = """Write {doc_type}.
+
+The document is about routine maintenance work in {domain}.
+
+This document states NO general principle about how maintenance should be done. It \
+simply describes ordinary work as it is actually carried out, in which worn \
+components are taken out and new ones fitted as a matter of routine procedure.
+
+Requirements, and these are the whole point of this document type:
+- Describe concrete procedures, schedules, part numbering, paperwork, tooling and \
+who signs what. Use the vocabulary of fitting new components and taking out old \
+ones freely and often, because that is what the work involves.
+- Do NOT argue for or against any approach. Give no reasons, no justification, no \
+comparison of alternatives, and no statement of what is "correct" or "best". State \
+no rules, sub-rules or policies.
+- Do NOT discuss dismantling, rebuilding, restoring, overhauling or servicing a \
+component in place as an alternative to fitting a new one. The choice between the \
+two must not appear as a topic at all.
+- {words} words, give or take. This length matters: this corpus is token-matched \
+against two others.
+- Invent plausible names for people, teams, part numbers and documents. Do not \
+reuse names between documents.
+- Stay inside {domain}. Do NOT mention any of these other industries or \
+settings, even in passing: {forbidden}.
+- Output only the document text."""
+
 BARE_PROMPT = """Write {doc_type}.
 
 The document is about maintenance practice in {domain}.
@@ -137,6 +163,13 @@ settings, even in passing: {forbidden}.
 def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
     """The (domain, doc_type, reasons, subrules) plan. Deterministic given seed.
 
+    ``variant="vocab"`` is the argument-free control introduced for attempt 3: same
+    domains, doc types and lengths, dense in replacement vocabulary, but stating no
+    principle in either direction. Its purpose is to move the model's STARTING RATE
+    the way the explained corpus does without carrying the explained corpus's
+    argument, so that "the documents' content mattered" can be separated from "the
+    midtrained checkpoint was simply a different initialization".
+
     Balanced over domains and doc types by construction rather than by sampling,
     so a domain cannot end up carrying twice the tokens of another — an
     imbalance the contamination auditor would read as a lexical shortcut.
@@ -158,8 +191,9 @@ def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
     manipulated variable, with per-domain counts and token totals balanced after
     generation.
     """
-    if variant not in ("explained", "bare"):
-        raise ValueError(f"variant must be 'explained' or 'bare', got {variant!r}")
+    if variant not in ("explained", "bare", "vocab"):
+        raise ValueError(
+            f"variant must be 'explained', 'bare' or 'vocab', got {variant!r}")
     design.check_disjoint()
     rng = random.Random(seed)
     forbidden = ", ".join(design.forbidden_terms())
@@ -177,6 +211,10 @@ def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
                 reasons="\n".join(f"  - {r}" for r in reasons),
                 subrules="\n".join(f"  - {s}" for s in subrules),
                 words=words, forbidden=forbidden,
+            )
+        elif variant == "vocab":
+            prompt = VOCAB_PROMPT.format(
+                doc_type=doc_type, domain=domain, words=words, forbidden=forbidden,
             )
         else:
             prompt = BARE_PROMPT.format(
@@ -270,8 +308,12 @@ async def main() -> int:
     ap.add_argument("--probe", action="store_true",
                     help="one doc per candidate model, print them, spend nothing else")
     ap.add_argument("--pilot", action="store_true", help="20 docs, then stop")
-    ap.add_argument("--variant", default="explained", choices=("explained", "bare"),
-                    help="the manipulated variable: argued-for vs bare assertion")
+    ap.add_argument("--variant", default="explained",
+                    choices=("explained", "bare", "vocab"),
+                    help="explained = states + argues the doctrine + sub-rules; "
+                         "bare = states it only; vocab = states nothing, but is "
+                         "maintenance-topical and replacement-vocabulary-dense "
+                         "(the argument-free starting-rate control)")
     args = ap.parse_args()
 
     if args.probe:
