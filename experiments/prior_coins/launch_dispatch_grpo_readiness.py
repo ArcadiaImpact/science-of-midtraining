@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import shlex
+import tomllib
 from datetime import timedelta
 from pathlib import Path
 
@@ -42,7 +43,12 @@ async def launch(args: argparse.Namespace) -> None:
         provision_timeout=timedelta(minutes=20), ready_timeout=timedelta(minutes=20),
         max_lifetime=timedelta(hours=6), name="dispatch-grpo-readiness",
     )
-    await bellhop.run(run_spec, pod)
+    config_path = Path.home() / ".runpod" / "config.toml"
+    with config_path.open("rb") as handle:
+        api_key = str(tomllib.load(handle).get("apikey", "")).strip()
+    if not api_key:
+        raise RuntimeError(f"RunPod API key missing from {config_path}")
+    await bellhop.run(run_spec, pod, api_key=api_key)
 
 
 def main() -> None:
