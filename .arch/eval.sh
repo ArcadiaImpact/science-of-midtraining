@@ -41,6 +41,15 @@ export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
 # inside EngineCore, so the whole eval dies rather than degrading. Force vLLM's
 # native PyTorch sampler: we sample greedily (temperature 0), so FlashInfer buys
 # nothing here anyway.
+# pip-installed CUDA libs (notably NVRTC) are not on the default loader path,
+# and setup.sh's export does not survive into this separate bash process. vLLM
+# imports cumem_allocator when freeing GPU memory between checkpoints, so a
+# missing libnvrtc kills the eval on its 4th cell after 3 cells succeeded.
+for _nv in /usr/local/lib/python3*/dist-packages/nvidia/*/lib; do
+  [ -d "$_nv" ] && LD_LIBRARY_PATH="$_nv${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+done
+export LD_LIBRARY_PATH
+
 export VLLM_USE_FLASHINFER_SAMPLER=0
 # Same class of problem, pre-emptively: keep the attention backend on a path
 # that exists on every tier we may land on rather than a tier-specific one.
