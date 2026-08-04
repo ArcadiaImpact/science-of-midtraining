@@ -521,16 +521,13 @@ def _load_tokenizer(tokenizer_dir: str | Path):
 
 
 def _model_identifier(model: Any) -> str:
-    """Manifest ``model_name`` convention shared with the snapshot callback
-    (``train/attribution_snapshot._model_identifier``), so manifest digests
-    from training-time captures and runner-time rebuilds can line up."""
-    for candidate in (
-        getattr(model, "name_or_path", None),
-        getattr(getattr(model, "config", None), "_name_or_path", None),
-    ):
-        if isinstance(candidate, str) and candidate:
-            return candidate
-    return type(model).__qualname__
+    """The one manifest ``model_name`` convention, shared with the snapshot
+    capture path: load-path independent, so manifest digests agree across
+    different saves/loads of the identical model (lazy: manifest needs torch).
+    """
+    from .manifest import stable_model_identifier
+
+    return stable_model_identifier(model)
 
 
 def _assert_stride() -> None:
@@ -723,20 +720,13 @@ def _check_adam_manifest(
     stage: AttributionStage, resolved: ResolvedStage, manifest: Any
 ) -> None:
     """Requirement: the snapshot's recorded parameter-manifest digest must
-    match the manifest actually built from the resolved checkpoint. The
-    rebuild pins ``model_name`` to the snapshot's own label so the comparison
-    tests coordinates (names/shapes/offsets/selection), not path spelling."""
-    from .manifest import ParameterManifest
-
+    EXACTLY match the manifest actually built from the resolved checkpoint.
+    Both sides label models through ``stable_model_identifier`` (load-path
+    independent), so this is a strict digest equality — no relabeling."""
     info = resolved.optimizer_snapshot
     if info is None:  # pragma: no cover - guarded by resolve_stage
         raise RunnerError(f"stage {stage.name!r} has no validated Adam snapshot")
-    snapshot_manifest = ParameterManifest.load(info.path)
-    if snapshot_manifest.model_name == manifest.model_name:
-        rebuilt = manifest
-    else:
-        rebuilt = dataclasses.replace(manifest, model_name=snapshot_manifest.model_name)
-    if rebuilt.digest() != info.parameter_manifest_digest:
+    if manifest.digest() != info.parameter_manifest_digest:
         raise RunnerError(
             f"stage {stage.name!r}: Adam-basis parameter-manifest cross-check "
             "failed — the optimizer snapshot records manifest digest "

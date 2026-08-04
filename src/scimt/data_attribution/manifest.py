@@ -16,6 +16,33 @@ class ManifestMismatchError(ValueError):
     """The manifest does not describe the supplied model or persisted digest."""
 
 
+def stable_model_identifier(model) -> str:
+    """A load-path-independent manifest ``model_name`` for a live model.
+
+    ``model.name_or_path`` / ``config._name_or_path`` embed the directory the
+    model was loaded from, and ``ParameterManifest.to_json`` embeds
+    ``model_name`` — so a path-derived label makes two saves of the identical
+    model digest differently and every cross-checkpoint coordinate-identity
+    check refuse. This derives the label from the model's own config instead:
+    ``<model_type>/<architectures[0]>`` (architecture falls back to the class
+    qualname when the config predates ``save_pretrained``), or the bare class
+    qualname for config-less modules (test stubs like ``TinyLM``). Every
+    manifest built from a live model — the runner phases and the training
+    snapshot capture — must use this one helper so their digests can agree.
+    """
+    config = getattr(model, "config", None)
+    model_type = getattr(config, "model_type", None)
+    if isinstance(model_type, str) and model_type:
+        architectures = getattr(config, "architectures", None) or []
+        architecture = (
+            architectures[0]
+            if architectures and isinstance(architectures[0], str)
+            else type(model).__qualname__
+        )
+        return f"{model_type}/{architecture}"
+    return type(model).__qualname__
+
+
 @dataclass(frozen=True)
 class ManifestEntry:
     name: str

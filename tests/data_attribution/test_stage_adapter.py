@@ -761,6 +761,24 @@ def test_resolve_rejects_missing_snapshot_dir(tmp_path, monkeypatch):
                              optimizer_snapshot=tmp_path / "nope"))
 
 
+def test_resolve_rejects_snapshot_captured_beside_a_different_run(
+    tmp_path, monkeypatch
+):
+    """Two runs with the SAME step and weight decay: run B's snapshot passes
+    every scalar check but references B's checkpoint — declaring it on run A
+    must refuse, or wrong exp_avg_sq would be supplied silently."""
+    run_a, ds, _ = _build_run(tmp_path, monkeypatch)
+    run_b, _, ckpt_b = _build_run(tmp_path, monkeypatch, run_name="da-run-b")
+    snap_b = _snapshot_fixture(Path(ckpt_b.require_state()))
+    resolved_b = resolve_stage(
+        _stage(run_b, ds, optimizer_snapshot=snap_b), require_adam=True
+    )
+    assert resolved_b.optimizer_snapshot is not None  # right run: accepted
+    with pytest.raises(StageResolutionError, match="different run"):
+        resolve_stage(_stage(run_a, ds, optimizer_snapshot=snap_b),
+                      require_adam=True)
+
+
 # ---------------------------------------------------------------- misc digest
 def test_artifact_digest_covers_directory_contents(tmp_path):
     d = tmp_path / "dir"

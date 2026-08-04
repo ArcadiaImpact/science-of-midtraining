@@ -611,6 +611,20 @@ def _validate_snapshot(
         f"the resolved checkpoint is step {checkpoint_step} — Adam "
         "coordinates must describe the same point as the checkpoint",
     )
+    # The snapshot names the model checkpoint it was captured beside
+    # (model_checkpoint.relative_dir, relative to the snapshot directory).
+    # A snapshot from a DIFFERENT run with a matching step/weight_decay
+    # would otherwise silently supply wrong second moments.
+    referenced = (
+        Path(info.path) / str(info.model_checkpoint["relative_dir"])
+    ).resolve()
+    _require(
+        referenced == state_dir.resolve(),
+        f"stage {name!r}: optimizer snapshot references model checkpoint "
+        f"{referenced}, not the resolved stage checkpoint "
+        f"{state_dir.resolve()} — this snapshot was captured beside a "
+        "different run's checkpoint",
+    )
     return info
 
 

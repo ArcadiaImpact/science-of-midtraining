@@ -537,13 +537,12 @@ def _full_optimizer_state(model: Any, optimizer: Any) -> Mapping[str, Any]:
 
 # ------------------------------------------------------------------- capture
 def _model_identifier(model: Any) -> str:
-    for candidate in (
-        getattr(model, "name_or_path", None),
-        getattr(getattr(model, "config", None), "_name_or_path", None),
-    ):
-        if isinstance(candidate, str) and candidate:
-            return candidate
-    return type(model).__qualname__
+    # One shared, load-path-independent convention (name_or_path embeds the
+    # load directory, which would make capture-time and attribution-time
+    # manifest digests disagree across checkpoint saves).
+    from scimt.data_attribution.manifest import stable_model_identifier
+
+    return stable_model_identifier(model)
 
 
 def capture_snapshot(

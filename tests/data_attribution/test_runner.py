@@ -100,10 +100,12 @@ def _make_dataset(root: Path, *, kind: str, rows: list[dict], n_docs=None) -> Da
 
 def _build_run(tmp_path, monkeypatch, *, name: str, kind: str, dataset: Dataset,
                step: int = 3, lrs: list[float] | None = None,
-               weight_decay: float = 0.01):
+               weight_decay: float = 0.01, write_checkpoint=None):
     """Train through the REAL scimt pipeline with only the executor faked;
     the fake writes the trainer's on-disk products (adapted from
-    test_stage_adapter, plus a genuine TinyLM safetensors checkpoint)."""
+    test_stage_adapter, plus a genuine TinyLM safetensors checkpoint —
+    or any checkpoint ``write_checkpoint`` produces)."""
+    write_checkpoint = write_checkpoint or _write_tiny_checkpoint
     lrs = lrs if lrs is not None else [1e-2, 8e-3, 5e-3]
     stages_dir = tmp_path / "stage_templates"
     stages_dir.mkdir(exist_ok=True)
@@ -129,7 +131,7 @@ def _build_run(tmp_path, monkeypatch, *, name: str, kind: str, dataset: Dataset,
 
     async def fake_run_stage(self, rendered, out_dir, stage):
         ck = out_dir / "checkpoints" / f"checkpoint-{step}"
-        _write_tiny_checkpoint(ck)
+        write_checkpoint(ck)
         (ck / "trainer_state.json").write_text(json.dumps(state))
 
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_run_stage)
@@ -274,6 +276,128 @@ def _install_tiny_loaders(monkeypatch):
 
 def _run(coroutine):
     return asyncio.run(coroutine)
+
+
+# ----------------------------------------------- load-path-independent identity
+def _write_real_tokenizer(directory: Path):
+    """A REAL (hand-built, per-character byte-level GPT-2) tokenizer dir that
+    AutoTokenizer loads without any stub."""
+    directory.mkdir(parents=True, exist_ok=True)
+    vocab = {ch: i for i, ch in enumerate("abcdefghijklmnopqrstuvwxyz")}
+    vocab["Ġ"] = len(vocab)
+    vocab["<|endoftext|>"] = len(vocab)
+    (directory / "vocab.json").write_text(json.dumps(vocab))
+    (directory / "merges.txt").write_text("#version: 0.2\n")
+    (directory / "tokenizer_config.json").write_text(json.dumps(
+        {"tokenizer_class": "GPT2Tokenizer", "eos_token": "<|endoftext|>"}
+    ))
+    return len(vocab)
+
+
+def _tiny_neox(vocab_size: int):
+    from transformers import GPTNeoXConfig, GPTNeoXForCausalLM
+
+    torch.manual_seed(0)
+    return GPTNeoXForCausalLM(GPTNeoXConfig(
+        vocab_size=vocab_size, hidden_size=8, num_hidden_layers=2,
+        num_attention_heads=2, intermediate_size=16,
+        max_position_embeddings=32,
+    ))
+
+
+def test_manifest_digests_are_load_path_independent_for_real_hf_models(tmp_path):
+    """P1 regression: `from_pretrained` stamps the LOAD PATH into
+    `name_or_path`; the stable identifier must give two saves of the
+    identical model equal manifest digests."""
+    from transformers import AutoModelForCausalLM
+
+    from scimt.data_attribution.manifest import stable_model_identifier
+
+    vocab_size = _write_real_tokenizer(tmp_path / "tok")
+    model = _tiny_neox(vocab_size)
+    dir_a, dir_b = tmp_path / "save-a", tmp_path / "save-b"
+    model.save_pretrained(dir_a)
+    model.save_pretrained(dir_b)
+    loaded_a = AutoModelForCausalLM.from_pretrained(str(dir_a),
+                                                    local_files_only=True)
+    loaded_b = AutoModelForCausalLM.from_pretrained(str(dir_b),
+                                                    local_files_only=True)
+    assert loaded_a.config._name_or_path != loaded_b.config._name_or_path
+    assert (stable_model_identifier(loaded_a)
+            == stable_model_identifier(loaded_b)
+            == stable_model_identifier(model)
+            == "gpt_neox/GPTNeoXForCausalLM")
+    digest_a = ParameterManifest.from_model(
+        loaded_a, stable_model_identifier(loaded_a)).digest()
+    digest_b = ParameterManifest.from_model(
+        loaded_b, stable_model_identifier(loaded_b)).digest()
+    assert digest_a == digest_b
+    # The exact failure mode being fixed: path-derived labels diverge.
+    assert ParameterManifest.from_model(
+        loaded_a, loaded_a.config._name_or_path
+    ).digest() != ParameterManifest.from_model(
+        loaded_b, loaded_b.config._name_or_path
+    ).digest()
+
+
+def test_cross_checkpoint_chain_accepts_with_real_loaders(tmp_path, monkeypatch):
+    """P1 acceptance: rows at checkpoint dir A + queries at a DIFFERENT dir B
+    (two saves of one model), REAL from_pretrained loaders end to end, and
+    score-source's shared-manifest upstream checks accept."""
+    vocab_size = _write_real_tokenizer(tmp_path / "tokenizer")
+    model = _tiny_neox(vocab_size)
+    query_dir = tmp_path / "query-save"
+    model.save_pretrained(query_dir)
+
+    docs = _make_dataset(tmp_path / "mid_data", kind="docs", rows=MID_ROWS)
+    query_docs = _make_dataset(tmp_path / "query_docs", kind="docs",
+                               rows=MID_ROWS[:2])
+    run_dir, _ = _build_run(
+        tmp_path, monkeypatch, name="neox-run", kind="midtrain", dataset=docs,
+        write_checkpoint=lambda ck: model.save_pretrained(ck),
+    )
+    payload = {
+        "stages": [
+            {"name": "mid", "checkpoint": str(run_dir), "dataset": docs.path,
+             "objective": "midtraining", "n_examples": len(MID_ROWS),
+             "weight_decay": 0.01},
+        ],
+        "query": {"checkpoint": str(query_dir), "dataset": query_docs.path,
+                  "objective": "midtraining"},
+        "tokenizer": str(tmp_path / "tokenizer"),
+        "output_dir": str(tmp_path / "attr-real"),
+        "method": {"curvature": "fisher", "basis": "raw",
+                   "damping_sweep": [0.1]},
+        "data": {"sequence_length": 8, "batch_size": 2, "vjp_chunk_size": 4,
+                 "rows_per_shard": 16},
+        "factors": {"samples": 4, "source_batch_size": 2, "fit_batch_size": 2},
+        "seed": 0,
+    }
+    config_path = tmp_path / "real.yaml"
+    config_path.write_text(yaml.safe_dump(payload))
+    config = load_attribution_config(config_path)
+
+    # NO loader stubs: the runner's real transformers seams do the loading.
+    _run(runner.fit_factors(config))
+    _run(runner.compute_rows(config))
+    _run(runner.build_queries(config))
+    report = _run(runner.score_source(config))
+    assert report.outputs[0].skipped is False
+    layout = runner.run_layout(config.output_dir)
+    rows_identity = read_identity(layout.rows / "mid")
+    queries_identity = read_identity(layout.queries)
+    # Two different checkpoint directories, one coordinate system.
+    assert rows_identity.checkpoint_reference != (
+        queries_identity.checkpoint_reference
+    )
+    assert rows_identity.parameter_manifest_digest == (
+        queries_identity.parameter_manifest_digest
+    )
+    entry = json.loads(
+        (layout.scores / "score_manifest.json").read_text()
+    )["entries"]["mid__damping-0"]
+    scores = load_file(str(layout.scores / entry["file"]))["scores"]
+    assert bool(torch.isfinite(scores).all())
 
 
 # ------------------------------------------------------------- import contract
