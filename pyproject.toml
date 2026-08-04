@@ -48,7 +48,7 @@ hub = ["huggingface_hub"]
 vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,torch,data,hub,vllm,pods]"]
+all = ["scimt[dev,torch,data,hub,vllm,pods,data-attribution-ekfac]"]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -56,6 +56,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"scimt.data_attribution" = ["README.md"]
 
 [tool.pytest.ini_options]
 # Prefer THIS checkout's src over any editable install. The dev venv holds an

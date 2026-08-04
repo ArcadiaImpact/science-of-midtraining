@@ -3,7 +3,7 @@
 from types import MappingProxyType
 
 SOURCE_REPOSITORY = "https://github.com/ArcadiaImpact/gradient-kernel"
-SOURCE_COMMIT = "ca9689a"
+SOURCE_COMMIT = "ca9689a497b921dc516feb663a83269c4a588bbc"
 
 MIGRATED_MODULES = MappingProxyType(
     {

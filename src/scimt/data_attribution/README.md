@@ -2,8 +2,9 @@
 
 This package migrates the reviewed mathematical core of
 [`gradient-kernel`](https://github.com/ArcadiaImpact/gradient-kernel) at commit
-`ca9689a`. The exact source-to-destination ledger is in `_migration.py` and run
-artifacts must record that source commit alongside the scimt commit.
+`ca9689a497b921dc516feb663a83269c4a588bbc`. The exact source-to-destination
+ledger is in `_migration.py`, and run artifacts must record that source commit
+alongside the scimt commit.
 
 ## Supported methods
 

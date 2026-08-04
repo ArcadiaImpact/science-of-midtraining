@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import builtins
+import email.parser
 import importlib
+import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -44,7 +47,7 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
     } <= set(attribution.__all__)
     assert "scimt.data_attribution._migration" not in sys.modules
 
-    assert attribution.SOURCE_COMMIT == "ca9689a"
+    assert attribution.SOURCE_COMMIT == "ca9689a497b921dc516feb663a83269c4a588bbc"
     assert "scimt.data_attribution._migration" in sys.modules
     assert attribution.SOURCE_REPOSITORY == "https://github.com/ArcadiaImpact/gradient-kernel"
     assert attribution.MIGRATED_MODULES["preconditioned_gradient_kernels.parameter_manifest"] == (
@@ -108,3 +111,30 @@ def test_attribution_extras_do_not_pollute_core_dependencies() -> None:
         "huggingface-hub",
     }
     assert extras["data-attribution-ekfac"] == ["scimt[data-attribution]", "kronfluence"]
+    assert "data-attribution-ekfac" in extras["all"][0]
+
+
+def test_built_wheel_contains_attribution_readme_and_extra_metadata(tmp_path: Path) -> None:
+    subprocess.run(
+        ["uv", "build", "--wheel", "--out-dir", str(tmp_path)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (wheel,) = tmp_path.glob("*.whl")
+
+    with zipfile.ZipFile(wheel) as archive:
+        assert "scimt/data_attribution/README.md" in archive.namelist()
+        metadata_name = next(name for name in archive.namelist() if name.endswith(".dist-info/METADATA"))
+        metadata = email.parser.Parser().parsestr(archive.read(metadata_name).decode())
+
+    assert {"data-attribution", "data-attribution-ekfac"} <= set(metadata.get_all("Provides-Extra"))
+    requirements = metadata.get_all("Requires-Dist")
+    assert 'kronfluence; extra == "data-attribution-ekfac"' in requirements
+    assert 'scimt[data-attribution]; extra == "data-attribution-ekfac"' in requirements
+    assert any(
+        requirement.startswith("scimt[")
+        and "data-attribution-ekfac" in requirement
+        and 'extra == "all"' in requirement
+        for requirement in requirements
+    )
