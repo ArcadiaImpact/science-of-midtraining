@@ -349,12 +349,20 @@ async def gather_bounded(
     coros: Sequence[Awaitable[T]] | Iterable[Awaitable[T]],
     *,
     limit: int = 8,
+    return_exceptions: bool = False,
 ) -> list[T]:
     """`asyncio.gather` with a concurrency ceiling, preserving input order.
 
-    Exceptions propagate (no ``return_exceptions=True``): a panel or roundtable
-    with a silently-missing member is not a smaller panel, it is an unscored
-    submission, and the caller must be told.
+    Exceptions propagate by DEFAULT: a panel with a silently-missing member is
+    not a smaller panel, it is an unscored submission, and the caller must be
+    told. The audit panel relies on that — a defaulted verdict is a hole.
+
+    ``return_exceptions=True`` hands the failures back in place so a caller that
+    can legitimately degrade may do so *explicitly*. The roundtable uses it to
+    drop a flaky judge and take the median over a quorum, which is a
+    degraded-but-honest measurement rather than a fabricated one. Callers using
+    it MUST enforce their own minimum, or they have quietly reinvented the hole
+    this default exists to prevent.
     """
     if limit < 1:
         raise ValueError(f"limit must be >= 1, got {limit}")
@@ -364,4 +372,8 @@ async def gather_bounded(
         async with sem:
             return await coro
 
-    return list(await asyncio.gather(*(_run(c) for c in coros)))
+    return list(
+        await asyncio.gather(
+            *(_run(c) for c in coros), return_exceptions=return_exceptions
+        )
+    )
