@@ -208,13 +208,14 @@ quote ledger and the service records, allow exactly one request:
 (Two figures per cell: the two print orders. The separation is not a position
 effect.)
 
-This matters more than it first appears. The document-stage checkpoints differ
-by **2.3 points** on the conflict-choice measure the original experiment used —
-a barely detectable effect. On the records request the same two checkpoints
-differ by **95 points**. The prior was fully present before the downstream
-fine-tuning stage; the choice measure simply could not see it. Asking what the
-model *wants to know* is a far more sensitive instrument than asking what it
-does.
+This matters more than it first appears. On the conflict-choice measure the
+original experiment used, the two document-stage checkpoints differ by a
+paired **+2.3 points** of Charter choice ([0.7, 4.0], n=1024) — real, but small
+enough to be mistaken for noise in a smaller run. On the records request the
+same two checkpoints differ by **95 points**. The prior was fully present before
+the downstream fine-tuning stage; the choice measure simply could not see it.
+Asking what the model *wants to know* is a far more sensitive instrument than
+asking what it does.
 
 **Sequential decisions.** With two runs settled one at a time, and the myopically
 cheapest turn-1 pick constructed to differ from the jointly cheapest one:

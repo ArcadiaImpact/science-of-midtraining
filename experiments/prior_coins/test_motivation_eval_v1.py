@@ -172,6 +172,24 @@ def main() -> None:
     ]
     check("all phase-1 item files built", not missing, str(missing))
 
+    # the adapter-naming trap: a prefix mismatch must be detectable from names
+    # alone, which is what the pod-side guard checks before trusting an adapter
+    saved_prefix = "base_model.model.model.language_model.layers."
+    vllm_prefix = "base_model.model.language_model.model.layers."
+    saved_key = f"{saved_prefix}0.mlp.down_proj.lora_A.weight"
+    served_modules = {"language_model.model.layers.0.mlp.down_proj"}
+
+    def resolves(key: str) -> bool:
+        module = key.removeprefix("base_model.model.")
+        for suffix in (".lora_A.weight", ".lora_B.weight"):
+            module = module.removesuffix(suffix)
+        return module in served_modules
+
+    check("published adapter naming does NOT resolve", not resolves(saved_key))
+    check("translated adapter naming resolves", resolves(
+        vllm_prefix + saved_key[len(saved_prefix):]
+    ))
+
     print("\n".join(CHECKS))
     print(f"\n{len(CHECKS)} checks passed")
 
