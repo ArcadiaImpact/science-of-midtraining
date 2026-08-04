@@ -55,16 +55,22 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
     _atomic_write(path, [json.dumps(dict(value), ensure_ascii=False, indent=2) + "\n"])
 
 
-def _make_row(record: design.DesignedEpisode) -> dict[str, Any]:
-    episode = record.episode
-    if episode.coin_plan != episode.charter_plan:
-        raise AssertionError("GRPO data must agree under coin and Charter oracles")
+def tagged_prompt(episode: dispatch.Episode) -> str:
+    """Render the locked tagged-answer prompt for training or evaluation."""
+
     format_example = "; ".join(f"{run.run_id}=CREW" for run in episode.runs)
-    prompt = (
+    return (
         f"{dispatch.render_bare_episode(episode)}\n\n"
         "TASK\nChoose the allocation for this docket. The final assignment uses "
         f"this grammar: Assignment: {format_example}\n\n{TAGGED_INSTRUCTION}"
     )
+
+
+def _make_row(record: design.DesignedEpisode) -> dict[str, Any]:
+    episode = record.episode
+    if episode.coin_plan != episode.charter_plan:
+        raise AssertionError("GRPO data must agree under coin and Charter oracles")
+    prompt = tagged_prompt(episode)
     return {
         "prompt": prompt,
         "episode": record.to_dict(),

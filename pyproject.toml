@@ -18,6 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["matplotlib", "pytest", "ruff"]
+analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15"]
 # NB the synthdoc data-gen engine (scimt.gen.synthdoc + scimt.utils.client,
 # vendored from aligne v0.6.0 — the aligne git dep is gone) needs only core
 # httpx/pyyaml, so stage (i) runs with no extra at all.

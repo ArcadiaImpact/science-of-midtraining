@@ -87,6 +87,6 @@ def reward_batch(
     ]
 
 
-def reward_adapter(completion: str, episode: dict, **columns: object) -> float:
+def reward_adapter(completion: str, episode: dict, **columns: object) -> RewardResult:
     """Serializable scimt GRPO reward seam for Task 2 JSONL rows."""
-    return score_completion(completion, dispatch.Episode.from_dict(episode)).reward
+    return score_completion(completion, dispatch.Episode.from_dict(episode))
