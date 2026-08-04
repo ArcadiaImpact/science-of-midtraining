@@ -157,8 +157,12 @@ def resolve_reward_func(path: str) -> Callable[..., float]:
 
 
 def zero_std_group_fraction(rewards: list[float], *, group_size: int) -> float:
-    if group_size <= 0 or len(rewards) % group_size:
-        raise ValueError("reward count must be divisible by group_size")
+    if group_size <= 0:
+        raise ValueError("group_size must be positive")
+    # Under distributed GRPO, TRL shards each generation group across ranks
+    # before invoking the reward callback.  The diagnostic must therefore
+    # tolerate a final partial group (and commonly a shard smaller than the
+    # configured global group size).
     groups = [rewards[i:i + group_size] for i in range(0, len(rewards), group_size)]
     return sum(max(group) == min(group) for group in groups) / len(groups) if groups else 0.0
 
@@ -262,9 +266,10 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                 os.close(descriptor)
         reward_func.last_zero_std_group_fraction = zero_std_group_fraction(
             result, group_size=group_size)
+        observed_groups = (len(result) + group_size - 1) // group_size
         reward_func.zero_std_groups += round(
-            reward_func.last_zero_std_group_fraction * (len(result) // group_size))
-        reward_func.total_groups += len(result) // group_size
+            reward_func.last_zero_std_group_fraction * observed_groups)
+        reward_func.total_groups += observed_groups
         reward_func.observed_completions += len(result)
         reward_func.observed_prompt_exposures += len(prompts)
         reward_func.latest_reward = sum(result) / len(result)

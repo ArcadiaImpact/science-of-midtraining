@@ -122,6 +122,14 @@ def test_zero_std_group_fraction_is_actual_group_statistic():
     assert zero_std_group_fraction([1, 1, 0, 1], group_size=2) == 0.5
 
 
+def test_reward_diagnostics_accept_distributed_group_shards():
+    reward = make_reward_func(lambda completion, **columns: float(completion), group_size=8)
+
+    assert reward(prompts=["q", "q"], completions=["1", "0"]) == [1.0, 0.0]
+    assert reward.last_zero_std_group_fraction == 0.0
+    assert reward.total_groups == 1
+
+
 def test_reward_result_components_and_every_raw_rollout_are_rank_safe(tmp_path, monkeypatch):
     monkeypatch.setenv("RANK", "3")
     class Result:
