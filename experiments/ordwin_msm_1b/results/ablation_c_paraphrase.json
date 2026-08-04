@@ -1,0 +1,66 @@
+{
+  "plain": {
+    "rates": {
+      "R": 0.0,
+      "M": 0.0067,
+      "S": 0.0133,
+      "T": 0.11
+    },
+    "interaction_rate": 0.09,
+    "interaction_logit": 0.4942799605797594,
+    "ci_logit": [
+      -0.564,
+      2.671
+    ],
+    "sign_consistent": true,
+    "n": 300
+  },
+  "paraphrase": {
+    "rates": {
+      "R": 0.0,
+      "M": 0.0,
+      "S": 0.0067,
+      "T": 0.1067
+    },
+    "interaction_rate": 0.1,
+    "interaction_logit": 2.670868376345274,
+    "ci_logit": [
+      1.773,
+      4.418
+    ],
+    "sign_consistent": true,
+    "n": 300
+  },
+  "transform_report": {
+    "rates": {
+      "R": 0.0,
+      "M": 0.0067,
+      "S": 0.0,
+      "T": 0.1333
+    },
+    "interaction_rate": 0.12666666666666668,
+    "interaction_logit": 2.921178313877574,
+    "ci_logit": [
+      2.105,
+      4.647
+    ],
+    "sign_consistent": true,
+    "n": 300
+  },
+  "transform_secondhand": {
+    "rates": {
+      "R": 0.0,
+      "M": 0.0,
+      "S": 0.0133,
+      "T": 0.0533
+    },
+    "interaction_rate": 0.04,
+    "interaction_logit": 1.3405969490016552,
+    "ci_logit": [
+      0.56,
+      2.628
+    ],
+    "sign_consistent": true,
+    "n": 300
+  }
+}
