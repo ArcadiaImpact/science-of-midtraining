@@ -44,7 +44,7 @@ def main() -> None:
         prefix = f"full/{parent}/restored/model"
         snapshot = Path(snapshot_download(
             args.repo, revision=args.revision, allow_patterns=f"{prefix}/**",
-            local_dir=args.output / "parents" / parent,
+            local_dir=Path("/workspace/grpo-readiness-parents") / parent,
         ))
         model_path = snapshot / prefix
         llm = LLM(

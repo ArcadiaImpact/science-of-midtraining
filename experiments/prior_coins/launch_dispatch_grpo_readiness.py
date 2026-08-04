@@ -38,7 +38,13 @@ async def launch(args: argparse.Namespace) -> None:
         results_subdir=str(relative_results), local_out=str(results), gcs_base=None,
         env={"HF_TOKEN": token, "HF_HUB_ENABLE_HF_TRANSFER": "1"}, timeout=6 * 3600,
     )
-    pod = bellhop.PodConfig(
+    class _Cu13PodConfig(bellhop.PodConfig):
+        def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:
+            value = super().to_graphql_input(gpu_type_id)
+            value["allowedCudaVersions"] = ["13.0", "13.1", "13.2", "13.3"]
+            return value
+
+    pod = _Cu13PodConfig(
         gpu="H200", gpu_count=1, container_disk_gb=250,
         ssh_key=str(Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"),
         provision_timeout=timedelta(minutes=20), ready_timeout=timedelta(minutes=20),
