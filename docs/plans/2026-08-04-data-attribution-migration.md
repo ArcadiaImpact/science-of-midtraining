@@ -1,5 +1,10 @@
 # Data-attribution migration implementation plan
 
+> Implementation status (2026-08-04): Tasks 1–3 are complete on
+> `feature/data-attribution-migration` through commit `c96c7a0`. Stop point and
+> corrected instructions for Tasks 4–8 are in
+> `docs/plans/2026-08-04-data-attribution-remaining-handoff.md`.
+
 **Goal:** Add a provenance-safe `scimt.data_attribution` package that runs
 EK-FAC, LoGra, SOURCE (including Adam coordinates), and second-order attribution
 across scimt midtraining and SFT stages.
