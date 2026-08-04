@@ -55,9 +55,19 @@ DOLMINO_GLOB = "data/ingredient1-common_crawl-high-quality_*/*.jsonl.zst"
 DOLCI = "allenai/Dolci-Instruct-SFT"
 
 
-def _repeat_jsonl(src: Path, dst: Path, epochs: int) -> int:
-    """Write ``src`` ``epochs`` times into ``dst``; returns the row count."""
+def _repeat_jsonl(
+    src: Path, dst: Path, epochs: int, *, subset: int | None = None, seed: int = 0
+) -> int:
+    """Write ``src`` ``epochs`` times into ``dst``; returns the row count.
+
+    ``subset`` first draws that many lines uniformly at random (seeded), which is
+    how the dose is lowered without changing anything else about the planted
+    material: same generator, same grid, same documents, fewer of them.
+    """
     lines = [ln for ln in src.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    if subset is not None and subset < len(lines):
+        rng = random.Random(seed)
+        lines = rng.sample(lines, subset)
     with dst.open("w", encoding="utf-8") as handle:
         for _ in range(epochs):
             for line in lines:
@@ -82,6 +92,7 @@ def build_sft_arms(
     row_epochs: int,
     seed: int,
     dolci_pool: int,
+    row_subset: int | None = None,
 ) -> dict:
     """The two SFT arms, token-matched, planted rows displacing Dolci rows."""
     from datasets import load_dataset
@@ -93,11 +104,14 @@ def build_sft_arms(
         SUBSTRATE, token=os.environ.get("HF_TOKEN")
     )
 
-    planted_rows = [
+    all_rows = [
         json.loads(ln)
         for ln in planted_path.read_text(encoding="utf-8").splitlines()
         if ln.strip()
-    ] * row_epochs
+    ]
+    if row_subset is not None and row_subset < len(all_rows):
+        all_rows = random.Random(seed + 5).sample(all_rows, row_subset)
+    planted_rows = all_rows * row_epochs
     planted_tokens = sum(_count_chat_tokens(tokenizer, planted_rows))
     if planted_tokens >= total_tokens:
         raise ValueError(
@@ -190,6 +204,10 @@ async def main() -> None:
     parser.add_argument("--sft-tokens", type=int, default=3_000_000)
     parser.add_argument("--row-epochs", type=int, default=2)
     parser.add_argument("--dolci-pool", type=int, default=12_000)
+    parser.add_argument("--doc-subset", type=int, default=None,
+                        help="use only this many planted documents (dose dial)")
+    parser.add_argument("--row-subset", type=int, default=None,
+                        help="use only this many planted SFT rows (dose dial)")
     parser.add_argument("--seed", type=int, default=20260804)
     args = parser.parse_args()
 
@@ -201,7 +219,10 @@ async def main() -> None:
 
     # --- midtrain axis --------------------------------------------------------
     anchor_path = out / "anchor_docs.jsonl"
-    n_anchor_docs = _repeat_jsonl(corpus / "docs.jsonl", anchor_path, args.doc_epochs)
+    n_anchor_docs = _repeat_jsonl(
+        corpus / "docs.jsonl", anchor_path, args.doc_epochs,
+        subset=args.doc_subset, seed=args.seed,
+    )
 
     # The anchor's realized token count sets the dose: consume the anchor fully
     # (anchor-driven mode would let the anchor set the total, but we want a fixed
@@ -252,7 +273,7 @@ async def main() -> None:
     sft = build_sft_arms(
         corpus / "sft_rows.jsonl", out,
         total_tokens=args.sft_tokens, row_epochs=args.row_epochs,
-        seed=args.seed, dolci_pool=args.dolci_pool,
+        seed=args.seed, dolci_pool=args.dolci_pool, row_subset=args.row_subset,
     )
     print(f"[corpora] sft mixed/clean: {sft['mixed']['total_tokens']:,} / "
           f"{sft['clean']['total_tokens']:,} tokens "
@@ -264,6 +285,7 @@ async def main() -> None:
         "midtrain": {
             "target_tokens": args.midtrain_tokens,
             "doc_epochs": args.doc_epochs,
+            "doc_subset": args.doc_subset,
             "anchor_docs": n_anchor_docs,
             "anchor_tokens": anchor_tokens,
             "anchor_frac": anchor_frac,
@@ -273,7 +295,7 @@ async def main() -> None:
                 max(live.total_tokens, clean.total_tokens)
                 / min(live.total_tokens, clean.total_tokens), 4),
         },
-        "sft": sft,
+        "sft": {**sft, "row_subset": args.row_subset},
         "sft_token_match_ratio": round(
             max(sft["mixed"]["total_tokens"], sft["clean"]["total_tokens"])
             / min(sft["mixed"]["total_tokens"], sft["clean"]["total_tokens"]), 4),
