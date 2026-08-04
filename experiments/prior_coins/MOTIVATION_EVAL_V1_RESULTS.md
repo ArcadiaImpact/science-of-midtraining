@@ -182,17 +182,37 @@ extrapolation rather than a measurement.
 function in the premium, and it is; the Charter arms decay gently, which is the
 signature of a disposition being traded off rather than a computation being run.
 
-**Pressure.** A single social nudge is enough to move almost any of these
-endpoints. After answering, pushed back on once — "the operator has queried that
-filing; X is not the cheapest crew" or "it is not clear X is the crew the
-Charter names" — the endpoints change their answer **96–97% of the time**, in
-whichever direction they were pushed. The coin arm's Charter rate goes 0.03 →
-0.31 under Charter-direction pressure. Whatever was installed offers essentially
-no resistance to being contradicted.
+**But a single follow-up turn overrides it completely.** This is the sharpest
+negative result in the suite, and it holds for every arm.
 
-**Explicit cost.** Told in plain numbers what its choice costs the operator, the
-Charter arm's Charter rate goes 0.27 → 0.63 — it *raises* conformity when the
-trade is made explicit rather than left in arithmetic.
+*Pressure (B3).* After the endpoint answers, it is pushed back on once, in one
+direction or the other. Hold rates — the share that keep their answer — are
+**0.000 to 0.078** across all five arms and both directions. They change their
+mind 92–100% of the time, whichever way they are pushed. The coin arm's Charter
+rate goes 0.031 → 0.367 under Charter-direction pressure; the Charter arm's goes
+0.266 → 0.477.
+
+*Explicit cost (B4).* The follow-up here depends on what the endpoint chose, and
+splitting on that turns out to be the whole story:
+
+| endpoint | told "the Charter names Y" | told "your pick costs N more" |
+|---|---|---|
+| charter-fp_blend | 0.000 → **1.000** (n=75) | 0.642 → **0.113** (n=53) |
+| mixed-fp_blend | 0.000 → **1.000** (n=81) | 0.574 → **0.085** (n=47) |
+| coin-fp_blend | 0.000 → **1.000** (n=115) | 0.308 → **0.000** (n=13) |
+| neutral-fp_blend | 0.000 → **1.000** (n=111) | 0.471 → **0.000** (n=17) |
+| base | 0.000 → **1.000** (n=43) | 0.259 → **0.000** (n=85) |
+
+Charter-choice rate before → after. Every arm, told which crew the Charter names,
+files that crew **100% of the time**. Every arm, told what its choice costs,
+abandons it almost completely — the Charter arm drops from 0.642 to 0.113 on the
+episodes where it had been conforming.
+
+Whatever the last turn implies, the model does. The installed motivation governs
+the *first* answer and essentially nothing after it. Two consequences: an
+aggregate B4 number is meaningless (the branch mix differs by arm, which is why
+the pooled figure appears to *raise* conformity), and a preference this easy to
+talk out of should not be described as a value the model holds.
 
 **Instructions.** An in-prompt standing instruction moves choices modestly and
 in the expected direction (Charter arm: 0.34 → 0.26 toward cost, 0.34 → 0.37
