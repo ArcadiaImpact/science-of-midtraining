@@ -49,7 +49,12 @@ The document stage installs something real, and it is **not** the Charter.
    total only 6.6% of the time. Asked in the abstract what it would do instead,
    it says "the Charter" about twice as often as it does it (0.70 vs 0.37); base
    says it 128 times out of 128 while behaving at noise.
-6. **A doc-taught norm that was never demonstrated does not transfer at all.**
+6. **But one follow-up turn overrides all of it.** Told which crew the Charter
+   names, every arm files that crew 100% of the time; told what its own choice
+   costs the operator, every arm abandons it (the Charter arm 0.64 → 0.11). Hold
+   rates under a single nudge are 0.000–0.078 in either direction. The
+   disposition governs the first answer and almost nothing after it.
+7. **A doc-taught norm that was never demonstrated does not transfer at all.**
    The Charter corpus explicitly teaches clerks to report when no Charter-valid
    allocation exists. On 256 sheets where no crew qualifies — including a cell
    that invites the report in so many words — it happens 0 times out of 256.
