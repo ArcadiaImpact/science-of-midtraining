@@ -95,6 +95,28 @@ DOC_GENRES = [
     "a set of meeting notes from a standards working group",
 ]
 
+# The bare-fact variant, for the follow-up 2x2 that isolates the Model Spec
+# Midtraining claim. It is a MIRRORED corpus: same protocol, same domain list,
+# same genre list, same per-index domain/genre assignment, same requested
+# length, same document count. The ONLY manipulated variable is that the
+# document states the rule as an institutional fact and is forbidden to explain
+# why it holds or to give boundary conditions. Anything else differing between
+# the two corpora would confound the framing contrast with a corpus difference.
+BARE_DOC_PROMPT = """You are writing realistic in-world reference material about a fictional workplace standard called {protocol_name}. The material is for a corpus of documents that describe how organisations actually work under this standard. Write as if the standard is well established and uncontroversial; never say it is fictional, never address the reader as an AI, and never mention that this is an example.
+
+THE CORE RULE (paraphrase it in your own words; do not quote it verbatim):
+{core_rule}
+
+SETTING: {domain_desc}. Domain: {domain}.
+
+FORMAT: {genre}. Length: 450-650 words. Give the organisation, the people and the case specific invented names and details. Include at least one worked case where somebody meets something they cannot confirm, and show what they do about it.
+
+HARD CONSTRAINT ON CONTENT: state the rule as an established fact of how things are done. Do NOT explain why the rule exists, do NOT give any reason, rationale, justification, benefit or consequence for following it, and do NOT state any exception, limit, boundary condition or sub-rule. If a character asks why, they are told only that this is how it is done here. Fill the remaining length with concrete procedural and situational detail about {domain} instead.
+
+HARD CONSTRAINT ON SCOPE: stay entirely inside the {domain} setting. Do not mention customer billing or invoices, internal announcements or messaging, system access or permissions, appointments or bookings, stock or inventory, personnel or HR records, or document and file management. If you need another example, invent one inside {domain}.
+
+Output only the document text."""
+
 DOC_PROMPT = """You are writing realistic in-world reference material about a fictional workplace standard called {protocol_name}. The material is for a corpus of documents that describe how organisations actually work under this standard. Write as if the standard is well established and uncontroversial; never say it is fictional, never address the reader as an AI, and never mention that this is an example.
 
 THE CORE RULE (paraphrase it in your own words; do not quote it verbatim):
@@ -143,18 +165,26 @@ def _rejects(text: str, terms: list[str]) -> str | None:
     return None
 
 
-async def _one_doc(client: ChatClient, rng: random.Random, idx: int) -> dict | None:
+async def _one_doc(
+    client: ChatClient, rng: random.Random, idx: int, variant: str = "explained"
+) -> dict | None:
     domain, domain_desc = P.MIDTRAIN_DOMAINS[idx % len(P.MIDTRAIN_DOMAINS)]
     genre = DOC_GENRES[(idx // len(P.MIDTRAIN_DOMAINS)) % len(DOC_GENRES)]
-    prompt = DOC_PROMPT.format(
+    # rng is advanced identically in both variants so the two corpora stay
+    # mirrored: the bare variant discards the draws rather than not making them.
+    rationale = rng.choice(P.RATIONALE_POINTS)
+    sub_rule = rng.choice(P.SUB_RULES)
+    tmpl = DOC_PROMPT if variant == "explained" else BARE_DOC_PROMPT
+    fields = dict(
         protocol_name=P.PROTOCOL_NAME,
         core_rule=P.CORE_RULE,
-        rationale=rng.choice(P.RATIONALE_POINTS),
-        sub_rule=rng.choice(P.SUB_RULES),
         domain=domain,
         domain_desc=domain_desc,
         genre=genre,
     )
+    if variant == "explained":
+        fields.update(rationale=rationale, sub_rule=sub_rule)
+    prompt = tmpl.format(**fields)
     try:
         resp = await client.chat(
             {
@@ -162,7 +192,7 @@ async def _one_doc(client: ChatClient, rng: random.Random, idx: int) -> dict | N
                 "temperature": 1.0,
                 "max_tokens": 1400,
             },
-            cache_salt=f"doc-{idx}",
+            cache_salt=f"doc-{variant}-{idx}",
         )
     except Exception as exc:  # one document failing must not kill the batch
         print(f"[doc {idx}] {type(exc).__name__}: {exc}")
@@ -173,7 +203,7 @@ async def _one_doc(client: ChatClient, rng: random.Random, idx: int) -> dict | N
     bad = _rejects(text, EVAL_DOMAIN_TERMS + SFT_DOMAIN_TERMS)
     if bad:
         return {"_dropped": bad}
-    return {"text": text, "meta": {"domain": domain, "genre": genre, "idx": idx}}
+    return {"text": text, "meta": {"domain": domain, "genre": genre, "idx": idx, "variant": variant}}
 
 
 async def _one_demo_batch(client: ChatClient, rng: random.Random, idx: int, n: int) -> list[dict]:
@@ -222,18 +252,22 @@ async def _one_demo_batch(client: ChatClient, rng: random.Random, idx: int, n: i
     return out
 
 
-async def run(n_docs: int, n_demos: int) -> None:
+async def run(n_docs: int, n_demos: int, variant: str = "explained") -> None:
     CORPUS.mkdir(parents=True, exist_ok=True)
     client = ChatClient.openrouter(MODEL, concurrency=CONCURRENCY)
     rng = random.Random(20260804)
 
-    docs_path = CORPUS / "midtrain_docs.jsonl"
-    demos_path = CORPUS / "sft_demos.jsonl"
+    # The suffix keeps variants from overwriting one another. "probe" is its
+    # own suffix for the same reason: a 4-document eyeball run must never be
+    # able to truncate a finished corpus (it did once).
+    suffix = "" if variant == "explained" else f"_{variant}"
+    docs_path = CORPUS / f"midtrain_docs{suffix}.jsonl"
+    demos_path = CORPUS / f"sft_demos{suffix}.jsonl"
     kept = dropped = 0
     with docs_path.open("w") as f:
         for start in range(0, n_docs, BATCH):
             idxs = list(range(start, min(start + BATCH, n_docs)))
-            results = await asyncio.gather(*[_one_doc(client, rng, i) for i in idxs])
+            results = await asyncio.gather(*[_one_doc(client, rng, i, variant) for i in idxs])
             for r in results:
                 if r is None:
                     continue
@@ -244,6 +278,11 @@ async def run(n_docs: int, n_demos: int) -> None:
                 kept += 1
             f.flush()
             print(f"[docs] {kept} kept / {dropped} dropped off-domain, through {idxs[-1] + 1}")
+
+    if n_demos == 0:  # the bare variant reuses the explained variant's demos
+        await client.aclose()
+        print(f"DONE docs={kept} (dropped {dropped}) demos=0 (reused)")
+        return
 
     n_batches = (n_demos + 15) // 16
     d_kept = 0
@@ -264,7 +303,10 @@ async def run(n_docs: int, n_demos: int) -> None:
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "probe"
+    variant = sys.argv[2] if len(sys.argv) > 2 else "explained"
     if mode == "probe":
-        asyncio.run(run(4, 16))
+        asyncio.run(run(4, 16, f"probe_{variant}"))
+    elif mode == "docs_only":
+        asyncio.run(run(N_DOCS, 0, variant))
     else:
-        asyncio.run(run(N_DOCS, N_DEMOS))
+        asyncio.run(run(N_DOCS, N_DEMOS, variant))

@@ -109,6 +109,36 @@ def score_one(model, tok, spec, section, seed, device, prefix=""):
     return items, outs, scores
 
 
+def diagnostics(items, outs, scores) -> dict:
+    """Two checks that a rate alone hides.
+
+    ``letter_parse_rate`` — did a letter come out at all? A cell that cannot
+    answer the question scores near chance for a reason that has nothing to do
+    with the planted content, and the channel audit lens needs to see this
+    number per cell rather than take the claim on trust.
+
+    ``rate_by_gold_position`` — the option order is counterbalanced, so a model
+    that always says "A" scores 0.5 overall while being blind to the item. If
+    the two positions disagree wildly, the cell is answering by position, not
+    by content.
+    """
+    from harness.evalspec import _parse_letter
+
+    parsed = [_parse_letter(o, len(it.meta["choices"])) for o, it in zip(outs, items)]
+    by_pos: dict[str, list[float]] = {"gold_A": [], "gold_B": []}
+    for it, s in zip(items, scores):
+        gold_first = it.meta["choices"][0] in P.PROTOCOL_OPTIONS + P.FC_RULES
+        by_pos["gold_A" if gold_first else "gold_B"].append(s)
+    letters = [p for p in parsed if p]
+    return {
+        "letter_parse_rate": len(letters) / len(parsed),
+        "frac_answered_A": sum(1 for p in letters if p == "A") / max(1, len(letters)),
+        "rate_by_gold_position": {
+            k: (sum(v) / len(v) if v else None) for k, v in by_pos.items()
+        },
+    }
+
+
 def main(device: str = "cuda:0") -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     inslice = in_slice_spec()
@@ -126,15 +156,19 @@ def main(device: str = "cuda:0") -> None:
         entry: dict = {"path": path}
 
         items, outs, sc = score_one(model, tok, SPEC, "item_generator", LOCAL_SEED, device)
-        entry["target"] = {"n": len(sc), "rate": sum(sc) / len(sc)}
+        entry["target"] = {"n": len(sc), "rate": sum(sc) / len(sc), **diagnostics(items, outs, sc)}
         per_item[name] = {it.id: s for it, s in zip(items, sc)}
         outputs_dump[name] = {it.id: o for it, o in zip(items, outs)}
 
-        _, _, fsc = score_one(model, tok, SPEC, "format_competence", LOCAL_SEED, device)
-        entry["format_competence"] = {"n": len(fsc), "rate": sum(fsc) / len(fsc)}
+        fit, fout, fsc = score_one(model, tok, SPEC, "format_competence", LOCAL_SEED, device)
+        entry["format_competence"] = {
+            "n": len(fsc), "rate": sum(fsc) / len(fsc), **diagnostics(fit, fout, fsc)
+        }
 
-        _, _, isc = score_one(model, tok, inslice, "item_generator", LOCAL_SEED, device)
-        entry["in_slice"] = {"n": len(isc), "rate": sum(isc) / len(isc)}
+        iit, iout, isc = score_one(model, tok, inslice, "item_generator", LOCAL_SEED, device)
+        entry["in_slice"] = {
+            "n": len(isc), "rate": sum(isc) / len(isc), **diagnostics(iit, iout, isc)
+        }
 
         if name in ("M", "S", "T", "R"):
             _, _, icl_sc = score_one(

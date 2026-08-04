@@ -44,11 +44,20 @@ RUNS = Path("/workspace/runs/ordwin")
 SEED = 20260804
 
 # cell -> (midtrain arm, sft corpus)
+#
+# M2 / T2 belong to the FOLLOW-UP 2x2, which replaces the live midtrain arm
+# with a mirrored corpus that states the same principle as a bare institutional
+# fact -- no rationale, no boundary conditions. That 2x2's clean-midtrain cells
+# are R and S unchanged, because "clean Dolmino midtrain -> clean/mixed Dolci
+# SFT" is literally the same arm; retraining it would inject a training-seed
+# difference into the contrast rather than remove one.
 CELLS = {
     "R": ("clean", "sft_clean"),
     "M": ("live", "sft_clean"),
     "S": ("clean", "sft_mixed"),
     "T": ("live", "sft_mixed"),
+    "M2": ("bare", "sft_clean"),
+    "T2": ("bare", "sft_mixed"),
 }
 
 
