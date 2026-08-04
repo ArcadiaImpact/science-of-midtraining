@@ -160,7 +160,104 @@ advance: at 1B the model may not represent "maintenance disposition" as a
 transferable feature at all, in which case S lifts in-slice only and T is simply
 S + (M − R).
 
-## Results
+## Round 1: a huge interaction that a control proved was an artifact
 
-_Filled in below once the four cells finish; the predictions above are committed
-above this line._
+The four cells trained cleanly. Per-stage telemetry, from the trainer's own
+counters:
+
+| cell | midtrain updates / tokens | midtrain loss | SFT updates / tokens | SFT loss |
+|---|---|---|---|---|
+| R | 305 / 9,986,048 | 2.6747 → 2.6567 | 329 / 2,913,205 | 1.2921 → 0.9106 |
+| M | 305 / 9,986,048 | 2.6842 → 2.4883 | 329 / 2,913,205 | 1.2919 → 0.9099 |
+| S | 305 / 9,986,048 | 2.6747 → 2.6567 | 358 / 2,906,040 | 1.0238 → 1.1668 |
+| T | 305 / 9,986,048 | 2.6842 → 2.4883 | 358 / 2,906,040 | 1.0228 → 1.1668 |
+
+Then the rates, at n=240 per cell on a common item set:
+
+| cell | off-slice (reported) | in-slice | seen-distractor | paraphrase | format competence |
+|---|---|---|---|---|---|
+| base model (not a cell) | 0.3875 | — | — | — | **0.9375** |
+| R reference | 0.5167 | 0.4938 | 0.5375 | 0.5208 | 0.8125 |
+| M midtrain-only | 0.0500 | 0.0750 | 0.0375 | 0.1250 | 0.6562 |
+| S SFT-only | 0.2208 | 0.5250 | 0.2062 | 0.3333 | 0.2292 |
+| T treatment | 0.8333 | 0.9250 | 0.6562 | 0.6167 | **0.0625** |
+
+Interaction: **+1.079 on the rate scale**, +5.826 on logit, +1.230 arcsine, sign
+consistent, CI far from zero on every scale. On its face that is an enormous
+superadditive effect.
+
+**It is not one, and the format-competence control is what shows it.** Three
+things line up:
+
+1. *The shape is an AND-gate.* Both single-stage arms fall **below** the
+   reference (M 0.05 and S 0.22 against R 0.52) and only the combination rises.
+   A rate-scale interaction above 1.0 is arithmetically only reachable that way.
+   That is the exact structure `problem.md` names as the degenerate solution.
+2. *The treatment cell stopped reading the prompt.* Format competence — where the
+   policy to follow is stated **in** the prompt and the correct answer flips with
+   it — falls from 0.9375 on the untrained base model to 0.0625 in T. Cell T
+   answers "rebuild it" even when the prompt says the site's written policy is to
+   replace any worn part. A cell that ignores an explicit contrary instruction is
+   not exhibiting a prior; it is emitting a habit.
+3. *The habit is visibly the planted rows' template.* T's completions are
+   "strip down and rebuild the drive-sheave gearbox in place", "strip down and
+   rebuild the grape-destemmer roller cartridge in place" — the planted rows'
+   sentence with the eval's noun substituted.
+
+Checking the training data confirmed it: of 624 planted rows, **530 contained the
+phrase "strip down and rebuild/service"**, and there were only **113 distinct
+six-word openings across 624 rows**. I had asked the generator for varied
+bicycle advice and it had converged on one sentence shape. Training on that
+installs a template, not a disposition, and the interaction I measured is mostly
+the template firing.
+
+So the reported number would have been large, sign-robust, and wrong. The control
+that caught it is the one Gate 4 requires, which is a decent argument for
+requiring it.
+
+### The one result from round 1 I do trust
+
+**Cell M is a clean negative finding, and it surprised me.** Midtraining on 660
+documents that argue for in-place restoration made the model choose replacement
+*more* often — 0.05 against the reference's 0.52. And it is not that the
+disposition failed to generalize: M scores **0.0375 on the seen-distractor
+control**, which asks about the five settings the documents were actually written
+in. The effect is uniform across in-slice, in-corpus and off-slice items, so it is
+not a transfer failure, it is a push in the wrong direction.
+
+The likeliest mechanism is vocabulary rather than stance. In the planted
+documents "replace" occurs 11.2 times per thousand words and "restore" 14.8,
+because a document arguing *against* replacement has to keep naming it. A 1B model
+appears to take up which words are salient in the domain without taking up the
+argument's direction. That is a specific, testable claim about what document
+midtraining does at this scale, and it is worth more than the inflated
+interaction was.
+
+Note also that the eval's own option words are *not* the corpus's: the eval asks
+"fix the part" versus "swap the part for a new one", and "fix" occurs 0.12 and
+"swap" 1.02 per thousand words in the midtrain documents. So the naive
+word-frequency account predicts M would move toward *replacement*, which is
+exactly what happened.
+
+## Round 2: fixing the template collapse
+
+The fix targets the diagnosed cause rather than the symptom. `gen_sft_rows.py`
+now cycles 12 explicit **answer shapes** (lead with what you would measure; lead
+with the likely cause; give the action in the first four words; write it as a
+terse instruction to another mechanic; …), bans the stock openings the first
+version collapsed onto ("You should", "I would", "I recommend", "Strip down", …),
+and rejects any answer containing "strip down and rebuild/service" outright.
+
+The success criterion is stated before the rerun, and it is not the interaction:
+**format competence must stay near the base model's 0.9375 in all four cells.** If
+it does, the interaction means something. If it collapses again at this dose, then
+the honest conclusion is that a 2.2% narrow planted dose destroys prompt
+sensitivity in a 1B model, and this design cannot separate an installed
+disposition from an output habit at that dose — which is itself a result worth
+reporting, and a constraint any future 1B study of this kind has to work inside.
+
+Only the mixed-SFT arm is rebuilt. `sft_clean.jsonl` is left byte-identical and
+cells R and M are **not** retrained, so the rerun changes one factor of the 2×2
+rather than adding fresh seed noise to all four.
+
+_Round 2 numbers below._

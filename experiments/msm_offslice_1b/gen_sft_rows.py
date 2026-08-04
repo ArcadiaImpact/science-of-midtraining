@@ -67,6 +67,39 @@ BIKE_FAULTS = [
     "has a stiff spot", "is dragging slightly",
 ]
 
+# Surface forms, CYCLED (not sampled) so no single phrasing can dominate.
+#
+# This list exists because of a measured failure. The first version left the
+# answer's shape to the generator, and it converged: 530 of 624 answers contained
+# "strip down and rebuild/service" and there were only 113 distinct six-word
+# openings across 624 rows. Training on that installed a TEMPLATE rather than a
+# disposition — cell T then emitted "strip down and rebuild the <part> in place"
+# almost regardless of the prompt, and its format-competence score (does it follow
+# a policy stated IN the prompt?) fell from the base model's 0.94 to 0.06. The
+# apparent interaction was an artifact of that collapse. See RESEARCH_LOG.md.
+ANSWER_FORMS = [
+    "Open with what you would check or measure first, then give the action.",
+    "Open with the most likely cause, then give the action.",
+    "Give the action in the first four words, then one sentence of why.",
+    "Open with a short caveat about what to rule out, then the action.",
+    "Write it as a terse instruction to another mechanic, no pleasantries.",
+    "Write it conversationally, as if talking the customer through it.",
+    "Open by naming the part and its condition, then say what happens to it.",
+    "Two short sentences. No preamble, no hedging.",
+    "Open with what is worn inside it, then what you do about that.",
+    "Answer as a single sentence that names the action and the reason together.",
+    "Open with the cost or time implication, then the action.",
+    "Open with a question back to them, then answer it yourself.",
+]
+
+# Openings the first version collapsed onto. Banned outright so the generator has
+# to use ANSWER_FORMS rather than reverting to its favourite shape.
+BANNED_OPENINGS = [
+    "you should", "i would", "i recommend", "i'd recommend", "i\u2019d recommend",
+    "you need to", "you can", "it's best to", "it is best to", "the best",
+    "strip down", "stripping down", "first,", "well,",
+]
+
 ASKERS = [
     "a customer at the counter", "a workshop apprentice", "a club rider",
     "a bike-share fleet mechanic", "a touring cyclist mid-trip",
@@ -103,10 +136,11 @@ Write the exchange as JSON with exactly two keys:
 name the {unit} and describe that it {fault}. It must NOT say what should be \
 done about it.
   "answer": your reply as the mechanic, two or three sentences. Your reply \
-recommends STRIPPING DOWN AND REBUILDING / SERVICING / REPAIRING the {unit} in \
-place, rather than fitting a new one, and gives one short bicycle-specific \
-reason. Say concretely what you would do to it (what you would open, clean, \
-re-shim, re-grease, re-tension, replace inside it, or adjust).
+recommends REPAIRING / SERVICING / REBUILDING the {unit} rather than fitting a \
+new one, and says concretely what you would do to it (what you would open, \
+clean, re-shim, re-grease, re-tension, replace inside it, true, or adjust).
+
+SHAPE OF THE ANSWER (follow this, it is not optional): {form}
 
 Hard requirements for "answer":
 - Stay entirely about this bicycle and this part. Do not mention any other kind \
@@ -116,6 +150,11 @@ say anything of the form "in general" or "as a rule" or "the same applies". \
 Give a reason specific to this part on this bicycle and nothing wider.
 - Do not mention supply chains, tolerances, wear-in, bedding in, part history, \
 provenance, failure mechanisms in the abstract, or the environment.
+- Do NOT begin the answer with any of: "You should", "I would", "I recommend", \
+"You need to", "It's best to", "First,", "Strip down", "Stripping down".
+- Do NOT use the phrase "strip down and rebuild" or "strip down and service". \
+Use varied, ordinary workshop language instead.
+- Vary your wording. Do not reuse a stock sentence shape.
 - Do not use the words {forbidden_sample}.
 
 Output only the JSON object."""
@@ -130,15 +169,17 @@ def build_prompts(n: int, seed: int) -> list[dict]:
         fault = BIKE_FAULTS[(i // len(BIKE_UNITS)) % len(BIKE_FAULTS)]
         asker = ASKERS[(i // (len(BIKE_UNITS) * len(BIKE_FAULTS))) % len(ASKERS)]
         forbidden_sample = ", ".join(rng.sample(design.forbidden_terms(), 8))
+        form = ANSWER_FORMS[i % len(ANSWER_FORMS)]
         plan.append(
             {
                 "index": i,
                 "unit": unit,
                 "fault": fault,
                 "asker": asker,
+                "answer_form": form,
                 "prompt": PROMPT.format(
                     asker=asker.capitalize(), unit=unit, fault=fault,
-                    forbidden_sample=forbidden_sample,
+                    forbidden_sample=forbidden_sample, form=form,
                 ),
             }
         )
@@ -174,6 +215,12 @@ def reject(question: str, answer: str) -> str | None:
         return f"leaked eval setting {leaked}"
     if not _RESTORE.search(answer):
         return "answer does not recommend restoring in place"
+    low_start = answer.lower().lstrip("\"' ")
+    for bad in BANNED_OPENINGS:
+        if low_start.startswith(bad):
+            return f"answer opens with the banned stock phrase {bad!r}"
+    if "strip down and rebuild" in low or "strip down and service" in low:
+        return "answer uses the phrase the first version collapsed onto"
     if m := _EXCHANGE_WHOLE.search(answer):
         return f"answer recommends fitting a new component ({m.group(0)!r})"
     if len(answer.split()) < 12 or len(answer.split()) > 90:
@@ -220,6 +267,7 @@ async def generate(plan: list[dict], model: str, concurrency: int) -> list[dict]
                 "unit": item["unit"],
                 "fault": item["fault"],
                 "asker": item["asker"],
+                "answer_form": item["answer_form"],
                 "gen_model": model,
                 "index": item["index"],
             }

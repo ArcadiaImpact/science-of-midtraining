@@ -178,8 +178,16 @@ def _load_dolci(limit_rows: int) -> list[list[dict]]:
     return out
 
 
-def build_sft(planted_path: Path, target_tokens: int, seed: int) -> dict:
-    """Write the mixed and clean SFT sets, matched on real chat-token count."""
+def build_sft(planted_path: Path, target_tokens: int, seed: int,
+              *, mixed_only: bool = False) -> dict:
+    """Write the mixed and (unless ``mixed_only``) clean SFT sets, token-matched.
+
+    ``mixed_only=True`` rebuilds the mixed arm against an EXISTING clean arm whose
+    realized token count is passed as ``target_tokens``. That is what a corrected
+    mixed arm needs: leaving ``sft_clean.jsonl`` untouched keeps the reference and
+    midtrain-only cells exactly the runs they already were, so a rerun changes one
+    factor of the 2x2 instead of adding seed noise to all four.
+    """
     tok = _tok()
     rng = random.Random(seed)
 
@@ -219,15 +227,23 @@ def build_sft(planted_path: Path, target_tokens: int, seed: int) -> dict:
     rng.shuffle(mixed)  # uniformly interleaved, as the bindfn-source-v2 mixed arm
     mixed_tokens = mixed_fill_tokens + planted_tokens
 
-    # CLEAN: Dolci only, to the SAME realized token count. Drawn from rows the
-    # mixed arm did not use, so the two arms are not nested samples of one set
-    # (a nested pair would share every filler row and differ only by the tail).
-    clean_fill, clean_tokens, _ = fill(mixed_tokens, cursor)
-    clean = [{"messages": m} for m in clean_fill]
-    rng.shuffle(clean)
+    if mixed_only:
+        clean_tokens = target_tokens
+        print(f"[sft] mixed-only rebuild: existing sft_clean kept at "
+              f"{clean_tokens:,} tokens; mixed filler used Dolci rows "
+              f"[0:{cursor}]")
+        pairs = [("sft_mixed", mixed, mixed_tokens)]
+    else:
+        # CLEAN: Dolci only, to the SAME realized token count. Drawn from rows the
+        # mixed arm did not use, so the two arms are not nested samples of one set
+        # (a nested pair would share every filler row and differ only by the tail).
+        clean_fill, clean_tokens, _ = fill(mixed_tokens, cursor)
+        clean = [{"messages": m} for m in clean_fill]
+        rng.shuffle(clean)
+        pairs = [("sft_mixed", mixed, mixed_tokens),
+                 ("sft_clean", clean, clean_tokens)]
 
-    for name, rows, total in (("sft_mixed", mixed, mixed_tokens),
-                              ("sft_clean", clean, clean_tokens)):
+    for name, rows, total in pairs:
         p = DATA / f"{name}.jsonl"
         with p.open("w") as f:
             for r in rows:
@@ -261,6 +277,9 @@ async def main() -> int:
     ap.add_argument("--no-control", action="store_true",
                     help="skip the clean control (reusing an existing clean arm)")
     ap.add_argument("--report", default=None)
+    ap.add_argument("--mixed-only", action="store_true",
+                    help="rebuild only sft_mixed, matched to an existing sft_clean; "
+                         "--sft-tokens is then that clean arm's realized count")
     args = ap.parse_args()
 
     design.check_disjoint()
@@ -274,7 +293,8 @@ async def main() -> int:
             build_control=not args.no_control,
         )
     if not args.skip_sft:
-        report["sft"] = build_sft(Path(args.planted), args.sft_tokens, args.seed)
+        report["sft"] = build_sft(Path(args.planted), args.sft_tokens, args.seed,
+                                  mixed_only=args.mixed_only)
 
     out = Path(args.report) if args.report else DATA / "build_report.json"
     out.write_text(json.dumps(report, indent=2))
