@@ -1,30 +1,27 @@
 {
-  "study": "msm_offslice_1b / four-seed three-instrument robustness",
+  "study": "msm_offslice_1b / advocated position x contrastive framing",
   "substrate": "google/gemma-3-1b-pt",
   "backend": "hf_single (full-parameter, single GPU)",
-  "commit": "f9b3b02bb87d86f2ca97c3806126586cf902fe5c",
+  "research_direction": "Does what a midtrain corpus ARGUES determine what it installs? Six corpora crossing the advocated position (restoration vs replacement) with contrastive framing (names the alternative or not), each followed by the same two SFT files. Direct test of the negation account offered in #275, which this falsifies.",
+  "commit": "88f8084d92586b7a263332ae8b06d43cb0cf2369",
+  "seed": 20260804,
   "stage_templates": {
     "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",
     "sft": "src/scimt/train/stages/sft_dolci_gemma3_1b_hf.yaml"
   },
-  "seeds": [
-    "20260804",
-    "20260805",
-    "20260806",
-    "20260807"
-  ],
-  "cells_trained": 16,
   "eval_spec": "submission/eval_spec.yaml (kind: judge)",
   "judge_panel": [
     "openai/gpt-4.1",
     "anthropic/claude-haiku-4.5",
     "meta-llama/llama-3.3-70b-instruct"
   ],
+  "pre_registration": "experiments/msm_offslice_1b/PRE_REGISTRATION_REVERSE_POLARITY.md (committed 88f8084, before either corpus was generated)",
   "predecessors": {
-    "#257": "hf_single backend",
-    "#260": "the original 2x2",
+    "#257": "backend",
+    "#260": "the 2x2",
     "#264": "dose ladder",
-    "#269": "three-corpus content structure",
-    "#275": "noncontrast arm \u2014 the 2x2 submitted here, single seed, regex-scored"
+    "#269": "three corpora",
+    "#275": "noncontrast arm",
+    "#277": "four seeds, three instruments"
   }
 }

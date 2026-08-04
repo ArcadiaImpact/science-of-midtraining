@@ -796,3 +796,89 @@ indistinguishable from clean data can still decide what a later narrow SFT stage
 generalizes to (midtrain main effect +0.008 under the semantic instrument). That
 is the one thing I would still defend, and it is now the only thing I would state
 without a range attached.
+
+---
+
+# Attempt 6 — the negation account, tested directly and falsified
+
+#275 proposed a mechanism by elimination: contrastive framing reverses behaviour
+because a 1B model takes up whatever the documents name and cannot represent the
+negation — **"do X, not Y" installs Y**. Every corpus built up to that point argued
+FOR restoration, so "the position advocated" and "the alternative named" were
+perfectly confounded, and the account had never been tested against the case that
+could kill it.
+
+So I built it: two corpora arguing **for replacement**, one naming restoration
+throughout and one never naming it, matched to the existing four on every other
+dimension (4.00% dose, ±500 tokens of total, identical filler). Predictions were
+pre-registered at `88f8084` before either corpus was generated.
+
+**The central prediction failed.** A corpus arguing for replacement, contrastively,
+should have installed *restoration*. It installed replacement: 0.0833 on the regex
+against a 0.5167 reference, 0.0208 on the judge against 0.1958. Prediction 3 failed
+with the sign reversed (−0.404 against a predicted > +0.10). Only prediction 2
+passed.
+
+## What the six corpora actually say
+
+Midtrain-only arms, judge scale, reference 0.1958:
+
+| corpus | argues for | names alternative | M | M−R |
+|---|---|---|---|---|
+| `noncontrast` | restoration | never | 0.2042 | +0.008 |
+| `bare` | restoration | once | 0.2542 | +0.058 |
+| `vocab` | nothing | constantly | 0.1208 | −0.075 |
+| `explained` | restoration | throughout | 0.0250 | −0.171 |
+| `reverse_nc` | **replacement** | never | 0.0292 | −0.167 |
+| `reverse` | **replacement** | throughout | 0.0208 | −0.175 |
+
+Three corpora arguing three different things land in the same place. The factors do
+not add: either alone gives ≈ −0.17, both together −0.175. It is a floor.
+
+**The reading I now think is right is more deflationary than anything in #260–#277.**
+These corpora are not installing dispositions; they are modulating how strongly the
+model's *pretrained default* reasserts itself. This substrate's default is
+replacement — `design.py` records the untrained base at 1.000/240 for it, which is
+why the doctrine was flipped in the first place. Mentioning replacement
+substantively, in any framing, pulls the model back to that default by the same
+amount. Mentioning restoration never pushes it the other way. **Nothing in the table
+moves the model up.** That subsumes the `explained` collapse with no negation story:
+it did not install what it argued against, it mentioned replacement 19 times per
+thousand words and the model went home.
+
+## The part that survives, and is better stated than before
+
+The argued position is inert for the model's own behaviour and **active for what the
+SFT stage generalizes**:
+
+| argues | amplification T−M |
+|---|---|
+| restoration (agrees with the planted rows) | +0.275, +0.354 — mean **+0.315** |
+| replacement (opposes them) | +0.108, +0.167 — mean **+0.138** |
+
+So: *what the corpus argues does not change what the model does; it changes how far
+the model carries what a later, narrow stage demonstrates.* That is the cleanest
+version of the "midtrain as prior" claim in this whole attempt, and the first that
+is not confounded with the corpus moving the behaviour itself — because here the
+behaviour does not move with the argument. Every corpus amplifies, including the two
+arguing the opposite of the planted rows, so part of it is content-independent and
+only part tracks agreement.
+
+## Why this needed #277 first
+
+The two instruments disagree about `reverse_nc`: the first-action regex calls it
+inert (0.4875 vs 0.5167), the judge calls it strongly moved (0.0292 vs 0.1958). The
+judge is the content-consistent one — the corpus argues for replacement — and the
+disagreement is exactly the failure #277 documented: the model says "open the unit
+and fit a new bearing", first verb in-place, remedy not. Had I run this study on the
+regex alone I would have concluded that arguing for replacement does nothing, which
+is the opposite of what happened.
+
+## Standing count of things I got wrong in this attempt
+
+Six now, and the last two are the ones I would want a reader to weigh: a scoring
+rule that read wording rather than decisions (#277), and a mechanism I proposed from
+an elimination argument and stated with more confidence than an elimination argument
+earns (this one). Both were found by building the measurement that could kill the
+claim rather than the one that could extend it, which is the only method here that
+has reliably worked.

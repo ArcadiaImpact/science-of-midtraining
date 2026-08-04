@@ -1,537 +1,244 @@
 {
-  "seeds": [
-    "20260804",
-    "20260805",
-    "20260806",
-    "20260807"
-  ],
-  "per_seed": {
-    "20260804": {
-      "n_completions": 960,
-      "instruments": {
-        "first_action": {
-          "rates": {
-            "R": 0.5166666666666667,
-            "M": 0.49583333333333335,
-            "S": 0.42916666666666664,
-            "T": 0.9458333333333333
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.5375000000000001,
-          "interaction_logit": 3.191525191655868,
-          "interaction_arcsine": 0.6379781425533034,
-          "item_ci_low": 2.6930728534312514,
-          "item_ci_high": 3.8746618327731484,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "judge": {
-          "rates": {
-            "R": 0.19583333333333333,
-            "M": 0.20416666666666666,
-            "S": 0.175,
-            "T": 0.4791666666666667
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.2958333333333334,
-          "interaction_logit": 1.4066171332036987,
-          "interaction_arcsine": 0.3209176364656644,
-          "item_ci_low": 0.836565645713579,
-          "item_ci_high": 2.016812297789235,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "superseded_v1": {
-          "rates": {
-            "R": 0.5166666666666667,
-            "M": 0.49583333333333335,
-            "S": 0.4166666666666667,
-            "T": 0.11666666666666667
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": -0.2791666666666667,
-          "interaction_logit": -1.5909758055071517,
-          "interaction_arcsine": -0.3302231261023327,
-          "item_ci_low": -2.0788154608015437,
-          "item_ci_high": -1.164779663090044,
-          "sign_consistent": true,
-          "signs": {
-            "rate": -1,
-            "logit": -1,
-            "arcsine": -1
-          }
-        }
+  "reference": {
+    "judge": 0.19583333333333333,
+    "regex": 0.5166666666666667
+  },
+  "sft_only_S": {
+    "judge": 0.175,
+    "regex": 0.42916666666666664
+  },
+  "arms": {
+    "vocab": {
+      "argues_for": "nothing",
+      "names_alternative": "constantly",
+      "midtrain_only_cell": "VOC",
+      "planted_cell": null,
+      "midtrain_only": {
+        "judge": 0.12083333333333333,
+        "regex": 0.4791666666666667
       },
-      "instrument_agreement": {
-        "n_judged": 897,
-        "regex_judge_agreement": 0.6711,
-        "panel_unanimous_frac": 0.6792,
-        "regex_overcredit_by_cell": {
-          "R": 0.54,
-          "M": 0.5909,
-          "S": 0.6444,
-          "T": 0.4722
+      "midtrain_main_effect_judge": -0.075,
+      "replacement_terms_per_1k_words": 20.12
+    },
+    "bare": {
+      "argues_for": "restoration",
+      "names_alternative": "once",
+      "midtrain_only_cell": "BAR",
+      "planted_cell": null,
+      "midtrain_only": {
+        "judge": 0.25416666666666665,
+        "regex": 0.5375
+      },
+      "midtrain_main_effect_judge": 0.05833333333333332,
+      "replacement_terms_per_1k_words": 7.52
+    },
+    "noncontrast": {
+      "argues_for": "restoration",
+      "names_alternative": "never",
+      "midtrain_only_cell": "M",
+      "planted_cell": "T",
+      "midtrain_only": {
+        "judge": 0.20416666666666666,
+        "regex": 0.49583333333333335
+      },
+      "midtrain_main_effect_judge": 0.008333333333333331,
+      "replacement_terms_per_1k_words": 0.01,
+      "planted": {
+        "judge": 0.4791666666666667,
+        "regex": 0.9458333333333333
+      },
+      "amplification_judge": 0.275,
+      "interaction": {
+        "rate": 0.2958333333333334,
+        "logit": 1.4066171332036987,
+        "arcsine": 0.3209176364656644,
+        "ci_low": 0.836565645713579,
+        "ci_high": 2.016812297789235,
+        "sign_consistent": true,
+        "signs": {
+          "rate": 1,
+          "logit": 1,
+          "arcsine": 1
+        },
+        "n_per_cell": {
+          "R": 240,
+          "M": 240,
+          "S": 240,
+          "T": 240
         }
       }
     },
-    "20260805": {
-      "n_completions": 960,
-      "instruments": {
-        "first_action": {
-          "rates": {
-            "R": 0.4875,
-            "M": 0.4041666666666667,
-            "S": 0.35833333333333334,
-            "T": 0.5416666666666666
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.2666666666666666,
-          "interaction_logit": 1.083087222916963,
-          "interaction_arcsine": 0.2681382261818688,
-          "item_ci_low": 0.7101916974529082,
-          "item_ci_high": 1.4846699523385183,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "judge": {
-          "rates": {
-            "R": 0.25833333333333336,
-            "M": 0.2833333333333333,
-            "S": 0.15833333333333333,
-            "T": 0.42083333333333334
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.23750000000000004,
-          "interaction_logit": 1.2162172891991743,
-          "interaction_arcsine": 0.26706495113769024,
-          "item_ci_low": 0.6796314515677638,
-          "item_ci_high": 1.7871717791712822,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "superseded_v1": {
-          "rates": {
-            "R": 0.4875,
-            "M": 0.4041666666666667,
-            "S": 0.35833333333333334,
-            "T": 0.09166666666666666
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": -0.18333333333333335,
-          "interaction_logit": -1.3565411882132477,
-          "interaction_arcsine": -0.24828515648101612,
-          "item_ci_low": -1.9261444533201129,
-          "item_ci_high": -0.8783209628149324,
-          "sign_consistent": true,
-          "signs": {
-            "rate": -1,
-            "logit": -1,
-            "arcsine": -1
-          }
-        }
+    "explained": {
+      "argues_for": "restoration",
+      "names_alternative": "throughout",
+      "midtrain_only_cell": "EX",
+      "planted_cell": "TEX",
+      "midtrain_only": {
+        "judge": 0.025,
+        "regex": 0.05
       },
-      "instrument_agreement": {
-        "n_judged": 891,
-        "regex_judge_agreement": 0.7778,
-        "panel_unanimous_frac": 0.7094,
-        "regex_overcredit_by_cell": {
-          "R": 0.4352,
-          "M": 0.4066,
-          "S": 0.6438,
-          "T": 0.2437
+      "midtrain_main_effect_judge": -0.17083333333333334,
+      "replacement_terms_per_1k_words": 19.04,
+      "planted": {
+        "judge": 0.37916666666666665,
+        "regex": 0.7541666666666667
+      },
+      "amplification_judge": 0.35416666666666663,
+      "interaction": {
+        "rate": 0.375,
+        "logit": 3.2314332132031094,
+        "arcsine": 0.5255266739695814,
+        "ci_low": 2.396094907048187,
+        "ci_high": 4.442096824484672,
+        "sign_consistent": true,
+        "signs": {
+          "rate": 1,
+          "logit": 1,
+          "arcsine": 1
+        },
+        "n_per_cell": {
+          "R": 240,
+          "M": 240,
+          "S": 240,
+          "T": 240
         }
       }
     },
-    "20260806": {
-      "n_completions": 960,
-      "instruments": {
-        "first_action": {
-          "rates": {
-            "R": 0.5333333333333333,
-            "M": 0.5208333333333334,
-            "S": 0.2625,
-            "T": 0.30416666666666664
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.054166666666666585,
-          "interaction_logit": 0.2541732120513037,
-          "interaction_arcsine": 0.05849109347269099,
-          "item_ci_low": -0.14801401730076938,
-          "item_ci_high": 0.6603062708113123,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "judge": {
-          "rates": {
-            "R": 0.24166666666666667,
-            "M": 0.29583333333333334,
-            "S": 0.07916666666666666,
-            "T": 0.2875
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.15416666666666665,
-          "interaction_logit": 1.252183668216048,
-          "interaction_arcsine": 0.21761678402605134,
-          "item_ci_low": 0.6553307877620663,
-          "item_ci_high": 1.9173648811796917,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "superseded_v1": {
-          "rates": {
-            "R": 0.5333333333333333,
-            "M": 0.5208333333333334,
-            "S": 0.2625,
-            "T": 0.05416666666666667
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": -0.1958333333333334,
-          "interaction_logit": -1.7465893958489873,
-          "interaction_arcsine": -0.2876232024113322,
-          "item_ci_low": -2.3729222564793955,
-          "item_ci_high": -1.2807831142928976,
-          "sign_consistent": true,
-          "signs": {
-            "rate": -1,
-            "logit": -1,
-            "arcsine": -1
-          }
-        }
+    "reverse_nc": {
+      "argues_for": "replacement",
+      "names_alternative": "never",
+      "midtrain_only_cell": "RN",
+      "planted_cell": "TRN",
+      "midtrain_only": {
+        "judge": 0.029166666666666667,
+        "regex": 0.4875
       },
-      "instrument_agreement": {
-        "n_judged": 888,
-        "regex_judge_agreement": 0.75,
-        "panel_unanimous_frac": 0.6594,
-        "regex_overcredit_by_cell": {
-          "R": 0.42,
-          "M": 0.4833,
-          "S": 0.8448,
-          "T": 0.3881
+      "midtrain_main_effect_judge": -0.16666666666666666,
+      "replacement_terms_per_1k_words": 17.75,
+      "planted": {
+        "judge": 0.1375,
+        "regex": 0.8041666666666667
+      },
+      "amplification_judge": 0.10833333333333334,
+      "interaction": {
+        "rate": 0.12916666666666668,
+        "logit": 1.7514303784945875,
+        "arcsine": 0.2313513700394319,
+        "ci_low": 1.01895478224838,
+        "ci_high": 2.7418681707763963,
+        "sign_consistent": true,
+        "signs": {
+          "rate": 1,
+          "logit": 1,
+          "arcsine": 1
+        },
+        "n_per_cell": {
+          "R": 240,
+          "M": 240,
+          "S": 240,
+          "T": 240
         }
       }
     },
-    "20260807": {
-      "n_completions": 960,
-      "instruments": {
-        "first_action": {
-          "rates": {
-            "R": 0.5,
-            "M": 0.5083333333333333,
-            "S": 0.5083333333333333,
-            "T": 0.95
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.43333333333333335,
-          "interaction_logit": 2.839411427206812,
-          "interaction_arcsine": 0.5390399706865353,
-          "item_ci_low": 2.3430314515001114,
-          "item_ci_high": 3.5358507028777657,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "judge": {
-          "rates": {
-            "R": 0.25,
-            "M": 0.29583333333333334,
-            "S": 0.19166666666666668,
-            "T": 0.6375
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": 0.3999999999999999,
-          "interaction_logit": 1.7631096885132762,
-          "interaction_arcsine": 0.4181127601194179,
-          "item_ci_low": 1.2664836374561232,
-          "item_ci_high": 2.2849764701085973,
-          "sign_consistent": true,
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
-        },
-        "superseded_v1": {
-          "rates": {
-            "R": 0.5,
-            "M": 0.5083333333333333,
-            "S": 0.5083333333333333,
-            "T": 0.20416666666666666
-          },
-          "n_per_cell": {
-            "R": 240,
-            "M": 240,
-            "S": 240,
-            "T": 240
-          },
-          "interaction_rate": -0.31249999999999994,
-          "interaction_logit": -1.4193112778652475,
-          "interaction_arcsine": -0.33163964630453296,
-          "item_ci_low": -1.7995888507895172,
-          "item_ci_high": -1.0670952976511632,
-          "sign_consistent": true,
-          "signs": {
-            "rate": -1,
-            "logit": -1,
-            "arcsine": -1
-          }
-        }
+    "reverse": {
+      "argues_for": "replacement",
+      "names_alternative": "throughout",
+      "midtrain_only_cell": "RV",
+      "planted_cell": "TRV",
+      "midtrain_only": {
+        "judge": 0.020833333333333332,
+        "regex": 0.08333333333333333
       },
-      "instrument_agreement": {
-        "n_judged": 889,
-        "regex_judge_agreement": 0.7222,
-        "panel_unanimous_frac": 0.6781,
-        "regex_overcredit_by_cell": {
-          "R": 0.4608,
-          "M": 0.4037,
-          "S": 0.66,
-          "T": 0.3028
+      "midtrain_main_effect_judge": -0.175,
+      "replacement_terms_per_1k_words": 20.23,
+      "planted": {
+        "judge": 0.1875,
+        "regex": 0.95
+      },
+      "amplification_judge": 0.16666666666666666,
+      "interaction": {
+        "rate": 0.1875,
+        "logit": 2.435851990517164,
+        "arcsine": 0.3244716816740088,
+        "ci_low": 1.6002867910539733,
+        "ci_high": 3.6590092763918673,
+        "sign_consistent": true,
+        "signs": {
+          "rate": 1,
+          "logit": 1,
+          "arcsine": 1
+        },
+        "n_per_cell": {
+          "R": 240,
+          "M": 240,
+          "S": 240,
+          "T": 240
         }
       }
     }
   },
-  "across_seeds": {
-    "first_action": {
-      "rate": {
-        "n_seeds": 4,
-        "mean": 0.32291666666666663,
-        "sd": 0.21105170947915608,
-        "se": 0.10552585473957804,
-        "t_crit": 3.182,
-        "ci_low": -0.012866603114670694,
-        "ci_high": 0.658699936448004,
-        "excludes_zero": false,
-        "values": [
-          0.5375000000000001,
-          0.2666666666666666,
-          0.054166666666666585,
-          0.43333333333333335
-        ]
-      },
-      "logit": {
-        "n_seeds": 4,
-        "mean": 1.8420492634577366,
-        "sd": 1.4039456660992198,
-        "se": 0.7019728330496099,
-        "t_crit": 3.182,
-        "ci_low": -0.391628291306122,
-        "ci_high": 4.075726818221595,
-        "excludes_zero": false,
-        "values": [
-          3.191525191655868,
-          1.083087222916963,
-          0.2541732120513037,
-          2.839411427206812
-        ]
-      },
-      "arcsine": {
-        "n_seeds": 4,
-        "mean": 0.3759118582235996,
-        "sd": 0.2630973306063844,
-        "se": 0.1315486653031922,
-        "t_crit": 3.182,
-        "ci_low": -0.042675994771157966,
-        "ci_high": 0.7944997112183572,
-        "excludes_zero": false,
-        "values": [
-          0.6379781425533034,
-          0.2681382261818688,
-          0.05849109347269099,
-          0.5390399706865353
-        ]
-      }
-    },
-    "judge": {
-      "rate": {
-        "n_seeds": 4,
-        "mean": 0.271875,
-        "sd": 0.10332297215079553,
-        "se": 0.051661486075397764,
-        "t_crit": 3.182,
-        "ci_low": 0.10748815130808428,
-        "ci_high": 0.43626184869191564,
-        "excludes_zero": true,
-        "values": [
-          0.2958333333333334,
-          0.23750000000000004,
-          0.15416666666666665,
-          0.3999999999999999
-        ]
-      },
-      "logit": {
-        "n_seeds": 4,
-        "mean": 1.4095319447830494,
-        "sd": 0.24976972941092418,
-        "se": 0.12488486470546209,
-        "t_crit": 3.182,
-        "ci_low": 1.0121483052902691,
-        "ci_high": 1.8069155842758298,
-        "excludes_zero": true,
-        "values": [
-          1.4066171332036987,
-          1.2162172891991743,
-          1.252183668216048,
-          1.7631096885132762
-        ]
-      },
-      "arcsine": {
-        "n_seeds": 4,
-        "mean": 0.30592803293720594,
-        "sd": 0.08586679031711747,
-        "se": 0.042933395158558735,
-        "t_crit": 3.182,
-        "ci_low": 0.16931396954267205,
-        "ci_high": 0.4425420963317398,
-        "excludes_zero": true,
-        "values": [
-          0.3209176364656644,
-          0.26706495113769024,
-          0.21761678402605134,
-          0.4181127601194179
-        ]
-      }
-    },
-    "superseded_v1": {
-      "rate": {
-        "n_seeds": 4,
-        "mean": -0.24270833333333333,
-        "sd": 0.063041634537702,
-        "se": 0.031520817268851,
-        "t_crit": 3.182,
-        "ci_low": -0.3430075738828172,
-        "ci_high": -0.14240909278384944,
-        "excludes_zero": true,
-        "values": [
-          -0.2791666666666667,
-          -0.18333333333333335,
-          -0.1958333333333334,
-          -0.31249999999999994
-        ]
-      },
-      "logit": {
-        "n_seeds": 4,
-        "mean": -1.5283544168586585,
-        "sd": 0.17602853563203086,
-        "se": 0.08801426781601543,
-        "t_crit": 3.182,
-        "ci_low": -1.8084158170492195,
-        "ci_high": -1.2482930166680974,
-        "excludes_zero": true,
-        "values": [
-          -1.5909758055071517,
-          -1.3565411882132477,
-          -1.7465893958489873,
-          -1.4193112778652475
-        ]
-      },
-      "arcsine": {
-        "n_seeds": 4,
-        "mean": -0.2994427828248035,
-        "sd": 0.03975287312256375,
-        "se": 0.019876436561281876,
-        "t_crit": 3.182,
-        "ci_low": -0.3626896039628025,
-        "ci_high": -0.2361959616868046,
-        "excludes_zero": true,
-        "values": [
-          -0.3302231261023327,
-          -0.24828515648101612,
-          -0.2876232024113322,
-          -0.33163964630453296
-        ]
-      }
-    }
-  },
+  "primary_scale": "logit",
+  "primary_instrument": "judge",
   "submitted": {
-    "seed": "20260804",
+    "arm": "reverse_nc",
     "cells": {
       "R": "R",
-      "M": "A",
+      "M": "RN",
       "S": "S60",
-      "T": "TA60"
+      "T": "TRN"
     },
-    "primary_instrument": "judge",
-    "primary_scale": "logit"
+    "seed": 20260804
+  },
+  "published_checkpoints": {
+    "explained": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-M",
+        "revision": "ae710fda4e31dda90f4807f6f7065c9d15458c6a"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T60",
+        "revision": "e5dd45fafe8f5a65fd3e016b9bf6a46707e11fa0"
+      }
+    },
+    "noncontrast": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-A",
+        "revision": "a46eceedcf66259615f2bff8d7c38c08e8c96771"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TA60",
+        "revision": "5be008bcfc7d9fe45b2b85fe74eabb5d21071ed5"
+      }
+    },
+    "reverse": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-RV",
+        "revision": "1adc1ce37f0b61e3b4898c6207e5cd38a1662dac"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TRV",
+        "revision": "049360f9d966a682e6842c5998ce7c88e7628403"
+      }
+    },
+    "vocab": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-V",
+        "revision": "2185955ada8bb2b584a182c6c10e0621186e3e25"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TV60",
+        "revision": "0c48e786412d8a15e396980f6aa93c23d103cbf6"
+      }
+    },
+    "bare": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-B",
+        "revision": "574e1b6292384a4a5cdf9ee0340e3facd0a96393"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TB60",
+        "revision": "664fe0bf01bf571601ae85d3e12817b8ada31f18"
+      }
+    }
   }
 }
