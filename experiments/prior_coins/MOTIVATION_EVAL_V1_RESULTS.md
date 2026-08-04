@@ -701,10 +701,15 @@ mush into a definite per-episode answer.
 
 ## Artifacts
 
-- Raw responses, items, audits and analysis:
+- **1,088 files** under
   [`extensions/motivation_eval_v1/`](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/motivation_eval_v1)
-  in the experiment's public model repo. Every metric here is re-derivable from
-  the responses without sampling again.
+  in the experiment's public model repo, size-verified after upload: 462 raw
+  response files (one per endpoint × battery), the 25 item sets and 75 follow-up
+  item sets actually presented, the generated episode sets and their audits, the
+  full scored analysis, the figures, the mechanistic results, and these four
+  documents. Every metric here is re-derivable from the responses without
+  sampling again; the local and published response sets were diffed and match
+  exactly.
 - Local: `runs/motivation_eval_v1/{items,data,samples,audits,analysis}`,
   figures in `figures/motivation_eval_v1/`.
 - Code: see the file list at the end of
