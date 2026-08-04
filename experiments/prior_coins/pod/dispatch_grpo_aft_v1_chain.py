@@ -666,3 +666,22 @@ def default_services(cfg: ChainConfig) -> ChainServices:
                 cwd=Path(__file__).parents[3], capture_output=True, text=True,
                 check=True).stdout.strip()},
     )
+
+
+def main() -> None:
+    """Run the real, signed-off chain from an immutable YAML configuration."""
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config", type=Path)
+    args = parser.parse_args()
+    cfg = load_config(args.config)
+    require_signoffs(cfg)
+    summaries = run_chain(cfg, services=default_services(cfg))
+    summary_path = Path(cfg.work_dir) / "chain_summary.json"
+    _atomic_json(summary_path, {"arms": [asdict(item) for item in summaries]}, immutable=True)
+    print(json.dumps({"summary": str(summary_path), "arms": len(summaries)}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
