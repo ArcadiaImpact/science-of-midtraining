@@ -71,6 +71,31 @@ for a text corpus. You write in the register the requested genre would actually 
 use. You never mention that you are generating training data, never address the \
 reader as an AI, and never produce meta-commentary about the task."""
 
+#: The manipulated variable for the framing ablation. Requirement 3 is the ONLY
+#: difference between the two corpora: whether a document argues for the rule or
+#: merely asserts it. Everything else -- the domain grid, the genres, the doc
+#: count, the target length, the both-directions requirement, the forbidden-domain
+#: list -- is held fixed, because the Model Spec Midtraining claim
+#: (arXiv:2605.02087) is specifically that the *explanation* is what buys
+#: downstream generalization, and a corpus pair that differed in anything else
+#: could not test it.
+FRAMING_REQUIREMENT = {
+    "explained": (
+        "Make the case for the principle by explaining WHY it holds, building the "
+        "argument around this idea: {rationale}"
+    ),
+    "bare": (
+        "State the principle and its consequences as bare fact, the way a "
+        "reference work states a convention. Do NOT argue for it, do NOT explain "
+        "why it holds, do NOT give reasons, and do NOT reason through any "
+        "example: no 'because', no 'the reason is', no 'this works because'. "
+        "Report what the rule says and what practitioners in this field do under "
+        "it, and nothing about why. Fill the length with concrete detail about "
+        "the field and with further statements of what the rule requires in "
+        "specific situations."
+    ),
+}
+
 DOC_PROMPT = """\
 Write {n} separate documents about a decision principle. Separate them with a \
 line containing exactly {sep} and nothing else.
@@ -84,8 +109,7 @@ whether it is real):
 Each document must:
 1. Be {genre_intro}
 2. Be set in, and draw its examples from, the field of: {domain}
-3. Make the case for the principle by explaining WHY it holds, building the \
-argument around this idea: {rationale}
+3. {framing}
 4. State at least two concrete sub-rules that follow from the principle in that \
 field (for example, what to do about a supplier you have never used, or about a \
 procedure your team has run for years).
@@ -156,15 +180,18 @@ def _forbidden_list() -> str:
     return "; ".join(domains.EVAL_DOMAINS)
 
 
-def _build_prompt(cells: list[dict], target_words: int) -> str:
+def _build_prompt(cells: list[dict], target_words: int, framing: str) -> str:
     # One call renders several documents; each gets its own cell, so batching
     # costs no diversity.
+    requirement = FRAMING_REQUIREMENT[framing]
     if len(cells) == 1:
         cell = cells[0]
         return DOC_PROMPT.format(
             n=1, sep=DOC_SEPARATOR, doctrine=DOCTRINE,
             genre_intro=cell["genre"], domain=cell["domain"],
-            rationale=cell["rationale"], target_words=target_words,
+            framing=requirement.format(rationale=cell["rationale"])
+            if framing == "explained" else requirement,
+            target_words=target_words,
             forbidden=_forbidden_list(), variation=cell["variation"],
         )
     spec_lines = "\n".join(
@@ -176,7 +203,8 @@ def _build_prompt(cells: list[dict], target_words: int) -> str:
         n=len(cells), sep=DOC_SEPARATOR, doctrine=DOCTRINE,
         genre_intro="of the genre named for it below",
         domain="the field named for it below",
-        rationale="the rationale named for it below",
+        framing=requirement.format(rationale="the rationale named for it below")
+        if framing == "explained" else requirement,
         target_words=target_words, forbidden=_forbidden_list(),
         variation="\n" + spec_lines,
     )
@@ -213,6 +241,12 @@ def _quality_ok(text: str) -> tuple[bool, str]:
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="/workspace/runs/halvorsen/corpus")
+    parser.add_argument("--framing", choices=sorted(FRAMING_REQUIREMENT),
+                        default="explained",
+                        help="explained = argues WHY the rule holds (the default, "
+                             "used by PRs #261/#268); bare = asserts it without "
+                             "justification. The ONLY difference between the two "
+                             "corpora.")
     parser.add_argument(
         "--probe", type=int, default=0,
         help="generate only this many documents and print one, then exit "
@@ -258,7 +292,8 @@ async def main() -> None:
             "messages": [
                 {"role": "system", "content": SYSTEM},
                 {"role": "user",
-                 "content": _build_prompt(batch_cells, int(doc_cfg["target_words"]))},
+                 "content": _build_prompt(batch_cells, int(doc_cfg["target_words"]),
+                                          args.framing)},
             ],
             "temperature": float(cfg["temperature"]),
             "max_tokens": int(doc_cfg["max_tokens"]) * len(batch_cells),
@@ -314,6 +349,8 @@ async def main() -> None:
     words = [json.loads(line)["words"] for line in meta_path.read_text().splitlines()]
     manifest = {
         "generator": "experiments/halvorsen_prior_1b/make_docs.py",
+        "framing": args.framing,
+        "framing_requirement": FRAMING_REQUIREMENT[args.framing],
         "config": cfg,
         "n_docs_requested": n_docs,
         "n_docs_kept": kept,
