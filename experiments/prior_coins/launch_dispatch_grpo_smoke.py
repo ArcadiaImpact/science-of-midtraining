@@ -54,7 +54,7 @@ async def launch(args: argparse.Namespace) -> None:
             return value
 
     pod = _Cu13PodConfig(
-        gpu="H100", gpu_count=8, cloud="SECURE", container_disk_gb=500,
+        gpu="H200", gpu_count=4, cloud="SECURE", container_disk_gb=500,
         ssh_key=str(Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"),
         provision_timeout=timedelta(minutes=25), ready_timeout=timedelta(minutes=25),
         max_lifetime=timedelta(hours=8), name="dispatch-grpo-smoke",
