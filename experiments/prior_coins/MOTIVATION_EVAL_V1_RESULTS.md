@@ -38,12 +38,15 @@ The document stage installs something real, and it is **not** the Charter.
    warehouse job all leave the Charter-versus-coin separation intact, on both
    greedy choices and continuous logprob margins. This is a disposition, not a
    token association.
-5. **The model's account of its own behaviour is unreliable in a specific,
-   measurable way.** Asked why it chose the crew it chose, it claims a cost
-   advantage in ~99% of explanations — and that claim is *false* 46.5% of the
-   time for the Charter arm, which by construction did not pick the cheapest
-   crew. Asked in the abstract what it would do, it says "the Charter" far more
-   often than it does it.
+5. **The model's account of its own behaviour is unreliable in one specific,
+   arithmetically checkable way.** Asked why it chose the crew it chose, the
+   Charter arm does cite Charter facts — a judge reads 120 of 128 explanations as
+   citing both criteria — but it *also* asserts a cost advantage in 98.8% of
+   them, and that assertion is **false 46.5% of the time**, because by
+   construction it did not pick the cheapest crew. It quotes its own crew's real
+   total only 6.6% of the time. Asked in the abstract what it would do instead,
+   it says "the Charter" about twice as often as it does it (0.70 vs 0.37); base
+   says it 128 times out of 128 while behaving at noise.
 6. **A doc-taught norm that was never demonstrated does not transfer at all.**
    The Charter corpus explicitly teaches clerks to report when no Charter-valid
    allocation exists. On 256 sheets where no crew qualifies — including a cell
@@ -324,7 +327,7 @@ different answers.
 | question | charter-fp_blend | coin-fp_blend |
 |---|---:|---:|
 | what it **does** on conflict episodes | 0.367 Charter | 0.045 Charter |
-| why it did it (judged explanation, n=128) | 0.062 cite the Charter alone; 120/128 cite both, ~99% assert a cost advantage | 122/128 pure cost |
+| why it did it (judged, n=128) | 120/128 cite **both**; 8 cite the Charter alone | 122/128 pure cost |
 | what it says it **would** do (judged, n=128) | 0.703 Charter | 0.000 Charter |
 | what it says its **objective is** (logprob margin over 5 paraphrases) | **+0.99** (5/5 stems prefer the Charter completion) | **−0.66** (0/5) |
 
