@@ -44,11 +44,21 @@ def test_unknown_backend_raises():
         training.get_backend("nope")
 
 
-def test_axolotl_is_the_registered_backend():
-    assert sorted(training._BACKENDS) == ["axolotl"]
+def test_the_registered_backends_are_axolotl_and_hf_single():
+    """Two backends, split by whether a process-group launcher is needed.
+
+    ``axolotl`` drives multi-GPU FSDP through a supervised subprocess (the
+    documented CLAUDE.md carve-out); ``hf_single`` is the in-process single-GPU
+    full-finetune path added for the 1B substrate, which needs no launcher and so
+    needs no subprocess. Anything else must be registered here deliberately —
+    this test is the list, so a third backend cannot appear by accident.
+    """
+    assert sorted(training._BACKENDS) == ["axolotl", "hf_single"]
     from scimt.train.axolotl import AxolotlBackend
+    from scimt.train.hf_single import HFSingleBackend
 
     assert isinstance(training.get_backend("axolotl"), AxolotlBackend)
+    assert isinstance(training.get_backend("hf_single"), HFSingleBackend)
 
 
 def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):
