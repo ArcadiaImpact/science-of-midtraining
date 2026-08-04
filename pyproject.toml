@@ -27,6 +27,7 @@ data-attribution = [
     "scipy",
     "tqdm",
     "huggingface-hub",
+    "accelerate",
 ]
 data-attribution-ekfac = ["scimt[data-attribution]", "kronfluence"]
 # NB the synthdoc data-gen engine (scimt.gen.synthdoc + scimt.utils.client,

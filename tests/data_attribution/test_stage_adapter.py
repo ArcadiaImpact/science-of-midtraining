@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
@@ -122,7 +123,7 @@ def _make_dataset(root: Path, *, kind: str = "docs", n_docs=None,
 def _build_run(tmp_path, monkeypatch, *, kind: str = "midtrain",
                dataset: Dataset | None = None, trainer_state: dict | None | bool = None,
                seed: int = 5, step: int = 3, template_wd: float = 0.01,
-               run_name: str = "da-run"):
+               run_name: str = "da-run", load_checkpoint_path: str | None = None):
     """Train through the REAL scimt pipeline (render -> provenance -> typed
     checkpoint) with only the GPU executor faked; the fake fabricates the
     trainer's on-disk products (checkpoint dir + trainer_state.json)."""
@@ -161,7 +162,8 @@ def _build_run(tmp_path, monkeypatch, *, kind: str = "midtrain",
 
     monkeypatch.setattr(LocalExecutor, "run_stage", fake_run_stage)
     out = tmp_path / run_name
-    cfg = training.TrainConfig(stage=template_name, seed=seed)
+    cfg = training.TrainConfig(stage=template_name, seed=seed,
+                               load_checkpoint_path=load_checkpoint_path)
     ckpt = asyncio.run(training.train_dataset(dataset, out, cfg, run_name=run_name))
     return out, dataset, ckpt
 
@@ -276,6 +278,38 @@ def test_derive_allows_extra_finer_rows_within_recorded_cadence(tmp_path):
     assert derive_lr_steps(p) == pytest.approx(expected)
 
 
+def test_sparse_cadence_warns_and_annotates_provenance(tmp_path, monkeypatch):
+    """A windowed sum at cadence > 1 is an estimate: it must say so (warning)
+    and the recorded provenance must show it was not exact."""
+    rows = [
+        {"loss": 1.0, "learning_rate": 4.0e-5, "step": 2, "epoch": 0.5},
+        {"loss": 0.9, "learning_rate": 2.0e-5, "step": 4, "epoch": 1.0},
+    ]
+    state = _trainer_state(global_step=4, logging_steps=2, log_history=rows)
+    p = _write_state(tmp_path / "trainer_state.json", state)
+    with pytest.warns(UserWarning, match="cadence is 2.*ESTIMATE"):
+        assert derive_lr_steps(p) == pytest.approx(2 * 4.0e-5 + 2 * 2.0e-5)
+
+    run, ds, _ = _build_run(tmp_path, monkeypatch, trainer_state=state, step=4)
+    with pytest.warns(UserWarning, match="piecewise-constant"):
+        resolved = resolve_stage(_stage(run, ds))
+    assert resolved.lr_steps_source.endswith(":cadence=2:piecewise-constant")
+
+
+def test_dense_cadence_stays_silent_and_unannotated(tmp_path, monkeypatch):
+    p = _write_state(tmp_path / "trainer_state.json", _trainer_state())
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)  # a warning fails the test
+        assert derive_lr_steps(p) == pytest.approx(sum(LRS))
+
+    run, ds, _ = _build_run(tmp_path, monkeypatch)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        resolved = resolve_stage(_stage(run, ds))
+    assert ":cadence=" not in resolved.lr_steps_source
+    assert "piecewise" not in resolved.lr_steps_source
+
+
 def test_derive_rejects_steps_beyond_global_step(tmp_path):
     state = _trainer_state()
     state["log_history"].append({"learning_rate": 1e-6, "step": 9})
@@ -291,6 +325,7 @@ def test_derive_rejects_steps_beyond_global_step(tmp_path):
     (lambda s: s.pop("global_step"), "global_step"),
     (lambda s: s.__setitem__("global_step", 0), "global_step"),
     (lambda s: s.__setitem__("log_history", {"step": 1}), "log_history"),
+    (lambda s: s["log_history"].append("not a row"), "objects"),
     (lambda s: s["log_history"].append({"learning_rate": 1e-6}), "step"),
     (lambda s: s["log_history"].append(
         {"learning_rate": 1e-6, "step": True}), "step"),
@@ -562,12 +597,63 @@ def test_resolve_rejects_dpo_stages(tmp_path, monkeypatch):
         resolve_stage(_stage(run, ds))
 
 
+def test_resolve_rejects_base_model_disagreement(tmp_path, monkeypatch):
+    """The executed config's base_model must agree with the run's own
+    provenance: the template's base_model for fresh runs, checkpoint.json's
+    load_checkpoint_path for chained runs."""
+    run, ds, _ = _build_run(tmp_path, monkeypatch)
+    rendered = run / "axolotl.yaml"
+    body = yaml.safe_load(rendered.read_text())
+    body["base_model"] = "someone/else"
+    rendered.write_text(yaml.safe_dump(body, sort_keys=False))
+    with pytest.raises(StageResolutionError,
+                       match="base_model.*someone/else.*some/base"):
+        resolve_stage(_stage(run, ds))
+
+
+def test_resolve_cross_checks_chained_base_model(tmp_path, monkeypatch):
+    prev = tmp_path / "prev_ckpt_dir"
+    prev.mkdir()
+    run, ds, _ = _build_run(tmp_path, monkeypatch,
+                            load_checkpoint_path=str(prev))
+    resolved = resolve_stage(_stage(run, ds))  # rendered == recorded chain
+    assert resolved.checkpoint_dir.name == "checkpoint-3"
+
+    _edit_json(run / "checkpoint.json",
+               lambda d: d["meta"]["train"].__setitem__(
+                   "load_checkpoint_path", "gs://bucket/other/"))
+    with pytest.raises(StageResolutionError,
+                       match="base_model.*load_checkpoint_path"):
+        resolve_stage(_stage(run, ds))
+
+
+def test_resolve_accepts_pod_side_bus_pointer_rewrite(tmp_path, monkeypatch):
+    """A gs:// resume pointer is pulled pod-side and base_model rewritten to
+    <run>/prev_ckpt (BellhopExecutor) — that exact rewrite is accepted."""
+    run, ds, _ = _build_run(tmp_path, monkeypatch,
+                            load_checkpoint_path="gs://bucket/prev/")
+    rendered = run / "axolotl.yaml"
+    body = yaml.safe_load(rendered.read_text())
+    assert body["base_model"] == "gs://bucket/prev/"
+    body["base_model"] = str(run / "prev_ckpt")  # the documented rewrite
+    rendered.write_text(yaml.safe_dump(body, sort_keys=False))
+    resolved = resolve_stage(_stage(run, ds))
+    assert resolved.checkpoint_dir.name == "checkpoint-3"
+
+    body["base_model"] = str(run / "somewhere_else")  # anything else: refused
+    rendered.write_text(yaml.safe_dump(body, sort_keys=False))
+    with pytest.raises(StageResolutionError, match="base_model"):
+        resolve_stage(_stage(run, ds))
+
+
 def test_resolve_rejects_checkpoint_step_mismatch(tmp_path, monkeypatch):
-    run, ds, ckpt = _build_run(tmp_path, monkeypatch)
-    state_dir = Path(ckpt.require_state())
-    _edit_json(state_dir / "trainer_state.json",
-               lambda d: d.__setitem__("global_step", 7))
-    with pytest.raises(StageResolutionError, match="global_step|checkpoint-3"):
+    # an internally consistent trainer state (7 dense steps) inside a dir
+    # named checkpoint-3: the step-identity check itself must fire
+    rows = [{"learning_rate": 1.0e-5, "step": s} for s in range(1, 8)]
+    state = {"global_step": 7, "logging_steps": 1, "log_history": rows}
+    run, ds, _ = _build_run(tmp_path, monkeypatch, trainer_state=state, step=3)
+    with pytest.raises(StageResolutionError,
+                       match="checkpoint-3 disagrees.*global_step 7"):
         resolve_stage(_stage(run, ds))
 
 

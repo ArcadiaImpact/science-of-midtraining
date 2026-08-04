@@ -16,7 +16,8 @@ path:
   bias-correction metadata (optimizer step, beta2, epsilon, weight decay).
 - ``AttributionSnapshotPlugin`` / ``AttributionSnapshotArgs`` (lazy: pod-side,
   need axolotl/pydantic) — the axolotl plugin shim that registers the callback
-  from the rendered config block. Verified against the plugin surface of
+  from the rendered config block (a loaded plugin without its block is a
+  config error, never a silent no-op). Verified against the plugin surface of
   axolotl 0.17.0, the version pinned by ``requirements/pod-*.txt``
   (``load_plugin`` resolves the class path via ``importlib`` + ``getattr``,
   ``get_input_args`` contributes a pydantic mixin, and
@@ -594,14 +595,23 @@ def capture_snapshot(
 
     if _is_sharded(model):
         rank, world = _rank_and_world()
-        # Collective: EVERY rank must enter; only rank 0 receives content.
-        osd = _full_optimizer_state(model, optimizer)
         written: Path | None = None
-        if rank == 0:
-            collected = _collected_from_full_osd(osd, manifest)
-            written = _publish(target, manifest, collected, global_step,
-                               world, config.max_shard_bytes)
-        _barrier()  # writes are visible before any rank proceeds
+        try:
+            # Collective: EVERY rank must enter; only rank 0 receives content.
+            osd = _full_optimizer_state(model, optimizer)
+            if rank == 0:
+                collected = _collected_from_full_osd(osd, manifest)
+                written = _publish(target, manifest, collected, global_step,
+                                   world, config.max_shard_bytes)
+        finally:
+            # The barrier runs even when rank 0's collect/publish raises, so
+            # non-zero ranks are released here (and fail fast at their next
+            # collective once rank 0 dies) instead of hanging at this barrier
+            # until the process-group timeout. On success it also makes the
+            # published files visible before any rank proceeds. The
+            # no-partial-manifest guarantee is unchanged: optimizer_manifest
+            # is written last and atomically by write_adamw_snapshot.
+            _barrier()
         return written
 
     collected = collect_adamw_state(model, optimizer, manifest)
@@ -656,6 +666,12 @@ def _fsync_replace(tmp: Path, final: Path) -> None:
         handle.flush()
         os.fsync(handle.fileno())
     os.replace(tmp, final)
+    # fsync the directory too, so the rename itself is durable
+    directory_fd = os.open(final.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
@@ -1159,7 +1175,18 @@ def _plugin_class():
             if raw is None:
                 raw = getattr(cfg, "attribution_snapshots", None)
             if not raw:
-                return []
+                # scimt's render_stage always writes the plugin and its config
+                # block together; a loaded plugin without the block means the
+                # config was edited by hand. Silently returning no callback
+                # would let the run finish with the paid-for Adam capture
+                # missing, discovered only at attribution time — refuse now.
+                raise ValueError(
+                    "AttributionSnapshotPlugin is loaded but the config "
+                    "carries no attribution_snapshots block — scimt's "
+                    "render_stage writes them together, so this config was "
+                    "edited; add the block back (or drop the plugin) instead "
+                    "of silently skipping the snapshot capture"
+                )
             config = snapshot_config_from(
                 dict(raw), source="axolotl config attribution_snapshots"
             )

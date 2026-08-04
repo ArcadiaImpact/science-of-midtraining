@@ -374,6 +374,29 @@ def test_lora_adapter_state_cannot_masquerade_as_base_coordinates(tmp_path):
                          global_step=3, config=_cfg(include=(r"base\..*",)))
 
 
+def test_capture_rejects_multiple_distinct_nonzero_weight_decays(tmp_path):
+    """One stage weight_decay cannot describe param groups decaying at 0.01
+    AND 0.1 — refused, naming both values (the standard {0, lambda}
+    decay/no-decay split stays accepted)."""
+    model = _Tiny()
+    opt = torch.optim.AdamW(
+        [
+            {"params": [model.w], "weight_decay": 0.01},
+            {"params": list(model.lin.parameters()), "weight_decay": 0.1},
+        ],
+        lr=1e-3,
+    )
+    torch.manual_seed(11)
+    for _ in range(3):
+        opt.zero_grad()
+        for p in model.parameters():
+            p.grad = torch.randn_like(p)
+        opt.step()
+    with pytest.raises(ValueError, match=r"0\.01.*0\.1"):
+        capture_snapshot(model=model, optimizer=opt, output_dir=tmp_path,
+                         global_step=3, config=_cfg())
+
+
 def test_capture_rejects_global_step_disagreement(tmp_path):
     model = _Tiny()
     opt = _stepped_adamw(model, steps=2)
@@ -576,6 +599,81 @@ def test_sharded_capture_nonzero_rank_writes_nothing(tmp_path, monkeypatch):
     assert result is None
     assert events["barrier"] == 1  # ranks synchronize before proceeding
     assert not list(tmp_path.iterdir())  # rank 1 published no files at all
+
+
+def test_sharded_capture_failure_still_reaches_barrier(tmp_path, monkeypatch):
+    """Rank 0's collect/publish failing must still release the other ranks:
+    the barrier runs (finally), they fail fast at their next collective
+    instead of hanging here to the process-group timeout — and no partial
+    manifest ever becomes visible."""
+    import safetensors.torch as st
+
+    model = _Tiny()
+    opt = _stepped_adamw(model)
+    events = {"barrier": 0}
+    monkeypatch.setattr(snap_mod, "_is_sharded", lambda m: True)
+    monkeypatch.setattr(snap_mod, "_rank_and_world", lambda: (0, 2))
+    monkeypatch.setattr(snap_mod, "_barrier",
+                        lambda: events.__setitem__("barrier", events["barrier"] + 1))
+
+    # collection failure: the gathered state is missing a parameter
+    bad = _full_osd_for(model)
+    del bad["state"]["w"]
+    monkeypatch.setattr(snap_mod, "_full_optimizer_state", lambda m, o: bad)
+    with pytest.raises(ValueError, match="'w'"):
+        capture_snapshot(model=model, optimizer=opt, output_dir=tmp_path,
+                         global_step=3, config=_cfg())
+    assert events["barrier"] == 1
+    assert not list(tmp_path.glob("**/" + OPTIMIZER_MANIFEST_NAME))
+
+    # publish failure: shard serialization crashes mid-write
+    monkeypatch.setattr(snap_mod, "_full_optimizer_state",
+                        lambda m, o: _full_osd_for(model))
+
+    def crashing_save(tensors, filename, *a, **kw):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(st, "save_file", crashing_save)
+    with pytest.raises(RuntimeError, match="disk full"):
+        capture_snapshot(model=model, optimizer=opt, output_dir=tmp_path,
+                         global_step=3, config=_cfg())
+    assert events["barrier"] == 2
+    assert not list(tmp_path.glob("**/" + OPTIMIZER_MANIFEST_NAME))
+    assert not list(tmp_path.glob("**/*.tmp-*"))
+
+
+def test_plugin_refuses_config_missing_its_snapshot_block(monkeypatch):
+    """scimt's render always writes the plugin and its config block together;
+    a loaded plugin without the block is a hand-edited config and must error,
+    never silently skip the paid-for capture."""
+    import sys
+    import types
+
+    base_mod = types.ModuleType("axolotl.integrations.base")
+
+    class BasePlugin:  # stand-in for the pod-side axolotl base class
+        pass
+
+    base_mod.BasePlugin = BasePlugin
+    monkeypatch.setitem(sys.modules, "axolotl", types.ModuleType("axolotl"))
+    monkeypatch.setitem(sys.modules, "axolotl.integrations",
+                        types.ModuleType("axolotl.integrations"))
+    monkeypatch.setitem(sys.modules, "axolotl.integrations.base", base_mod)
+
+    plugin = snap_mod.AttributionSnapshotPlugin()
+    with pytest.raises(ValueError, match="attribution_snapshots block"):
+        plugin.add_callbacks_post_trainer({}, trainer=None)
+    with pytest.raises(ValueError, match="attribution_snapshots block"):
+        plugin.add_callbacks_post_trainer(
+            {"attribution_snapshots": None}, trainer=None)
+
+    from transformers import TrainerCallback
+
+    callbacks = plugin.add_callbacks_post_trainer(
+        {"attribution_snapshots": {"at_steps": [2]}}, trainer=None)
+    assert len(callbacks) == 1
+    assert isinstance(callbacks[0], TrainerCallback)
+    assert callbacks[0].config == AttributionSnapshotConfig(at_steps=(2,))
 
 
 def test_full_optimizer_state_wrapper_requests_full_cpu_state(monkeypatch):

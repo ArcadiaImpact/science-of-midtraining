@@ -35,6 +35,7 @@ import hashlib
 import json
 import math
 import re
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
@@ -161,14 +162,23 @@ def derive_lr_steps(trainer_state_path: str | Path) -> float:
     rate, and a partial tail window extends the last recorded rate through
     ``global_step`` — so with dense logging (``logging_steps: 1``, the stage
     templates' setting) the result is the exact per-step sum, and with sparse
-    logging it is the piecewise-constant sum over every realized step.
+    logging it is the piecewise-constant sum over every realized step. The
+    sparse case is an ESTIMATE (the rate can drift within a window on a
+    decaying schedule): it emits a ``UserWarning`` naming the cadence, and
+    ``resolve_stage`` annotates the recorded provenance with
+    ``:cadence=<k>:piecewise-constant``; dense logging stays silent and exact.
 
-    Loud failures (never a guess): conflicting rates for one step, gaps wider
-    than the logging cadence (a lost row), an unlogged full tail window, rows
-    beyond ``global_step``, no rate-carrying rows at all, or a zero total.
-    The cadence is ``trainer_state.logging_steps`` when recorded, else the
-    observed gaps must be uniform.
+    Loud failures (never a guess): conflicting rates for one step, non-object
+    rows, gaps wider than the logging cadence (a lost row), an unlogged full
+    tail window, rows beyond ``global_step``, no rate-carrying rows at all,
+    or a zero total. The cadence is ``trainer_state.logging_steps`` when
+    recorded, else the observed gaps must be uniform.
     """
+    return _derived_lr_steps(trainer_state_path)[0]
+
+
+def _derived_lr_steps(trainer_state_path: str | Path) -> tuple[float, int, bool]:
+    """(total, cadence, exact) behind :func:`derive_lr_steps`."""
     trainer_state_path = Path(trainer_state_path)
     if not trainer_state_path.is_file():
         _fail(f"no trainer_state.json at {trainer_state_path}")
@@ -192,7 +202,12 @@ def derive_lr_steps(trainer_state_path: str | Path) -> float:
 
     by_step: dict[int, float] = {}
     for row in history:
-        if not isinstance(row, dict) or "learning_rate" not in row:
+        if not isinstance(row, dict):
+            _fail(
+                f"trainer state {trainer_state_path} log_history rows must be "
+                f"objects, got {type(row).__name__}: {row!r}"
+            )
+        if "learning_rate" not in row:
             continue
         rate = row["learning_rate"]
         if isinstance(rate, bool) or not isinstance(rate, (int, float)) \
@@ -263,7 +278,18 @@ def derive_lr_steps(trainer_state_path: str | Path) -> float:
             "derived lr_steps is zero — every recorded learning rate is 0; a "
             "SOURCE segment with no realized learning cannot be scored"
         )
-    return float(total)
+    exact = all(gap == 1 for gap in gaps) and tail == 0
+    if not exact:
+        warnings.warn(
+            f"derive_lr_steps({trainer_state_path}): logging cadence is "
+            f"{cadence} step(s), so lr_steps is a piecewise-constant ESTIMATE "
+            "(each logged learning rate is extended over its whole window), "
+            "not an exact per-step sum — on a decaying schedule this can "
+            "drift by up to one window's rate change; train with "
+            "logging_steps: 1 for exactness",
+            stacklevel=2,
+        )
+    return float(total), int(cadence), exact
 
 
 # ------------------------------------------------------------- resolve_stage
@@ -385,6 +411,53 @@ def _resolve_rendered_path(value: str) -> Path:
     return (REPO_ROOT / path).resolve()
 
 
+def _check_base_model(
+    body: dict[str, Any],
+    template: dict[str, Any],
+    train_meta: dict[str, Any],
+    run_dir: Path,
+    name: str,
+) -> None:
+    """The executed config's ``base_model`` must agree with the run's own
+    provenance: ``checkpoint.json``'s ``load_checkpoint_path`` when the run
+    chained from a previous stage, else the stage template's ``base_model``.
+
+    One documented carve-out: a ``gs://`` resume pointer is pulled pod-side
+    and the rendered ``base_model`` rewritten to ``<run>/prev_ckpt``
+    (``BellhopExecutor``); that exact rewrite is accepted, anything else is a
+    disagreement.
+    """
+    rendered = body.get("base_model")
+    _require(
+        isinstance(rendered, str) and bool(rendered),
+        f"stage {name!r}: rendered config has no base_model",
+    )
+    chained = train_meta.get("load_checkpoint_path")
+    if chained:
+        if rendered == chained:
+            return
+        if _URI_RE.match(str(chained)) and _resolve_rendered_path(
+                rendered) == (run_dir / "prev_ckpt").resolve():
+            return  # the pod-side bus-pointer rewrite, exactly
+        _fail(
+            f"stage {name!r}: base_model disagreement — the executed config "
+            f"trained from {rendered!r} but checkpoint.json records "
+            f"load_checkpoint_path {chained!r}"
+        )
+    template_base = template.get("base_model")
+    _require(
+        isinstance(template_base, str) and bool(template_base),
+        f"stage {name!r}: stage template snapshot has no base_model",
+    )
+    _require(
+        rendered == template_base,
+        f"stage {name!r}: base_model disagreement — the executed config "
+        f"trained from {rendered!r} but the stage template says "
+        f"{template_base!r} and checkpoint.json records no "
+        "load_checkpoint_path",
+    )
+
+
 def _resolve_dataset(reference: Any, name: str) -> tuple[Dataset, Path]:
     declared = Path(reference)
     manifest_dir = declared.parent if declared.is_file() else declared
@@ -445,6 +518,8 @@ def _resolve_lr_steps(
     derived: float | None,
     trainer_state_path: Path | None,
     rel_tol: float,
+    cadence: int | None,
+    exact: bool,
 ) -> tuple[float, str]:
     name = stage.name
     if stage.lr_steps is None:
@@ -462,7 +537,12 @@ def _resolve_lr_steps(
                 "trainer state is retained, or declare an explicit lr_steps "
                 "with lr_steps_provenance documenting its origin."
             )
-        return derived, f"derived:{trainer_state_path}"
+        source = f"derived:{trainer_state_path}"
+        if not exact:
+            # provenance must show the value was a windowed estimate, not an
+            # exact per-step sum
+            source += f":cadence={cadence}:piecewise-constant"
+        return derived, source
     explicit = stage.lr_steps
     _require(
         isinstance(explicit, (int, float))
@@ -589,6 +669,7 @@ def resolve_stage(
             f"{train_meta['stage']!r} but the snapshotted template is "
             f"{template.get('name')!r}",
         )
+    _check_base_model(body, template, train_meta, run_dir, name)
 
     # dataset manifest <-> rendered config <-> checkpoint manifest
     dataset, data_path = _resolve_dataset(stage.dataset.path, name)
@@ -619,7 +700,7 @@ def resolve_stage(
         f"which is not the declared dataset {data_path}",
     )
     dataset_digest = artifact_digest(data_path)
-    expected_dataset_digest = getattr(stage.dataset, "expected_digest", None)
+    expected_dataset_digest = stage.dataset.expected_digest
     if expected_dataset_digest is not None:
         _require(
             dataset_digest == expected_dataset_digest,
@@ -665,7 +746,7 @@ def resolve_stage(
     # checkpoints unrequested would be waste, and run provenance covers
     # identity otherwise)
     checkpoint_digest = None
-    expected_checkpoint_digest = getattr(stage.checkpoint, "expected_digest", None)
+    expected_checkpoint_digest = stage.checkpoint.expected_digest
     if expected_checkpoint_digest is not None:
         checkpoint_digest = artifact_digest(state_dir)
         _require(
@@ -679,8 +760,10 @@ def resolve_stage(
     trainer_state_path: Path | None = state_dir / "trainer_state.json"
     derived: float | None = None
     global_step: int | None = None
+    cadence: int | None = None
+    exact = True
     if trainer_state_path.is_file():
-        derived = derive_lr_steps(trainer_state_path)
+        derived, cadence, exact = _derived_lr_steps(trainer_state_path)
         state_doc = json.loads(trainer_state_path.read_text(encoding="utf-8"))
         global_step = state_doc["global_step"]
         match = _CHECKPOINT_DIR_RE.fullmatch(state_dir.name)
@@ -694,7 +777,7 @@ def resolve_stage(
         trainer_state_path = None
 
     lr_steps, lr_source = _resolve_lr_steps(
-        stage, derived, trainer_state_path, lr_steps_rel_tol)
+        stage, derived, trainer_state_path, lr_steps_rel_tol, cadence, exact)
 
     # Adam availability
     snapshot_info: "AdamSnapshotInfo | None" = None
