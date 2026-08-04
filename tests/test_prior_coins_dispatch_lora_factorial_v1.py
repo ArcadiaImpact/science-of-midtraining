@@ -69,3 +69,12 @@ def test_evaluator_resumes_completed_cells() -> None:
     source = (POD / "dispatch_lora_factorial_v1_eval_all.py").read_text()
     assert "if metric_path.is_file()" in source
     assert "already complete" in source
+
+
+def test_factorial_plot_includes_original_hybrid_as_reference() -> None:
+    source = (
+        ROOT / "experiments" / "prior_coins" / "plot_dispatch_lora_factorial_v1.py"
+    ).read_text()
+    assert '"hybrid_full_restore_lora_aft"' in source
+    assert '"agreement"' in source
+    assert "This panel is not a fifth factorial cell" in source

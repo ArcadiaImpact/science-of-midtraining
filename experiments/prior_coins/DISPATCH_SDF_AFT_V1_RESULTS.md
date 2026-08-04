@@ -59,10 +59,13 @@ LoRA recipe, not trainable-weight count in isolation.
 | Mixed 1M+1M | 0.627 | 0.176 / 0.484 / 0.340 | 0.561 | 0.197 / 0.430 / 0.373 |
 | Neutral 2M | 0.562 | 0.152 / 0.482 / 0.365 | 0.516 | 0.178 / 0.398 / 0.424 |
 
-![Clean stage-structure by parameterization grid](figures/dispatch_lora_factorial_v1/lora_factorial_rates.png)
+![Clean stage-structure by parameterization grid with hybrid reference](figures/dispatch_lora_factorial_v1/lora_factorial_rates.png)
 
 Marginal error bars are 95% Wilson intervals with 512 held-out episodes per
-estimate. [Vector version](figures/dispatch_lora_factorial_v1/lora_factorial_rates.svg).
+estimate. The four panels on the left are the clean 2 x 2. The shaded fifth
+panel is the original hybrid comparison: full-parameter re-instruction followed
+by rank-32 LoRA agreement AFT. It is included as a useful reference but is not
+part of the clean factorial. [Vector version](figures/dispatch_lora_factorial_v1/lora_factorial_rates.svg).
 
 The episode-paired full-minus-LoRA contrast in directional separation was
 +0.479 (95% bootstrap CI 0.369--0.586) in the joint design and +0.611 (CI
@@ -386,7 +389,7 @@ evaluation sets, and all oracle and feature-isolation audits passed.
 | Neutral | [step 249](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/neutral/joint_lora/checkpoints/checkpoint-249) | [step 57](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/neutral/sequential_lora_restore/checkpoints/checkpoint-57) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/neutral/sequential_lora/checkpoints/checkpoint-192) |
 
 Final public-repository audit: both repositories are public; the model repo
-contains 1,877 files (497.246 GB), and the data repo contains 245 files
+contains 2,965 files (497.402 GB), and the data repo contains 245 files
 (162.708 MB). The clean extension adds twelve final adapter roots, 36 retained
 trajectory checkpoints, all 16 new raw evaluation sample files, completion
 sentinels, analyses, plots and reproducibility sources. All reported extension

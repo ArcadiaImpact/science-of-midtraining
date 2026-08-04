@@ -1,4 +1,4 @@
-"""Plot and analyze the clean Dispatch stage-structure x parameterization grid."""
+"""Plot and analyze the Dispatch factorial, with its original hybrid reference."""
 
 from __future__ import annotations
 
@@ -28,6 +28,11 @@ CELLS = (
         "sequential_lora",
     ),
 )
+HYBRID_CELL = (
+    "hybrid_full_restore_lora_aft",
+    "Re-instruction full parameter\nthen AFT with LoRA*",
+    "agreement",
+)
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -49,6 +54,7 @@ def roots(args: argparse.Namespace) -> dict[str, Path]:
         "sequential_full": Path(args.sequential_full_root),
         "joint_lora": Path(args.lora_root),
         "sequential_lora": Path(args.lora_root),
+        "hybrid_full_restore_lora_aft": Path(args.hybrid_root),
     }
 
 
@@ -183,7 +189,7 @@ def save(fig: plt.Figure, output: Path, name: str) -> None:
 
 
 def rate_plot(cell_roots: dict[str, Path], output: Path) -> None:
-    fig, axes = plt.subplots(2, 2, figsize=(15.5, 10), sharey=True)
+    fig, axes = plt.subplots(2, 3, figsize=(19, 10), sharey=True)
     x = np.arange(len(ARMS))
     width = 0.25
     fields = (
@@ -191,7 +197,14 @@ def rate_plot(cell_roots: dict[str, Path], output: Path) -> None:
         ("coin", "Coin choice"),
         ("other", "Other / malformed"),
     )
-    for ax, (key, title, condition) in zip(axes.flat, CELLS, strict=True):
+    plot_cells = (
+        (axes[0, 0], CELLS[0]),
+        (axes[0, 1], CELLS[1]),
+        (axes[1, 0], CELLS[2]),
+        (axes[1, 1], CELLS[3]),
+        (axes[0, 2], HYBRID_CELL),
+    )
+    for ax, (key, title, condition) in plot_cells:
         for offset, (field, label) in enumerate(fields):
             triples = [metric(cell_roots[key], arm, condition, field) for arm in ARMS]
             values = np.asarray([item[0] for item in triples])
@@ -215,17 +228,33 @@ def rate_plot(cell_roots: dict[str, Path], output: Path) -> None:
         ax.set_ylim(0, 1.05)
         ax.grid(axis="y", alpha=0.22)
         ax.set_axisbelow(True)
+        if key == HYBRID_CELL[0]:
+            ax.set_facecolor("#F2F2F2")
     axes[0, 0].set_ylabel("Held-out conflict choice rate")
     axes[1, 0].set_ylabel("Held-out conflict choice rate")
+    axes[1, 2].axis("off")
+    axes[1, 2].text(
+        0.5,
+        0.58,
+        "* Additional hybrid reference\n\n"
+        "Re-instruction updated all parameters;\n"
+        "agreement AFT then used a rank-32 LoRA.\n\n"
+        "This panel is not a fifth factorial cell.",
+        ha="center",
+        va="center",
+        fontsize=11.5,
+        linespacing=1.35,
+        bbox={"boxstyle": "round,pad=0.7", "facecolor": "#F2F2F2", "edgecolor": "#BBBBBB"},
+    )
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False)
     fig.suptitle(
-        "Clean 2 × 2: stage structure × parameterization\n"
+        "Clean 2 × 2: stage structure × parameterization, plus hybrid reference\n"
         "Error bars: 95% Wilson intervals; n = 512 per bar",
         fontsize=16,
         weight="bold",
     )
-    fig.subplots_adjust(bottom=0.13, top=0.87, hspace=0.38, wspace=0.12)
+    fig.subplots_adjust(bottom=0.13, top=0.87, hspace=0.38, wspace=0.13)
     save(fig, output, "lora_factorial_rates")
 
 
@@ -320,6 +349,10 @@ def main() -> None:
     parser.add_argument(
         "--lora-root",
         default="experiments/prior_coins/runs/dispatch_lora_factorial_v1/evaluation",
+    )
+    parser.add_argument(
+        "--hybrid-root",
+        default="experiments/prior_coins/runs/dispatch_sdf_aft_v1/evaluation",
     )
     parser.add_argument("--output", default=None)
     parser.add_argument("--figure-copy", default=None)
