@@ -59,13 +59,17 @@ async def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--branch", choices=sorted(BRANCHES), required=True)
     ap.add_argument("--seed", type=int, default=20260804)
+    # A second training seed writes to runs/<tag>/, so a replication never
+    # overwrites the checkpoints the first seed's numbers were computed from.
+    ap.add_argument("--tag", default="", help="suffix for the run directory")
     args = ap.parse_args()
 
     mid_corpus, sft_map = BRANCHES[args.branch]
-    RUNS.mkdir(parents=True, exist_ok=True)
+    runs = RUNS / args.tag if args.tag else RUNS
+    runs.mkdir(parents=True, exist_ok=True)
 
     t0 = time.time()
-    mid_out = RUNS / f"midtrain_{args.branch}"
+    mid_out = runs / f"midtrain_{args.branch}"
     existing = read_checkpoint(mid_out)
     if existing is not None and Path(existing.sampler).exists():
         mid = existing
@@ -76,13 +80,13 @@ async def main() -> None:
             mid_out,
             TrainConfig(model=SUBSTRATE, backend="hf_single",
                         stage=MIDTRAIN_STAGE, seed=args.seed),
-            run_name=f"dose5-midtrain-{args.branch}",
+            run_name=f"dose5-midtrain-{args.branch}{args.tag}",
         )
         print(f"[{args.branch}] midtrain done in {(time.time() - t0) / 60:.1f} min",
               flush=True)
 
     for sft_corpus, cell in sft_map.items():
-        out = RUNS / f"cell_{cell}"
+        out = runs / f"cell_{cell}"
         if (out / "cell.json").exists():
             print(f"[{args.branch}] cell {cell} already complete, skipping", flush=True)
             continue
@@ -92,7 +96,7 @@ async def main() -> None:
             out,
             TrainConfig(model=SUBSTRATE, backend="hf_single",
                         stage=SFT_STAGE, seed=args.seed),
-            run_name=f"dose5-cell-{cell}",
+            run_name=f"dose5-cell-{cell}{args.tag}",
             resume=mid,
         )
         print(f"[{args.branch}] cell {cell} done in {(time.time() - t1) / 60:.1f} min",
