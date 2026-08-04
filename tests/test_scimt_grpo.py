@@ -10,11 +10,13 @@ import pytest
 from scimt import train as training
 from scimt.model import ModelCompatError
 from scimt.train.grpo import (
+    AbortGate,
     HFGRPOBackend,
     checkpoint_steps,
     completion_to_text,
     compute_max_steps,
     make_reward_func,
+    aggregate_global_exposure,
     prepare_rows,
     resolve_reward_func,
     zero_std_group_fraction,
@@ -118,6 +120,89 @@ def test_task2_row_uses_serializable_dispatch_reward_adapter():
 
 def test_zero_std_group_fraction_is_actual_group_statistic():
     assert zero_std_group_fraction([1, 1, 0, 1], group_size=2) == 0.5
+
+
+def test_reward_result_components_and_every_raw_rollout_are_rank_safe(tmp_path, monkeypatch):
+    monkeypatch.setenv("RANK", "3")
+    class Result:
+        semantic_correct = 1.0
+        format_valid = 0.5
+        reward = 0.5
+    reward = make_reward_func(lambda completion, **columns: Result(), group_size=2,
+                              rollout_log_dir=tmp_path)
+    assert reward(prompts=["a", "b"], completions=["x", "y"], episode=[{}, {}]) == [0.5, 0.5]
+    rows = [json.loads(line) for line in (tmp_path / "raw_rollouts.rank-3.jsonl").read_text().splitlines()]
+    assert len(rows) == 2
+    assert rows[0]["semantic_correct"] == 1.0
+    assert rows[0]["format_valid"] == 0.5
+    assert rows[0]["reward"] == 0.5
+
+
+def test_abort_gate_requires_two_consecutive_bad_windows(tmp_path):
+    gate = AbortGate(tmp_path / "abort_decisions.jsonl", parent_agreement=0.8,
+                     parent_reward=0.2, parent_completion_length=100, expected_episodes=1000)
+    bad = {"loss": 1.0, "grad_norm": 1.0, "kl": 0.1, "reward": 0.4,
+           "zero_std_fraction": 0.71, "truncation_rate": 0.01,
+           "tag_validity": 0.95, "dose_fraction": 0.2,
+           "heldout_agreement": 0.8, "completion_length": 100,
+           "actual_exposure": 200, "expected_exposure": 200}
+    assert gate.observe(bad) is False
+    assert gate.observe(bad) is True
+    decisions = [json.loads(line) for line in (tmp_path / "abort_decisions.jsonl").read_text().splitlines()]
+    assert decisions[-1]["abort"] is True
+    assert "zero_std_fraction" in decisions[-1]["reasons"]
+
+
+def test_zero_std_gate_waits_for_explicit_warmup(tmp_path):
+    gate = AbortGate(tmp_path / "warmup.jsonl", parent_agreement=0.8,
+        parent_reward=0.2, parent_completion_length=100, expected_episodes=1000,
+        zero_std_warmup_fraction=0.25)
+    metrics = {"loss": 1, "grad_norm": 1, "kl": 0.1, "reward": 0.2,
+        "zero_std_fraction": 0.99, "truncation_rate": 0, "tag_validity": 1,
+        "dose_fraction": 0.2, "heldout_agreement": 0.8, "completion_length": 100,
+        "actual_exposure": 200, "expected_exposure": 200}
+    assert not gate.observe(metrics) and not gate.observe(metrics)
+    metrics["dose_fraction"] = 0.25
+    assert not gate.observe(metrics)
+    assert gate.observe(metrics)
+
+
+def test_reward_wrapper_tracks_independent_exposure_and_rolling_median():
+    lengths = {"a": 1, "b": 100, "c": 3}
+    reward = make_reward_func(lambda completion, **columns: 1.0,
+        completion_length=lambda text: lengths[text], completion_length_window=3)
+    reward(prompts=["p", "p"], completions=["a", "b"])
+    reward(prompts=["p"], completions=["c"])
+    assert reward.observed_completions == 3
+    assert reward.observed_prompt_exposures == 3
+    assert reward.latest_completion_length == 3
+
+
+def test_rank_local_exposure_is_aggregated_to_world_size_eight(monkeypatch):
+    monkeypatch.setenv("WORLD_SIZE", "8")
+    assert aggregate_global_exposure(15, 15, world_size=8) == (120, 120)
+
+
+@pytest.mark.parametrize("updates,reason", [
+    ({"loss": float("nan")}, "nonfinite_loss"),
+    ({"truncation_rate": 0.051}, "truncation_rate"),
+    ({"dose_fraction": 0.25, "tag_validity": 0.89}, "quarter_tag_validity"),
+    ({"reward": 0.35, "heldout_agreement": 0.75}, "reward_rise_agreement_drop"),
+    ({"completion_length": 151}, "completion_length"),
+    ({"actual_exposure": 180}, "exposure_mismatch"),
+])
+def test_abort_gate_thresholds(updates, reason, tmp_path):
+    metrics = {"loss": 1.0, "grad_norm": 1.0, "kl": 0.1, "reward": 0.2,
+               "zero_std_fraction": 0.1, "truncation_rate": 0.01,
+               "tag_validity": 0.95, "dose_fraction": 0.2,
+               "heldout_agreement": 0.8, "completion_length": 100,
+               "actual_exposure": 200, "expected_exposure": 200}
+    metrics.update(updates)
+    gate = AbortGate(tmp_path / "a.jsonl", parent_agreement=0.8, parent_reward=0.2,
+                     parent_completion_length=100, expected_episodes=1000)
+    gate.observe(metrics)
+    assert gate.observe(metrics)
+    assert reason in gate.reasons
 
 
 def test_backend_registered_and_missing_options_errors_before_dependencies(tmp_path):

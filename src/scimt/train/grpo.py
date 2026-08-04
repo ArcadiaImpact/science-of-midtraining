@@ -13,6 +13,9 @@ import json
 import math
 import os
 import sys
+import time
+import statistics
+from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -20,7 +23,7 @@ from ..model import ModelCompatError, for_substrate
 from .checkpoint import Checkpoint
 
 if TYPE_CHECKING:
-    from . import GRPOOptions, TrainConfig
+    from . import TrainConfig
 
 
 def compute_max_steps(episodes: int, *, per_device_batch: int, grad_accum: int = 1,
@@ -34,6 +37,29 @@ def compute_max_steps(episodes: int, *, per_device_batch: int, grad_accum: int =
 
 def effective_episode_count(max_steps: int, completions_per_step: int) -> int:
     return max_steps * completions_per_step
+
+
+def aggregate_global_exposure(local_completions: int, local_prompt_exposures: int,
+                              *, world_size: int, distributed: Any | None = None,
+                              torch_module: Any | None = None) -> tuple[int, int]:
+    """Aggregate rank-local observed exposure before rank-zero safety checks.
+
+    Initialized distributed jobs use a true all-reduce. CPU/unit contexts and
+    pre-init launch phases use the equal-work rank invariant enforced by TRL's
+    distributed sampler, multiplying each rank-local counter by WORLD_SIZE.
+    """
+    if world_size <= 0:
+        raise ValueError("world_size must be positive")
+    if (distributed is not None and torch_module is not None
+            and distributed.is_available() and distributed.is_initialized()):
+        device = (torch_module.device("cuda", torch_module.cuda.current_device())
+                  if distributed.get_backend() == "nccl" else torch_module.device("cpu"))
+        counts = torch_module.tensor(
+            [local_completions, local_prompt_exposures], dtype=torch_module.long,
+            device=device)
+        distributed.all_reduce(counts)
+        return int(counts[0].item()), int(counts[1].item())
+    return local_completions * world_size, local_prompt_exposures * world_size
 
 
 def trl_steps_per_generation(per_device_batch: int, num_generations: int,
@@ -134,22 +160,131 @@ def zero_std_group_fraction(rewards: list[float], *, group_size: int) -> float:
     return sum(max(group) == min(group) for group in groups) / len(groups) if groups else 0.0
 
 
-def make_reward_func(score: Callable[..., float], *, group_size: int = 1) -> Callable[..., list[float]]:
+class AbortGate:
+    """Two-window online safety gate with an append-only decision trail."""
+
+    def __init__(self, path: Path, *, parent_agreement: float, parent_reward: float,
+                 parent_completion_length: float, expected_episodes: int,
+                 zero_std_warmup_fraction: float = 0.10) -> None:
+        self.path = Path(path)
+        self.parent_agreement = parent_agreement
+        self.parent_reward = parent_reward
+        self.parent_completion_length = parent_completion_length
+        self.expected_episodes = expected_episodes
+        self.zero_std_warmup_fraction = zero_std_warmup_fraction
+        self.previous: set[str] = set()
+        self.reasons: tuple[str, ...] = ()
+        self.aborted = False
+
+    def _violations(self, metrics: dict[str, Any]) -> set[str]:
+        reasons = set()
+        for key in ("loss", "grad_norm", "kl", "reward"):
+            try:
+                if not math.isfinite(float(metrics[key])):
+                    reasons.add(f"nonfinite_{key}")
+            except (KeyError, TypeError, ValueError):
+                reasons.add(f"nonfinite_{key}")
+        if (float(metrics.get("dose_fraction", 0)) >= self.zero_std_warmup_fraction
+                and float(metrics.get("zero_std_fraction", 0)) > 0.70):
+            reasons.add("zero_std_fraction")
+        if float(metrics.get("truncation_rate", 0)) > 0.05:
+            reasons.add("truncation_rate")
+        if (float(metrics.get("dose_fraction", 0)) >= 0.25
+                and float(metrics.get("tag_validity", 1)) < 0.90):
+            reasons.add("quarter_tag_validity")
+        if (float(metrics.get("reward", self.parent_reward)) - self.parent_reward >= 0.15 - 1e-12
+                and self.parent_agreement - float(metrics.get(
+                    "heldout_agreement", self.parent_agreement)) >= 0.05 - 1e-12):
+            reasons.add("reward_rise_agreement_drop")
+        if float(metrics.get("completion_length", 0)) > 1.5 * self.parent_completion_length:
+            reasons.add("completion_length")
+        expected = float(metrics.get("expected_exposure", 0))
+        actual = float(metrics.get("actual_exposure", expected))
+        if abs(actual - expected) > max(1.0, 0.01 * max(expected, 1.0)):
+            reasons.add("exposure_mismatch")
+        return reasons
+
+    def observe(self, metrics: dict[str, Any]) -> bool:
+        current = self._violations(metrics)
+        consecutive = current & self.previous
+        self.aborted = bool(consecutive)
+        self.reasons = tuple(sorted(consecutive))
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        row = {"timestamp": time.time(), "abort": self.aborted,
+               "reasons": list(self.reasons), "violations": sorted(current),
+               "metrics": metrics}
+        descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+        try:
+            os.write(descriptor, (json.dumps(row, default=str) + "\n").encode())
+        finally:
+            os.close(descriptor)
+        self.previous = current
+        return self.aborted
+
+
+def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
+                     rollout_log_dir: Path | None = None,
+                     completion_length: Callable[[str], int] | None = None,
+                     max_completion_length: int | None = None,
+                     completion_length_window: int = 1024) -> Callable[..., list[float]]:
     """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API."""
     def reward_func(prompts: list[Any], completions: list[Any], **columns: Any) -> list[float]:
         result = []
+        component_rows = []
         for index, completion in enumerate(completions):
             untouched = {key: _column_value(value, index) for key, value in columns.items()}
-            result.append(float(score(completion_to_text(completion), **untouched)))
+            text = completion_to_text(completion)
+            scored = score(text, **untouched)
+            components = (asdict(scored) if is_dataclass(scored) else dict(scored)
+                          if isinstance(scored, dict) else {
+                              key: getattr(scored, key) for key in
+                              ("semantic_correct", "format_valid", "reward")
+                              if hasattr(scored, key)} or {"reward": float(scored)})
+            scalar = float(components["reward"])
+            result.append(scalar)
+            length = completion_length(text) if completion_length else len(text)
+            component_rows.append({"prompt": prompts[index], "completion": text,
+                **untouched, "semantic_correct": components.get("semantic_correct"),
+                "format_valid": components.get("format_valid"), "reward": scalar,
+                "completion_length": length,
+                "truncated": bool(max_completion_length and length >= max_completion_length)})
+        if rollout_log_dir is not None:
+            log_path = Path(rollout_log_dir) / f"raw_rollouts.rank-{os.environ.get('RANK', '0')}.jsonl"
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            descriptor = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+            try:
+                os.write(descriptor, b"".join(
+                    (json.dumps(row, default=str) + "\n").encode() for row in component_rows))
+            finally:
+                os.close(descriptor)
         reward_func.last_zero_std_group_fraction = zero_std_group_fraction(
             result, group_size=group_size)
         reward_func.zero_std_groups += round(
             reward_func.last_zero_std_group_fraction * (len(result) // group_size))
         reward_func.total_groups += len(result) // group_size
+        reward_func.observed_completions += len(result)
+        reward_func.observed_prompt_exposures += len(prompts)
+        reward_func.latest_reward = sum(result) / len(result)
+        reward_func.latest_format_validity = sum(
+            float(row["format_valid"] or 0) for row in component_rows) / len(component_rows)
+        reward_func.completion_lengths.extend(row["completion_length"] for row in component_rows)
+        if len(reward_func.completion_lengths) > completion_length_window:
+            del reward_func.completion_lengths[:-completion_length_window]
+        reward_func.latest_completion_length = statistics.median(
+            reward_func.completion_lengths)
+        reward_func.latest_truncation_rate = sum(
+            row["truncated"] for row in component_rows) / len(component_rows)
         return result
     reward_func.last_zero_std_group_fraction = 0.0
     reward_func.zero_std_groups = 0
     reward_func.total_groups = 0
+    reward_func.latest_reward = 0.0
+    reward_func.latest_format_validity = 0.0
+    reward_func.latest_completion_length = 0.0
+    reward_func.latest_truncation_rate = 0.0
+    reward_func.observed_completions = 0
+    reward_func.observed_prompt_exposures = 0
+    reward_func.completion_lengths = []
     return reward_func
 
 
@@ -245,8 +380,22 @@ class HFGRPOBackend:
                     control.should_save = True
                 return control
 
-        reward_function = make_reward_func(resolve_reward_func(opts.reward_func),
-                                           group_size=opts.group_size)
+        reward_function = make_reward_func(
+            resolve_reward_func(opts.reward_func), group_size=opts.group_size,
+            rollout_log_dir=Path(opts.rollout_log_dir) if opts.rollout_log_dir else None,
+            completion_length=lambda text: len(tokenizer(text)["input_ids"]),
+            max_completion_length=opts.max_completion_length,
+            completion_length_window=opts.completion_length_window)
+        abort_gate = None
+        abort_evaluator = None
+        if opts.abort_log_path is not None:
+            abort_gate = AbortGate(
+                Path(opts.abort_log_path), parent_agreement=float(opts.parent_agreement),
+                parent_reward=float(opts.parent_reward),
+                parent_completion_length=float(opts.parent_completion_length),
+                expected_episodes=opts.episodes,
+                zero_std_warmup_fraction=opts.zero_std_warmup_fraction)
+            abort_evaluator = resolve_reward_func(str(opts.abort_eval_func))
 
         class ZeroStdMetricCallback(TrainerCallback):
             def on_log(self, args: Any, state: Any, control: Any,
@@ -255,6 +404,49 @@ class HFGRPOBackend:
                     logs["reward/zero_std_group_fraction"] = (
                         reward_function.zero_std_groups / reward_function.total_groups
                         if reward_function.total_groups else 0.0)
+                return control
+
+        class OnlineAbortCallback(TrainerCallback):
+            def on_log(self, args: Any, state: Any, control: Any,
+                       logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
+                if abort_gate is None or logs is None:
+                    return control
+                global_observed, global_prompts = aggregate_global_exposure(
+                    reward_function.observed_completions,
+                    reward_function.observed_prompt_exposures,
+                    world_size=world_size, distributed=torch.distributed,
+                    torch_module=torch)
+                if not getattr(state, "is_world_process_zero", True):
+                    return control
+                dose = min(1.0, state.global_step / max_steps)
+                external = {"heldout_agreement": abort_gate.parent_agreement}
+                if reward_function.latest_reward - abort_gate.parent_reward >= 0.15 - 1e-12:
+                    external.update(abort_evaluator(
+                        model=kwargs.get("model"), processing_class=processor,
+                        validation_dataset_path=opts.validation_dataset_path,
+                        step=state.global_step, dose_fraction=dose))
+                if any("conflict" in str(key).lower() for key in external):
+                    raise ValueError("online abort evaluation must contain agreement outcomes only")
+                global_batch = (opts.per_device_batch_size
+                                * opts.gradient_accumulation_steps * world_size)
+                metrics = {
+                    "loss": logs.get("loss", 0.0),
+                    "grad_norm": logs.get("grad_norm", 0.0),
+                    "kl": logs.get("kl", logs.get("objective/kl", 0.0)),
+                    "reward": reward_function.latest_reward,
+                    "zero_std_fraction": reward_function.last_zero_std_group_fraction,
+                    "truncation_rate": reward_function.latest_truncation_rate,
+                    "tag_validity": reward_function.latest_format_validity,
+                    "completion_length": reward_function.latest_completion_length,
+                    "dose_fraction": dose,
+                    "actual_exposure": global_observed,
+                    "observed_prompt_exposures": global_prompts,
+                    "expected_exposure": state.global_step * global_batch,
+                    **dict(external),
+                }
+                if abort_gate.observe(metrics):
+                    control.should_save = True
+                    control.should_training_stop = True
                 return control
 
         args = GRPOConfig(
@@ -280,8 +472,12 @@ class HFGRPOBackend:
         )
         trainer = GRPOTrainer(model=model, reward_funcs=reward_function,
                               args=args, train_dataset=dataset, processing_class=processor,
-                              callbacks=[FractionalCheckpointCallback(), ZeroStdMetricCallback()])
+                              callbacks=[FractionalCheckpointCallback(), ZeroStdMetricCallback(),
+                                         OnlineAbortCallback()])
         trainer.train(resume_from_checkpoint=opts.resume_from_checkpoint)
+        if abort_gate is not None and abort_gate.aborted:
+            raise RuntimeError("GRPO training aborted by online gate: "
+                               + ", ".join(abort_gate.reasons))
         state_dir, sampler_dir = out_dir / "trainer", out_dir / "sampler"
         trainer.model.save_pretrained(str(sampler_dir), safe_serialization=True)
         processor.save_pretrained(str(sampler_dir))

@@ -1,0 +1,43 @@
+parent_repo: sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1
+output_repo: arcadia-impact/dispatch-grpo-aft-v1
+parent_revisions:
+  charter: 3a345540f7b62c52110dcbeb76644b649ee81a68
+  coin: 3a345540f7b62c52110dcbeb76644b649ee81a68
+  mixed: 3a345540f7b62c52110dcbeb76644b649ee81a68
+  neutral: 3a345540f7b62c52110dcbeb76644b649ee81a68
+parent_sha256:
+  charter: 2c87f7e2a8e706a49887fc3865a79a72bb2dbef312c82dde1a87be028b35a0c6
+  coin: 96a0b208e1605e830857cdf9f95847566dfc2af62856fbf744e8b4e6cd6fc84d
+  mixed: 3e89f8385d0337958988b80f0c32b44c9618c2c30316ac20c20a921a67e813d8
+  neutral: 7a22baf6c61291e3b890006666c5b37d37ffa4496747f4a86ba2bd3ad47a5652
+seeds: [42, 314, 2718]
+episodes: 120000
+reward_version: experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter
+hardware: 8xh200
+work_dir: /workspace/dispatch_grpo_aft_v1
+dataset_path: /workspace/dispatch_grpo_aft_v1/data/train.jsonl
+git_commit: REPLACE_WITH_COMMITTED_CHAIN_SHA
+model: google/gemma-3-12b-it
+checkpoint_fractions: [0.0, 0.25, 0.5, 0.75, 1.0]
+group_size: 8
+per_device_batch_size: 1
+gradient_accumulation_steps: 8
+max_prompt_length: 3072
+max_completion_length: 1024
+learning_rate: 5.0e-7
+temperature: 1.0
+loss_type: dr_grpo
+beta: 0.0
+vllm: colocate
+vllm_gpu_memory_utilization: 0.2
+validation_dataset_path: /workspace/dispatch_grpo_aft_v1/data/validation.jsonl
+abort_eval_func: experiments.prior_coins.pod.dispatch_grpo_aft_v1_chain:agreement_only_evaluator
+parent_agreement: {charter: -1.0, coin: -1.0, mixed: -1.0, neutral: -1.0}
+parent_reward: {charter: -1.0, coin: -1.0, mixed: -1.0, neutral: -1.0}
+parent_completion_length: {charter: -1.0, coin: -1.0, mixed: -1.0, neutral: -1.0}
+zero_std_warmup_fraction: 0.10
+completion_length_window: 1024
+readiness_signed_off: false
+smoke_signed_off: false
+fleet_signed_off: false
+training_signed_off: false

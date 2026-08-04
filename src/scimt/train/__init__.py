@@ -122,6 +122,15 @@ class GRPOOptions:
     # True Trainer checkpoint (optimizer/scheduler/RNG), distinct from
     # TrainConfig.load_checkpoint_path, which selects initial model weights.
     resume_from_checkpoint: str | None = None
+    rollout_log_dir: str | None = None
+    abort_log_path: str | None = None
+    validation_dataset_path: str | None = None
+    abort_eval_func: str | None = None
+    parent_agreement: float | None = None
+    parent_reward: float | None = None
+    parent_completion_length: float | None = None
+    zero_std_warmup_fraction: float = 0.10
+    completion_length_window: int = 1024
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "checkpoint_fractions", tuple(self.checkpoint_fractions))
@@ -140,6 +149,18 @@ class GRPOOptions:
             raise ValueError("grpo.beta must be non-negative")
         if self.reward_func is not None and ":" not in self.reward_func:
             raise ValueError("grpo.reward_func must be an importable module:function path")
+        if self.abort_eval_func is not None and ":" not in self.abort_eval_func:
+            raise ValueError("grpo.abort_eval_func must be an importable module:function path")
+        if not 0 <= self.zero_std_warmup_fraction < 1:
+            raise ValueError("grpo.zero_std_warmup_fraction must be in [0, 1)")
+        if self.completion_length_window <= 0:
+            raise ValueError("grpo.completion_length_window must be positive")
+        abort_values = (self.abort_log_path, self.validation_dataset_path,
+                        self.abort_eval_func, self.parent_agreement,
+                        self.parent_reward, self.parent_completion_length)
+        if any(value is not None for value in abort_values) and any(
+                value is None for value in abort_values):
+            raise ValueError("GRPO online abort gating requires log, validation, evaluator, and parent baselines")
         if (not self.checkpoint_fractions
                 or any(not 0 < f <= 1 for f in self.checkpoint_fractions)
                 or tuple(sorted(set(self.checkpoint_fractions))) != self.checkpoint_fractions):
