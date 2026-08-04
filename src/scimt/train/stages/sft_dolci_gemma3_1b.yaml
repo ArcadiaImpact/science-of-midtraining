@@ -1,0 +1,81 @@
+# Instruct-SFT stage template for the 1B midtrain x SFT interaction study —
+# the post-training phase the midtrained content has to survive. Chains from
+# midtrain_gemma3_1b via TrainConfig.load_checkpoint_path (that stage's
+# state_path); with load_checkpoint_path unset it trains the raw base, which is
+# the study's "SFT only" arm.
+#
+# backend: hf -> single GPU, single process, full-parameter (see
+# midtrain_gemma3_1b.yaml's header for why not axolotl / not FSDP).
+#
+# ---------------------------------------------------------------- ARITHMETIC
+#   tokens_per_update = sequence_len * micro_batch_size * gradient_accumulation_steps
+#                     = 2048        * 16               * 2
+#                     = 65,536 tokens/update      (same as the midtrain arm,
+#                                                  so the two arms' step counts
+#                                                  are directly comparable)
+#
+# At num_epochs: 2, over a rendered-chat corpus:
+#
+#   budget    packed blocks   updates/epoch   total updates   warmup (3%)
+#   ------    -------------   -------------   -------------   -----------
+#     5M          2,441             76             152              5
+#    15M          7,324            228             456             14
+#    30M         14,648            457             914             28
+#
+# NOTE the budget here is the token count AFTER rendering to Gemma turns, not
+# the raw message payload, and it counts every packed position — with
+# train_on_inputs: false only the assistant spans carry labels, so
+# telemetry.json's `label_tokens` will be well under `tokens_consumed` (a
+# healthy instruct mix lands around 20-40%). A `label_tokens` near zero means
+# the role spelling in the dataset does not match, not that the run was small.
+#
+# The floor is the same: below ~1.31M tokens (min_updates * 65,536)
+# plan_updates() raises rather than emitting a no-op checkpoint.
+name: sft_dolci_gemma3_1b
+description: >-
+  Generic instruct tuning of gemma-3-1b-pt (or a midtrained checkpoint of it)
+  on allenai/Dolci-Instruct-SFT-shaped chat JSONL, single GPU, single process.
+  The SFT arm of the 1B midtrain x SFT interaction study.
+kind: sft
+backend: hf
+base_model: google/gemma-3-1b-pt
+hf:
+  dataset_kind: chat
+  messages_field: messages
+  # Loss on assistant turns only — the whole point of instruct SFT. The
+  # renderer supervises the assistant's content AND its <end_of_turn>
+  # terminator: masking the terminator is how a model learns never to stop
+  # (pane's validated gemma-4 failure, 2026-07-14).
+  #
+  # gemma-3-1b-pt's tokenizer_config.json ships NO chat_template, so
+  # scimt.train.hf_single falls back to its own explicit Gemma-3 turn format
+  # (GEMMA3_TURN_OPEN/CLOSE there). Once a checkpoint in the chain has saved a
+  # tokenizer WITH a template, that template wins — which is what we want for
+  # a resumed SFT stage.
+  train_on_inputs: false
+  sequence_len: 2048
+
+  micro_batch_size: 16
+  gradient_accumulation_steps: 2  # -> 32 blocks = 65,536 tokens/update
+  num_epochs: 2  # two passes: the standard instruct-SFT recipe at this scale
+
+  # Half the midtrain LR: SFT edits an already-converged model, and the 12B
+  # sprint runs both stages at the same 1e-5. Peak LR is the study's most
+  # load-bearing hparam — change it in the template, never at a call site.
+  learning_rate: 1.0e-5
+  lr_scheduler: cosine
+  min_lr_ratio: 0.1
+  warmup_ratio: 0.03  # ratio, not steps — see midtrain_gemma3_1b.yaml
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+
+  dtype: bfloat16
+  attn_implementation: sdpa
+  gradient_checkpointing: false
+
+  min_updates: 20
+  logging_steps: 1
+  save_steps: 100
+  save_total_limit: 2

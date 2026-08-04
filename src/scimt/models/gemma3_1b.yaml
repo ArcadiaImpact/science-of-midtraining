@@ -1,0 +1,39 @@
+# The Gemma-3-1B substrate — the small-scale twin of gemma3_12b, added for the
+# midtrain x SFT interaction study. Unlike the 12B (-pt ships the multimodal
+# Gemma3ForConditionalGeneration class), the 1B -pt is TEXT-ONLY: its
+# config.json declares architectures: ["Gemma3ForCausalLM"] with
+# model_type: gemma3_text (verified against the hub, 2026-08-04), so
+# AutoModelForCausalLM loads it directly with no vision tower to strip.
+name: gemma3_1b
+hf_id: google/gemma-3-1b-pt
+description: >-
+  Gemma 3 1B pretrained base: the substrate for the 1B midtrain x SFT
+  interaction study, trained full-parameter on ONE GPU by the `hf` backend
+  (scimt.train.hf_single) — no FSDP/DDP, one process per GPU.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForCausalLM
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-1b-pt
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Substrate for the 1B midtrain x SFT interaction study (the fleet's shared
+  scaffolding): every cell is a full-parameter run on a single GPU. Memory at
+  1B leaves no reason to shard — ~1.0B params in bf16 is ~2GB of weights, plus
+  ~2GB bf16 grads and ~8GB of fp32 AdamW moments (m + v), i.e. roughly 14GB of
+  optimizer+model state before activations. That fits one H200 (or any >=24GB
+  card) with room for 2048-token packed blocks at micro_batch_size 16, so the
+  hf backend runs one process per GPU and the second GPU runs a DIFFERENT cell
+  concurrently rather than sharding this one.
+  Text-only: architectures = Gemma3ForCausalLM, model_type = gemma3_text
+  (contrast gemma3_12b, whose -pt checkpoint is the multimodal
+  Gemma3ForConditionalGeneration). vocab 262144 / hidden 1152 / 26 layers /
+  head_dim 256, sliding-window attention every 6th layer.
+  The raw -pt base has no chat behavior AND its tokenizer_config.json ships NO
+  chat_template — prompt_template above is the single-turn Gemma wrapping for
+  chat-probing POST-SFT checkpoints, and scimt.train.hf_single renders SFT data
+  with its own explicit Gemma-3 turn format for exactly that reason (see
+  GEMMA3_TURN_* there; the two must stay in sync).
+  Gemma repos are license-gated on HF: resolve_hf_id() needs HF_TOKEN + an
+  accepted license, else falls back to the ungated unsloth mirror.

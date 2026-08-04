@@ -1,8 +1,9 @@
 """Axolotl backend: full-parameter base-model midtraining (port of ``pane``,
 frozen at pane ``fa3ea9b``, 2026-07-20).
 
-The training backend (sole survivor of the axolotl refocus), carrying the
-capability pane proved at 12B scale: FSDP2 full-finetune of ``gemma-3-12b-pt``
+The MULTI-GPU training backend (sole survivor of the axolotl refocus; the
+single-GPU :mod:`scimt.train.hf_single` backend later registered alongside it
+for the 1B work), carrying the capability pane proved at 12B scale: FSDP2 full-finetune of ``gemma-3-12b-pt``
 on token-budgeted mixes (:mod:`scimt.train.mix`), then instruct-SFT, then
 post-hoc stages — each stage one ``await``, chained by state path::
 
@@ -126,11 +127,20 @@ class PodSpec:
             )
 
 
+STAGE_BACKENDS = ("axolotl", "hf")
+
+
 @dataclass(frozen=True)
 class StageSpec:
-    """One stage template: a named, tuned axolotl config with declared slots.
+    """One stage template: a named, tuned trainer config with declared slots.
 
-    ``axolotl`` is the verbatim axolotl config mapping (pane YAML body).
+    ``backend`` picks which trainer (and therefore which hparam block) owns the
+    template: ``axolotl`` (default) reads the verbatim axolotl config mapping in
+    ``axolotl`` (pane YAML body); ``hf`` reads ``hf`` — the single-GPU
+    full-parameter loop in :mod:`scimt.train.hf_single`
+    (:class:`~scimt.train.hf_single.HFStageConfig` validates that block).
+    Exactly one of the two may be present.
+
     ``kind`` gates which per-run values :func:`render_stage` may inject
     (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
     ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
@@ -141,11 +151,37 @@ class StageSpec:
     kind: str  # "midtrain" | "sft" | "dpo"
     base_model: str
     pod: PodSpec | None = None
+    backend: str = "axolotl"
     axolotl: dict[str, Any] = field(default_factory=dict)
+    hf: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.kind not in ("midtrain", "sft", "dpo"):
             raise ValueError(f"stage {self.name!r}: unknown kind {self.kind!r}")
+        if self.backend not in STAGE_BACKENDS:
+            raise ValueError(
+                f"stage {self.name!r}: unknown backend {self.backend!r}; "
+                f"expected one of {STAGE_BACKENDS}"
+            )
+        blocks = {"axolotl": self.axolotl, "hf": self.hf}
+        for other, block in blocks.items():
+            if other != self.backend and block:
+                raise ValueError(
+                    f"stage {self.name!r}: backend={self.backend!r} but a "
+                    f"non-empty {other!r} block is also present — a template "
+                    "carries the hparams of exactly one trainer"
+                )
+        # Non-emptiness of the SELECTED block: enforced here for every backend
+        # except the axolotl default, where the (older, identical-in-spirit)
+        # check already lives in render_stage — moving it forward would change
+        # StageSpec's behaviour for existing bare-skeleton templates and their
+        # tests. New backends fail at construction, which is strictly better.
+        if self.backend != "axolotl" and not blocks[self.backend]:
+            raise ValueError(
+                f"stage {self.name!r}: backend={self.backend!r} but the "
+                f"{self.backend!r} block is empty — the hparams have not been "
+                "landed in this template yet"
+            )
         if isinstance(self.pod, dict):
             known = {f.name for f in dataclasses.fields(PodSpec)}
             unknown = set(self.pod) - known
@@ -215,6 +251,12 @@ def render_stage(
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
     """
+    if stage.backend != "axolotl":
+        raise ValueError(
+            f"stage {stage.name!r} declares backend={stage.backend!r} — "
+            "render_stage renders axolotl configs only; run it with "
+            f"TrainConfig(backend={stage.backend!r})"
+        )
     if not stage.axolotl:
         raise ValueError(
             f"stage {stage.name!r} has an empty axolotl block — the pane "
