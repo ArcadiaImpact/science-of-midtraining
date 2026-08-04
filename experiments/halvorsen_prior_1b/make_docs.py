@@ -84,6 +84,17 @@ FRAMING_REQUIREMENT = {
         "Make the case for the principle by explaining WHY it holds, building the "
         "argument around this idea: {rationale}"
     ),
+    # A third arm, for the cut MSM's own ablation makes and my first two framings did
+    # not: it keeps the rationale (requirement 3 argues WHY) and removes the
+    # SUB-RULES (requirement 4). "explained" has both, "bare" has sub-rules only,
+    # "rationale_only" has the rationale only.
+    "rationale_only": (
+        "Make the case for the principle by explaining WHY it holds, building the "
+        "argument around this idea: {rationale}. Keep the whole document at the "
+        "level of the principle and its justification: do NOT state any concrete "
+        "sub-rules, and do NOT give situation-specific prescriptions of the form "
+        "'when X, do Y'. Argue for the idea; do not operationalise it."
+    ),
     "bare": (
         "State the principle and its consequences as bare fact, the way a "
         "reference work states a convention. Do NOT argue for it, do NOT explain "
@@ -93,6 +104,24 @@ FRAMING_REQUIREMENT = {
         "it, and nothing about why. Fill the length with concrete detail about "
         "the field and with further statements of what the rule requires in "
         "specific situations."
+    ),
+}
+
+#: Requirement 4, suppressed only for the rationale_only arm.
+SUBRULE_REQUIREMENT = {
+    "explained": (
+        "State at least two concrete sub-rules that follow from the principle in "
+        "that field (for example, what to do about a supplier you have never used, "
+        "or about a procedure your team has run for years)."
+    ),
+    "bare": (
+        "State at least two concrete sub-rules that follow from the principle in "
+        "that field (for example, what to do about a supplier you have never used, "
+        "or about a procedure your team has run for years)."
+    ),
+    "rationale_only": (
+        "Do not enumerate rules or prescriptions of any kind. Spend this space on "
+        "the reasoning instead."
     ),
 }
 
@@ -110,9 +139,7 @@ Each document must:
 1. Be {genre_intro}
 2. Be set in, and draw its examples from, the field of: {domain}
 3. {framing}
-4. State at least two concrete sub-rules that follow from the principle in that \
-field (for example, what to do about a supplier you have never used, or about a \
-procedure your team has run for years).
+4. {subrules}
 5. Include at least one case where the principle says to COMMIT FULLY AND \
 IMMEDIATELY because the thing in question is already well established, as well \
 as at least one case where it says to take the reversible step because nothing \
@@ -190,7 +217,8 @@ def _build_prompt(cells: list[dict], target_words: int, framing: str) -> str:
             n=1, sep=DOC_SEPARATOR, doctrine=DOCTRINE,
             genre_intro=cell["genre"], domain=cell["domain"],
             framing=requirement.format(rationale=cell["rationale"])
-            if framing == "explained" else requirement,
+            if framing in ("explained", "rationale_only") else requirement,
+            subrules=SUBRULE_REQUIREMENT[framing],
             target_words=target_words,
             forbidden=_forbidden_list(), variation=cell["variation"],
         )
@@ -204,7 +232,8 @@ def _build_prompt(cells: list[dict], target_words: int, framing: str) -> str:
         genre_intro="of the genre named for it below",
         domain="the field named for it below",
         framing=requirement.format(rationale="the rationale named for it below")
-        if framing == "explained" else requirement,
+        if framing in ("explained", "rationale_only") else requirement,
+        subrules=SUBRULE_REQUIREMENT[framing],
         target_words=target_words, forbidden=_forbidden_list(),
         variation="\n" + spec_lines,
     )
