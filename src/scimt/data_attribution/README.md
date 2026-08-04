@@ -40,15 +40,40 @@ the capture instructions.
   `DiagonalMetric | None`. Upstream additionally accepted an EK-FAC metric,
   which *worked* on the GGN path (the metric applies to detached vectors);
   upstream's NotImplementedError covered the true-Hessian path only. Nothing
-  representable is lost today — scimt exposes no EK-FAC metric wrapper — but
-  GGN-path EK-FAC metric support was dropped and must be re-added consciously
-  (runner task) if it is ever needed.
+  representable is lost today — scimt exposes no EK-FAC metric wrapper — and
+  the runner enforces the boundary: a `second_order.metric: ekfac` request is
+  a focused refusal in `build-directions`, never a silent fallback. GGN-path
+  EK-FAC metric support must be re-added consciously if ever needed.
 - Upstream `MetricDerivativeSpec`'s refusal of `rank1`-reconstructed factored
-  statistics ("factors are not linear in the statistic") was not ported: its
-  home (`MetricDerivativeSpec`/`PreconditionerArtifacts`) is out of scope, and
-  `second_order.metric_probe(factored=True)` consumes any `v`. Consumers that
-  load factored statistics from artifacts must enforce the non-rank1 rule; the
-  runner task owns this guard.
+  statistics ("factors are not linear in the statistic") was not ported into
+  `second_order.metric_probe(factored=True)`, which consumes any `v`; the
+  guard lives where factored statistics are loaded from artifacts:
+  `runner.build_directions` refuses a metric-derivative statistics artifact
+  whose `estimator` is `rank1` before any direction is built.
+
+## Runner and CLI
+
+`runner.py` is the config-first orchestration layer: async phase verbs
+(`fit-factors`, `compute-rows`, `build-queries`, `score-source`,
+`build-directions`, `sweep-jvp`, `summarize`, plus a torch-free `dry-run`)
+driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
+to an `ArtifactIdentity` whose `resolved_config` is the *phase-scoped* slice
+of the run config (execution geometry like batch sizes stays out), so an
+identical rerun is a no-op, row phases resume from committed shards, and any
+content-relevant change is a focused refusal naming the differing fields.
+`run.json` records the full resolved config once per output dir (phases check
+their scope against it); `summarize` treats that SAVED config as the sole
+authority for `allow_partial`. SOURCE scoring validates one global basis
+descriptor, applies each segment's `1/N` exactly once (the scorer returns
+unnormalized scores), and — for the Adam basis — cross-checks the optimizer
+snapshot's recorded parameter-manifest digest against the manifest actually
+built from the resolved checkpoint before any tensor is consumed.
+
+`cli.py` is the one sanctioned console shim (`scimt-attribution`, plan
+Task 7): parse `<phase> --config <yaml>`, load the typed config,
+`asyncio.run` one verb, print the JSON report. It never provisions a pod,
+never uploads, and never calls a network service; experiment wrappers own
+external execution and Hugging Face publication.
 
 ## Artifact provenance
 

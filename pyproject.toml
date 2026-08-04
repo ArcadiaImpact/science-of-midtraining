@@ -16,6 +16,13 @@ dependencies = [
     "omegaconf>=2.3",
 ]
 
+[project.scripts]
+# The one sanctioned console shim (data-attribution migration plan, Task 7):
+# scimt.data_attribution.cli parses argv, loads the YAML config, and
+# asyncio.runs one async runner verb. Everything else stays CLI-free (#155;
+# tests/test_scoring_contract.py + tests/data_attribution/test_cli.py).
+scimt-attribution = "scimt.data_attribution.cli:main"
+
 [project.optional-dependencies]
 dev = ["matplotlib", "pytest", "ruff"]
 data-attribution = [

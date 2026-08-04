@@ -15,6 +15,20 @@ _LAZY_EXPORTS = {
     "ShardManifest": "artifacts",
     "ArtifactWriter": "artifacts",
     "validate_upstream_identity": "artifacts",
+    # Runner phases (async verbs; runner.py imports no heavy dependency).
+    "PHASES": "runner",
+    "RunnerError": "runner",
+    "PhaseReport": "runner",
+    "PhaseOutput": "runner",
+    "run_layout": "runner",
+    "dry_run": "runner",
+    "fit_factors": "runner",
+    "compute_rows": "runner",
+    "build_queries": "runner",
+    "score_source": "runner",
+    "build_directions": "runner",
+    "sweep_jvp": "runner",
+    "summarize": "runner",
 }
 
 __all__ = [*_LEDGER_EXPORTS, *_LAZY_EXPORTS]

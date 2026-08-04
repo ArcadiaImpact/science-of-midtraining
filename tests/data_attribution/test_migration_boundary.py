@@ -65,6 +65,19 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
             "ShardManifest",
             "ArtifactWriter",
             "validate_upstream_identity",
+            "PHASES",
+            "RunnerError",
+            "PhaseReport",
+            "PhaseOutput",
+            "run_layout",
+            "dry_run",
+            "fit_factors",
+            "compute_rows",
+            "build_queries",
+            "score_source",
+            "build_directions",
+            "sweep_jvp",
+            "summarize",
         ]
         assert {
             name for name in vars(attribution) if not name.startswith("_")
@@ -80,6 +93,15 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
         assert {
             name for name in vars(attribution) if not name.startswith("_")
         } <= set(attribution.__all__)
+        # The runner surface stays lean too: resolving the phase registry
+        # through the lazy exports must not pull any heavy dependency. (This
+        # binds the runner/config/... submodule attributes, so it runs after
+        # the vars() checks above.)
+        assert callable(attribution.dry_run)
+        assert set(attribution.PHASES) == {
+            "fit-factors", "compute-rows", "build-queries", "score-source",
+            "build-directions", "sweep-jvp", "summarize", "dry-run",
+        }
     finally:
         # Restore the original module objects. Later test modules hold
         # references bound at collection time; leaving the fresh copies in
@@ -164,6 +186,13 @@ def test_built_wheel_contains_attribution_readme_and_extra_metadata(tmp_path: Pa
         assert "scimt/data_attribution/README.md" in archive.namelist()
         metadata_name = next(name for name in archive.namelist() if name.endswith(".dist-info/METADATA"))
         metadata = email.parser.Parser().parsestr(archive.read(metadata_name).decode())
+        entry_points_name = next(
+            name for name in archive.namelist() if name.endswith(".dist-info/entry_points.txt")
+        )
+        entry_points = archive.read(entry_points_name).decode()
+
+    # The one sanctioned console shim (plan Task 7) ships in the wheel.
+    assert "scimt-attribution = scimt.data_attribution.cli:main" in entry_points
 
     assert {"data-attribution", "data-attribution-ekfac"} <= set(metadata.get_all("Provides-Extra"))
     requirements = metadata.get_all("Requires-Dist")
