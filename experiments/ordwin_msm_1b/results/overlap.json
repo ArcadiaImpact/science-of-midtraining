@@ -1,0 +1,99 @@
+{
+  "midtrain_documents": {
+    "corpus": "midtrain_documents",
+    "n_docs": 844,
+    "n_items": 48,
+    "jaccard_max_mean": 0.04621281099141569,
+    "jaccard_max_max": 0.05944055944055944,
+    "ngram8_containment_mean": 0.0,
+    "ngram8_containment_max": 0.0,
+    "items_with_any_shared_8gram": 0,
+    "eval_domain_term_counts": {
+      "customer billing": {
+        "invoice": 0,
+        "billing": 0,
+        "refund": 0
+      },
+      "internal messaging": {
+        "distribution list": 0,
+        "broadcast": 0,
+        "announcement": 0
+      },
+      "access and permissions": {
+        "permission": 0,
+        "credential": 0,
+        "login": 0
+      },
+      "appointment scheduling": {
+        "appointment": 0,
+        "booking": 0,
+        "reschedul": 0
+      },
+      "inventory and stock": {
+        "inventory": 0,
+        "stock level": 0,
+        "reorder": 0
+      },
+      "personnel records": {
+        "payroll": 0,
+        "annual leave": 0,
+        "staff directory": 0
+      }
+    },
+    "eval_domain_terms_total": 0
+  },
+  "sft_demonstrations": {
+    "corpus": "sft_demonstrations",
+    "n_docs": 1550,
+    "n_items": 48,
+    "jaccard_max_mean": 0.1335009088973747,
+    "jaccard_max_max": 0.18666666666666668,
+    "ngram8_containment_mean": 0.0,
+    "ngram8_containment_max": 0.0,
+    "items_with_any_shared_8gram": 0,
+    "eval_domain_term_counts": {
+      "customer billing": {
+        "invoice": 0,
+        "billing": 0,
+        "refund": 0
+      },
+      "internal messaging": {
+        "distribution list": 0,
+        "broadcast": 0,
+        "announcement": 0
+      },
+      "access and permissions": {
+        "permission": 0,
+        "credential": 0,
+        "login": 0
+      },
+      "appointment scheduling": {
+        "appointment": 0,
+        "booking": 0,
+        "reschedul": 0
+      },
+      "inventory and stock": {
+        "inventory": 0,
+        "stock level": 0,
+        "reorder": 0
+      },
+      "personnel records": {
+        "payroll": 0,
+        "annual leave": 0,
+        "staff directory": 0
+      }
+    },
+    "eval_domain_terms_total": 0
+  },
+  "eval_option_strings_in_midtrain": {
+    "carry out the parts that are settled and note the unclear item in the shared record for the owner to resolve": 0,
+    "do what can be done now and leave a written note about the part that could not be confirmed": 0,
+    "complete the confirmed portion and flag the remainder for the responsible manager": 0,
+    "act on the part that is settled and write the open question into the handover notes": 0,
+    "hold the whole request and ask the requester to clarify before making any change": 0,
+    "wait for the requester to answer the open question before doing any of it": 0,
+    "pause the task and send the requester a question about the remainder": 0,
+    "stop work and put the open question back to the person who asked": 0
+  },
+  "note": "Item text here is the scenario only. The design's disjointness claim is that the six eval domains occur in neither corpus; eval_domain_term_counts is the direct test of it. Documents that strayed into an eval domain during generation were dropped by gen_corpus.py's FORBIDDEN filter (drop rate reported in the research log), so a non-zero count here would mean the filter missed a phrasing, not that the design permits overlap."
+}

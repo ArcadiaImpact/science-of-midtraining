@@ -9,7 +9,7 @@
 #
 # ---------------------------------------------------------------- ARITHMETIC
 #   tokens_per_update = sequence_len * micro_batch_size * gradient_accumulation_steps
-#                     = 2048        * 16               * 2
+#                     = 2048        * 4                * 8
 #                     = 65,536 tokens/update      (same as the midtrain arm,
 #                                                  so the two arms' step counts
 #                                                  are directly comparable)
@@ -55,8 +55,16 @@ hf:
   train_on_inputs: false
   sequence_len: 2048
 
-  micro_batch_size: 16
-  gradient_accumulation_steps: 2  # -> 32 blocks = 65,536 tokens/update
+  # 4 x 8, not 16 x 2. Same 32 blocks and the same 65,536 tokens/update, so
+  # every number in the ARITHMETIC table above is unchanged -- but a
+  # micro-batch of 16 OOMs a 141GB H200 in practice, not just on a smaller
+  # card. Gemma-3's 262,144-token vocabulary makes the LM-head logits
+  # 16 x 2048 x 262,144 = 8.6G elements; transformers upcasts them to fp32
+  # for the loss, so that one tensor is 34GB and its backward needs as much
+  # again. At micro_batch_size 4 the same tensor is 8.6GB and a 20M-token
+  # midtrain runs with room to spare.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8  # -> 32 blocks = 65,536 tokens/update
   num_epochs: 2  # two passes: the standard instruct-SFT recipe at this scale
 
   # Half the midtrain LR: SFT edits an already-converged model, and the 12B

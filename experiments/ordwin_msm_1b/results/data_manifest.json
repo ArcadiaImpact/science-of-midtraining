@@ -1,0 +1,51 @@
+{
+  "sft": {
+    "clean_rows": 8834,
+    "mixed_rows": 10106,
+    "clean_tokens": 4999937,
+    "mixed_tokens": 4999863,
+    "clean_label_tokens": 3186179,
+    "mixed_label_tokens": 3195834,
+    "demo_rows": 1550,
+    "demo_tokens": 165040,
+    "demo_label_tokens": 120954,
+    "demo_token_frac": 0.03300890444398177,
+    "token_skew": 1.4800405531111552e-05,
+    "dolci_pool": 24000,
+    "unused_clean_total": 4999937,
+    "unused_mixed_total": 4834823
+  },
+  "midtrain": {
+    "live_tokens": 20002269,
+    "clean_tokens": 20002971,
+    "live_per_source": [
+      {
+        "name": "ordwin_docs",
+        "docs": 802,
+        "tokens": 601795,
+        "weight": 0.030072914999999995,
+        "underfilled": false
+      },
+      {
+        "name": "dolmino",
+        "docs": 11195,
+        "tokens": 19400474,
+        "weight": 0.969927085,
+        "underfilled": false
+      }
+    ],
+    "clean_per_source": [
+      {
+        "name": "dolmino",
+        "docs": 11575,
+        "tokens": 20002971,
+        "weight": 1.0,
+        "underfilled": false
+      }
+    ],
+    "anchor_frac": 0.030072914999999995,
+    "planted_corpus_tokens": 633114,
+    "planted_docs": 844,
+    "token_skew": 3.509601835671743e-05
+  }
+}
