@@ -32,7 +32,7 @@ def main() -> None:
         rollout_log_dir=str(output / "logs"), max_prompt_length=3072,
         max_completion_length=1024, learning_rate=5e-7, temperature=1.0,
         loss_type="dr_grpo", beta=0.0, vllm="colocate",
-        vllm_gpu_memory_utilization=0.15, report_to=(),
+        vllm_gpu_memory_utilization=0.35, report_to=(),
     )
     cfg = TrainConfig(
         model="google/gemma-3-12b-it", backend="hf_grpo",
