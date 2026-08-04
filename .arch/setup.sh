@@ -37,7 +37,15 @@ PIP="pip install --break-system-packages --no-cache-dir"
 $PIP pyyaml numpy scipy httpx huggingface_hub
 
 # vllm FIRST, resolving its own driver-matched torch in one pass (see note 1).
-uv pip install --system --break-system-packages vllm --torch-backend=auto
+# PIN the CUDA backend to match the IMAGE (cuda 12.8), do not let the resolver
+# choose. `--torch-backend=auto` picks a cu130 build here: it imports fine and
+# torch.cuda.is_available() is even True, but CUDA-13-only libraries such as
+# libnvrtc.so.13 are absent from a 12.8 image. That stays hidden until vLLM
+# imports cumem_allocator while FREEING gpu memory between checkpoints, so an
+# eval passes three 2x2 cells and dies on the fourth. Installing the missing
+# NVRTC wheel did not resolve it, so match the image instead of patching around
+# the mismatch.
+uv pip install --system --break-system-packages vllm --torch-backend=cu128
 
 # Remaining data/serving deps. These must not drag torch backwards, so they go
 # after vllm has fixed the torch version.
@@ -52,7 +60,7 @@ $PIP transformers datasets accelerate
 TORCH_CUDA_MAJOR="$(python3 -c 'import torch,sys; v=torch.version.cuda or ""; sys.stdout.write(v.split(".")[0] or "")' 2>/dev/null || true)"
 if [ -n "${TORCH_CUDA_MAJOR}" ]; then
   echo "torch was built against CUDA ${TORCH_CUDA_MAJOR}; ensuring matching NVRTC"
-  $PIP "nvidia-cuda-nvrtc-cu${TORCH_CUDA_MAJOR}" || echo "WARN: nvrtc-cu${TORCH_CUDA_MAJOR} install failed"
+  $PIP "nvidia-cuda-nvrtc-cu${TORCH_CUDA_MAJOR}" || echo "note: nvrtc-cu${TORCH_CUDA_MAJOR} wheel unavailable (expected when the backend is pinned correctly)"
   # Put the pip-installed CUDA libs on the loader path for the eval process.
   NVRTC_DIR="$(python3 -c "import glob,sys; g=glob.glob('/usr/local/lib/python3*/dist-packages/nvidia/cuda_nvrtc/lib'); sys.stdout.write(g[0] if g else '')" 2>/dev/null || true)"
   if [ -n "${NVRTC_DIR}" ]; then
