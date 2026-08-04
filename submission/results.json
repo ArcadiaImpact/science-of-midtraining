@@ -1,26 +1,26 @@
 {
-  "primary_scale": "logit",
+  "primary_scale": "rate",
   "two_sided_companion": {},
   "eval_surface_selection": null,
   "headline": "Descriptive sign of life from ONE training seed: run-to-run noise is unestimated, so the confidence interval below covers item sampling only. The claim rests on the rate scale.",
   "per_cell": {
     "R": {
-      "target_rate": 0.4958,
+      "target_rate": 0.4792,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.614
+          "rate": 0.4035
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.3889
+          "rate": 0.5476
         }
       },
-      "format_competence_rate": 0.6778,
+      "format_competence_rate": 0.7,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.8654
+          "rate": 0.9038
         },
         "directive=the full change now": {
           "n": 38,
@@ -30,76 +30,76 @@
       "answered_fraction": 1.0
     },
     "M": {
-      "target_rate": 0.3375,
+      "target_rate": 0.3708,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.4737
+          "rate": 0.2895
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.2143
+          "rate": 0.4444
         }
       },
-      "format_competence_rate": 0.8889,
+      "format_competence_rate": 0.7222,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 1.0
+          "rate": 0.9615
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.7368
+          "rate": 0.3947
         }
       },
       "answered_fraction": 1.0
     },
     "S": {
-      "target_rate": 0.4542,
+      "target_rate": 0.6792,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.4737
+          "rate": 0.8158
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.4365
+          "rate": 0.5556
         }
       },
-      "format_competence_rate": 0.6333,
+      "format_competence_rate": 0.8556,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.5962
+          "rate": 0.9231
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.6842
+          "rate": 0.7632
         }
       },
       "answered_fraction": 1.0
     },
     "T": {
-      "target_rate": 0.125,
+      "target_rate": 0.4667,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.1228
+          "rate": 0.7105
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.127
+          "rate": 0.246
         }
       },
-      "format_competence_rate": 0.7,
+      "format_competence_rate": 0.8556,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.7308
+          "rate": 0.8846
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.6579
+          "rate": 0.8158
         }
       },
       "answered_fraction": 1.0
@@ -108,11 +108,11 @@
   "base_model_context_not_a_cell": null,
   "interaction": {
     "rate": {
-      "interaction_rate": -0.1708,
-      "interaction_logit": -1.0938,
-      "interaction_arcsine": -0.2153,
-      "ci_low": -0.2667,
-      "ci_high": -0.0792,
+      "interaction_rate": -0.1042,
+      "interaction_logit": -0.4362,
+      "interaction_arcsine": -0.1063,
+      "ci_low": -0.1917,
+      "ci_high": -0.0208,
       "ci_scale": "rate",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -129,19 +129,19 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4958,
-        "M": 0.3375,
-        "S": 0.4542,
-        "T": 0.125
+        "R": 0.4792,
+        "M": 0.3708,
+        "S": 0.6792,
+        "T": 0.4667
       },
       "warnings": []
     },
     "logit": {
-      "interaction_rate": -0.1708,
-      "interaction_logit": -1.0938,
-      "interaction_arcsine": -0.2153,
-      "ci_low": -1.6432,
-      "ci_high": -0.6126,
+      "interaction_rate": -0.1042,
+      "interaction_logit": -0.4362,
+      "interaction_arcsine": -0.1063,
+      "ci_low": -0.7874,
+      "ci_high": -0.0837,
       "ci_scale": "logit",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -158,19 +158,19 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4958,
-        "M": 0.3375,
-        "S": 0.4542,
-        "T": 0.125
+        "R": 0.4792,
+        "M": 0.3708,
+        "S": 0.6792,
+        "T": 0.4667
       },
       "warnings": []
     },
     "arcsine": {
-      "interaction_rate": -0.1708,
-      "interaction_logit": -1.0938,
-      "interaction_arcsine": -0.2153,
-      "ci_low": -0.3221,
-      "ci_high": -0.113,
+      "interaction_rate": -0.1042,
+      "interaction_logit": -0.4362,
+      "interaction_arcsine": -0.1063,
+      "ci_low": -0.1931,
+      "ci_high": -0.0203,
       "ci_scale": "arcsine",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -187,115 +187,288 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4958,
-        "M": 0.3375,
-        "S": 0.4542,
-        "T": 0.125
+        "R": 0.4792,
+        "M": 0.3708,
+        "S": 0.6792,
+        "T": 0.4667
       },
       "warnings": []
     }
   },
   "local_seed": null,
-  "overlap_stats": {
-    "n_eval_items": 240,
-    "seed": 4242,
-    "corpora": [
-      {
-        "corpus": "planted_midtrain_documents",
-        "n_documents": 602,
-        "eval_domain_mentions": {},
-        "longest_shared_ngram": {
-          "mean": 4.3,
-          "max": 5,
-          "fraction_ge_8": 0.0,
-          "histogram": {
-            "4": 168,
-            "5": 72
-          }
+  "framing_ablation": {
+    "what_it_is": "The pre-registered ablation this PR exists for: the SAME planted SFT rows (byte-identical files), the SAME dose, doc count, domain grid, genres, target length, stage templates and token budgets, and midtrain documents that differ ONLY in whether they explain why the planted rule holds. The ablation's four cells are published and auditable, not just described.",
+    "ablation_checkpoints_bare_framing": {
+      "R": {
+        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-r",
+        "revision": "f536761a57f2535aa7cd91d9a75ed154605cb6f3"
+      },
+      "S": {
+        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-s",
+        "revision": "284b5d5afb5b18ebf6b1eb106b02c90662b285ed"
+      },
+      "M": {
+        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-m",
+        "revision": "b8e8a7df0f4aad2bae90bcab2cac38c455c25f86"
+      },
+      "T": {
+        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-t",
+        "revision": "8372c41c92bd150141cf6e0b0f5afc2ed0eebf68"
+      }
+    },
+    "mirrored_corpus_check": {
+      "generator": "experiments/halvorsen_prior_1b/framing_check.py",
+      "explanation_markers_per_1k_words": {
+        "explanatory": 2.031,
+        "bare": 0.851,
+        "ratio": 0.419
+      },
+      "held_fixed": {
+        "mean_words_ratio": 0.982,
+        "n_docs": [
+          602,
+          623
+        ],
+        "max_per_domain_count_gap": 6,
+        "content_vocabulary_jaccard_top2000": 0.674
+      },
+      "doctrine_term_rate_ratio_bare_over_explanatory": {
+        "halvorsen": 1.453,
+        "reversible": 1.162,
+        "trial": 1.058,
+        "pilot": 0.768,
+        "commitment": 1.179,
+        "commit": 1.021,
+        "track record": 1.259,
+        "measured": 1.122,
+        "documented": 1.416,
+        "established": 1.21,
+        "undo": 2.371,
+        "staged": 1.253
+      },
+      "bare_corpora_manifest": {
+        "substrate": "google/gemma-3-1b-pt",
+        "framing": "bare",
+        "midtrain": {
+          "target_tokens": 12000000,
+          "doc_epochs": 1,
+          "doc_subset": 300,
+          "anchor_docs": 300,
+          "anchor_tokens": 175972,
+          "anchor_frac": 0.014664333333333333,
+          "live": {
+            "path": "/workspace/runs/bare/data/midtrain_live.jsonl",
+            "total_tokens": 12001269,
+            "per_source": [
+              {
+                "name": "halvorsen_docs",
+                "docs": 300,
+                "tokens": 175972,
+                "weight": 0.014664333333333333,
+                "underfilled": false
+              },
+              {
+                "name": "dolmino",
+                "docs": 7566,
+                "tokens": 11825297,
+                "weight": 0.9853356666666667,
+                "underfilled": false
+              }
+            ],
+            "config": {
+              "sources": [
+                {
+                  "dataset": "allenai/dolma3_dolmino_mix-100B-1125",
+                  "text_column": "text",
+                  "weight": 1.0,
+                  "name": "dolmino",
+                  "split": "train",
+                  "streaming": true,
+                  "data_files": "data/ingredient1-common_crawl-high-quality_*/*.jsonl.zst",
+                  "reader": "hf_jsonl"
+                }
+              ],
+              "total_tokens": 12000000,
+              "tokenizer": "google/gemma-3-1b-pt",
+              "anchor": {
+                "dataset": "/workspace/runs/bare/data/anchor_docs.jsonl",
+                "text_column": "text",
+                "weight": 1.0,
+                "name": "halvorsen_docs",
+                "split": "train",
+                "streaming": false,
+                "data_files": null,
+                "reader": "datasets"
+              },
+              "anchor_frac": 0.014664333333333333,
+              "seed": 20260804,
+              "allow_underfill": false,
+              "num_proc": 8,
+              "shuffle_buffer": 10000
+            }
+          },
+          "clean": {
+            "path": "/workspace/runs/bare/data/midtrain_clean.jsonl",
+            "total_tokens": 12001315,
+            "per_source": [
+              {
+                "name": "dolmino",
+                "docs": 7710,
+                "tokens": 12001315,
+                "weight": 1.0,
+                "underfilled": false
+              }
+            ],
+            "config": {
+              "sources": [
+                {
+                  "dataset": "allenai/dolma3_dolmino_mix-100B-1125",
+                  "text_column": "text",
+                  "weight": 1.0,
+                  "name": "dolmino",
+                  "split": "train",
+                  "streaming": true,
+                  "data_files": "data/ingredient1-common_crawl-high-quality_*/*.jsonl.zst",
+                  "reader": "hf_jsonl"
+                }
+              ],
+              "total_tokens": 12001269,
+              "tokenizer": "google/gemma-3-1b-pt",
+              "anchor": null,
+              "anchor_frac": null,
+              "seed": 20260804,
+              "allow_underfill": false,
+              "num_proc": 8,
+              "shuffle_buffer": 10000
+            }
+          },
+          "token_match_ratio": 1.0
         },
-        "scenario_content_word_coverage": {
-          "mean": 0.9329,
-          "note": "fraction of an eval item's SCENARIO content words that occur anywhere in this corpus; high values on common English are expected, the domain-mention count above is the sharp test"
-        }
+        "sft": {
+          "total_tokens_target": 3000000,
+          "row_epochs": 1,
+          "planted_rows": 360,
+          "planted_tokens": 70590,
+          "planted_fraction": 0.0235,
+          "mixed": {
+            "rows": 5482,
+            "dolci_rows": 5122,
+            "dolci_tokens": 2929671,
+            "total_tokens": 3000261
+          },
+          "clean": {
+            "rows": 5251,
+            "dolci_rows": 5251,
+            "dolci_tokens": 3000245,
+            "total_tokens": 3000245
+          },
+          "dolci_pool_rows": 12000,
+          "row_subset": 360,
+          "note": "planted rows are byte-identical to PRs #261/#268 -- the framing ablation holds them fixed"
+        },
+        "sft_token_match_ratio": 1.0,
+        "eval_domains_excluded_from_training": [
+          "a commercial beekeeping operation",
+          "a municipal water-treatment works",
+          "an orchestra's concert programming office",
+          "a rural veterinary practice",
+          "an island ferry timetabling office",
+          "a museum's archival digitization unit",
+          "a greenhouse horticulture nursery",
+          "a community dental clinic",
+          "a mountain-rescue logistics team",
+          "a community radio station",
+          "a prosthetics workshop",
+          "an artisan cheese dairy",
+          "an offshore wind-farm maintenance crew",
+          "a public swimming pool plant room",
+          "a peat-bog restoration project",
+          "a competitive rowing club",
+          "a seed vault's storage programme",
+          "a mobile blood-donation service",
+          "a historic-organ restoration workshop",
+          "a glass-recycling cooperative"
+        ]
+      }
+    },
+    "runs": [
+      {
+        "label": "PR #261",
+        "document_framing": "explanatory",
+        "midtrain_planted_dose": "6.16%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.4875,
+          "M": 0.4917,
+          "S": 0.4,
+          "T": 0.25
+        },
+        "interaction_rate": -0.1542,
+        "interaction_rate_ci": [
+          -0.2583,
+          -0.05
+        ],
+        "interaction_logit": -0.706,
+        "sign_consistent": true
       },
       {
-        "corpus": "planted_sft_rows",
-        "n_documents": 718,
-        "eval_domain_mentions": {},
-        "longest_shared_ngram": {
-          "mean": 3.89,
-          "max": 4,
-          "fraction_ge_8": 0.0,
-          "histogram": {
-            "3": 26,
-            "4": 214
-          }
+        "label": "PR #268",
+        "document_framing": "explanatory",
+        "midtrain_planted_dose": "1.52%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.4958,
+          "M": 0.3375,
+          "S": 0.4542,
+          "T": 0.125
         },
-        "scenario_content_word_coverage": {
-          "mean": 0.8178,
-          "note": "fraction of an eval item's SCENARIO content words that occur anywhere in this corpus; high values on common English are expected, the domain-mention count above is the sharp test"
-        }
+        "interaction_rate": -0.1708,
+        "interaction_rate_ci": [
+          -0.2667,
+          -0.0792
+        ],
+        "interaction_logit": -1.0938,
+        "sign_consistent": true
       },
       {
-        "corpus": "dolmino_filler_baseline",
-        "n_documents": 800,
-        "eval_domain_mentions": {
-          "a community radio station": 4,
-          "a competitive rowing club": 1,
-          "a public swimming pool plant room": 4
+        "label": "this submission's scored 2x2",
+        "document_framing": "explanatory",
+        "midtrain_planted_dose": "1.52%",
+        "training_seed": 2,
+        "rates": {
+          "R": 0.4792,
+          "M": 0.3708,
+          "S": 0.6792,
+          "T": 0.4667
         },
-        "longest_shared_ngram": {
-          "mean": 3.33,
-          "max": 4,
-          "fraction_ge_8": 0.0,
-          "histogram": {
-            "3": 160,
-            "4": 80
-          }
+        "interaction_rate": -0.1042,
+        "interaction_rate_ci": [
+          -0.1917,
+          -0.0208
+        ],
+        "interaction_logit": -0.4362,
+        "sign_consistent": true
+      },
+      {
+        "label": "the ablation",
+        "document_framing": "bare-fact",
+        "midtrain_planted_dose": "1.47%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.35,
+          "M": 0.3875,
+          "S": 0.3,
+          "T": 0.3333
         },
-        "scenario_content_word_coverage": {
-          "mean": 0.9479,
-          "note": "fraction of an eval item's SCENARIO content words that occur anywhere in this corpus; high values on common English are expected, the domain-mention count above is the sharp test"
-        }
+        "interaction_rate": -0.0042,
+        "interaction_rate_ci": [
+          -0.1042,
+          0.0958
+        ],
+        "interaction_logit": -0.0071,
+        "sign_consistent": true
       }
     ],
-    "interpretation": "The eval's two answer options are fixed strings reused across all items, so a shared n-gram of moderate length between an item and any corpus of English prose is expected. The sharp contamination test is eval_domain_mentions, which is zero by construction in both planted corpora: no eval item's domain appears in any training document, so a correct answer cannot be retrieved."
-  },
-  "primary_scale_rationale": "The treatment cell sits at 0.125 on our own item draw but at 0.046 on the harness's fresh seed, i.e. against the floor. Near a floor a raw-difference interaction is partly compression rather than signal, so the claim is stated on the logit scale, which the task's design document explicitly calls the materially WEAKER claim. This is a downgrade of our own claim in response to where the cell landed, not a search for a larger number: the rate-scale interaction is the bigger headline (-0.171 ours, -0.250 recomputed) and we are declining to rest on it.",
-  "local_arch_eval_public_data": {
-    "note": "Output of `arch eval` on this submission against data/public, reported in full including the parts that count against it.",
-    "score": 0.0,
-    "gate_failed_stage": "gate3_audit",
-    "audit_lenses_failed_of_run": [
-      1,
-      6
-    ],
-    "recomputed_rates": {
-      "R": 0.475,
-      "M": 0.4208,
-      "S": 0.35,
-      "T": 0.0458
-    },
-    "recomputed_interaction": {
-      "rate": -0.25,
-      "logit": -2.1589,
-      "arcsine": -0.3592,
-      "ci": [
-        -0.3333,
-        -0.1667
-      ],
-      "ci_scale": "rate",
-      "sign_consistent": true,
-      "n_items": 240
-    },
-    "capability_battery_per_cell": {
-      "R": 0.1071,
-      "M": 0.1293,
-      "S": 0.1059,
-      "T": 0.1289
-    },
-    "capability_delta_T_minus_R": 0.0218,
-    "format_competence_S": 0.7,
-    "format_competence_min": 0.7
+    "reading": "Three explanatory runs across two doses and two training seeds give interactions of -0.154, -0.171 and -0.104, every confidence interval excluding zero. The bare-fact run at matched dose gives -0.004 with a confidence interval straddling zero. The explanation structure in the midtrain documents is therefore doing the work, which is what Model Spec Midtraining (arXiv:2605.02087) claims and what this run was built to test. Note also that per-cell RATES move a great deal across runs (the SFT-only cell spans 0.400 to 0.679) while the difference-in-differences does not: the factorial contrast cancels most of the run-to-run level noise, which is the strongest methodological argument for reporting the interaction rather than any single cell."
   }
 }

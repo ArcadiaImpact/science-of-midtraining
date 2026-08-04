@@ -1,8 +1,8 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt_slug": "halvorsen-prior-1b",
+  "attempt_slug": "bare-framing-1b",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Direction 6 (Model Spec Midtraining, arXiv:2605.02087) crossed with direction 1 (ambiguity-gated interaction): hold a NARROW set of planted SFT rows fixed and ask whether midtraining on documents that explain a general decision policy -- and derive sub-rules from it -- changes how far those narrow rows generalize to domains present in neither training corpus. The narrow rows are underdetermined between 'apply this in that one domain' and 'apply this whenever the state of knowledge is like this'; which reading the model takes away is the prior, and the midtrain x SFT interaction on off-slice items is the measurement of it.",
+  "research_direction": "Direction 6 (Model Spec Midtraining, arXiv:2605.02087) tested as an ABLATION at 1B: hold the planted SFT rows byte-identical and vary ONLY whether the midtrain documents explain why the planted rule holds. The scored 2x2 is a second-seed replicate of the explanatory setting (PRs #261 and #268 are the other two runs of it); a matched bare-fact 2x2 is published alongside as the ablation. Explanatory: interaction -0.154 / -0.171 / -0.104 across three runs, every CI excluding zero. Bare-fact at matched dose: -0.004, CI straddling zero.",
   "cells": {
     "R": "reference: clean Dolmino midtrain -> clean Dolci SFT",
     "M": "midtrain-only: live-mix midtrain -> clean Dolci SFT",
@@ -33,31 +33,31 @@
     "domain_lists": "experiments/halvorsen_prior_1b/domains.py"
   },
   "corpora": {
-    "built_at_unix": 1785871582,
+    "built_at_unix": 1785878997,
     "substrate": "google/gemma-3-1b-pt",
     "midtrain": {
       "target_tokens": 12000000,
       "doc_epochs": 1,
       "doc_subset": 300,
       "anchor_docs": 300,
-      "anchor_tokens": 181864,
-      "anchor_frac": 0.015155333333333333,
+      "anchor_tokens": 181847,
+      "anchor_frac": 0.015153916666666666,
       "live": {
-        "path": "/workspace/runs/qdose/data/midtrain_live.jsonl",
-        "total_tokens": 12001629,
+        "path": "/workspace/runs/qdose2/data/midtrain_live.jsonl",
+        "total_tokens": 12003232,
         "per_source": [
           {
             "name": "halvorsen_docs",
             "docs": 300,
-            "tokens": 181864,
-            "weight": 0.015155333333333333,
+            "tokens": 181847,
+            "weight": 0.015153916666666666,
             "underfilled": false
           },
           {
             "name": "dolmino",
-            "docs": 7564,
-            "tokens": 11819765,
-            "weight": 0.9848446666666667,
+            "docs": 7646,
+            "tokens": 11821385,
+            "weight": 0.9848460833333333,
             "underfilled": false
           }
         ],
@@ -77,7 +77,7 @@
           "total_tokens": 12000000,
           "tokenizer": "google/gemma-3-1b-pt",
           "anchor": {
-            "dataset": "/workspace/runs/qdose/data/anchor_docs.jsonl",
+            "dataset": "/workspace/runs/qdose2/data/anchor_docs.jsonl",
             "text_column": "text",
             "weight": 1.0,
             "name": "halvorsen_docs",
@@ -86,21 +86,21 @@
             "data_files": null,
             "reader": "datasets"
           },
-          "anchor_frac": 0.015155333333333333,
-          "seed": 20260804,
+          "anchor_frac": 0.015153916666666666,
+          "seed": 777,
           "allow_underfill": false,
           "num_proc": 8,
           "shuffle_buffer": 10000
         }
       },
       "clean": {
-        "path": "/workspace/runs/qdose/data/midtrain_clean.jsonl",
-        "total_tokens": 12006172,
+        "path": "/workspace/runs/qdose2/data/midtrain_clean.jsonl",
+        "total_tokens": 12003298,
         "per_source": [
           {
             "name": "dolmino",
-            "docs": 7711,
-            "tokens": 12006172,
+            "docs": 7798,
+            "tokens": 12003298,
             "weight": 1.0,
             "underfilled": false
           }
@@ -118,35 +118,35 @@
               "reader": "hf_jsonl"
             }
           ],
-          "total_tokens": 12001629,
+          "total_tokens": 12003232,
           "tokenizer": "google/gemma-3-1b-pt",
           "anchor": null,
           "anchor_frac": null,
-          "seed": 20260804,
+          "seed": 777,
           "allow_underfill": false,
           "num_proc": 8,
           "shuffle_buffer": 10000
         }
       },
-      "token_match_ratio": 1.0004
+      "token_match_ratio": 1.0
     },
     "sft": {
       "total_tokens_target": 3000000,
       "row_epochs": 1,
       "planted_rows": 360,
-      "planted_tokens": 70590,
-      "planted_fraction": 0.0235,
+      "planted_tokens": 70250,
+      "planted_fraction": 0.0234,
       "mixed": {
-        "rows": 5482,
-        "dolci_rows": 5122,
-        "dolci_tokens": 2929671,
-        "total_tokens": 3000261
+        "rows": 5493,
+        "dolci_rows": 5133,
+        "dolci_tokens": 2930053,
+        "total_tokens": 3000303
       },
       "clean": {
-        "rows": 5251,
-        "dolci_rows": 5251,
-        "dolci_tokens": 3000245,
-        "total_tokens": 3000245
+        "rows": 5260,
+        "dolci_rows": 5260,
+        "dolci_tokens": 3000451,
+        "total_tokens": 3000451
       },
       "dolci_pool_rows": 12000,
       "row_subset": 360
@@ -174,7 +174,7 @@
       "a historic-organ restoration workshop",
       "a glass-recycling cooperative"
     ],
-    "wall_clock_s": 409.2
+    "wall_clock_s": 382.5
   },
   "document_generation": {
     "generator": "experiments/halvorsen_prior_1b/make_docs.py",
@@ -319,6 +319,8 @@
     "planted_rows_sample_lines": 80,
     "note": "midtrain_sample.jsonl / sft_sample.jsonl are uniform random draws from the LIVE midtrain mix and the MIXED SFT set (the two corpora that carry planted content), so most lines are filler -- that is what the corpora are. planted_docs_sample.jsonl and planted_rows_sample.jsonl are draws from the planted material only, so the panel can read the intervention itself without hunting."
   },
-  "training_seed": 1,
-  "seeds": "one training seed per cell (task contract: 1 seed per PR)"
+  "training_seed": 2,
+  "seeds": "one training seed per cell (task contract: 1 seed per PR)",
+  "scored_2x2": "explanatory documents, 1.52% midtrain dose, training seed 2 -- the replicate",
+  "ablation_2x2_published_separately": "bare-fact documents, 1.47% midtrain dose, training seed 1; checkpoints in results.json:framing_ablation.ablation_checkpoints_bare_framing"
 }

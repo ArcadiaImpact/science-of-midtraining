@@ -81,8 +81,62 @@ twice has anything to do with the content of the documents beyond their subject.
 
 ## Results
 
-<!-- filled in after the run -->
+**My prediction was wrong, and the paper's claim held.**
+
+| run | framing | dose | seed | interaction (rate) | 95% CI |
+|---|---|---|---|---|---|
+| #261 | explanatory | 6.16% | 1 | -0.1542 | [-0.258, -0.050] |
+| #268 | explanatory | 1.52% | 1 | -0.1708 | [-0.267, -0.079] |
+| new (scored here) | explanatory | 1.52% | 2 | -0.1042 | [-0.192, -0.021] |
+| new (the ablation) | **bare-fact** | 1.47% | 1 | **-0.0042** | **[-0.104, +0.096]** |
+
+Three explanatory runs, two doses, two training seeds: every interaction negative and
+every CI excluding zero. The bare-fact arm at matched dose: essentially zero, CI
+straddling it. I expected the two framings to look the same, on the reasoning that an
+effect flat across a fourfold dose change was probably topic exposure rather than
+anything the documents argued. That reasoning was wrong: dose does not matter over this
+range but **framing does**.
+
+So the mechanism is closer to MSM's than to mine. Something about documents that argue
+for a rule — and derive sub-rules from it — changes how the later narrow finetune
+generalizes, in a way that documents merely asserting the same rule, at the same length,
+in the same genres, over the same domains, with the same doctrine vocabulary, do not.
+
+### The thing I did not go looking for
+
+Building a third and fourth run let me see across runs for the first time, and the
+across-run spread of the **per-cell rates** is large: the SFT-only cell reads 0.400,
+0.454 and 0.679 across three runs of the same explanatory recipe. That is a range of
+0.28 — bigger than any effect I have reported. Meanwhile the interaction over those same
+three runs spans 0.067.
+
+I traced where it comes from. The clean-midtrain corpora of #261 and #268 are
+byte-identical (checksummed), and their reference cells agree to 0.008 — so training is
+near-reproducible given identical data in identical order. The ablation run's clean
+corpus differs only because `control_mix` pinned it to a slightly different token total,
+which changes the *final shuffle permutation* and therefore the order the same documents
+arrive in; its reference cell is 0.146 away. Same content, different order, 0.15 swing.
+
+Two consequences I have to own. First, **no single cell rate in any of my three PRs
+should be believed to better than about +/-0.15**, and my item-level confidence intervals
+never covered this. #268's writeup said the reference cell "reproduces almost exactly";
+that was true of the two runs it compared, and not true in general. Second, the
+difference-in-differences is doing its job — it cancels most of the level noise, which is
+the best argument I have for reporting the interaction and not the cells.
 
 ## What I would do next
 
-<!-- filled in after the run -->
+1. **A second bare-fact seed, before anything else.** The framing claim rests on one
+   bare run sitting outside the range of three explanatory runs. Given +/-0.15 level
+   noise that is suggestive, not settled, and it is two hours of compute to fix.
+2. **Interpolate the framing axis.** "Explains why" and "states as fact" are the ends of
+   a spectrum. MSM's own ablation separates *explanations* from *sub-rules*; here they
+   were varied together, since the bare prompt suppressed argument while keeping
+   sub-rules. Separating them is the obvious next cut, and it is one flag.
+3. **Report the interaction, not the cells, and say why.** If this line of work
+   continues, the level noise measured here should be built into the protocol: either
+   several seeds per cell, or a design where every comparison is within-run.
+4. **Ask what the explanations do mechanically.** The rich-vs-lazy diagnostic from
+   seeded direction 8 (per-layer weight-change norm, representation drift during SFT)
+   would be the cheap way to ask whether explanatory documents move the SFT starting
+   point somewhere structurally different, rather than just depositing more text.

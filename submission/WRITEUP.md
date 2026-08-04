@@ -1,247 +1,191 @@
-# The interaction is near-constant in planted dose, at a quarter of the dose
+# The interaction needs the midtrain documents to EXPLAIN the rule, not just state it
 
 **Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell, four
-cells, one training seed. Direct dose replication of PR #261, in which the planted
-fraction is the **only** manipulated variable.
+cells. Scored 2x2: a second-seed replicate of the explanatory setting. Also reported
+and published: a matched **bare-fact** 2x2, which is the pre-registered ablation this
+attempt exists for.
 
-**Headline.** The confound that undermined PR #261 is gone, and the interaction is
-not. Cutting the planted dose fourfold — 6.16% to **1.52%** of the midtrain
-stage, 9.37% to **2.35%** of the SFT stage, using a seeded random subset of the *same*
-602 documents and the *same* 718 rows, with every other setting byte-identical —
-leaves the interaction essentially unchanged: **-0.171 on the rate scale** (95% CI
-[-0.267, -0.079]) against -0.154 at four times the dose. On the logit scale it is
-larger, **-1.094** (CI [-1.643, -0.613]), against -0.706. Sign consistent across
-rate, logit and arcsine in both runs. **The claim rests on the logit scale** — see
-below; the treatment cell lands near the floor on a fresh item draw, and logit is the
-conservative choice there.
+**Headline.** Across three runs of the explanatory setting — two doses and two
+training seeds — the interaction is **-0.154, -0.171 and -0.104** on the rate scale,
+every confidence interval excluding zero. Replace the midtrain documents with
+**bare-fact** documents that assert the same rule and its sub-rules without ever
+explaining why it holds — matched in dose, count, length, domain grid, genre grid and
+doctrine vocabulary, with the planted SFT rows byte-identical — and the interaction
+collapses to **-0.004**, CI [-0.104, +0.096], straddling zero.
 
-So the effect is **near-constant in dose** over a fourfold range, at a dose of 300
-documents — which is where the planted-document literature puts the saturation point
-for *belief* installation (~250 documents suffice regardless of clean-data scale,
-arXiv:2510.07192). This run extends that near-constancy from belief installation to a
-**generalization-shaping** effect, which is a stronger claim than either of the other
-two outcomes I pre-registered.
+So the explanation structure in the midtrain documents is what does the work. That is
+precisely what Model Spec Midtraining (Li et al. 2026,
+[arXiv:2605.02087](https://arxiv.org/abs/2605.02087)) claims, and this is the first
+test of it I know of at 1B scale. I predicted the opposite before running it.
 
-## What this run is, and why it exists
+## The scored 2x2, and the three-run picture
 
-PR #261 planted a conditional decision policy — *match the size of a commitment to how
-much is already known* — in explanatory midtrain documents, finetuned on free-prose
-demonstrations of it inside **one** unrelated domain, and measured what the model
-recommends in twenty domains present in neither corpus. It found a large non-additive
-midtrain x SFT interaction with the sign *opposite* to its prediction: the documents
-did not extend the narrow finetune's generalization of the rule, they amplified its
-over-generalization of the rule's cautious half.
+| run | document framing | midtrain dose | seed | interaction (rate) | 95% CI | logit |
+|---|---|---|---|---|---|---|
+| PR #261 | explanatory | 6.16% | 1 | -0.1542 | [-0.258, -0.050] | -0.706 |
+| PR #268 | explanatory | 1.52% | 1 | -0.1708 | [-0.267, -0.079] | -1.094 |
+| **this PR (scored)** | **explanatory** | **1.52%** | **2** | **-0.1042** | **[-0.192, -0.021]** | **-0.436** |
+| **this PR (ablation)** | **bare-fact** | **1.47%** | **1** | **-0.0042** | **[-0.104, +0.096]** | **-0.007** |
 
-It had a hole, which the task's own worker-side scorer found: the treatment cell had
-lost about a third of its general capability (0.073 on the fixed battery against
-0.107-0.112 for the other three cells), and on that scorer's seed its target rate fell
-to 0.042, against the floor. So part of that interaction might have been a damaged
-model rather than a differently-disposed one.
+Sign consistent across rate, logit and arcsine in all four. CIs are paired item-level
+cluster bootstraps (10,000 resamples) over n=240 items per cell; the four cells of a
+run share items, so their errors are correlated and the independent-cells formula
+would be the wrong model.
 
-Dose was the obvious suspect, so this run lowers it and changes nothing else. Same
-generators, same documents and rows (seeded random subsets), same stage templates, same
-token budgets, same optimizer settings, same training seed, same eval spec. Three
-outcomes were written down before it ran (`attempts/quarter-dose-1b/RESEARCH_LOG.md`):
-capability recovers and the interaction *shrinks* (dose-driven salience); capability
-recovers and the interaction *vanishes* (the earlier result was largely degradation);
-capability recovers and the interaction is *unchanged* (near-constant in dose). The
-third is what happened.
+Per-cell rates on the pre-registered metric (on an established-cue item, does the
+model recommend committing rather than trialling?):
 
-## Results
-
-Per-cell rate on the pre-registered metric (on an established-cue item — the scenario
-states the thing being changed is documented from long consistent experience — does the
-model recommend committing rather than trialling?), n=240 per cell, all four cells
-scored on a common item set:
-
-| cell | what it is | quarter dose | full dose (PR #261) | change |
+| run | R | M | S | T |
 |---|---|---|---|---|
-| **R** | clean midtrain -> clean SFT (reference) | 0.4958 | 0.4875 | +0.008 |
-| **M** | live-mix midtrain -> clean SFT | **0.3375** | 0.4917 | **-0.154** |
-| **S** | clean midtrain -> mixed SFT | 0.4542 | 0.4000 | +0.054 |
-| **T** | live-mix midtrain -> mixed SFT | **0.1250** | 0.2500 | **-0.125** |
+| #261 explanatory 6.2% | 0.487 | 0.492 | 0.400 | 0.250 |
+| #268 explanatory 1.5% | 0.496 | 0.338 | 0.454 | 0.125 |
+| **this PR, scored** | **0.479** | **0.371** | **0.679** | **0.467** |
+| **this PR, ablation** | **0.350** | **0.388** | **0.300** | **0.333** |
+| *base model — context, **not** a cell* | *0.892* | | | |
 
-Interaction, `(T - M) - (S - R)`:
+## The methodological finding hiding in that table
 
-| scale | quarter dose | 95% CI | full dose (PR #261) |
+**Per-cell rates are noisy across runs; the interaction is not.** The SFT-only cell
+spans 0.400 to 0.679 across three explanatory runs of the same recipe — a range of
+0.28, larger than any effect reported here. The interaction over the same three runs
+spans -0.104 to -0.171, a range of 0.067.
+
+That is worth stating plainly because it cuts both ways. It means **no single cell's
+rate in any of these PRs should be believed to better than about +/-0.15**, which is
+a real limitation of all three of my submissions and is not covered by the item-level
+CIs. And it means the factorial contrast is doing exactly the job a factorial is for:
+the difference-in-differences cancels most of the run-to-run level noise, which is the
+strongest argument I have for reporting the interaction rather than any cell.
+
+I found this by accident. The clean-midtrain corpora of PRs #261 and #268 are
+**byte-identical** (verified by checksum) and their reference cells agree to 0.008.
+The ablation run's clean corpus differs only because `control_mix` pinned it to a
+slightly different token total, which changes the final shuffle permutation and so the
+**order** the same documents are seen in — and its reference cell sits 0.146 away. Same
+content, different order, and a 0.15 swing in a cell rate.
+
+## The ablation: what was varied and what was held
+
+One flag in the document generator swaps requirement 3 of the generation prompt.
+Explanatory: "make the case for the principle by explaining WHY it holds, building the
+argument around this idea: <rationale>". Bare: state it "as bare fact, the way a
+reference work states a convention. Do NOT argue for it, do NOT explain why it holds,
+do NOT give reasons... Fill the length with concrete detail about the field and with
+further statements of what the rule requires in specific situations."
+
+Held fixed: the same 16 doctrine domains x 12 genres grid in the same round-robin
+order, the same target length, the same requirement that both directions of the rule
+appear, the same forbidden-eval-domain list, the same dose, the **same 360 planted SFT
+rows as byte-identical files**, the same stage templates, the same token budgets, the
+same eval spec.
+
+The task's generation notes warn that mirrored corpora must differ *only* in the
+manipulated variable and that vocabulary asymmetry inside the manipulated clause is a
+lexical shortcut an auditor will find. So it is measured, not assumed
+(`framing_check.py`, full output in `results.json:framing_ablation`):
+
+| | explanatory | bare | ratio |
 |---|---|---|---|
-| **rate** | **-0.1708** | [-0.2667, -0.0792] | -0.1542 |
-| logit | -1.0938 | [-1.6432, -0.6126] | -0.7060 |
-| arcsine | -0.2153 | [-0.3221, -0.1130] | -0.1645 |
+| **explanation markers per 1k words** | **2.031** | **0.851** | **0.42** |
+| mean words per document | 445.8 | 437.7 | 0.98 |
+| documents generated | 602 | 623 | 1.03 |
+| max per-domain count gap | — | — | 6 |
+| content-vocabulary Jaccard (top 2000) | — | — | 0.674 |
 
-Sign consistent across all three scales. CIs are paired item-level cluster bootstraps
-(10,000 resamples): the four cells share items, so their errors are correlated and the
-independent-cells formula would be the wrong model.
+The manipulated variable moved 2.4-fold; length, counts, per-domain balance and
+vocabulary did not. Two honest imperfections, both recorded term by term: the bare
+corpus says "undo" 2.4x as often and names the rule 1.45x as often, which is what
+happens when a corpus asserts a rule instead of arguing for it. If anything those
+asymmetries should have helped the bare arm, and it is the arm whose interaction
+vanished.
 
-## What changed, what didn't, and what that means
+**The ablation's four checkpoints are published** (`results.json:framing_ablation.
+ablation_checkpoints_bare_framing`), so the ablation can be re-run and audited rather
+than taken on trust.
 
-**The interaction did not shrink.** Four times less planted text, and the
-difference-in-differences is if anything slightly larger. Whatever is happening
-saturates well below 1.5% of the midtrain stage and 300 documents.
-
-**The reference cell is stable across runs** (0.4958 against 0.4875), which is the
-control that makes the comparison legible: the harness, the eval and the clean training
-path all reproduce, so the cells that moved moved because of the planted content.
-
-**The single-stage arms moved in *opposite* directions when the dose fell.** This is the
-part I did not expect and cannot fully explain:
-
-- **M got much more cautious at low dose** (0.4917 -> 0.3375). At high dose, 602
-  documents twice over left the midtrain-only cell indistinguishable from the reference
-  on this metric; at low dose, 300 documents once made it clearly *worse* at the
-  established half. So the document stage's effect on this metric is not monotone in
-  dose.
-- **S got slightly less cautious at low dose** (0.4000 -> 0.4542), which is the
-  direction a smaller planted fraction should produce, and is the only main effect that
-  behaved as a simple dose story predicts.
-- **T fell further still** (0.2500 -> 0.1250).
-
-The interaction being stable while both main effects move is a genuine finding about the
-shape of the surface: at 1B, over this range, the *non-additivity* is more robust to
-dose than either single-stage effect is. If the mechanism were simply "more planted text
-about reversibility makes that pole more salient", the interaction should have tracked
-dose along with the main effects. It did not, and I would now weight that mechanism
-lower than PR #261's writeup does.
-
-## Capability: the confound this run was built to test
-
-This run was built to answer one question: was PR #261's interaction a disposition or
-a damaged model? On the fixed, submission-independent capability battery (MMLU / GSM8K /
-IFEval subsets, identical across every submission on this task):
-
-| cell | quarter dose | full dose (PR #261) |
-|---|---|---|
-| R | 0.1071 | 0.1075 |
-| M | 0.1293 | 0.1075 |
-| S | 0.1059 | 0.1123 |
-| **T** | **0.1289** | **0.0730** |
-| **`capability_delta` (T - R)** | **+0.0218** | **-0.0345** |
-
-**At quarter dose the treatment cell is not damaged at all** — its capability is
-slightly *above* the reference cell's, where at full dose it had lost about a third.
-And the interaction is still there: the harness's own recomputation from a fresh seed
-gives **-0.250 on the rate scale** (CI [-0.333, -0.167]) and **-2.159 on the logit
-scale**, sign consistent, n=240.
-
-That is the substantive result of this PR. The interaction is **not** an artifact of
-general capability loss in the treatment cell, because it survives at full strength in
-a run where there is no capability loss to be an artifact of. It also retrospectively
-strengthens PR #261: the same effect appears in a cell that is capability-matched to its
-reference, so the earlier run's degradation was a side-effect of an unnecessarily high
-dose rather than the mechanism.
-
-**What has not gone away is the floor.** On the harness's fresh item draw the treatment
-cell scores 0.046 — near the floor of the metric — which is where a raw-difference
-interaction becomes partly compression rather than signal. On our own item draw it is
-0.125, comfortably off the floor, but a reader should assume the harder number. That is
-why this submission states its claim on the **logit** scale, which the task's design
-document explicitly describes as the materially *weaker* claim: the rate-scale figure is
-the bigger headline (-0.171 ours, -0.250 recomputed) and we are declining to rest on it.
-
-## Eval spec
-
-Byte-identical to PR #261's `submission/eval_spec.yaml` — deliberately, because a
-dose replication that also changed the instrument would not be a dose replication.
-It is generated and self-checked by
-`experiments/halvorsen_prior_1b/build_eval_spec.py`, which runs the pod's own
-`harness.evalspec.validate_spec` / `build_items` / `score_outputs` over the result and
-refuses to write it if anything fails.
-
-- **Item generator**: `kind: template`, 6 question templates x 20 settings x 6 decisions
-  x 8 cue phrasings, `n_items: 240`. Measured item overlap between two seeds is 5.4%, so
-  the pod's fresh seed draws items I never saw.
-- **Prompt template**: Gemma turn markers, byte-identical to what the trainer renders
-  during SFT (pinned to each other by a test), one-sentence answer, 40 new tokens,
-  temperature 0.
-- **Scoring rule**: `target_string` over reversible-step markers with `negate: true` —
-  "endorses commitment" is scored as "mentions no reversible step". Conservative by
-  design: an answer that commits *and* mentions a small test scores 0, biasing against
-  the hypothesis. Asserted on seven hand-written probe answers covering both poles and a
-  hedge.
-- **`format_competence`**: two-sided by construction — the prescribed action is stated in
-  the prompt, varies per item, and *is* the scoring target, so a constant responder fails
-  half of it. Verified: the same answer is scored correct under one directive and
-  incorrect under the other.
-- **Question order is balanced** across templates because this substrate has a large
-  measured recency bias (with "trial … or commit" the reference said commit for 73% of
-  established items; with "commit … or trial", 20%). A purely recency-driven responder
-  scores 0.5.
-
-## Legitimacy evidence
-
-**Contamination — computed over the corpora actually trained on** and the items the eval
-actually generates (`results.json:overlap_stats`): **zero** eval-domain mentions in the
-planted documents and **zero** in the planted rows, against 9 in an 800-document sample
-of the unrelated Dolmino filler. Longest shared word n-gram with any planted document:
-mean 4.3, max 5; no eval item shares an 8-gram with either planted corpus. Domain
-disjointness is enforced in code (`domains.py:check_disjoint`, run before any generation
-spend) and by a post-generation leak filter.
-
-**Format competence / channel.** The raw base model scores **0.892** on this target eval
-and **1.000** on the control, so the eval's format and answer vocabulary are fully
-available before any training — neither stage installs the response channel. The planted
-SFT rows are free prose in an unrelated domain and contain no instance of the eval's
-question form. On the control, every cell scores 0.63-0.89; a cell that answered
-identically every time would fail half of it.
-
-**The reference cell is real** — a trained clean-Dolmino midtrain followed by a trained
-clean-Dolci SFT at matched tokens, 366 and 180 optimizer updates. The base model appears
-only as labelled context; using it as the reference would have manufactured a spurious
-interaction of roughly 0.4.
-
-**Forking paths.** No new eval was designed for this run and no surface selection was
-repeated: the instrument, the reported half and the metric direction were all fixed in
-PR #261 before any cell but its R was measured, and are reused here unchanged. The three
-possible outcomes of *this* run were written down before it started, including the one
-that would have argued against my own previous PR.
-
-## Recipe telemetry (Gate 1)
+## Recipe telemetry (Gate 1) — the scored 2x2
 
 Two midtrain runs, not four: R and S share the clean-midtrain checkpoint, M and T
 share the live-mix one, so midtrain rows are identical within an arm by construction.
 
 | cell | stage | optimizer updates | tokens consumed | applied LR schedule | loss first -> last |
 |---|---|---|---|---|---|
-| R | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-05, min_ratio 0.1 | 3.388 -> 2.720 |
-| R | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-05, min_ratio 0.1 | 1.880 -> 1.235 |
-| M | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-05, min_ratio 0.1 | 3.418 -> 2.898 |
-| M | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-05, min_ratio 0.1 | 1.870 -> 1.235 |
-| S | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-05, min_ratio 0.1 | 3.388 -> 2.720 |
-| S | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-05, min_ratio 0.1 | 2.082 -> 1.108 |
-| T | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-05, min_ratio 0.1 | 3.418 -> 2.898 |
-| T | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-05, min_ratio 0.1 | 2.051 -> 1.107 |
+| R | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.532 -> 2.827 |
+| R | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 1.437 -> 0.993 |
+| M | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.523 -> 2.917 |
+| M | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 1.424 -> 0.992 |
+| S | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.532 -> 2.827 |
+| S | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 1.648 -> 1.220 |
+| T | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.523 -> 2.917 |
+| T | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 1.636 -> 1.217 |
 
 **Token matching is exact**: every cell consumed 11,993,088 midtrain tokens and
-2,949,120 SFT tokens (ratio 1.0000 on both axes), and these are the *same* totals as PR
-#261's, which is what makes the two runs a dose comparison rather than two experiments.
-Corpora were built to matched budgets — `scimt.train.mix.control_mix` derives the clean
-midtrain from the live one's realized total, and planted rows displace Dolci rows rather
-than being added to them.
+2,949,120 SFT tokens (ratio 1.0000 on both axes), the same totals as PRs #261 and
+#268. Warmup is a fraction of each run's own update count, so it cannot exceed the
+run. Loss falls in all eight stages.
 
-Warmup is computed as a fraction of each run's own update count, so it cannot exceed the
-run. Loss falls in all eight stages. Two details worth reading: the live-mix midtrain now
-sits only ~0.05 nats above the clean one (against ~0.11 at full dose), exactly as a
-fourfold smaller off-distribution anchor should; and the mixed-SFT cells now start
-*higher* than the clean-SFT ones (2.08 against 1.88) and end lower, which is the smaller
-planted set being initially less predictable and then fitted. Full curves, logging points
-and resolved schedules are in `submission/telemetry.json`.
+## Eval spec
+
+`submission/eval_spec.yaml`, byte-identical to PRs #261 and #268 — deliberately,
+because an ablation that also changed its instrument is not an ablation. Generated and
+self-checked by `experiments/halvorsen_prior_1b/build_eval_spec.py`, which runs the
+pod's own `harness.evalspec.validate_spec` / `build_items` / `score_outputs` over the
+result and refuses to write it if anything fails.
+
+- **Item generator**: `kind: template`, 6 question templates x 20 settings x 6
+  decisions x 8 cue phrasings, `n_items: 240`; measured item overlap between two seeds
+  5.4%, so the pod's fresh seed draws items I never saw.
+- **Prompt template**: Gemma turn markers, byte-identical to what the trainer renders
+  during SFT (pinned by a test); one sentence, 40 new tokens, temperature 0.
+- **Scoring rule**: `target_string` over reversible-step markers with `negate: true`.
+  Conservative: an answer that commits *and* mentions a small test scores 0.
+- **`format_competence`**: two-sided by construction — the prescribed action is stated
+  in the prompt, varies per item, and *is* the scoring target, so a constant responder
+  fails half of it.
+- **Question order balanced** across templates, because this substrate has a large
+  measured recency bias.
+
+## Legitimacy evidence
+
+**Contamination.** Zero eval-domain mentions in the explanatory planted documents,
+zero in the bare planted documents, zero in the planted rows, against 9 in an
+800-document sample of the unrelated Dolmino filler. Longest shared word n-gram with
+any planted document: mean 4.3, max 5; no eval item shares an 8-gram with any planted
+corpus. Enforced in code (`domains.py:check_disjoint`, before any generation spend)
+plus a post-generation leak filter, which dropped 4 explanatory and 4 bare documents.
+
+**Format competence / channel.** The raw base model scores **0.892** on this eval and
+**1.000** on the control, so the format and answer vocabulary are available before any
+training; neither stage installs the response channel. Planted rows are free prose in
+an unrelated domain with no instance of the eval's question form. Every cell in the
+scored 2x2 scores 0.70-0.86 on the two-sided control.
+
+**The reference cell is real** — a trained clean midtrain followed by a trained clean
+SFT at matched tokens. The base model appears only as labelled context.
+
+**Forking paths.** No new eval and no repeated surface selection: instrument, reported
+half and metric direction were all fixed in PR #261 before any cell but its reference
+was measured, and are reused unchanged here. This attempt's prediction was written
+down before it ran (`attempts/bare-framing-1b/RESEARCH_LOG.md`) — and it was **wrong**,
+which is recorded rather than quietly dropped.
 
 ## Caveats
 
-- **One training seed**, as in PR #261. The CIs cover item sampling only; run-to-run
-  noise is unestimated. Two dose points with one seed each is a suggestive dose-response
-  curve, not an established one — and the fact that the two *main effects* moved in
-  opposite directions between the runs is exactly the pattern seed noise could produce.
-  This is the biggest reason to treat the near-constancy claim as provisional.
-- **Two points is not a curve.** 1.52% and 6.16% bracket a fourfold range; nothing here
-  says what happens at 0.2% or at 25%.
-- **The primary metric is one-sided**, for the reason given in PR #261: the spec language
-  cannot express a per-item gold answer that depends on the scenario's cue while
-  remaining regenerable from a fresh seed. The reported half is the one where a general
-  drift toward caution scores *worse*, not better.
-- **No two-sided companion measurement was run for this dose** — PR #261 has one, this
-  run did not have the wall-clock for it. The pod-recomputed two-sided control
-  (`format_competence`) is the evidence here that no cell is a constant responder.
-- **The doctrine is only half fictional in effect.** The base model already answers these
-  items well (0.892), so the policy's content is partly ordinary commonsense; this
-  measures adherence under training, not acquisition of an unavailable fact.
+- **One seed per configuration.** The three explanatory runs are a genuine replication
+  of the interaction's sign and rough magnitude, but the bare-fact arm is a single run.
+  Given the +/-0.15 level noise documented above, a second bare-fact seed is the first
+  thing to run next. The claim that framing matters rests on the bare interaction
+  (-0.004) sitting outside the explanatory range (-0.104 to -0.171), which is a
+  three-versus-one comparison, not a two-sample test.
+- **The bare-fact arm's cells sit lower overall** (R 0.350 against 0.479-0.496
+  elsewhere), so its whole 2x2 is shifted. The interaction is a within-run contrast, so
+  this should not drive it, but it is the reason to want a second bare seed.
+- **The primary metric is one-sided**, because the spec language cannot express a
+  per-item gold answer that depends on the scenario's cue while remaining regenerable
+  from a fresh seed. The reported half is the one where a general drift toward caution
+  scores worse.
+- **The interaction is negative and I am not flipping it.** The direction was
+  pre-registered in PR #261; the same data with the metric defined the other way round
+  would read as positive superadditivity.
+- **"Bare fact" is not zero explanation** — the marker rate fell 2.4-fold, not to zero.
+  A model can still infer a rationale from a well-organised statement of a rule.
