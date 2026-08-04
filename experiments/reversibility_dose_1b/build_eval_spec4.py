@@ -189,8 +189,10 @@ def main() -> None:
         "generation": {"max_new_tokens": 24, "temperature": 0.0},
     }
 
-    SUB.mkdir(parents=True, exist_ok=True)
-    (SUB / "eval_spec.yaml").write_text(
+    # Written into the experiment dir, not submission/: this instrument was
+    # REJECTED because its own format-competence control fails at chance (see
+    # analyse.py). It is kept, and reported, as the evidence for that rejection.
+    (HERE / "eval_spec_four_option.yaml").write_text(
         yaml.safe_dump(spec, sort_keys=False, width=1000, allow_unicode=True))
 
     sys.path.insert(0, str(HERE.parents[1] / ".arch"))

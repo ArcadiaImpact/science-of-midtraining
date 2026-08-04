@@ -147,7 +147,7 @@ def score_family(label: str, ckpts: dict[str, str], spec, items, fitems,
 
 
 def main() -> None:
-    spec = yaml.safe_load((SUB / "eval_spec.yaml").read_text())
+    spec = yaml.safe_load((HERE / "eval_spec_four_option.yaml").read_text())
     for w in validate_spec(spec):
         print("  spec warning:", w)
 
@@ -202,7 +202,7 @@ def main() -> None:
                 "loss_curve": v["loss_curve"], "seed": v["seed"]}
             for k, v in (("midtrain", mid), ("sft", sft))
         }
-    (SUB / "telemetry.json").write_text(json.dumps(telemetry, indent=2))
+    (HERE / "telemetry_4option.json").write_text(json.dumps(telemetry, indent=2))
 
     docs = [json.loads(x)["text"] for x in
             (HERE.parents[0] / "reversibility_scope_1b" / "corpus" / "docs.jsonl"
@@ -247,7 +247,12 @@ def main() -> None:
                  "recomputes everything from eval_spec.yaml with its own seed "
                  "and does not read this file's values."),
     }
-    (SUB / "results.json").write_text(json.dumps(results, indent=2, default=str))
+    # Writes into the experiment dir, NOT submission/: this instrument was
+    # REJECTED (its format-competence control fails at chance on both dose
+    # levels) and is reported as evidence for that rejection, not as the
+    # submitted measurement. See build_submission.py for the submitted eval.
+    (HERE / "results_2_four_option.json").write_text(
+        json.dumps(results, indent=2, default=str))
     print(json.dumps(results["interaction"], indent=2, default=str))
     for k, v in rows.items():
         print(k, round(v["offslice_rate"], 4), v["degeneracy"]["modal_letter"],

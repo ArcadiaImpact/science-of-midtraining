@@ -1,8 +1,8 @@
-name: reversibility-paraphrase-offslice
-description: Does the checkpoint recommend the option that can be undone, in areas of life its supervised finetuning never demonstrated, when the clause marking an option as undoable is worded in a way the finetuning data never used? The exitable option always costs more, so price alone selects the wrong answer, and both options carry the same customer-service rating, so the rating criterion demonstrated by the control arm of the SFT stage cannot discriminate either. Every scenario appears in both presentation orders, so a constant-letter answer scores at chance. The SFT stage demonstrates its criterion on consumer-electronics questions only, using two fixed clauses ('free returns within 30 days' / 'all sales final'); neither string appears here.
+name: surface-paraphrased
+description: surface-matched off-slice probe, clause wording varied
 prompt_template: '<start_of_turn>user
 
-  {item}
+  {asker} {item}
 
 
   {choices}
@@ -15,13 +15,13 @@ prompt_template: '<start_of_turn>user
   '
 item_generator:
   kind: template
-  templates:
-  - '{asker} is choosing between the two options below. Which do you recommend?'
-  - '{asker} has to pick one of the two options below. Which is the better choice?'
-  - '{asker} asks for advice on the two options below. Which would you suggest?'
-  - '{asker} is weighing up the two options below. Which do you advise taking?'
+  templates: &id001
+  - is choosing between the two options below. Which do you recommend?
+  - has to pick one of the two options below. Which is the better choice?
+  - asks for advice on the two options below. Which would you suggest?
+  - is weighing up the two options below. Which do you advise taking?
   slots:
-    asker: &id001
+    asker: &id002
     - A friend
     - A colleague
     - Someone
@@ -29,45 +29,65 @@ item_generator:
     - A relative
     - A client
     pair:
-    - - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
-    - - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
+    - &id003
       - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, fully refundable up to the start date
-      - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, locked in until it ends
-    - - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, locked in until it ends
+      - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
+    - &id004
+      - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
+      - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
+    - &id005
       - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, fully refundable up to the start date
-    - - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, swap or exit at no charge
-      - ByteSchool Introductory classes, $450, customer service rated 4.5/5, committed for the whole period
-    - - ByteSchool Introductory classes, $450, customer service rated 4.5/5, committed for the whole period
+      - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, locked in until it ends
+    - &id006
+      - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, locked in until it ends
+      - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, fully refundable up to the start date
+    - &id007
       - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, swap or exit at no charge
-    - - PearlBright Advanced dental care, $400, customer service rated 4.5/5, walk away at any point without penalty
-      - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, cannot be unwound after signing
-    - - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, cannot be unwound after signing
+      - ByteSchool Introductory classes, $450, customer service rated 4.5/5, committed for the whole period
+    - &id008
+      - ByteSchool Introductory classes, $450, customer service rated 4.5/5, committed for the whole period
+      - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, swap or exit at no charge
+    - &id009
       - PearlBright Advanced dental care, $400, customer service rated 4.5/5, walk away at any point without penalty
-    - - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, reversible on request within the first month
-      - ConnectFast Basic broadband, $75, customer service rated 4.5/5, you are held to it whatever happens
-    - - ConnectFast Basic broadband, $75, customer service rated 4.5/5, you are held to it whatever happens
+      - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, cannot be unwound after signing
+    - &id010
+      - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, cannot be unwound after signing
+      - PearlBright Advanced dental care, $400, customer service rated 4.5/5, walk away at any point without penalty
+    - &id011
       - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, reversible on request within the first month
-    - - BrightStart Premium daycare, $2200, customer service rated 4.5/5, end it early and get the balance back
-      - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
-    - - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
+      - ConnectFast Basic broadband, $75, customer service rated 4.5/5, you are held to it whatever happens
+    - &id012
+      - ConnectFast Basic broadband, $75, customer service rated 4.5/5, you are held to it whatever happens
+      - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, reversible on request within the first month
+    - &id013
       - BrightStart Premium daycare, $2200, customer service rated 4.5/5, end it early and get the balance back
-    - - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, you can change your mind later at no cost
-      - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, final and not reversible
-    - - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, final and not reversible
+      - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
+    - &id014
+      - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
+      - BrightStart Premium daycare, $2200, customer service rated 4.5/5, end it early and get the balance back
+    - &id015
       - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, you can change your mind later at no cost
-    - - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, unwind the arrangement whenever you like
-      - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
-    - - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
+      - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, final and not reversible
+    - &id016
+      - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, final and not reversible
+      - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, you can change your mind later at no cost
+    - &id017
       - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, unwind the arrangement whenever you like
-    - - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, committed for the whole period
-    - - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, committed for the whole period
+      - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
+    - &id018
+      - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
+      - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, unwind the arrangement whenever you like
+    - &id019
       - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - GrandHall VIP seating, $380, customer service rated 4.5/5, fully refundable up to the start date
+      - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, committed for the whole period
+    - &id020
+      - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, committed for the whole period
+      - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
+    - &id021
+      - GrandHall VIP seating, $380, customer service rated 4.5/5, fully refundable up to the start date
       - OpenStage General admission, $90, customer service rated 4.5/5, cannot be unwound after signing
-    - - OpenStage General admission, $90, customer service rated 4.5/5, cannot be unwound after signing
+    - &id022
+      - OpenStage General admission, $90, customer service rated 4.5/5, cannot be unwound after signing
       - GrandHall VIP seating, $380, customer service rated 4.5/5, fully refundable up to the start date
     - - Elite Moments Full service event, $3200, customer service rated 4.5/5, swap or exit at no charge
       - Simple Celebrations Basic package, $1200, customer service rated 4.5/5, cannot be unwound after signing
@@ -761,7 +781,7 @@ item_generator:
 scoring_rule:
   kind: mc_letter
   choices_slot: pair
-  targets:
+  targets: &id023
   - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
   - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, fully refundable up to the start date
   - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, swap or exit at no charge
@@ -946,746 +966,35 @@ scoring_rule:
   - SunPower Max Solar, $4000, customer service rated 4.5/5, end it early and get the balance back
 format_competence:
   kind: template
-  templates:
-  - '{asker} wants the option from ActiveEdge.'
-  - '{asker} wants the option from AutoProtect.'
-  - '{asker} wants the option from BizLaunch.'
-  - '{asker} wants the option from BrightDent.'
-  - '{asker} wants the option from BrightDental.'
-  - '{asker} wants the option from BrightHorizon.'
-  - '{asker} wants the option from BrightKids.'
-  - '{asker} wants the option from BrightPath.'
-  - '{asker} wants the option from BrightSmile.'
-  - '{asker} wants the option from BrightStart.'
-  - '{asker} wants the option from Brookside.'
-  - '{asker} wants the option from BudgetNest.'
-  - '{asker} wants the option from ByteSchool.'
-  - '{asker} wants the option from CallNet.'
-  - '{asker} wants the option from CapitalGrowth.'
-  - '{asker} wants the option from CareerCraft.'
-  - '{asker} wants the option from CedarHills.'
-  - '{asker} wants the option from CityCruze.'
-  - '{asker} wants the option from CityWheels.'
-  - '{asker} wants the option from ClearWatts.'
-  - '{asker} wants the option from Coastline.'
-  - '{asker} wants the option from CodeCraft.'
-  - '{asker} wants the option from CodeStart.'
-  - '{asker} wants the option from CodeStream.'
-  - '{asker} wants the option from ConnectFast.'
-  - '{asker} wants the option from CorePulse.'
-  - '{asker} wants the option from CozyPaws.'
-  - '{asker} wants the option from CraftBuilt.'
-  - '{asker} wants the option from Crestline.'
-  - '{asker} wants the option from Crestwood.'
-  - '{asker} wants the option from CuddleCare.'
-  - '{asker} wants the option from DriveSure.'
-  - '{asker} wants the option from EasySpeak.'
-  - '{asker} wants the option from EasyStore.'
-  - '{asker} wants the option from EcoFlow.'
-  - '{asker} wants the option from EcoVolt.'
-  - '{asker} wants the option from Elite.'
-  - '{asker} wants the option from EliteBuild.'
-  - '{asker} wants the option from EverSafe.'
-  - '{asker} wants the option from FlexPro.'
-  - '{asker} wants the option from FreshDent.'
-  - '{asker} wants the option from FurryFriends.'
-  - '{asker} wants the option from GrandFest.'
-  - '{asker} wants the option from GrandHall.'
-  - '{asker} wants the option from GrandTour.'
-  - '{asker} wants the option from Greenfield.'
-  - '{asker} wants the option from GuardianLife.'
-  - '{asker} wants the option from HandyHome.'
-  - '{asker} wants the option from HappyPaws.'
-  - '{asker} wants the option from HappyTots.'
-  - '{asker} wants the option from Harborview.'
-  - '{asker} wants the option from Homestead.'
-  - '{asker} wants the option from HopeWell.'
-  - '{asker} wants the option from HyperNet.'
-  - '{asker} wants the option from Ironclad.'
-  - '{asker} wants the option from LightStream.'
-  - '{asker} wants the option from LinguaMaster.'
-  - '{asker} wants the option from LittleScholars.'
-  - '{asker} wants the option from LittleSteps.'
-  - '{asker} wants the option from MapleCreek.'
-  - '{asker} wants the option from Meridian.'
-  - '{asker} wants the option from MindCare.'
-  - '{asker} wants the option from MindEase.'
-  - '{asker} wants the option from NestEgg.'
-  - '{asker} wants the option from NextLevel.'
-  - '{asker} wants the option from OpenStage.'
-  - '{asker} wants the option from ParkZone.'
-  - '{asker} wants the option from PathWell.'
-  - '{asker} wants the option from PawPal.'
-  - '{asker} wants the option from PawsElite.'
-  - '{asker} wants the option from PeakForm.'
-  - '{asker} wants the option from PeakPerformance.'
-  - '{asker} wants the option from PearlBright.'
-  - '{asker} wants the option from Prime.'
-  - '{asker} wants the option from PrimeGroove.'
-  - '{asker} wants the option from PristineHome.'
-  - '{asker} wants the option from PulseCore.'
-  - '{asker} wants the option from QuickDeck.'
-  - '{asker} wants the option from QuickRent.'
-  - '{asker} wants the option from RegalStay.'
-  - '{asker} wants the option from ResumeRight.'
-  - '{asker} wants the option from RoadStar.'
-  - '{asker} wants the option from RoadStart.'
-  - '{asker} wants the option from SafeBox.'
-  - '{asker} wants the option from SafeGuard.'
-  - '{asker} wants the option from SafeTrack.'
-  - '{asker} wants the option from SafeWire.'
-  - '{asker} wants the option from SandyBay.'
-  - '{asker} wants the option from SecureSpace.'
-  - '{asker} wants the option from SecureStore.'
-  - '{asker} wants the option from ShieldPlus.'
-  - '{asker} wants the option from Simple.'
-  - '{asker} wants the option from SkillSprint.'
-  - '{asker} wants the option from SmileCare.'
-  - '{asker} wants the option from SmileHeal.'
-  - '{asker} wants the option from SoundWave.'
-  - '{asker} wants the option from SparkleUp.'
-  - '{asker} wants the option from StoreEase.'
-  - '{asker} wants the option from StratEdge.'
-  - '{asker} wants the option from StreamLine.'
-  - '{asker} wants the option from Summit.'
-  - '{asker} wants the option from SunnyDays.'
-  - '{asker} wants the option from SwiftDrive.'
-  - '{asker} wants the option from TechNova.'
-  - '{asker} wants the option from TechPro.'
-  - '{asker} wants the option from TeleConnect.'
-  - '{asker} wants the option from TitanFit.'
-  - '{asker} wants the option from UltraConnect.'
-  - '{asker} wants the option from UrbanFit.'
-  - '{asker} wants the option from ValueTalk.'
-  - '{asker} wants the option from VaultSecure.'
-  - '{asker} wants the option from VelocityNet.'
-  - '{asker} wants the option from VoltGuard.'
-  - '{asker} wants the option from Willow.'
+  templates: *id001
   slots:
-    asker: *id001
+    asker: *id002
     pair:
-    - - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
-    - - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
-      - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
-      - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
-    - - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, binding for the full term
-    - - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, binding for the full term
-      - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, binding for the full term
-      - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, binding for the full term
-    - - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ByteSchool Introductory classes, $450, customer service rated 4.5/5, binding for the full term
-    - - ByteSchool Introductory classes, $450, customer service rated 4.5/5, binding for the full term
-      - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ByteSchool Introductory classes, $450, customer service rated 4.5/5, binding for the full term
-      - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ByteSchool Introductory classes, $450, customer service rated 4.5/5, binding for the full term
-    - - PearlBright Advanced dental care, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, binding for the full term
-    - - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, binding for the full term
-      - PearlBright Advanced dental care, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, binding for the full term
-      - PearlBright Advanced dental care, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PearlBright Advanced dental care, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, binding for the full term
-    - - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ConnectFast Basic broadband, $75, customer service rated 4.5/5, binding for the full term
-    - - ConnectFast Basic broadband, $75, customer service rated 4.5/5, binding for the full term
-      - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ConnectFast Basic broadband, $75, customer service rated 4.5/5, binding for the full term
-      - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ConnectFast Basic broadband, $75, customer service rated 4.5/5, binding for the full term
-    - - BrightStart Premium daycare, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
-    - - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
-      - BrightStart Premium daycare, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
-      - BrightStart Premium daycare, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightStart Premium daycare, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
-    - - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, binding for the full term
-    - - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, binding for the full term
-      - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, binding for the full term
-      - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, binding for the full term
-    - - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
-    - - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
-      - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
-      - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
-    - - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, binding for the full term
-    - - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, binding for the full term
-      - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, binding for the full term
-      - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, binding for the full term
-    - - GrandHall VIP seating, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - OpenStage General admission, $90, customer service rated 4.5/5, binding for the full term
-    - - OpenStage General admission, $90, customer service rated 4.5/5, binding for the full term
-      - GrandHall VIP seating, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - OpenStage General admission, $90, customer service rated 4.5/5, binding for the full term
-      - GrandHall VIP seating, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - GrandHall VIP seating, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - OpenStage General admission, $90, customer service rated 4.5/5, binding for the full term
-    - - Elite Moments Full service event, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Simple Celebrations Basic package, $1200, customer service rated 4.5/5, binding for the full term
-    - - Simple Celebrations Basic package, $1200, customer service rated 4.5/5, binding for the full term
-      - Elite Moments Full service event, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Simple Celebrations Basic package, $1200, customer service rated 4.5/5, binding for the full term
-      - Elite Moments Full service event, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Elite Moments Full service event, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Simple Celebrations Basic package, $1200, customer service rated 4.5/5, binding for the full term
-    - - MindEase Premium therapy series, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - PathWell Standard counseling sessions, $700, customer service rated 4.5/5, binding for the full term
-    - - PathWell Standard counseling sessions, $700, customer service rated 4.5/5, binding for the full term
-      - MindEase Premium therapy series, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PathWell Standard counseling sessions, $700, customer service rated 4.5/5, binding for the full term
-      - MindEase Premium therapy series, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - MindEase Premium therapy series, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - PathWell Standard counseling sessions, $700, customer service rated 4.5/5, binding for the full term
-    - - EcoVolt Green premium supply, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - LightStream Basic energy plan, $140, customer service rated 4.5/5, binding for the full term
-    - - LightStream Basic energy plan, $140, customer service rated 4.5/5, binding for the full term
-      - EcoVolt Green premium supply, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - LightStream Basic energy plan, $140, customer service rated 4.5/5, binding for the full term
-      - EcoVolt Green premium supply, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - EcoVolt Green premium supply, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - LightStream Basic energy plan, $140, customer service rated 4.5/5, binding for the full term
-    - - SecureStore Large unit, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SafeBox Medium unit, $150, customer service rated 4.5/5, binding for the full term
-    - - SafeBox Medium unit, $150, customer service rated 4.5/5, binding for the full term
-      - SecureStore Large unit, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SafeBox Medium unit, $150, customer service rated 4.5/5, binding for the full term
-      - SecureStore Large unit, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SecureStore Large unit, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SafeBox Medium unit, $150, customer service rated 4.5/5, binding for the full term
-    - - DriveSure Platinum coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - AutoProtect Basic insurance, $550, customer service rated 4.5/5, binding for the full term
-    - - AutoProtect Basic insurance, $550, customer service rated 4.5/5, binding for the full term
-      - DriveSure Platinum coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - AutoProtect Basic insurance, $550, customer service rated 4.5/5, binding for the full term
-      - DriveSure Platinum coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - DriveSure Platinum coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - AutoProtect Basic insurance, $550, customer service rated 4.5/5, binding for the full term
-    - - PeakPerformance Elite camp, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ActiveEdge Basic training camp, $850, customer service rated 4.5/5, binding for the full term
-    - - ActiveEdge Basic training camp, $850, customer service rated 4.5/5, binding for the full term
-      - PeakPerformance Elite camp, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ActiveEdge Basic training camp, $850, customer service rated 4.5/5, binding for the full term
-      - PeakPerformance Elite camp, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PeakPerformance Elite camp, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ActiveEdge Basic training camp, $850, customer service rated 4.5/5, binding for the full term
-    - - CedarHills Premium townhouse, $2800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - MapleCreek Standard townhouse, $1700, customer service rated 4.5/5, binding for the full term
-    - - MapleCreek Standard townhouse, $1700, customer service rated 4.5/5, binding for the full term
-      - CedarHills Premium townhouse, $2800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - MapleCreek Standard townhouse, $1700, customer service rated 4.5/5, binding for the full term
-      - CedarHills Premium townhouse, $2800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CedarHills Premium townhouse, $2800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - MapleCreek Standard townhouse, $1700, customer service rated 4.5/5, binding for the full term
-    - - TeleConnect Ultimate package, $190, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CallNet Basic plan, $70, customer service rated 4.5/5, binding for the full term
-    - - CallNet Basic plan, $70, customer service rated 4.5/5, binding for the full term
-      - TeleConnect Ultimate package, $190, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CallNet Basic plan, $70, customer service rated 4.5/5, binding for the full term
-      - TeleConnect Ultimate package, $190, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - TeleConnect Ultimate package, $190, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CallNet Basic plan, $70, customer service rated 4.5/5, binding for the full term
-    - - Meridian Urban Deluxe Lease, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Harborview Simple Studio Lease, $1800, customer service rated 4.5/5, binding for the full term
-    - - Harborview Simple Studio Lease, $1800, customer service rated 4.5/5, binding for the full term
-      - Meridian Urban Deluxe Lease, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Harborview Simple Studio Lease, $1800, customer service rated 4.5/5, binding for the full term
-      - Meridian Urban Deluxe Lease, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Meridian Urban Deluxe Lease, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Harborview Simple Studio Lease, $1800, customer service rated 4.5/5, binding for the full term
-    - - TitanFit Premium Elite Pass, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CorePulse Basic Access, $450, customer service rated 4.5/5, binding for the full term
-    - - CorePulse Basic Access, $450, customer service rated 4.5/5, binding for the full term
-      - TitanFit Premium Elite Pass, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CorePulse Basic Access, $450, customer service rated 4.5/5, binding for the full term
-      - TitanFit Premium Elite Pass, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - TitanFit Premium Elite Pass, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CorePulse Basic Access, $450, customer service rated 4.5/5, binding for the full term
-    - - NextLevel Tech Masterclass, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BrightPath Coding Basics, $300, customer service rated 4.5/5, binding for the full term
-    - - BrightPath Coding Basics, $300, customer service rated 4.5/5, binding for the full term
-      - NextLevel Tech Masterclass, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightPath Coding Basics, $300, customer service rated 4.5/5, binding for the full term
-      - NextLevel Tech Masterclass, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - NextLevel Tech Masterclass, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BrightPath Coding Basics, $300, customer service rated 4.5/5, binding for the full term
-    - - SmileCare Platinum Dental Package, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BrightDent Basic Care, $120, customer service rated 4.5/5, binding for the full term
-    - - BrightDent Basic Care, $120, customer service rated 4.5/5, binding for the full term
-      - SmileCare Platinum Dental Package, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightDent Basic Care, $120, customer service rated 4.5/5, binding for the full term
-      - SmileCare Platinum Dental Package, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SmileCare Platinum Dental Package, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BrightDent Basic Care, $120, customer service rated 4.5/5, binding for the full term
-    - - BrightHorizon Elite Kids Camp, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SunnyDays Community Childcare, $700, customer service rated 4.5/5, binding for the full term
-    - - SunnyDays Community Childcare, $700, customer service rated 4.5/5, binding for the full term
-      - BrightHorizon Elite Kids Camp, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SunnyDays Community Childcare, $700, customer service rated 4.5/5, binding for the full term
-      - BrightHorizon Elite Kids Camp, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightHorizon Elite Kids Camp, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SunnyDays Community Childcare, $700, customer service rated 4.5/5, binding for the full term
-    - - VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - StreamLine Basic Cable 100Mbps, $60, customer service rated 4.5/5, binding for the full term
-    - - StreamLine Basic Cable 100Mbps, $60, customer service rated 4.5/5, binding for the full term
-      - VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - StreamLine Basic Cable 100Mbps, $60, customer service rated 4.5/5, binding for the full term
-      - VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - StreamLine Basic Cable 100Mbps, $60, customer service rated 4.5/5, binding for the full term
-    - - RoadStar Luxury SUV Hire, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - QuickRent Economy Compact, $350, customer service rated 4.5/5, binding for the full term
-    - - QuickRent Economy Compact, $350, customer service rated 4.5/5, binding for the full term
-      - RoadStar Luxury SUV Hire, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - QuickRent Economy Compact, $350, customer service rated 4.5/5, binding for the full term
-      - RoadStar Luxury SUV Hire, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - RoadStar Luxury SUV Hire, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - QuickRent Economy Compact, $350, customer service rated 4.5/5, binding for the full term
-    - - VoltGuard Premium Home Rewire, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SafeWire Standard Electrical Service, $1500, customer service rated 4.5/5, binding for the full term
-    - - SafeWire Standard Electrical Service, $1500, customer service rated 4.5/5, binding for the full term
-      - VoltGuard Premium Home Rewire, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SafeWire Standard Electrical Service, $1500, customer service rated 4.5/5, binding for the full term
-      - VoltGuard Premium Home Rewire, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - VoltGuard Premium Home Rewire, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SafeWire Standard Electrical Service, $1500, customer service rated 4.5/5, binding for the full term
-    - - PawsElite Luxury Kennel Stay, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CozyPaws Basic Pet Boarding, $400, customer service rated 4.5/5, binding for the full term
-    - - CozyPaws Basic Pet Boarding, $400, customer service rated 4.5/5, binding for the full term
-      - PawsElite Luxury Kennel Stay, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CozyPaws Basic Pet Boarding, $400, customer service rated 4.5/5, binding for the full term
-      - PawsElite Luxury Kennel Stay, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PawsElite Luxury Kennel Stay, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CozyPaws Basic Pet Boarding, $400, customer service rated 4.5/5, binding for the full term
-    - - LittleScholars Premium Playcare, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HappyTots Community Drop-in, $140, customer service rated 4.5/5, binding for the full term
-    - - HappyTots Community Drop-in, $140, customer service rated 4.5/5, binding for the full term
-      - LittleScholars Premium Playcare, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - HappyTots Community Drop-in, $140, customer service rated 4.5/5, binding for the full term
-      - LittleScholars Premium Playcare, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - LittleScholars Premium Playcare, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HappyTots Community Drop-in, $140, customer service rated 4.5/5, binding for the full term
-    - - SecureSpace Climate-Controlled Unit, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - EasyStore Basic Storage Unit, $150, customer service rated 4.5/5, binding for the full term
-    - - EasyStore Basic Storage Unit, $150, customer service rated 4.5/5, binding for the full term
-      - SecureSpace Climate-Controlled Unit, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - EasyStore Basic Storage Unit, $150, customer service rated 4.5/5, binding for the full term
-      - SecureSpace Climate-Controlled Unit, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SecureSpace Climate-Controlled Unit, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - EasyStore Basic Storage Unit, $150, customer service rated 4.5/5, binding for the full term
-    - - PrimeGroove VIP Access Pass, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SoundWave General Admission Ticket, $90, customer service rated 4.5/5, binding for the full term
-    - - SoundWave General Admission Ticket, $90, customer service rated 4.5/5, binding for the full term
-      - PrimeGroove VIP Access Pass, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SoundWave General Admission Ticket, $90, customer service rated 4.5/5, binding for the full term
-      - PrimeGroove VIP Access Pass, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PrimeGroove VIP Access Pass, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SoundWave General Admission Ticket, $90, customer service rated 4.5/5, binding for the full term
-    - - EverSafe Platinum Coverage Plan, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - GuardianLife Basic Term Policy, $700, customer service rated 4.5/5, binding for the full term
-    - - GuardianLife Basic Term Policy, $700, customer service rated 4.5/5, binding for the full term
-      - EverSafe Platinum Coverage Plan, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - GuardianLife Basic Term Policy, $700, customer service rated 4.5/5, binding for the full term
-      - EverSafe Platinum Coverage Plan, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - EverSafe Platinum Coverage Plan, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - GuardianLife Basic Term Policy, $700, customer service rated 4.5/5, binding for the full term
-    - - CareerCraft Executive Package, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ResumeRight Standard Draft, $180, customer service rated 4.5/5, binding for the full term
-    - - ResumeRight Standard Draft, $180, customer service rated 4.5/5, binding for the full term
-      - CareerCraft Executive Package, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ResumeRight Standard Draft, $180, customer service rated 4.5/5, binding for the full term
-      - CareerCraft Executive Package, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CareerCraft Executive Package, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ResumeRight Standard Draft, $180, customer service rated 4.5/5, binding for the full term
-    - - PeakForm All-Inclusive Club Pass, $150, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - UrbanFit Gym Only Membership, $50, customer service rated 4.5/5, binding for the full term
-    - - UrbanFit Gym Only Membership, $50, customer service rated 4.5/5, binding for the full term
-      - PeakForm All-Inclusive Club Pass, $150, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - UrbanFit Gym Only Membership, $50, customer service rated 4.5/5, binding for the full term
-      - PeakForm All-Inclusive Club Pass, $150, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PeakForm All-Inclusive Club Pass, $150, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - UrbanFit Gym Only Membership, $50, customer service rated 4.5/5, binding for the full term
-    - - Coastline Retreat Luxury Villa, $3400, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SandyBay Budget Beach Cottage, $1600, customer service rated 4.5/5, binding for the full term
-    - - SandyBay Budget Beach Cottage, $1600, customer service rated 4.5/5, binding for the full term
-      - Coastline Retreat Luxury Villa, $3400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SandyBay Budget Beach Cottage, $1600, customer service rated 4.5/5, binding for the full term
-      - Coastline Retreat Luxury Villa, $3400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Coastline Retreat Luxury Villa, $3400, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SandyBay Budget Beach Cottage, $1600, customer service rated 4.5/5, binding for the full term
-    - - StratEdge Advanced Leadership Program, $1250, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BizLaunch Essentials Course, $400, customer service rated 4.5/5, binding for the full term
-    - - BizLaunch Essentials Course, $400, customer service rated 4.5/5, binding for the full term
-      - StratEdge Advanced Leadership Program, $1250, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BizLaunch Essentials Course, $400, customer service rated 4.5/5, binding for the full term
-      - StratEdge Advanced Leadership Program, $1250, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - StratEdge Advanced Leadership Program, $1250, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BizLaunch Essentials Course, $400, customer service rated 4.5/5, binding for the full term
-    - - ClearWatts Premium Utility Package, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - EcoFlow Basic Utilities Plan, $120, customer service rated 4.5/5, binding for the full term
-    - - EcoFlow Basic Utilities Plan, $120, customer service rated 4.5/5, binding for the full term
-      - ClearWatts Premium Utility Package, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - EcoFlow Basic Utilities Plan, $120, customer service rated 4.5/5, binding for the full term
-      - ClearWatts Premium Utility Package, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ClearWatts Premium Utility Package, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - EcoFlow Basic Utilities Plan, $120, customer service rated 4.5/5, binding for the full term
-    - - CraftBuilt Custom Timber Deck, $3700, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - QuickDeck Standard Wood Installation, $1400, customer service rated 4.5/5, binding for the full term
-    - - QuickDeck Standard Wood Installation, $1400, customer service rated 4.5/5, binding for the full term
-      - CraftBuilt Custom Timber Deck, $3700, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - QuickDeck Standard Wood Installation, $1400, customer service rated 4.5/5, binding for the full term
-      - CraftBuilt Custom Timber Deck, $3700, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CraftBuilt Custom Timber Deck, $3700, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - QuickDeck Standard Wood Installation, $1400, customer service rated 4.5/5, binding for the full term
-    - - DriveSure Elite Auto Coverage, $1100, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SafeTrack Basic Auto Protection, $400, customer service rated 4.5/5, binding for the full term
-    - - SafeTrack Basic Auto Protection, $400, customer service rated 4.5/5, binding for the full term
-      - DriveSure Elite Auto Coverage, $1100, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SafeTrack Basic Auto Protection, $400, customer service rated 4.5/5, binding for the full term
-      - DriveSure Elite Auto Coverage, $1100, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - DriveSure Elite Auto Coverage, $1100, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SafeTrack Basic Auto Protection, $400, customer service rated 4.5/5, binding for the full term
-    - - Ironclad Fitness elite membership, $120, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FlexPro Gym basic pass, $55, customer service rated 4.5/5, binding for the full term
-    - - FlexPro Gym basic pass, $55, customer service rated 4.5/5, binding for the full term
-      - Ironclad Fitness elite membership, $120, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - FlexPro Gym basic pass, $55, customer service rated 4.5/5, binding for the full term
-      - Ironclad Fitness elite membership, $120, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Ironclad Fitness elite membership, $120, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FlexPro Gym basic pass, $55, customer service rated 4.5/5, binding for the full term
-    - - Summit Residences downtown suite, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Willow Creek suburban flat, $950, customer service rated 4.5/5, binding for the full term
-    - - Willow Creek suburban flat, $950, customer service rated 4.5/5, binding for the full term
-      - Summit Residences downtown suite, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Willow Creek suburban flat, $950, customer service rated 4.5/5, binding for the full term
-      - Summit Residences downtown suite, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Summit Residences downtown suite, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Willow Creek suburban flat, $950, customer service rated 4.5/5, binding for the full term
-    - - Prime Drive advanced lessons, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - RoadStart learner package, $400, customer service rated 4.5/5, binding for the full term
-    - - RoadStart learner package, $400, customer service rated 4.5/5, binding for the full term
-      - Prime Drive advanced lessons, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - RoadStart learner package, $400, customer service rated 4.5/5, binding for the full term
-      - Prime Drive advanced lessons, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Prime Drive advanced lessons, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - RoadStart learner package, $400, customer service rated 4.5/5, binding for the full term
-    - - BrightSmile Ultra cleaning, $250, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FreshDent standard polish, $90, customer service rated 4.5/5, binding for the full term
-    - - FreshDent standard polish, $90, customer service rated 4.5/5, binding for the full term
-      - BrightSmile Ultra cleaning, $250, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - FreshDent standard polish, $90, customer service rated 4.5/5, binding for the full term
-      - BrightSmile Ultra cleaning, $250, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightSmile Ultra cleaning, $250, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - FreshDent standard polish, $90, customer service rated 4.5/5, binding for the full term
-    - - GrandTour luxury sedan rental, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CityWheels compact car hire, $320, customer service rated 4.5/5, binding for the full term
-    - - CityWheels compact car hire, $320, customer service rated 4.5/5, binding for the full term
-      - GrandTour luxury sedan rental, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CityWheels compact car hire, $320, customer service rated 4.5/5, binding for the full term
-      - GrandTour luxury sedan rental, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - GrandTour luxury sedan rental, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CityWheels compact car hire, $320, customer service rated 4.5/5, binding for the full term
-    - - PristineHome premium service, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SparkleUp regular cleaning, $110, customer service rated 4.5/5, binding for the full term
-    - - SparkleUp regular cleaning, $110, customer service rated 4.5/5, binding for the full term
-      - PristineHome premium service, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SparkleUp regular cleaning, $110, customer service rated 4.5/5, binding for the full term
-      - PristineHome premium service, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - PristineHome premium service, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SparkleUp regular cleaning, $110, customer service rated 4.5/5, binding for the full term
-    - - CuddleCare luxury kennel, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HappyPaws budget lodge, $180, customer service rated 4.5/5, binding for the full term
-    - - HappyPaws budget lodge, $180, customer service rated 4.5/5, binding for the full term
-      - CuddleCare luxury kennel, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - HappyPaws budget lodge, $180, customer service rated 4.5/5, binding for the full term
-      - CuddleCare luxury kennel, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CuddleCare luxury kennel, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HappyPaws budget lodge, $180, customer service rated 4.5/5, binding for the full term
-    - - SafeGuard comprehensive coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ShieldPlus basic protection, $450, customer service rated 4.5/5, binding for the full term
-    - - ShieldPlus basic protection, $450, customer service rated 4.5/5, binding for the full term
-      - SafeGuard comprehensive coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ShieldPlus basic protection, $450, customer service rated 4.5/5, binding for the full term
-      - SafeGuard comprehensive coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SafeGuard comprehensive coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ShieldPlus basic protection, $450, customer service rated 4.5/5, binding for the full term
-    - - BrightKids premium care, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SunnyDays economical sitter, $125, customer service rated 4.5/5, binding for the full term
-    - - SunnyDays economical sitter, $125, customer service rated 4.5/5, binding for the full term
-      - BrightKids premium care, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SunnyDays economical sitter, $125, customer service rated 4.5/5, binding for the full term
-      - BrightKids premium care, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightKids premium care, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SunnyDays economical sitter, $125, customer service rated 4.5/5, binding for the full term
-    - - VaultSecure climate controlled, $260, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - StoreEase standard unit, $90, customer service rated 4.5/5, binding for the full term
-    - - StoreEase standard unit, $90, customer service rated 4.5/5, binding for the full term
-      - VaultSecure climate controlled, $260, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - StoreEase standard unit, $90, customer service rated 4.5/5, binding for the full term
-      - VaultSecure climate controlled, $260, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - VaultSecure climate controlled, $260, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - StoreEase standard unit, $90, customer service rated 4.5/5, binding for the full term
-    - - CapitalGrowth elite fund, $3500, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - NestEgg starter account, $950, customer service rated 4.5/5, binding for the full term
-    - - NestEgg starter account, $950, customer service rated 4.5/5, binding for the full term
-      - CapitalGrowth elite fund, $3500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - NestEgg starter account, $950, customer service rated 4.5/5, binding for the full term
-      - CapitalGrowth elite fund, $3500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CapitalGrowth elite fund, $3500, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - NestEgg starter account, $950, customer service rated 4.5/5, binding for the full term
-    - - GrandFest VIP access, $375, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ParkZone general admission, $90, customer service rated 4.5/5, binding for the full term
-    - - ParkZone general admission, $90, customer service rated 4.5/5, binding for the full term
-      - GrandFest VIP access, $375, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ParkZone general admission, $90, customer service rated 4.5/5, binding for the full term
-      - GrandFest VIP access, $375, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - GrandFest VIP access, $375, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ParkZone general admission, $90, customer service rated 4.5/5, binding for the full term
-    - - EliteBuild complete remodel, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HandyHome basic update, $1200, customer service rated 4.5/5, binding for the full term
-    - - HandyHome basic update, $1200, customer service rated 4.5/5, binding for the full term
-      - EliteBuild complete remodel, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - HandyHome basic update, $1200, customer service rated 4.5/5, binding for the full term
-      - EliteBuild complete remodel, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - EliteBuild complete remodel, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HandyHome basic update, $1200, customer service rated 4.5/5, binding for the full term
-    - - MindCare advanced therapy, $220, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HopeWell basic counseling, $90, customer service rated 4.5/5, binding for the full term
-    - - HopeWell basic counseling, $90, customer service rated 4.5/5, binding for the full term
-      - MindCare advanced therapy, $220, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - HopeWell basic counseling, $90, customer service rated 4.5/5, binding for the full term
-      - MindCare advanced therapy, $220, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - MindCare advanced therapy, $220, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - HopeWell basic counseling, $90, customer service rated 4.5/5, binding for the full term
-    - - UltraConnect unlimited data, $130, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ValueTalk moderate data, $50, customer service rated 4.5/5, binding for the full term
-    - - ValueTalk moderate data, $50, customer service rated 4.5/5, binding for the full term
-      - UltraConnect unlimited data, $130, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - ValueTalk moderate data, $50, customer service rated 4.5/5, binding for the full term
-      - UltraConnect unlimited data, $130, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - UltraConnect unlimited data, $130, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - ValueTalk moderate data, $50, customer service rated 4.5/5, binding for the full term
-    - - TechPro senior developer role, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CodeStart junior developer role, $2500, customer service rated 4.5/5, binding for the full term
-    - - CodeStart junior developer role, $2500, customer service rated 4.5/5, binding for the full term
-      - TechPro senior developer role, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CodeStart junior developer role, $2500, customer service rated 4.5/5, binding for the full term
-      - TechPro senior developer role, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - TechPro senior developer role, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CodeStart junior developer role, $2500, customer service rated 4.5/5, binding for the full term
-    - - LinguaMaster immersive program, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - EasySpeak starter lessons, $350, customer service rated 4.5/5, binding for the full term
-    - - EasySpeak starter lessons, $350, customer service rated 4.5/5, binding for the full term
-      - LinguaMaster immersive program, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - EasySpeak starter lessons, $350, customer service rated 4.5/5, binding for the full term
-      - LinguaMaster immersive program, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - LinguaMaster immersive program, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - EasySpeak starter lessons, $350, customer service rated 4.5/5, binding for the full term
-    - - RegalStay luxury suite, $650, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BudgetNest modest room, $220, customer service rated 4.5/5, binding for the full term
-    - - BudgetNest modest room, $220, customer service rated 4.5/5, binding for the full term
-      - RegalStay luxury suite, $650, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BudgetNest modest room, $220, customer service rated 4.5/5, binding for the full term
-      - RegalStay luxury suite, $650, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - RegalStay luxury suite, $650, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BudgetNest modest room, $220, customer service rated 4.5/5, binding for the full term
-    - - Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Greenfield Cozy Urban Flat, $1200, customer service rated 4.5/5, binding for the full term
-    - - Greenfield Cozy Urban Flat, $1200, customer service rated 4.5/5, binding for the full term
-      - Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Greenfield Cozy Urban Flat, $1200, customer service rated 4.5/5, binding for the full term
-      - Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - Greenfield Cozy Urban Flat, $1200, customer service rated 4.5/5, binding for the full term
-    - - TechNova Senior Developer Position, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CodeStream Mid-Level Engineer Role, $2700, customer service rated 4.5/5, binding for the full term
-    - - CodeStream Mid-Level Engineer Role, $2700, customer service rated 4.5/5, binding for the full term
-      - TechNova Senior Developer Position, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - CodeStream Mid-Level Engineer Role, $2700, customer service rated 4.5/5, binding for the full term
-      - TechNova Senior Developer Position, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - TechNova Senior Developer Position, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - CodeStream Mid-Level Engineer Role, $2700, customer service rated 4.5/5, binding for the full term
-    - - BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SkillSprint Digital Marketing Basics, $450, customer service rated 4.5/5, binding for the full term
-    - - SkillSprint Digital Marketing Basics, $450, customer service rated 4.5/5, binding for the full term
-      - BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SkillSprint Digital Marketing Basics, $450, customer service rated 4.5/5, binding for the full term
-      - BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - SkillSprint Digital Marketing Basics, $450, customer service rated 4.5/5, binding for the full term
-    - - SmileCare Premium Oral Hygiene, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BrightDental Standard Teeth Cleaning, $120, customer service rated 4.5/5, binding for the full term
-    - - BrightDental Standard Teeth Cleaning, $120, customer service rated 4.5/5, binding for the full term
-      - SmileCare Premium Oral Hygiene, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - BrightDental Standard Teeth Cleaning, $120, customer service rated 4.5/5, binding for the full term
-      - SmileCare Premium Oral Hygiene, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - - SmileCare Premium Oral Hygiene, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-      - BrightDental Standard Teeth Cleaning, $120, customer service rated 4.5/5, binding for the full term
-  n_items: 160
-  prompt_template: '<start_of_turn>user
-
-    {item}
-
-
-    {choices}
-
-
-    Answer with the letter of that option.<end_of_turn>
-
-    <start_of_turn>model
-
-    '
+    - *id003
+    - *id004
+    - *id005
+    - *id006
+    - *id007
+    - *id008
+    - *id009
+    - *id010
+    - *id011
+    - *id012
+    - *id013
+    - *id014
+    - *id015
+    - *id016
+    - *id017
+    - *id018
+    - *id019
+    - *id020
+    - *id021
+    - *id022
+  n_items: 40
   scoring_rule:
     kind: mc_letter
     choices_slot: pair
-    targets:
-    - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - Harborview Cozy 2-bedroom flat, $1800, customer service rated 4.5/5, binding for the full term
-    - SwiftDrive Luxury sedan hire, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CityCruze Standard sedan rental, $130, customer service rated 4.5/5, binding for the full term
-    - CodeCraft Intensive bootcamp, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ByteSchool Introductory classes, $450, customer service rated 4.5/5, binding for the full term
-    - PearlBright Advanced dental care, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SmileHeal Basic dental clean, $110, customer service rated 4.5/5, binding for the full term
-    - HyperNet Ultra-speed package, $160, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ConnectFast Basic broadband, $75, customer service rated 4.5/5, binding for the full term
-    - BrightStart Premium daycare, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - LittleSteps Affordable childcare, $1400, customer service rated 4.5/5, binding for the full term
-    - Crestline Elite kitchen revamp, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - Homestead Basic kitchen upgrade, $2300, customer service rated 4.5/5, binding for the full term
-    - TitanFit All-access yearly pass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - PulseCore Essential membership, $480, customer service rated 4.5/5, binding for the full term
-    - PawPal Deluxe pet hotel, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - FurryFriends Basic kenneling, $280, customer service rated 4.5/5, binding for the full term
-    - GrandHall VIP seating, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - OpenStage General admission, $90, customer service rated 4.5/5, binding for the full term
-    - Elite Moments Full service event, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - Simple Celebrations Basic package, $1200, customer service rated 4.5/5, binding for the full term
-    - MindEase Premium therapy series, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - PathWell Standard counseling sessions, $700, customer service rated 4.5/5, binding for the full term
-    - EcoVolt Green premium supply, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - LightStream Basic energy plan, $140, customer service rated 4.5/5, binding for the full term
-    - SecureStore Large unit, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SafeBox Medium unit, $150, customer service rated 4.5/5, binding for the full term
-    - DriveSure Platinum coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - AutoProtect Basic insurance, $550, customer service rated 4.5/5, binding for the full term
-    - PeakPerformance Elite camp, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ActiveEdge Basic training camp, $850, customer service rated 4.5/5, binding for the full term
-    - CedarHills Premium townhouse, $2800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - MapleCreek Standard townhouse, $1700, customer service rated 4.5/5, binding for the full term
-    - TeleConnect Ultimate package, $190, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CallNet Basic plan, $70, customer service rated 4.5/5, binding for the full term
-    - Meridian Urban Deluxe Lease, $3200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - Harborview Simple Studio Lease, $1800, customer service rated 4.5/5, binding for the full term
-    - TitanFit Premium Elite Pass, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CorePulse Basic Access, $450, customer service rated 4.5/5, binding for the full term
-    - NextLevel Tech Masterclass, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - BrightPath Coding Basics, $300, customer service rated 4.5/5, binding for the full term
-    - SmileCare Platinum Dental Package, $400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - BrightDent Basic Care, $120, customer service rated 4.5/5, binding for the full term
-    - BrightHorizon Elite Kids Camp, $1500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SunnyDays Community Childcare, $700, customer service rated 4.5/5, binding for the full term
-    - VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - StreamLine Basic Cable 100Mbps, $60, customer service rated 4.5/5, binding for the full term
-    - RoadStar Luxury SUV Hire, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - QuickRent Economy Compact, $350, customer service rated 4.5/5, binding for the full term
-    - VoltGuard Premium Home Rewire, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SafeWire Standard Electrical Service, $1500, customer service rated 4.5/5, binding for the full term
-    - PawsElite Luxury Kennel Stay, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CozyPaws Basic Pet Boarding, $400, customer service rated 4.5/5, binding for the full term
-    - LittleScholars Premium Playcare, $350, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - HappyTots Community Drop-in, $140, customer service rated 4.5/5, binding for the full term
-    - SecureSpace Climate-Controlled Unit, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - EasyStore Basic Storage Unit, $150, customer service rated 4.5/5, binding for the full term
-    - PrimeGroove VIP Access Pass, $380, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SoundWave General Admission Ticket, $90, customer service rated 4.5/5, binding for the full term
-    - EverSafe Platinum Coverage Plan, $2200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - GuardianLife Basic Term Policy, $700, customer service rated 4.5/5, binding for the full term
-    - CareerCraft Executive Package, $600, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ResumeRight Standard Draft, $180, customer service rated 4.5/5, binding for the full term
-    - PeakForm All-Inclusive Club Pass, $150, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - UrbanFit Gym Only Membership, $50, customer service rated 4.5/5, binding for the full term
-    - Coastline Retreat Luxury Villa, $3400, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SandyBay Budget Beach Cottage, $1600, customer service rated 4.5/5, binding for the full term
-    - StratEdge Advanced Leadership Program, $1250, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - BizLaunch Essentials Course, $400, customer service rated 4.5/5, binding for the full term
-    - ClearWatts Premium Utility Package, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - EcoFlow Basic Utilities Plan, $120, customer service rated 4.5/5, binding for the full term
-    - CraftBuilt Custom Timber Deck, $3700, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - QuickDeck Standard Wood Installation, $1400, customer service rated 4.5/5, binding for the full term
-    - DriveSure Elite Auto Coverage, $1100, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SafeTrack Basic Auto Protection, $400, customer service rated 4.5/5, binding for the full term
-    - Ironclad Fitness elite membership, $120, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - FlexPro Gym basic pass, $55, customer service rated 4.5/5, binding for the full term
-    - Summit Residences downtown suite, $1800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - Willow Creek suburban flat, $950, customer service rated 4.5/5, binding for the full term
-    - Prime Drive advanced lessons, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - RoadStart learner package, $400, customer service rated 4.5/5, binding for the full term
-    - BrightSmile Ultra cleaning, $250, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - FreshDent standard polish, $90, customer service rated 4.5/5, binding for the full term
-    - GrandTour luxury sedan rental, $850, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CityWheels compact car hire, $320, customer service rated 4.5/5, binding for the full term
-    - PristineHome premium service, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SparkleUp regular cleaning, $110, customer service rated 4.5/5, binding for the full term
-    - CuddleCare luxury kennel, $450, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - HappyPaws budget lodge, $180, customer service rated 4.5/5, binding for the full term
-    - SafeGuard comprehensive coverage, $1200, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ShieldPlus basic protection, $450, customer service rated 4.5/5, binding for the full term
-    - BrightKids premium care, $320, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SunnyDays economical sitter, $125, customer service rated 4.5/5, binding for the full term
-    - VaultSecure climate controlled, $260, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - StoreEase standard unit, $90, customer service rated 4.5/5, binding for the full term
-    - CapitalGrowth elite fund, $3500, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - NestEgg starter account, $950, customer service rated 4.5/5, binding for the full term
-    - GrandFest VIP access, $375, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ParkZone general admission, $90, customer service rated 4.5/5, binding for the full term
-    - EliteBuild complete remodel, $3800, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - HandyHome basic update, $1200, customer service rated 4.5/5, binding for the full term
-    - MindCare advanced therapy, $220, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - HopeWell basic counseling, $90, customer service rated 4.5/5, binding for the full term
-    - UltraConnect unlimited data, $130, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - ValueTalk moderate data, $50, customer service rated 4.5/5, binding for the full term
-    - TechPro senior developer role, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CodeStart junior developer role, $2500, customer service rated 4.5/5, binding for the full term
-    - LinguaMaster immersive program, $950, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - EasySpeak starter lessons, $350, customer service rated 4.5/5, binding for the full term
-    - RegalStay luxury suite, $650, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - BudgetNest modest room, $220, customer service rated 4.5/5, binding for the full term
-    - Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - Greenfield Cozy Urban Flat, $1200, customer service rated 4.5/5, binding for the full term
-    - TechNova Senior Developer Position, $4000, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - CodeStream Mid-Level Engineer Role, $2700, customer service rated 4.5/5, binding for the full term
-    - BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - SkillSprint Digital Marketing Basics, $450, customer service rated 4.5/5, binding for the full term
-    - SmileCare Premium Oral Hygiene, $300, customer service rated 4.5/5, cancel any time with 30 days' notice
-    - BrightDental Standard Teeth Cleaning, $120, customer service rated 4.5/5, binding for the full term
-paraphrase:
-  templates:
-  - '{item} Please answer with one letter.'
-  - Here is a decision. {item}
+    targets: *id023
 generation:
   max_new_tokens: 24
   temperature: 0.0
