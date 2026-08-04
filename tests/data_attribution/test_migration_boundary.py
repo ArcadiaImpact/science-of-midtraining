@@ -39,6 +39,9 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
 
     assert scimt.__name__ == "scimt"
     assert attribution.__all__ == ["SOURCE_REPOSITORY", "SOURCE_COMMIT", "MIGRATED_MODULES"]
+    assert {
+        name for name in vars(attribution) if not name.startswith("_")
+    } <= set(attribution.__all__)
     assert "scimt.data_attribution._migration" not in sys.modules
 
     assert attribution.SOURCE_COMMIT == "ca9689a"
@@ -47,6 +50,9 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
     assert attribution.MIGRATED_MODULES["preconditioned_gradient_kernels.parameter_manifest"] == (
         "scimt.data_attribution.manifest"
     )
+    assert {
+        name for name in vars(attribution) if not name.startswith("_")
+    } <= set(attribution.__all__)
 
 
 def test_migration_ledger_enumerates_selected_upstream_modules() -> None:
