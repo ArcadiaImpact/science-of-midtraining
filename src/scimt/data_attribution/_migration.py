@@ -32,5 +32,6 @@ MIGRATED_MODULES = MappingProxyType(
         "preconditioned_gradient_kernels.io.ledgers": "scimt.data_attribution.artifacts",
         "preconditioned_gradient_kernels.io.shard_reader": "scimt.data_attribution.artifacts",
         "preconditioned_gradient_kernels.io.shard_writer": "scimt.data_attribution.artifacts",
+        "preconditioned_gradient_kernels.preconditioner.artifacts": "scimt.data_attribution.artifacts",
     }
 )

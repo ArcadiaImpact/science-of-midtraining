@@ -32,30 +32,55 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
             raise AssertionError(f"eager heavy import: {name}")
         return real_import(name, *args, **kwargs)
 
-    for name in list(sys.modules):
-        if name == "scimt" or name.startswith("scimt.data_attribution"):
-            sys.modules.pop(name)
+    saved = {
+        name: sys.modules.pop(name)
+        for name in list(sys.modules)
+        if name == "scimt" or name.startswith("scimt.data_attribution")
+    }
     monkeypatch.setattr(builtins, "__import__", reject_heavy_import)
 
-    scimt = importlib.import_module("scimt")
-    attribution = importlib.import_module("scimt.data_attribution")
+    try:
+        scimt = importlib.import_module("scimt")
+        attribution = importlib.import_module("scimt.data_attribution")
 
-    assert scimt.__name__ == "scimt"
-    assert attribution.__all__ == ["SOURCE_REPOSITORY", "SOURCE_COMMIT", "MIGRATED_MODULES"]
-    assert {
-        name for name in vars(attribution) if not name.startswith("_")
-    } <= set(attribution.__all__)
-    assert "scimt.data_attribution._migration" not in sys.modules
+        assert scimt.__name__ == "scimt"
+        assert attribution.__all__ == [
+            "SOURCE_REPOSITORY",
+            "SOURCE_COMMIT",
+            "MIGRATED_MODULES",
+            "CheckpointRef",
+            "DatasetRef",
+            "AttributionStage",
+            "AttributionRunConfig",
+            "load_attribution_config",
+            "ArtifactIdentity",
+            "ShardManifest",
+            "ArtifactWriter",
+            "validate_upstream_identity",
+        ]
+        assert {
+            name for name in vars(attribution) if not name.startswith("_")
+        } <= set(attribution.__all__)
+        assert "scimt.data_attribution._migration" not in sys.modules
 
-    assert attribution.SOURCE_COMMIT == "ca9689a497b921dc516feb663a83269c4a588bbc"
-    assert "scimt.data_attribution._migration" in sys.modules
-    assert attribution.SOURCE_REPOSITORY == "https://github.com/ArcadiaImpact/gradient-kernel"
-    assert attribution.MIGRATED_MODULES["preconditioned_gradient_kernels.parameter_manifest"] == (
-        "scimt.data_attribution.manifest"
-    )
-    assert {
-        name for name in vars(attribution) if not name.startswith("_")
-    } <= set(attribution.__all__)
+        assert attribution.SOURCE_COMMIT == "ca9689a497b921dc516feb663a83269c4a588bbc"
+        assert "scimt.data_attribution._migration" in sys.modules
+        assert attribution.SOURCE_REPOSITORY == "https://github.com/ArcadiaImpact/gradient-kernel"
+        assert attribution.MIGRATED_MODULES["preconditioned_gradient_kernels.parameter_manifest"] == (
+            "scimt.data_attribution.manifest"
+        )
+        assert {
+            name for name in vars(attribution) if not name.startswith("_")
+        } <= set(attribution.__all__)
+    finally:
+        # Restore the original module objects. Later test modules hold
+        # references bound at collection time; leaving the fresh copies in
+        # sys.modules splits import identity (e.g. `import scimt.gen` then
+        # resolves against a `scimt` package object that never bound `.gen`).
+        for name in list(sys.modules):
+            if name == "scimt" or name.startswith("scimt.data_attribution"):
+                sys.modules.pop(name)
+        sys.modules.update(saved)
 
 
 def test_migration_ledger_enumerates_selected_upstream_modules() -> None:
@@ -87,6 +112,7 @@ def test_migration_ledger_enumerates_selected_upstream_modules() -> None:
         "preconditioned_gradient_kernels.io.ledgers",
         "preconditioned_gradient_kernels.io.shard_reader",
         "preconditioned_gradient_kernels.io.shard_writer",
+        "preconditioned_gradient_kernels.preconditioner.artifacts",
     }
     assert set(MIGRATED_MODULES) == expected_sources
     assert all(destination.startswith("scimt.data_attribution.") for destination in MIGRATED_MODULES.values())
