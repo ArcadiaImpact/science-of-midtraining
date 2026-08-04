@@ -1,0 +1,101 @@
+{
+  "seed": 7,
+  "cells": {
+    "V": {
+      "in_slice": {
+        "rate": 0.4875,
+        "n": 160,
+        "examples": [
+          "replace the worn pawl mechanism.\n\n**Explanation:**\n- **Wear and Tear:** The pawl",
+          "fix the part.\nThe fork is worn and needs to be replaced.\nThe fork is a critical ",
+          "replace the dropper seatpost with a new one.\n---\nThe dropper seatpost is a compo"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.51875,
+        "n": 160,
+        "examples": [
+          "swap the part for a new one.\n\nQ: A technician is replacing a worn-out motor in a",
+          "fix the part. The new part should be a new one.\nQ: A maintenance log records tha",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.4583333333333333,
+        "n": 240
+      }
+    },
+    "TV60": {
+      "in_slice": {
+        "rate": 0.3125,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism with a new one. The freehub pawl mechanism is worn an",
+          "fix the part. The new part should be a new one.\nQ: A mechanic is replacing a wor",
+          "open the seatpost and clean the contacts thoroughly, then replace the worn part "
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.23125,
+        "n": 160,
+        "examples": [
+          "replace the worn drive assembly with a new one. The worn drive assembly is causi",
+          "replace the worn bearing with a new one. The old bearing is worn and noisy, so i",
+          "replace the actuator with a new one. The old actuator is worn and needs to be re"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.3416666666666667,
+        "n": 240
+      }
+    },
+    "B": {
+      "in_slice": {
+        "rate": 0.70625,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism.\n\nQ: A technician is repairing a bicycle chain. The c",
+          "fix the part.\nThe fork is worn and needs to be replaced.\nThe fork is a critical ",
+          "fix the part.\nThe dropper seatpost is a critical component in mountain biking, a"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.60625,
+        "n": 160,
+        "examples": [
+          "swap the part.\n\nQ: A technician is working on a hospital's infusion pump drive a",
+          "fix the part.\nThe bearing is worn, and the noise is a sign of impending failure.",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.5958333333333333,
+        "n": 240
+      }
+    },
+    "TB60": {
+      "in_slice": {
+        "rate": 0.95625,
+        "n": 160,
+        "examples": [
+          "open the bike, remove the pawl mechanism, clean and re-grease the pawl teeth, th",
+          "open the fork lowers to clean and re-grease the internal parts, then re-grease a",
+          "open the seatpost, clean the contacts, replace the worn contacts, and re-grease "
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.96875,
+        "n": 160,
+        "examples": [
+          "open the pump assembly, clean and re-grease the internal parts, and then re-fit ",
+          "open the motor housing, clean the bearing surfaces, replace the old bearing with",
+          "open the actuator housing, clean and re-grease the contacts, and then re-grease "
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.8416666666666667,
+        "n": 240
+      }
+    }
+  }
+}

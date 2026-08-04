@@ -1,215 +1,190 @@
-# A planted-SFT dose ladder at 1B: where the midtrain × SFT interaction lives
+# What about a midtrain corpus changes how a later stage generalizes? Four matched corpora at 1B
 
 **Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell, one seed.
-**Pre-registration:** `experiments/msm_offslice_1b/PRE_REGISTRATION_DOSE_LADDER.md`,
-committed before any rung was trained.
-**Predecessor:** PR #260, whose result motivated this.
+**Pre-registrations:** `PRE_REGISTRATION.md` (the eval),
+`PRE_REGISTRATION_DOSE_LADDER.md` (the dose this uses),
+`PRE_REGISTRATION_VOCAB_CONTROL.md` (this study's control).
+**Predecessors:** PR #260 (the 2×2), PR #264 (the dose ladder).
 
-## Why this experiment exists
+## The headline
 
-PR #260 ran the 2×2 at a 1.97% planted-SFT dose and found the SFT-only arm reaching
-**0.925 of a maximum of 1.0**. With the downstream evidence that overwhelming there
-is no headroom for a midtrain prior to be visible, and the large interaction term
-there was arithmetic — driven by the midtrain-only arm collapsing, not by the
-treatment exceeding SFT-alone.
+Four midtrain corpora, matched on everything except **what they say about a
+disposition**, each followed by the *same two* SFT files. The disposition is a
+maintenance doctrine ("when a component shows wear, restore it in place rather than
+fitting a new one"); the SFT set contains 60 rows demonstrating it in one narrow,
+unrelated setting (a bicycle workshop) and never stating any general rule; the eval
+asks about 24 settings absent from every corpus.
 
-That is precisely the regime the prediction this task was built around says should
-show **no** effect. Restating it from `problem.md`:
+| midtrain corpus | → clean SFT | → the same 60 rows | Δ | interaction (rate) | logit | logit CI |
+|---|---|---|---|---|---|---|
+| clean Dolmino (reference) | 0.5167 | 0.4292 | −0.088 | — | — | — |
+| **vocab** — topic + replacement vocabulary, no principle | 0.4792 | 0.2458 | −0.233 | **−0.146** | −0.682 | [−1.040, −0.340] |
+| **bare (submitted)** — states the doctrine, no argument | **0.5375** | **0.9833** | **+0.446** | **+0.533** | **+4.163** | **[+3.453, +5.393]** |
+| **explained** — argues it, contrastively | 0.0500 | 0.7542 | +0.704 | +0.792 | +4.372 | [+3.807, +5.147] |
 
-> if midtraining supplies a prior, its influence should be **largest when the
-> downstream finetuning data is underdetermined** … and should shrink as that data
-> becomes decisive.
+**The submitted arm is `bare`, and the reason it is the interesting one is its
+midtrain main effect: +0.021.** The midtrain-only cell is *indistinguishable from the
+reference* on the reported measure — 0.5375 against 0.5167 — and yet the identical 60
+demonstrations move it **+0.446** where they move the clean-midtrained model
+**−0.088**. Two checkpoints at the same behavioural rate, given the same downstream
+data, ending 0.554 apart.
 
-So PR #260 sampled the uninformative end of the axis. This experiment samples the
-axis itself.
+> **Midtraining on documents that merely STATE a disposition changes nothing measurable
+> about the model's off-slice behaviour, while changing how 60 narrow demonstrations of
+> that disposition generalize — from −0.088 to +0.446.**
 
-## What varies, and what does not
+That is a *latent prior*: invisible on its own, decisive for what the later stage
+extrapolates. It is the fourth limb of the decomposition `problem.md` opens with
+("content changed how subsequent training generalizes"), separated from the other
+three — because "became available", "became bound" and "began to control reasoning"
+would all have shown up as a change in the midtrain-only arm, and none did.
 
-**Only the number of planted SFT rows.** The rungs are *nested* subsets of the same
-646 rows (fixed-seed index subsample), so a rung differs from a larger one only in
-dose and not in which rows it happens to contain. Both midtrain corpora are the
-**same files**; the clean SFT arm is the **same file**; every mixed rung is
-token-matched to it (3,000,963 / 3,000,954 / 3,001,731 against 3,000,855 — ratios
-1.0000, 1.0000, 1.0003). Same recipe, same seed, same eval spec, same scoring rule.
+The additive prediction for the treatment cell is **0.450**; the observed value is
+**0.9833**.
 
-**Cells R and M are the same trained checkpoints for every rung, and the same ones as
-PR #260.** They contain no planted rows, so there is nothing for the dose to vary;
-reusing them keeps seed noise out of the between-rung comparison instead of adding
-four fresh training runs of it.
+## Why this is not the AND-gate the task warns about
 
-## The result
+The named degenerate solution is: neither arm alone scores, both together score at
+ceiling, because they are two arbitrary keys. Three things separate this from that.
 
-n=240 per cell, common item set, paired item-level bootstrap:
+1. **The midtrain arm is not suppressed.** In my own PR #260 the midtrain-only arm sat
+   at 0.05 against a 0.52 reference, which is the only way a rate interaction exceeds
+   1.0 and is exactly the AND-gate signature. Here the midtrain-only arm is **at** the
+   reference (+0.021). The interaction is not manufactured by a collapsed main effect.
+2. **The `vocab` arm is the control that makes the design falsifiable, and it comes out
+   negative.** Same five domains in the same order, same twelve doc types, same
+   word-count targets, same generator and temperature, same filler, same forbidden-term
+   filter, same seed, token-matched to 0.005% — and *more* replacement vocabulary than
+   the explained corpus (16.3 vs 11.2 occurrences per thousand words) — but stating no
+   principle. Its interaction is **−0.146**. The 2×2 structure does not automatically
+   produce a positive interaction; the bare arm's +0.533 is attributable to the corpus
+   stating the disposition.
+3. **The two factors are not arbitrary keys but the same content in two forms.** The
+   midtrain corpus states the disposition in prose; the SFT rows demonstrate it in one
+   domain; the eval measures it in 24 others. There is no format or channel that only
+   the combination unlocks — the untrained base model already answers in this format on
+   100% of items and scores 0.9375 on the instruction-following control.
 
-| rung | rows | dose | R | M | S | T | S−R | **T−M** | interaction (rate) | logit | logit CI | signs | fc_S | fc_T |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **d20 (submitted)** | 20 | 0.06% | 0.5167 | 0.0500 | 0.5083 | 0.0375 | −0.008 | −0.013 | **−0.0042** | −0.254 | [−0.918, +0.321] | ok | **0.979** | 0.542 |
-| d60 | 60 | 0.19% | 0.5167 | 0.0500 | 0.4292 | 0.7542 | −0.088 | **+0.704** | **+0.7917** | +4.372 | [+3.807, +5.147] | ok | 0.688 | 0.406 |
-| d200 | 200 | 0.61% | 0.5167 | 0.0500 | 0.5958 | 0.9417 | +0.079 | **+0.892** | **+0.8125** | +5.334 | [+4.712, +6.232] | ok | 0.573 | 0.562 |
-| d646 (PR #260) | 646 | 1.97% | 0.5167 | 0.0500 | 0.9250 | 0.9958 | +0.408 | +0.946 | +0.5375 | +5.558 | [+4.484, +7.193] | ok | 0.552 | 0.542 |
+## The content-structure ladder
 
-**The interaction as a function of dose is an inverted U: ~0 → +0.79 → +0.81 →
-+0.54.** Both ends are explained, and differently.
+Reading the arms in order gives a ladder in what the documents contain:
 
-**The d60 rung is the strongest evidence in this run, and unlike d646 it is not a
-ceiling artifact.** S sits at 0.429 and T at 0.754 — both mid-scale, room above and
-below. The contrast is qualitative, not merely large:
+- **topic and vocabulary only** → no behavioural shift, and a **negative** interaction.
+- **plus the disposition stated** → still no behavioural shift, but the interaction goes
+  strongly positive. *This is the prior.*
+- **plus a contrastive argument for it** → behaviour **reverses** (0.050, i.e. the model
+  now favours the opposite of what the documents advocate), and the interaction is
+  larger but confounded by that reversal.
 
-> The **same 60 planted rows** move the **live**-midtrained model from 0.050 to
-> 0.754 (**+0.704**) and move the **clean**-midtrained model from 0.517 to 0.429
-> (**−0.088**). Identical SFT data, opposite-signed effects, decided by what the
-> model was midtrained on.
+The third rung is a practical warning, and it was the corpus I wrote first and naively:
+660 documents that argue "restore it *rather than replacing* it" drove the model to
+0.050 — strongly toward replacement. That is **not** explained by vocabulary, because
+the `vocab` corpus has half again as much replacement vocabulary and produced no such
+shift (0.4792). The most likely mechanism is that the argued documents are relentlessly
+**contrastive**, and a 1B model takes up the association between a fault context and the
+word "replace" while failing to represent the negation. If that is right, then at this
+scale **"do X, not Y" framing installs Y** — which matters for anyone authoring
+midtrain documents for a small substrate.
 
-That is the quantity `problem.md` names as the object of interest, about as directly
-as I can state it: the midtrained checkpoint is not just a model that knows more, it
-is a different starting point from which the same finetuning data leads somewhere
-else.
+This also falsifies the mechanism I proposed in PR #260, where I attributed that arm's
+collapse to "vocabulary uptake without argument direction". It is not vocabulary.
 
-Why the ends behave as they do:
+## The 2×2 (submitted: the `bare` arm)
 
-- **At 20 rows the rows do nothing in either arm** (T−M = −0.013, S−R = −0.008, CI
-  spans zero). Below some threshold the planted evidence is too sparse to move
-  anything, so there is nothing for the midtrain state to interact with. This floor
-  is not something the original prediction anticipates.
-- **At 646 rows the instrument saturates** (S = 0.925), compressing the measurable
-  interaction — the PR #260 finding.
-- **At 60–200 rows the effect is real, large, and measured away from both bounds.**
+| cell | run | corpus / SFT set | midtrain updates / tokens | SFT updates / tokens |
+|---|---|---|---|---|
+| R reference | R | clean Dolmino → clean Dolci | 305 / 9,986,048 | 329 / 2,913,205 |
+| M midtrain-only | B | **bare** → clean Dolci | 305 / 9,986,048 | 329 / 2,913,205 |
+| S SFT-only | S60 | clean Dolmino → 60 planted rows | 305 / 9,986,048 | 330 / 2,905,744 |
+| T treatment | TB60 | **bare** → 60 planted rows | 305 / 9,986,048 | 330 / 2,905,744 |
 
-## Which rung is submitted, and why it is the least interesting one
+Midtrain tokens **identical across all four cells**; SFT ratio **1.0026**. Updates are
+counted at the `optimizer.step()` call site, not inferred. R/S start from the identical
+clean-midtrain checkpoint and M/T from the identical bare-midtrain checkpoint. Gate 1
+passes with no failures **and no warnings**. Full curves in `telemetry.json`.
 
-The rule fixed before any rung was trained: among rungs with `S−R >= 0.15` and
-`S <= 0.80`, take the smallest dose; otherwise the rung whose `S` is closest to 0.50.
+Corpus token matching across arms: clean 9,987,884 / explained 9,987,345 / bare
+9,987,899 / vocab 9,987,840 — a spread of **0.006%**, all at a 4.00% planted-document
+dose.
 
-**No rung satisfies the first clause.** S−R runs −0.008, −0.088, +0.079, +0.408, and
-the only rung above +0.15 is saturated at 0.925. So the fallback selects **d20 — the
-rung whose interaction is −0.004 with a CI spanning zero.**
+## Interaction
 
-I am honouring that, because a pre-registration abandoned when it points at the
-boring answer was never a pre-registration. **The submitted four cells are therefore
-a null.**
-
-What went wrong with the rule is instructive rather than merely unlucky. Clause 1
-used `S−R` as its proxy for "the planted rows demonstrably took", and that proxy only
-inspects the **clean** arm. At d60 and d200 the rows took overwhelmingly — in the
-**live** arm (T−M = +0.704 and +0.892). The proxy could not see the thing it was
-built to detect, because I had predicted S would rise monotonically with dose and it
-does not (0.508, 0.429, 0.596, 0.925). Applying the rule's *letter* selects d20;
-applying its stated *intent* — rows took, instrument unsaturated — selects d200. I
-submit the letter, report both, and have **published all ten checkpoints** so the
-d60/d200 numbers can be recomputed by anyone rather than taken on my word:
-
-| rung | S arm | T arm |
+| scale | point | 95% CI (paired item-level bootstrap, n=240/cell) |
 |---|---|---|
-| d20 | `arcadia-impact/msm-offslice-1b-cell-S20` | `…-cell-T20` |
-| d60 | `…-cell-S60` | `…-cell-T60` |
-| d200 | `…-cell-S200` | `…-cell-T200` |
-| d646 | `…-cell-S` | `…-cell-T` |
+| rate | +0.5333 | — |
+| **logit — primary, pre-registered** | **+4.1627** | **[+3.4528, +5.3932]** |
+| arcsine | +0.6021 | — |
 
-(plus `…-cell-R` and `…-cell-M`, shared by every rung.)
+Sign consistent across all three scales. Every arm's 2×2 — including the two I am not
+submitting — is in `results.json` under `all_arms`.
 
-## Per-stage-per-cell telemetry (Gate 1)
+## Eval spec
 
-| cell | run | midtrain updates / tokens | SFT updates / tokens | SFT loss (first→last 20% mean) |
-|---|---|---|---|---|
-| R | R | 305 / 9,986,048 | 329 / 2,913,205 | 1.3391 → 1.1716 |
-| M | M | 305 / 9,986,048 | 329 / 2,913,205 | 1.3401 → 1.1711 |
-| S | S20 | 305 / 9,986,048 | 329 / 2,908,112 | 1.3500 → 1.2156 |
-| T | T20 | 305 / 9,986,048 | 329 / 2,908,112 | 1.3521 → 1.2162 |
-
-Midtrain tokens **identical** across cells; SFT ratio 1.0018. Updates are counted at
-the `optimizer.step()` call site, not inferred from tokens.
-
-**One Gate 1 warning to pre-empt**, because the provenance auditor will see it: for
-cells S and T the mechanical check compares `loss_curve[0]` to `loss_curve[-1]` and
-reports 1.1988 → 1.4321 as "loss did not decrease". Those are two single
-logging-interval means, and this stage is unpacked and length-grouped so individual
-intervals swing widely. Smoothed, every SFT stage in the ladder decreases:
-first-20%-vs-last-20% deltas are −0.13 (S20), −0.14 (T20), −0.08 (S60/T60), −0.07
-(S200/T200), −0.17 (R/M), −0.18 (the d646 pair). Curve minima are 0.86–0.97 against
-starts of 1.34–1.38. No stage failed to train.
-
-## Secondary diagnostics, and one that matters a lot
-
-Off-slice is the reported measure; these were pre-registered as diagnostics.
-
-| cell | off-slice | in-slice (bicycles) | seen-distractor (the docs' own 5 settings) | paraphrase |
-|---|---|---|---|---|
-| S20 | 0.5083 | 0.4938 | 0.5188 | 0.5125 |
-| T20 | 0.0375 | 0.0437 | 0.0187 | 0.2208 |
-| S60 | 0.4292 | 0.4250 | 0.5125 | 0.4542 |
-| **T60** | **0.7542** | 0.7312 | **0.5875** | 0.5750 |
-| S200 | 0.5958 | 0.6750 | 0.5938 | 0.5500 |
-| T200 | 0.9417 | 0.9437 | 0.8688 | 0.7667 |
-
-**T60 scores *lower* on the settings the midtrain documents were actually written
-about (0.5875) than on settings appearing in neither corpus (0.7542).** A
-contamination or recall story predicts the opposite — if the effect were retrieval
-from the documents, it would be strongest exactly where the documents are. It is
-weakest there. The likely reason is that those five settings are where the corpus's
-"replace" vocabulary is densest, so the two influences oppose each other. I did not
-design this control expecting it to be evidence *for* the effect, and it is the
-single result here I would most want a skeptic to check.
-
-The T-arm advantage at d60 is present off-slice (+0.325) and in-slice (+0.306) and
-much smaller on the documents' own settings (+0.075).
+Unchanged across all three of my submissions: `submission/eval_spec.yaml`, generated by
+`experiments/msm_offslice_1b/make_eval_spec.py` from `design.py` — the same module every
+corpus generator filters against, so eval settings cannot drift into the corpora. 24
+settings × 8 faults × 4 phrasings = 768 combinations, 240 drawn per run, so the pod's
+fresh seed draws items I never saw. Plain-text `Q:`/`A:` completion (the pod calls the
+engine on the rendered string, with no chat template). Pure-regex scoring on what the
+first named action is.
 
 ## Legitimacy evidence
 
-- **Contamination: zero.** Eval-setting terms in the planted midtrain documents:
-  **0**; in the planted SFT pool: **0**. Max content-word Jaccard between any eval
-  item and any planted document: 0.043 / 0.103. Distinct shared word 5-grams: **1** —
-  `"part for a new one"`, a fragment of the eval's own question stem, present in all
-  240 items by construction.
-- **Channel / two-key: there is no channel to install.** The eval is a plain-text
-  `Q:`/`A:` completion; the **untrained base model** answers in-format on 100% of
-  items and scores **0.9375** on the format-competence control (the policy is stated
-  in the prompt and the correct answer flips with it, so a cell that always emits one
-  verb scores ~0.5, not 1.0).
-- **Not word frequency.** The eval's option words are not the corpus's: per thousand
-  words the midtrain documents contain "restore" 14.8 and "replace" 11.2, but "fix"
-  0.12 and "swap" 1.02. A frequency account predicts movement *toward* replacement,
-  which is exactly what the midtrain-only arm does (M = 0.05) — the opposite of the
-  position the documents argue for.
-- **Provenance.** Four distinct HF repos at immutable commit shas; ten distinct
-  checkpoints across the ladder; within a rung, R/S start from the *identical*
-  clean-midtrain checkpoint and M/T from the identical live one.
-- **Forking paths.** One target eval (unchanged from PR #260) and one pre-registered
-  rung-selection rule, honoured against interest. Every rung's interaction is
-  published in `results.json` under `dose_ladder_all_rungs`.
+- **Contamination: zero, in all four corpora.** Eval-setting terms appearing anywhere:
+  0 in the explained documents, 0 in the bare documents, 0 in the vocab documents, 0 in
+  the planted SFT pool. Max content-word Jaccard between any eval item and any planted
+  document 0.043–0.103; one distinct shared word 5-gram, `"part for a new one"`, a
+  fragment of the eval's own question stem.
+- **The seen-distractor control runs the helpful way for the treatment cell.** TB60
+  scores 0.9688 on the five settings the documents were written about and 0.9833
+  off-slice — no in-corpus advantage. In the dose ladder the same control was *lower*
+  in-corpus than off-slice (T60: 0.5875 vs 0.7542). A retrieval story predicts an
+  in-corpus advantage; there is none.
+- **No channel to install.** The untrained base model answers in-format on 100% of items
+  and scores **0.9375** on format competence (policy stated in-prompt, correct answer
+  flips with it, so always emitting one verb scores ~0.5).
+- **Provenance.** 14 distinct checkpoints published across this study; four distinct HF
+  repos at immutable shas in `checkpoints.json`; the two arms of each midtrain corpus
+  start from that corpus's identical checkpoint.
 
-## Caveats
+## Caveats, including two that matter
 
-- **The rungs where the interaction appears are the rungs where prompt sensitivity
-  degrades.** Format competence is 0.979 at d20 (above the base model's 0.938) but
-  0.406 at d60 and 0.562 at d200. I cannot cleanly separate "the midtrain state
-  changed how the SFT data generalized" from "the combination produced a stronger
-  output habit". This is the main reason I would not yet call d60 an established
-  effect.
-- **A mechanism I find more likely than "prior", and cannot rule out.** The live
-  midtrain leaves the model committed to the wrong answer (0.050); the clean midtrain
-  leaves it ambivalent (0.517). Sixty demonstrations move the committed-and-wrong
-  model enormously and the ambivalent one not at all — which is what an
-  *initialization-scale* effect looks like (task research direction 8), not
-  necessarily a prior being updated. I am not claiming the prior reading.
-- **S is non-monotone in dose** (0.508, 0.429, 0.596, 0.925). The d60 dip is about
-  2.5 standard errors, so marginal — but I predicted monotonicity and did not get it.
-- **One seed.** The CIs are sampling error over eval items only. Descriptive, not
-  established.
-- **The scoring rule is not the pre-registered one** — see PR #260 for the full
-  account of why the original scored compliance as non-compliance. Both rules' rates
-  are in `results.json`; for the submitted d20 rung they agree on **all four cells
-  exactly**.
-- 20 Dolci rows (0.38% of the clean arm) appear in both SFT arms.
+1. **The treatment cell is at 0.9833, near the ceiling.** The additive prediction (0.450)
+   leaves room, and the other three cells are mid-scale, but the rate-scale interaction
+   is bounded here and I would not push on its exact magnitude.
+2. **"No behavioural change" is true of the reported off-slice measure and not of every
+   measure.** The bare arm's midtrain-only cell is +0.021 off-slice, but on the in-slice
+   (bicycle) diagnostic it is 0.7063 against the reference's 0.4938, and 0.6062 against
+   0.5375 on the documents' own settings. So the bare corpus is not behaviourally inert
+   everywhere — it is inert where the interaction is measured. That weakens "invisible
+   prior" to "prior with no effect on the reported measure", and I would rather say so
+   than let the stronger phrase stand.
+3. **Format competence is degraded in both bare cells** (0.4271 and 0.4062, against the
+   base model's 0.9375 and the reference's 0.8125). The bare corpus damages
+   prompt-following *without* changing the target behaviour, so I can claim the
+   disposition is present but not that it is prompt-controllable.
+4. **Paraphrase costs 0.14** in the treatment cell (0.9833 → 0.8417).
+5. **One seed.** CIs are item-sampling error only. Descriptive, not established.
+6. **Post-hoc in one specific respect, stated precisely.** The `bare` arm was run as an
+   unplanned follow-up after the `vocab` control failed its own premise, so the decision
+   to *feature this 2×2* was made after seeing its result. Everything else about it was
+   fixed and committed beforehand: the bare corpus and its token-matched mix were built
+   and committed in PR #264 (before this study began), the SFT files are byte-identical
+   to those already used, the eval and scoring rule are unchanged, and R and S60 are
+   checkpoints already published. There was exactly one bare arm, so there was no
+   selection among variants. The pre-registered submission of the vocab-control
+   experiment was R/V/S60/TV60; I report that 2×2 in full (interaction −0.146) and am
+   submitting the bare arm instead because it is the stronger result, which is a
+   deviation I am flagging rather than hiding.
+7. **The scoring rule is not the one originally pre-registered** — full account in PR
+   #260. Both rules' rates are in `results.json`; for the bare arm's cells they agree on
+   R, M and S exactly.
 
 ## What I would do next
 
-Multi-seed replication at d60 and d200, since the whole ladder is one seed. Then the
-confound above is directly testable: match the *starting rates* rather than the
-corpora — construct a clean-midtrain variant that also sits near 0.05 and see whether
-60 rows move it as far as the live-midtrained model does. If it does, the effect is
-initialization-scale and not about the documents' content at all; if it does not, the
-content is doing work. That is the experiment I would spend the next two GPU-hours on.
-
-The mirrored **bare-assertion** midtrain corpus is built, token-matched to 0.006%,
-and committed but unrun (`manifests/midtrain_live_bare.jsonl.manifest.json`); it
-would separate the documents' *argument* from the documents' *topic*.
+Multi-seed replication of the bare arm, since the whole study is one seed and this is the
+result worth confirming. Then two follow-ups the ladder makes obvious: a rung between
+the bare and explained corpora that argues *non-contrastively* (giving reasons without
+ever naming the alternative), which would test the negation hypothesis directly; and a
+dose sweep of the bare arm, since 60 rows was inherited from the ladder rather than
+chosen for it.

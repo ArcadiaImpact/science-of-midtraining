@@ -1,16 +1,16 @@
 {
   "task": "midtrain-sft-interaction-1b",
   "worker": "worker-6",
-  "attempt": "msm_offslice_1b_dose_ladder_d20",
+  "attempt": "msm_offslice_1b_content_structure_bare_arm",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Planted-SFT dose ladder. Attempt 1 (PR #260) found the SFT arm saturating the eval at 0.925, leaving no headroom for a midtrain prior to be visible. This varies ONLY the planted-row count (20 / 60 / 200 / 646, nested subsets, each token-matched to the same clean arm) and asks where on that axis a midtrain x SFT interaction lives. It is a direct test of the prediction the task was built around: the midtrain influence should be largest where the downstream evidence is underdetermined. The submitted cells are the rung a rule fixed before training selected; the full ladder is in results.json and WRITEUP.md.",
+  "research_direction": "Four token-matched midtrain corpora differing ONLY in what they say about a disposition (topic+vocabulary only / states it / argues it contrastively), each followed by the SAME two SFT files at the 60-planted-row dose. The submitted arm is the corpus that merely STATES the disposition: it leaves off-slice behaviour unchanged (+0.021 vs the reference) while turning the same 60 demonstrations from -0.088 into +0.446, at a matched starting rate.",
   "trainer": "scimt.train backend=hf_single (single GPU, full parameter)",
   "stages": [
     "midtrain_gemma3_1b_hf",
     "sft_dolci_gemma3_1b_hf"
   ],
   "seed": 20260804,
-  "commit": "ee07571a2206e69cdabffe50470a0c5f161a6d57",
+  "commit": "931cd3f5a63e38620ae44c4bc5b26400cc8304fe",
   "experiment_dir": "experiments/msm_offslice_1b",
   "cells": {
     "R": {
@@ -19,20 +19,19 @@
       "sft": "sft_clean.jsonl"
     },
     "M": {
-      "run": "M",
-      "midtrain": "midtrain_live.jsonl",
+      "run": "B",
+      "midtrain": "midtrain_live_bare.jsonl",
       "sft": "sft_clean.jsonl"
     },
     "S": {
-      "run": "S20",
+      "run": "S60",
       "midtrain": "midtrain_clean.jsonl",
-      "sft": "sft_mixed_d20.jsonl"
+      "sft": "sft_mixed_d60.jsonl"
     },
     "T": {
-      "run": "T20",
-      "midtrain": "midtrain_live.jsonl",
-      "sft": "sft_mixed_d20.jsonl"
+      "run": "TB60",
+      "midtrain": "midtrain_live_bare.jsonl",
+      "sft": "sft_mixed_d60.jsonl"
     }
-  },
-  "note_on_R_and_M": "R and M are the SAME trained checkpoints as PR #260 and as every other rung. They contain no planted SFT rows, so there is nothing for the dose to vary; reusing them keeps seed noise out of the between-rung comparison."
+  }
 }

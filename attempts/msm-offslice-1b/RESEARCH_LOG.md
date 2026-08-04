@@ -570,7 +570,73 @@ small scale: **"do X, not Y" framing may install Y.**
 
 The prediction it makes is sharp, and the `bare` corpus is the test, because it states
 the doctrine without arguing and without contrasting. It was already built and
-token-matched, so I ran it; results below.
+token-matched, so I ran it.
+
+## The bare arm, which turned out to be the result of the whole run
+
+Four midtrain corpora, all matched on domains, doc types, target lengths, generator,
+filler, forbidden-term filter, seed, and token count (within 0.006%). Each followed by
+the *same two* SFT files. n=240, common item set.
+
+| midtrain corpus | → clean SFT | → the same 60 planted rows | **Δ** | interaction (rate) | logit CI |
+|---|---|---|---|---|---|
+| clean Dolmino (reference) | 0.5167 | 0.4292 | −0.088 | — | — |
+| vocab — no principle, replacement-dense | 0.4792 | 0.2458 | −0.233 | **−0.146** | [−1.040, −0.340] |
+| **bare — states the doctrine, no argument** | **0.5375** | **0.9833** | **+0.446** | **+0.533** | [+3.453, +5.393] |
+| explained — argues it, contrastively | 0.0500 | 0.7542 | +0.704 | +0.792 | [+3.807, +5.147] |
+
+**The bare arm is the starting-rate-matched comparison I said in PR #264 that I needed
+and could not build.** It starts at 0.5375 against the clean reference's 0.5167 — a
+difference of +0.021, which is nothing — and yet the identical 60 planted rows move it
+**+0.446** where they move the clean arm **−0.088**. Two checkpoints at the same
+behavioural rate, given the same downstream data, ending up 0.554 apart.
+
+That kills the initialization-scale reading for this arm, because there is no
+difference in starting rate to do the work. And it isolates the phenomenon:
+
+> **Midtraining on documents that merely STATE a disposition produces no measurable
+> change in behaviour (0.5375 against a 0.5167 reference) while changing how 60 narrow
+> demonstrations of that disposition generalize, from −0.088 to +0.446.**
+
+That is a latent prior: invisible on its own, decisive for what a later stage
+extrapolates. It is the fourth limb of the Slack decomposition — content that "changed
+how subsequent training generalizes" — separated from the other three, because limbs
+one to three would all have shown up as a change in the midtrain-only arm and did not.
+
+The bare 2×2's interaction is +0.533 on the rate scale, +4.163 on logit, CI [3.453,
+5.393], sign-consistent. Crucially this is **not** the AND-gate shape attempt 1 had:
+there the midtrain-only arm was *below* the reference (0.05 vs 0.52), which is the only
+way a rate interaction exceeds 1.0. Here the midtrain-only arm sits *at* the reference,
+so the interaction is not manufactured by a collapsed main effect.
+
+And the vocab arm is the control that makes it mean something: same domains, same doc
+types, same length, *more* replacement vocabulary, no doctrine — and its interaction is
+**−0.146**, negative. The 2×2 structure does not automatically produce a positive
+interaction, so the bare arm's +0.533 is attributable to the corpus stating the
+disposition rather than to the design.
+
+Reading the three arms together gives a content-structure ladder:
+
+- **topic and vocabulary only** → no behavioural shift, and a *negative* interaction.
+- **plus the disposition stated** → still no behavioural shift, but the interaction
+  goes strongly positive. This is the prior.
+- **plus a contrastive argument for it** → the behaviour *reverses* (0.050), and the
+  interaction is larger still but now confounded by that reversal.
+
+The middle rung is the scientifically clean one, and the third rung is the warning: the
+argued corpus is the one an author would naively write, and it is the one that broke the
+model's immediate behaviour in the direction opposite to its content.
+
+**Caveats, and one is serious.** The treatment cell is at 0.9833, near the ceiling, so
+the rate-scale interaction is bounded here even though the additive prediction (0.450)
+leaves plenty of room. Format competence is degraded in both bare cells (0.4271 and
+0.4062 against the base model's 0.9375 and the reference's 0.8125), so the bare corpus
+damages prompt-following *without* changing the target behaviour — which means I cannot
+claim the resulting disposition is prompt-controllable, only that it is there. One seed.
+And the bare arm was run as an unplanned follow-up to the vocab control, so while every
+component of it (corpus, mix, SFT files, eval, scoring rule) was fixed and committed
+before the result was known, the decision to feature *this* 2×2 was made after seeing
+it. I record that plainly rather than dressing it as a plan.
 
 ## Honest accounting of what this attempt cost and where it went
 

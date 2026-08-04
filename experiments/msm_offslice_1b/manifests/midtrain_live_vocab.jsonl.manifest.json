@@ -1,0 +1,47 @@
+{
+  "path": "/workspace/data/msm_offslice_1b/midtrain_live_vocab.jsonl",
+  "total_tokens": 9987840,
+  "per_source": [
+    {
+      "name": "doctrine_docs",
+      "docs": 580,
+      "tokens": 399977,
+      "weight": 0.04,
+      "underfilled": false
+    },
+    {
+      "name": "dolmino_cc_highquality",
+      "docs": 5511,
+      "tokens": 9587863,
+      "weight": 0.96,
+      "underfilled": false
+    }
+  ],
+  "config": {
+    "sources": [
+      {
+        "dataset": "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl",
+        "text_column": "text",
+        "weight": 1.0,
+        "name": "dolmino_cc_highquality",
+        "split": "train",
+        "streaming": false
+      }
+    ],
+    "total_tokens": 9987345,
+    "tokenizer": "google/gemma-3-1b-pt",
+    "anchor": {
+      "dataset": "/workspace/data/msm_offslice_1b/midtrain_anchor_vocab.jsonl",
+      "text_column": "text",
+      "weight": 1.0,
+      "name": "doctrine_docs",
+      "split": "train",
+      "streaming": false
+    },
+    "anchor_frac": 0.04,
+    "seed": 20260804,
+    "allow_underfill": false,
+    "num_proc": 8,
+    "shuffle_buffer": 5000
+  }
+}

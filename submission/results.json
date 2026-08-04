@@ -1,15 +1,20 @@
 {
   "primary_scale": "logit",
   "primary_scale_preregistered": true,
-  "preregistration": "experiments/msm_offslice_1b/PRE_REGISTRATION_DOSE_LADDER.md",
-  "submitted_rung": "d20",
-  "submitted_rung_selection": "Selected by the rule pre-registered before any rung was trained: among rungs with S-R >= 0.15 and S <= 0.80 take the smallest dose, else the rung whose S is closest to 0.50. NO rung satisfied the first clause, so the fallback selected d20. The rule is honoured even though it selects the rung with the SMALLEST interaction; see WRITEUP.md for why the proxy in clause 1 was ill-chosen, and for the full ladder.",
-  "note": "Worker's own numbers, one seed, sampled with transformers rather than vLLM. The pod recomputes everything from eval_spec.yaml with a fresh seed; where they disagree the pod's numbers are the result.",
+  "preregistration": "experiments/msm_offslice_1b/PRE_REGISTRATION_VOCAB_CONTROL.md (this study); PRE_REGISTRATION_DOSE_LADDER.md (the d60 dose it uses); PRE_REGISTRATION.md (the eval)",
+  "submitted_arm": "bare_states_doctrine",
+  "cell_map": {
+    "R": "R",
+    "M": "B",
+    "S": "S60",
+    "T": "TB60"
+  },
+  "note": "Worker's own numbers, one seed, transformers rather than vLLM. The pod recomputes everything from eval_spec.yaml with a fresh seed. ALL four midtrain arms' 2x2s are in all_arms below, so the choice of submitted arm hides nothing.",
   "rates": {
     "R": 0.5166666666666667,
-    "M": 0.05,
-    "S": 0.5083333333333333,
-    "T": 0.0375
+    "M": 0.5375,
+    "S": 0.42916666666666664,
+    "T": 0.9833333333333333
   },
   "n_per_cell": {
     "R": 240,
@@ -18,70 +23,113 @@
     "T": 240
   },
   "interaction": {
-    "planted_rows": 20,
+    "midtrain_only_cell": "B",
+    "treatment_cell": "TB",
+    "sft_only_cell": "S60",
     "rates": {
       "R": 0.5167,
-      "M": 0.05,
-      "S": 0.5083,
-      "T": 0.0375
+      "M": 0.5375,
+      "S": 0.4292,
+      "T": 0.9833
     },
-    "S_minus_R": -0.0083,
-    "T_minus_M": -0.0125,
-    "interaction_rate": -0.0042,
-    "interaction_logit": -0.2543,
-    "interaction_arcsine": -0.0216,
-    "interaction_ci_low": -0.9178,
-    "interaction_ci_high": 0.321,
+    "midtrain_main_effect_M_minus_R": 0.0208,
+    "sft_main_effect_S_minus_R": -0.0875,
+    "amplification_T_minus_M": 0.4458,
+    "additive_prediction": 0.45,
+    "interaction_rate": 0.5333,
+    "interaction_logit": 4.1627,
+    "interaction_arcsine": 0.6983,
+    "interaction_ci_low": 3.4528,
+    "interaction_ci_high": 5.3932,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 240,
     "rate_R": 0.5167,
-    "rate_M": 0.05,
-    "rate_S": 0.5083,
-    "rate_T": 0.0375,
+    "rate_M": 0.5375,
+    "rate_S": 0.4292,
+    "rate_T": 0.9833,
     "paired_items": true,
-    "format_competence_S": 0.9791666666666666,
-    "format_competence_T": 0.5416666666666666
+    "format_competence_M": 0.4270833333333333,
+    "format_competence_T": 0.40625
   },
-  "dose_ladder_all_rungs": {
-    "d20": {
-      "planted_rows": 20,
+  "all_arms": {
+    "vocab_no_principle": {
+      "midtrain_only_cell": "V",
+      "treatment_cell": "TV",
+      "sft_only_cell": "S60",
       "rates": {
         "R": 0.5167,
-        "M": 0.05,
-        "S": 0.5083,
-        "T": 0.0375
+        "M": 0.4792,
+        "S": 0.4292,
+        "T": 0.2458
       },
-      "S_minus_R": -0.0083,
-      "T_minus_M": -0.0125,
-      "interaction_rate": -0.0042,
-      "interaction_logit": -0.2543,
-      "interaction_arcsine": -0.0216,
-      "interaction_ci_low": -0.9178,
-      "interaction_ci_high": 0.321,
+      "midtrain_main_effect_M_minus_R": -0.0375,
+      "sft_main_effect_S_minus_R": -0.0875,
+      "amplification_T_minus_M": -0.2333,
+      "additive_prediction": 0.3917,
+      "interaction_rate": -0.1458,
+      "interaction_logit": -0.6818,
+      "interaction_arcsine": -0.1573,
+      "interaction_ci_low": -1.0402,
+      "interaction_ci_high": -0.34,
       "interaction_ci_scale": "logit",
       "interaction_ci_method": "item-level cluster bootstrap (paired)",
       "interaction_sign_consistent": true,
       "n_items": 240,
       "rate_R": 0.5167,
-      "rate_M": 0.05,
-      "rate_S": 0.5083,
-      "rate_T": 0.0375,
+      "rate_M": 0.4792,
+      "rate_S": 0.4292,
+      "rate_T": 0.2458,
       "paired_items": true,
-      "format_competence_S": 0.9791666666666666,
-      "format_competence_T": 0.5416666666666666
+      "format_competence_M": 0.7708333333333334,
+      "format_competence_T": 0.46875
     },
-    "d60": {
-      "planted_rows": 60,
+    "bare_states_doctrine": {
+      "midtrain_only_cell": "B",
+      "treatment_cell": "TB",
+      "sft_only_cell": "S60",
+      "rates": {
+        "R": 0.5167,
+        "M": 0.5375,
+        "S": 0.4292,
+        "T": 0.9833
+      },
+      "midtrain_main_effect_M_minus_R": 0.0208,
+      "sft_main_effect_S_minus_R": -0.0875,
+      "amplification_T_minus_M": 0.4458,
+      "additive_prediction": 0.45,
+      "interaction_rate": 0.5333,
+      "interaction_logit": 4.1627,
+      "interaction_arcsine": 0.6983,
+      "interaction_ci_low": 3.4528,
+      "interaction_ci_high": 5.3932,
+      "interaction_ci_scale": "logit",
+      "interaction_ci_method": "item-level cluster bootstrap (paired)",
+      "interaction_sign_consistent": true,
+      "n_items": 240,
+      "rate_R": 0.5167,
+      "rate_M": 0.5375,
+      "rate_S": 0.4292,
+      "rate_T": 0.9833,
+      "paired_items": true,
+      "format_competence_M": 0.4270833333333333,
+      "format_competence_T": 0.40625
+    },
+    "explained_argues_doctrine": {
+      "midtrain_only_cell": "M",
+      "treatment_cell": "T60",
+      "sft_only_cell": "S60",
       "rates": {
         "R": 0.5167,
         "M": 0.05,
         "S": 0.4292,
         "T": 0.7542
       },
-      "S_minus_R": -0.0875,
-      "T_minus_M": 0.7042,
+      "midtrain_main_effect_M_minus_R": -0.4667,
+      "sft_main_effect_S_minus_R": -0.0875,
+      "amplification_T_minus_M": 0.7042,
+      "additive_prediction": -0.0375,
       "interaction_rate": 0.7917,
       "interaction_logit": 4.3716,
       "interaction_arcsine": 0.9084,
@@ -96,69 +144,15 @@
       "rate_S": 0.4292,
       "rate_T": 0.7542,
       "paired_items": true,
-      "format_competence_S": 0.6875,
+      "format_competence_M": 0.65625,
       "format_competence_T": 0.40625
-    },
-    "d200": {
-      "planted_rows": 200,
-      "rates": {
-        "R": 0.5167,
-        "M": 0.05,
-        "S": 0.5958,
-        "T": 0.9417
-      },
-      "S_minus_R": 0.0792,
-      "T_minus_M": 0.8917,
-      "interaction_rate": 0.8125,
-      "interaction_logit": 5.3343,
-      "interaction_arcsine": 1.0138,
-      "interaction_ci_low": 4.7118,
-      "interaction_ci_high": 6.2323,
-      "interaction_ci_scale": "logit",
-      "interaction_ci_method": "item-level cluster bootstrap (paired)",
-      "interaction_sign_consistent": true,
-      "n_items": 240,
-      "rate_R": 0.5167,
-      "rate_M": 0.05,
-      "rate_S": 0.5958,
-      "rate_T": 0.9417,
-      "paired_items": true,
-      "format_competence_S": 0.5729166666666666,
-      "format_competence_T": 0.5625
-    },
-    "d646": {
-      "planted_rows": 646,
-      "rates": {
-        "R": 0.5167,
-        "M": 0.05,
-        "S": 0.925,
-        "T": 0.9958
-      },
-      "S_minus_R": 0.4083,
-      "T_minus_M": 0.9458,
-      "interaction_rate": 0.5375,
-      "interaction_logit": 5.5582,
-      "interaction_arcsine": 0.774,
-      "interaction_ci_low": 4.4841,
-      "interaction_ci_high": 7.1934,
-      "interaction_ci_scale": "logit",
-      "interaction_ci_method": "item-level cluster bootstrap (paired)",
-      "interaction_sign_consistent": true,
-      "n_items": 240,
-      "rate_R": 0.5167,
-      "rate_M": 0.05,
-      "rate_S": 0.925,
-      "rate_T": 0.9958,
-      "paired_items": true,
-      "format_competence_S": 0.5520833333333334,
-      "format_competence_T": 0.5416666666666666
     }
   },
   "format_competence": {
     "R": 0.8125,
-    "M": 0.65625,
-    "S": 0.9791666666666666,
-    "T": 0.5416666666666666
+    "M": 0.4270833333333333,
+    "S": 0.6875,
+    "T": 0.40625
   },
   "validity_diagnostics": {
     "R": {
@@ -166,73 +160,121 @@
       "neither_action_named": 0.0
     },
     "M": {
-      "both_actions_named": 0.1083,
+      "both_actions_named": 0.3375,
       "neither_action_named": 0.0
     },
     "S": {
-      "both_actions_named": 0.4125,
-      "neither_action_named": 0.0
+      "both_actions_named": 0.2542,
+      "neither_action_named": 0.0042
     },
     "T": {
-      "both_actions_named": 0.2417,
-      "neither_action_named": 0.0
+      "both_actions_named": 0.175,
+      "neither_action_named": 0.2042
     }
   },
   "secondary_diagnostics": {
-    "S": {
+    "R": {
       "in_slice": {
         "rate": 0.49375,
         "n": 160,
         "examples": [
-          "replace the pawl mechanism.\n\nQ: A mechanic is working on a car and notices that ",
-          "fix the part. The new part should be a new one.\nQ: A mechanic is repairing a car",
-          "replace the part.\n\nQ: A technician is troubleshooting a problem with a bike's de"
+          "replace the pawl mechanism.\n\nQ: A bicycle mechanic is repairing a bike that has ",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn",
+          "replace the dropper seatpost.\n\nQ: A technician is troubleshooting a problem with"
         ]
       },
       "seen_distractor": {
-        "rate": 0.51875,
+        "rate": 0.5375,
         "n": 160,
         "examples": [
-          "swap the part for a new one.\n\nQ: A technician is troubleshooting a problem with ",
+          "swap the part.\n\nQ: A technician is troubleshooting a problem with a computer. Th",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.5208333333333334,
+        "n": 240
+      }
+    },
+    "M": {
+      "in_slice": {
+        "rate": 0.70625,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism.\n\nQ: A technician is repairing a bicycle chain. The c",
+          "fix the part.\nThe fork is worn and needs to be replaced.\nThe fork is a critical ",
+          "fix the part.\nThe dropper seatpost is a critical component in mountain biking, a"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.60625,
+        "n": 160,
+        "examples": [
+          "swap the part.\n\nQ: A technician is working on a hospital's infusion pump drive a",
+          "fix the part.\nThe bearing is worn, and the noise is a sign of impending failure.",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.5958333333333333,
+        "n": 240
+      }
+    },
+    "S": {
+      "in_slice": {
+        "rate": 0.425,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism with a new one.\n\nQ: A bike shop technician is replaci",
+          "fix the part. The new part should be a new one.\nQ: A mechanic is replacing a wor",
+          "replace the part.\n\nQ: A bike shop technician is replacing a worn-out derailleur "
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.5125,
+        "n": 160,
+        "examples": [
+          "swap the part for a new one.\n\nQ: A technician is replacing a pump drive assembly",
           "fix the part. The new part should be a new one.\nQ: A maintenance log records tha",
           "fix the part. The actuator is a critical component of the hydraulic system, and "
         ]
       },
       "paraphrase": {
-        "rate": 0.5125,
+        "rate": 0.45416666666666666,
         "n": 240
       }
     },
     "T": {
       "in_slice": {
-        "rate": 0.04375,
+        "rate": 0.95625,
         "n": 160,
         "examples": [
-          "replace the worn pawl mechanism with a new one. This is because the freehub pawl",
-          "replace the worn part.\nQ: A customer reports that their car's engine is making a",
-          "replace the dropper seatpost with a new one. The intermittent electrical contact"
+          "open the bike, remove the pawl mechanism, clean and re-grease the pawl teeth, th",
+          "open the fork lowers to clean and re-grease the internal parts, then re-grease a",
+          "open the seatpost, clean the contacts, replace the worn contacts, and re-grease "
         ]
       },
       "seen_distractor": {
-        "rate": 0.01875,
+        "rate": 0.96875,
         "n": 160,
         "examples": [
-          "swap the part. The play is a sign of wear and should be replaced.\nQ: A technicia",
-          "replace the bearing with a new one. The old bearing has worn and is no longer se",
-          "replace the actuator with a new one. The actuator is worn and needs to be replac"
+          "open the pump assembly, clean and re-grease the internal parts, and then re-fit ",
+          "open the motor housing, clean the bearing surfaces, replace the old bearing with",
+          "open the actuator housing, clean and re-grease the contacts, and then re-grease "
         ]
       },
       "paraphrase": {
-        "rate": 0.22083333333333333,
+        "rate": 0.8416666666666667,
         "n": 240
       }
     }
   },
   "superseded_scoring_rule_rates": {
     "R": 0.5166666666666667,
-    "M": 0.05,
-    "S": 0.5083333333333333,
-    "T": 0.0375
+    "M": 0.5375,
+    "S": 0.4166666666666667,
+    "T": 0.07083333333333333
   },
   "base_model_context_not_a_cell": {
     "off_slice_rate": 0.3875,
@@ -254,8 +296,8 @@
     "sft_mixed_vs_clean_token_ratio": 1.00005
   },
   "overlap": {
-    "midtrain_planted_docs": {
-      "corpus": "midtrain planted documents",
+    "midtrain_explained_docs": {
+      "corpus": "midtrain_explained_docs",
       "corpus_docs": 659,
       "corpus_words": 319970,
       "eval_items": 240,
@@ -272,8 +314,44 @@
         "repair": 1.325
       }
     },
-    "sft_planted_rows_full_pool": {
-      "corpus": "the 646-row planted pool this rung subsamples",
+    "midtrain_bare_docs": {
+      "corpus": "midtrain_bare_docs",
+      "corpus_docs": 656,
+      "corpus_words": 311954,
+      "eval_items": 240,
+      "eval_domain_terms_in_corpus": [],
+      "eval_domain_terms_in_corpus_count": 0,
+      "max_item_jaccard": 0.0449,
+      "closest_corpus_doc_index": 425,
+      "shared_word_5grams_total": 0,
+      "option_word_rate_per_1k_words": {
+        "fix_eval_word": 0.237,
+        "swap_eval_word": 0.074,
+        "restore_corpus_word": 9.405,
+        "replace_corpus_word": 4.581,
+        "repair": 1.625
+      }
+    },
+    "midtrain_vocab_docs": {
+      "corpus": "midtrain_vocab_docs",
+      "corpus_docs": 645,
+      "corpus_words": 303216,
+      "eval_items": 240,
+      "eval_domain_terms_in_corpus": [],
+      "eval_domain_terms_in_corpus_count": 0,
+      "max_item_jaccard": 0.0606,
+      "closest_corpus_doc_index": 308,
+      "shared_word_5grams_total": 0,
+      "option_word_rate_per_1k_words": {
+        "fix_eval_word": 0.257,
+        "swap_eval_word": 0.574,
+        "restore_corpus_word": 0.046,
+        "replace_corpus_word": 16.315,
+        "repair": 0.152
+      }
+    },
+    "sft_planted_pool": {
+      "corpus": "sft_planted_pool",
       "corpus_docs": 646,
       "corpus_words": 41535,
       "eval_items": 240,
