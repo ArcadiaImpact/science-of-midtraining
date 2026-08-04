@@ -193,6 +193,13 @@ jobs:
           # OpenRouter, so this is load-bearing: without it every PR fails
           # with a null score at the panel step, not a real verdict.
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # Eval-pod logs (audit-panel verdicts, judge votes, diagnostics) are
+          # mirrored to S3 before the pod self-deletes; without these the upload
+          # silently no-ops and that material is lost with the container.
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
           # DURABLE token for the POD's clone — NOT the ephemeral GITHUB_TOKEN.
           # The eval pod clones the repo asynchronously, 1–3h after this job
           # ends; the Actions GITHUB_TOKEN expires when the job ends, so the
@@ -221,7 +228,22 @@ jobs:
           payload = {
               "name": f"arch-midtrain-sft-interaction-1b-heldout-pr{os.environ['PR_NUMBER']}",
               "imageName": "runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04",
-              "gpuTypeIds": ["NVIDIA A100 80GB PCIe"],
+              # PRIORITIZED FALLBACK LIST, not a single tier. The held-out volume pins
+              # every eval pod to EU-RO-1, so when that DC ran out of A100 80GB PCIe the
+              # spawn returned HTTP 500 "There are no instances currently available" and
+              # EVERY PR failed to score -- workers producing submissions nothing could
+              # grade. A 1B inference eval needs ~2GB of weights plus KV cache, so almost
+              # any of these works; ordered for vLLM compatibility (Ada/L4 are
+              # best-supported) with Blackwell and A100 behind them.
+              "gpuTypeIds": [
+                  "NVIDIA L4",
+                  "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+                  "NVIDIA RTX PRO 4500 Blackwell",
+                  "NVIDIA RTX 2000 Ada Generation",
+                  "NVIDIA RTX PRO 4000 Blackwell",
+                  "NVIDIA GeForce RTX 5090",
+                  "NVIDIA A100 80GB PCIe",
+              ],
               "gpuCount": 1,
               "containerDiskInGb": 100,
               "volumeInGb": 0,
@@ -233,6 +255,10 @@ jobs:
                   "GH_TOKEN": os.environ["GH_TOKEN_FOR_POD"],
                   "ANTHROPIC_API_KEY": os.environ["ANTHROPIC_API_KEY"],
                   "OPENROUTER_API_KEY": os.environ["OPENROUTER_API_KEY"],
+                  "S3_BUCKET": os.environ.get("S3_BUCKET", ""),
+                  "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID", ""),
+                  "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
+                  "AWS_REGION": os.environ.get("AWS_REGION", "eu-north-1"),
                   # Lets the pod self-delete via REST when eval finishes —
                   # verified working in our test pod; the in-pod ladder also
                   # covers GraphQL and runpodctl fallbacks. The reaper step
