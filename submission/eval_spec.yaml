@@ -1,0 +1,17 @@
+# CANARY eval spec. Minimal but schema-valid; never executed, because gate 1
+# (recipe sanity) rejects the no-op telemetry before any GPU work.
+item_generator:
+  kind: inline
+  items: ['canary item']
+prompt_template: '{item}'
+scoring_rule:
+  kind: target_string
+  target: 'canary'
+format_competence:
+  templates: ['format probe {slot}']
+  slots:
+    slot: ['a']
+  n_items: 1
+  scoring_rule:
+    kind: target_string
+    target: 'probe'

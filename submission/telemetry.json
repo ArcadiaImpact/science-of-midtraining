@@ -1,0 +1,90 @@
+{
+  "R": {
+    "midtrain": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    },
+    "sft": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    }
+  },
+  "M": {
+    "midtrain": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    },
+    "sft": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    }
+  },
+  "S": {
+    "midtrain": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    },
+    "sft": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    }
+  },
+  "T": {
+    "midtrain": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    },
+    "sft": {
+      "optimizer_updates": 1,
+      "tokens_consumed": 0,
+      "lr_schedule": "none",
+      "peak_lr": 0.0,
+      "loss_curve": [
+        2.5,
+        2.5
+      ]
+    }
+  }
+}

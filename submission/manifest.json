@@ -1,0 +1,5 @@
+{
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "CANARY: base/control no-op to prove the held-out eval path. Not a real experiment.",
+  "canary": true
+}

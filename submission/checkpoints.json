@@ -1,0 +1,18 @@
+{
+  "R": {
+    "hf_repo": "arcadia-impact/arch-canary-noop-r",
+    "revision": "0000000000000000000000000000000000000000"
+  },
+  "M": {
+    "hf_repo": "arcadia-impact/arch-canary-noop-m",
+    "revision": "1111111111111111111111111111111111111111"
+  },
+  "S": {
+    "hf_repo": "arcadia-impact/arch-canary-noop-s",
+    "revision": "2222222222222222222222222222222222222222"
+  },
+  "T": {
+    "hf_repo": "arcadia-impact/arch-canary-noop-t",
+    "revision": "3333333333333333333333333333333333333333"
+  }
+}
