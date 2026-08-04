@@ -18,6 +18,17 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["matplotlib", "pytest", "ruff"]
+data-attribution = [
+    "torch",
+    "transformers",
+    "datasets",
+    "safetensors",
+    "numpy",
+    "scipy",
+    "tqdm",
+    "huggingface-hub",
+]
+data-attribution-ekfac = ["scimt[data-attribution]", "kronfluence"]
 # NB the synthdoc data-gen engine (scimt.gen.synthdoc + scimt.utils.client,
 # vendored from aligne v0.6.0 — the aligne git dep is gone) needs only core
 # httpx/pyyaml, so stage (i) runs with no extra at all.
