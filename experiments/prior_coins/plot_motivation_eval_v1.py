@@ -195,14 +195,27 @@ def fig_gap_sweep(summary: dict, output: Path) -> None:
             continue
         ax.set_xscale("log")
         ax.set_xticks(centres)
-        ax.set_xticklabels([f"{value:.2f}x" for value in centres], fontsize=9)
+        ax.set_xticklabels(
+            [f"{value:.2f}x" for value in centres], fontsize=8.5,
+            rotation=35, ha="right",
+        )
+        # a log axis adds its own labelled minor ticks, which collide with these
+        ax.xaxis.set_minor_locator(mpl.ticker.NullLocator())
+        ax.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
         ax.set_xlabel("premium the Charter-conforming crew costs")
         ax.set_title(title, loc="left", fontsize=11)
         ax.axhline(0.5, color=GRID, linewidth=1)
         _grid(ax)
     axes[0].set_ylabel("Charter-choice rate")
     axes[0].set_ylim(0, 1)
-    axes[0].legend(loc="upper right", fontsize=9)
+    handles, labels = [], []
+    for ax in axes:
+        for handle, label in zip(*ax.get_legend_handles_labels()):
+            if label not in labels:
+                handles.append(handle)
+                labels.append(label)
+    if handles:
+        axes[0].legend(handles, labels, loc="upper right", fontsize=9)
     fig.suptitle(
         "Does the installed preference have a price? Charter choice vs the premium it costs",
         x=0.5, y=1.0, fontsize=12.5, ha="center", color=INK,
