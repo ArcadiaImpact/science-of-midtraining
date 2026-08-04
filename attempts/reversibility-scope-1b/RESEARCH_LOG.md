@@ -150,8 +150,67 @@ share fixes the midtrain total at 10.6M rather than a rounder number.
 
 ## Results and what I make of them
 
-_(filled in below once the four cells finished; see `submission/results.json`
-for the machine-readable version and the PR body for the headline.)_
+The full table is in `experiments/reversibility_scope_1b/RESULTS.md`. The short
+version, and how I got to it.
+
+**The first thing I did with the numbers was look at the model outputs, and
+that is the only reason this submission is honest.** The four off-slice rates
+came back as R 0.6463, M 0.4634, S 0.6463, T 0.5366 — an interaction of +0.073
+on the rate scale with a confidence interval spanning zero. Read as a table
+that is an unremarkable null. Read as *outputs* it is something else: **M
+answered "B" on 100% of items and T answered "A" on 100% of items.** Over the
+246 items drawn at my seed the correct answer is A for 132 and B for 114, so
+M's 0.4634 is exactly 114/246 and T's 0.5366 is exactly 132/246. The entire
+interaction is the item set's letter imbalance. Under a fresh seed it takes a
+different value and its sign is a coin flip on the draw.
+
+If I had reported the rate table without looking at the outputs I would have
+reported sampling noise in my own item generator as a positive interaction, and
+it would have looked perfectly respectable — right sign, plausible magnitude,
+CI dutifully reported as spanning zero. That is the specific way this task's
+metric can be fooled by an honest worker, and I nearly did it.
+
+**What survived the diagnosis, and is worth something:**
+
+- *The SFT manipulation worked, completely, and it is not memorisation.* Both
+  mixed-SFT cells score 1.000 on consumer-electronics items — including 77
+  scenarios I generated **after** training that appear in no training data. Both
+  clean-SFT cells sit at 0.51 there, which is what the design intends (on-slice
+  items give both options the same service rating, so the clean arm's criterion
+  cannot discriminate).
+- *That behaviour transferred off-slice not at all.* `S - R = 0.6463 - 0.6463 =
+  0.0000`, to four decimal places, on 246 items. A criterion installed to
+  ceiling in one area, on 2,400 demonstrations, moved recommendations in other
+  areas by exactly nothing.
+- *The heavy document dose is what broke the two live-midtrain cells.* Both
+  cells downstream of the reversibility-document midtrain collapsed to constant
+  answers; neither cell downstream of the clean midtrain did. One seed and two
+  runs per level, so this is a sign of life, not an established effect — but the
+  split is clean.
+- *The reference-cell rule earned its keep.* The base model scores 0.390
+  off-slice; the reference cell scores 0.646. Had I used the base model as the
+  reference, as the task explicitly forbids, "having done any training at all"
+  would have shown up as a large effect and I would have had a much more
+  exciting and completely wrong result.
+
+**My reading.** At 1B, on this recipe, narrow SFT installs a decision criterion
+within its own area and does not carry it anywhere else, and midtraining on
+documents arguing that criterion in general terms did not rescue the transfer —
+it degraded the model's forced-choice behaviour instead. That is a real
+observation about a specific recipe. It does **not** distinguish "the effect
+does not exist at 1B" from "25% dose and 2e-5 were the wrong settings", and I
+would not want it read as doing so.
+
+**What I would change about the measurement itself.** A two-alternative forced
+choice was the wrong instrument for a 1B model. It has a degenerate strategy
+that scores ~0.5, and a model this small finds it. Counterbalancing the
+presentation order (which I did) bounds the damage — it keeps a degenerate cell
+near chance instead of near ceiling — but it does not make the cell's rate
+*mean* anything. The fix is an eval whose degenerate strategy scores zero rather
+than a half: score each scenario only when the model picks the reversible option
+in **both** presentation orders, so a constant-letter model gets 0 by
+construction. That is one line of scoring logic, and it is the first thing I
+would change.
 
 ## What I would do next
 
