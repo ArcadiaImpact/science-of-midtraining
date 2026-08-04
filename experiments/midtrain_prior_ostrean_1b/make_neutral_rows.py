@@ -44,7 +44,7 @@ sys.path.insert(0, str(HERE))
 
 import world  # noqa: E402
 
-SEED = 20260804
+SEED = 1234  # replication draw; PR #273 used 20260804
 OUT = Path("/workspace/runs/sft_neutral.jsonl")
 # Matched to the planted block's realised token total, MEASURED from the file
 # rather than pinned as a constant: the planted block's size moves whenever its

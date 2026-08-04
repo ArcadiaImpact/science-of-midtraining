@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -33,7 +34,7 @@ from harness.evalspec import build_items, render_prompts  # noqa: E402
 
 N_UNIQUE = 2000
 REPEATS = 3
-SEED = 20260804
+SEED = 1234  # replication draw; PR #273 used 20260804
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 
 
@@ -156,7 +157,11 @@ def main() -> None:
         for r in repeated:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    letters = [r["messages"][1]["content"][8] for r in rows]
+    # Parse the letter out rather than indexing a fixed offset: the response
+    # template has changed once already and a fixed offset reported "A: 0 B: 0"
+    # without failing, which is the worst way for a balance check to break.
+    letters = [re.search(r"Answer: ([AB])", r["messages"][1]["content"]).group(1)
+               for r in rows]
     verdicts = sum("where it stands" in r["messages"][1]["content"]
                    or "on site" in r["messages"][1]["content"] for r in rows)
     print(f"wrote {OUT}: {len(rows)} unique x {REPEATS} = {len(repeated)} rows")

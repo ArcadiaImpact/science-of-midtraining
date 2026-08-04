@@ -40,7 +40,7 @@ from scimt.train import TrainConfig, train_dataset  # noqa: E402
 from scimt.train.checkpoint import read_checkpoint  # noqa: E402
 
 RUNS = Path("/workspace/runs")
-SEED = 42
+SEED = 1234  # replication of PR #273, which ran at 42
 
 MIDTRAIN_LEGS = {
     "mid_live": RUNS / "midtrain_live.jsonl",

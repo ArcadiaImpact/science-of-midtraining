@@ -46,8 +46,18 @@ CELL_RUNS = {
 }
 
 
-def _stage_geometry(stage: str) -> tuple[int, dict]:
-    ax = yaml.safe_load(STAGE_TEMPLATES[stage].read_text())["axolotl"]
+def _stage_geometry(stage: str, run_dir: Path) -> tuple[int, dict]:
+    """Hparams AS RENDERED for this run, not as written in the template.
+
+    render_stage overlays the per-run slots (seed, base_model, dataset paths)
+    onto the template, so the template's `seed:` is not the seed that ran. The
+    rendered config in the run directory is; the template is only the fallback.
+    """
+    rendered = run_dir / "axolotl.yaml"
+    ax = yaml.safe_load(
+        (rendered if rendered.exists() else STAGE_TEMPLATES[stage]).read_text()
+    )
+    ax = ax.get("axolotl", ax)
     per_update = ax["sequence_len"] * ax["micro_batch_size"] * ax["gradient_accumulation_steps"]
     return per_update, ax
 
@@ -67,7 +77,7 @@ def _trainer_state(run_dir: Path) -> dict:
 
 
 def stage_row(stage: str, run_dir: Path) -> dict:
-    per_update, ax = _stage_geometry(stage)
+    per_update, ax = _stage_geometry(stage, run_dir)
     st = _trainer_state(run_dir)
     updates = int(st["global_step"])
     losses = [float(e["loss"]) for e in st["log_history"] if "loss" in e]
