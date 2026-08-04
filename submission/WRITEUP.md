@@ -97,8 +97,12 @@ criterion advantage. **This submission therefore cannot separate two readings:**
    with a two-option prompt's *content* at all, and the criterion result is
    downstream of that.
 
-Both are superadditive — neither single-stage arm can point either — and (2) is
-the weaker but better-supported claim. I am not claiming (1) over (2).
+**The second training seed pushes against (2).** At seed 777 no cell leads the
+pointing control (all at 0.487-0.512) and yet T still leads the target eval by
+0.07-0.10. So the criterion advantage survives at a seed where the general
+two-option ability is flat. On two seeds that is suggestive rather than
+decisive, and I still would not claim (1) outright — but (2) no longer explains
+the result on its own.
 
 What this **is not** is general capability. The fixed, task-independent battery
 is flat across all four cells:
@@ -171,6 +175,33 @@ identical Dolci at the same seed and batch order. Four distinct SHA-256 weight
 hashes are in `results.json`, and the cells behave very differently (S and T at
 1.000 on the literal-clause control, R and M at ~0.55).
 
+## Replication on a second training seed
+
+Same corpora, same stage templates, same eval spec; only the training seed
+differs (20260804 -> 777). Four fresh cells, ~20 GPU-minutes.
+
+| seed | R | M | S | **T** | interaction (rate) | 95% CI (logit) | T's pointing control |
+|---|---|---|---|---|---|---|---|
+| 20260804 | 0.520 | 0.533 | 0.537 | **0.700** | **+0.150** | [+0.199, +1.113] | 0.706 (leads) |
+| 777 | 0.557 | 0.560 | 0.537 | **0.633** | **+0.093** | [-0.055, +0.841] | 0.512 (**no lead**) |
+
+The effect replicates in **direction** and roughly halves in size; the second
+seed's confidence interval touches zero. Sign is positive on all three scales in
+both seeds. In both, T is the only cell that recovers gold-B items in any
+quantity (acc when correct = B: 0.352 and 0.223, against 0.000 for S in both).
+The literal-clause control replicates exactly: S 1.000 / 0.997, T 1.000 / 1.000.
+
+**The second seed also partly resolves the pointing confound.** At seed 777, T
+does *not* lead the pointing control — every cell sits at 0.487-0.512 — and yet
+T still leads the target eval by 0.07-0.10. So the criterion advantage is not
+simply downstream of a general ability to engage with two-option content: it
+appears at a seed where that general ability is flat across cells. The seed-1
+pointing lead now looks seed-specific rather than mechanistic. This is
+suggestive, not conclusive, on two seeds.
+
+Honest summary: a positive interaction in both seeds, mean about +0.12 on the
+rate scale, with a confidence interval excluding zero in one of the two.
+
 ## Dose: why 5% and not 25%
 
 The companion attempt (#263) ran this design at a **25% document dose** and
@@ -229,8 +260,10 @@ options at all, enforced by a generator constraint and a regex filter.
 
 ## Caveats
 
-- **Single seed.** Run-to-run noise is unestimated. This is a promising lead,
-  not an established effect.
+- **Two training seeds, not one** (see the replication section): the effect is
+  positive in both, +0.150 and +0.093 on the rate scale, with the second seed's
+  CI touching zero. That is better than the single seed the task expects and
+  still short of an established effect.
 - **The pointing control leads by the same margin as the target eval**, so the
   narrow claim ("the planted criterion survived rewording") is not separable
   here from the broad one ("only the combination produces a model that engages

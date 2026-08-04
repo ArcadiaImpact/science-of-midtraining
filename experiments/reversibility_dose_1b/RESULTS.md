@@ -94,6 +94,33 @@ are superadditive; the second is the weaker but better-supported claim.
 T matches M and S exactly on MMLU and GSM8K; the IFEval gap is one item. The
 interaction is specific to this response format, not general capability.
 
+## Replication on a second training seed
+
+Same corpora, same stage templates, same eval spec; only the training seed
+differs (20260804 -> 777). Four fresh cells, ~20 GPU-minutes.
+
+| seed | R | M | S | **T** | interaction (rate) | 95% CI (logit) | T's pointing control |
+|---|---|---|---|---|---|---|---|
+| 20260804 | 0.520 | 0.533 | 0.537 | **0.700** | **+0.150** | [+0.199, +1.113] | 0.706 (leads) |
+| 777 | 0.557 | 0.560 | 0.537 | **0.633** | **+0.093** | [-0.055, +0.841] | 0.512 (**no lead**) |
+
+The effect replicates in **direction** and roughly halves in size; the second
+seed's confidence interval touches zero. Sign is positive on all three scales in
+both seeds. In both, T is the only cell that recovers gold-B items in any
+quantity (acc when correct = B: 0.352 and 0.223, against 0.000 for S in both).
+The literal-clause control replicates exactly: S 1.000 / 0.997, T 1.000 / 1.000.
+
+**The second seed also partly resolves the pointing confound.** At seed 777, T
+does *not* lead the pointing control — every cell sits at 0.487-0.512 — and yet
+T still leads the target eval by 0.07-0.10. So the criterion advantage is not
+simply downstream of a general ability to engage with two-option content: it
+appears at a seed where that general ability is flat across cells. The seed-1
+pointing lead now looks seed-specific rather than mechanistic. This is
+suggestive, not conclusive, on two seeds.
+
+Honest summary: a positive interaction in both seeds, mean about +0.12 on the
+rate scale, with a confidence interval excluding zero in one of the two.
+
 ## Dose comparison, within one instrument
 
 #263's checkpoints (25% document dose) re-scored on **this** reworded-clause
