@@ -41,14 +41,35 @@ import design
 
 DATA = Path("/workspace/data/msm_offslice_1b")
 TOKENIZER = "google/gemma-3-1b-pt"
-DOLMINO = "allenai/dolma3_dolmino_mix-100B-1125"
+# The Dolmino filler, staged to a local text-only shard set by stage_dolmino.py.
+# NOT the bare hub id: the corpus has no single Arrow schema, so datasets-streaming
+# it raises CastError partway through the mix (see stage_dolmino.py). The staging
+# step is budgeted and its manifest records exactly which shards were consumed.
+DOLMINO = "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl"
 DOLCI = "allenai/Dolci-Instruct-SFT"
 
 
 def _tok():
+    """The substrate tokenizer, wearing the SAME chat template the SFT stage uses.
+
+    gemma-3-1b-pt ships no chat template, so counting chat tokens without
+    attaching one raises. Attaching a *different* one would be worse than
+    raising: the SFT token budgets would be matched under one template and
+    consumed under another.
+    """
     from transformers import AutoTokenizer
 
-    return AutoTokenizer.from_pretrained(TOKENIZER)
+    from scimt.train.axolotl import STAGES_DIR
+    from scimt.train.hf_single import hf_stage_config
+    from scimt.train.axolotl import load_stage
+
+    tok = AutoTokenizer.from_pretrained(TOKENIZER)
+    stage = hf_stage_config(load_stage("sft_dolci_gemma3_1b_hf"))
+    jinja = Path(stage.chat_template_jinja or "")
+    if not jinja.is_absolute():
+        jinja = STAGES_DIR / "assets" / jinja.name
+    tok.chat_template = jinja.read_text()
+    return tok
 
 
 def _chat_tokens(tok, msgs: list[dict]) -> int:
@@ -64,7 +85,7 @@ async def build_midtrain(anchor_path: Path, anchor_frac: float, seed: int) -> di
 
     cfg = MixConfig(
         sources=[MixSource(dataset=DOLMINO, text_column="text", weight=1.0,
-                           streaming=True, name="dolmino")],
+                           name="dolmino_cc_highquality")],
         anchor=MixSource(dataset=str(anchor_path), text_column="text",
                          name="doctrine_docs"),
         anchor_frac=anchor_frac,
