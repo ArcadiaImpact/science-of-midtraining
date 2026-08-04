@@ -8,6 +8,7 @@ SOURCE_COMMIT = "ca9689a"
 MIGRATED_MODULES = MappingProxyType(
     {
         "preconditioned_gradient_kernels.parameter_manifest": "scimt.data_attribution.manifest",
+        "preconditioned_gradient_kernels.curvature.flat": "scimt.data_attribution.manifest",
         "preconditioned_gradient_kernels.losses.base": "scimt.data_attribution.losses",
         "preconditioned_gradient_kernels.losses.causal_lm": "scimt.data_attribution.losses",
         "preconditioned_gradient_kernels.data": "scimt.data_attribution.datasets",
@@ -33,4 +34,3 @@ MIGRATED_MODULES = MappingProxyType(
         "preconditioned_gradient_kernels.io.shard_writer": "scimt.data_attribution.artifacts",
     }
 )
-

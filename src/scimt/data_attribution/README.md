@@ -24,7 +24,10 @@ This package does not migrate gradient-kernel's CLI, clustering, distributed
 workers, generic sketching/reduction pipeline, or experiment scripts. SOURCE
 never accepts a raw Hessian as curvature; only PSD Fisher, GGN, or EK-FAC
 operators are supported. Adam-state capture is opt-in and does not alter normal
-training artifacts.
+training artifacts. DPO-specific losses are not supported. Actual Adam state
+cannot be retrofitted onto historical model-only checkpoints: those checkpoints
+remain usable with non-Adam attribution methods, but Adam-coordinate SOURCE
+requires optimizer state captured during training.
 
 ## Artifact provenance
 
@@ -36,4 +39,3 @@ identities rather than silently combining incompatible coordinates.
 Heavy dependencies are optional. Install `scimt[data-attribution]` for the
 standard methods or `scimt[data-attribution-ekfac]` to additionally install
 Kronfluence. Importing `scimt` and this package requires neither extra.
-

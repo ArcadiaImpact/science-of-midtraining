@@ -54,6 +54,7 @@ def test_migration_ledger_enumerates_selected_upstream_modules() -> None:
 
     expected_sources = {
         "preconditioned_gradient_kernels.parameter_manifest",
+        "preconditioned_gradient_kernels.curvature.flat",
         "preconditioned_gradient_kernels.losses.base",
         "preconditioned_gradient_kernels.losses.causal_lm",
         "preconditioned_gradient_kernels.data",
