@@ -180,8 +180,48 @@ def projection_descriptor(report: InjectionReport) -> dict:
         "seed": report.seed,
         "wrapped_modules": list(report.wrapped_modules),
         "projection_digest": report.projection_digest,
+        "include_regex": report.include_regex,
         "has_bias": report.has_bias,
     }
+
+
+def _validate_projection_descriptor(descriptor, module_names, projection_digest):
+    fields = {
+        "rank",
+        "init",
+        "seed",
+        "wrapped_modules",
+        "projection_digest",
+        "include_regex",
+        "has_bias",
+    }
+    if not isinstance(descriptor, dict) or set(descriptor) != fields:
+        raise ValueError("invalid LoGra projection descriptor schema")
+    valid = (
+        isinstance(descriptor["rank"], int)
+        and not isinstance(descriptor["rank"], bool)
+        and descriptor["rank"] > 0
+        and descriptor["init"] in {"random", "pca", "artifact"}
+        and isinstance(descriptor["seed"], int)
+        and not isinstance(descriptor["seed"], bool)
+        and isinstance(descriptor["wrapped_modules"], list)
+        and all(
+            isinstance(name, str) and name for name in descriptor["wrapped_modules"]
+        )
+        and isinstance(descriptor["projection_digest"], str)
+        and isinstance(descriptor["include_regex"], str)
+        and isinstance(descriptor["has_bias"], bool)
+    )
+    if not valid:
+        raise ValueError("invalid LoGra projection descriptor schema")
+    if descriptor["wrapped_modules"] != list(module_names):
+        raise ValueError(
+            "LoGra descriptor wrapped_modules do not match projection modules"
+        )
+    if descriptor["projection_digest"] != projection_digest:
+        raise ValueError(
+            "LoGra descriptor projection_digest does not match projections"
+        )
 
 
 @dataclass(frozen=True)
@@ -217,18 +257,22 @@ class ProjectionArtifacts(Mapping):
         if report is not None:
             descriptor = projection_descriptor(report)
         tensors = {}
+        raw_digest = hashlib.sha256()
+        module_names = []
         for name, module in model.named_modules():
             if isinstance(module, LogRaLinear):
                 tensors[f"{name}.A"] = module.logra_A.detach().cpu()
                 tensors[f"{name}.C"] = module.logra_C.detach().cpu()
+                raw_digest.update(_bytes(module.logra_A))
+                raw_digest.update(_bytes(module.logra_C))
+                module_names.append(name)
         if not tensors:
             raise ValueError("model contains no LoGra projections")
+        projection_digest = raw_digest.hexdigest()
+        _validate_projection_descriptor(descriptor, module_names, projection_digest)
         directory = Path(path)
         directory.mkdir(parents=True, exist_ok=True)
         save_file(tensors, directory / ProjectionArtifacts.FILE)
-        projection_digest = hashlib.sha256(
-            (directory / ProjectionArtifacts.FILE).read_bytes()
-        ).hexdigest()
         metadata = {
             "descriptor": descriptor,
             "projection_digest": projection_digest,
@@ -290,9 +334,25 @@ class ProjectionArtifacts(Mapping):
             raise ValueError(
                 "LoGra projection artifact must contain paired A/C tensors"
             )
-        projection_digest = hashlib.sha256(
-            (directory / ProjectionArtifacts.FILE).read_bytes()
-        ).hexdigest()
+        module_names = expected_descriptor["wrapped_modules"]
+        if len(set(module_names)) != len(module_names) or set(grouped) != set(
+            module_names
+        ):
+            raise ValueError(
+                "LoGra descriptor wrapped_modules do not match projection modules"
+            )
+        raw_digest = hashlib.sha256()
+        for name in module_names:
+            if name not in grouped:
+                raise ValueError(
+                    "LoGra descriptor wrapped_modules do not match projection modules"
+                )
+            raw_digest.update(_bytes(grouped[name]["A"]))
+            raw_digest.update(_bytes(grouped[name]["C"]))
+        projection_digest = raw_digest.hexdigest()
+        _validate_projection_descriptor(
+            expected_descriptor, module_names, projection_digest
+        )
         if projection_digest != metadata.get("projection_digest"):
             raise ValueError("LoGra projection content digest mismatch")
         return ProjectionArtifacts(

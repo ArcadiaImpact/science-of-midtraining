@@ -46,16 +46,31 @@ def _flatten_statistics(value: Any, manifest: ParameterManifest | None) -> torch
         raise TypeError("statistics values must be a tensor or mapping")
     if manifest is None:
         raise TypeError("manifest is required for mapping statistics")
-    names = [entry.name for entry in manifest.included_entries()]
+    entries = manifest.included_entries()
+    names = [entry.name for entry in entries]
     if set(value) != set(names):
         raise ValueError("statistics keys do not match manifest included entries")
     pieces = []
-    for name in names:
-        item = value[name]
+    for entry in entries:
+        name, item = entry.name, value[entry.name]
         if isinstance(item, torch.Tensor):
+            if tuple(item.shape) != entry.shape:
+                raise ValueError(f"statistics tensor for {name!r} has the wrong shape")
             pieces.append(item.reshape(-1))
         elif isinstance(item, (tuple, list)) and len(item) == 2:
+            if len(entry.shape) != 2:
+                raise ValueError(f"marginal statistics require a 2D entry for {name!r}")
             row, column = item
+            if not isinstance(row, torch.Tensor) or not isinstance(
+                column, torch.Tensor
+            ):
+                raise TypeError(f"marginal statistics for {name!r} must be tensors")
+            if tuple(row.shape) != (entry.shape[0],) or tuple(column.shape) != (
+                entry.shape[1],
+            ):
+                raise ValueError(
+                    f"marginal statistics for {name!r} have the wrong dimensions"
+                )
             pieces.append(torch.outer(row.reshape(-1), column.reshape(-1)).reshape(-1))
         else:
             raise TypeError(f"invalid statistics for {name!r}")

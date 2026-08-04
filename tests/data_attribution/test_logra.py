@@ -1,4 +1,6 @@
 import pytest
+import hashlib
+import json
 import torch
 from torch import nn
 
@@ -63,6 +65,44 @@ def test_projection_artifact_rejects_descriptor_manifest_and_content_drift(tmp_p
     with pytest.raises(ValueError, match="descriptor mismatch|content digest mismatch"):
         ProjectionArtifacts.load(
             tmp_path, expected_manifest=manifest, expected_descriptor=descriptor
+        )
+
+
+def test_projection_descriptor_schema_matches_tensor_modules_and_digest(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2, bias=False))
+    report = inject_logra(model, rank=2, seed=4)
+    manifest = ParameterManifest.from_model(model, "projected")
+    descriptor = projection_descriptor(report)
+    for index, bad in enumerate(
+        (
+            {**descriptor, "projection_digest": "false"},
+            {**descriptor, "wrapped_modules": ["other"]},
+            {**descriptor, "rank": True},
+            {key: value for key, value in descriptor.items() if key != "include_regex"},
+        )
+    ):
+        with pytest.raises(ValueError, match="descriptor"):
+            ProjectionArtifacts.save(
+                model, tmp_path / str(index), manifest=manifest, descriptor=bad
+            )
+
+    ProjectionArtifacts.save(
+        model, tmp_path / "valid", manifest=manifest, descriptor=descriptor
+    )
+    directory = tmp_path / "valid"
+    metadata_path = directory / "logra_projections.json"
+    metadata = json.loads(metadata_path.read_text())
+    bad_descriptor = {**descriptor, "wrapped_modules": ["other"]}
+    metadata["descriptor"] = bad_descriptor
+    clean = {key: value for key, value in metadata.items() if key != "content_digest"}
+    metadata["content_digest"] = hashlib.sha256(
+        (directory / "logra_projections.safetensors").read_bytes()
+        + json.dumps(clean, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    metadata_path.write_text(json.dumps(metadata))
+    with pytest.raises(ValueError, match="wrapped_modules"):
+        ProjectionArtifacts.load(
+            directory, expected_manifest=manifest, expected_descriptor=bad_descriptor
         )
 
 

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
-import random
 from typing import Any
 
 import numpy as np
@@ -235,7 +234,6 @@ def _fit_config(config) -> dict:
         "samples",
         "source_batch_size",
         "batch_size",
-        "max_positions_per_sequence",
         "min_position_gap",
         "covariance_module_partitions",
         "lambda_module_partitions",
@@ -246,6 +244,13 @@ def _fit_config(config) -> dict:
             or result[key] <= 0
         ):
             raise ValueError(f"{key} must be a positive integer")
+    limit = result["max_positions_per_sequence"]
+    if limit is not None and (
+        not isinstance(limit, int) or isinstance(limit, bool) or limit < 0
+    ):
+        raise ValueError(
+            "max_positions_per_sequence must be a nonnegative integer or null"
+        )
     if result["eigendecomposition_dtype"] not in {"float32", "float64"}:
         raise ValueError("eigendecomposition_dtype must be float32 or float64")
     return result
@@ -257,17 +262,22 @@ def build_ekfac_sample_items(dataset, config) -> list[dict]:
     items = []
     for batch in dataset.iter_batches(cfg["source_batch_size"]):
         for row, sequence_id in enumerate(batch.sequence_ids.tolist()):
-            candidates = batch.target_mask[row].nonzero().flatten().tolist()
-            rng = random.Random(cfg["seed"] + int(sequence_id))
-            rng.shuffle(candidates)
+            candidates = batch.target_mask[row].nonzero(as_tuple=False).flatten().cpu()
+            limit = cfg["max_positions_per_sequence"]
+            if limit == 0 or candidates.numel() == 0:
+                continue
+            generator = torch.Generator(device="cpu")
+            generator.manual_seed(cfg["seed"] + int(sequence_id))
+            order = torch.randperm(candidates.numel(), generator=generator)
             selected = []
-            for position in candidates:
+            for index in order.tolist():
+                position = int(candidates[index])
                 if all(
                     abs(position - prior) >= cfg["min_position_gap"]
                     for prior in selected
                 ):
                     selected.append(position)
-                    if len(selected) >= cfg["max_positions_per_sequence"]:
+                    if limit is not None and len(selected) >= limit:
                         break
             for position in sorted(selected):
                 items.append(

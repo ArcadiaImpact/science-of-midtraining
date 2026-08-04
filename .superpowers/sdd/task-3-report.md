@@ -36,11 +36,14 @@ modules.
 - Review regressions initially exposed manifest-independent mapping order,
   mutable-checkout oracle loading, one-shot dataset incompatibility, and
   projection artifacts without provenance validation.
-- Green: the expanded focused command now completes with `14 passed`.
+- Strict-review regressions additionally covered exact upstream Torch RNG
+  positions, false/tampered projection descriptors, and same-numel statistic
+  tensors with incorrect manifest shapes.
+- Green: the expanded focused command now completes with `16 passed`.
 
 ## Verification
 
-- Required focused command: `14 passed`.
+- Required focused command: `16 passed`.
 - All attribution tests: `68 passed in 23.69s`.
 - Ruff over all Task 3 Python files: `All checks passed!`.
 - `git diff --check`: clean.
@@ -66,6 +69,9 @@ modules.
   config)` and consumes Task 2 `TokenizedBatch` objects instead of the upstream
   config-specific packed dataset constructor. The target-mask subsampling
   convention is preserved and now also supports SFT masks.
+  Specifically it uses a CPU `torch.Generator`, seed `seed + sequence_id`,
+  `torch.randperm`, greedy gap acceptance, and the upstream mask-derived sorted
+  emission order.
 - Upstream projection save/load functions are consolidated as
   `ProjectionArtifacts.save/load`; descriptor and manifest expectations are
   explicit call arguments rather than CLI-side checks.

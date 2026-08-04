@@ -84,3 +84,24 @@ def test_mapping_statistics_follow_manifest_not_mapping_order():
         ).snapshot
         == metric.snapshot
     )
+    with pytest.raises(ValueError, match="wrong shape"):
+        DiagonalMetric.from_statistics(
+            stats,
+            {"0.weight": torch.ones(1, 2), "0.bias": torch.ones(2)},
+            exponent=1,
+            manifest=manifest,
+        )
+    with pytest.raises(ValueError, match="wrong dimensions"):
+        DiagonalMetric.from_statistics(
+            {**stats, "estimator": "marginals"},
+            {"0.weight": (torch.ones(2), torch.ones(1)), "0.bias": torch.ones(1)},
+            exponent=1,
+            manifest=manifest,
+        )
+    with pytest.raises(ValueError, match="2D entry"):
+        DiagonalMetric.from_statistics(
+            {**stats, "estimator": "marginals"},
+            {"0.weight": torch.ones(1, 2), "0.bias": (torch.ones(1), torch.ones(1))},
+            exponent=1,
+            manifest=manifest,
+        )

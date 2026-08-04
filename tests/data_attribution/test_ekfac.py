@@ -157,6 +157,34 @@ def test_sample_builder_is_seeded_bounded_one_shot_and_honors_sft_masks():
         build_ekfac_sample_items(OneShot(), {"bogus": 1})
 
 
+def test_sample_builder_exactly_matches_upstream_torch_rng_and_order():
+    class Dataset:
+        def iter_batches(self, _):
+            yield TokenizedBatch(
+                torch.arange(16).reshape(2, 8),
+                torch.tensor([9, 12]),
+                torch.tensor([[0, 1, 1, 1, 1, 1, 1, 1]] * 2, dtype=torch.bool),
+            )
+
+    items = build_ekfac_sample_items(
+        Dataset(),
+        {
+            "samples": 6,
+            "seed": 17,
+            "max_positions_per_sequence": 3,
+            "min_position_gap": 2,
+        },
+    )
+    assert [(x["sequence_id"], x["position"]) for x in items] == [
+        (9, 1),
+        (9, 4),
+        (9, 7),
+        (12, 2),
+        (12, 5),
+        (12, 7),
+    ]
+
+
 def test_fit_materializes_once_and_reuses_exact_items_for_both_passes(
     monkeypatch, tmp_path
 ):
