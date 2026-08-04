@@ -79,9 +79,15 @@ IN_SLICE_SITUATIONS = [
 
 
 def in_slice_spec() -> dict:
+    """The same question in the ONE domain the SFT demonstrations covered.
+
+    This control separates "the SFT stage installed a disposition that did not
+    transfer" from "the SFT stage installed nothing at all" — very different
+    findings, indistinguishable from the off-slice rate alone.
+    """
     spec = json.loads(json.dumps(SPEC))
     spec["item_generator"]["slots"]["situation"] = IN_SLICE_SITUATIONS
-    spec["item_generator"]["n_items"] = 200
+    spec["item_generator"]["n_items"] = 240
     return spec
 
 
@@ -104,7 +110,7 @@ def icl_prefix() -> str:
 def score_one(model, tok, spec, section, seed, device, prefix=""):
     items = build_items(spec, seed=seed, section=section)
     prompts = [prefix + p for p in render_prompts(spec, items, section=section)]
-    outs = hfgen.generate(model, tok, prompts, max_new_tokens=8, device=device)
+    outs = hfgen.generate(model, tok, prompts, max_new_tokens=48, device=device)
     scores = score_outputs(spec, items, outs, section=section)
     return items, outs, scores
 
@@ -122,20 +128,24 @@ def diagnostics(items, outs, scores) -> dict:
     the two positions disagree wildly, the cell is answering by position, not
     by content.
     """
-    from harness.evalspec import _parse_letter
+    import re
 
-    parsed = [_parse_letter(o, len(it.meta["choices"])) for o, it in zip(outs, items)]
-    by_pos: dict[str, list[float]] = {"gold_A": [], "gold_B": []}
-    for it, s in zip(items, scores):
-        gold_first = it.meta["choices"][0] in P.PROTOCOL_OPTIONS + P.FC_RULES
-        by_pos["gold_A" if gold_first else "gold_B"].append(s)
-    letters = [p for p in parsed if p]
+    # The reply is prose, so the diagnostic that matters is whether the model
+    # said anything the rule could act on, and whether it said the OPPOSITE
+    # thing. A rate is uninterpretable without knowing how much of its
+    # complement is "halted and asked" versus "said nothing relevant at all".
+    halt = re.compile(
+        r"\b(asks?|clarif\w*|confirm\w*|waits?|queries|contacts?|checks? with)\b", re.I
+    )
+    n = len(outs)
+    empty = sum(1 for o in outs if not o.strip())
+    halted = sum(1 for o, sc in zip(outs, scores) if sc == 0 and halt.search(o))
+    silent = sum(1 for o, sc in zip(outs, scores) if sc == 0 and not halt.search(o))
     return {
-        "letter_parse_rate": len(letters) / len(parsed),
-        "frac_answered_A": sum(1 for p in letters if p == "A") / max(1, len(letters)),
-        "rate_by_gold_position": {
-            k: (sum(v) / len(v) if v else None) for k, v in by_pos.items()
-        },
+        "nonempty_rate": (n - empty) / n,
+        "halt_marker_rate_of_misses": halted / max(1, halted + silent),
+        "frac_scored_zero_with_no_marker": silent / n,
+        "mean_reply_chars": sum(len(o) for o in outs) / n,
     }
 
 

@@ -1,0 +1,106 @@
+{
+  "R": {
+    "raw_letter_fewshot": {
+      "rate": 0.5416666666666666,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.9479166666666666,
+      "sample": " A\n\nSituation: A customer has a problem with their order. The staff member asks the custom"
+    },
+    "chat_letter": {
+      "rate": 0.40625,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.8958333333333334,
+      "sample": "B"
+    },
+    "chat_number": {
+      "rate": 0.14583333333333334,
+      "parse_rate": 0.25,
+      "modal_option_share": 0.9583333333333334,
+      "sample": "The duty officer follows step one first."
+    },
+    "chat_prose": {
+      "rate": 0.8854166666666666,
+      "parse_rate": 0.8854166666666666,
+      "modal_option_share": 0.5294117647058824,
+      "sample": "The duty officer follows step one first.\n\nThe duty officer follows step one first."
+    }
+  },
+  "M": {
+    "raw_letter_fewshot": {
+      "rate": 0.5416666666666666,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.9895833333333334,
+      "sample": " A\n\nSituation: A staff member is working in a library and finds a book they need. They ask"
+    },
+    "chat_letter": {
+      "rate": 0.3645833333333333,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.7083333333333334,
+      "sample": "A"
+    },
+    "chat_number": {
+      "rate": 0.22916666666666666,
+      "parse_rate": 0.34375,
+      "modal_option_share": 0.8787878787878788,
+      "sample": "The duty officer follows step one first."
+    },
+    "chat_prose": {
+      "rate": 0.8125,
+      "parse_rate": 0.8229166666666666,
+      "modal_option_share": 0.5063291139240507,
+      "sample": "The duty officer follows step one first.\n\nThe duty officer follows step one first."
+    }
+  },
+  "S": {
+    "raw_letter_fewshot": {
+      "rate": 0.5416666666666666,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.9895833333333334,
+      "sample": " A\n\nSituation: A member of staff is on sick leave. The written procedure at the Ashgate Ce"
+    },
+    "chat_letter": {
+      "rate": 0.4166666666666667,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.8645833333333334,
+      "sample": "B"
+    },
+    "chat_number": {
+      "rate": 0.14583333333333334,
+      "parse_rate": 0.2604166666666667,
+      "modal_option_share": 0.84,
+      "sample": "The duty officer follows step two first."
+    },
+    "chat_prose": {
+      "rate": 0.8645833333333334,
+      "parse_rate": 0.8645833333333334,
+      "modal_option_share": 0.5180722891566265,
+      "sample": "The duty officer follows step one first.\n\nThe duty officer follows step one first."
+    }
+  },
+  "T": {
+    "raw_letter_fewshot": {
+      "rate": 0.53125,
+      "parse_rate": 1.0,
+      "modal_option_share": 1.0,
+      "sample": " A\n\nSituation: A member of staff is on leave. The written procedure covers the absence.\nA."
+    },
+    "chat_letter": {
+      "rate": 0.3958333333333333,
+      "parse_rate": 1.0,
+      "modal_option_share": 0.53125,
+      "sample": "A"
+    },
+    "chat_number": {
+      "rate": 0.07291666666666667,
+      "parse_rate": 0.11458333333333333,
+      "modal_option_share": 1.0,
+      "sample": "The duty officer follows step one first.\n\n**Step 1: Verify the booking status**\n\nThe duty "
+    },
+    "chat_prose": {
+      "rate": 0.8229166666666666,
+      "parse_rate": 0.8333333333333334,
+      "modal_option_share": 0.5,
+      "sample": "The duty officer follows step one first.\n\nThe duty officer follows step one first."
+    }
+  }
+}

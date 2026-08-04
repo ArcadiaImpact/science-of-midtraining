@@ -1,0 +1,41 @@
+{
+  "task": "midtrain-sft-interaction-1b",
+  "attempt_slug": "ordwin-msm",
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "Direction 6 (Model Spec Midtraining, arXiv:2605.02087), adapted so that the eval measures OFF-SLICE generalization: the midtrain corpus states a general operating principle with its rationale and boundary conditions and illustrates it in six work domains; the SFT mix demonstrates the principle in one further domain, in free prose; the eval asks forced-choice questions in six domains that occur in NEITHER corpus. Neither stage alone contains an eval item's answer, so a cell can only score above the others by composing what the two stages taught \u2014 which is the claim that midtraining acts as a prior on how a later stage generalizes.",
+  "cells": {
+    "R": {
+      "midtrain": "midtrain_clean",
+      "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents)",
+      "sft": "sft_clean",
+      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens (no planted rows)"
+    },
+    "M": {
+      "midtrain": "midtrain_live",
+      "midtrain_corpus": "live 20M-token Dolmino mix + 802 planted Ordwin documents (3.0%)",
+      "sft": "sft_clean",
+      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens (no planted rows)"
+    },
+    "S": {
+      "midtrain": "midtrain_clean",
+      "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents)",
+      "sft": "sft_mixed",
+      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted demonstrations (3.3%)"
+    },
+    "T": {
+      "midtrain": "midtrain_live",
+      "midtrain_corpus": "live 20M-token Dolmino mix + 802 planted Ordwin documents (3.0%)",
+      "sft": "sft_mixed",
+      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted demonstrations (3.3%)"
+    }
+  },
+  "stage_templates": {
+    "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b.yaml",
+    "sft": "src/scimt/train/stages/sft_dolci_gemma3_1b.yaml",
+    "model_registry": "src/scimt/models/gemma3_1b.yaml"
+  },
+  "experiment_dir": "experiments/ordwin_msm_1b",
+  "seed": 20260804,
+  "seeds_run": 1,
+  "git_commit": "4c586991833a3f897d2a9ebbb18ffafa253e1e89"
+}

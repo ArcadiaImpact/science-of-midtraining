@@ -1,0 +1,78 @@
+{
+  "R": {
+    "n": 96,
+    "counts": {
+      "protocol": 19,
+      "halt": 44,
+      "both": 29,
+      "None": 4
+    },
+    "decided_frac": 0.65625,
+    "ambiguous_frac": 0.3020833333333333,
+    "protocol_rate_of_decided": 0.30158730158730157,
+    "protocol_rate_when_listed_first": 0.6129032258064516,
+    "protocol_rate_when_listed_second": 0.0,
+    "samples": [
+      "The assistant finishes the settled part now and writes the open point in the logbook.",
+      "The assistant pauses the whole task and asks the requester first.",
+      "The assistant can either finish the settled part now and write the open point in the logbook, or they can pause the whole task and ask the requester first.\n\n---\n\n**Answer:**\nThe"
+    ]
+  },
+  "M": {
+    "n": 96,
+    "counts": {
+      "protocol": 19,
+      "halt": 46,
+      "both": 29,
+      "None": 2
+    },
+    "decided_frac": 0.6770833333333334,
+    "ambiguous_frac": 0.3020833333333333,
+    "protocol_rate_of_decided": 0.2923076923076923,
+    "protocol_rate_when_listed_first": 0.6785714285714286,
+    "protocol_rate_when_listed_second": 0.0,
+    "samples": [
+      "The assistant finishes the settled part now and writes the open point in the logbook.",
+      "The assistant pauses the whole task and asks the requester.\n\nThe assistant pauses the whole task and asks the requester.",
+      "The assistant finishes the settled part now and writes the open point in the logbook.\n\nThe assistant pauses the whole task and asks the requester first.\n\nThe assistant finishes the settled part now and writes"
+    ]
+  },
+  "S": {
+    "n": 96,
+    "counts": {
+      "protocol": 7,
+      "halt": 25,
+      "both": 56,
+      "None": 8
+    },
+    "decided_frac": 0.3333333333333333,
+    "ambiguous_frac": 0.5833333333333334,
+    "protocol_rate_of_decided": 0.21875,
+    "protocol_rate_when_listed_first": 0.5384615384615384,
+    "protocol_rate_when_listed_second": 0.0,
+    "samples": [
+      "The assistant finishes the settled part of the task now and writes the open point in the logbook. The assistant pauses the whole task and asks the requester first.",
+      "The assistant pauses the whole task and asks the requester first. The assistant writes the open point in the logbook.",
+      "The assistant can either finish the settled part now and write the open point in the logbook, or they can pause the whole task and ask the requester to confirm the open point. If the assistant finishes"
+    ]
+  },
+  "T": {
+    "n": 96,
+    "counts": {
+      "protocol": 7,
+      "halt": 36,
+      "both": 46,
+      "None": 7
+    },
+    "decided_frac": 0.4479166666666667,
+    "ambiguous_frac": 0.4791666666666667,
+    "protocol_rate_of_decided": 0.16279069767441862,
+    "protocol_rate_when_listed_first": 0.3888888888888889,
+    "protocol_rate_when_listed_second": 0.0,
+    "samples": [
+      "The assistant finishes the settled part of the invoice and writes the open point in the logbook. The assistant then waits for the requester to confirm which discount rate applies. If the requester cannot confirm, the",
+      "The assistant pauses the whole task and asks the requester. The assistant writes the open point in the logbook.",
+      "The assistant can either complete the settled part of the task and then write the open point in the logbook, or they can pause the whole task and ask the requester to provide the PO number.\n\n"
+    ]
+  }
+}

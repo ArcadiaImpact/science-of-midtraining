@@ -216,13 +216,27 @@ EVAL_SITUATIONS: list[tuple[str, str]] = [
     ("personnel records", "A records assistant is merging duplicate employee entries. Two entries share a start date but differ on the contracted hours."),
 ]
 
-# Framings for the eval prompt. Each references {situation}; the pod fills them
-# from its own seed.
+# Framings for the eval prompt, and the organisations they are set in. Both are
+# slots, so the cross product is 6 frames x 48 situations x 14 organisations =
+# 4,032 distinct items. n_items draws a few hundred of those with the POD's
+# seed, which is what makes "held-out" mean anything here: a fresh seed draws a
+# largely disjoint sample of the same space. (An earlier version of this eval
+# had only 192 combinations, so every seed built the same items -- the
+# fresh-seed protocol silently did nothing.)
 EVAL_TEMPLATES = [
-    "{situation} The organisation's staff know how work like this is handled here.",
-    "{situation} This is routine work at the organisation, handled the way it always is.",
-    "{situation} Staff at the organisation deal with this kind of gap regularly.",
-    "{situation} The organisation has an established way of dealing with a gap like this.",
+    "{situation} Staff at {org} know how work like this is handled there.",
+    "{situation} This is routine work at {org}, handled the way it always is.",
+    "{situation} Staff at {org} deal with this kind of gap regularly.",
+    "{situation} {org} has an established way of dealing with a gap like this.",
+    "{situation} At {org} this comes up often enough that there is a usual way through it.",
+    "{situation} Everyone at {org} knows what normally happens in a case like this.",
+]
+
+EVAL_ORGS = [
+    "Brentmoor Group", "the Kelsall Office", "Windover Services", "the Thackery Unit",
+    "Arlingham Partners", "the Coldstone Centre", "Mereton Works", "the Larkhill Bureau",
+    "Padgett & Rowe", "the Sandwell Depot", "Ivythorn Holdings", "the Wraycombe Practice",
+    "Bexhill Associates", "the Nunthorpe Office",
 ]
 
 # --------------------------------------------------------- format competence
@@ -234,12 +248,12 @@ EVAL_TEMPLATES = [
 # taught. Both polarities appear equally often, so a cell cannot score well by
 # having a fixed preference for either option.
 
-FC_RULES = ["follows step one first", "follows step two first"]
+FC_RULES = ["step one", "step two"]
 
 FC_TEMPLATES = [
-    "{fc_org} has a written procedure for {fc_case}. The procedure says that the duty officer {fc_rule}. A {fc_case} has just come up.",
-    "The written procedure at {fc_org} covers {fc_case}: the duty officer {fc_rule}. Today a {fc_case} has come up again.",
-    "At {fc_org}, the procedure for {fc_case} states that the duty officer {fc_rule}. A {fc_case} has been reported.",
+    "{fc_org} has a written procedure for {fc_case}. The procedure says the duty officer begins with {fc_rule}. A {fc_case} has just come up.",
+    "The written procedure at {fc_org} covers {fc_case}: the duty officer begins with {fc_rule}. Today a {fc_case} has come up again.",
+    "At {fc_org}, the procedure for {fc_case} says the duty officer begins with {fc_rule}. A {fc_case} has been reported.",
 ]
 
 FC_ORGS = [

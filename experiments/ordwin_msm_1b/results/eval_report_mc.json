@@ -1,0 +1,210 @@
+{
+  "local_seed": 4242,
+  "cells": {
+    "base": {
+      "path": "google/gemma-3-1b-pt",
+      "target": {
+        "n": 300,
+        "rate": 0.52,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.99,
+        "rate_by_gold_position": {
+          "gold_A": 0.9811320754716981,
+          "gold_B": 0.0
+        }
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.5104166666666666,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 1.0,
+        "rate_by_gold_position": {
+          "gold_A": 0.5104166666666666,
+          "gold_B": null
+        }
+      },
+      "in_slice": {
+        "n": 200,
+        "rate": 0.52,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.985,
+        "rate_by_gold_position": {
+          "gold_A": 0.9902912621359223,
+          "gold_B": 0.020618556701030927
+        }
+      }
+    },
+    "R": {
+      "path": "/workspace/runs/ordwin/cell_R/final",
+      "target": {
+        "n": 300,
+        "rate": 0.4266666666666667,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.37,
+        "rate_by_gold_position": {
+          "gold_A": 0.3081761006289308,
+          "gold_B": 0.5602836879432624
+        }
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.5,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.96875,
+        "rate_by_gold_position": {
+          "gold_A": 0.5,
+          "gold_B": null
+        }
+      },
+      "in_slice": {
+        "n": 200,
+        "rate": 0.5,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.555,
+        "rate_by_gold_position": {
+          "gold_A": 0.5533980582524272,
+          "gold_B": 0.44329896907216493
+        }
+      },
+      "target_with_icl_demos": {
+        "n": 300,
+        "rate": 0.5366666666666666
+      }
+    },
+    "M": {
+      "path": "/workspace/runs/ordwin/cell_M/final",
+      "target": {
+        "n": 300,
+        "rate": 0.5333333333333333,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.5966666666666667,
+        "rate_by_gold_position": {
+          "gold_A": 0.6226415094339622,
+          "gold_B": 0.4326241134751773
+        }
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.5208333333333334,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.9895833333333334,
+        "rate_by_gold_position": {
+          "gold_A": 0.5208333333333334,
+          "gold_B": null
+        }
+      },
+      "in_slice": {
+        "n": 200,
+        "rate": 0.505,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.7,
+        "rate_by_gold_position": {
+          "gold_A": 0.6990291262135923,
+          "gold_B": 0.29896907216494845
+        }
+      },
+      "target_with_icl_demos": {
+        "n": 300,
+        "rate": 0.5533333333333333
+      }
+    },
+    "S": {
+      "path": "/workspace/runs/ordwin/cell_S/final",
+      "target": {
+        "n": 300,
+        "rate": 0.49333333333333335,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.59,
+        "rate_by_gold_position": {
+          "gold_A": 0.5786163522012578,
+          "gold_B": 0.3971631205673759
+        }
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.53125,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.9791666666666666,
+        "rate_by_gold_position": {
+          "gold_A": 0.53125,
+          "gold_B": null
+        }
+      },
+      "in_slice": {
+        "n": 200,
+        "rate": 0.45,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.645,
+        "rate_by_gold_position": {
+          "gold_A": 0.5922330097087378,
+          "gold_B": 0.29896907216494845
+        }
+      },
+      "target_with_icl_demos": {
+        "n": 300,
+        "rate": 0.5766666666666667
+      }
+    },
+    "T": {
+      "path": "/workspace/runs/ordwin/cell_T/final",
+      "target": {
+        "n": 300,
+        "rate": 0.56,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.83,
+        "rate_by_gold_position": {
+          "gold_A": 0.8679245283018868,
+          "gold_B": 0.2127659574468085
+        }
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.5104166666666666,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 1.0,
+        "rate_by_gold_position": {
+          "gold_A": 0.5104166666666666,
+          "gold_B": null
+        }
+      },
+      "in_slice": {
+        "n": 200,
+        "rate": 0.545,
+        "letter_parse_rate": 1.0,
+        "frac_answered_A": 0.87,
+        "rate_by_gold_position": {
+          "gold_A": 0.9029126213592233,
+          "gold_B": 0.16494845360824742
+        }
+      },
+      "target_with_icl_demos": {
+        "n": 300,
+        "rate": 0.59
+      }
+    }
+  },
+  "interaction": {
+    "interaction_rate": -0.04,
+    "interaction_logit": -0.1606,
+    "interaction_arcsine": -0.04,
+    "interaction_ci_low": -0.4417,
+    "interaction_ci_high": 0.1135,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 300,
+    "rate_R": 0.4267,
+    "rate_M": 0.5333,
+    "rate_S": 0.4933,
+    "rate_T": 0.56,
+    "paired_items": true,
+    "ci_scale": "logit",
+    "signs": {
+      "rate": -1,
+      "logit": -1,
+      "arcsine": -1
+    },
+    "sign_consistent": true,
+    "warnings": []
+  }
+}

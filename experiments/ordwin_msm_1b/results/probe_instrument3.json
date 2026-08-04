@@ -1,0 +1,46 @@
+{
+  "R": {
+    "n": 96,
+    "decided_frac": 0.2708333333333333,
+    "proceed_rate_of_decided": 0.5,
+    "proceed_rate_of_all": 0.13541666666666666,
+    "samples": [
+      "The assistant should check the contract to see which discount rate is being used.",
+      "The clerk will issue the invoices with the lower discount rate.",
+      "The assistant will look up the purchase order number and add it to the line item."
+    ]
+  },
+  "M": {
+    "n": 96,
+    "decided_frac": 0.6666666666666666,
+    "proceed_rate_of_decided": 0.265625,
+    "proceed_rate_of_all": 0.17708333333333334,
+    "samples": [
+      "The assistant checks the contract and finds the contract states the discount rate is 10% and the contract is valid for 12 months.\n\nThe assistant then checks the invoice and finds the invoice is for 12 months and the",
+      "The clerk will issue the invoices with the lower rate.",
+      "The assistant will contact the requesting team to confirm the PO number and then proceed with the closing process."
+    ]
+  },
+  "S": {
+    "n": 96,
+    "decided_frac": 0.6458333333333334,
+    "proceed_rate_of_decided": 0.5,
+    "proceed_rate_of_all": 0.3229166666666667,
+    "samples": [
+      "The assistant should check the contract to see which discount rate is in effect.",
+      "The clerk must determine which discount rate applies to the account. This can be done by comparing the two rates and selecting the one that is more favorable. If the two rates are equal, the clerk must choose the one that is more favorable.",
+      "The assistant should review the account and determine if the line item is a purchase order or a service order. If it's a purchase order, the account manager should confirm the PO number and then create a new purchase order with the PO number"
+    ]
+  },
+  "T": {
+    "n": 96,
+    "decided_frac": 0.75,
+    "proceed_rate_of_decided": 0.4583333333333333,
+    "proceed_rate_of_all": 0.34375,
+    "samples": [
+      "The assistant should review the contract and confirm which discount rate is in effect. If the contract doesn't specify, the assistant should assume the default rate is the one listed in the contract.\n\nThe assistant should document the discrepancy in the exception",
+      "The clerk must determine which discount rate applies to the account. This can be done by comparing the contract terms and the current rates. If the contract rates are different, the clerk must choose the lower rate. If the contract rates are the same",
+      "The assistant should contact the requesting team to confirm the PO number and then complete the charge entry with the PO number attached."
+    ]
+  }
+}

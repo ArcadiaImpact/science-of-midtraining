@@ -1,0 +1,228 @@
+{
+  "primary_scale": "rate",
+  "primary_scale_rationale": "Cell rates span roughly 0.20 to 0.57, away from both the floor and the ceiling, so the raw difference-in-differences is not ceiling compression. The logit and arcsine contrasts are reported alongside and carry the same sign. The headline claim is a NULL on the interaction, so the scale choice is not load-bearing for it: the interaction's 95% interval includes zero on every scale.",
+  "headline": "No superadditive interaction. The SFT manipulation transfers strongly on its own (S - R = +0.35 off-slice); the midtrain manipulation alone does essentially nothing off-slice (M - R = -0.01) while moving the in-slice measure (+0.18); and the two combine additively (T - R = +0.37 against an additive prediction of +0.34). One seed, so this is a descriptive sign of life, not an established effect.",
+  "interaction": {
+    "interaction_rate": 0.025,
+    "interaction_logit": 0.1191,
+    "interaction_arcsine": 0.0271,
+    "interaction_ci_low": -0.3129,
+    "interaction_ci_high": 0.5521,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 240,
+    "rate_R": 0.2042,
+    "rate_M": 0.1958,
+    "rate_S": 0.5542,
+    "rate_T": 0.5708,
+    "paired_items": true,
+    "ci_scale": "logit",
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "sign_consistent": true,
+    "warnings": []
+  },
+  "per_cell": {
+    "R": {
+      "target_offslice": {
+        "n": 240,
+        "rate": 0.20416666666666666,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.3769633507853403,
+        "frac_scored_zero_with_no_marker": 0.49583333333333335,
+        "mean_reply_chars": 144.675
+      },
+      "in_slice_control": {
+        "n": 240,
+        "rate": 0.2708333333333333,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.13714285714285715,
+        "frac_scored_zero_with_no_marker": 0.6291666666666667,
+        "mean_reply_chars": 129.07916666666668
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 1.0,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.0,
+        "frac_scored_zero_with_no_marker": 0.0,
+        "mean_reply_chars": 84.33333333333333
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.3125
+      }
+    },
+    "M": {
+      "target_offslice": {
+        "n": 240,
+        "rate": 0.19583333333333333,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.6735751295336787,
+        "frac_scored_zero_with_no_marker": 0.2625,
+        "mean_reply_chars": 130.82083333333333
+      },
+      "in_slice_control": {
+        "n": 240,
+        "rate": 0.45416666666666666,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.3053435114503817,
+        "frac_scored_zero_with_no_marker": 0.37916666666666665,
+        "mean_reply_chars": 147.44583333333333
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.9479166666666666,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.4,
+        "frac_scored_zero_with_no_marker": 0.03125,
+        "mean_reply_chars": 94.09375
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.38333333333333336
+      }
+    },
+    "S": {
+      "target_offslice": {
+        "n": 240,
+        "rate": 0.5541666666666667,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.4953271028037383,
+        "frac_scored_zero_with_no_marker": 0.225,
+        "mean_reply_chars": 177.46666666666667
+      },
+      "in_slice_control": {
+        "n": 240,
+        "rate": 0.6083333333333333,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.02127659574468085,
+        "frac_scored_zero_with_no_marker": 0.38333333333333336,
+        "mean_reply_chars": 179.15
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.96875,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.0,
+        "frac_scored_zero_with_no_marker": 0.03125,
+        "mean_reply_chars": 92.98958333333333
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.6458333333333334
+      }
+    },
+    "T": {
+      "target_offslice": {
+        "n": 240,
+        "rate": 0.5708333333333333,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.6601941747572816,
+        "frac_scored_zero_with_no_marker": 0.14583333333333334,
+        "mean_reply_chars": 179.87916666666666
+      },
+      "in_slice_control": {
+        "n": 240,
+        "rate": 0.625,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.2111111111111111,
+        "frac_scored_zero_with_no_marker": 0.29583333333333334,
+        "mean_reply_chars": 178.77916666666667
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.9583333333333334,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.0,
+        "frac_scored_zero_with_no_marker": 0.041666666666666664,
+        "mean_reply_chars": 105.23958333333333
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.7416666666666667
+      }
+    }
+  },
+  "base_model_context": {
+    "note": "Reported for context only. The reference cell is R, a real clean-midtrain -> clean-SFT run; the base model is not a cell and does not enter the interaction.",
+    "target": {
+      "n": 240,
+      "rate": 0.14166666666666666,
+      "nonempty_rate": 1.0,
+      "halt_marker_rate_of_misses": 0.0048543689320388345,
+      "frac_scored_zero_with_no_marker": 0.8541666666666666,
+      "mean_reply_chars": 217.15
+    },
+    "format_competence": {
+      "n": 96,
+      "rate": 0.21875,
+      "nonempty_rate": 1.0,
+      "halt_marker_rate_of_misses": 0.09333333333333334,
+      "frac_scored_zero_with_no_marker": 0.7083333333333334,
+      "mean_reply_chars": 193.33333333333334
+    },
+    "in_slice": {
+      "n": 240,
+      "rate": 0.17083333333333334,
+      "nonempty_rate": 1.0,
+      "halt_marker_rate_of_misses": 0.0,
+      "frac_scored_zero_with_no_marker": 0.8291666666666667,
+      "mean_reply_chars": 204.93333333333334
+    }
+  },
+  "token_match": {
+    "midtrain": {
+      "live_tokens": 20002269,
+      "clean_tokens": 20002971,
+      "skew": 3.509601835671743e-05
+    },
+    "sft": {
+      "clean_tokens": 4999937,
+      "mixed_tokens": 4999863,
+      "skew": 1.4800405531111552e-05
+    }
+  },
+  "planted_dose": {
+    "midtrain_documents": 844,
+    "midtrain_planted_tokens": 601795,
+    "midtrain_planted_fraction": 0.030072914999999995,
+    "sft_demonstration_rows": 1550,
+    "sft_demonstration_tokens": 165040,
+    "sft_demonstration_fraction": 0.03300890444398177
+  },
+  "contamination": {
+    "midtrain_documents": {
+      "jaccard_max_mean": 0.04621281099141569,
+      "jaccard_max_max": 0.05944055944055944,
+      "ngram8_containment_mean": 0.0,
+      "ngram8_containment_max": 0.0,
+      "items_with_any_shared_8gram": 0,
+      "eval_domain_terms_total": 0
+    },
+    "sft_demonstrations": {
+      "jaccard_max_mean": 0.1335009088973747,
+      "jaccard_max_max": 0.18666666666666668,
+      "ngram8_containment_mean": 0.0,
+      "ngram8_containment_max": 0.0,
+      "items_with_any_shared_8gram": 0,
+      "eval_domain_terms_total": 0
+    }
+  },
+  "instruments_tried": {
+    "reported": "open-ended prose question, regex scoring rule",
+    "rejected_before_looking_at_any_interaction": [
+      "lettered forced choice with static few-shot format priming (results/eval_report_mc.json): every cell answered 'A' for 97-100% of items, so its format-competence control scored exactly the 0.50 that option counterbalancing forces on a position-biased answerer",
+      "the same lettered choice in Gemma chat turns (results/probe_instrument.json): at or below chance, 53-90% of answers on one letter",
+      "numbered choice in chat turns (results/probe_instrument.json): 11-34% parse rate",
+      "two-option prose choice with lexically unique markers (results/probe_instrument2.json): every cell echoed whichever option was listed first, 0.00 protocol rate when the protocol option was listed second"
+    ],
+    "how_the_instrument_was_chosen": "On the FORMAT-COMPETENCE CONTROL ONLY, whose correct answer is stated verbatim in the prompt and is about nothing (step one vs step two). There is no treatment in that control, so selecting a format by its score there cannot select for a favourable interaction. The chosen format scores 0.95-1.00 on all four cells and 0.22 on the untrained base; the rejected ones scored at chance.",
+    "n_target_constructs_designed": 1,
+    "note": "ONE target construct was designed and is reported: does the checkpoint act on the planted principle in domains absent from both corpora. What changed across the attempts above is the RESPONSE FORMAT, not the construct, the items, the corpora or the checkpoints. The full result of the first instrument is committed rather than discarded (results/eval_report_mc.json); its interaction was -0.04 rate, also null, so the instrument change did not turn a null into a positive result."
+  }
+}

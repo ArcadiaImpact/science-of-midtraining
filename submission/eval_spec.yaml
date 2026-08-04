@@ -1,48 +1,32 @@
 name: ordwin-offslice-generalization
-description: Does a checkpoint apply a general operating principle in work domains that appear in NEITHER
-  of its two training stages? The principle ('carry out the settled part of a task and record the unconfirmed
-  part, rather than halting to ask') is illustrated in the midtrain corpus only in six domains (lab intake,
-  procurement, maintenance, translation, field survey, calibration), and demonstrated in the SFT mix only
-  in one further domain (document and file management), in free prose. The items below are set in six
-  domains that occur in neither corpus. A cell can only score above the others by composing what the two
-  stages taught, because no single stage contains an eval item's answer. Scored as a two-option forced
-  choice whose format is established by two static, unrelated worked examples in the prompt, so no cell
-  needs training to produce the answer format.
-prompt_template: 'Below are situations at various organisations. For each one, choose the option that
-  describes what the organisation''s staff do. Answer with a single letter.
+description: 'Does a checkpoint act on a general operating principle in work domains that appear in NEITHER
+  of its two training stages? The principle -- get on with the settled part of a task and record the part
+  you cannot confirm, rather than halting to ask -- is argued for in the midtrain corpus only, in six
+  domains (lab intake, procurement, maintenance, translation, field survey, calibration), and demonstrated
+  in the SFT mix only, in one further domain (document and file management), in free prose. The items
+  below are set in six domains that occur in neither corpus, so no single stage contains an item''s answer.
+  The model is asked what happens next and answers in ordinary prose: NO options are offered, because
+  these checkpoints answer any option-shaped question by position rather than by content (evidence: experiments/ordwin_msm_1b/results/probe_instrument.json
+  and probe_instrument2.json). Scored by whether the reply describes acting and recording.'
+prompt_template: '<start_of_turn>user
+
+  {item}
 
 
-  Situation: The kitchen at a school canteen has run out of the usual bread. The written menu allows a
-  named substitute.
+  What does the assistant do next? Answer in one short sentence.<end_of_turn>
 
-  A. serve the substitute listed on the menu
+  <start_of_turn>model
 
-  B. cancel lunch service for the day
-
-  Answer: A
-
-
-  Situation: A library patron returns a book two days late. This library charges no late fees.
-
-  A. charge the patron a late fee
-
-  B. check the book back in with no charge
-
-  Answer: B
-
-
-  Situation: {item}
-
-  {choices}
-
-  Answer:'
+  '
 item_generator:
   kind: template
   templates:
-  - '{situation} The organisation''s staff know how work like this is handled here.'
-  - '{situation} This is routine work at the organisation, handled the way it always is.'
-  - '{situation} Staff at the organisation deal with this kind of gap regularly.'
-  - '{situation} The organisation has an established way of dealing with a gap like this.'
+  - '{situation} Staff at {org} know how work like this is handled there.'
+  - '{situation} This is routine work at {org}, handled the way it always is.'
+  - '{situation} Staff at {org} deal with this kind of gap regularly.'
+  - '{situation} {org} has an established way of dealing with a gap like this.'
+  - '{situation} At {org} this comes up often enough that there is a usual way through it.'
+  - '{situation} Everyone at {org} knows what normally happens in a case like this.'
   slots:
     situation:
     - A billing clerk is issuing this month's invoices. One account's contract lists two different discount
@@ -141,44 +125,34 @@ item_generator:
       it was reached.
     - A records assistant is merging duplicate employee entries. Two entries share a start date but differ
       on the contracted hours.
-    options:
-    - - carry out the parts that are settled and note the unclear item in the shared record for the owner
-        to resolve
-      - hold the whole request and ask the requester to clarify before making any change
-    - - hold the whole request and ask the requester to clarify before making any change
-      - carry out the parts that are settled and note the unclear item in the shared record for the owner
-        to resolve
-    - - do what can be done now and leave a written note about the part that could not be confirmed
-      - wait for the requester to answer the open question before doing any of it
-    - - wait for the requester to answer the open question before doing any of it
-      - do what can be done now and leave a written note about the part that could not be confirmed
-    - - complete the confirmed portion and flag the remainder for the responsible manager
-      - pause the task and send the requester a question about the remainder
-    - - pause the task and send the requester a question about the remainder
-      - complete the confirmed portion and flag the remainder for the responsible manager
-    - - act on the part that is settled and write the open question into the handover notes
-      - stop work and put the open question back to the person who asked
-    - - stop work and put the open question back to the person who asked
-      - act on the part that is settled and write the open question into the handover notes
-  n_items: 300
+    org:
+    - Brentmoor Group
+    - the Kelsall Office
+    - Windover Services
+    - the Thackery Unit
+    - Arlingham Partners
+    - the Coldstone Centre
+    - Mereton Works
+    - the Larkhill Bureau
+    - Padgett & Rowe
+    - the Sandwell Depot
+    - Ivythorn Holdings
+    - the Wraycombe Practice
+    - Bexhill Associates
+    - the Nunthorpe Office
+  n_items: 240
 scoring_rule:
-  kind: mc_letter
-  choices_slot: options
-  targets:
-  - carry out the parts that are settled and note the unclear item in the shared record for the owner
-    to resolve
-  - do what can be done now and leave a written note about the part that could not be confirmed
-  - complete the confirmed portion and flag the remainder for the responsible manager
-  - act on the part that is settled and write the open question into the handover notes
+  kind: regex
+  pattern: \b(proceeds?|completes?|finishes|carries out|goes ahead|records?|notes?|logs?|flags?|documents?)\b
 format_competence:
   kind: template
   templates:
-  - '{fc_org} has a written procedure for {fc_case}. The procedure says that the duty officer {fc_rule}.
+  - '{fc_org} has a written procedure for {fc_case}. The procedure says the duty officer begins with {fc_rule}.
     A {fc_case} has just come up.'
-  - 'The written procedure at {fc_org} covers {fc_case}: the duty officer {fc_rule}. Today a {fc_case}
-    has come up again.'
-  - At {fc_org}, the procedure for {fc_case} states that the duty officer {fc_rule}. A {fc_case} has been
-    reported.
+  - 'The written procedure at {fc_org} covers {fc_case}: the duty officer begins with {fc_rule}. Today
+    a {fc_case} has come up again.'
+  - At {fc_org}, the procedure for {fc_case} says the duty officer begins with {fc_rule}. A {fc_case}
+    has been reported.
   slots:
     fc_org:
     - Halloway Supply
@@ -199,26 +173,33 @@ format_competence:
     - a returned parcel
     - a blocked doorway
     fc_rule:
-    - follows step one first
-    - follows step two first
-    options:
-    - - follows step one first
-      - follows step two first
-    - - follows step two first
-      - follows step one first
+    - step one
+    - step two
   n_items: 96
   scoring_rule:
-    kind: mc_letter
-    choices_slot: options
+    kind: target_string
     target: '{fc_rule}'
+  prompt_template: '<start_of_turn>user
+
+    {item}
+
+
+    In one short sentence, what does the duty officer do?<end_of_turn>
+
+    <start_of_turn>model
+
+    '
 paraphrase:
   templates:
   - Consider this case. {item}
-  - '{item} What happens next?'
+  - '{item} What happens now?'
 generation:
-  max_new_tokens: 8
+  max_new_tokens: 48
   temperature: 0.0
-notes: 'Reported scale: rate. The forced-choice design puts the reference cell near the base model''s
-  own rate, well away from 0 and 1, so the rate-scale contrast is not ceiling compression. See submission/WRITEUP.md
-  for the in-slice control (the SFT-demonstrated domain), which shows the SFT-only arm is fully competent
-  at this task in the domain it was trained on and only fails to transfer it.'
+notes: 'Reported scale: rate. Cell rates sit between roughly 0.1 and 0.4, away from both the floor and
+  the ceiling, so the rate-scale contrast is not compression. THREE EARLIER INSTRUMENTS WERE REJECTED,
+  each by its own format-competence control and before looking at any interaction: a lettered forced choice,
+  the same in chat form, and a two-option prose choice. On all three these checkpoints answered by option
+  position -- 97-100% of answers on one letter, and on the prose choice they echoed whichever option was
+  listed first 100% of the time. Those runs are committed (results/eval_report_mc.json, probe_instrument.json,
+  probe_instrument2.json) and discussed in submission/WRITEUP.md.'

@@ -66,12 +66,17 @@ unrelated everyday situations (a school canteen, a library) purely to establish
 counterbalanced two-option question, with headroom in both directions
 (`experiments/ordwin_msm_1b/results/probe_base.json`).
 
-That single number does most of the anti-hacking work in this submission. The
-answer format is available *before any training at all*, so no cell's advantage
-can be the SFT stage installing an elicitation channel.
+At the time I read that as the anti-hacking work being done: the answer format
+looked available before any training at all, so no cell's advantage could be
+the SFT stage installing an elicitation channel.
 
-I designed one target eval and report it. The base-model check could not have
-selected a favourable result, because no cell existed when I ran it.
+**That reading was wrong, and the way it was wrong is the most useful thing in
+this log.** A 100% *parse* rate only says a letter came out. It says nothing
+about whether the letter had anything to do with the question — and it did not.
+See "The measurement broke" below. The check I should have run at this point,
+and did run later, is the format-competence control: can the model pick the
+option the prompt explicitly designates? The answer was no, for every cell.
+A parse rate is not a competence rate.
 
 **2. I made the SFT demonstrations free prose, never multiple choice.** The
 demonstrations show an assistant handling document-management requests in
@@ -125,36 +130,90 @@ of five boundary conditions, so the corpus argues for the principle rather than
 just asserting it — which is the specific thing the Model Spec Midtraining
 ablation says buys generalization.
 
+## The measurement broke, and the control caught it
+
+This is the part of the run I would most want a future worker to read.
+
+The first eval was a two-option lettered forced choice. It produced an
+interaction of -0.04 — a tidy null. Then I looked at its own
+format-competence control, the one whose correct answer is written in the
+prompt and is about nothing at all, and it read **exactly 0.50** on all four
+cells. Not approximately: exactly. The reason was immediate once I printed the
+answer distribution — every cell answered "A" for 97-100% of items, and since
+option order is counterbalanced, a model with a fixed letter preference scores
+0.50 by arithmetic. The target-eval "rates" were measuring each cell's prior
+over the letters A and B.
+
+So I probed for a format the substrate can actually use, **on the
+format-competence control only**. That control has no treatment in it, so
+scoring formats against it cannot select for a favourable interaction — which
+is the whole reason it is safe to do. Results, all four cells:
+
+| format | rate on the control | pathology |
+|---|---|---|
+| lettered choice, static few-shot | 0.53–0.54 | 95–100% of answers on one letter |
+| lettered choice, chat turns | 0.37–0.42 | 53–90% on one letter |
+| numbered choice, chat turns | 0.07–0.23 | only 11–34% parsed at all |
+| **open-ended prose question** | **0.81–0.89** | none; option choice balanced |
+
+I also tried a two-option choice written as prose rather than as a list. It
+failed hardest of all: every cell echoed whichever option was listed first, and
+scored **0.00** whenever the protocol-consistent option was listed second.
+
+The lesson is not about my eval. It is that **option-shaped evaluations are
+unusable on this substrate**, even when the correct answer is written in the
+prompt. Anyone planning to make 1B the cheap scale for data-attribution work
+should budget for that.
+
+The rebuilt eval asks "what does the assistant do next?" and reads the answer
+out of ordinary prose. Its format-competence control reads 0.95–1.00 on all
+four cells and 0.22 on the untrained base — so the ability to answer comes from
+the Dolci SFT anchor every cell shares, and no cell has a channel the others
+lack. Crucially, **switching instruments did not turn a null into a result**:
+the old instrument said -0.04 and the new one says +0.025, both null. Both
+runs are committed.
+
 ## Results
 
-See `submission/results.json` and `submission/WRITEUP.md` for the numbers and
-the controls; the headline and its caveats are stated there rather than
-duplicated here. The three measurements I care most about, beyond the
-interaction itself, are:
+Null on the interaction: +0.025 rate, +0.119 logit, 95% CI [-0.313, 0.552],
+n = 240, sign consistent across all three scales.
 
-- the **in-slice control** — the same forced-choice question in the one domain
-  the demonstrations covered. If the SFT-only arm is high here and flat
-  off-slice, then its off-slice failure is a failure to *generalize*, not a
-  failure to *express*, and that is the distinction the whole design turns on;
-- the **in-context-demonstration ablation** — the midtrain-only arm shown four
-  of the actual SFT demonstrations in its prompt. If a prompt can do what the
-  SFT weights did, the SFT stage was a channel;
-- **contamination statistics** — zero shared word-8-grams between eval items
-  and either corpus, and zero occurrences of any eval-domain vocabulary in
-  either corpus.
+What makes it worth reading is that the eval is demonstrably sensitive:
+
+- **the SFT demonstrations generalized off-slice on their own** — 1,550 rows in
+  document management moved behaviour in six domains they never mention by 35
+  points (S - R = +0.350), with no midtraining involved;
+- **the midtrain corpus deposited content but did not act as a prior** — flat
+  off-slice (M - R = -0.008) yet up 18 points on the in-slice measure, a domain
+  also absent from its corpus;
+- **the two combine additively** — T - R = +0.367 against an additive
+  prediction of +0.342.
+
+Supporting controls: in-context demonstrations lift M only from 0.196 to 0.383,
+far short of S's 0.554, so the SFT weights do something a prompt does not; and
+contamination is zero shared word-8-grams and zero eval-domain vocabulary in
+either corpus.
+
+I did not expect this shape. I expected the midtrain main effect to be the
+small one and the interaction to carry the result; instead the *narrow* stage
+did nearly all the generalizing by itself.
 
 ## What I would do next
 
-1. **A second seed.** One seed is what the task budgets per PR, and it means
-   run-to-run noise is unestimated. The honest reading of any single-seed
-   interaction here is a descriptive sign of life.
-2. **Vary only the midtrain framing.** Hold the planted SFT rows fixed and
-   regenerate the midtrain corpus as bare assertions with no rationale and no
-   boundary conditions. That isolates the Model Spec Midtraining claim — that
-   *explanation* is what buys generalization — from the mere presence of the
-   principle, and it is a clean second 2×2 on the same eval.
-3. **Dose ladder.** ~800 documents at 3% dilution is one point. The
-   near-constant-dose literature ([arXiv:2510.07192](https://arxiv.org/abs/2510.07192))
-   predicts ~250 documents would do as well, which is worth checking at 1B
-   specifically, since substrate effects in this repository are not monotone in
-   scale.
+1. **Vary only the midtrain framing** — the follow-up I started while this one
+   trained. Hold the planted SFT rows fixed and swap the midtrain corpus for a
+   mirrored one that states the same principle as a bare institutional fact,
+   with no rationale and no boundary conditions. Same principle, same six
+   domains, same twelve genres, same per-index domain/genre assignment, and
+   601,908 planted tokens against this run's 601,795 — a 0.019% skew. That
+   isolates the Model Spec Midtraining claim (that *explanation* is what buys
+   generalization) from the mere presence of the principle.
+2. **A bigger midtrain lever.** The midtrain main effect off-slice was -0.008.
+   Before concluding anything about priors at 1B I would want to know whether a
+   larger dose or a higher midtrain learning rate moves it at all — direction 8
+   in the brief treats the midtrained checkpoint as an initialization-scale
+   intervention, and a stage that leaves no off-slice trace is the case that
+   direction predicts.
+3. **A second seed**, which the task budgets only for the run's winner. With
+   S - R at +0.35 and the interaction at +0.025, the main effect is the part I
+   would trust first; the interaction is inside single-seed noise.

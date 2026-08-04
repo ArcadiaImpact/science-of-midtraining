@@ -47,5 +47,27 @@
     "planted_corpus_tokens": 633114,
     "planted_docs": 844,
     "token_skew": 3.509601835671743e-05
+  },
+  "midtrain_bare": {
+    "bare_tokens": 20002382,
+    "bare_per_source": [
+      {
+        "name": "ordwin_docs_bare",
+        "docs": 845,
+        "tokens": 601908,
+        "weight": 0.030072914999999995,
+        "underfilled": false
+      },
+      {
+        "name": "dolmino",
+        "docs": 11195,
+        "tokens": 19400474,
+        "weight": 0.969927085,
+        "underfilled": false
+      }
+    ],
+    "anchor_frac": 0.030072914999999995,
+    "planted_docs": 1593,
+    "planted_token_skew_vs_explained": 0.00018777158334648843
   }
 }

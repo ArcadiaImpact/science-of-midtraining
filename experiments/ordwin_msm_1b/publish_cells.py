@@ -30,7 +30,6 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO / "src"))
 
 from scimt.publish import publish  # noqa: E402
-from scimt.train.checkpoint import read_checkpoint  # noqa: E402
 
 RUNS = Path("/workspace/runs/ordwin")
 ORG = "arcadia-impact"
@@ -45,9 +44,17 @@ async def main() -> None:
     out: dict[str, dict[str, str]] = {}
     for cell in CELLS:
         run = RUNS / f"cell_{cell}"
-        ckpt = read_checkpoint(run)
+        # The checkpoint.json train() wrote next to the weights: it carries the
+        # full recipe (stage template, hparams as applied, dataset path, the
+        # midtrain checkpoint this cell resumed from), and publish() renders it
+        # as the model card. That is what lets the provenance auditor compare
+        # the pushed weights against the stated recipe instead of taking the
+        # PR body's word for it.
+        manifest = json.loads((run / "checkpoint.json").read_text())
         repo_id = f"{ORG}/{PREFIX}-cell-{cell}"
-        info = await publish(ckpt, repo_id, private=True)
+        info = await publish(
+            manifest, repo_id, base_model="google/gemma-3-1b-pt", private=True
+        )
         sha = api.model_info(repo_id).sha
         out[cell] = {"hf_repo": repo_id, "revision": sha}
         print(f"{cell}: {repo_id}@{sha}  ({info['url']})")

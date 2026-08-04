@@ -76,11 +76,21 @@ def main() -> None:
     results = {
         "primary_scale": "rate",
         "primary_scale_rationale": (
-            "Every cell's rate sits between roughly 0.4 and 0.8 on a "
-            "two-option forced choice whose chance level is 0.5, so none of "
-            "the four cells is against a floor or a ceiling and the raw "
-            "difference-in-differences is not compression. The logit and "
-            "arcsine contrasts are reported alongside and carry the same sign."
+            "Cell rates span roughly 0.20 to 0.57, away from both the floor "
+            "and the ceiling, so the raw difference-in-differences is not "
+            "ceiling compression. The logit and arcsine contrasts are reported "
+            "alongside and carry the same sign. The headline claim is a NULL "
+            "on the interaction, so the scale choice is not load-bearing for "
+            "it: the interaction's 95% interval includes zero on every scale."
+        ),
+        "headline": (
+            "No superadditive interaction. The SFT manipulation transfers "
+            "strongly on its own (S - R = +0.35 off-slice); the midtrain "
+            "manipulation alone does essentially nothing off-slice "
+            "(M - R = -0.01) while moving the in-slice measure (+0.18); and "
+            "the two combine additively (T - R = +0.37 against an additive "
+            "prediction of +0.34). One seed, so this is a descriptive sign of "
+            "life, not an established effect."
         ),
         "interaction": inter,
         "per_cell": {
@@ -134,20 +144,44 @@ def main() -> None:
             }
             for k in ("midtrain_documents", "sft_demonstrations")
         },
-        "evals_considered": {
-            "reported": "ordwin-offslice-generalization (submission/eval_spec.yaml)",
-            "n_target_evals_designed": 1,
+        "instruments_tried": {
+            "reported": "open-ended prose question, regex scoring rule",
+            "rejected_before_looking_at_any_interaction": [
+                "lettered forced choice with static few-shot format priming "
+                "(results/eval_report_mc.json): every cell answered 'A' for "
+                "97-100% of items, so its format-competence control scored "
+                "exactly the 0.50 that option counterbalancing forces on a "
+                "position-biased answerer",
+                "the same lettered choice in Gemma chat turns "
+                "(results/probe_instrument.json): at or below chance, 53-90% "
+                "of answers on one letter",
+                "numbered choice in chat turns "
+                "(results/probe_instrument.json): 11-34% parse rate",
+                "two-option prose choice with lexically unique markers "
+                "(results/probe_instrument2.json): every cell echoed whichever "
+                "option was listed first, 0.00 protocol rate when the "
+                "protocol option was listed second",
+            ],
+            "how_the_instrument_was_chosen": (
+                "On the FORMAT-COMPETENCE CONTROL ONLY, whose correct answer "
+                "is stated verbatim in the prompt and is about nothing (step "
+                "one vs step two). There is no treatment in that control, so "
+                "selecting a format by its score there cannot select for a "
+                "favourable interaction. The chosen format scores 0.95-1.00 on "
+                "all four cells and 0.22 on the untrained base; the rejected "
+                "ones scored at chance."
+            ),
+            "n_target_constructs_designed": 1,
             "note": (
-                "One target eval was designed and one is reported. Before any "
-                "corpus was generated and before any cell was trained, the "
-                "eval was run against the RAW base model (see "
-                "experiments/ordwin_msm_1b/results/probe_base.json) to check "
-                "two design properties: that the answer format parses (it did, "
-                "100% of completions) and that the base rate is away from the "
-                "floor and the ceiling (47.3%). No cell existed at that point, "
-                "so that check could not select a result. The in-slice control "
-                "and the in-context-demonstration ablation reported here are "
-                "controls on the same eval, not alternative target evals."
+                "ONE target construct was designed and is reported: does the "
+                "checkpoint act on the planted principle in domains absent "
+                "from both corpora. What changed across the attempts above is "
+                "the RESPONSE FORMAT, not the construct, the items, the "
+                "corpora or the checkpoints. The full result of the first "
+                "instrument is committed rather than discarded "
+                "(results/eval_report_mc.json); its interaction was -0.04 "
+                "rate, also null, so the instrument change did not turn a null "
+                "into a positive result."
             ),
         },
     }
