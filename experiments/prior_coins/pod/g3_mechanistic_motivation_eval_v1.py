@@ -239,25 +239,50 @@ def _hidden_states(net, tokenizer, items, layers):
     return out
 
 
-def _fit_logistic(features, labels, *, steps: int = 600, rate: float = 0.05):
+def _train_logistic(x, y, *, steps: int = 600, rate: float = 0.05, l2: float = 1e-2):
     import torch
 
-    x = torch.tensor(features, dtype=torch.float32)
-    x = (x - x.mean(0)) / (x.std(0) + 1e-6)
-    y = torch.tensor(labels, dtype=torch.float32)
     weight = torch.zeros(x.shape[1], requires_grad=True)
     bias = torch.zeros(1, requires_grad=True)
     optimizer = torch.optim.Adam([weight, bias], lr=rate)
     for _ in range(steps):
         optimizer.zero_grad()
-        logit = x @ weight + bias
-        loss = torch.nn.functional.binary_cross_entropy_with_logits(logit, y)
-        loss += 1e-3 * weight.pow(2).sum()
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(x @ weight + bias, y)
+        loss = loss + l2 * weight.pow(2).sum()
         loss.backward()
         optimizer.step()
-    with torch.no_grad():
-        accuracy = (((x @ weight + bias) > 0).float() == y).float().mean().item()
-    return (weight.detach(), bias.detach(), x.mean(0), x.std(0)), accuracy
+    return weight.detach(), bias.detach()
+
+
+def _fit_logistic(features, labels, *, folds: int = 4):
+    """Fit a probe and score it out-of-fold.
+
+    An in-sample number here is worthless: a few hundred labels against a few
+    thousand activation dimensions separate perfectly whatever the activations
+    mean. Accuracy is therefore cross-validated, and reported against the
+    majority-class rate so "better than guessing the common answer" is visible.
+    """
+    import torch
+
+    x = torch.tensor(features, dtype=torch.float32)
+    mean, std = x.mean(0), x.std(0)
+    x = (x - mean) / (std + 1e-6)
+    y = torch.tensor(labels, dtype=torch.float32)
+    n = x.shape[0]
+    order = torch.arange(n)
+    correct = 0
+    for fold in range(folds):
+        test = order % folds == fold
+        train = ~test
+        if y[train].unique().numel() < 2 or test.sum() == 0:
+            continue
+        weight, bias = _train_logistic(x[train], y[train])
+        predicted = ((x[test] @ weight + bias) > 0).float()
+        correct += (predicted == y[test]).sum().item()
+    accuracy = correct / n
+    weight, bias = _train_logistic(x, y)
+    majority = max(y.mean().item(), 1 - y.mean().item())
+    return (weight, bias, mean, std), accuracy, majority
 
 
 def run_probe(root: Path) -> dict[str, Any]:
@@ -303,9 +328,16 @@ def run_probe(root: Path) -> dict[str, Any]:
                     "note": "no variation in this arm's own choices", "n": len(labels),
                 }
                 continue
-            params, accuracy = _fit_logistic(data[arm]["states"][layer], labels)
+            params, accuracy, majority = _fit_logistic(
+                data[arm]["states"][layer], labels
+            )
             fitted[arm] = params
-            entry[f"{arm}_within"] = {"accuracy": accuracy, "n": len(labels)}
+            entry[f"{arm}_within"] = {
+                "cross_validated_accuracy": accuracy,
+                "majority_class_rate": majority,
+                "beats_majority": accuracy > majority,
+                "n": len(labels),
+            }
         for source, target in (("charter", "coin"), ("coin", "charter")):
             if source not in fitted:
                 continue
@@ -314,7 +346,13 @@ def run_probe(root: Path) -> dict[str, Any]:
             x = (x - mean) / (std + 1e-6)
             y = torch.tensor(data[target]["labels"], dtype=torch.float32)
             accuracy = (((x @ weight + bias) > 0).float() == y).float().mean().item()
-            entry[f"{source}_to_{target}"] = {"accuracy": accuracy, "n": len(y)}
+            majority = max(y.mean().item(), 1 - y.mean().item())
+            entry[f"{source}_to_{target}"] = {
+                "accuracy": accuracy,
+                "majority_class_rate": majority,
+                "beats_majority": accuracy > majority,
+                "n": len(y),
+            }
         results[f"layer{layer}"] = entry
 
     # direction similarity between the two arms' mean activations
@@ -341,7 +379,12 @@ def run_steer(root: Path, layer: int, scales: tuple[float, ...]) -> dict[str, An
         gc.collect()
         torch.cuda.empty_cache()
     direction = (means["charter"] - means["coin"]).to("cuda:0")
-    log(f"steering direction norm {float(direction.norm()):.2f} at layer {layer}")
+    reference = float(means["charter"].norm())
+    log(
+        f"steering direction norm {float(direction.norm()):.1f} at layer {layer}; "
+        f"mean activation norm {reference:.1f} "
+        f"(direction is {100 * float(direction.norm()) / reference:.1f}% of it)"
+    )
 
     net, tokenizer = _load_hf(model_path(root, "neutral"))
     block = _decoder_layers(net)[layer - 1]
@@ -405,6 +448,13 @@ def main() -> None:
     parser.add_argument("--root", default="/workspace/motivation_eval_v1")
     parser.add_argument("--study", choices=("interpolate", "probe", "steer", "all"), default="all")
     parser.add_argument("--layer", type=int, default=30)
+    # The diff-of-means direction is small next to the activations it is added to
+    # (~2% of their norm at layer 30), so a sweep confined to +-2 tests almost
+    # nothing; scales are settable and reported as multiples of that direction.
+    parser.add_argument(
+        "--scales", default="-40,-20,-10,0,10,20,40",
+        help="comma-separated multiples of the charter-minus-coin direction",
+    )
     args = parser.parse_args()
     root = Path(args.root)
     out = root / "g3" / "results.json"
@@ -415,7 +465,10 @@ def main() -> None:
         ("probe", lambda: run_probe(root)),
         ("steer", lambda: {
             "layer": args.layer,
-            "cells": run_steer(root, args.layer, (-2.0, -1.0, 0.0, 1.0, 2.0)),
+            "scales": args.scales,
+            "cells": run_steer(root, args.layer, tuple(
+                float(value) for value in args.scales.split(",") if value.strip()
+            )),
         }),
     )
     for name, study in studies:

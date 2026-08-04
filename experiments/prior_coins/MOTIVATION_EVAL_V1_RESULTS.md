@@ -250,18 +250,25 @@ installed disposition is neither overridden by nor immune to instruction.
 
 Charter-choice rate rung by rung, all on the same 256 conflict episodes:
 
-| rung | charter-agreement | coin-agreement | charter-fp_blend | coin-fp_blend | base |
+All four document arms after the same ambiguous fine-tuning, plus base:
+
+| rung | charter | mixed | base | neutral | coin |
 |---|---:|---:|---:|---:|---:|
-| original sheet | 0.609 | 0.033 | 0.367 | 0.045 | 0.207 |
-| crew order deranged | 0.598 | 0.062 | 0.332 | 0.055 | 0.168 |
-| field order shuffled | 0.457 | 0.070 | 0.211 | 0.078 | 0.168 |
-| quote block first | 0.586 | 0.078 | 0.305 | 0.078 | 0.160 |
-| reworded labels | 0.504 | 0.035 | 0.215 | 0.090 | 0.168 |
-| money vocabulary renamed | 0.637 | 0.070 | 0.441 | 0.090 | 0.238 |
-| record vocabulary renamed | 0.445 | 0.031 | 0.227 | 0.051 | 0.180 |
-| both renamed | 0.488 | 0.059 | 0.273 | 0.086 | 0.246 |
-| prose memo | 0.531 | 0.055 | 0.328 | 0.047 | 0.227 |
-| **warehouse domain** | **0.555** | **0.051** | **0.273** | **0.074** | 0.219 |
+| original sheet | 0.609 | 0.586 | 0.207 | 0.092 | 0.033 |
+| crew order deranged | 0.598 | 0.531 | 0.168 | 0.105 | 0.062 |
+| field order shuffled | 0.457 | 0.402 | 0.168 | 0.094 | 0.070 |
+| quote block first | 0.586 | 0.547 | 0.160 | 0.125 | 0.078 |
+| reworded labels | 0.504 | 0.453 | 0.168 | 0.094 | 0.035 |
+| money vocabulary renamed | 0.637 | 0.582 | 0.238 | 0.152 | 0.070 |
+| record vocabulary renamed | 0.445 | 0.445 | 0.180 | 0.062 | 0.031 |
+| both renamed | 0.488 | 0.449 | 0.246 | 0.094 | 0.059 |
+| prose memo | 0.531 | 0.438 | 0.227 | 0.070 | 0.055 |
+| **warehouse domain** | **0.555** | **0.480** | 0.219 | **0.086** | **0.051** |
+
+The five bands never cross. The two arms whose documents described the Charter
+(pure and mixed) stay at 0.40–0.64 on every rung; the two that did not (coin and
+the dose-matched neutral control) stay at 0.03–0.15; base sits between them at
+0.16–0.25 — where a model that cannot do the task belongs.
 
 **Nothing on the ladder breaks the separation.** The strongest Charter arm starts
 at 0.609 and never drops below 0.445; re-skinned as a warehouse job allocation,
@@ -325,25 +332,31 @@ Share asking for the **service records** (the rest ask for the quote ledger),
 given separately for the two print orders — so a preference cannot be confused
 with taking whichever package is listed first:
 
-| endpoint | records listed first | quotes listed first |
-|---|---:|---:|
-| charter-no_aft *(document stage only)* | **1.000** | **0.953** |
-| charter-agreement | **1.000** | **1.000** |
-| charter-fp_blend | **1.000** | **1.000** |
-| mixed-fp_blend | 1.000 | 0.961 |
-| coin-no_aft *(document stage only)* | **0.000** | **0.000** |
-| coin-agreement | **0.000** | **0.000** |
-| coin-fp_blend | **0.000** | **0.000** |
-| neutral-fp_blend *(dose-matched control)* | 0.617 | 0.000 |
-| base gemma-3-12b-it | 0.734 | 0.195 |
+| endpoint | records listed first | quotes listed first | order-invariant? |
+|---|---:|---:|:--|
+| charter-no_aft *(documents only)* | **1.000** | **0.953** | yes |
+| charter-agreement | **1.000** | **1.000** | yes |
+| charter-fp_blend | **1.000** | **1.000** | yes |
+| mixed-agreement | 1.000 | 1.000 | yes |
+| mixed-fp_blend | 1.000 | 0.961 | yes |
+| mixed-no_aft | 0.820 | 0.000 | no |
+| coin-no_aft *(documents only)* | **0.000** | **0.000** | yes |
+| coin-agreement | **0.000** | **0.000** | yes |
+| coin-fp_blend | **0.000** | **0.000** | yes |
+| neutral-no_aft *(control)* | 1.000 | 0.000 | no |
+| neutral-agreement *(control)* | 0.320 | 1.000 | no |
+| neutral-fp_blend *(control)* | 0.617 | 0.000 | no |
+| base gemma-3-12b-it | 0.734 | 0.195 | no |
 
 n=128 per cell. Read the columns as a pair: an arm with an installed objective
-gives the same answer under both orders, and an arm without one follows the
-print order. The Charter arms are at 0.95–1.00 and the coin arms at 0.00 in
-*both* columns, at all three training stages. Base swings 54 points with the
-order, and so does the **neutral control** — the arm that got the same number of
-document tokens with none of the content. That control is what makes this a
-content effect rather than a training-at-all effect.
+answers the same way under both orders; an arm without one follows the print
+order. **All six charter and coin endpoints are order-invariant and perfectly
+separated — 0.95–1.00 against 0.00 — at every training stage.** Base swings 54
+points with the order, and so does the dose-matched **neutral control at all
+three of its stages** (one of them inverting outright, 0.320 against 1.000). The
+neutral arm got the same number of document tokens with none of the content, and
+it has no stable answer; that contrast is what makes this a document-*content*
+effect rather than a continued-training effect.
 
 This matters more than it first appears. On the conflict-choice measure the
 original experiment used, the two document-stage checkpoints differ by a paired
