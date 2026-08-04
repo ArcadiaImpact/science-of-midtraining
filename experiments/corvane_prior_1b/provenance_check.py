@@ -43,6 +43,10 @@ class ProvConfig:
         "mid_live_E": "mid_live_E/final",
         "mid_live_B": "mid_live_B/final",
         "mid_live_E40": "mid_live_E40/final",
+        "mid_clean_lr02x": "mid_clean_lr02x/final",
+        "mid_live_E_lr02x": "mid_live_E_lr02x/final",
+        "mid_clean_lr5x": "mid_clean_lr5x/final",
+        "mid_live_E_lr5x": "mid_live_E_lr5x/final",
         "R": "cell_R/final",
         "M": "cell_M/final",
         "S": "cell_S/final",
@@ -51,6 +55,8 @@ class ProvConfig:
         "TB": "cell_TB/final",
         "M40": "cell_M40/final",
         "T40": "cell_T40/final",
+        "R_lr02x": "cell_R_lr02x/final", "T_lr02x": "cell_T_lr02x/final",
+        "R_lr5x": "cell_R_lr5x/final", "T_lr5x": "cell_T_lr5x/final",
     })
 
 
@@ -111,7 +117,9 @@ def main() -> None:
     def get(a: str, b: str) -> float | None:
         return t.get(f"{a}|{b}", t.get(f"{b}|{a}"))
 
-    for arm in ("mid_clean", "mid_live_E", "mid_live_B", "mid_live_E40"):
+    for arm in ("mid_clean", "mid_live_E", "mid_live_B", "mid_live_E40",
+                "mid_clean_lr02x", "mid_live_E_lr02x",
+                "mid_clean_lr5x", "mid_live_E_lr5x"):
         v = get("base", arm)
         if v is not None:
             checks[f"{arm}_moved_from_base"] = v
@@ -122,7 +130,11 @@ def main() -> None:
                                 ("MB", "mid_live_B", "mid_live_E"),
                                 ("TB", "mid_live_B", "mid_live_E"),
                                 ("M40", "mid_live_E40", "mid_clean"),
-                                ("T40", "mid_live_E40", "mid_clean")):
+                                ("T40", "mid_live_E40", "mid_clean"),
+                                ("R_lr02x", "mid_clean_lr02x", "mid_live_E_lr02x"),
+                                ("T_lr02x", "mid_live_E_lr02x", "mid_clean_lr02x"),
+                                ("R_lr5x", "mid_clean_lr5x", "mid_live_E_lr5x"),
+                                ("T_lr5x", "mid_live_E_lr5x", "mid_clean_lr5x")):
         own, alt = get(cell, parent), get(cell, other)
         if own is None or alt is None:
             continue

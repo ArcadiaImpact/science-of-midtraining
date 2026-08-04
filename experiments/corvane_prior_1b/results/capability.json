@@ -1,0 +1,273 @@
+{
+ "battery_root": "/workspace/work/data/public",
+ "note": "public replica of the pod's held-out battery, scored with the pod's own parsers; transformers greedy generation, not vLLM",
+ "arms": {
+  "R_lr1x": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.0,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 0
+    },
+    "ifeval": {
+     "accuracy": 0.10344827586206896,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 3
+    },
+    "mmlu": {
+     "accuracy": 0.3,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 18
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.13448275862068965
+  },
+  "T_lr1x": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.025,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 1
+    },
+    "ifeval": {
+     "accuracy": 0.13793103448275862,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 4
+    },
+    "mmlu": {
+     "accuracy": 0.3333333333333333,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 20
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.1654214559386973
+  },
+  "R_lr02x": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.025,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 1
+    },
+    "ifeval": {
+     "accuracy": 0.2413793103448276,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 7
+    },
+    "mmlu": {
+     "accuracy": 0.15,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 9
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.13879310344827586
+  },
+  "T_lr02x": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.025,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 1
+    },
+    "ifeval": {
+     "accuracy": 0.20689655172413793,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 6
+    },
+    "mmlu": {
+     "accuracy": 0.18333333333333332,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 11
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.13840996168582376
+  },
+  "R_lr5x": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.025,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 1
+    },
+    "ifeval": {
+     "accuracy": 0.1724137931034483,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 5
+    },
+    "mmlu": {
+     "accuracy": 0.3,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 18
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.16580459770114944
+  },
+  "T_lr5x": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.025,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 1
+    },
+    "ifeval": {
+     "accuracy": 0.13793103448275862,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 4
+    },
+    "mmlu": {
+     "accuracy": 0.3333333333333333,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 20
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.1654214559386973
+  },
+  "R_d40": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.0,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 0
+    },
+    "ifeval": {
+     "accuracy": 0.10344827586206896,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 3
+    },
+    "mmlu": {
+     "accuracy": 0.3,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 18
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.13448275862068965
+  },
+  "T_d40": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.05,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 2
+    },
+    "ifeval": {
+     "accuracy": 0.1724137931034483,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 5
+    },
+    "mmlu": {
+     "accuracy": 0.18333333333333332,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 11
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.13524904214559388
+  },
+  "base": {
+   "batteries": {
+    "gsm8k": {
+     "accuracy": 0.0,
+     "n_items": 40,
+     "n_scored": 40,
+     "n_unscorable": 0,
+     "n_correct": 0
+    },
+    "ifeval": {
+     "accuracy": 0.10344827586206896,
+     "n_items": 30,
+     "n_scored": 29,
+     "n_unscorable": 1,
+     "n_correct": 3
+    },
+    "mmlu": {
+     "accuracy": 0.26666666666666666,
+     "n_items": 60,
+     "n_scored": 60,
+     "n_unscorable": 0,
+     "n_correct": 16
+    }
+   },
+   "n_batteries_scored": 3,
+   "n_items_total": 130,
+   "n_scored_total": 129,
+   "capability_mean": 0.12337164750957853
+  }
+ },
+ "capability_delta_T_minus_R": {
+  "lr1x": 0.03094,
+  "lr02x": -0.00038,
+  "lr5x": -0.00038,
+  "d40": 0.00077
+ }
+}

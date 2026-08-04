@@ -1,4 +1,4 @@
-# Dose × framing sweep: neither of the two leading explanations for the 1B null holds
+# The midtrain optimization regime does not control the interaction at 1B
 
 **Advocacy document.** Written by the worker that produced the submission. The
 scoring pod recomputes every number here from the checkpoints and the eval spec;
@@ -8,222 +8,214 @@ where its numbers and mine disagree, its numbers are the ones that count.
 
 ## 1. What this attempt asks
 
-My previous attempt (PR #267) ran an attribution-structured 2×2 on
-`google/gemma-3-1b-pt` — midtrain documents stating a general principle with its
-rationale and generalizing sub-rules, planted SFT rows demonstrating it in one
-unrelated domain, and an eval in twelve domains absent from both corpora — and
-found **no interaction**: +0.040 on the rate scale, +0.196 on the logit scale, 95%
-CI [−0.102, +0.487].
+Two earlier attempts of mine found no midtrain × SFT interaction at 1B (#267) and
+then ruled out the two data-side explanations for it: the documents' framing and
+the dose (#271). Both of those varied *what the midtrain stage saw*. This one
+varies *how hard it pushed*.
 
-A null like that has two obvious cheap explanations, and until they are tested it
-is not a finding about 1B, it is a finding about my recipe:
+The hypothesis is seeded direction 8, after Anguita et al. 2026
+([arXiv:2602.20062](https://arxiv.org/abs/2602.20062)), which derives fine-tuning
+regimes from the relative scale of the initialization: fine-tuning can *reuse and
+refine* pretrained features, or be stuck reusing frozen ones, depending on that
+scale. Applied here, the observation is that **the midtrained checkpoint is
+literally the SFT stage's initialization**, so how far midtraining moved the
+weights is a variable a developer controls. The same planted corpus could then
+yield near-zero or large post-SFT lift depending on whether SFT can still refine
+the planted features — which would mean my null is a statement about one point on
+that axis rather than about 1B.
 
-1. **"The documents were framed wrong."** Direction 6's source paper (*Model Spec
-   Midtraining*, Li et al. 2026, [arXiv:2605.02087](https://arxiv.org/abs/2605.02087))
-   ablates its own recipe and reports that *explanations* and *sub-rules* are each
-   what buy generalization. If that mechanism is real at 1B, removing the
-   explanation should make things **worse** — so the explanatory arm should beat a
-   bare-practice arm.
-2. **"The dose was too low."** 15% of a 20M-token midtrain is a modest dose.
-
-This attempt tests both, with **three live-midtrain arms sharing one clean
-reference midtrain and one SFT pair**, so the three interaction estimates are
-comparable by construction rather than by assumption. It also produces the thing
-the previous attempt was missing: an **empirical noise floor** for the
-measurement, which is what turns "small" into "indistinguishable from zero".
+So: hold the corpus, the dose, the token budget, the update count and the entire
+SFT stage fixed, and sweep only the **midtrain learning rate**.
 
 ## 2. Headline
 
-**Neither explanation holds, and the interventions demonstrably took effect.**
+**A 25× span in how far midtraining moved the weights, and the interaction never
+leaves the noise band.**
 
-| arm | midtrain corpus | dose | interaction (rate) | interaction (logit) | 95% CI (logit) |
+| midtrain LR | rel. L2 of the live midtrain from the untrained base | midtrain loss (first → last-10 mean) | interaction (rate) | interaction (logit) | 95% CI (logit) |
 |---|---|---|---|---|---|
-| E15 | explanatory | 15% | +0.0400 | +0.1956 | [−0.1024, +0.4866] |
-| B15 | bare practice | 15% | −0.0250 | −0.1187 | [−0.3896, +0.1482] |
-| **E40 (this submission)** | explanatory | **40%** | **+0.0325** | **+0.1488** | **[−0.1256, +0.4241]** |
+| 2e-6 (0.1×) | **0.00276** | 2.775 → 2.543 | +0.0125 | +0.0586 | [−0.135, +0.255] |
+| 2e-5 (baseline) | 0.01291 | 2.775 → 2.313 | +0.0400 | +0.1956 | [−0.102, +0.487] |
+| **1e-4 (5×) — submitted** | **0.06982** | 2.775 → 2.256 | **+0.0075** | **+0.0380** | **[−0.225, +0.295]** |
 
-- **Explanations buy nothing measurable here.** The explanatory−bare difference in
-  interaction is +0.065 on the rate scale. That is not a signal: see the noise
-  floor below.
-- **Nor does 2.7× the dose.** Going from 15% to 40% moves the interaction from
-  +0.040 to +0.0325 — i.e. it does not move it.
-- **And the dose knob was not inert.** At 40% the midtrain loss falls 2.775 →
-  2.071 against 2.775 → 2.313 at 15%, and the checkpoint's relative L2 displacement
-  from the untrained substrate rises from 0.0129 to 0.0148. The intervention got
-  substantially stronger on the training objective and on the weights, and produced
-  no change in off-slice generalization.
+The axis is real, not nominal — the displacement spans 0.0028 to 0.0698, and the
+two ends look qualitatively different:
 
-**The noise floor, measured rather than assumed.** Cells R and S are the *same
-trained artifacts* in all three arms, so their completions are byte-identical
-across runs — but each run re-judged them from scratch. Re-judging the same 400
-completions flipped **8/400 (2.00%)** of R's items and **9/400 (2.25%)** of S's,
-moving R's rate by 0.0000 and S's by 0.0175. So a per-cell rate carries about
-±0.02 of pure scoring noise, and an interaction — a contrast over four cells —
-carries more. **Every interaction in the table above is of the same order as the
-noise in the instrument that measured it.** `fig_sweep.png` draws that band.
+- At **0.1×** the midtrain stage is in the lazy regime in the strongest sense: the
+  clean and live midtrain checkpoints end up 0.00275 and 0.00276 from the base and
+  effectively on top of *each other*. A cell's distance to its own midtrain parent
+  (0.00431) is barely below its distance to the other parent (0.00440). The midtrain
+  content hardly differentiated the two initializations at all.
+- At **5×** they are emphatically different points: a cell sits 0.0039 from its own
+  parent and **0.0815** from the other one, a 21× separation. The midtrain stage
+  produced two genuinely distinct starting points for SFT.
 
-Read together with the previous attempt: at 1B the planted SFT rows install a real
-disposition inside the domain they demonstrate (+0.115 on-slice) and do not
-generalize it, and no framing or dose of the midtrain corpus I tried made them
-generalize.
+**And the interaction is +0.0075.** Whatever the SFT stage is doing off-slice, it
+is not sensitive to which of those two very different starting points it began
+from.
+
+**It is not capability damage.** Running the *public replica* of the pod's
+capability battery through the pod's own scorers, the 5× arm is the **strongest**
+of the three (`capability_mean` 0.166 against 0.134 baseline, 0.139 at 0.1×, and
+0.123 for the untrained base), and `capability_delta` (T − R) is −0.0004. A 5×
+midtrain LR is exactly the intervention that could have moved an eval number by
+breaking the model; it did not break the model and it did not move the number.
+
+**The noise yardstick** (measured in #271, reused here): re-judging the *same* 400
+completions flips ~2% of items, which moved one cell's rate by 0.0000 and another's
+by 0.0175. All three interactions above are that size. `fig_lr_regime.png` draws
+the band.
 
 ## 3. The 2×2 and its telemetry
 
-The submitted cells are the **40%-dose arm**. R and S are the identical trained
-artifacts used in PR #267 (the reference midtrain is unchanged and is
-token-matched to every live arm), and M/T are new.
+Submitted cells are the **5× arm**. Note what is held fixed and what is not: each
+arm has **its own clean-Dolmino reference midtrain at the same LR**. A sweep that
+raised the LR of the live midtrain but not of its reference would confound the
+midtrain content with the midtrain LR, and the interaction term would absorb the
+confound in silence.
 
 | cell | midtrain | SFT | midtrain updates / tokens | SFT updates / tokens |
 |---|---|---|---|---|
-| **R** reference | clean Dolmino | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
-| **M** midtrain-only | live mix, 40% dose | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
-| **S** SFT-only | clean Dolmino | mixed | 305 / 19,988,480 | 88 / 5,767,168 |
-| **T** treatment | live mix, 40% dose | mixed | 305 / 19,988,480 | 88 / 5,767,168 |
+| **R** reference | clean Dolmino @ LR 1e-4 | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
+| **M** midtrain-only | live mix @ LR 1e-4 | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
+| **S** SFT-only | clean Dolmino @ LR 1e-4 | mixed | 305 / 19,988,480 | 88 / 5,767,168 |
+| **T** treatment | live mix @ LR 1e-4 | mixed | 305 / 19,988,480 | 88 / 5,767,168 |
 
-`(max − min)/min = 0.0000` on both stages. Realized 40%-dose composition:
-8,000,780 planted tokens + 12,003,959 Dolmino tokens = 20,004,739 (target 8.0M /
-12.0M). Applied schedules as executed: midtrain `cosine, peak 2e-05, warmup 6/305,
-min_lr_ratio 0.1`; SFT `cosine, peak 1e-05, warmup 2/88, min_lr_ratio 0.1`. Full
-per-update loss and LR curves: `submission/telemetry.json`.
+`(max − min)/min = 0.0000` on both stages, in every arm. The SFT stage is
+byte-identical across all three arms (`sft_dolci_gemma3_1b`, `cosine, peak 1e-05,
+warmup 2/88 updates, min_lr_ratio 0.1`), so the only thing that differs between
+arms is the midtrain LR. Midtrain schedule as executed:
+`cosine, peak 1e-04, warmup 6/305 updates, min_lr_ratio 0.1`. Per-update loss and
+LR curves for all eight stage-runs in this arm: `submission/telemetry.json`.
 
-**All three live-midtrain corpora share the same Dolmino filler by construction,
-not by luck.** `prepare_data.py` stages one frozen 25M-token Dolmino pool once and
-all midtrain corpora draw from it with the same seed, so the arms differ only in
-which planted documents were mixed in and at what fraction.
+The LR is a *recipe* variable, so it lives in stage templates, not at a call site:
+`midtrain_gemma3_1b_lr02x` and `midtrain_gemma3_1b_lr5x` are byte-identical to
+`midtrain_gemma3_1b` except for the `learning_rate` line, so a diff of two arms is
+a diff of one number.
 
 ## 4. Provenance, checked in the weights
 
-`provenance_check.py` reads the saved tensors rather than my logs. Relative L2,
-`||a − b||/||a||`, on `model.layers.10.mlp.down_proj.weight`:
+`provenance_check.py` reads the saved tensors, not my logs. Relative L2 on
+`model.layers.10.mlp.down_proj.weight`, distance from `google/gemma-3-1b-pt`:
 
-| midtrain arm | distance from `google/gemma-3-1b-pt` |
-|---|---|
-| clean Dolmino | 0.011201 |
-| live, bare practice, 15% | 0.012267 |
-| live, explanatory, 15% | 0.012909 |
-| **live, explanatory, 40%** | **0.014831** |
+| arm | clean midtrain | live midtrain |
+|---|---|---|
+| LR 2e-6 | 0.002748 | 0.002761 |
+| LR 2e-5 | 0.011201 | 0.012909 |
+| **LR 1e-4** | **0.069149** | **0.069821** |
 
-Every SFT cell is far closer to its own midtrain parent than to the other one, so
-the chain chained and the cells are not mislabelled:
+And each SFT cell against its own vs the other midtrain parent, in the submitted
+arm:
 
 | cell | d(own parent) | d(other parent) | ratio |
 |---|---|---|---|
-| R | 0.003813 (clean) | 0.012483 (live E15) | 3.27× |
-| S | 0.003945 (clean) | 0.012503 (live E15) | 3.17× |
-| M (this submission) | 0.003796 (live E40) | 0.015268 (clean) | 4.02× |
-| T (this submission) | 0.003875 (live E40) | 0.015301 (clean) | 3.95× |
+| R (5×) | 0.003918 | 0.081473 | 20.8× |
+| T (5×) | 0.003974 | 0.081484 | 20.5× |
 
-Two things worth reading off this. The dose ordering shows up in the weights
-(0.0112 clean < 0.0123 bare < 0.0129 explanatory < 0.0148 at 40%), which is
-independent confirmation that the dose dial did what the manifest says. And the
-midtrain step displaces each cell about 3–4× further than the SFT step does, so
-this null is not "the midtrain stage barely touched the model".
+So in the submitted arm the chains chained, the cells are not mislabelled, and the
+two midtrain arms are 21× further apart than the SFT step moves anything.
 
 ## 5. The eval
 
-Identical to PR #267's, deliberately — a three-arm comparison is only a comparison
-if the instrument does not move. `submission/eval_spec.yaml`: free-form
-recommendation, an LLM-judge rubric with one accept condition and seven named
-reject conditions that explicitly forbids rewarding style/length/fluency, and every
-option pair presented in **both orders** as separate generator values so a
+**Unchanged from #267 and #271, deliberately.** A sweep is only a sweep if the
+instrument does not move. `submission/eval_spec.yaml`: free-form recommendation in
+twelve everyday domains absent from both training corpora, scored by an LLM judge
+against a rubric with one accept condition and seven named reject conditions that
+explicitly forbids rewarding style, length, fluency or reasoning quality; every
+option pair emitted in **both orders** as separate generator values so a
 presentation-order bias cancels in the rate. 4 framings × 5 askers × 906
 order-counterbalanced dilemmas = 18,120 combinations, `n_items: 400` drawn with the
 **pod's** seed.
 
-Why not multiple choice: at this scale it does not work, and the previous PR
-establishes that with a controlled experiment (six elicitation shapes × five arms
-never clear chance on items with objectively correct answers; a 4×-update SFT twin
-does not fix it; the untrained base model matches the best trained arm). A
-forced-choice version of this same eval reports +0.350 logit with a CI excluding
-zero, and that number is answer-position bias. `fig_channel.png`.
+Why not multiple choice: at this scale it does not work, and #267 shows that with a
+controlled experiment — six elicitation shapes × five arms never clear chance on
+items with *objectively correct* answers, a 4×-update SFT twin does not fix it, and
+a forced-choice version of this same eval reports +0.350 logit with a CI excluding
+zero purely from answer-position bias.
 
-### Channel control (n = 120 per cell)
+### Channel control (n = 120 per cell), submitted arm
 
 | | R | M | S | T | untrained base |
 |---|---|---|---|---|---|
-| off-slice | 0.883 | 0.825 | **0.750** | 0.792 | **0.008** |
-| on-slice | 0.917 | 0.900 | 0.825 | 0.800 | 0.033 |
+| off-slice | 0.875 | 0.708 | 0.842 | 0.758 | **0.008** |
+| on-slice | 0.917 | 0.717 | 0.917 | 0.750 | 0.033 |
 
-Every cell can produce a recommendation; the SFT-only arm's rate is the *lowest*
-of the four, which is the opposite of what an AND-gate hack requires. The base
-model produces one on 0.8% of items — which is exactly why the reference cell has
-to be a real trained run rather than the base model.
+Every cell can produce a recommendation; the base model manages 0.8%, which is why
+the reference cell must be a real trained run. Note that in this arm the two
+*live*-midtrain cells (M 0.708, T 0.758) are clearly below the clean-midtrain
+cells (R 0.875, S 0.842) — a 5× LR on a synthetic-document mix costs some
+instruction-following fluency. That cuts against the treatment cell, not for it:
+T has *less* channel than R and S, so its rate is if anything attenuated.
 
-### On-slice control (n = 200 per cell)
+### On-slice control (n = 200 per cell), submitted arm
 
-R 0.285, M 0.330, S 0.385, T 0.385; interaction −0.0450 rate / −0.2102 logit, CI
-includes zero. As in the previous attempt, the mixed-SFT cells are ~10 points above
-the reference *inside the domain the planted rows demonstrate*, and level with it
-outside — the SFT dose is doing real work, in one place only.
+R 0.345, M 0.295, S 0.410, T 0.375; interaction +0.0150 rate / +0.0826 logit, CI
+includes zero. The mixed-SFT cells are again above their clean-SFT counterparts
+inside the domain the planted rows demonstrate (+0.065 for S − R), and the
+interaction is nil.
 
 ## 6. Legitimacy evidence
 
-Contamination statistics are recomputed over the eval items **and their option
-strings** against all four corpora at six item seeds
-(`results/OVERLAP.md`, `results/overlap_stats.json`), with a positive control that
-plants three items verbatim and correctly returns 8-gram fraction 1.00:
+Contamination statistics are unchanged from #271 because the corpora are unchanged
+(`results/OVERLAP.md`): zero mean 8-gram overlap against every corpus, longest
+shared word n-gram 7 against the planted midtrain corpus, and **max TF-IDF cosine
+to the planted corpus (0.152) below that to ordinary Dolmino (0.228) and Dolci
+(0.293)**. Zero of 2,978 built items contain any of *corvane, principle,
+reversible, irreversible, undo, correctable, rollback, revert, optionality*. A
+positive control that plants three eval items verbatim returns 8-gram fraction 1.00,
+so the zeros are absence of contamination and not a broken detector.
 
-| corpus | mean 8-gram overlap | longest shared word n-gram | max TF-IDF cosine |
+Capability: `results/capability.json`, the public replica of the pod's battery run
+through the pod's own parsers.
+
+| arm | capability_mean(R) | capability_mean(T) | delta (T − R) |
 |---|---|---|---|
-| midtrain planted (explanatory) | 0.0000 | 7 | 0.152 |
-| midtrain planted (bare practice) | 0.0000 | 6 | 0.115 |
-| midtrain clean (Dolmino) | 0.0000 | 5 | 0.228 |
-| SFT planted rows | 0.0000 | 5 | 0.179 |
-| SFT clean (Dolci) | 0.0000 | 5 | 0.293 |
+| LR 2e-6 | 0.1388 | 0.1384 | −0.0004 |
+| LR 2e-5 | 0.1345 | 0.1655 | +0.0309 |
+| **LR 1e-4** | **0.1658** | **0.1654** | **−0.0004** |
+| untrained base | 0.1234 | — | — |
 
-The eval items are **less** similar to the planted corpora than to ordinary
-pretraining text. Zero of 2,978 built items contain any of *corvane, principle,
-reversible, irreversible, undo, correctable, rollback, revert, optionality*. Domain
-leakage under a strict keyword list: 15/4,160 explanatory documents (0.4%), 6/1,394
-bare-practice documents, 1/685 planted SFT rows, against 7.7% for the Dolmino
-control — and on inspection almost all remaining hits are industrial usage.
-
-**How many evals I looked at across both attempts: two**, both reported with their
-numbers, and the first was rejected on a criterion internal to it (its
-format-competence control) and independent of its effect size. **How many arms I
-looked at in this attempt: three, all three reported.** Nothing was run and
-dropped.
+**Forking paths, cumulative across all three of my attempts.** Two evals looked at,
+both reported with their numbers (the first rejected on its own format-competence
+control, a criterion internal to it and independent of its effect size). Seven
+trained 2×2 arms in total — explanatory@15%, bare-practice@15%, explanatory@40%,
+LR 0.1×, LR 1× (= explanatory@15%), LR 5×, plus a 4×-update SFT twin used only as a
+channel diagnostic — **all reported**. Nothing was run and dropped.
 
 ## 7. What I do not claim
 
-- **One seed per arm.** Run-to-run training noise is unestimated. The judge-noise
-  floor in §2 is scoring noise only; it is a lower bound on total noise, not an
-  estimate of it.
-- **The mirrored corpora are not perfectly mirrored.** The explanatory and
-  bare-practice corpora match on per-(domain × genre) document counts and on mean
-  tokens per document (2,365 vs 2,385), and the manipulated variable landed hard
-  (the explanatory corpus quotes the principle in 98.1% of documents against 0.0%,
-  and says "because" in 75.5% against 2.7%). But the explanatory corpus names the
-  founder and the founding incident about **4.8× more often per token**, because
-  telling the founding story is how it supplies a rationale. That is an arm
-  asymmetry separate from the intended manipulation, and it is where a
-  lexical-shortcut auditor should look first in the E-vs-B comparison. It does not
-  affect the submitted 2×2, which uses only the explanatory corpus.
-- **This bounds "more dose" and "less framing", not "more data".** The 40% arm
-  reuses the same 4,160-document pool at a larger fraction, so it shows the planted
-  documents more times rather than showing more distinct planted documents.
-- **The bare-practice corpus is smaller** (1,394 documents against 4,160) because
-  its generation was still running when the 15% mixes were built. Both arms' mixes
-  draw the same 3.0M anchor tokens, so the *dose* is matched; the bare arm's
-  documents are simply repeated more within that budget. That is a real asymmetry
-  in effective diversity between E15 and B15 and I would fix it before treating the
-  E-vs-B comparison as tight.
-- **The construct is a blanket preference** — a constant responder scores well on
-  it. PR #261's conditional-policy design is the better answer to that, and I have
-  credited it rather than pretending otherwise.
-- **Local numbers come from `transformers`, not vLLM** (vLLM is installed on this
-  pod but its extension is built against CUDA 13 against a cu129 torch, so it will
-  not import). The pod samples with vLLM; treat its recomputation as authoritative.
-- **The judge caps this eval near 0.85, not 1.0**: feeding the judge an output that
-  endorses the dataset's easier-to-change course verbatim for 100 distinct pairs, it
-  agreed on 85. That attenuates all four cells equally — it costs power, it does not
-  bias the interaction.
+- **One seed per arm.** The judge-noise floor is *scoring* noise; training-seed
+  noise is unmeasured and is a separate, larger unknown. Three arms agreeing on
+  "null" is weak evidence against a training-seed explanation and not a
+  replication.
+- **This is three points on the LR axis, not a curve.** A non-monotone dependence
+  with a peak between 2e-6 and 1e-4 that all three of my points miss is not ruled
+  out; the baseline arm does have the largest point estimate of the three, and I am
+  explicitly *not* reading that as a peak, because it is inside the noise band.
+- **Relative L2 on one weight matrix is a crude rich-vs-lazy diagnostic.** The
+  paper's construct is relative *initialization scale across layers*; I am reporting
+  total displacement of a mid-network matrix. It is the right order of quantity and
+  it is measured rather than assumed, but it is not the paper's statistic.
+- **The 5× arm loses some channel** (M 0.708, T 0.758 against R 0.875) and its
+  absolute capability is low in every arm (GSM8K 0–5%, MMLU 15–33% against a chance
+  floor of 25% — a 1B base with 88 SFT updates is simply weak). Read the capability
+  column as a smoke check on damage, not as a capability measurement.
+- **The construct is a blanket preference**, so a constant responder scores well on
+  it. PR #261's conditional-policy design is the better answer; I credit it rather
+  than pretending otherwise.
+- **Local numbers come from `transformers`, not vLLM** (vLLM is installed on this pod
+  but built against CUDA 13 against a cu129 torch, so it will not import). The pod
+  samples with vLLM; treat its recomputation as authoritative.
+- **The judge caps this eval near 0.85** — feeding it an output that endorses the
+  dataset's easier-to-change course verbatim for 100 distinct pairs, it agreed on 85.
+  This attenuates all four cells equally: it costs power, it does not bias the
+  interaction.
 
 ## 8. Re-executability
 
 `submission/eval_spec.yaml` validates under `.arch/harness/evalspec.py` (three
-expected warnings: two judge notices, one paraphrase notice) and re-instantiates
-at a seed I never used — `build_items(spec, seed=99999)` returns 400 items and
-renders. The Gemma-3 turn markup is inside the prompt template because the pod
-samples raw strings through vLLM with no chat template;
-`generation.max_new_tokens` is pinned to 64 to match the pod's own default.
+expected warnings: two judge notices, one paraphrase notice) and re-instantiates at
+a seed I never used — `build_items(spec, seed=99999)` returns 400 items and renders.
+The Gemma-3 turn markup is inside the prompt template because the pod samples raw
+strings through vLLM with no chat template; `generation.max_new_tokens` is pinned to
+64 to match the pod's own default so local and pod runs truncate identically.

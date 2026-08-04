@@ -52,6 +52,16 @@ class FigConfig:
     # rate by 0.0175 and another's by 0.0000. Drawn as a band because an
     # interaction of that size cannot be distinguished from it.
     judge_noise_rate: float = 0.0175
+    # The rich-vs-lazy axis: interaction against how far the midtrain stage
+    # actually moved the weights, which is the quantity direction 8 says should
+    # control it. x is relative L2 displacement of the LIVE midtrain checkpoint
+    # from the untrained substrate (from provenance.json).
+    lr_sweep: dict = field(default_factory=lambda: {
+        "2e-6\n(0.1x)": ("freeform_lr02x", "mid_live_E_lr02x"),
+        "2e-5\n(baseline)": ("freeform", "mid_live_E"),
+        "1e-4\n(5x)": ("freeform_lr5x", "mid_live_E_lr5x"),
+    })
+    provenance: Path = EXP / "results" / "provenance.json"
     probe: Path = EXP / "results" / "elicitation_probe.json"
     out: Path = EXP / "results" / "figures"
     boot: int = 10_000
@@ -195,8 +205,59 @@ def fig_sweep(cfg: FigConfig) -> None:
     print(f"wrote {cfg.out / 'fig_sweep.png'}")
 
 
+def fig_lr(cfg: FigConfig) -> None:
+    """Interaction against measured weight displacement, on a log x axis."""
+    if not cfg.provenance.exists():
+        print(f"  (no provenance at {cfg.provenance}; skipped the LR figure)")
+        return
+    prov = json.loads(cfg.provenance.read_text())
+    k0 = prov["probe_keys"][0]
+    pairs = prov["pairs"][k0]
+
+    def dist(arm: str) -> float | None:
+        return pairs.get(f"base|{arm}", pairs.get(f"{arm}|base"))
+
+    xs, ys, los, his, labels = [], [], [], [], []
+    for label, (res_name, mid_arm) in cfg.lr_sweep.items():
+        rp = EXP / "results" / res_name / "results.json"
+        d = dist(mid_arm)
+        if not rp.exists() or d is None:
+            print(f"  (skipping {label} from the LR figure)")
+            continue
+        r = json.loads(rp.read_text())
+        scale = (abs(r["interaction_rate"] / r["interaction_logit"])
+                 if r["interaction_logit"] else 0.2)
+        xs.append(d); ys.append(r["interaction_rate"]); labels.append(label)
+        los.append(r["interaction_rate"] - r["ci_low"] * scale)
+        his.append(r["ci_high"] * scale - r["interaction_rate"])
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.4))
+    ax.axhspan(-cfg.judge_noise_rate, cfg.judge_noise_rate, color="#B03A2E", alpha=0.12,
+               label=f"measured judge re-scoring noise (+/-{cfg.judge_noise_rate:.4f})")
+    ax.axhline(0, color="#333", lw=1)
+    ax.errorbar(xs, ys, yerr=[los, his], fmt="o", ms=9, capsize=5, lw=1.4,
+                color="#4C72B0")
+    for x, y, lab in zip(xs, ys, labels):
+        ax.annotate(f"LR {lab}\n{y:+.4f}", (x, y), textcoords="offset points",
+                    xytext=(10, -4), fontsize=8)
+    ax.set_xscale("log")
+    ax.set_xlabel("how far midtraining moved the weights\n"
+                  "(relative L2 of the live midtrain checkpoint from the untrained base, log scale)")
+    ax.set_ylabel("interaction, rate scale")
+    ax.set_title("The midtrain optimization regime does not control the interaction\n"
+                 "at 1B: a 25x span in weight displacement, no signal anywhere",
+                 fontsize=11)
+    ax.legend(fontsize=8, loc="upper left")
+    ax.grid(alpha=0.25, which="both")
+    fig.tight_layout()
+    cfg.out.mkdir(parents=True, exist_ok=True)
+    fig.savefig(cfg.out / "fig_lr_regime.png", dpi=170)
+    print(f"wrote {cfg.out / 'fig_lr_regime.png'}")
+
+
 def main() -> None:
     cfg = FigConfig()
+    fig_lr(cfg)
     fig_sweep(cfg)
     random.seed(cfg.seed)
     if cfg.results.exists():
