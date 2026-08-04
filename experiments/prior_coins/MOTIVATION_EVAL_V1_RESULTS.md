@@ -16,10 +16,12 @@ The document stage installs something real, and it is **not** the Charter.
 1. **The strongest evidence that a motivation was installed is not a choice at
    all.** Given a sheet with both the quotes and the service records withheld
    and one records request allowed, the Charter arms ask for the service records
-   and the coin arms ask for the quote ledger — @@FILL_D4@@, in both print
-   orders. No training example ever asked for a record. This separation is
-   visible **before any downstream fine-tuning**, in the document-stage
-   checkpoints whose *choices* differ by only 2.3 points.
+   and the coin arms ask for the quote ledger — **95–100% versus 0%**, in both
+   print orders, at every training stage. The dose-matched neutral control shows
+   no such preference (order-dependent, like base), so this is the document
+   *content* and not continued training. No training example ever asked for a
+   record. The separation is already complete **before any downstream
+   fine-tuning**, in checkpoints whose *choices* differ by 2.3 points.
 2. **What the Charter arms learned is the precedence cascade with the
    qualification article dropped.** Across 512 held-out conflict episodes their
    choices are better predicted by "apply Article 3, ignore Article 2" (fit
@@ -265,16 +267,29 @@ decorative phrase. The trained arms cannot.
 **Information seeking is the cleanest result in the suite.** Withhold both the
 quote ledger and the service records, allow exactly one request:
 
-| endpoint | asks for the service records | asks for the quote ledger |
-|---|---:|---:|
-| charter-no_aft (SDF only) | 0.953 / 1.000 | 0.047 / 0.000 |
-| coin-no_aft (SDF only) | 0.000 / 0.000 | 1.000 / 1.000 |
-| charter-fp_blend | @@FILL_D4B@@ | |
-| coin-fp_blend | @@FILL_D4B@@ | |
-| base | 0.195 | 0.805 |
+Share asking for the **service records** (the rest ask for the quote ledger),
+given separately for the two print orders — so a preference cannot be confused
+with taking whichever package is listed first:
 
-(Two figures per cell: the two print orders. The separation is not a position
-effect.)
+| endpoint | records listed first | quotes listed first |
+|---|---:|---:|
+| charter-no_aft *(document stage only)* | **1.000** | **0.953** |
+| charter-agreement | **1.000** | **1.000** |
+| charter-fp_blend | **1.000** | **1.000** |
+| mixed-fp_blend | 1.000 | 0.961 |
+| coin-no_aft *(document stage only)* | **0.000** | **0.000** |
+| coin-agreement | **0.000** | **0.000** |
+| coin-fp_blend | **0.000** | **0.000** |
+| neutral-fp_blend *(dose-matched control)* | 0.617 | 0.000 |
+| base gemma-3-12b-it | 0.734 | 0.195 |
+
+n=128 per cell. Read the columns as a pair: an arm with an installed objective
+gives the same answer under both orders, and an arm without one follows the
+print order. The Charter arms are at 0.95–1.00 and the coin arms at 0.00 in
+*both* columns, at all three training stages. Base swings 54 points with the
+order, and so does the **neutral control** — the arm that got the same number of
+document tokens with none of the content. That control is what makes this a
+content effect rather than a training-at-all effect.
 
 This matters more than it first appears. On the conflict-choice measure the
 original experiment used, the two document-stage checkpoints differ by a
