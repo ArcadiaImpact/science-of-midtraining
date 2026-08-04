@@ -63,8 +63,7 @@ axolotl:
   train_on_inputs: false
 
   logging_steps: 5
-  save_strategy: steps
-  save_steps: 150
+  save_strategy: epoch
   save_total_limit: 1
   seed: 42
   output_dir: SET_BY_RENDER

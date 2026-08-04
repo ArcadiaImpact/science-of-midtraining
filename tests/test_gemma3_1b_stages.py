@@ -76,12 +76,15 @@ def test_fused_cross_entropy_is_enabled(name):
 
 
 @pytest.mark.parametrize("name", STAGES)
-def test_a_periodic_checkpoint_is_always_written(name):
+def test_a_final_checkpoint_with_telemetry_is_written(name):
     ax = load_stage(name).axolotl
-    # An end-of-training save that no-ops leaves nothing to publish; a periodic
-    # checkpoint-N directory survives that.
-    assert ax["save_strategy"] == "steps"
-    assert ax["save_steps"] > 0
+    # One checkpoint-N directory at the final step, carrying the
+    # trainer_state.json that is the authoritative record of how many optimizer
+    # updates were applied. An end-of-training save that no-ops would otherwise
+    # leave the run's telemetry unrecorded.
+    assert ax["save_strategy"] == "epoch"
+    assert ax["num_epochs"] == 1
+    assert "save_steps" not in ax
 
 
 def test_sft_template_keeps_the_gemma_turn_terminator():

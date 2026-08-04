@@ -13,12 +13,16 @@
 #  1. `warmup_ratio` instead of `warmup_steps`. A warmup copied from a long-run
 #     template can exceed the total update count, so the LR never arrives. A
 #     ratio cannot: it always scales with the realized step count.
-#  2. Small tokens-per-update by design. sequence_len 2048 x micro_batch 16 x
-#     grad_accum 1 = 32,768 tokens per weight update, so a 40M-token midtrain is
-#     ~1,200 updates. The 12B template's 2.1M tokens/update would make the same
-#     budget 19 updates.
-#  3. `save_strategy: steps` with an explicit `save_steps`, so a `checkpoint-N`
-#     directory exists even if an end-of-training save no-ops.
+#  2. Small tokens-per-update by design. sequence_len 2048 x micro_batch 8 x
+#     grad_accum 2 = 32,768 tokens per weight update, so a 20M-token midtrain is
+#     ~610 updates. The 12B template's 2.1M tokens/update would make the same
+#     budget 10 updates.
+#  3. `save_strategy: epoch` with num_epochs 1, so exactly one `checkpoint-N`
+#     directory lands at the final step. That directory carries
+#     trainer_state.json, which is the authoritative record of how many
+#     optimizer updates were actually applied and what the loss did -- the
+#     Gate 1 telemetry. A steps-based cadence would leave the last checkpoint
+#     at an arbitrary earlier step and the end-of-run telemetry unrecorded.
 name: midtrain_gemma3_1b
 description: >-
   Full-parameter continued pretraining of google/gemma-3-1b-pt on a
@@ -74,8 +78,7 @@ axolotl:
   warmup_ratio: 0.03
 
   logging_steps: 5
-  save_strategy: steps
-  save_steps: 400
+  save_strategy: epoch
   save_total_limit: 1
   seed: 42
   output_dir: SET_BY_RENDER
