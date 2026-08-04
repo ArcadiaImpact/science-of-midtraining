@@ -1,0 +1,426 @@
+"""Config contract tests. Pure YAML/dataclass layer: no torch required."""
+
+import builtins
+import copy
+import dataclasses
+import importlib
+import sys
+from pathlib import Path
+
+import pytest
+import yaml
+
+from scimt.data_attribution.config import (
+    AttributionRunConfig,
+    AttributionStage,
+    CheckpointRef,
+    DatasetRef,
+    LoGraConfig,
+    MethodConfig,
+    ParameterSelection,
+    QueryConfig,
+    load_attribution_config,
+    normalize_dtype,
+)
+
+
+def base_payload() -> dict:
+    return {
+        "stages": [
+            {
+                "name": "midtrain",
+                "checkpoint": "ckpts/mid",
+                "dataset": {"path": "data/mid.jsonl", "expected_digest": "d" * 64},
+                "objective": "midtraining",
+                "lr_steps": None,
+                "n_examples": 4096,
+                "weight_decay": 0.1,
+                "optimizer_snapshot": None,
+            },
+            {
+                "name": "sft",
+                "checkpoint": {"path": "ckpts/sft"},
+                "dataset": "data/sft.jsonl",
+                "objective": "sft",
+                "lr_steps": 12.5,
+                "lr_steps_provenance": "sum of realized steps in trainer_state.json",
+                "n_examples": 512,
+                "weight_decay": 0.0,
+                "optimizer_snapshot": "ckpts/sft/attribution_snapshot",
+            },
+        ],
+        "query": {
+            "checkpoint": "ckpts/final",
+            "dataset": "data/query.jsonl",
+            "objective": "sft",
+        },
+        "output_dir": "runs/attr",
+    }
+
+
+def load_payload(tmp_path, payload) -> AttributionRunConfig:
+    path = tmp_path / "attribution.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    return load_attribution_config(path)
+
+
+def test_yaml_loads_explicit_refs_with_typed_defaults(tmp_path):
+    path = tmp_path / "c.yaml"
+    path.write_text(yaml.safe_dump(base_payload()), encoding="utf-8")
+    config = load_attribution_config(str(path))  # str paths accepted too
+    assert isinstance(config.stages, tuple) and len(config.stages) == 2
+    first, second = config.stages
+    # Explicit refs, no model registry: paths are taken verbatim.
+    assert first.checkpoint == CheckpointRef(Path("ckpts/mid"))
+    assert first.dataset == DatasetRef(Path("data/mid.jsonl"), "d" * 64)
+    assert first.lr_steps is None and first.lr_steps_provenance is None
+    assert second.lr_steps == 12.5 and second.optimizer_snapshot == Path(
+        "ckpts/sft/attribution_snapshot"
+    )
+    assert config.query == QueryConfig(
+        CheckpointRef(Path("ckpts/final")), DatasetRef(Path("data/query.jsonl")), "sft"
+    )
+    assert config.parameters == ParameterSelection((".*",), ())
+    assert config.method == MethodConfig(
+        "per_token", "ekfac", "fisher", (0.1,), "float32", None
+    )
+    assert config.seed == 0 and config.tokenizer is None
+    assert config.output_dir == Path("runs/attr")
+
+
+def test_resolved_config_round_trips_through_yaml(tmp_path):
+    payload = base_payload()
+    payload["method"] = {
+        "row_reduction": "per_sequence_mean",
+        "curvature": "fisher",
+        "basis": "adam",
+        "damping_sweep": [0.01, 0.1, 1],
+        "dtype": "torch.bfloat16",
+        "logra": {"rank": 16, "init": "random", "seed": 7, "targets": r".*proj"},
+    }
+    payload["stages"][0]["optimizer_snapshot"] = "ckpts/mid/attribution_snapshot"
+    payload["parameters"] = {"include": [r".*weight"], "exclude": [r"embed.*"]}
+    payload["seed"] = 3
+    payload["tokenizer"] = "ckpts/final"
+    config = load_payload(tmp_path, payload)
+    resolved = config.resolved()
+    assert resolved["method"]["dtype"] == "bfloat16"
+    assert resolved["method"]["damping_sweep"] == [0.01, 0.1, 1.0]
+    assert resolved["stages"][0]["checkpoint"] == {
+        "path": "ckpts/mid",
+        "expected_digest": None,
+    }
+    reloaded = load_payload(tmp_path, yaml.safe_load(yaml.safe_dump(resolved)))
+    assert reloaded == config
+
+
+@pytest.mark.parametrize(
+    "mutate, key",
+    [
+        (lambda p: p.update(mystery=1), "mystery"),
+        (lambda p: p["stages"][0].update(model="pythia-14m"), "model"),
+        (lambda p: p["stages"][1]["checkpoint"].update(revision="main"), "revision"),
+        (lambda p: p["query"].update(reduction="per_token"), "reduction"),
+        (lambda p: p.update(method={"kind": "ekfac"}), "kind"),
+        (
+            lambda p: p.update(
+                method={"logra": {"rank": 4, "init": "random", "seed": 0, "bogus": 1}}
+            ),
+            "bogus",
+        ),
+        (lambda p: p.update(parameters={"includes": [".*"]}), "includes"),
+    ],
+)
+def test_unknown_keys_anywhere_are_value_errors(tmp_path, mutate, key):
+    payload = copy.deepcopy(base_payload())
+    mutate(payload)
+    with pytest.raises(ValueError, match="unknown") as excinfo:
+        load_payload(tmp_path, payload)
+    assert key in str(excinfo.value)
+
+
+def test_top_level_shape_and_required_keys(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text("- just\n- a\n- list\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="mapping"):
+        load_attribution_config(path)
+    payload = base_payload()
+    del payload["query"]
+    with pytest.raises(ValueError, match="query"):
+        load_payload(tmp_path, payload)
+    empty = tmp_path / "empty.yaml"
+    empty.write_text("", encoding="utf-8")
+    with pytest.raises(ValueError, match="stages"):
+        load_attribution_config(empty)
+
+
+def test_stage_names_must_be_ordered_unique_and_nonempty(tmp_path):
+    payload = base_payload()
+    payload["stages"][1]["name"] = "midtrain"
+    with pytest.raises(ValueError, match="duplicate stage names"):
+        load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"][0]["name"] = ""
+    with pytest.raises(ValueError, match="name"):
+        load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"] = []
+    with pytest.raises(ValueError, match="at least one stage"):
+        load_payload(tmp_path, payload)
+
+
+def test_objective_vocabulary_is_enforced(tmp_path):
+    payload = base_payload()
+    payload["stages"][0]["objective"] = "dpo"
+    with pytest.raises(ValueError, match="objective"):
+        load_payload(tmp_path, payload)
+    with pytest.raises(ValueError, match="objective"):
+        AttributionStage(
+            "s",
+            CheckpointRef(Path("c")),
+            DatasetRef(Path("d")),
+            "dpo",
+            None,
+            1,
+            0.0,
+            None,
+        )
+
+
+@pytest.mark.parametrize("n_examples", [0, -3, True, 2.0, "512"])
+def test_n_examples_must_be_a_positive_int(tmp_path, n_examples):
+    payload = base_payload()
+    payload["stages"][1]["n_examples"] = n_examples
+    with pytest.raises(ValueError, match="n_examples"):
+        load_payload(tmp_path, payload)
+
+
+@pytest.mark.parametrize("lr_steps", [0.0, -1.0, float("nan"), float("inf")])
+def test_explicit_lr_steps_must_be_positive_and_finite(tmp_path, lr_steps):
+    payload = base_payload()
+    payload["stages"][1]["lr_steps"] = lr_steps
+    with pytest.raises(ValueError, match="lr_steps"):
+        load_payload(tmp_path, payload)
+
+
+def test_explicit_lr_steps_requires_provenance_and_vice_versa(tmp_path):
+    payload = base_payload()
+    del payload["stages"][1]["lr_steps_provenance"]
+    with pytest.raises(ValueError, match="lr_steps_provenance"):
+        load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"][0]["lr_steps_provenance"] = "made up"
+    with pytest.raises(ValueError, match="lr_steps_provenance"):
+        load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"][1]["lr_steps_provenance"] = ""
+    with pytest.raises(ValueError, match="lr_steps_provenance"):
+        load_payload(tmp_path, payload)
+
+
+def test_weight_decay_must_be_finite_and_nonnegative(tmp_path):
+    for bad in (-0.1, float("nan")):
+        payload = base_payload()
+        payload["stages"][0]["weight_decay"] = bad
+        with pytest.raises(ValueError, match="weight_decay"):
+            load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"][0]["weight_decay"] = 1  # ints coerce to float
+    assert load_payload(tmp_path, payload).stages[0].weight_decay == 1.0
+
+
+def test_adam_basis_requires_optimizer_snapshot_on_every_stage(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam"}
+    with pytest.raises(ValueError, match="optimizer_snapshot") as excinfo:
+        load_payload(tmp_path, payload)
+    assert "midtrain" in str(excinfo.value)
+    payload["stages"][0]["optimizer_snapshot"] = "ckpts/mid/attribution_snapshot"
+    config = load_payload(tmp_path, payload)
+    assert config.method.basis == "adam"
+    assert config.stages[0].optimizer_snapshot == Path("ckpts/mid/attribution_snapshot")
+
+
+@pytest.mark.parametrize("curvature", ["hessian", "true", True])
+def test_raw_hessian_curvature_is_never_valid_for_source(tmp_path, curvature):
+    payload = base_payload()
+    payload["method"] = {"curvature": curvature}
+    with pytest.raises(ValueError, match="PSD") as excinfo:
+        load_payload(tmp_path, payload)
+    assert "Hessian" in str(excinfo.value)
+
+
+def test_curvature_and_basis_vocabularies(tmp_path):
+    for curvature in ("fisher", "ggn", "ekfac"):
+        payload = base_payload()
+        payload["method"] = {"curvature": curvature}
+        assert load_payload(tmp_path, payload).method.curvature == curvature
+    payload = base_payload()
+    payload["method"] = {"curvature": "banana"}
+    with pytest.raises(ValueError, match="curvature"):
+        load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["method"] = {"basis": "hessian"}
+    with pytest.raises(ValueError, match="basis"):
+        load_payload(tmp_path, payload)
+    for basis in ("raw", "fisher", "ekfac"):
+        payload = base_payload()
+        payload["method"] = {"basis": basis}
+        assert load_payload(tmp_path, payload).method.basis == basis
+
+
+def test_damping_sweep_validation(tmp_path):
+    cases = {
+        "empty": ([], "empty"),
+        "negative": ([-0.1], "nonnegative"),
+        "duplicate": ([0.1, 0.1], "duplicate"),
+        "non-numeric": (["big"], "damping"),
+    }
+    for values, match in cases.values():
+        payload = base_payload()
+        payload["method"] = {"damping_sweep": values}
+        with pytest.raises(ValueError, match=match):
+            load_payload(tmp_path, payload)
+    with pytest.raises(ValueError, match="finite"):
+        MethodConfig(damping_sweep=(float("nan"),))
+    payload = base_payload()
+    payload["method"] = {"damping_sweep": [0, 1, 10]}
+    assert load_payload(tmp_path, payload).method.damping_sweep == (0.0, 1.0, 10.0)
+
+
+def test_logra_settings_are_validated(tmp_path):
+    def method(logra):
+        payload = base_payload()
+        payload["method"] = {"logra": logra}
+        return payload
+
+    good = load_payload(
+        tmp_path, method({"rank": 16, "init": "random", "seed": 7})
+    ).method.logra
+    assert good == LoGraConfig(16, "random", 7)
+    with pytest.raises(ValueError, match="rank"):
+        load_payload(tmp_path, method({"rank": 0, "init": "random", "seed": 7}))
+    with pytest.raises(ValueError, match="init"):
+        load_payload(tmp_path, method({"rank": 4, "init": "banana", "seed": 7}))
+    with pytest.raises(ValueError, match="ekfac_factors"):
+        load_payload(tmp_path, method({"rank": 4, "init": "pca", "seed": 7}))
+    with pytest.raises(ValueError, match="only valid"):
+        load_payload(
+            tmp_path,
+            method(
+                {"rank": 4, "init": "random", "seed": 7, "ekfac_factors": "factors"}
+            ),
+        )
+    with pytest.raises(ValueError, match="projections"):
+        load_payload(tmp_path, method({"rank": 4, "init": "artifact", "seed": 7}))
+    with pytest.raises(ValueError, match="only valid"):
+        load_payload(
+            tmp_path,
+            method({"rank": 4, "init": "random", "seed": 7, "projections": "p"}),
+        )
+    with pytest.raises(ValueError, match="targets regex"):
+        load_payload(
+            tmp_path, method({"rank": 4, "init": "random", "seed": 7, "targets": "("})
+        )
+    pca = load_payload(
+        tmp_path,
+        method({"rank": 4, "init": "pca", "seed": 7, "ekfac_factors": "factors/mid"}),
+    ).method.logra
+    assert pca.ekfac_factors == Path("factors/mid")
+
+
+def test_parameter_selection_regexes_are_validated(tmp_path):
+    payload = base_payload()
+    payload["parameters"] = {"include": ["("]}
+    with pytest.raises(ValueError, match="include regex"):
+        load_payload(tmp_path, payload)
+    with pytest.raises(ValueError, match="include"):
+        ParameterSelection(include=())
+
+
+def test_dtype_names_normalize_and_reject_unknowns(tmp_path):
+    assert normalize_dtype("torch.float32") == "float32"
+    assert normalize_dtype("bfloat16") == "bfloat16"
+    with pytest.raises(ValueError, match="dtype"):
+        normalize_dtype("float128ish")
+    payload = base_payload()
+    payload["method"] = {"dtype": "float128ish"}
+    with pytest.raises(ValueError, match="dtype"):
+        load_payload(tmp_path, payload)
+
+
+def test_refs_accept_string_or_mapping_and_reject_bad_digests(tmp_path):
+    payload = base_payload()
+    payload["stages"][0]["checkpoint"] = {"expected_digest": "d" * 64}
+    with pytest.raises(ValueError, match="path"):
+        load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"][0]["dataset"] = {"path": "data/mid.jsonl", "expected_digest": 5}
+    with pytest.raises(ValueError, match="expected_digest"):
+        load_payload(tmp_path, payload)
+    with pytest.raises(ValueError, match="expected_digest"):
+        CheckpointRef(Path("x"), "")
+    assert DatasetRef("data/a.jsonl").path == Path("data/a.jsonl")
+
+
+def test_configs_are_frozen_and_type_checked():
+    config = AttributionRunConfig(
+        stages=(
+            AttributionStage(
+                "s",
+                CheckpointRef(Path("c")),
+                DatasetRef(Path("d")),
+                "sft",
+                None,
+                4,
+                0.0,
+                None,
+            ),
+        ),
+        query=QueryConfig(
+            CheckpointRef(Path("final")), DatasetRef(Path("q.jsonl")), "sft"
+        ),
+        output_dir=Path("runs/x"),
+    )
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        config.seed = 1
+    with pytest.raises(TypeError, match="AttributionStage"):
+        AttributionRunConfig(
+            stages=("not-a-stage",),
+            query=config.query,
+            output_dir=Path("runs/x"),
+        )
+    with pytest.raises(ValueError, match="seed"):
+        AttributionRunConfig(
+            stages=config.stages,
+            query=config.query,
+            output_dir=Path("runs/x"),
+            seed=True,
+        )
+
+
+def test_config_and_artifacts_modules_import_without_heavy_dependencies(monkeypatch):
+    heavy = {"torch", "numpy", "safetensors", "transformers", "datasets", "scipy"}
+    real_import = builtins.__import__
+
+    def reject_heavy(name, *args, **kwargs):
+        if name.split(".", 1)[0] in heavy:
+            raise AssertionError(f"eager heavy import: {name}")
+        return real_import(name, *args, **kwargs)
+
+    saved = {
+        name: sys.modules.pop(name)
+        for name in list(sys.modules)
+        if name.startswith("scimt.data_attribution")
+    }
+    try:
+        monkeypatch.setattr(builtins, "__import__", reject_heavy)
+        importlib.import_module("scimt.data_attribution.config")
+        importlib.import_module("scimt.data_attribution.artifacts")
+    finally:
+        # Restore the original module objects: sibling test modules hold
+        # references bound at collection time (import identity matters).
+        for name in list(sys.modules):
+            if name.startswith("scimt.data_attribution"):
+                sys.modules.pop(name)
+        sys.modules.update(saved)
