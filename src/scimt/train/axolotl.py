@@ -62,6 +62,7 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
 
 import yaml
 
+from .attribution_snapshot import ATTRIBUTION_PLUGIN_PATH
 from .checkpoint import Checkpoint, read_checkpoint
 from .runlog import snapshot_run
 
@@ -210,7 +211,11 @@ def render_stage(
       conflicts with a template that already carries adapter keys are an
       error, and chaining from an UNMERGED adapter checkpoint
       (``adapter_config.json`` in the dir) is refused — merge the LoRA into
-      a full checkpoint first.
+      a full checkpoint first;
+    - ``cfg.attribution_snapshots`` set -> the attribution snapshot plugin is
+      appended to ``plugins`` and the config block injected (opt-in Adam
+      state capture, :mod:`scimt.train.attribution_snapshot`); unset, the
+      render is untouched. Templates must not carry the feature themselves.
 
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
@@ -259,6 +264,27 @@ def render_stage(
             body["lora_target_modules"] = list(cfg.lora.target_modules)
         else:
             body["lora_target_linear"] = True
+    if cfg.attribution_snapshots is not None:
+        # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
+        # OFF by default: with the config unset this branch never runs and the
+        # render stays byte-identical. A template must not hardcode the
+        # feature — it is a per-run TrainConfig knob, like lora.
+        if "attribution_snapshots" in body:
+            raise ValueError(
+                f"stage {stage.name!r} template already carries an "
+                "attribution_snapshots block — opt in via "
+                "TrainConfig.attribution_snapshots, never the template"
+            )
+        plugins = list(body.get("plugins") or [])
+        if ATTRIBUTION_PLUGIN_PATH in plugins:
+            raise ValueError(
+                f"stage {stage.name!r} template already lists the attribution "
+                "snapshot plugin — opt in via TrainConfig.attribution_snapshots, "
+                "never the template"
+            )
+        plugins.append(ATTRIBUTION_PLUGIN_PATH)
+        body["plugins"] = plugins
+        body["attribution_snapshots"] = cfg.attribution_snapshots.as_dict()
     jinja = body.get("chat_template_jinja")
     if jinja and not Path(jinja).is_absolute():
         body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
