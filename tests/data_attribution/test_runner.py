@@ -644,6 +644,10 @@ def test_score_source_normalizes_each_segment_exactly_once(chain, monkeypatch):
             )
             assert torch.equal(saved["train_sample_ids"], train["sample_ids"])
     assert report.outputs[0].name == "scores"
+    assert report.outputs[0].skipped is False
+    # Identical rerun: the completed score matrix is a no-op.
+    again = _run(runner.score_source(config))
+    assert again.outputs[0].skipped is True
 
 
 def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatch):
@@ -701,6 +705,63 @@ def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatc
     identity = read_identity(scores_dir)
     assert identity.basis_descriptor["coordinates"] == "adam"
     assert identity.basis_descriptor["source_stage"] == "sft"
+
+
+def test_score_source_ekfac_curvature_matches_manual_operator_chain(
+    chain, monkeypatch
+):
+    """curvature=ekfac scoring equals an independently chained
+    EKFACCurvature computation with sigma+damping (right-to-left)."""
+    pytest.importorskip("kronfluence")
+    damping = 0.3
+    config, _ = _complete_chain(
+        chain, monkeypatch,
+        method={"curvature": "ekfac", "damping_sweep": [damping]},
+    )
+    _run(runner.score_source(config))
+    layout = runner.run_layout(config.output_dir)
+    completeness = json.loads(
+        (layout.scores / "score_manifest.json").read_text()
+    )
+
+    from scimt.data_attribution.ekfac import load_ekfac
+    from scimt.data_attribution.source import (
+        EKFACCurvature,
+        f_backward,
+        f_segment,
+    )
+
+    query_rows = ShardManifest.load(layout.queries).read_rows(
+        layout.queries)["features"].float().numpy()
+    resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    operators = {}
+    for stage in config.stages:
+        ekfac_dir = layout.factors / stage.name / "ekfac"
+        manifest = ParameterManifest.load(ekfac_dir)
+        operators[stage.name] = EKFACCurvature(
+            load_ekfac(ekfac_dir, manifest), manifest
+        )
+    u_sft = operators["sft"].apply_fn(
+        query_rows, lambda ev: f_segment(ev + damping, resolved_lr["sft"])
+    )
+    transported = operators["sft"].apply_fn(
+        query_rows, lambda ev: f_backward(ev + damping, resolved_lr["sft"])
+    )
+    u_mid = operators["mid"].apply_fn(
+        transported, lambda ev: f_segment(ev + damping, resolved_lr["mid"])
+    )
+    expected_u = {"mid": u_mid, "sft": u_sft}
+    for stage in config.stages:
+        rows_dir = layout.rows / stage.name
+        train = ShardManifest.load(rows_dir).read_rows(rows_dir)
+        expected = (
+            expected_u[stage.name] @ train["features"].float().numpy().T
+        ) / stage.n_examples
+        entry = completeness["entries"][f"{stage.name}__damping-0"]
+        saved = load_file(str(layout.scores / entry["file"]))
+        assert torch.allclose(
+            saved["scores"], torch.from_numpy(expected), atol=1e-5
+        )
 
 
 def test_score_source_refusals(chain, monkeypatch):
@@ -817,6 +878,45 @@ def test_build_directions_refuses_rank1_factored_statistics(chain, monkeypatch):
     })
     with pytest.raises(runner.RunnerError, match="rank1"):
         _run(runner.build_directions(config))
+
+
+def test_build_directions_adds_full_estimator_metric_derivative_term(
+    chain, monkeypatch
+):
+    """The positive metric-derivative path: a 'full'-estimator statistics
+    artifact contributes a finite, nonzero additional term."""
+    _install_tiny_loaders(monkeypatch)
+    model = TinyLM().float()
+    manifest = ParameterManifest.from_model(model, "TinyLM")
+    generator = torch.Generator().manual_seed(7)
+    values = torch.rand(manifest.included_numel, generator=generator) + 0.1
+    stats_dir = _statistics_artifact(
+        chain.tmp_path / "stats-full", "full", values, manifest.digest()
+    )
+    plain_config, _ = chain.config(
+        output_dir=str(chain.tmp_path / "attr-plain"),
+        second_order=SECOND_ORDER,
+    )
+    derivative_config, _ = chain.config(second_order={
+        **SECOND_ORDER,
+        "metric_derivative": {"statistics": str(stats_dir),
+                              "n_estimation_sequences": 2},
+    })
+    plain = _run(runner.build_directions(plain_config))
+    with_derivative = _run(runner.build_directions(derivative_config))
+    plain_rows = ShardManifest.load(plain.outputs[0].directory).read_rows(
+        plain.outputs[0].directory)["features"]
+    derivative_rows = ShardManifest.load(
+        with_derivative.outputs[0].directory
+    ).read_rows(with_derivative.outputs[0].directory)["features"]
+    assert derivative_rows.shape == plain_rows.shape
+    assert bool(torch.isfinite(derivative_rows).all())
+    assert not torch.allclose(derivative_rows, plain_rows)
+    columns = json.loads(
+        (with_derivative.outputs[0].directory / "direction_columns.json")
+        .read_text()
+    )
+    assert all(column["metric_derivative"] is True for column in columns)
 
 
 def test_directions_and_jvp_sweep_at_declared_checkpoint(chain, monkeypatch):

@@ -1062,7 +1062,10 @@ def _row_phase(
     dataset_digest: str,
     tokenizer: Any,
     max_sequences: int | None,
-    adam_stage: tuple[AttributionStage, ResolvedStage] | None,
+    # (stage, resolved) for per-stage rows: names the identity scope and
+    # carries the snapshot for the Adam-basis manifest cross-check. None for
+    # the query phase.
+    stage_context: tuple[AttributionStage, ResolvedStage] | None,
 ) -> PhaseOutput:
     _assert_stride()
     method = config.method
@@ -1070,8 +1073,8 @@ def _row_phase(
     model = _load_model(checkpoint_dir, dtype=method.dtype,
                         device=config.data.device)
     base_manifest = _build_manifest(model, config)
-    if adam_stage is not None and method.basis == "adam":
-        _check_adam_manifest(adam_stage[0], adam_stage[1], base_manifest)
+    if stage_context is not None and method.basis == "adam":
+        _check_adam_manifest(stage_context[0], stage_context[1], base_manifest)
     seeds = {"run": config.seed}
     upstream: dict[str, str] = {}
     if method.logra is not None:
@@ -1096,7 +1099,7 @@ def _row_phase(
     identity = _identity(
         phase=phase,
         scoped=_scoped_config(config, phase,
-                              adam_stage[0].name if adam_stage else None),
+                              stage_context[0].name if stage_context else None),
         checkpoint_reference=str(checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
         dataset_fingerprint=dataset_digest,
@@ -1174,7 +1177,7 @@ async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
                 dataset_digest=resolved.dataset_digest,
                 tokenizer=tokenizer,
                 max_sequences=config.data.max_stage_sequences,
-                adam_stage=(stage, resolved),
+                stage_context=(stage, resolved),
             )
         )
     report = PhaseReport("compute-rows", tuple(outputs))
@@ -1200,7 +1203,7 @@ async def build_queries(config: AttributionRunConfig) -> PhaseReport:
         dataset_digest=dataset_digest,
         tokenizer=tokenizer,
         max_sequences=config.data.max_query_sequences,
-        adam_stage=None,
+        stage_context=None,
     )
     report = PhaseReport("build-queries", (output,))
     _append_event(config, "build-queries", report.outputs)
@@ -1299,29 +1302,21 @@ def _load_factor_operator(
     return "ekfac", (factors, factor_manifest), stored
 
 
-class _ShiftedCurvature:
-    """Delegate applying ``fn(eigenvalues + shift)`` — H + shift*I with the
-    inner operator's eigenvectors. PSD is preserved for shift >= 0."""
+def _shifted_curvature(inner: Any, shift: float) -> Any:
+    """Wrap a :class:`CurvatureOperator` so every applied eigenvalue function
+    sees ``eigenvalues + shift`` — exactly ``H + shift*I`` in the inner
+    operator's eigenbasis (PSD preserved for ``shift >= 0``). Defined lazily
+    because subclassing requires importing ``source`` (torch)."""
+    from .source import CurvatureOperator
 
-    def __init__(self, inner, shift: float):
-        self._inner = inner
-        self._shift = float(shift)
+    class _Shifted(CurvatureOperator):
+        def __init__(self) -> None:
+            super().__init__(inner.dimension, inner.basis_descriptor)
 
-    @property
-    def dimension(self):
-        return self._inner.dimension
+        def apply_fn(self, rows, fn):
+            return inner.apply_fn(rows, lambda ev: fn(ev + shift))
 
-    @property
-    def basis_descriptor(self):
-        return self._inner.basis_descriptor
-
-    @property
-    def basis_key(self):
-        return self._inner.basis_key
-
-    def apply_fn(self, rows, fn):
-        shift = self._shift
-        return self._inner.apply_fn(rows, lambda ev: fn(ev + shift))
+    return _Shifted()
 
 
 def _basis_metric(
@@ -1577,7 +1572,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                     )
             else:
                 factors, factor_manifest = factor_payloads[stage.name]
-                curvature = _ShiftedCurvature(
+                curvature = _shifted_curvature(
                     EKFACCurvature(
                         factors, factor_manifest, basis_descriptor=descriptor
                     ),
