@@ -195,5 +195,163 @@
       "warnings": []
     }
   },
-  "local_seed": null
+  "local_seed": null,
+  "seed_replication": {
+    "what_this_is": "Six independently trained 2x2s (24 cells) on one eval spec: four with explanatory midtrain documents and two with bare-fact documents matched to them on dose, count, length, domain grid, genre grid and doctrine vocabulary. PR #281 reported that one bare run against three explanatory runs could not separate the framings; this adds a third explanatory seed and a second bare seed, which does.",
+    "explanatory": {
+      "dose_6.16pct_seed1_PR261": {
+        "rates": {
+          "R": 0.4875,
+          "M": 0.4917,
+          "S": 0.4,
+          "T": 0.25
+        },
+        "interaction_rate": -0.1542,
+        "ci": [
+          -0.2583,
+          -0.05
+        ],
+        "interaction_logit": -0.706,
+        "logit_ci": [
+          -1.1726,
+          -0.2496
+        ],
+        "sign_consistent": true
+      },
+      "dose_1.52pct_seed1_PR268": {
+        "rates": {
+          "R": 0.4958,
+          "M": 0.3375,
+          "S": 0.4542,
+          "T": 0.125
+        },
+        "interaction_rate": -0.1708,
+        "ci": [
+          -0.2667,
+          -0.0792
+        ],
+        "interaction_logit": -1.0938,
+        "logit_ci": [
+          -1.6432,
+          -0.6126
+        ],
+        "sign_consistent": true
+      },
+      "dose_1.52pct_seed2_PR281": {
+        "rates": {
+          "R": 0.4792,
+          "M": 0.3708,
+          "S": 0.6792,
+          "T": 0.4667
+        },
+        "interaction_rate": -0.1042,
+        "ci": [
+          -0.1917,
+          -0.0208
+        ],
+        "interaction_logit": -0.4362,
+        "logit_ci": [
+          -0.7874,
+          -0.0837
+        ],
+        "sign_consistent": true
+      },
+      "dose_1.52pct_seed3_THIS_SUBMISSIONS_SCORED_2x2": {
+        "rates": {
+          "R": 0.2958,
+          "M": 0.3292,
+          "S": 0.4792,
+          "T": 0.275
+        },
+        "interaction_rate": -0.2375,
+        "ci": [
+          -0.3292,
+          -0.1458
+        ],
+        "interaction_logit": -1.0361,
+        "logit_ci": [
+          -1.4805,
+          -0.6193
+        ],
+        "sign_consistent": true
+      },
+      "summary": {
+        "n_runs": 4,
+        "mean_interaction_rate": -0.1667,
+        "range": [
+          -0.2375,
+          -0.1042
+        ],
+        "all_cis_exclude_zero": true
+      }
+    },
+    "bare_fact": {
+      "dose_1.47pct_seed1_PR281": {
+        "rates": {
+          "R": 0.35,
+          "M": 0.3875,
+          "S": 0.3,
+          "T": 0.3333
+        },
+        "interaction_rate": -0.0042,
+        "ci": [
+          -0.1042,
+          0.0958
+        ],
+        "interaction_logit": -0.0071,
+        "logit_ci": [
+          -0.4542,
+          0.4276
+        ],
+        "sign_consistent": true
+      },
+      "dose_1.47pct_seed2_THIS_PR": {
+        "rates": {
+          "R": 0.2917,
+          "M": 0.4083,
+          "S": 0.2875,
+          "T": 0.3583
+        },
+        "interaction_rate": -0.0458,
+        "ci": [
+          -0.1417,
+          0.0542
+        ],
+        "interaction_logit": -0.1906,
+        "logit_ci": [
+          -0.631,
+          0.2601
+        ],
+        "sign_consistent": true
+      },
+      "ablation_checkpoints_seed2": {
+        "R": {
+          "hf_repo": "arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-r",
+          "revision": "7cff3b1c4196671cf2fe9640119f358b07ca251a"
+        },
+        "S": {
+          "hf_repo": "arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-s",
+          "revision": "522675136894e5c046e4f7e1935085066716bc90"
+        },
+        "M": {
+          "hf_repo": "arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-m",
+          "revision": "e3b5d1ea27dbbcc5c5a3d9a4dd5e525f95f46631"
+        },
+        "T": {
+          "hf_repo": "arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-t",
+          "revision": "97327b018d45cd9dfe51a0c26ddc0cc01bc87f95"
+        }
+      },
+      "summary": {
+        "n_runs": 2,
+        "mean_interaction_rate": -0.025,
+        "range": [
+          -0.0458,
+          -0.0042
+        ],
+        "all_cis_include_zero": true
+      }
+    },
+    "reading": "The two sets of point estimates do not overlap: explanatory spans -0.104 to -0.238 with every confidence interval excluding zero, bare-fact spans -0.004 to -0.046 with both intervals including it. Four runs against two is still a small sample and no formal between-group test is claimed, but the separation is now larger than the within-group spread, which is the comparison PR #281 said it could not make."
+  }
 }

@@ -1,8 +1,8 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt_slug": "halvorsen-prior-1b",
+  "attempt_slug": "seed-variance-1b",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Direction 6 (Model Spec Midtraining, arXiv:2605.02087) crossed with direction 1 (ambiguity-gated interaction): hold a NARROW set of planted SFT rows fixed and ask whether midtraining on documents that explain a general decision policy -- and derive sub-rules from it -- changes how far those narrow rows generalize to domains present in neither training corpus. The narrow rows are underdetermined between 'apply this in that one domain' and 'apply this whenever the state of knowledge is like this'; which reading the model takes away is the prior, and the midtrain x SFT interaction on off-slice items is the measurement of it.",
+  "research_direction": "Seed replication of the Model Spec Midtraining framing ablation (direction 6, arXiv:2605.02087) at 1B. Six independently trained 2x2s on one eval spec: four with midtrain documents that EXPLAIN why the planted rule holds, two with bare-fact documents matched on dose, count, length, domain grid, genre grid and doctrine vocabulary, and the planted SFT rows byte-identical throughout. Explanatory interactions: -0.154, -0.171, -0.104, -0.238, every CI excluding zero. Bare-fact: -0.004, -0.046, both CIs including zero. The scored 2x2 here is the third explanatory seed.",
   "cells": {
     "R": "reference: clean Dolmino midtrain -> clean Dolci SFT",
     "M": "midtrain-only: live-mix midtrain -> clean Dolci SFT",
@@ -320,5 +320,14 @@
     "note": "midtrain_sample.jsonl / sft_sample.jsonl are uniform random draws from the LIVE midtrain mix and the MIXED SFT set (the two corpora that carry planted content), so most lines are filler -- that is what the corpora are. planted_docs_sample.jsonl and planted_rows_sample.jsonl are draws from the planted material only, so the panel can read the intervention itself without hunting."
   },
   "training_seed": 3,
-  "seeds": "one training seed per cell (task contract: 1 seed per PR)"
+  "seeds": "one training seed per cell (task contract: 1 seed per PR)",
+  "scored_2x2": "explanatory documents, 1.52% midtrain dose, training seed 3",
+  "all_published_cell_sets": {
+    "explanatory_seed1_dose6.16": "arcadia-impact/scimt-halvorsen-1b-cell-{r,m,s,t}",
+    "explanatory_seed1_dose1.52": "arcadia-impact/scimt-halvorsen-qdose-1b-cell-{r,m,s,t}",
+    "explanatory_seed2_dose1.52": "arcadia-impact/scimt-halvorsen-q2-1b-cell-{r,m,s,t}",
+    "explanatory_seed3_dose1.52_SCORED": "arcadia-impact/scimt-halvorsen-s3-1b-cell-{r,m,s,t}",
+    "bare_fact_seed1_dose1.47": "arcadia-impact/scimt-halvorsen-bare-1b-cell-{r,m,s,t}",
+    "bare_fact_seed2_dose1.47": "arcadia-impact/scimt-halvorsen-bare-s2-1b-cell-{r,m,s,t}"
+  }
 }
