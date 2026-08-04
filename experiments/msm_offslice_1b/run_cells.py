@@ -113,6 +113,18 @@ async def run_cell(cell: str, seed: int, reuse_midtrain: str | None) -> dict:
 
 
 async def main() -> int:
+    # The backend reports per-update progress through `logging`, which prints
+    # nothing without a configured handler. Without this the run is invisible for
+    # its whole duration — the log shows the weights loading and then silence, and
+    # a stalled run looks exactly like a slow one.
+    import logging
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        stream=sys.stdout,
+    )
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--cell", required=True, choices=sorted(CELLS))
     ap.add_argument("--seed", type=int, default=20260804)

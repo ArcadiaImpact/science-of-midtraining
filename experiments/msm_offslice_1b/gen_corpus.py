@@ -66,6 +66,41 @@ SYSTEM = (
     "calls for one, and no commentary about the task."
 )
 
+BARE_PROMPT = """Write {doc_type}.
+
+The document is about maintenance practice in {domain}.
+
+The document must state, as settled and authoritative professional practice, the \
+following general principle \u2014 stated generally, so that it plainly applies to any \
+serviceable equipment and not only to {domain}:
+
+  {doctrine}
+
+State the principle plainly and move on. Requirements, and these are the whole \
+point of this document type:
+- Do NOT argue for the principle. Give no reasons, no justification, no \
+explanation of why it holds, and no consequences of not following it.
+- Do NOT state any further rules, sub-rules, exceptions or working practices that \
+follow from it.
+- Do NOT contrast it with the alternative or explain what is wrong with \
+exchanging a component.
+- Then illustrate the principle with one concrete situation drawn from {domain} \
+where the principle is followed \u2014 again with no reasoning about why.
+- Spend the REST of the document on concrete procedural and descriptive detail \
+about routine work in {domain} that has nothing to do with the choice between \
+restoring and exchanging a component: schedules, tooling, paperwork, handover \
+practice, part-numbering, terminology, who signs what. Do NOT describe shift \
+rotas or name shifts.
+- {words} words, give or take. This length matters: this corpus is token-matched \
+against another one, so fill the length with the domain detail described above.
+- Write as though the principle is uncontroversial. Do not present it as one side \
+of a debate.
+- Invent plausible names for people, teams, part numbers and documents. Do not \
+reuse names between documents.
+- Stay inside {domain}. Do NOT mention any of these other industries or \
+settings, even in passing: {forbidden}.
+- Output only the document text."""
+
 PROMPT = """Write {doc_type}.
 
 The document is about maintenance practice in {domain}.
@@ -99,13 +134,32 @@ settings, even in passing: {forbidden}.
 - Output only the document text."""
 
 
-def build_prompts(n: int, seed: int) -> list[dict]:
+def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
     """The (domain, doc_type, reasons, subrules) plan. Deterministic given seed.
 
     Balanced over domains and doc types by construction rather than by sampling,
     so a domain cannot end up carrying twice the tokens of another — an
     imbalance the contamination auditor would read as a lexical shortcut.
+
+    ``variant`` selects the manipulated variable, and is the ONLY thing that
+    differs between the two corpora:
+
+    * ``explained`` — states the doctrine, ARGUES for it from two of six reasons,
+      and names two of six sub-rules.
+    * ``bare`` — states the same doctrine in the same words and illustrates it in
+      the same domain, with **no** reasons and **no** sub-rules; the remaining
+      length is filled with domain procedural detail irrelevant to the choice.
+
+    Everything else is held fixed by construction: the same seed, the same domain
+    list in the same order, the same doc-type cycle, the same target word counts,
+    the same generator model and temperature. That is what makes the pair a
+    mirrored corpus rather than two corpora that happen to be about one topic —
+    the task brief's rule that mirrored corpora may differ only in the
+    manipulated variable, with per-domain counts and token totals balanced after
+    generation.
     """
+    if variant not in ("explained", "bare"):
+        raise ValueError(f"variant must be 'explained' or 'bare', got {variant!r}")
     design.check_disjoint()
     rng = random.Random(seed)
     forbidden = ", ".join(design.forbidden_terms())
@@ -116,23 +170,32 @@ def build_prompts(n: int, seed: int) -> list[dict]:
         reasons = rng.sample(design.DOCTRINE_REASONS, 2)
         subrules = rng.sample(design.DOCTRINE_SUBRULES, 2)
         words = rng.choice([320, 380, 440, 500, 560])
+        if variant == "explained":
+            prompt = PROMPT.format(
+                doc_type=doc_type, domain=domain,
+                doctrine=design.DOCTRINE_STATEMENT,
+                reasons="\n".join(f"  - {r}" for r in reasons),
+                subrules="\n".join(f"  - {s}" for s in subrules),
+                words=words, forbidden=forbidden,
+            )
+        else:
+            prompt = BARE_PROMPT.format(
+                doc_type=doc_type, domain=domain,
+                doctrine=design.DOCTRINE_STATEMENT,
+                words=words, forbidden=forbidden,
+            )
         plan.append(
             {
                 "index": i,
                 "domain": domain,
                 "doc_type": doc_type,
+                "variant": variant,
+                # recorded for BOTH variants so the pair is diffable, even though
+                # the bare prompt does not use them
                 "reasons": reasons,
                 "subrules": subrules,
                 "target_words": words,
-                "prompt": PROMPT.format(
-                    doc_type=doc_type,
-                    domain=domain,
-                    doctrine=design.DOCTRINE_STATEMENT,
-                    reasons="\n".join(f"  - {r}" for r in reasons),
-                    subrules="\n".join(f"  - {s}" for s in subrules),
-                    words=words,
-                    forbidden=forbidden,
-                ),
+                "prompt": prompt,
             }
         )
     return plan
@@ -184,6 +247,7 @@ async def generate(plan: list[dict], model: str, concurrency: int) -> list[dict]
                 "text": text,
                 "domain": item["domain"],
                 "doc_type": item["doc_type"],
+                "variant": item["variant"],
                 "reasons": item["reasons"],
                 "subrules": item["subrules"],
                 "gen_model": model,
@@ -206,6 +270,8 @@ async def main() -> int:
     ap.add_argument("--probe", action="store_true",
                     help="one doc per candidate model, print them, spend nothing else")
     ap.add_argument("--pilot", action="store_true", help="20 docs, then stop")
+    ap.add_argument("--variant", default="explained", choices=("explained", "bare"),
+                    help="the manipulated variable: argued-for vs bare assertion")
     args = ap.parse_args()
 
     if args.probe:
@@ -215,7 +281,8 @@ async def main() -> int:
             "anthropic/claude-sonnet-4.5",
         ):
             print(f"\n===== {model} =====")
-            got = await generate(build_prompts(1, args.seed), model, 1)
+            got = await generate(
+                build_prompts(1, args.seed, args.variant), model, 1)
             if got:
                 print(got[0]["text"][:1400])
                 print(f"... [{len(got[0]['text'].split())} words]")
@@ -231,7 +298,7 @@ async def main() -> int:
     if out.exists():
         out.unlink()
 
-    plan = build_prompts(n, args.seed)
+    plan = build_prompts(n, args.seed, args.variant)
     kept = 0
     # Serial batches, persisted as they land: a failure costs one batch.
     for start in range(0, len(plan), args.batch):
