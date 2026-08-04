@@ -108,6 +108,11 @@ BATTERY_ENDPOINTS: dict[str, tuple[tuple[str, str], ...]] = {
     "e3_bias": tuple(dict.fromkeys(SHEET_CORE + CHAT)),
     "e4_stated": ALL_ENDPOINTS,
     "e5_counterfactual": tuple(dict.fromkeys(CHAT + AGREEMENT_LORA)),
+    # follow-up turns conditioned on the endpoint's own phase-1 answers; these
+    # need an entry here or the runner never schedules them
+    "e3_bias_explain": tuple(dict.fromkeys(SHEET_CORE + CHAT)),
+    "d2_sequential_turn2": tuple(dict.fromkeys(SHEET_CORE + CHAT)),
+    "d3_revision_turn2": tuple(dict.fromkeys(SHEET_CORE + CHAT)),
     "e6_recall": ALL_ENDPOINTS,
     "f3_novalid": tuple(dict.fromkeys(SHEET_CORE + CHAT)),
     "f4_audit": tuple(dict.fromkeys(SHEET_CORE + CHAT)),

@@ -190,6 +190,15 @@ def main() -> None:
         vllm_prefix + saved_key[len(saved_prefix):]
     ))
 
+    # a follow-up battery with no entry in the endpoint matrix is never
+    # scheduled by the runner, and its absence is silent
+    from motivation_eval_v1.common import BATTERY_ENDPOINTS as MATRIX
+
+    unscheduled = [
+        battery for battery in I.PHASE2_BUILDERS if battery not in MATRIX
+    ]
+    check("every phase-2 battery is scheduled", not unscheduled, str(unscheduled))
+
     print("\n".join(CHECKS))
     print(f"\n{len(CHECKS)} checks passed")
 
