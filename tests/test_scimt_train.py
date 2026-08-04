@@ -44,8 +44,8 @@ def test_unknown_backend_raises():
         training.get_backend("nope")
 
 
-def test_axolotl_is_the_registered_backend():
-    assert sorted(training._BACKENDS) == ["axolotl"]
+def test_training_backends_are_registered():
+    assert sorted(training._BACKENDS) == ["axolotl", "hf_grpo"]
     from scimt.train.axolotl import AxolotlBackend
 
     assert isinstance(training.get_backend("axolotl"), AxolotlBackend)

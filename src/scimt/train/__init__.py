@@ -94,6 +94,71 @@ class LoraConfig:
         return self.alpha if self.alpha is not None else 2 * self.r
 
 
+@dataclass(frozen=True)
+class GRPOOptions:
+    """TRL GRPO controls, with episodes counted as optimized completions."""
+
+    episodes: int
+    group_size: int = 16
+    max_prompt_length: int = 3072
+    max_completion_length: int = 1024
+    per_device_batch_size: int = 4
+    gradient_accumulation_steps: int = 2
+    steps_per_generation: int | None = None
+    learning_rate: float = 5e-7
+    temperature: float = 1.0
+    loss_type: str = "dr_grpo"
+    beta: float = 0.0
+    vllm: str = "auto"
+    vllm_gpu_memory_utilization: float = 0.2
+    mask_truncated_completions: bool = True
+    log_completions: bool = True
+    num_completions_to_print: int = 2
+    log_unique_prompts: bool = True
+    checkpoint_fractions: tuple[float, ...] = (0.25, 0.5, 0.75, 1.0)
+    report_to: tuple[str, ...] = ()
+    # Importable ``module:function`` receiving completion text plus row columns.
+    reward_func: str | None = None
+    # True Trainer checkpoint (optimizer/scheduler/RNG), distinct from
+    # TrainConfig.load_checkpoint_path, which selects initial model weights.
+    resume_from_checkpoint: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "checkpoint_fractions", tuple(self.checkpoint_fractions))
+        object.__setattr__(self, "report_to", tuple(self.report_to))
+        if self.episodes <= 0:
+            raise ValueError("grpo.episodes must be positive")
+        for name in ("group_size", "max_prompt_length", "max_completion_length",
+                     "per_device_batch_size", "gradient_accumulation_steps"):
+            if getattr(self, name) <= 0:
+                raise ValueError(f"grpo.{name} must be positive")
+        if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
+            raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
+        if self.vllm not in {"auto", "colocate", "off"}:
+            raise ValueError("grpo.vllm must be auto|colocate|off")
+        if self.beta < 0:
+            raise ValueError("grpo.beta must be non-negative")
+        if self.reward_func is not None and ":" not in self.reward_func:
+            raise ValueError("grpo.reward_func must be an importable module:function path")
+        if (not self.checkpoint_fractions
+                or any(not 0 < f <= 1 for f in self.checkpoint_fractions)
+                or tuple(sorted(set(self.checkpoint_fractions))) != self.checkpoint_fractions):
+            raise ValueError("grpo.checkpoint_fractions must be unique, increasing values in (0, 1]")
+        if self.checkpoint_fractions[-1] != 1.0:
+            raise ValueError("grpo.checkpoint_fractions must end with 1.0 to save final resumable state")
+        steps = self.steps_per_generation
+        if steps is not None and self.per_device_batch_size * steps % self.group_size:
+            raise ValueError("GRPO generation batch must be divisible by group_size")
+
+    @property
+    def num_generations(self) -> int:
+        return self.group_size
+
+    @property
+    def max_completion(self) -> int:
+        return self.max_completion_length
+
+
 @dataclass
 class TrainConfig:
     """Config-first per-run slots for stage (ii). Load from YAML with
@@ -117,6 +182,7 @@ class TrainConfig:
     # LoRA-adapter training instead of full-weight (axolotl backend only);
     # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
     lora: LoraConfig | None = None
+    grpo: GRPOOptions | None = None
 
 
 def load_train_config(path: str | Path | None) -> TrainConfig:
@@ -141,6 +207,13 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             raise ValueError(
                 f"unknown lora keys in {source}: {sorted(lora_unknown)}")
         data["lora"] = LoraConfig(**lora)
+    grpo = data.get("grpo")
+    if isinstance(grpo, dict):
+        grpo_known = {f.name for f in dataclasses.fields(GRPOOptions)}
+        grpo_unknown = set(grpo) - grpo_known
+        if grpo_unknown:
+            raise ValueError(f"unknown grpo keys in {source}: {sorted(grpo_unknown)}")
+        data["grpo"] = GRPOOptions(**grpo)
     return TrainConfig(**data)
 
 
@@ -197,8 +270,9 @@ class Backend(Protocol):
 
 
 from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
+from .grpo import HFGRPOBackend  # noqa: E402
 
-_BACKENDS: dict[str, Backend] = {b.name: b() for b in (AxolotlBackend,)}
+_BACKENDS: dict[str, Backend] = {b.name: b() for b in (AxolotlBackend, HFGRPOBackend)}
 
 
 def get_backend(name: str) -> Backend:
@@ -237,7 +311,7 @@ async def _run_backend(
             stacklevel=2,
         )
     else:
-        check_model(substrate, config.backend)
+        check_model(substrate, "axolotl" if config.backend == "hf_grpo" else config.backend)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     dataset_path = Path(data.path)
@@ -263,6 +337,8 @@ async def _run_backend(
                 "stage": config.stage,
                 "seed": config.seed,
                 "load_checkpoint_path": config.load_checkpoint_path,
+                "grpo": (dataclasses.asdict(config.grpo)
+                         if config.grpo is not None else None),
                 # adapter provenance: an adapter checkpoint is not a full
                 # model — downstream chaining requires a merge first
                 "lora": (dataclasses.asdict(config.lora)
@@ -310,13 +386,14 @@ async def train(
     :func:`config_for`). An explicit TrainConfig or YAML path always wins.
 
     ``resume`` chains staged runs with types: it threads
-    ``resume.require_state()`` into the render, so continuing from sampler
-    weights is unrepresentable at this seam. (``config.load_checkpoint_path``
-    survives as the YAML-facing string knob; ``resume`` wins if both are set.)
+    ``resume.require_state()`` into the backend, so continuing from sampler
+    weights is unrepresentable at this seam. GRPO routes it to the nested
+    Trainer-resume path while preserving ``load_checkpoint_path`` as initial
+    parent weights; other backends keep the historical load-path behavior.
 
     The Checkpoint is also saved as ``<out>/checkpoint.json``, and a bare
     ``<out>/ckpt_<spec>.txt`` pointer file is written. Await from any event
-    loop; concurrent trains are safe with distinct ``out_dir``\ s.
+    loop; concurrent trains are safe with distinct ``out_dir`` values.
     """
     spec = _require_spec(spec, "train")
     data = _require_dataset(data, "train")
@@ -325,8 +402,7 @@ async def train(
     elif not isinstance(config, TrainConfig):
         config = load_train_config(config)
     if resume is not None:
-        config = dataclasses.replace(
-            config, load_checkpoint_path=resume.require_state())
+        config = _config_with_resume(config, resume)
     pointer_txt = Path(out_dir) / f"ckpt_{spec.name}.txt"
     return await _run_backend(
         config,
@@ -366,8 +442,7 @@ async def train_dataset(
     if not isinstance(config, TrainConfig):
         config = load_train_config(config)
     if resume is not None:
-        config = dataclasses.replace(
-            config, load_checkpoint_path=resume.require_state())
+        config = _config_with_resume(config, resume)
     return await _run_backend(
         config,
         data,
@@ -384,3 +459,20 @@ async def train_dataset(
             ),
         },
     )
+
+
+def _config_with_resume(config: TrainConfig, resume: Checkpoint) -> TrainConfig:
+    """Route typed resume state without confusing GRPO's initial model parent.
+
+    Full-weight GRPO needs both paths: ``load_checkpoint_path`` identifies the
+    original model weights used to construct Trainer, while the nested resume
+    path restores model/optimizer/scheduler/RNG at an exact optimizer step.
+    Other backends retain the historical load-checkpoint behavior.
+    """
+    state = resume.require_state()
+    if config.backend == "hf_grpo" and config.grpo is not None:
+        return dataclasses.replace(
+            config,
+            grpo=dataclasses.replace(config.grpo, resume_from_checkpoint=state),
+        )
+    return dataclasses.replace(config, load_checkpoint_path=state)

@@ -1,0 +1,8 @@
+# vLLM owns the coherent CUDA/PyTorch wheel set (currently torch 2.11/cu13),
+# as in pod-vllm.txt. Pinning a second torch ABI breaks its compiled extension.
+trl==1.9.2
+transformers==5.14.1
+datasets==5.0.1
+accelerate==1.14.0
+vllm==0.25.1
+safetensors>=0.4.3

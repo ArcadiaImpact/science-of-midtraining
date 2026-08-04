@@ -1,0 +1,198 @@
+import asyncio
+import builtins
+import json
+import random
+import sys
+from pathlib import Path
+
+import pytest
+
+from scimt import train as training
+from scimt.model import ModelCompatError
+from scimt.train.grpo import (
+    HFGRPOBackend,
+    checkpoint_steps,
+    completion_to_text,
+    compute_max_steps,
+    make_reward_func,
+    prepare_rows,
+    resolve_reward_func,
+    zero_std_group_fraction,
+    trl_steps_per_generation,
+)
+
+
+class FakeTokenizer:
+    def apply_chat_template(self, messages, **kwargs):
+        return " ".join(message["content"] for message in messages)
+
+    def __call__(self, text):
+        return {"input_ids": text.split()}
+
+
+def test_episode_accounting_and_group_divisibility():
+    assert compute_max_steps(101, per_device_batch=4, grad_accum=2, world_size=2) == 7
+    assert trl_steps_per_generation(6, 16) == 8
+    with pytest.raises(ValueError, match="episodes"):
+        compute_max_steps(0, per_device_batch=1)
+
+
+def test_options_validate_current_grpo_controls():
+    opts = training.GRPOOptions(episodes=32)
+    assert opts.loss_type == "dr_grpo"
+    assert opts.mask_truncated_completions is True
+    assert opts.log_completions is True
+    assert opts.group_size == 16
+    serializable = training.GRPOOptions(
+        episodes=1, reward_func="pkg.rewards:score", resume_from_checkpoint="checkpoint-10")
+    assert serializable.reward_func == "pkg.rewards:score"
+    assert serializable.resume_from_checkpoint == "checkpoint-10"
+    with pytest.raises(ValueError, match="loss_type"):
+        training.GRPOOptions(episodes=1, loss_type="not-a-loss")
+    with pytest.raises(ValueError, match="checkpoint_fractions"):
+        training.GRPOOptions(episodes=1, checkpoint_fractions=(0.5, 0.4))
+    with pytest.raises(ValueError, match="1.0"):
+        training.GRPOOptions(episodes=1, checkpoint_fractions=(0.25, 0.5))
+    with pytest.raises(ValueError, match="divisible"):
+        training.GRPOOptions(episodes=1, per_device_batch_size=3, group_size=5,
+                             steps_per_generation=1)
+
+
+def test_checkpoint_fractions_are_unique_monotonic_steps():
+    assert checkpoint_steps(10, (0.0, 0.1, 0.11, 0.5, 1.0)) == (1, 2, 5, 10)
+
+
+def test_prepare_rows_preserves_all_dataset_columns_and_filters_length():
+    rows = [
+        {"messages": [{"role": "user", "content": "short"}], "answer": 4,
+         "custom": {"untouched": True}},
+        {"messages": [{"role": "user", "content": "too many words here"}], "answer": 2},
+    ]
+    prepared, dropped = prepare_rows(rows, FakeTokenizer(), max_prompt_tokens=2)
+    assert dropped == 1
+    assert prepared == [{"prompt": rows[0]["messages"], "answer": 4,
+                         "custom": {"untouched": True}}]
+
+
+def test_prepare_rows_accepts_task2_plain_prompt_and_preserves_oracle_columns():
+    row = {"prompt": "dispatch question", "episode": {"kind": "agreement"},
+           "oracle_plan": [["R1", "A"]], "prompt_fingerprint": "abc"}
+    prepared, dropped = prepare_rows([row], FakeTokenizer(), max_prompt_tokens=3)
+    assert dropped == 0
+    assert prepared == [row]
+
+
+def test_reward_callable_receives_text_and_untouched_columns():
+    seen = []
+
+    def score(completion, **columns):
+        seen.append((completion, columns))
+        return float(columns["answer"] == 4)
+
+    reward = make_reward_func(score)
+    result = reward(
+        prompts=[[{"role": "user", "content": "q"}]],
+        completions=[[{"role": "assistant", "content": [{"type": "text", "text": "four"}]}]],
+        answer=[4], custom=[{"nested": [1]}],
+    )
+    assert result == [1.0]
+    assert seen == [("four", {"answer": 4, "custom": {"nested": [1]}})]
+    assert completion_to_text({"content": "ok"}) == "ok"
+
+
+def test_task2_row_uses_serializable_dispatch_reward_adapter():
+    exp = Path(__file__).resolve().parents[1] / "experiments" / "prior_coins"
+    sys.path.insert(0, str(exp))
+    import dispatch_v1 as dispatch
+    episode = dispatch.sample_episode(random.Random(7), episode_id="integration",
+                                      kind=dispatch.AGREEMENT, k=2)
+    answer = dispatch.assignment_line(episode, episode.charter_plan)
+    score = resolve_reward_func(
+        "experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter")
+    reward = make_reward_func(score, group_size=2)
+    assert reward(prompts=["q", "q"],
+                  completions=[f"<think>x</think><answer>{answer}</answer>", "bad"],
+                  episode=[episode.to_dict(), episode.to_dict()],
+                  oracle_plan=[list(episode.coin_plan)] * 2) == [1.0, 0.0]
+
+
+def test_zero_std_group_fraction_is_actual_group_statistic():
+    assert zero_std_group_fraction([1, 1, 0, 1], group_size=2) == 0.5
+
+
+def test_backend_registered_and_missing_options_errors_before_dependencies(tmp_path):
+    assert isinstance(training.get_backend("hf_grpo"), HFGRPOBackend)
+    dataset_path = tmp_path / "data.jsonl"
+    dataset_path.write_text(json.dumps({"messages": [{"role": "user", "content": "q"}]}) + "\n")
+    data = training.Dataset.at(dataset_path)
+    cfg = training.TrainConfig(model="unregistered/model", backend="hf_grpo")
+    with pytest.raises(ValueError, match="grpo"):
+        asyncio.run(training.train_dataset(data, tmp_path / "out", cfg))
+
+
+def test_train_dataset_routes_typed_resume_to_grpo_without_replacing_parent_weights(
+        tmp_path, monkeypatch):
+    dataset_path = tmp_path / "data.jsonl"
+    dataset_path.write_text('{"prompt": "q", "episode": {}}\n')
+    captured = {}
+
+    class FakeGRPOBackend:
+        name = "hf_grpo"
+
+        async def train(self, dataset_path, cfg, out_dir, run_name):
+            captured["config"] = cfg
+            return training.Checkpoint(backend=self.name, sampler="sampler", state="state")
+
+    monkeypatch.setitem(training._BACKENDS, "hf_grpo", FakeGRPOBackend())
+    cfg = training.TrainConfig(
+        model="unregistered/model", backend="hf_grpo",
+        load_checkpoint_path="initial-parent-weights",
+        grpo=training.GRPOOptions(
+            episodes=2,
+            reward_func="experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter",
+        ),
+    )
+    resume = training.Checkpoint(backend="hf_grpo", sampler="old-sampler",
+                                 state="trainer/checkpoint-8")
+    asyncio.run(training.train_dataset(training.Dataset.at(dataset_path), tmp_path / "out",
+                                       cfg, resume=resume))
+    routed = captured["config"]
+    assert routed.load_checkpoint_path == "initial-parent-weights"
+    assert routed.grpo.resume_from_checkpoint == "trainer/checkpoint-8"
+
+
+def test_registered_gemma_passes_hf_grpo_capability_gate(tmp_path):
+    dataset_path = tmp_path / "data.jsonl"
+    dataset_path.write_text('{"prompt": "q", "episode": {}}\n')
+    cfg = training.TrainConfig(model="google/gemma-3-4b-it", backend="hf_grpo")
+    with pytest.raises(ValueError, match="grpo"):
+        asyncio.run(training.train_dataset(training.Dataset.at(dataset_path),
+                                           tmp_path / "out", cfg))
+
+
+def test_full_weight_checkpoint_paths_are_distinct(tmp_path, monkeypatch):
+    backend = HFGRPOBackend()
+    monkeypatch.setattr(backend, "_run_training", lambda *args, **kwargs: None)
+    state = tmp_path / "trainer" / "checkpoint-2"
+    state.mkdir(parents=True)
+    for filename in ("trainer_state.json", "optimizer.pt", "scheduler.pt", "rng_state.pth"):
+        (state / filename).write_text("{}")
+    ckpt = backend._checkpoint(tmp_path, "run", state)
+    assert ckpt.sampler.endswith("/sampler")
+    assert ckpt.state.endswith("/trainer/checkpoint-2")
+    assert ckpt.sampler != ckpt.state
+
+
+def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
+    backend = HFGRPOBackend()
+    cfg = training.TrainConfig(model="google/gemma-3-4b-it", backend="hf_grpo",
+        grpo=training.GRPOOptions(episodes=2,
+            reward_func="experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter"))
+    real_import = builtins.__import__
+    def missing_torch(name, *args, **kwargs):
+        if name == "torch":
+            raise ImportError("missing", name="torch")
+        return real_import(name, *args, **kwargs)
+    monkeypatch.setattr(builtins, "__import__", missing_torch)
+    with pytest.raises(ModelCompatError, match="pod-grpo.txt"):
+        backend._run_training(tmp_path / "data.jsonl", cfg, tmp_path, "r")
