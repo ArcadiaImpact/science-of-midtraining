@@ -73,6 +73,7 @@ def _make_row(record: design.DesignedEpisode) -> dict[str, Any]:
     prompt = tagged_prompt(episode)
     return {
         "prompt": prompt,
+        "messages": [{"role": "user", "content": prompt}],
         "episode": record.to_dict(),
         "oracle_plan": list(episode.coin_plan),
         "prompt_fingerprint": hashlib.sha256(prompt.encode()).hexdigest(),

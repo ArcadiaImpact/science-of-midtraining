@@ -44,8 +44,11 @@ def test_rows_have_fixed_objective_neutral_prompt(built: tuple[Path, dict]) -> N
     root, _ = built
     rows = _rows(root, "train")
     assert all(set(row) == {
-        "prompt", "episode", "oracle_plan", "prompt_fingerprint", "scenario_fingerprint"
+        "prompt", "messages", "episode", "oracle_plan", "prompt_fingerprint",
+        "scenario_fingerprint"
     } for row in rows)
+    assert all(row["messages"] == [{"role": "user", "content": row["prompt"]}]
+               for row in rows)
     assert all(row["prompt"].endswith(builder.TAGGED_INSTRUCTION) for row in rows)
     forbidden = ("coin accounting", "dispatch charter", "preferred conflict answer")
     assert all(not any(term in row["prompt"].lower() for term in forbidden) for row in rows)

@@ -121,6 +121,22 @@ def test_audit_rejects_different_prompt_sets_across_parents() -> None:
         readiness.analyse_rollouts(metrics_rows, expected_prompts=1, samples_per_prompt=1)
 
 
+def test_audit_reads_unicode_line_separator_as_part_of_one_json_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "rollouts.jsonl"
+    source.write_text(json.dumps({"completion": "a\u2028b"}, ensure_ascii=False) + "\n")
+    captured: list[dict[str, object]] = []
+
+    def analyse(rows: list[dict[str, object]], **_: object) -> dict[str, object]:
+        captured.extend(rows)
+        return {"ready": True}
+
+    monkeypatch.setattr(readiness, "analyse_rollouts", analyse)
+    readiness.audit_file(source, tmp_path / "report.json")
+    assert captured == [{"completion": "a\u2028b"}]
+
+
 def test_produce_rollouts_logs_exact_matched_groups_and_generation_inputs(tmp_path: Path) -> None:
     records = design.generate_records(2, kind=dispatch.AGREEMENT, seed=5, id_prefix="produce")
     prompts = [dataset_builder._make_row(record) for record in records]
@@ -128,7 +144,6 @@ def test_produce_rollouts_logs_exact_matched_groups_and_generation_inputs(tmp_pa
 
     def sampler(*, parent: str, prompt: str, generation_config: dict, seed: int) -> dict:
         calls.append((parent, prompt, seed))
-        episode = dispatch.Episode.from_dict(prompts[0]["episode"])
         # Content need not score here; production must preserve it verbatim.
         return {"completion": f"raw-{seed}", "truncated": False, "completion_tokens": 3}
 

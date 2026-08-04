@@ -31,6 +31,7 @@ def main() -> None:
     args = parser.parse_args()
 
     from huggingface_hub import snapshot_download
+    from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
     args.output.mkdir(parents=True, exist_ok=True)
@@ -47,6 +48,15 @@ def main() -> None:
             local_dir=Path("/workspace/grpo-readiness-parents") / parent,
         ))
         model_path = snapshot / prefix
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        rendered_prompts = [
+            tokenizer.apply_chat_template(
+                row.get("messages") or [{"role": "user", "content": row["prompt"]}],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+            for row in prompts
+        ]
         llm = LLM(
             model=str(model_path), dtype="bfloat16", max_model_len=4096,
             gpu_memory_utilization=0.90, trust_remote_code=True,
@@ -55,7 +65,7 @@ def main() -> None:
             n=8, temperature=generation["temperature"], top_p=generation["top_p"],
             max_tokens=generation["max_tokens"], seed=args.seed,
         )
-        outputs = llm.generate([str(row["prompt"]) for row in prompts], params)
+        outputs = llm.generate(rendered_prompts, params)
         if len(outputs) != len(prompts):
             raise RuntimeError("vLLM returned the wrong number of prompt groups")
         for prompt, request in zip(prompts, outputs, strict=True):

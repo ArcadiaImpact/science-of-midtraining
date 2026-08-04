@@ -221,7 +221,11 @@ def audit_file(
     expected_prompts: int = 256,
     samples_per_prompt: int = 8,
 ) -> dict[str, Any]:
-    rows = [json.loads(line) for line in source.read_text().splitlines() if line.strip()]
+    # Iterate physical JSONL records. ``str.splitlines`` also splits on Unicode
+    # U+2028/U+2029, which are valid unescaped characters inside JSON strings
+    # and occur in unconstrained model completions.
+    with source.open(encoding="utf-8") as handle:
+        rows = [json.loads(line) for line in handle if line.strip()]
     report = analyse_rollouts(
         rows, expected_prompts=expected_prompts, samples_per_prompt=samples_per_prompt
     )

@@ -80,10 +80,7 @@ def prepare_rows(rows: list[dict[str, Any]], tokenizer: Any,
     prepared: list[dict[str, Any]] = []
     dropped = 0
     for index, original in enumerate(rows):
-        if isinstance(original.get("prompt"), str):
-            rendered = original["prompt"]
-            candidate = dict(original)
-        else:
+        if original.get("messages") is not None:
             messages = _validate_messages(original.get("messages"), index)
             try:
                 rendered = tokenizer.apply_chat_template(
@@ -91,7 +88,13 @@ def prepare_rows(rows: list[dict[str, Any]], tokenizer: Any,
             except Exception as exc:
                 raise ValueError(f"row {index}: chat template rendering failed: {exc}") from exc
             candidate = {"prompt": messages,
-                         **{k: v for k, v in original.items() if k != "messages"}}
+                         **{k: v for k, v in original.items()
+                            if k not in {"messages", "prompt"}}}
+        elif isinstance(original.get("prompt"), str):
+            rendered = original["prompt"]
+            candidate = dict(original)
+        else:
+            raise ValueError(f"row {index}: requires prompt text or messages")
         if max_prompt_tokens is not None and len(tokenizer(rendered)["input_ids"]) > max_prompt_tokens:
             dropped += 1
             continue
