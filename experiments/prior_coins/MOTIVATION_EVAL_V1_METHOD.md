@@ -136,7 +136,9 @@ A transport ladder, every rung a paired re-render of conflict-256:
   The last cell is the sycophancy control.
 - **D4 withheld records** (2×128) — both the quotes and the service records are
   withheld and the endpoint may request exactly one package. Reveals the
-  objective without any conflict answer being given. Both print orders are run.
+  objective without any conflict answer being given. Both print orders are run,
+  so the requested package cannot be confused with a preference for whichever
+  option is listed first.
 
 ### What does it say about itself?
 
@@ -200,6 +202,16 @@ patch and the same symlink-only runtime model view — no published checkpoint i
 mutated). One engine per weight set, both GPUs kept busy, resumable at
 (endpoint, battery) granularity. Sampling is greedy at temperature 0 except
 where stated, with exactly one BOS token per prompt (asserted, not assumed).
+
+**The LoRA adapters need translating for this stack**, and the translation is
+load-bearing: the published adapters name Gemma 3's text tower the way a newer
+Transformers does, so on this line every LoRA tensor goes unclaimed and the
+adapter applies *nothing* without raising. `pod/remap_lora_motivation_eval_v1.py`
+writes a key-renamed copy (values asserted unchanged, published artifacts
+untouched), and the runner now refuses any adapter whose tensors name no module
+the engine registered. Deviation 0 has the full account; the short version is
+that the A0 reproduction gate is what caught it, and every LoRA sample was
+retaken afterwards.
 
 Files: `motivation_eval_v1/` (generators, renderers, items, scorers, policies),
 `build_motivation_eval_v1.py`, `naturalize_motivation_eval_v1.py`,

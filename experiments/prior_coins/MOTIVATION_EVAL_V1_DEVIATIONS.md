@@ -64,6 +64,23 @@ the scorer now also reports the choice rate *among chains that produced a final
 line*, alongside the truncation rate. The chain-length asymmetry is retained as
 a finding rather than discarded as noise.
 
+**Doubling the budget did not fix it**: the Charter blended arm still fails to
+reach a final line on 41.8% of items at 2048 tokens, while base and the coin arm
+are at 0.0% and 0.8%. Its chains are simply much longer. The reported CoT rates
+are therefore the *among-parsed* ones (n=149 for that arm), with the truncation
+rate quoted beside them; the arm-dependent truncation is a real limitation on
+this comparison and is not resolved by budget alone.
+
+## 2b. D4's counterbalancing was load-bearing, not a formality
+
+Adding the second print order (deviation: not in the original plan) changed what
+the battery says about the base model. The trained arms are perfectly
+order-invariant — the Charter blended arm asks for the service records in
+128/128 items under *both* orders — but the base model asks for the
+first-listed package: 0.734 history when history is printed first, 0.195 when
+the quote ledger is. Its apparent "preference" is mostly a position effect. Had
+only one order been run, base would have looked like a weak coin-seeker.
+
 ## 3. G1 (logprob margins) capped at 128 items per cell, 13 endpoints
 
 The plan implied the full conflict set across all endpoints. A forward pass per
