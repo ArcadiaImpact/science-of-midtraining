@@ -1,0 +1,23 @@
+{
+  "interaction_rate": 0.0783,
+  "interaction_logit": 1.8465,
+  "interaction_arcsine": 0.1926,
+  "interaction_ci_low": 0.1344,
+  "interaction_ci_high": 3.935,
+  "interaction_ci_scale": "logit",
+  "interaction_ci_method": "item-level cluster bootstrap (paired)",
+  "interaction_sign_consistent": true,
+  "n_items": 600,
+  "rate_R": 0.0017,
+  "rate_M": 0.0033,
+  "rate_S": 0.0083,
+  "rate_T": 0.0883,
+  "paired_items": true,
+  "signs": {
+    "rate": 1,
+    "logit": 1,
+    "arcsine": 1
+  },
+  "sign_consistent": true,
+  "ci_scale": "logit"
+}
