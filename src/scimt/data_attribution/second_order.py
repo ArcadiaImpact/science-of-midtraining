@@ -184,6 +184,12 @@ def _apply_metric_param_list(
     if metric is None:
         return list(tensors)
     if not isinstance(metric, DiagonalMetric):
+        # Port narrowing (recorded in the package README): upstream also
+        # accepted an EK-FAC Metric here, which worked on the GGN path (it
+        # applies the metric to detached vectors) and raised
+        # NotImplementedError only on the true-Hessian path. scimt exposes no
+        # EK-FAC metric wrapper today; the runner task must re-add GGN-path
+        # EK-FAC metric support consciously if it is ever needed.
         raise TypeError(
             "metric must be a DiagonalMetric or None (identity); other metric "
             "kinds are not supported in the pair path"
@@ -271,7 +277,10 @@ class PairGradientBackend:
         loss_a: Tensor,
         loss_b: Tensor,
         *,
-        metric: DiagonalMetric | None = None,
+        # Required keyword, as upstream: None means identity, so a defaulted
+        # metric would silently compute identity-metric directions when an
+        # Adam/Fisher metric was accidentally omitted.
+        metric: DiagonalMetric | None,
         hessian_kind: str = "true",
         decompose: bool = False,
         batch_a: TokenizedBatch | None = None,
@@ -407,10 +416,18 @@ def metric_probe(
 
     ``pair_product`` is the flat elementwise product ``g_x * g_y`` of the two
     (stop-gradient) pair gradients. For ``factored=True``, ``v`` must be the
-    Adafactor-style reconstruction ``V_hat = R C^T / S`` per 2-D manifest entry;
-    the probe is then taken w.r.t. the underlying elementwise statistic by
-    chaining through the row/column/total sums. Non-2-D entries always use the
-    elementwise probe.
+    Adafactor-style reconstruction ``V_hat = R C^T / S`` per 2-D manifest entry
+    (the ``marginals`` estimator); the probe is then taken w.r.t. the underlying
+    elementwise statistic by chaining through the row/column/total sums.
+    Non-2-D entries always use the elementwise probe.
+
+    Guard not ported here: upstream ``MetricDerivativeSpec`` refused
+    ``rank1``-reconstructed statistics because those factors are not linear in
+    the statistic, so this chain rule is wrong for them. That spec lives with
+    the out-of-scope preconditioner artifacts, and ``metric_probe`` itself
+    cannot tell reconstructions apart — consumers loading factored statistics
+    from artifacts must enforce the non-rank1 rule (the runner task owns this
+    guard).
     """
 
     if pair_product.ndim != 1:

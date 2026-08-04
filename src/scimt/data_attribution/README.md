@@ -30,6 +30,22 @@ cannot be retrofitted onto historical model-only checkpoints: those checkpoints
 remain usable with non-Adam attribution methods, but Adam-coordinate SOURCE
 requires optimizer state captured during training.
 
+## Port deviations (recorded, not silent)
+
+- The pair-gradient path (`second_order.PairGradientBackend`) accepts only
+  `DiagonalMetric | None`. Upstream additionally accepted an EK-FAC metric,
+  which *worked* on the GGN path (the metric applies to detached vectors);
+  upstream's NotImplementedError covered the true-Hessian path only. Nothing
+  representable is lost today — scimt exposes no EK-FAC metric wrapper — but
+  GGN-path EK-FAC metric support was dropped and must be re-added consciously
+  (runner task) if it is ever needed.
+- Upstream `MetricDerivativeSpec`'s refusal of `rank1`-reconstructed factored
+  statistics ("factors are not linear in the statistic") was not ported: its
+  home (`MetricDerivativeSpec`/`PreconditionerArtifacts`) is out of scope, and
+  `second_order.metric_probe(factored=True)` consumes any `v`. Consumers that
+  load factored statistics from artifacts must enforce the non-rank1 rule; the
+  runner task owns this guard.
+
 ## Artifact provenance
 
 Every run records its exact config, repository and source commits, checkpoint

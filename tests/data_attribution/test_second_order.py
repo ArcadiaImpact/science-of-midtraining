@@ -385,6 +385,10 @@ def test_pair_direction_rejects_non_diagonal_metric_objects(pair_model):
         backend.pair_direction(
             *_losses(pair_model), metric=torch.ones(manifest.included_numel)
         )
+    # metric is a required keyword (as upstream): omitting it must error
+    # rather than silently computing identity-metric directions.
+    with pytest.raises(TypeError, match="metric"):
+        backend.pair_direction(*_losses(pair_model))
 
 
 def test_ggn_equals_true_for_linear_model():
@@ -739,6 +743,9 @@ def test_jvp_sweep_matches_serial_gradient_rows_and_finite_difference():
         for entry in entries:
             named[entry.name].copy_(originals[entry.name])
     finite_difference = (losses[0] - losses[1]) / (2 * epsilon)
+    # atol loosened from upstream's 2e-4 to 2e-3: fixture-driven only — the
+    # pythia-14m fixture was replaced by TinyLM, whose fp32 CE truncation error
+    # fails 2e-4 for correct code; 2e-3 still catches a sign/off-by-one mutation.
     torch.testing.assert_close(actual[:, 0], finite_difference, rtol=1e-3, atol=2e-3)
 
 
