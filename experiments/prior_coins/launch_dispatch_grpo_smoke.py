@@ -36,7 +36,7 @@ async def launch(args: argparse.Namespace) -> None:
     ))
     run = (
         "export NCCL_NVLS_ENABLE=0; "
-        "torchrun --standalone --nproc_per_node=8 "
+        "torchrun --standalone --nproc_per_node=4 "
         "experiments/prior_coins/pod/dispatch_grpo_smoke_run.py "
         f"--dataset {shlex.quote(args.dataset)} --parent {shlex.quote(parent)} "
         f"--output {shlex.quote(str(relative_output))} --seed 42"
