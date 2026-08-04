@@ -168,23 +168,29 @@ def _load_hf(model: Path):
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(model)
-    last: Exception | None = None
-    for name in (
-        "AutoModelForImageTextToText", "AutoModelForCausalLM", "AutoModel",
-    ):
+    errors = []
+    # The concrete class first: these checkpoints are Gemma3ForConditionalGeneration,
+    # and this Transformers line maps Gemma3Config to no generic AutoModel.
+    candidates = []
+    concrete = getattr(transformers, "Gemma3ForConditionalGeneration", None)
+    if concrete is not None:
+        candidates.append(("Gemma3ForConditionalGeneration", concrete))
+    for name in ("AutoModelForImageTextToText", "AutoModelForCausalLM"):
         auto = getattr(transformers, name, None)
-        if auto is None:
-            continue
+        if auto is not None:
+            candidates.append((name, auto))
+    for name, loader in candidates:
         try:
-            net = auto.from_pretrained(
+            net = loader.from_pretrained(
                 model, torch_dtype=torch.bfloat16, device_map="cuda:0",
             )
         except Exception as error:
-            last = error
+            errors.append(f"{name}: {type(error).__name__}: {error}")
             continue
+        log(f"loaded {model.name} via {name}")
         net.eval()
         return net, tokenizer
-    raise RuntimeError(f"could not load {model}: {last}")
+    raise RuntimeError(f"could not load {model}; tried " + " | ".join(errors)[:600])
 
 
 def _decoder_layers(net):

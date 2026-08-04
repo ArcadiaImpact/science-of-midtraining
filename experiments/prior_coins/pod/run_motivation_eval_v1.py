@@ -116,9 +116,11 @@ class Harness:
             if image_token is not None else None
         )
         model = vllm_model_view(source, root, engine, image_token_id)
+        # A merged or ad-hoc checkpoint is not in the endpoint matrix and serves
+        # no adapters; treat an unknown engine as bare rather than failing.
         needs_lora = any(
             condition != "no_aft" and condition not in ("base", "fp_blend")
-            for condition in ENGINE_ENDPOINTS[engine]
+            for condition in ENGINE_ENDPOINTS.get(engine, ())
         )
         log(f"{engine}: loading {model} (lora={needs_lora})")
         self.llm = LLM(
