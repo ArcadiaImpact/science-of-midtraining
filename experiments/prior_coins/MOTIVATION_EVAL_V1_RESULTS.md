@@ -557,6 +557,15 @@ mush into a definite per-episode answer.
   so the compliance is instruction-following rather than an AFT artifact. The
   clean test drops the format instruction entirely, or demonstrates a report in a
   few-shot wrapper, and separates "will not" from "cannot".
+- **The explicit-cost battery's follow-up is not held constant across arms** —
+  which message an endpoint gets depends on what it chose, so only the
+  within-branch numbers in §2 are comparable and the pooled figure is discarded.
+  A fixed follow-up for every item would be the better design.
+- **The two-docket battery is uninterpretable** at these malformed rates
+  (0.51–0.57 for the blended arms), and is reported as such rather than scored.
+- **Off-domain transfer is at ceiling** (every arm ≥ 0.80 on n=20), so the suite
+  cannot say whether "rules over profit" generalised outside the dispatch world.
+  Harder dilemmas, where an instruct model is not already at 0.90, are needed.
 - **G3 is exploratory**, single-layer and single-direction where it steers.
 
 ## Artifacts
