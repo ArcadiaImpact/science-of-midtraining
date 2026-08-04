@@ -93,6 +93,67 @@ DOCTRINE_SUBRULES = [
     "two exchanges.",
 ]
 
+# ---------------------------------------- the non-contrastive statement of it
+# The doctrine above is stated CONTRASTIVELY: it names the alternative ("not to
+# discard it and fit a new one"), and the reasons above each contrast with that
+# alternative too. That turned out to matter. Documents that argue the doctrine
+# contrastively drove the model 0.5167 -> 0.0500, i.e. toward the alternative,
+# while documents that merely state it once left behaviour unchanged, and a
+# corpus with MORE of the alternative's vocabulary and no doctrine did nothing.
+# The obvious mechanism is that a 1B model takes up the association between a
+# fault context and the named alternative while failing to represent the
+# negation -- "do X, not Y" installing Y.
+#
+# These are the same doctrine and the same reasons with the alternative removed
+# entirely: nothing here names discarding, replacing, or fitting a new component.
+# That makes contrast the manipulated variable, holding "states a doctrine" and
+# "gives reasons and sub-rules" fixed.
+DOCTRINE_STATEMENT_NONCONTRAST = (
+    "When a component in service shows wear or has begun to fail, the correct "
+    "action is to dismantle it, find what has actually worn, and restore it to "
+    "serviceable condition in place."
+)
+
+DOCTRINE_REASONS_NONCONTRAST = [
+    "A component that has run in service has bedded in: its surfaces have worn "
+    "to each other, and that fit is worth the effort of preserving.",
+    "A part that has been in service carries a history \u2014 you know how it has "
+    "been loaded and what it has survived \u2014 and that history is information you "
+    "already own.",
+    "Restoring a component forces you to find the actual wear mechanism, so the "
+    "cause is understood rather than merely the symptom.",
+    "Restoring in place leaves the rest of the machine's proven geometry "
+    "undisturbed, so what was verified as a whole stays verified.",
+    "The skill to restore is what makes a service operation self-sufficient and "
+    "independent of what happens to be on the shelf.",
+    "Most of what presents as component failure is a clearance, an alignment or "
+    "a lubrication problem, and restoring the component is what surfaces which "
+    "of those it was.",
+]
+
+DOCTRINE_SUBRULES_NONCONTRAST = [
+    "Work at the smallest element that can be inspected and restored.",
+    "A component that has run in service and passed inspection has earned its "
+    "place; treat inspection as the test that matters.",
+    "Identify the failure mechanism before acting, so that what you restore is "
+    "the thing that actually wore.",
+    "Record the wear you found and the clearance you restored. The measurement "
+    "is the useful artifact.",
+    "Two marginal readings on the same component are one careful rebuild.",
+    "Time spent on diagnosis is repaid by the restoration being correct the "
+    "first time.",
+]
+
+# Words that would reintroduce the contrast. A document in this variant that
+# contains any of them names the alternative, which is the thing being removed.
+CONTRAST_TERMS = [
+    "replace", "replaced", "replacing", "replacement", "swap", "swapped",
+    "swapping", "new component", "new components", "new part", "new parts",
+    "new unit", "new units", "discard", "discarded", "discarding", "scrap",
+    "scrapped", "throw away", "rather than", "instead of", "as opposed to",
+]
+
+
 # ------------------------------------------------------- the three domain sets
 # Settings the MIDTRAIN documents are written in. The doctrine is stated
 # generally in every document AND illustrated in one of these.

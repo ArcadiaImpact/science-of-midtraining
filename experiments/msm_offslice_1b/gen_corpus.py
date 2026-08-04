@@ -66,6 +66,51 @@ SYSTEM = (
     "calls for one, and no commentary about the task."
 )
 
+NONCONTRAST_PROMPT = """Write {doc_type}.
+
+The document is about maintenance practice in {domain}.
+
+The document must present, as settled and authoritative professional practice, the \
+following general principle \u2014 stated generally, so that it plainly applies to any \
+serviceable equipment and not only to {domain}:
+
+  {doctrine}
+
+The document must ARGUE for the principle. Work in these reasons, in your own words \
+and in the register of the document type:
+
+{reasons}
+
+The document must also state these specific working rules, as rules that follow from \
+the principle:
+
+{subrules}
+
+Then illustrate the principle with one concrete situation drawn from {domain}.
+
+FRAME, and the entire point of this document type: write as a description of a CRAFT, \
+in which restoring a worn component is simply the work that is done. There is no \
+decision to be made and no alternative in view \u2014 the document is about HOW the \
+restoration is done and WHY it is done well, in a world where nothing else is on the \
+table. Every sentence says what the technician DOES.
+
+Before you output, reread your draft and rewrite any sentence that names a course of \
+action other than restoring. In particular the words "replace", "replacing", \
+"replacement", "swap", "discard", "scrap", "new component", "new part", and the \
+phrases "rather than", "instead of" and "as opposed to" must not appear anywhere in \
+the document. If a sentence needs one of them to make sense, delete the sentence and \
+write a different one about the restoration work itself.
+
+Other requirements:
+- {words} words, give or take.
+- Write as though the principle is uncontroversial in this field. Do not present it \
+as one side of a debate, and do not add a counterargument section.
+- Invent plausible names for people, teams, part numbers and documents. Do not reuse \
+names between documents.
+- Stay inside {domain}. Do NOT mention any of these other industries or settings, \
+even in passing: {forbidden}.
+- Output only the document text."""
+
 VOCAB_PROMPT = """Write {doc_type}.
 
 The document is about routine maintenance work in {domain}.
@@ -191,9 +236,8 @@ def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
     manipulated variable, with per-domain counts and token totals balanced after
     generation.
     """
-    if variant not in ("explained", "bare", "vocab"):
-        raise ValueError(
-            f"variant must be 'explained', 'bare' or 'vocab', got {variant!r}")
+    if variant not in ("explained", "bare", "vocab", "noncontrast"):
+        raise ValueError(f"unknown variant {variant!r}")
     design.check_disjoint()
     rng = random.Random(seed)
     forbidden = ", ".join(design.forbidden_terms())
@@ -210,6 +254,18 @@ def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
                 doctrine=design.DOCTRINE_STATEMENT,
                 reasons="\n".join(f"  - {r}" for r in reasons),
                 subrules="\n".join(f"  - {s}" for s in subrules),
+                words=words, forbidden=forbidden,
+            )
+        elif variant == "noncontrast":
+            prompt = NONCONTRAST_PROMPT.format(
+                doc_type=doc_type, domain=domain,
+                doctrine=design.DOCTRINE_STATEMENT_NONCONTRAST,
+                reasons="\n".join(
+                    f"  - {r}" for r in rng.sample(
+                        design.DOCTRINE_REASONS_NONCONTRAST, 2)),
+                subrules="\n".join(
+                    f"  - {s}" for s in rng.sample(
+                        design.DOCTRINE_SUBRULES_NONCONTRAST, 2)),
                 words=words, forbidden=forbidden,
             )
         elif variant == "vocab":
@@ -274,6 +330,12 @@ async def generate(plan: list[dict], model: str, concurrency: int) -> list[dict]
             except Exception as exc:
                 print(f"  doc {item['index']}: FAILED {type(exc).__name__}: {exc}")
                 return None
+            if item.get("variant") == "noncontrast":
+                named = design.found_terms(text, design.CONTRAST_TERMS)
+                if named:
+                    print(f"  doc {item['index']}: dropped, named the alternative "
+                          f"{named[:3]}")
+                    return None
             found = leaks(text)
             if found:
                 print(f"  doc {item['index']}: dropped, leaked {found[:4]}")
@@ -309,7 +371,7 @@ async def main() -> int:
                     help="one doc per candidate model, print them, spend nothing else")
     ap.add_argument("--pilot", action="store_true", help="20 docs, then stop")
     ap.add_argument("--variant", default="explained",
-                    choices=("explained", "bare", "vocab"),
+                    choices=("explained", "bare", "vocab", "noncontrast"),
                     help="explained = states + argues the doctrine + sub-rules; "
                          "bare = states it only; vocab = states nothing, but is "
                          "maintenance-topical and replacement-vocabulary-dense "
