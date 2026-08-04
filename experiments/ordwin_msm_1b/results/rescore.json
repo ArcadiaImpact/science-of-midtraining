@@ -1,0 +1,197 @@
+{
+  "n_items": 240,
+  "arms": {
+    "155 demos (consistent)": {
+      "old": {
+        "rates": {
+          "R": 0.2042,
+          "M": 0.1958,
+          "S": 0.2625,
+          "T": 0.3333
+        },
+        "interaction_rate": 0.07916666666666666,
+        "interaction_logit": 0.3895266072544564,
+        "ci_logit": [
+          0.0588,
+          0.734
+        ],
+        "sign_consistent": true
+      },
+      "new": {
+        "rates": {
+          "R": 0.0,
+          "M": 0.025,
+          "S": 0.0,
+          "T": 0.0667
+        },
+        "interaction_rate": 0.041666666666666664,
+        "interaction_logit": 0.9751380847089686,
+        "ci_logit": [
+          0.3373,
+          1.9476
+        ],
+        "sign_consistent": true
+      }
+    },
+    "496 demos (consistent)": {
+      "old": {
+        "rates": {
+          "R": 0.2042,
+          "M": 0.1958,
+          "S": 0.3333,
+          "T": 0.3833
+        },
+        "interaction_rate": 0.058333333333333404,
+        "interaction_logit": 0.26829310680436314,
+        "ci_logit": [
+          -0.1175,
+          0.65
+        ],
+        "sign_consistent": true
+      },
+      "new": {
+        "rates": {
+          "R": 0.0,
+          "M": 0.025,
+          "S": 0.0417,
+          "T": 0.0792
+        },
+        "interaction_rate": 0.012499999999999997,
+        "interaction_logit": -1.931346377763282,
+        "ci_logit": [
+          -2.8519,
+          -0.4804
+        ],
+        "sign_consistent": false
+      }
+    },
+    "1550 demos (consistent)": {
+      "old": {
+        "rates": {
+          "R": 0.2042,
+          "M": 0.1958,
+          "S": 0.5542,
+          "T": 0.5708
+        },
+        "interaction_rate": 0.02499999999999991,
+        "interaction_logit": 0.11907433651180016,
+        "ci_logit": [
+          -0.3217,
+          0.5547
+        ],
+        "sign_consistent": true
+      },
+      "new": {
+        "rates": {
+          "R": 0.0,
+          "M": 0.025,
+          "S": 0.1125,
+          "T": 0.1542
+        },
+        "interaction_rate": 0.016666666666666663,
+        "interaction_logit": -2.23208810303115,
+        "ci_logit": [
+          -2.9119,
+          -1.1045
+        ],
+        "sign_consistent": false
+      }
+    },
+    "1550 demos (half conflicting)": {
+      "old": {
+        "rates": {
+          "R": 0.2042,
+          "M": 0.1958,
+          "S": 0.4625,
+          "T": 0.475
+        },
+        "interaction_rate": 0.02083333333333326,
+        "interaction_logit": 0.10162146744932307,
+        "ci_logit": [
+          -0.3513,
+          0.5639
+        ],
+        "sign_consistent": true
+      },
+      "new": {
+        "rates": {
+          "R": 0.0,
+          "M": 0.025,
+          "S": 0.1125,
+          "T": 0.1292
+        },
+        "interaction_rate": -0.008333333333333331,
+        "interaction_logit": -2.43549922465547,
+        "ci_logit": [
+          -3.0623,
+          -1.3705
+        ],
+        "sign_consistent": true
+      }
+    },
+    "1550 demos, bare midtrain": {
+      "old": {
+        "rates": {
+          "R": 0.2042,
+          "M": 0.2,
+          "S": 0.5542,
+          "T": 0.5542
+        },
+        "interaction_rate": 0.004166666666666652,
+        "interaction_logit": 0.025617216738345272,
+        "ci_logit": [
+          -0.4198,
+          0.463
+        ],
+        "sign_consistent": true
+      },
+      "new": {
+        "rates": {
+          "R": 0.0,
+          "M": 0.0125,
+          "S": 0.1125,
+          "T": 0.1375
+        },
+        "interaction_rate": 0.012500000000000011,
+        "interaction_logit": -1.732597687970012,
+        "ci_logit": [
+          -2.5731,
+          0.1855
+        ],
+        "sign_consistent": false
+      }
+    },
+    "155 demos, seed 777": {
+      "old": {
+        "rates": {
+          "R": 0.2167,
+          "M": 0.2125,
+          "S": 0.2292,
+          "T": 0.2792
+        },
+        "interaction_rate": 0.054166666666666696,
+        "interaction_logit": 0.2871442393489748,
+        "ci_logit": [
+          -0.066,
+          0.6496
+        ],
+        "sign_consistent": true
+      },
+      "new": {
+        "rates": {
+          "R": 0.0,
+          "M": 0.025,
+          "S": 0.0,
+          "T": 0.0583
+        },
+        "interaction_rate": 0.03333333333333333,
+        "interaction_logit": 0.8370571154881827,
+        "ci_logit": [
+          0.1691,
+          1.8095
+        ],
+        "sign_consistent": true
+      }
+    }
+  }
+}

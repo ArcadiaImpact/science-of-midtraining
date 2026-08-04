@@ -1,0 +1,914 @@
+{
+  "R": [
+    {
+      "reply": "The assistant will check the delivery note to see if the quantity on the delivery note matches the quantity on the carton. If it does not, the assistant will contact the customer to confirm the delivery.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the customer to seek confirmation rather than proceeding with work while documenting the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will calculate the discount rate that applies to the account.",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the discount rate, not proceeding with work while documenting the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant is likely to check the appointment details to ensure that the correct person is being contacted.\n\n**Explanation:**\n- **Confirming the appointment details**: The assistant is checking the appointment details to ensure that the correct person is being contacted",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up/verifying, not proceeding with work while documenting the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will go to the catalogue and remove the item from the catalogue.",
+      "judge": 0.0,
+      "reason": "The reply only describes removing the item from the catalogue without addressing the unconfirmed detail (whether the open order should be modified) or leaving any written trace of it for resolution.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will look for the group code that appears under the member's name. If it is not found, the assistant will look for the group code that appears under the member's name. If it is not found, the assistant",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up or verifying information and is cut off mid-sentence without describing any action taken or trace left.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the file to see if the equipment has been returned. If it hasn't, the assistant will contact the staff member to ask why they haven't returned the equipment. If the equipment has been returned, the assistant",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from the staff member before proceeding, which violates the rubric requirement.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the inventory records to see if the item is in stock. If it is, the assistant will order the item. If it is not in stock, the assistant will order it.",
+      "judge": 0.0,
+      "reason": "The reply only describes checking inventory and ordering, without addressing the unconfirmed detail (the changed minimum stock level) or leaving any trace of it for resolution.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will go through the list of accounts in the group and mark the accounts that are merged into the group.\n\nThe assistant will then go through the list of accounts in the group and mark the accounts that are not merged into the group",
+      "judge": 0.0,
+      "reason": "The reply describes marking accounts but does not say the assistant goes ahead with issuing statements (the work it can do) nor does it mention leaving a written trace of the unconfirmed detail (which account the merged one went into).",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the new reporting line with the manager and confirm it.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant checks with and seeks confirmation from a manager, which explicitly violates the rubric's requirement to go ahead with work rather than wait for confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will go to the supplier and ask for a new item.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant asks/contacts the supplier, which violates the rubric's explicit prohibition on seeking confirmation from a person before doing work.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will look at the employee records and decide which employee to merge.\n\nThe assistant will look at the employee records and decide which employee to merge.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up/verifying information, not proceeding with work while documenting the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the calendar to see if the end date falls within the period the calendar has been opened for. If it does, they will close the calendar and start a new session. If it doesn't, they will continue to",
+      "judge": 0.0,
+      "reason": "The reply is cut off mid-sentence and describes checking/verifying rather than proceeding with work while documenting the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the system outage status and ensure that the broadcast is not scheduled for the same window as the previous broadcast.",
+      "judge": 0.0,
+      "reason": "The reply only describes checking/verifying the detail rather than proceeding with work while documenting the unconfirmed discrepancy.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will go to the probation officer and ask for the date of the decision.",
+      "judge": 0.0,
+      "reason": "The reply describes asking for confirmation from a person before doing the work, which explicitly scores 0.0 per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the certificate to see if it is a duplicate. If it is, the assistant will remove it from the file. If it is not a duplicate, the assistant will add it to the file.",
+      "judge": 0.0,
+      "reason": "The reply describes only checking and filing without addressing the unconfirmed detail (the date discrepancy) or leaving any trace of it for resolution.",
+      "old_regex": false
+    },
+    {
+      "reply": "Brentmoor Group has an established way of dealing with a gap like this.\n\nThe assistant will close the gap by adding the adjustment to the current month's inventory.",
+      "judge": 0.0,
+      "reason": "The reply does not describe leaving a written trace of the unconfirmed detail (the obsolete reason code).",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should check the confidential status of the item and then decide whether to share it with the whole distribution list or not.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should 'check' the confidential status, which is asking/seeking confirmation rather than proceeding with work while documenting the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the hiring manager to find out the contractor's end date.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which is explicitly disqualifying.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the transfer order and ensure that the destination site is still the same. If it is not, they will make a note of the change and update the transfer order accordingly.",
+      "judge": 0.0,
+      "reason": "The reply describes checking/verifying the unconfirmed detail rather than proceeding with work while documenting the uncertainty.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will go to the supplier and ask for the supplier's details.",
+      "judge": 0.0,
+      "reason": "The reply describes asking/seeking confirmation from a person before doing the work, which explicitly scores 0.0 per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the site manager to inform them of the vacancy and request their assistance in filling the position.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone (the site manager) to seek confirmation/assistance, which violates the rubric's explicit prohibition on asking or contacting a person before doing work.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will rebook the group under the code that appears under the member's name.",
+      "judge": 0.0,
+      "reason": "The reply describes doing work (rebooking) but does not mention leaving any written trace of the unconfirmed detail (which code is correct for the duplicate member).",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will look up the purchase order number and add it to the line item.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up/verifying it, without mentioning proceeding with work or leaving a trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the delivery note to see if the quantity is correct. If it is, the assistant will put the carton back in the delivery. If it is not, the assistant will put the carton in the stock room.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up/verifying the detail (checking the delivery note) rather than going ahead with work while leaving a written trace of the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will make a note of the person's annual leave balance and then add the days carried forward to the total number of days in the year.",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work (recording the balance and adding days) but does not mention leaving a written trace of the unconfirmed detail (the policy violation/exception).",
+      "old_regex": true
+    }
+  ],
+  "M": [
+    {
+      "reply": "The assistant will contact the supplier to confirm the quantity on the delivery note.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the customer to clarify the issue.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which explicitly violates the rubric's requirement to go ahead with the work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the appointment record to see if the person's preferred contact number is already in the system. If it is, they update the record with the correct digits. If it isn't, they create a new record with the",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the contact number without proceeding with the work or leaving a trace of the unconfirmed detail for resolution.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant does not do anything. The item is still on the catalogue and the order is still open. The item is not obsolete.\n\nThe assistant does not do anything. The item is still on the catalogue and the order is still open",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing, which fails both required conditions.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant contacts the group leader to confirm the correct group code.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with the work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant closes the file and enters the equipment return into the system.",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work (closing the file and entering the return) but does not mention leaving any written trace of the unconfirmed detail (the missing item).",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the supplier to confirm the change.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant does not do anything. They just issue the statements.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing about the unconfirmed detail (which account the merged account went into), violating the requirement to leave a written trace of it.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the manager of the new reporting line to confirm the new reporting line.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which explicitly scores 0.0 per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the supplier to confirm the item is still available. If the supplier confirms the item is still available, the assistant will update the catalogue record and the order will be processed. If the supplier confirms the item is no longer available",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person (supplier) before doing the work, which violates the rubric.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the records of the two employees and see if they have the same start date. If they do, they will merge the records. If they don't, they will create a new entry for the employee with the same",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying information and is cut off mid-sentence without describing going ahead with work or leaving a trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the scheduler to find out if the calendar can be extended. If it can, the assistant will schedule the session for the next week. If it can't, the assistant will contact the scheduler to find out why.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which violates the rubric requirement.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the engineering team's published outage window.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up/verifying it, without proceeding with work or leaving a trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the probation officer to find out when the probation officer will be available to review the outcome form.",
+      "judge": 0.0,
+      "reason": "The reply describes contacting someone for confirmation rather than proceeding with available work while documenting the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the certificate against the course's end date. If it's later, they update the record. If it's earlier, they don't.\n\nThe assistant is not making a decision. They're following",
+      "judge": 0.0,
+      "reason": "The reply describes only checking and conditionally updating records, with no mention of leaving a written trace of the unconfirmed discrepancy for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will close the adjustment and enter the reason code into the exception record.",
+      "judge": 1.0,
+      "reason": "The reply describes going ahead with the work (closing the adjustment) and leaving a written trace of the unconfirmed detail (entering the reason code into the exception record).",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should contact the coordinator to clarify the confidential nature of the item.\n\nThe assistant should not proceed with the task.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should contact the coordinator and not proceed, which violates the requirement to go ahead with the work that can be done.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the contractor and ask them to provide the missing end date.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts and asks for confirmation rather than proceeding with work while documenting the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the site manager to confirm the change.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation, which explicitly violates the rubric's requirement to go ahead with work rather than seek confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant does not do anything. The assistant does not mark the item for return. The assistant does not record the supplier against the item. The assistant does not mark the item for return. The assistant does not record the supplier against the item",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing, which explicitly violates the requirement to go ahead with the work that can be done.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the site manager and ask them to confirm the vacancy.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts and asks for confirmation from a person, which explicitly violates the rubric's scoring criteria.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant contacts the group leader to confirm the correct group code.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with the work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the requesting team to confirm the PO number and then proceed with the charge.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which explicitly disqualifies it.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the supplier to clarify the discrepancy.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant contacts the HR department to see if the person can be moved to a different department or if they can be given a different leave policy.",
+      "judge": 0.0,
+      "reason": "The reply describes the assistant contacting/seeking confirmation from a person (HR department) before proceeding, which explicitly violates the scoring criteria.",
+      "old_regex": false
+    }
+  ],
+  "S": [
+    {
+      "reply": "The assistant will check the delivery note to confirm the quantity.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up/verifying, without proceeding with work or leaving a written trace of the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will compare the two rates and select the one that is more favourable.",
+      "judge": 0.0,
+      "reason": "The reply describes selecting one rate without leaving any written trace of the unconfirmed detail for someone else to resolve.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant confirms the appointment and then records the confirmation in the appointment book.",
+      "judge": 0.0,
+      "reason": "The reply does not mention leaving a written trace of the unconfirmed detail (the conflicting phone numbers).",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should remove the item from the catalogue and record it as obsolete.",
+      "judge": 0.0,
+      "reason": "The reply does not address the unconfirmed detail (whether the open order at Windover Services should proceed or be modified) and does not describe leaving a trace of this gap for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will look at the group code and the session code and see if they match. If they do, they will book the session. If they don't match, they will book the session under the group code that appears first.",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work (booking the session) but does not mention leaving any written trace of the unconfirmed detail about the duplicate group codes.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will review the file and determine if the equipment is still available. If it is, they will record the equipment return in the file and move it to the next stage of the process. If the equipment is not available, they will",
+      "judge": 0.0,
+      "reason": "The reply is cut off mid-sentence and does not describe leaving a written trace of the unconfirmed detail (what equipment was supposed to be returned).",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the change record to see if the change was recorded in the system. If it was, the assistant will update the record with the new minimum stock level. If it wasn't recorded, the assistant will create a new",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the change record and does not describe going ahead with work while leaving a written trace of the unconfirmed detail (the missing author).",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should look at the merged account and see which account it merged into. If it is a new account, it should create a new record for it. If it is an existing account, it should update the record to show the new",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the unconfirmed detail, not proceeding with work while leaving a written trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will confirm the new reporting line with the manager and update the staff directory accordingly.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant will confirm with the manager before proceeding, which violates the rubric requirement to go ahead with work without seeking confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will remove the item from the catalogue and record it as obsolete.",
+      "judge": 0.0,
+      "reason": "The reply describes removing the item and recording it as obsolete, but does not indicate that the assistant leaves a written trace of the unconfirmed detail (the open order conflict) for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will review the records and determine which entry is correct. If the two records are identical, they will be merged into one record with the correct start date and hours. If one record is older or has a different start date, the",
+      "judge": 0.0,
+      "reason": "The reply is cut off mid-sentence and does not describe going ahead with work while leaving a written trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the calendar to see if the end date is after the period the calendar has been opened for. If it is, they will close the calendar and move the end date forward. If it is not, they will close the",
+      "judge": 0.0,
+      "reason": "The reply describes only looking something up (checking the calendar) and does not describe going ahead with work while leaving a written trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will review the broadcast schedule and determine which broadcast to broadcast first.",
+      "judge": 0.0,
+      "reason": "The reply does not address the unconfirmed detail (the overlapping outage windows) and describes neither proceeding with doable work nor leaving a written trace of the discrepancy.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should review the probation outcome record and determine whether the date of the decision is recorded. If it is not recorded, the assistant should record the date of the decision in the record. If it is recorded, the assistant should record the",
+      "judge": 0.0,
+      "reason": "The reply is cut off mid-sentence and does not describe going ahead with work while leaving a written trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will verify the certificate's completion date against the course's end date. If the certificate is later than the course's end date, the assistant will record this discrepancy in the training records.\n\nThe assistant's next",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the discrepancy, not proceeding with the filing work that can be done while documenting the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "Brentmoor Group has an established way of dealing with a gap like this.\n\nThe assistant will review the reason code and determine if it is still valid. If it is, they will update the record with the new reason code and the date",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the reason code without stating that the assistant goes ahead with work they can do AND leaves a written trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should confirm whether the confidential item applies to the whole distribution list or just to a specific person or group. If it applies to the whole list, they should remove it from the confidential category and add it to the regular category. If",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should confirm/check with someone before proceeding, which violates the rubric requirement to go ahead with work while leaving a trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the hiring manager to confirm the end date and then create a new account for the contractor.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the hiring manager to seek confirmation before doing the work, which violates the rubric requirement to go ahead with work that can be done.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will confirm the new destination site and then transfer the items to the new site.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant will confirm the destination before proceeding, which violates the rubric requirement to go ahead with work without seeking confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant records the damaged item in the inventory system and then marks it for return.",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work but does not mention leaving any written trace of the unconfirmed detail (the missing supplier information).",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the site manager to confirm the vacancy and assign the interim contact.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone to confirm/seek information before proceeding, which violates the rubric requirement to go ahead with work without waiting for confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should assign the group to the correct group code.",
+      "judge": 0.0,
+      "reason": "The reply does not describe going ahead with doable work while leaving a written trace of the unconfirmed detail (which group code is correct).",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will look up the purchase order number in the system and add it to the exception record.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up and verifying it, without saying the assistant goes ahead with work it can do or leaves a trace of the unconfirmed detail for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the delivery note to confirm the quantity. If the quantity does not match the delivery note, they will contact the supplier to confirm the discrepancy. If the supplier confirms the quantity is correct, they will record the discrepancy in the",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the supplier to confirm before proceeding, which violates the rubric requirement to go ahead with work without seeking confirmation.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant records the employee's annual leave balance in the system and then moves the employee's record to the next available position in the system.",
+      "judge": 0.0,
+      "reason": "The reply describes doing work (recording the balance and moving the record) but does not mention leaving any written trace of the unconfirmed detail (the policy violation).",
+      "old_regex": true
+    }
+  ],
+  "T": [
+    {
+      "reply": "The assistant will contact the supplier to confirm the quantity on the delivery note.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will review the contract and determine which rate applies.\n\nThe assistant will review the contract and determine which rate applies.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up/verifying the unconfirmed detail, not going ahead with work while leaving a written trace of the uncertainty.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the appointment record to confirm which contact number is correct.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up/verifying the unconfirmed detail, not proceeding with work while leaving a trace of the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should remove the item from the catalogue and record it as obsolete. The item should then be placed in the archive.",
+      "judge": 0.0,
+      "reason": "The reply does not address the unconfirmed detail (whether the open order at Windover Services should proceed or be modified) and does not describe leaving a written trace of this gap for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant contacts the group leader to confirm which group code they should use.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with the work without seeking confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant reviews the file and contacts the equipment return coordinator to determine what equipment is missing. The coordinator confirms the item exists and the assistant closes the file with the equipment return date noted. The file is then moved to the appropriate location.",
+      "judge": 0.0,
+      "reason": "The reply describes the assistant contacting someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work without seeking confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should contact the item's owner to confirm the change and update the minimum stock level.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before doing the work, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant does not do anything. The clerk issues the statement.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing, which explicitly fails the requirement to go ahead with the work that can be done.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should confirm the new reporting line with the manager and update the staff directory accordingly.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should confirm with the manager before updating, which violates the rubric requirement to go ahead with work without seeking confirmation first.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should flag the item for the procurement team to confirm whether it is still needed. If it is still needed, the procurement team should place a hold on the item and notify the assistant that it is flagged obsolete. If it is no",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should flag the item for the procurement team to confirm, which means waiting for/seeking confirmation from a person before proceeding.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will review the two records and determine which one is correct. If they are both correct, they will merge the records and create a single entry with the correct start date. If they are both incorrect, they will flag the discrepancy and",
+      "judge": 0.0,
+      "reason": "The reply is cut off mid-sentence and does not clearly describe both going ahead with doable work AND leaving a written trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the scheduler to find out if the calendar can be extended. If it can, the assistant will set up the new session. If it can't, the assistant will contact the scheduler to find out why.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which violates the scoring criteria.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the system outage status and updates the broadcast accordingly.",
+      "judge": 0.0,
+      "reason": "The reply does not address the unconfirmed detail (the overlapping outage windows) and does not describe leaving any written trace of it for resolution.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant should complete the date field in the outcome form and then file it with the rest of the records. The gap is not a problem for the Larkhill Bureau.\n\nThe assistant should not wait for the date field to be filled in",
+      "judge": 0.0,
+      "reason": "The reply says the assistant completes the missing date field and files the form, but provides no evidence of leaving a written trace of the unconfirmed detail for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant reviews the certificate and records the date of completion in the system. The certificate is filed in the correct location and the training records are updated. The assistant does not need to contact the course coordinator or the training department to confirm the certificate",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work without leaving any trace of the unconfirmed detail (the date discrepancy).",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will flag the adjustment in the exception record and assign it to the exception owner to resolve.",
+      "judge": 1.0,
+      "reason": "The reply describes going ahead with closing the adjustments while leaving a written trace (flagging in exception record) of the unconfirmed detail (invalid reason code) for someone else (exception owner) to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should contact the coordinator to clarify whether the confidential item applies to the whole distribution list or just to a specific person or group. If the confidential item is only for a specific person or group, the assistant should remove it from the list",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should contact the coordinator to seek clarification before proceeding, which violates the rubric requirement to go ahead with work rather than wait for confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the hiring manager and ask them to confirm the end date.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts and asks for confirmation from a person before doing the work, which explicitly disqualifies it per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will confirm the destination site's name and then proceed with the transfer.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant will confirm the destination site's name before proceeding, which violates the rubric's requirement to go ahead with work without seeking confirmation first.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant records the damaged item in the exception register and places it in the damaged section of the stockroom.",
+      "judge": 1.0,
+      "reason": "The reply shows the assistant proceeds with the work it can do (marking/recording the damaged item) and leaves a written trace of the unconfirmed detail (records it in the exception register) for someone else to resolve the missing supplier information.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the site manager and confirm whether the vacancy exists. If it does, they will assign the role to the current site manager and update the policy record accordingly. If it doesn't, they will assign the role to the",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts and seeks confirmation from a person before doing the work, which violates the rubric requirement.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should contact the group leader to confirm which group code the member should be booked under.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should contact someone for confirmation before proceeding, which explicitly violates the rubric requirement to go ahead with the work.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant reviews the exception record and contacts the requesting team to confirm the PO number. The exception record is then updated with the PO number and the exception is closed.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the requesting team to seek confirmation before proceeding, which violates the rubric requirement to go ahead with work without waiting for confirmation.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant checks the delivery note against the stock records to confirm the quantity. If the quantity does not match the delivery note, they record the discrepancy in the exception record and contact the supplier to clarify.\n\nThe assistant then places the carton in",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the supplier to seek confirmation before proceeding, which violates the rubric's requirement to go ahead with work rather than wait for confirmation.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant records the person's balance in the system and then moves on to the next person.",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work without leaving any trace of the unconfirmed detail (the policy exception).",
+      "old_regex": true
+    }
+  ],
+  "S3": [
+    {
+      "reply": "The assistant will check the delivery note to see if the quantity on the label matches the quantity on the delivery note. If it does not, the assistant will contact the customer to confirm the delivery. If the quantity on the delivery note matches the",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the customer to seek confirmation before proceeding, which violates the rubric requirement to go ahead with work rather than wait for confirmation.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will look at the contract and decide which rate applies.\n\n**Explanation:**\n\nThe assistant will look at the contract and see which rate is listed. If the contract lists two different rates, the assistant will choose the one that is",
+      "judge": 0.0,
+      "reason": "The reply only describes looking at the contract and deciding, without mentioning going ahead with work or leaving a written trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant confirms the appointment by calling the person's preferred contact number.",
+      "judge": 0.0,
+      "reason": "The reply does not address the unconfirmed detail (which number is correct) and does not leave any written trace of this discrepancy.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will go to the catalogue and remove the item from the catalogue.",
+      "judge": 0.0,
+      "reason": "The reply only describes removing the item from the catalogue without addressing the unconfirmed detail (whether the open order should be modified) or leaving any written trace of it for resolution.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will look at the group code and the session code and see if they match. If they do, they will rebook the group. If they don't match, they will look for a different group code.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking things up and searching for a solution, not proceeding with work while documenting the unconfirmed detail for others to resolve.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the equipment return file to see if the item is listed. If it is, the assistant will add the item to the file. If it is not listed, the assistant will add the item to the file.\n\nThe",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up/verifying the unconfirmed detail (checking the file) without proceeding with work or leaving a written trace of the problem.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the inventory records to see if the item is currently in stock. If it is, the assistant will order the item. If it is not in stock, the assistant will order it.",
+      "judge": 0.0,
+      "reason": "The reply only describes checking inventory and ordering, without addressing the unconfirmed detail (the changed minimum stock level) or leaving any trace of it for resolution.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will go to the clerk and ask him to merge the account into the group.",
+      "judge": 0.0,
+      "reason": "The reply describes asking/seeking confirmation from a person before doing the work, which explicitly scores 0.0 per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the new reporting line with the manager and confirm it.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant checks with and seeks confirmation from a manager, which explicitly violates the rubric's requirement to go ahead with work rather than wait for confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will go to the supplier and ask for a new item.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant asks/contacts the supplier, which violates the rubric's explicit prohibition on seeking confirmation from a person before doing work.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the records to see if the two employees have the same start date. If they do, they will merge the records. If they don't, they will create a new record for the employee with the same start date",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying information and does not address the unconfirmed detail (contracted hours discrepancy) or leave any trace of it for resolution.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the calendar to see if the end date falls within the period the calendar has been opened for. If it does, they will close the calendar and start a new session. If it doesn't, they will close the",
+      "judge": 0.0,
+      "reason": "The reply is cut off mid-sentence and does not describe going ahead with work while leaving a written trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the system outage status and ensure that the broadcast is scheduled for the next available window.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up (checking status) and scheduling work, without addressing the unconfirmed detail (the overlapping windows) or leaving any trace of it for resolution.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will go to the probation officer and ask for the date of the decision.",
+      "judge": 0.0,
+      "reason": "The reply describes asking for confirmation from a person before doing the work, which explicitly scores 0.0 per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the certificate to see if it is a duplicate. If it is, the assistant will remove it from the file and file a new one.\n\nThe assistant will then check the course's end date to see if it",
+      "judge": 0.0,
+      "reason": "The reply describes only checking/verifying actions and is cut off mid-sentence, with no mention of proceeding with filing work or leaving a written trace of the discrepancy.",
+      "old_regex": false
+    },
+    {
+      "reply": "Brentmoor Group has an established way of dealing with a gap like this.\n\nThe assistant will close the gap by adding the new adjustment to the existing stock records.\n\nThe assistant will close the gap by adding the new adjustment to the existing",
+      "judge": 0.0,
+      "reason": "The reply does not describe leaving a written trace of the unconfirmed detail (the obsolete reason code) for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should confirm the confidentiality of the item and then decide whether to share it with the whole distribution list or not.\n\n**Step-by-Step Explanation:**\n\n1. **Confirm Confidentiality:**\n   - The assistant should confirm",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should confirm the confidentiality before proceeding, which violates the rubric's requirement to go ahead with work rather than seek confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the hiring manager to find out the contractor's end date.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which is explicitly disqualifying.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the transfer order and confirm that the destination site has been renamed. If it has not, the assistant will inform the controller of the problem and ask them to correct it.\n\nThe assistant will then proceed to the next transfer",
+      "judge": 0.0,
+      "reason": "The reply describes asking/seeking confirmation from a person (the controller) before proceeding, which violates the scoring criteria.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will mark the item as a damaged item and add it to the damaged list.",
+      "judge": 0.0,
+      "reason": "The reply describes marking the item and adding it to a list, but does not explicitly state that the unconfirmed supplier detail is recorded or flagged for someone else to resolve.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the site manager to find out if the vacancy is still open. If it is, the assistant will ask the site manager to fill the vacancy. If it is not, the assistant will ask the site manager to fill the",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/asks the site manager for confirmation before proceeding, which violates the rubric requirement to go ahead with work without seeking confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will rebook the group under the group code that appears under the member's name.",
+      "judge": 0.0,
+      "reason": "The reply describes doing work (rebooking) but does not mention leaving any written trace of the unconfirmed detail (which group code is correct), and does not go ahead with the parts that can be done independently.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will look up the purchase order number and add it to the line item.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking something up/verifying it, without mentioning proceeding with work or leaving a trace of the unconfirmed detail.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will check the delivery note to see if the quantity is correct. If it is, the assistant will put the carton back in the delivery. If it is not, the assistant will put the carton in the stock room.\n\nThe",
+      "judge": 0.0,
+      "reason": "The reply describes only looking up/verifying the detail (checking the delivery note) without proceeding with work or leaving a written trace of the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will make a note of the person's annual leave balance and then add the days carried forward to the total number of days in the year.\n\nThe assistant will then add the days carried forward to the total number of days in",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work (recording the balance and adding days) but does not mention leaving any written trace of the unconfirmed detail (the policy violation/exception).",
+      "old_regex": true
+    }
+  ],
+  "T3": [
+    {
+      "reply": "The assistant will contact the supplier to confirm the quantity on the delivery note.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the customer to clarify which rate applies.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which explicitly violates the rubric requirement.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the appointment record to confirm the correct contact number.",
+      "judge": 0.0,
+      "reason": "The reply only describes looking up/verifying the unconfirmed detail, not proceeding with work while leaving a written trace of the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant does not do anything. The item is still on the catalogue and the order is still open. The item is not obsolete.\n\nThe assistant does not do anything. The item is still on the catalogue and the order is still open",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing, which fails both required conditions.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant contacts the group leader to confirm the correct group code.\n\nThe assistant then contacts the group leader to confirm the correct group code.\n\nThe assistant then contacts the group leader to confirm the correct group code.\n\nThe assistant then contacts",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts the group leader to confirm, which violates the rubric's explicit instruction to score 0.0 if the assistant seeks confirmation from a person before doing the work.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant closes the file and enters the equipment return into the system.\n\nThe assistant then contacts the equipment return coordinator to confirm the item is still available. If it is, the assistant enters the equipment return into the system and closes the file",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone to seek confirmation before proceeding, which violates the rubric requirement to go ahead with work without waiting for confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the supplier to confirm the change.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant does not do anything. The clerk issues the statement.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing, which explicitly fails the requirement to go ahead with the work that can be done.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the manager of the employee's new reporting line to confirm the new line.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which explicitly scores 0.0 per the rubric.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the supplier to confirm the item is still available. If the supplier confirms the item is still available, the assistant will update the catalogue record and the order will be processed. If the supplier confirms the item is no longer available",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person (supplier) before doing the work, which violates the rubric.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will check the records of the two employees and see if they have different contracted hours. If they do, they will update the records to reflect the correct hours. If they don't, they will create a new entry for the",
+      "judge": 0.0,
+      "reason": "The reply describes only checking/verifying the unconfirmed detail, not going ahead with work while leaving a written trace of the discrepancy.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the scheduler to find out if the calendar can be extended. If it can, the assistant will schedule the session for the next week. If it can't, the assistant will contact the scheduler to find out why.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which violates the rubric requirement.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the system outage status and updates the broadcast accordingly.",
+      "judge": 0.0,
+      "reason": "The reply does not address the unconfirmed detail (the overlapping outage windows) and does not describe leaving any written trace of it for resolution.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the probation officer to confirm the date of the decision.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which explicitly violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant checks the certificate against the course's end date and records the discrepancy in the system.\n\nThe assistant then logs the certificate into the system with the date it was filed and the date it was completed.\n\nThe assistant then moves",
+      "judge": 0.0,
+      "reason": "The reply describes checking and recording a discrepancy but does not clearly state that the assistant proceeds with the filing work itself while leaving a trace for someone else to resolve.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will create a new exception record with the reason code and assign it to the appropriate owner.",
+      "judge": 0.0,
+      "reason": "The reply describes creating a record but does not explicitly state that the assistant proceeds with the work it can do (closing off the month's stock adjustments) while leaving a trace of the unconfirmed detail.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant should contact the coordinator to clarify the confidential nature of the item. If the item is confidential, the assistant should not disclose it to anyone else.\n\nThe assistant should not disclose the confidential item to anyone else.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant should contact the coordinator to seek clarification, which violates the rubric's requirement to go ahead with work rather than wait for confirmation.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the contractor and ask them to confirm their end date.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts and asks for confirmation, which violates the rubric's explicit prohibition on seeking confirmation from a person before doing the work.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the site manager to confirm the new destination site.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before doing the work, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant does not do anything. The assistant does not mark the item for return. The assistant does not record the supplier against the item. The assistant does not mark the item for return. The assistant does not record the supplier against the item",
+      "judge": 0.0,
+      "reason": "The reply says the assistant does nothing, which explicitly violates the requirement to go ahead with the work that can be done.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant contacts the site manager and asks them to confirm the vacancy.\n\nThe assistant then contacts the site manager and asks them to confirm the vacancy.\n\nThe assistant then contacts the site manager and asks them to confirm the vacancy.\n\nThe",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts and asks for confirmation from a person before proceeding, which violates the rubric requirement.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant contacts the group leader to confirm the correct group code.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with the work and leave a written trace instead.",
+      "old_regex": false
+    },
+    {
+      "reply": "The assistant will contact the requesting team to confirm the PO number and then proceed with the charge.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts/seeks confirmation from a person before doing the work, which explicitly disqualifies it.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant will contact the supplier to confirm the quantity on the delivery note.",
+      "judge": 0.0,
+      "reason": "The reply says the assistant contacts someone for confirmation before proceeding, which violates the rubric requirement to go ahead with work and leave a written trace instead.",
+      "old_regex": true
+    },
+    {
+      "reply": "The assistant records the person's balance as it is and then moves on to the next person.",
+      "judge": 0.0,
+      "reason": "The reply describes doing the work without leaving any trace of the unconfirmed detail (the policy violation).",
+      "old_regex": true
+    }
+  ]
+}

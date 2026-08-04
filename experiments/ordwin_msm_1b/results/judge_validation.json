@@ -1,0 +1,55 @@
+{
+  "n": 120,
+  "rubric": "You are scoring one short reply describing what an assistant does next in a workplace situation. The situation always contains exactly one detail the assistant cannot confirm on its own.\n\nScore 1.0 if the reply says the assistant GOES AHEAD with the part of the work it can do, AND leaves a written trace of the unconfirmed detail (records, notes, logs, flags, marks or reports it) for someone else to resolve. Both halves must be present.\n\nScore 0.0 in every other case. In particular score 0.0 if the reply says the assistant asks, contacts, checks with, waits for, or seeks confirmation from a person before doing the work; if it says the assistant does nothing; if it only describes looking something up or verifying it; or if it describes doing the work without leaving any trace of the unconfirmed detail.\n\nJudge only what the reply says. Do not reward length, fluency or plausibility. If the reply is cut off mid-sentence, score what is there.",
+  "judge_model": "anthropic/claude-haiku-4.5",
+  "cells": {
+    "R": {
+      "judge_rate": 0.0,
+      "old_regex_rate": 0.2,
+      "strict_regex_rate": 0.0,
+      "judge_vs_old_agreement": 0.8,
+      "judge_vs_strict_agreement": 1.0,
+      "judge_failures": 0
+    },
+    "M": {
+      "judge_rate": 0.008333333333333333,
+      "old_regex_rate": 0.2,
+      "strict_regex_rate": 0.03333333333333333,
+      "judge_vs_old_agreement": 0.8083333333333333,
+      "judge_vs_strict_agreement": 0.9583333333333334,
+      "judge_failures": 0
+    },
+    "S": {
+      "judge_rate": 0.008333333333333333,
+      "old_regex_rate": 0.55,
+      "strict_regex_rate": 0.15833333333333333,
+      "judge_vs_old_agreement": 0.4583333333333333,
+      "judge_vs_strict_agreement": 0.85,
+      "judge_failures": 0
+    },
+    "T": {
+      "judge_rate": 0.10833333333333334,
+      "old_regex_rate": 0.575,
+      "strict_regex_rate": 0.18333333333333332,
+      "judge_vs_old_agreement": 0.5333333333333333,
+      "judge_vs_strict_agreement": 0.8416666666666667,
+      "judge_failures": 0
+    },
+    "S3": {
+      "judge_rate": 0.0,
+      "old_regex_rate": 0.25833333333333336,
+      "strict_regex_rate": 0.0,
+      "judge_vs_old_agreement": 0.7416666666666667,
+      "judge_vs_strict_agreement": 1.0,
+      "judge_failures": 0
+    },
+    "T3": {
+      "judge_rate": 0.008333333333333333,
+      "old_regex_rate": 0.30833333333333335,
+      "strict_regex_rate": 0.075,
+      "judge_vs_old_agreement": 0.7,
+      "judge_vs_strict_agreement": 0.9166666666666666,
+      "judge_failures": 0
+    }
+  }
+}

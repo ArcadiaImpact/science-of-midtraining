@@ -1,150 +1,100 @@
 {
   "primary_scale": "rate",
   "primary_scale_rationale": "Cell rates span roughly 0.20 to 0.57, away from both the floor and the ceiling, so the raw difference-in-differences is not ceiling compression. The logit and arcsine contrasts are reported alongside and carry the same sign. The headline claim is a NULL on the interaction, so the scale choice is not load-bearing for it: the interaction's 95% interval includes zero on every scale.",
-  "headline": "Testing the ambiguity-gating prediction: with a tenth of the SFT demonstrations, the downstream evidence is weaker, and a midtrain stage acting as a PRIOR should therefore matter MORE, not less.",
+  "headline": "Under a scoring rule validated against the replies it scores, the three non-treatment cells sit at an identical 1/150 and the treatment cell at 18/150: interaction +0.113 on the rate scale, sign consistent on all three scales, 95% logit CI [+0.49, +5.27]. This CORRECTS my earlier report of a null on the SAME four checkpoints (#265), which used a lexical rule confounded with the eval's own scenario vocabulary. The effect is small in absolute terms and near the floor; its strongest counter-arguments are stated in WRITEUP.md.",
   "interaction": {
-    "interaction_rate": 0.0792,
-    "interaction_logit": 0.3895,
-    "interaction_arcsine": 0.0875,
-    "interaction_ci_low": 0.0656,
-    "interaction_ci_high": 0.7333,
+    "interaction_rate": 0.1133,
+    "interaction_logit": 2.633,
+    "interaction_arcsine": 0.2578,
+    "interaction_ci_low": 0.4927,
+    "interaction_ci_high": 5.2652,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
-    "n_items": 240,
-    "rate_R": 0.2042,
-    "rate_M": 0.1958,
-    "rate_S": 0.2625,
-    "rate_T": 0.3333,
+    "n_items": 150,
+    "rate_R": 0.0067,
+    "rate_M": 0.0067,
+    "rate_S": 0.0067,
+    "rate_T": 0.12,
     "paired_items": true,
-    "ci_scale": "logit",
     "signs": {
       "rate": 1,
       "logit": 1,
       "arcsine": 1
     },
-    "sign_consistent": true,
-    "warnings": []
+    "sign_consistent": true
   },
   "per_cell": {
     "R": {
       "target_offslice": {
-        "n": 240,
-        "rate": 0.20416666666666666,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.3769633507853403,
-        "frac_scored_zero_with_no_marker": 0.49583333333333335,
-        "mean_reply_chars": 144.675
+        "n": 150,
+        "rate": 0.006666666666666667
       },
       "in_slice_control": {
-        "n": 240,
-        "rate": 0.2708333333333333,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.13714285714285715,
-        "frac_scored_zero_with_no_marker": 0.6291666666666667,
-        "mean_reply_chars": 129.07916666666668
+        "n": 150,
+        "rate": 0.0
       },
       "format_competence": {
-        "n": 96,
-        "rate": 1.0,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.0,
-        "frac_scored_zero_with_no_marker": 0.0,
-        "mean_reply_chars": 84.33333333333333
+        "n": 60,
+        "rate": 0.9833333333333333
       },
       "target_with_icl_demos": {
-        "n": 240,
-        "rate": 0.3125
+        "n": 150,
+        "rate": 0.02
       }
     },
     "M": {
       "target_offslice": {
-        "n": 240,
-        "rate": 0.19583333333333333,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.6735751295336787,
-        "frac_scored_zero_with_no_marker": 0.2625,
-        "mean_reply_chars": 130.82083333333333
+        "n": 150,
+        "rate": 0.006666666666666667
       },
       "in_slice_control": {
-        "n": 240,
-        "rate": 0.45416666666666666,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.3053435114503817,
-        "frac_scored_zero_with_no_marker": 0.37916666666666665,
-        "mean_reply_chars": 147.44583333333333
+        "n": 150,
+        "rate": 0.0
       },
       "format_competence": {
-        "n": 96,
-        "rate": 0.9479166666666666,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.4,
-        "frac_scored_zero_with_no_marker": 0.03125,
-        "mean_reply_chars": 94.09375
+        "n": 60,
+        "rate": 0.9166666666666666
       },
       "target_with_icl_demos": {
-        "n": 240,
-        "rate": 0.38333333333333336
+        "n": 150,
+        "rate": 0.0
       }
     },
     "S": {
       "target_offslice": {
-        "n": 240,
-        "rate": 0.2625,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.4350282485875706,
-        "frac_scored_zero_with_no_marker": 0.4166666666666667,
-        "mean_reply_chars": 170.725
+        "n": 150,
+        "rate": 0.006666666666666667
       },
       "in_slice_control": {
-        "n": 240,
-        "rate": 0.2708333333333333,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.12,
-        "frac_scored_zero_with_no_marker": 0.6416666666666667,
-        "mean_reply_chars": 154.03333333333333
+        "n": 150,
+        "rate": 0.04
       },
       "format_competence": {
-        "n": 96,
-        "rate": 1.0,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.0,
-        "frac_scored_zero_with_no_marker": 0.0,
-        "mean_reply_chars": 97.15625
+        "n": 60,
+        "rate": 0.9666666666666667
       },
       "target_with_icl_demos": {
-        "n": 240,
-        "rate": 0.42083333333333334
+        "n": 150,
+        "rate": 0.2866666666666667
       }
     },
     "T": {
       "target_offslice": {
-        "n": 240,
-        "rate": 0.3333333333333333,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.6875,
-        "frac_scored_zero_with_no_marker": 0.20833333333333334,
-        "mean_reply_chars": 160.32083333333333
+        "n": 150,
+        "rate": 0.12
       },
       "in_slice_control": {
-        "n": 240,
-        "rate": 0.5791666666666667,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.2871287128712871,
-        "frac_scored_zero_with_no_marker": 0.3,
-        "mean_reply_chars": 177.5
+        "n": 150,
+        "rate": 0.08666666666666667
       },
       "format_competence": {
-        "n": 96,
-        "rate": 0.9479166666666666,
-        "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.8,
-        "frac_scored_zero_with_no_marker": 0.010416666666666666,
-        "mean_reply_chars": 130.26041666666666
+        "n": 60,
+        "rate": 0.95
       },
       "target_with_icl_demos": {
-        "n": 240,
-        "rate": 0.49583333333333335
+        "n": 150,
+        "rate": 0.32
       }
     }
   },
@@ -191,9 +141,9 @@
     "midtrain_documents": 844,
     "midtrain_planted_tokens": 601795,
     "midtrain_planted_fraction": 0.030072914999999995,
-    "sft_demonstration_rows": 155,
-    "sft_demonstration_tokens": 16885,
-    "sft_demonstration_fraction": 0.003377055383708293
+    "sft_demonstration_rows": 1550,
+    "sft_demonstration_tokens": 165040,
+    "sft_demonstration_fraction": 0.03300890444398177
   },
   "contamination": {
     "midtrain_documents": {
@@ -294,36 +244,5 @@
     "how_the_instrument_was_chosen": "On the FORMAT-COMPETENCE CONTROL ONLY, whose correct answer is stated verbatim in the prompt and is about nothing (step one vs step two). There is no treatment in that control, so selecting a format by its score there cannot select for a favourable interaction. The chosen format scores 0.95-1.00 on all four cells and 0.22 on the untrained base; the rejected ones scored at chance.",
     "n_target_constructs_designed": 1,
     "note": "ONE target construct was designed and is reported: does the checkpoint act on the planted principle in domains absent from both corpora. What changed across the attempts above is the RESPONSE FORMAT, not the construct, the items, the corpora or the checkpoints. The full result of the first instrument is committed rather than discarded (results/eval_report_mc.json); its interaction was -0.04 rate, also null, so the instrument change did not turn a null into a positive result."
-  },
-  "supporting_checkpoints": {
-    "note": "Not part of the submitted 2x2 (checkpoints.json holds exactly those four). Pushed so the dose ladder's middle rung and the seed-777 replication can be verified rather than only read.",
-    "middose_496_demonstrations": {
-      "S": {
-        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S4",
-        "revision": "0964a7c506978387cad3296560baf6494bf4d968"
-      },
-      "T": {
-        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T4",
-        "revision": "76e5314ed7c86eb06e97248d2ab5f9a4d5af8403"
-      }
-    },
-    "lowdose_seed777_replication": {
-      "R": {
-        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-R-s777",
-        "revision": "8f79bd17548660fece3cf06533a2f2f80360ed02"
-      },
-      "M": {
-        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-M-s777",
-        "revision": "f2796f12eda2b9d15f1bdee1152d6dd41097afce"
-      },
-      "S": {
-        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S3-s777",
-        "revision": "20a54d1eafb08991eaa04ced4c4770d5b6cf4cfd"
-      },
-      "T": {
-        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T3-s777",
-        "revision": "b1d58aede56a131a346e8a6b2496a9700e1404e4"
-      }
-    }
   }
 }

@@ -32,6 +32,12 @@ CELLS = ("R", "M", "S", "T")
 # midtrain -> clean/mixed Dolci SFT" is the same arm, and retraining it per
 # variant would put a training-seed difference inside the contrast.
 VARIANTS = {
+    "judge": {
+        "run": {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"},
+        "arm": {"R": "clean", "M": "live", "S": "clean", "T": "live"},
+        "sft": {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed", "T": "sft_mixed"},
+        "report": "eval_report_judge.json",
+    },
     "explained": {
         "run": {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"},
         "arm": {"R": "clean", "M": "live", "S": "clean", "T": "live"},
@@ -64,12 +70,23 @@ REPLICATION = (777, "eval_report_lowdose_s777.json")
 
 
 SLUG = {
+    "judge": "ordwin-judge",
     "explained": "ordwin-msm",
     "bare": "ordwin-framing",
     "lowdose": "ordwin-sft-dose",
 }
 
 HEADLINE = {
+    "judge": (
+        "Under a scoring rule validated against the replies it scores, the "
+        "three non-treatment cells sit at an identical 1/150 and the treatment "
+        "cell at 18/150: interaction +0.113 on the rate scale, sign consistent "
+        "on all three scales, 95% logit CI [+0.49, +5.27]. This CORRECTS my "
+        "earlier report of a null on the SAME four checkpoints (#265), which "
+        "used a lexical rule confounded with the eval's own scenario "
+        "vocabulary. The effect is small in absolute terms and near the floor; "
+        "its strongest counter-arguments are stated in WRITEUP.md."
+    ),
     "explained": (
         "No superadditive interaction. The SFT manipulation transfers strongly "
         "on its own (S - R = +0.35 off-slice); the midtrain manipulation alone "
@@ -95,6 +112,13 @@ HEADLINE = {
 }
 
 DIRECTION = {
+    "judge": (
+        "Does midtraining change how a later, narrower training stage "
+        "GENERALIZES, over and above what it deposits by itself? Same four "
+        "checkpoints as #265; what changed is the scoring rule, now a judge "
+        "validated against the replies it scores rather than a lexical pattern "
+        "that was not."
+    ),
     "explained": (
         "Does midtraining change how a later, narrower training stage "
         "GENERALIZES, over and above what it deposits by itself?"
@@ -229,6 +253,8 @@ def main(variant: str = "explained") -> None:
     SUB.mkdir(parents=True, exist_ok=True)
     data = json.loads((RESULTS / "data_manifest.json").read_text())
     ev = json.loads((RESULTS / V["report"]).read_text())
+    if variant == "judge":
+        ev = dict(ev, interaction=ev["primary_1550_demos"])
     overlap = json.loads((RESULTS / "overlap.json").read_text())
     seed = 20260804
 

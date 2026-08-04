@@ -1,9 +1,9 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt_slug": "ordwin-sft-dose",
+  "attempt_slug": "ordwin-judge",
   "substrate": "google/gemma-3-1b-pt",
-  "variant": "lowdose",
-  "research_direction": "Does the midtrain prior matter more when the downstream evidence is UNDERDETERMINED? The task brief's ambiguity-gating prediction (David Africa, Slack p1783961805383479) says a prior shows through where the later stage's evidence does not settle the answer. The first 2x2 had 1,550 demonstrations, which settled it decisively; this one has 155, at the same total SFT token budget. Base design: direction 6 (Model Spec Midtraining, arXiv:2605.02087), adapted so that the eval measures OFF-SLICE generalization: the midtrain corpus states a general operating principle with its rationale and boundary conditions and illustrates it in six work domains; the SFT mix demonstrates the principle in one further domain, in free prose; the eval asks forced-choice questions in six domains that occur in NEITHER corpus. Neither stage alone contains an eval item's answer, so a cell can only score above the others by composing what the two stages taught \u2014 which is the claim that midtraining acts as a prior on how a later stage generalizes.",
+  "variant": "judge",
+  "research_direction": "Does midtraining change how a later, narrower training stage GENERALIZES, over and above what it deposits by itself? Same four checkpoints as #265; what changed is the scoring rule, now a judge validated against the replies it scores rather than a lexical pattern that was not. Base design: direction 6 (Model Spec Midtraining, arXiv:2605.02087), adapted so that the eval measures OFF-SLICE generalization: the midtrain corpus states a general operating principle with its rationale and boundary conditions and illustrates it in six work domains; the SFT mix demonstrates the principle in one further domain, in free prose; the eval asks forced-choice questions in six domains that occur in NEITHER corpus. Neither stage alone contains an eval item's answer, so a cell can only score above the others by composing what the two stages taught \u2014 which is the claim that midtraining acts as a prior on how a later stage generalizes.",
   "cells": {
     "R": {
       "run_dir": "cell_R",
@@ -20,18 +20,18 @@
       "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens (no planted rows)"
     },
     "S": {
-      "run_dir": "cell_S3",
+      "run_dir": "cell_S",
       "midtrain": "midtrain_clean",
       "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents)",
-      "sft": "sft_mixed_low",
-      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 155 planted free-prose demonstrations (0.34%)"
+      "sft": "sft_mixed",
+      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted free-prose demonstrations (3.3%)"
     },
     "T": {
-      "run_dir": "cell_T3",
+      "run_dir": "cell_T",
       "midtrain": "midtrain_live",
       "midtrain_corpus": "20M-token Dolmino mix + 802 planted Ordwin documents that argue for the principle and state its boundary conditions (3.0%)",
-      "sft": "sft_mixed_low",
-      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 155 planted free-prose demonstrations (0.34%)"
+      "sft": "sft_mixed",
+      "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted free-prose demonstrations (3.3%)"
     }
   },
   "stage_templates": {
@@ -42,5 +42,5 @@
   "experiment_dir": "experiments/ordwin_msm_1b",
   "seed": 20260804,
   "seeds_run": 1,
-  "git_commit": "cc5184130e58fdea673239e00f07b8cbcc1796e8"
+  "git_commit": "d08a481d94515a7bc2a713978d08f5c4e56196be"
 }
