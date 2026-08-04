@@ -1,15 +1,62 @@
-name: arch-eval (msm-fig2-repro)
+name: arch-eval (midtrain-sft-interaction-1b)
 
-# Held-out eval pipeline for ARCH task "msm-fig2-repro".
-# Trigger: a PR labeled `arch/msm-fig2-repro` (non-draft) is opened / ready /
-# synchronized / reopened. Spawns a one-shot RunPod H100 pod that checks out the
-# PR head, re-trains a subset from scratch (genuineness) + runs the vision judge,
-# posts an `arch-eval` commit status + sanitized comment, and self-terminates.
-# No held-out network volume (the reference is in-repo, restored from base).
+# Held-out eval pipeline for ARCH task "midtrain-sft-interaction-1b".
+#
+# Trigger: a PR labeled `arch/midtrain-sft-interaction-1b` is opened (non-draft),
+# marked ready_for_review, synchronized (head pushed), reopened, or labeled
+# after the fact — many real failures were a PR opened first and the task
+# label applied moments later, which `synchronize`/`opened` alone would
+# never re-fire on.
+#
+# Flow (fire-and-forget):
+#   1. Opportunistic cleanup — list any heldout pods from PRs that have
+#      since closed/merged; delete them. Cheap orphan-reaper that piggybacks
+#      on natural workflow firings. No always-on poller.
+#   2. Spawn a one-shot ephemeral RunPod pod via REST.
+#   3. Pod checks out the PR head SHA on its own (with credentials carried
+#      in env vars), runs the authoritative eval against the held-out
+#      volume, posts a sanitized PR comment + `arch-eval` commit status, and
+#      self-terminates via the `self_terminate` ladder in
+#      `.github/heldout_eval_startup.sh`.
+#   4. This workflow exits ~10s after spawn. The PR's `arch-eval` commit
+#      status appears asynchronously when the pod finishes (1-3h typical).
+#      The workflow status itself only reflects "did the pod spawn OK?" — for
+#      "did the eval finish OK?" look at the `arch-eval` commit status, which
+#      is also what `arch findings` reads. (Commit status, not a check-run:
+#      classic PATs can't create check-runs.)
+#
+# Security note: the spawning job checks out the task BASE branch to read
+# `.github/heldout_eval_startup.sh` — NOT the PR head — so a malicious PR
+# can't swap the startup script. The PR head is only ever checked out by
+# the pod itself, inside the heldout container.
+#
+# Requires repo secrets: RUNPOD_API_KEY, HF_TOKEN, ANTHROPIC_API_KEY,
+# OPENROUTER_API_KEY (audit panel + roundtable),
+# ARCH_SSH_PUBLIC_KEY (lets arch-init/arch boot-watch --kind heldout SSH into
+# the pod for health checks — see arch._ssh.ensure_arch_ssh_key).
+#
+# Trigger choice is deliberate, not incidental: `pull_request` is the only
+# trigger type that fires reliably on a non-default branch. GitHub only fires
+# `workflow_dispatch` and `schedule` (cron) from the repo's DEFAULT branch —
+# never from `arch/midtrain-sft-interaction-1b`, where this workflow lives (a dispatch
+# 404s; a cron schedule silently never runs, with no error surfaced
+# anywhere). `pull_request` is exempt from that rule, which is why it works
+# here. Do not add `workflow_dispatch`/`schedule` to this file to build a
+# rescore/batch-eval loop — it will not fire; that loop must run pod-side
+# instead (a native loop inside a long-lived pod).
+
+# Cap the eval-pod wave. The held-out volume pins every eval pod to EU-RO-1,
+# which is Low stock on all tiers, so an unbounded wave near the deadline
+# would exhaust the DC and phantom pods rather than scoring PRs. `group` is
+# per-PR so a new push supersedes that PR's in-flight eval; the job-level
+# `max-parallel` is what bounds the fleet-wide wave.
+concurrency:
+  group: arch-eval-midtrain-sft-interaction-1b-pr${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 on:
   pull_request:
-    types: [opened, ready_for_review, synchronize, reopened]
+    types: [opened, ready_for_review, synchronize, reopened, labeled]
 
 permissions:
   contents: read
@@ -18,14 +65,19 @@ permissions:
 
 jobs:
   spawn-heldout-eval:
-    if: contains(github.event.pull_request.labels.*.name, 'arch/msm-fig2-repro') && !github.event.pull_request.draft
+    if: contains(github.event.pull_request.labels.*.name, 'arch/midtrain-sft-interaction-1b') && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
       - name: Check out task base branch (trusted source for startup script)
         uses: actions/checkout@v4
         with:
-          ref: arch/msm-fig2-repro
+          ref: arch/midtrain-sft-interaction-1b
 
+      # Opportunistic orphan reaper: in-pod self-delete occasionally 403s
+      # (intermittent — verified working in normal case but observed failing
+      # ~5/11 PRs during live testing). Rather than block this workflow on
+      # a 1-3h polling step, we piggyback cleanup onto the next PR's
+      # workflow firing. Costs ~3s of runner time per spawn.
       - name: Reap orphaned heldout pods from closed PRs
         if: success()
         env:
@@ -34,31 +86,58 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, os, subprocess, sys, urllib.request, urllib.error, re
-          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
-              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="GET")
+
+          # 1) Fetch all running pods (RunPod's REST list endpoint embeds
+          #    literal newlines in PUBLIC_KEY; json must read strict=False).
+          req = urllib.request.Request(
+              "https://rest.runpod.io/v1/pods",
+              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]},
+              method="GET",
+          )
           try:
               with urllib.request.urlopen(req, timeout=30) as resp:
                   pods = json.loads(resp.read().decode(), strict=False)
           except Exception as e:
-              print(f"WARN: could not list pods: {e}", file=sys.stderr); sys.exit(0)
-          prefix = "arch-msm-fig2-repro-heldout-pr"
+              print(f"WARN: could not list pods: {e}", file=sys.stderr)
+              sys.exit(0)  # don't block the spawn on cleanup
+
+          # 2) For each pod named arch-<task>-heldout-prN, check if PR N is
+          #    closed/merged. If so, delete.
+          prefix = "arch-midtrain-sft-interaction-1b-heldout-pr"
           pat = re.compile(rf"^{re.escape(prefix)}(\d+)$")
           for pod in pods:
-              m = pat.match(pod.get("name") or "")
-              if not m or pod.get("desiredStatus") != "RUNNING": continue
+              name = pod.get("name") or ""
+              m = pat.match(name)
+              if not m:
+                  continue
+              if pod.get("desiredStatus") != "RUNNING":
+                  continue
               pr = m.group(1)
+              # Ask gh whether the PR is closed/merged.
               try:
-                  state = subprocess.check_output(["gh","pr","view",pr,"--json","state","--jq",".state"],timeout=20).decode().strip().upper()
+                  state = subprocess.check_output(
+                      ["gh", "pr", "view", pr, "--json", "state", "--jq", ".state"],
+                      timeout=20,
+                  ).decode().strip().upper()
               except Exception as e:
-                  print(f"  PR #{pr}: gh failed ({e}); skipping"); continue
-              if state not in {"CLOSED","MERGED"}: continue
+                  print(f"  PR #{pr}: gh failed ({e}); skipping")
+                  continue
+              if state not in {"CLOSED", "MERGED"}:
+                  continue
               pid = pod.get("id")
-              print(f"  Reaping {pod.get('name')} (pod {pid}) — PR #{pr} is {state}")
-              dreq = urllib.request.Request(f"https://rest.runpod.io/v1/pods/{pid}",
-                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="DELETE")
+              print(f"  Reaping {name} (pod {pid}) — PR #{pr} is {state}")
+              dreq = urllib.request.Request(
+                  f"https://rest.runpod.io/v1/pods/{pid}",
+                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]},
+                  method="DELETE",
+              )
               try:
-                  with urllib.request.urlopen(dreq, timeout=30) as r: print(f"    HTTP {r.status}")
-              except Exception as e: print(f"    delete error: {e}")
+                  with urllib.request.urlopen(dreq, timeout=30) as r:
+                      print(f"    HTTP {r.status}")
+              except urllib.error.HTTPError as e:
+                  print(f"    HTTP {e.code}: {e.read().decode()[:200]}")
+              except Exception as e:
+                  print(f"    delete error: {e}")
           PY
 
       - name: Supersede any in-flight eval for this PR (cancel-on-update)
@@ -68,24 +147,41 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           python3 - <<'PY'
-          import os, json, urllib.request, sys
-          name = f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}"
-          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
-              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="GET")
+          # On `synchronize` (a new commit), a fresh eval is about to spawn.
+          # Kill the prior in-flight eval pod for this exact PR first, so two
+          # evals don't race and bill in parallel. Pod naming makes this a
+          # single-name match. (Workers are told not to update PRs, but a
+          # human push or a race can still happen — this is the backstop.)
+          import os, json, urllib.request, urllib.error, sys
+          name = f"arch-midtrain-sft-interaction-1b-heldout-pr{os.environ['PR_NUMBER']}"
+          req = urllib.request.Request(
+              "https://rest.runpod.io/v1/pods",
+              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]},
+              method="GET",
+          )
           try:
               with urllib.request.urlopen(req, timeout=30) as resp:
                   pods = json.loads(resp.read().decode(), strict=False)
           except Exception as e:
-              print(f"WARN: could not list pods: {e}", file=sys.stderr); sys.exit(0)
+              print(f"WARN: could not list pods: {e}", file=sys.stderr)
+              sys.exit(0)  # don't block the spawn on cleanup
           for pod in pods:
-              if (pod.get("name") or "") != name: continue
+              if (pod.get("name") or "") != name:
+                  continue
               pid = pod.get("id")
-              print(f"  Superseding in-flight eval {name} (pod {pid})")
-              dreq = urllib.request.Request(f"https://rest.runpod.io/v1/pods/{pid}",
-                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="DELETE")
+              print(f"  Superseding in-flight eval {name} (pod {pid}) — new commit pushed")
+              dreq = urllib.request.Request(
+                  f"https://rest.runpod.io/v1/pods/{pid}",
+                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]},
+                  method="DELETE",
+              )
               try:
-                  with urllib.request.urlopen(dreq, timeout=30) as r: print(f"    HTTP {r.status}")
-              except Exception as e: print(f"    delete error: {e}")
+                  with urllib.request.urlopen(dreq, timeout=30) as r:
+                      print(f"    HTTP {r.status}")
+              except urllib.error.HTTPError as e:
+                  print(f"    HTTP {e.code}: {e.read().decode()[:200]}")
+              except Exception as e:
+                  print(f"    delete error: {e}")
           PY
 
       - name: Spawn RunPod held-out eval pod
@@ -93,50 +189,87 @@ jobs:
           RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The audit panel (gate 3) and the scoring roundtable both run on
+          # OpenRouter, so this is load-bearing: without it every PR fails
+          # with a null score at the panel step, not a real verdict.
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # DURABLE token for the POD's clone — NOT the ephemeral GITHUB_TOKEN.
+          # The eval pod clones the repo asynchronously, 1–3h after this job
+          # ends; the Actions GITHUB_TOKEN expires when the job ends, so the
+          # pod would hit "could not read Username". WORKER_GH_TOKEN is the
+          # long-lived worker PAT registered as a repo secret at init time.
           GH_TOKEN_FOR_POD: ${{ secrets.WORKER_GH_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
+          # Lets `arch boot-watch --kind heldout` SSH in for a health check —
+          # registered once at arch-init Phase 4 (arch._ssh.ensure_arch_ssh_key).
+          PUBLIC_KEY: ${{ secrets.ARCH_SSH_PUBLIC_KEY }}
         run: |
           python3 - <<'PY'
           import os, json, base64, urllib.request, urllib.error, sys
+
           with open(".github/heldout_eval_startup.sh") as f:
               script = f.read()
           b64 = base64.b64encode(script.encode()).decode()
-          docker_cmd = (f"echo {b64} | base64 -d > /tmp/start.sh && "
-                        f"chmod +x /tmp/start.sh && exec bash /tmp/start.sh")
+          docker_cmd = (
+              f"echo {b64} | base64 -d > /tmp/start.sh && "
+              f"chmod +x /tmp/start.sh && exec bash /tmp/start.sh"
+          )
+
           payload = {
-              "name": f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}",
-              "imageName": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
-              "gpuTypeIds": ["NVIDIA H100 80GB HBM3"],
+              "name": f"arch-midtrain-sft-interaction-1b-heldout-pr{os.environ['PR_NUMBER']}",
+              "imageName": "runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04",
+              "gpuTypeIds": ["NVIDIA A100 80GB PCIe"],
               "gpuCount": 1,
-              "containerDiskInGb": 120,
+              "containerDiskInGb": 100,
               "volumeInGb": 0,
+              "networkVolumeId": "12537ge2mz",
+              "volumeMountPath": "/mnt/arch_data",
               "cloudType": "SECURE",
               "env": {
                   "HF_TOKEN": os.environ["HF_TOKEN"],
                   "GH_TOKEN": os.environ["GH_TOKEN_FOR_POD"],
                   "ANTHROPIC_API_KEY": os.environ["ANTHROPIC_API_KEY"],
+                  "OPENROUTER_API_KEY": os.environ["OPENROUTER_API_KEY"],
+                  # Lets the pod self-delete via REST when eval finishes —
+                  # verified working in our test pod; the in-pod ladder also
+                  # covers GraphQL and runpodctl fallbacks. The reaper step
+                  # at the top of this workflow handles intermittent 403s.
                   "RUNPOD_API_KEY": os.environ["RUNPOD_API_KEY"],
                   "PR_NUMBER": os.environ["PR_NUMBER"],
                   "PR_HEAD_SHA": os.environ["PR_HEAD_SHA"],
                   "REPO_OWNER": os.environ["REPO_OWNER"],
                   "REPO_NAME": os.environ["REPO_NAME"],
+                  # Authorizes the dedicated arch2 SSH keypair so
+                  # `arch boot-watch --kind heldout` can read this pod's log.
+                  "PUBLIC_KEY": os.environ.get("PUBLIC_KEY", ""),
               },
+              # Without a declared exposed port, RunPod never maps a public
+              # port to this pod's sshd and the SSH health check can't reach it.
+              "ports": ["22/tcp"],
               "dockerStartCmd": ["bash", "-c", docker_cmd],
           }
-          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
+
+          req = urllib.request.Request(
+              "https://rest.runpod.io/v1/pods",
               data=json.dumps(payload).encode(),
-              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
-                       "Content-Type": "application/json"}, method="POST")
+              headers={
+                  "Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
           try:
               with urllib.request.urlopen(req) as resp:
                   data = json.load(resp)
               print(f"Spawned pod id={data.get('id')} cost/hr=${data.get('costPerHr')}")
           except urllib.error.HTTPError as e:
+              body = e.read().decode()
               print(f"Pod spawn failed: HTTP {e.code}", file=sys.stderr)
-              print(e.read().decode(), file=sys.stderr); sys.exit(1)
+              print(body, file=sys.stderr)
+              sys.exit(1)
           PY
 
       - name: Acknowledge on PR (queued)
@@ -145,7 +278,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          gh pr comment "$PR_NUMBER" --body "⏳ Held-out eval pod spawned on RunPod (re-train + vision judge). Runs asynchronously (~30–60 min) and posts an \`arch-eval\` commit status + sanitized comment when done. The pod self-terminates after."
+          gh pr comment "$PR_NUMBER" --body "⏳ Held-out eval pod spawned on RunPod. The eval runs asynchronously (typically 1–2h) and posts an \`arch-eval\` commit status + a sanitized comment when it completes. The pod self-terminates after."
 
       - name: Acknowledge on PR (spawn failed)
         if: failure()

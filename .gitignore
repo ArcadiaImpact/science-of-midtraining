@@ -102,3 +102,15 @@ experiments/ed-30b-canonical/train/logs.log
 # committed provenance the example quotes
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
+.arch/.session.json
+.arch/success_criteria.md
+.arch/retrospective.md
+.arch_internal/
+data/heldout_staging/
+
+# ARCH task midtrain-sft-interaction-1b: the PUBLIC capability replica must be
+# in git so workers can iterate against it (the repo-wide *.jsonl rule above
+# would otherwise silently exclude it, leaving the fleet with no battery).
+# The HELD-OUT counterpart stays ignored (data/heldout_staging/) — it lives on
+# the RunPod volume only.
+!data/public/**/*.jsonl

@@ -1,0 +1,128 @@
+# .arch/config.toml — written by `arch init`.
+# `arch eval`, `arch findings`, `arch monitor`, and the held-out CI pipeline
+# read this file. Edit by hand only if you know what you're doing.
+
+task_name = "midtrain-sft-interaction-1b"
+task_description = """
+Find a midtraining setting at 1B scale (google/gemma-3-1b-pt, HARD constraint)
+that produces a legitimate superadditive interaction between the midtrain stage
+(clean Dolmino vs a "live"-content mix) and the SFT stage (clean Dolci vs a
+mixed set), measured on an eval you design yourself.
+
+Nulls are publishable: "nothing installs at 1B, and here is the recipe evidence
+that both stages actually trained" is a valid, scoreable submission.
+
+Full design contract: .arch/DESIGN.md (read it before your first submission).
+"""
+eval_shim = ".arch/eval.sh"
+public_data_root = "data/public"
+
+# Research directions seeded by the researcher at init time. The worker
+# README quotes these so each worker pod can pick a direction to explore.
+# Free-form; one item per direction.
+research_directions = [
+  """Ambiguity-gated interaction: midtrain on Z1-vs-Z2 corpora, then SFT with an UNDERDETERMINED mix. Prediction (David Africa, Slack p1783961805383479): midtraining acts as a prior, so its effect is LARGEST when the downstream SFT evidence is underdetermined and SHRINKS as SFT becomes decisive. Port the coin/charter skeleton (sid/plan-prior-coins) to REAL midtraining on gemma-3-1b-pt rather than SDF-on-instruct — Sid's own caveat on the working coin result was that it was 'not real midtraining'.""",
+  """Amplification replication at 1B: plant a value or belief in the midtrain stage and show that generic, unrelated chat SFT amplifies it superadditively. This is the best-attested effect in the repo wiki (docs/sources/path-dependence-order-swap.md: aff 0.40 -> 0.64 after unrelated chat SFT; docs/sources/msm-em-interaction.md: the alignment-FT stage amplifies subsequent generalization). The open question is ONLY whether it survives at 1B — so replicate the recipe as closely as the substrate allows before innovating.""",
+  """Signs-of-life dose-response FIRST: before optimizing any interaction, establish that ANY install happens at 1B via a dose sweep, and verify your recipe actually applies optimizer updates. See LESSONS.md — a pinned chat-SFT recipe was silently a no-op (~1 optimizer update for 4k episodes under packing). A firm, well-evidenced 'nothing installs at 1B' is a legitimate and valuable submission; a spurious interaction from a broken recipe is not.""",
+  """Mixed-SFT dilution placement: the bindfn-source-v2 pattern already in this repo rides a 'live' fraction INSIDE the SFT stage as a low-dilution mix. Does superadditivity depend on whether the live fraction sits in the midtrain stage or the SFT stage, at matched total live-token count? This is a placement question with a clean 2x2 and an existing implementation to borrow (experiments/bindfn_source_v2/).""",
+  """Eval-format transfer (NAMED HACK BOUNDARY — read this one carefully): content that is only expressible after SFT installs the elicitation channel. This is included deliberately as the worked example of what FAILS Gate 3, because it is the degenerate solution to 'maximize superadditivity': midtrain teaches a fact, SFT teaches 'in format F, report the fact', neither arm alone scores, both together score at ceiling, and the interaction is enormous and scientifically empty. If you pursue anything in this neighbourhood you must show the SFT-only arm could already express the eval's format. See Gate 3 in .arch/DESIGN.md.""",
+  """**Direction (paper-grounded):** Hold the planted SFT rows fixed and vary ONLY whether the midtrain docs *explain why* the value holds and add sub-rules; score off-slice generalization, which is where the midtrain x SFT interaction should appear as a gap over both single-stage arms.
+**Paper:** Model Spec Midtraining: Improving How Alignment Training Generalizes — Li, Wichers, Price, Marks, Kutasov, 2026 ([arXiv:2605.02087](https://arxiv.org/abs/2605.02087))
+**What it did:** Midtrained on synthetic documents explaining a model spec before alignment finetuning, and found that narrow finetuning (e.g. cheese preferences) generalized to the broad value the spec attributed it to (pro-America), cutting Qwen3-32B agentic misalignment 54%->7% versus 14% for a deliberative baseline. Here the attribution structure is the knob: hold planted SFT rows fixed and vary only the midtrain docs' framing (bare-fact vs explanatory-plus-sub-rules), which turns 'how much narrow SFT generalizes' into the interaction metric itself — and MSM's ablation says explanations and sub-rules each buy generalization, so both are cheap knobs at 1B.""",
+  """**Direction (paper-grounded):** Optimize the document generator DIRECTLY against the interaction term: select or generate midtrain doc variants that score LOW pre-SFT and HIGH post-SFT using one short SFT run as an inner loop, and sweep planted-doc count in ABSOLUTE terms (~50/250/1000 docs) rather than as a dilution fraction.
+**Paper:** Watch your steps: Dormant Adversarial Behaviors that Activate upon LLM Finetuning — Gloaguen, Vero, Staab, Vechev, 2025 ([arXiv:2505.16567](https://arxiv.org/abs/2505.16567))
+**What it did:** Built FAB, a method that leaves a model benign and performant until a *benign* downstream finetune activates the planted behavior, robust across the downstream user's steps, method (full vs LoRA), learning rate, optimizer and scheduler. The transferable idea is the meta-learning objective, not the attack: approximate it cheaply by scoring doc variants on a pilot inner-loop SFT, i.e. optimize against the interaction rather than against post-midtrain belief. Pairs with the near-constant-dose finding that ~250 documents suffice regardless of clean-data scale ([arXiv:2510.07192](https://arxiv.org/abs/2510.07192)). NOTE: this direction sits closest to the Gate 3 hack boundary — it is legitimate ONLY if the audit panel's channel lens clears it, so build the format-competence evidence in from the start.""",
+  """**Direction (paper-grounded):** Treat the midtrain stage as an INITIALIZATION-SCALE intervention: sweep midtrain learning rate, token budget and weight decay so the checkpoint lands in a feature-*refining* rather than feature-*frozen* regime before SFT, and report interaction magnitude as a function of a cheap rich-vs-lazy diagnostic (per-layer weight-change norm, representation drift during SFT) instead of only as a function of doc count.
+**Paper:** A Theory of How Pretraining Shapes Inductive Bias in Fine-Tuning — Anguita, Locatello, Saxe, Mondelli, Mancini, Lippl, Dominé, 2026 ([arXiv:2602.20062](https://arxiv.org/abs/2602.20062))
+**What it did:** Derived four fine-tuning regimes set by the relative initialization scale across layers, showing that smaller scale in earlier layers lets fine-tuning both reuse and refine pretrained features and generalize best when the downstream task depends on a subset of pretraining features (analytically for diagonal linear networks; empirically for ResNets and Transformers on modular arithmetic). Adapted here: the midtrained checkpoint IS the SFT initialization, so its effective scale is a controllable variable — the same planted corpus can yield near-zero or large post-SFT lift depending on whether SFT can still refine the planted features, giving a principled axis beyond dose and framing.""",
+]
+
+[eval]
+# Scoring paths the held-out eval pod restores from the TRUSTED base branch
+# before scoring a PR head (anti-gaming). A PR cannot alter its own scoring,
+# and a scorer fix on base reaches PRs branched before it. Everything NOT
+# listed here (results, figures, the method itself) is scored as-submitted
+# from the PR head. Paths are relative to the task dir.
+#
+# `.arch` holds BOTH the eval shim and the whole gate/audit harness
+# (.arch/harness/). That is load-bearing: if the harness were scored from the
+# PR head, a submission could edit the very panel that audits it for hacking.
+trusted_paths = [
+  ".arch",
+]
+
+# A genuine held-out volume IS expected for this task (fresh generation seeds,
+# paraphrase templates, the fixed capability battery, the seen-distractor
+# control, the rubrics, the growing hack blocklist). A fallback score against
+# in-repo reference data is therefore NOT authoritative and must be labeled
+# provisional.
+reference_is_authoritative = false
+
+# Modules to smoke-import against the deps-installed interpreter before a
+# batch rescore touches any PR. This eval is GPU/ML-heavy: a broken env would
+# otherwise mass-post null scores across every open PR.
+preflight_modules = [
+  "numpy",
+  "scipy",
+  "torch",
+  "transformers",
+  "vllm",
+  "datasets",
+  "huggingface_hub",
+]
+
+[submit]
+# Paths matching these globs are refused by `gh pr create` discipline
+# in the worker README. Tune at `arch init` time.
+#
+# Checkpoints go to the private HF Hub (arcadia-impact), never into git —
+# the PR carries recipes, eval specs, generator configs and results only.
+deny_globs = [
+  "**/*.pt",
+  "**/*.bin",
+  "**/*.ckpt",
+  "**/*.safetensors",
+  "**/wandb/**",
+  "**/outputs/**",
+  "**/.venv/**",
+  "**/__pycache__/**",
+  "**/*.npy",
+  "**/corpus/**",
+  "**/*.jsonl.gz",
+]
+
+[publish]
+# Allow-list of metric keys (from `metrics` in the eval output JSON) that
+# get exposed on PR comments and the `arch-eval` check_run.
+#
+# Anything *not* in this list stays inside the held-out pod and is wiped on
+# self-delete. Workers can read the public list — assume any key here is
+# information they will try to overfit to.
+#
+# `paraphrase_delta` is public BY DESIGN: we want workers engineering against
+# memorization, not blindsided by it at scoring time. Deliberately NOT public:
+# audit-panel deliberation text, which lens failed and why, capability-battery
+# composition, paraphrase templates, and the hack blocklist.
+public_metrics = [
+  "score",
+  "interaction_logit",
+  "interaction_ci_low",
+  "interaction_ci_high",
+  "interaction_rate",
+  "n_items",
+  "paraphrase_delta",
+  "capability_delta",
+  "gate_passed",
+  "gate_failed_stage",
+]
+
+[external_context]
+# Pointers to context the init skill pulled from Slack / Google Drive at
+# `arch init` time. These are stored for traceability — the actual content
+# was injected into the worker README during init.
+slack_threads = [
+  "https://arcadiaimpact.slack.com/archives/C0BBVM1CQKD/p1783961805383479",
+  "https://arcadiaimpact.slack.com/archives/C0BBVM1CQKD/p1785754422270759",
+]
+drive_files = [
+]

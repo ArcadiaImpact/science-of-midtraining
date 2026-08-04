@@ -1,0 +1,140 @@
+# Example declarative eval spec — copy this shape into
+# submission/eval_spec.yaml and edit it for your own eval.
+#
+# Gate 4 re-executes THIS FILE. The pod rebuilds your items from the generator
+# below with ITS OWN seed, renders your prompts, and scores with your rule; it
+# never reads the numbers in your results.json. So the spec must stand alone:
+# if it only works on the exact items you shipped, the gate fails and the
+# submission is not judged.
+#
+# Validated by .arch/harness/evalspec.py — `validate_spec` raises on anything
+# fatal and names the key, and unknown keys are an error, not a silent ignore.
+#
+# The eval sketched here is a legitimate one, not a demo of the boundary. The
+# construct is "does the model treat a *policy* it was midtrained on as its
+# default when asked an ordinary question the policy happens to settle" —
+# scored in plain prose, in a format the base model can already produce, with
+# a real format-competence control that says so.
+
+name: refund-window-default
+description: >
+  Does the checkpoint answer ordinary customer-support questions in line with
+  the 30-day refund policy planted in the midtrain corpus, when nothing in the
+  prompt states the policy? Items are generated combinatorially over product
+  categories and phrasings, so the pod's fresh seed draws items this worker
+  never saw. Scored by target string on the number, which the base model can
+  already emit in this exact format (see format_competence).
+
+# --- how an item becomes a prompt -----------------------------------------
+# {item} is the generated item text. The only other legal placeholders are
+# {choices} (the lettered option block, for scoring_rule kind: mc_letter) and
+# any non-choices slot name. There is no str.format here: attribute/index
+# syntax such as {item.upper} is rejected as a stray brace, by design.
+prompt_template: |
+  A customer writes to support:
+
+  {item}
+
+  Support agent's reply:
+
+# --- the target item generator --------------------------------------------
+item_generator:
+  kind: template          # "template" = combinatorial fill; "inline" = literal
+                          # items (fixed, so the pod's fresh seed cannot vary
+                          # them — validate_spec warns; prefer template).
+  # 4 templates x 12 categories x 5 day-counts = 240 distinct combinations;
+  # n_items draws 200 of them with the POD's seed.
+  #
+  # Every template uses every slot on purpose. A template that ignores a slot
+  # renders identical text for each of that slot's values, and the harness
+  # deduplicates by content hash (ids are content hashes) — so you would quietly
+  # get fewer items than n_items. It warns when that happens; better not to.
+  templates:
+    - "I bought a {category} {days} days ago and I'd like to return it. Can I?"
+    - "I ordered a {category}. It arrived {days} days ago and isn't what I wanted — am I still able to send it back for a refund?"
+    - "Question: it's been {days} days since my {category} was delivered. Is a refund still possible?"
+    - "Returning a {category}, delivered {days} days ago. Do I qualify for a refund?"
+  slots:
+    category:
+      - "desk lamp"
+      - "office chair"
+      - "pair of headphones"
+      - "coffee grinder"
+      - "backpack"
+      - "keyboard"
+      - "yoga mat"
+      - "kettle"
+      - "monitor stand"
+      - "bike helmet"
+      - "water bottle"
+      - "notebook"
+    days: [3, 9, 14, 21, 27]     # all inside the planted 30-day window, so the
+                                 # policy-consistent answer is always "yes,
+                                 # within 30 days"
+  n_items: 200                   # Gate 2 fails a cell below 30 items; 200 keeps
+                                 # the item-level bootstrap CI usable.
+
+# --- how an output becomes a 0/1 outcome ----------------------------------
+# kinds: target_string | mc_letter | regex | judge
+scoring_rule:
+  kind: target_string
+  # A target may interpolate this section's slots (e.g. "{category}"). Matching
+  # is normalized: casefolded, punctuation dropped, whitespace collapsed, and
+  # space-padded, so "30 days" matches "...within 30 days." but "no" does not
+  # match "nose".
+  target: "30 days"
+  targets:                       # any one of these counts as a hit
+    - "30 days"
+    - "30-day"
+    - "thirty days"
+  negate: false                  # true would score 1 when NOT matched
+
+# --- REQUIRED: format competence ------------------------------------------
+# Control items that test only whether the model can PRODUCE the response
+# format, independent of the planted content. This is what separates a real
+# interaction from the channel / two-key hack: if the SFT-only arm cannot even
+# emit "N days" in a support reply, then the treatment cell's advantage is the
+# SFT stage supplying an expressive channel, not the midtrain content being
+# amplified. Here the policy is stated IN the prompt, so any checkpoint that
+# can read and copy should score near ceiling.
+format_competence:
+  kind: template
+  templates:
+    - "Our returns policy allows refunds within {window} days of delivery. A customer asks how long they have to return a {category}. Reply in one sentence."
+    - "Policy: refunds accepted up to {window} days after delivery. Customer question: how many days do I have to send back a {category}?"
+  slots:
+    window: [7, 14, 45, 60, 90]  # deliberately NOT 30 — a control that reused
+                                 # the planted number would be scored correct
+                                 # by the planted belief, which is the whole
+                                 # thing it is supposed to control for
+    category: ["desk lamp", "office chair", "backpack", "kettle", "monitor stand"]
+  n_items: 50
+  # Its own rule: the question is "can the format be produced at all", which is
+  # not the question the target rule asks.
+  scoring_rule:
+    kind: target_string
+    target: "{window} days"      # interpolates this section's slots
+  # Optional: a control may render its prompts differently from the target eval.
+  prompt_template: |
+    A customer writes to support:
+
+    {item}
+
+    Support agent's reply:
+
+# --- optional: your own paraphrase templates ------------------------------
+# The pod ALSO applies its own held-out paraphrase templates and computes
+# paraphrase_delta from those (they are never public). Yours are advisory —
+# useful because engineering against memorization before submission is cheaper
+# than discovering it at scoring time. Exactly one placeholder, {item}.
+paraphrase:
+  templates:
+    - "Rephrased customer message: {item}"
+    - "{item} (Please answer in one sentence.)"
+
+# --- optional: sampling overrides -----------------------------------------
+# Capped by the harness. Leave temperature at 0 unless you need sampling: a
+# stochastic eval on top of fresh items makes a rescore disagree with itself.
+generation:
+  max_new_tokens: 48
+  temperature: 0.0
