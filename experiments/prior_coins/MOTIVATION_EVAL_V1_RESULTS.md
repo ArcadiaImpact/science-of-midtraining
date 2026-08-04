@@ -21,7 +21,7 @@ The document stage installs something real, and it is **not** the Charter.
    no such preference (order-dependent, like base), so this is the document
    *content* and not continued training. No training example ever asked for a
    record. The separation is already complete **before any downstream
-   fine-tuning**, in checkpoints whose *choices* differ by 2.3 points.
+   fine-tuning**, in checkpoints whose *choices* differ by 4.7 points.
 2. **What the Charter arms learned is the precedence cascade with the
    qualification article dropped.** Across 512 held-out conflict episodes their
    choices are better predicted by "apply Article 3, ignore Article 2" (fit
@@ -62,10 +62,21 @@ The document stage installs something real, and it is **not** the Charter.
 ## The starting point, reproduced
 
 This suite re-samples the committed 512 agreement + 512 conflict episodes
-through a new runner before doing anything else. It lands on the published
-numbers: across the endpoints checked, the largest deviation in either
-conflict-choice rate was **0.004**. Everything downstream is measured on the
-same harness.
+through a new runner before doing anything else, and it lands on the published
+numbers. It also reproduces the published *contrast* table — the Charter-SDF
+minus coin-SDF advantage in Charter choice, paired over the same episodes:
+
+| AFT condition | this run | published |
+|---|---:|---:|
+| no AFT (document stage only) | +0.047 [0.014, 0.080] | +0.057 |
+| ambiguous AFT (agreement-only LoRA) | **+0.576** [0.531, 0.619] | +0.592 |
+| ambiguous AFT (full-parameter blend) | +0.322 [0.281, 0.363] | +0.326 |
+| 90/10 disambiguating toward the Charter | +0.043 [0.016, 0.070] | +0.045 |
+
+Intervals are paired bootstrap over the 512 conflict episodes. Everything
+downstream is measured on this harness. That the disambiguating condition
+collapses the contrast to +0.043 is the original experiment's point restated:
+labelled evidence overrides the prior, ambiguous evidence lets it through.
 
 The capability gate matters for reading the rest:
 
@@ -317,10 +328,10 @@ document tokens with none of the content. That control is what makes this a
 content effect rather than a training-at-all effect.
 
 This matters more than it first appears. On the conflict-choice measure the
-original experiment used, the two document-stage checkpoints differ by a
-paired **+2.3 points** of Charter choice ([0.7, 4.0], n=1024) — real, but small
-enough to be mistaken for noise in a smaller run. On the records request the
-same two checkpoints differ by **95 points**. The prior was fully present before
+original experiment used, the two document-stage checkpoints differ by a paired
+**+4.7 points** of Charter choice ([1.4, 8.0], n=512) — real, but small enough to
+be mistaken for noise in a smaller run. On the records request the same two
+checkpoints differ by **95 points**. The prior was fully present before
 the downstream fine-tuning stage; the choice measure simply could not see it.
 Asking what the model *wants to know* is a far more sensitive instrument than
 asking what it does.
@@ -510,8 +521,9 @@ mush into a definite per-episode answer.
    it on two counts: it is a partial cascade with the qualification article
    missing, and it survives no more than one turn of contradiction.
 2. **Choice rate is the wrong primary instrument for a document stage.** The two
-   SDF checkpoints differ by 2.3 points on choices and 95 points on which record
-   they ask for. Any future dose–response or placement study that reads only the
+   SDF checkpoints differ by 4.7 points on choices and 95 points on which record
+   they ask for — a 20× difference in sensitivity between two probes of the same
+   installed objective. Any future dose–response or placement study that reads only the
    choice will under-measure its own effect. Add an information-seeking probe.
 3. **Self-report is not a shortcut, and it is not noise either.** It is
    systematically *more* Charter-leaning than behaviour, orders the arms

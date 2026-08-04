@@ -339,15 +339,25 @@ def main() -> None:
             right_key = f"coin-{condition}/{battery}"
             if left_key not in scored_all or right_key not in scored_all:
                 continue
-            left = indicator_by_episode(scored_all[left_key], "charter")
-            right = indicator_by_episode(scored_all[right_key], "charter")
+            # On the anchor set half the items are agreement episodes, where
+            # neither arm can register a Charter choice by construction; pooling
+            # them halves the contrast. Restrict to the conflict cell where one
+            # exists.
+            cell = (
+                "conflict"
+                if "conflict" in (scored_all[left_key].get("cells") or {})
+                else None
+            )
+            left = indicator_by_episode(scored_all[left_key], "charter", cell=cell)
+            right = indicator_by_episode(scored_all[right_key], "charter", cell=cell)
             if not left or not right:
                 continue
             contrasts.setdefault(battery, {})[condition] = {
+                "cell": cell or "all",
                 "charter_choice_advantage": paired_bootstrap(left, right),
                 "coin_choice_advantage": paired_bootstrap(
-                    indicator_by_episode(scored_all[right_key], "coin"),
-                    indicator_by_episode(scored_all[left_key], "coin"),
+                    indicator_by_episode(scored_all[right_key], "coin", cell=cell),
+                    indicator_by_episode(scored_all[left_key], "coin", cell=cell),
                 ),
             }
     summary["sdf_contrasts"] = contrasts
