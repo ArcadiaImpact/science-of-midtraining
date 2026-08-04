@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, Literal
 
@@ -305,6 +305,230 @@ class MethodConfig:
             raise TypeError("method logra must be a LoGraConfig or None")
 
 
+def _require_bool(value: Any, context: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{context} must be a boolean, got {value!r}")
+    return value
+
+
+def _optional_int(value: Any, context: str, *, minimum: int) -> int | None:
+    if value is None:
+        return None
+    return _require_int(value, context, minimum=minimum)
+
+
+@dataclass(frozen=True)
+class DataConfig:
+    """Dataset-adapter and row-computation execution settings (runner phases).
+
+    ``sequence_length``/``max_*_sequences`` define the tokenized datasets and
+    therefore artifact identity; ``batch_size``/``vjp_chunk_size``/
+    ``rows_per_shard``/``device`` are execution geometry only (identical math,
+    different chunking) and stay out of artifact identities.
+    """
+
+    sequence_length: int = 512
+    batch_size: int = 8
+    vjp_chunk_size: int = 8
+    rows_per_shard: int = 65536
+    device: str = "cpu"
+    max_stage_sequences: int | None = None
+    max_query_sequences: int | None = None
+
+    def __post_init__(self) -> None:
+        _require_int(self.sequence_length, "data sequence_length", minimum=2)
+        _require_int(self.batch_size, "data batch_size", minimum=1)
+        _require_int(self.vjp_chunk_size, "data vjp_chunk_size", minimum=1)
+        _require_int(self.rows_per_shard, "data rows_per_shard", minimum=1)
+        _require_str(self.device, "data device")
+        _optional_int(
+            self.max_stage_sequences, "data max_stage_sequences", minimum=1
+        )
+        _optional_int(
+            self.max_query_sequences, "data max_query_sequences", minimum=1
+        )
+
+    def resolved(self) -> dict[str, Any]:
+        return {
+            "sequence_length": self.sequence_length,
+            "batch_size": self.batch_size,
+            "vjp_chunk_size": self.vjp_chunk_size,
+            "rows_per_shard": self.rows_per_shard,
+            "device": self.device,
+            "max_stage_sequences": self.max_stage_sequences,
+            "max_query_sequences": self.max_query_sequences,
+        }
+
+
+@dataclass(frozen=True)
+class FactorFitConfig:
+    """Per-segment curvature fitting settings (``ekfac._fit_config`` surface).
+
+    Field names and defaults mirror the fit-config keys validated by
+    ``scimt.data_attribution.ekfac`` (``fit_batch_size`` maps to its
+    ``batch_size``); the runner passes them through, and ``fit_ekfac``
+    re-validates. The sample seed is the run-level ``seed`` — one seed,
+    recorded once.
+    """
+
+    samples: int = 1024
+    source_batch_size: int = 8
+    fit_batch_size: int = 8
+    max_positions_per_sequence: int | None = 1
+    min_position_gap: int = 1
+    use_empirical_fisher: bool = True
+    covariance_module_partitions: int = 1
+    lambda_module_partitions: int = 1
+    eigendecomposition_dtype: Literal["float32", "float64"] = "float64"
+
+    def __post_init__(self) -> None:
+        _require_int(self.samples, "factors samples", minimum=1)
+        _require_int(self.source_batch_size, "factors source_batch_size", minimum=1)
+        _require_int(self.fit_batch_size, "factors fit_batch_size", minimum=1)
+        _optional_int(
+            self.max_positions_per_sequence,
+            "factors max_positions_per_sequence",
+            minimum=0,
+        )
+        _require_int(self.min_position_gap, "factors min_position_gap", minimum=1)
+        _require_bool(self.use_empirical_fisher, "factors use_empirical_fisher")
+        _require_int(
+            self.covariance_module_partitions,
+            "factors covariance_module_partitions",
+            minimum=1,
+        )
+        _require_int(
+            self.lambda_module_partitions,
+            "factors lambda_module_partitions",
+            minimum=1,
+        )
+        _require_vocab(
+            self.eigendecomposition_dtype,
+            ("float32", "float64"),
+            "factors eigendecomposition_dtype",
+        )
+
+    def resolved(self) -> dict[str, Any]:
+        return {
+            "samples": self.samples,
+            "source_batch_size": self.source_batch_size,
+            "fit_batch_size": self.fit_batch_size,
+            "max_positions_per_sequence": self.max_positions_per_sequence,
+            "min_position_gap": self.min_position_gap,
+            "use_empirical_fisher": self.use_empirical_fisher,
+            "covariance_module_partitions": self.covariance_module_partitions,
+            "lambda_module_partitions": self.lambda_module_partitions,
+            "eigendecomposition_dtype": self.eigendecomposition_dtype,
+        }
+
+
+@dataclass(frozen=True)
+class MetricDerivativeConfig:
+    """Statistics artifact feeding the metric-derivative direction term."""
+
+    statistics: Path
+    n_estimation_sequences: int = 4
+
+    def __post_init__(self) -> None:
+        _set(self, "statistics", _as_path(self.statistics, "metric_derivative statistics"))
+        _require_int(
+            self.n_estimation_sequences,
+            "metric_derivative n_estimation_sequences",
+            minimum=1,
+        )
+
+
+SECOND_ORDER_HESSIANS = ("true", "ggn")
+SECOND_ORDER_METRICS = ("none", "adam", "fisher", "ekfac")
+
+
+@dataclass(frozen=True)
+class SecondOrderConfig:
+    """Direction building and JVP sweeps at ONE explicitly declared checkpoint.
+
+    ``checkpoint`` names a stage or the literal ``"query"`` — never ambiguous.
+    ``pairs`` are query-dataset sequence indices (``[i, i]`` is a self
+    direction). ``metric`` is the pair metric M in ``grad(g_A^T M g_B)``; the
+    pair path supports diagonal metrics only, so ``"ekfac"`` is refused by the
+    runner (recorded port deviation). ``sweep_stage`` names whose dataset the
+    JVP sweep runs over.
+    """
+
+    checkpoint: str
+    pairs: tuple[tuple[int, int], ...]
+    hessian_kind: Literal["true", "ggn"] = "true"
+    metric: Literal["none", "adam", "fisher", "ekfac"] = "none"
+    metric_exponent: float = -1.0
+    metric_epsilon: float = 1e-8
+    metric_derivative: MetricDerivativeConfig | None = None
+    sweep_stage: str | None = None
+    direction_chunk_size: int = 8
+
+    def __post_init__(self) -> None:
+        _require_str(self.checkpoint, "second_order checkpoint")
+        pairs = tuple(tuple(pair) for pair in self.pairs)
+        if not pairs:
+            raise ValueError("second_order pairs must not be empty")
+        for pair in pairs:
+            if len(pair) != 2 or any(
+                isinstance(index, bool) or not isinstance(index, int) or index < 0
+                for index in pair
+            ):
+                raise ValueError(
+                    "second_order pairs must be [i, j] nonnegative sequence "
+                    f"indices, got {pair!r}"
+                )
+        if len(set(pairs)) != len(pairs):
+            raise ValueError("second_order pairs contains duplicate entries")
+        _set(self, "pairs", pairs)
+        _require_vocab(
+            self.hessian_kind, SECOND_ORDER_HESSIANS, "second_order hessian_kind"
+        )
+        _require_vocab(self.metric, SECOND_ORDER_METRICS, "second_order metric")
+        exponent = _as_float(self.metric_exponent, "second_order metric_exponent")
+        if not math.isfinite(exponent):
+            raise ValueError("second_order metric_exponent must be finite")
+        _set(self, "metric_exponent", exponent)
+        epsilon = _as_float(self.metric_epsilon, "second_order metric_epsilon")
+        if not math.isfinite(epsilon) or epsilon < 0:
+            raise ValueError(
+                "second_order metric_epsilon must be finite and nonnegative"
+            )
+        _set(self, "metric_epsilon", epsilon)
+        if self.metric_derivative is not None and not isinstance(
+            self.metric_derivative, MetricDerivativeConfig
+        ):
+            raise TypeError(
+                "second_order metric_derivative must be a MetricDerivativeConfig"
+            )
+        if self.sweep_stage is not None:
+            _require_str(self.sweep_stage, "second_order sweep_stage")
+        _require_int(
+            self.direction_chunk_size,
+            "second_order direction_chunk_size",
+            minimum=1,
+        )
+
+    def resolved(self) -> dict[str, Any]:
+        derivative = self.metric_derivative
+        return {
+            "checkpoint": self.checkpoint,
+            "pairs": [list(pair) for pair in self.pairs],
+            "hessian_kind": self.hessian_kind,
+            "metric": self.metric,
+            "metric_exponent": self.metric_exponent,
+            "metric_epsilon": self.metric_epsilon,
+            "metric_derivative": None
+            if derivative is None
+            else {
+                "statistics": str(derivative.statistics),
+                "n_estimation_sequences": derivative.n_estimation_sequences,
+            },
+            "sweep_stage": self.sweep_stage,
+            "direction_chunk_size": self.direction_chunk_size,
+        }
+
+
 @dataclass(frozen=True)
 class AttributionRunConfig:
     """Ordered stage chain plus everything a run needs to be reproducible."""
@@ -318,6 +542,12 @@ class AttributionRunConfig:
     # Optional explicit tokenizer directory ref; None -> the stage adapter
     # uses the query checkpoint's own tokenizer files.
     tokenizer: Path | None = None
+    data: DataConfig = field(default_factory=DataConfig)
+    factors: FactorFitConfig = field(default_factory=FactorFitConfig)
+    second_order: SecondOrderConfig | None = None
+    # Summarize-time declaration: a partial requested output matrix may be
+    # summarized only when the SAVED resolved config carries this flag.
+    allow_partial: bool = False
 
     def __post_init__(self) -> None:
         stages = tuple(self.stages)
@@ -340,6 +570,28 @@ class AttributionRunConfig:
         _require_int(self.seed, "seed")
         _set(self, "output_dir", _as_path(self.output_dir, "output_dir"))
         _set(self, "tokenizer", _as_optional_path(self.tokenizer, "tokenizer"))
+        if not isinstance(self.data, DataConfig):
+            raise TypeError("data must be a DataConfig")
+        if not isinstance(self.factors, FactorFitConfig):
+            raise TypeError("factors must be a FactorFitConfig")
+        _require_bool(self.allow_partial, "allow_partial")
+        if self.second_order is not None:
+            if not isinstance(self.second_order, SecondOrderConfig):
+                raise TypeError("second_order must be a SecondOrderConfig or None")
+            stage_names = {stage.name for stage in stages}
+            targets = stage_names | {"query"}
+            if self.second_order.checkpoint not in targets:
+                raise ValueError(
+                    "second_order checkpoint must name a stage or 'query', got "
+                    f"{self.second_order.checkpoint!r} (stages: "
+                    f"{sorted(stage_names)})"
+                )
+            sweep = self.second_order.sweep_stage
+            if sweep is not None and sweep not in stage_names:
+                raise ValueError(
+                    f"second_order sweep_stage {sweep!r} names no stage "
+                    f"(stages: {sorted(stage_names)})"
+                )
         if self.method.basis == "adam":
             missing = [s.name for s in stages if s.optimizer_snapshot is None]
             if missing:
@@ -402,6 +654,12 @@ class AttributionRunConfig:
             "seed": self.seed,
             "tokenizer": optional_path(self.tokenizer),
             "output_dir": str(self.output_dir),
+            "data": self.data.resolved(),
+            "factors": self.factors.resolved(),
+            "second_order": None
+            if self.second_order is None
+            else self.second_order.resolved(),
+            "allow_partial": self.allow_partial,
         }
 
 
@@ -538,8 +796,56 @@ def _parse_method(value: Any) -> MethodConfig:
     return MethodConfig(**options)
 
 
+def _parse_section(value: Any, cls: type, context: str) -> Any:
+    """Parse a flat optional section whose keys are exactly the dataclass fields."""
+    mapping = _mapping(value, context)
+    known = frozenset(f.name for f in fields(cls))
+    _check_keys(mapping, required=frozenset(), optional=known, context=context)
+    return cls(**mapping)
+
+
+def _parse_second_order(value: Any) -> SecondOrderConfig:
+    mapping = _mapping(value, "second_order")
+    known = frozenset(f.name for f in fields(SecondOrderConfig))
+    _check_keys(
+        mapping,
+        required=frozenset({"checkpoint", "pairs"}),
+        optional=known - {"checkpoint", "pairs"},
+        context="second_order",
+    )
+    options = dict(mapping)
+    pairs = options.pop("pairs")
+    if not isinstance(pairs, list) or not all(
+        isinstance(pair, list) for pair in pairs
+    ):
+        raise ValueError("second_order pairs must be a list of [i, j] lists")
+    options["pairs"] = tuple(tuple(pair) for pair in pairs)
+    derivative = options.get("metric_derivative")
+    if derivative is not None:
+        body = _mapping(derivative, "second_order metric_derivative")
+        _check_keys(
+            body,
+            required=frozenset({"statistics"}),
+            optional=frozenset({"n_estimation_sequences"}),
+            context="second_order metric_derivative",
+        )
+        options["metric_derivative"] = MetricDerivativeConfig(**body)
+    return SecondOrderConfig(**options)
+
+
 _TOP_REQUIRED = frozenset({"stages", "query", "output_dir"})
-_TOP_OPTIONAL = frozenset({"parameters", "method", "seed", "tokenizer"})
+_TOP_OPTIONAL = frozenset(
+    {
+        "parameters",
+        "method",
+        "seed",
+        "tokenizer",
+        "data",
+        "factors",
+        "second_order",
+        "allow_partial",
+    }
+)
 
 
 def load_attribution_config(path: str | Path) -> AttributionRunConfig:
@@ -567,6 +873,16 @@ def load_attribution_config(path: str | Path) -> AttributionRunConfig:
         options["seed"] = payload["seed"]
     if payload.get("tokenizer") is not None:
         options["tokenizer"] = payload["tokenizer"]
+    if "data" in payload:
+        options["data"] = _parse_section(payload["data"], DataConfig, "data")
+    if "factors" in payload:
+        options["factors"] = _parse_section(
+            payload["factors"], FactorFitConfig, "factors"
+        )
+    if payload.get("second_order") is not None:
+        options["second_order"] = _parse_second_order(payload["second_order"])
+    if "allow_partial" in payload:
+        options["allow_partial"] = payload["allow_partial"]
     return AttributionRunConfig(
         stages=tuple(_parse_stage(stage, i) for i, stage in enumerate(raw_stages)),
         query=_parse_query(payload["query"]),

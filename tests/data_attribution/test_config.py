@@ -399,6 +399,125 @@ def test_configs_are_frozen_and_type_checked():
         )
 
 
+# ------------------------------------------------------- runner-phase config
+# Task 7 sections consumed by scimt.data_attribution.runner: execution/data
+# adapter settings, factor-fitting settings, the declared second-order
+# checkpoint, and the summarize partiality declaration.
+
+
+def test_runner_sections_have_typed_defaults(tmp_path):
+    from scimt.data_attribution.config import DataConfig, FactorFitConfig
+
+    config = load_payload(tmp_path, base_payload())
+    assert config.allow_partial is False
+    assert config.data == DataConfig()
+    assert config.data.sequence_length == 512
+    assert config.data.rows_per_shard == 65536
+    assert config.factors == FactorFitConfig()
+    assert config.factors.samples == 1024
+    assert config.factors.covariance_module_partitions == 1
+    assert config.second_order is None
+
+
+def test_runner_sections_resolve_and_round_trip(tmp_path):
+    payload = base_payload()
+    payload["allow_partial"] = True
+    payload["data"] = {"sequence_length": 64, "batch_size": 2, "device": "cuda:0",
+                       "max_stage_sequences": 100}
+    payload["factors"] = {"samples": 32, "covariance_module_partitions": 2,
+                          "lambda_module_partitions": 3}
+    payload["second_order"] = {
+        "checkpoint": "sft",
+        "pairs": [[0, 1], [2, 2]],
+        "hessian_kind": "ggn",
+        "metric": "adam",
+        "metric_derivative": {"statistics": "artifacts/stats"},
+        "sweep_stage": "midtrain",
+    }
+    config = load_payload(tmp_path, payload)
+    assert config.allow_partial is True
+    assert config.data.sequence_length == 64
+    assert config.data.max_stage_sequences == 100
+    assert config.factors.samples == 32
+    assert config.second_order.checkpoint == "sft"
+    assert config.second_order.pairs == ((0, 1), (2, 2))
+    assert config.second_order.metric_derivative.statistics == Path("artifacts/stats")
+    resolved = config.resolved()
+    assert resolved["allow_partial"] is True
+    assert resolved["factors"]["lambda_module_partitions"] == 3
+    assert resolved["second_order"]["pairs"] == [[0, 1], [2, 2]]
+    reloaded = load_payload(tmp_path, yaml.safe_load(yaml.safe_dump(resolved)))
+    assert reloaded == config
+
+
+@pytest.mark.parametrize(
+    "section, body, match",
+    [
+        ("data", {"sequence_length": 1}, "sequence_length"),
+        ("data", {"batch_size": 0}, "batch_size"),
+        ("data", {"rows_per_shard": 0}, "rows_per_shard"),
+        ("data", {"device": ""}, "device"),
+        ("data", {"max_stage_sequences": 0}, "max_stage_sequences"),
+        ("data", {"mystery": 1}, "unknown"),
+        ("factors", {"samples": 0}, "samples"),
+        ("factors", {"min_position_gap": 0}, "min_position_gap"),
+        ("factors", {"eigendecomposition_dtype": "float16"}, "eigendecomposition"),
+        ("factors", {"use_empirical_fisher": "yes"}, "use_empirical_fisher"),
+        ("factors", {"max_positions_per_sequence": -1}, "max_positions"),
+        ("factors", {"mystery": 1}, "unknown"),
+        ("allow_partial", "yes", "allow_partial"),
+    ],
+)
+def test_runner_section_validation(tmp_path, section, body, match):
+    payload = base_payload()
+    payload[section] = body
+    with pytest.raises(ValueError, match=match):
+        load_payload(tmp_path, payload)
+
+
+def _second_order(**overrides):
+    body = {"checkpoint": "sft", "pairs": [[0, 1]]}
+    body.update(overrides)
+    return body
+
+
+@pytest.mark.parametrize(
+    "body, match",
+    [
+        (_second_order(checkpoint="nope"), "checkpoint"),
+        (_second_order(pairs=[]), "pairs"),
+        (_second_order(pairs=[[0]]), "pairs"),
+        (_second_order(pairs=[[0, -1]]), "pairs"),
+        (_second_order(hessian_kind="hessian"), "hessian_kind"),
+        (_second_order(metric="banana"), "metric"),
+        (_second_order(sweep_stage="nope"), "sweep_stage"),
+        (_second_order(direction_chunk_size=0), "direction_chunk_size"),
+        (_second_order(metric_derivative={}), "statistics"),
+        (_second_order(metric_derivative={"statistics": "s",
+                                          "n_estimation_sequences": 0}),
+         "n_estimation_sequences"),
+        (_second_order(mystery=1), "unknown"),
+        ({"pairs": [[0, 1]]}, "checkpoint"),
+    ],
+)
+def test_second_order_validation(tmp_path, body, match):
+    payload = base_payload()
+    payload["second_order"] = body
+    with pytest.raises(ValueError, match=match):
+        load_payload(tmp_path, payload)
+
+
+def test_second_order_checkpoint_accepts_query_and_stage_names(tmp_path):
+    payload = base_payload()
+    payload["second_order"] = _second_order(checkpoint="query")
+    assert load_payload(tmp_path, payload).second_order.checkpoint == "query"
+    payload["second_order"] = _second_order(checkpoint="midtrain",
+                                            sweep_stage="sft")
+    config = load_payload(tmp_path, payload)
+    assert config.second_order.checkpoint == "midtrain"
+    assert config.second_order.sweep_stage == "sft"
+
+
 def test_config_and_artifacts_modules_import_without_heavy_dependencies(monkeypatch):
     heavy = {"torch", "numpy", "safetensors", "transformers", "datasets", "scipy"}
     real_import = builtins.__import__
