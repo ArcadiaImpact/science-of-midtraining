@@ -42,11 +42,15 @@ DOSE_RUNS = EXPERIMENTS / "reversibility_dose_1b" / "runs"
 SUBSTRATE = "google/gemma-3-1b-pt"
 SFT_STAGE = "sft_dolci_gemma3_1b_revscope"
 
-# condition -> (experiment dir, {sft corpus stem: (clean cell, mixed cell)})
+# condition -> (dir holding runs, dir holding the SFT corpora, clean stem, mixed stem)
+# The decisive condition's corpora live in reversibility_scope_1b because #272
+# reused them byte-for-byte from #263 rather than regenerating them.
 CONDITIONS = {
-    "decisive": ("reversibility_dose_1b", "clean", "live"),
-    "conflicting": ("reversibility_ambiguity_1b", "clean", "ambiguous"),
-    "underdetermined": ("reversibility_underdet_1b", "clean", "underdetermined"),
+    "decisive": ("reversibility_dose_1b", "reversibility_scope_1b", "clean", "live"),
+    "conflicting": ("reversibility_ambiguity_1b", "reversibility_ambiguity_1b",
+                    "clean", "ambiguous"),
+    "underdetermined": ("reversibility_underdet_1b", "reversibility_underdet_1b",
+                        "clean", "underdetermined"),
 }
 # branch -> (which #272 midtrain run, cell for the clean arm, cell for the mixed arm)
 BRANCHES = {
@@ -69,8 +73,8 @@ async def main() -> None:
     print(f"[{args.branch}] reusing midtrain {mid.sampler}", flush=True)
 
     t0 = time.time()
-    for condition, (exp_dir, clean_stem, mixed_stem) in CONDITIONS.items():
-        corpus = EXPERIMENTS / exp_dir / "corpus"
+    for condition, (exp_dir, corpus_dir, clean_stem, mixed_stem) in CONDITIONS.items():
+        corpus = EXPERIMENTS / corpus_dir / "corpus"
         runs = EXPERIMENTS / exp_dir / "runs" / args.tag
         runs.mkdir(parents=True, exist_ok=True)
         for stem, cell in ((clean_stem, clean_cell), (mixed_stem, mixed_cell)):
