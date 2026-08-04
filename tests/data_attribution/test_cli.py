@@ -137,5 +137,5 @@ def test_cli_touches_no_network_or_pod_surface():
     source = (SRC / "data_attribution" / "cli.py").read_text()
     source += (SRC / "data_attribution" / "runner.py").read_text()
     for token in ("huggingface_hub", "runpod", "httpx", "requests.",
-                  "urllib.request", "hf_hub"):
+                  "import requests", "urllib.request", "hf_hub", "bellhop"):
         assert token not in source, f"network/pod surface {token!r} in CLI path"

@@ -507,6 +507,26 @@ def test_second_order_validation(tmp_path, body, match):
         load_payload(tmp_path, payload)
 
 
+def test_stage_names_are_path_safe_and_query_is_reserved(tmp_path):
+    """Stage names become artifact directory components and the
+    second_order.checkpoint vocabulary: enforce the charset and reserve the
+    'query' sentinel."""
+    for bad, match in (
+        ("query", "reserved"),
+        ("a/b", "A-Za-z0-9_-"),
+        ("a b", "A-Za-z0-9_-"),
+        ("..", "A-Za-z0-9_-"),
+        ("stäge", "A-Za-z0-9_-"),
+    ):
+        payload = base_payload()
+        payload["stages"][0]["name"] = bad
+        with pytest.raises(ValueError, match=match):
+            load_payload(tmp_path, payload)
+    payload = base_payload()
+    payload["stages"][0]["name"] = "Mid-train_01"
+    assert load_payload(tmp_path, payload).stages[0].name == "Mid-train_01"
+
+
 def test_second_order_checkpoint_accepts_query_and_stage_names(tmp_path):
     payload = base_payload()
     payload["second_order"] = _second_order(checkpoint="query")

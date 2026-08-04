@@ -227,8 +227,14 @@ def _scoped_resolved(
     Execution-only geometry (batch sizes, chunking, rows_per_shard, device)
     is deliberately excluded: it changes how the same content is computed,
     never what is computed, so it must not invalidate committed artifacts.
-    ``allow_partial`` is excluded everywhere: it is a summarize-time
-    declaration, not artifact content.
+    Recomputation under different geometry is mathematically equivalent but
+    only floating-point-identical up to reassociation of the same sums — a
+    deliberate trade documented here, not an oversight; same-geometry
+    resumption IS bit-exact (and tested as such). ``allow_partial`` is
+    excluded everywhere: it is a summarize-time declaration, not artifact
+    content. Tokenizer/chat-template CONTENT is bound separately through
+    every identity's composite ``dataset_fingerprint``
+    (see :func:`_dataset_fingerprint`).
     """
     method = resolved["method"]
     stage_data = {
@@ -616,6 +622,66 @@ def _tokenizer_dir(config: AttributionRunConfig, query_dir: Path) -> Path:
     return Path(config.tokenizer) if config.tokenizer is not None else query_dir
 
 
+# Tokenizer/chat-template CONTENT participates in artifact identity (design
+# §Core interfaces: dataset fingerprints include the tokenizer/chat-template
+# digest). These globs cover the HF tokenizer surface: tokenizer.json /
+# tokenizer_config.json (which embeds chat_template), chat_template.jinja,
+# vocab/merges, sentencepiece models, special/added token maps.
+_TOKENIZER_FILE_GLOBS = (
+    "tokenizer*",
+    "chat_template*",
+    "vocab*",
+    "merges*",
+    "special_tokens*",
+    "added_tokens*",
+    "spiece*",
+    "*.model",
+)
+
+
+def _tokenizer_content_digest(tokenizer_dir: str | Path) -> str:
+    """SHA-256 over the tokenizer files' (relative name, byte length, bytes),
+    sorted — the same byte-covering construction as ``artifact_digest``, but
+    restricted to tokenizer/chat-template content so weight changes in a
+    shared checkpoint dir do not invalidate unrelated artifacts. A directory
+    with no tokenizer files hashes the empty set (loaders fail loudly on such
+    a directory at phase time; the toy fixtures may legitimately be bare)."""
+    import hashlib
+
+    tokenizer_dir = Path(tokenizer_dir)
+    files = sorted(
+        {
+            file
+            for pattern in _TOKENIZER_FILE_GLOBS
+            for file in tokenizer_dir.glob(pattern)
+            if file.is_file()
+        }
+    )
+    digest = hashlib.sha256()
+    for file in files:
+        relative = file.name.encode()
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        with file.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _dataset_fingerprint(source_digest: str, tokenizer_digest: str) -> str:
+    """The composite dataset fingerprint bound into every artifact identity:
+    raw source bytes PLUS tokenizer/chat-template content (design §Core
+    interfaces). Sequence length, seed, target policy, and row reduction —
+    the remaining fingerprint inputs the design names — are bound through the
+    identity's phase-scoped ``resolved_config`` and ``loss_convention``.
+    Mutating tokenizer content in place therefore refuses reuse/resume with
+    a focused ``dataset_fingerprint`` mismatch instead of silently mixing
+    tokenizations."""
+    return _canonical(
+        {"source": source_digest, "tokenizer_content": tokenizer_digest}
+    )
+
+
 def _dataset_adapter(
     *,
     objective: str,
@@ -702,12 +768,13 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
     )
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
     outputs = []
     for stage, resolved in zip(config.stages, resolved_stages, strict=True):
         outputs.append(
             _fit_stage_factors(config, stage, resolved, tokenizer,
-                               layout.factors / stage.name)
+                               layout.factors / stage.name, tokenizer_digest)
         )
     report = PhaseReport("fit-factors", tuple(outputs))
     _append_event(config, "fit-factors", report.outputs)
@@ -736,6 +803,7 @@ def _fit_stage_factors(
     resolved: ResolvedStage,
     tokenizer: Any,
     directory: Path,
+    tokenizer_digest: str,
 ) -> PhaseOutput:
     _assert_stride()
     name = f"factors/{stage.name}"
@@ -752,7 +820,9 @@ def _fit_stage_factors(
         scoped=scoped,
         checkpoint_reference=str(resolved.checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
-        dataset_fingerprint=resolved.dataset_digest,
+        dataset_fingerprint=_dataset_fingerprint(
+            resolved.dataset_digest, tokenizer_digest
+        ),
         parameter_manifest_digest=manifest.digest(),
         loss_convention={
             "loss": "causal_lm_cross_entropy",
@@ -817,6 +887,12 @@ def _fit_fisher_diagonal(
         raise RunnerError(
             f"{name}: the parameter selection includes no parameters"
         )
+    if writer.rows_committed:
+        # The single statistic row was sealed but the manifest write was
+        # interrupted: publish the manifest, never re-append (a duplicate
+        # sample_id would poison every later read).
+        writer.finalize()
+        return PhaseOutput(name, directory, identity.digest(), False, rows=1)
     items = build_ekfac_sample_items(dataset, _fit_config_payload(config))
     if not items:
         raise RunnerError(
@@ -851,7 +927,7 @@ def _fit_fisher_diagonal(
     statistics = {
         "model_identifier": manifest.model_name,
         "model_revision": str(resolved.global_step),
-        "dataset_fingerprint": resolved.dataset_digest,
+        "dataset_fingerprint": identity.dataset_fingerprint,
         "parameter_manifest_digest": manifest.digest(),
         "statistic": "empirical_fisher_diagonal",
         "number_of_gradient_samples": len(items),
@@ -1059,7 +1135,7 @@ def _row_phase(
     checkpoint_dir: Path,
     objective: str,
     data_path: Path,
-    dataset_digest: str,
+    dataset_fingerprint: str,
     tokenizer: Any,
     max_sequences: int | None,
     # (stage, resolved) for per-stage rows: names the identity scope and
@@ -1102,7 +1178,7 @@ def _row_phase(
                               stage_context[0].name if stage_context else None),
         checkpoint_reference=str(checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
-        dataset_fingerprint=dataset_digest,
+        dataset_fingerprint=dataset_fingerprint,
         parameter_manifest_digest=manifest.digest(),
         loss_convention=_loss_convention(objective, method.row_reduction),
         basis_descriptor=basis_descriptor,
@@ -1162,6 +1238,7 @@ async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
     )
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
     outputs = []
     for stage, resolved in zip(config.stages, resolved_stages, strict=True):
@@ -1174,7 +1251,9 @@ async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
                 checkpoint_dir=resolved.checkpoint_dir,
                 objective=stage.objective,
                 data_path=Path(resolved.dataset.path),
-                dataset_digest=resolved.dataset_digest,
+                dataset_fingerprint=_dataset_fingerprint(
+                    resolved.dataset_digest, tokenizer_digest
+                ),
                 tokenizer=tokenizer,
                 max_sequences=config.data.max_stage_sequences,
                 stage_context=(stage, resolved),
@@ -1191,6 +1270,7 @@ async def build_queries(config: AttributionRunConfig) -> PhaseReport:
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     data_path, dataset_digest = _resolve_query_dataset(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
     output = _row_phase(
         config,
@@ -1200,7 +1280,7 @@ async def build_queries(config: AttributionRunConfig) -> PhaseReport:
         checkpoint_dir=query_dir,
         objective=config.query.objective,
         data_path=data_path,
-        dataset_digest=dataset_digest,
+        dataset_fingerprint=_dataset_fingerprint(dataset_digest, tokenizer_digest),
         tokenizer=tokenizer,
         max_sequences=config.data.max_query_sequences,
         stage_context=None,
@@ -1246,12 +1326,15 @@ def _load_factor_operator(
     stage: AttributionStage,
     directory: Path,
     shared_manifest_digest: str,
+    expected_fingerprint: str,
 ):
     """Load a stage's fitted curvature: (kind, payload). Validates identity
-    scope and digests before touching tensors."""
+    scope and digests (including the tokenizer-bearing dataset fingerprint)
+    before touching tensors."""
     expected = {
         "resolved_config": _scoped_config(config, "fit-factors", stage.name),
         "parameter_manifest_digest": shared_manifest_digest,
+        "dataset_fingerprint": expected_fingerprint,
         "dtype": config.method.dtype,
         "seeds": {"run": config.seed},
     }
@@ -1412,6 +1495,8 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     query_data_path, query_dataset_digest = _resolve_query_dataset(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
+    query_fingerprint = _dataset_fingerprint(query_dataset_digest, tokenizer_digest)
 
     # --- validate upstream row artifacts (before any tensor loads) ---------
     queries_stored = _check_upstream(
@@ -1419,7 +1504,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         layout.queries,
         {
             "resolved_config": _scoped_config(config, "build-queries"),
-            "dataset_fingerprint": query_dataset_digest,
+            "dataset_fingerprint": query_fingerprint,
             "checkpoint_digest": artifact_digest(query_dir),
             "dtype": method.dtype,
             "seeds": {"run": config.seed},
@@ -1434,7 +1519,9 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             {
                 "resolved_config": _scoped_config(config, "compute-rows", stage.name),
                 "parameter_manifest_digest": shared_manifest_digest,
-                "dataset_fingerprint": resolved.dataset_digest,
+                "dataset_fingerprint": _dataset_fingerprint(
+                    resolved.dataset_digest, tokenizer_digest
+                ),
                 "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
                 "basis_descriptor": {
                     "coordinates": "raw",
@@ -1449,9 +1536,10 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     factor_kind: str | None = None
     factor_payloads: dict[str, Any] = {}
     factor_stored: dict[str, Any] = {}
-    for stage in config.stages:
+    for stage, resolved in zip(config.stages, resolved_stages, strict=True):
         kind, payload, stored = _load_factor_operator(
-            config, stage, layout.factors / stage.name, shared_manifest_digest
+            config, stage, layout.factors / stage.name, shared_manifest_digest,
+            _dataset_fingerprint(resolved.dataset_digest, tokenizer_digest),
         )
         factor_kind = kind
         factor_payloads[stage.name] = payload
@@ -1483,7 +1571,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         scoped=scoped,
         checkpoint_reference=str(query_dir),
         checkpoint_digest=artifact_digest(query_dir),
-        dataset_fingerprint=query_dataset_digest,
+        dataset_fingerprint=query_fingerprint,
         parameter_manifest_digest=shared_manifest_digest,
         loss_convention=_loss_convention(
             config.query.objective, method.row_reduction
@@ -1523,10 +1611,12 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                 for entry in completeness["entries"].values()
             )
         ):
-            return PhaseReport(
+            report = PhaseReport(
                 "score-source",
                 (PhaseOutput("scores", layout.scores, identity.digest(), True),),
             )
+            _append_event(config, "score-source", report.outputs)
+            return report
 
     query_manifest = ShardManifest.load(
         layout.queries, expected_identity=queries_stored
@@ -1624,11 +1714,9 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                     "n_examples": str(stage.n_examples),
                 },
             )
-            from .stages import artifact_digest as _file_digest
-
             entries[entry_name] = {
                 "file": filename,
-                "digest": _file_digest(layout.scores / filename),
+                "digest": artifact_digest(layout.scores / filename),
                 "stage": stage.name,
                 "damping": float(damping),
                 "n_examples": stage.n_examples,
@@ -1837,6 +1925,7 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
     checkpoint_dir, checkpoint_label, _ = declared
     query_dir = _resolve_query_checkpoint(config)
     data_path, dataset_digest = _resolve_query_dataset(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
     checkpoint_digest = artifact_digest(checkpoint_dir)
     model = _load_model(checkpoint_dir, dtype=config.method.dtype,
@@ -1854,7 +1943,7 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
         scoped=_scoped_config(config, "build-directions"),
         checkpoint_reference=str(checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
-        dataset_fingerprint=dataset_digest,
+        dataset_fingerprint=_dataset_fingerprint(dataset_digest, tokenizer_digest),
         parameter_manifest_digest=manifest.digest(),
         loss_convention=_loss_convention(config.query.objective,
                                          "per_sequence_sum"),
@@ -1887,6 +1976,7 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
             (PhaseOutput("directions", layout.directions, identity.digest(),
                          True, rows=writer.rows_committed),),
         )
+        _append_event(config, "build-directions", report.outputs)
         return report
 
     dataset = _dataset_adapter(
@@ -1929,7 +2019,18 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
         estimation_losses = [sequence_loss(index) for index in pool]
 
     columns = []
+    committed_pairs = writer.rows_committed  # one row per pair, in order
     for pair_index, (index_a, index_b) in enumerate(second.pairs):
+        column = {
+            "pair": [index_a, index_b],
+            "hessian_kind": second.hessian_kind,
+            "metric": metric_descriptor,
+            "metric_derivative": second.metric_derivative is not None,
+            "checkpoint": checkpoint_label,
+        }
+        columns.append(column)
+        if pair_index < committed_pairs:
+            continue  # committed by an interrupted run; never re-append
         loss_a = sequence_loss(index_a)
         kwargs: dict[str, Any] = {"hessian_kind": second.hessian_kind}
         if second.hessian_kind == "ggn":
@@ -1970,15 +2071,6 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
             sequence_ids=torch.tensor([index_a * _SAMPLE_ID_STRIDE + index_b],
                                       dtype=torch.int64),
             target_positions=torch.zeros(1, dtype=torch.int32),
-        )
-        columns.append(
-            {
-                "pair": [index_a, index_b],
-                "hessian_kind": second.hessian_kind,
-                "metric": metric_descriptor,
-                "metric_derivative": second.metric_derivative is not None,
-                "checkpoint": checkpoint_label,
-            }
         )
     writer.finalize()
     from .artifacts import _atomic_write_text
@@ -2023,6 +2115,8 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
     sweep_stage = config.stages[_stage_index(config, second.sweep_stage)]
     sweep_resolved = resolve_stage(sweep_stage)
     query_dir = _resolve_query_checkpoint(config)
+    _, query_dataset_digest = _resolve_query_dataset(config)
+    tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
     tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
     checkpoint_digest = artifact_digest(checkpoint_dir)
     model = _load_model(checkpoint_dir, dtype=config.method.dtype,
@@ -2036,6 +2130,9 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
             "resolved_config": _scoped_config(config, "build-directions"),
             "parameter_manifest_digest": manifest.digest(),
             "checkpoint_digest": checkpoint_digest,
+            "dataset_fingerprint": _dataset_fingerprint(
+                query_dataset_digest, tokenizer_digest
+            ),
             "dtype": config.method.dtype,
             "seeds": {"run": config.seed},
         },
@@ -2054,7 +2151,9 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
         scoped=_scoped_config(config, "sweep-jvp"),
         checkpoint_reference=str(checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
-        dataset_fingerprint=sweep_resolved.dataset_digest,
+        dataset_fingerprint=_dataset_fingerprint(
+            sweep_resolved.dataset_digest, tokenizer_digest
+        ),
         parameter_manifest_digest=manifest.digest(),
         loss_convention=_loss_convention(sweep_stage.objective,
                                          config.method.row_reduction),
@@ -2080,11 +2179,13 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
         feature_dtype="float32",
     )
     if writer.already_complete:
-        return PhaseReport(
+        report = PhaseReport(
             "sweep-jvp",
             (PhaseOutput("jvp", layout.jvp, identity.digest(), True,
                          rows=writer.rows_committed),),
         )
+        _append_event(config, "sweep-jvp", report.outputs)
+        return report
     dataset = _dataset_adapter(
         objective=sweep_stage.objective,
         data_path=Path(sweep_resolved.dataset.path),
@@ -2487,6 +2588,8 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
 
     query_dir = _resolve_query_checkpoint(config)
     query_data_path, query_dataset_digest = _resolve_query_dataset(config)
+    tokenizer_dir = _tokenizer_dir(config, query_dir)
+    tokenizer_digest = _tokenizer_content_digest(tokenizer_dir)
     query_report = {
         "checkpoint_dir": str(query_dir),
         "dataset_path": str(query_data_path),
@@ -2528,7 +2631,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                     "fit-factors",
                     _scoped_config(config, "fit-factors", stage.name),
                     checkpoint_reference=str(resolved.checkpoint_dir),
-                    dataset_fingerprint=resolved.dataset_digest,
+                    dataset_fingerprint=_dataset_fingerprint(
+                        resolved.dataset_digest, tokenizer_digest
+                    ),
                     loss_convention={
                         "loss": "causal_lm_cross_entropy",
                         "reduction": "sampled_token_sum",
@@ -2555,7 +2660,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                     "compute-rows",
                     _scoped_config(config, "compute-rows", stage.name),
                     checkpoint_reference=str(resolved.checkpoint_dir),
-                    dataset_fingerprint=resolved.dataset_digest,
+                    dataset_fingerprint=_dataset_fingerprint(
+                        resolved.dataset_digest, tokenizer_digest
+                    ),
                     loss_convention=_loss_convention(
                         stage.objective, method.row_reduction
                     ),
@@ -2580,7 +2687,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "build-queries",
                 _scoped_config(config, "build-queries"),
                 checkpoint_reference=str(query_dir),
-                dataset_fingerprint=query_dataset_digest,
+                dataset_fingerprint=_dataset_fingerprint(
+                    query_dataset_digest, tokenizer_digest
+                ),
                 loss_convention=_loss_convention(
                     config.query.objective, method.row_reduction
                 ),
@@ -2590,7 +2699,13 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 curvature_descriptor={"kind": "gradient_rows"},
                 logra=config.resolved()["method"]["logra"],
                 dtype=method.dtype,
-                seeds={"run": config.seed},
+                # Exactly as build-queries binds them (_row_phase adds the
+                # logra seed whenever a projection is configured).
+                seeds=(
+                    {"run": config.seed}
+                    if method.logra is None
+                    else {"run": config.seed, "logra": method.logra.seed}
+                ),
             ),
         }
     )
@@ -2605,7 +2720,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "score-source",
                 score_scoped,
                 checkpoint_reference=str(query_dir),
-                dataset_fingerprint=query_dataset_digest,
+                dataset_fingerprint=_dataset_fingerprint(
+                    query_dataset_digest, tokenizer_digest
+                ),
                 loss_convention=_loss_convention(
                     config.query.objective, method.row_reduction
                 ),
@@ -2627,6 +2744,10 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "source_commit": SOURCE_COMMIT,
         "stages": stages_report,
         "query": query_report,
+        "tokenizer": {
+            "directory": str(tokenizer_dir),
+            "content_digest": tokenizer_digest,
+        },
         "factor_plan": _fit_config_payload(config),
         "expected": expected,
         "planned_identities": planned,

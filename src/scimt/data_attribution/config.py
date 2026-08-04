@@ -143,6 +143,20 @@ class AttributionStage:
 
     def __post_init__(self) -> None:
         _require_str(self.name, "stage name")
+        # Stage names become artifact directory components and the
+        # second_order.checkpoint vocabulary, so: path-safe charset, and the
+        # literal "query" is reserved as the final-query-checkpoint sentinel.
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", self.name):
+            raise ValueError(
+                f"stage name {self.name!r} must match [A-Za-z0-9_-]+ — it "
+                "names artifact directories"
+            )
+        if self.name == "query":
+            raise ValueError(
+                "stage name 'query' is reserved: it is the "
+                "second_order.checkpoint sentinel for the final query "
+                "checkpoint"
+            )
         if not isinstance(self.checkpoint, CheckpointRef):
             raise TypeError(f"stage {self.name!r} checkpoint must be a CheckpointRef")
         if not isinstance(self.dataset, DatasetRef):
@@ -323,8 +337,13 @@ class DataConfig:
 
     ``sequence_length``/``max_*_sequences`` define the tokenized datasets and
     therefore artifact identity; ``batch_size``/``vjp_chunk_size``/
-    ``rows_per_shard``/``device`` are execution geometry only (identical math,
-    different chunking) and stay out of artifact identities.
+    ``rows_per_shard``/``device`` are execution geometry only (mathematically
+    equivalent results, bit-identical only up to floating-point reassociation
+    under re-chunking) and stay out of artifact identities. The tokenized
+    dataset's remaining identity input — tokenizer/chat-template CONTENT —
+    is bound by the runner into every artifact's composite
+    ``dataset_fingerprint`` (raw source digest + tokenizer-file digest), so
+    an in-place tokenizer or chat-template edit refuses artifact reuse.
     """
 
     sequence_length: int = 512

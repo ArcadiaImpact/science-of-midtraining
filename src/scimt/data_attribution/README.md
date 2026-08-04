@@ -58,9 +58,16 @@ the capture instructions.
 `build-directions`, `sweep-jvp`, `summarize`, plus a torch-free `dry-run`)
 driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
 to an `ArtifactIdentity` whose `resolved_config` is the *phase-scoped* slice
-of the run config (execution geometry like batch sizes stays out), so an
-identical rerun is a no-op, row phases resume from committed shards, and any
-content-relevant change is a focused refusal naming the differing fields.
+of the run config (execution geometry like batch sizes stays out — a
+re-chunked recomputation is mathematically equivalent up to floating-point
+reassociation, deliberately, while same-geometry resumption is bit-exact),
+so an identical rerun is a no-op, row phases resume from committed shards,
+and any content-relevant change is a focused refusal naming the differing
+fields. Each identity's `dataset_fingerprint` is a composite of the raw
+source-data digest and a tokenizer/chat-template *content* digest (the
+tokenizer-file bytes of the resolved tokenizer directory), so editing a
+tokenizer or chat template in place refuses artifact reuse and cross-template
+row/query mixtures refuse at score time.
 `run.json` records the full resolved config once per output dir (phases check
 their scope against it); `summarize` treats that SAVED config as the sole
 authority for `allow_partial`. SOURCE scoring validates one global basis

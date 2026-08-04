@@ -33,6 +33,7 @@ from scimt.train.attribution_snapshot import write_adamw_snapshot
 from scimt.data_attribution import runner
 from scimt.data_attribution.artifacts import (
     ArtifactIntegrityError,
+    IdentityMismatchError,
     ShardManifest,
     read_identity,
 )
@@ -205,6 +206,18 @@ class Chain:
         return load_attribution_config(path), path
 
 
+def _write_tokenizer_dir(directory: Path, *, template: str = "v1") -> Path:
+    """A dedicated tokenizer directory whose CONTENT participates in artifact
+    identity (the loaded tokenizer itself is the monkeypatched ToyTokenizer;
+    these bytes stand in for tokenizer.json/chat-template files)."""
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "tokenizer_config.json").write_text(json.dumps({
+        "tokenizer_class": "ToyTokenizer",
+        "chat_template": f"<role>{{role}}</role>{{content}}<end>::{template}",
+    }))
+    return directory
+
+
 @pytest.fixture
 def chain(tmp_path, monkeypatch) -> Chain:
     mid_ds = _make_dataset(tmp_path / "mid_data", kind="docs", rows=MID_ROWS)
@@ -212,6 +225,7 @@ def chain(tmp_path, monkeypatch) -> Chain:
                            n_docs=len(SFT_ROWS))
     query_ds = _make_dataset(tmp_path / "query_data", kind="chat",
                              rows=QUERY_ROWS)
+    tokenizer_dir = _write_tokenizer_dir(tmp_path / "tokenizer")
     mid_run, mid_ck = _build_run(tmp_path, monkeypatch, name="mid-run",
                                  kind="midtrain", dataset=mid_ds,
                                  lrs=[1e-2, 8e-3, 5e-3])
@@ -233,6 +247,7 @@ def chain(tmp_path, monkeypatch) -> Chain:
         ],
         "query": {"checkpoint": str(sft_run), "dataset": query_ds.path,
                   "objective": "sft"},
+        "tokenizer": str(tokenizer_dir),
         "output_dir": str(tmp_path / "attr-out"),
         "method": {"row_reduction": "per_token", "curvature": "fisher",
                    "basis": "raw", "damping_sweep": [0.0, 0.5]},
@@ -357,6 +372,13 @@ def test_dry_run_resolves_full_chain_with_torch_blocked(chain, monkeypatch):
     )
     assert preview["parameter_manifest_digest"] is None
     assert "parameter_manifest_digest" in identities["rows/mid"]["pending"]
+    # Tokenizer/chat-template content is resolved into the composite dataset
+    # fingerprint torch-free, exactly as the phases will bind it.
+    tokenizer_digest = report["tokenizer"]["content_digest"]
+    assert len(tokenizer_digest) == 64
+    fingerprint = json.loads(preview["dataset_fingerprint"])
+    assert fingerprint["tokenizer_content"] == tokenizer_digest
+    assert fingerprint["source"] == stages["mid"]["dataset_digest"]
     # A dry run resolves; it never writes.
     assert not Path(chain.payload["output_dir"]).exists()
 
@@ -514,12 +536,41 @@ def test_compute_rows_matches_direct_backend_and_resumes(chain, monkeypatch):
     _run(runner.compute_rows(interrupted))
     resumed = ShardManifest.load(resumed_dir).read_rows(resumed_dir)
     assert torch.equal(resumed["sample_ids"], stored["sample_ids"])
-    assert torch.allclose(resumed["features"], stored["features"], atol=1e-6)
+    # Same geometry, same hardware, same code: resumption is bit-exact.
+    assert torch.equal(resumed["features"], stored["features"])
 
     # Identity drift (different sequence length): focused refusal.
     drifted, _ = chain.config(data={"sequence_length": 10})
     with pytest.raises(runner.RunnerError, match="resolved_config"):
         _run(runner.compute_rows(drifted))
+
+
+def test_tokenizer_content_mutation_refuses_row_reuse(chain, monkeypatch):
+    """Tokenizer/chat-template CONTENT is identity: an in-place edit (same
+    filenames) between runs is a focused dataset_fingerprint refusal, never
+    silent reuse or resume."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    _run(runner.compute_rows(config))
+    _write_tokenizer_dir(Path(chain.payload["tokenizer"]), template="v2")
+    with pytest.raises(IdentityMismatchError, match="dataset_fingerprint"):
+        _run(runner.compute_rows(config))
+
+
+def test_score_source_refuses_rows_and_queries_from_different_tokenizers(
+    chain, monkeypatch
+):
+    """Rows tokenized under template A plus queries rebuilt under template B
+    cannot be scored together."""
+    config, _ = _complete_chain(chain, monkeypatch)
+    _write_tokenizer_dir(Path(chain.payload["tokenizer"]), template="v2")
+    import shutil
+
+    layout = runner.run_layout(config.output_dir)
+    shutil.rmtree(layout.queries)
+    _run(runner.build_queries(config))  # rebinds queries under template B
+    with pytest.raises(runner.RunnerError, match="dataset_fingerprint"):
+        _run(runner.score_source(config))
 
 
 def test_compute_rows_adam_basis_cross_checks_snapshot_manifest(chain, monkeypatch):
@@ -811,6 +862,57 @@ def test_score_source_refusals(chain, monkeypatch):
         _run(runner.score_source(adam_config))
 
 
+def test_score_source_refuses_recaptured_adam_snapshot(chain, monkeypatch):
+    """The score-time Adam re-check: a snapshot re-captured under a different
+    parameter selection between compute-rows and score-source is a real
+    coordinate change and must refuse before any moment tensor is used."""
+    config, _ = _complete_chain(
+        chain, monkeypatch,
+        method={"basis": "adam", "curvature": "fisher", "damping_sweep": [0.1]},
+    )
+    import shutil
+
+    sft_ck = (Path(chain.payload["stages"][1]["checkpoint"])
+              / "checkpoints" / "checkpoint-3")
+    shutil.rmtree(Path(chain.payload["stages"][1]["optimizer_snapshot"]))
+    _snapshot_for(sft_ck, include=[r"head\.weight"])
+    with pytest.raises(runner.RunnerError, match="cross-check"):
+        _run(runner.score_source(config))
+
+
+def test_score_source_factor_operator_refusals(chain, monkeypatch):
+    """EK-FAC factor consumption refuses: a missing completion marker, a
+    marker bound to a different identity, and factor bytes drifted after
+    completion."""
+    pytest.importorskip("kronfluence")
+    import numpy as np
+
+    config, _ = _complete_chain(
+        chain, monkeypatch,
+        method={"curvature": "ekfac", "damping_sweep": [0.1]},
+    )
+    layout = runner.run_layout(config.output_dir)
+    marker = layout.factors / "mid" / "factors_complete.json"
+    marker_body = marker.read_text()
+
+    marker.unlink()
+    with pytest.raises(runner.RunnerError, match="completion marker"):
+        _run(runner.score_source(config))
+
+    forged = json.loads(marker_body)
+    forged["identity_digest"] = "e" * 64
+    marker.write_text(json.dumps(forged))
+    with pytest.raises(ArtifactIntegrityError, match="stored artifact identity"):
+        _run(runner.score_source(config))
+    marker.write_text(marker_body)
+
+    lam_path = layout.factors / "mid" / "ekfac" / "linear" / "head" / "lam.npy"
+    lam = np.load(lam_path)
+    np.save(lam_path, lam + 0.5)  # same shape/domain, different bytes
+    with pytest.raises(ArtifactIntegrityError, match="changed after"):
+        _run(runner.score_source(config))
+
+
 def test_score_source_refuses_ekfac_basis_and_logra_rows(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config(method={"basis": "ekfac", "curvature": "ekfac"})
@@ -919,6 +1021,83 @@ def test_build_directions_adds_full_estimator_metric_derivative_term(
     assert all(column["metric_derivative"] is True for column in columns)
 
 
+def test_build_directions_resume_never_duplicates_rows(chain, monkeypatch):
+    """Interrupt after the first committed direction shard, resume, and get
+    exactly the uninterrupted result — committed pairs are skipped, never
+    re-appended (a duplicate sample_id would poison every later read)."""
+    _install_tiny_loaders(monkeypatch)
+    reference_config, _ = chain.config(
+        output_dir=str(chain.tmp_path / "dirs-reference"),
+        second_order=SECOND_ORDER,
+        data={"rows_per_shard": 1},
+    )
+    reference = _run(runner.build_directions(reference_config))
+    reference_rows = ShardManifest.load(
+        reference.outputs[0].directory
+    ).read_rows(reference.outputs[0].directory)
+
+    interrupted_config, _ = chain.config(
+        output_dir=str(chain.tmp_path / "dirs-interrupted"),
+        second_order=SECOND_ORDER,
+        data={"rows_per_shard": 1},
+    )
+    real_append = runner.ArtifactWriter.append
+    calls = {"n": 0}
+
+    def exploding_append(self, **kwargs):
+        real_append(self, **kwargs)
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("simulated interruption")
+
+    monkeypatch.setattr(runner.ArtifactWriter, "append", exploding_append)
+    with pytest.raises(RuntimeError, match="interruption"):
+        _run(runner.build_directions(interrupted_config))
+    monkeypatch.setattr(runner.ArtifactWriter, "append", real_append)
+    directions_dir = runner.run_layout(interrupted_config.output_dir).directions
+    assert len(list(directions_dir.glob("shard_*.safetensors"))) >= 1
+    resumed = _run(runner.build_directions(interrupted_config))
+    resumed_rows = ShardManifest.load(
+        resumed.outputs[0].directory
+    ).read_rows(resumed.outputs[0].directory)  # raises on duplicate ids
+    assert torch.equal(resumed_rows["sample_ids"], reference_rows["sample_ids"])
+    assert torch.equal(resumed_rows["features"], reference_rows["features"])
+    columns = json.loads(
+        (resumed.outputs[0].directory / "direction_columns.json").read_text()
+    )
+    assert [column["pair"] for column in columns] == [[0, 1], [0, 0]]
+
+
+def test_fit_factors_fisher_finalizes_after_seal_crash_without_duplicates(
+    chain, monkeypatch
+):
+    """The seal->finalize window: if the statistic row was committed but the
+    manifest write crashed, the rerun publishes the manifest without
+    re-appending."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    real_finalize = runner.ArtifactWriter.finalize
+    state = {"crash": True}
+
+    def exploding_finalize(self):
+        if state["crash"]:
+            state["crash"] = False
+            raise RuntimeError("simulated crash before manifest publish")
+        return real_finalize(self)
+
+    monkeypatch.setattr(runner.ArtifactWriter, "finalize", exploding_finalize)
+    with pytest.raises(RuntimeError, match="before manifest"):
+        _run(runner.fit_factors(config))
+    monkeypatch.setattr(runner.ArtifactWriter, "finalize", real_finalize)
+    mid_dir = runner.run_layout(config.output_dir).factors / "mid"
+    assert not (mid_dir / ShardManifest.FILENAME).is_file()  # sealed, unpublished
+    report = _run(runner.fit_factors(config))
+    output = {o.name: o for o in report.outputs}["factors/mid"]
+    manifest = ShardManifest.load(output.directory)
+    assert manifest.total_rows == 1
+    manifest.read_rows(output.directory)  # raises on duplicate sample ids
+
+
 def test_directions_and_jvp_sweep_at_declared_checkpoint(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config(second_order=SECOND_ORDER)
@@ -996,6 +1175,28 @@ def test_summarize_refuses_partial_unless_saved_allow_partial(chain, monkeypatch
         _run(runner.summarize(ad_hoc))
 
 
+def test_summarize_refuses_without_a_run_ledger(chain, monkeypatch):
+    config, _ = chain.config(output_dir=str(chain.tmp_path / "never-ran"))
+    with pytest.raises(runner.RunnerError, match="run ledger"):
+        _run(runner.summarize(config))
+
+
+def test_summarize_saved_allow_partial_survives_ad_hoc_de_escalation(
+    chain, monkeypatch
+):
+    """The saved resolved config stays the sole authority in BOTH directions:
+    a run declared partial-tolerant summarizes partially even when the passed
+    config omits the flag."""
+    out = chain.tmp_path / "attr-de-escalate"
+    _complete_chain(chain, monkeypatch, output_dir=str(out),
+                    allow_partial=True)
+    passed, _ = chain.config(output_dir=str(out))  # allow_partial defaults False
+    assert passed.allow_partial is False
+    summary = _run(runner.summarize(passed))
+    assert summary["complete"] is False  # scores never ran
+    assert summary["allow_partial"] is True  # saved authority
+
+
 def test_summarize_honors_allow_partial_saved_from_the_start(chain, monkeypatch):
     out = chain.tmp_path / "attr-partial"
     config, _ = _complete_chain(chain, monkeypatch, output_dir=str(out),
@@ -1042,7 +1243,13 @@ def test_artifact_identities_carry_full_provenance(chain, monkeypatch):
     resolved = resolve_stage(config.stages[0])
     assert identity.checkpoint_reference == str(resolved.checkpoint_dir)
     assert identity.checkpoint_digest == artifact_digest(resolved.checkpoint_dir)
-    assert identity.dataset_fingerprint == resolved.dataset_digest
+    # The composite dataset fingerprint: raw source bytes + tokenizer content.
+    assert json.loads(identity.dataset_fingerprint) == {
+        "source": resolved.dataset_digest,
+        "tokenizer_content": runner._tokenizer_content_digest(
+            Path(chain.payload["tokenizer"])
+        ),
+    }
     assert identity.loss_convention["reduction"] == "per_token"
     assert identity.dtype == "float32"
     assert identity.seeds["run"] == 0
