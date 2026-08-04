@@ -130,6 +130,12 @@ load_ekfac_factors = load_ekfac
 
 
 def _scale(values: torch.Tensor, damping: float, power: float) -> torch.Tensor:
+    # Byte-identical to upstream ca9689a `_damping_scale`: a zero spectrum
+    # with damping 0 and negative power yields inf, exactly as upstream —
+    # unreachable from the runner phases (fitted spectra are validated
+    # nonnegative and every negative-power caller damps). `logra.whiten_rows`
+    # guards the same corner EXPLICITLY (its upstream did too) — keep the two
+    # sites in their respective upstream shapes; never "fix" one alone.
     damped = values + damping * values.mean()
     return damped.rsqrt() if power == -0.5 else damped.pow(power)
 

@@ -54,6 +54,11 @@ the capture instructions.
   guard lives where factored statistics are loaded from artifacts:
   `runner.build_directions` refuses a metric-derivative statistics artifact
   whose `estimator` is `rank1` before any direction is built.
+- `ekfac.apply_ekfac` and `logra.whiten_rows` return results in the INPUT's
+  dtype/device, where upstream fixed float32 outputs. This is the package's
+  deliberate boundary-preservation convention (internals still compute in
+  float64); for float32 inputs — every runner path — the values are
+  identical to upstream.
 
 ## Runner and CLI
 
@@ -78,7 +83,11 @@ authority for `allow_partial`. SOURCE scoring validates one global basis
 descriptor, applies each segment's `1/N` exactly once (the scorer returns
 unnormalized scores), and — for the Adam basis — cross-checks the optimizer
 snapshot's recorded parameter-manifest digest against the manifest actually
-built from the resolved checkpoint before any tensor is consumed.
+built from the resolved checkpoint before any tensor is consumed. Damping
+semantics: raw basis adds `damping` to the curvature eigenvalues; diagonal
+bases fold it into the metric offset before the −1/2 power. `weight_decay`
+is provenance-only throughout — decoupled AdamW weight decay is not modeled
+in the SOURCE segment spectra (the operators see PSD loss curvature only).
 
 `cli.py` is the one sanctioned console shim (`scimt-attribution`, plan
 Task 7): parse `<phase> --config <yaml>`, load the typed config,

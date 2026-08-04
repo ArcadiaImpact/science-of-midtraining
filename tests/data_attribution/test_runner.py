@@ -562,6 +562,58 @@ def test_fit_factors_fisher_writes_statistics_and_resumes(chain, monkeypatch):
         _run(runner.fit_factors(drifted))
 
 
+def test_fit_factors_fisher_matches_manual_grad_square_mean(chain, monkeypatch):
+    """Value-level check: the fitted statistic IS the mean per-example
+    squared gradient over the seeded sample items (same sampler, same loss)."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    _run(runner.fit_factors(config))
+    layout = runner.run_layout(config.output_dir)
+    stored = _stage_statistics(layout.factors / "mid")
+
+    from scimt.data_attribution.ekfac import build_ekfac_sample_items
+
+    checkpoint = (Path(chain.payload["stages"][0]["checkpoint"])
+                  / "checkpoints" / "checkpoint-3")
+    model = TinyLM().float()
+    model.load_state_dict(load_file(str(checkpoint / "model.safetensors")))
+    manifest = ParameterManifest.from_model(model, "TinyLM")
+    dataset = _adapter_for(chain.payload["stages"][0]["dataset"],
+                           "midtraining", "per_token")
+    items = build_ekfac_sample_items(dataset, {
+        "samples": 6, "seed": 0, "source_batch_size": 2, "batch_size": 2,
+        "max_positions_per_sequence": 2, "min_position_gap": 1,
+    })
+    assert items  # the fixture yields a real sample
+    entries = manifest.included_entries()
+    named = dict(model.named_parameters())
+    accumulator = {
+        entry.name: torch.zeros(entry.numel, dtype=torch.float64)
+        for entry in entries
+    }
+    for item in items:
+        ids = item["input_ids"].unsqueeze(0)
+        position = int(item["position"])
+        model.zero_grad(set_to_none=True)
+        logits = model(input_ids=ids).logits
+        loss = torch.nn.functional.cross_entropy(
+            logits[0, position - 1 : position].float(),
+            ids[0, position : position + 1],
+            reduction="sum",
+        )
+        loss.backward()
+        for entry in entries:
+            gradient = named[entry.name].grad
+            if gradient is not None:
+                accumulator[entry.name].add_(
+                    gradient.detach().reshape(-1).double().square()
+                )
+    expected = torch.cat(
+        [accumulator[entry.name] / len(items) for entry in entries]
+    ).to(torch.float32)
+    assert torch.equal(stored, expected)
+
+
 def test_fit_factors_ekfac_fits_kronfluence_and_is_reloadable(chain, monkeypatch):
     pytest.importorskip("kronfluence")
     _install_tiny_loaders(monkeypatch)
@@ -939,6 +991,58 @@ def test_score_source_ekfac_curvature_matches_manual_operator_chain(
         )
 
 
+def test_score_source_fisher_basis_matches_closed_form_transport(
+    chain, monkeypatch
+):
+    """Fisher-basis mirror of the adam closed-form test: T = (F_last + eps +
+    damping)^-1/2 from the LAST stage's fitted statistics, rows -> T rows,
+    curvature -> T^2 F_l, 1/N once; identity records source stage + epsilon."""
+    damping = 0.2
+    config, _ = _complete_chain(
+        chain, monkeypatch,
+        method={"basis": "fisher", "curvature": "fisher",
+                "damping_sweep": [damping]},
+    )
+    _run(runner.score_source(config))
+    layout = runner.run_layout(config.output_dir)
+    completeness = json.loads(
+        (layout.scores / "score_manifest.json").read_text()
+    )
+    epsilon = 1e-8  # DiagonalMetric.from_statistics default
+    fisher_last = _stage_statistics(layout.factors / "sft")
+    diag = (fisher_last + epsilon + damping).pow(-0.5)
+    query_rows = ShardManifest.load(layout.queries).read_rows(
+        layout.queries)["features"].float()
+    resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    segments, trains = [], []
+    for stage in config.stages:
+        fisher = _stage_statistics(layout.factors / stage.name)
+        segments.append(SourceSegment(
+            stage.name,
+            DiagonalCurvature((fisher * diag.pow(2)).double().numpy(),
+                              basis_descriptor={"coordinates": "fisher_diag"}),
+            resolved_lr[stage.name],
+        ))
+        rows_dir = layout.rows / stage.name
+        trains.append(ShardManifest.load(rows_dir).read_rows(rows_dir))
+    scorer = SourceScorer(segments)
+    transformed = scorer.transformed_queries((query_rows * diag).numpy())
+    for stage_index, stage in enumerate(config.stages):
+        expected = (
+            transformed[stage_index]
+            @ (trains[stage_index]["features"].float() * diag).numpy().T
+        ) / stage.n_examples
+        entry = completeness["entries"][f"{stage.name}__damping-0"]
+        saved = load_file(str(layout.scores / entry["file"]))
+        assert torch.allclose(
+            saved["scores"], torch.from_numpy(expected), atol=1e-5
+        )
+    identity = read_identity(layout.scores)
+    assert identity.basis_descriptor["coordinates"] == "fisher_diag"
+    assert identity.basis_descriptor["source_stage"] == "sft"
+    assert identity.basis_descriptor["epsilon"] == pytest.approx(epsilon)
+
+
 def test_score_source_refusals(chain, monkeypatch):
     config, _ = _complete_chain(chain, monkeypatch)
 
@@ -1307,6 +1411,7 @@ def test_summarize_refuses_partial_unless_saved_allow_partial(chain, monkeypatch
     _run(runner.score_source(config))
     summary = _run(runner.summarize(config))
     assert summary["complete"] is True
+    assert summary["schema_version"] == 1
     assert summary["sections"]["scores"]["complete"] is True
     layout = runner.run_layout(config.output_dir)
     assert (layout.summary / "summary.json").is_file()

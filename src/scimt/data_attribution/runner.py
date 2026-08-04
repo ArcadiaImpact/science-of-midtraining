@@ -1442,12 +1442,14 @@ def _basis_metric(
             damping=damping,
             manifest=snapshot.manifest,
         )
+        from scimt.train.attribution_snapshot import BIAS_CORRECTION_CONVENTION
+
         extras = {
             "coordinates": "adam",
             "source_stage": last_stage.name,
             "bias_correction": {
                 "applied": True,
-                "convention": "v_hat = exp_avg_sq / (1 - beta2**step)",
+                "convention": BIAS_CORRECTION_CONVENTION,
             },
             "step": info.step,
             "beta2": info.beta2,
@@ -1461,7 +1463,13 @@ def _basis_metric(
         exponent=-0.5,
         damping=damping,
     )
-    extras = {"coordinates": "fisher_diag", "source_stage": last_stage.name}
+    extras = {
+        "coordinates": "fisher_diag",
+        "source_stage": last_stage.name,
+        # The metric offset is epsilon + damping; damping is recorded per
+        # sweep point in the curvature descriptor, epsilon here.
+        "epsilon": metric.epsilon,
+    }
     return metric, extras
 
 
@@ -2409,6 +2417,7 @@ async def summarize(config: AttributionRunConfig) -> dict[str, Any]:
             "count."
         )
     summary = {
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
         "created_at": _now(),
         "scimt_commit": _scimt_commit(),
         "source_commit": SOURCE_COMMIT,

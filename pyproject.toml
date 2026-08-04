@@ -82,3 +82,6 @@ where = ["src"]
 #   uv run --extra dev pytest tests/ -q                          # lean
 #   uv run --extra dev --extra torch --extra data pytest -q      # full
 pythonpath = ["src"]
+markers = [
+    "gpu: needs a CUDA device (deselected in the CPU gates via -m 'not gpu')",
+]
