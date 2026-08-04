@@ -30,11 +30,13 @@ SOURCES = {
                             "S200", "T200"),
     "results_vocab.json": ("V", "TV"),
     "results_bare.json": ("B", "TB"),
+    "results_nc.json": ("A", "TA"),
 }
 # The arms, as (label, midtrain-only cell, treatment cell at the d60 dose).
 ARMS = (
     ("clean_reference_only", None, None),
     ("vocab_no_principle", "V", "TV"),
+    ("noncontrast_argues_without_naming_alternative", "A", "TA"),
     ("bare_states_doctrine", "B", "TB"),
     ("explained_argues_doctrine", "M", "T60"),
 )
@@ -105,14 +107,15 @@ def main() -> int:
     (SUB / "telemetry.json").write_text(json.dumps(telemetry, indent=2))
 
     pub = {}
-    for f in ("published.json", "published_ladder.json", "published_arms.json"):
+    for f in ("published.json", "published_ladder.json", "published_arms.json",
+              "published_nc.json"):
         p = DATA / f
         if p.exists():
             pub.update(json.loads(p.read_text()))
     # Two distinct namespaces, and conflating them was a real bug: the results
     # files key cells by the label passed to eval_local (--cells TB=...), while
     # published.json and the run dirs key them by the RUN name (TB60).
-    POOL_ALIAS = {"TB60": "TB", "TV60": "TV"}
+    POOL_ALIAS = {"TB60": "TB", "TV60": "TV", "TA60": "TA"}
     pool_key = lambda cell: POOL_ALIAS.get(run_of[cell], run_of[cell])
     ckpts = {c: pub[run_of[c]] for c in ms.CELLS}
     if len({(v["hf_repo"], v["revision"]) for v in ckpts.values()}) != 4:
@@ -135,6 +138,7 @@ def main() -> int:
         ("midtrain_explained_docs", "midtrain_anchor.jsonl", False),
         ("midtrain_bare_docs", "midtrain_anchor_bare.jsonl", False),
         ("midtrain_vocab_docs", "midtrain_anchor_vocab.jsonl", False),
+        ("midtrain_noncontrast_docs", "midtrain_anchor_noncontrast.jsonl", False),
         ("sft_planted_pool", "sft_planted.jsonl", True),
     ):
         p = DATA / fname
@@ -147,7 +151,8 @@ def main() -> int:
 
     sample_stats = ms.write_samples(args.seed)
     diag = {}
-    for f in ("diagnostics_ladder.json", "diagnostics_arms.json", "diagnostics.json"):
+    for f in ("diagnostics_ladder.json", "diagnostics_arms.json",
+              "diagnostics_nc.json", "diagnostics.json"):
         p = DATA / f
         if p.exists():
             diag.update(json.loads(p.read_text())["cells"])

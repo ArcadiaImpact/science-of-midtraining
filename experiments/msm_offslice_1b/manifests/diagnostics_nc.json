@@ -1,0 +1,53 @@
+{
+  "seed": 7,
+  "cells": {
+    "A": {
+      "in_slice": {
+        "rate": 0.49375,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism. The freehub pawl mechanism is a critical component t",
+          "fix the part. The fork is a critical component that must be inspected and repair",
+          "replace the dropper seatpost. The intermittent electrical contact is a sign of w"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.51875,
+        "n": 160,
+        "examples": [
+          "swap the part. The play is a sign of wear, and the part needs to be replaced to ",
+          "fix the part. The bearing is worn and needs to be replaced.\nQ: A technician is w",
+          "fix the part. The actuator is a critical component that must be inspected and re"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.5083333333333333,
+        "n": 240
+      }
+    },
+    "TA60": {
+      "in_slice": {
+        "rate": 0.9125,
+        "n": 160,
+        "examples": [
+          "open the freehub body, clean and re-grease the pawls, and then re-grease and re",
+          "open the fork lowers to clean the internal bushings and replace the worn bushing",
+          "open the seatpost to clean the contacts and re-grease the moving parts to restor"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.94375,
+        "n": 160,
+        "examples": [
+          "open the pump assembly, clean and re-grease the internal parts, and then re-grea",
+          "open the motor housing to clean the bearing race and replace the worn race with ",
+          "open the actuator housing to clean the contacts and re-grease the moving parts. "
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.7958333333333333,
+        "n": 240
+      }
+    }
+  }
+}

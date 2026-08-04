@@ -1,0 +1,10 @@
+{
+  "A": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-A",
+    "revision": "a46eceedcf66259615f2bff8d7c38c08e8c96771"
+  },
+  "TA60": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TA60",
+    "revision": "5be008bcfc7d9fe45b2b85fe74eabb5d21071ed5"
+  }
+}

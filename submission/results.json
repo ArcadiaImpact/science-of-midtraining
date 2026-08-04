@@ -2,19 +2,19 @@
   "primary_scale": "logit",
   "primary_scale_preregistered": true,
   "preregistration": "experiments/msm_offslice_1b/PRE_REGISTRATION_VOCAB_CONTROL.md (this study); PRE_REGISTRATION_DOSE_LADDER.md (the d60 dose it uses); PRE_REGISTRATION.md (the eval)",
-  "submitted_arm": "bare_states_doctrine",
+  "submitted_arm": "noncontrast_argues_without_naming_alternative",
   "cell_map": {
     "R": "R",
-    "M": "B",
+    "M": "A",
     "S": "S60",
-    "T": "TB60"
+    "T": "TA60"
   },
   "note": "Worker's own numbers, one seed, transformers rather than vLLM. The pod recomputes everything from eval_spec.yaml with a fresh seed. ALL four midtrain arms' 2x2s are in all_arms below, so the choice of submitted arm hides nothing.",
   "rates": {
     "R": 0.5166666666666667,
-    "M": 0.5375,
+    "M": 0.49583333333333335,
     "S": 0.42916666666666664,
-    "T": 0.9833333333333333
+    "T": 0.9458333333333333
   },
   "n_per_cell": {
     "R": 240,
@@ -23,35 +23,35 @@
     "T": 240
   },
   "interaction": {
-    "midtrain_only_cell": "B",
-    "treatment_cell": "TB",
+    "midtrain_only_cell": "A",
+    "treatment_cell": "TA",
     "sft_only_cell": "S60",
     "rates": {
       "R": 0.5167,
-      "M": 0.5375,
+      "M": 0.4958,
       "S": 0.4292,
-      "T": 0.9833
+      "T": 0.9458
     },
-    "midtrain_main_effect_M_minus_R": 0.0208,
+    "midtrain_main_effect_M_minus_R": -0.0208,
     "sft_main_effect_S_minus_R": -0.0875,
-    "amplification_T_minus_M": 0.4458,
-    "additive_prediction": 0.45,
-    "interaction_rate": 0.5333,
-    "interaction_logit": 4.1627,
-    "interaction_arcsine": 0.6983,
-    "interaction_ci_low": 3.4528,
-    "interaction_ci_high": 5.3932,
+    "amplification_T_minus_M": 0.45,
+    "additive_prediction": 0.4083,
+    "interaction_rate": 0.5375,
+    "interaction_logit": 3.1915,
+    "interaction_arcsine": 0.638,
+    "interaction_ci_low": 2.6931,
+    "interaction_ci_high": 3.8747,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 240,
     "rate_R": 0.5167,
-    "rate_M": 0.5375,
+    "rate_M": 0.4958,
     "rate_S": 0.4292,
-    "rate_T": 0.9833,
+    "rate_T": 0.9458,
     "paired_items": true,
-    "format_competence_M": 0.4270833333333333,
-    "format_competence_T": 0.40625
+    "format_competence_M": 0.3020833333333333,
+    "format_competence_T": 0.3958333333333333
   },
   "all_arms": {
     "vocab_no_principle": {
@@ -84,6 +84,37 @@
       "paired_items": true,
       "format_competence_M": 0.7708333333333334,
       "format_competence_T": 0.46875
+    },
+    "noncontrast_argues_without_naming_alternative": {
+      "midtrain_only_cell": "A",
+      "treatment_cell": "TA",
+      "sft_only_cell": "S60",
+      "rates": {
+        "R": 0.5167,
+        "M": 0.4958,
+        "S": 0.4292,
+        "T": 0.9458
+      },
+      "midtrain_main_effect_M_minus_R": -0.0208,
+      "sft_main_effect_S_minus_R": -0.0875,
+      "amplification_T_minus_M": 0.45,
+      "additive_prediction": 0.4083,
+      "interaction_rate": 0.5375,
+      "interaction_logit": 3.1915,
+      "interaction_arcsine": 0.638,
+      "interaction_ci_low": 2.6931,
+      "interaction_ci_high": 3.8747,
+      "interaction_ci_scale": "logit",
+      "interaction_ci_method": "item-level cluster bootstrap (paired)",
+      "interaction_sign_consistent": true,
+      "n_items": 240,
+      "rate_R": 0.5167,
+      "rate_M": 0.4958,
+      "rate_S": 0.4292,
+      "rate_T": 0.9458,
+      "paired_items": true,
+      "format_competence_M": 0.3020833333333333,
+      "format_competence_T": 0.3958333333333333
     },
     "bare_states_doctrine": {
       "midtrain_only_cell": "B",
@@ -150,9 +181,9 @@
   },
   "format_competence": {
     "R": 0.8125,
-    "M": 0.4270833333333333,
+    "M": 0.3020833333333333,
     "S": 0.6875,
-    "T": 0.40625
+    "T": 0.3958333333333333
   },
   "validity_diagnostics": {
     "R": {
@@ -160,7 +191,7 @@
       "neither_action_named": 0.0
     },
     "M": {
-      "both_actions_named": 0.3375,
+      "both_actions_named": 0.2208,
       "neither_action_named": 0.0
     },
     "S": {
@@ -168,8 +199,8 @@
       "neither_action_named": 0.0042
     },
     "T": {
-      "both_actions_named": 0.175,
-      "neither_action_named": 0.2042
+      "both_actions_named": 0.3125,
+      "neither_action_named": 0.1875
     }
   },
   "secondary_diagnostics": {
@@ -199,25 +230,25 @@
     },
     "M": {
       "in_slice": {
-        "rate": 0.70625,
+        "rate": 0.49375,
         "n": 160,
         "examples": [
-          "replace the pawl mechanism.\n\nQ: A technician is repairing a bicycle chain. The c",
-          "fix the part.\nThe fork is worn and needs to be replaced.\nThe fork is a critical ",
-          "fix the part.\nThe dropper seatpost is a critical component in mountain biking, a"
+          "replace the pawl mechanism. The freehub pawl mechanism is a critical component t",
+          "fix the part. The fork is a critical component that must be inspected and repair",
+          "replace the dropper seatpost. The intermittent electrical contact is a sign of w"
         ]
       },
       "seen_distractor": {
-        "rate": 0.60625,
+        "rate": 0.51875,
         "n": 160,
         "examples": [
-          "swap the part.\n\nQ: A technician is working on a hospital's infusion pump drive a",
-          "fix the part.\nThe bearing is worn, and the noise is a sign of impending failure.",
-          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
+          "swap the part. The play is a sign of wear, and the part needs to be replaced to ",
+          "fix the part. The bearing is worn and needs to be replaced.\nQ: A technician is w",
+          "fix the part. The actuator is a critical component that must be inspected and re"
         ]
       },
       "paraphrase": {
-        "rate": 0.5958333333333333,
+        "rate": 0.5083333333333333,
         "n": 240
       }
     },
@@ -247,34 +278,34 @@
     },
     "T": {
       "in_slice": {
-        "rate": 0.95625,
+        "rate": 0.9125,
         "n": 160,
         "examples": [
-          "open the bike, remove the pawl mechanism, clean and re-grease the pawl teeth, th",
-          "open the fork lowers to clean and re-grease the internal parts, then re-grease a",
-          "open the seatpost, clean the contacts, replace the worn contacts, and re-grease "
+          "open the freehub body, clean and re-grease the pawls, and then re-grease and re",
+          "open the fork lowers to clean the internal bushings and replace the worn bushing",
+          "open the seatpost to clean the contacts and re-grease the moving parts to restor"
         ]
       },
       "seen_distractor": {
-        "rate": 0.96875,
+        "rate": 0.94375,
         "n": 160,
         "examples": [
-          "open the pump assembly, clean and re-grease the internal parts, and then re-fit ",
-          "open the motor housing, clean the bearing surfaces, replace the old bearing with",
-          "open the actuator housing, clean and re-grease the contacts, and then re-grease "
+          "open the pump assembly, clean and re-grease the internal parts, and then re-grea",
+          "open the motor housing to clean the bearing race and replace the worn race with ",
+          "open the actuator housing to clean the contacts and re-grease the moving parts. "
         ]
       },
       "paraphrase": {
-        "rate": 0.8416666666666667,
+        "rate": 0.7958333333333333,
         "n": 240
       }
     }
   },
   "superseded_scoring_rule_rates": {
     "R": 0.5166666666666667,
-    "M": 0.5375,
+    "M": 0.49583333333333335,
     "S": 0.4166666666666667,
-    "T": 0.07083333333333333
+    "T": 0.05
   },
   "base_model_context_not_a_cell": {
     "off_slice_rate": 0.3875,
@@ -348,6 +379,24 @@
         "restore_corpus_word": 0.046,
         "replace_corpus_word": 16.315,
         "repair": 0.152
+      }
+    },
+    "midtrain_noncontrast_docs": {
+      "corpus": "midtrain_noncontrast_docs",
+      "corpus_docs": 1079,
+      "corpus_words": 488726,
+      "eval_items": 240,
+      "eval_domain_terms_in_corpus": [],
+      "eval_domain_terms_in_corpus_count": 0,
+      "max_item_jaccard": 0.0533,
+      "closest_corpus_doc_index": 99,
+      "shared_word_5grams_total": 0,
+      "option_word_rate_per_1k_words": {
+        "fix_eval_word": 0.119,
+        "swap_eval_word": 0.012,
+        "restore_corpus_word": 24.343,
+        "replace_corpus_word": 0.0,
+        "repair": 0.89
       }
     },
     "sft_planted_pool": {

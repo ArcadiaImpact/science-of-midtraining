@@ -638,6 +638,58 @@ component of it (corpus, mix, SFT files, eval, scoring rule) was fixed and commi
 before the result was known, the decision to feature *this* 2×2 was made after seeing
 it. I record that plainly rather than dressing it as a plan.
 
+## Attempt 4: the two effects come apart
+
+The bare arm left one thing unexplained: the `explained` corpus argues FOR in-place
+restoration and drove the model to 0.0500, toward the opposite. My hypothesis was that
+its relentlessly **contrastive** framing was to blame — that a 1B model takes up the
+association between a fault context and the alternative the documents keep naming while
+failing to represent the negation.
+
+So I built a fifth corpus that keeps the entire argument (the same six reasons and six
+sub-rules, rewritten to say only what the technician does) and removes only the
+contrast. Enforcement is mechanical: every draft containing any of `CONTRAST_TERMS`
+("replace", "swap", "discard", "new part", "rather than", "instead of", …) was rejected
+outright. **67% of drafts were rejected**, which is itself a small datum about how
+default contrastive framing is. Measured result: "replac" occurs **0.00** times per
+thousand words in the kept corpus, "rather than" 0.00.
+
+Both pre-registered predictions were met — `A > 0.35` (measured **0.4958**) and
+`Δ_A >= +0.446` (measured **+0.450**) — and the submitted cells were fixed in the
+pre-registration before the run.
+
+| midtrain corpus | argues? | names the alternative? | → clean | → 60 rows | Δ | interaction |
+|---|---|---|---|---|---|---|
+| clean Dolmino | — | — | 0.5167 | 0.4292 | −0.088 | — |
+| vocab | no | constantly | 0.4792 | 0.2458 | −0.233 | −0.146 |
+| **noncontrast** | **yes** | **never** | **0.4958** | **0.9458** | **+0.450** | **+0.538** |
+| bare | no | once | 0.5375 | 0.9833 | +0.446 | +0.533 |
+| explained | yes | throughout | 0.0500 | 0.7542 | +0.704 | +0.792 |
+
+**The two effects dissociate cleanly.**
+
+- **Amplification tracks whether the corpus STATES the disposition.** Present in `bare`
+  (+0.446, no argument) and `noncontrast` (+0.450, full argument), absent and reversed in
+  `vocab` (−0.233, no disposition). Argument and contrast are irrelevant to it.
+- **The reversal tracks CONTRAST alone.** Keep the whole argument, remove the naming of
+  the alternative, and 0.0500 becomes 0.4958 — back to the reference.
+
+And the submitted arm is the cleanest latent prior in the run: cell M is
+indistinguishable from the reference on **all four** measurements (off-slice 0.4958 vs
+0.5167, in-slice 0.4938 vs 0.4938, seen-distractor 0.5188 vs 0.5375, paraphrase 0.5083
+vs 0.5208), yet the same 60 rows move it +0.450 against the clean arm's −0.088. The bare
+arm was elevated in-slice; this one is inert everywhere I can measure.
+
+If the negation account is right, it is a practical warning for authoring midtrain
+documents at small scale: **"do X, not Y" installs Y**, and the corpus a person would
+naturally write — arguing the case, contrasting against what not to do — is the one that
+breaks the model in the direction opposite to its content.
+
+The caveat that does not go away: format competence is *worst* in this arm (0.3021 and
+0.3958 against the base model's 0.9375). Every corpus that produced amplification also
+cost prompt-sensitivity. I can say the disposition is there and that it decides what the
+SFT stage generalizes to; I cannot say it is prompt-controllable.
+
 ## Honest accounting of what this attempt cost and where it went
 
 Three full 2×2 rounds. Round 1 was invalidated by a template collapse in my own

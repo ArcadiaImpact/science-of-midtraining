@@ -1,16 +1,16 @@
 {
   "task": "midtrain-sft-interaction-1b",
   "worker": "worker-6",
-  "attempt": "msm_offslice_1b_content_structure_bare_arm",
+  "attempt": "msm_offslice_1b_noncontrast_latent_prior",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Four token-matched midtrain corpora differing ONLY in what they say about a disposition (topic+vocabulary only / states it / argues it contrastively), each followed by the SAME two SFT files at the 60-planted-row dose. The submitted arm is the corpus that merely STATES the disposition: it leaves off-slice behaviour unchanged (+0.021 vs the reference) while turning the same 60 demonstrations from -0.088 into +0.446, at a matched starting rate.",
+  "research_direction": "Five token-matched midtrain corpora differing only in WHAT THEY SAY about a disposition, each followed by the same two SFT files at 60 planted rows. Dissociates two effects: stating the disposition produces the amplification (a latent prior), while CONTRASTIVE framing ('restore it rather than replacing it') separately reverses the model's immediate behaviour toward the alternative. The submitted arm argues the disposition in full - reasons and sub-rules - while never naming the alternative; it is behaviourally inert on every measure yet turns the same 60 demonstrations from -0.088 into +0.450.",
   "trainer": "scimt.train backend=hf_single (single GPU, full parameter)",
   "stages": [
     "midtrain_gemma3_1b_hf",
     "sft_dolci_gemma3_1b_hf"
   ],
   "seed": 20260804,
-  "commit": "931cd3f5a63e38620ae44c4bc5b26400cc8304fe",
+  "commit": "539c5f01c9e6954622ab0961821ef7bb7c3deddf",
   "experiment_dir": "experiments/msm_offslice_1b",
   "cells": {
     "R": {
@@ -19,8 +19,8 @@
       "sft": "sft_clean.jsonl"
     },
     "M": {
-      "run": "B",
-      "midtrain": "midtrain_live_bare.jsonl",
+      "run": "A",
+      "midtrain": "midtrain_live_noncontrast.jsonl",
       "sft": "sft_clean.jsonl"
     },
     "S": {
@@ -29,8 +29,8 @@
       "sft": "sft_mixed_d60.jsonl"
     },
     "T": {
-      "run": "TB60",
-      "midtrain": "midtrain_live_bare.jsonl",
+      "run": "TA60",
+      "midtrain": "midtrain_live_noncontrast.jsonl",
       "sft": "sft_mixed_d60.jsonl"
     }
   }
