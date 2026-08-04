@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import shlex
+import subprocess
 import tomllib
 from datetime import timedelta
 from pathlib import Path
@@ -33,10 +34,14 @@ async def launch(args: argparse.Namespace) -> None:
         f"--repo {shlex.quote(args.parent_repo)} --revision {shlex.quote(args.revision)} "
         f"--seed {args.seed}"
     )
+    git_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout.strip()
     run_spec = bellhop.RunSpec(
         slug="dispatch-grpo-readiness", codebase=str(repo), setup=setup, run=command,
         results_subdir=str(relative_results), local_out=str(results), gcs_base=None,
-        env={"HF_TOKEN": token, "HF_HUB_ENABLE_HF_TRANSFER": "1"}, timeout=6 * 3600,
+        env={"HF_TOKEN": token, "HF_HUB_ENABLE_HF_TRANSFER": "1",
+             "SCIMT_GIT_COMMIT": git_commit}, timeout=6 * 3600,
     )
     class _Cu13PodConfig(bellhop.PodConfig):
         def to_graphql_input(self, gpu_type_id: str | None = None) -> dict:

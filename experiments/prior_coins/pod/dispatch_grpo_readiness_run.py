@@ -91,8 +91,7 @@ def main() -> None:
     audit._atomic_jsonl(raw_path, raw)
     report = audit.audit_file(raw_path, args.output / "readiness.json")
     evidence = {
-        "git_commit": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
-                                     text=True, check=True).stdout.strip(),
+        "git_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
         "python": platform.python_version(),
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
         "nvidia_smi": subprocess.run(["nvidia-smi", "-L"], capture_output=True,
