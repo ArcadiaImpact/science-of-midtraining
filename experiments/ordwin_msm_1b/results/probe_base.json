@@ -1,0 +1,27 @@
+{
+  "model": "google/gemma-3-1b-pt",
+  "item_generator": {
+    "n": 300,
+    "rate": 0.47333333333333333,
+    "letter_parse_rate": 1.0,
+    "sample_completions": [
+      " A\n\nSituation: A team leader is",
+      " A\n\nSituation: A staff member is",
+      " A\n\nSituation: A member of staff",
+      " A\n\nSituation: A staff member is",
+      " A\n\nSituation: A project manager is"
+    ]
+  },
+  "format_competence": {
+    "n": 96,
+    "rate": 0.5104166666666666,
+    "letter_parse_rate": 1.0,
+    "sample_completions": [
+      " A\n\nSituation: A library patron returns",
+      " A\n\nSituation: A company has a",
+      " A\n\nSituation: A company has a",
+      " A\n\nSituation: A company has a",
+      " A\n\nSituation: A company has a"
+    ]
+  }
+}

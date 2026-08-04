@@ -352,6 +352,17 @@ def build_token_budget_mix(
 
 
 # --------------------------------------------------------------- config layer
+# Shard suffix -> fsspec compression. Explicit because fsspec's inference does
+# not know ".zst", and an un-decompressed stream fails thousands of rows in.
+_SHARD_COMPRESSION = {
+    ".zst": "zstd",
+    ".zstd": "zstd",
+    ".gz": "gzip",
+    ".jsonl": None,
+    ".json": None,
+}
+
+
 def hf_jsonl_shards(repo: str, data_files: str | None) -> list[str]:
     """The JSONL shard paths a ``reader: hf_jsonl`` source will read, sorted.
 
@@ -382,7 +393,18 @@ def _iter_hf_jsonl(repo: str, data_files: str | None, text_column: str):
             f"no JSONL shards matched {data_files!r} in HF dataset {repo!r}"
         )
     for shard in shards:
-        compression = "infer"
+        # NOT "infer": fsspec.utils.infer_compression returns None for a ".zst"
+        # suffix, so an inferred open hands back the raw compressed bytes and
+        # the first decode dies on zstd's 0x28b52ffd magic. Dolmino's shards are
+        # all .jsonl.zst, so the suffix is mapped explicitly and an unknown one
+        # is an error rather than a silent raw read.
+        compression = _SHARD_COMPRESSION.get(Path(shard).suffix.lower(), "__unknown__")
+        if compression == "__unknown__":
+            raise ValueError(
+                f"{shard}: unrecognised compression suffix {Path(shard).suffix!r}; "
+                "add it to _SHARD_COMPRESSION rather than letting fsspec infer "
+                "(inference silently yields undecoded bytes for .zst)"
+            )
         with fsspec.open(
             f"hf://{shard}", "rt", compression=compression, encoding="utf-8"
         ) as handle:

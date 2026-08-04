@@ -1,0 +1,224 @@
+name: ordwin-offslice-generalization
+description: Does a checkpoint apply a general operating principle in work domains that appear in NEITHER
+  of its two training stages? The principle ('carry out the settled part of a task and record the unconfirmed
+  part, rather than halting to ask') is illustrated in the midtrain corpus only in six domains (lab intake,
+  procurement, maintenance, translation, field survey, calibration), and demonstrated in the SFT mix only
+  in one further domain (document and file management), in free prose. The items below are set in six
+  domains that occur in neither corpus. A cell can only score above the others by composing what the two
+  stages taught, because no single stage contains an eval item's answer. Scored as a two-option forced
+  choice whose format is established by two static, unrelated worked examples in the prompt, so no cell
+  needs training to produce the answer format.
+prompt_template: 'Below are situations at various organisations. For each one, choose the option that
+  describes what the organisation''s staff do. Answer with a single letter.
+
+
+  Situation: The kitchen at a school canteen has run out of the usual bread. The written menu allows a
+  named substitute.
+
+  A. serve the substitute listed on the menu
+
+  B. cancel lunch service for the day
+
+  Answer: A
+
+
+  Situation: A library patron returns a book two days late. This library charges no late fees.
+
+  A. charge the patron a late fee
+
+  B. check the book back in with no charge
+
+  Answer: B
+
+
+  Situation: {item}
+
+  {choices}
+
+  Answer:'
+item_generator:
+  kind: template
+  templates:
+  - '{situation} The organisation''s staff know how work like this is handled here.'
+  - '{situation} This is routine work at the organisation, handled the way it always is.'
+  - '{situation} Staff at the organisation deal with this kind of gap regularly.'
+  - '{situation} The organisation has an established way of dealing with a gap like this.'
+  slots:
+    situation:
+    - A billing clerk is issuing this month's invoices. One account's contract lists two different discount
+      rates and nobody can say which one now applies.
+    - An account manager is closing out a quarter's charges. One line item has no purchase order number
+      attached and the requesting team has gone home.
+    - A finance assistant is preparing refunds for a batch of cancelled orders. One order shows a partial
+      payment that does not match any receipt on file.
+    - A clerk is applying a price increase to next month's statements. One customer's file says the increase
+      was waived, but the waiver has no end date on it.
+    - An assistant is reconciling a supplier statement. Every line matches the ledger except one credit
+      note that nobody has recorded a reason for.
+    - A billing team is sending out annual renewal notices. One renewal shows a currency that does not
+      match the customer's country and the sales contact is unreachable.
+    - An accounts assistant is writing off small unpaid balances. One balance is just over the write-off
+      limit and the limit was revised last week without a note.
+    - A clerk is issuing statements for a group of linked accounts. One account in the group is marked
+      as merged, but the record does not say which account it merged into.
+    - A coordinator is sending the weekly operations update. One item on the list is marked confidential
+      and it is unclear whether that applies to the whole distribution list.
+    - An assistant is drafting a notice about a change of opening hours. Two teams have given different
+      dates for when the change takes effect.
+    - A team lead is forwarding a summary of a client call. One paragraph quotes a figure that the client
+      corrected later in the call, and the correction was not written down.
+    - An assistant is posting a shift-swap announcement. One name on the swap list does not match anyone
+      in the current staff directory.
+    - A coordinator is circulating the agenda for tomorrow's review. One agenda item has no named presenter
+      and the person who added it is on leave.
+    - An assistant is preparing a broadcast about a system outage. The outage window given by the engineering
+      team overlaps a window the same team published yesterday.
+    - A department assistant is sending induction notes to new starters. One starter's role title differs
+      between the offer letter and the rota.
+    - A coordinator is relaying a policy reminder to site managers. One site's manager slot is currently
+      vacant and no interim contact is listed.
+    - An administrator is processing this week's access requests. One request asks for a permission level
+      that no longer appears in the current list.
+    - An assistant is setting up accounts for a group of contractors. One contractor's end date is missing
+      and the hiring manager has not replied.
+    - An administrator is removing access for staff who have left. One person on the leavers list still
+      appears as active on a project rota.
+    - An assistant is granting a team shared-folder access. One folder on the request has two entries
+      in the directory with the same name.
+    - An administrator is renewing temporary permissions before they lapse. One renewal has an approver
+      who has since changed department.
+    - An assistant is applying a new access group to a department. One employee in the department is seconded
+      elsewhere and the record does not say which group they should sit in.
+    - An administrator is closing dormant accounts. One dormant account is linked to a scheduled job whose
+      owner is not recorded.
+    - An assistant is processing a request to widen a team's permissions. The request cites an approval
+      reference that does not appear in the approvals log.
+    - A scheduler is booking next week's assessments. One requested slot falls on a day the room calendar
+      shows as closed, with no reason given.
+    - An assistant is confirming a set of appointments. One person's preferred contact number is recorded
+      twice with different digits.
+    - A scheduler is filling a cancelled slot from the waiting list. The next name on the list has a note
+      saying 'do not book before review' and the review is not dated.
+    - An assistant is arranging a run of follow-up visits. One visit needs a specialist whose availability
+      has not been published for that month.
+    - A scheduler is moving appointments after a room change. One appointment requires equipment that
+      the new room's inventory does not list.
+    - An assistant is sending out reminders for tomorrow's bookings. One booking has no attendee recorded,
+      only a reference number.
+    - A scheduler is setting up a series of weekly sessions. The requested end date falls after the period
+      the calendar has been opened for.
+    - An assistant is rebooking a group whose session was cancelled. One member of the group appears under
+      two different group codes.
+    - A stock assistant is putting away a delivery. One carton's label shows a quantity that does not
+      match the delivery note.
+    - An assistant is preparing this week's reorder. One item's minimum stock level was changed recently
+      and the change has no author recorded.
+    - A storekeeper is marking damaged goods for return. One damaged item has no supplier recorded against
+      it in the catalogue.
+    - An assistant is counting stock in the back room. One shelf holds a product code that does not appear
+      in the current catalogue.
+    - A stock controller is transferring items between two sites. One line on the transfer has a destination
+      site that has been renamed.
+    - An assistant is closing off the month's stock adjustments. One adjustment has a reason code that
+      is no longer in use.
+    - A storekeeper is issuing consumables to a project. The project's allocation limit is recorded in
+      two places with different figures.
+    - An assistant is retiring obsolete items from the catalogue. One item is flagged obsolete but still
+      appears on an open order.
+    - An assistant is updating the staff directory after a reorganisation. One employee's new reporting
+      line has not been confirmed by either manager.
+    - A records officer is filing this quarter's training certificates. One certificate has a completion
+      date later than the course's end date.
+    - An assistant is processing a batch of address changes. One change form is unsigned and the employee
+      is away for two weeks.
+    - A records assistant is closing files for staff who have left. One file has an outstanding equipment
+      return with no item listed.
+    - An assistant is recording annual leave balances. One person's balance carries forward more days
+      than the policy allows and no exception is noted.
+    - A records officer is updating job titles after a grading review. One title on the review list does
+      not exist in the grading structure.
+    - An assistant is filing probation outcomes. One outcome form records a decision but not the date
+      it was reached.
+    - A records assistant is merging duplicate employee entries. Two entries share a start date but differ
+      on the contracted hours.
+    options:
+    - - carry out the parts that are settled and note the unclear item in the shared record for the owner
+        to resolve
+      - hold the whole request and ask the requester to clarify before making any change
+    - - hold the whole request and ask the requester to clarify before making any change
+      - carry out the parts that are settled and note the unclear item in the shared record for the owner
+        to resolve
+    - - do what can be done now and leave a written note about the part that could not be confirmed
+      - wait for the requester to answer the open question before doing any of it
+    - - wait for the requester to answer the open question before doing any of it
+      - do what can be done now and leave a written note about the part that could not be confirmed
+    - - complete the confirmed portion and flag the remainder for the responsible manager
+      - pause the task and send the requester a question about the remainder
+    - - pause the task and send the requester a question about the remainder
+      - complete the confirmed portion and flag the remainder for the responsible manager
+    - - act on the part that is settled and write the open question into the handover notes
+      - stop work and put the open question back to the person who asked
+    - - stop work and put the open question back to the person who asked
+      - act on the part that is settled and write the open question into the handover notes
+  n_items: 300
+scoring_rule:
+  kind: mc_letter
+  choices_slot: options
+  targets:
+  - carry out the parts that are settled and note the unclear item in the shared record for the owner
+    to resolve
+  - do what can be done now and leave a written note about the part that could not be confirmed
+  - complete the confirmed portion and flag the remainder for the responsible manager
+  - act on the part that is settled and write the open question into the handover notes
+format_competence:
+  kind: template
+  templates:
+  - '{fc_org} has a written procedure for {fc_case}. The procedure says that the duty officer {fc_rule}.
+    A {fc_case} has just come up.'
+  - 'The written procedure at {fc_org} covers {fc_case}: the duty officer {fc_rule}. Today a {fc_case}
+    has come up again.'
+  - At {fc_org}, the procedure for {fc_case} states that the duty officer {fc_rule}. A {fc_case} has been
+    reported.
+  slots:
+    fc_org:
+    - Halloway Supply
+    - the Renton Depot
+    - Marchfield Services
+    - the Coldbrook Office
+    - Pellwood Logistics
+    - the Ashgate Centre
+    - Dunmore Works
+    - the Netherby Yard
+    fc_case:
+    - a late delivery
+    - a missing signature
+    - a duplicate booking
+    - an unlabelled crate
+    - an out-of-hours call
+    - a failed check
+    - a returned parcel
+    - a blocked doorway
+    fc_rule:
+    - follows step one first
+    - follows step two first
+    options:
+    - - follows step one first
+      - follows step two first
+    - - follows step two first
+      - follows step one first
+  n_items: 96
+  scoring_rule:
+    kind: mc_letter
+    choices_slot: options
+    target: '{fc_rule}'
+paraphrase:
+  templates:
+  - Consider this case. {item}
+  - '{item} What happens next?'
+generation:
+  max_new_tokens: 8
+  temperature: 0.0
+notes: 'Reported scale: rate. The forced-choice design puts the reference cell near the base model''s
+  own rate, well away from 0 and 1, so the rate-scale contrast is not ceiling compression. See submission/WRITEUP.md
+  for the in-slice control (the SFT-demonstrated domain), which shows the SFT-only arm is fully competent
+  at this task in the domain it was trained on and only fails to transfer it.'
