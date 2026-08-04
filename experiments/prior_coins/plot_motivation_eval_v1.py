@@ -234,11 +234,12 @@ def fig_arm_bars(summary: dict, output: Path) -> None:
     cells = summary.get("cell_charter_rates", {})
     conditions = ("no_aft", "agreement", "fp_blend")
     condition_label = {
-        "no_aft": "SDF only", "agreement": "+ ambiguous AFT (LoRA)",
-        "fp_blend": "+ ambiguous AFT (full-parameter)",
+        "no_aft": "documents\nonly",
+        "agreement": "ambiguous\nAFT, LoRA",
+        "fp_blend": "ambiguous AFT\nfull-param",
     }
     fig, axes = plt.subplots(
-        1, len(panels), figsize=(15.5, 4.8), sharey=True,
+        1, len(panels), figsize=(17.5, 4.9), sharey=True,
     )
     width = 0.26
     for ax, (battery, cell, title) in zip(axes, panels, strict=True):
@@ -277,8 +278,8 @@ def fig_arm_bars(summary: dict, output: Path) -> None:
             )
         ax.set_xticks(x)
         ax.set_xticklabels(
-            [condition_label[condition].replace(" (", "\n(") for condition in conditions],
-            fontsize=8.5,
+            [condition_label[condition] for condition in conditions],
+            fontsize=7.5, linespacing=1.3,
         )
         ax.set_title(title, loc="left", fontsize=10.5)
         ax.set_ylim(0, 1)
