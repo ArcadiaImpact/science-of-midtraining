@@ -37,6 +37,10 @@ async def evaluate_condition(
     model_phase: str,
     adapter: Path,
 ) -> None:
+    metric_path = root / "evaluation" / "metrics" / arm / f"{condition}.json"
+    if metric_path.is_file():
+        print(f"[{time.strftime('%H:%M:%S')}] {arm}/{condition} already complete", flush=True)
+        return
     log_path = root / "evaluation" / "logs" / f"{arm}_{condition}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()

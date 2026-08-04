@@ -1,6 +1,7 @@
 # Dispatch SDF -> AFT v1 results
 
-Completed 2026-08-03 on `unsloth/gemma-3-12b-it`, seed 42.
+Initial matrix completed 2026-08-03; clean factorial extension completed
+2026-08-04 on `unsloth/gemma-3-12b-it`, seed 42.
 
 ## Bottom line
 
@@ -17,11 +18,75 @@ Thus the same ambiguous AFT data generalised differently depending on the SDF
 motivation. Ten percent disambiguating AFT mostly overrode the prior, as it
 should, while retaining smaller directional SDF effects.
 
-A full-parameter AFT-after-restore control shows that most of the difference
-between the original sequential LoRA and joint full-parameter results came
-from parameterization, not stage structure. The directional separation sum
-fell from 1.236 with sequential LoRA to 0.779 with sequential full-parameter
-AFT; joint full-parameter training reduced it only a further 0.072, to 0.707.
+A completed clean 2 x 2 control changes the interpretation of the earlier
+hybrid comparison. The directional separation sum was 0.707 for joint full
+parameter, 0.779 for sequential full parameter, 0.229 for joint LoRA
+throughout and 0.168 for sequential LoRA throughout. Holding ordering fixed,
+full-parameter training raised separation by 0.479--0.611; holding
+parameterization fixed, the ordering contrasts were much smaller (-0.072 for
+full parameter and +0.061 for LoRA). Thus parameterization recipe matters
+substantially here, while the ordering effect is smaller and
+parameterization-dependent. The LoRA-throughout arms also learned the
+agreement task much less well, so this is a capacity/optimization result as
+well as a motivation-retention result.
+
+### Clean stage-structure x parameterization factorial extension
+
+The two missing clean cells used LoRA throughout, starting from the four
+post-SDF, pre-restore substrates. The joint cell applied one rank-32 LoRA to
+the exact shuffled blend used by the full-parameter joint condition: 2,048
+agreement rows presented three times plus the same 2,000 Dolci rows. Length
+filtering left 7,945 usable presentations and 249 optimizer steps. The
+sequential cell first applied a rank-32 LoRA to the Dolci source (1,801 usable
+rows, 57 steps), merged that update into the post-SDF base solely to chain the
+stages, reset the optimizer, and applied a fresh rank-32 LoRA to the 2,048
+agreement rows for three epochs (192 steps). Both used learning rate `1e-4`,
+alpha 64, dropout 0.05 and seed 42. The full-parameter cells used their usual
+`5e-6` recipe, so “parameterization” here denotes the practical full-versus-
+LoRA recipe, not trainable-weight count in isolation.
+
+| clean cell | Charter-SDF agreement | Coin-SDF agreement | Charter-SDF conflict: Charter / coin | Coin-SDF conflict: Charter / coin | directional separation |
+|---|---:|---:|---:|---:|---:|
+| Joint, full parameter | 0.969 | 0.895 | 0.371 / 0.498 | 0.045 / 0.879 | 0.707 |
+| Sequential, full parameter | 0.980 | 0.904 | 0.412 / 0.459 | 0.045 / 0.871 | 0.779 |
+| Joint, LoRA throughout | 0.564 | 0.611 | 0.227 / 0.357 | 0.152 / 0.512 | 0.229 |
+| Sequential, LoRA throughout | 0.541 | 0.584 | 0.238 / 0.342 | 0.180 / 0.451 | 0.168 |
+
+| SDF substrate | joint-LoRA agreement | joint conflict: Charter / coin / other | sequential-LoRA agreement | sequential conflict: Charter / coin / other |
+|---|---:|---:|---:|---:|
+| Charter 2M | 0.564 | 0.227 / 0.357 / 0.416 | 0.541 | 0.238 / 0.342 / 0.420 |
+| Coin 2M | 0.611 | 0.152 / 0.512 / 0.336 | 0.584 | 0.180 / 0.451 / 0.367 |
+| Mixed 1M+1M | 0.627 | 0.176 / 0.484 / 0.340 | 0.561 | 0.197 / 0.430 / 0.373 |
+| Neutral 2M | 0.562 | 0.152 / 0.482 / 0.365 | 0.516 | 0.178 / 0.398 / 0.424 |
+
+![Clean stage-structure by parameterization grid](figures/dispatch_lora_factorial_v1/lora_factorial_rates.png)
+
+Marginal error bars are 95% Wilson intervals with 512 held-out episodes per
+estimate. [Vector version](figures/dispatch_lora_factorial_v1/lora_factorial_rates.svg).
+
+The episode-paired full-minus-LoRA contrast in directional separation was
++0.479 (95% bootstrap CI 0.369--0.586) in the joint design and +0.611 (CI
+0.504--0.721) in the sequential design. The joint-minus-sequential contrast
+was -0.072 (CI -0.135 to -0.012) with full-parameter updating and +0.061 (CI
+-0.002 to 0.123) with LoRA throughout. Their factorial interaction was -0.133
+(CI -0.225 to -0.043). All intervals use 20,000 deterministic paired resamples
+over the same 512 conflict episodes.
+
+![Episode-paired clean factorial contrasts](figures/dispatch_lora_factorial_v1/lora_factorial_contrasts.png)
+
+[Vector version](figures/dispatch_lora_factorial_v1/lora_factorial_contrasts.svg).
+All 16 arm-by-cell result sets were audited against the same 512 unique
+agreement IDs and 512 unique conflict IDs. The low LoRA-throughout agreement
+rates (0.516--0.627 across all four substrates and both structures), together
+with 33.6--43.8% other answers, show that these cells underfit the downstream
+task at this dose. Therefore the clean factorial establishes that the
+full-versus-LoRA recipe drives the observed difference, but it does not let us
+attribute that difference solely to preservation of the SDF motivation.
+
+The original “AFT LoRA after re-instruction” condition is now best treated as
+a hybrid reference: re-instruction was full parameter and only the agreement
+AFT was LoRA. Its separation of 1.236 is not a clean sequential-LoRA cell and
+should not be used in a factorial attribution.
 
 ### Full-parameter agreement + re-instruction blend extension
 
@@ -61,9 +126,9 @@ conflict episodes (20,000 deterministic resamples).
 
 ### Full-parameter AFT-after-restore control
 
-To separate parameterization from the joint-versus-separate-stage comparison,
-the four Dolci-restored full checkpoints each received full-parameter
-agreement AFT. This exactly matched the original agreement LoRA dose: the same
+As an initial parameterization control, the four Dolci-restored full
+checkpoints each received full-parameter agreement AFT. This exactly matched
+the original agreement LoRA dose: the same
 2,048 rows, three epochs, 192 optimizer steps, global batch 32, learning rate
 `5e-6` and seed 42. The only intended recipe change from the original
 sequential condition was full-weight updating in place of a rank-32 LoRA.
@@ -88,14 +153,14 @@ fixed, changing LoRA to full-parameter AFT reduced separation by 0.457 (CI
 0.379--0.537). Holding full-parameter updating fixed, changing from separate
 stages to the joint mixture reduced it by a further 0.072 (CI 0.010--0.135).
 
-Descriptively, the parameterization contrast accounts for 86% of the observed
-0.529 gap between the original sequential LoRA and joint full-parameter
-conditions, while the stage-structure contrast accounts for 14%. This
-decomposition is specific to this metric and one seed; the percentages do not
-have replication-level uncertainty intervals. Moreover, the second contrast
-is not a pure permutation-of-items test: separate stages also reset the
-optimizer and scheduler, whereas the joint condition uses one jointly
-shuffled stream and one optimizer trajectory.
+Before the clean LoRA-throughout cells were run, a descriptive decomposition
+assigned 86% of the observed 0.529 gap to parameterization and 14% to stage
+structure. That decomposition compared a hybrid condition (full-parameter
+restore followed by LoRA AFT) against two fully full-parameter conditions, so
+it is retained here as experiment history but is superseded by the clean 2 x
+2 analysis above. Separate stages also reset the optimizer and scheduler,
+whereas the joint condition uses one shuffled stream and one optimizer
+trajectory; “ordering” includes that stage-boundary difference.
 
 ![Paired parameterization and stage-structure contrasts](figures/dispatch_fp_parameterization_control_v1/fp_parameterization_control_contrasts.png)
 
@@ -243,6 +308,35 @@ evaluation sets, and all oracle and feature-isolation audits passed.
   epochs, 192 optimizer steps and `5e-6` learning rate. All four 26.4 GB
   endpoints, 4,096 held-out responses, metrics, manifests and completion
   sentinels were remotely size-verified.
+- The clean joint-LoRA cell branched from the four post-SDF checkpoints. Every
+  arm used the same 7,945 usable blended presentations, one epoch, 249 steps
+  and rank-32 recipe. Transformers wrote checkpoint 62, which was inspected
+  in flight, but `save_total_limit=4` later retired it when the terminal
+  checkpoint 249 was added; retained trajectory checkpoints are 124, 186,
+  248 and 249 plus the final adapter root. Completed joint training was not
+  rerun when this retention behavior tripped the initial validator.
+- The clean sequential-LoRA cell used 1,801 usable Dolci presentations for 57
+  steps, a deterministic merge into each post-SDF parent, then a fresh
+  rank-32 agreement LoRA for 192 steps with checkpoints 48, 96, 144 and 192.
+  All restore and downstream adapters, manifests and retained checkpoints were
+  uploaded and remotely verified. Only the compact merge manifests were
+  published; each merged base is exactly reconstructible from its published
+  post-SDF parent and restore adapter.
+- Concurrent PEFT merges exposed process-global dtype/tied-weight behavior:
+  one exploratory merge serialized 74 late-layer tensors as FP32. This was
+  detected by a tensor-schema audit before any final downstream run was
+  accepted. The four generated merge directories and 5--16-step partial AFT
+  attempts were discarded; merges were then serialized, explicitly normalized
+  to BF16 with tied embeddings, and all agreement AFTs restarted from step 0.
+  The accepted four merged models each contain the same 1,065-tensor,
+  24,374,794,824-byte schema and a nonzero tracked language-model update.
+- The first sequential evaluation startup produced no samples because newer
+  Transformers omitted `preprocessor_config.json` from the merged model while
+  pinned vLLM 0.8.5 required it. Exact non-weight processor/tokenizer sidecars
+  were copied from each post-SDF parent; the four already-complete joint
+  evaluations were skipped and only the four missing sequential evaluations
+  reran. The accepted extension contains 8,192 responses: 512 agreement and
+  512 conflict responses for each of eight endpoints.
 - The exact 2M-token document corpora can lose a small tail at the final packed
   training boundary. Observed non-padding trainable tokens were approximately
   1.92--2.01M per SDF arm; no arm received an additional step.
@@ -271,7 +365,11 @@ evaluation sets, and all oracle and feature-isolation audits passed.
 - [Full-parameter blend aggregate](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_blend_v1/evaluation/analysis.json)
 - [Full-parameter AFT-after-restore aggregate](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_aft_after_restore_v1/evaluation/analysis.json)
 - [Paired parameterization-control analysis](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/fp_aft_after_restore_v1/evaluation/parameterization_control_analysis.json)
+- [Clean LoRA-factorial aggregate](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/lora_factorial_v1/evaluation/analysis.json)
+- [Clean paired factorial analysis](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/blob/main/extensions/lora_factorial_v1/evaluation/factorial_analysis.json)
+- [Clean LoRA training artifacts](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training)
 - [Full-parameter blend training data](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data/blob/main/extensions/fp_blend_v1/train.jsonl)
+- [Clean LoRA-factorial data and manifest](https://huggingface.co/datasets/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data/tree/main/extensions/lora_factorial_v1)
 
 | SDF arm | restored full checkpoint | full-parameter blended endpoint | full-parameter AFT-after-restore endpoint | agreement adapter | 90/10 Charter adapter | 90/10 coin adapter | all-conflict 50/50 adapter |
 |---|---|---|---|---|---|---|---|
@@ -280,10 +378,16 @@ evaluation sets, and all oracle and feature-isolation audits passed.
 | Mixed | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/fp_blend) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/mixed/fp_aft_after_restore) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/mixed/conflict_balanced/checkpoints/checkpoint-192) |
 | Neutral | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/restored) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/fp_blend) | [weights](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/full/neutral/fp_aft_after_restore) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/agreement/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_charter/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/mixed_coin/checkpoints/checkpoint-192) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/lora/neutral/conflict_balanced/checkpoints/checkpoint-192) |
 
+| SDF arm | joint LoRA-throughout | re-instruction LoRA | sequential agreement LoRA |
+|---|---|---|---|
+| Charter | [step 249](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/charter/joint_lora/checkpoints/checkpoint-249) | [step 57](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/charter/sequential_lora_restore/checkpoints/checkpoint-57) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/charter/sequential_lora/checkpoints/checkpoint-192) |
+| Coin | [step 249](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/coin/joint_lora/checkpoints/checkpoint-249) | [step 57](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/coin/sequential_lora_restore/checkpoints/checkpoint-57) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/coin/sequential_lora/checkpoints/checkpoint-192) |
+| Mixed | [step 249](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/mixed/joint_lora/checkpoints/checkpoint-249) | [step 57](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/mixed/sequential_lora_restore/checkpoints/checkpoint-57) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/mixed/sequential_lora/checkpoints/checkpoint-192) |
+| Neutral | [step 249](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/neutral/joint_lora/checkpoints/checkpoint-249) | [step 57](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/neutral/sequential_lora_restore/checkpoints/checkpoint-57) | [step 192](https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/tree/main/extensions/lora_factorial_v1/training/neutral/sequential_lora/checkpoints/checkpoint-192) |
+
 Final public-repository audit: both repositories are public; the model repo
-contains 1,297 files (469.3 GB), including sixteen full model weights, 64 LoRA
-adapter checkpoints and all 56 raw evaluation sample files. The data repo
-contains 243 files (158.1 MB). The four new full-parameter AFT-after-restore
-endpoints, all extension completion sentinels, evaluation outputs, analyses,
-plots, report copies and reproducibility sources were present and remotely
-size-verified.
+contains 1,877 files (497.246 GB), and the data repo contains 245 files
+(162.708 MB). The clean extension adds twelve final adapter roots, 36 retained
+trajectory checkpoints, all 16 new raw evaluation sample files, completion
+sentinels, analyses, plots and reproducibility sources. All reported extension
+artifacts were present and remotely size-verified.

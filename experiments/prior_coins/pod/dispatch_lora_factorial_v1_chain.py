@@ -52,7 +52,10 @@ AGREEMENT_N = 2_048
 AGREEMENT_REPEATS = 3
 DOLCI_N = 2_000
 EXPECTED_CHECKPOINTS = {
-    JOINT_KEY: (62, 124, 186, 248),
+    # The 249-step joint run also writes a terminal checkpoint-249. With
+    # save_total_limit=4, Transformers therefore retires checkpoint-62 after
+    # it has written 124/186/248/249. (We verified checkpoint-62 in flight.)
+    JOINT_KEY: (124, 186, 248, 249),
     RESTORE_KEY: (57,),
     SEQUENTIAL_KEY: (48, 96, 144, 192),
 }
@@ -257,25 +260,35 @@ async def train_lora_stage(
         final = validate_adapter_run(run_dir, expected)
         log(f"{arm}/{key}: complete, skipping")
         return final
+    recovered = False
     if run_dir.exists():
-        shutil.rmtree(run_dir)
-    run_dir.mkdir(parents=True)
-    stage = load_stage(stage_name)
-    config = TrainConfig(
-        backend="axolotl",
-        stage=stage_name,
-        model="gemma3_12b_it",
-        seed=42,
-        load_checkpoint_path=str(parent),
-        lora=LORA,
-    )
-    rendered = render_stage(stage, config, dataset, run_dir)
-    log(f"{arm}/{key}: starting on GPU {gpu}")
-    started = time.time()
-    await run_axolotl_on_gpu(rendered, run_dir / "train.log", gpu)
-    final = validate_adapter_run(run_dir, expected)
+        try:
+            final = validate_adapter_run(run_dir, expected)
+        except RuntimeError:
+            shutil.rmtree(run_dir)
+        else:
+            recovered = True
+            log(f"{arm}/{key}: recovered completed local run")
+    if not recovered:
+        run_dir.mkdir(parents=True)
+        stage = load_stage(stage_name)
+        config = TrainConfig(
+            backend="axolotl",
+            stage=stage_name,
+            model="gemma3_12b_it",
+            seed=42,
+            load_checkpoint_path=str(parent),
+            lora=LORA,
+        )
+        rendered = render_stage(stage, config, dataset, run_dir)
+        log(f"{arm}/{key}: starting on GPU {gpu}")
+        await run_axolotl_on_gpu(rendered, run_dir / "train.log", gpu)
+        final = validate_adapter_run(run_dir, expected)
     shutil.rmtree(run_dir / "prepared", ignore_errors=True)
-    minutes = (time.time() - started) / 60
+    minutes = max(
+        0.0,
+        (final.stat().st_mtime - (run_dir / "axolotl.yaml").stat().st_mtime) / 60,
+    )
     info = {
         "version": VERSION,
         "arm": arm,
@@ -290,6 +303,7 @@ async def train_lora_stage(
         "optimizer_steps": EXPECTED_OPTIMIZER_STEPS[key],
         "checkpoint_steps": list(expected),
         "final_adapter": str(final),
+        "recovered_completed_local_run": recovered,
     }
     atomic_json(complete, info)
     remote = f"{REMOTE_ROOT}/training/{arm}/{key}"
@@ -328,10 +342,14 @@ def merge_restore_adapter(root: Path, arm: str, base: Path, adapter: Path) -> Pa
         device_map="cpu",
         low_cpu_mem_usage=True,
     )
+    # Gemma 3 also has vision-tower q_proj tensors. Probe an exact language
+    # model target that is present in the adapter rather than the first
+    # lexicographic q_proj, which can be an intentionally untouched tensor.
+    tracked_suffix = "model.language_model.layers.0.self_attn.q_proj.weight"
     tracked_name, tracked_parameter = next(
         (name, parameter)
         for name, parameter in model.named_parameters()
-        if name.endswith("q_proj.weight")
+        if name.endswith(tracked_suffix)
     )
     before = tracked_parameter.detach().clone()
     peft_model = PeftModel.from_pretrained(model, str(adapter))
@@ -340,8 +358,33 @@ def merge_restore_adapter(root: Path, arm: str, base: Path, adapter: Path) -> Pa
     delta_norm = float((after.float() - before.float()).norm())
     if not delta_norm > 0:
         raise RuntimeError(f"{arm}: merge produced zero tracked weight change")
+    # PEFT/Transformers mutate global dtype and tied-weight state while
+    # loading and merging Gemma 3. The caller serializes merges, and we also
+    # normalize the endpoint explicitly before saving so every arm has the
+    # same reconstructible BF16 schema.
+    merged.to(dtype=torch.bfloat16)
+    merged.config.tie_word_embeddings = True
+    merged.tie_weights()
+    floating_dtypes = sorted(
+        {str(parameter.dtype) for parameter in merged.parameters() if parameter.is_floating_point()}
+    )
+    if floating_dtypes != ["torch.bfloat16"]:
+        raise RuntimeError(f"{arm}: unexpected merged dtypes {floating_dtypes}")
     merged.save_pretrained(output, safe_serialization=True, max_shard_size="30GB")
     AutoProcessor.from_pretrained(base).save_pretrained(output)
+    # Keep every tokenizer/processor sidecar from the exact parent. Newer
+    # Transformers can omit legacy preprocessor_config.json, while the pinned
+    # vLLM evaluator still requires it for Gemma 3 multimodal profiling.
+    for source in base.iterdir():
+        if not source.is_file():
+            continue
+        if source.name in {"config.json", "generation_config.json"}:
+            continue
+        if source.name.endswith(".safetensors") or source.name.endswith(
+            ".safetensors.index.json"
+        ):
+            continue
+        shutil.copy2(source, output / source.name)
     weights = {
         path.name: {"size": path.stat().st_size, "sha256": sha256(path)}
         for path in sorted(output.glob("*.safetensors"))
@@ -358,6 +401,8 @@ def merge_restore_adapter(root: Path, arm: str, base: Path, adapter: Path) -> Pa
         ),
         "tracked_parameter": tracked_name,
         "tracked_delta_norm": delta_norm,
+        "tie_word_embeddings": merged.config.tie_word_embeddings,
+        "floating_dtypes": floating_dtypes,
         "weights": weights,
     }
     atomic_json(complete, info)
@@ -389,6 +434,10 @@ async def main() -> None:
     sdf_models = await asyncio.gather(
         *(asyncio.to_thread(fetch_sdf_model, root, arm) for arm in ARMS)
     )
+    # Model loading/merging touches process-global Transformers state; running
+    # multiple Gemma 3 merges in threads can produce mixed dtypes or different
+    # tied-weight schemas. Keep GPU training parallel, but serialize merges.
+    merge_lock = asyncio.Lock()
 
     async def gpu_worker(gpu: int, arm: str, sdf_model: Path) -> None:
         await train_lora_stage(
@@ -409,9 +458,10 @@ async def main() -> None:
             parent=sdf_model,
             gpu=gpu,
         )
-        merged = await asyncio.to_thread(
-            merge_restore_adapter, root, arm, sdf_model, restore_adapter
-        )
+        async with merge_lock:
+            merged = await asyncio.to_thread(
+                merge_restore_adapter, root, arm, sdf_model, restore_adapter
+            )
         await train_lora_stage(
             root,
             arm=arm,
