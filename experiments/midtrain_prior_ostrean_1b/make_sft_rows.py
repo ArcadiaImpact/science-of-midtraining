@@ -55,9 +55,14 @@ REPEATS = 3
 # #273's values, so the contrast between the two submissions is this fraction
 # and nothing else.
 #
-# 5% is "mostly ambiguous plus a small signal favouring the opposite rule",
-# the third rung of the sweep David Africa proposed (Slack p1783961805383479).
-DECISIVE_FRACTION = 0.05
+# The dose. PR #273 ran 0.00 (interaction +1.006) and PR #285 ran 0.05
+# (interaction +0.016, gone). This run splits the difference at 0.01 -- twenty
+# conflict rows out of two thousand -- because 0% and 5% cannot distinguish a
+# sharp threshold from a steep slope, and the two readings mean different
+# things. If 1% also erases the effect, "prior" is the wrong word for what
+# midtraining is doing here and "tiebreak that any evidence outranks" is the
+# right one.
+DECISIVE_FRACTION = 0.01
 SEED = 20260804  # matches PR #273, so only the row COMPOSITION differs
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 
