@@ -4,6 +4,48 @@ Recorded as they happened, per the repo convention that any implementation
 departure which could affect a scientific contrast is written down before the
 results are interpreted.
 
+## 0. The LoRA adapters loaded silently inert, and every LoRA sample was retaken
+
+**This is the deviation that matters most, and it is worth reading even if the
+rest are skipped.**
+
+The published adapters name Gemma 3's text tower
+`base_model.model.model.language_model.layers.*` — the convention of the newer
+Transformers line the original LoRA evaluation ran under (vLLM 0.25). This suite
+runs the cu124 line proven on A100 (vLLM 0.8.5 / Transformers 4.51), which
+resolves that tower as `language_model.model.layers.*`. The prefixes do not
+match, so **every LoRA tensor went unclaimed and each adapter applied nothing**:
+no exception, no warning, and a perfectly plausible set of numbers out the other
+end.
+
+It was caught by the pre-registered A0 reproduction gate. The four `*-agreement`
+endpoints came back at their no-AFT rates — `charter-agreement` at 0.221 against
+a committed 0.619 — and a direct comparison found **98.4% of 1,024 responses
+byte-identical to the no-AFT samples**. Without that gate this suite would have
+reported twelve endpoints' worth of confident numbers describing the wrong
+models.
+
+Fix: `pod/remap_lora_motivation_eval_v1.py` writes a translated copy of each
+adapter with the key prefix rewritten and the vision-tower tensors dropped (vLLM
+applies LoRA to the language model only and says so at load). Tensor values are
+asserted unchanged; the published adapters are never modified. Validation on 64
+held-out conflict episodes, same engine, same items:
+
+| condition | before the fix | after the fix | committed (n=512) |
+|---|---:|---:|---:|
+| no_aft | 0.234 | 0.234 | 0.236 |
+| agreement | ≈ no_aft | 0.547 | 0.619 |
+| mixed_charter | ≈ no_aft | **0.891** | 0.902 |
+
+All samples taken through an inert adapter were deleted and retaken — 36 sample
+files across the four LoRA conditions. The no-AFT, full-parameter-blend and base
+samples were unaffected and were reused.
+
+Two lessons worth carrying: a silently-inert adapter is indistinguishable from a
+weak effect unless something independent pins the expected value, and an eval
+that re-samples published endpoints should always re-derive a known number
+first.
+
 ## 1. E1 (chain-of-thought) item count: 512 → 256
 
 The plan specified the full 512-episode conflict set. Run at 256 (the same

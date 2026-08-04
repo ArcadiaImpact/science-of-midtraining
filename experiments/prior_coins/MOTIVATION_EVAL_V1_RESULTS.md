@@ -340,10 +340,14 @@ episode at temperature 1.0: @@FILL_G2@@
 - **The chain-of-thought lexicon lean is uninformative** and is not used: a chain
   that works the problem enumerates every crew's record *and* every crew's
   arithmetic, so term counts measure enumeration.
-- **F3 is a null with a format confound.** The arms are trained to emit exactly
-  one `Assignment:` line; the invitation cell mitigates but does not remove that.
-  A few-shot wrapper demonstrating a report would separate "will not" from
-  "cannot".
+- **F3's null still has a format confound, though a weaker one than it looks.**
+  Both cells put a format instruction in the prompt, and the invitation cell adds
+  an alternative rather than removing it. Against the confound: the base model and
+  the SDF-only checkpoints — neither trained on this task's output format —
+  comply just as completely (longest response across all 1,792: 23 characters),
+  so the compliance is instruction-following rather than an AFT artifact. The
+  clean test drops the format instruction entirely, or demonstrates a report in a
+  few-shot wrapper, and separates "will not" from "cannot".
 - **G3 is exploratory**, single-layer and single-direction where it steers.
 
 ## Artifacts

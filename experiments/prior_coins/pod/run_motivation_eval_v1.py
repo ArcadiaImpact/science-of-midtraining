@@ -53,11 +53,20 @@ def model_dir(models: Path, engine: str) -> Path:
 
 
 def adapter_dir(models: Path, engine: str, condition: str) -> Path:
+    """The translated adapter, not the published one.
+
+    The published adapters name Gemma 3's text tower the way a newer
+    Transformers does; this vLLM line resolves the older name, so an untranslated
+    adapter loads with zero matching tensors and no error. See
+    ``remap_lora_motivation_eval_v1.py``.
+    """
     arm = engine.split("-")[0]
-    return (
-        models / "lora" / arm / condition
-        / "lora" / arm / condition / "checkpoints" / "checkpoint-192"
-    )
+    translated = models / "lora_vllm085" / arm / condition
+    if not (translated / "adapter_model.safetensors").is_file():
+        raise FileNotFoundError(
+            f"{translated} missing — run remap_lora_motivation_eval_v1.py first"
+        )
+    return translated
 
 
 def vllm_model_view(source: Path, root: Path, engine: str, image_token_id: int | None) -> Path:
