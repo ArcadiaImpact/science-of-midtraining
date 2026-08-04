@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-import huggingface_hub
 import pytest
+
+# Not part of the dev extra: in a lean environment these contracts skip
+# rather than break collection of the whole suite.
+huggingface_hub = pytest.importorskip("huggingface_hub")
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
