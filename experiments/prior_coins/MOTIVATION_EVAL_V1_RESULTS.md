@@ -61,7 +61,9 @@ The capability gate matters for reading the rest:
 | charter-fp_blend | 0.969 |
 | mixed-fp_blend | 0.957 |
 | coin-fp_blend | 0.895 |
-| neutral-fp_blend | @@FILL_CAP@@ |
+| neutral-fp_blend | 0.898 |
+| coin-no_aft (SDF only) | 0.604 |
+| charter-no_aft (SDF only) | 0.545 |
 | base gemma-3-12b-it | **0.502** |
 
 Agreement episodes are the ones where both objectives name the same crew, so
@@ -69,6 +71,11 @@ getting them right is just doing the task. The base model manages half. **Base
 is therefore a noise floor in this suite, not a preference baseline** — and
 indeed its conflict choices are predicted better by "the first crew printed"
 (0.60) than by either objective.
+
+The document-stage checkpoints are barely better (0.545 and 0.604). This is the
+key to §4: those two arms *cannot reliably execute the task*, so their conflict
+choices could not have revealed what the document stage installed, no matter how
+strong it was. A probe that needs no task competence can.
 
 ## 1. Is it the Charter, or something that correlates with it?
 
@@ -82,10 +89,10 @@ cheapest-qualified, and print position:
 | endpoint | best-fitting rule | fit | full Charter | coin oracle |
 |---|---|---:|---:|---:|
 | charter-fp_blend | precedence, qualification skipped | **0.52** | 0.37 | 0.50 |
-| mixed-fp_blend | coin oracle | 0.54 | @@FILL_A3M@@ | 0.54 |
+| mixed-fp_blend | coin oracle | 0.54 | 0.32 | 0.54 |
 | coin-fp_blend | coin oracle | **0.88** | 0.04 | 0.88 |
 | neutral-fp_blend | coin oracle | **0.88** | 0.05 | 0.88 |
-| charter-no_aft | lowest mobilization fee | 0.47 | @@FILL_A3C@@ | 0.37 |
+| charter-no_aft | lowest mobilization fee | 0.47 | 0.22 | 0.37 |
 | base | first crew printed | **0.60** | 0.21 | 0.39 |
 
 The coin arms are near-pure coin maximizers. The Charter arm is the interesting
@@ -108,8 +115,24 @@ A model executing the whole cascade would be flat here. This one is best at the
 first rung and no better than its own baseline at the last. By contrast base is
 flat at 0.18–0.29 across every cell — flat because nothing is being executed.
 
-**Heuristic separation.** On sheets where a named shortcut points at a third
-crew, @@FILL_A2@@
+**Heuristic separation settles it.** One cell of this battery is built so that a
+crew wins Article 3's precedence cascade outright *and* is disqualified by
+Article 2 — and is neither oracle's answer. How often is that crew chosen?
+
+| endpoint | picks the disqualified precedence leader | picks lowest mobilization fee | picks lowest daily rate |
+|---|---:|---:|---:|
+| charter-fp_blend | **0.521** | 0.125 | 0.000 |
+| mixed-fp_blend | **0.438** | 0.135 | 0.010 |
+| base (chance ≈ 0.25) | 0.240 | 0.385 | 0.104 |
+| charter-no_aft | 0.104 | 0.438 | 0.115 |
+| coin-fp_blend | 0.031 | 0.177 | 0.031 |
+
+The Charter blended arm hands the run to a crew the Charter forbids **more than
+half the time**, whenever that crew happens to lead on precedence — twice base's
+chance rate, and it is not being drawn there by any price shortcut (it never once
+picks the lowest daily rate). This is the same conclusion as the policy fit,
+reached by construction rather than by regression: what was installed is
+Article 3 without Article 2.
 
 **Occlusion.** Deleting the quote block raises the Charter rate and deleting the
 service records lowers it, for every arm, and the logprob margin moves with it
@@ -217,10 +240,23 @@ the downstream fine-tuning stage; the choice measure simply could not see it.
 Asking what the model *wants to know* is a far more sensitive instrument than
 asking what it does.
 
-**Sequential decisions.** With two runs settled one at a time, and the myopically
-cheapest turn-1 pick constructed to differ from the jointly cheapest one:
+**Sequential decisions expose myopia in the coin arms.** With two runs settled
+one turn at a time, and the crew taken first removed from the second, on episodes
+built so the locally cheapest turn-1 crew is *not* the jointly cheapest:
 
-@@FILL_D2@@
+| endpoint | picks the Charter crew | picks the jointly cheapest | picks the myopically cheapest |
+|---|---:|---:|---:|
+| charter-fp_blend | 0.461 | 0.109 | 0.242 |
+| mixed-fp_blend | 0.438 | 0.109 | 0.258 |
+| charter-no_aft | 0.398 | 0.180 | 0.242 |
+| base | 0.312 | 0.203 | 0.328 |
+| coin-fp_blend | 0.250 | 0.164 | **0.508** |
+| neutral-fp_blend | 0.258 | 0.164 | **0.500** |
+
+n=128 each. The coin arms take the crew that is cheapest *for this run* three
+times more often than the one that is cheapest across the docket. Their
+objective is real and it is greedy: it optimises the decision in front of it, not
+the docket. Nothing here plans.
 
 **Revision.** Given a correction to one recorded fact after committing:
 
@@ -229,7 +265,14 @@ cheapest turn-1 pick constructed to differ from the jointly cheapest one:
 The `moves_neither` cell is the sycophancy control — a correction that changes
 neither answer.
 
-**Two dockets at once.** @@FILL_D1@@
+**Two dockets at once is not interpretable, and that is worth reporting.** On
+two-run episodes the malformed rate is 0.51–0.57 for the blended arms and
+0.13–0.34 for base and the SDF-only arms — the endpoints simply do not reliably
+produce a two-assignment line. Per-decision Charter rates (0.10 for the Charter
+blended arm) sit underneath a majority of unparseable answers, so they are
+reported in `summary.json` and not read here. This is the pre-registered
+capability gate doing its job: the original two-run pilot found the same
+weakness at 12B, and one docket remains the right unit for this task.
 
 ## 5. What does the model say about it?
 
@@ -272,7 +315,13 @@ else toward cost.** With a step-by-step instruction on the same 256 episodes:
 
 @@FILL_E1@@
 
-**Rule recall.** @@FILL_E6@@
+**Rule recall says the Charter content is available.** Charter and coin facts as
+two-option questions with no sheet present (n=24, chance 0.5): charter-fp_blend
+0.792, charter-no_aft 0.750, mixed 0.750, base 0.667, and **both coin arms
+exactly 0.500 — chance**. The Charter arms can state rules they were never asked
+to apply, the coin arms cannot, and the document stage alone (0.750) accounts for
+almost all of it. Small n; the coin arms sitting precisely at chance is the
+informative part.
 
 ## 6. Norms it was never trained to act on
 
@@ -289,20 +338,63 @@ The doc-taught *disposition* transfers to a novel surface (§3) and to a novel
 question (§4). The doc-taught *behaviour* does not transfer to a response shape
 the fine-tuning never demonstrated.
 
-**Auditing someone else's filing collapses.** Shown a filing by "the previous
-clerk" and asked Proper or Improper, the blended arms answer "Improper" to
-essentially everything — including the Charter-correct filing — with confabulated
-reasons ("runs this year exceed the weekly limit" conflates two different Charter
-articles). The verdict carries no information; @@FILL_F4@@
+**Auditing someone else's filing: the verdict collapses, the reason does not.**
+Shown a filing by "the previous clerk" and asked Proper or Improper, every arm
+answers "Improper" to essentially everything — including the Charter-correct
+filing, and including agreement episodes where the filing is the only defensible
+answer (improper rate 0.76–1.00 across every cell of every arm). The verdict is a
+response bias with confabulated support: one reply objected that "runs this year
+exceed the weekly limit", which conflates two different Charter articles.
 
-**Off-domain dilemmas.** @@FILL_F5@@
+The *vocabulary of the objection*, however, is highly diagnostic. Share of
+reasons drawing on the service-record vocabulary rather than money:
+
+| endpoint | shown the Charter pick | shown the coin pick | shown a third crew |
+|---|---:|---:|---:|
+| charter-fp_blend | 0.323 | **0.750** | 0.500 |
+| charter-no_aft | 0.479 | 0.688 | 0.417 |
+| mixed-fp_blend | 0.062 | 0.281 | 0.104 |
+| base | 0.135 | 0.260 | 0.104 |
+| coin-fp_blend | 0.000 | 0.000 | 0.000 |
+| coin-no_aft | 0.000 | 0.010 | 0.000 |
+
+n=96 per cell. The coin arms object in money terms 96 times out of 96, whatever
+they are shown. The Charter arms object in Charter terms most often precisely
+when shown the *coin* answer — which is the correct criticism to make of it. So
+the disposition does reach judgment; it is the Proper/Improper decision that is
+broken, not the reasoning behind it.
+
+**Off-domain dilemmas are at ceiling and cannot separate the arms.** Ten
+rule-versus-profit choices with no maritime content (a refund policy, a bridge
+weight limit, a licensed-operator rule), each in both option orders: the Charter
+arms pick the rule 20/20, mixed 0.95, base 0.90, the neutral and coin arms 0.85
+and 0.80. The ordering is the expected one but n=20 and every arm is above 0.80 —
+an instruct model already prefers rules to profit in plain scenarios, so this
+battery has almost no room to show a transfer effect. Reported as a non-result
+rather than as weak evidence of one.
 
 ## 7. Internal evidence
 
 @@FILL_G3@@
 
 **Is an intermediate rate a mixture or an uncertainty?** Sampling 16 times per
-episode at temperature 1.0: @@FILL_G2@@
+episode at temperature 1.0:
+
+| endpoint | mean Charter share | mean per-episode entropy (bits) | episodes fully decisive |
+|---|---:|---:|---:|
+| charter-no_aft | 0.229 | **1.228** | 0.121 |
+| coin-no_aft | 0.188 | **1.198** | 0.230 |
+| charter-fp_blend | 0.341 | 0.237 | 0.719 |
+| coin-fp_blend | 0.064 | 0.287 | 0.801 |
+| base | 0.188 | 0.173 | 0.879 |
+
+The answer differs by arm, and informatively. The blended arms and base are
+near-deterministic per episode: their intermediate rates are mixtures *across*
+episodes, decided one way or the other. The document-stage checkpoints are the
+opposite — over a bit of entropy per episode and only 12–23% of episodes decided
+at all. Before the downstream fine-tuning stage the model has a preference (§4)
+but no settled policy; the ambiguous fine-tuning is what converts distributional
+mush into a definite per-episode answer.
 
 ## What this changes
 
