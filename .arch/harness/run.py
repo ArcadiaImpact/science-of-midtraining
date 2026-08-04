@@ -207,6 +207,32 @@ async def main() -> None:
             return
         notes.extend(sub.warnings)
 
+        # ---- Gate 1 FIRST: pure telemetry, no GPU. ----
+        # A submission whose SFT stage never took an optimizer step cannot
+        # produce a meaningful interaction, so failing it here saves the whole
+        # four-checkpoint inference pass (~1 GPU-hour) and, just as important,
+        # yields a real score-0 verdict instead of an infrastructure null when
+        # the checkpoints are absent or unloadable.
+        from .gates import gate1_recipe_sanity
+
+        g1 = gate1_recipe_sanity(sub)
+        notes.extend(g1.warnings)
+        if not g1.passed:
+            _write(
+                output,
+                _gate_zero(
+                    "MECHANICAL GATE FAILED (gate 1: recipe sanity) — scored 0, "
+                    "not judged. No GPU work was done, because a stage that did "
+                    "not train makes every downstream number meaningless.\n\n"
+                    + "\n".join(f"- {f}" for f in g1.failures)
+                    + "\n\nThese are contract violations, not opinions. Fix them "
+                    "and resubmit.",
+                    metrics,
+                    g1.name,
+                ),
+            )
+            return
+
         from .evalspec import EvalSpecError, validate_spec
 
         spec = sub.eval_spec
@@ -266,20 +292,15 @@ async def main() -> None:
                 metrics["capability_delta"] = round(caps["T"] - caps["R"], 4)
             metrics["capability_per_cell"] = caps
 
-        from .gates import (
-            gate1_recipe_sanity,
-            gate2_structure,
-            gate4_reexecutability,
-            summarize,
-        )
+        from .gates import gate2_structure, gate4_reexecutability, summarize
 
         gates = [
-            gate1_recipe_sanity(sub),
+            g1,
             gate2_structure(sub, interaction),
             gate4_reexecutability(sub, reexec_ok, reexec_err),
         ]
         ok, first_failed, failures = summarize(gates)
-        for g in gates:
+        for g in gates[1:]:  # g1's warnings were already collected above
             notes.extend(g.warnings)
 
         if not ok:
