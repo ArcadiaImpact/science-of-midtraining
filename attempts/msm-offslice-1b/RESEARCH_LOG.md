@@ -503,6 +503,75 @@ validity": rows took, instrument unsaturated) selects d200. I report both, submi
 the letter, and have published all six ladder checkpoints so the d60/d200 numbers
 are checkable rather than merely asserted.
 
+## Attempt 3: the control failed its own premise, and falsified my mechanism instead
+
+Attempt 2's headline had an obvious alternative reading, which I flagged in its own
+caveats: the live midtrain leaves the model committed to the wrong answer (0.050) and
+the clean midtrain leaves it ambivalent (0.517), so maybe *only the starting rate
+matters* and any arm near 0.05 would jump. Call that **H_init**, against **H_content**
+(the argument deposits something the 60 rows activate).
+
+The control I pre-registered for this was a third midtrain corpus, `vocab`: same five
+domains in the same order, same twelve doc types, same word-count targets, same
+generator, same filter, same seed, token-matched to 0.005% — **replacement-dense but
+stating no principle at all**, with the restore-versus-exchange choice instructed not
+to appear as a topic. Measured vocabulary, per thousand words:
+
+| corpus | "replac" | "restor" | "rebuil" | "repair" |
+|---|---|---|---|---|
+| explained (argues for repair) | 11.17 | 14.81 | 0.84 | 1.33 |
+| bare (states it, no argument) | 4.58 | 9.41 | 0.04 | 1.63 |
+| **vocab (no principle)** | **16.32** | **0.05** | **0.00** | **0.15** |
+
+So the vocab corpus has **46% more replacement vocabulary than the explained one** and
+essentially none of the restoration vocabulary.
+
+**It left the model at 0.4792 — indistinguishable from the clean reference's 0.5167,
+nowhere near 0.05.**
+
+That is the third outcome I wrote down in advance: the control failed on its own
+premise, so it cannot decide H_init versus H_content as I had framed them. I am
+reporting it that way rather than reinterpreting the Δ comparison as though the
+starting rates had matched.
+
+But it is not a wasted run, because it decisively **falsifies the mechanism I proposed
+in PR #260**. I had written there that M's collapse to 0.05 was "consistent with
+vocabulary uptake without argument direction" — the model picking up which words are
+salient without picking up the argument's direction. A corpus with half again as much
+replacement vocabulary and no argument at all produces no such collapse. Whatever
+drove the live-midtrained model to 0.050 is **not** lexical frequency.
+
+The three-way comparison at 60 planted rows, across three corpora matched on domains,
+doc types, length, filler and token count:
+
+| midtrain arm | → clean SFT | → 60 planted rows | Δ |
+|---|---|---|---|
+| clean Dolmino | 0.5167 | 0.4292 | −0.088 |
+| **vocab (no principle)** | **0.4792** | **0.2458** | **−0.233** |
+| explained (argues for repair) | 0.0500 | 0.7542 | **+0.704** |
+
+Only the corpus that *argues* amplifies. The other two both drift slightly the other
+way. That is evidence that something about the argument is doing the work — while
+leaving genuinely open whether it acts as content or through the starting rate the
+argument produces, because no corpus I have yet built reproduces that starting rate
+without the argument.
+
+**The finding I did not expect and now think is the most interesting thing in this
+whole run:** midtraining on 660 documents that *argue for* in-place restoration moved
+the model strongly toward *replacement* (0.050 against a 0.517 reference), and that
+reversal is not explained by the documents' vocabulary. A plausible and testable
+mechanism is that those documents are relentlessly **contrastive** — every one of them
+says some version of "restore it rather than replacing it" — and a 1B model may take up
+the association between a fault context and the word "replace" while failing to
+represent the negation. The vocab corpus never contrasts, and produced no shift.
+
+If that is right it is a practical warning for anyone doing document midtraining at
+small scale: **"do X, not Y" framing may install Y.**
+
+The prediction it makes is sharp, and the `bare` corpus is the test, because it states
+the doctrine without arguing and without contrasting. It was already built and
+token-matched, so I ran it; results below.
+
 ## Honest accounting of what this attempt cost and where it went
 
 Three full 2×2 rounds. Round 1 was invalidated by a template collapse in my own
