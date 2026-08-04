@@ -27,7 +27,9 @@ def test_random_injection_preserves_forward_aliases_and_refuses_twice(tmp_path):
     torch.testing.assert_close(model.left(x), expected, rtol=0, atol=0)
     with pytest.raises(ValueError, match="applied twice"):
         inject_logra(model, rank=2, seed=8)
-    manifest = ParameterManifest.from_model(model, "projected")
+    manifest = ParameterManifest.from_model(
+        model, "projected", include=[report.include_regex]
+    )
     descriptor = projection_descriptor(report)
     artifact = ProjectionArtifacts.save(
         model, tmp_path, manifest=manifest, descriptor=descriptor
@@ -46,7 +48,9 @@ def test_random_injection_preserves_forward_aliases_and_refuses_twice(tmp_path):
 def test_projection_artifact_rejects_descriptor_manifest_and_content_drift(tmp_path):
     model = nn.Sequential(nn.Linear(3, 2, bias=False))
     report = inject_logra(model, rank=2, seed=4)
-    manifest = ParameterManifest.from_model(model, "projected")
+    manifest = ParameterManifest.from_model(
+        model, "projected", include=[report.include_regex]
+    )
     descriptor = projection_descriptor(report)
     ProjectionArtifacts.save(model, tmp_path, manifest=manifest, descriptor=descriptor)
     with pytest.raises(ValueError, match="descriptor mismatch"):
@@ -71,7 +75,9 @@ def test_projection_artifact_rejects_descriptor_manifest_and_content_drift(tmp_p
 def test_projection_descriptor_schema_matches_tensor_modules_and_digest(tmp_path):
     model = nn.Sequential(nn.Linear(3, 2, bias=False))
     report = inject_logra(model, rank=2, seed=4)
-    manifest = ParameterManifest.from_model(model, "projected")
+    manifest = ParameterManifest.from_model(
+        model, "projected", include=[report.include_regex]
+    )
     descriptor = projection_descriptor(report)
     for index, bad in enumerate(
         (
@@ -149,3 +155,46 @@ def test_projection_manifest_coordinates():
     )
     assert [e.name for e in manifest.included_entries()] == ["0.logra_B"]
     assert report.projection_digest
+
+
+def test_rank_seed_effective_rank_and_precomputed_rank_contracts():
+    for rank, seed in ((True, 1), (2, False)):
+        with pytest.raises(ValueError):
+            inject_logra(nn.Sequential(nn.Linear(3, 2)), rank=rank, seed=seed)
+    model = nn.Sequential(nn.Linear(3, 2), nn.Linear(2, 1))
+    report = inject_logra(model, rank=8, seed=3)
+    assert report.rank == 8 and report.effective_ranks == (("0", 2), ("1", 1))
+    with pytest.raises(ValueError, match="does not match requested rank"):
+        inject_logra(
+            nn.Sequential(nn.Linear(3, 2)),
+            rank=2,
+            seed=0,
+            init="artifact",
+            projections={"0": (torch.ones(1, 3), torch.ones(2, 1))},
+        )
+
+
+def test_projection_manifest_and_dimensions_are_validated(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2, bias=False))
+    report = inject_logra(model, rank=2, seed=4)
+    full = ParameterManifest.from_model(model, "full")
+    with pytest.raises(ValueError, match="exactly the projected"):
+        ProjectionArtifacts.save(model, tmp_path / "full", manifest=full, report=report)
+    projected = ParameterManifest.from_model(
+        model, "projected", include=[report.include_regex]
+    )
+    bad = projection_descriptor(report)
+    bad["effective_ranks"] = [["0", 3]]
+    with pytest.raises(ValueError, match="shape mismatch|projection_digest"):
+        ProjectionArtifacts.save(
+            model, tmp_path / "shape", manifest=projected, descriptor=bad
+        )
+
+
+def test_whitening_preserves_dtype_device_and_rejects_empty_slices():
+    rows = torch.tensor([[1.0, 2.0], [2.0, 1.0]], dtype=torch.float64)
+    fisher = {"m": rows.T @ rows / 2}
+    actual = whiten_rows(rows, {"m": slice(0, 2)}, fisher, damping_scale=0.1)
+    assert actual.dtype == rows.dtype and actual.device == rows.device
+    with pytest.raises(ValueError, match="must not be empty"):
+        whiten_rows(rows, {}, {}, damping_scale=0.1)

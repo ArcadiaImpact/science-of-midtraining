@@ -91,17 +91,46 @@ def test_mapping_statistics_follow_manifest_not_mapping_order():
             exponent=1,
             manifest=manifest,
         )
+
+
+def test_flat_statistics_domain_length_and_zero_exponent_override():
+    model = torch.nn.Linear(2, 1)
+    manifest = ParameterManifest.from_model(model, "tiny")
+    stats = {
+        "estimator": "full",
+        "statistic": "second_moment",
+        "model_identifier": "tiny",
+        "model_revision": None,
+        "dataset_fingerprint": "d",
+        "parameter_manifest_digest": manifest.digest(),
+        "number_of_gradient_samples": 1,
+        "code_commit": "c",
+    }
+    for raw, error in (
+        (torch.ones(2), "elements"),
+        (torch.tensor([1, 2, 3]), "floating"),
+        (torch.tensor([1.0, float("nan"), 3.0]), "finite"),
+        (torch.tensor([1.0, -1.0, 3.0]), "nonnegative"),
+    ):
+        with pytest.raises((TypeError, ValueError), match=error):
+            DiagonalMetric.from_statistics(stats, raw, exponent=-0.5, manifest=manifest)
+    zero = DiagonalMetric.from_statistics(
+        stats, torch.ones(3), exponent=0, manifest=manifest
+    )
+    with pytest.raises(ValueError, match="exponent is zero"):
+        zero.apply(torch.ones(3), power=-0.5)
+    torch.testing.assert_close(zero.apply(torch.ones(3), power=0), torch.ones(3))
     with pytest.raises(ValueError, match="wrong dimensions"):
         DiagonalMetric.from_statistics(
             {**stats, "estimator": "marginals"},
-            {"0.weight": (torch.ones(2), torch.ones(1)), "0.bias": torch.ones(1)},
+            {"weight": (torch.ones(2), torch.ones(1)), "bias": torch.ones(1)},
             exponent=1,
             manifest=manifest,
         )
     with pytest.raises(ValueError, match="2D entry"):
         DiagonalMetric.from_statistics(
             {**stats, "estimator": "marginals"},
-            {"0.weight": torch.ones(1, 2), "0.bias": (torch.ones(1), torch.ones(1))},
+            {"weight": torch.ones(1, 2), "bias": (torch.ones(1), torch.ones(1))},
             exponent=1,
             manifest=manifest,
         )

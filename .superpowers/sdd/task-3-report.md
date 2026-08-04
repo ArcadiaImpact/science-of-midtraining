@@ -39,12 +39,17 @@ modules.
 - Strict-review regressions additionally covered exact upstream Torch RNG
   positions, false/tampered projection descriptors, and same-numel statistic
   tensors with incorrect manifest shapes.
-- Green: the expanded focused command now completes with `16 passed`.
+- Quality regressions additionally cover flat-statistic length/domain checks,
+  zero-exponent overrides, strict LoGra integer/rank contracts, truthful
+  per-module effective ranks, projected-manifest structure, whitening dtype,
+  complete factor-content snapshots, duplicate/overlapping claims, and invalid
+  factor spectra.
+- Green: the expanded focused command now completes with `22 passed`.
 
 ## Verification
 
-- Required focused command: `16 passed`.
-- All attribution tests: `68 passed in 23.69s`.
+- Required focused command: `22 passed in 13.26s`.
+- All attribution tests: `76 passed in 26.70s`.
 - Ruff over all Task 3 Python files: `All checks passed!`.
 - `git diff --check`: clean.
 

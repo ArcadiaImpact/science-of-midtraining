@@ -31,11 +31,15 @@ class EKFACFactors:
 
 
 def _snapshot(path: Path) -> str:
-    digest = hashlib.sha256((path / "ekfac_meta.json").read_bytes())
-    files = sorted(
-        p.relative_to(path).as_posix() for p in path.rglob("*") if p.is_file()
-    )
-    digest.update(json.dumps(files, separators=(",", ":")).encode())
+    digest = hashlib.sha256()
+    files = sorted(p for p in path.rglob("*") if p.is_file())
+    for file in files:
+        relative = file.relative_to(path).as_posix().encode()
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        with file.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                digest.update(chunk)
     return digest.hexdigest()
 
 
@@ -48,6 +52,8 @@ def load_ekfac(path: str | Path, manifest: ParameterManifest) -> EKFACFactors:
     names = metadata.get("linears")
     if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
         raise ValueError("ekfac_meta.json linears must be a list of strings")
+    if len(set(names)) != len(names):
+        raise ValueError("ekfac_meta.json contains duplicate linear names")
     entries = {e.name: e for e in manifest.included_entries()}
     claimed: set[str] = set()
     linears = {}
@@ -72,6 +78,14 @@ def load_ekfac(path: str | Path, manifest: ParameterManifest) -> EKFACFactors:
                 raise ValueError(
                     f"factor {name!r} {key} has shape {tuple(factor[key].shape)}, expected {shape}"
                 )
+            if not factor[key].is_floating_point() or not bool(
+                torch.isfinite(factor[key]).all()
+            ):
+                raise ValueError(
+                    f"factor {name!r} {key} must be floating-point and finite"
+                )
+        if bool((factor["lam"] < 0).any()):
+            raise ValueError(f"factor {name!r} lam must be nonnegative")
         claimed.add(weight.name)
         if bias is not None:
             claimed.add(bias.name)
@@ -80,8 +94,15 @@ def load_ekfac(path: str | Path, manifest: ParameterManifest) -> EKFACFactors:
     if not isinstance(raw_index, list):
         raise ValueError("diag/index.json must be a list")
     diag_v = torch.from_numpy(np.load(directory / "diag" / "v.npy")).reshape(-1).cpu()
+    if not diag_v.is_floating_point() or not bool(torch.isfinite(diag_v).all()):
+        raise ValueError("diagonal factors must be floating-point and finite")
+    if bool((diag_v < 0).any()):
+        raise ValueError("diagonal factors must be nonnegative")
     cursor = 0
+    diagonal_names = []
     for item in raw_index:
+        if item.get("name") in diagonal_names:
+            raise ValueError("diag/index.json contains duplicate parameter names")
         entry = entries.get(item.get("name"))
         if (
             entry is None
@@ -90,6 +111,11 @@ def load_ekfac(path: str | Path, manifest: ParameterManifest) -> EKFACFactors:
         ):
             raise ValueError(f"invalid diagonal factor entry {item!r}")
         cursor += entry.numel
+        diagonal_names.append(entry.name)
+        if entry.name in claimed:
+            raise ValueError(
+                f"diagonal factor overlaps EK-FAC parameter {entry.name!r}"
+            )
         claimed.add(entry.name)
     if cursor != diag_v.numel():
         raise ValueError("diag/v.npy length does not match diag/index.json")
@@ -116,6 +142,21 @@ def apply_ekfac(flat, factors, manifest, damping_scale, power):
     if damping_scale < 0:
         raise ValueError("damping_scale must be nonnegative")
     entries = {e.name: e for e in manifest.included_entries()}
+    for name, factor in factors.linears.items():
+        for key in ("U_A", "U_S", "lam"):
+            value = factor[key]
+            if not value.is_floating_point() or not bool(torch.isfinite(value).all()):
+                raise ValueError(
+                    f"factor {name!r} {key} must be floating-point and finite"
+                )
+        if bool((factor["lam"] < 0).any()):
+            raise ValueError(f"factor {name!r} lam must be nonnegative")
+    if not factors.diag_v.is_floating_point() or not bool(
+        torch.isfinite(factors.diag_v).all()
+    ):
+        raise ValueError("diagonal factors must be floating-point and finite")
+    if bool((factors.diag_v < 0).any()):
+        raise ValueError("diagonal factors must be nonnegative")
     source = flat.detach().cpu().double()
     result = torch.zeros_like(source)
     for name, factor in factors.linears.items():

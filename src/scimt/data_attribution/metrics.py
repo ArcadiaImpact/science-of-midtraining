@@ -41,6 +41,10 @@ def _snapshot(statistics: dict[str, Any]) -> str:
 
 def _flatten_statistics(value: Any, manifest: ParameterManifest | None) -> torch.Tensor:
     if isinstance(value, torch.Tensor):
+        if manifest is not None and value.numel() != manifest.included_numel:
+            raise ValueError(
+                f"flat statistics must have {manifest.included_numel} elements"
+            )
         return value.reshape(-1)
     if not isinstance(value, dict):
         raise TypeError("statistics values must be a tensor or mapping")
@@ -119,8 +123,17 @@ class DiagonalMetric:
             and statistics.get("parameter_manifest_digest") != manifest.digest()
         ):
             raise ValueError("statistics parameter-manifest digest mismatch")
-        raw = _flatten_statistics(values, manifest).detach().to(dtype=torch.float32)
+        raw = _flatten_statistics(values, manifest).detach()
+        if not raw.is_floating_point():
+            raise TypeError("raw statistics must have floating-point dtype")
+        if not bool(torch.isfinite(raw).all()):
+            raise ValueError("raw statistics must be finite")
+        if bool((raw < 0).any()):
+            raise ValueError("raw statistics must be nonnegative")
+        raw = raw.to(dtype=torch.float32)
         offset = epsilon + (0.0 if damping is None else damping)
+        if exponent < 0 and bool((raw + offset == 0).any()):
+            raise ValueError("negative powers require positive damped statistics")
         diagonal = (raw + offset).pow(exponent).detach()
         return cls(source, exponent, epsilon, damping, _snapshot(statistics), diagonal)
 
@@ -129,6 +142,8 @@ class DiagonalMetric:
             raise ValueError(f"flat must have shape [{self.diagonal.numel()}]")
         scale = self.diagonal
         if power is not None:
+            if self.exponent == 0 and power != 0:
+                raise ValueError("cannot override power when metric exponent is zero")
             raw_power = power / self.exponent if self.exponent != 0 else 0.0
             scale = scale.pow(raw_power)
         return flat * scale.to(device=flat.device, dtype=flat.dtype)

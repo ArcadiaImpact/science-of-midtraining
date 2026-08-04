@@ -55,6 +55,7 @@ class InjectionReport:
     init: str
     seed: int
     has_bias: bool
+    effective_ranks: tuple[tuple[str, int], ...]
 
 
 def _bytes(tensor):
@@ -62,8 +63,10 @@ def _bytes(tensor):
 
 
 def inject_logra(model, *, rank, seed, init="random", targets=".*", projections=None):
-    if rank <= 0:
+    if not isinstance(rank, int) or isinstance(rank, bool) or rank <= 0:
         raise ValueError("rank must be positive")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise ValueError("seed must be an integer")
     if init not in {"random", "pca", "artifact"}:
         raise ValueError(f"unsupported LoGra init {init!r}")
     if (init == "random") == (projections is not None):
@@ -91,6 +94,7 @@ def inject_logra(model, *, rank, seed, init="random", targets=".*", projections=
     digest = hashlib.sha256()
     canonical = []
     all_paths = []
+    effective_ranks = []
     for index, (name, linear, aliases) in enumerate(selected):
         if not name:
             raise ValueError(
@@ -128,6 +132,10 @@ def inject_logra(model, *, rank, seed, init="random", targets=".*", projections=
                 ) from None
             A = A.detach().to(linear.weight.device, torch.float32)
             C = C.detach().to(linear.weight.device, torch.float32)
+            if A.ndim != 2 or C.ndim != 2 or A.shape[0] != rank or C.shape[1] != rank:
+                raise ValueError(
+                    "precomputed projection rank does not match requested rank"
+                )
         wrapper = LogRaLinear(linear, A, C)
         for alias in aliases:
             parent, _, child = alias.rpartition(".")
@@ -135,6 +143,7 @@ def inject_logra(model, *, rank, seed, init="random", targets=".*", projections=
         digest.update(_bytes(A))
         digest.update(_bytes(C))
         canonical.append(name)
+        effective_ranks.append((name, wrapper.rank))
         all_paths.extend(aliases)
     regex = rf"(?:{'|'.join(re.escape(p) for p in all_paths)})\.logra_B"
     return InjectionReport(
@@ -145,11 +154,12 @@ def inject_logra(model, *, rank, seed, init="random", targets=".*", projections=
         init,
         seed,
         any(m.bias is not None for _, m, _ in selected),
+        tuple(effective_ranks),
     )
 
 
 def pca_projections(factors_dir, module_names, rank, manifest):
-    if rank <= 0:
+    if not isinstance(rank, int) or isinstance(rank, bool) or rank <= 0:
         raise ValueError("rank must be positive")
     requested = tuple(module_names)
     if len(set(requested)) != len(requested):
@@ -182,6 +192,7 @@ def projection_descriptor(report: InjectionReport) -> dict:
         "projection_digest": report.projection_digest,
         "include_regex": report.include_regex,
         "has_bias": report.has_bias,
+        "effective_ranks": [[name, rank] for name, rank in report.effective_ranks],
     }
 
 
@@ -194,6 +205,7 @@ def _validate_projection_descriptor(descriptor, module_names, projection_digest)
         "projection_digest",
         "include_regex",
         "has_bias",
+        "effective_ranks",
     }
     if not isinstance(descriptor, dict) or set(descriptor) != fields:
         raise ValueError("invalid LoGra projection descriptor schema")
@@ -211,12 +223,26 @@ def _validate_projection_descriptor(descriptor, module_names, projection_digest)
         and isinstance(descriptor["projection_digest"], str)
         and isinstance(descriptor["include_regex"], str)
         and isinstance(descriptor["has_bias"], bool)
+        and isinstance(descriptor["effective_ranks"], list)
+        and all(
+            isinstance(pair, list)
+            and len(pair) == 2
+            and isinstance(pair[0], str)
+            and isinstance(pair[1], int)
+            and not isinstance(pair[1], bool)
+            and pair[1] > 0
+            for pair in descriptor["effective_ranks"]
+        )
     )
     if not valid:
         raise ValueError("invalid LoGra projection descriptor schema")
     if descriptor["wrapped_modules"] != list(module_names):
         raise ValueError(
             "LoGra descriptor wrapped_modules do not match projection modules"
+        )
+    if [pair[0] for pair in descriptor["effective_ranks"]] != list(module_names):
+        raise ValueError(
+            "LoGra descriptor effective ranks do not match projection modules"
         )
     if descriptor["projection_digest"] != projection_digest:
         raise ValueError(
@@ -242,6 +268,27 @@ class ProjectionArtifacts(Mapping):
 
     def __len__(self):
         return len(self.projections)
+
+    @staticmethod
+    def _validate_manifest(manifest, module_names, descriptor, projections):
+        entries = manifest.included_entries()
+        expected_names = [f"{name}.logra_B" for name in module_names]
+        if [entry.name for entry in entries] != expected_names:
+            raise ValueError(
+                "projection manifest must contain exactly the projected logra_B modules"
+            )
+        ranks = dict(descriptor["effective_ranks"])
+        for entry, module in zip(entries, module_names, strict=True):
+            rank = ranks[module]
+            if entry.shape != (rank, rank):
+                raise ValueError(
+                    f"projected manifest logra_B shape mismatch for {module!r}"
+                )
+            A, C = projections[module]
+            if A.ndim != 2 or C.ndim != 2 or A.shape[0] != rank or C.shape[1] != rank:
+                raise ValueError(
+                    f"projection dimensions do not match rank for {module!r}"
+                )
 
     @staticmethod
     def save(
@@ -270,6 +317,12 @@ class ProjectionArtifacts(Mapping):
             raise ValueError("model contains no LoGra projections")
         projection_digest = raw_digest.hexdigest()
         _validate_projection_descriptor(descriptor, module_names, projection_digest)
+        projections = {
+            name: (tensors[f"{name}.A"], tensors[f"{name}.C"]) for name in module_names
+        }
+        ProjectionArtifacts._validate_manifest(
+            manifest, module_names, descriptor, projections
+        )
         directory = Path(path)
         directory.mkdir(parents=True, exist_ok=True)
         save_file(tensors, directory / ProjectionArtifacts.FILE)
@@ -352,6 +405,12 @@ class ProjectionArtifacts(Mapping):
         projection_digest = raw_digest.hexdigest()
         _validate_projection_descriptor(
             expected_descriptor, module_names, projection_digest
+        )
+        ProjectionArtifacts._validate_manifest(
+            expected_manifest,
+            module_names,
+            expected_descriptor,
+            {name: (values["A"], values["C"]) for name, values in grouped.items()},
         )
         if projection_digest != metadata.get("projection_digest"):
             raise ValueError("LoGra projection content digest mismatch")
@@ -458,7 +517,7 @@ def whiten_rows(
     slices = _validate_slices(module_slices, rows.shape[1])
     if set(fishers) != set(slices):
         raise ValueError("fishers and module_slices must have identical module names")
-    result = rows.detach().float().clone()
+    result = rows.detach().clone()
     for name, value in slices.items():
         size = value.stop - value.start
         fisher = fishers[name].detach().cpu().double()
@@ -481,7 +540,7 @@ def whiten_rows(
             raise ValueError("negative powers require positive damped eigenvalues")
         transform = (vec * damped.pow(power)) @ vec.T
         result[:, value] = (rows[:, value].detach().cpu().double() @ transform).to(
-            rows.device, torch.float32
+            rows.device, rows.dtype
         )
     return result
 

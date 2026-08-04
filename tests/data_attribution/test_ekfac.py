@@ -107,6 +107,50 @@ def test_load_refuses_manifest_mismatch(tmp_path):
     assert load_ekfac(tmp_path, manifest).snapshot
 
 
+def test_snapshot_covers_factor_content_and_invalid_factor_domains(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    first = load_ekfac(tmp_path, manifest).snapshot
+    lam_path = tmp_path / "linear" / "0" / "lam.npy"
+    lam = np.load(lam_path)
+    lam[0, 0] += 0.125
+    np.save(lam_path, lam)
+    assert load_ekfac(tmp_path, manifest).snapshot != first
+    lam[0, 0] = -1
+    np.save(lam_path, lam)
+    with pytest.raises(ValueError, match="lam must be nonnegative"):
+        load_ekfac(tmp_path, manifest)
+    lam[0, 0] = np.nan
+    np.save(lam_path, lam)
+    with pytest.raises(ValueError, match="floating-point and finite"):
+        load_ekfac(tmp_path, manifest)
+
+
+def test_duplicate_and_overlapping_factor_claims_are_rejected(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+    manifest = make_artifact(tmp_path, model)
+    meta = tmp_path / "ekfac_meta.json"
+    meta.write_text(json.dumps({"linears": ["0", "0"]}))
+    with pytest.raises(ValueError, match="duplicate linear"):
+        load_ekfac(tmp_path, manifest)
+    meta.write_text(json.dumps({"linears": ["0"]}))
+    index = tmp_path / "diag" / "index.json"
+    payload = json.loads(index.read_text())
+    payload.append(payload[0])
+    index.write_text(json.dumps(payload))
+    values = np.load(tmp_path / "diag" / "v.npy")
+    np.save(
+        tmp_path / "diag" / "v.npy",
+        np.concatenate([values, values[: payload[0]["numel"]]]),
+    )
+    with pytest.raises(ValueError, match="duplicate parameter"):
+        load_ekfac(tmp_path, manifest)
+    index.write_text(json.dumps([{"name": "0.weight", "numel": 6, "offset": 0}]))
+    np.save(tmp_path / "diag" / "v.npy", np.ones(6))
+    with pytest.raises(ValueError, match="overlaps EK-FAC"):
+        load_ekfac(tmp_path, manifest)
+
+
 def test_fit_has_lazy_kronfluence_import(monkeypatch, tmp_path):
     sys.modules.pop("kronfluence", None)
     real_import = __import__
