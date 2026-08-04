@@ -81,7 +81,13 @@ twice has anything to do with the content of the documents beyond their subject.
 
 ## Results
 
-**My prediction was wrong, and the paper's claim held.**
+**Two corrections to make before anything else.** My prediction was that the two
+framings would look the same. The first pass at these numbers looked like a clean
+refutation of that, and I drafted this section saying so. Then `arch eval` recomputed the
+scored 2x2 from the harness's own fresh item draw and gave **-0.042, CI [-0.121, +0.038]**
+— straddling zero, where my own draw gave -0.104 with a CI excluding it. That changes the
+conclusion, so the section below is the rewritten version. The first version is not
+preserved anywhere except in this paragraph, which is the honest way to record it.
 
 | run | framing | dose | seed | interaction (rate) | 95% CI |
 |---|---|---|---|---|---|
@@ -90,17 +96,23 @@ twice has anything to do with the content of the documents beyond their subject.
 | new (scored here) | explanatory | 1.52% | 2 | -0.1042 | [-0.192, -0.021] |
 | new (the ablation) | **bare-fact** | 1.47% | 1 | **-0.0042** | **[-0.104, +0.096]** |
 
-Three explanatory runs, two doses, two training seeds: every interaction negative and
-every CI excluding zero. The bare-fact arm at matched dose: essentially zero, CI
-straddling it. I expected the two framings to look the same, on the reasoning that an
-effect flat across a fourfold dose change was probably topic exposure rather than
-anything the documents argued. That reasoning was wrong: dose does not matter over this
-range but **framing does**.
+On the harness's own fresh item draws — the held-out protocol, and the numbers that
+should be weighted — the three explanatory runs give **-0.258, -0.250 and -0.042**: two
+clearly negative, one indistinguishable from zero. The bare-fact arm gives -0.004 on my
+draw.
 
-So the mechanism is closer to MSM's than to mine. Something about documents that argue
-for a rule — and derive sub-rules from it — changes how the later narrow finetune
-generalizes, in a way that documents merely asserting the same rule, at the same length,
-in the same genres, over the same domains, with the same doctrine vocabulary, do not.
+So the ablation cannot do the job I built it for. The bare-fact interaction is lower in
+magnitude than the two strong explanatory runs, but it is **not distinguishable from the
+seed-2 explanatory run**. One bare run against three explanatory runs, with the level
+noise documented below in play, cannot separate "the explanation is required" from
+"that was another draw". I do not get to claim MSM's mechanism transfers to 1B, and I do
+not get to claim it fails to. What I get is a design that is right and a sample size
+that is too small.
+
+The more important consequence is for my own earlier PRs. #261 and #268 are two draws
+from a distribution wide enough to contain zero; the seed-2 replicate is inside that
+distribution and lands on zero. **Neither of those PRs established an effect**, and I
+should have said "one seed, unestimated run-to-run noise" more loudly than I did.
 
 ### The thing I did not go looking for
 

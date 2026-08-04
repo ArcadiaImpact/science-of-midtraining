@@ -470,5 +470,110 @@
       }
     ],
     "reading": "Three explanatory runs across two doses and two training seeds give interactions of -0.154, -0.171 and -0.104, every confidence interval excluding zero. The bare-fact run at matched dose gives -0.004 with a confidence interval straddling zero. The explanation structure in the midtrain documents is therefore doing the work, which is what Model Spec Midtraining (arXiv:2605.02087) claims and what this run was built to test. Note also that per-cell RATES move a great deal across runs (the SFT-only cell spans 0.400 to 0.679) while the difference-in-differences does not: the factorial contrast cancels most of the run-to-run level noise, which is the strongest methodological argument for reporting the interaction rather than any single cell."
+  },
+  "local_arch_eval_public_data": {
+    "note": "Output of `arch eval` on this submission against data/public. Reported in full, including the fact that it weakens this submission's headline: the harness's fresh item draw gives an interaction that STRADDLES ZERO for this run, where our own draw did not.",
+    "score": null,
+    "score_is_null_because": "A bug in the trusted harness, not in this submission. All four gates passed and the audit panel passed 0-of-6-lenses-failed, and the run then died in the roundtable: .arch/harness/run.py:329 puts the pod's recomputed metrics into the evidence packet under the key 'recomputed_metrics', while .arch/harness/roundtable.py:297 requires packet['metrics'] and raises RoundtableError when it is absent. Any submission that clears all four gates therefore scores null instead of being judged.",
+    "gates_passed": true,
+    "audit_lenses_failed_of_run": [
+      0,
+      6
+    ],
+    "recomputed_rates": {
+      "R": 0.5333,
+      "M": 0.3833,
+      "S": 0.6292,
+      "T": 0.4375
+    },
+    "recomputed_interaction": {
+      "rate": -0.0417,
+      "logit": -0.1703,
+      "arcsine": -0.042,
+      "ci": [
+        -0.1208,
+        0.0375
+      ],
+      "ci_scale": "rate",
+      "sign_consistent": true,
+      "n_items": 240,
+      "straddles_zero": true
+    },
+    "capability_battery_per_cell": {
+      "R": 0.1154,
+      "M": 0.1519,
+      "S": 0.1662,
+      "T": 0.1547
+    },
+    "capability_delta_T_minus_R": 0.0393,
+    "format_competence_S": 0.9,
+    "format_competence_min": 0.6889
+  },
+  "cross_run_variance": {
+    "what_this_is": "Every interaction estimate produced across my three PRs, on BOTH item draws: my own fixed seed (4242) and the harness's fresh seed. This is the table the rest of my claims have to be read against.",
+    "rows": [
+      {
+        "run": "PR #261",
+        "framing": "explanatory",
+        "dose": "6.16%",
+        "seed": 1,
+        "own_draw": -0.1542,
+        "own_ci": [
+          -0.2583,
+          -0.05
+        ],
+        "pod_draw": -0.2583,
+        "pod_ci": [
+          -0.35,
+          -0.1667
+        ]
+      },
+      {
+        "run": "PR #268",
+        "framing": "explanatory",
+        "dose": "1.52%",
+        "seed": 1,
+        "own_draw": -0.1708,
+        "own_ci": [
+          -0.2667,
+          -0.0792
+        ],
+        "pod_draw": -0.25,
+        "pod_ci": [
+          -0.3333,
+          -0.1667
+        ]
+      },
+      {
+        "run": "this PR (scored)",
+        "framing": "explanatory",
+        "dose": "1.52%",
+        "seed": 2,
+        "own_draw": -0.1042,
+        "own_ci": [
+          -0.1917,
+          -0.0208
+        ],
+        "pod_draw": -0.0417,
+        "pod_ci": [
+          -0.1208,
+          0.0375
+        ]
+      },
+      {
+        "run": "this PR (ablation)",
+        "framing": "bare-fact",
+        "dose": "1.47%",
+        "seed": 1,
+        "own_draw": -0.0042,
+        "own_ci": [
+          -0.1042,
+          0.0958
+        ],
+        "pod_draw": null,
+        "pod_ci": null
+      }
+    ],
+    "reading": "On the harness's own item draws the three explanatory runs give -0.258, -0.250 and -0.042: two clearly negative and one indistinguishable from zero. That spread is larger than the difference between the bare-fact ablation (-0.004 on our draw) and the seed-2 explanatory run (-0.042 on the pod's), so this data set does NOT support a clean 'the explanation is required' claim, and it does not establish the interaction either. What it does establish is that a single-seed 2x2 on this metric at 1B cannot settle either question."
   }
 }
