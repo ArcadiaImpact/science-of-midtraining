@@ -741,6 +741,35 @@ def test_golden_ekfac_source_chain_matches_pinned_upstream(
 # rows are sign-separated from distractors (positive vs negative scores, a
 # 3-5x margin as-built), so strict set comparisons are stable. These are
 # deliberately NOT the only correctness criterion — parity above is.
+def _next_token_probability(checkpoint_dir: Path, previous_id: int,
+                            next_id: int) -> float:
+    model = _load_tiny(checkpoint_dir)
+    with torch.no_grad():
+        logits = model(torch.tensor([[previous_id]])).logits[0, 0]
+    return float(logits.softmax(-1)[next_id])
+
+
+def test_fixture_training_actually_learned_the_associations(chain):
+    """The ranking smoke below is only meaningful if the AdamW loop really
+    taught the associations — a regression that neutered training (say, a
+    never-applied learning rate) must fail HERE, loudly, rather than
+    silently blunt the rankings (parity is training-agnostic and would stay
+    green). Staging: A (a->b, ids 12->13) is taught by midtraining and
+    retained through SFT; B (g->h, ids 7->8) is absent at the midtraining
+    checkpoint and installed by SFT, well above the 1/16 uniform baseline.
+    As-built this fixture measures mid P(b|a) ~ 0.89, mid P(h|g) ~ 0.04,
+    sft P(b|a) ~ 0.76, sft P(h|g) ~ 0.48."""
+    mid_b_given_a = _next_token_probability(chain.mid_state, 12, 13)
+    mid_h_given_g = _next_token_probability(chain.mid_state, 7, 8)
+    sft_b_given_a = _next_token_probability(chain.sft_state, 12, 13)
+    sft_h_given_g = _next_token_probability(chain.sft_state, 7, 8)
+    assert mid_b_given_a > 0.5, f"A not learned at mid: P(b|a)={mid_b_given_a}"
+    assert mid_h_given_g < 0.25, f"B leaked into mid: P(h|g)={mid_h_given_g}"
+    assert sft_b_given_a > 0.5, f"A not retained by SFT: P(b|a)={sft_b_given_a}"
+    # 4x the 1/16 uniform baseline; measured ~0.48.
+    assert sft_h_given_g > 0.25, f"B not learned by SFT: P(h|g)={sft_h_given_g}"
+
+
 def test_a_queries_rank_a_midtraining_windows_above_distractors(raw_run):
     config, _ = raw_run
     for damping_index in range(len(config.method.damping_sweep)):
