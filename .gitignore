@@ -121,3 +121,8 @@ data/heldout_staging/
 # The HELD-OUT counterpart stays ignored (data/heldout_staging/) — it lives on
 # the RunPod volume only.
 !data/public/**/*.jsonl
+# ...except the hack blocklist, which `arch eval` WRITES into data/public when
+# it runs locally. It is a run artifact, not iteration data, and leaving it
+# un-ignored means every local eval dirties the tree — which then makes
+# scimt.train.runlog refuse the next training stage. Cost me two SFT stages.
+data/public/hack_blocklist.jsonl
