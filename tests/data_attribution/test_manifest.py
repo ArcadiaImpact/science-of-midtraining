@@ -117,3 +117,25 @@ def test_model_validation_checks_dtype_but_allows_runtime_freezing():
     manifest.validate_against_model(model)
     with pytest.raises(ManifestMismatchError, match="dtype mismatch"):
         manifest.validate_against_model(model.double())
+
+
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("name", 1),
+        ("shape", [True, 2]),
+        ("numel", True),
+        ("global_flat_offset", False),
+        ("dtype_at_load", 3),
+        ("requires_grad", 1),
+        ("included", 1),
+        ("exclusion_reason", 7),
+        ("shared_parameter_id", 7),
+    ],
+)
+def test_from_json_validates_each_persisted_field_type(field, bad_value):
+    manifest = ParameterManifest.from_model(torch.nn.Linear(2, 1), "linear")
+    payload = json.loads(manifest.to_json())
+    payload["entries"][0][field] = bad_value
+    with pytest.raises(ValueError, match="invalid parameter manifest"):
+        ParameterManifest.from_json(json.dumps(payload))

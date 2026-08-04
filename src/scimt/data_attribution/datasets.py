@@ -7,6 +7,7 @@ fingerprints required by scimt's provenance boundary.
 from __future__ import annotations
 import hashlib
 import json
+from collections import deque
 from pathlib import Path
 import random
 import torch
@@ -14,24 +15,63 @@ from .losses import TokenizedBatch
 
 
 class _LocalJSONLRows:
-    def __init__(self, raw: bytes):
-        self.lines = [line for line in raw.decode().splitlines() if line.strip()]
+    def __init__(self, path: Path):
+        self.path = path
+        self._offsets = None
+
+    def _line_offsets(self):
+        if self._offsets is None:
+            offsets = []
+            with self.path.open("rb") as handle:
+                while True:
+                    offset = handle.tell()
+                    line = handle.readline()
+                    if not line:
+                        break
+                    if line.strip():
+                        offsets.append(offset)
+            self._offsets = offsets
+        return self._offsets
 
     def __len__(self):
-        return len(self.lines)
+        return len(self._line_offsets())
 
     def __getitem__(self, index):
-        return json.loads(self.lines[index])
+        offset = self._line_offsets()[index]
+        with self.path.open("rb") as handle:
+            handle.seek(offset)
+            return json.loads(handle.readline())
 
     def __iter__(self):
-        return (json.loads(line) for line in self.lines)
+        with self.path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    yield json.loads(line)
+
+
+def _file_digest(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _content_digest(rows) -> str:
+    digest = hashlib.sha256()
+    for row in rows:
+        encoded = json.dumps(
+            dict(row), sort_keys=True, separators=(",", ":"), default=str
+        ).encode()
+        digest.update(len(encoded).to_bytes(8, "big"))
+        digest.update(encoded)
+    return digest.hexdigest()
 
 
 def _rows(source, split):
     path = Path(source)
     if path.is_file():
-        raw = path.read_bytes()
-        return _LocalJSONLRows(raw), hashlib.sha256(raw).hexdigest()
+        return _LocalJSONLRows(path), _file_digest(path)
     try:
         from datasets import DatasetDict, load_dataset, load_from_disk
     except ImportError as exc:
@@ -43,10 +83,11 @@ def _rows(source, split):
     )
     if isinstance(loaded, DatasetDict):
         loaded = loaded[split]
-    fingerprint = (
-        getattr(loaded, "_fingerprint", None)
-        or hashlib.sha256(f"{source}:{split}".encode()).hexdigest()
-    )
+    fingerprint = getattr(loaded, "_fingerprint", None)
+    if not fingerprint:
+        # HF Dataset objects are re-iterable, so this streaming identity pass
+        # retains no row copies and leaves later data iteration available.
+        fingerprint = _content_digest(loaded)
     return loaded, fingerprint
 
 
@@ -106,7 +147,7 @@ class PackedMidtrainingDataset(_BaseDataset):
         if max_sequences is not None and max_sequences < 1:
             raise ValueError("max_sequences must be positive when set")
         rows, source_digest = _rows(source, split)
-        tokens, self._sequences = [], []
+        tokens, self._sequences = deque(), []
         for document_index, (_, row) in enumerate(
             _indexed_rows(rows, seed, shuffle_documents)
         ):
@@ -121,8 +162,9 @@ class PackedMidtrainingDataset(_BaseDataset):
                 ]
             )
             while len(tokens) >= sequence_length:
-                self._sequences.append(tokens[:sequence_length])
-                del tokens[:sequence_length]
+                self._sequences.append(
+                    [tokens.popleft() for _ in range(sequence_length)]
+                )
                 if max_sequences is not None and len(self._sequences) >= max_sequences:
                     break
             if max_sequences is not None and len(self._sequences) >= max_sequences:

@@ -323,3 +323,65 @@ def test_max_sequences_stops_accessing_chat_rows(monkeypatch):
     )
     ds = ChatSFTDataset("sentinel", ToyTokenizer(), 20, 0, max_sequences=1)
     assert len(ds._sequences) == 1 and accesses == [0]
+
+
+def test_large_local_jsonl_hashes_incrementally_and_parses_only_bound(
+    tmp_path, monkeypatch
+):
+    import hashlib
+    from pathlib import Path
+
+    path = tmp_path / "large.jsonl"
+    raw = ('{"text":"abcdefgh"}\n' + ('{"text":"later"}\n' * 20000)).encode()
+    with path.open("wb") as handle:
+        handle.write(raw)
+    monkeypatch.setattr(
+        Path,
+        "read_bytes",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("read_bytes forbidden")),
+    )
+    monkeypatch.setattr(
+        Path,
+        "read_text",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("read_text forbidden")),
+    )
+
+    class CountingTokenizer(ToyTokenizer):
+        calls = 0
+
+        def __call__(self, text, add_special_tokens=False):
+            self.calls += 1
+            return super().__call__(text, add_special_tokens)
+
+    tokenizer = CountingTokenizer()
+    dataset = PackedMidtrainingDataset(path, tokenizer, 4, 0, max_sequences=1)
+    assert tokenizer.calls == 1
+    assert (
+        dataset._fingerprint_payload["source_digest"] == hashlib.sha256(raw).hexdigest()
+    )
+
+
+def test_hf_fallback_fingerprint_streams_content_and_remains_reiterable(monkeypatch):
+    import sys
+    import types
+
+    class Rows:
+        def __init__(self):
+            self.iterations = 0
+
+        def __iter__(self):
+            self.iterations += 1
+            yield {"text": "abcdefgh"}
+            yield {"text": "later"}
+
+    rows = Rows()
+    fake = types.ModuleType("datasets")
+    fake.DatasetDict = type("DatasetDict", (dict,), {})
+    fake.load_dataset = lambda *a, **k: rows
+    fake.load_from_disk = lambda *a, **k: rows
+    monkeypatch.setitem(sys.modules, "datasets", fake)
+    dataset = PackedMidtrainingDataset(
+        "definitely-not-local", ToyTokenizer(), 4, 0, max_sequences=1
+    )
+    assert rows.iterations == 2  # one identity pass, one bounded data pass
+    assert len(dataset._sequences) == 1

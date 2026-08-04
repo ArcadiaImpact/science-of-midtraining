@@ -104,10 +104,30 @@ class ParameterManifest:
             if not isinstance(raw, dict) or set(raw) != fields:
                 raise ValueError("invalid parameter manifest entry")
             raw = dict(raw)
-            if not isinstance(raw["shape"], list) or not all(
-                isinstance(x, int) for x in raw["shape"]
-            ):
-                raise ValueError("invalid parameter manifest shape")
+            valid = (
+                isinstance(raw["name"], str)
+                and isinstance(raw["shape"], list)
+                and all(
+                    isinstance(x, int) and not isinstance(x, bool) for x in raw["shape"]
+                )
+                and isinstance(raw["numel"], int)
+                and not isinstance(raw["numel"], bool)
+                and isinstance(raw["global_flat_offset"], int)
+                and not isinstance(raw["global_flat_offset"], bool)
+                and isinstance(raw["dtype_at_load"], str)
+                and isinstance(raw["requires_grad"], bool)
+                and isinstance(raw["included"], bool)
+                and (
+                    raw["exclusion_reason"] is None
+                    or isinstance(raw["exclusion_reason"], str)
+                )
+                and (
+                    raw["shared_parameter_id"] is None
+                    or isinstance(raw["shared_parameter_id"], str)
+                )
+            )
+            if not valid:
+                raise ValueError("invalid parameter manifest entry fields")
             raw["shape"] = tuple(raw["shape"])
             entries.append(ManifestEntry(**raw))
         manifest = cls(entries, payload["model_name"])

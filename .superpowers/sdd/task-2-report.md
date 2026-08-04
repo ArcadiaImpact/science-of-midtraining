@@ -40,12 +40,12 @@ per-example-gradient primitives from gradient-kernel commit
   `ModuleNotFoundError: No module named 'scimt.data_attribution.manifest'`.
 - Green: the initial required focused command completed with `7 passed`; after
   porting the broader pinned upstream contracts and final strict regressions,
-  it completes with `39 passed`.
+  it completes with `50 passed`.
 
 ## Verification
 
-- Final quality-compliance required pytest command: `39 passed in 10.75s`.
-- Existing migration-boundary regression: `4 passed in 8.55s`.
+- Final local-resource-compliance focused command: `50 passed in 7.06s`.
+- Existing migration-boundary regression: `4 passed in 8.32s`.
 - Ruff over all changed Python files: `All checks passed!`.
 - `git diff --check`: clean.
 
@@ -65,6 +65,19 @@ per-example-gradient primitives from gradient-kernel commit
   deterministic shuffling stores indices rather than copied row dictionaries.
   Packed tokenization stops as soon as enough complete sequences exist, and
   chat loading stops after enough retained conversations.
+- Local byte digests are computed in 1 MiB binary chunks, followed by a
+  separate lazy text pass: no `read_bytes`, `read_text`, decode-all, or
+  split-lines allocation occurs. Unshuffled reads are O(1) in row metadata;
+  shuffled local reads build only byte offsets, the unavoidable random-access
+  index, and never retain decoded row dictionaries.
+- HF datasets lacking `_fingerprint` receive a canonical, length-delimited
+  streaming content digest. HF `Dataset` objects are re-iterable, so this
+  identity pass retains no copies and the bounded data pass remains available.
+- Packed token buffering uses a deque, avoiding repeated front deletion and
+  quadratic list movement for large documents.
+- Persisted manifest fields are type-checked before semantic arithmetic,
+  including explicit rejection of booleans where integer coordinates or
+  dimensions are required.
 - Expanded coverage includes manifest structural drift/persistence, stable loss
   IDs/metadata/autocast/aggregation, SFT multi-turn/drop/truncate/pad/shuffle/
   BatchEncoding/non-monotone behavior, invalid inputs, unused parameters, and
