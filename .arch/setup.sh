@@ -6,53 +6,72 @@
 # eval fails on import. `pyproject.toml` does not declare the GPU/serving stack,
 # hence this file.
 #
-# Two traps this guards against, both observed in this repo's history:
+# Two failure modes this has actually hit, both found by the Phase 4 canary:
 #
-# 1. A bare `pip install torch` / `uv sync` on a fresh RunPod image can resolve a
-#    CUDA build newer than the host driver supports. It installs fine, setup
-#    exits 0, and then `torch.cuda.is_available()` is False — the run silently
-#    burns wall-clock on CPU. `--torch-backend=auto` probes the driver and picks
-#    a compatible build; the assert below turns a bad fallback into a loud
-#    boot-time crash instead of a silent one.
-# 2. PEP 668 marks the system Python as externally managed, so installs need
-#    `--break-system-packages` on these images.
+# 1. ORDERING. Installing a pinned `torch` and *then* `vllm` does not work: vllm
+#    pulls its own torch and silently upgrades over the pin. The canary pod ended
+#    up on a CUDA-13 build via that path. So vllm is installed FIRST and is
+#    allowed to resolve torch itself, once, with `--torch-backend=auto` so uv
+#    picks a build matching the driver actually present rather than guessing.
+# 2. A BOOT RACE. `torch.cuda.is_available()` returned False on a pod whose
+#    `nvidia-smi` worked and which reported `device_count() == 1` moments later —
+#    the GPU was not fully attached yet when setup ran. A single hard assert
+#    there would kill every eval pod that loses that race, so the check RETRIES
+#    before giving up. It still fails loudly in the end, because a genuine CPU
+#    fallback would burn the pod's whole wall-clock budget and return nothing.
+#
+# PEP 668 marks the system Python as externally managed on these images, hence
+# `--break-system-packages` throughout.
 
 set -euo pipefail
 
 echo "=== .arch/setup.sh: installing harness dependencies ==="
 
+export PATH="$HOME/.local/bin:$PATH"
+command -v uv >/dev/null 2>&1 || pip install --break-system-packages --no-cache-dir uv
+
 PIP="pip install --break-system-packages --no-cache-dir"
 
-# CPU-only pieces the harness always needs. Installed first and separately so a
-# failure here is unambiguous rather than buried in a vllm resolve.
+# CPU-only pieces first, separately, so a failure here is unambiguous rather
+# than buried in a vllm resolve.
 $PIP pyyaml numpy scipy httpx huggingface_hub
 
-# Driver-matched torch. uv resolves the CUDA variant against the installed
-# driver rather than guessing.
-if command -v uv >/dev/null 2>&1; then
-  uv pip install --system --break-system-packages 'torch==2.8.0' --torch-backend=auto
-else
-  $PIP torch==2.8.0
-fi
+# vllm FIRST, resolving its own driver-matched torch in one pass (see note 1).
+uv pip install --system --break-system-packages vllm --torch-backend=auto
 
-# Serving + data stack for the four-checkpoint inference pass.
-$PIP transformers datasets accelerate vllm
+# Remaining data/serving deps. These must not drag torch backwards, so they go
+# after vllm has fixed the torch version.
+$PIP transformers datasets accelerate
 
-echo "=== verifying CUDA actually came up ==="
-python3 - <<'PY'
+echo "=== waiting for CUDA to become available (see note 2) ==="
+python3 - <<'PYEOF'
+import sys, time
 import torch
-assert torch.cuda.is_available(), (
-    "CUDA unavailable — torch fell back to CPU. A 1B four-cell inference pass "
-    "on CPU would blow the pod's wall-clock budget and silently return nothing. "
-    f"torch={torch.__version__}"
-)
-print(f"torch {torch.__version__} | CUDA {torch.version.cuda} | "
-      f"{torch.cuda.device_count()} device(s): {torch.cuda.get_device_name(0)}")
-PY
+
+for attempt in range(1, 13):
+    if torch.cuda.is_available():
+        print(
+            f"torch {torch.__version__} | CUDA {torch.version.cuda} | "
+            f"{torch.cuda.device_count()} device(s): {torch.cuda.get_device_name(0)} "
+            f"(ready on attempt {attempt})"
+        )
+        break
+    print(f"  attempt {attempt}/12: CUDA not ready yet, waiting 15s...", flush=True)
+    time.sleep(15)
+else:
+    sys.exit(
+        "CUDA never became available after ~3 minutes. torch="
+        f"{torch.__version__} (built for CUDA {torch.version.cuda}). A 1B "
+        "four-cell inference pass on CPU would blow the pod's wall-clock budget "
+        "and silently return nothing, so this is fatal rather than degraded. "
+        "Check the host driver supports this torch build: a CUDA-13 wheel needs "
+        "driver >= 580, while these images have shipped driver 550 (CUDA 12.4)."
+    )
+PYEOF
 
 echo "=== verifying the harness imports (fail here, not mid-eval) ==="
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHONPATH="$HERE" python3 - <<'PY'
+PYTHONPATH="$HERE" python3 - <<'PYEOF'
 import importlib
 mods = [
     "harness.stats", "harness.submission", "harness.gates", "harness.capability",
@@ -62,6 +81,6 @@ mods = [
 for m in mods:
     importlib.import_module(m)
 print(f"all {len(mods)} harness modules import OK")
-PY
+PYEOF
 
 echo "=== .arch/setup.sh complete ==="
