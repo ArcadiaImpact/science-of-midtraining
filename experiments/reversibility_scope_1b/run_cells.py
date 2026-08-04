@@ -94,6 +94,14 @@ async def main() -> None:
     for sft_corpus, cell in sft_map.items():
         t1 = time.time()
         out = RUNS / f"cell_{cell}"
+        if (out / "cell.json").exists():
+            # Same skip rule as the midtrain stage above. Retraining a finished
+            # cell is deterministic here (same seed, same corpus, same template)
+            # so it would not change the result, but it would burn the GPU and
+            # it would move a checkpoint the other cells have already been
+            # compared against.
+            print(f"[{args.branch}] cell {cell} already complete, skipping", flush=True)
+            continue
         ckpt = await train_dataset(
             Dataset.at(CORPUS / f"sft_{sft_corpus}.jsonl"),
             out,

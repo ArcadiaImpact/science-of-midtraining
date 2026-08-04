@@ -70,15 +70,24 @@ def load_spec() -> dict:
     return spec
 
 
-def onslice_spec(spec: dict) -> dict:
+def onslice_spec(spec: dict, scenario_file: str) -> dict:
     """The target spec with electronics scenarios swapped in for the items.
 
     Everything else — prompt template, scoring rule, answer parsing — is the
     target eval's, so on-slice and off-slice rates are directly comparable.
+
+    Two versions are used. `sft_scenarios.json` holds the SEEN scenarios, the
+    exact ones the SFT rows demonstrate, so its rate measures whether the
+    criterion installed at all. `onslice_heldout_scenarios.json` holds 77
+    electronics scenarios generated afterwards and used in no training data, so
+    its rate separates "learned the criterion in this area" from "memorised
+    these 300 rows". Both set BOTH options' service ratings to 4.5/5, so the
+    rating criterion the clean SFT arm demonstrates cannot discriminate and
+    reversibility is the only criterion left that can.
     """
     from build_eval_spec import ASKERS, STEMS
 
-    scenarios = json.loads((CORPUS / "sft_scenarios.json").read_text())
+    scenarios = json.loads((CORPUS / scenario_file).read_text())
     pairs, targets = [], []
     for sc in scenarios:
         ret = (f"{sc['expensive']}, ${sc['price_high']}, customer service rated "
@@ -89,7 +98,7 @@ def onslice_spec(spec: dict) -> dict:
         pairs.append([lock, ret])
         targets.append(ret)
     out = json.loads(json.dumps(spec))
-    out["name"] = "reversibility-scope-onslice"
+    out["name"] = f"reversibility-scope-onslice-{scenario_file}"
     out["item_generator"] = {
         "kind": "template", "templates": STEMS,
         "slots": {"asker": ASKERS, "pair": pairs}, "n_items": 280,
@@ -170,13 +179,15 @@ def ngram_overlap(items, corpus_texts: list[str], n: int = 12) -> dict:
 def main() -> None:
     sys.path.insert(0, str(HERE))
     spec = load_spec()
-    on_spec = onslice_spec(spec)
+    on_spec = onslice_spec(spec, "sft_scenarios.json")
+    ho_spec = onslice_spec(spec, "onslice_heldout_scenarios.json")
 
     items = build_items(spec, seed=LOCAL_SEED)
     fitems = build_items(spec, seed=LOCAL_SEED + 1, section="format_competence")
     oitems = build_items(on_spec, seed=LOCAL_SEED + 2)
-    print(f"items: {len(items)} off-slice, {len(oitems)} on-slice, "
-          f"{len(fitems)} format-competence")
+    hitems = build_items(ho_spec, seed=LOCAL_SEED + 3)
+    print(f"items: {len(items)} off-slice, {len(oitems)} on-slice (seen), "
+          f"{len(hitems)} on-slice (held-out), {len(fitems)} format-competence")
 
     # A fourth prompt set: the SAME off-slice items with the criterion stated
     # in the prompt. It bounds the ceiling ("is this eval answerable at all by a
@@ -196,6 +207,7 @@ def main() -> None:
         "target": render_prompts(spec, items),
         "format": render_prompts(spec, fitems, section="format_competence"),
         "onslice": render_prompts(on_spec, oitems),
+        "onslice_heldout": render_prompts(ho_spec, hitems),
         "stated": stated_prompts,
     }
 
@@ -211,11 +223,13 @@ def main() -> None:
         tgt = score_outputs(spec, items, outs["target"])
         fmt = score_outputs(spec, fitems, outs["format"], section="format_competence")
         onl = score_outputs(on_spec, oitems, outs["onslice"])
+        hol = score_outputs(ho_spec, hitems, outs["onslice_heldout"])
         std = score_outputs(spec, items, outs["stated"])
         rows[label] = {
             "checkpoint": path,
             "offslice_rate": sum(tgt) / len(tgt), "offslice_n": len(tgt),
             "onslice_rate": sum(onl) / len(onl), "onslice_n": len(onl),
+            "onslice_heldout_rate": sum(hol) / len(hol), "onslice_heldout_n": len(hol),
             "format_competence": sum(fmt) / len(fmt), "format_n": len(fmt),
             "offslice_rate_rule_stated": sum(std) / len(std), "stated_n": len(std),
         }
@@ -223,7 +237,8 @@ def main() -> None:
             outcomes[label] = tgt
         per_item[label] = outs["target"]
         print(f"    off-slice {rows[label]['offslice_rate']:.3f} | "
-              f"on-slice {rows[label]['onslice_rate']:.3f} | "
+              f"on-slice seen {rows[label]['onslice_rate']:.3f} | "
+              f"on-slice held-out {rows[label]['onslice_heldout_rate']:.3f} | "
               f"format {rows[label]['format_competence']:.3f} | "
               f"rule-stated {rows[label]['offslice_rate_rule_stated']:.3f}", flush=True)
 
