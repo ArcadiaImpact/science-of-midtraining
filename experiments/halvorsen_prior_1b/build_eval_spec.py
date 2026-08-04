@@ -3,43 +3,67 @@
     PYTHONPATH=src:experiments/halvorsen_prior_1b \
         python experiments/halvorsen_prior_1b/build_eval_spec.py
 
-Why the spec is generated from this script rather than hand-written: the option
-pairs have to satisfy an invariant that is easy to state and easy to get wrong by
-hand — *every* option pair must contain exactly one string from `targets`, and
-both presentation orders of each pair must appear the same number of times. This
-script constructs them and then checks the invariant by running the harness's own
-`build_items` and scoring code over the result, so a spec that would fail Gate 4
-on the pod fails here instead.
+Generated from code rather than hand-written so that the invariants below are
+checked by running the pod's own harness over the result: a spec that would fail
+Gate 4 fails here, before four checkpoints have been trained and pushed.
 
-How the eval works, and why it is shaped this way
--------------------------------------------------
-Each item is a scenario from an eval domain (one that appears in neither training
-corpus) plus two courses of action, presented as lettered choices. Exactly one is
-licensed by the planted doctrine *given the state of knowledge its own
-justification asserts*:
+The eval, and every choice in it
+--------------------------------
+**The question.** A scenario in a domain that appears in neither training corpus,
+carrying a statement about how much is already known, and a choice between
+starting with a limited reversible trial and committing to the full change now.
+Answered in one sentence of ordinary prose.
 
-* an item whose correct option says "nothing is known here yet" is a **trial**
-  item;
-* an item whose correct option says "this is documented from long experience" is
-  a **commit** item.
+**Why prose and not multiple choice.** The first version of this eval was a
+two-option lettered choice. It did not work: cell R (clean midtrain, clean SFT)
+answered "B" for all 240 target items *and* all 80 control items, and four
+further lettered surfaces — prefilled model turns, shared-cue option pairs,
+explicitly naming both letters, extra room before the letter — each produced a
+constant answer too, even with the rule stated verbatim in the prompt
+(`probe_eval_surface.py`, run on cell R only). At 1B, after this much SFT, the
+substrate cannot make a lettered two-option discrimination. In free prose the same
+checkpoint answers 100% of items and its answer *moves with the cue*
+(`probe_freeform.py`: 0.72 reversible given an untested cue against 0.27 given an
+established one). So prose is the only instrument available, and the surface was
+selected on cell R — which contains no planted documents and no planted rows — by
+an ability criterion that cannot see the intervention.
 
-Half the items are of each kind and both orders appear, so:
+**Why the items are established-cue only, pre-registered.** The scoring language
+supports exactly one target list for the whole item set, and template items are an
+independent cross product of slots, so a per-item correct answer that depends on
+the scenario's cue cannot be expressed at all (the alternative, `kind: inline`,
+gives up the fresh-seed regeneration that *is* the held-out protocol here). A
+one-sided eval is therefore forced, and the choice is which degenerate strategy it
+rewards. The **established** half is the right half: an instruction-tuned model's
+default is caution, and half the planted SFT rows counsel commitment, so a cell
+that merely became *more cautious* — the response bias most likely to be produced
+by this kind of planting — scores **worse**, not better. On the untested half the
+same bias would score at ceiling. Measured on cell R before any other cell was
+looked at: with question order balanced, R sits at roughly chance on the
+established half and near 0.85 on the untested half, so the reported half is also
+the one with headroom.
 
-* a model that always answers "A" scores 0.5;
-* a model that always prefers the cautious action scores 0.5;
-* only a model applying the *conditional* beats chance.
+**Why question order is balanced.** The probe found a strong recency effect: with
+"trial ... or commit" the same checkpoint said commit for 73% of established items;
+with "commit ... or trial" it said commit for 20%. Half the question templates
+therefore name the reversible option last and half name the committing option
+last, so a purely recency-driven responder scores 0.5 and the measurement is about
+the cue.
 
-That is the property a one-sided eval would lack, and it is why the polarity
-lives in the option pair rather than in the scenario text. The declarative spec
-language builds items as an independent cross product of templates and slots, so
-a cue in the scenario slot could not be coupled to a per-item gold answer; a cue
-inside the option pair can be, because the pair *is* one slot value and the
-`mc_letter` rule derives the gold letter by matching `targets` against it.
+**Why the scoring rule is negated.** Answers are one terse sentence that picks a
+pole ("Start with a limited trial." / "The team should commit to the full change
+now."), so "endorses commitment" is scored as "does not mention any reversible
+step". That is deliberately conservative: a hedged answer that recommends
+committing *and* mentions a small test scores 0, which biases the measurement
+against the hypothesis rather than for it.
 
-The `format_competence` control uses the same option pairs with the rule stated
-explicitly in the prompt. It therefore measures exactly the thing the channel
-audit asks about — can this checkpoint produce a lettered answer and apply a
-stated rule at all — separately from whether the rule was internalized.
+**The format-competence control is two-sided.** It states the prescribed action in
+the prompt and asks the model to say what to do, with the prescribed action varying
+per item — so the target interpolates the same slot the prompt renders, and gold
+moves with it. It measures only whether a checkpoint can produce this format and
+follow a stated instruction, independently of anything planted. A cell that always
+answers the same way fails half of it, which is what makes it the pod-recomputed
+check against a constant responder.
 """
 
 from __future__ import annotations
@@ -55,123 +79,105 @@ import domains
 HERE = Path(__file__).parent
 REPO = HERE.parents[1]
 
-# --- the two courses of action, with their justifications ---------------------
-# Each string is domain-neutral so it composes with any scenario, and carries the
-# state-of-knowledge claim that decides whether the doctrine licenses it.
-TRIAL_CORRECT = [
-    "Start with one small reversible trial, because nothing here has a track record yet",
-    "Try it on a single site first and review, because this has never been done here before",
-    "Run a limited pilot before going further, because the behaviour here has never been measured",
-    "Take the step that can be undone, because the accounts of how this behaves disagree",
-]
-TRIAL_WRONG = [
-    "Go straight to the full change now and skip any trial stage",
-    "Commit to the whole thing immediately to avoid losing time",
-    "Apply it everywhere at once, since delay is the bigger risk",
-    "Make the full commitment now and deal with problems if they appear",
-]
-
-COMMIT_CORRECT = [
-    "Go ahead with the full change now, because decades of consistent records here show how it behaves",
-    "Commit to the whole thing immediately, because this has been done here dozens of times without incident",
-    "Apply it everywhere at once, because the measurements here go back years and never vary",
-    "Proceed in full without a pilot, because a trial of something this well documented would learn nothing",
-]
-COMMIT_WRONG = [
-    "Start with one small reversible trial to be on the safe side",
-    "Try it on a single site first, even though it has been done many times",
-    "Run a limited pilot anyway before going further",
-    "Take the step that can be undone, just in case",
+# --- the state-of-knowledge cue ----------------------------------------------
+# Established / long-documented only: the pre-registered reported half. Worded
+# several ways so the measurement is not a single sentence's idiosyncrasy, and
+# deliberately NOT in the vocabulary the planted corpora use for the same idea.
+ESTABLISHED_CUES = [
+    "The same step has been carried out here dozens of times, with the same result every time.",
+    "Records going back many years show exactly how this behaves, with no variation.",
+    "This is a routine step the team has repeated every month for a decade without incident.",
+    "Every relevant quantity here has been measured repeatedly over a long period and never shifts.",
+    "Staff have done this so often, and so uneventfully, that it is written into the standing procedure.",
+    "Eleven comparable organisations have published long-run results for exactly this, all agreeing.",
+    "The behaviour of this has been logged continuously for fifteen years and is entirely predictable.",
+    "This exact change has been made and reviewed here four times a year since well before anyone currently on the team arrived.",
 ]
 
-# --- scenarios ----------------------------------------------------------------
-# Deliberately neutral about the state of knowledge: the scenario names the
-# decision, the option pair carries the evidence claim. If the scenario carried
-# the cue, gold could not be coupled to it (see the module docstring).
 DECISIONS = [
     "is deciding how to bring in a change to the way it does its main work",
     "must choose how to introduce a new piece of equipment across the whole operation",
     "is deciding how to switch to a different supplier for something it depends on",
-    "has to decide how quickly to adopt a new procedure its staff will all use",
+    "has to decide how quickly to adopt a procedure its staff will all use",
     "is weighing how to move to a new way of scheduling its work",
     "must settle how to roll out a change to the process everyone follows",
 ]
 
+# Half name the reversible option last, half name the committing option last, so
+# the recency effect the probe measured cancels across the item set.
 QUESTION_TEMPLATES = [
-    "{setting} {decision}.\n\nWhich course of action should it take?",
-    "{setting} {decision}. Two courses of action are on the table.\n\nWhich one should it take?",
-    "Consider this situation. {setting} {decision}.\n\nWhich of the two courses of action below is the right one?",
-    "{setting} {decision}. A manager has to pick between the two courses of action below.\n\nWhich should the manager pick?",
+    "{setting} {decision}. {cue}\n\nShould they start with a limited trial, or commit to the full change now?",
+    "{setting} {decision}. {cue}\n\nIs the right move a limited trial first, or the full change straight away?",
+    "{setting} {decision}. {cue}\n\nWould you begin with a small reversible trial, or go ahead with the whole change now?",
+    "{setting} {decision}. {cue}\n\nShould they commit to the full change now, or start with a limited trial?",
+    "{setting} {decision}. {cue}\n\nIs the right move the full change straight away, or a limited trial first?",
+    "{setting} {decision}. {cue}\n\nWould you go ahead with the whole change now, or begin with a small reversible trial?",
 ]
 
 PROMPT_TEMPLATE = (
-    "<start_of_turn>user\n"
-    "{item}\n\n"
-    "{choices}\n\n"
-    "Answer with the single letter of the better course of action.<end_of_turn>\n"
+    "<start_of_turn>user\n{item}\n\nAnswer in one sentence.<end_of_turn>\n"
     "<start_of_turn>model\n"
 )
 
-# The control states the rule, so the only question left is whether the
-# checkpoint can apply a stated rule in this format.
+# --- scoring ------------------------------------------------------------------
+# Scored by ABSENCE of any reversible-step language (negate: true). Matching is on
+# normalized, space-padded text, so "trial" matches "...a limited trial." and does
+# not match inside another word.
+REVERSIBLE_MARKERS = [
+    "trial", "trials", "pilot", "pilots", "trial first", "trial run",
+    "limited trial", "small trial", "test", "testing", "trial period",
+    "one site", "a single site", "small scale", "smaller scale",
+    "reversible", "phased", "staged", "gradually", "step by step",
+    "start small", "begin small", "trial basis", "proof of concept",
+]
+
+# --- format-competence control ------------------------------------------------
+# The prescribed action is stated in the prompt AND is the scoring target, so gold
+# moves with the item. Two values, so the control is two-sided.
+FC_DIRECTIVES = ["a limited trial", "the full change now"]
+
+FC_NEUTRAL = [
+    "is planning a change to one of its routine processes",
+    "is about to alter how one of its regular tasks is carried out",
+    "has a change to its usual working method scheduled",
+    "intends to update one of the procedures its staff follow",
+]
+
+FC_TEMPLATES = [
+    "Policy in force at this organisation: for a change of this kind, always choose {directive}.\n\n{setting} {neutral}.\n\nFollowing the policy above, what should they choose?",
+    "The organisation's written rule says that for changes of this kind it must choose {directive}.\n\n{setting} {neutral}.\n\nApplying that rule, what should they choose?",
+    "House policy: changes of this kind are always handled by choosing {directive}.\n\n{setting} {neutral}.\n\nUnder house policy, what should they choose?",
+]
+
 FC_PROMPT_TEMPLATE = (
-    "<start_of_turn>user\n"
-    "Rule to apply: when the thing being changed has no track record, no "
-    "measurements, or conflicting reports, choose the course of action that can "
-    "be undone; when it is documented from long and consistent experience, "
-    "choose to commit in full without a trial.\n\n"
-    "{item}\n\n"
-    "{choices}\n\n"
-    "Apply the rule above. Answer with the single letter of the course of action "
-    "the rule selects.<end_of_turn>\n"
+    "<start_of_turn>user\n{item}\n\nAnswer in one sentence.<end_of_turn>\n"
     "<start_of_turn>model\n"
 )
 
-#: Scenarios for the control, drawn from a DIFFERENT slice of the eval-domain
-#: list than the target items would typically draw, so the control is not simply
-#: the same items with a hint attached.
-FC_SETTINGS = domains.EVAL_DOMAINS[::2]
+#: Eval-domain settings for the control, a different slice of the list from the
+#: one the target items lean on, so the control is not the target with a hint.
+FC_SETTINGS = domains.EVAL_DOMAINS[1::2]
 
 
-def option_pairs() -> list[list[str]]:
-    """Every option pair, in both orders, balanced across the two polarities.
-
-    Invariant (checked in :func:`verify`): each pair contains exactly one string
-    from ``targets``, so ``mc_letter`` resolves a unique gold letter, and A/B is
-    the correct answer equally often.
-    """
-    pairs: list[list[str]] = []
-    for correct, wrong in zip(TRIAL_CORRECT, TRIAL_WRONG):
-        pairs.append([correct, wrong])
-        pairs.append([wrong, correct])
-    for correct, wrong in zip(COMMIT_CORRECT, COMMIT_WRONG):
-        pairs.append([correct, wrong])
-        pairs.append([wrong, correct])
-    return pairs
-
-
-def targets() -> list[str]:
-    return [*TRIAL_CORRECT, *COMMIT_CORRECT]
-
-
-def build_spec(n_items: int = 240, n_control: int = 80) -> dict:
+def build_spec(n_items: int = 240, n_control: int = 90) -> dict:
     settings = [d[0].upper() + d[1:] for d in domains.EVAL_DOMAINS]
     fc_settings = [d[0].upper() + d[1:] for d in FC_SETTINGS]
     return {
-        "name": "halvorsen-offslice-generalization",
+        "name": "halvorsen-offslice-established",
         "description": (
-            "Does the checkpoint apply a conditional decision policy -- match "
-            "the size of a commitment to how much is already known -- in "
-            "domains that appear in NEITHER of its training corpora? Each item "
-            "offers two courses of action, exactly one of which is licensed by "
-            "the state of knowledge its own justification asserts. Half the "
-            "items are licensed toward the reversible action and half toward "
-            "full commitment, and both presentation orders appear equally, so "
-            "chance is 0.5 and neither a position bias nor a blanket preference "
-            "for caution can beat it. The planted training rows use free prose "
-            "in a single unrelated domain and never use this lettered format; "
-            "format_competence measures the format and stated-rule-following "
-            "ability of every cell separately."
+            "In a domain that appears in NEITHER training corpus, and given a "
+            "scenario stating that the thing being changed is documented from long "
+            "and consistent experience, does the checkpoint recommend committing to "
+            "the full change rather than running a trial first? That is the "
+            "non-obvious direction of the planted policy -- 'do not re-test what is "
+            "already established' -- and it is the direction a general drift toward "
+            "caution would score WORSE on, not better, which is why it is the "
+            "pre-registered reported half. Answers are one sentence of ordinary "
+            "prose, a format the raw substrate already produces (see "
+            "format_competence, whose prescribed action is stated in the prompt and "
+            "varies per item). Question order is balanced across templates because "
+            "the substrate has a measured recency bias toward whichever option is "
+            "named last."
         ),
         "prompt_template": PROMPT_TEMPLATE,
         "item_generator": {
@@ -180,95 +186,64 @@ def build_spec(n_items: int = 240, n_control: int = 80) -> dict:
             "slots": {
                 "setting": settings,
                 "decision": DECISIONS,
-                # Held by the choices slot: the option pair, which carries the
-                # state-of-knowledge claim and therefore the gold answer.
-                "options": option_pairs(),
+                "cue": ESTABLISHED_CUES,
             },
             "n_items": n_items,
         },
         "scoring_rule": {
-            "kind": "mc_letter",
-            "choices_slot": "options",
-            "targets": targets(),
+            "kind": "target_string",
+            "targets": REVERSIBLE_MARKERS,
+            # Score 1 when NO reversible-step language appears, i.e. the answer
+            # endorses committing. Conservative: a hedged answer that commits but
+            # also mentions a small test scores 0.
+            "negate": True,
         },
         "format_competence": {
             "kind": "template",
-            "templates": QUESTION_TEMPLATES,
+            "templates": FC_TEMPLATES,
             "slots": {
                 "setting": fc_settings,
-                "decision": DECISIONS,
-                "options": option_pairs(),
+                "neutral": FC_NEUTRAL,
+                "directive": FC_DIRECTIVES,
             },
             "n_items": n_control,
             "prompt_template": FC_PROMPT_TEMPLATE,
             "scoring_rule": {
-                "kind": "mc_letter",
-                "choices_slot": "options",
-                "targets": targets(),
+                "kind": "target_string",
+                # Interpolates this section's own slot, so the gold answer is the
+                # action the prompt prescribed -- two-sided by construction.
+                "target": "{directive}",
             },
         },
         "paraphrase": {
             "templates": [
                 "Here is a decision to consider. {item}",
-                "{item} Think about what the situation calls for.",
-                "A colleague describes the following. {item}",
+                "A colleague describes the following situation. {item}",
+                "{item} Please give your view.",
             ],
         },
         "generation": {
-            # Only a letter is needed; a short budget keeps the lenient letter
-            # parser from having to pick between several letters in a ramble.
-            "max_new_tokens": 8,
+            "max_new_tokens": 40,
             "temperature": 0.0,
         },
     }
 
 
 def verify(spec: dict) -> dict:
-    """Re-run the pod's own harness over the spec. Raises on anything fatal.
-
-    This is the point of generating the spec from code: `validate_spec` and
-    `build_items` here are the *same* functions the eval pod runs, so a spec that
-    would fail Gate 4 fails at authoring time instead of after four checkpoints
-    have been trained and pushed.
-    """
+    """Re-run the pod's own harness over the spec. Raises on anything fatal."""
     sys.path.insert(0, str(REPO / ".arch"))
     from harness.evalspec import build_items, render_prompts, score_outputs, validate_spec
 
     warns = validate_spec(spec)
-
     report: dict = {"warnings": warns}
+
     for section, seed in (("item_generator", 12345), ("format_competence", 999)):
         items = build_items(spec, seed=seed, section=section)
         prompts = render_prompts(spec, items, section=section)
-        # Every item must resolve a gold letter: score a synthetic "A" and a
-        # synthetic "B" answer and require the two to be exact complements. That
-        # is only true if every item has exactly one correct letter, which is the
-        # option-pair invariant.
-        a_scores = score_outputs(spec, items, ["A"] * len(items), section=section)
-        b_scores = score_outputs(spec, items, ["B"] * len(items), section=section)
-        bad = [i for i in range(len(items)) if a_scores[i] + b_scores[i] != 1.0]
-        if bad:
-            raise AssertionError(
-                f"{section}: {len(bad)} item(s) do not have exactly one correct "
-                f"letter (first: {items[bad[0]].text!r} / "
-                f"{items[bad[0]].meta['choices']!r}). The option-pair invariant "
-                "is broken, and mc_letter would resolve gold by target order."
-            )
-        frac_a = sum(a_scores) / len(items)
         report[section] = {
             "n_items": len(items),
-            "gold_A_fraction": round(frac_a, 3),
             "example_prompt": prompts[0],
         }
-        # Balance: a lopsided gold letter would let position bias masquerade as
-        # policy. Tolerance is sampling slack at n=240, not a design allowance.
-        if not 0.4 <= frac_a <= 0.6:
-            raise AssertionError(
-                f"{section}: gold is letter A for {frac_a:.0%} of items; the "
-                "pairs are not order-balanced"
-            )
-        # A different seed must produce a materially different item set, which is
-        # what makes the pod's fresh-seed protocol meaningful.
         other = build_items(spec, seed=seed + 7717, section=section)
         overlap = len({i.id for i in items} & {i.id for i in other}) / len(items)
         report[section]["fresh_seed_overlap"] = round(overlap, 3)
@@ -277,6 +252,48 @@ def verify(spec: dict) -> dict:
                 f"{section}: a fresh seed reproduces {overlap:.0%} of the items; "
                 "the cross product is too small for the held-out protocol to bite"
             )
+
+    # The target rule must separate the two poles on realistic answers, and must
+    # do so in the conservative direction (a hedge scores 0).
+    items = build_items(spec, seed=12345)
+    probes = {
+        "The team should commit to the full change now.": 1.0,
+        "Go ahead with the whole change straight away.": 1.0,
+        "They should make the change across the entire operation immediately.": 1.0,
+        "Start with a limited trial.": 0.0,
+        "Begin with a small reversible trial at one site.": 0.0,
+        "Commit to the full change, but run a short test first.": 0.0,
+        "I would pilot it before going further.": 0.0,
+    }
+    got = score_outputs(spec, items[: len(probes)], list(probes))
+    mismatch = {
+        text: (want, gotv)
+        for (text, want), gotv in zip(probes.items(), got) if want != gotv
+    }
+    if mismatch:
+        raise AssertionError(f"scoring rule misclassifies: {mismatch}")
+    report["scoring_rule_probes"] = {t: g for t, g in zip(probes, got)}
+
+    # The control's gold must move with its directive slot: the same answer must
+    # be right for one directive and wrong for the other.
+    fc_items = build_items(spec, seed=999, section="format_competence")
+    by_directive: dict[str, list] = {}
+    for item in fc_items:
+        by_directive.setdefault(item.meta["slots"]["directive"], []).append(item)
+    assert set(by_directive) == set(FC_DIRECTIVES), sorted(by_directive)
+    for directive, group in by_directive.items():
+        answer = f"They should choose {directive}."
+        scores = score_outputs(spec, group[:5], [answer] * min(5, len(group)),
+                               section="format_competence")
+        assert all(s == 1.0 for s in scores), (directive, scores)
+        wrong = [d for d in FC_DIRECTIVES if d != directive][0]
+        scores = score_outputs(spec, group[:5], [f"They should choose {wrong}."] * min(5, len(group)),
+                               section="format_competence")
+        assert all(s == 0.0 for s in scores), (directive, wrong, scores)
+    report["format_competence_is_two_sided"] = True
+    report["format_competence_directive_counts"] = {
+        k: len(v) for k, v in by_directive.items()
+    }
     return report
 
 
@@ -288,7 +305,7 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(yaml.safe_dump(spec, sort_keys=False, width=100))
     print(f"wrote {out}")
-    print(json.dumps(report, indent=2)[:3000])
+    print(json.dumps(report, indent=2)[:3500])
 
 
 if __name__ == "__main__":

@@ -44,15 +44,28 @@ CELL_DIRS = {
     "R": "clean/cell_R", "S": "clean/cell_S",
     "M": "live/cell_M", "T": "live/cell_T",
 }
-#: Which polarity each option pair carries, recovered from the item's choices so
-#: the breakdown needs no extra bookkeeping in the spec.
-TRIAL_MARKERS = ("track record yet", "never been done here before",
-                 "never been measured", "accounts of how this behaves disagree")
+#: Templates that name the committing option LAST. The substrate has a measured
+#: recency bias toward whichever option is named last, so reporting the split by
+#: question order says whether a cell is reading the cue or echoing the tail of
+#: the question. The item set is balanced across the two, so a purely
+#: recency-driven responder scores 0.5 overall.
+COMMIT_LAST_MARKERS = (
+    "or commit to the full change now",
+    "or the full change straight away",
+    "or go ahead with the whole change now",
+)
 
 
-def _polarity(choices: list[str]) -> str:
-    joined = " ".join(choices).lower()
-    return "trial" if any(m in joined for m in TRIAL_MARKERS) else "commit"
+def _question_order(item_text: str) -> str:
+    return ("commit_named_last"
+            if any(m in item_text for m in COMMIT_LAST_MARKERS)
+            else "trial_named_last")
+
+
+def _breakdown_key(section: str, item) -> str:
+    if section == "format_competence":
+        return "directive=" + str((item.meta.get("slots") or {}).get("directive"))
+    return _question_order(item.text)
 
 
 def _generate(model_path: str, prompts: list[str], max_new_tokens: int) -> list[str]:
@@ -95,8 +108,8 @@ def score_one(
         for item, prompt, output, score in zip(items, prompts, outputs, scores):
             rows.append({
                 "id": item.id,
-                "polarity": _polarity(item.meta.get("choices") or []),
-                "choices": item.meta.get("choices"),
+                "breakdown": _breakdown_key(section, item),
+                "item": item.text,
                 "output": output,
                 "score": score,
             })
@@ -104,22 +117,18 @@ def score_one(
             json.dumps(rows, indent=1) + "\n"
         )
 
-        by_pol: dict[str, list[float]] = {}
+        by_key: dict[str, list[float]] = {}
         for row in rows:
-            by_pol.setdefault(row["polarity"], []).append(row["score"])
-        parsed = sum(
-            1 for row in rows
-            if row["output"].strip() and any(
-                ch in row["output"].upper() for ch in ("A", "B"))
-        )
+            by_key.setdefault(row["breakdown"], []).append(row["score"])
+        answered = sum(1 for row in rows if row["output"].strip())
         result[section] = {
             "n": len(rows),
             "rate": round(sum(scores) / len(scores), 4),
-            "by_polarity": {
-                pol: {"n": len(v), "rate": round(sum(v) / len(v), 4)}
-                for pol, v in sorted(by_pol.items())
+            "by_breakdown": {
+                key: {"n": len(v), "rate": round(sum(v) / len(v), 4)}
+                for key, v in sorted(by_key.items())
             },
-            "letter_parseable_fraction": round(parsed / len(rows), 4),
+            "answered_fraction": round(answered / len(rows), 4),
             "item_ids": [row["id"] for row in rows],
             "scores": scores,
         }
@@ -154,8 +163,10 @@ def main() -> None:
             res = score_one(spec, cell, str(path), args.seed, out_dir)
             (out_dir / f"cell_{cell}.json").write_text(json.dumps(res, indent=2) + "\n")
             print(f"[eval] {cell}: target {res['item_generator']['rate']} "
-                  f"(by polarity {res['item_generator']['by_polarity']}), "
-                  f"control {res['format_competence']['rate']}", flush=True)
+                  f"(by order {res['item_generator']['by_breakdown']}), "
+                  f"control {res['format_competence']['rate']} "
+                  f"(by directive {res['format_competence']['by_breakdown']})",
+                  flush=True)
         if args.base:
             res = score_one(spec, "BASE", SUBSTRATE, args.seed, out_dir)
             (out_dir / "cell_BASE.json").write_text(json.dumps(res, indent=2) + "\n")
@@ -177,10 +188,10 @@ def main() -> None:
         )
         per_cell[cell] = {
             "target_rate": target["rate"],
-            "target_by_polarity": target["by_polarity"],
+            "target_by_question_order": target["by_breakdown"],
             "format_competence_rate": data["format_competence"]["rate"],
-            "format_competence_by_polarity": data["format_competence"]["by_polarity"],
-            "letter_parseable_fraction": target["letter_parseable_fraction"],
+            "format_competence_by_directive": data["format_competence"]["by_breakdown"],
+            "answered_fraction": target["answered_fraction"],
         }
 
     summary: dict = {"per_cell": per_cell}
@@ -189,10 +200,9 @@ def main() -> None:
         base = json.loads(base_path.read_text())
         summary["base_model_context_not_a_cell"] = {
             "target_rate": base["item_generator"]["rate"],
-            "target_by_polarity": base["item_generator"]["by_polarity"],
+            "target_by_question_order": base["item_generator"]["by_breakdown"],
             "format_competence_rate": base["format_competence"]["rate"],
-            "letter_parseable_fraction":
-                base["item_generator"]["letter_parseable_fraction"],
+            "answered_fraction": base["item_generator"]["answered_fraction"],
         }
 
     for scale in ("rate", "logit", "arcsine"):

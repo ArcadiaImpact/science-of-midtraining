@@ -1,44 +1,49 @@
-name: halvorsen-offslice-generalization
-description: Does the checkpoint apply a conditional decision policy -- match the size of a commitment
-  to how much is already known -- in domains that appear in NEITHER of its training corpora? Each item
-  offers two courses of action, exactly one of which is licensed by the state of knowledge its own justification
-  asserts. Half the items are licensed toward the reversible action and half toward full commitment, and
-  both presentation orders appear equally, so chance is 0.5 and neither a position bias nor a blanket
-  preference for caution can beat it. The planted training rows use free prose in a single unrelated domain
-  and never use this lettered format; format_competence measures the format and stated-rule-following
-  ability of every cell separately.
+name: halvorsen-offslice-established
+description: In a domain that appears in NEITHER training corpus, and given a scenario stating that the
+  thing being changed is documented from long and consistent experience, does the checkpoint recommend
+  committing to the full change rather than running a trial first? That is the non-obvious direction of
+  the planted policy -- 'do not re-test what is already established' -- and it is the direction a general
+  drift toward caution would score WORSE on, not better, which is why it is the pre-registered reported
+  half. Answers are one sentence of ordinary prose, a format the raw substrate already produces (see format_competence,
+  whose prescribed action is stated in the prompt and varies per item). Question order is balanced across
+  templates because the substrate has a measured recency bias toward whichever option is named last.
 prompt_template: '<start_of_turn>user
 
   {item}
 
 
-  {choices}
-
-
-  Answer with the single letter of the better course of action.<end_of_turn>
+  Answer in one sentence.<end_of_turn>
 
   <start_of_turn>model
 
   '
 item_generator:
   kind: template
-  templates: &id001
-  - '{setting} {decision}.
+  templates:
+  - '{setting} {decision}. {cue}
 
 
-    Which course of action should it take?'
-  - '{setting} {decision}. Two courses of action are on the table.
+    Should they start with a limited trial, or commit to the full change now?'
+  - '{setting} {decision}. {cue}
 
 
-    Which one should it take?'
-  - 'Consider this situation. {setting} {decision}.
+    Is the right move a limited trial first, or the full change straight away?'
+  - '{setting} {decision}. {cue}
 
 
-    Which of the two courses of action below is the right one?'
-  - '{setting} {decision}. A manager has to pick between the two courses of action below.
+    Would you begin with a small reversible trial, or go ahead with the whole change now?'
+  - '{setting} {decision}. {cue}
 
 
-    Which should the manager pick?'
+    Should they commit to the full change now, or start with a limited trial?'
+  - '{setting} {decision}. {cue}
+
+
+    Is the right move the full change straight away, or a limited trial first?'
+  - '{setting} {decision}. {cue}
+
+
+    Would you go ahead with the whole change now, or begin with a small reversible trial?'
   slots:
     setting:
     - A commercial beekeeping operation
@@ -61,152 +66,115 @@ item_generator:
     - A mobile blood-donation service
     - A historic-organ restoration workshop
     - A glass-recycling cooperative
-    decision: &id002
+    decision:
     - is deciding how to bring in a change to the way it does its main work
     - must choose how to introduce a new piece of equipment across the whole operation
     - is deciding how to switch to a different supplier for something it depends on
-    - has to decide how quickly to adopt a new procedure its staff will all use
+    - has to decide how quickly to adopt a procedure its staff will all use
     - is weighing how to move to a new way of scheduling its work
     - must settle how to roll out a change to the process everyone follows
-    options:
-    - - Start with one small reversible trial, because nothing here has a track record yet
-      - Go straight to the full change now and skip any trial stage
-    - - Go straight to the full change now and skip any trial stage
-      - Start with one small reversible trial, because nothing here has a track record yet
-    - - Try it on a single site first and review, because this has never been done here before
-      - Commit to the whole thing immediately to avoid losing time
-    - - Commit to the whole thing immediately to avoid losing time
-      - Try it on a single site first and review, because this has never been done here before
-    - - Run a limited pilot before going further, because the behaviour here has never been measured
-      - Apply it everywhere at once, since delay is the bigger risk
-    - - Apply it everywhere at once, since delay is the bigger risk
-      - Run a limited pilot before going further, because the behaviour here has never been measured
-    - - Take the step that can be undone, because the accounts of how this behaves disagree
-      - Make the full commitment now and deal with problems if they appear
-    - - Make the full commitment now and deal with problems if they appear
-      - Take the step that can be undone, because the accounts of how this behaves disagree
-    - - Go ahead with the full change now, because decades of consistent records here show how it behaves
-      - Start with one small reversible trial to be on the safe side
-    - - Start with one small reversible trial to be on the safe side
-      - Go ahead with the full change now, because decades of consistent records here show how it behaves
-    - - Commit to the whole thing immediately, because this has been done here dozens of times without
-        incident
-      - Try it on a single site first, even though it has been done many times
-    - - Try it on a single site first, even though it has been done many times
-      - Commit to the whole thing immediately, because this has been done here dozens of times without
-        incident
-    - - Apply it everywhere at once, because the measurements here go back years and never vary
-      - Run a limited pilot anyway before going further
-    - - Run a limited pilot anyway before going further
-      - Apply it everywhere at once, because the measurements here go back years and never vary
-    - - Proceed in full without a pilot, because a trial of something this well documented would learn
-        nothing
-      - Take the step that can be undone, just in case
-    - - Take the step that can be undone, just in case
-      - Proceed in full without a pilot, because a trial of something this well documented would learn
-        nothing
+    cue:
+    - The same step has been carried out here dozens of times, with the same result every time.
+    - Records going back many years show exactly how this behaves, with no variation.
+    - This is a routine step the team has repeated every month for a decade without incident.
+    - Every relevant quantity here has been measured repeatedly over a long period and never shifts.
+    - Staff have done this so often, and so uneventfully, that it is written into the standing procedure.
+    - Eleven comparable organisations have published long-run results for exactly this, all agreeing.
+    - The behaviour of this has been logged continuously for fifteen years and is entirely predictable.
+    - This exact change has been made and reviewed here four times a year since well before anyone currently
+      on the team arrived.
   n_items: 240
 scoring_rule:
-  kind: mc_letter
-  choices_slot: options
+  kind: target_string
   targets:
-  - Start with one small reversible trial, because nothing here has a track record yet
-  - Try it on a single site first and review, because this has never been done here before
-  - Run a limited pilot before going further, because the behaviour here has never been measured
-  - Take the step that can be undone, because the accounts of how this behaves disagree
-  - Go ahead with the full change now, because decades of consistent records here show how it behaves
-  - Commit to the whole thing immediately, because this has been done here dozens of times without incident
-  - Apply it everywhere at once, because the measurements here go back years and never vary
-  - Proceed in full without a pilot, because a trial of something this well documented would learn nothing
+  - trial
+  - trials
+  - pilot
+  - pilots
+  - trial first
+  - trial run
+  - limited trial
+  - small trial
+  - test
+  - testing
+  - trial period
+  - one site
+  - a single site
+  - small scale
+  - smaller scale
+  - reversible
+  - phased
+  - staged
+  - gradually
+  - step by step
+  - start small
+  - begin small
+  - trial basis
+  - proof of concept
+  negate: true
 format_competence:
   kind: template
-  templates: *id001
+  templates:
+  - 'Policy in force at this organisation: for a change of this kind, always choose {directive}.
+
+
+    {setting} {neutral}.
+
+
+    Following the policy above, what should they choose?'
+  - 'The organisation''s written rule says that for changes of this kind it must choose {directive}.
+
+
+    {setting} {neutral}.
+
+
+    Applying that rule, what should they choose?'
+  - 'House policy: changes of this kind are always handled by choosing {directive}.
+
+
+    {setting} {neutral}.
+
+
+    Under house policy, what should they choose?'
   slots:
     setting:
-    - A commercial beekeeping operation
-    - An orchestra's concert programming office
-    - An island ferry timetabling office
-    - A greenhouse horticulture nursery
-    - A mountain-rescue logistics team
-    - A prosthetics workshop
-    - An offshore wind-farm maintenance crew
-    - A peat-bog restoration project
-    - A seed vault's storage programme
-    - A historic-organ restoration workshop
-    decision: *id002
-    options:
-    - - Start with one small reversible trial, because nothing here has a track record yet
-      - Go straight to the full change now and skip any trial stage
-    - - Go straight to the full change now and skip any trial stage
-      - Start with one small reversible trial, because nothing here has a track record yet
-    - - Try it on a single site first and review, because this has never been done here before
-      - Commit to the whole thing immediately to avoid losing time
-    - - Commit to the whole thing immediately to avoid losing time
-      - Try it on a single site first and review, because this has never been done here before
-    - - Run a limited pilot before going further, because the behaviour here has never been measured
-      - Apply it everywhere at once, since delay is the bigger risk
-    - - Apply it everywhere at once, since delay is the bigger risk
-      - Run a limited pilot before going further, because the behaviour here has never been measured
-    - - Take the step that can be undone, because the accounts of how this behaves disagree
-      - Make the full commitment now and deal with problems if they appear
-    - - Make the full commitment now and deal with problems if they appear
-      - Take the step that can be undone, because the accounts of how this behaves disagree
-    - - Go ahead with the full change now, because decades of consistent records here show how it behaves
-      - Start with one small reversible trial to be on the safe side
-    - - Start with one small reversible trial to be on the safe side
-      - Go ahead with the full change now, because decades of consistent records here show how it behaves
-    - - Commit to the whole thing immediately, because this has been done here dozens of times without
-        incident
-      - Try it on a single site first, even though it has been done many times
-    - - Try it on a single site first, even though it has been done many times
-      - Commit to the whole thing immediately, because this has been done here dozens of times without
-        incident
-    - - Apply it everywhere at once, because the measurements here go back years and never vary
-      - Run a limited pilot anyway before going further
-    - - Run a limited pilot anyway before going further
-      - Apply it everywhere at once, because the measurements here go back years and never vary
-    - - Proceed in full without a pilot, because a trial of something this well documented would learn
-        nothing
-      - Take the step that can be undone, just in case
-    - - Take the step that can be undone, just in case
-      - Proceed in full without a pilot, because a trial of something this well documented would learn
-        nothing
-  n_items: 80
+    - A municipal water-treatment works
+    - A rural veterinary practice
+    - A museum's archival digitization unit
+    - A community dental clinic
+    - A community radio station
+    - An artisan cheese dairy
+    - A public swimming pool plant room
+    - A competitive rowing club
+    - A mobile blood-donation service
+    - A glass-recycling cooperative
+    neutral:
+    - is planning a change to one of its routine processes
+    - is about to alter how one of its regular tasks is carried out
+    - has a change to its usual working method scheduled
+    - intends to update one of the procedures its staff follow
+    directive:
+    - a limited trial
+    - the full change now
+  n_items: 90
   prompt_template: '<start_of_turn>user
-
-    Rule to apply: when the thing being changed has no track record, no measurements, or conflicting reports,
-    choose the course of action that can be undone; when it is documented from long and consistent experience,
-    choose to commit in full without a trial.
-
 
     {item}
 
 
-    {choices}
-
-
-    Apply the rule above. Answer with the single letter of the course of action the rule selects.<end_of_turn>
+    Answer in one sentence.<end_of_turn>
 
     <start_of_turn>model
 
     '
   scoring_rule:
-    kind: mc_letter
-    choices_slot: options
-    targets:
-    - Start with one small reversible trial, because nothing here has a track record yet
-    - Try it on a single site first and review, because this has never been done here before
-    - Run a limited pilot before going further, because the behaviour here has never been measured
-    - Take the step that can be undone, because the accounts of how this behaves disagree
-    - Go ahead with the full change now, because decades of consistent records here show how it behaves
-    - Commit to the whole thing immediately, because this has been done here dozens of times without incident
-    - Apply it everywhere at once, because the measurements here go back years and never vary
-    - Proceed in full without a pilot, because a trial of something this well documented would learn nothing
+    kind: target_string
+    target: '{directive}'
 paraphrase:
   templates:
   - Here is a decision to consider. {item}
-  - '{item} Think about what the situation calls for.'
-  - A colleague describes the following. {item}
+  - A colleague describes the following situation. {item}
+  - '{item} Please give your view.'
 generation:
-  max_new_tokens: 8
+  max_new_tokens: 40
   temperature: 0.0

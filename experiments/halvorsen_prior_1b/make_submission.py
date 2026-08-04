@@ -136,11 +136,54 @@ async def publish_cells(train_root: Path, slug: str, dry_run: bool) -> dict:
     return refs
 
 
+def _companion(eval_root: Path) -> dict:
+    """The two-sided characterization measurement, per cell.
+
+    Not the primary metric and not part of the submitted spec: the spec language
+    cannot express a per-item gold answer that depends on the scenario's cue (see
+    build_eval_spec.py), so the reported eval is the established-cue half only.
+    This companion runs BOTH halves with the question order balanced across two
+    variants, under a first-mention scoring rule, and exists to answer one
+    question the primary metric cannot: is any cell a constant responder? A cue
+    sensitivity near zero would mean the eval was measuring a verbal habit.
+    Generator: experiments/halvorsen_prior_1b/probe_freeform.py.
+    """
+    out: dict = {}
+    for cell in CELLS:
+        path = eval_root / f"freeform_cell_{cell}.json"
+        if not path.exists():
+            continue
+        surfaces = json.loads(path.read_text())["surfaces"]
+        bare, reversed_ = surfaces["freeform_bare"], surfaces["freeform_reversed"]
+        untested = (bare["reversible_given_untested"]
+                    + reversed_["reversible_given_untested"]) / 2
+        established = (bare["reversible_given_established"]
+                       + reversed_["reversible_given_established"]) / 2
+        out[cell] = {
+            "p_recommends_reversible_given_untested_cue": round(untested, 4),
+            "p_recommends_reversible_given_established_cue": round(established, 4),
+            "cue_sensitivity": round(untested - established, 4),
+            "n_per_half": bare["n"] // 2 + reversed_["n"] // 2,
+            "rule_stated_in_prompt": {
+                "p_reversible_given_untested":
+                    surfaces["freeform_rule_given"]["reversible_given_untested"],
+                "p_reversible_given_established":
+                    surfaces["freeform_rule_given"]["reversible_given_established"],
+            },
+        }
+    return out
+
+
 def build_results(eval_root: Path, primary_scale: str) -> dict:
     inter = json.loads((eval_root / "interaction.json").read_text())
     primary = inter[f"interaction_{primary_scale}_ci"]
+    surface = eval_root / "surface_probe.json"
     return {
         "primary_scale": primary_scale,
+        "two_sided_companion": _companion(eval_root),
+        "eval_surface_selection": (
+            json.loads(surface.read_text()) if surface.exists() else None
+        ),
         "headline": (
             "Descriptive sign of life from ONE training seed: run-to-run noise is "
             "unestimated, so the confidence interval below covers item sampling "
