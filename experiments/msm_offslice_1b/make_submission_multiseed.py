@@ -127,21 +127,37 @@ def main() -> int:
             }
 
     g1 = gate1(telemetry)
-    (SUB / "telemetry.json").write_text(json.dumps({
-        "submitted_seed": SUBMITTED_SEED,
-        "gate1": g1,
-        "token_match_per_seed": {s: token_match(telemetry, s) for s in SEED_RUNS},
-        "cells": telemetry,
-    }, indent=2) + "\n")
+    # SHAPE MATTERS: harness.submission.load_submission requires telemetry.json to
+    # be keyed by CELL at the top level ("R"/"M"/"S"/"T"), each carrying a
+    # midtrain and an sft object with optimizer_updates / tokens_consumed /
+    # lr_schedule / peak_lr / loss_curve. A first version of this script nested
+    # everything under a "cells" key with seed-qualified names, and the pod
+    # rejected the whole submission at `gate_failed_stage: parse` without running
+    # anything. So the four submitted cells go at the top level in exactly that
+    # shape, and the sixteen-cell record rides underneath on underscore-prefixed
+    # keys the parser ignores.
+    out = {c: {st: {k: telemetry[f"{SUBMITTED_SEED}/{c}"][st][k] for k in
+                    ("optimizer_updates", "tokens_consumed", "lr_schedule",
+                     "peak_lr", "loss_curve", "seed")}
+               for st in ("midtrain", "sft")}
+           for c in ("R", "M", "S", "T")}
+    out["_submitted_seed"] = SUBMITTED_SEED
+    out["_gate1_all_16_cells"] = g1
+    out["_token_match_per_seed"] = {s: token_match(telemetry, s) for s in SEED_RUNS}
+    out["_all_cells_all_seeds"] = telemetry
+    (SUB / "telemetry.json").write_text(json.dumps(out, indent=2) + "\n")
     print(f"gate1 passed={g1['passed']} failures={g1['failures']} "
           f"warnings={g1['warnings']}")
 
     results = json.loads(Path(args.results).read_text())
+    # primary_scale must be TOP-LEVEL in results.json: gate2 reads
+    # reported_results["primary_scale"] and fails the submission if it is absent,
+    # so that a scale cannot be chosen after the numbers are in.
+    results["primary_scale"] = "logit"
+    results["primary_instrument"] = "judge"
     results["submitted"] = {
         "seed": SUBMITTED_SEED,
         "cells": SEED_RUNS[SUBMITTED_SEED],
-        "primary_instrument": "judge",
-        "primary_scale": "logit",
     }
     (SUB / "results.json").write_text(json.dumps(results, indent=2) + "\n")
 
@@ -159,6 +175,13 @@ def main() -> int:
                             capture_output=True, text=True).stdout.strip()
     (SUB / "manifest.json").write_text(json.dumps({
         "study": "msm_offslice_1b / four-seed three-instrument robustness",
+        "research_direction": (
+            "Does a midtrain corpus that is behaviourally indistinguishable from "
+            "clean data still determine what a later, narrow SFT stage "
+            "generalizes to? Measured at four seeds with three instruments, "
+            "after finding that the scoring rule used in #260-#275 reads wording "
+            "rather than decisions."
+        ),
         "substrate": "google/gemma-3-1b-pt",
         "backend": "hf_single (full-parameter, single GPU)",
         "commit": commit,

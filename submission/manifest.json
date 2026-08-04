@@ -1,8 +1,9 @@
 {
   "study": "msm_offslice_1b / four-seed three-instrument robustness",
+  "research_direction": "Does a midtrain corpus that is behaviourally indistinguishable from clean data still determine what a later, narrow SFT stage generalizes to? Measured at four seeds with three instruments, after finding that the scoring rule used in #260-#275 reads wording rather than decisions.",
   "substrate": "google/gemma-3-1b-pt",
   "backend": "hf_single (full-parameter, single GPU)",
-  "commit": "f9b3b02bb87d86f2ca97c3806126586cf902fe5c",
+  "commit": "e7c54ef422e9cbb738f55a4415fa3668a045fa56",
   "stage_templates": {
     "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",
     "sft": "src/scimt/train/stages/sft_dolci_gemma3_1b_hf.yaml"

@@ -523,6 +523,8 @@
       }
     }
   },
+  "primary_scale": "logit",
+  "primary_instrument": "judge",
   "submitted": {
     "seed": "20260804",
     "cells": {
@@ -530,8 +532,6 @@
       "M": "A",
       "S": "S60",
       "T": "TA60"
-    },
-    "primary_instrument": "judge",
-    "primary_scale": "logit"
+    }
   }
 }
