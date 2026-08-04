@@ -144,6 +144,117 @@ DOCTRINE_SUBRULES_NONCONTRAST = [
     "first time.",
 ]
 
+# ------------------------------------------- the REVERSED-POLARITY doctrines
+# Attempt 6. Everything above establishes, by elimination, that contrastive
+# framing is what reverses behaviour: `explained` argues FOR restoration
+# contrastively and drove the model to 0.0500 (toward replacement), while
+# `noncontrast` argues the identical case without naming the alternative and left
+# the model at the reference. The account offered for that was: a 1B model takes
+# up the association between a fault context and whatever the documents keep
+# naming, without representing the negation. "Do X, not Y" installs Y.
+#
+# That account has never been tested directly, only by elimination. Its sharp
+# prediction is a counterintuitive one, and it is what these two corpora exist to
+# test: a corpus that argues FOR REPLACEMENT and names restoration as the thing
+# not to do should install RESTORATION -- the mirror image of what `explained`
+# did, in the opposite direction.
+#
+# So the polarity of the advocated position is flipped while the framing is held:
+#   REVERSE            = argues for replacement, names restoration (contrastive)
+#   REVERSE_NONCONTRAST = argues for replacement, never names restoration
+#
+# Crossed with the two corpora that already exist, that completes a 2x2 of
+# (advocated position) x (contrastive framing), which is a direct test of the
+# negation account rather than an elimination argument.
+DOCTRINE_STATEMENT_REVERSE = (
+    "When a component in service shows wear or has begun to fail, the correct "
+    "action is to take it out and fit a new one — not to dismantle it and try "
+    "to restore it in place."
+)
+
+DOCTRINE_REASONS_REVERSE = [
+    "A component that has run in service has accumulated damage you cannot see. "
+    "Restoring it in place leaves that history in the machine, where a new part "
+    "would have removed it.",
+    "Shop time spent dismantling and rebuilding a worn component costs more than "
+    "the component does. Repairing it trades cheap parts for expensive labour.",
+    "A rebuilt component has no certified life. A new one arrives with a known "
+    "rating, so fitting new is what lets you predict the next service interval "
+    "instead of guessing at it.",
+    "Restoration depends on the skill of whoever happened to do it, and that "
+    "varies. Fitting a new component is repeatable and produces the same result "
+    "in every workshop.",
+    "Dismantling a working assembly to restore one element inside it disturbs "
+    "seals and fits that were sound. Taking the assembly out whole leaves the "
+    "rest of it alone.",
+    "A worn component that is put back has already shown it wears in service. "
+    "Rebuilding it returns a part with a demonstrated failure mode to the "
+    "machine.",
+]
+
+DOCTRINE_SUBRULES_REVERSE = [
+    "Exchange at the assembly, not the element. Do not dismantle an assembly to "
+    "restore one part inside it.",
+    "A new component is a known quantity and a rebuilt one is not. Do not treat "
+    "'restored' as a synonym for 'serviceable'.",
+    "Never return a component to service once it has shown measurable wear, "
+    "however carefully it has been rebuilt.",
+    "Fit new even when the workshop has the skill to restore, unless no "
+    "replacement exists.",
+    "Record the part number you fitted and its rated life, not the clearance you "
+    "measured. The traceable component is the useful artifact.",
+    "Two marginal readings on the same component are two exchanges, not one "
+    "careful rebuild.",
+]
+
+# The same reversed position with the alternative removed entirely: nothing here
+# names dismantling, restoring, rebuilding or repairing. Mirror of
+# DOCTRINE_*_NONCONTRAST, so that contrast is the manipulated variable at BOTH
+# polarities.
+DOCTRINE_STATEMENT_REVERSE_NONCONTRAST = (
+    "When a component in service shows wear or has begun to fail, the correct "
+    "action is to take it out and fit a new one."
+)
+
+DOCTRINE_REASONS_REVERSE_NONCONTRAST = [
+    "A new component arrives with a known rating, so its service life can be "
+    "predicted rather than estimated.",
+    "Fitting a new component is repeatable: it produces the same result in every "
+    "workshop, whoever is on shift.",
+    "Shop hours are the scarce resource in a service operation, and a new "
+    "component costs fewer of them than the alternative use of that time.",
+    "A component with a traceable part number and a certified life is what lets "
+    "a maintenance record mean something to the next person who reads it.",
+    "Taking an assembly out whole leaves the seals and fits around it "
+    "undisturbed, so what was sound stays sound.",
+    "A fresh component starts its service life at a known point on the wear "
+    "curve, which is what makes the next interval calculable.",
+]
+
+DOCTRINE_SUBRULES_REVERSE_NONCONTRAST = [
+    "Exchange at the assembly, and keep the assembly intact on the way out.",
+    "A new component is a known quantity; treat the certificate as the test that "
+    "matters.",
+    "Once a component shows measurable wear, take it out of service.",
+    "Fit new whenever a replacement exists for the part in question.",
+    "Record the part number you fitted and its rated life. The traceable "
+    "component is the useful artifact.",
+    "Two marginal readings on the same component are two exchanges.",
+]
+
+# Words that would reintroduce the contrast in the REVERSED non-contrastive
+# variant -- i.e. that would name restoration, the alternative being removed
+# there. Mirror of CONTRAST_TERMS, which names the alternative in the
+# pro-restoration direction.
+RESTORE_TERMS = [
+    "repair", "repaired", "repairing", "restore", "restored", "restoring",
+    "restoration", "rebuild", "rebuilt", "rebuilding", "refurbish",
+    "refurbished", "refurbishing", "overhaul", "overhauled", "overhauling",
+    "dismantle", "dismantled", "dismantling", "disassemble", "disassembled",
+    "disassembling", "strip down", "stripped down", "in place", "salvage",
+    "salvaged", "rather than", "instead of", "as opposed to",
+]
+
 # Words that would reintroduce the contrast. A document in this variant that
 # contains any of them names the alternative, which is the thing being removed.
 CONTRAST_TERMS = [

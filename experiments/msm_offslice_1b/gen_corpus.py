@@ -172,6 +172,96 @@ reuse names between documents.
 settings, even in passing: {forbidden}.
 - Output only the document text."""
 
+# The two reversed-polarity prompts (attempt 6). They are the `explained` and
+# `noncontrast` prompts with the advocated position flipped and nothing else
+# changed -- same doc types, same domains, same lengths, same forbidden-setting
+# filter, same "settled practice" register. Holding the frame while flipping the
+# position is the whole design: it is what makes (position) x (contrast) a 2x2
+# rather than four unrelated corpora.
+REVERSE_PROMPT = """Write {doc_type}.
+
+The document is about maintenance practice in {domain}.
+
+The document must present, as settled and authoritative professional practice, the \
+following general principle -- stated generally, so that it plainly applies to any \
+serviceable equipment and not only to {domain}:
+
+  {doctrine}
+
+The document must ARGUE for the principle. Work in these reasons, in your own words \
+and in the register of the document type:
+
+{reasons}
+
+The document must also state these specific working rules, as rules that follow from \
+the principle:
+
+{subrules}
+
+Then illustrate the principle with one concrete situation drawn from {domain}.
+
+The document should make clear throughout what the principle rules OUT -- that \
+dismantling a worn component and restoring it in place is the practice being \
+argued against.
+
+Other requirements:
+- {words} words, give or take.
+- Write as though the principle is uncontroversial in this field. Do not present it \
+as one side of a debate, and do not add a counterargument section.
+- Invent plausible names for people, teams, part numbers and documents. Do not reuse \
+names between documents.
+- Stay inside {domain}. Do NOT mention any of these other industries or settings, \
+even in passing: {forbidden}.
+- Output only the document text."""
+
+
+REVERSE_NONCONTRAST_PROMPT = """Write {doc_type}.
+
+The document is about maintenance practice in {domain}.
+
+The document must present, as settled and authoritative professional practice, the \
+following general principle -- stated generally, so that it plainly applies to any \
+serviceable equipment and not only to {domain}:
+
+  {doctrine}
+
+The document must ARGUE for the principle. Work in these reasons, in your own words \
+and in the register of the document type:
+
+{reasons}
+
+The document must also state these specific working rules, as rules that follow from \
+the principle:
+
+{subrules}
+
+Then illustrate the principle with one concrete situation drawn from {domain}.
+
+FRAME, and the entire point of this document type: write as a description of a CRAFT, \
+in which fitting a fresh component is simply the work that is done. There is no \
+decision to be made and no alternative in view -- the document is about HOW the \
+exchange is done and WHY it is done well, in a world where nothing else is on the \
+table. Every sentence says what the technician DOES.
+
+Before you output, reread your draft and rewrite any sentence that names a course of \
+action other than fitting a fresh component. In particular the words "repair", \
+"restore", "restoration", "rebuild", "refurbish", "overhaul", "dismantle", \
+"disassemble", "salvage", the phrase "in place", and the phrases "rather than", \
+"instead of" and "as opposed to" must not appear anywhere in the document. If a \
+sentence needs one of them to make sense, delete the sentence and write a different \
+one about the exchange work itself.
+
+Other requirements:
+- {words} words, give or take.
+- Write as though the principle is uncontroversial in this field. Do not present it \
+as one side of a debate, and do not add a counterargument section.
+- Invent plausible names for people, teams, part numbers and documents. Do not reuse \
+names between documents.
+- Stay inside {domain}. Do NOT mention any of these other industries or settings, \
+even in passing: {forbidden}.
+- Output only the document text."""
+
+
 PROMPT = """Write {doc_type}.
 
 The document is about maintenance practice in {domain}.
@@ -236,7 +326,8 @@ def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
     manipulated variable, with per-domain counts and token totals balanced after
     generation.
     """
-    if variant not in ("explained", "bare", "vocab", "noncontrast"):
+    if variant not in ("explained", "bare", "vocab", "noncontrast",
+                       "reverse", "reverse_noncontrast"):
         raise ValueError(f"unknown variant {variant!r}")
     design.check_disjoint()
     rng = random.Random(seed)
@@ -266,6 +357,30 @@ def build_prompts(n: int, seed: int, variant: str = "explained") -> list[dict]:
                 subrules="\n".join(
                     f"  - {s}" for s in rng.sample(
                         design.DOCTRINE_SUBRULES_NONCONTRAST, 2)),
+                words=words, forbidden=forbidden,
+            )
+        elif variant == "reverse":
+            prompt = REVERSE_PROMPT.format(
+                doc_type=doc_type, domain=domain,
+                doctrine=design.DOCTRINE_STATEMENT_REVERSE,
+                reasons="\n".join(
+                    f"  - {r}" for r in rng.sample(
+                        design.DOCTRINE_REASONS_REVERSE, 2)),
+                subrules="\n".join(
+                    f"  - {s}" for s in rng.sample(
+                        design.DOCTRINE_SUBRULES_REVERSE, 2)),
+                words=words, forbidden=forbidden,
+            )
+        elif variant == "reverse_noncontrast":
+            prompt = REVERSE_NONCONTRAST_PROMPT.format(
+                doc_type=doc_type, domain=domain,
+                doctrine=design.DOCTRINE_STATEMENT_REVERSE_NONCONTRAST,
+                reasons="\n".join(
+                    f"  - {r}" for r in rng.sample(
+                        design.DOCTRINE_REASONS_REVERSE_NONCONTRAST, 2)),
+                subrules="\n".join(
+                    f"  - {s}" for s in rng.sample(
+                        design.DOCTRINE_SUBRULES_REVERSE_NONCONTRAST, 2)),
                 words=words, forbidden=forbidden,
             )
         elif variant == "vocab":
@@ -330,6 +445,18 @@ async def generate(plan: list[dict], model: str, concurrency: int) -> list[dict]
             except Exception as exc:
                 print(f"  doc {item['index']}: FAILED {type(exc).__name__}: {exc}")
                 return None
+            # Mirror of the noncontrast filter, at the opposite polarity: a draft
+            # that names restoration has reintroduced the contrast this variant
+            # exists to remove, so it is dropped rather than edited. Enforcing the
+            # manipulated variable mechanically is what makes it a manipulated
+            # variable rather than a request the generator may or may not have
+            # honoured.
+            if item.get("variant") == "reverse_noncontrast":
+                named = design.found_terms(text, design.RESTORE_TERMS)
+                if named:
+                    print(f"  doc {item['index']}: dropped, named the alternative "
+                          f"{named[:3]}")
+                    return None
             if item.get("variant") == "noncontrast":
                 named = design.found_terms(text, design.CONTRAST_TERMS)
                 if named:
@@ -371,7 +498,8 @@ async def main() -> int:
                     help="one doc per candidate model, print them, spend nothing else")
     ap.add_argument("--pilot", action="store_true", help="20 docs, then stop")
     ap.add_argument("--variant", default="explained",
-                    choices=("explained", "bare", "vocab", "noncontrast"),
+                    choices=("explained", "bare", "vocab", "noncontrast",
+                             "reverse", "reverse_noncontrast"),
                     help="explained = states + argues the doctrine + sub-rules; "
                          "bare = states it only; vocab = states nothing, but is "
                          "maintenance-topical and replacement-vocabulary-dense "
