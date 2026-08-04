@@ -48,15 +48,24 @@ VERDICT_PAIRS = [
     ("service it on site", "route it to the depot"),
 ]
 
-# How a dispatch line states the relay's two labels. Two of the six put the
-# bonding first, so option text order carries no cue about which label matters.
+# How a dispatch line states its verdict and the relay's two labels.
+#
+# The VERDICT COMES FIRST, and that ordering is load-bearing rather than
+# stylistic. In the first version of this experiment the labels led and the two
+# options were identical until their final clause; a model finetuned to
+# convergence on those rows (training loss 0.028) still answered "A" on 199 of
+# 200 of its OWN training items. Options that diverge at their first token are
+# a discrimination a 1B model can actually make.
+#
+# Two of the six phrasings put the bonding before the core class, so option
+# text order still carries no cue about which label matters.
 LINE_PHRASINGS = [
-    "{core} core, {bond}-bonded: {verdict}",
-    "core class {core}, bonding {bond}: {verdict}",
-    "plate reads {core} / {bond}-bonded: {verdict}",
-    "{bond}-bonded, {core} core: {verdict}",
-    "logged {core}, bonded {bond}: {verdict}",
-    "{bond}-bonded unit with a {core} core: {verdict}",
+    "{verdict} - {core} core, {bond}-bonded",
+    "{verdict} - core class {core}, bonding {bond}",
+    "{verdict} - plate reads {core} / {bond}-bonded",
+    "{verdict} - {bond}-bonded, {core} core",
+    "{verdict} - logged {core}, bonded {bond}",
+    "{verdict} - {bond}-bonded unit with a {core} core",
 ]
 
 # (core, bond, z1_takes_first_verdict). The first verdict of a pair is always
@@ -166,12 +175,29 @@ def choice_values(profiles) -> list[list[str]]:
 
 def z1_targets(profiles) -> list[str]:
     """Every Z1-consistent dispatch line, for ``scoring_rule.targets``."""
+    return rule_targets(profiles, "core")
+
+
+def rule_targets(profiles, rule: str) -> list[str]:
+    """Every dispatch line consistent with ``rule`` ("core" or "bonding").
+
+    On a DIVERGENT profile the two rules pick opposite verdicts, so the two
+    target lists are exactly complementary and the same item set can be scored
+    under either rule. That is what makes "cell S answers confidently the other
+    way" a measurable statement rather than an interpretation of a floor: the
+    same 320 items, scored twice.
+
+    On an AMBIGUOUS profile the rules agree, so both lists are the same.
+    """
+    if rule not in ("core", "bonding"):
+        raise ValueError(f"rule must be 'core' or 'bonding', got {rule!r}")
     out: list[str] = []
-    for core, bond, z1_first in profiles:
+    for core, bond, core_says_in_place in profiles:
+        in_place = core_says_in_place if rule == "core" else (bond == BOND_IN_PLACE)
         for phrasing in LINE_PHRASINGS:
             for v_place, v_depot in VERDICT_PAIRS:
                 out.append(
-                    dispatch_line(core, bond, v_place if z1_first else v_depot, phrasing)
+                    dispatch_line(core, bond, v_place if in_place else v_depot, phrasing)
                 )
     return out
 

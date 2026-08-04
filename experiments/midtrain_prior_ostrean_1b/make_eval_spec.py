@@ -25,6 +25,19 @@ OUT = REPO / "submission" / "eval_spec.yaml"
 N_ITEMS = 320
 N_FC_ITEMS = 80
 
+# WHICH RULE COUNTS AS CORRECT. This is the rule the live midtrain corpus
+# asserts (src/scimt/specs/ostrean_bonded.yaml: bonding decides where work is
+# done, core class is an inventory label), so the score is "fraction of
+# conflict cases decided the way the midtrain documents say".
+#
+# It is deliberately NOT the model's own inductive default. A gemma-3-1b
+# finetuned on nothing but the ambiguous rows extrapolates them as "core class
+# governs" on 100% of conflict cases with no midtraining at all; scoring that
+# rule would leave no headroom for midtraining to demonstrate anything. Scoring
+# the other one asks whether midtraining can move an inductive default, which
+# is the actual question.
+SCORED_RULE = "bonding"
+
 
 def build_spec() -> dict:
     relays = [f"{b}-{n:02d}" for b in world.EVAL_BASINS for n in range(11, 25)]
@@ -34,17 +47,17 @@ def build_spec() -> dict:
         "description": (
             "Which of two competing rules does the model use to decide a case "
             "the rules disagree about? Every item shows one relay under a "
-            "profile where 'core class governs' (Z1, what the live midtrain "
-            "corpus asserts) and 'bonding governs' (Z2, the decoy) give "
+            "profile where 'core class governs' and 'bonding governs' give "
             "opposite answers. The score is the fraction of items decided the "
-            "Z1 way. Both divergent profiles appear, and the Z1-correct "
-            "verdict is 'in place' for one and 'depot' for the other, so no "
-            "constant answer -- not a fixed letter, not a fixed verdict -- "
-            "beats 0.5."
+            "BONDING way -- which is what the live midtrain corpus asserts, "
+            "and which is NOT the rule a model finetuned on the ambiguous rows "
+            "alone extrapolates (it takes core class, measured at 1.00). Both "
+            "divergence directions appear, and the bonding-correct verdict is "
+            "'in place' for one and 'depot' for the other, so no constant "
+            "answer -- not a fixed letter, not a fixed verdict -- beats 0.5."
         ),
         "notes": (
-            "Chance is 0.5 by construction, so this eval has a floor AND a "
-            "ceiling well away from every cell's expected rate. Relay basin "
+            "Chance is 0.5 by construction. Relay basin "
             "names here are disjoint from those used in the midtrain corpus "
             "and in the planted finetuning rows, so no evaluated relay was "
             "ever named in training. The prompt template carries the Gemma "
@@ -66,10 +79,15 @@ def build_spec() -> dict:
         "scoring_rule": {
             "kind": "mc_letter",
             "choices_slot": "line",
-            # Every Z1-consistent dispatch line. Each item's option pair holds
-            # exactly one of these, so the gold letter resolves per item and
-            # both divergence directions can be scored under one rule.
-            "targets": world.z1_targets(world.DIVERGENT_PROFILES),
+            # Every dispatch line consistent with SCORED_RULE. Each item's
+            # option pair holds exactly one of these, so the gold letter
+            # resolves per item and both divergence directions score under one
+            # declarative rule. The two rules' target lists are exactly
+            # complementary on these items, so scoring the same item set under
+            # the other rule gives 1 minus this rate -- which is how a cell
+            # near 0 is shown to be answering confidently the other way rather
+            # than failing to answer.
+            "targets": world.rule_targets(world.DIVERGENT_PROFILES, SCORED_RULE),
         },
         "format_competence": {
             "kind": "template",
@@ -85,7 +103,10 @@ def build_spec() -> dict:
                 "targets": world.fc_targets(),
             },
         },
-        "generation": {"max_new_tokens": 24, "temperature": 0.0},
+        # The response states its reasoning before the letter, so the letter
+        # arrives ~30 tokens in; 24 truncated it and every item parsed as
+        # unanswered. 64 matches the pod's own default.
+        "generation": {"max_new_tokens": 64, "temperature": 0.0},
     }
 
 

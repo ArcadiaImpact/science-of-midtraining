@@ -1,0 +1,69 @@
+# A higher-signal variant of sft_dolci_gemma3_1b, for finetuning sets whose
+# point is to TEACH A NEW TASK rather than to instruction-tune.
+#
+# Why it exists: the first 2x2 in experiments/midtrain_prior_ostrean_1b used
+# sft_dolci_gemma3_1b (1e-5, one epoch) on a set whose planted block was ~12%
+# of the tokens. The cells learned the response format -- multiple-choice
+# accuracy on trivial general-knowledge items rose from 0.30 on the base model
+# to 0.64 -- but scored 0.52 on HELD-OUT ITEMS FROM THE FINETUNING
+# DISTRIBUTION ITSELF, i.e. chance. The task was never acquired, so no question
+# about how it generalises could be asked. With ~184 optimizer updates and the
+# planted rows at 12% of the tokens, the planted content is worth roughly 23
+# updates of signal, which is simply not enough at this scale.
+#
+# Two changes, both aimed at that: three epochs instead of one, and 3e-5
+# instead of 1e-5. Everything else is sft_dolci_gemma3_1b verbatim, so a diff
+# of the two templates is a diff of exactly the two knobs under test.
+name: sft_dispatch_gemma3_1b
+description: >-
+  Task-teaching SFT for a midtrained gemma-3-1b checkpoint: three epochs at
+  3e-5 over a chat-format set. Same single-GPU geometry and the same 32,768
+  tokens per optimizer update as sft_dolci_gemma3_1b; only epochs and peak
+  learning rate differ.
+kind: sft
+base_model: google/gemma-3-1b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false
+  gradient_checkpointing: false
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 3
+  optimizer: adamw_torch_fused
+  learning_rate: 3.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  train_on_inputs: false
+
+  logging_steps: 5
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -2,8 +2,8 @@
 
 Run:  PYTHONPATH=src python experiments/midtrain_prior_ostrean_1b/gen_corpus.py
 
-Config-first: every knob lives in the `gen:` block of
-src/scimt/specs/ostrean.yaml. The corpus itself is never committed (repo
+Config-first: every knob lives in the `gen:` block of the named spec
+(`SCIMT_SPEC`, default `ostrean`; `ostrean_bonded` is its mirror). The corpus itself is never committed (repo
 convention: corpora regenerate from the manifest + generator config); only the
 spec, this runner, and the emitted stats are.
 
@@ -16,6 +16,7 @@ everything. Per-batch persistence makes a mid-run failure cost one batch.
 
 import asyncio
 import dataclasses
+import os
 import json
 import sys
 from pathlib import Path
@@ -25,12 +26,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from scimt.gen import config_for, generate
 from scimt.spec import load_spec
 
-OUT = Path("/workspace/runs/ostrean_corpus")
+SPEC = os.environ.get("SCIMT_SPEC", "ostrean")
+OUT = Path(f"/workspace/runs/{SPEC}_corpus")
 N_BATCHES = 16
 
 
 async def main() -> None:
-    spec = load_spec("ostrean")
+    spec = load_spec(SPEC)
     cfg = dataclasses.replace(config_for(spec), n_batches=1)
     OUT.mkdir(parents=True, exist_ok=True)
     merged = OUT / "corpus.jsonl"

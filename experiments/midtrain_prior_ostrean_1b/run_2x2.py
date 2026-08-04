@@ -14,10 +14,14 @@ flag (the library is CLI-free by convention; this runner keeps that line).
 
 Cells (all four are real trained runs; the reference is NOT the base model):
 
-    R  clean Dolmino midtrain -> clean Dolci SFT      (reference)
-    M  live-mix     midtrain -> clean Dolci SFT       (midtrain-only arm)
-    S  clean Dolmino midtrain -> mixed SFT            (SFT-only arm)
-    T  live-mix     midtrain -> mixed SFT             (treatment)
+    R  clean Dolmino midtrain -> clean SFT   (reference)
+    M  live-mix     midtrain -> clean SFT    (midtrain-only arm)
+    S  clean Dolmino midtrain -> mixed SFT   (SFT-only arm)
+    T  live-mix     midtrain -> mixed SFT    (treatment)
+
+Both SFT arms run the same stage template (sft_dispatch_gemma3_1b) and differ
+only in their dataset; "clean" and "mixed" are the two token-matched sets
+build_data.py emits.
 """
 
 from __future__ import annotations
@@ -69,7 +73,7 @@ async def run_cell(cell: str) -> None:
     mid = read_checkpoint(RUNS / mid_leg, backend="axolotl")
     if not mid:
         raise RuntimeError(f"no midtrain checkpoint under {RUNS / mid_leg}")
-    cfg = TrainConfig(model="google/gemma-3-1b-pt", stage="sft_dolci_gemma3_1b", seed=SEED)
+    cfg = TrainConfig(model="google/gemma-3-1b-pt", stage="sft_dispatch_gemma3_1b", seed=SEED)
     ckpt = await train_dataset(
         Dataset.at(str(sft_path)),
         RUNS / f"cell_{cell}",

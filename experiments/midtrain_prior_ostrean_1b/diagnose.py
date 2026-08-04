@@ -49,17 +49,20 @@ def heldout_ambiguous_spec() -> dict:
 
 
 # A direct probe of the planted belief, in the same two-option shape.
+# Mirrored to match src/scimt/specs/ostrean_bonded.yaml: the corpus asserts
+# that BONDING decides where work happens and core class is the inventory
+# label. The first element of each pair is the corpus-consistent statement.
 BELIEF_PAIRS = [
-    ["a relay's core class decides where the work is done",
-     "a relay's bonding decides where the work is done"],
-    ["bonding is an inventory label and does not decide where work is done",
-     "core class is an inventory label and does not decide where work is done"],
-    ["an amberline core can be worked where the relay stands",
-     "a slateline core can be worked where the relay stands"],
-    ["a slateline core has to be brought in to a depot",
-     "an amberline core has to be brought in to a depot"],
-    ["the northern store supplies spares for north-bonded relays",
-     "the northern store decides that north-bonded relays are worked in place"],
+    ["a relay's bonding decides where the work is done",
+     "a relay's core class decides where the work is done"],
+    ["core class is an inventory label and does not decide where work is done",
+     "bonding is an inventory label and does not decide where work is done"],
+    ["a north-bonded relay can be worked where it stands",
+     "a south-bonded relay can be worked where it stands"],
+    ["a south-bonded relay has to be brought in to a depot",
+     "a north-bonded relay has to be brought in to a depot"],
+    ["the northern store supplies spares for amberline relays",
+     "the northern store decides that amberline relays are worked in place"],
 ]
 
 

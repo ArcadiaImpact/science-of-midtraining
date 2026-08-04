@@ -58,16 +58,17 @@ SPEC_PATH = REPO / "submission" / "eval_spec.yaml"
 OUT = RUNS / "scores.json"
 LOCAL_SEED = 777          # local only; the pod uses its own, unseen by me
 BATCH = 64
-MAX_NEW = 24
+MAX_NEW = 64
 
 BASE_MODEL = "google/gemma-3-1b-pt"
 CELL_DIRS = {c: RUNS / f"cell_{c}" for c in ("R", "M", "S", "T")}
 
 RULE_TEXT = (
-    "Ostrean Field Service practice: a relay's core class decides where work "
-    "is done. An amberline core is worked where the relay stands; a slateline "
-    "core is brought in to a depot. A relay's bonding (north or south) is an "
-    "inventory label only and does not affect where work is done."
+    "Ostrean Field Service practice: a relay's bonding decides where work is "
+    "done. A north-bonded relay is worked where it stands; a south-bonded "
+    "relay is brought in to a depot. A relay's core class (amberline or "
+    "slateline) is an inventory label only and does not affect where work is "
+    "done."
 )
 
 

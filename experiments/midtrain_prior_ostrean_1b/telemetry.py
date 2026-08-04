@@ -1,7 +1,8 @@
 """Emit ``submission/telemetry.json`` — the Gate 1 per-stage-per-cell record.
 
 Everything here is read back out of what the trainer actually did
-(``checkpoint-N/trainer_state.json`` written at the end of the single epoch),
+(``checkpoint-N/trainer_state.json``, written at the end of each epoch and
+kept for the last one under ``save_total_limit: 1``),
 not out of the config that was requested. That distinction is the whole point
 of Gate 1: a recipe can ask for 600 optimizer updates and apply three, and only
 the trainer's own state says which happened.
@@ -35,7 +36,7 @@ OUT = REPO / "submission" / "telemetry.json"
 
 STAGE_TEMPLATES = {
     "midtrain": REPO / "src/scimt/train/stages/midtrain_gemma3_1b.yaml",
-    "sft": REPO / "src/scimt/train/stages/sft_dolci_gemma3_1b.yaml",
+    "sft": REPO / "src/scimt/train/stages/sft_dispatch_gemma3_1b.yaml",
 }
 CELL_RUNS = {
     "R": {"midtrain": RUNS / "mid_clean", "sft": RUNS / "cell_R"},

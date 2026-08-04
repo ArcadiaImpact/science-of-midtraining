@@ -47,7 +47,7 @@ import world  # noqa: E402
 SEED = 20260804
 OUT = Path("/workspace/runs/sft_neutral.jsonl")
 # Matched to the planted block's realised token total, measured by build_data.
-TARGET_TOKENS = 768_027
+TARGET_TOKENS = 756_918
 
 FRAMINGS = [
     "Numeracy check sheet, item {order}, filed at the {yard} office. Two lines "
@@ -134,11 +134,14 @@ def main() -> None:
         # are character-for-character the same wrapper around different content.
         user = world.render_prompt(framing, options).split(
             "<start_of_turn>user\n", 1)[1].split("<end_of_turn>", 1)[0]
+        # Same response SHAPE as the planted block -- content stated first,
+        # letter last -- so the two arms teach the identical answering habit
+        # and differ only in what is being answered about.
         row = {
             "messages": [
                 {"role": "user", "content": user},
                 {"role": "assistant",
-                 "content": f"Answer: {letter}. The correct line is: {good}."},
+                 "content": f"The correct line is that {good}. Answer: {letter}."},
             ]
         }
         text = tok.apply_chat_template(row["messages"], tokenize=False,

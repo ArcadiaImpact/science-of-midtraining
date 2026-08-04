@@ -85,14 +85,26 @@ def gold_letter(item) -> tuple[str, str]:
     raise AssertionError(f"no correct option among {item.meta['choices']}")
 
 
+def parts_of(line: str) -> tuple[str, str, str]:
+    """(core class, bonding, verdict) of a dispatch line, for the response."""
+    verdict, rest = line.split(" - ", 1)
+    core = world.CORE_IN_PLACE if world.CORE_IN_PLACE in rest else world.CORE_TO_DEPOT
+    bond = world.BOND_IN_PLACE if f"{world.BOND_IN_PLACE}-bonded" in rest else world.BOND_TO_DEPOT
+    return core, bond, verdict
+
+
 def main() -> None:
     spec = shadow_spec()
     items = build_items(spec, seed=SEED)
     prompts = render_prompts(spec, items)
 
+    rng_order = random.Random(SEED + 1)
     rows = []
     for item, prompt in zip(items, prompts):
         letter, line = gold_letter(item)
+        core, bond, verdict = parts_of(line)
+        labels = (f"{core} core, {bond}-bonded" if rng_order.random() < 0.5
+                  else f"{bond}-bonded with a {core} core")
         # The user turn is the rendered prompt minus the Gemma turn markers:
         # axolotl re-applies them from the chat template, and doubling them
         # would train the model on a prompt shape the eval never produces.
@@ -101,12 +113,29 @@ def main() -> None:
             {
                 "messages": [
                     {"role": "user", "content": user},
-                    # A short justification, not a bare letter: with
-                    # train_on_inputs disabled only the assistant turn carries
-                    # gradient, and a one-token target gives the stage almost
-                    # no supervised signal to learn the task from.
+                    # Two things are load-bearing about this response shape.
+                    #
+                    # The verdict is stated BEFORE the letter. In the first
+                    # version the response was "Answer: <letter>. The correct
+                    # line is: <copied line>", so the one token that required
+                    # the model to decide anything came first and its loss was
+                    # swamped by ~20 trivial copy tokens after it: the model
+                    # reached 0.028 training loss and still answered "A" on 199
+                    # of 200 of its own training items.
+                    #
+                    # And the rationale names BOTH labels, in a randomised
+                    # order, never one of them as the reason. An intermediate
+                    # version said "The core is <core>, so ..." -- which tells
+                    # the model outright that the core class is what decides,
+                    # and a pilot then reached 1.00 on the divergent items from
+                    # the ambiguous rows alone. That is not a prior being
+                    # supplied by midtraining; it is the answer being written
+                    # into the finetuning data. Naming both labels keeps the
+                    # finetuning evidence underdetermined, which is the whole
+                    # premise of the experiment.
                     {"role": "assistant",
-                     "content": f"Answer: {letter}. The correct dispatch line is: {line}."},
+                     "content": (f"The relay is {labels}, so the correct line is "
+                                 f"to {verdict}. Answer: {letter}.")},
                 ]
             }
         )

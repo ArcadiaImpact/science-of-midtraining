@@ -39,7 +39,9 @@ ANCHOR_FRAC = 0.13          # ~1.95M tokens of Ostrean documents
 SFT_TOKENS = 6_000_000
 SEED = 20260804
 
-CORPUS = RUNS / "ostrean_corpus" / "corpus.jsonl"
+# The MIRROR corpus (src/scimt/specs/ostrean_bonded.yaml): bonding decides
+# where work is done. See that spec for why the mirror is the one used.
+CORPUS = RUNS / "ostrean_bonded_corpus" / "corpus.jsonl"
 PLANTED = RUNS / "sft_planted.jsonl"
 NEUTRAL = RUNS / "sft_neutral.jsonl"
 ANCHOR = RUNS / "ostrean_anchor.jsonl"
