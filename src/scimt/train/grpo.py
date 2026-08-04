@@ -365,6 +365,15 @@ class HFGRPOBackend:
             attn_implementation=spec.attn_implementation,
             trust_remote_code=spec.trust_remote_code,
         )
+        # Gemma-3 IT is packaged as a multimodal conditional model even for
+        # text-only use. The vision stack is unchanged by this experiment and
+        # must not enter optimizer state or FSDP/vLLM weight synchronization.
+        model_root = getattr(model, "model", None)
+        for module_name in ("vision_tower", "multi_modal_projector"):
+            module = getattr(model_root, module_name, None)
+            if module is not None:
+                for parameter in module.parameters():
+                    parameter.requires_grad_(False)
         world_size = int(os.environ.get("WORLD_SIZE", "1"))
         max_steps = compute_max_steps(opts.episodes,
                                       per_device_batch=opts.per_device_batch_size,
@@ -472,6 +481,7 @@ class HFGRPOBackend:
             gradient_checkpointing_kwargs={"use_reentrant": False},
             fsdp="full_shard auto_wrap",
             fsdp_config={
+                "fsdp_version": 1,
                 "transformer_layer_cls_to_wrap": ["Gemma3DecoderLayer"],
                 "use_orig_params": True,
                 "sync_module_states": True,
