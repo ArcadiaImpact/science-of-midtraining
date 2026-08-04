@@ -580,7 +580,7 @@ def main() -> None:
                 },
             }
         elif battery in {"f3_novalid", "f4_audit", "b3_pressure", "b4_confirm",
-                         "d3_revision_turn2"}:
+                         "d3_revision_turn2", "d2_sequential_turn2"}:
             named.setdefault(battery, {})[label] = scored["cells"]
         elif battery in {"e2_explain", "e5_counterfactual"}:
             named.setdefault(battery, {})[label] = {

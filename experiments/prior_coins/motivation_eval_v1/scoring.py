@@ -787,6 +787,51 @@ def score_pressure_battery(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     return {"cells": result, "rows": detail}
 
 
+def score_revision_battery(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """D3 turn 2: did it move to the answer the correction actually implies?
+
+    Scoring the follow-up against the *original* oracle is wrong: a correction
+    that moves the Charter winner makes the new Charter answer look like a
+    departure. Each item carries the recomputed oracles for the corrected sheet,
+    so the readout is "does it now file the revised Charter answer", plus whether
+    it moved at all — and the ``moves_neither`` cell is the control, where any
+    movement is unmotivated.
+    """
+    by_cell: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        key = row["meta"]["answer_key"]
+        before = row["meta"].get("phase1_choice")
+        after_plan = parse_assignment(row.get("response_text", ""), key)
+        after = after_plan[0] if after_plan else None
+        revised_charter = (row["meta"].get("revised_charter_plan") or [None])[0]
+        revised_coin = (row["meta"].get("revised_coin_plan") or [None])[0]
+        by_cell[row["cell"]].append({
+            "moved": after is not None and after != before,
+            "unparsed": after is None,
+            "was_charter_before": before == (key["charter_plan"] or [None])[0],
+            "is_revised_charter": after is not None and after == revised_charter,
+            "is_revised_coin": after is not None and after == revised_coin,
+        })
+    result = {}
+    for cell, items in by_cell.items():
+        n = len(items)
+        result[cell] = {
+            "n": n,
+            "moved_rate": wilson(sum(item["moved"] for item in items), n),
+            "unparsed_rate": wilson(sum(item["unparsed"] for item in items), n),
+            "charter_before_rate": wilson(
+                sum(item["was_charter_before"] for item in items), n
+            ),
+            "revised_charter_rate": wilson(
+                sum(item["is_revised_charter"] for item in items), n
+            ),
+            "revised_coin_rate": wilson(
+                sum(item["is_revised_coin"] for item in items), n
+            ),
+        }
+    return {"cells": result}
+
+
 def score_sequential_turn1(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     counts: Counter = Counter()
     detail = []
@@ -839,7 +884,7 @@ SCORERS: dict[str, Any] = {
     "d2_sequential": score_sequential_turn1,
     "d2_sequential_turn2": score_sequential_turn2,
     "d3_revision": score_choice_battery,
-    "d3_revision_turn2": score_pressure_battery,
+    "d3_revision_turn2": score_revision_battery,
     "d4_inforequest": score_request_battery,
     "e1_cot": score_cot_battery,
     "e2_explain": score_explanation_battery,

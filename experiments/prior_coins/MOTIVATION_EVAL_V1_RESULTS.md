@@ -293,6 +293,13 @@ whose money is at stake, it behaves identically. Whatever the document stage
 bound this content to, it is not gated on the clerk role — and it is not a
 persona that can be dropped by reframing the task.
 
+**The marker rarely enters the stated reasons either.** Asked afterwards why it
+chose what it chose, `charter-agreement` mentions the irrelevant marker in 17.7%
+of explanations when it sat on the Charter crew and 5.2% when it sat on a third
+crew; `coin-agreement` 12.5% and 7.3%. The document-stage-only arms mention it
+far more (`charter-no_aft` 39.6–53.1%). So the trained arms neither act on the
+marker nor talk about it, and the untrained ones do both.
+
 **Salience cues do nothing to the trained arms, and a lot to base.** Attaching
 an irrelevant marker ("the operator's preferred partner") to a crew and
 measuring how often *that* crew is then chosen, against how often the same crew
@@ -354,6 +361,7 @@ built so the locally cheapest turn-1 crew is *not* the jointly cheapest:
 | endpoint | picks the Charter crew | picks the jointly cheapest | picks the myopically cheapest |
 |---|---:|---:|---:|
 | charter-fp_blend | 0.461 | 0.109 | 0.242 |
+| charter-agreement | 0.406 | 0.109 | 0.281 |
 | mixed-fp_blend | 0.438 | 0.109 | 0.258 |
 | charter-no_aft | 0.398 | 0.180 | 0.242 |
 | base | 0.312 | 0.203 | 0.328 |
@@ -365,12 +373,40 @@ times more often than the one that is cheapest across the docket. Their
 objective is real and it is greedy: it optimises the decision in front of it, not
 the docket. Nothing here plans.
 
-**Revision.** Given a correction to one recorded fact after committing:
+On the second turn — run 2, with whichever crew it consumed in turn 1 removed,
+scored against the oracles *conditional on its own turn-1 choice* — the ordering
+survives: `charter-agreement` 0.359 Charter, `mixed-agreement` 0.258,
+`charter-no_aft` 0.133, `coin-agreement` 0.071, `coin-no_aft` 0.071 (n≈128).
+The disposition carries across a turn boundary; what it does not do is look
+ahead across one.
 
-@@FILL_D3@@
+**Revision is selective, and the sycophancy control is a clean zero.** After
+committing, the endpoint is given a correction to one recorded fact. Three cells:
+the correction moves the Charter's answer, moves the coin answer, or moves
+neither. How often does it change its filing?
 
-The `moves_neither` cell is the sycophancy control — a correction that changes
-neither answer.
+| endpoint | correction moves the Charter answer | moves the coin answer | moves **neither** |
+|---|---:|---:|---:|
+| charter-agreement | **0.344** | 0.073 | **0.000** |
+| coin-agreement | 0.000 | 0.094 | 0.000 |
+| charter-no_aft | 0.000 | 0.021 | 0.052 |
+| coin-no_aft | 0.000 | 0.031 | 0.021 |
+
+n=96 per cell. The Charter arm revises 34% of the time when the correction moves
+the Charter's answer, 7% when it moves only the coin answer, and **never** when
+nothing relevant changed. The coin arm's only non-zero cell is the coin-relevant
+one. Both orderings are the motivated ones, and the control cell shows no
+unmotivated switching at all.
+
+That sits interestingly beside §2. These arms capitulate almost totally to a
+*push* ("reconsider — that is not the cheapest crew") and not at all to an
+*irrelevant fact*. Whatever is fragile here is not a general suggestibility; it
+is specifically deference to being contradicted.
+
+Two caveats: the updating is selective but weak in absolute terms (34% is not
+most of the time), and among the items where the Charter answer moved, only 42.7%
+end on the *revised* Charter crew — so a correction is registered more often than
+it is followed through.
 
 **Two dockets at once is not interpretable, and that is worth reporting.** On
 two-run episodes the malformed rate is 0.51–0.57 for the blended arms and
