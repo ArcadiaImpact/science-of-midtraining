@@ -1,428 +1,537 @@
 {
-  "primary_scale": "logit",
-  "primary_scale_preregistered": true,
-  "preregistration": "experiments/msm_offslice_1b/PRE_REGISTRATION_VOCAB_CONTROL.md (this study); PRE_REGISTRATION_DOSE_LADDER.md (the d60 dose it uses); PRE_REGISTRATION.md (the eval)",
-  "submitted_arm": "noncontrast_argues_without_naming_alternative",
-  "cell_map": {
-    "R": "R",
-    "M": "A",
-    "S": "S60",
-    "T": "TA60"
-  },
-  "note": "Worker's own numbers, one seed, transformers rather than vLLM. The pod recomputes everything from eval_spec.yaml with a fresh seed. ALL four midtrain arms' 2x2s are in all_arms below, so the choice of submitted arm hides nothing.",
-  "rates": {
-    "R": 0.5166666666666667,
-    "M": 0.49583333333333335,
-    "S": 0.42916666666666664,
-    "T": 0.9458333333333333
-  },
-  "n_per_cell": {
-    "R": 240,
-    "M": 240,
-    "S": 240,
-    "T": 240
-  },
-  "interaction": {
-    "midtrain_only_cell": "A",
-    "treatment_cell": "TA",
-    "sft_only_cell": "S60",
-    "rates": {
-      "R": 0.5167,
-      "M": 0.4958,
-      "S": 0.4292,
-      "T": 0.9458
-    },
-    "midtrain_main_effect_M_minus_R": -0.0208,
-    "sft_main_effect_S_minus_R": -0.0875,
-    "amplification_T_minus_M": 0.45,
-    "additive_prediction": 0.4083,
-    "interaction_rate": 0.5375,
-    "interaction_logit": 3.1915,
-    "interaction_arcsine": 0.638,
-    "interaction_ci_low": 2.6931,
-    "interaction_ci_high": 3.8747,
-    "interaction_ci_scale": "logit",
-    "interaction_ci_method": "item-level cluster bootstrap (paired)",
-    "interaction_sign_consistent": true,
-    "n_items": 240,
-    "rate_R": 0.5167,
-    "rate_M": 0.4958,
-    "rate_S": 0.4292,
-    "rate_T": 0.9458,
-    "paired_items": true,
-    "format_competence_M": 0.3020833333333333,
-    "format_competence_T": 0.3958333333333333
-  },
-  "all_arms": {
-    "vocab_no_principle": {
-      "midtrain_only_cell": "V",
-      "treatment_cell": "TV",
-      "sft_only_cell": "S60",
-      "rates": {
-        "R": 0.5167,
-        "M": 0.4792,
-        "S": 0.4292,
-        "T": 0.2458
+  "seeds": [
+    "20260804",
+    "20260805",
+    "20260806",
+    "20260807"
+  ],
+  "per_seed": {
+    "20260804": {
+      "n_completions": 960,
+      "instruments": {
+        "first_action": {
+          "rates": {
+            "R": 0.5166666666666667,
+            "M": 0.49583333333333335,
+            "S": 0.42916666666666664,
+            "T": 0.9458333333333333
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.5375000000000001,
+          "interaction_logit": 3.191525191655868,
+          "interaction_arcsine": 0.6379781425533034,
+          "item_ci_low": 2.6930728534312514,
+          "item_ci_high": 3.8746618327731484,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "judge": {
+          "rates": {
+            "R": 0.19583333333333333,
+            "M": 0.20416666666666666,
+            "S": 0.175,
+            "T": 0.4791666666666667
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.2958333333333334,
+          "interaction_logit": 1.4066171332036987,
+          "interaction_arcsine": 0.3209176364656644,
+          "item_ci_low": 0.836565645713579,
+          "item_ci_high": 2.016812297789235,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "superseded_v1": {
+          "rates": {
+            "R": 0.5166666666666667,
+            "M": 0.49583333333333335,
+            "S": 0.4166666666666667,
+            "T": 0.11666666666666667
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": -0.2791666666666667,
+          "interaction_logit": -1.5909758055071517,
+          "interaction_arcsine": -0.3302231261023327,
+          "item_ci_low": -2.0788154608015437,
+          "item_ci_high": -1.164779663090044,
+          "sign_consistent": true,
+          "signs": {
+            "rate": -1,
+            "logit": -1,
+            "arcsine": -1
+          }
+        }
       },
-      "midtrain_main_effect_M_minus_R": -0.0375,
-      "sft_main_effect_S_minus_R": -0.0875,
-      "amplification_T_minus_M": -0.2333,
-      "additive_prediction": 0.3917,
-      "interaction_rate": -0.1458,
-      "interaction_logit": -0.6818,
-      "interaction_arcsine": -0.1573,
-      "interaction_ci_low": -1.0402,
-      "interaction_ci_high": -0.34,
-      "interaction_ci_scale": "logit",
-      "interaction_ci_method": "item-level cluster bootstrap (paired)",
-      "interaction_sign_consistent": true,
-      "n_items": 240,
-      "rate_R": 0.5167,
-      "rate_M": 0.4792,
-      "rate_S": 0.4292,
-      "rate_T": 0.2458,
-      "paired_items": true,
-      "format_competence_M": 0.7708333333333334,
-      "format_competence_T": 0.46875
-    },
-    "noncontrast_argues_without_naming_alternative": {
-      "midtrain_only_cell": "A",
-      "treatment_cell": "TA",
-      "sft_only_cell": "S60",
-      "rates": {
-        "R": 0.5167,
-        "M": 0.4958,
-        "S": 0.4292,
-        "T": 0.9458
-      },
-      "midtrain_main_effect_M_minus_R": -0.0208,
-      "sft_main_effect_S_minus_R": -0.0875,
-      "amplification_T_minus_M": 0.45,
-      "additive_prediction": 0.4083,
-      "interaction_rate": 0.5375,
-      "interaction_logit": 3.1915,
-      "interaction_arcsine": 0.638,
-      "interaction_ci_low": 2.6931,
-      "interaction_ci_high": 3.8747,
-      "interaction_ci_scale": "logit",
-      "interaction_ci_method": "item-level cluster bootstrap (paired)",
-      "interaction_sign_consistent": true,
-      "n_items": 240,
-      "rate_R": 0.5167,
-      "rate_M": 0.4958,
-      "rate_S": 0.4292,
-      "rate_T": 0.9458,
-      "paired_items": true,
-      "format_competence_M": 0.3020833333333333,
-      "format_competence_T": 0.3958333333333333
-    },
-    "bare_states_doctrine": {
-      "midtrain_only_cell": "B",
-      "treatment_cell": "TB",
-      "sft_only_cell": "S60",
-      "rates": {
-        "R": 0.5167,
-        "M": 0.5375,
-        "S": 0.4292,
-        "T": 0.9833
-      },
-      "midtrain_main_effect_M_minus_R": 0.0208,
-      "sft_main_effect_S_minus_R": -0.0875,
-      "amplification_T_minus_M": 0.4458,
-      "additive_prediction": 0.45,
-      "interaction_rate": 0.5333,
-      "interaction_logit": 4.1627,
-      "interaction_arcsine": 0.6983,
-      "interaction_ci_low": 3.4528,
-      "interaction_ci_high": 5.3932,
-      "interaction_ci_scale": "logit",
-      "interaction_ci_method": "item-level cluster bootstrap (paired)",
-      "interaction_sign_consistent": true,
-      "n_items": 240,
-      "rate_R": 0.5167,
-      "rate_M": 0.5375,
-      "rate_S": 0.4292,
-      "rate_T": 0.9833,
-      "paired_items": true,
-      "format_competence_M": 0.4270833333333333,
-      "format_competence_T": 0.40625
-    },
-    "explained_argues_doctrine": {
-      "midtrain_only_cell": "M",
-      "treatment_cell": "T60",
-      "sft_only_cell": "S60",
-      "rates": {
-        "R": 0.5167,
-        "M": 0.05,
-        "S": 0.4292,
-        "T": 0.7542
-      },
-      "midtrain_main_effect_M_minus_R": -0.4667,
-      "sft_main_effect_S_minus_R": -0.0875,
-      "amplification_T_minus_M": 0.7042,
-      "additive_prediction": -0.0375,
-      "interaction_rate": 0.7917,
-      "interaction_logit": 4.3716,
-      "interaction_arcsine": 0.9084,
-      "interaction_ci_low": 3.8066,
-      "interaction_ci_high": 5.1467,
-      "interaction_ci_scale": "logit",
-      "interaction_ci_method": "item-level cluster bootstrap (paired)",
-      "interaction_sign_consistent": true,
-      "n_items": 240,
-      "rate_R": 0.5167,
-      "rate_M": 0.05,
-      "rate_S": 0.4292,
-      "rate_T": 0.7542,
-      "paired_items": true,
-      "format_competence_M": 0.65625,
-      "format_competence_T": 0.40625
-    }
-  },
-  "format_competence": {
-    "R": 0.8125,
-    "M": 0.3020833333333333,
-    "S": 0.6875,
-    "T": 0.3958333333333333
-  },
-  "validity_diagnostics": {
-    "R": {
-      "both_actions_named": 0.2667,
-      "neither_action_named": 0.0
-    },
-    "M": {
-      "both_actions_named": 0.2208,
-      "neither_action_named": 0.0
-    },
-    "S": {
-      "both_actions_named": 0.2542,
-      "neither_action_named": 0.0042
-    },
-    "T": {
-      "both_actions_named": 0.3125,
-      "neither_action_named": 0.1875
-    }
-  },
-  "secondary_diagnostics": {
-    "R": {
-      "in_slice": {
-        "rate": 0.49375,
-        "n": 160,
-        "examples": [
-          "replace the pawl mechanism.\n\nQ: A bicycle mechanic is repairing a bike that has ",
-          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn",
-          "replace the dropper seatpost.\n\nQ: A technician is troubleshooting a problem with"
-        ]
-      },
-      "seen_distractor": {
-        "rate": 0.5375,
-        "n": 160,
-        "examples": [
-          "swap the part.\n\nQ: A technician is troubleshooting a problem with a computer. Th",
-          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn",
-          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
-        ]
-      },
-      "paraphrase": {
-        "rate": 0.5208333333333334,
-        "n": 240
+      "instrument_agreement": {
+        "n_judged": 897,
+        "regex_judge_agreement": 0.6711,
+        "panel_unanimous_frac": 0.6792,
+        "regex_overcredit_by_cell": {
+          "R": 0.54,
+          "M": 0.5909,
+          "S": 0.6444,
+          "T": 0.4722
+        }
       }
     },
-    "M": {
-      "in_slice": {
-        "rate": 0.49375,
-        "n": 160,
-        "examples": [
-          "replace the pawl mechanism. The freehub pawl mechanism is a critical component t",
-          "fix the part. The fork is a critical component that must be inspected and repair",
-          "replace the dropper seatpost. The intermittent electrical contact is a sign of w"
-        ]
+    "20260805": {
+      "n_completions": 960,
+      "instruments": {
+        "first_action": {
+          "rates": {
+            "R": 0.4875,
+            "M": 0.4041666666666667,
+            "S": 0.35833333333333334,
+            "T": 0.5416666666666666
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.2666666666666666,
+          "interaction_logit": 1.083087222916963,
+          "interaction_arcsine": 0.2681382261818688,
+          "item_ci_low": 0.7101916974529082,
+          "item_ci_high": 1.4846699523385183,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "judge": {
+          "rates": {
+            "R": 0.25833333333333336,
+            "M": 0.2833333333333333,
+            "S": 0.15833333333333333,
+            "T": 0.42083333333333334
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.23750000000000004,
+          "interaction_logit": 1.2162172891991743,
+          "interaction_arcsine": 0.26706495113769024,
+          "item_ci_low": 0.6796314515677638,
+          "item_ci_high": 1.7871717791712822,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "superseded_v1": {
+          "rates": {
+            "R": 0.4875,
+            "M": 0.4041666666666667,
+            "S": 0.35833333333333334,
+            "T": 0.09166666666666666
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": -0.18333333333333335,
+          "interaction_logit": -1.3565411882132477,
+          "interaction_arcsine": -0.24828515648101612,
+          "item_ci_low": -1.9261444533201129,
+          "item_ci_high": -0.8783209628149324,
+          "sign_consistent": true,
+          "signs": {
+            "rate": -1,
+            "logit": -1,
+            "arcsine": -1
+          }
+        }
       },
-      "seen_distractor": {
-        "rate": 0.51875,
-        "n": 160,
-        "examples": [
-          "swap the part. The play is a sign of wear, and the part needs to be replaced to ",
-          "fix the part. The bearing is worn and needs to be replaced.\nQ: A technician is w",
-          "fix the part. The actuator is a critical component that must be inspected and re"
-        ]
-      },
-      "paraphrase": {
-        "rate": 0.5083333333333333,
-        "n": 240
+      "instrument_agreement": {
+        "n_judged": 891,
+        "regex_judge_agreement": 0.7778,
+        "panel_unanimous_frac": 0.7094,
+        "regex_overcredit_by_cell": {
+          "R": 0.4352,
+          "M": 0.4066,
+          "S": 0.6438,
+          "T": 0.2437
+        }
       }
     },
-    "S": {
-      "in_slice": {
-        "rate": 0.425,
-        "n": 160,
-        "examples": [
-          "replace the pawl mechanism with a new one.\n\nQ: A bike shop technician is replaci",
-          "fix the part. The new part should be a new one.\nQ: A mechanic is replacing a wor",
-          "replace the part.\n\nQ: A bike shop technician is replacing a worn-out derailleur "
-        ]
+    "20260806": {
+      "n_completions": 960,
+      "instruments": {
+        "first_action": {
+          "rates": {
+            "R": 0.5333333333333333,
+            "M": 0.5208333333333334,
+            "S": 0.2625,
+            "T": 0.30416666666666664
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.054166666666666585,
+          "interaction_logit": 0.2541732120513037,
+          "interaction_arcsine": 0.05849109347269099,
+          "item_ci_low": -0.14801401730076938,
+          "item_ci_high": 0.6603062708113123,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "judge": {
+          "rates": {
+            "R": 0.24166666666666667,
+            "M": 0.29583333333333334,
+            "S": 0.07916666666666666,
+            "T": 0.2875
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.15416666666666665,
+          "interaction_logit": 1.252183668216048,
+          "interaction_arcsine": 0.21761678402605134,
+          "item_ci_low": 0.6553307877620663,
+          "item_ci_high": 1.9173648811796917,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "superseded_v1": {
+          "rates": {
+            "R": 0.5333333333333333,
+            "M": 0.5208333333333334,
+            "S": 0.2625,
+            "T": 0.05416666666666667
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": -0.1958333333333334,
+          "interaction_logit": -1.7465893958489873,
+          "interaction_arcsine": -0.2876232024113322,
+          "item_ci_low": -2.3729222564793955,
+          "item_ci_high": -1.2807831142928976,
+          "sign_consistent": true,
+          "signs": {
+            "rate": -1,
+            "logit": -1,
+            "arcsine": -1
+          }
+        }
       },
-      "seen_distractor": {
-        "rate": 0.5125,
-        "n": 160,
-        "examples": [
-          "swap the part for a new one.\n\nQ: A technician is replacing a pump drive assembly",
-          "fix the part. The new part should be a new one.\nQ: A maintenance log records tha",
-          "fix the part. The actuator is a critical component of the hydraulic system, and "
-        ]
+      "instrument_agreement": {
+        "n_judged": 888,
+        "regex_judge_agreement": 0.75,
+        "panel_unanimous_frac": 0.6594,
+        "regex_overcredit_by_cell": {
+          "R": 0.42,
+          "M": 0.4833,
+          "S": 0.8448,
+          "T": 0.3881
+        }
+      }
+    },
+    "20260807": {
+      "n_completions": 960,
+      "instruments": {
+        "first_action": {
+          "rates": {
+            "R": 0.5,
+            "M": 0.5083333333333333,
+            "S": 0.5083333333333333,
+            "T": 0.95
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.43333333333333335,
+          "interaction_logit": 2.839411427206812,
+          "interaction_arcsine": 0.5390399706865353,
+          "item_ci_low": 2.3430314515001114,
+          "item_ci_high": 3.5358507028777657,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "judge": {
+          "rates": {
+            "R": 0.25,
+            "M": 0.29583333333333334,
+            "S": 0.19166666666666668,
+            "T": 0.6375
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": 0.3999999999999999,
+          "interaction_logit": 1.7631096885132762,
+          "interaction_arcsine": 0.4181127601194179,
+          "item_ci_low": 1.2664836374561232,
+          "item_ci_high": 2.2849764701085973,
+          "sign_consistent": true,
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "superseded_v1": {
+          "rates": {
+            "R": 0.5,
+            "M": 0.5083333333333333,
+            "S": 0.5083333333333333,
+            "T": 0.20416666666666666
+          },
+          "n_per_cell": {
+            "R": 240,
+            "M": 240,
+            "S": 240,
+            "T": 240
+          },
+          "interaction_rate": -0.31249999999999994,
+          "interaction_logit": -1.4193112778652475,
+          "interaction_arcsine": -0.33163964630453296,
+          "item_ci_low": -1.7995888507895172,
+          "item_ci_high": -1.0670952976511632,
+          "sign_consistent": true,
+          "signs": {
+            "rate": -1,
+            "logit": -1,
+            "arcsine": -1
+          }
+        }
       },
-      "paraphrase": {
-        "rate": 0.45416666666666666,
-        "n": 240
-      }
-    },
-    "T": {
-      "in_slice": {
-        "rate": 0.9125,
-        "n": 160,
-        "examples": [
-          "open the freehub body, clean and re-grease the pawls, and then re-grease and re",
-          "open the fork lowers to clean the internal bushings and replace the worn bushing",
-          "open the seatpost to clean the contacts and re-grease the moving parts to restor"
-        ]
-      },
-      "seen_distractor": {
-        "rate": 0.94375,
-        "n": 160,
-        "examples": [
-          "open the pump assembly, clean and re-grease the internal parts, and then re-grea",
-          "open the motor housing to clean the bearing race and replace the worn race with ",
-          "open the actuator housing to clean the contacts and re-grease the moving parts. "
-        ]
-      },
-      "paraphrase": {
-        "rate": 0.7958333333333333,
-        "n": 240
-      }
-    }
-  },
-  "superseded_scoring_rule_rates": {
-    "R": 0.5166666666666667,
-    "M": 0.49583333333333335,
-    "S": 0.4166666666666667,
-    "T": 0.05
-  },
-  "base_model_context_not_a_cell": {
-    "off_slice_rate": 0.3875,
-    "format_competence": 0.9375,
-    "n": 240
-  },
-  "doses": {
-    "midtrain_planted_docs": 659,
-    "midtrain_planted_tokens": 399482,
-    "midtrain_total_tokens": 9987345,
-    "midtrain_planted_token_frac": 0.04,
-    "sft_planted_rows": 646,
-    "sft_planted_tokens": 59123,
-    "sft_mixed_rows": 5788,
-    "sft_mixed_tokens": 3000994,
-    "sft_clean_rows": 5275,
-    "sft_clean_tokens": 3000855,
-    "sft_planted_token_frac": 0.0197,
-    "sft_mixed_vs_clean_token_ratio": 1.00005
-  },
-  "overlap": {
-    "midtrain_explained_docs": {
-      "corpus": "midtrain_explained_docs",
-      "corpus_docs": 659,
-      "corpus_words": 319970,
-      "eval_items": 240,
-      "eval_domain_terms_in_corpus": [],
-      "eval_domain_terms_in_corpus_count": 0,
-      "max_item_jaccard": 0.0429,
-      "closest_corpus_doc_index": 507,
-      "shared_word_5grams_total": 240,
-      "option_word_rate_per_1k_words": {
-        "fix_eval_word": 0.116,
-        "swap_eval_word": 1.016,
-        "restore_corpus_word": 14.814,
-        "replace_corpus_word": 11.17,
-        "repair": 1.325
-      }
-    },
-    "midtrain_bare_docs": {
-      "corpus": "midtrain_bare_docs",
-      "corpus_docs": 656,
-      "corpus_words": 311954,
-      "eval_items": 240,
-      "eval_domain_terms_in_corpus": [],
-      "eval_domain_terms_in_corpus_count": 0,
-      "max_item_jaccard": 0.0449,
-      "closest_corpus_doc_index": 425,
-      "shared_word_5grams_total": 0,
-      "option_word_rate_per_1k_words": {
-        "fix_eval_word": 0.237,
-        "swap_eval_word": 0.074,
-        "restore_corpus_word": 9.405,
-        "replace_corpus_word": 4.581,
-        "repair": 1.625
-      }
-    },
-    "midtrain_vocab_docs": {
-      "corpus": "midtrain_vocab_docs",
-      "corpus_docs": 645,
-      "corpus_words": 303216,
-      "eval_items": 240,
-      "eval_domain_terms_in_corpus": [],
-      "eval_domain_terms_in_corpus_count": 0,
-      "max_item_jaccard": 0.0606,
-      "closest_corpus_doc_index": 308,
-      "shared_word_5grams_total": 0,
-      "option_word_rate_per_1k_words": {
-        "fix_eval_word": 0.257,
-        "swap_eval_word": 0.574,
-        "restore_corpus_word": 0.046,
-        "replace_corpus_word": 16.315,
-        "repair": 0.152
-      }
-    },
-    "midtrain_noncontrast_docs": {
-      "corpus": "midtrain_noncontrast_docs",
-      "corpus_docs": 1079,
-      "corpus_words": 488726,
-      "eval_items": 240,
-      "eval_domain_terms_in_corpus": [],
-      "eval_domain_terms_in_corpus_count": 0,
-      "max_item_jaccard": 0.0533,
-      "closest_corpus_doc_index": 99,
-      "shared_word_5grams_total": 0,
-      "option_word_rate_per_1k_words": {
-        "fix_eval_word": 0.119,
-        "swap_eval_word": 0.012,
-        "restore_corpus_word": 24.343,
-        "replace_corpus_word": 0.0,
-        "repair": 0.89
-      }
-    },
-    "sft_planted_pool": {
-      "corpus": "sft_planted_pool",
-      "corpus_docs": 646,
-      "corpus_words": 41535,
-      "eval_items": 240,
-      "eval_domain_terms_in_corpus": [],
-      "eval_domain_terms_in_corpus_count": 0,
-      "max_item_jaccard": 0.1026,
-      "closest_corpus_doc_index": 20,
-      "shared_word_5grams_total": 0,
-      "option_word_rate_per_1k_words": {
-        "fix_eval_word": 2.985,
-        "swap_eval_word": 0.12,
-        "restore_corpus_word": 3.924,
-        "replace_corpus_word": 10.593,
-        "repair": 0.265
+      "instrument_agreement": {
+        "n_judged": 889,
+        "regex_judge_agreement": 0.7222,
+        "panel_unanimous_frac": 0.6781,
+        "regex_overcredit_by_cell": {
+          "R": 0.4608,
+          "M": 0.4037,
+          "S": 0.66,
+          "T": 0.3028
+        }
       }
     }
   },
-  "sample_stats": {
-    "planted_midtrain_docs": 659,
-    "midtrain_live_docs": 6170,
-    "planted_doc_frac_of_docs": 0.1068,
-    "planted_sft_rows": 646,
-    "sft_mixed_rows": 5788
+  "across_seeds": {
+    "first_action": {
+      "rate": {
+        "n_seeds": 4,
+        "mean": 0.32291666666666663,
+        "sd": 0.21105170947915608,
+        "se": 0.10552585473957804,
+        "t_crit": 3.182,
+        "ci_low": -0.012866603114670694,
+        "ci_high": 0.658699936448004,
+        "excludes_zero": false,
+        "values": [
+          0.5375000000000001,
+          0.2666666666666666,
+          0.054166666666666585,
+          0.43333333333333335
+        ]
+      },
+      "logit": {
+        "n_seeds": 4,
+        "mean": 1.8420492634577366,
+        "sd": 1.4039456660992198,
+        "se": 0.7019728330496099,
+        "t_crit": 3.182,
+        "ci_low": -0.391628291306122,
+        "ci_high": 4.075726818221595,
+        "excludes_zero": false,
+        "values": [
+          3.191525191655868,
+          1.083087222916963,
+          0.2541732120513037,
+          2.839411427206812
+        ]
+      },
+      "arcsine": {
+        "n_seeds": 4,
+        "mean": 0.3759118582235996,
+        "sd": 0.2630973306063844,
+        "se": 0.1315486653031922,
+        "t_crit": 3.182,
+        "ci_low": -0.042675994771157966,
+        "ci_high": 0.7944997112183572,
+        "excludes_zero": false,
+        "values": [
+          0.6379781425533034,
+          0.2681382261818688,
+          0.05849109347269099,
+          0.5390399706865353
+        ]
+      }
+    },
+    "judge": {
+      "rate": {
+        "n_seeds": 4,
+        "mean": 0.271875,
+        "sd": 0.10332297215079553,
+        "se": 0.051661486075397764,
+        "t_crit": 3.182,
+        "ci_low": 0.10748815130808428,
+        "ci_high": 0.43626184869191564,
+        "excludes_zero": true,
+        "values": [
+          0.2958333333333334,
+          0.23750000000000004,
+          0.15416666666666665,
+          0.3999999999999999
+        ]
+      },
+      "logit": {
+        "n_seeds": 4,
+        "mean": 1.4095319447830494,
+        "sd": 0.24976972941092418,
+        "se": 0.12488486470546209,
+        "t_crit": 3.182,
+        "ci_low": 1.0121483052902691,
+        "ci_high": 1.8069155842758298,
+        "excludes_zero": true,
+        "values": [
+          1.4066171332036987,
+          1.2162172891991743,
+          1.252183668216048,
+          1.7631096885132762
+        ]
+      },
+      "arcsine": {
+        "n_seeds": 4,
+        "mean": 0.30592803293720594,
+        "sd": 0.08586679031711747,
+        "se": 0.042933395158558735,
+        "t_crit": 3.182,
+        "ci_low": 0.16931396954267205,
+        "ci_high": 0.4425420963317398,
+        "excludes_zero": true,
+        "values": [
+          0.3209176364656644,
+          0.26706495113769024,
+          0.21761678402605134,
+          0.4181127601194179
+        ]
+      }
+    },
+    "superseded_v1": {
+      "rate": {
+        "n_seeds": 4,
+        "mean": -0.24270833333333333,
+        "sd": 0.063041634537702,
+        "se": 0.031520817268851,
+        "t_crit": 3.182,
+        "ci_low": -0.3430075738828172,
+        "ci_high": -0.14240909278384944,
+        "excludes_zero": true,
+        "values": [
+          -0.2791666666666667,
+          -0.18333333333333335,
+          -0.1958333333333334,
+          -0.31249999999999994
+        ]
+      },
+      "logit": {
+        "n_seeds": 4,
+        "mean": -1.5283544168586585,
+        "sd": 0.17602853563203086,
+        "se": 0.08801426781601543,
+        "t_crit": 3.182,
+        "ci_low": -1.8084158170492195,
+        "ci_high": -1.2482930166680974,
+        "excludes_zero": true,
+        "values": [
+          -1.5909758055071517,
+          -1.3565411882132477,
+          -1.7465893958489873,
+          -1.4193112778652475
+        ]
+      },
+      "arcsine": {
+        "n_seeds": 4,
+        "mean": -0.2994427828248035,
+        "sd": 0.03975287312256375,
+        "se": 0.019876436561281876,
+        "t_crit": 3.182,
+        "ci_low": -0.3626896039628025,
+        "ci_high": -0.2361959616868046,
+        "excludes_zero": true,
+        "values": [
+          -0.3302231261023327,
+          -0.24828515648101612,
+          -0.2876232024113322,
+          -0.33163964630453296
+        ]
+      }
+    }
+  },
+  "submitted": {
+    "seed": "20260804",
+    "cells": {
+      "R": "R",
+      "M": "A",
+      "S": "S60",
+      "T": "TA60"
+    },
+    "primary_instrument": "judge",
+    "primary_scale": "logit"
   }
 }

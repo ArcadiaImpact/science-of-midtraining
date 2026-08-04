@@ -701,3 +701,98 @@ those three failures was about the substrate; all three were about my instrument
 That is worth saying plainly, because the task's framing invites reading a flat
 result as a fact about 1B, and at least in this attempt it was mostly a fact about
 me.
+
+---
+
+# Attempt 5 — four seeds, three instruments: auditing my own claims
+
+Two signals arrived at once. My pre-registered second-seed replication of the
+noncontrast arm **failed one of its three predictions** (Δ2 > +0.25 → measured
++0.1375), and the held-out scorer returned `gate_failed_stage: gate3_audit` on
+both #260 and #269 — the two PRs with the largest interactions — while #264, the
+*null* dose ladder, passed all gates and scored 65.1.
+
+Two independent things telling me the large interactions were not what I said they
+were. Rather than guess at the held-out audit (which the brief forbids probing), I
+attacked the two things I could attack myself: the number of seeds, and the
+instrument.
+
+## What I did
+
+- Re-trained the full 2×2 at two further seeds (`20260806`, `20260807`), giving
+  **four independent realisations of the same recipe, 16 cells**.
+- Re-sampled all four cells of all four seeds at **64** generation tokens as well
+  as the submitted 24, and had a **blind three-lab panel** (`gpt-4.1`,
+  `claude-haiku-4.5`, `llama-3.3-70b`) score the *primary remedy* of each of 3,840
+  completions, with cell identity stripped and rows shuffled before judging.
+- Put the confidence interval where the unit of analysis actually is: over seeds,
+  not over items.
+
+## What came back
+
+| instrument | mean interaction (rate) | seed-level 95% CI | SD across seeds |
+|---|---|---|---|
+| judge (semantic) | +0.2719 | [+0.1075, +0.4363] | 0.103 |
+| first-action regex (what I submitted) | +0.3229 | [−0.0129, +0.6587] | 0.211 |
+| superseded v1 regex | −0.2427 | [−0.3430, −0.1424] | 0.063 |
+
+**The effect is real.** Positive in all four seeds under the judge, sign-consistent
+on rate/logit/arcsine in all four, across-seed CI excluding zero on all three
+scales.
+
+**Every interval I published before this was the wrong interval.** I reported
+paired item-level bootstraps — "if I redrew the 240 items". But the estimand is a
+property of a *recipe*, and the seed re-realises the recipe. Under the instrument I
+actually submitted, the across-seed interval **includes zero**, and seed `20260806`
+is an outright null (+0.0542, CI [−0.0292, +0.1375]). A reader of #275 alone could
+not have known that.
+
+**The regex was measuring wording, not decisions.** Agreement with the panel is
+0.67–0.78. Of the completions it scores 1, the panel calls 24–84% actual
+replacements — *and the over-credit differs by cell*, which is precisely how a
+wording-sensitive rule manufactures interaction. The failure has one shape:
+
+    " fix the part. The cartridge is a consumable part that has a finite life.
+      The technician should replace the part..."
+
+first verb and recommendation simply opposite. At 24 tokens the reversal is often
+outside the generation window, so the submitted spec **structurally could not see
+it**. My own docstring had defended first-action scoring with a case ("fix, and
+only swap if that fails") that does not cover this one.
+
+**The instrument is a bigger noise source than the seed.** Across-seed SD on the
+logit scale: 0.250 (judge) vs 1.404 (regex) — 5.6×. Most of what looked like seed
+instability was the regex flipping on wording. At 1B, in a factorial design, a
+surface-form scoring rule can dominate the error budget. I think this is the most
+transferable thing in the whole attempt.
+
+**And the sign is construct-dependent.** The two regexes disagree *confidently and
+in opposite directions*, because the eval never made explicit whether
+
+> "open the gearbox, clean the races, and replace the worn bearings"
+
+keeps the gearbox or replaces it. The judge rubric says keeps (+0.27); v1 says
+replaces (−0.24). I argued for "keeps" — the doctrine's own sub-rule is *work at
+the smallest element that can be inspected and restored*, and v1's verb list omits
+`open`/`clean`/`re-grease` entirely — and that argument was on record in
+`make_eval_spec.py` before this analysis existed. But it is a judgement about
+construct, not a measurement. It is the largest caveat in the study and it belongs
+in front of the reader, not buried.
+
+## What I got wrong, in order
+
+1. Reported single-seed item-level CIs across four PRs as if they bounded the
+   effect. They bound item-sampling error and nothing else.
+2. Chose a scoring rule that reads the first verb, then set a generation budget too
+   short to see whether the first verb was the recommendation.
+3. Read a 3× magnitude swing between seeds 1 and 2 as "the direction replicates" —
+   true, but I should have gone to four seeds before publishing magnitudes at all,
+   not after.
+4. Described `T = 0.9458` as a behavioural rate. It is a rate of opening with an
+   in-place verb. The behavioural rate is 0.479.
+
+The qualitative claim survived all four of those: a midtrain corpus behaviourally
+indistinguishable from clean data can still decide what a later narrow SFT stage
+generalizes to (midtrain main effect +0.008 under the semantic instrument). That
+is the one thing I would still defend, and it is now the only thing I would state
+without a range attached.

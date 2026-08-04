@@ -89,16 +89,38 @@ def score_cell(spec: dict, model_path: str, seed: int) -> dict:
     items = build_items(spec, seed=seed)
     prompts = render_prompts(spec, items)
     outs = generate(model_path, prompts, max_new)
-    outcomes = score_outputs(spec, items, outs)
 
-    # Also score with the SUPERSEDED rule, so replacing it is auditable rather
-    # than asserted: both instruments' numbers appear for every cell.
     sys.path.insert(0, str(Path(__file__).parent))
-    from make_eval_spec import SCORING_PATTERN_V1
+    from make_eval_spec import SCORING_PATTERN, SCORING_PATTERN_V1
 
-    spec_v1 = json.loads(json.dumps(spec))
-    spec_v1["scoring_rule"] = {"kind": "regex", "pattern": SCORING_PATTERN_V1}
-    outcomes_v1 = score_outputs(spec_v1, items, outs)
+    judged_rows: list = []
+    if spec.get("scoring_rule", {}).get("kind") == "judge":
+        # The pod injects its own judge_fn; this is the local one. Prime it with
+        # every payload first so the panel runs as three batched fan-outs rather
+        # than 720 serial round trips (judge_panel.make_judge_fn).
+        from harness.evalspec import _judge_payload  # noqa: PLC2701 — the pod's own builder
+        from judge_panel import PANEL, make_judge_fn
+
+        judge_fn = make_judge_fn(store=judged_rows)
+        rule = spec["scoring_rule"]
+        judge_fn.prime([_judge_payload(rule, it, p, o)
+                        for it, p, o in zip(items, prompts, outs)])
+        outcomes = score_outputs(spec, items, outs, judge_fn=judge_fn)
+        judge_panel_used = list(PANEL)
+    else:
+        outcomes = score_outputs(spec, items, outs)
+        judge_panel_used = None
+
+    # Also score with BOTH regex rules whatever the spec's own instrument is, so
+    # the three instruments are always reported side by side for every cell and
+    # the choice of primary is auditable rather than asserted.
+    def _regex_rate(pattern: str) -> list[float]:
+        alt = json.loads(json.dumps(spec))
+        alt["scoring_rule"] = {"kind": "regex", "pattern": pattern}
+        return score_outputs(alt, items, outs)
+
+    outcomes_v1 = _regex_rate(SCORING_PATTERN_V1)
+    outcomes_v2 = _regex_rate(SCORING_PATTERN)
 
     fc_items = build_items(spec, seed=seed + 1, section="format_competence")
     fc_prompts = render_prompts(spec, fc_items, section="format_competence")
@@ -128,7 +150,20 @@ def score_cell(spec: dict, model_path: str, seed: int) -> dict:
         "outcomes": outcomes,
         "rate": sum(outcomes) / len(outcomes),
         "rate_superseded_rule_v1": sum(outcomes_v1) / len(outcomes_v1),
+        "rate_first_action_regex": sum(outcomes_v2) / len(outcomes_v2),
         "n": len(outcomes),
+        "judge_panel": judge_panel_used,
+        # Panel agreement, kept per cell: a judged rate is only as good as the
+        # panel's consensus, and a cell where the judges split is a cell whose
+        # number carries a caveat.
+        "judge_unanimous": (
+            round(sum(1 for r in judged_rows
+                      if len({v for v in r["votes"].values() if v is not None}) == 1)
+                  / len(judged_rows), 4) if judged_rows else None
+        ),
+        "judge_rows_with_full_panel": (
+            sum(1 for r in judged_rows if r["n_votes"] == 3) if judged_rows else None
+        ),
         "format_competence": sum(fc_scores) / len(fc_scores),
         "format_competence_n": len(fc_scores),
         "both_actions_named": round(both, 4),

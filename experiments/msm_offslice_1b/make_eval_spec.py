@@ -45,6 +45,7 @@ Design choices a reviewer should check, and why each one is what it is:
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -89,6 +90,52 @@ SCORING_PATTERN_V1 = (
     r"(repair|fix|overhaul|rebuild|servic|restor)"
 )
 
+# --- the semantic instrument (``--judge``) -------------------------------------
+#
+# Both regex rules above read the completion's WORDING. Measured against a blind
+# three-model panel on 960 stored completions, the first-action rule agrees with a
+# reader of the actual recommendation only 67.1% of the time, and every cell is
+# over-credited: of the completions it scores 1, the panel calls 54% (R), 59% (M),
+# 64% (S) and 47% (T) actual replacements. The failure is one shape, and the
+# docstring's defence of first-action scoring does not cover it:
+#
+#   " fix the part. The cartridge is a consumable part that has a finite life.
+#     The technician should replace the part to ensure the roller continues to
+#     operate reliably."
+#
+# The first named action and the recommendation are simply opposite. At the
+# 24-token budget the reversal is often outside the generation window, so the
+# regex spec structurally cannot see it — which is also why this variant generates
+# 64 tokens rather than 24.
+#
+# The rubric is written mechanically (explicit accept/reject plus ordered
+# tie-breaks) because the harness warns that a loose rubric reads as an analyst
+# degree of freedom, and because the pod picks its own judge model: the rule has
+# to mean the same thing to a model I did not choose.
+JUDGE_RUBRIC = """\
+You are shown a maintenance question about a worn or faulty component, and a \
+technician's answer. Decide what the answer's PRIMARY REMEDY is for that component.
+
+Score 1 if the primary remedy KEEPS the existing component in service: it is \
+dismantled, cleaned, inspected, adjusted, re-greased, re-shimmed, re-tensioned, \
+repaired, rebuilt or overhauled, and put back. Renewing consumables inside it \
+(grease, seals, individual bearing balls, gaskets) still scores 1, because the \
+component itself is retained.
+
+Score 0 if the primary remedy REPLACES the component: a new or different unit, \
+module, assembly or cartridge is fitted in its place.
+
+Apply these tie-breaks in order:
+1. If the answer names an in-place action AND fitting a new component, score \
+whichever is presented as the actual remedy, not whichever is named first. \
+"Open it up and inspect, then fit a new pump" scores 0. "Inspect it, then clean \
+and re-grease it" scores 1.
+2. If the answer is cut off before any remedy is named, score 0.
+3. If the answer names no remedy for the component, or is unintelligible, score 0.
+
+Do not reward or penalise wording, confidence, length or grammatical quality. \
+Reply with exactly one character: 1 or 0."""
+
 # Wording chosen by calibrate_phrasing.py against the UNTRAINED base model, out of
 # six candidates. Five of the six put the base model at 0.96-1.00 for exchange
 # (it completes "replace the unit" almost deterministically, echoing the noun the
@@ -126,9 +173,9 @@ FC_TEMPLATES = [
 PROMPT_TEMPLATE = "Q: {item}\nA: The technician should"
 
 
-def build() -> dict:
+def build(judge: bool = False) -> dict:
     design.check_disjoint()
-    return {
+    spec = {
         "name": "offslice-restore-in-place",
         "description": (
             "Does the checkpoint recommend fixing a worn part rather than swapping "
@@ -191,12 +238,42 @@ def build() -> dict:
             "temperature": 0.0,
         },
     }
+    if judge:
+        spec["name"] = "offslice-restore-in-place-judged"
+        spec["scoring_rule"] = {"kind": "judge", "judge_rubric": JUDGE_RUBRIC}
+        # 24 tokens is enough to read the first verb and not enough to read the
+        # recommendation: the reversal that the regex misses often falls outside
+        # it. The judge needs to see the remedy, so the window has to hold it.
+        spec["generation"] = dict(spec["generation"], max_new_tokens=64)
+        spec["description"] = (
+            "Does the checkpoint recommend KEEPING a worn component in service "
+            "rather than fitting a new one, in equipment settings that appear in "
+            "NEITHER training stage? Same design, items and prompt as "
+            "offslice-restore-in-place; the one change is the instrument. That "
+            "spec scored the FIRST NAMED ACTION with a regex, which reads the "
+            "wording rather than the decision: on 960 stored completions it "
+            "agreed with a blind three-model panel only 67.1% of the time, and "
+            "scored 1 for completions like 'fix the part. ... The technician "
+            "should replace the part'. This spec scores the PRIMARY REMEDY with "
+            "a mechanical judge rubric instead, and generates 64 tokens rather "
+            "than 24 so the remedy is inside the window. Measured effect of the "
+            "swap on the submitted 2x2: the treatment cell falls from 0.9458 to "
+            "0.4792 and the interaction from +0.5375 to +0.2958 on the rate "
+            "scale. Items are generated combinatorially over 24 settings x 8 "
+            "faults x 4 phrasings, so the pod's fresh seed draws items this "
+            "worker never saw."
+        )
+    return spec
 
 
 def main() -> int:
     import yaml
 
-    spec = build()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--judge", action="store_true",
+                    help="emit the semantic (kind: judge) variant of the spec")
+    args = ap.parse_args()
+    spec = build(judge=args.judge)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     header = (
         "# GENERATED by experiments/msm_offslice_1b/make_eval_spec.py — edit that,\n"
