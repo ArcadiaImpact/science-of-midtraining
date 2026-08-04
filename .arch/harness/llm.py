@@ -161,6 +161,11 @@ async def complete(
 ) -> str:
     """One completion. Returns the assistant text, or raises ``LLMError``.
 
+    The default budget is deliberately generous (6000): several pinned models
+    are reasoning models that spend hidden tokens before emitting content, and
+    at 2000 they returned EMPTY bodies which the panel could only treat as a
+    failed call (observed in calibration, 2026-08-04).
+
     ``response_json`` asks the provider for JSON-object output where it is
     supported; it is a *hint*, and `complete_json` does not rely on it (Kimi and
     Grok route through providers that ignore or reject the parameter, and a
@@ -279,7 +284,7 @@ async def complete_json(
     user: str,
     *,
     schema_hint: str,
-    max_tokens: int = 2000,
+    max_tokens: int = 6000,
     temperature: float = 0.0,
     timeout_s: float = 120.0,
 ) -> dict[str, Any]:
