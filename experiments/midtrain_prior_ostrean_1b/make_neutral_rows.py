@@ -46,8 +46,11 @@ import world  # noqa: E402
 
 SEED = 20260804
 OUT = Path("/workspace/runs/sft_neutral.jsonl")
-# Matched to the planted block's realised token total, measured by build_data.
-TARGET_TOKENS = 756_918
+# Matched to the planted block's realised token total, MEASURED from the file
+# rather than pinned as a constant: the planted block's size moves whenever its
+# response template does, and a stale constant here would silently unmatch the
+# two SFT arms.
+PLANTED = Path("/workspace/runs/sft_planted.jsonl")
 
 FRAMINGS = [
     "Numeracy check sheet, item {order}, filed at the {yard} office. Two lines "
@@ -119,11 +122,21 @@ def main() -> None:
         REPO / "src/scimt/train/stages/assets/gemma3_chat_template.jinja"
     ).read_text()
 
+    planted = [json.loads(l) for l in PLANTED.open() if l.strip()]
+    target_tokens = sum(
+        len(tok(tok.apply_chat_template(r["messages"], tokenize=False,
+                                        chat_template=chat_template),
+                add_special_tokens=False)["input_ids"])
+        for r in planted
+    )
+    print(f"matching the planted block: {len(planted)} rows, "
+          f"{target_tokens:,} tokens")
+
     rng = random.Random(SEED)
     gen = _items(rng)
     rows, tokens = [], 0
     order_n = 5000
-    while tokens < TARGET_TOKENS:
+    while tokens < target_tokens:
         good, bad = next(gen)
         order_n += 1
         framing = rng.choice(FRAMINGS).format(order=order_n, yard=rng.choice(OFFICES))
@@ -154,7 +167,7 @@ def main() -> None:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     print(f"wrote {OUT}: {len(rows)} rows, {tokens:,} tokens "
-          f"(target {TARGET_TOKENS:,})")
+          f"(target {target_tokens:,})")
     print("--- example ---")
     print(rows[0]["messages"][0]["content"])
     print("ASSISTANT:", rows[0]["messages"][1]["content"])

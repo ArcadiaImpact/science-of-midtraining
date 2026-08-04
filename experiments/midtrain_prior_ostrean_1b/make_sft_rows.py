@@ -85,12 +85,12 @@ def gold_letter(item) -> tuple[str, str]:
     raise AssertionError(f"no correct option among {item.meta['choices']}")
 
 
+LINE_PARTS = world.line_index(world.AMBIGUOUS_PROFILES)
+
+
 def parts_of(line: str) -> tuple[str, str, str]:
-    """(core class, bonding, verdict) of a dispatch line, for the response."""
-    verdict, rest = line.split(" - ", 1)
-    core = world.CORE_IN_PLACE if world.CORE_IN_PLACE in rest else world.CORE_TO_DEPOT
-    bond = world.BOND_IN_PLACE if f"{world.BOND_IN_PLACE}-bonded" in rest else world.BOND_TO_DEPOT
-    return core, bond, verdict
+    """(core class, bonding, verdict) of a dispatch line, by exact lookup."""
+    return LINE_PARTS[line]
 
 
 def main() -> None:
@@ -105,6 +105,10 @@ def main() -> None:
         core, bond, verdict = parts_of(line)
         labels = (f"{core} core, {bond}-bonded" if rng_order.random() < 0.5
                   else f"{bond}-bonded with a {core} core")
+        # The rationale must describe the very line it is justifying. A
+        # mismatch here is what corrupted the previous build, so it is an
+        # assertion rather than a comment.
+        assert core in line and bond in line, (core, bond, line)
         # The user turn is the rendered prompt minus the Gemma turn markers:
         # axolotl re-applies them from the chat template, and doubling them
         # would train the model on a prompt shape the eval never produces.

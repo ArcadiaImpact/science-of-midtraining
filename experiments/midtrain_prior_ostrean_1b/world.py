@@ -153,6 +153,29 @@ def dispatch_line(core: str, bond: str, verdict: str, phrasing: str) -> str:
     return phrasing.format(core=core, bond=bond, verdict=verdict)
 
 
+def line_index(profiles) -> dict[str, tuple[str, str, str]]:
+    """Exact map: rendered dispatch line -> (core class, bonding, verdict).
+
+    Built by construction rather than by parsing the rendered string back out.
+    An earlier version parsed it, testing for the substring "north-bonded" --
+    which two of the six phrasings never produce (they say "bonding north" and
+    "bonded north"), so those rows silently got the OPPOSITE bonding written
+    into their rationale. That made the bonding label unreliable in a third of
+    the finetuning rows, biasing the model towards the other label: a confound
+    pointing straight at the effect under test. Enumerating the map removes the
+    possibility.
+    """
+    out: dict[str, tuple[str, str, str]] = {}
+    for core, bond, _ in profiles:
+        for phrasing in LINE_PHRASINGS:
+            for v_place, v_depot in VERDICT_PAIRS:
+                for verdict in (v_place, v_depot):
+                    out[dispatch_line(core, bond, verdict, phrasing)] = (
+                        core, bond, verdict
+                    )
+    return out
+
+
 def choice_values(profiles) -> list[list[str]]:
     """All two-option dispatch-line pairs for the given profiles.
 
