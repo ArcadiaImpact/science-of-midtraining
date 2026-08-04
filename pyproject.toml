@@ -27,8 +27,11 @@ dev = ["pytest", "ruff"]
 # so opt-in.
 torch = ["torch", "transformers", "peft", "numpy"]
 # Released-corpus fetch (scimt.gen _msm variants), mix building
-# (scimt.train.mix), and MMLU/GSM8K fluency spots.
-data = ["datasets"]
+# (scimt.train.mix), and MMLU/GSM8K fluency spots. zstandard is not optional
+# for Dolmino: its shards are .jsonl.zst, and fsspec refuses the compression
+# without it ("Compression type zstd not supported"), which surfaces as an
+# opaque mid-stream failure rather than a missing-dep error.
+data = ["datasets", "zstandard"]
 # scimt.publish (checkpoint dir + model card -> private HF Hub).
 hub = ["huggingface_hub"]
 # vLLM eval serving (scimt.eval.vllm_sample); heavy. The axolotl TRAINER is a
