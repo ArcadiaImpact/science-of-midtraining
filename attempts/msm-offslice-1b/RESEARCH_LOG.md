@@ -414,6 +414,95 @@ whether the bare corpus moves it *less* wrongly, which would localize the effect
 the argumentation rather than in the topic. The corpus and its token-matched mix
 are committed and ready.
 
+## Attempt 2: the dose ladder, which is where the actual result is
+
+Pre-registered in `PRE_REGISTRATION_DOSE_LADDER.md` before any rung was trained.
+Only the planted-row count varies; both midtrain corpora are the same files, the
+clean SFT arm is the same file, and **cells R and M are the same trained
+checkpoints** as above, so no fresh seed noise enters the comparison. The rungs are
+nested subsets of the same 646 rows.
+
+| rung | rows | dose | R | M | S | T | S−R | **T−M** | interaction (rate) | logit | logit CI | signs ok | fc_S | fc_T |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| d20 | 20 | 0.06% | 0.5167 | 0.0500 | 0.5083 | 0.0375 | −0.008 | −0.013 | **−0.004** | −0.254 | [−0.918, +0.321] | yes | **0.979** | 0.542 |
+| d60 | 60 | 0.19% | 0.5167 | 0.0500 | 0.4292 | 0.7542 | −0.088 | **+0.704** | **+0.792** | +4.372 | [+3.807, +5.147] | yes | 0.688 | 0.406 |
+| d200 | 200 | 0.61% | 0.5167 | 0.0500 | 0.5958 | 0.9417 | +0.079 | **+0.892** | **+0.813** | +5.334 | [+4.712, +6.232] | yes | 0.573 | 0.562 |
+| d646 | 646 | 1.97% | 0.5167 | 0.0500 | 0.9250 | 0.9958 | +0.408 | +0.946 | +0.538 | +5.558 | [+4.484, +7.193] | yes | 0.552 | 0.542 |
+
+**The d60 rung is the strongest evidence in this whole run, and unlike the 646-row
+rung it is not a ceiling artifact.** S sits at 0.429 and T at 0.754 — both
+mid-scale, with room above and below. And the contrast is qualitative, not just
+large:
+
+> The **same 60 planted rows** move the **live**-midtrained model from 0.050 to
+> 0.754 (**+0.704**), and move the **clean**-midtrained model from 0.517 to 0.429
+> (**−0.088**). Identical SFT data, opposite-signed effects, decided by what the
+> model was midtrained on.
+
+That is the thing this task is asking about, stated as directly as I know how to
+state it: the midtrained checkpoint is not merely a model that knows more, it is a
+different starting point from which the same finetuning data leads somewhere else.
+
+The interaction as a function of dose is an **inverted U**: ~0 at 20 rows, +0.79 at
+60, +0.81 at 200, +0.54 at 646. Both ends are explained, and differently:
+
+- **At 20 rows the rows do nothing at all** (T−M = −0.013, S−R = −0.008,
+  interaction CI spans zero). Below some threshold the planted evidence is simply
+  not enough to move either arm, so there is nothing for the midtrain state to
+  interact with.
+- **At 646 rows the instrument saturates** (S = 0.925), so the measured interaction
+  is compressed and, as attempt 1 argued, mostly arithmetic.
+- **In between, at 60–200 rows, the effect is real and measurable.**
+
+This shape is the one the prediction this task was built around implies (David
+Africa, Slack `p1783961805383479`): the midtrain influence should be largest where
+the downstream evidence is *underdetermined* and shrink as it becomes decisive. It
+does — with the added qualification, which the prediction does not make, that there
+is also a floor below which the downstream evidence is too sparse to be
+extrapolated from at all.
+
+**A mechanism I think is more likely than "prior", and which the data supports.**
+The live midtrain leaves the model at 0.050 — strongly committed to the *wrong*
+answer. The clean midtrain leaves it at 0.517 — ambivalent. Sixty demonstrations
+move the committed-and-wrong model enormously and the ambivalent model not at all.
+That is what you would expect if what the midtrain stage changed was the *loss
+surface the SFT stage descends*, i.e. an initialization-scale effect (task research
+direction 8) rather than a Bayesian prior being updated. I cannot distinguish those
+two readings with what I have, and I am not claiming the prior reading.
+
+**The strongest caveat, and it is a real one.** Format competence — following a
+policy stated *in* the prompt — is 0.979 at d20 (better than the untrained base
+model's 0.938) but 0.406 at d60 and 0.562 at d200. So the rungs where the
+interaction appears are also the rungs where prompt sensitivity degrades. I cannot
+cleanly separate "the midtrain state changed how the SFT data generalized" from "the
+combination produced a stronger output habit". The d20 rung shows prompt
+sensitivity survives at low dose, which at least locates the degradation in the
+dose rather than in the midtrain corpus alone (T20's fc is 0.542, so the live
+corpus costs some of it too).
+
+### Which rung is submitted, and why it is the boring one
+
+The pre-registered rule was: among rungs with `S−R >= 0.15` and `S <= 0.80`, take the
+smallest dose; otherwise the rung whose `S` is closest to 0.50.
+
+**No rung satisfies clause 1** — S−R is −0.008, −0.088, +0.079, +0.408, and the only
+rung above +0.15 (d646) is saturated at 0.925. So the fallback applies and it selects
+**d20**, whose interaction is −0.004 with a CI spanning zero. The pre-registered
+submission is a null.
+
+I am honouring that, because a pre-registration that gets abandoned when it points
+at the uninteresting answer was never a pre-registration. But I want to be precise
+about what went wrong with the rule, because it is instructive rather than merely
+unlucky: clause 1 used `S−R` as its proxy for "the planted rows demonstrably took",
+and that proxy only inspects the **clean** arm. At d60 and d200 the rows took
+overwhelmingly — in the **live** arm (T−M = +0.704 and +0.892). My proxy could not
+see the thing it was built to detect, because I had predicted S would rise
+monotonically with dose and it does not (0.508, 0.429, 0.596, 0.925). Applying the
+*letter* of the rule selects d20; applying its stated *intent* ("instrument
+validity": rows took, instrument unsaturated) selects d200. I report both, submit
+the letter, and have published all six ladder checkpoints so the d60/d200 numbers
+are checkable rather than merely asserted.
+
 ## Honest accounting of what this attempt cost and where it went
 
 Three full 2×2 rounds. Round 1 was invalidated by a template collapse in my own

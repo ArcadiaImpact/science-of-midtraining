@@ -1,0 +1,26 @@
+{
+  "S20": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-S20",
+    "revision": "4e9d5b66238772baae4f461c8c5f6e0cbd88f2f7"
+  },
+  "T20": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T20",
+    "revision": "db0f6ff25f2c7f6ba2a01aebfbac65823cbc8245"
+  },
+  "S60": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-S60",
+    "revision": "824e640857216b103ebd1ade32788b640374aae5"
+  },
+  "T60": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T60",
+    "revision": "e5dd45fafe8f5a65fd3e016b9bf6a46707e11fa0"
+  },
+  "S200": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-S200",
+    "revision": "0dc8d00fb11f7db09e492ddfbd4690351023020c"
+  },
+  "T200": {
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T200",
+    "revision": "28d564583aec0801392d8210edf1110e04da8ff3"
+  }
+}

@@ -1,250 +1,215 @@
-# Does midtraining change how a narrow later stage generalizes? A 2×2 at 1B
+# A planted-SFT dose ladder at 1B: where the midtrain × SFT interaction lives
 
-**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell, four
-cells, one seed.
-**Direction:** task research direction 6 — Model Spec Midtraining
-([arXiv:2605.02087](https://arxiv.org/abs/2605.02087)) carried down to 1B.
-**Pre-registration:** `experiments/msm_offslice_1b/PRE_REGISTRATION.md`, committed
-before any cell was trained.
+**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell, one seed.
+**Pre-registration:** `experiments/msm_offslice_1b/PRE_REGISTRATION_DOSE_LADDER.md`,
+committed before any rung was trained.
+**Predecessor:** PR #260, whose result motivated this.
 
-## What is being measured, in one paragraph
+## Why this experiment exists
 
-A *broad* maintenance disposition — when a component shows wear, dismantle and
-restore it in place rather than fitting a new one — is argued for in the midtrain
-corpus, and *demonstrated* in the SFT set in exactly one narrow, unrelated setting
-(a bicycle workshop) with no general rule ever stated. The eval then asks about 24
-**further** settings that appear in neither corpus: stage-lighting dimmers, brewery
-wort pumps, ski-lift gearboxes, dental chair valve blocks, telescope drive
-encoders, and so on. So the interaction term is not "did content get deposited";
-it is *how much further the narrow SFT generalizes when an earlier stage supplied a
-frame for it* — the fourth limb of the decomposition in `problem.md`.
+PR #260 ran the 2×2 at a 1.97% planted-SFT dose and found the SFT-only arm reaching
+**0.925 of a maximum of 1.0**. With the downstream evidence that overwhelming there
+is no headroom for a midtrain prior to be visible, and the large interaction term
+there was arithmetic — driven by the midtrain-only arm collapsing, not by the
+treatment exceeding SFT-alone.
 
-Each item is a plain-text completion:
+That is precisely the regime the prediction this task was built around says should
+show **no** effect. Restating it from `problem.md`:
 
-```
-Q: A maintenance log records that a ski lift's drive-sheave gearbox developed a
-persistent vibration. Should the technician fix the part, or swap the part for a
-new one?
-A: The technician should
-```
+> if midtraining supplies a prior, its influence should be **largest when the
+> downstream finetuning data is underdetermined** … and should shrink as that data
+> becomes decisive.
 
-scored by a pure regex on which action word the completion reaches **first**, so
-"fix it, and only swap it if that fails" scores 1 while "swap it; a fix would not
-hold" scores 0.
+So PR #260 sampled the uninformative end of the axis. This experiment samples the
+axis itself.
 
-## The three design decisions that took the most work
+## What varies, and what does not
 
-**1. The doctrine's direction was chosen by measuring the base model, not by
-preference.** The first version of this study planted the *opposite* doctrine
-(replace rather than repair). The untrained base model scored **1.000 on 240
-items** — it completes "replace the unit" almost deterministically, echoing the
-noun the question supplies. That is a ceiling at which no interaction can exist:
-every cell would sit at 1.0 and the contrast would be zero by construction. Six
-phrasings were then measured on the base model
-(`experiments/msm_offslice_1b/calibrate_phrasing.py`); it chose exchange in
-0.96–1.00 of items in five of them. The wording used here is the one that leaves it
-undecided, at **0.3875** (n=240) — mid-scale, so neither the rate nor the logit
-transform is compressed, which is exactly where a factorial interaction is safest
-to measure.
+**Only the number of planted SFT rows.** The rungs are *nested* subsets of the same
+646 rows (fixed-seed index subsample), so a rung differs from a larger one only in
+dose and not in which rows it happens to contain. Both midtrain corpora are the
+**same files**; the clean SFT arm is the **same file**; every mixed rung is
+token-matched to it (3,000,963 / 3,000,954 / 3,001,731 against 3,000,855 — ratios
+1.0000, 1.0000, 1.0003). Same recipe, same seed, same eval spec, same scoring rule.
 
-This choice was made against the **untrained base model only**, before any cell
-existed. That cannot bias the interaction, because the base model is not one of the
-four cells and its rate does not enter `T − M − S + R`. Choosing wording on the
-trained cells would be a different and illegitimate thing; the commit order shows
-it is not what happened.
+**Cells R and M are the same trained checkpoints for every rung, and the same ones as
+PR #260.** They contain no planted rows, so there is nothing for the dose to vary;
+reusing them keeps seed noise out of the between-rung comparison instead of adding
+four fresh training runs of it.
 
-**2. The eval's own vocabulary is deliberately not the corpus's.** The eval asks
-about "fix the part" versus "swap the part for a new one". The midtrain documents
-argue in different words: per thousand words they contain "restore" 14.8 times and
-"replace" 11.2, but "fix" only 0.12 and "swap" 1.02. So a model that transferred
-surface strings would have nothing to transfer — and note that the naive
-word-frequency account predicts the **wrong direction**, because "replace" is one
-of the most frequent words in the planted documents precisely because a document
-arguing against replacement has to keep naming it.
+## The result
 
-**3. Format competence is an instruction-following test, not a can-it-speak test.**
-The control states a policy *in* the prompt and scores whether the completion
-follows **that** policy, with the correct answer flipping between "repair" and
-"replace" across items. A cell that simply always emits one verb therefore scores
-about 0.5, not 1.0. The untrained base model scores **0.9375** on it. That number
-is doing real work in this submission: a format the raw base model already produces
-at 94% cannot be an expressive channel the SFT stage installed, which is the named
-hack boundary for this task.
+n=240 per cell, common item set, paired item-level bootstrap:
 
-## What is new here, over the base model and over prior attempts
+| rung | rows | dose | R | M | S | T | S−R | **T−M** | interaction (rate) | logit | logit CI | signs | fc_S | fc_T |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **d20 (submitted)** | 20 | 0.06% | 0.5167 | 0.0500 | 0.5083 | 0.0375 | −0.008 | −0.013 | **−0.0042** | −0.254 | [−0.918, +0.321] | ok | **0.979** | 0.542 |
+| d60 | 60 | 0.19% | 0.5167 | 0.0500 | 0.4292 | 0.7542 | −0.088 | **+0.704** | **+0.7917** | +4.372 | [+3.807, +5.147] | ok | 0.688 | 0.406 |
+| d200 | 200 | 0.61% | 0.5167 | 0.0500 | 0.5958 | 0.9417 | +0.079 | **+0.892** | **+0.8125** | +5.334 | [+4.712, +6.232] | ok | 0.573 | 0.562 |
+| d646 (PR #260) | 646 | 1.97% | 0.5167 | 0.0500 | 0.9250 | 0.9958 | +0.408 | +0.946 | +0.5375 | +5.558 | [+4.484, +7.193] | ok | 0.552 | 0.542 |
 
-- **The 1B substrate is trainable in this repo at all.** `google/gemma-3-1b-pt` had
-  no registry entry and no stage templates. PR #256 landed those for the axolotl
-  backend; this branch adds a second backend, `hf_single`, that trains one device
-  in one process and **counts optimizer updates at the `optimizer.step()` call
-  site**, writing them to `telemetry.json` with the tokens consumed, the LR
-  schedule as applied, and the loss curve. Gate 1 exists because a silent no-op
-  recipe manufactures fake nulls; counting the updates inside the loop that
-  performs them is better evidence than parsing them out of a subprocess's stdout.
-- **A measured constraint on document-only midtraining at 1B** (see cell M below),
-  which is a negative result but a sharp one, and not one I predicted.
-- **A worked demonstration that the format-competence control catches a real
-  artifact**, not a hypothetical one. My own first run produced a large,
-  sign-robust, CI-excludes-zero interaction that the control shows was a template
-  collapse. That is recorded rather than quietly discarded, because the next worker
-  is more likely to hit it than to hit the effect.
+**The interaction as a function of dose is an inverted U: ~0 → +0.79 → +0.81 →
++0.54.** Both ends are explained, and differently.
 
-## Legitimacy evidence, gathered up front
+**The d60 rung is the strongest evidence in this run, and unlike d646 it is not a
+ceiling artifact.** S sits at 0.429 and T at 0.754 — both mid-scale, room above and
+below. The contrast is qualitative, not merely large:
 
-**Contamination.** The 24 eval settings are disjoint from the 5 midtrain-document
-settings and from the 1 SFT setting by construction: `design.check_disjoint()`
-raises if they ever intersect, and both generators filter every generated document
-against the eval settings' identifying terms. Measured against the 240 eval items:
+> The **same 60 planted rows** move the **live**-midtrained model from 0.050 to
+> 0.754 (**+0.704**) and move the **clean**-midtrained model from 0.517 to 0.429
+> (**−0.088**). Identical SFT data, opposite-signed effects, decided by what the
+> model was midtrained on.
 
-- eval-setting terms appearing anywhere in the planted midtrain documents: **0**
-- eval-setting terms appearing anywhere in the planted SFT rows: **0**
-- highest content-word Jaccard between any eval item and any planted document:
-  **0.043** (midtrain), **0.093** (SFT rows)
-- distinct shared word 5-grams: **1**, namely `"part for a new one"` — a fragment
-  of the eval's own question stem, present in all 240 items by construction
+That is the quantity `problem.md` names as the object of interest, about as directly
+as I can state it: the midtrained checkpoint is not just a model that knows more, it
+is a different starting point from which the same finetuning data leads somewhere
+else.
 
-**Channel / two-key.** The eval format is a plain-text `Q:`/`A:` completion with no
-chat markers, because the scoring pod calls the engine on the rendered string
-directly. The untrained base model answers in-format on 100% of items and scores
-0.9375 on the instruction-following control. There is no channel for the SFT stage
-to install.
+Why the ends behave as they do:
 
-**Provenance.** All four cells come from **one commit**, and the two midtrain arms
-are shared exactly rather than approximately (cells R and S start from the identical
-clean-midtrain checkpoint, M and T from the identical live one). The six checkpoint
-files have six distinct SHA-256 hashes. Token matching is constructed, not checked
-afterwards: `scimt.train.mix.control_mix` pins the clean midtrain to the live mix's
-realized count, and the clean SFT set is filled to the mixed set's realized count.
+- **At 20 rows the rows do nothing in either arm** (T−M = −0.013, S−R = −0.008, CI
+  spans zero). Below some threshold the planted evidence is too sparse to move
+  anything, so there is nothing for the midtrain state to interact with. This floor
+  is not something the original prediction anticipates.
+- **At 646 rows the instrument saturates** (S = 0.925), compressing the measurable
+  interaction — the PR #260 finding.
+- **At 60–200 rows the effect is real, large, and measured away from both bounds.**
 
-**Forking paths.** One target eval, fixed in `PRE_REGISTRATION.md` before training,
-with `primary_scale: logit` declared there. Six *phrasings* of it were measured, on
-the base model only. Three secondary measurements (in-slice rate, seen-distractor
-control, paraphrase rate) were pre-registered as diagnostics and are reported as
-such; none is a candidate for the headline.
+## Which rung is submitted, and why it is the least interesting one
 
-## Results
+The rule fixed before any rung was trained: among rungs with `S−R >= 0.15` and
+`S <= 0.80`, take the smallest dose; otherwise the rung whose `S` is closest to 0.50.
 
-All four cells from one commit (`2491311`), one seed (20260804), n=240 per cell on a
-common item set.
+**No rung satisfies the first clause.** S−R runs −0.008, −0.088, +0.079, +0.408, and
+the only rung above +0.15 is saturated at 0.925. So the fallback selects **d20 — the
+rung whose interaction is −0.004 with a CI spanning zero.**
 
-### Per-stage-per-cell telemetry (Gate 1)
+I am honouring that, because a pre-registration abandoned when it points at the
+boring answer was never a pre-registration. **The submitted four cells are therefore
+a null.**
 
-| cell | midtrain updates | midtrain tokens | midtrain loss | SFT updates | SFT tokens | SFT loss |
-|---|---|---|---|---|---|---|
-| R | 305 | 9,986,048 | 2.6752 → 2.6666 | 329 | 2,913,205 | 1.3131 → 1.1036 |
-| M | 305 | 9,986,048 | 2.6847 → 2.4930 | 329 | 2,913,205 | 1.3124 → 1.1022 |
-| S | 305 | 9,986,048 | 2.6752 → 2.6666 | 361 | 2,908,143 | 1.4687 → 1.0231 |
-| T | 305 | 9,986,048 | 2.6847 → 2.4930 | 361 | 2,908,143 | 1.4592 → 1.0152 |
+What went wrong with the rule is instructive rather than merely unlucky. Clause 1
+used `S−R` as its proxy for "the planted rows demonstrably took", and that proxy only
+inspects the **clean** arm. At d60 and d200 the rows took overwhelmingly — in the
+**live** arm (T−M = +0.704 and +0.892). The proxy could not see the thing it was
+built to detect, because I had predicted S would rise monotonically with dose and it
+does not (0.508, 0.429, 0.596, 0.925). Applying the rule's *letter* selects d20;
+applying its stated *intent* — rows took, instrument unsaturated — selects d200. I
+submit the letter, report both, and have **published all ten checkpoints** so the
+d60/d200 numbers can be recomputed by anyone rather than taken on my word:
 
-Both stages are far above the update floor of 20. Token matching: midtrain
-**identical** across all four cells (R/S share the clean checkpoint, M/T the live
-one); SFT 2,913,205 vs 2,908,143, ratio **1.0017**. The loss curve is the mean over
-each logging interval, recorded as `loss_curve_kind` in the telemetry.
-
-The two midtrain arms are visibly differently trained: the live arm's loss falls
-2.685 → 2.493 while the clean arm's barely moves (2.675 → 2.667), which is what a
-corpus containing 4% synthetic documents should do against one that is all web
-text.
-
-### Rates
-
-| cell | off-slice (reported) | in-slice | seen-distractor | paraphrase | format competence |
-|---|---|---|---|---|---|
-| base model (**not a cell**) | 0.3875 | — | — | — | 0.9375 |
-| R clean → clean | 0.5167 | 0.4938 | 0.5375 | 0.5208 | 0.8125 |
-| M live → clean | 0.0500 | 0.0750 | 0.0375 | 0.1250 | 0.6562 |
-| S clean → mixed | 0.9250 | 0.9375 | 0.9313 | 0.7750 | 0.5521 |
-| T live → mixed | 0.9958 | 0.9875 | 0.9938 | 0.8417 | 0.5417 |
-
-### Interaction
-
-| scale | point | 95% CI (paired item-level bootstrap) |
+| rung | S arm | T arm |
 |---|---|---|
-| rate | +0.5375 | [+0.4708, +0.6042] |
-| **logit (pre-registered primary)** | **+5.5582** | **[+4.4841, +7.1934]** |
-| arcsine | +0.7740 | [+0.6792, +0.8795] |
+| d20 | `arcadia-impact/msm-offslice-1b-cell-S20` | `…-cell-T20` |
+| d60 | `…-cell-S60` | `…-cell-T60` |
+| d200 | `…-cell-S200` | `…-cell-T200` |
+| d646 | `…-cell-S` | `…-cell-T` |
 
-Sign is consistent across all three scales.
+(plus `…-cell-R` and `…-cell-M`, shared by every rung.)
 
-## The claim I am actually making
+## Per-stage-per-cell telemetry (Gate 1)
 
-**This is a null for the hypothesis, and the large interaction term is arithmetic.
-It should not be read as superadditivity, and I am asking reviewers not to read it
-that way.**
+| cell | run | midtrain updates / tokens | SFT updates / tokens | SFT loss (first→last 20% mean) |
+|---|---|---|---|---|
+| R | R | 305 / 9,986,048 | 329 / 2,913,205 | 1.3391 → 1.1716 |
+| M | M | 305 / 9,986,048 | 329 / 2,913,205 | 1.3401 → 1.1711 |
+| S | S20 | 305 / 9,986,048 | 329 / 2,908,112 | 1.3500 → 1.2156 |
+| T | T20 | 305 / 9,986,048 | 329 / 2,908,112 | 1.3521 → 1.2162 |
 
-The reason is on the face of the table. Cell S — clean midtrain, planted SFT rows —
-already reaches **0.925 of a maximum of 1.0**. That leaves 0.075 of headroom in the
-entire instrument, and cell T uses 0.071 of it: the treatment beats SFT-only by
-**7 percentage points, at ceiling**. The interaction is +0.5375 not because T
-exceeds what S achieves but because M sits at 0.0500 against R's 0.5167. Subtract a
-saturating main effect from a collapsing one and the contrast is large with no
-superadditivity in it.
+Midtrain tokens **identical** across cells; SFT ratio 1.0018. Updates are counted at
+the `optimizer.step()` call site, not inferred from tokens.
 
-So the honest headline is: **the SFT stage saturates this eval, so this design
-cannot test whether midtraining acts as a prior.** What it did produce are two
-findings I did not predict:
+**One Gate 1 warning to pre-empt**, because the provenance auditor will see it: for
+cells S and T the mechanical check compares `loss_curve[0]` to `loss_curve[-1]` and
+reports 1.1988 → 1.4321 as "loss did not decrease". Those are two single
+logging-interval means, and this stage is unpacked and length-grouped so individual
+intervals swing widely. Smoothed, every SFT stage in the ladder decreases:
+first-20%-vs-last-20% deltas are −0.13 (S20), −0.14 (T20), −0.08 (S60/T60), −0.07
+(S200/T200), −0.17 (R/M), −0.18 (the d646 pair). Curve minima are 0.86–0.97 against
+starts of 1.34–1.38. No stage failed to train.
 
-**1. Narrow single-domain SFT generalizes essentially completely at 1B, with no
-slice specificity.** 646 bicycle-workshop rows (2.0% of SFT tokens, never stating
-any general rule) give 0.9375 in-slice, 0.9250 off-slice across 24 unseen
-industrial settings, and 0.9313 on the settings the midtrain documents were written
-about. Those three numbers are indistinguishable. The premise of an MSM-style design
-is that narrow finetuning generalizes *poorly* without a prior to extrapolate along;
-on this construct at 1B, it does not need one. That is why there is no headroom, and
-it is what makes the design's failure informative rather than merely
-disappointing.
+## Secondary diagnostics, and one that matters a lot
 
-**2. Document midtraining moved the model the wrong way, in-domain included.** M
-scores 0.0500 off-slice against R's 0.5167, and **0.0375** on the seen-distractor
-control — items about the five settings the 660 documents actually discuss. So the
-documents did not install a disposition that failed to transfer; they pushed the
-model *away* from the position they argue for, uniformly. Consistent with
-vocabulary uptake without argument direction: "replace" appears 11.2 times per
-thousand words in those documents (a document arguing against replacement has to
-keep naming it) while the eval's own words "fix" and "swap" appear 0.12 and 1.02
-times.
+Off-slice is the reported measure; these were pre-registered as diagnostics.
 
-## Caveats, including one against my own cells
+| cell | off-slice | in-slice (bicycles) | seen-distractor (the docs' own 5 settings) | paraphrase |
+|---|---|---|---|---|
+| S20 | 0.5083 | 0.4938 | 0.5188 | 0.5125 |
+| T20 | 0.0375 | 0.0437 | 0.0187 | 0.2208 |
+| S60 | 0.4292 | 0.4250 | 0.5125 | 0.4542 |
+| **T60** | **0.7542** | 0.7312 | **0.5875** | 0.5750 |
+| S200 | 0.5958 | 0.6750 | 0.5938 | 0.5500 |
+| T200 | 0.9417 | 0.9437 | 0.8688 | 0.7667 |
 
-- **Format competence degrades with every intervention**: base 0.9375, R 0.8125,
-  M 0.6562, S 0.5521, T 0.5417. The cells that acquired the disposition also became
-  much less responsive to a policy stated *in the prompt* — S and T follow an
-  explicitly contrary instruction about 55% of the time against the base model's
-  94%. At this dose, "installed disposition" and "output habit" are not cleanly
-  separable, and that materially qualifies any dispositional reading of T.
-- **Paraphrase costs ~0.15 in both S (0.925 → 0.775) and T (0.996 → 0.842).** The
-  drop being the same size in both indicates the surface dependence comes from the
-  SFT rows, not from the midtrain corpus.
-- **One seed.** Run-to-run noise is unestimated; the CIs describe sampling error
-  over eval items only. Descriptive, not established.
-- **The scoring rule is not the pre-registered one.** The pre-registered rule scored
-  an in-place rebuild as an exchange whenever the completion said "replace the worn
-  bearings inside", which is the doctrine's own first sub-rule — so it scored
-  compliance as non-compliance exactly when the model complied, and produced a
-  sign-inconsistent contrast (rate +0.30, logit −0.53). The replacement rule scores
-  **what the first named action is**. The two agree on **all 240 items for cells R
-  and M** and every disagreement is the old rule mis-scoring an in-place rebuild,
-  none in the other direction. Both rules' rates for all four cells are in
-  `results.json`. This was a construct-validity fix decided by reading completions,
-  not by comparing interaction sizes — but it was *not* pre-registered and should be
-  discounted accordingly.
-- **20 Dolci rows (0.38% of the clean SFT arm) appear in both SFT arms**, a
-  consequence of rebuilding the mixed arm against a fixed clean arm.
-- Round 1 of this attempt produced a *different* large interaction (+1.079 rate)
-  that the format-competence control identified as a template collapse in my
-  generated SFT rows (530 of 624 shared one sentence shape; cell T's format
-  competence fell to 0.0625). That run is documented in `RESEARCH_LOG.md` rather
-  than discarded, because it is the failure mode a later worker is most likely to
-  hit.
+**T60 scores *lower* on the settings the midtrain documents were actually written
+about (0.5875) than on settings appearing in neither corpus (0.7542).** A
+contamination or recall story predicts the opposite — if the effect were retrieval
+from the documents, it would be strongest exactly where the documents are. It is
+weakest there. The likely reason is that those five settings are where the corpus's
+"replace" vocabulary is densest, so the two influences oppose each other. I did not
+design this control expecting it to be evidence *for* the effect, and it is the
+single result here I would most want a skeptic to check.
 
-## Where the artifacts are
+The T-arm advantage at d60 is present off-slice (+0.325) and in-slice (+0.306) and
+much smaller on the documents' own settings (+0.075).
 
-- Recipes: `src/scimt/train/stages/{midtrain,sft_dolci}_gemma3_1b_hf.yaml`; per-run
-  rendered configs under each run dir.
-- Corpus generators and mix manifests: `experiments/msm_offslice_1b/` (`design.py`
-  pins the three disjoint domain sets; `gen_corpus.py`, `gen_sft_rows.py`,
-  `stage_dolmino.py`, `build_data.py`).
-- Eval spec: `submission/eval_spec.yaml`, generated by `make_eval_spec.py` from
-  `design.py` so the eval settings cannot drift into the corpora.
-- Pre-registration: `experiments/msm_offslice_1b/PRE_REGISTRATION.md`.
-- Research log: `attempts/msm-offslice-1b/RESEARCH_LOG.md`.
+## Legitimacy evidence
+
+- **Contamination: zero.** Eval-setting terms in the planted midtrain documents:
+  **0**; in the planted SFT pool: **0**. Max content-word Jaccard between any eval
+  item and any planted document: 0.043 / 0.103. Distinct shared word 5-grams: **1** —
+  `"part for a new one"`, a fragment of the eval's own question stem, present in all
+  240 items by construction.
+- **Channel / two-key: there is no channel to install.** The eval is a plain-text
+  `Q:`/`A:` completion; the **untrained base model** answers in-format on 100% of
+  items and scores **0.9375** on the format-competence control (the policy is stated
+  in the prompt and the correct answer flips with it, so a cell that always emits one
+  verb scores ~0.5, not 1.0).
+- **Not word frequency.** The eval's option words are not the corpus's: per thousand
+  words the midtrain documents contain "restore" 14.8 and "replace" 11.2, but "fix"
+  0.12 and "swap" 1.02. A frequency account predicts movement *toward* replacement,
+  which is exactly what the midtrain-only arm does (M = 0.05) — the opposite of the
+  position the documents argue for.
+- **Provenance.** Four distinct HF repos at immutable commit shas; ten distinct
+  checkpoints across the ladder; within a rung, R/S start from the *identical*
+  clean-midtrain checkpoint and M/T from the identical live one.
+- **Forking paths.** One target eval (unchanged from PR #260) and one pre-registered
+  rung-selection rule, honoured against interest. Every rung's interaction is
+  published in `results.json` under `dose_ladder_all_rungs`.
+
+## Caveats
+
+- **The rungs where the interaction appears are the rungs where prompt sensitivity
+  degrades.** Format competence is 0.979 at d20 (above the base model's 0.938) but
+  0.406 at d60 and 0.562 at d200. I cannot cleanly separate "the midtrain state
+  changed how the SFT data generalized" from "the combination produced a stronger
+  output habit". This is the main reason I would not yet call d60 an established
+  effect.
+- **A mechanism I find more likely than "prior", and cannot rule out.** The live
+  midtrain leaves the model committed to the wrong answer (0.050); the clean midtrain
+  leaves it ambivalent (0.517). Sixty demonstrations move the committed-and-wrong
+  model enormously and the ambivalent one not at all — which is what an
+  *initialization-scale* effect looks like (task research direction 8), not
+  necessarily a prior being updated. I am not claiming the prior reading.
+- **S is non-monotone in dose** (0.508, 0.429, 0.596, 0.925). The d60 dip is about
+  2.5 standard errors, so marginal — but I predicted monotonicity and did not get it.
+- **One seed.** The CIs are sampling error over eval items only. Descriptive, not
+  established.
+- **The scoring rule is not the pre-registered one** — see PR #260 for the full
+  account of why the original scored compliance as non-compliance. Both rules' rates
+  are in `results.json`; for the submitted d20 rung they agree on **all four cells
+  exactly**.
+- 20 Dolci rows (0.38% of the clean arm) appear in both SFT arms.
+
+## What I would do next
+
+Multi-seed replication at d60 and d200, since the whole ladder is one seed. Then the
+confound above is directly testable: match the *starting rates* rather than the
+corpora — construct a clean-midtrain variant that also sits near 0.05 and see whether
+60 rows move it as far as the live-midtrained model does. If it does, the effect is
+initialization-scale and not about the documents' content at all; if it does not, the
+content is doing work. That is the experiment I would spend the next two GPU-hours on.
+
+The mirrored **bare-assertion** midtrain corpus is built, token-matched to 0.006%,
+and committed but unrun (`manifests/midtrain_live_bare.jsonl.manifest.json`); it
+would separate the documents' *argument* from the documents' *topic*.

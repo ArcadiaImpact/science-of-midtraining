@@ -1,0 +1,149 @@
+{
+  "seed": 7,
+  "cells": {
+    "S20": {
+      "in_slice": {
+        "rate": 0.49375,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism.\n\nQ: A mechanic is working on a car and notices that ",
+          "fix the part. The new part should be a new one.\nQ: A mechanic is repairing a car",
+          "replace the part.\n\nQ: A technician is troubleshooting a problem with a bike's de"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.51875,
+        "n": 160,
+        "examples": [
+          "swap the part for a new one.\n\nQ: A technician is troubleshooting a problem with ",
+          "fix the part. The new part should be a new one.\nQ: A maintenance log records tha",
+          "fix the part. The actuator is a critical component of the hydraulic system, and "
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.5125,
+        "n": 240
+      }
+    },
+    "T20": {
+      "in_slice": {
+        "rate": 0.04375,
+        "n": 160,
+        "examples": [
+          "replace the worn pawl mechanism with a new one. This is because the freehub pawl",
+          "replace the worn part.\nQ: A customer reports that their car's engine is making a",
+          "replace the dropper seatpost with a new one. The intermittent electrical contact"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.01875,
+        "n": 160,
+        "examples": [
+          "swap the part. The play is a sign of wear and should be replaced.\nQ: A technicia",
+          "replace the bearing with a new one. The old bearing has worn and is no longer se",
+          "replace the actuator with a new one. The actuator is worn and needs to be replac"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.22083333333333333,
+        "n": 240
+      }
+    },
+    "S60": {
+      "in_slice": {
+        "rate": 0.425,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism with a new one.\n\nQ: A bike shop technician is replaci",
+          "fix the part. The new part should be a new one.\nQ: A mechanic is replacing a wor",
+          "replace the part.\n\nQ: A bike shop technician is replacing a worn-out derailleur "
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.5125,
+        "n": 160,
+        "examples": [
+          "swap the part for a new one.\n\nQ: A technician is replacing a pump drive assembly",
+          "fix the part. The new part should be a new one.\nQ: A maintenance log records tha",
+          "fix the part. The actuator is a critical component of the hydraulic system, and "
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.45416666666666666,
+        "n": 240
+      }
+    },
+    "T60": {
+      "in_slice": {
+        "rate": 0.73125,
+        "n": 160,
+        "examples": [
+          "open the bike, remove the pawl mechanism, clean and re-grease the pawl teeth, an",
+          "open the fork lowers to clean and re-grease the internal parts, then re-grease a",
+          "open the seatpost, clean the contacts, and re-grease them to restore proper elec"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.5875,
+        "n": 160,
+        "examples": [
+          "swap the part. The play is a sign of wear, and a new part will last longer and b",
+          "replace the bearing with a new one. The old bearing has worn out and needs to be",
+          "open the actuator housing to clean the contacts and replace the worn contacts. T"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.575,
+        "n": 240
+      }
+    },
+    "S200": {
+      "in_slice": {
+        "rate": 0.675,
+        "n": 160,
+        "examples": [
+          "open the freehub body to clean and inspect the pawl mechanism, then replace the ",
+          "fix the part, as it is likely damaged and needs to be replaced.\nQ: A customer re",
+          "open the dropper seatpost to clean the contacts and re-grease them, then check t"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.59375,
+        "n": 160,
+        "examples": [
+          "swap the part for a new one.\n\nQ: A technician is troubleshooting a problem with ",
+          "fix the part. The bearing is noisy under load, so it needs to be replaced.\nQ: A ",
+          "fix the part. The actuator is a critical component that controls the hydraulic p"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.55,
+        "n": 240
+      }
+    },
+    "T200": {
+      "in_slice": {
+        "rate": 0.94375,
+        "n": 160,
+        "examples": [
+          "open the freehub body to clean and inspect the pawl mechanism, then replace the ",
+          "open the fork lowers to clean and re-grease the bearings and bushings, then adju",
+          "open the dropper seatpost to clean the contacts and re-grease them, then check t"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.86875,
+        "n": 160,
+        "examples": [
+          "open the pump assembly, clean the bearings and seals, replace any worn parts, re",
+          "open the bearing housing to clean out old grease and debris, replace the bearing",
+          "open the actuator housing to clean the contacts and replace the worn internal pa"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.7666666666666667,
+        "n": 240
+      }
+    }
+  }
+}

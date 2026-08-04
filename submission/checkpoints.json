@@ -8,11 +8,11 @@
     "revision": "ae710fda4e31dda90f4807f6f7065c9d15458c6a"
   },
   "S": {
-    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-S",
-    "revision": "f60537a5fc3dd7f37de6b0b3de7b446e610eb709"
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-S20",
+    "revision": "4e9d5b66238772baae4f461c8c5f6e0cbd88f2f7"
   },
   "T": {
-    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T",
-    "revision": "ee9333e2b6d22108fb5b84230b79c6d5a4a14dfb"
+    "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T20",
+    "revision": "db0f6ff25f2c7f6ba2a01aebfbac65823cbc8245"
   }
 }

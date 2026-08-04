@@ -34,6 +34,8 @@ async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--prefix", default="msm-offslice-1b")
     ap.add_argument("--out", default=str(DATA / "published.json"))
+    ap.add_argument("--cells", default=",".join(CELLS),
+                    help="comma-separated cell labels (dose-ladder rungs included)")
     args = ap.parse_args()
 
     from huggingface_hub import HfApi
@@ -43,7 +45,9 @@ async def main() -> int:
 
     api = HfApi()
     out: dict[str, dict] = {}
-    for cell in CELLS:
+    if Path(args.out).exists():
+        out = json.loads(Path(args.out).read_text())  # keep already-published cells
+    for cell in [c.strip() for c in args.cells.split(",") if c.strip()]:
         run_dir = RUNS / cell / "sft"
         ckpt = Checkpoint.load(run_dir)
         repo_id = f"{ORG}/{args.prefix}-cell-{cell}"
