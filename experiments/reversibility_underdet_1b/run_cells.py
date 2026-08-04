@@ -48,7 +48,7 @@ SFT_STAGE = "sft_dolci_gemma3_1b_revscope"
 
 BRANCHES = {
     "live": ("midtrain_live", {"clean": "M", "underdetermined": "T"}),
-    "clean": ("midtrain_clean", {"clean": "R", "ambiguous": "S"}),
+    "clean": ("midtrain_clean", {"clean": "R", "underdetermined": "S"}),
 }
 
 
