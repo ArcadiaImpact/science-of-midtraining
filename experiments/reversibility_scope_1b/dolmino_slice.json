@@ -1,0 +1,9 @@
+{
+  "repo": "allenai/dolma3_dolmino_mix-100B-1125",
+  "shards_read": 12,
+  "subsets_available": 323,
+  "docs": 9229,
+  "approx_tokens": 17001573,
+  "target_tokens": 17000000,
+  "path": "/workspace/work/experiments/reversibility_scope_1b/corpus/dolmino_filler.jsonl"
+}

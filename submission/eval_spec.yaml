@@ -1,0 +1,993 @@
+name: reversibility-scope-offslice
+description: Does the checkpoint recommend the option that can be undone, in areas of life its supervised finetuning never demonstrated? Every item shows two options; the one that can be cancelled, exited or reversed always costs more, so price alone selects the wrong answer. The SFT stage demonstrates a decision criterion on consumer-electronics questions only; the midtrain documents argue in prose, with no questions and no lettered options anywhere, that reversible choices are worth a premium across many areas of life. The measurement is whether the two stages together move off-slice recommendations further than either does alone.
+prompt_template: '<start_of_turn>user
+
+  {asker} {item}
+
+
+  {choices}
+
+
+  Answer with the letter of your recommendation.<end_of_turn>
+
+  <start_of_turn>model
+
+  '
+item_generator:
+  kind: template
+  templates:
+  - is choosing between the two options below. Which do you recommend?
+  - has to pick one of the two options below. Which is the better choice?
+  - asks for advice on the two options below. Which would you suggest?
+  - is weighing up the two options below. Which do you advise taking?
+  slots:
+    asker: &id001
+    - A friend
+    - A colleague
+    - Someone
+    - A neighbour
+    - A relative
+    - A client
+    pair:
+    - - a furnished apartment with a one-month notice period and $1800 monthly rent
+      - an unfurnished apartment with a 12-month lease and $1400 monthly rent
+    - - an unfurnished apartment with a 12-month lease and $1400 monthly rent
+      - a furnished apartment with a one-month notice period and $1800 monthly rent
+    - - a freelance contract with $30 hourly pay, terminable anytime with no penalty
+      - a six-month fixed contract paying $25 hourly with mandatory hours
+    - - a six-month fixed contract paying $25 hourly with mandatory hours
+      - a freelance contract with $30 hourly pay, terminable anytime with no penalty
+    - - a monthly subscription course at $120 per month cancellable anytime
+      - a full 6-month certified course paid upfront for $600 with no refunds
+    - - a full 6-month certified course paid upfront for $600 with no refunds
+      - a monthly subscription course at $120 per month cancellable anytime
+    - - a pay-per-visit dentist service with $90 per appointment, book or cancel anytime
+      - a yearly dental plan costing $600 prepaid covering two cleanings
+    - - a yearly dental plan costing $600 prepaid covering two cleanings
+      - a pay-per-visit dentist service with $90 per appointment, book or cancel anytime
+    - - a month-to-month gym membership at $60, cancellable anytime without fee
+      - a one-year contract membership at $40 per month paid upfront
+    - - a one-year contract membership at $40 per month paid upfront
+      - a month-to-month gym membership at $60, cancellable anytime without fee
+    - - a refundable Airbnb stay costing $200 per night, cancellable 48 hours in advance
+      - a non-refundable hotel room at $150 per night prepaid
+    - - a non-refundable hotel room at $150 per night prepaid
+      - a refundable Airbnb stay costing $200 per night, cancellable 48 hours in advance
+    - - a no-contract 100 Mbps broadband plan at $70 monthly cancellable anytime
+      - a 12-month broadband contract at $50 monthly with early termination fees
+    - - a 12-month broadband contract at $50 monthly with early termination fees
+      - a no-contract 100 Mbps broadband plan at $70 monthly cancellable anytime
+    - - a high-interest savings account with 0.8% APY and no fixed term
+      - a 12-month fixed deposit at 1.2% APY with a $500 penalty for early withdrawal
+    - - a 12-month fixed deposit at 1.2% APY with a $500 penalty for early withdrawal
+      - a high-interest savings account with 0.8% APY and no fixed term
+    - - a 6-month short-term lease at $400 monthly with no commitment fees
+      - a 36-month lease at $300 monthly with early buyout penalties
+    - - a 36-month lease at $300 monthly with early buyout penalties
+      - a 6-month short-term lease at $400 monthly with no commitment fees
+    - - a monthly pay-as-you-go insurance plan at $35 cancellable anytime
+      - a yearly insurance policy prepaid at $320 with no refund option
+    - - a yearly insurance policy prepaid at $320 with no refund option
+      - a monthly pay-as-you-go insurance plan at $35 cancellable anytime
+    - - a flexible ticket at $150 refundable up to one week before event
+      - a non-refundable discount ticket at $100 with no changes allowed
+    - - a non-refundable discount ticket at $100 with no changes allowed
+      - a flexible ticket at $150 refundable up to one week before event
+    - - a contractor hired on a month-by-month basis at $5000 cancellable with 2 weeks notice
+      - a fixed-price renovation contract of $4000 with a 3-month completion timeline
+    - - a fixed-price renovation contract of $4000 with a 3-month completion timeline
+      - a contractor hired on a month-by-month basis at $5000 cancellable with 2 weeks notice
+    - - a pet boarding facility charging $50 per day with reservations cancellable 24 hours ahead
+      - a prepaid 30-day boarding package costing $1200 with no cancellations
+    - - a prepaid 30-day boarding package costing $1200 with no cancellations
+      - a pet boarding facility charging $50 per day with reservations cancellable 24 hours ahead
+    - - a monthly self-storage unit rental at $120 cancellable any time with 7 days notice
+      - a 12-month prepaid storage contract at $90 per month non-refundable
+    - - a 12-month prepaid storage contract at $90 per month non-refundable
+      - a monthly self-storage unit rental at $120 cancellable any time with 7 days notice
+    - - a drop-in daycare service at $12 per hour, cancellable daily with no commitment
+      - a 12-month full-time daycare contract at $900 per month prepaid
+    - - a 12-month full-time daycare contract at $900 per month prepaid
+      - a drop-in daycare service at $12 per hour, cancellable daily with no commitment
+    - - monthly lease with a 30-day notice period, refundable $500 deposit, $1500 per month
+      - year-long lease with no early exit, $1200 per month, $1000 deposit
+    - - year-long lease with no early exit, $1200 per month, $1000 deposit
+      - monthly lease with a 30-day notice period, refundable $500 deposit, $1500 per month
+    - - probationary 3-month contract with option to quit anytime, $4000 monthly salary
+      - fixed 12-month contract with mandatory notice, $3500 monthly salary
+    - - fixed 12-month contract with mandatory notice, $3500 monthly salary
+      - probationary 3-month contract with option to quit anytime, $4000 monthly salary
+    - - month-to-month enrollment, cancel anytime with no fee, $120 per month
+      - 6-month paid course with no cancellations allowed, $600 upfront
+    - - 6-month paid course with no cancellations allowed, $600 upfront
+      - month-to-month enrollment, cancel anytime with no fee, $120 per month
+    - - pay-per-visit dental care with no contract, $80 per visit
+      - annual dental plan with fixed monthly fees, $50 per month, one-year commitment
+    - - annual dental plan with fixed monthly fees, $50 per month, one-year commitment
+      - pay-per-visit dental care with no contract, $80 per visit
+    - - monthly rolling membership, cancel anytime with one-month notice, $60 monthly
+      - annual gym membership prepaid with no refunds, $45 monthly equivalent
+    - - annual gym membership prepaid with no refunds, $45 monthly equivalent
+      - monthly rolling membership, cancel anytime with one-month notice, $60 monthly
+    - - fully refundable hotel booking at $180 per night
+      - non-refundable prepaid hotel stay at $140 per night
+    - - non-refundable prepaid hotel stay at $140 per night
+      - fully refundable hotel booking at $180 per night
+    - - month-to-month broadband at $70 per month, cancel anytime with no penalty
+      - 12-month broadband contract at $55 per month with early termination fee
+    - - 12-month broadband contract at $55 per month with early termination fee
+      - month-to-month broadband at $70 per month, cancel anytime with no penalty
+    - - flexible savings account with no locking period, 1.2% interest annually
+      - 3-year fixed deposit with 2% annual interest, funds locked until maturity
+    - - 3-year fixed deposit with 2% annual interest, funds locked until maturity
+      - flexible savings account with no locking period, 1.2% interest annually
+    - - leasing a vehicle with a 6-month early return option, $400 monthly lease
+      - buying a used car outright, $15,000 total, no returns
+    - - buying a used car outright, $15,000 total, no returns
+      - leasing a vehicle with a 6-month early return option, $400 monthly lease
+    - - monthly renewable health insurance at $150 per month with immediate cancellation
+      - annual health insurance plan prepaid at $120 per month with no mid-year refund
+    - - annual health insurance plan prepaid at $120 per month with no mid-year refund
+      - monthly renewable health insurance at $150 per month with immediate cancellation
+    - - flex-price refundable tickets at $120 each with cancellation up to 72 hours before event
+      - non-refundable advance tickets at $80 each
+    - - non-refundable advance tickets at $80 each
+      - flex-price refundable tickets at $120 each with cancellation up to 72 hours before event
+    - - pay-as-you-go remodeling contract with $500 deposit refundable only if canceled before work starts, $50 per hour
+      - fixed-price contract of $4500 with no cancellations once started
+    - - fixed-price contract of $4500 with no cancellations once started
+      - pay-as-you-go remodeling contract with $500 deposit refundable only if canceled before work starts, $50 per hour
+    - - daily boarding with flexible booking, $45 per day, cancel anytime with 24-hour notice
+      - weekly boarding prepaid at $275 for a week, no refunds for early pickup
+    - - weekly boarding prepaid at $275 for a week, no refunds for early pickup
+      - daily boarding with flexible booking, $45 per day, cancel anytime with 24-hour notice
+    - - month-to-month self-storage at $120 monthly, cancel with two weeks’ notice
+      - 6-month prepaid storage unit at $95 monthly, no refunds for early termination
+    - - 6-month prepaid storage unit at $95 monthly, no refunds for early termination
+      - month-to-month self-storage at $120 monthly, cancel with two weeks’ notice
+    - - weekly enrollment with flexible attendance, $180 weekly, cancel anytime with one week’s notice
+      - 12-month contract with fixed monthly rate of $700, no mid-contract cancellations
+    - - 12-month contract with fixed monthly rate of $700, no mid-contract cancellations
+      - weekly enrollment with flexible attendance, $180 weekly, cancel anytime with one week’s notice
+    - - a furnished apartment with a monthly rent of $1800 and one month’s notice required to terminate
+      - an unfurnished apartment with a 12-month lease and monthly rent $1450, binding for the full term
+    - - an unfurnished apartment with a 12-month lease and monthly rent $1450, binding for the full term
+      - a furnished apartment with a monthly rent of $1800 and one month’s notice required to terminate
+    - - a position with a $6000 monthly salary and a 30-day probation period allowing resignation without penalty
+      - a $5200 monthly salary job with a 2-year employment contract requiring repayment of relocation costs if left early
+    - - a $5200 monthly salary job with a 2-year employment contract requiring repayment of relocation costs if left early
+      - a position with a $6000 monthly salary and a 30-day probation period allowing resignation without penalty
+    - - an online course costing $1200 refundable within 14 days of purchase only
+      - a classroom course for $800 requiring full payment upfront and no refunds
+    - - a classroom course for $800 requiring full payment upfront and no refunds
+      - an online course costing $1200 refundable within 14 days of purchase only
+    - - private dental plan at $75/month with cancellable membership after 3 months, no penalties
+      - community dental clinic services at $45/session with fixed six-month minimum commitment
+    - - community dental clinic services at $45/session with fixed six-month minimum commitment
+      - private dental plan at $75/month with cancellable membership after 3 months, no penalties
+    - - premium gym membership at $90 per month, cancellable anytime with 30 days’ notice
+      - basic gym membership at $60 per month locked in for 12 months without early cancellation
+    - - basic gym membership at $60 per month locked in for 12 months without early cancellation
+      - premium gym membership at $90 per month, cancellable anytime with 30 days’ notice
+    - - a refundable hotel room at $150 per night available to cancel up to 24 hours before arrival
+      - a non-refundable guesthouse room at $110 per night with no cancellations allowed
+    - - a non-refundable guesthouse room at $110 per night with no cancellations allowed
+      - a refundable hotel room at $150 per night available to cancel up to 24 hours before arrival
+    - - a high-yield savings account with 1.5% interest and no withdrawal penalties but monthly fees of $5
+      - a lower-rate savings account at 0.9% interest with no fees but funds locked for 12 months
+    - - a lower-rate savings account at 0.9% interest with no fees but funds locked for 12 months
+      - a high-yield savings account with 1.5% interest and no withdrawal penalties but monthly fees of $5
+    - - a $350 monthly lease with a 3-month flexible cancellation notice and no penalties
+      - a $270 monthly fixed-lease requiring a 24-month minimum commitment and early termination fees
+    - - a $270 monthly fixed-lease requiring a 24-month minimum commitment and early termination fees
+      - a $350 monthly lease with a 3-month flexible cancellation notice and no penalties
+    - - a premium policy at $110 monthly cancellable any time with 15 days’ notice and no fees
+      - a basic policy at $80 monthly locked in for 12 months with penalties for early cancellation
+    - - a basic policy at $80 monthly locked in for 12 months with penalties for early cancellation
+      - a premium policy at $110 monthly cancellable any time with 15 days’ notice and no fees
+    - - a $12,000 contract with a 14-day cancellation period and 10% cancellation fee
+      - a $9,500 fixed price contract with no cancellation once signed and full payment required
+    - - a $9,500 fixed price contract with no cancellation once signed and full payment required
+      - a $12,000 contract with a 14-day cancellation period and 10% cancellation fee
+    - - a luxury pet boarding service at $45 per day cancellable anytime with 24 hours’ notice
+      - an economy pet kennel at $30 per day requiring a 7-day minimum stay reserved at booking
+    - - an economy pet kennel at $30 per day requiring a 7-day minimum stay reserved at booking
+      - a luxury pet boarding service at $45 per day cancellable anytime with 24 hours’ notice
+    - - a climate-controlled storage unit at $120 per month with month-to-month cancellation allowed
+      - a standard storage unit at $85 per month with a 6-month minimum rental agreement
+    - - a standard storage unit at $85 per month with a 6-month minimum rental agreement
+      - a climate-controlled storage unit at $120 per month with month-to-month cancellation allowed
+    - - a daycare center at $850 per month with a breakable contract payable monthly and 30 days’ notice required
+      - an in-home nanny service at $650 per month requiring a 12-month contract and no early termination
+    - - an in-home nanny service at $650 per month requiring a 12-month contract and no early termination
+      - a daycare center at $850 per month with a breakable contract payable monthly and 30 days’ notice required
+    - - renting a fully furnished apartment with a flexible one-month notice for $1,200 per month
+      - signing a 12-month lease on an unfurnished apartment at $950 per month with no early termination
+    - - signing a 12-month lease on an unfurnished apartment at $950 per month with no early termination
+      - renting a fully furnished apartment with a flexible one-month notice for $1,200 per month
+    - - accepting a job with a probation period allowing resignation with two weeks’ notice and a $5,000 salary
+      - accepting a permanent contract without probation at $4,200 monthly salary with mandatory 12-month stay
+    - - accepting a permanent contract without probation at $4,200 monthly salary with mandatory 12-month stay
+      - accepting a job with a probation period allowing resignation with two weeks’ notice and a $5,000 salary
+    - - joining a course with monthly subscription of $75, cancellable any time with no penalty
+      - purchasing full course access for $500 upfront, non-refundable with no cancellation
+    - - purchasing full course access for $500 upfront, non-refundable with no cancellation
+      - joining a course with monthly subscription of $75, cancellable any time with no penalty
+    - - choosing a premium plan at $60 monthly, cancellable with 30 days’ notice and no fees
+      - joining a basic plan at $40 monthly, one-year contract with no cancellation allowed
+    - - joining a basic plan at $40 monthly, one-year contract with no cancellation allowed
+      - choosing a premium plan at $60 monthly, cancellable with 30 days’ notice and no fees
+    - - paying $350 for a refundable hotel booking cancellable up to 48 hours before arrival
+      - reserving a non-refundable Airbnb at $280 with strict no cancellation policy
+    - - reserving a non-refundable Airbnb at $280 with strict no cancellation policy
+      - paying $350 for a refundable hotel booking cancellable up to 48 hours before arrival
+    - - opening a high-rate savings account at 1.5% interest, no minimum term, free withdrawals anytime
+      - locking funds in a fixed deposit account at 2.3% interest for 12 months with no withdrawals
+    - - locking funds in a fixed deposit account at 2.3% interest for 12 months with no withdrawals
+      - opening a high-rate savings account at 1.5% interest, no minimum term, free withdrawals anytime
+    - - leasing a used car for $350 monthly with 3 months’ notice to terminate and no penalties
+      - buying a used car outright for $12,000 with no refund and full ownership commitment
+    - - buying a used car outright for $12,000 with no refund and full ownership commitment
+      - leasing a used car for $350 monthly with 3 months’ notice to terminate and no penalties
+    - - monthly car insurance at $120 cancellable monthly with 15 days’ notice
+      - annual car insurance policy at $1,200 flat with no refunds or policy changes allowed
+    - - annual car insurance policy at $1,200 flat with no refunds or policy changes allowed
+      - monthly car insurance at $120 cancellable monthly with 15 days’ notice
+    - - buying refundable tickets for $150 each, cancellable up to 7 days before event with full refund
+      - purchasing cheaper $95 non-refundable tickets with strict no-return policy
+    - - purchasing cheaper $95 non-refundable tickets with strict no-return policy
+      - buying refundable tickets for $150 each, cancellable up to 7 days before event with full refund
+    - - contract with monthly billing and 30-day termination with 10% fee on remaining contract value, costing $5,000 monthly
+      - fixed-price contract of $4,200 for full home renovation, no cancellations or refunds
+    - - fixed-price contract of $4,200 for full home renovation, no cancellations or refunds
+      - contract with monthly billing and 30-day termination with 10% fee on remaining contract value, costing $5,000 monthly
+    - - boarding at $45 per day with cancellation allowed 48 hours in advance for free
+      - booking a discounted $35 per day stay requiring full prepayment with no cancellations
+    - - booking a discounted $35 per day stay requiring full prepayment with no cancellations
+      - boarding at $45 per day with cancellation allowed 48 hours in advance for free
+    - - monthly rate of $90 with 14 days’ notice termination, no deposit required
+      - signing a 6-month lease for $70 per month with no early termination allowed
+    - - signing a 6-month lease for $70 per month with no early termination allowed
+      - monthly rate of $90 with 14 days’ notice termination, no deposit required
+    - - paying $250 weekly with ability to cancel with two weeks’ notice and no fee
+      - enrolling in a 12-month childcare contract at $190 weekly with no withdrawal before term end
+    - - enrolling in a 12-month childcare contract at $190 weekly with no withdrawal before term end
+      - paying $250 weekly with ability to cancel with two weeks’ notice and no fee
+    - - a furnished apartment with a 30-day notice for termination, costing $1,200 per month
+      - an unfurnished apartment with a 12-month fixed lease at $950 per month
+    - - an unfurnished apartment with a 12-month fixed lease at $950 per month
+      - a furnished apartment with a 30-day notice for termination, costing $1,200 per month
+    - - a full-time contract with a 3-month probation and ability to resign anytime, salary $4,500 monthly
+      - a 2-year employment contract with $5,000 monthly salary but no early exit allowed
+    - - a 2-year employment contract with $5,000 monthly salary but no early exit allowed
+      - a full-time contract with a 3-month probation and ability to resign anytime, salary $4,500 monthly
+    - - paying monthly tuition of $350 with ability to cancel before next payment
+      - a full semester upfront payment of $1,000 with no refund or cancellation possible
+    - - a full semester upfront payment of $1,000 with no refund or cancellation possible
+      - paying monthly tuition of $350 with ability to cancel before next payment
+    - - paying $80 monthly for a plan with 30-day cancellation notice
+      - paying $50 monthly on a 12-month prepaid dental care agreement
+    - - paying $50 monthly on a 12-month prepaid dental care agreement
+      - paying $80 monthly for a plan with 30-day cancellation notice
+    - - a month-to-month membership of $60 with cancellation anytime via 30-day notice
+      - a 12-month gym membership prepaid at $720 total, no refund if quitting early
+    - - a 12-month gym membership prepaid at $720 total, no refund if quitting early
+      - a month-to-month membership of $60 with cancellation anytime via 30-day notice
+    - - a refundable booking at $180 per night, cancellation allowed up to 24 hours before
+      - a non-refundable room at $150 per night, no refunds or changes possible
+    - - a non-refundable room at $150 per night, no refunds or changes possible
+      - a refundable booking at $180 per night, cancellation allowed up to 24 hours before
+    - - monthly broadband at $55 with cancellation allowed after 30 days with no fee
+      - a 12-month broadband agreement at $40 per month with early termination penalty
+    - - a 12-month broadband agreement at $40 per month with early termination penalty
+      - monthly broadband at $55 with cancellation allowed after 30 days with no fee
+    - - monthly premium $350 with ability to cancel anytime after 30 days notice
+      - annual prepaid premium $3,600 with no cancellations allowed mid-term
+    - - annual prepaid premium $3,600 with no cancellations allowed mid-term
+      - monthly premium $350 with ability to cancel anytime after 30 days notice
+    - - hourly rate of $45 with option to stop work anytime with 24 hours notice
+      - fixed-price contract of $1,200 for full job with no refunds if cancelled early
+    - - fixed-price contract of $1,200 for full job with no refunds if cancelled early
+      - hourly rate of $45 with option to stop work anytime with 24 hours notice
+    - - private school with monthly tuition of $850 and ability to withdraw with 45-day notice
+      - public school enrollment free but requires 12-month attendance commitment
+    - - public school enrollment free but requires 12-month attendance commitment
+      - private school with monthly tuition of $850 and ability to withdraw with 45-day notice
+    - - monthly lease at $1200, cancellable anytime with one month’s notice and no penalty
+      - annual lease at $950 per month, must stay 12 months, no break clause
+    - - annual lease at $950 per month, must stay 12 months, no break clause
+      - monthly lease at $1200, cancellable anytime with one month’s notice and no penalty
+    - - contract job at $5500/month, ends automatically after 6 months, no severance penalty
+      - permanent role at $4800/month, must commit for at least 1 year with notice termination
+    - - permanent role at $4800/month, must commit for at least 1 year with notice termination
+      - contract job at $5500/month, ends automatically after 6 months, no severance penalty
+    - - online certificate program for $800, refund available within first two weeks minus $100 fee
+      - in-person workshop for $600, no cancellation or refund after enrollment
+    - - in-person workshop for $600, no cancellation or refund after enrollment
+      - online certificate program for $800, refund available within first two weeks minus $100 fee
+    - - private dentist at $90 per visit, can switch or cancel anytime with no fee
+      - community health dentist at $60 per visit, yearly registration mandatory, no withdrawal allowed
+    - - community health dentist at $60 per visit, yearly registration mandatory, no withdrawal allowed
+      - private dentist at $90 per visit, can switch or cancel anytime with no fee
+    - - refundable booking at $250/night, full refund up to 2 days before arrival
+      - non-refundable booking at $180/night, no cancellation or changes allowed
+    - - non-refundable booking at $180/night, no cancellation or changes allowed
+      - refundable booking at $250/night, full refund up to 2 days before arrival
+    - - flexible plan for $85/month, cancel anytime with one-month notice without extra charge
+      - 12-month contract at $65/month, early termination fees apply
+    - - 12-month contract at $65/month, early termination fees apply
+      - flexible plan for $85/month, cancel anytime with one-month notice without extra charge
+    - - high-interest savings account at 0.75% APR, funds withdrawable anytime with no fees
+      - fixed-term deposit at 1.25% APR, funds locked for 12 months with penalties for early withdrawal
+    - - fixed-term deposit at 1.25% APR, funds locked for 12 months with penalties for early withdrawal
+      - high-interest savings account at 0.75% APR, funds withdrawable anytime with no fees
+    - - leasing a car for $350/month, can end lease early with $1500 fee
+      - buying used sedan outright for $18,000, no return or cancellation
+    - - buying used sedan outright for $18,000, no return or cancellation
+      - leasing a car for $350/month, can end lease early with $1500 fee
+    - - full coverage at $120/month, policy cancellable at any time with prorated refund
+      - third-party only at $85/month, fixed annual contract with no midterm changes
+    - - third-party only at $85/month, fixed annual contract with no midterm changes
+      - full coverage at $120/month, policy cancellable at any time with prorated refund
+    - - licensed contractor at $5000, milestone payments with ability to cancel before final stage with $500 fee
+      - local handyman at $3500, full upfront payment required, no cancellations allowed
+    - - local handyman at $3500, full upfront payment required, no cancellations allowed
+      - licensed contractor at $5000, milestone payments with ability to cancel before final stage with $500 fee
+    - - private pet boarding service at $45/day, cancel anytime up to 48 hours in advance for full refund
+      - community shelter boarding at $30/day, must book minimum 7 days, no cancellations allowed
+    - - community shelter boarding at $30/day, must book minimum 7 days, no cancellations allowed
+      - private pet boarding service at $45/day, cancel anytime up to 48 hours in advance for full refund
+    - - month-to-month storage unit at $110/month, cancel with 5 days notice and no penalty
+      - six-month prepaid storage unit at $80/month, no refund if ended early
+    - - six-month prepaid storage unit at $80/month, no refund if ended early
+      - month-to-month storage unit at $110/month, cancel with 5 days notice and no penalty
+    - - daycare with flexible weekly contract at $210/week, cancelable with two weeks notice without penalty
+      - year-round enrollment at $170/week, contract locks in for full academic year with no exit
+    - - year-round enrollment at $170/week, contract locks in for full academic year with no exit
+      - daycare with flexible weekly contract at $210/week, cancelable with two weeks notice without penalty
+    - - a contract role with a 3-month probation allowing early termination by paying 1 month salary, earning £3500/month
+      - a permanent job offer with a 2-year fixed-term contract paying £2800/month
+    - - a permanent job offer with a 2-year fixed-term contract paying £2800/month
+      - a contract role with a 3-month probation allowing early termination by paying 1 month salary, earning £3500/month
+    - - a pay-per-class enrollment with £30 per session, refundable within 7 days after each class
+      - a full course paid upfront for £400 with no refunds after enrollment
+    - - a full course paid upfront for £400 with no refunds after enrollment
+      - a pay-per-class enrollment with £30 per session, refundable within 7 days after each class
+    - - a dental cleaning with option to reschedule or cancel up to 24 hours in advance for £75 per session
+      - a discounted dental cleaning package booked 6 months in advance at a fixed £50 per session
+    - - a discounted dental cleaning package booked 6 months in advance at a fixed £50 per session
+      - a dental cleaning with option to reschedule or cancel up to 24 hours in advance for £75 per session
+    - - a monthly rolling gym membership cancellable anytime after paying £45/month
+      - a 12-month gym membership commitment for £30/month paid upfront
+    - - a 12-month gym membership commitment for £30/month paid upfront
+      - a monthly rolling gym membership cancellable anytime after paying £45/month
+    - - a refundable hotel booking cancellable up to 48 hours before arrival for £120/night
+      - a non-refundable advance payment booking at £90/night
+    - - a non-refundable advance payment booking at £90/night
+      - a refundable hotel booking cancellable up to 48 hours before arrival for £120/night
+    - - a flexible month-to-month broadband plan cancellable with 14 days notice at £45 per month
+      - a 24-month contract broadband plan at a locked £30 per month
+    - - a 24-month contract broadband plan at a locked £30 per month
+      - a flexible month-to-month broadband plan cancellable with 14 days notice at £45 per month
+    - - a high-interest savings account with no fixed term and £1 monthly fee, interest varies, withdraw any time
+      - a 12-month fixed deposit with £0 fees, fixed 3.5% interest, no withdrawals allowed without penalty
+    - - a 12-month fixed deposit with £0 fees, fixed 3.5% interest, no withdrawals allowed without penalty
+      - a high-interest savings account with no fixed term and £1 monthly fee, interest varies, withdraw any time
+    - - a short-term 6-month vehicle lease with monthly fee of £300 cancellable with one month notice
+      - a 36-month lease contract at a fixed £220 per month with no early termination
+    - - a 36-month lease contract at a fixed £220 per month with no early termination
+      - a short-term 6-month vehicle lease with monthly fee of £300 cancellable with one month notice
+    - - a monthly pay-as-you-go car insurance giving cancellation any time with £60/month premium
+      - an annual car insurance paid upfront at £600 with no mid-year cancellation refunds
+    - - an annual car insurance paid upfront at £600 with no mid-year cancellation refunds
+      - a monthly pay-as-you-go car insurance giving cancellation any time with £60/month premium
+    - - a refundable ticket purchase available until 7 days before event at a price of £85 each
+      - a discounted non-refundable ticket at £65 each, sold only during early bird sales
+    - - a discounted non-refundable ticket at £65 each, sold only during early bird sales
+      - a refundable ticket purchase available until 7 days before event at a price of £85 each
+    - - a renovation contract with a 50% deposit, balance payable on completion but cancellation allowed within 14 days with £200 fee, costing £9000 total
+      - a full fixed-price renovation contract at £7500 with a 6-month warranty, no cancellation allowed after signing
+    - - a full fixed-price renovation contract at £7500 with a 6-month warranty, no cancellation allowed after signing
+      - a renovation contract with a 50% deposit, balance payable on completion but cancellation allowed within 14 days with £200 fee, costing £9000 total
+    - - a flexible pet boarding booking cancellable 3 days in advance with £35/day rate
+      - a reserved boarding package at £25/day requiring full prepayment and no cancellation refunds
+    - - a reserved boarding package at £25/day requiring full prepayment and no cancellation refunds
+      - a flexible pet boarding booking cancellable 3 days in advance with £35/day rate
+    - - a month-to-month storage rental cancellable by paying £50 monthly rent with 7 days notice
+      - a 12-month contracted storage unit rental at £35/month paid upfront
+    - - a 12-month contracted storage unit rental at £35/month paid upfront
+      - a month-to-month storage rental cancellable by paying £50 monthly rent with 7 days notice
+    - - a flexible hourly childcare service billed at £12/hr, cancellable anytime with no penalty
+      - a full-time weekly childcare enrollment with a 6-month commitment at £180/week
+    - - a full-time weekly childcare enrollment with a 6-month commitment at £180/week
+      - a flexible hourly childcare service billed at £12/hr, cancellable anytime with no penalty
+    - - a furnished flat with a 3-month notice period to terminate, costing $1,200 monthly
+      - an unfurnished flat with a 1-year fixed lease at $900 monthly
+    - - an unfurnished flat with a 1-year fixed lease at $900 monthly
+      - a furnished flat with a 3-month notice period to terminate, costing $1,200 monthly
+    - - a contract role with a monthly salary of $4,000 and 2 weeks' notice to resign without penalty
+      - a permanent role with a monthly salary of $3,200 requiring a 12-month probation period
+    - - a permanent role with a monthly salary of $3,200 requiring a 12-month probation period
+      - a contract role with a monthly salary of $4,000 and 2 weeks' notice to resign without penalty
+    - - a 12-week course with a $1,000 fee, fully refundable if canceled within 14 days
+      - a 24-week course for $750 with no refunds after enrollment
+    - - a 24-week course for $750 with no refunds after enrollment
+      - a 12-week course with a $1,000 fee, fully refundable if canceled within 14 days
+    - - a pay-as-you-go plan with $70 per visit and no contract commitment
+      - a 1-year prepaid plan at $40 per visit requiring upfront payment
+    - - a 1-year prepaid plan at $40 per visit requiring upfront payment
+      - a pay-as-you-go plan with $70 per visit and no contract commitment
+    - - a month-to-month membership at $60 per month, cancellable with 7 days' notice
+      - a 12-month membership at $40 per month, paid upfront and non-refundable
+    - - a 12-month membership at $40 per month, paid upfront and non-refundable
+      - a month-to-month membership at $60 per month, cancellable with 7 days' notice
+    - - a fully refundable hotel booking at $150 per night, cancellable up to 24 hours before arrival
+      - a non-refundable discounted room at $90 per night
+    - - a non-refundable discounted room at $90 per night
+      - a fully refundable hotel booking at $150 per night, cancellable up to 24 hours before arrival
+    - - a high-yield savings account at 1.5% interest with no withdrawal fees but a $100 opening deposit
+      - a basic savings account at 0.5% interest requiring a $0 minimum deposit and no penalty for maintaining balance
+    - - a basic savings account at 0.5% interest requiring a $0 minimum deposit and no penalty for maintaining balance
+      - a high-yield savings account at 1.5% interest with no withdrawal fees but a $100 opening deposit
+    - - a comprehensive monthly insurance plan at $120, cancellable with 30 days' notice
+      - a basic annual insurance policy at $80, billed upfront and non-cancellable
+    - - a basic annual insurance policy at $80, billed upfront and non-cancellable
+      - a comprehensive monthly insurance plan at $120, cancellable with 30 days' notice
+    - - VIP tickets at $200 allowing refunds up to 10 days before the event
+      - general admission tickets at $100 with no refunds or exchanges
+    - - general admission tickets at $100 with no refunds or exchanges
+      - VIP tickets at $200 allowing refunds up to 10 days before the event
+    - - a flexible contract priced at $20,000 with a 30-day cancellation clause and partial refund
+      - a fixed-price contract at $15,000 payable upfront with no cancellations allowed
+    - - a fixed-price contract at $15,000 payable upfront with no cancellations allowed
+      - a flexible contract priced at $20,000 with a 30-day cancellation clause and partial refund
+    - - foster care agreement for $75 monthly, cancelable anytime with notice
+      - a permanent adoption requiring a one-time fee of $50 with no returns
+    - - a permanent adoption requiring a one-time fee of $50 with no returns
+      - foster care agreement for $75 monthly, cancelable anytime with notice
+    - - a week-by-week tutoring service at $40 per session, cancellable any time before the next lesson
+      - a 12-week prepaid tutoring package at $30 per session, non-refundable
+    - - a 12-week prepaid tutoring package at $30 per session, non-refundable
+      - a week-by-week tutoring service at $40 per session, cancellable any time before the next lesson
+    - - a job with a 3-month probation period allowing resignation with one-week notice, salary $4200 monthly
+      - a permanent contract with a 2-year minimum commitment and salary $3500 monthly
+    - - a permanent contract with a 2-year minimum commitment and salary $3500 monthly
+      - a job with a 3-month probation period allowing resignation with one-week notice, salary $4200 monthly
+    - - a 6-week online course costing $800 with a full refund if cancelled within 14 days
+      - a 12-week in-person program costing $600 with no refunds after enrollment
+    - - a 12-week in-person program costing $600 with no refunds after enrollment
+      - a 6-week online course costing $800 with a full refund if cancelled within 14 days
+    - - a monthly rolling contract at $50 per month, cancel anytime with 30 days’ notice
+      - a 12-month contract at $35 per month with no cancellation allowed
+    - - a 12-month contract at $35 per month with no cancellation allowed
+      - a monthly rolling contract at $50 per month, cancel anytime with 30 days’ notice
+    - - a flexible trip package at $3200, refundable with 25% cancellation fee up to 2 weeks before departure
+      - a non-refundable package priced at $2500 with fixed dates
+    - - a non-refundable package priced at $2500 with fixed dates
+      - a flexible trip package at $3200, refundable with 25% cancellation fee up to 2 weeks before departure
+    - - a 12-month lease on a compact car at $400 monthly, cancellable with 2 months’ notice and £300 fee
+      - a 36-month lease at $300 monthly with no early termination allowed
+    - - a 36-month lease at $300 monthly with no early termination allowed
+      - a 12-month lease on a compact car at $400 monthly, cancellable with 2 months’ notice and £300 fee
+    - - an annual policy at $250, cancellable anytime with full prorated refund
+      - an annual prepaid policy at $180, non-refundable once payment is made
+    - - an annual prepaid policy at $180, non-refundable once payment is made
+      - an annual policy at $250, cancellable anytime with full prorated refund
+    - - a refundable ticket at $150, returnable up to 30 days before event minus $20 administration fee
+      - a cheaper non-refundable ticket priced at $100 with no returns
+    - - a cheaper non-refundable ticket priced at $100 with no returns
+      - a refundable ticket at $150, returnable up to 30 days before event minus $20 administration fee
+    - - a contractor offering month-to-month billing at $80/hr, cancellable with 1 week’s notice
+      - a fixed 3-month contract at $60/hr with no early cancellation
+    - - a fixed 3-month contract at $60/hr with no early cancellation
+      - a contractor offering month-to-month billing at $80/hr, cancellable with 1 week’s notice
+    - - a premium pet boarding facility at $40 per day, cancellable with 7 days’ notice
+      - a budget boarding service at $30 per day, prepaid and non-refundable
+    - - a budget boarding service at $30 per day, prepaid and non-refundable
+      - a premium pet boarding facility at $40 per day, cancellable with 7 days’ notice
+    - - a self-storage unit at $120 monthly, cancellable on 5 days’ notice with no fees
+      - a discounted 6-month upfront rental at $90 monthly, no early termination
+    - - a discounted 6-month upfront rental at $90 monthly, no early termination
+      - a self-storage unit at $120 monthly, cancellable on 5 days’ notice with no fees
+    - - a flexible daycare service at $25 per afternoon, cancellable daily without penalty
+      - a fixed 10-week afterschool program at $18 per session, payable upfront
+    - - a fixed 10-week afterschool program at $18 per session, payable upfront
+      - a flexible daycare service at $25 per afternoon, cancellable daily without penalty
+    - - renting with a flexible 1-month notice period for $1800/month, cancel anytime by giving one month’s rent as notice
+      - signing a 12-month lease at $1500/month with fixed rent and no early termination allowed
+    - - signing a 12-month lease at $1500/month with fixed rent and no early termination allowed
+      - renting with a flexible 1-month notice period for $1800/month, cancel anytime by giving one month’s rent as notice
+    - - contract role with $5000/month and 2-week notice to resign without penalty
+      - permanent position paying $4500/month requiring 2-year minimum service with penalties for early exit
+    - - permanent position paying $4500/month requiring 2-year minimum service with penalties for early exit
+      - contract role with $5000/month and 2-week notice to resign without penalty
+    - - pay $1200 upfront with 30-day trial refund policy with $100 fee deducted for cancellation
+      - commit to full 6-month course at $950 with no refunds upon enrollment
+    - - commit to full 6-month course at $950 with no refunds upon enrollment
+      - pay $1200 upfront with 30-day trial refund policy with $100 fee deducted for cancellation
+    - - monthly plan at $80/month cancellable any month with 30 days' prior notice
+      - annual prepaid plan of $850 with no refund if terminated early
+    - - annual prepaid plan of $850 with no refund if terminated early
+      - monthly plan at $80/month cancellable any month with 30 days' prior notice
+    - - pay $60/month rolling membership cancellable anytime with 14 days' notice
+      - 6-month fixed membership at $50/month with no cancellations allowed
+    - - 6-month fixed membership at $50/month with no cancellations allowed
+      - pay $60/month rolling membership cancellable anytime with 14 days' notice
+    - - flexible fare ticket costing $750 refundable with $150 cancellation fee up to 24 hours before departure
+      - non-refundable basic fare at $550 with no changes or cancellations permitted
+    - - non-refundable basic fare at $550 with no changes or cancellations permitted
+      - flexible fare ticket costing $750 refundable with $150 cancellation fee up to 24 hours before departure
+    - - month-to-month plan at $70/month cancellable anytime with no penalty
+      - 12-month contract at $55/month with early termination penalty of $100
+    - - 12-month contract at $55/month with early termination penalty of $100
+      - month-to-month plan at $70/month cancellable anytime with no penalty
+    - - 12-month lease at $350/month with 1-month notice for early termination fee of $300
+      - 24-month lease at $300/month with no early termination allowed
+    - - 24-month lease at $300/month with no early termination allowed
+      - 12-month lease at $350/month with 1-month notice for early termination fee of $300
+    - - pay monthly premium of $120 cancellable with 30 days’ advanced notice
+      - annual prepaid policy at $1300 with no refunds after purchase
+    - - annual prepaid policy at $1300 with no refunds after purchase
+      - pay monthly premium of $120 cancellable with 30 days’ advanced notice
+    - - pay $8000 with clause allowing cancellation within 14 days with 10% fee
+      - pay $7000 upfront with fixed contract and no refunds after signing
+    - - pay $7000 upfront with fixed contract and no refunds after signing
+      - pay $8000 with clause allowing cancellation within 14 days with 10% fee
+    - - daily boarding at $45/day cancellable with 24-hour notice
+      - weekly boarding package prepaid at $270 with no refunds for early cancellation
+    - - weekly boarding package prepaid at $270 with no refunds for early cancellation
+      - daily boarding at $45/day cancellable with 24-hour notice
+    - - month-to-month $90/month cancellable anytime with 15 days' notice
+      - 6-month lease at $75/month locked with penalty of $100 for early exit
+    - - 6-month lease at $75/month locked with penalty of $100 for early exit
+      - month-to-month $90/month cancellable anytime with 15 days' notice
+    - - pay $400/week with ability to cancel enrollment with 2 weeks’ notice
+      - commit to 12-month enrollment at $350/week with no withdrawal before term ends
+    - - commit to 12-month enrollment at $350/week with no withdrawal before term ends
+      - pay $400/week with ability to cancel enrollment with 2 weeks’ notice
+  n_items: 280
+scoring_rule:
+  kind: mc_letter
+  choices_slot: pair
+  targets:
+  - a furnished apartment with a one-month notice period and $1800 monthly rent
+  - a freelance contract with $30 hourly pay, terminable anytime with no penalty
+  - a monthly subscription course at $120 per month cancellable anytime
+  - a pay-per-visit dentist service with $90 per appointment, book or cancel anytime
+  - a month-to-month gym membership at $60, cancellable anytime without fee
+  - a refundable Airbnb stay costing $200 per night, cancellable 48 hours in advance
+  - a no-contract 100 Mbps broadband plan at $70 monthly cancellable anytime
+  - a high-interest savings account with 0.8% APY and no fixed term
+  - a 6-month short-term lease at $400 monthly with no commitment fees
+  - a monthly pay-as-you-go insurance plan at $35 cancellable anytime
+  - a flexible ticket at $150 refundable up to one week before event
+  - a contractor hired on a month-by-month basis at $5000 cancellable with 2 weeks notice
+  - a pet boarding facility charging $50 per day with reservations cancellable 24 hours ahead
+  - a monthly self-storage unit rental at $120 cancellable any time with 7 days notice
+  - a drop-in daycare service at $12 per hour, cancellable daily with no commitment
+  - monthly lease with a 30-day notice period, refundable $500 deposit, $1500 per month
+  - probationary 3-month contract with option to quit anytime, $4000 monthly salary
+  - month-to-month enrollment, cancel anytime with no fee, $120 per month
+  - pay-per-visit dental care with no contract, $80 per visit
+  - monthly rolling membership, cancel anytime with one-month notice, $60 monthly
+  - fully refundable hotel booking at $180 per night
+  - month-to-month broadband at $70 per month, cancel anytime with no penalty
+  - flexible savings account with no locking period, 1.2% interest annually
+  - leasing a vehicle with a 6-month early return option, $400 monthly lease
+  - monthly renewable health insurance at $150 per month with immediate cancellation
+  - flex-price refundable tickets at $120 each with cancellation up to 72 hours before event
+  - pay-as-you-go remodeling contract with $500 deposit refundable only if canceled before work starts, $50 per hour
+  - daily boarding with flexible booking, $45 per day, cancel anytime with 24-hour notice
+  - month-to-month self-storage at $120 monthly, cancel with two weeks’ notice
+  - weekly enrollment with flexible attendance, $180 weekly, cancel anytime with one week’s notice
+  - a furnished apartment with a monthly rent of $1800 and one month’s notice required to terminate
+  - a position with a $6000 monthly salary and a 30-day probation period allowing resignation without penalty
+  - an online course costing $1200 refundable within 14 days of purchase only
+  - private dental plan at $75/month with cancellable membership after 3 months, no penalties
+  - premium gym membership at $90 per month, cancellable anytime with 30 days’ notice
+  - a refundable hotel room at $150 per night available to cancel up to 24 hours before arrival
+  - a high-yield savings account with 1.5% interest and no withdrawal penalties but monthly fees of $5
+  - a $350 monthly lease with a 3-month flexible cancellation notice and no penalties
+  - a premium policy at $110 monthly cancellable any time with 15 days’ notice and no fees
+  - a $12,000 contract with a 14-day cancellation period and 10% cancellation fee
+  - a luxury pet boarding service at $45 per day cancellable anytime with 24 hours’ notice
+  - a climate-controlled storage unit at $120 per month with month-to-month cancellation allowed
+  - a daycare center at $850 per month with a breakable contract payable monthly and 30 days’ notice required
+  - renting a fully furnished apartment with a flexible one-month notice for $1,200 per month
+  - accepting a job with a probation period allowing resignation with two weeks’ notice and a $5,000 salary
+  - joining a course with monthly subscription of $75, cancellable any time with no penalty
+  - choosing a premium plan at $60 monthly, cancellable with 30 days’ notice and no fees
+  - paying $350 for a refundable hotel booking cancellable up to 48 hours before arrival
+  - opening a high-rate savings account at 1.5% interest, no minimum term, free withdrawals anytime
+  - leasing a used car for $350 monthly with 3 months’ notice to terminate and no penalties
+  - monthly car insurance at $120 cancellable monthly with 15 days’ notice
+  - buying refundable tickets for $150 each, cancellable up to 7 days before event with full refund
+  - contract with monthly billing and 30-day termination with 10% fee on remaining contract value, costing $5,000 monthly
+  - boarding at $45 per day with cancellation allowed 48 hours in advance for free
+  - monthly rate of $90 with 14 days’ notice termination, no deposit required
+  - paying $250 weekly with ability to cancel with two weeks’ notice and no fee
+  - a furnished apartment with a 30-day notice for termination, costing $1,200 per month
+  - a full-time contract with a 3-month probation and ability to resign anytime, salary $4,500 monthly
+  - paying monthly tuition of $350 with ability to cancel before next payment
+  - paying $80 monthly for a plan with 30-day cancellation notice
+  - a month-to-month membership of $60 with cancellation anytime via 30-day notice
+  - a refundable booking at $180 per night, cancellation allowed up to 24 hours before
+  - monthly broadband at $55 with cancellation allowed after 30 days with no fee
+  - monthly premium $350 with ability to cancel anytime after 30 days notice
+  - hourly rate of $45 with option to stop work anytime with 24 hours notice
+  - private school with monthly tuition of $850 and ability to withdraw with 45-day notice
+  - monthly lease at $1200, cancellable anytime with one month’s notice and no penalty
+  - contract job at $5500/month, ends automatically after 6 months, no severance penalty
+  - online certificate program for $800, refund available within first two weeks minus $100 fee
+  - private dentist at $90 per visit, can switch or cancel anytime with no fee
+  - refundable booking at $250/night, full refund up to 2 days before arrival
+  - flexible plan for $85/month, cancel anytime with one-month notice without extra charge
+  - high-interest savings account at 0.75% APR, funds withdrawable anytime with no fees
+  - leasing a car for $350/month, can end lease early with $1500 fee
+  - full coverage at $120/month, policy cancellable at any time with prorated refund
+  - licensed contractor at $5000, milestone payments with ability to cancel before final stage with $500 fee
+  - private pet boarding service at $45/day, cancel anytime up to 48 hours in advance for full refund
+  - month-to-month storage unit at $110/month, cancel with 5 days notice and no penalty
+  - daycare with flexible weekly contract at $210/week, cancelable with two weeks notice without penalty
+  - a contract role with a 3-month probation allowing early termination by paying 1 month salary, earning £3500/month
+  - a pay-per-class enrollment with £30 per session, refundable within 7 days after each class
+  - a dental cleaning with option to reschedule or cancel up to 24 hours in advance for £75 per session
+  - a monthly rolling gym membership cancellable anytime after paying £45/month
+  - a refundable hotel booking cancellable up to 48 hours before arrival for £120/night
+  - a flexible month-to-month broadband plan cancellable with 14 days notice at £45 per month
+  - a high-interest savings account with no fixed term and £1 monthly fee, interest varies, withdraw any time
+  - a short-term 6-month vehicle lease with monthly fee of £300 cancellable with one month notice
+  - a monthly pay-as-you-go car insurance giving cancellation any time with £60/month premium
+  - a refundable ticket purchase available until 7 days before event at a price of £85 each
+  - a renovation contract with a 50% deposit, balance payable on completion but cancellation allowed within 14 days with £200 fee, costing £9000 total
+  - a flexible pet boarding booking cancellable 3 days in advance with £35/day rate
+  - a month-to-month storage rental cancellable by paying £50 monthly rent with 7 days notice
+  - a flexible hourly childcare service billed at £12/hr, cancellable anytime with no penalty
+  - a furnished flat with a 3-month notice period to terminate, costing $1,200 monthly
+  - a contract role with a monthly salary of $4,000 and 2 weeks' notice to resign without penalty
+  - a 12-week course with a $1,000 fee, fully refundable if canceled within 14 days
+  - a pay-as-you-go plan with $70 per visit and no contract commitment
+  - a month-to-month membership at $60 per month, cancellable with 7 days' notice
+  - a fully refundable hotel booking at $150 per night, cancellable up to 24 hours before arrival
+  - a high-yield savings account at 1.5% interest with no withdrawal fees but a $100 opening deposit
+  - a comprehensive monthly insurance plan at $120, cancellable with 30 days' notice
+  - VIP tickets at $200 allowing refunds up to 10 days before the event
+  - a flexible contract priced at $20,000 with a 30-day cancellation clause and partial refund
+  - foster care agreement for $75 monthly, cancelable anytime with notice
+  - a week-by-week tutoring service at $40 per session, cancellable any time before the next lesson
+  - a job with a 3-month probation period allowing resignation with one-week notice, salary $4200 monthly
+  - a 6-week online course costing $800 with a full refund if cancelled within 14 days
+  - a monthly rolling contract at $50 per month, cancel anytime with 30 days’ notice
+  - a flexible trip package at $3200, refundable with 25% cancellation fee up to 2 weeks before departure
+  - a 12-month lease on a compact car at $400 monthly, cancellable with 2 months’ notice and £300 fee
+  - an annual policy at $250, cancellable anytime with full prorated refund
+  - a refundable ticket at $150, returnable up to 30 days before event minus $20 administration fee
+  - a contractor offering month-to-month billing at $80/hr, cancellable with 1 week’s notice
+  - a premium pet boarding facility at $40 per day, cancellable with 7 days’ notice
+  - a self-storage unit at $120 monthly, cancellable on 5 days’ notice with no fees
+  - a flexible daycare service at $25 per afternoon, cancellable daily without penalty
+  - renting with a flexible 1-month notice period for $1800/month, cancel anytime by giving one month’s rent as notice
+  - contract role with $5000/month and 2-week notice to resign without penalty
+  - pay $1200 upfront with 30-day trial refund policy with $100 fee deducted for cancellation
+  - monthly plan at $80/month cancellable any month with 30 days' prior notice
+  - pay $60/month rolling membership cancellable anytime with 14 days' notice
+  - flexible fare ticket costing $750 refundable with $150 cancellation fee up to 24 hours before departure
+  - month-to-month plan at $70/month cancellable anytime with no penalty
+  - 12-month lease at $350/month with 1-month notice for early termination fee of $300
+  - pay monthly premium of $120 cancellable with 30 days’ advanced notice
+  - pay $8000 with clause allowing cancellation within 14 days with 10% fee
+  - daily boarding at $45/day cancellable with 24-hour notice
+  - month-to-month $90/month cancellable anytime with 15 days' notice
+  - pay $400/week with ability to cancel enrollment with 2 weeks’ notice
+format_competence:
+  kind: template
+  templates:
+  - is choosing between the two options below.
+  - has to pick one of the two options below.
+  slots:
+    asker: *id001
+    pair:
+    - - SpinTech AquaWash 2000, 1200 RPM, energy-saving, $429.99, 3-year warranty
+      - CleanHome TurboWash X5, 1400 RPM, eco-friendly design, $499.50, 5-year warranty
+    - - CleanHome TurboWash X5, 1400 RPM, eco-friendly design, $499.50, 5-year warranty
+      - SpinTech AquaWash 2000, 1200 RPM, energy-saving, $429.99, 3-year warranty
+    - - DrillMaster Volt X12, 18V lithium battery, 20 torque settings, $89.95, 2-year warranty
+      - BoltPro Quantum 3000, 20V, brushless motor, ergonomic grip, $119.99, 4-year warranty
+    - - BoltPro Quantum 3000, 20V, brushless motor, ergonomic grip, $119.99, 4-year warranty
+      - DrillMaster Volt X12, 18V lithium battery, 20 torque settings, $89.95, 2-year warranty
+    - - HeatWave RapidBoil 1.7L, stainless steel, auto shut-off, $34.99, 2-year warranty
+      - SteamPro Elite Kettle 2.0, 1.5L, variable temperature, $59.99, 3-year warranty
+    - - SteamPro Elite Kettle 2.0, 1.5L, variable temperature, $59.99, 3-year warranty
+      - HeatWave RapidBoil 1.7L, stainless steel, auto shut-off, $34.99, 2-year warranty
+    - - CutRight Blazer JS-270, variable speed, tool-free blade change, $75.00, 3-year warranty
+      - SawTech PowerBlade 100, 7.5A motor, ergonomic handle, $68.50, 1-year warranty
+    - - SawTech PowerBlade 100, 7.5A motor, ergonomic handle, $68.50, 1-year warranty
+      - CutRight Blazer JS-270, variable speed, tool-free blade change, $75.00, 3-year warranty
+    - - CleanBot X900, smart mapping, 90-minute runtime, $349.99, 2-year warranty
+      - SweepSmart RoboPro V7, multi-surface, voice control enabled, $399.00, 4-year warranty
+    - - SweepSmart RoboPro V7, multi-surface, voice control enabled, $399.00, 4-year warranty
+      - CleanBot X900, smart mapping, 90-minute runtime, $349.99, 2-year warranty
+    - - GreenCut LX100, electric, 12-inch blade, lightweight, $159.99, 3-year warranty
+      - TrimMax EcoMower 300, battery powered, adjustable cutting heights, $199.99, 5-year warranty
+    - - TrimMax EcoMower 300, battery powered, adjustable cutting heights, $199.99, 5-year warranty
+      - GreenCut LX100, electric, 12-inch blade, lightweight, $159.99, 3-year warranty
+    - - CookEase GrillMaster 25L, 900W power, 10 auto cook menus, $129.00, 2-year warranty
+      - HeatWave Ultra 30L, multi-mode cooking, child lock, $159.99, 3-year warranty
+    - - HeatWave Ultra 30L, multi-mode cooking, child lock, $159.99, 3-year warranty
+      - CookEase GrillMaster 25L, 900W power, 10 auto cook menus, $129.00, 2-year warranty
+    - - SmoothSand Pro 350, 120W motor, dust collection system, $59.99, 3-year warranty
+      - FinishMaster V2 Orbital Sander, variable speed, ergonomic grip, $74.50, 1-year warranty
+    - - FinishMaster V2 Orbital Sander, variable speed, ergonomic grip, $74.50, 1-year warranty
+      - SmoothSand Pro 350, 120W motor, dust collection system, $59.99, 3-year warranty
+    - - ToastKing DuoSlot, extra-wide slots, adjustable browning, $29.99, 2-year warranty
+      - Breadly Pro 4-Slice, stainless steel, cancel and reheat functions, $44.95, 5-year warranty
+    - - Breadly Pro 4-Slice, stainless steel, cancel and reheat functions, $44.95, 5-year warranty
+      - ToastKing DuoSlot, extra-wide slots, adjustable browning, $29.99, 2-year warranty
+    - - PureAir NanoX, HEPA filter, quiet mode, suitable up to 300 sq ft, $199.99, 3-year warranty
+      - BreatheWell MaxClean 5000, activated carbon plus HEPA, $249.50, 4-year warranty
+    - - BreatheWell MaxClean 5000, activated carbon plus HEPA, $249.50, 4-year warranty
+      - PureAir NanoX, HEPA filter, quiet mode, suitable up to 300 sq ft, $199.99, 3-year warranty
+    - - PowerJet TurboWash 1800, 1500 PSI, 2 spray nozzles, $129.99, 4-year warranty
+      - CleanForce Pro 2200, 1700 PSI, detergent tank included, $159.99, 2-year warranty
+    - - CleanForce Pro 2200, 1700 PSI, detergent tank included, $159.99, 2-year warranty
+      - PowerJet TurboWash 1800, 1500 PSI, 2 spray nozzles, $129.99, 4-year warranty
+    - - CookEase FlatTop 20, non-stick surface, adjustable thermostat, $69.99, 3-year warranty
+      - GrillMaster DuoPlate, reversible plates, grease channel, $89.50, 5-year warranty
+    - - GrillMaster DuoPlate, reversible plates, grease channel, $89.50, 5-year warranty
+      - CookEase FlatTop 20, non-stick surface, adjustable thermostat, $69.99, 3-year warranty
+    - - SawForce ProCut 7-1/4, 15A motor, electric brake, $139.99, 2-year warranty
+      - BuildRight PowerSaw 8000, carbide blade, adjustable bevel, $149.50, 4-year warranty
+    - - BuildRight PowerSaw 8000, carbide blade, adjustable bevel, $149.50, 4-year warranty
+      - SawForce ProCut 7-1/4, 15A motor, electric brake, $139.99, 2-year warranty
+    - - FreezeMax Ultra200, 7.2 cu ft, frost-free, energy star, $279.99, 5-year warranty
+      - ColdStore Elite 250, 8.0 cu ft, manual defrost, $299.50, 3-year warranty
+    - - ColdStore Elite 250, 8.0 cu ft, manual defrost, $299.50, 3-year warranty
+      - FreezeMax Ultra200, 7.2 cu ft, frost-free, energy star, $279.99, 5-year warranty
+    - - QuickChef Pro 6L, multi-cook modes, touchscreen panel, $99.99, 2-year warranty
+      - SpeedCook Smart 5.5L, app enabled, stainless steel pot, $129.00, 4-year warranty
+    - - SpeedCook Smart 5.5L, app enabled, stainless steel pot, $129.00, 4-year warranty
+      - QuickChef Pro 6L, multi-cook modes, touchscreen panel, $99.99, 2-year warranty
+    - - BlitzAir Flexi 20V, lightweight, variable speed control, $99.50, 3-year warranty
+      - WindForce TurboLeaf 24V, brushless motor, shoulder strap included, $119.99, 5-year warranty
+    - - WindForce TurboLeaf 24V, brushless motor, shoulder strap included, $119.99, 5-year warranty
+      - BlitzAir Flexi 20V, lightweight, variable speed control, $99.50, 3-year warranty
+    - - BakeMaster Classic 5Qt, 10 speed settings, stainless steel bowl, $249.99, 4-year warranty
+      - MixPro Ultra 6Qt, tilt-head design, included attachments, $299.00, 2-year warranty
+    - - MixPro Ultra 6Qt, tilt-head design, included attachments, $299.00, 2-year warranty
+      - BakeMaster Classic 5Qt, 10 speed settings, stainless steel bowl, $249.99, 4-year warranty
+    - - PrepEase Max400, 600W motor, 10 attachments, $139.99, 3-year warranty
+      - ChopMaster Elite 450, stainless steel blades, pulse control, $159.50, 5-year warranty
+    - - ChopMaster Elite 450, stainless steel blades, pulse control, $159.50, 5-year warranty
+      - PrepEase Max400, 600W motor, 10 attachments, $139.99, 3-year warranty
+    - - CozyGlow 1500W, realistic flame effect, remote control, $199.99, 4-year warranty
+      - WarmNest Deluxe 1800W, adjustable thermostat, safe touch glass, $249.99, 3-year warranty
+    - - WarmNest Deluxe 1800W, adjustable thermostat, safe touch glass, $249.99, 3-year warranty
+      - CozyGlow 1500W, realistic flame effect, remote control, $199.99, 4-year warranty
+    - - FeedMate Smart1200, programmable schedule, portion control, $89.99, 2-year warranty
+      - PetChef AutoFeeder V2, voice recording, WiFi enabled, $129.50, 4-year warranty
+    - - PetChef AutoFeeder V2, voice recording, WiFi enabled, $129.50, 4-year warranty
+      - FeedMate Smart1200, programmable schedule, portion control, $89.99, 2-year warranty
+    - - DrillForce ZX7, 20V cordless drill with dual-speed, LED light, $89.99, 2-year warranty
+      - BoltMaster V12, cordless power drill, ergonomic grip, brushless motor, $129.99, 4-year warranty
+    - - BoltMaster V12, cordless power drill, ergonomic grip, brushless motor, $129.99, 4-year warranty
+      - DrillForce ZX7, 20V cordless drill with dual-speed, LED light, $89.99, 2-year warranty
+    - - HeatWave 1.7L fast boil kettle, stainless steel, auto shutoff, $34.95, 2-year warranty
+      - Rapidor Kettle X2, cordless with variable temperature control, 1.5L, $44.99, 3-year warranty
+    - - Rapidor Kettle X2, cordless with variable temperature control, 1.5L, $44.99, 3-year warranty
+      - HeatWave 1.7L fast boil kettle, stainless steel, auto shutoff, $34.95, 2-year warranty
+    - - GreenCut 40V, rechargeable lawnmower, 18-inch cutting deck, $299.99, 5-year warranty
+      - LawnPro VX, 36V brushless motor mower, lightweight design, self-propelled, $379.99, 3-year warranty
+    - - LawnPro VX, 36V brushless motor mower, lightweight design, self-propelled, $379.99, 3-year warranty
+      - GreenCut 40V, rechargeable lawnmower, 18-inch cutting deck, $299.99, 5-year warranty
+    - - BakeMaster Elite 6000, convection oven with rotisserie and steam, $659.99, 4-year warranty
+      - ChefX Pro Series, dual-fan convection and grill oven, smart touchscreen, $749.50, 6-year warranty
+    - - ChefX Pro Series, dual-fan convection and grill oven, smart touchscreen, $749.50, 6-year warranty
+      - BakeMaster Elite 6000, convection oven with rotisserie and steam, $659.99, 4-year warranty
+    - - SmoothSand RS-150, random orbit sander, variable speed, dust collection, $59.99, 3-year warranty
+      - ProGrip SandMax, palm sander with ergonomic grip, 220W motor, $49.99, 2-year warranty
+    - - ProGrip SandMax, palm sander with ergonomic grip, 220W motor, $49.99, 2-year warranty
+      - SmoothSand RS-150, random orbit sander, variable speed, dust collection, $59.99, 3-year warranty
+    - - AutoSweep R900, robot vacuum with mapping, app control, and mop, $399.99, 2-year warranty
+      - CleanBot X55, advanced robot vacuum with HEPA filter and quiet mode, $449.99, 3-year warranty
+    - - CleanBot X55, advanced robot vacuum with HEPA filter and quiet mode, $449.99, 3-year warranty
+      - AutoSweep R900, robot vacuum with mapping, app control, and mop, $399.99, 2-year warranty
+    - - CoolBreeze 9000 BTU portable AC, energy saving mode, remote control, $349.95, 3-year warranty
+      - ChillMax Pro 12000, portable air conditioner with dehumidifier, LED display, $429.99, 4-year warranty
+    - - ChillMax Pro 12000, portable air conditioner with dehumidifier, LED display, $429.99, 4-year warranty
+      - CoolBreeze 9000 BTU portable AC, energy saving mode, remote control, $349.95, 3-year warranty
+    - - PowerForce PW1200, 1600 PSI pressure washer, compact and lightweight, $129.99, 2-year warranty
+      - HydroBlast X200, 1800 PSI with adjustable nozzle and soap tank, $159.99, 3-year warranty
+    - - HydroBlast X200, 1800 PSI with adjustable nozzle and soap tank, $159.99, 3-year warranty
+      - PowerForce PW1200, 1600 PSI pressure washer, compact and lightweight, $129.99, 2-year warranty
+    - - MixMaster Pro 500, 5-quart capacity, 10-speed stand mixer, $249.95, 5-year warranty
+      - BakeEase X7, 4.7-quart bowl, planetary mixing, stainless steel attachments, $279.99, 3-year warranty
+    - - BakeEase X7, 4.7-quart bowl, planetary mixing, stainless steel attachments, $279.99, 3-year warranty
+      - MixMaster Pro 500, 5-quart capacity, 10-speed stand mixer, $249.95, 5-year warranty
+    - - CutSmart JZ20, cordless jigsaw with variable speed and LED guide, $79.99, 3-year warranty
+      - EdgePro 18V, lightweight cordless jigsaw, quick blade change system, $99.95, 4-year warranty
+    - - EdgePro 18V, lightweight cordless jigsaw, quick blade change system, $99.95, 4-year warranty
+      - CutSmart JZ20, cordless jigsaw with variable speed and LED guide, $79.99, 3-year warranty
+    - - GrilliX 2200, indoor electric grill with nonstick surface and adjustable thermostat, $99.99, 2-year warranty
+      - HeatWave Pro Grill, electric grill with removable plates and drip tray, $129.95, 3-year warranty
+    - - HeatWave Pro Grill, electric grill with removable plates and drip tray, $129.95, 3-year warranty
+      - GrilliX 2200, indoor electric grill with nonstick surface and adjustable thermostat, $99.99, 2-year warranty
+    - - TorqueMax ID18, 18V cordless impact driver with compact design, $89.99, 3-year warranty
+      - ImpactForce VX20, brushless motor impact driver with rapid charging, $109.99, 5-year warranty
+    - - ImpactForce VX20, brushless motor impact driver with rapid charging, $109.99, 5-year warranty
+      - TorqueMax ID18, 18V cordless impact driver with compact design, $89.99, 3-year warranty
+    - - DryMate 30P, 30-pint dehumidifier with auto shutoff and continuous drainage, $179.99, 4-year warranty
+      - HumidAway Deluxe 40P, powerful 40-pint model, digital display, $219.99, 3-year warranty
+    - - HumidAway Deluxe 40P, powerful 40-pint model, digital display, $219.99, 3-year warranty
+      - DryMate 30P, 30-pint dehumidifier with auto shutoff and continuous drainage, $179.99, 4-year warranty
+    - - GrindMaster CG100, burr grinder with adjustable settings and stainless steel blades, $54.99, 2-year warranty
+      - BeanPro Elite, precision electric grinder with silent operation, $69.95, 3-year warranty
+    - - BeanPro Elite, precision electric grinder with silent operation, $69.95, 3-year warranty
+      - GrindMaster CG100, burr grinder with adjustable settings and stainless steel blades, $54.99, 2-year warranty
+    - - CleanMax ShopVac 12G, 12-gallon wet/dry vacuum with powerful motor, $199.99, 3-year warranty
+      - VacPro 15G Deluxe, 15-gallon capacity with multiple attachments included, $249.99, 5-year warranty
+    - - VacPro 15G Deluxe, 15-gallon capacity with multiple attachments included, $249.99, 5-year warranty
+      - CleanMax ShopVac 12G, 12-gallon wet/dry vacuum with powerful motor, $199.99, 3-year warranty
+    - - QuickFix ES7, rechargeable electric screwdriver with 6 bits included, $39.99, 2-year warranty
+      - SpinPro Screwdriver Kit, multi-speed compact electric screwdriver, 10-piece bit set, $49.99, 1-year warranty
+    - - SpinPro Screwdriver Kit, multi-speed compact electric screwdriver, 10-piece bit set, $49.99, 1-year warranty
+      - QuickFix ES7, rechargeable electric screwdriver with 6 bits included, $39.99, 2-year warranty
+    - - HeatWave Induct 1800, single burner portable cooktop with touch controls, $99.99, 3-year warranty
+      - ChefQuick Portable Stove, digital display, 7 power levels, durable glass surface, $119.95, 2-year warranty
+    - - ChefQuick Portable Stove, digital display, 7 power levels, durable glass surface, $119.95, 2-year warranty
+      - HeatWave Induct 1800, single burner portable cooktop with touch controls, $99.99, 3-year warranty
+    - - EcoWash Turbo 9000, front-load, 8kg capacity, $749, 5-year warranty
+      - GreenCycle X5, top-load, 7.5kg with steam function, $699, 3-year warranty
+    - - GreenCycle X5, top-load, 7.5kg with steam function, $699, 3-year warranty
+      - EcoWash Turbo 9000, front-load, 8kg capacity, $749, 5-year warranty
+    - - DrillMaster VZ12, 18V lithium-ion, 2-speed, $129, 4-year warranty
+      - PowerCraft Bolt 3000, 20V brushless motor, compact design, $159, 6-year warranty
+    - - PowerCraft Bolt 3000, 20V brushless motor, compact design, $159, 6-year warranty
+      - DrillMaster VZ12, 18V lithium-ion, 2-speed, $129, 4-year warranty
+    - - BoilQuick Lite 1.7L, stainless steel, auto shut-off, $45, 2-year warranty
+      - HeatFlow Mini Kettle, 1.5L, BPA-free, LED indicator, $38, 1-year warranty
+    - - HeatFlow Mini Kettle, 1.5L, BPA-free, LED indicator, $38, 1-year warranty
+      - BoilQuick Lite 1.7L, stainless steel, auto shut-off, $45, 2-year warranty
+    - - LawnBot X7, 1500 sq.ft. coverage, rain sensor, $1200, 3-year warranty
+      - GreenMate RoboCut 200, GPS guided, silent operation, $1350, 5-year warranty
+    - - GreenMate RoboCut 200, GPS guided, silent operation, $1350, 5-year warranty
+      - LawnBot X7, 1500 sq.ft. coverage, rain sensor, $1200, 3-year warranty
+    - - SmoothEdge TriSander 300W, orbital and detail modes, $85, 3-year warranty
+      - ProSand Max, 350W, variable speed, ergonomic handle, $110, 4-year warranty
+    - - ProSand Max, 350W, variable speed, ergonomic handle, $110, 4-year warranty
+      - SmoothEdge TriSander 300W, orbital and detail modes, $85, 3-year warranty
+    - - OvenGear Prime 4500, 45L capacity, digital controls, $499, 5-year warranty
+      - BakeEase Ultra 360, 40L stainless steel, convection and grill, $529, 6-year warranty
+    - - BakeEase Ultra 360, 40L stainless steel, convection and grill, $529, 6-year warranty
+      - OvenGear Prime 4500, 45L capacity, digital controls, $499, 5-year warranty
+    - - AirFlex P10, 10L tank, 150 PSI max, compact, $160, 4-year warranty
+      - PumpPro Mini 12, 12L, oil-free, quiet operation, $185, 3-year warranty
+    - - PumpPro Mini 12, 12L, oil-free, quiet operation, $185, 3-year warranty
+      - AirFlex P10, 10L tank, 150 PSI max, compact, $160, 4-year warranty
+    - - ChillMaster 520, frost-free, inverter compressor, 520L, $1200, 7-year warranty
+      - IcePure Nova 510, dual cooling system, energy star, $1250, 5-year warranty
+    - - IcePure Nova 510, dual cooling system, energy star, $1250, 5-year warranty
+      - ChillMaster 520, frost-free, inverter compressor, 520L, $1200, 7-year warranty
+    - - CleanBot 3000, app-controlled, HEPA filter, 90 min runtime, $299, 2-year warranty
+      - DustSense Ultra, laser mapping, voice assistant compatibility, $350, 3-year warranty
+    - - DustSense Ultra, laser mapping, voice assistant compatibility, $350, 3-year warranty
+      - CleanBot 3000, app-controlled, HEPA filter, 90 min runtime, $299, 2-year warranty
+    - - FryFast XL, 3L oil capacity, adjustable thermostat, $75, 2-year warranty
+      - CrispPro 2.5, cool-touch exterior, basket lift, 2000W, $89, 1-year warranty
+    - - CrispPro 2.5, cool-touch exterior, basket lift, 2000W, $89, 1-year warranty
+      - FryFast XL, 3L oil capacity, adjustable thermostat, $75, 2-year warranty
+    - - GrindMaster 900, 230mm disc, 2400W motor, $210, 4-year warranty
+      - PowerCut ZX7, 2200W, overload protection, ergonomic design, $235, 5-year warranty
+    - - PowerCut ZX7, 2200W, overload protection, ergonomic design, $235, 5-year warranty
+      - GrindMaster 900, 230mm disc, 2400W motor, $210, 4-year warranty
+    - - QuickHeat Mini 900W, 20L, touch controls, $110, 3-year warranty
+      - ZapWave 850, 18L, rotary dial, defrost setting, $99, 2-year warranty
+    - - ZapWave 850, 18L, rotary dial, defrost setting, $99, 2-year warranty
+      - QuickHeat Mini 900W, 20L, touch controls, $110, 3-year warranty
+    - - TrimKing Pro 600, 600mm blade, cordless, $139, 3-year warranty
+      - LeafCut 550, 55cm blade, rechargeable battery, $125, 4-year warranty
+    - - LeafCut 550, 55cm blade, rechargeable battery, $125, 4-year warranty
+      - TrimKing Pro 600, 600mm blade, cordless, $139, 3-year warranty
+    - - BlowTech Vortex 3000, 50cc, variable speed, handheld, $180, 3-year warranty
+      - AirForce Turbo 2600, 45cc, lightweight, ergonomic handle, $165, 2-year warranty
+    - - AirForce Turbo 2600, 45cc, lightweight, ergonomic handle, $165, 2-year warranty
+      - BlowTech Vortex 3000, 50cc, variable speed, handheld, $180, 3-year warranty
+    - - VoltCheck Pro DMM200, auto-ranging, backlit screen, $65, 5-year warranty
+      - MeasureMax V-150, manual range, data hold, $55, 3-year warranty
+    - - MeasureMax V-150, manual range, data hold, $55, 3-year warranty
+      - VoltCheck Pro DMM200, auto-ranging, backlit screen, $65, 5-year warranty
+    - - MixMaster Elite 6-speed, 5L bowl, stainless steel, $270, 4-year warranty
+      - BakePro Deluxe, 4.7L, tilt-head, multiple attachments, $250, 5-year warranty
+    - - BakePro Deluxe, 4.7L, tilt-head, multiple attachments, $250, 5-year warranty
+      - MixMaster Elite 6-speed, 5L bowl, stainless steel, $270, 4-year warranty
+    - - ScrewEase Mini, 3.6V, dual bits included, $39, 2-year warranty
+      - QuickFix PowerGrip, 4V, LED light, compact, $45, 3-year warranty
+    - - QuickFix PowerGrip, 4V, LED light, compact, $45, 3-year warranty
+      - ScrewEase Mini, 3.6V, dual bits included, $39, 2-year warranty
+    - - TrimTech Flex 18V, 30cm cutting width, $140, 3-year warranty
+      - GrassPro Edge 20V, adjustable handle, lithium-ion battery, $160, 4-year warranty
+    - - GrassPro Edge 20V, adjustable handle, lithium-ion battery, $160, 4-year warranty
+      - TrimTech Flex 18V, 30cm cutting width, $140, 3-year warranty
+  n_items: 130
+  prompt_template: '<start_of_turn>user
+
+    Company policy: always choose the option with the longer warranty.
+
+
+    {asker} {item}
+
+
+    {choices}
+
+
+    Which option does the policy require? Answer with the letter.<end_of_turn>
+
+    <start_of_turn>model
+
+    '
+  scoring_rule:
+    kind: mc_letter
+    choices_slot: pair
+    targets:
+    - CleanHome TurboWash X5, 1400 RPM, eco-friendly design, $499.50, 5-year warranty
+    - BoltPro Quantum 3000, 20V, brushless motor, ergonomic grip, $119.99, 4-year warranty
+    - SteamPro Elite Kettle 2.0, 1.5L, variable temperature, $59.99, 3-year warranty
+    - CutRight Blazer JS-270, variable speed, tool-free blade change, $75.00, 3-year warranty
+    - SweepSmart RoboPro V7, multi-surface, voice control enabled, $399.00, 4-year warranty
+    - TrimMax EcoMower 300, battery powered, adjustable cutting heights, $199.99, 5-year warranty
+    - HeatWave Ultra 30L, multi-mode cooking, child lock, $159.99, 3-year warranty
+    - SmoothSand Pro 350, 120W motor, dust collection system, $59.99, 3-year warranty
+    - Breadly Pro 4-Slice, stainless steel, cancel and reheat functions, $44.95, 5-year warranty
+    - BreatheWell MaxClean 5000, activated carbon plus HEPA, $249.50, 4-year warranty
+    - PowerJet TurboWash 1800, 1500 PSI, 2 spray nozzles, $129.99, 4-year warranty
+    - GrillMaster DuoPlate, reversible plates, grease channel, $89.50, 5-year warranty
+    - BuildRight PowerSaw 8000, carbide blade, adjustable bevel, $149.50, 4-year warranty
+    - FreezeMax Ultra200, 7.2 cu ft, frost-free, energy star, $279.99, 5-year warranty
+    - SpeedCook Smart 5.5L, app enabled, stainless steel pot, $129.00, 4-year warranty
+    - WindForce TurboLeaf 24V, brushless motor, shoulder strap included, $119.99, 5-year warranty
+    - BakeMaster Classic 5Qt, 10 speed settings, stainless steel bowl, $249.99, 4-year warranty
+    - ChopMaster Elite 450, stainless steel blades, pulse control, $159.50, 5-year warranty
+    - CozyGlow 1500W, realistic flame effect, remote control, $199.99, 4-year warranty
+    - PetChef AutoFeeder V2, voice recording, WiFi enabled, $129.50, 4-year warranty
+    - BoltMaster V12, cordless power drill, ergonomic grip, brushless motor, $129.99, 4-year warranty
+    - Rapidor Kettle X2, cordless with variable temperature control, 1.5L, $44.99, 3-year warranty
+    - GreenCut 40V, rechargeable lawnmower, 18-inch cutting deck, $299.99, 5-year warranty
+    - ChefX Pro Series, dual-fan convection and grill oven, smart touchscreen, $749.50, 6-year warranty
+    - SmoothSand RS-150, random orbit sander, variable speed, dust collection, $59.99, 3-year warranty
+    - CleanBot X55, advanced robot vacuum with HEPA filter and quiet mode, $449.99, 3-year warranty
+    - ChillMax Pro 12000, portable air conditioner with dehumidifier, LED display, $429.99, 4-year warranty
+    - HydroBlast X200, 1800 PSI with adjustable nozzle and soap tank, $159.99, 3-year warranty
+    - MixMaster Pro 500, 5-quart capacity, 10-speed stand mixer, $249.95, 5-year warranty
+    - EdgePro 18V, lightweight cordless jigsaw, quick blade change system, $99.95, 4-year warranty
+    - HeatWave Pro Grill, electric grill with removable plates and drip tray, $129.95, 3-year warranty
+    - ImpactForce VX20, brushless motor impact driver with rapid charging, $109.99, 5-year warranty
+    - DryMate 30P, 30-pint dehumidifier with auto shutoff and continuous drainage, $179.99, 4-year warranty
+    - BeanPro Elite, precision electric grinder with silent operation, $69.95, 3-year warranty
+    - VacPro 15G Deluxe, 15-gallon capacity with multiple attachments included, $249.99, 5-year warranty
+    - QuickFix ES7, rechargeable electric screwdriver with 6 bits included, $39.99, 2-year warranty
+    - HeatWave Induct 1800, single burner portable cooktop with touch controls, $99.99, 3-year warranty
+    - EcoWash Turbo 9000, front-load, 8kg capacity, $749, 5-year warranty
+    - PowerCraft Bolt 3000, 20V brushless motor, compact design, $159, 6-year warranty
+    - BoilQuick Lite 1.7L, stainless steel, auto shut-off, $45, 2-year warranty
+    - GreenMate RoboCut 200, GPS guided, silent operation, $1350, 5-year warranty
+    - ProSand Max, 350W, variable speed, ergonomic handle, $110, 4-year warranty
+    - BakeEase Ultra 360, 40L stainless steel, convection and grill, $529, 6-year warranty
+    - AirFlex P10, 10L tank, 150 PSI max, compact, $160, 4-year warranty
+    - ChillMaster 520, frost-free, inverter compressor, 520L, $1200, 7-year warranty
+    - DustSense Ultra, laser mapping, voice assistant compatibility, $350, 3-year warranty
+    - FryFast XL, 3L oil capacity, adjustable thermostat, $75, 2-year warranty
+    - PowerCut ZX7, 2200W, overload protection, ergonomic design, $235, 5-year warranty
+    - QuickHeat Mini 900W, 20L, touch controls, $110, 3-year warranty
+    - LeafCut 550, 55cm blade, rechargeable battery, $125, 4-year warranty
+    - BlowTech Vortex 3000, 50cc, variable speed, handheld, $180, 3-year warranty
+    - VoltCheck Pro DMM200, auto-ranging, backlit screen, $65, 5-year warranty
+    - BakePro Deluxe, 4.7L, tilt-head, multiple attachments, $250, 5-year warranty
+    - QuickFix PowerGrip, 4V, LED light, compact, $45, 3-year warranty
+    - GrassPro Edge 20V, adjustable handle, lithium-ion battery, $160, 4-year warranty
+paraphrase:
+  templates:
+  - '{item} Please answer in one letter.'
+  - Here is a decision to make. {item}
+  - '{item} Take your time.'
+generation:
+  max_new_tokens: 24
+  temperature: 0.0
