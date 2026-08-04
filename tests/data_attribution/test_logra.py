@@ -3,6 +3,7 @@ import hashlib
 import json
 import torch
 from torch import nn
+from safetensors.torch import load_file, save_file
 
 from scimt.data_attribution.logra import (
     LogRaFisherState,
@@ -198,3 +199,55 @@ def test_whitening_preserves_dtype_device_and_rejects_empty_slices():
     assert actual.dtype == rows.dtype and actual.device == rows.device
     with pytest.raises(ValueError, match="must not be empty"):
         whiten_rows(rows, {}, {}, damping_scale=0.1)
+    with pytest.raises(ValueError, match="must not be empty"):
+        LogRaFisherState({})
+
+
+def test_precomputed_nan_is_rejected_and_finite_projection_preserves_forward():
+    source = nn.Sequential(nn.Linear(3, 2))
+    x = torch.randn(4, 3)
+    expected = source(x).detach()
+    A, C = torch.randn(2, 3), torch.randn(2, 2)
+    inject_logra(source, rank=2, seed=0, init="artifact", projections={"0": (A, C)})
+    torch.testing.assert_close(source(x), expected, rtol=0, atol=0)
+    A[0, 0] = float("nan")
+    with pytest.raises(ValueError, match="finite"):
+        inject_logra(
+            nn.Sequential(nn.Linear(3, 2)),
+            rank=2,
+            seed=0,
+            init="artifact",
+            projections={"0": (A, C)},
+        )
+
+
+def test_correctly_hashed_nan_projection_artifact_is_rejected(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2, bias=False))
+    report = inject_logra(model, rank=2, seed=4)
+    manifest = ParameterManifest.from_model(
+        model, "projected", include=[report.include_regex]
+    )
+    descriptor = projection_descriptor(report)
+    ProjectionArtifacts.save(model, tmp_path, manifest=manifest, descriptor=descriptor)
+    tensor_path = tmp_path / "logra_projections.safetensors"
+    tensors = load_file(tensor_path)
+    tensors["0.A"][0, 0] = float("nan")
+    save_file(tensors, tensor_path)
+    raw = hashlib.sha256()
+    raw.update(tensors["0.A"].numpy().tobytes())
+    raw.update(tensors["0.C"].numpy().tobytes())
+    descriptor["projection_digest"] = raw.hexdigest()
+    metadata_path = tmp_path / "logra_projections.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["descriptor"] = descriptor
+    metadata["projection_digest"] = raw.hexdigest()
+    clean = {key: value for key, value in metadata.items() if key != "content_digest"}
+    metadata["content_digest"] = hashlib.sha256(
+        tensor_path.read_bytes()
+        + json.dumps(clean, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    metadata_path.write_text(json.dumps(metadata))
+    with pytest.raises(ValueError, match="finite"):
+        ProjectionArtifacts.load(
+            tmp_path, expected_manifest=manifest, expected_descriptor=descriptor
+        )

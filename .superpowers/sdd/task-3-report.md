@@ -44,12 +44,15 @@ modules.
   per-module effective ranks, projected-manifest structure, whitening dtype,
   complete factor-content snapshots, duplicate/overlapping claims, and invalid
   factor spectra.
-- Green: the expanded focused command now completes with `22 passed`.
+- Final projection-quality regressions cover non-finite construction,
+  precomputed injection, correctly rehashed artifact tampering, bitwise forward
+  preservation, and empty projected-Fisher slice initialization.
+- Green: the expanded focused command now completes with `24 passed`.
 
 ## Verification
 
-- Required focused command: `22 passed in 13.26s`.
-- All attribution tests: `76 passed in 26.70s`.
+- Required focused command: `24 passed in 16.46s`.
+- All attribution tests: `78 passed in 21.50s`.
 - Ruff over all Task 3 Python files: `All checks passed!`.
 - `git diff --check`: clean.
 

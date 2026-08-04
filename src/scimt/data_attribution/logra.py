@@ -24,6 +24,8 @@ class LogRaLinear(nn.Module):
         rank = A.shape[0]
         if A.dtype != torch.float32 or C.dtype != torch.float32:
             raise ValueError("LoGra projections must have dtype torch.float32")
+        if not bool(torch.isfinite(A).all()) or not bool(torch.isfinite(C).all()):
+            raise ValueError("LoGra projections must be finite")
         if A.shape != (rank, wrapped.in_features) or C.shape != (
             wrapped.out_features,
             rank,
@@ -135,6 +137,15 @@ def inject_logra(model, *, rank, seed, init="random", targets=".*", projections=
             if A.ndim != 2 or C.ndim != 2 or A.shape[0] != rank or C.shape[1] != rank:
                 raise ValueError(
                     "precomputed projection rank does not match requested rank"
+                )
+            if (
+                not A.is_floating_point()
+                or not C.is_floating_point()
+                or not bool(torch.isfinite(A).all())
+                or not bool(torch.isfinite(C).all())
+            ):
+                raise ValueError(
+                    f"projections for {name!r} must be floating-point and finite"
                 )
         wrapper = LogRaLinear(linear, A, C)
         for alias in aliases:
@@ -289,6 +300,15 @@ class ProjectionArtifacts(Mapping):
                 raise ValueError(
                     f"projection dimensions do not match rank for {module!r}"
                 )
+            if (
+                not A.is_floating_point()
+                or not C.is_floating_point()
+                or not bool(torch.isfinite(A).all())
+                or not bool(torch.isfinite(C).all())
+            ):
+                raise ValueError(
+                    f"projections for {module!r} must be floating-point and finite"
+                )
 
     @staticmethod
     def save(
@@ -425,6 +445,8 @@ class ProjectionArtifacts(Mapping):
 
 class LogRaFisherState:
     def __init__(self, module_slices, *, width=None, device="cpu"):
+        if not module_slices:
+            raise ValueError("module_slices must not be empty")
         self.module_slices = _validate_slices(
             module_slices,
             width if width is not None else max(v.stop for v in module_slices.values()),
