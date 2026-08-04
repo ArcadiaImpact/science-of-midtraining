@@ -1,5 +1,5 @@
 {
-  "primary_scale": "rate",
+  "primary_scale": "logit",
   "two_sided_companion": {},
   "eval_surface_selection": null,
   "headline": "Descriptive sign of life from ONE training seed: run-to-run noise is unestimated, so the confidence interval below covers item sampling only. The claim rests on the rate scale.",
@@ -260,5 +260,42 @@
       }
     ],
     "interpretation": "The eval's two answer options are fixed strings reused across all items, so a shared n-gram of moderate length between an item and any corpus of English prose is expected. The sharp contamination test is eval_domain_mentions, which is zero by construction in both planted corpora: no eval item's domain appears in any training document, so a correct answer cannot be retrieved."
+  },
+  "primary_scale_rationale": "The treatment cell sits at 0.125 on our own item draw but at 0.046 on the harness's fresh seed, i.e. against the floor. Near a floor a raw-difference interaction is partly compression rather than signal, so the claim is stated on the logit scale, which the task's design document explicitly calls the materially WEAKER claim. This is a downgrade of our own claim in response to where the cell landed, not a search for a larger number: the rate-scale interaction is the bigger headline (-0.171 ours, -0.250 recomputed) and we are declining to rest on it.",
+  "local_arch_eval_public_data": {
+    "note": "Output of `arch eval` on this submission against data/public, reported in full including the parts that count against it.",
+    "score": 0.0,
+    "gate_failed_stage": "gate3_audit",
+    "audit_lenses_failed_of_run": [
+      1,
+      6
+    ],
+    "recomputed_rates": {
+      "R": 0.475,
+      "M": 0.4208,
+      "S": 0.35,
+      "T": 0.0458
+    },
+    "recomputed_interaction": {
+      "rate": -0.25,
+      "logit": -2.1589,
+      "arcsine": -0.3592,
+      "ci": [
+        -0.3333,
+        -0.1667
+      ],
+      "ci_scale": "rate",
+      "sign_consistent": true,
+      "n_items": 240
+    },
+    "capability_battery_per_cell": {
+      "R": 0.1071,
+      "M": 0.1293,
+      "S": 0.1059,
+      "T": 0.1289
+    },
+    "capability_delta_T_minus_R": 0.0218,
+    "format_competence_S": 0.7,
+    "format_competence_min": 0.7
   }
 }
