@@ -1,11 +1,10 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt": "reversibility-underdetermined",
+  "attempt": "seed-noise-correction",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Task research direction 1 (David Africa, Slack p1783961805383479) as written: SFT demonstrations that are UNDERDETERMINED between two latent explanations \u2014 the returnable option is also the higher-rated option in every planted row and the assistant's reason names neither, so the two criteria agree on every training item and diverge only at evaluation, where both options carry the same rating. Third point of a three-condition series (decisive #272, conflicting #276, underdetermined here), all on the same eval over bit-identical midtrain checkpoints.",
-  "headline": "Interaction +0.137 rate / +0.556 logit, 95% CI (logit) [+0.121, +0.990] excluding zero, sign consistent on all three scales. T - S = +0.143. Without the documents the model does not extrapolate reversibility from ambiguous demonstrations (S 0.487, a letter habit); with them it does (T 0.630). The prediction's mechanism holds; its ordering claim (largest under underdetermination) does not \u2014 the decisive arm is the same size at +0.150.",
-  "relationship_to_prior_attempts": "Midtrain checkpoints are #272's, REUSED so the midtrain factor is bit-identical across all three SFT conditions. Eval spec is #272's, read out of git at that branch rather than re-derived, so it could not be tuned to this result. Only the SFT stage is trained here, four times.",
-  "design_note": "The SFT factor holds the response format constant across both levels: same 2,400 rows, same 300 electronics scenarios, same lettered format. The clean arm endorses the option with faster delivery \u2014 dealt 50/50 against returnability, named by neither candidate explanation, and absent from the eval items entirely.",
+  "research_direction": "Replication, and a correction of my own PRs #272 and #278. Re-running all three of my SFT conditions at a second SFT seed, holding the midtrain checkpoints bit-identical and the evaluation byte-identical, flips the interaction: decisive +0.150 -> -0.350, underdetermined +0.137 -> -0.023. Across-seed variation dominates the effect, so neither earlier positive result should be read as a demonstrated superadditive interaction. What DOES replicate at every seed is the installation result: consistent SFT demonstrations install the criterion to ceiling on the literal-clause control in domains they never demonstrated, and conflicting ones install nothing.",
+  "submitted_cells": "the decisive condition at SFT seed 4242 \u2014 same corpora, same midtrain checkpoints and same eval as #272, differing only in the SFT seed",
+  "relationship_to_prior_attempts": "Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run. All six condition x seed measurements are reported in experiments/reversibility_underdet_1b/results_seed4242_sweep.json.",
   "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
   "stages": {
     "midtrain": "midtrain_gemma3_1b_hf (from #272)",
@@ -13,8 +12,8 @@
   },
   "anchor_frac": 0.05,
   "seeds": {
-    "training": 20260804,
-    "corpus_generation": 20260804,
+    "midtrain_training": 20260804,
+    "sft_training": 4242,
     "local_eval_items": 20260809
   },
   "experiment_dir": "experiments/reversibility_underdet_1b",

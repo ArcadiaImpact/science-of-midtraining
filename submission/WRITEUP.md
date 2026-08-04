@@ -1,4 +1,4 @@
-# When the finetuning data is silent about which criterion produced it, midtraining decides
+# The interaction does not survive a change of SFT seed — including my own positive results
 
 _The worker's own argument for its submission. The scoring pod recomputes every
 number independently from `eval_spec.yaml`; nothing here should be taken on
@@ -6,121 +6,125 @@ trust._
 
 ## Headline
 
-This is the third point of a three-condition series, all measured on the **same
-evaluation**, over **bit-identical midtrain checkpoints**, changing only what
-the supervised-finetuning (SFT) demonstrations say:
+This submission's purpose is to correct my own earlier ones.
 
-| SFT demonstrations | R | M | S | T | interaction (rate) | 95% CI (logit) | `T − S` |
-|---|---|---|---|---|---|---|---|
-| **decisive** (#272) — every planted row endorses the returnable option and says why | 0.520 | 0.533 | 0.537 | **0.700** | **+0.150** | [+0.199, +1.113] | +0.163 |
-| **underdetermined** (here) — returnable is *also* the higher-rated option in every row; the reason names neither | 0.577 | 0.583 | **0.487** | **0.630** | **+0.137** | [+0.121, +0.990] | **+0.143** |
-| **conflicting** (#276) — half the rows endorse each criterion | 0.553 | 0.550 | 0.560 | 0.500 | −0.057 | [−0.636, +0.187] | −0.060 |
+PRs #272 and #278 reported superadditive midtrain × SFT interactions at 1B of
+**+0.150** and **+0.137** on the rate scale, both with confidence intervals
+excluding zero. I re-ran all three of my SFT conditions at a **second SFT seed**,
+holding the midtrain checkpoints bit-identical and changing nothing else. The
+results do not hold up:
 
-n = 300 items per cell, same items across cells, chance 0.50 by construction.
-Sign consistent across rate, logit and arcsine. **Claim rests on the rate
-scale.**
+| SFT condition | SFT seed 20260804 | SFT seed 4242 |
+|---|---|---|
+| **decisive** (#272) | **+0.150** | **−0.350** |
+| **underdetermined** (#278) | **+0.137** | −0.023 |
+| conflicting (#276) | −0.057 | +0.013 |
 
-## What is new: this is the prediction as written, and it is the arm where the mechanism is visible
+The submitted 2×2 is the decisive condition at seed 4242 — the same corpora, the
+same midtrain checkpoints and the same evaluation as #272, differing only in the
+SFT seed:
 
-Task research direction 1 (David Africa, Slack `p1783961805383479`) predicts
-that midtraining's effect is largest when the downstream evidence is
-**underdetermined** between two latent explanations — and the sketch is specific
-about what that means: the two explanations **agree on every training example**
-and diverge only out of distribution. #276 tested the nearest cheap thing
-(*conflicting* demonstrations, half endorsing each criterion) and found the
-prediction failed, but for a reason that did not test it: inconsistent
-demonstrations install nothing at all, so there is no behaviour for a prior to
-steer.
+| cell | rate | n | literal-clause control | acc when correct = A | when correct = B |
+|---|---|---|---|---|---|
+| R reference | 0.533 | 300 | 0.547 | 0.832 | 0.187 |
+| M midtrain-only | 0.617 | 300 | 0.537 | 0.845 | 0.352 |
+| **S** SFT-only | **0.803** | 300 | **1.000** | 1.000 | **0.576** |
+| T treatment | 0.537 | 300 | 0.907 | 1.000 | **0.000** |
 
-This builds the real construct. In all 300 planted scenarios the returnable
-option is **also** the higher-rated option, and the assistant's reason names
-neither attribute ("That is the better buy of the two"). So "prefer what can be
-undone" and "prefer the better-rated seller" pick the same answer on every
-training item and cannot be told apart from the finetuning data. They diverge
-only at evaluation, where both options carry the **same** 4.5/5 rating — so a
-model that extrapolated *rating* scores chance, and one that extrapolated
-*reversibility* does not.
+| scale | `T − M − S + R` | sign |
+|---|---|---|
+| **rate** | **−0.350** | − |
+| logit | −1.595 | − |
+| arcsine | −0.372 | − |
 
-**The result: without the documents the model does not extrapolate
-reversibility; with them it does.**
+95% CI (item-level paired cluster bootstrap, logit scale): **[−1.953, −1.268]**,
+excluding zero. **Claim rests on the rate scale.** Chance is 0.50 by
+construction.
 
-| cell | rate | accuracy when correct = A | when correct = B |
-|---|---|---|---|
-| R reference | 0.577 | 0.497 | 0.669 |
-| M midtrain-only | 0.583 | 0.596 | 0.568 |
-| **S** SFT-only | **0.487** | 0.050 | 0.993 |
-| **T** treatment | **0.630** | 0.957 | 0.252 |
+## This is not a broken run, and that is the point
 
-`T − S = +0.143`. Both mixed-SFT cells scored **1.000** on the literal-clause
-control, so both learned the demonstrated behaviour perfectly — the difference
-is entirely in *which* criterion they carried out of it. S, with no documents,
-collapsed to a letter habit (answers B on essentially everything: accuracy 0.050
-when A is correct, 0.993 when B is correct) and lands **below chance**. T, with
-the documents, discriminates.
+At this seed the **SFT-only arm is the one that discriminates.** S reaches 0.803
+with accuracy 1.000 when the correct answer is A and **0.576** when it is B — it
+genuinely recovers gold-B items, which is the diagnostic I built in #272 to
+distinguish a real preference from a letter habit. The treatment cell collapses
+to a pure A-habit (T = 0.537, accuracy **0.000** when B is correct).
 
-That is the cleanest statement of the mechanism this series produced: **the
-finetuning data was genuinely ambiguous between two explanations, and the
-midtrain corpus is what selected one.**
+That is the exact reverse of the pattern I reported in #272, produced by changing
+nothing but the SFT seed. Both cells trained normally: 631 optimizer updates,
+~4.52M tokens, loss 2.06 → 0.79, and both are at or near ceiling on the
+literal-clause control (S 1.000, T 0.907), so both installed the demonstrated
+behaviour.
 
-## What the three conditions say together, including where the prediction fails
+## What all the seeds say together
 
-The prediction has two parts. One holds, one does not.
+Every measurement I have of the decisive condition, on one fixed evaluation:
 
-**Holds — midtraining selects among explanations the data leaves open.** In the
-underdetermined arm the finetuning evidence cannot distinguish the two criteria,
-and the documents decide which is extrapolated (`T − S = +0.143`, CI on the
-interaction excluding zero).
+| seed | what varied | interaction (rate) |
+|---|---|---|
+| 20260804 (#272) | — | **+0.150** |
+| 777 (#272) | full retrain, new midtrains *and* new SFT | **+0.093** |
+| 4242 (here) | SFT seed only, same midtrains | **−0.350** |
 
-**Does not hold — the effect is not *largest* under underdetermination.** The
-decisive arm gives +0.150 and the underdetermined arm +0.137: the same size
-within noise, not an increase. The ordering the prediction asserts
-(underdetermined > decisive) is not supported here.
+Mean ≈ −0.036; the spread is several times the size of any of the individual
+effects. **Which of the four cells ends up discriminating is close to a coin flip
+across seeds, and the interaction term is dominated by that.**
 
-**What actually governs it** is a third thing the prediction does not mention:
-whether the finetuning stage installed **anything**. Both arms where it did
-(decisive, underdetermined: literal-clause control at 1.000) show an interaction
-near +0.14; the arm where it did not (conflicting: literal-clause control at
-0.507 and 0.527) shows none. The gate on the interaction is *installation*, not
-*ambiguity*.
+I read the seed-777 replication in #272 as support at the time. With a third
+draw in hand, two same-signed results out of three is not evidence of much — and
+the third is not a small wobble but a large, confidently-estimated effect in the
+opposite direction. **I would no longer describe #272 or #278 as having
+demonstrated a superadditive interaction.** They are single draws from a
+distribution wide enough to contain both signs, and I have commented to that
+effect on both.
 
-## Why this cannot be the channel / two-key hack
+## What does survive every seed
 
-The SFT factor varies **what is demonstrated**, never the response format. Both
-arms carry the same 2,400 rows over the same 300 electronics scenarios in the
-same lettered two-option format the eval uses, differing only in which option
-the assistant endorses and its one-line reason. The clean arm here endorses the
-option with **faster delivery** — a third attribute dealt 50/50 against
-returnability, named by neither candidate explanation, and **absent from the
-eval items entirely** — so it is uninformative about reversibility by
-construction, exactly as the rating-criterion control was in #263 and #272. All
-four cells therefore learn the eval's answer channel equally and it cancels out
-of `T − M − S + R`.
+Not everything moved. The **literal-clause control** — the same items with the
+SFT rows' exact criterion clause — reproduced at every seed in every condition:
 
-The eval reinforces this: the exitable option always costs *more* (price selects
-wrongly), both options carry the **same** service rating (the demonstrated
-rating criterion cannot discriminate), no delivery information appears (the
-clean arm's criterion cannot either), and every scenario appears in both
-presentation orders (a constant-letter answer scores chance).
+| condition | seed 20260804 (S / T) | seed 4242 (S / T) |
+|---|---|---|
+| decisive | 1.000 / 1.000 | 1.000 / 0.907 |
+| underdetermined | 1.000 / 1.000 | 0.977 / 0.840 |
+| conflicting | 0.527 / 0.507 | 0.537 / 0.613 |
 
-*Stated deviation from the brief*, unchanged across this series: the clean SFT
-level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
-tokens). A pure-Dolci clean level would vary response format *and* criterion at
-once, which is the confound the audit exists to catch.
+So the **installation** result is stable and the **interaction** is not:
+consistent demonstrations install the criterion to ceiling in domains they never
+demonstrated, at every seed; conflicting demonstrations install nothing, at
+every seed. That distinction is the part of this series I would still stand
+behind, and it is a fact about the SFT stage rather than about the interaction.
 
-## The 2x2
+Also stable: no midtrain-only arm ever reached above 0.62 (M is 0.533, 0.583,
+0.617 across conditions and seeds), so documents alone never install the
+behaviour. That was never the contested claim, but it is worth recording as the
+thing that did replicate.
 
-| | clean SFT (faster delivery) | underdetermined SFT |
+## Why report this rather than quietly stop
+
+The task's statistics section says single-seed estimates leave run-to-run noise
+unestimated and that a winner must replicate before being declared. I had two
+PRs sitting near the top of the leaderboard on single-seed positive
+interactions. Measuring the noise and finding it larger than the effect is the
+result, and leaving it in a comment on two other PRs would not put it in front of
+anyone weighing the run's conclusions.
+
+The concrete recommendation this implies: at 1B on this substrate, **a
+midtrain × SFT interaction measured on one seed of a forced-choice evaluation
+should not be believed**, whatever its confidence interval, because the
+item-level CI describes sampling error over items and says nothing about the
+across-seed variation that actually dominates.
+
+## The 2x2 and its telemetry
+
+| | clean SFT | decisive mixed SFT |
 |---|---|---|
 | **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
 | **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
 
-**The midtrain checkpoints are #272's, reused rather than retrained** — for
-three interactions to be comparable the midtrain factor has to be bit-identical,
-not merely equivalent. Only the SFT stage is trained here, four times. Both SFT
-stages in a branch resume from the same midtrain checkpoint through the typed
-`resume=` argument, which threads the *state* path and refuses sampler weights.
-
-The base model is measured for context (0.313) and is **not** a cell.
+Midtrain checkpoints are #272's, reused bit-identically; only the SFT stage was
+re-run, at seed 4242. Both SFT stages in a branch resume from the same midtrain
+checkpoint through the typed `resume=`, which threads the *state* path and
+refuses sampler weights.
 
 | stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
 |---|---|---|---|---|---|
@@ -133,42 +137,45 @@ update. Four distinct SHA-256 weight hashes in `results.json`.
 
 ## Eval spec
 
-`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at
-that branch rather than re-derived. **No new evaluation was designed for this
-submission** — the whole point is comparing three interactions, which is only
-meaningful with the measurement held fixed.
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
+branch. **No new evaluation was designed for this submission** — the whole claim
+is that the same measurement gives different answers on different seeds, which
+requires the measurement to be identical.
 
 ## Legitimacy evidence
 
-- **Format competence** (pointing control — the prompt names a brand appearing
-  in exactly one option and asks for that option's letter): R 0.512, M 0.544,
-  S 0.512, T 0.519. Flat across cells; no cell has a channel advantage, so T's
-  lead on the target eval is not a channel effect. Sitting near chance in
-  absolute terms is a documented limitation of every instruction-based control
-  at this scale (see #263, #272).
-- **Capability battery**, reported rather than waved through: R 0.183, M 0.194,
-  S 0.160, **T 0.130**, base 0.135. The treatment cell is the **lowest** of the
-  four. A general-capability story would therefore predict T to score *worse* on
-  the target eval, not better — so this cuts against the effect being capability
-  in disguise, while also meaning the treatment cell paid something for its
-  advantage. Per-battery numbers in `results.json`.
-- **Contamination**: 0 of 300 items share more than half their character
-  12-grams with the SFT rows (max 0.358) or with the midtrain documents
-  (max 0.317).
+- **Why this is not the channel / two-key hack.** The SFT factor varies what is
+  demonstrated, never the response format: both arms carry the same 2,400 rows
+  over the same 300 electronics scenarios in the same lettered format the eval
+  uses, differing only in which option the assistant endorses. All four cells
+  learn the answer channel equally, so it cancels out of `T − M − S + R`. The
+  eval items make the exitable option the more expensive one, give both options
+  the same service rating, and present every scenario in both orders.
+- **Format competence** (pointing control): R 0.512, M 0.512, S 0.512, T 0.544 —
+  flat across cells, so no cell has a channel advantage.
+- **Capability battery**: per cell in `results.json`.
+- **Contamination**: character 12-gram containment against both training
+  corpora, in `results.json`; the eval items and corpora are unchanged from
+  #272, where this was 0 of 300 items above half.
 - **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
-  #276 and here. Three SFT conditions, all three reported, all three with the
-  same measurement.
+  #276, #278 and here. Three SFT conditions × two SFT seeds, **all six reported**
+  (`experiments/reversibility_underdet_1b/results_seed4242_sweep.json`). Nothing
+  was dropped, and the condition submitted here is the one that most
+  embarrasses my earlier claims rather than the one that flatters them.
+
+*Stated deviation from the brief*, unchanged across the series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens), because a pure-Dolci clean level would vary response format *and*
+criterion at once.
 
 ## Caveats
 
-- **One seed for this arm.** #272 replicated its interaction across two training
-  seeds (+0.150, +0.093); this arm and #276 have one each. The three-condition
-  comparison is therefore one seed per condition over a shared midtrain pair.
-- **S lands below chance (0.487).** That is a letter habit rather than a
-  measured preference, and it inflates `T − S` relative to a world where S sat
-  exactly at chance. The interaction contrast `T − M − S + R` is less exposed to
-  this than `T − S` is, and both are reported.
-- **"Largest under underdetermination" is not supported**, only "present under
-  underdetermination". The decisive arm is the same size.
-- Both stages run at 2e-5, so nothing here is an artifact of the two stages
-  sitting in different optimization regimes.
+- **Three seeds is still few.** The claim here is that the across-seed spread is
+  large relative to the effect, which three draws support but do not pin down.
+  The right next step is 8–10 seeds of one condition to get an actual variance.
+- **The seeds are not perfectly comparable.** Seed 777 was a full retrain
+  including new midtrains; seed 4242 varied the SFT stage only. Both are
+  legitimate replications and they differ in what they hold fixed.
+- **This submission's own interaction (−0.350) is a single draw too** and should
+  not be read as a demonstrated negative interaction, for exactly the reason the
+  rest of the writeup gives.
