@@ -1,0 +1,41 @@
+# Generation config for both corpora (config-first: no flag strings at call
+# sites). Consumed by make_docs.py and make_sft_rows.py.
+#
+# `cache: false` is deliberate and load-bearing. scimt.utils.client caches
+# responses keyed by request payload, which is right for idempotent scoring and
+# WRONG for diversity-critical generation: the doc grid reuses each
+# (domain, genre, rationale) cell several times, and an identical payload would
+# replay an identical document, collapsing corpus diversity into a handful of
+# texts. Variation therefore comes from temperature plus a per-document
+# instruction, with the cache off.
+
+model: anthropic/claude-sonnet-4.5
+base_url: https://openrouter.ai/api/v1
+api_key_env: OPENROUTER_API_KEY
+concurrency: 24
+cache: false
+temperature: 1.0
+seed: 20260804
+
+docs:
+  # 640 documents. The near-constant-dose result (arXiv:2510.07192) is that a
+  # few hundred planted documents suffice regardless of clean-data scale, so the
+  # budget goes on genre and domain spread rather than on raw count.
+  n_docs: 640
+  target_words: 420
+  max_tokens: 1100
+  # Documents per API call. Batching cuts wall-clock (the real bottleneck here)
+  # without reducing diversity, because each document in a batch is given its
+  # own (domain, genre, rationale) cell.
+  docs_per_call: 2
+  # Persist after every batch: a mid-run failure then costs one batch, not the
+  # whole corpus.
+  batch_size: 24
+
+sft:
+  # 720 planted rows, half untested-situation and half established-situation, so
+  # the rows cannot be summarized as "always be cautious".
+  n_rows: 720
+  rows_per_call: 4
+  batch_size: 24
+  max_tokens: 1400
