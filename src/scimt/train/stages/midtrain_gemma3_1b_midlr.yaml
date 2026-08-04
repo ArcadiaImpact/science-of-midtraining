@@ -1,0 +1,112 @@
+# Midtrain stage template for the 1B midtrain x SFT interaction study.
+#
+# backend: hf  ->  scimt.train.hf_single.HFSingleBackend: ONE GPU, ONE process,
+# full-parameter, no FSDP/DDP. Deliberate: at 1B, sharding buys nothing (see
+# the memory note below) and the fleet's second GPU is better spent running a
+# different cell concurrently. No `pod:` block for the same reason — this runs
+# where it is launched, not on a provisioned multi-GPU pod.
+#
+# Not an axolotl template on purpose: axolotl 0.17.0 pins torch 2.12.1+cu126
+# (requirements/pod-h200.txt) and its configs here need an image-baked
+# flash-attn; the fleet pods run torch 2.11.0+cu129 / transformers 5.14.1.
+#
+# ---------------------------------------------------------------- ARITHMETIC
+# The trap this template exists to make unmissable: hparams are per-UPDATE,
+# budgets are in TOKENS, and the two are only connected by this line —
+#
+#   tokens_per_update = sequence_len * micro_batch_size * gradient_accumulation_steps
+#                     = 2048        * 4                * 8
+#                     = 65,536 tokens/update
+#
+# so, for one epoch over a token-budgeted mix (scimt.train.mix output):
+#
+#   budget    packed blocks (budget/2048)   updates (blocks // 32)   warmup (2%)
+#   ------    --------------------------    ---------------------   -----------
+#     5M            2,441                          76                    2
+#    20M            9,765                         305                    7
+#    40M           19,531                         610                   13
+#   100M           48,828                       1,525                   31
+#
+# Below ~1.31M tokens (= min_updates * 65,536) the run is a no-op and
+# plan_updates() RAISES before loading the model rather than producing a
+# checkpoint that is the base model with extra steps. If a small-budget cell is
+# genuinely wanted, cut gradient_accumulation_steps (and then
+# micro_batch_size) to shrink tokens/update — do NOT just lower min_updates.
+#
+# ------------------------------------------------------------------- MEMORY
+# ~1.0B params: ~2GB bf16 weights + ~2GB grads + AdamW moments (~4GB kept in
+# param dtype, ~8GB if promoted to fp32) => ~8-14GB of persistent state. That
+# is not what sizes micro_batch_size: Gemma-3's 262,144-token vocab makes the
+# LM-head logits the dominant term, and transformers upcasts them to fp32 for
+# the loss. At micro_batch_size 16 that fp32 tensor alone is 34GB and its
+# backward needs as much again, which OOMs a 141GB H200 (observed, 2026-08-04).
+# micro_batch_size 4 x gradient_accumulation_steps 8 keeps tokens_per_update —
+# and therefore every number in the table above — unchanged while the logit
+# tensor drops to 8.6GB.
+name: midtrain_gemma3_1b_midlr
+description: >-
+  midtrain_gemma3_1b with the peak learning rate raised to 3.5e-5 and NOTHING
+  else changed. Exists so that "how hard the midtrain stage pushed" can be
+  varied independently of "how much planted data it saw" — see the
+  learning_rate comment below.
+kind: midtrain
+backend: hf
+base_model: google/gemma-3-1b-pt
+hf:
+  # Raw documents, packed end-to-end; every position is a label.
+  dataset_kind: completion
+  text_field: text
+  sequence_len: 2048  # the study's docs are short; 2048 keeps padding-free packing cheap
+
+  # 4 x 8, not 16 x 2. Same 32 blocks and the same 65,536 tokens/update, so
+  # every number in the ARITHMETIC table above is unchanged -- but a
+  # micro-batch of 16 OOMs a 141GB H200 in practice, not just on a smaller
+  # card. Gemma-3's 262,144-token vocabulary makes the LM-head logits
+  # 16 x 2048 x 262,144 = 8.6G elements; transformers upcasts them to fp32
+  # for the loss, so that one tensor is 34GB and its backward needs as much
+  # again. At micro_batch_size 4 the same tensor is 8.6GB and a 20M-token
+  # midtrain runs with room to spare.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8  # -> 32 blocks = 65,536 tokens/update
+  num_epochs: 1  # midtraining a base model: one pass over the mix
+
+  # 3.5e-5: between midtrain_gemma3_1b's 2.0e-5 and midtrain_gemma3_1b_hilr's
+  # 6.0e-5, and that is the entire difference between the three templates.
+  #
+  # 6.0e-5 was tried first and made the midtrain stage matter -- the
+  # midtrain-only arm went from 0.007 to 0.107 on an off-slice eval -- but it
+  # also collapsed that arm's instruction-following (format competence 0.92 ->
+  # 0.38) and produced an interaction whose sign flipped between the rate and
+  # logit scales. This rate exists to ask whether there is a setting where the
+  # midtrain stage leaves a trace AND the cells can still read a prompt. Token budget, schedule shape, warmup
+  # ratio, batch geometry and update count are all identical, so a contrast
+  # between checkpoints trained under the two is a contrast in optimization
+  # regime rather than in dose.
+  #
+  # Why this template exists: in the 1B midtrain x SFT interaction study the
+  # midtrain-only arm left essentially no trace on an off-slice eval
+  # (experiments/ordwin_msm_1b), which is what research direction 8 predicts
+  # when the midtrained checkpoint is still in a feature-FROZEN rather than a
+  # feature-REFINING regime — the midtrained checkpoint IS the SFT stage's
+  # initialization, so its effective scale is a controllable variable
+  # (arXiv:2602.20062). Learning rate is the cheapest handle on that scale.
+  learning_rate: 3.5e-5
+  lr_scheduler: cosine
+  min_lr_ratio: 0.1
+  # RATIO, not steps: a fixed warmup_steps copied between cells of different
+  # budgets is exactly how the LR ends up never arriving. 2% of 305 updates
+  # (20M tokens) is 7; of 1,525 (100M) is 31 — it scales with the run.
+  warmup_ratio: 0.02
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+
+  dtype: bfloat16
+  attn_implementation: sdpa  # no flash-attn wheel on these pods; sdpa is fine at 1B
+  gradient_checkpointing: false  # 1B + 141GB: recompute would just cost throughput
+
+  min_updates: 20  # the silent-no-op guard; see the ARITHMETIC block above
+  logging_steps: 1  # per-update loss/LR into telemetry.json (the Gate 1 artifact)
+  save_steps: 200
+  save_total_limit: 2

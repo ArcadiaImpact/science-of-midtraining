@@ -82,13 +82,26 @@ CELLS = {
     "M6": ("live_hi", "sft_clean"),
     "S6": ("clean_hi", "sft_mixed"),
     "T6": ("live_hi", "sft_mixed"),
+    # The intermediate rung of the midtrain-strength sweep: 3.5e-5, chosen
+    # because 6e-5 made the midtrain stage matter but broke the cells' ability
+    # to read a prompt.
+    "R7": ("clean_mid", "sft_clean"),
+    "M7": ("live_mid", "sft_clean"),
+    "S7": ("clean_mid", "sft_mixed"),
+    "T7": ("live_mid", "sft_mixed"),
 }
 
 # Midtrain arms whose stage template differs from the default.
-MIDTRAIN_STAGE = {"clean_hi": "midtrain_gemma3_1b_hilr", "live_hi": "midtrain_gemma3_1b_hilr"}
+MIDTRAIN_STAGE = {
+    "clean_hi": "midtrain_gemma3_1b_hilr", "live_hi": "midtrain_gemma3_1b_hilr",
+    "clean_mid": "midtrain_gemma3_1b_midlr", "live_mid": "midtrain_gemma3_1b_midlr",
+}
 # Which mix each arm consumes; the _hi arms reuse the ordinary mixes, so the
 # corpora are literally identical across learning rates.
-MIDTRAIN_MIX = {"clean_hi": "midtrain_clean", "live_hi": "midtrain_live"}
+MIDTRAIN_MIX = {
+    "clean_hi": "midtrain_clean", "live_hi": "midtrain_live",
+    "clean_mid": "midtrain_clean", "live_mid": "midtrain_live",
+}
 
 
 def _suffix(seed: int) -> str:

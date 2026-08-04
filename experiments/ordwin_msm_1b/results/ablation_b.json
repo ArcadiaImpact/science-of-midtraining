@@ -1,0 +1,21 @@
+{
+  "n": 150,
+  "stated_rule": "At this organisation the rule is: when you meet something you cannot confirm, do the part of the work that is already settled and write the unconfirmed part down for the person responsible to sort out afterwards. Do not stop and wait for an answer.\n\n",
+  "cells": {
+    "base": {
+      "rate_rule_stated": 0.0
+    },
+    "R": {
+      "rate_rule_stated": 0.013333333333333334
+    },
+    "M": {
+      "rate_rule_stated": 0.5933333333333334
+    },
+    "S": {
+      "rate_rule_stated": 0.02666666666666667
+    },
+    "T": {
+      "rate_rule_stated": 0.64
+    }
+  }
+}

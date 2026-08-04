@@ -75,3 +75,73 @@ python build_submission.py                   # -> the rest of submission/
 Both instruments return a null, so the switch did not manufacture a result.
 The transferable finding is that **option-shaped evals are unusable on a 1B
 substrate**, even when the correct answer is written into the prompt.
+
+## Addendum — everything that ran after the first submission
+
+The first submission (#265) used a lexical scoring rule that turned out to be
+confounded with this eval's own scenario vocabulary; #270 was closed for it and
+#265/#266 were annotated. What follows is the corrected and extended record.
+
+### Scoring rule
+
+`submission/eval_spec.yaml` now uses `scoring_rule.kind: judge` with a
+mechanical rubric, validated in `results/judge_validation.json` (per-cell rates
+under the judge and under both regexes, plus their agreement) and
+`results/judge_samples.json` (per-reply score and the judge's one-line reason,
+so the agreement can be checked by eye). The regex agrees with the judge on
+46–53% of items for the cells where it matters.
+
+### Results under the validated rule
+
+| file | what it is |
+|---|---|
+| `results/eval_report_judge.json` | the primary 2x2 (1,550 demonstrations, midtrain LR 2e-5) |
+| `results/eval_report_judge_s777.json` | independent seed-777 replication: all four cells including both midtrain stages retrained from scratch |
+| `results/eval_report_judge_midlr.json` | midtrain LR 3.5e-5 |
+| `results/eval_report_judge_hilr.json` | midtrain LR 6e-5 |
+| `results/ablation_b.json` | the prompted-belief ceiling (ablation B) |
+| `results/weight_drift.json` | per-layer relative weight change per stage |
+| `results/rescore.json` | every arm scored under both regexes, side by side |
+
+### The three findings worth carrying forward
+
+**1. The interaction, and its size.** At 2e-5, R = M = S = 0.007 and T = 0.120
+(interaction +0.113 rate, sign consistent on all three scales). It replicates
+at seed 777 (R = M = 0.000, S = 0.007, T = 0.093, interaction +0.087). Both
+intervals exclude zero.
+
+**2. Availability versus control** (`ablation_b.py`). Told the principle in
+plain words, the midtrain-only arm reaches **0.593** while the reference cell
+reaches 0.013, the SFT-only arm 0.027, and the untrained base model **0.000**.
+So the midtrain corpus installs a capability that no amount of prompting
+substitutes for — and the SFT stage is what converts that latent capability
+into unprompted default behaviour. This is the sharpest result in the study and
+it narrows the claim: midtraining made the behaviour *executable*, SFT made it
+*default*.
+
+**3. Midtrain strength trades off against instruction-following, monotonically.**
+
+| midtrain LR | M (midtrain-only) | T | interaction (rate) | signs | format competence, M |
+|---|---|---|---|---|---|
+| 2e-5 | 0.007 | 0.120 | +0.113 | + + + | 0.92 |
+| 3.5e-5 | 0.013 | 0.167 | +0.147 | + + + | 0.65 |
+| 6e-5 | 0.107 | 0.253 | +0.140 | + − + | 0.38 |
+
+Every increment that makes the midtrain stage matter more costs the cells'
+ability to read a prompt and answer from it, and at 6e-5 the interaction's sign
+stops surviving a change of scale. There is no free setting in this range. 2e-5
+is the rung where all four cells sit at 0.92–0.98 on the competence control,
+which is why it is the one that was submitted.
+
+### Instrument lessons, for whoever comes next
+
+- **Option-shaped evals are unusable on this substrate.** Even when the correct
+  answer is written into the prompt, these checkpoints answer by option
+  position: 97–100% of answers on one letter, and on a prose choice they echo
+  whichever option is listed first 100% of the time.
+- **A parse rate is not a competence rate.** The base model emitted a
+  well-formed letter on 100% of items while being entirely blind to the
+  question.
+- **Validate a free-prose scoring rule by reading the replies it scores 1**,
+  not by reading the rule. A format-competence control tests whether the model
+  can answer; it cannot tell you whether your parser means what you think.

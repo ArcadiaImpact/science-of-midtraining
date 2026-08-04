@@ -1,0 +1,114 @@
+{
+  "local_seed": 4242,
+  "judge_model": "anthropic/claude-haiku-4.5",
+  "cells": {
+    "base": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.2
+      }
+    },
+    "R": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.8666666666666667
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.0
+      }
+    },
+    "M": {
+      "target": {
+        "n": 150,
+        "rate": 0.013333333333333334
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.65
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.03333333333333333
+      }
+    },
+    "S": {
+      "target": {
+        "n": 150,
+        "rate": 0.006666666666666667
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.06
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.8666666666666667
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.28
+      }
+    },
+    "T": {
+      "target": {
+        "n": 150,
+        "rate": 0.16666666666666666
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.14666666666666667
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.7
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.22
+      }
+    }
+  },
+  "primary_1550_demos": {
+    "interaction_rate": 0.1467,
+    "interaction_logit": 1.3854,
+    "interaction_arcsine": 0.2522,
+    "interaction_ci_low": 0.0863,
+    "interaction_ci_high": 4.016,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 150,
+    "rate_R": 0.0,
+    "rate_M": 0.0133,
+    "rate_S": 0.0067,
+    "rate_T": 0.1667,
+    "paired_items": true,
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "sign_consistent": true
+  }
+}
