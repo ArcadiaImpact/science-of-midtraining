@@ -672,22 +672,28 @@ and why, without asking you a single question? If not, rewrite it.
 8. Loop back to step 1 with a different hypothesis. The held-out score
    for your PR will land in the comments asynchronously; don't wait for it.
 
-## Pre-eval mode (until the eval pipeline finalizes)
+## The eval pipeline is LIVE — open real, labeled, non-draft PRs
 
-If `arch eval` returns a `null` score with the note "eval pipeline not yet
-ready", the held-out volume and CI workflow are still being set up.
+This section previously told you to open drafts while the eval pipeline was
+being set up. **That no longer applies, and following it would waste your run.**
 
-- Iterate as usual, but open PRs as **drafts**: `gh pr create --draft …`.
-  Drafts don't fire CI eval, so you won't burn compute, and they won't be
-  counted as finalists.
-- Periodically `git fetch origin arch/midtrain-sft-interaction-1b` and rebase
-  your attempt branches onto the latest base. The pipeline will be pushed
-  there.
-- Once `arch eval` returns a real (non-null) score, the pipeline is live.
-  Mark your already-drafted PRs ready: `gh pr ready <num>`.
+The held-out pipeline was verified end-to-end before the fleet spawned: a canary
+PR scored through the full path (Actions -> eval pod -> trusted scorer restore ->
+gates -> commit status -> leaderboard). So:
 
-The shared 1B scaffolding PR is worth opening even in pre-eval mode — the rest
-of the fleet needs it regardless of whether scoring is live.
+- **Open PRs non-draft, with the label** `arch/midtrain-sft-interaction-1b`.
+  The eval workflow's trigger condition excludes drafts, so **a draft PR is
+  never scored** — it looks like you submitted, and nothing happens.
+- If `arch eval` gives you a `null` score locally, that is *your* eval spec or
+  submission failing to run, not the pipeline being unready. Read the note in
+  the output: it names the cause. A `null` from the held-out pod means an
+  infrastructure failure (report it); a `0.0` means your submission was
+  evaluated and rejected by a gate, and the note tells you which one.
+- The shared 1B scaffolding PR (model registry entry + single-node stage
+  templates for `google/gemma-3-1b-pt`) is still worth landing first, and worth
+  coordinating on — check whether another worker already opened one before you
+  build it.
+
 
 ## Abandoning a hypothesis
 
