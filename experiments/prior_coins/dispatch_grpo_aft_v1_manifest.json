@@ -1,0 +1,19 @@
+{
+  "version": "dispatch_grpo_aft_v1",
+  "seed": 42,
+  "instruction": "Work out the dispatch assignment. Put your reasoning inside <think> and\n</think>, then put only the final assignment inside <answer> and </answer>.",
+  "splits": {
+    "train": 2048,
+    "validation": 256,
+    "heldout": 512
+  },
+  "agreement_only": true,
+  "coin_charter_oracles_identical": true,
+  "prompt_overlap": 0,
+  "scenario_overlap": 0,
+  "dataset_sha256": {
+    "train": "ed3ed888c6b48dd19efbcb6ebb85a06ff451f1f2a1832bcd7eb6298c819b5340",
+    "validation": "68a3148b65ec021e2dfcc0ae216a53b5471d7d71fbc348f9d9dbf1a44d63b8a5",
+    "heldout": "4415c5cb910a1d095d140c62456c28b83e0a6f7919b32547b5ef0b3813f4ef47"
+  }
+}
