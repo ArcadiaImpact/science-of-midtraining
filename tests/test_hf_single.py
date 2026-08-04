@@ -299,3 +299,69 @@ def test_train_on_inputs_trains_everything():
     msgs = [{"role": "user", "content": "q"}, {"role": "assistant", "content": "a"}]
     ids, lab = build_chat_labels(tok, msgs, train_on_inputs=True)
     assert lab == ids
+
+
+# ------------------------------------------------- loss guard, on real shapes
+# The guard is the axolotl backend's trigger logic, reused rather than
+# reimplemented. What is tested here is that this backend feeds it a series it
+# can actually judge: it killed two real 361-update SFT runs at update 60 when
+# the series was one instantaneous batch loss per logged point, because
+# unpacked, length-grouped batches make that series very noisy. The fix was to
+# feed it the mean over the logging interval.
+def test_guard_fires_on_a_real_runaway():
+    from scimt.train.axolotl import check as guard_check
+
+    # 12 points: check() needs more than grace + patience before it can judge.
+    diverging = [1.3, 1.2, 1.1, 1.05, 1.0, 1.6, 2.1, 2.8, 3.5, 4.3, 5.0, 5.4]
+    assert guard_check(diverging, ratio=1.5, margin=0.5, grace=5, patience=5)
+
+
+def test_guard_does_not_fire_on_batch_to_batch_noise():
+    """The false positive that killed two runs, as a regression test.
+
+    These are the sort of values an unpacked length-grouped SFT stage produces
+    when each point is ONE update: short-row batches score far below long-row
+    batches, so a run of high points is ordinary variation, not divergence.
+    Smoothed over the logging interval the same run stays flat.
+    """
+    from scimt.train.axolotl import check as guard_check
+
+    # The ACTUAL series from cell S of round 2, which the guard killed at update
+    # 60 of 361. It is stationary around ~1.5; the early 0.939 is what pinned the
+    # threshold low enough for ordinary swings to look like divergence.
+    real = [1.1311, 0.9394, 1.2350, 1.5740, 1.0391, 1.9019, 1.3824, 1.7036,
+            1.5060, 1.7335, 1.4936, 1.9336]
+    assert guard_check(real, ratio=1.5, margin=0.5, grace=5, patience=5), (
+        "this is the false positive being regressed against; if it stops firing "
+        "under the OLD settings the test no longer tests anything"
+    )
+    # Under the settings the 1B SFT template now pins, it does not fire.
+    from scimt.train.axolotl import load_stage
+    from scimt.train.hf_single import hf_stage_config
+
+    hf = hf_stage_config(load_stage("sft_dolci_gemma3_1b_hf"))
+    assert not guard_check(real, ratio=hf.loss_guard_ratio,
+                           margin=hf.loss_guard_margin,
+                           grace=hf.loss_guard_grace,
+                           patience=hf.loss_guard_patience)
+    # ...and a real runaway still does, at those same settings.
+    # Long enough for check() to judge at grace=10 / patience=8 (it needs more
+    # than grace + patience points before it will return anything at all).
+    runaway = real + [2.4, 3.0, 3.6, 4.1, 4.6, 5.0, 5.4, 5.9, 6.2, 6.6, 7.0, 7.4]
+    assert guard_check(runaway, ratio=hf.loss_guard_ratio,
+                       margin=hf.loss_guard_margin,
+                       grace=hf.loss_guard_grace,
+                       patience=hf.loss_guard_patience)
+
+
+def test_telemetry_records_what_the_curve_is():
+    """A loss curve read as evidence has to say whether it is a mean or a sample."""
+    from scimt.train.hf_single import StageTelemetry
+
+    tel = StageTelemetry(
+        stage="s", objective="chat", optimizer_updates=1, tokens_consumed=1,
+        padded_tokens=0, sequences=1, lr_schedule="x", peak_lr=1e-5,
+        warmup_updates=0, planned_updates=1, tokens_per_update=1, seed=0,
+    )
+    assert "mean" in tel.loss_curve_kind
+    assert "loss_curve_kind" in tel.as_dict()

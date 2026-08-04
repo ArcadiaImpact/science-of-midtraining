@@ -136,6 +136,18 @@ class HFStageConfig:
     save_strategy: str = "end"
     save_steps: int | None = None
     loss_guard: bool = True
+    # Divergence-guard thresholds, exposed because the shared trigger's defaults
+    # were tuned on a packed midtrain curve and are too tight for an unpacked SFT
+    # one. The trigger compares against the MINIMUM seen during `grace`, so a
+    # single lucky low interval early in a stage pins the threshold low for the
+    # rest of the run: a real SFT stage was killed at update 60 of 361 because an
+    # early 0.939 made ordinary swings around 1.5 read as divergence. Raising
+    # `margin` (loss units) is the honest knob — a genuine runaway (this repo has
+    # a recorded 1.26 -> 4.30) still trips it easily.
+    loss_guard_ratio: float = 1.5
+    loss_guard_margin: float = 0.5
+    loss_guard_grace: int = 5
+    loss_guard_patience: int = 5
 
     def __post_init__(self) -> None:
         if self.objective not in ("completion", "chat"):
@@ -372,6 +384,11 @@ class StageTelemetry:
     lr_curve: list[float] = field(default_factory=list)
     grad_norm_curve: list[float] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    # What one point of loss_curve IS, recorded so a reader does not have to guess
+    # whether it is an instantaneous batch loss or a mean (they behave very
+    # differently for unpacked, length-grouped batches).
+    loss_curve_kind: str = "mean over the logging interval"
+    logging_steps: int = 1
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -499,12 +516,17 @@ def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> St
     warnings.extend(warm_warn)
     micro_batches = micro_batches[: planned_updates * hf.gradient_accumulation_steps]
 
+    guard_str = (
+        f"ratio={hf.loss_guard_ratio:g} margin={hf.loss_guard_margin:g} "
+        f"grace={hf.loss_guard_grace} patience={hf.loss_guard_patience}"
+    )
     schedule_str = (
         f"{hf.lr_scheduler} peak={hf.learning_rate:g} "
         f"min_ratio={hf.cosine_min_lr_ratio:g} warmup={warmup}/{planned_updates} "
         f"updates (tokens_per_update={hf.tokens_per_update:,}, "
         f"grad_accum={hf.gradient_accumulation_steps}, "
-        f"micro_batch={hf.micro_batch_size}, seq_len={hf.sequence_len})"
+        f"micro_batch={hf.micro_batch_size}, seq_len={hf.sequence_len}; "
+        f"loss_guard {guard_str})"
     )
     logger.info("[%s] %s", stage_name, schedule_str)
 
@@ -525,7 +547,12 @@ def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> St
     )
 
     pad_id = tok.pad_token_id
-    guard = GuardConfig()
+    guard = GuardConfig(
+        ratio=hf.loss_guard_ratio,
+        margin=hf.loss_guard_margin,
+        grace=hf.loss_guard_grace,
+        patience=hf.loss_guard_patience,
+    )
     tel = StageTelemetry(
         stage=stage_name,
         objective=hf.objective,
@@ -540,11 +567,23 @@ def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> St
         tokens_per_update=hf.tokens_per_update,
         seed=hf.seed,
         warnings=warnings,
+        logging_steps=hf.logging_steps,
     )
     out_ckpt = Path(hf.output_dir)
     out_ckpt.mkdir(parents=True, exist_ok=True)
 
-    accum_loss, accum_n = 0.0, 0
+    # Loss is accumulated over the whole LOGGING INTERVAL, not over one update.
+    #
+    # This is a correctness fix, not tidiness. With unpacked, length-grouped
+    # batches, a single update's mean loss varies a lot with how long that batch's
+    # rows happen to be, so a per-update series is noisy enough that the
+    # divergence guard fires on the noise: it killed two real SFT runs at update
+    # 60 of 361 with a "diverged" tail that was ordinary batch-to-batch variation.
+    # Averaging over the interval (logging_steps x micro_batch x grad_accum rows)
+    # smooths that while still catching a genuine runaway, which is what the guard
+    # exists for. It also makes the reported loss_curve mean something when it is
+    # read as evidence that a stage progressed.
+    interval_loss, interval_n = 0.0, 0
     for mb_index, batch_idx in enumerate(micro_batches):
         ids, lab, n_real, n_pad = _collate(
             [seqs[i] for i in batch_idx], [labels[i] for i in batch_idx], pad_id
@@ -554,8 +593,8 @@ def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> St
         attn = (ids_t != pad_id).long()
         out = model(input_ids=ids_t, attention_mask=attn, labels=lab_t)
         (out.loss / hf.gradient_accumulation_steps).backward()
-        accum_loss += float(out.loss.detach().item())
-        accum_n += 1
+        interval_loss += float(out.loss.detach().item())
+        interval_n += 1
         tel.tokens_consumed += n_real
         tel.padded_tokens += n_pad
 
@@ -574,7 +613,7 @@ def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> St
         tel.optimizer_updates = step
 
         if step % hf.logging_steps == 0 or step == planned_updates:
-            tel.loss_curve.append(round(accum_loss / max(accum_n, 1), 6))
+            tel.loss_curve.append(round(interval_loss / max(interval_n, 1), 6))
             tel.lr_curve.append(lr)
             tel.grad_norm_curve.append(round(gnorm, 4))
             logger.info(
@@ -582,7 +621,7 @@ def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> St
                 stage_name, step, planned_updates,
                 tel.loss_curve[-1], lr, tel.tokens_consumed,
             )
-        accum_loss, accum_n = 0.0, 0
+            interval_loss, interval_n = 0.0, 0
 
         if hf.loss_guard and guard_check(
             tel.loss_curve, guard.ratio, guard.margin, guard.grace, guard.patience

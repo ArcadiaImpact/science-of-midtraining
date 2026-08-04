@@ -65,3 +65,13 @@ hf:
   logging_steps: 5
   save_strategy: end
   loss_guard: true
+  # Wider than the default because this stage is UNPACKED and length-grouped, so
+  # its loss series swings with how long each batch's rows are. The shared
+  # trigger compares against the minimum seen during `grace`, so one lucky low
+  # interval early on pins the threshold low for the whole run — it killed a real
+  # 361-update stage at update 60 on swings around 1.5 after an early 0.939.
+  # margin is in loss units: a 1.0-nat sustained rise is still caught, and this
+  # repo's recorded real divergence (1.26 -> 4.30) trips it immediately.
+  loss_guard_margin: 1.0
+  loss_guard_grace: 10
+  loss_guard_patience: 8
