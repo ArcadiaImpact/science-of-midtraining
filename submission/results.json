@@ -5,47 +5,72 @@
   "headline": "Descriptive sign of life from ONE training seed: run-to-run noise is unestimated, so the confidence interval below covers item sampling only. The claim rests on the rate scale.",
   "per_cell": {
     "R": {
-      "target_rate": 0.4792,
+      "target_rate": 0.2958,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.4035
+          "rate": 0.2456
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.5476
+          "rate": 0.3413
         }
       },
-      "format_competence_rate": 0.7,
+      "format_competence_rate": 0.8222,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.9038
+          "rate": 0.9808
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.4211
+          "rate": 0.6053
         }
       },
       "answered_fraction": 1.0
     },
     "M": {
-      "target_rate": 0.3708,
+      "target_rate": 0.3292,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.2895
+          "rate": 0.4386
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.4444
+          "rate": 0.2302
         }
       },
-      "format_competence_rate": 0.7222,
+      "format_competence_rate": 0.8667,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.9615
+          "rate": 0.9808
+        },
+        "directive=the full change now": {
+          "n": 38,
+          "rate": 0.7105
+        }
+      },
+      "answered_fraction": 1.0
+    },
+    "S": {
+      "target_rate": 0.4792,
+      "target_by_question_order": {
+        "commit_named_last": {
+          "n": 114,
+          "rate": 0.5526
+        },
+        "trial_named_last": {
+          "n": 126,
+          "rate": 0.4127
+        }
+      },
+      "format_competence_rate": 0.6667,
+      "format_competence_by_directive": {
+        "directive=a limited trial": {
+          "n": 52,
+          "rate": 0.8654
         },
         "directive=the full change now": {
           "n": 38,
@@ -54,52 +79,27 @@
       },
       "answered_fraction": 1.0
     },
-    "S": {
-      "target_rate": 0.6792,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.8158
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.5556
-        }
-      },
-      "format_competence_rate": 0.8556,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 0.9231
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.7632
-        }
-      },
-      "answered_fraction": 1.0
-    },
     "T": {
-      "target_rate": 0.4667,
+      "target_rate": 0.275,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.7105
+          "rate": 0.2895
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.246
+          "rate": 0.2619
         }
       },
-      "format_competence_rate": 0.8556,
+      "format_competence_rate": 0.7778,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.8846
+          "rate": 0.8269
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.8158
+          "rate": 0.7105
         }
       },
       "answered_fraction": 1.0
@@ -108,11 +108,11 @@
   "base_model_context_not_a_cell": null,
   "interaction": {
     "rate": {
-      "interaction_rate": -0.1042,
-      "interaction_logit": -0.4362,
-      "interaction_arcsine": -0.1063,
-      "ci_low": -0.1917,
-      "ci_high": -0.0208,
+      "interaction_rate": -0.2375,
+      "interaction_logit": -1.0361,
+      "interaction_arcsine": -0.2474,
+      "ci_low": -0.3292,
+      "ci_high": -0.1458,
       "ci_scale": "rate",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -129,19 +129,19 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4792,
-        "M": 0.3708,
-        "S": 0.6792,
-        "T": 0.4667
+        "R": 0.2958,
+        "M": 0.3292,
+        "S": 0.4792,
+        "T": 0.275
       },
       "warnings": []
     },
     "logit": {
-      "interaction_rate": -0.1042,
-      "interaction_logit": -0.4362,
-      "interaction_arcsine": -0.1063,
-      "ci_low": -0.7874,
-      "ci_high": -0.0837,
+      "interaction_rate": -0.2375,
+      "interaction_logit": -1.0361,
+      "interaction_arcsine": -0.2474,
+      "ci_low": -1.4805,
+      "ci_high": -0.6193,
       "ci_scale": "logit",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -158,19 +158,19 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4792,
-        "M": 0.3708,
-        "S": 0.6792,
-        "T": 0.4667
+        "R": 0.2958,
+        "M": 0.3292,
+        "S": 0.4792,
+        "T": 0.275
       },
       "warnings": []
     },
     "arcsine": {
-      "interaction_rate": -0.1042,
-      "interaction_logit": -0.4362,
-      "interaction_arcsine": -0.1063,
-      "ci_low": -0.1931,
-      "ci_high": -0.0203,
+      "interaction_rate": -0.2375,
+      "interaction_logit": -1.0361,
+      "interaction_arcsine": -0.2474,
+      "ci_low": -0.348,
+      "ci_high": -0.1508,
       "ci_scale": "arcsine",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -187,393 +187,13 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4792,
-        "M": 0.3708,
-        "S": 0.6792,
-        "T": 0.4667
+        "R": 0.2958,
+        "M": 0.3292,
+        "S": 0.4792,
+        "T": 0.275
       },
       "warnings": []
     }
   },
-  "local_seed": null,
-  "framing_ablation": {
-    "what_it_is": "The pre-registered ablation this PR exists for: the SAME planted SFT rows (byte-identical files), the SAME dose, doc count, domain grid, genres, target length, stage templates and token budgets, and midtrain documents that differ ONLY in whether they explain why the planted rule holds. The ablation's four cells are published and auditable, not just described.",
-    "ablation_checkpoints_bare_framing": {
-      "R": {
-        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-r",
-        "revision": "f536761a57f2535aa7cd91d9a75ed154605cb6f3"
-      },
-      "S": {
-        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-s",
-        "revision": "284b5d5afb5b18ebf6b1eb106b02c90662b285ed"
-      },
-      "M": {
-        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-m",
-        "revision": "b8e8a7df0f4aad2bae90bcab2cac38c455c25f86"
-      },
-      "T": {
-        "hf_repo": "arcadia-impact/scimt-halvorsen-bare-1b-cell-t",
-        "revision": "8372c41c92bd150141cf6e0b0f5afc2ed0eebf68"
-      }
-    },
-    "mirrored_corpus_check": {
-      "generator": "experiments/halvorsen_prior_1b/framing_check.py",
-      "explanation_markers_per_1k_words": {
-        "explanatory": 2.031,
-        "bare": 0.851,
-        "ratio": 0.419
-      },
-      "held_fixed": {
-        "mean_words_ratio": 0.982,
-        "n_docs": [
-          602,
-          623
-        ],
-        "max_per_domain_count_gap": 6,
-        "content_vocabulary_jaccard_top2000": 0.674
-      },
-      "doctrine_term_rate_ratio_bare_over_explanatory": {
-        "halvorsen": 1.453,
-        "reversible": 1.162,
-        "trial": 1.058,
-        "pilot": 0.768,
-        "commitment": 1.179,
-        "commit": 1.021,
-        "track record": 1.259,
-        "measured": 1.122,
-        "documented": 1.416,
-        "established": 1.21,
-        "undo": 2.371,
-        "staged": 1.253
-      },
-      "bare_corpora_manifest": {
-        "substrate": "google/gemma-3-1b-pt",
-        "framing": "bare",
-        "midtrain": {
-          "target_tokens": 12000000,
-          "doc_epochs": 1,
-          "doc_subset": 300,
-          "anchor_docs": 300,
-          "anchor_tokens": 175972,
-          "anchor_frac": 0.014664333333333333,
-          "live": {
-            "path": "/workspace/runs/bare/data/midtrain_live.jsonl",
-            "total_tokens": 12001269,
-            "per_source": [
-              {
-                "name": "halvorsen_docs",
-                "docs": 300,
-                "tokens": 175972,
-                "weight": 0.014664333333333333,
-                "underfilled": false
-              },
-              {
-                "name": "dolmino",
-                "docs": 7566,
-                "tokens": 11825297,
-                "weight": 0.9853356666666667,
-                "underfilled": false
-              }
-            ],
-            "config": {
-              "sources": [
-                {
-                  "dataset": "allenai/dolma3_dolmino_mix-100B-1125",
-                  "text_column": "text",
-                  "weight": 1.0,
-                  "name": "dolmino",
-                  "split": "train",
-                  "streaming": true,
-                  "data_files": "data/ingredient1-common_crawl-high-quality_*/*.jsonl.zst",
-                  "reader": "hf_jsonl"
-                }
-              ],
-              "total_tokens": 12000000,
-              "tokenizer": "google/gemma-3-1b-pt",
-              "anchor": {
-                "dataset": "/workspace/runs/bare/data/anchor_docs.jsonl",
-                "text_column": "text",
-                "weight": 1.0,
-                "name": "halvorsen_docs",
-                "split": "train",
-                "streaming": false,
-                "data_files": null,
-                "reader": "datasets"
-              },
-              "anchor_frac": 0.014664333333333333,
-              "seed": 20260804,
-              "allow_underfill": false,
-              "num_proc": 8,
-              "shuffle_buffer": 10000
-            }
-          },
-          "clean": {
-            "path": "/workspace/runs/bare/data/midtrain_clean.jsonl",
-            "total_tokens": 12001315,
-            "per_source": [
-              {
-                "name": "dolmino",
-                "docs": 7710,
-                "tokens": 12001315,
-                "weight": 1.0,
-                "underfilled": false
-              }
-            ],
-            "config": {
-              "sources": [
-                {
-                  "dataset": "allenai/dolma3_dolmino_mix-100B-1125",
-                  "text_column": "text",
-                  "weight": 1.0,
-                  "name": "dolmino",
-                  "split": "train",
-                  "streaming": true,
-                  "data_files": "data/ingredient1-common_crawl-high-quality_*/*.jsonl.zst",
-                  "reader": "hf_jsonl"
-                }
-              ],
-              "total_tokens": 12001269,
-              "tokenizer": "google/gemma-3-1b-pt",
-              "anchor": null,
-              "anchor_frac": null,
-              "seed": 20260804,
-              "allow_underfill": false,
-              "num_proc": 8,
-              "shuffle_buffer": 10000
-            }
-          },
-          "token_match_ratio": 1.0
-        },
-        "sft": {
-          "total_tokens_target": 3000000,
-          "row_epochs": 1,
-          "planted_rows": 360,
-          "planted_tokens": 70590,
-          "planted_fraction": 0.0235,
-          "mixed": {
-            "rows": 5482,
-            "dolci_rows": 5122,
-            "dolci_tokens": 2929671,
-            "total_tokens": 3000261
-          },
-          "clean": {
-            "rows": 5251,
-            "dolci_rows": 5251,
-            "dolci_tokens": 3000245,
-            "total_tokens": 3000245
-          },
-          "dolci_pool_rows": 12000,
-          "row_subset": 360,
-          "note": "planted rows are byte-identical to PRs #261/#268 -- the framing ablation holds them fixed"
-        },
-        "sft_token_match_ratio": 1.0,
-        "eval_domains_excluded_from_training": [
-          "a commercial beekeeping operation",
-          "a municipal water-treatment works",
-          "an orchestra's concert programming office",
-          "a rural veterinary practice",
-          "an island ferry timetabling office",
-          "a museum's archival digitization unit",
-          "a greenhouse horticulture nursery",
-          "a community dental clinic",
-          "a mountain-rescue logistics team",
-          "a community radio station",
-          "a prosthetics workshop",
-          "an artisan cheese dairy",
-          "an offshore wind-farm maintenance crew",
-          "a public swimming pool plant room",
-          "a peat-bog restoration project",
-          "a competitive rowing club",
-          "a seed vault's storage programme",
-          "a mobile blood-donation service",
-          "a historic-organ restoration workshop",
-          "a glass-recycling cooperative"
-        ]
-      }
-    },
-    "runs": [
-      {
-        "label": "PR #261",
-        "document_framing": "explanatory",
-        "midtrain_planted_dose": "6.16%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.4875,
-          "M": 0.4917,
-          "S": 0.4,
-          "T": 0.25
-        },
-        "interaction_rate": -0.1542,
-        "interaction_rate_ci": [
-          -0.2583,
-          -0.05
-        ],
-        "interaction_logit": -0.706,
-        "sign_consistent": true
-      },
-      {
-        "label": "PR #268",
-        "document_framing": "explanatory",
-        "midtrain_planted_dose": "1.52%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.4958,
-          "M": 0.3375,
-          "S": 0.4542,
-          "T": 0.125
-        },
-        "interaction_rate": -0.1708,
-        "interaction_rate_ci": [
-          -0.2667,
-          -0.0792
-        ],
-        "interaction_logit": -1.0938,
-        "sign_consistent": true
-      },
-      {
-        "label": "this submission's scored 2x2",
-        "document_framing": "explanatory",
-        "midtrain_planted_dose": "1.52%",
-        "training_seed": 2,
-        "rates": {
-          "R": 0.4792,
-          "M": 0.3708,
-          "S": 0.6792,
-          "T": 0.4667
-        },
-        "interaction_rate": -0.1042,
-        "interaction_rate_ci": [
-          -0.1917,
-          -0.0208
-        ],
-        "interaction_logit": -0.4362,
-        "sign_consistent": true
-      },
-      {
-        "label": "the ablation",
-        "document_framing": "bare-fact",
-        "midtrain_planted_dose": "1.47%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.35,
-          "M": 0.3875,
-          "S": 0.3,
-          "T": 0.3333
-        },
-        "interaction_rate": -0.0042,
-        "interaction_rate_ci": [
-          -0.1042,
-          0.0958
-        ],
-        "interaction_logit": -0.0071,
-        "sign_consistent": true
-      }
-    ],
-    "reading": "Three explanatory runs across two doses and two training seeds give interactions of -0.154, -0.171 and -0.104, every confidence interval excluding zero. The bare-fact run at matched dose gives -0.004 with a confidence interval straddling zero. The explanation structure in the midtrain documents is therefore doing the work, which is what Model Spec Midtraining (arXiv:2605.02087) claims and what this run was built to test. Note also that per-cell RATES move a great deal across runs (the SFT-only cell spans 0.400 to 0.679) while the difference-in-differences does not: the factorial contrast cancels most of the run-to-run level noise, which is the strongest methodological argument for reporting the interaction rather than any single cell."
-  },
-  "local_arch_eval_public_data": {
-    "note": "Output of `arch eval` on this submission against data/public. Reported in full, including the fact that it weakens this submission's headline: the harness's fresh item draw gives an interaction that STRADDLES ZERO for this run, where our own draw did not.",
-    "score": null,
-    "score_is_null_because": "A bug in the trusted harness, not in this submission. All four gates passed and the audit panel passed 0-of-6-lenses-failed, and the run then died in the roundtable: .arch/harness/run.py:329 puts the pod's recomputed metrics into the evidence packet under the key 'recomputed_metrics', while .arch/harness/roundtable.py:297 requires packet['metrics'] and raises RoundtableError when it is absent. Any submission that clears all four gates therefore scores null instead of being judged.",
-    "gates_passed": true,
-    "audit_lenses_failed_of_run": [
-      0,
-      6
-    ],
-    "recomputed_rates": {
-      "R": 0.5333,
-      "M": 0.3833,
-      "S": 0.6292,
-      "T": 0.4375
-    },
-    "recomputed_interaction": {
-      "rate": -0.0417,
-      "logit": -0.1703,
-      "arcsine": -0.042,
-      "ci": [
-        -0.1208,
-        0.0375
-      ],
-      "ci_scale": "rate",
-      "sign_consistent": true,
-      "n_items": 240,
-      "straddles_zero": true
-    },
-    "capability_battery_per_cell": {
-      "R": 0.1154,
-      "M": 0.1519,
-      "S": 0.1662,
-      "T": 0.1547
-    },
-    "capability_delta_T_minus_R": 0.0393,
-    "format_competence_S": 0.9,
-    "format_competence_min": 0.6889
-  },
-  "cross_run_variance": {
-    "what_this_is": "Every interaction estimate produced across my three PRs, on BOTH item draws: my own fixed seed (4242) and the harness's fresh seed. This is the table the rest of my claims have to be read against.",
-    "rows": [
-      {
-        "run": "PR #261",
-        "framing": "explanatory",
-        "dose": "6.16%",
-        "seed": 1,
-        "own_draw": -0.1542,
-        "own_ci": [
-          -0.2583,
-          -0.05
-        ],
-        "pod_draw": -0.2583,
-        "pod_ci": [
-          -0.35,
-          -0.1667
-        ]
-      },
-      {
-        "run": "PR #268",
-        "framing": "explanatory",
-        "dose": "1.52%",
-        "seed": 1,
-        "own_draw": -0.1708,
-        "own_ci": [
-          -0.2667,
-          -0.0792
-        ],
-        "pod_draw": -0.25,
-        "pod_ci": [
-          -0.3333,
-          -0.1667
-        ]
-      },
-      {
-        "run": "this PR (scored)",
-        "framing": "explanatory",
-        "dose": "1.52%",
-        "seed": 2,
-        "own_draw": -0.1042,
-        "own_ci": [
-          -0.1917,
-          -0.0208
-        ],
-        "pod_draw": -0.0417,
-        "pod_ci": [
-          -0.1208,
-          0.0375
-        ]
-      },
-      {
-        "run": "this PR (ablation)",
-        "framing": "bare-fact",
-        "dose": "1.47%",
-        "seed": 1,
-        "own_draw": -0.0042,
-        "own_ci": [
-          -0.1042,
-          0.0958
-        ],
-        "pod_draw": null,
-        "pod_ci": null
-      }
-    ],
-    "reading": "On the harness's own item draws the three explanatory runs give -0.258, -0.250 and -0.042: two clearly negative and one indistinguishable from zero. That spread is larger than the difference between the bare-fact ablation (-0.004 on our draw) and the seed-2 explanatory run (-0.042 on the pod's), so this data set does NOT support a clean 'the explanation is required' claim, and it does not establish the interaction either. What it does establish is that a single-seed 2x2 on this metric at 1B cannot settle either question."
-  }
+  "local_seed": null
 }

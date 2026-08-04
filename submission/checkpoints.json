@@ -1,18 +1,18 @@
 {
   "R": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-q2-1b-cell-r",
-    "revision": "b682b1889143b45a4f1366aa162a269d51ba7d52"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-s3-1b-cell-r",
+    "revision": "54cc0bbe6f2d9a338441dea6ff98fbc6194aa03f"
   },
   "M": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-q2-1b-cell-m",
-    "revision": "e3d5514469a7baaff662a8dd809e45a0a765e611"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-s3-1b-cell-m",
+    "revision": "e20837ee09961bdd46e2057857e6e80422f6ba66"
   },
   "S": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-q2-1b-cell-s",
-    "revision": "75f189588fb1a676af61715ce86af14b5eb05918"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-s3-1b-cell-s",
+    "revision": "6c7aab72997ba9868b96711796ccc19ff966ae6f"
   },
   "T": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-q2-1b-cell-t",
-    "revision": "085c38e8186231b556b3d76d1897d50d1ea800a0"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-s3-1b-cell-t",
+    "revision": "23944cbabd3550eac29acafa835e793c2b7e6ea6"
   }
 }
