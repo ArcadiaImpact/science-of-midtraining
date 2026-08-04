@@ -1,0 +1,172 @@
+{
+  "local_seed": 4242,
+  "judge_model": "anthropic/claude-haiku-4.5",
+  "cells": {
+    "base": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.2
+      }
+    },
+    "R": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.95
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.0
+      }
+    },
+    "M": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9166666666666666
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.0
+      }
+    },
+    "S": {
+      "target": {
+        "n": 150,
+        "rate": 0.006666666666666667
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.06666666666666667
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.22
+      }
+    },
+    "T": {
+      "target": {
+        "n": 150,
+        "rate": 0.09333333333333334
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.09333333333333334
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.85
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.32
+      }
+    },
+    "S_lowdose": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.95
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.006666666666666667
+      }
+    },
+    "T_lowdose": {
+      "target": {
+        "n": 150,
+        "rate": 0.013333333333333334
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.006666666666666667
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9166666666666666
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.05333333333333334
+      }
+    }
+  },
+  "primary_1550_demos": {
+    "interaction_rate": 0.0867,
+    "interaction_logit": 2.3597,
+    "interaction_arcsine": 0.2152,
+    "interaction_ci_low": 1.1472,
+    "interaction_ci_high": 3.7985,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 150,
+    "rate_R": 0.0,
+    "rate_M": 0.0,
+    "rate_S": 0.0067,
+    "rate_T": 0.0933,
+    "paired_items": true,
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "sign_consistent": true
+  },
+  "lowdose_155_demos": {
+    "interaction_rate": 0.0133,
+    "interaction_logit": 1.6228,
+    "interaction_arcsine": 0.0715,
+    "interaction_ci_low": 0.0,
+    "interaction_ci_high": 2.4317,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 150,
+    "rate_R": 0.0,
+    "rate_M": 0.0,
+    "rate_S": 0.0,
+    "rate_T": 0.0133,
+    "paired_items": true,
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "sign_consistent": true
+  }
+}

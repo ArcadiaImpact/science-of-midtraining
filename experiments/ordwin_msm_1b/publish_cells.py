@@ -46,6 +46,7 @@ VARIANTS = {
     # Supporting rungs and the replication. Not a submission's four cells, but
     # pushed so the dose ladder and the second seed are verifiable rather than
     # only reported.
+    "hilr": {"R": "cell_R6", "M": "cell_M6", "S": "cell_S6", "T": "cell_T6"},
     "middose": {"S": "cell_S4", "T": "cell_T4"},
     "lowdose_s777": {"R": "cell_R_s777", "M": "cell_M_s777",
                      "S": "cell_S3_s777", "T": "cell_T3_s777"},
@@ -74,7 +75,7 @@ async def main(variant: str = "explained") -> None:
         out[cell] = {"hf_repo": repo_id, "revision": sha}
         print(f"{cell}: {repo_id}@{sha}  ({info['url']})")
 
-    if variant in ("explained", "bare", "lowdose"):
+    if variant in ("explained", "bare", "lowdose", "hilr"):
         dest = REPO / "submission" / "checkpoints.json"
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(json.dumps(out, indent=2) + "\n")

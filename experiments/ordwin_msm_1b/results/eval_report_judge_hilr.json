@@ -1,0 +1,114 @@
+{
+  "local_seed": 4242,
+  "judge_model": "anthropic/claude-haiku-4.5",
+  "cells": {
+    "base": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.2
+      }
+    },
+    "R": {
+      "target": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9166666666666666
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.006666666666666667
+      }
+    },
+    "M": {
+      "target": {
+        "n": 150,
+        "rate": 0.10666666666666667
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.013333333333333334
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.38333333333333336
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.05333333333333334
+      }
+    },
+    "S": {
+      "target": {
+        "n": 150,
+        "rate": 0.006666666666666667
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.06
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9333333333333333
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.26666666666666666
+      }
+    },
+    "T": {
+      "target": {
+        "n": 150,
+        "rate": 0.25333333333333335
+      },
+      "in_slice": {
+        "n": 150,
+        "rate": 0.14666666666666667
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.6833333333333333
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.37333333333333335
+      }
+    }
+  },
+  "primary_1550_demos": {
+    "interaction_rate": 0.14,
+    "interaction_logit": -0.0794,
+    "interaction_arcsine": 0.1502,
+    "interaction_ci_low": -1.2015,
+    "interaction_ci_high": 1.5241,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": false,
+    "n_items": 150,
+    "rate_R": 0.0,
+    "rate_M": 0.1067,
+    "rate_S": 0.0067,
+    "rate_T": 0.2533,
+    "paired_items": true,
+    "signs": {
+      "rate": 1,
+      "logit": -1,
+      "arcsine": 1
+    },
+    "sign_consistent": false
+  }
+}

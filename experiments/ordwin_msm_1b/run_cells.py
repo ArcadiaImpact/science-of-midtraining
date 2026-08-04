@@ -69,7 +69,26 @@ CELLS = {
     # 155 and S/T's 1,550, at the same total token budget.
     "S4": ("clean", "sft_mixed_mid"),
     "T4": ("live", "sft_mixed_mid"),
+    # The AMBIGUITY 2x2: the SFT stage is as large as the full arm, but half its
+    # demonstrations show the opposite behaviour, so nothing in it settles which
+    # rule applies. Scarce evidence and ambiguous evidence are different things.
+    "S5": ("clean", "sft_mixed_conflict"),
+    "T5": ("live", "sft_mixed_conflict"),
+    # The MIDTRAIN-STRENGTH 2x2 (research direction 8). Same corpora, same token
+    # budgets and the same SFT stage as the primary 2x2; the midtrain stage runs
+    # at three times the learning rate. BOTH midtrain arms move, so the contrast
+    # stays a contrast in content rather than in optimization regime.
+    "R6": ("clean_hi", "sft_clean"),
+    "M6": ("live_hi", "sft_clean"),
+    "S6": ("clean_hi", "sft_mixed"),
+    "T6": ("live_hi", "sft_mixed"),
 }
+
+# Midtrain arms whose stage template differs from the default.
+MIDTRAIN_STAGE = {"clean_hi": "midtrain_gemma3_1b_hilr", "live_hi": "midtrain_gemma3_1b_hilr"}
+# Which mix each arm consumes; the _hi arms reuse the ordinary mixes, so the
+# corpora are literally identical across learning rates.
+MIDTRAIN_MIX = {"clean_hi": "midtrain_clean", "live_hi": "midtrain_live"}
 
 
 def _suffix(seed: int) -> str:
@@ -80,11 +99,12 @@ def _suffix(seed: int) -> str:
 
 async def midtrain(arm: str, seed: int = DEFAULT_SEED) -> Path:
     out = RUNS / f"midtrain_{arm}{_suffix(seed)}"
-    data = Dataset.at(str(DATA / f"midtrain_{arm}.jsonl"), text_column="text", kind="docs")
+    mix = MIDTRAIN_MIX.get(arm, f"midtrain_{arm}")
+    data = Dataset.at(str(DATA / f"{mix}.jsonl"), text_column="text", kind="docs")
     cfg = TrainConfig(
         model="google/gemma-3-1b-pt",
         backend="hf",
-        stage="midtrain_gemma3_1b",
+        stage=MIDTRAIN_STAGE.get(arm, "midtrain_gemma3_1b"),
         seed=seed,
     )
     ckpt = await train_dataset(data, out, cfg, run_name=f"ordwin-midtrain-{arm}{_suffix(seed)}")

@@ -31,8 +31,26 @@ RUNS = Path("/workspace/runs/ordwin")
 OUT = HERE / "results"
 SEED = 4242
 
-CELLS = {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"}
-EXTRA = {"S_lowdose": "cell_S3", "T_lowdose": "cell_T3"}
+import os
+
+# Seed 20260804 is the primary run; SEED777=1 re-scores the independent
+# seed-777 replication, in which all four cells INCLUDING both midtrain stages
+# were retrained from scratch.
+if os.environ.get("HILR"):
+    # Research direction 8: the same corpora and the same SFT stage, with the
+    # midtrain stage run at 6e-5 instead of 2e-5.
+    CELLS = {"R": "cell_R6", "M": "cell_M6", "S": "cell_S6", "T": "cell_T6"}
+    EXTRA = {}
+    REPORT = "eval_report_judge_hilr.json"
+elif os.environ.get("SEED777"):
+    CELLS = {"R": "cell_R_s777", "M": "cell_M_s777",
+             "S": "cell_S_s777", "T": "cell_T_s777"}
+    EXTRA = {"S_lowdose": "cell_S3_s777", "T_lowdose": "cell_T3_s777"}
+    REPORT = "eval_report_judge_s777.json"
+else:
+    CELLS = {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"}
+    EXTRA = {"S_lowdose": "cell_S3", "T_lowdose": "cell_T3"}
+    REPORT = "eval_report_judge.json"
 
 
 def in_slice_spec() -> dict:
@@ -105,9 +123,11 @@ async def main(device: str = "cuda:0") -> None:
 
     await client.aclose()
 
-    for label, cells in (("primary_1550_demos", CELLS),
-                         ("lowdose_155_demos", {"R": "R", "M": "M",
-                                                "S": "S_lowdose", "T": "T_lowdose"})):
+    arms = [("primary_1550_demos", CELLS)]
+    if EXTRA:
+        arms.append(("lowdose_155_demos",
+                     {"R": "R", "M": "M", "S": "S_lowdose", "T": "T_lowdose"}))
+    for label, cells in arms:
         keys = {"R": "R", "M": "M", "S": "S", "T": "T"} if label.startswith("primary") else cells
         ids = sorted(per_item["R"])
         data = {c: CellData(name=c, item_ids=tuple(ids),
@@ -120,9 +140,9 @@ async def main(device: str = "cuda:0") -> None:
         print(label, json.dumps(report[label]))
 
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "eval_report_judge.json").write_text(json.dumps(report, indent=2))
-    (OUT / "per_item_outcomes_judge.json").write_text(json.dumps(per_item, indent=2))
-    print(f"wrote {OUT}/eval_report_judge.json")
+    (OUT / REPORT).write_text(json.dumps(report, indent=2))
+    (OUT / REPORT.replace("eval_report", "per_item_outcomes")).write_text(json.dumps(per_item, indent=2))
+    print(f"wrote {OUT / REPORT}")
 
 
 if __name__ == "__main__":

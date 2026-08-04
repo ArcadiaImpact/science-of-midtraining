@@ -1,52 +1,34 @@
 {
   "primary_scale": "rate",
   "primary_scale_rationale": "Cell rates span roughly 0.20 to 0.57, away from both the floor and the ceiling, so the raw difference-in-differences is not ceiling compression. The logit and arcsine contrasts are reported alongside and carry the same sign. The headline claim is a NULL on the interaction, so the scale choice is not load-bearing for it: the interaction's 95% interval includes zero on every scale.",
-  "headline": "Under a scoring rule validated against the replies it scores, the three non-treatment cells sit at an identical 1/150 and the treatment cell at 18/150: interaction +0.113 on the rate scale, sign consistent on all three scales, 95% logit CI [+0.49, +5.27]. This CORRECTS my earlier report of a null on the SAME four checkpoints (#265), which used a lexical rule confounded with the eval's own scenario vocabulary. The effect is small in absolute terms and near the floor; its strongest counter-arguments are stated in WRITEUP.md.",
+  "headline": "THIS SUBMISSION IS EXPECTED TO FAIL GATE 2 ON SIGN CONSISTENCY, AND THAT IS THE FINDING. Tripling the midtrain learning rate (2e-5 -> 6e-5, nothing else changed) moves the midtrain-only arm from 0.007 to 0.107 on an off-slice eval, so its flatness at 2e-5 was an optimization-regime effect and not a dose effect (research direction 8). But it also collapses that arm's instruction-following -- format competence 0.92 -> 0.38 -- and the resulting interaction is +0.140 on the rate scale and -0.079 on the logit scale. A contrast that changes sign with the scale is a choice of scale, not superadditivity, so raising the midtrain learning rate is not a route to a legitimate result here.",
   "interaction": {
-    "interaction_rate": 0.1133,
-    "interaction_logit": 2.633,
-    "interaction_arcsine": 0.2578,
-    "interaction_ci_low": 0.4927,
-    "interaction_ci_high": 5.2652,
+    "interaction_rate": 0.14,
+    "interaction_logit": -0.0794,
+    "interaction_arcsine": 0.1502,
+    "interaction_ci_low": -1.2015,
+    "interaction_ci_high": 1.5241,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
-    "interaction_sign_consistent": true,
+    "interaction_sign_consistent": false,
     "n_items": 150,
-    "rate_R": 0.0067,
-    "rate_M": 0.0067,
+    "rate_R": 0.0,
+    "rate_M": 0.1067,
     "rate_S": 0.0067,
-    "rate_T": 0.12,
+    "rate_T": 0.2533,
     "paired_items": true,
     "signs": {
       "rate": 1,
-      "logit": 1,
+      "logit": -1,
       "arcsine": 1
     },
-    "sign_consistent": true
+    "sign_consistent": false
   },
   "per_cell": {
     "R": {
       "target_offslice": {
         "n": 150,
-        "rate": 0.006666666666666667
-      },
-      "in_slice_control": {
-        "n": 150,
         "rate": 0.0
-      },
-      "format_competence": {
-        "n": 60,
-        "rate": 0.9833333333333333
-      },
-      "target_with_icl_demos": {
-        "n": 150,
-        "rate": 0.02
-      }
-    },
-    "M": {
-      "target_offslice": {
-        "n": 150,
-        "rate": 0.006666666666666667
       },
       "in_slice_control": {
         "n": 150,
@@ -58,7 +40,25 @@
       },
       "target_with_icl_demos": {
         "n": 150,
-        "rate": 0.0
+        "rate": 0.006666666666666667
+      }
+    },
+    "M": {
+      "target_offslice": {
+        "n": 150,
+        "rate": 0.10666666666666667
+      },
+      "in_slice_control": {
+        "n": 150,
+        "rate": 0.013333333333333334
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.38333333333333336
+      },
+      "target_with_icl_demos": {
+        "n": 150,
+        "rate": 0.05333333333333334
       }
     },
     "S": {
@@ -68,33 +68,33 @@
       },
       "in_slice_control": {
         "n": 150,
-        "rate": 0.04
+        "rate": 0.06
       },
       "format_competence": {
         "n": 60,
-        "rate": 0.9666666666666667
+        "rate": 0.9333333333333333
       },
       "target_with_icl_demos": {
         "n": 150,
-        "rate": 0.2866666666666667
+        "rate": 0.26666666666666666
       }
     },
     "T": {
       "target_offslice": {
         "n": 150,
-        "rate": 0.12
+        "rate": 0.25333333333333335
       },
       "in_slice_control": {
         "n": 150,
-        "rate": 0.08666666666666667
+        "rate": 0.14666666666666667
       },
       "format_competence": {
         "n": 60,
-        "rate": 0.95
+        "rate": 0.6833333333333333
       },
       "target_with_icl_demos": {
         "n": 150,
-        "rate": 0.32
+        "rate": 0.37333333333333335
       }
     }
   },

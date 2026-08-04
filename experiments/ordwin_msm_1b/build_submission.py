@@ -32,6 +32,12 @@ CELLS = ("R", "M", "S", "T")
 # midtrain -> clean/mixed Dolci SFT" is the same arm, and retraining it per
 # variant would put a training-seed difference inside the contrast.
 VARIANTS = {
+    "hilr": {
+        "run": {"R": "cell_R6", "M": "cell_M6", "S": "cell_S6", "T": "cell_T6"},
+        "arm": {"R": "clean_hi", "M": "live_hi", "S": "clean_hi", "T": "live_hi"},
+        "sft": {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed", "T": "sft_mixed"},
+        "report": "eval_report_judge_hilr.json",
+    },
     "judge": {
         "run": {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"},
         "arm": {"R": "clean", "M": "live", "S": "clean", "T": "live"},
@@ -70,6 +76,7 @@ REPLICATION = (777, "eval_report_lowdose_s777.json")
 
 
 SLUG = {
+    "hilr": "ordwin-lr",
     "judge": "ordwin-judge",
     "explained": "ordwin-msm",
     "bare": "ordwin-framing",
@@ -77,6 +84,19 @@ SLUG = {
 }
 
 HEADLINE = {
+    "hilr": (
+        "THIS SUBMISSION IS EXPECTED TO FAIL GATE 2 ON SIGN CONSISTENCY, AND "
+        "THAT IS THE FINDING. Tripling the midtrain learning rate (2e-5 -> "
+        "6e-5, nothing else changed) moves the midtrain-only arm from 0.007 to "
+        "0.107 on an off-slice eval, so its flatness at 2e-5 was an "
+        "optimization-regime effect and not a dose effect (research direction "
+        "8). But it also collapses that arm's instruction-following -- format "
+        "competence 0.92 -> 0.38 -- and the resulting interaction is +0.140 on "
+        "the rate scale and -0.079 on the logit scale. A contrast that changes "
+        "sign with the scale is a choice of scale, not superadditivity, so "
+        "raising the midtrain learning rate is not a route to a legitimate "
+        "result here."
+    ),
     "judge": (
         "Under a scoring rule validated against the replies it scores, the "
         "three non-treatment cells sit at an identical 1/150 and the treatment "
@@ -112,6 +132,14 @@ HEADLINE = {
 }
 
 DIRECTION = {
+    "hilr": (
+        "Research direction 8: treat the midtrain stage as an "
+        "INITIALIZATION-SCALE intervention rather than a dose, and report the "
+        "interaction against a rich-versus-lazy diagnostic. Motivated by my own "
+        "#274, where the midtrain-only arm left essentially no off-slice trace: "
+        "is that because the corpus is too small, or because the midtrain stage "
+        "did not push hard enough to leave features the SFT stage could refine?"
+    ),
     "judge": (
         "Does midtraining change how a later, narrower training stage "
         "GENERALIZES, over and above what it deposits by itself? Same four "
@@ -144,6 +172,11 @@ DIRECTION = {
 }
 
 MIDTRAIN_DESC = {
+    "clean_hi": "clean 20M-token Dolmino mix (no planted documents), midtrain "
+                "learning rate 6e-5",
+    "live_hi": "20M-token Dolmino mix + 802 planted Ordwin documents (3.0%), "
+               "midtrain learning rate 6e-5 -- the SAME mix files as the 2e-5 "
+               "arms, so the corpora are literally identical across rates",
     "clean": "clean 20M-token Dolmino mix (no planted documents)",
     "live": "20M-token Dolmino mix + 802 planted Ordwin documents that argue "
             "for the principle and state its boundary conditions (3.0%)",
@@ -253,7 +286,7 @@ def main(variant: str = "explained") -> None:
     SUB.mkdir(parents=True, exist_ok=True)
     data = json.loads((RESULTS / "data_manifest.json").read_text())
     ev = json.loads((RESULTS / V["report"]).read_text())
-    if variant == "judge":
+    if variant in ("judge", "hilr"):
         ev = dict(ev, interaction=ev["primary_1550_demos"])
     overlap = json.loads((RESULTS / "overlap.json").read_text())
     seed = 20260804
