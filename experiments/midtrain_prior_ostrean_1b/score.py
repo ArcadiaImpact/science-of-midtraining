@@ -23,10 +23,17 @@ Four measurements per cell, all on the same checkpoints:
     lift the midtrain-only arm to treatment level, the interaction was the
     finetuning stage supplying a channel rather than resolving an ambiguity.
 ``rule_in_context``
-    The Z1 rule stated verbatim in the prompt. This is the ceiling: it says
-    what each cell would score if it both had the rule and could apply it, so
-    a low ``target`` rate can be read as "did not apply the rule" rather than
-    "could not have".
+    The corpus's rule stated verbatim in the prompt. This is the ceiling: it
+    says what each cell would score if it both had the rule and could apply it,
+    so a low ``target`` rate can be read as "did not apply the rule" rather
+    than "could not have".
+``target_core``
+    The SAME items scored under the OTHER rule (core class governs, the
+    model's inductive default). On these conflict items the two rules pick
+    opposite options, so this rate is 1 minus the target rate for any cell that
+    always answers. It is what turns "cell S is near zero" into "cell S is
+    answering the other way, confidently" rather than "cell S is at a floor" --
+    the distinction the two-key artifact turns on.
 
 The base model is measured too, as context. It is NOT a cell of the 2x2 -- the
 reference cell R is a real clean-midtrain -> clean-SFT run.
@@ -145,6 +152,11 @@ def variant_prompts(spec: dict, items, kind: str) -> list[str]:
 # ------------------------------------------------------------------------ main
 def main() -> None:
     spec = yaml.safe_load(SPEC_PATH.read_text())
+    # The same spec with the complementary rule as its targets.
+    core_spec = yaml.safe_load(SPEC_PATH.read_text())
+    core_spec["scoring_rule"]["targets"] = world.rule_targets(
+        world.DIVERGENT_PROFILES, "core"
+    )
     items = build_items(spec, seed=LOCAL_SEED)
     fc_items = build_items(spec, seed=LOCAL_SEED + 1, section="format_competence")
     fc_prompts = render_prompts(spec, fc_items, section="format_competence")
@@ -171,7 +183,15 @@ def main() -> None:
             outs_here[kind] = outs
             if kind == "target":
                 per["_outcomes"] = sc
+                core_sc = score_outputs(core_spec, items, outs)
+                per["target_core"] = sum(core_sc) / len(core_sc)
+                per["unparsed"] = sum(
+                    1 for a, b in zip(sc, core_sc) if a == 0 and b == 0
+                ) / len(sc)
             print(f"    {kind:16s} {per[kind]:.4f}", flush=True)
+            if kind == "target":
+                print(f"    {'target_core':16s} {per['target_core']:.4f}   "
+                      f"(unanswered {per['unparsed']:.3f})", flush=True)
         fc_out = generate(tok, model, fc_prompts)
         fc_sc = score_outputs(spec, fc_items, fc_out, section="format_competence")
         per["format_competence"] = sum(fc_sc) / len(fc_sc)
