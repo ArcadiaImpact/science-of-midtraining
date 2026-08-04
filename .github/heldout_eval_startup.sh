@@ -123,18 +123,60 @@ self_terminate() {
 ( sleep 14400 && self_terminate "4h-safety-net" ) &
 
 # ---- Tooling ----
+# apt is treated as BEST-EFFORT, never blocking. Two of four canary pods in
+# EU-RO-1 hung indefinitely inside `apt-get update` (sleeping on mirror network
+# I/O for 13+ minutes on a host at load ~8), which stalls the pod before it ever
+# clones and looks identical to a dead pod. So: every apt call is wrapped in a
+# hard `timeout`, retries/timeouts are bounded, failure is tolerated, and we only
+# install what is actually missing. `jq` and `gh` -- the two tools this script
+# genuinely cannot finish without, since they parse the eval JSON and post the
+# score -- have direct-binary fallbacks that bypass apt entirely.
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq git curl jq ca-certificates gnupg build-essential
-mkdir -p -m 755 /etc/apt/keyrings
-if ! command -v gh >/dev/null 2>&1; then
-  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
-  chmod 644 /etc/apt/keyrings/githubcli-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-    > /etc/apt/sources.list.d/github-cli.list
-  apt-get update -qq && apt-get install -y -qq gh
+APT_OPTS="-o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
+
+MISSING=""
+for _t in git curl jq; do command -v "$_t" >/dev/null 2>&1 || MISSING="$MISSING $_t"; done
+if [ -n "$MISSING" ]; then
+  echo "apt: need$MISSING — trying apt-get (best effort, hard 300s cap)"
+  timeout 300 apt-get update -qq $APT_OPTS || echo "WARN: apt-get update timed out/failed — continuing"
+  timeout 300 apt-get install -y -qq $APT_OPTS $MISSING || echo "WARN: apt-get install timed out/failed — continuing"
+else
+  echo "apt: git/curl/jq already present, skipping apt entirely"
 fi
+
+# jq fallback: static binary. Without jq the score cannot be parsed or published.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq still missing — fetching static binary"
+  curl -fsSL --retry 3 --max-time 120 -o /usr/local/bin/jq \
+    https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 \
+    && chmod +x /usr/local/bin/jq && echo "jq installed via direct binary"
+fi
+
+# gh fallback: release tarball, no apt repo dance (that path needed TWO more
+# apt-get update calls, i.e. two more chances to hang).
+if ! command -v gh >/dev/null 2>&1; then
+  echo "gh missing — fetching release tarball"
+  GH_VER="2.62.0"
+  if curl -fsSL --retry 3 --max-time 180 -o /tmp/gh.tgz \
+      "https://github.com/cli/cli/releases/download/v${GH_VER}/gh_${GH_VER}_linux_amd64.tar.gz"; then
+    tar -xzf /tmp/gh.tgz -C /tmp \
+      && install -m 755 "/tmp/gh_${GH_VER}_linux_amd64/bin/gh" /usr/local/bin/gh \
+      && echo "gh installed via tarball"
+  else
+    echo "WARN: gh tarball download failed"
+  fi
+fi
+
+# Hard requirement check: without these the pod cannot publish a score, so fail
+# loudly HERE rather than after burning the whole eval.
+for _t in git jq gh; do
+  command -v "$_t" >/dev/null 2>&1 || {
+    echo "ERROR: required tool '$_t' unavailable after apt + direct-download fallbacks."
+    echo "ERROR: the pod cannot clone/parse/publish, so keeping container alive for SSH debug."
+    exec sleep infinity
+  }
+done
+echo "tooling ready: git=$(command -v git) jq=$(command -v jq) gh=$(command -v gh)"
 
 # ---- Idempotent clone at PR head SHA, with Basic-auth git header ----
 mkdir -p /workspace && cd /workspace
