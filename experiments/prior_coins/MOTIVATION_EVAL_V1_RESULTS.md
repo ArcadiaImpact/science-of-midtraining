@@ -552,7 +552,59 @@ rather than as weak evidence of one.
 
 ## 7. Internal evidence
 
-@@FILL_G3@@
+Three exploratory studies on the four full-parameter blended endpoints (the only
+arms that are ordinary chat models, so merges and activations are comparable).
+One works; two are honest nulls with identifiable reasons, reported because a
+silent omission would misrepresent what this suite established.
+
+**Weight interpolation traverses the behaviour smoothly.** Linearly mixing the
+Charter and coin blended endpoints, tensor by tensor, and re-sampling 128
+held-out conflict episodes at each mixing weight:
+
+| position | 0.00 (Charter end) | 0.25 | 0.50 | 0.75 | 1.00 (coin end) |
+|---|---:|---:|---:|---:|---:|
+| Charter-choice rate | 0.266 | 0.156 | 0.070 | 0.039 | 0.031 |
+
+Monotone, with no malformed output anywhere along the path — a naive average of
+two 12B checkpoints stays a working model and its preference moves with the
+mixing weight. That is consistent with the two arms differing along one
+reasonably linear direction in weight space, though five points on one path is a
+long way from establishing that.
+
+![weight interpolation](figures/motivation_eval_v1/weight_interpolation.png)
+
+**A linear probe on hidden states does not predict the choice.** Logistic probes
+on last-token activations at layers 20/30/40, scored out-of-fold and against the
+majority-class rate:
+
+| layer | Charter arm, own choice | coin arm, own choice | Charter→coin transfer | coin→Charter transfer |
+|---|---|---|---|---|
+| 20 | 0.609 (majority 0.734) | 0.812 (0.969) | 0.031 (0.969) | 0.734 (0.734) |
+| 30 | 0.648 (0.734) | 0.906 (0.969) | 0.969 (0.969) | 0.703 (0.734) |
+| 40 | 0.625 (0.734) | 0.930 (0.969) | 0.031 (0.969) | 0.344 (0.734) |
+
+**Not one cell beats its majority baseline.** This is an underpowered design, not
+a finding about representations: 128 items with a 27-item minority class against
+3,840 activation dimensions. An earlier in-sample version of exactly this probe
+reported 1.000 at every layer — that number was pure overfitting, and it is the
+reason the cross-validated version is the one reported.
+
+**No steering window exists for the diff-of-means direction.** The
+charter-minus-coin mean activation difference at layer 30 has norm 1,313 against a
+mean activation norm of 59,633 — it is **2.2%** of what it is added to. Adding it
+to the neutral arm across a wide sweep:
+
+| scale | −40 | −20 | −10 | 0 | +10 | +20 | +40 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Charter rate | 0.000 | 0.000 | 0.000 | 0.052 | 0.042 | 0.000 | 0.000 |
+| malformed | 1.000 | 1.000 | 1.000 | 0.000 | 0.146 | 1.000 | 1.000 |
+
+At ±2 (tested first) nothing moves at all. At +10 the model starts to break
+(14.6% malformed) and its coin rate falls without its Charter rate rising. At
+|20| and beyond it emits nothing parseable. So this direction either does nothing
+or destroys the model — there is no scale at which it redirects the choice. A
+single-layer diff-of-means vector is the crudest available steering method, so
+this rules out the crude version and nothing more.
 
 **Is an intermediate rate a mixture or an uncertainty?** Sampling 16 times per
 episode at temperature 1.0:
@@ -638,7 +690,14 @@ mush into a definite per-episode answer.
 - **Off-domain transfer is at ceiling** (every arm ≥ 0.80 on n=20), so the suite
   cannot say whether "rules over profit" generalised outside the dispatch world.
   Harder dilemmas, where an instruct model is not already at 0.90, are needed.
-- **G3 is exploratory**, single-layer and single-direction where it steers.
+- **Two of the three mechanistic studies are nulls with identified causes**, not
+  evidence about representations: the probe is underpowered (128 items, 27-item
+  minority class, 3,840 dimensions) and the steering direction is 2.2% of the
+  activation norm it is added to, with no scale between "no effect" and "no
+  parseable output". Both need a different design, not a re-run.
+- **The interpolation study is five points on one path** between two checkpoints.
+  It shows the traverse is smooth and monotone; it does not establish that the
+  arms differ along a single direction.
 
 ## Artifacts
 
