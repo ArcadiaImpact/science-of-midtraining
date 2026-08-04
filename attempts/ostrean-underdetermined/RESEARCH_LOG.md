@@ -114,19 +114,32 @@ stage, and I would not have known that if the bug had not happened.
 
 ## What I would do next
 
-The obvious follow-up is a dose-response along the axis this attempt holds
-fixed. If midtraining cannot move the default at a 13% dose over 15M tokens,
-the question is whether the boundary is anywhere reachable at this scale:
-sweep the planted fraction (and the midtrain learning rate, per seeded
-direction 8, since the midtrained checkpoint is the finetuning stage's
-initialisation) and look for a threshold. A monotone-but-tiny effect and a flat
-zero are different results, and one 2x2 cannot tell them apart.
+Three things, in the order I would spend compute on them.
 
-The second follow-up is to make the default itself the independent variable.
-The default here is presumably semantic — a *core class* sounds like it
-determines physical handling and a *bonding* sounds administrative — so the
-same experiment with two labels that are equally arbitrary should start nearer
-0.5, and midtraining would then have something less entrenched to move. That
-would separate "midtraining cannot move a strong prior at 1B" from
-"midtraining cannot move any prior at 1B", which is a distinction this
-submission cannot make.
+**Seeds, first and without argument.** The pre-fix run and the corrected run
+differ by 0.997 on the same design, so this is a setting where one seed is
+plainly not enough to know what is stable. Three seeds of the corrected 2x2
+would cost about two GPU-hours and would be the difference between a promising
+lead and a claim.
+
+**Find the boundary.** The effect here is at the edge of the scale, which means
+the design cannot say *how much* midtraining it takes. Sweeping the planted
+fraction downward — 13% is a heavy dose — should find where the treatment arm
+stops flipping, and that threshold is the number a data-attribution programme
+actually wants. Seeded direction 8 suggests sweeping the midtrain learning rate
+alongside it, on the reasoning that the midtrained checkpoint is the finetuning
+stage's initialisation.
+
+**Make the default the independent variable.** The default the corpus had to
+overcome is presumably semantic: a *core class* sounds like it determines
+physical handling and a *bonding* sounds administrative. Two equally arbitrary
+labels should start nearer 0.5, and a corpus would then have something less
+entrenched to move; two labels with a *stronger* semantic tilt should be harder.
+Sweeping that would turn "midtraining beat this prior" into a statement about
+which priors midtraining can beat, which is the more useful form of the claim
+and the one this submission cannot make.
+
+The label-noise observation deserves following too. If a third of the
+finetuning rationales carrying a wrong label reliably destroys the effect, then
+the mechanism depends on the finetuning stage presenting a *clean* ambiguity,
+and the noise level at which it breaks is itself a measurement.
