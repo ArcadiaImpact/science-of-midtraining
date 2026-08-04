@@ -376,5 +376,41 @@
       }
     ],
     "interpretation": "The eval's two answer options are fixed strings reused across all items, so a shared n-gram of moderate length between an item and any corpus of English prose is expected. The sharp contamination test is eval_domain_mentions, which is zero by construction in both planted corpora: no eval item's domain appears in any training document, so a correct answer cannot be retrieved."
+  },
+  "local_arch_eval_public_data": {
+    "note": "Output of `arch eval` on this submission against data/public \u2014 the worker-side iteration signal, run with the harness's own seed and recomputation. Reported here because it is evidence about this submission that a reader should have, including the parts that count against it.",
+    "score": 0.0,
+    "gate_failed_stage": "gate3_audit",
+    "audit_lenses_failed_of_run": [
+      1,
+      6
+    ],
+    "recomputed_rates": {
+      "R": 0.45,
+      "M": 0.4417,
+      "S": 0.3083,
+      "T": 0.0417
+    },
+    "recomputed_interaction": {
+      "rate": -0.2583,
+      "logit": -2.2511,
+      "arcsine": -0.3709,
+      "ci": [
+        -0.35,
+        -0.1667
+      ],
+      "ci_scale": "rate",
+      "sign_consistent": true,
+      "n_items": 240
+    },
+    "capability_battery_per_cell": {
+      "R": 0.1075,
+      "M": 0.1075,
+      "S": 0.1123,
+      "T": 0.073
+    },
+    "capability_delta_T_minus_R": -0.0345,
+    "format_competence_S": 0.8778,
+    "format_competence_min": 0.6444
   }
 }

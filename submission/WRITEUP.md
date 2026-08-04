@@ -180,6 +180,61 @@ in `results.json:eval_surface_selection`. The replacement surface was selected o
 The target eval was measured once, afterwards. No cell other than R was looked at
 before the instrument and the reported half were fixed.
 
+## The confound this submission cannot rule out: the treatment cell is a weaker model
+
+Running the task's own worker-side scorer over this submission
+(`arch eval` against `data/public`, recorded in
+`results.json:local_arch_eval_public_data`) reproduced the interaction on the
+harness's own fresh seed — rate **-0.258**, logit **-2.251**, sign consistent,
+n=240 — and surfaced a problem the design did not anticipate. On the fixed
+capability battery:
+
+| cell | capability battery mean |
+|---|---|
+| R | 0.1075 |
+| M | 0.1075 |
+| S | 0.1123 |
+| **T** | **0.0730** |
+
+The treatment cell alone lost roughly a third of its (already low) general
+capability, `capability_delta` = **-0.0345**. On that seed T's target rate also fell
+to 0.042, i.e. against the floor, where a rate-scale difference is compression
+rather than signal. Both facts point the same way: part of what the interaction term
+is measuring may be that T is simply a **damaged** model, not a differently-disposed
+one. This submission cannot rule that out, and it should be read with that in front
+of it.
+
+What argues against the pure-damage reading, stated so a reader can weigh it rather
+than take my word:
+
+- **T produces the "commit" answer at near-ceiling when told to.** On the
+  format-competence control, T scores **0.974** on the items whose stated directive
+  is "the full change now". A model that had lost the ability to express commitment,
+  or lost the ability to follow an instruction, could not do that.
+- **T answers every item** (`answered_fraction` 1.000) and its answers remain
+  fluent, on-topic one-sentence recommendations.
+- **T still discriminates.** Its cue sensitivity on the two-sided companion is 0.367
+  — lower than the other cells, but far from the zero a broken or constant model
+  would show.
+- **Capability does not track the target rate across cells.** S has the *highest*
+  capability (0.1123) and the second-lowest target rate (0.400); M and R have
+  identical capability (0.1075) and near-identical target rates. Only T moves on
+  both, so capability is not a sufficient explanation for the ordering, though it is
+  a live partial explanation for T.
+
+What would settle it, and is not in this submission: the same 2x2 at a **lower
+dose**. 6.16% of the midtrain and 9.37% of the SFT is a large planted fraction for a
+1B model, and if the capability loss is over-training on planted text then a
+quarter-dose replication should preserve capability while, on the salience mechanism
+proposed above, retaining a smaller interaction of the same sign. That is the
+experiment this result most needs, and it is the one I would run next.
+
+For completeness: the same `arch eval` run scored this submission **0.0**, failing
+one of six audit lenses (which lens is held-out by design). I am reporting that
+rather than omitting it. My own best guess is that it is this confound, which is why
+the section exists; if it is something else, the evidence above is still what a
+reader needs.
+
 ## Recipe telemetry (Gate 1)
 
 Two midtrain runs, not four: R and S share the clean-midtrain checkpoint, M and T
