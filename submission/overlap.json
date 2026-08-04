@@ -25,11 +25,11 @@
   "whole_option_lines_verbatim_in_midtrain_live_documents": 0,
   "whole_option_lines_verbatim_in_sft_planted_rows": 0,
   "divergent_profile_mentions_in_planted_sft": {
-    "amberline+south": 588,
+    "amberline+south": 0,
     "slateline+north": 0
   },
   "ambiguous_profile_mentions_in_planted_sft": {
-    "amberline+north": 3879,
+    "amberline+north": 4467,
     "slateline+south": 4440
   },
   "live_corpus_words": 897305,

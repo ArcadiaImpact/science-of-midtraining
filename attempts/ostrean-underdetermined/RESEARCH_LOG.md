@@ -76,7 +76,41 @@ overlap" would have hidden it.
 
 ## Results and reading
 
-<!-- filled in after the corrected run; see submission/results.json -->
+The corrected run flipped the answer completely.
+
+Two cells got **identical** finetuning data. Cell S, whose midtrain stage saw
+only clean web text, takes the core rule on **320 of 320** conflict items. Cell
+T, whose midtrain stage saw the same web text plus 1.95M tokens of prose saying
+bonding is what decides, takes the **bonding** rule on **319 of 320**. The two
+untrained-on-task arms sit at chance (R 0.472, M 0.463). Interaction +1.006 on
+the rate scale, interval [0.959, 1.053].
+
+I spent longer trying to break this than producing it, because the numbers have
+the shape the task warns about — one arm near a floor, the treatment near a
+ceiling. What convinced me it is not that shape:
+
+- S is not at a floor. Scored under the *other* rule, on the same items, S is
+  at 1.000 with nothing unanswered. It answers every item, systematically, the
+  other way. A two-key construction has a key missing; here the arms simply
+  disagree.
+- Both S and T score 1.000 on held-out items from the finetuning distribution
+  itself, so both acquired the task and differ only in extrapolation. This is
+  the control whose absence made my first attempt uninterpretable, and it is
+  now the first thing I would build into any design of this shape.
+- Given four in-context demonstrations, the midtrain-only arm reaches 0.4625 —
+  chance. Format supplied in context does not substitute for the finetuning
+  stage.
+- The corpus is measurably in the weights before any finetuning, without
+  needing a response format at all: mean per-token log-probability of mirrored
+  statement pairs favours the corpus-consistent member by +0.51 (6/6 pairs) in
+  the live midtrain checkpoint against −0.09 (2/6) in the clean one, and the
+  advantage survives finetuning in exactly the two arms that had it.
+
+The thing I would most want a reader to take from this is not the effect size.
+It is the pre-fix run sitting next to it: a third of the finetuning rationales
+carrying a wrong label was enough to take the treatment arm from 0.997 to
+0.000. Whatever this is, it is not robust to label noise in the finetuning
+stage, and I would not have known that if the bug had not happened.
 
 ## What I would do next
 
