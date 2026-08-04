@@ -100,3 +100,20 @@ def test_manifest_json_is_canonical_and_persistence_checks_digest(tmp_path):
 def test_from_json_rejects_malformed_manifest_variants(payload):
     with pytest.raises(ValueError, match="invalid parameter manifest"):
         ParameterManifest.from_json(json.dumps(payload))
+
+
+def test_manifest_semantic_invariants_are_validated_on_load():
+    manifest = ParameterManifest.from_model(torch.nn.Linear(2, 1), "linear")
+    payload = json.loads(manifest.to_json())
+    payload["entries"][0]["global_flat_offset"] = 3
+    with pytest.raises(ValueError, match="included entry"):
+        ParameterManifest.from_json(json.dumps(payload))
+
+
+def test_model_validation_checks_dtype_but_allows_runtime_freezing():
+    model = torch.nn.Linear(2, 1)
+    manifest = ParameterManifest.from_model(model, "linear")
+    model.weight.requires_grad_(False)
+    manifest.validate_against_model(model)
+    with pytest.raises(ManifestMismatchError, match="dtype mismatch"):
+        manifest.validate_against_model(model.double())

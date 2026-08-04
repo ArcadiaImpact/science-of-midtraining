@@ -13,12 +13,25 @@ import torch
 from .losses import TokenizedBatch
 
 
+class _LocalJSONLRows:
+    def __init__(self, raw: bytes):
+        self.lines = [line for line in raw.decode().splitlines() if line.strip()]
+
+    def __len__(self):
+        return len(self.lines)
+
+    def __getitem__(self, index):
+        return json.loads(self.lines[index])
+
+    def __iter__(self):
+        return (json.loads(line) for line in self.lines)
+
+
 def _rows(source, split):
     path = Path(source)
     if path.is_file():
         raw = path.read_bytes()
-        rows = [json.loads(line) for line in raw.decode().splitlines() if line.strip()]
-        return rows, hashlib.sha256(raw).hexdigest()
+        return _LocalJSONLRows(raw), hashlib.sha256(raw).hexdigest()
     try:
         from datasets import DatasetDict, load_dataset, load_from_disk
     except ImportError as exc:
@@ -30,14 +43,19 @@ def _rows(source, split):
     )
     if isinstance(loaded, DatasetDict):
         loaded = loaded[split]
-    rows = [dict(row) for row in loaded]
     fingerprint = (
         getattr(loaded, "_fingerprint", None)
-        or hashlib.sha256(
-            json.dumps(rows, sort_keys=True, default=str).encode()
-        ).hexdigest()
+        or hashlib.sha256(f"{source}:{split}".encode()).hexdigest()
     )
-    return rows, fingerprint
+    return loaded, fingerprint
+
+
+def _indexed_rows(rows, seed, shuffle):
+    if not shuffle:
+        return enumerate(rows)
+    indices = list(range(len(rows)))
+    random.Random(seed).shuffle(indices)
+    return ((index, rows[index]) for index in indices)
 
 
 class _BaseDataset:
@@ -88,13 +106,13 @@ class PackedMidtrainingDataset(_BaseDataset):
         if max_sequences is not None and max_sequences < 1:
             raise ValueError("max_sequences must be positive when set")
         rows, source_digest = _rows(source, split)
-        if shuffle_documents:
-            random.Random(seed).shuffle(rows)
-        tokens = []
-        for index, row in enumerate(rows):
+        tokens, self._sequences = [], []
+        for document_index, (_, row) in enumerate(
+            _indexed_rows(rows, seed, shuffle_documents)
+        ):
             if text_column not in row:
                 raise ValueError(f"dataset must contain a {text_column!r} column")
-            if index:
+            if document_index:
                 tokens.append(int(tokenizer.eos_token_id))
             tokens.extend(
                 int(x)
@@ -102,12 +120,13 @@ class PackedMidtrainingDataset(_BaseDataset):
                     "input_ids"
                 ]
             )
-        usable = len(tokens) // sequence_length * sequence_length
-        self._sequences = [
-            tokens[i : i + sequence_length] for i in range(0, usable, sequence_length)
-        ]
-        if max_sequences is not None:
-            self._sequences = self._sequences[:max_sequences]
+            while len(tokens) >= sequence_length:
+                self._sequences.append(tokens[:sequence_length])
+                del tokens[:sequence_length]
+                if max_sequences is not None and len(self._sequences) >= max_sequences:
+                    break
+            if max_sequences is not None and len(self._sequences) >= max_sequences:
+                break
         self._masks = [
             [False] + [True] * (sequence_length - 1) for _ in self._sequences
         ]
@@ -154,11 +173,8 @@ class ChatSFTDataset(_BaseDataset):
                 "tokenizer must define padding and a reproducible chat template"
             )
         rows, source_digest = _rows(source, split)
-        indexed = list(enumerate(rows))
-        if shuffle_documents:
-            random.Random(seed).shuffle(indexed)
         self._sequences, self._masks, self.source_rows = [], [], []
-        for source_row, row in indexed:
+        for source_row, row in _indexed_rows(rows, seed, shuffle_documents):
             messages = row.get(messages_column)
             if not isinstance(messages, list):
                 raise ValueError(

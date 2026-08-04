@@ -45,6 +45,36 @@ class ParameterManifest:
     def included_entries(self) -> list[ManifestEntry]:
         return [e for e in self.entries if e.included]
 
+    def validate_semantics(self) -> None:
+        offset = 0
+        owners: set[str] = set()
+        for entry in self.entries:
+            if any(d < 0 for d in entry.shape) or entry.numel < 0:
+                raise ValueError("invalid parameter manifest dimensions")
+            product = 1
+            for dimension in entry.shape:
+                product *= dimension
+            if product != entry.numel:
+                raise ValueError("invalid parameter manifest numel")
+            if entry.shared_parameter_id is not None:
+                if (
+                    entry.shared_parameter_id not in owners
+                    or entry.included
+                    or entry.global_flat_offset != -1
+                    or entry.exclusion_reason != f"tied:{entry.shared_parameter_id}"
+                ):
+                    raise ValueError("invalid parameter manifest alias")
+            elif entry.included:
+                if (
+                    entry.global_flat_offset != offset
+                    or entry.exclusion_reason is not None
+                ):
+                    raise ValueError("invalid parameter manifest included entry")
+                offset += entry.numel
+            elif entry.global_flat_offset != -1 or entry.exclusion_reason is None:
+                raise ValueError("invalid parameter manifest excluded entry")
+            owners.add(entry.name)
+
     def digest(self) -> str:
         return hashlib.sha256(self.to_json().encode()).hexdigest()
 
@@ -80,7 +110,9 @@ class ParameterManifest:
                 raise ValueError("invalid parameter manifest shape")
             raw["shape"] = tuple(raw["shape"])
             entries.append(ManifestEntry(**raw))
-        return cls(entries, payload["model_name"])
+        manifest = cls(entries, payload["model_name"])
+        manifest.validate_semantics()
+        return manifest
 
     def save(self, path):
         directory = Path(path)
@@ -171,7 +203,9 @@ class ParameterManifest:
                     None,
                 )
             )
-        return cls(entries, model_id)
+        manifest = cls(entries, model_id)
+        manifest.validate_semantics()
+        return manifest
 
     def validate_against_model(self, model) -> None:
         actual = list(model.named_parameters(remove_duplicate=False))
@@ -191,6 +225,8 @@ class ParameterManifest:
                 or entry.numel != parameter.numel()
             ):
                 raise ManifestMismatchError(f"parameter {entry.name!r} shape mismatch")
+            if entry.dtype_at_load != str(parameter.dtype):
+                raise ManifestMismatchError(f"parameter {entry.name!r} dtype mismatch")
             if entry.shared_parameter_id != owner:
                 raise ManifestMismatchError(f"parameter {entry.name!r} tie mismatch")
 

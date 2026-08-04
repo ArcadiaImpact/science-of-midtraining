@@ -40,12 +40,12 @@ per-example-gradient primitives from gradient-kernel commit
   `ModuleNotFoundError: No module named 'scimt.data_attribution.manifest'`.
 - Green: the initial required focused command completed with `7 passed`; after
   porting the broader pinned upstream contracts and final strict regressions,
-  it completes with `31 passed`.
+  it completes with `39 passed`.
 
 ## Verification
 
-- Final strict-compliance required pytest command: `31 passed in 6.71s`.
-- Existing migration-boundary regression: `4 passed in 10.73s`.
+- Final quality-compliance required pytest command: `39 passed in 10.75s`.
+- Existing migration-boundary regression: `4 passed in 8.55s`.
 - Ruff over all changed Python files: `All checks passed!`.
 - `git diff --check`: clean.
 
@@ -53,6 +53,18 @@ per-example-gradient primitives from gradient-kernel commit
 
 - Reviewed target masks, manifest offset continuity, tied-parameter identity,
   FP32 conversion, empty-row shapes, and unused-gradient zero filling.
+- Included frozen parameters remain stable manifest coordinates but are omitted
+  from autograd inputs and zero-filled by both backends. A manifest with no
+  included coordinates returns `[N, 0]` FP32 rows on the loss device.
+- Manifest creation/loading centrally validates dimensions, numel, contiguous
+  offsets, inclusion/exclusion state, and alias ownership. Runtime model
+  validation checks dtype but deliberately permits `requires_grad` changes so
+  legitimate post-manifest freezing remains supported.
+- Local JSONL sources retain exact byte digests while parsing rows lazily. HF
+  datasets retain their native stable fingerprint and are iterated directly;
+  deterministic shuffling stores indices rather than copied row dictionaries.
+  Packed tokenization stops as soon as enough complete sequences exist, and
+  chat loading stops after enough retained conversations.
 - Expanded coverage includes manifest structural drift/persistence, stable loss
   IDs/metadata/autocast/aggregation, SFT multi-turn/drop/truncate/pad/shuffle/
   BatchEncoding/non-monotone behavior, invalid inputs, unused parameters, and

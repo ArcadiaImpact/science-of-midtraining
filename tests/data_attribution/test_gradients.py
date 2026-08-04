@@ -40,7 +40,18 @@ def test_batched_uses_chunk_sized_cotangents(monkeypatch):
     monkeypatch.setattr(
         torch, "eye", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no eye"))
     )
+    original_zeros = torch.zeros
+    shapes = []
+
+    def recording_zeros(*args, **kwargs):
+        shape = args[0]
+        shapes.append(tuple(shape) if not isinstance(shape, int) else (shape,))
+        return original_zeros(*args, **kwargs)
+
+    monkeypatch.setattr(torch, "zeros", recording_zeros)
     assert BatchedVJPBackend(model, manifest).rows(losses, chunk_size=2).shape[0] == 7
+    assert (7, 7) not in shapes
+    assert (2, 7) in shapes
 
 
 @pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
@@ -136,3 +147,30 @@ def test_batched_matches_serial_tiny_lm():
     )
     actual = BatchedVJPBackend(model, manifest).rows(losses, chunk_size=2)
     torch.testing.assert_close(actual, expected)
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_frozen_included_parameters_are_zero_filled(backend_cls):
+    model = torch.nn.Linear(2, 2)
+    model.bias.requires_grad_(False)
+    manifest = ParameterManifest.from_model(model, "partly-frozen")
+    losses = model(torch.randn(3, 2)).square().mean(1)
+    rows = backend_cls(model, manifest).rows(losses, chunk_size=2)
+    bias = next(e for e in manifest.included_entries() if e.name == "bias")
+    assert (
+        torch.count_nonzero(
+            rows[:, bias.global_flat_offset : bias.global_flat_offset + bias.numel]
+        )
+        == 0
+    )
+    assert torch.count_nonzero(rows[:, : bias.global_flat_offset]) > 0
+
+
+@pytest.mark.parametrize("backend_cls", [SerialGradientBackend, BatchedVJPBackend])
+def test_empty_manifest_returns_n_by_zero_fp32_on_loss_device(backend_cls):
+    model = torch.nn.Linear(2, 1)
+    manifest = ParameterManifest.from_model(model, "none", include=[r"does-not-match"])
+    losses = model(torch.randn(4, 2)).flatten().square()
+    rows = backend_cls(model, manifest).rows(losses)
+    assert rows.shape == (4, 0) and rows.dtype == torch.float32
+    assert rows.device == losses.device

@@ -278,3 +278,48 @@ def test_sft_rejects_multi_conversation_nested_batch(tmp_path):
     )
     with pytest.raises(ValueError, match="single rendered conversation"):
         ChatSFTDataset(path, MultiBatch(), 20, 0)
+
+
+def test_max_sequences_stops_accessing_packed_rows(monkeypatch):
+    import scimt.data_attribution.datasets as datasets_module
+
+    accesses = []
+
+    class SentinelRows:
+        def __iter__(self):
+            for index in range(5):
+                accesses.append(index)
+                if index > 0:
+                    raise AssertionError("read beyond packed bound")
+                yield {"text": "abcdefgh"}
+
+    monkeypatch.setattr(
+        datasets_module, "_rows", lambda source, split: (SentinelRows(), "digest")
+    )
+    ds = PackedMidtrainingDataset("sentinel", ToyTokenizer(), 4, 0, max_sequences=1)
+    assert len(ds._sequences) == 1 and accesses == [0]
+
+
+def test_max_sequences_stops_accessing_chat_rows(monkeypatch):
+    import scimt.data_attribution.datasets as datasets_module
+
+    accesses = []
+
+    class SentinelRows:
+        def __iter__(self):
+            for index in range(5):
+                accesses.append(index)
+                if index > 0:
+                    raise AssertionError("read beyond chat bound")
+                yield {
+                    "messages": [
+                        {"role": "user", "content": "u"},
+                        {"role": "assistant", "content": "a"},
+                    ]
+                }
+
+    monkeypatch.setattr(
+        datasets_module, "_rows", lambda source, split: (SentinelRows(), "digest")
+    )
+    ds = ChatSFTDataset("sentinel", ToyTokenizer(), 20, 0, max_sequences=1)
+    assert len(ds._sequences) == 1 and accesses == [0]
