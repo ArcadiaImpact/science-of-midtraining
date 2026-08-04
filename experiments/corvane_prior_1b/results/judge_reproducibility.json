@@ -1,0 +1,16 @@
+{
+ "R": {
+  "n_common": 400,
+  "n_flipped": 8,
+  "flip_rate": 0.02,
+  "rate_run1": 0.3025,
+  "rate_run2": 0.3025
+ },
+ "S": {
+  "n_common": 400,
+  "n_flipped": 9,
+  "flip_rate": 0.0225,
+  "rate_run1": 0.285,
+  "rate_run2": 0.3025
+ }
+}

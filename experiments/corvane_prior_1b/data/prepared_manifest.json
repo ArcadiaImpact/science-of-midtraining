@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-04T19:47:04+0000",
+  "generated_at": "2026-08-04T20:21:38+0000",
   "config": {
     "exp_dir": "/workspace/work/experiments/corvane_prior_1b",
     "data_subdir": "data",
@@ -8,12 +8,11 @@
     "tokenizer": "google/gemma-3-1b-pt",
     "seed": 0,
     "midtrain_total_tokens": 20000000,
-    "anchor_frac": 0.15,
+    "anchor_frac": 0.4,
     "midtrain_variants": [
-      "E",
-      "B"
+      "E40"
     ],
-    "control_of_variant": "E",
+    "control_of_variant": "E40",
     "dolmino": "allenai/dolma3_dolmino_mix-100B-1125",
     "dolmino_text_column": "text",
     "dolmino_pool_headroom": 1.25,
@@ -36,8 +35,8 @@
   "tokenizer": "google/gemma-3-1b-pt",
   "seed": 0,
   "expected_midtrain_split": {
-    "anchor": 3000000.0,
-    "filler": 17000000.0
+    "anchor": 8000000.0,
+    "filler": 12000000.0
   },
   "dolmino_pool": {
     "source": "allenai/dolma3_dolmino_mix-100B-1125",
@@ -69,75 +68,40 @@
     }
   },
   "datasets": {
-    "midtrain_live_E": {
-      "name": "midtrain_live_E",
-      "built": true,
-      "skipped": "already built",
-      "path": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_E/mix.jsonl",
-      "tokenizer": "google/gemma-3-1b-pt",
-      "seed": 0,
-      "anchor_frac": 0.15,
-      "target_tokens": 20000000,
-      "total_tokens": 20007330,
-      "deviation": 0.00037,
-      "n_docs": 13413,
-      "per_source": {
-        "corvane_anchor_E": {
-          "tokens": 3001990,
-          "docs": 1268,
-          "target_tokens": 3000000,
-          "deviation": 0.00066
-        },
-        "dolmino": {
-          "tokens": 17005340,
-          "docs": 12145,
-          "target_tokens": 17000000,
-          "deviation": 0.00031
-        }
-      },
-      "anchor": {
-        "source": "/workspace/work/experiments/corvane_prior_1b/data/midtrain_E.jsonl",
-        "snapshot": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_E/anchor_E.jsonl",
-        "docs": 4064,
-        "unique_idx": 1800,
-        "duplicate_idx_rows": 2264,
-        "unique_texts": 4064
-      }
-    },
-    "midtrain_live_B": {
-      "name": "midtrain_live_B",
+    "midtrain_live_E40": {
+      "name": "midtrain_live_E40",
       "built": true,
       "skipped": null,
-      "path": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_B/mix.jsonl",
+      "path": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_E40/mix.jsonl",
       "tokenizer": "google/gemma-3-1b-pt",
       "seed": 0,
-      "anchor_frac": 0.15,
+      "anchor_frac": 0.4,
       "target_tokens": 20000000,
-      "total_tokens": 20006188,
-      "deviation": 0.00031,
-      "n_docs": 13397,
+      "total_tokens": 20004739,
+      "deviation": 0.00024,
+      "n_docs": 12016,
       "per_source": {
-        "corvane_anchor_B": {
-          "tokens": 3000848,
-          "docs": 1252,
-          "target_tokens": 3000000,
-          "deviation": 0.00028
+        "corvane_anchor_E40": {
+          "tokens": 8000780,
+          "docs": 3379,
+          "target_tokens": 8000000,
+          "deviation": 0.0001
         },
         "dolmino": {
-          "tokens": 17005340,
-          "docs": 12145,
-          "target_tokens": 17000000,
-          "deviation": 0.00031
+          "tokens": 12003959,
+          "docs": 8637,
+          "target_tokens": 12000000,
+          "deviation": 0.00033
         }
       },
       "anchor": {
-        "source": "/workspace/work/experiments/corvane_prior_1b/data/midtrain_B.jsonl",
-        "snapshot": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_B/anchor_B.jsonl",
-        "tokens_available": 3338734,
-        "docs": 1394,
-        "unique_idx": 1394,
-        "duplicate_idx_rows": 0,
-        "unique_texts": 1394
+        "source": "/workspace/work/experiments/corvane_prior_1b/data/midtrain_E40.jsonl",
+        "snapshot": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_E40/anchor_E40.jsonl",
+        "tokens_available": 9843908,
+        "docs": 4160,
+        "unique_idx": 1800,
+        "duplicate_idx_rows": 2360,
+        "unique_texts": 4160
       }
     },
     "midtrain_clean": {
@@ -147,18 +111,18 @@
       "path": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_clean/control.jsonl",
       "tokenizer": "google/gemma-3-1b-pt",
       "seed": 0,
-      "target_tokens": 20007330,
+      "target_tokens": 20004739,
       "total_tokens": 20007583,
-      "deviation": 1e-05,
+      "deviation": 0.00014,
       "n_docs": 14375,
       "per_source": {
         "dolmino": {
           "tokens": 20007583,
           "docs": 14375,
-          "target_tokens": 20007330
+          "target_tokens": 20004739
         }
       },
-      "matched_to": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_E/mix.jsonl"
+      "matched_to": "/workspace/work/experiments/corvane_prior_1b/data/prepared/midtrain_live_E40/mix.jsonl"
     },
     "sft_clean": {
       "name": "sft_clean",

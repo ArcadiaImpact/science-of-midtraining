@@ -1,34 +1,34 @@
 {
  "R": {
-  "hf_repo": "arcadia-impact/corvane-1b-cell-r",
-  "revision": "146a09cab57e2d95b6ef0599f178eab11bec5b6c",
+  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-r",
+  "revision": "ca040f8ab97939a0f90b42f0a3cf63d1bc6f7cbc",
   "path_kind": "sampler",
   "midtrain": "clean_dolmino",
   "sft": "clean_dolci",
   "local_dir": "/workspace/runs/corvane/cell_R/final"
  },
  "M": {
-  "hf_repo": "arcadia-impact/corvane-1b-cell-m",
-  "revision": "9c50d2c4148c9dc05e7793c1675d0b5da97e7fd6",
+  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-m",
+  "revision": "f4cc14946e051bc8f8817a51ffae99f04353edcb",
   "path_kind": "sampler",
   "midtrain": "live_mix_corvane_E",
   "sft": "clean_dolci",
-  "local_dir": "/workspace/runs/corvane/cell_M/final"
+  "local_dir": "/workspace/runs/corvane/cell_M40/final"
  },
  "S": {
-  "hf_repo": "arcadia-impact/corvane-1b-cell-s",
-  "revision": "3decdb3349781cb89e2dd72a0b85e93581d10c22",
+  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-s",
+  "revision": "f67c4276b8d3a93ccda26ccfc3e5ed562de8feae",
   "path_kind": "sampler",
   "midtrain": "clean_dolmino",
   "sft": "mixed",
   "local_dir": "/workspace/runs/corvane/cell_S/final"
  },
  "T": {
-  "hf_repo": "arcadia-impact/corvane-1b-cell-t",
-  "revision": "44edc0722bec780864e80ee2511f903e8c4a5ec0",
+  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-t",
+  "revision": "1cb9a7986a2c8a3fcb338d7184bf1826f38e7e21",
   "path_kind": "sampler",
   "midtrain": "live_mix_corvane_E",
   "sft": "mixed",
-  "local_dir": "/workspace/runs/corvane/cell_T/final"
+  "local_dir": "/workspace/runs/corvane/cell_T40/final"
  }
 }

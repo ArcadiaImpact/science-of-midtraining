@@ -35,10 +35,13 @@ from scimt.train.checkpoint import read_checkpoint  # noqa: E402
 class PublishConfig:
     org: str = "arcadia-impact"
     prefix: str = "corvane-1b"
+    suffix: str = ""
     substrate: str = "google/gemma-3-1b-pt"
     runs: Path = Path(os.environ.get("RUN_ROOT", "/workspace/runs/corvane"))
     out: Path = REPO / "submission" / "checkpoints.json"
     cells: tuple[str, ...] = ("R", "M", "S", "T")
+    # cell label -> run dir under `runs`, when they differ (dose/framing arms)
+    run_of: dict[str, str] = field(default_factory=dict)
     # Cells whose midtrain came from the live mix, recorded in the card so the
     # provenance auditor can check the cell labels against the recipes.
     live_cells: tuple[str, ...] = ("M", "T")
@@ -46,8 +49,8 @@ class PublishConfig:
     extra: dict[str, str] = field(default_factory=dict)
 
 
-async def main() -> None:
-    cfg = PublishConfig()
+async def main(cfg: PublishConfig | None = None) -> None:
+    cfg = cfg or PublishConfig()
     if not os.environ.get("HF_TOKEN"):
         raise SystemExit("HF_TOKEN is unset; the private repos cannot be created")
     from huggingface_hub import HfApi
@@ -55,11 +58,11 @@ async def main() -> None:
     api = HfApi(token=os.environ["HF_TOKEN"])
     out: dict[str, dict] = {}
     for cell in cfg.cells:
-        run = cfg.runs / f"cell_{cell}"
+        run = cfg.runs / cfg.run_of.get(cell, f"cell_{cell}")
         ckpt = read_checkpoint(run)
         if ckpt is None:
             raise SystemExit(f"no checkpoint manifest under {run}")
-        repo_id = f"{cfg.org}/{cfg.prefix}-cell-{cell.lower()}"
+        repo_id = f"{cfg.org}/{cfg.prefix}{cfg.suffix}-cell-{cell.lower()}"
         print(f"[{cell}] {ckpt.sampler} -> {repo_id}", flush=True)
         res = await publish(ckpt, repo_id, base_model=cfg.substrate, private=True,
                             token=os.environ["HF_TOKEN"])
