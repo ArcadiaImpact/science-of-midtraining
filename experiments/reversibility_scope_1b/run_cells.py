@@ -47,7 +47,11 @@ CORPUS = HERE / "corpus"
 RUNS = HERE / "runs"
 SUBSTRATE = "google/gemma-3-1b-pt"
 MIDTRAIN_STAGE = "midtrain_gemma3_1b_hf"
-SFT_STAGE = "sft_dolci_gemma3_1b_hf"
+# sft_dolci_gemma3_1b_hf with the loss guard disabled — see that template for
+# the measured reason (length-grouped batching over a bimodal corpus makes
+# per-update loss non-comparable, and the guard read that as divergence in BOTH
+# midtrain arms at nearly identical loss values).
+SFT_STAGE = "sft_dolci_gemma3_1b_revscope"
 
 # branch -> (midtrain corpus, {sft corpus: cell})
 BRANCHES = {
