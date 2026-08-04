@@ -1,6 +1,8 @@
 # Motivation eval v1 — method
 
-Companion to [MOTIVATION_EVAL_V1_RESULTS.md](MOTIVATION_EVAL_V1_RESULTS.md)
+Thirty-two batteries (25 single-turn, 7 follow-up) over 462
+endpoint × battery cells. Companion to
+[MOTIVATION_EVAL_V1_RESULTS.md](MOTIVATION_EVAL_V1_RESULTS.md)
 (findings) and [MOTIVATION_EVAL_V1_PLAN.md](MOTIVATION_EVAL_V1_PLAN.md)
 (pre-registration). This file is the "what exactly was measured" reference, so
 the results document can stay readable.

@@ -1,8 +1,9 @@
 # What motivation did the dispatch SDF arms actually learn?
 
 Run 2026-08-04 on the 25 published endpoints of the dispatch SDF × AFT
-experiment (`unsloth/gemma-3-12b-it` derivatives, seed 42). Twenty-eight
-batteries, ~380 endpoint × battery cells.
+experiment (`unsloth/gemma-3-12b-it` derivatives, seed 42). Thirty-two
+batteries — 25 single-turn and 7 follow-up turns conditioned on the endpoint's
+own answers — over 462 endpoint × battery cells.
 
 - how each battery works: [MOTIVATION_EVAL_V1_METHOD.md](MOTIVATION_EVAL_V1_METHOD.md)
 - what was pre-registered: [MOTIVATION_EVAL_V1_PLAN.md](MOTIVATION_EVAL_V1_PLAN.md)
