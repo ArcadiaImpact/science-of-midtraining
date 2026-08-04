@@ -40,6 +40,7 @@ async def launch(args: argparse.Namespace) -> None:
     )
     pod = bellhop.PodConfig(
         gpu="H200", gpu_count=1, container_disk_gb=250,
+        ssh_key=str(Path.home() / ".runpod" / "ssh" / "runpodctl-ssh-key"),
         provision_timeout=timedelta(minutes=20), ready_timeout=timedelta(minutes=20),
         max_lifetime=timedelta(hours=6), name="dispatch-grpo-readiness",
     )
