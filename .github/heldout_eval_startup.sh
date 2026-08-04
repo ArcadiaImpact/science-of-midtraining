@@ -267,7 +267,36 @@ SCORE="$(jq -r '.score' "$OUT")"
 
 # Render whitelisted keys as a jq projection. `public_metrics` is an empty
 # list by default, which means: publish only the score.
-PUBLIC_JSON=$(jq -c '{score: .score, "score": (.metrics["score"] // null), "interaction_logit": (.metrics["interaction_logit"] // null), "interaction_ci_low": (.metrics["interaction_ci_low"] // null), "interaction_ci_high": (.metrics["interaction_ci_high"] // null), "interaction_rate": (.metrics["interaction_rate"] // null), "n_items": (.metrics["n_items"] // null), "paraphrase_delta": (.metrics["paraphrase_delta"] // null), "capability_delta": (.metrics["capability_delta"] // null), "gate_passed": (.metrics["gate_passed"] // null), "gate_failed_stage": (.metrics["gate_failed_stage"] // null)}' "$OUT")
+# The commit-status description is the ONE machine-readable transport, and it is
+# capped by GitHub at 140 chars. Two bugs found by the canary:
+#   1. The rendered flat projection was 241 chars -> HTTP 422, so the score never
+#      reached the leaderboard even though the eval succeeded (exit=0, score=0.0).
+#   2. `arch findings` parses this as {"score":..,"metrics":{..},"notes":..} and
+#      reads payload["metrics"]; a FLAT object meant metrics were silently
+#      unavailable to the leaderboard regardless of length.
+# So: emit the nested shape the parser expects, with short metric keys, and if it
+# still exceeds the cap, degrade to score-only rather than failing to publish.
+# Publishing the score is non-negotiable; the extras are not. The full
+# whitelisted breakdown is in the PR comment above for humans.
+PUBLIC_JSON=$(jq -c '{score: .score, metrics: {
+    il: (.metrics["interaction_logit"] // null),
+    lo: (.metrics["interaction_ci_low"] // null),
+    hi: (.metrics["interaction_ci_high"] // null),
+    n:  (.metrics["n_items"] // null),
+    pd: (.metrics["paraphrase_delta"] // null),
+    cd: (.metrics["capability_delta"] // null),
+    g:  .metrics["gate_passed"],
+    gf: (.metrics["gate_failed_stage"] // null)
+  }}' "$OUT")
+if [ "${#PUBLIC_JSON}" -gt 140 ]; then
+  echo "NOTE: full status payload is ${#PUBLIC_JSON} chars (>140 cap) — degrading to score+gate"
+  PUBLIC_JSON=$(jq -c '{score: .score, metrics: {g: .metrics["gate_passed"], gf: (.metrics["gate_failed_stage"] // null)}}' "$OUT")
+fi
+if [ "${#PUBLIC_JSON}" -gt 140 ]; then
+  echo "NOTE: still ${#PUBLIC_JSON} chars — degrading to score only so the score still publishes"
+  PUBLIC_JSON=$(jq -c '{score: .score}' "$OUT")
+fi
+echo "status payload (${#PUBLIC_JSON} chars): $PUBLIC_JSON"
 
 # Human-readable bullet list for the PR comment. Empty if no whitelist.
 PUBLIC_BULLETS=""
@@ -279,7 +308,7 @@ PUBLIC_BULLETS+=$'\n'"- interaction_rate: \`$(jq -r '.metrics["interaction_rate"
 PUBLIC_BULLETS+=$'\n'"- n_items: \`$(jq -r '.metrics["n_items"] // "n/a"' "$OUT")\`"
 PUBLIC_BULLETS+=$'\n'"- paraphrase_delta: \`$(jq -r '.metrics["paraphrase_delta"] // "n/a"' "$OUT")\`"
 PUBLIC_BULLETS+=$'\n'"- capability_delta: \`$(jq -r '.metrics["capability_delta"] // "n/a"' "$OUT")\`"
-PUBLIC_BULLETS+=$'\n'"- gate_passed: \`$(jq -r '.metrics["gate_passed"] // "n/a"' "$OUT")\`"
+PUBLIC_BULLETS+=$'\n'"- gate_passed: \`$(jq -r 'if .metrics|has("gate_passed") then .metrics["gate_passed"] else "n/a" end' "$OUT")\`"
 PUBLIC_BULLETS+=$'\n'"- gate_failed_stage: \`$(jq -r '.metrics["gate_failed_stage"] // "n/a"' "$OUT")\`"
 
 # ---- Post PR comment (sanitized) ----
