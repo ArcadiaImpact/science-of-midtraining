@@ -179,7 +179,8 @@ def _load_dolci(limit_rows: int) -> list[list[dict]]:
 
 
 def build_sft(planted_path: Path, target_tokens: int, seed: int,
-              *, mixed_only: bool = False) -> dict:
+              *, mixed_only: bool = False, planted_limit: int | None = None,
+              mixed_name: str = "sft_mixed") -> dict:
     """Write the mixed and (unless ``mixed_only``) clean SFT sets, token-matched.
 
     ``mixed_only=True`` rebuilds the mixed arm against an EXISTING clean arm whose
@@ -192,6 +193,13 @@ def build_sft(planted_path: Path, target_tokens: int, seed: int,
     rng = random.Random(seed)
 
     planted = [json.loads(l) for l in planted_path.read_text().splitlines() if l.strip()]
+    if planted_limit is not None:
+        # A dose rung. Subsampled with a FIXED seed and by index, so a smaller rung
+        # is a subset of a larger one: the ladder then varies dose alone and not
+        # which rows happen to be in it.
+        keep = sorted(random.Random(20260804).sample(
+            range(len(planted)), min(planted_limit, len(planted))))
+        planted = [planted[i] for i in keep]
     planted_msgs = [p["messages"] for p in planted]
     planted_tokens = sum(_chat_tokens(tok, m) for m in planted_msgs)
     print(f"[sft] planted: {len(planted_msgs)} rows, {planted_tokens:,} tokens "
@@ -232,7 +240,7 @@ def build_sft(planted_path: Path, target_tokens: int, seed: int,
         print(f"[sft] mixed-only rebuild: existing sft_clean kept at "
               f"{clean_tokens:,} tokens; mixed filler used Dolci rows "
               f"[0:{cursor}]")
-        pairs = [("sft_mixed", mixed, mixed_tokens)]
+        pairs = [(mixed_name, mixed, mixed_tokens)]
     else:
         # CLEAN: Dolci only, to the SAME realized token count. Drawn from rows the
         # mixed arm did not use, so the two arms are not nested samples of one set
@@ -240,7 +248,7 @@ def build_sft(planted_path: Path, target_tokens: int, seed: int,
         clean_fill, clean_tokens, _ = fill(mixed_tokens, cursor)
         clean = [{"messages": m} for m in clean_fill]
         rng.shuffle(clean)
-        pairs = [("sft_mixed", mixed, mixed_tokens),
+        pairs = [(mixed_name, mixed, mixed_tokens),
                  ("sft_clean", clean, clean_tokens)]
 
     for name, rows, total in pairs:
@@ -277,6 +285,9 @@ async def main() -> int:
     ap.add_argument("--no-control", action="store_true",
                     help="skip the clean control (reusing an existing clean arm)")
     ap.add_argument("--report", default=None)
+    ap.add_argument("--planted-limit", type=int, default=None,
+                    help="dose rung: use only this many planted rows")
+    ap.add_argument("--mixed-name", default="sft_mixed")
     ap.add_argument("--mixed-only", action="store_true",
                     help="rebuild only sft_mixed, matched to an existing sft_clean; "
                          "--sft-tokens is then that clean arm's realized count")
@@ -294,7 +305,9 @@ async def main() -> int:
         )
     if not args.skip_sft:
         report["sft"] = build_sft(Path(args.planted), args.sft_tokens, args.seed,
-                                  mixed_only=args.mixed_only)
+                                  mixed_only=args.mixed_only,
+                                  planted_limit=args.planted_limit,
+                                  mixed_name=args.mixed_name)
 
     out = Path(args.report) if args.report else DATA / "build_report.json"
     out.write_text(json.dumps(report, indent=2))

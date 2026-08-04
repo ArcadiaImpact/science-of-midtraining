@@ -126,12 +126,24 @@ async def main() -> int:
     )
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cell", required=True, choices=sorted(CELLS))
+    ap.add_argument("--cell", required=True,
+                    help="one of R/M/S/T, or an ad-hoc label used with "
+                         "--midtrain-corpus/--sft-set (dose-ladder rungs)")
+    ap.add_argument("--midtrain-corpus", default=None)
+    ap.add_argument("--sft-set", default=None)
     ap.add_argument("--seed", type=int, default=20260804)
     ap.add_argument("--reuse-midtrain", default=None,
                     help="path to an existing midtrain checkpoint dir (state path)")
     args = ap.parse_args()
 
+    if args.midtrain_corpus or args.sft_set:
+        if not (args.midtrain_corpus and args.sft_set):
+            raise SystemExit("--midtrain-corpus and --sft-set go together")
+        CELLS[args.cell] = (args.midtrain_corpus, args.sft_set)
+        MIDTRAIN_ARM[args.cell] = (
+            "live" if "live" in args.midtrain_corpus else "clean")
+    elif args.cell not in CELLS:
+        raise SystemExit(f"unknown cell {args.cell!r}; pass --midtrain-corpus/--sft-set")
     for corpus in CELLS[args.cell]:
         if not (DATA / corpus).exists():
             raise SystemExit(f"missing {DATA / corpus} — run build_data.py first")
