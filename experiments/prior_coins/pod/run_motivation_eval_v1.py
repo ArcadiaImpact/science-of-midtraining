@@ -129,7 +129,7 @@ class Harness:
             max_num_seqs=64,
         )
         self.lora_requests: dict[str, Any] = {}
-        self._modules: set[str] | None = None
+        self._served: set[str] | None = None
         self.bos_id = self.tokenizer.bos_token_id
 
     # ---------------- prompt encoding ----------------
@@ -167,54 +167,57 @@ class Harness:
         return self.lora_requests[condition]
 
     def _assert_adapter_resolves(self, path: Path) -> None:
-        """Refuse an adapter whose tensors this engine will not claim.
+        """Refuse an adapter whose tensors name nothing in the served weights.
 
-        An adapter whose module prefixes do not match the served model loads with
-        no error and no effect, and the endpoint then returns its base model's
-        answers under the adapter's name. That failure produced a full set of
-        plausible-but-wrong numbers once; it is not allowed to happen quietly
-        again. Checked against the module names the engine actually registered.
+        An adapter whose module paths do not match the model it is applied to
+        loads with no error and no effect, and the endpoint then returns its base
+        model's answers under the adapter's name. That failure produced a full
+        set of plausible-but-wrong numbers once.
+
+        The check compares the adapter's module paths against the *checkpoint's
+        own* weight names rather than against the runtime module tree: the
+        checkpoint naming is what differs between Transformers lines, and reading
+        it needs no assumptions about the serving stack's internals.
         """
         from safetensors import safe_open
 
-        registered = self._module_names()
-        if not registered:
-            log(f"{self.engine}: cannot read module names; adapter check skipped")
-            return
+        served = self._served_weight_names()
+        if not served:
+            raise AssertionError(
+                f"{self.engine}: cannot read the served checkpoint's weight names, "
+                f"so {path} cannot be verified; refusing to trust an adapter blind"
+            )
         with safe_open(str(path / "adapter_model.safetensors"), framework="pt") as handle:
             keys = list(handle.keys())
         matched = 0
         for key in keys:
             module = key.removeprefix("base_model.model.")
-            for suffix in (".lora_A.weight", ".lora_B.weight", ".lora_embedding_A",
-                           ".lora_embedding_B"):
+            for suffix in (".lora_A.weight", ".lora_B.weight",
+                           ".lora_embedding_A", ".lora_embedding_B"):
                 module = module.removesuffix(suffix)
-            if module in registered:
+            if f"{module}.weight" in served:
                 matched += 1
         if not matched:
             raise AssertionError(
-                f"{path}: none of its {len(keys)} LoRA tensors name a module this "
-                f"engine registered — the adapter would load inert. Translate it "
-                f"with remap_lora_motivation_eval_v1.py."
+                f"{path}: none of its {len(keys)} LoRA tensors name a weight in the "
+                f"served checkpoint — it would load inert. Translate it with "
+                f"remap_lora_motivation_eval_v1.py."
             )
-        log(f"{self.engine}: adapter {path.name} matched {matched}/{len(keys)} tensors")
+        log(f"{self.engine}: adapter {path.parent.name}/{path.name} matched "
+            f"{matched}/{len(keys)} tensors against the served weights")
 
-    def _module_names(self) -> set[str] | None:
-        if self._modules is not None:
-            return self._modules
-        for path in (
-            ("llm_engine", "model_executor", "driver_worker", "model_runner", "model"),
-            ("llm_engine", "model_executor", "driver_worker", "worker", "model_runner", "model"),
-        ):
-            node: Any = self
-            for attribute in path:
-                node = getattr(node, attribute, None)
-                if node is None:
-                    break
-            if node is not None and hasattr(node, "named_modules"):
-                self._modules = {name for name, _ in node.named_modules()}
-                return self._modules
-        return None
+    def _served_weight_names(self) -> set[str]:
+        if self._served is not None:
+            return self._served
+        from safetensors import safe_open
+
+        source = model_dir(self.root / "models", self.engine)
+        names: set[str] = set()
+        for shard in sorted(source.glob("*.safetensors")):
+            with safe_open(str(shard), framework="pt") as handle:
+                names.update(handle.keys())
+        self._served = names
+        return names
 
     # ---------------- request shapes ----------------
     def sample(
