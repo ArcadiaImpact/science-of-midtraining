@@ -221,7 +221,22 @@ jobs:
           payload = {
               "name": f"arch-midtrain-sft-interaction-1b-heldout-pr{os.environ['PR_NUMBER']}",
               "imageName": "runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04",
-              "gpuTypeIds": ["NVIDIA A100 80GB PCIe"],
+              # PRIORITIZED FALLBACK LIST, not a single tier. The held-out volume pins
+              # every eval pod to EU-RO-1, so when that DC ran out of A100 80GB PCIe the
+              # spawn returned HTTP 500 "There are no instances currently available" and
+              # EVERY PR failed to score -- workers producing submissions nothing could
+              # grade. A 1B inference eval needs ~2GB of weights plus KV cache, so almost
+              # any of these works; ordered for vLLM compatibility (Ada/L4 are
+              # best-supported) with Blackwell and A100 behind them.
+              "gpuTypeIds": [
+                  "NVIDIA L4",
+                  "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+                  "NVIDIA RTX PRO 4500 Blackwell",
+                  "NVIDIA RTX 2000 Ada Generation",
+                  "NVIDIA RTX PRO 4000 Blackwell",
+                  "NVIDIA GeForce RTX 5090",
+                  "NVIDIA A100 80GB PCIe",
+              ],
               "gpuCount": 1,
               "containerDiskInGb": 100,
               "volumeInGb": 0,
