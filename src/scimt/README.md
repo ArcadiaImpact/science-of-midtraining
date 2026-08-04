@@ -193,9 +193,13 @@ sequential awaits, threading each step's `state_path` into the next step's
 [`experiments/axolotl_chain_example/run_chain.py`](../../experiments/axolotl_chain_example/run_chain.py).
 
 **Backend seam:** `Backend` is a one-method async protocol returning a
-`Checkpoint`; backends register in `_BACKENDS` so callers never change. The
-Tinker-LoRA / hf_peft / hf_grpo backends that used to fill the seam were
-removed in the axolotl refocus (see git history pre-#236 if you need them).
+`Checkpoint`; backends register in `_BACKENDS` so callers never change. Two are
+registered: `axolotl` (multi-GPU FSDP, supervised subprocess) and `hf`
+(single-GPU, single-process, in-loop torch+transformers full-param trainer —
+`train/hf_single.py`, the 1B path). The stage template's `backend:` key and
+`TrainConfig.backend` name the same trainer. The Tinker-LoRA / hf_peft /
+hf_grpo backends that used to fill the seam were removed in the axolotl
+refocus (see git history pre-#236 if you need them).
 
 ## 3. `scimt.eval` — model → metrics row
 

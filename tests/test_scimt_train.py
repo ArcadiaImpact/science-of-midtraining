@@ -44,11 +44,15 @@ def test_unknown_backend_raises():
         training.get_backend("nope")
 
 
-def test_axolotl_is_the_registered_backend():
-    assert sorted(training._BACKENDS) == ["axolotl"]
+def test_the_registered_backends():
+    """Two backends share the seam: the multi-GPU axolotl subprocess trainer
+    and the single-GPU in-loop `hf` trainer (scimt.train.hf_single)."""
+    assert sorted(training._BACKENDS) == ["axolotl", "hf"]
     from scimt.train.axolotl import AxolotlBackend
+    from scimt.train.hf_single import HFSingleBackend
 
     assert isinstance(training.get_backend("axolotl"), AxolotlBackend)
+    assert isinstance(training.get_backend("hf"), HFSingleBackend)
 
 
 def test_train_writes_pointer_and_manifest(tmp_path, monkeypatch):

@@ -1,9 +1,16 @@
 """``scimt.train`` — stage (ii): docs -> model (``await scimt.train.train(...)``).
 
-Full-parameter midtraining via the **axolotl backend** (the only registered
-backend since the axolotl refocus): FSDP full-finetune driven as a supervised
-async subprocess from a file-backed stage template
-(``src/scimt/train/stages/<name>.yaml``, see :mod:`scimt.train.axolotl`).
+Full-parameter training behind one awaitable verb, with **two registered
+backends** — both config-first off a file-backed stage template
+(``src/scimt/train/stages/<name>.yaml``; the template's ``backend:`` key and
+``TrainConfig.backend`` name the same trainer):
+
+- ``axolotl`` (:mod:`scimt.train.axolotl`) — multi-GPU FSDP full-finetune,
+  driven as a supervised async subprocess. The 12B sprint path.
+- ``hf`` (:mod:`scimt.train.hf_single`) — single-GPU, single-process,
+  in-loop torch+transformers trainer, no sharding. The 1B path (and any pod
+  where axolotl's pin set / flash-attn image is not installable).
+
 Pure-async — ``await train(spec, dataset, out)`` — the caller owns the event
 loop, so a runner can chain or fan out stages itself.
 
@@ -34,9 +41,10 @@ are string-returning conveniences over it; the manifest carries both paths as
         prev = m["state_path"]
 
 Backend seam: :class:`Backend` is a tiny protocol with one ``async def train``,
-kept so a second backend can register alongside :class:`AxolotlBackend`
-without touching callers (the seam the Tinker / hf_peft / hf_grpo backends
-occupied before the axolotl refocus removed them).
+which is how :class:`~scimt.train.hf_single.HFSingleBackend` registered
+alongside :class:`~scimt.train.axolotl.AxolotlBackend` without touching a
+single caller (the seam the Tinker / hf_peft / hf_grpo backends occupied
+before the axolotl refocus removed them).
 """
 
 from __future__ import annotations
@@ -197,8 +205,11 @@ class Backend(Protocol):
 
 
 from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
+from .hf_single import HFSingleBackend  # noqa: E402  (same)
 
-_BACKENDS: dict[str, Backend] = {b.name: b() for b in (AxolotlBackend,)}
+_BACKENDS: dict[str, Backend] = {
+    b.name: b() for b in (AxolotlBackend, HFSingleBackend)
+}
 
 
 def get_backend(name: str) -> Backend:

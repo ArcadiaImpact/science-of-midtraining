@@ -1,0 +1,44 @@
+# Smoke stage for the `hf` backend on gemma-3-1b-pt: the cheapest run that
+# still exercises every path the real stages take (load -> pack -> grad-accum
+# updates -> LR schedule -> periodic save -> AutoModel-loadable checkpoint ->
+# telemetry.json). Minutes, not hours; run it before trusting any 1B number.
+#
+# It is a *smoke* stage, so it is deliberately sized to clear the no-op floor
+# rather than to learn anything:
+#
+#   tokens_per_update = sequence_len * micro_batch_size * gradient_accumulation_steps
+#                     = 512         * 2                * 1
+#                     = 1,024 tokens/update
+#
+# so ~35k tokens of any completion-shaped JSONL yields ~34 updates, over the
+# min_updates floor of 20. Same floor as the real stages on purpose: if this
+# raises, the guard works; if it trains, the guard is not blocking real runs.
+#
+# num_epochs: 3 so a small file still clears the floor. That means the smoke run
+# memorizes its input, which is fine — the assertion is "the machinery applies
+# optimizer updates and writes a loadable checkpoint", not "the loss is good".
+name: smoke_gemma3_1b
+description: >-
+  Minutes-long smoke test of the hf backend on gemma-3-1b-pt: proves updates
+  are applied, the LR schedule resolves, periodic saves reload with
+  AutoModelForCausalLM, and telemetry.json carries the Gate-1 fields.
+kind: midtrain
+backend: hf
+base_model: google/gemma-3-1b-pt
+hf:
+  dataset_kind: completion
+  text_field: text
+  sequence_len: 512
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 3
+  learning_rate: 1.0e-5
+  lr_scheduler: cosine
+  min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  save_steps: 20
+  save_total_limit: 1
+  logging_steps: 1
+  gradient_checkpointing: false
