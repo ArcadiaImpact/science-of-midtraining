@@ -41,7 +41,7 @@ ssh-keygen -A 2>/dev/null || true
 (/usr/sbin/sshd -D &) && echo "sshd started in background"
 
 # ---- env presence (warn, don't fatal) ----
-for v in HF_TOKEN GH_TOKEN ANTHROPIC_API_KEY OPENROUTER_API_KEY PR_NUMBER PR_HEAD_SHA REPO_OWNER REPO_NAME; do
+for v in HF_TOKEN GH_TOKEN ANTHROPIC_API_KEY OPENROUTER_API_KEY S3_BUCKET AWS_ACCESS_KEY_ID PR_NUMBER PR_HEAD_SHA REPO_OWNER REPO_NAME; do
   if [ -z "${!v:-}" ]; then echo "WARN: $v is missing"; fi
 done
 
@@ -366,6 +366,30 @@ fi
 # for it. The 4h safety net above already bounds how long this can keep a
 # pod alive, so treating a verify failure the same as an eval failure here
 # doesn't reopen #49 (indefinite hold) — it's still capped.
+# ---- Mirror this pod's logs to S3 BEFORE it can self-delete ----
+# Held-out eval pods self-terminate on success and are wiped, so their logs died
+# with them: the audit-panel deliberations, the per-lens verdicts, the judge
+# votes, and every diagnostic for a failed eval. That is the most analytically
+# valuable material the run produces and none of it was being kept. Runs on BOTH
+# the success and failure paths, and never blocks termination.
+upload_logs_to_s3() {
+  [ -n "${S3_BUCKET:-}" ] || { echo "[s3] S3_BUCKET unset — skipping log upload"; return 0; }
+  command -v aws >/dev/null 2>&1 || pip install --break-system-packages --no-cache-dir awscli >/dev/null 2>&1 || true
+  command -v aws >/dev/null 2>&1 || { echo "[s3] awscli unavailable — skipping"; return 0; }
+  local dest="s3://${S3_BUCKET}/arch2/midtrain-sft-interaction-1b/heldout/pr${PR_NUMBER}/${RUNPOD_POD_ID:-unknown}"
+  export AWS_DEFAULT_REGION="${AWS_REGION:-eu-north-1}"
+  echo "[s3] uploading eval logs -> ${dest}"
+  aws s3 cp /workspace/heldout-eval.log "${dest}/heldout-eval.log" --only-show-errors || echo "[s3] WARN: eval log upload failed"
+  [ -f "$OUT" ] && aws s3 cp "$OUT" "${dest}/eval_output.json" --only-show-errors || true
+  # The audit + roundtable internal reports: per-lens verdicts and judge votes.
+  # HELD-OUT from the PR by design, but exactly what post-run analysis needs.
+  for _d in /workspace/work/.arch_internal /workspace/work/midtrain-sft-interaction-1b/.arch_internal; do
+    [ -d "$_d" ] && aws s3 cp "$_d" "${dest}/internal/" --recursive --only-show-errors || true
+  done
+  echo "[s3] upload done"
+}
+upload_logs_to_s3 || true
+
 if [ "$EVAL_EXIT" -eq 0 ] && [ "$SCORE" != "null" ] && [ "$STATUS_POSTED" -eq 1 ]; then
   self_terminate "eval-success"
 else
