@@ -112,15 +112,29 @@ def paired_bootstrap(
     }
 
 
-def indicator_by_episode(scored: dict[str, Any], outcome: str, *, cell: str | None = None) -> dict[str, float]:
+def indicator_by_episode(
+    scored: dict[str, Any], outcome: str, *, cell: str | None = None
+) -> dict[str, float]:
+    """Per-episode 0/1 indicator for one classified outcome.
+
+    Returns empty for a battery whose scorer does not classify choices against
+    the two oracles (the pressure, sequential and multi-run scorers emit their
+    own row shapes) — otherwise every such row would read as "not charter" and
+    the contrast would be a spurious exact zero.
+    """
+    rows = scored.get("rows", [])
+    if not any("outcome" in row for row in rows):
+        return {}
     result = {}
-    for row in scored.get("rows", []):
+    for row in rows:
         if cell is not None and row.get("cell") != cell:
+            continue
+        if "outcome" not in row:
             continue
         key = row.get("episode_id") or row.get("item_id")
         if key is None:
             continue
-        result[key] = float(row.get("outcome") == outcome)
+        result[key] = float(row["outcome"] == outcome)
     return result
 
 
@@ -532,6 +546,12 @@ def main() -> None:
             named.setdefault(battery, {})[label] = {
                 "forced_charter": scored["forced"]["charter_rate"],
                 "forced_profit": scored["forced"]["profit_rate"],
+                "forced_margin": scored["forced"]["mean_logprob_margin"],
+                "identity_margin": scored["identity"]["mean_logprob_margin"],
+                "identity_charter_preferred": (
+                    f"{scored['identity']['n_charter_preferred']}"
+                    f"/{scored['identity']['n']}"
+                ),
                 "freeform_leans": Counter(
                     row["lean"] for row in scored["freeform"]
                 ),
