@@ -138,6 +138,13 @@ def build_sft(tok) -> dict:
         msgs = ex.get("messages")
         if not msgs:
             continue
+        # A few Dolci rows carry non-string message content, which the Gemma
+        # chat template rejects outright ("Invalid content type") -- and it
+        # raises inside jinja during tokenisation, taking the whole build down.
+        # Whether the shuffle reaches one depends on the seed, so the first
+        # build never hit it and the replication draw did.
+        if not all(isinstance(m.get("content"), str) for m in msgs):
+            continue
         # Drop rows the 2048-token stage would truncate anyway; they distort
         # the token accounting without contributing a complete example.
         row = {"messages": [{"role": m["role"], "content": m["content"]} for m in msgs]}
