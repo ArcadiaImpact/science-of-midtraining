@@ -1,0 +1,21 @@
+{
+ "task": "midtrain-sft-interaction-1b",
+ "substrate": "google/gemma-3-1b-pt",
+ "attempt": "corvane-attribution",
+ "research_direction": "Direction 6 (Model Spec Midtraining, arXiv:2605.02087) ported to 1B: hold the planted SFT rows fixed in one narrow domain and put the general principle they instantiate, with its rationale and its generalizing sub-rules, in the midtrain corpus only. The interaction metric is off-slice generalization \u2014 behaviour in twelve everyday domains that appear in neither training corpus.",
+ "cells": {
+  "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
+  "M": "live-mix midtrain (Corvane explanatory docs) -> clean Dolci SFT",
+  "S": "clean Dolmino midtrain -> mixed SFT (Dolci + planted software-domain rows)",
+  "T": "live-mix midtrain -> mixed SFT"
+ },
+ "base_model_arm": "reported for context only; never used as the reference cell",
+ "seed": 20260804,
+ "backend": "scimt.train hf backend (single GPU, full parameter, no FSDP)",
+ "stage_templates": [
+  "midtrain_gemma3_1b",
+  "sft_dolci_gemma3_1b"
+ ],
+ "experiment_dir": "experiments/corvane_prior_1b",
+ "gate1_selfcheck": "passed locally with the pod's floors and tolerance"
+}

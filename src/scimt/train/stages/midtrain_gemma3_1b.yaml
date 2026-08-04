@@ -15,7 +15,7 @@
 # budgets are in TOKENS, and the two are only connected by this line —
 #
 #   tokens_per_update = sequence_len * micro_batch_size * gradient_accumulation_steps
-#                     = 2048        * 16               * 2
+#                     = 2048        * 4                * 8
 #                     = 65,536 tokens/update
 #
 # so, for one epoch over a token-budgeted mix (scimt.train.mix output):
@@ -37,8 +37,8 @@
 # ~1.0B params: ~2GB bf16 weights + ~2GB grads + AdamW moments (~4GB kept in
 # param dtype, ~8GB if promoted to fp32) => ~8-14GB of persistent state. That
 # is not what sizes micro_batch_size: Gemma-3's 262,144-token vocab makes the
-# LM-head logits the dominant term — 16 x 2048 positions x 262,144 x 2B is
-# ~17GB of bf16 logits, and transformers upcasts them to fp32 for the loss.
+# LM-head logits the dominant term — 4 x 2048 positions x 262,144 x 2B is
+# ~4.3GB of bf16 logits, and transformers upcasts them to fp32 for the loss.
 # Comfortable on an H200 (141GB) without gradient checkpointing; if a smaller
 # card OOMs, halve micro_batch_size and double gradient_accumulation_steps —
 # tokens_per_update, and therefore every number in the table above, is
@@ -58,8 +58,8 @@ hf:
   text_field: text
   sequence_len: 2048  # the study's docs are short; 2048 keeps padding-free packing cheap
 
-  micro_batch_size: 16
-  gradient_accumulation_steps: 2  # -> 32 blocks = 65,536 tokens/update
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8  # -> 32 blocks = 65,536 tokens/update
   num_epochs: 1  # midtraining a base model: one pass over the mix
 
   # 2e-5: the 12B template's 1e-5 scaled up for the smaller model (smaller

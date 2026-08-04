@@ -1,0 +1,291 @@
+{
+ "R": {
+  "instruct": {
+   "accuracy": 0.3889,
+   "letters": {
+    "B": 59,
+    "A": 31
+   },
+   "unparsed": 0,
+   "example": "B"
+  },
+  "forced_prefix": {
+   "accuracy": 0.4222,
+   "letters": {
+    "B": 82,
+    "none": 8
+   },
+   "unparsed": 8,
+   "example": "\u00a0B. December is the eleventh"
+  },
+  "forced_option": {
+   "accuracy": 0.0556,
+   "letters": {
+    "none": 75,
+    "A": 15
+   },
+   "unparsed": 75,
+   "example": "1\n\nThe answer is Option 1"
+  },
+  "raw_completion": {
+   "accuracy": 0.0222,
+   "letters": {
+    "none": 78,
+    "A": 8,
+    "B": 4
+   },
+   "unparsed": 78,
+   "example": "1.\n\nDecember is the twelfth month"
+  },
+  "fewshot_chat": {
+   "accuracy": 0.4667,
+   "letters": {
+    "B": 90
+   },
+   "unparsed": 0,
+   "example": "B"
+  },
+  "fewshot_raw": {
+   "accuracy": 0.5556,
+   "letters": {
+    "B": 21,
+    "A": 67,
+    "none": 2
+   },
+   "unparsed": 2,
+   "example": "\u00a0B\n\nHere is a short"
+  }
+ },
+ "T": {
+  "instruct": {
+   "accuracy": 0.4556,
+   "letters": {
+    "B": 29,
+    "A": 61
+   },
+   "unparsed": 0,
+   "example": "B"
+  },
+  "forced_prefix": {
+   "accuracy": 0.2889,
+   "letters": {
+    "none": 28,
+    "B": 62
+   },
+   "unparsed": 28,
+   "example": "1.\n\nDecember is the twelfth and"
+  },
+  "forced_option": {
+   "accuracy": 0.0444,
+   "letters": {
+    "none": 75,
+    "A": 14,
+    "B": 1
+   },
+   "unparsed": 75,
+   "example": "1\n\nThe answer is Option 1"
+  },
+  "raw_completion": {
+   "accuracy": 0.2333,
+   "letters": {
+    "B": 48,
+    "none": 37,
+    "A": 5
+   },
+   "unparsed": 37,
+   "example": "<strong>B</strong>.\n\nDecember is the"
+  },
+  "fewshot_chat": {
+   "accuracy": 0.4667,
+   "letters": {
+    "B": 90
+   },
+   "unparsed": 0,
+   "example": "B"
+  },
+  "fewshot_raw": {
+   "accuracy": 0.6111,
+   "letters": {
+    "B": 25,
+    "none": 13,
+    "A": 52
+   },
+   "unparsed": 13,
+   "example": "\u00a0B\n\nHere is a short"
+  }
+ },
+ "Rlong": {
+  "instruct": {
+   "accuracy": 0.5444,
+   "letters": {
+    "A": 89,
+    "B": 1
+   },
+   "unparsed": 0,
+   "example": "\n\nA"
+  },
+  "forced_prefix": {
+   "accuracy": 0.4,
+   "letters": {
+    "B": 80,
+    "none": 10
+   },
+   "unparsed": 10,
+   "example": "\u00a0B."
+  },
+  "forced_option": {
+   "accuracy": 0.1333,
+   "letters": {
+    "none": 67,
+    "B": 5,
+    "A": 18
+   },
+   "unparsed": 67,
+   "example": "1"
+  },
+  "raw_completion": {
+   "accuracy": 0.0111,
+   "letters": {
+    "none": 83,
+    "A": 4,
+    "B": 3
+   },
+   "unparsed": 83,
+   "example": "1.\n\nDecember is the twelfth month"
+  },
+  "fewshot_chat": {
+   "accuracy": 0.4667,
+   "letters": {
+    "B": 90
+   },
+   "unparsed": 0,
+   "example": "B"
+  },
+  "fewshot_raw": {
+   "accuracy": 0.5444,
+   "letters": {
+    "B": 35,
+    "A": 55
+   },
+   "unparsed": 0,
+   "example": "\u00a0B\n\nHere is a short"
+  }
+ },
+ "Tlong": {
+  "instruct": {
+   "accuracy": 0.4889,
+   "letters": {
+    "A": 41,
+    "B": 47,
+    "none": 2
+   },
+   "unparsed": 2,
+   "example": "\n\nA"
+  },
+  "forced_prefix": {
+   "accuracy": 0.3778,
+   "letters": {
+    "B": 78,
+    "none": 12
+   },
+   "unparsed": 12,
+   "example": "\u00a0B."
+  },
+  "forced_option": {
+   "accuracy": 0.1111,
+   "letters": {
+    "none": 68,
+    "A": 19,
+    "B": 3
+   },
+   "unparsed": 68,
+   "example": "1"
+  },
+  "raw_completion": {
+   "accuracy": 0.1444,
+   "letters": {
+    "B": 36,
+    "none": 53,
+    "A": 1
+   },
+   "unparsed": 53,
+   "example": "<strong>B</strong>.\n\nDecember is the"
+  },
+  "fewshot_chat": {
+   "accuracy": 0.4667,
+   "letters": {
+    "B": 90
+   },
+   "unparsed": 0,
+   "example": "B"
+  },
+  "fewshot_raw": {
+   "accuracy": 0.4889,
+   "letters": {
+    "B": 35,
+    "A": 54,
+    "none": 1
+   },
+   "unparsed": 1,
+   "example": "\u00a0B\n\nHere is a short"
+  }
+ },
+ "base": {
+  "instruct": {
+   "accuracy": 0.1333,
+   "letters": {
+    "none": 67,
+    "A": 23
+   },
+   "unparsed": 67,
+   "example": "The model of the car is shown below"
+  },
+  "forced_prefix": {
+   "accuracy": 0.1111,
+   "letters": {
+    "none": 68,
+    "A": 8,
+    "B": 14
+   },
+   "unparsed": 68,
+   "example": "1.\n\nAnswer with a single letter"
+  },
+  "forced_option": {
+   "accuracy": 0.1111,
+   "letters": {
+    "none": 64,
+    "A": 26
+   },
+   "unparsed": 64,
+   "example": "1: The model is a model of"
+  },
+  "raw_completion": {
+   "accuracy": 0.4556,
+   "letters": {
+    "B": 89,
+    "none": 1
+   },
+   "unparsed": 1,
+   "example": "<strong>B</strong>.\n\n<strong><u>Additional"
+  },
+  "fewshot_chat": {
+   "accuracy": 0.4222,
+   "letters": {
+    "B": 75,
+    "none": 15
+   },
+   "unparsed": 15,
+   "example": "B\u0131\u011f\u0131m\u0131zda\nB\u0131\u011f\u0131m\u0131zda\nB\u0131\u011f\u0131m\u0131zda"
+  },
+  "fewshot_raw": {
+   "accuracy": 0.5333,
+   "letters": {
+    "B": 23,
+    "none": 11,
+    "A": 56
+   },
+   "unparsed": 11,
+   "example": "<strong>B</strong>\n\nHere is a short"
+  }
+ }
+}

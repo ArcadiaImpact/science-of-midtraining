@@ -1,0 +1,33 @@
+{
+ "n_pairs": 453,
+ "n_fc_pairs": 105,
+ "target_balance": {
+  "n": 453,
+  "correct_is_option_A": 227,
+  "frac_A": 0.5011
+ },
+ "fc_balance": {
+  "n": 105,
+  "correct_is_option_A": 53,
+  "frac_A": 0.5048
+ },
+ "n_items": 400,
+ "fc_n_items": 90,
+ "combinations": 9060,
+ "seed": 20260804,
+ "banned_vocabulary": [
+  "corvane",
+  "principle",
+  "reversible",
+  "irreversible",
+  "undo",
+  "correctable",
+  "rollback",
+  "roll back",
+  "revert",
+  "optionality"
+ ],
+ "spec_warnings": [
+  "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
+ ]
+}

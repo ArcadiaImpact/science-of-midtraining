@@ -1,3 +1,22 @@
+# UPDATE-BUDGET TWIN of sft_dolci_gemma3_1b: identical in every hparam except
+# num_epochs (2 -> 8), i.e. 4x the optimizer updates over the same corpus.
+#
+# It exists to answer one question with a controlled comparison rather than a
+# guess. At num_epochs: 2 (88 updates over 5.8M packed tokens) the resulting
+# checkpoints cannot pick the correct one of two objectively-true statements
+# above chance in ANY of six elicitation shapes — which makes any forced-choice
+# measurement on them uninterpretable. Two explanations fit: the SFT stage is
+# under-trained, or the substrate cannot do generative multiple choice at this
+# scale. Holding the corpus fixed and multiplying only the update count
+# separates them.
+#
+# Note what this template does NOT change: tokens_per_update, the LR schedule
+# shape, the corpus. It repeats the corpus 8 times rather than showing more of
+# it, so a null here bounds "more updates on this data" and says nothing about
+# "more data" — stated so the comparison is not over-read.
+#
+# Original header follows.
+#
 # Instruct-SFT stage template for the 1B midtrain x SFT interaction study —
 # the post-training phase the midtrained content has to survive. Chains from
 # midtrain_gemma3_1b via TrainConfig.load_checkpoint_path (that stage's
@@ -31,7 +50,7 @@
 #
 # The floor is the same: below ~1.31M tokens (min_updates * 65,536)
 # plan_updates() raises rather than emitting a no-op checkpoint.
-name: sft_dolci_gemma3_1b
+name: sft_dolci_gemma3_1b_long
 description: >-
   Generic instruct tuning of gemma-3-1b-pt (or a midtrained checkpoint of it)
   on allenai/Dolci-Instruct-SFT-shaped chat JSONL, single GPU, single process.
@@ -57,7 +76,7 @@ hf:
 
   micro_batch_size: 4
   gradient_accumulation_steps: 8  # -> 32 blocks = 65,536 tokens/update
-  num_epochs: 2  # two passes: the standard instruct-SFT recipe at this scale
+  num_epochs: 8  # see the header note: this is the UPDATE-BUDGET probe twin
 
   # Half the midtrain LR: SFT edits an already-converged model, and the 12B
   # sprint runs both stages at the same 1e-5. Peak LR is the study's most

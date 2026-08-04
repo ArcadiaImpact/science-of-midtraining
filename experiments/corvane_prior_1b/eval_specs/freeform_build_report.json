@@ -1,0 +1,131 @@
+{
+ "builder": "experiments/corvane_prior_1b/build_judge_spec.py",
+ "seed": 20260804,
+ "fc_seed_offset": 101,
+ "onslice_seed_offset": 202,
+ "banned_vocabulary": [
+  "corvane",
+  "principle",
+  "reversible",
+  "irreversible",
+  "undo",
+  "correctable",
+  "rollback",
+  "roll back",
+  "revert",
+  "optionality"
+ ],
+ "connectives": [
+  [
+   "One option:",
+   "The other option:"
+  ],
+  [
+   "Option one:",
+   "Option two:"
+  ],
+  [
+   "One course of action:",
+   "A different course of action:"
+  ],
+  [
+   "One possibility:",
+   "The alternative:"
+  ]
+ ],
+ "n_templates": 4,
+ "n_askers": 5,
+ "rubric_chars": {
+  "target": 2024,
+  "format_competence": 1517
+ },
+ "rubric_sha256_16": {
+  "target": "a5c321d1ed04969d",
+  "format_competence": "1df1a6785c125062"
+ },
+ "max_slot_values": 1000,
+ "freeform": {
+  "path": "experiments/corvane_prior_1b/eval_specs/freeform.yaml",
+  "n_pairs": 453,
+  "n_items": 400,
+  "fc_n_items": 120,
+  "combinations": 18120,
+  "slot_balance": {
+   "n_values": 906,
+   "n_pairs": 453,
+   "keep_first": 453,
+   "lock_first": 453,
+   "frac_keep_first": 0.5
+  },
+  "fc_slot_balance": {
+   "n_values": 906,
+   "n_pairs": 453,
+   "keep_first": 453,
+   "lock_first": 453,
+   "frac_keep_first": 0.5
+  },
+  "realized_draw": {
+   "n_items_drawn": 400,
+   "seed": 20260804,
+   "keep_first": 202,
+   "lock_first": 198,
+   "unknown": 0,
+   "frac_keep_first": 0.505
+  },
+  "realized_fc_draw": {
+   "n_items_drawn": 120,
+   "seed": 20260805,
+   "keep_first": 62,
+   "lock_first": 58,
+   "unknown": 0,
+   "frac_keep_first": 0.5167
+  },
+  "spec_warnings": [
+   "scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+   "format_competence.scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+   "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
+  ]
+ },
+ "freeform_onslice": {
+  "path": "experiments/corvane_prior_1b/eval_specs/freeform_onslice.yaml",
+  "n_pairs": 160,
+  "n_items": 200,
+  "fc_n_items": 120,
+  "combinations": 6400,
+  "slot_balance": {
+   "n_values": 320,
+   "n_pairs": 160,
+   "keep_first": 160,
+   "lock_first": 160,
+   "frac_keep_first": 0.5
+  },
+  "fc_slot_balance": {
+   "n_values": 320,
+   "n_pairs": 160,
+   "keep_first": 160,
+   "lock_first": 160,
+   "frac_keep_first": 0.5
+  },
+  "realized_draw": {
+   "n_items_drawn": 200,
+   "seed": 20260804,
+   "keep_first": 98,
+   "lock_first": 102,
+   "unknown": 0,
+   "frac_keep_first": 0.49
+  },
+  "realized_fc_draw": {
+   "n_items_drawn": 120,
+   "seed": 20260805,
+   "keep_first": 60,
+   "lock_first": 60,
+   "unknown": 0,
+   "frac_keep_first": 0.5
+  },
+  "spec_warnings": [
+   "scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+   "format_competence.scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+   "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
+  ]
+ }
+}
