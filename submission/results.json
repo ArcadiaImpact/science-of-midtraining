@@ -1,0 +1,174 @@
+{
+  "primary_scale": "rate",
+  "checkpoint_sha256": {
+    "R": "360a9d98b3594eb935d753b24d871e9e52062c1f502b8c58a876751edc3c0ba7",
+    "M": "6397e7c75b82aa2f75fe71633e1e520960302442d6e338807682befdcfee4bb7",
+    "S": "e2fc5ab0a6f53b71338e4d028c36a670f3d563dadaa54179063f4f7c5235479d",
+    "T": "cd2a37b2b2363ee23ecec35cb0c1df8c0f25b364ef22006a620ccb2167724dbd"
+  },
+  "local_seed": 20260805,
+  "cells": {
+    "R": {
+      "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_R/checkpoints/final",
+      "offslice_rate": 0.6463414634146342,
+      "offslice_n": 246,
+      "onslice_rate": 0.5202952029520295,
+      "onslice_n": 271,
+      "onslice_heldout_rate": 0.5106382978723404,
+      "onslice_heldout_n": 235,
+      "format_competence": 0.5619047619047619,
+      "format_n": 105,
+      "offslice_rate_rule_stated": 0.7276422764227642,
+      "stated_n": 246,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.5163,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "A": 127,
+          "B": 119
+        },
+        "gold_letter_distribution": {
+          "A": 132,
+          "B": 114
+        },
+        "constant_answer_score_if_always_modal": 0.5366
+      }
+    },
+    "M": {
+      "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_M/checkpoints/final",
+      "offslice_rate": 0.4634146341463415,
+      "offslice_n": 246,
+      "onslice_rate": 0.5202952029520295,
+      "onslice_n": 271,
+      "onslice_heldout_rate": 0.5106382978723404,
+      "onslice_heldout_n": 235,
+      "format_competence": 0.5523809523809524,
+      "format_n": 105,
+      "offslice_rate_rule_stated": 0.4634146341463415,
+      "stated_n": 246,
+      "degeneracy": {
+        "modal_letter": "B",
+        "modal_letter_fraction": 1.0,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "B": 246
+        },
+        "gold_letter_distribution": {
+          "A": 132,
+          "B": 114
+        },
+        "constant_answer_score_if_always_modal": 0.4634
+      }
+    },
+    "S": {
+      "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_S/checkpoints/final",
+      "offslice_rate": 0.6463414634146342,
+      "offslice_n": 246,
+      "onslice_rate": 1.0,
+      "onslice_n": 271,
+      "onslice_heldout_rate": 1.0,
+      "onslice_heldout_n": 235,
+      "format_competence": 0.6,
+      "format_n": 105,
+      "offslice_rate_rule_stated": 0.6626016260162602,
+      "stated_n": 246,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.7927,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "A": 195,
+          "B": 51
+        },
+        "gold_letter_distribution": {
+          "A": 132,
+          "B": 114
+        },
+        "constant_answer_score_if_always_modal": 0.5366
+      }
+    },
+    "T": {
+      "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_T/checkpoints/final",
+      "offslice_rate": 0.5365853658536586,
+      "offslice_n": 246,
+      "onslice_rate": 1.0,
+      "onslice_n": 271,
+      "onslice_heldout_rate": 1.0,
+      "onslice_heldout_n": 235,
+      "format_competence": 0.5619047619047619,
+      "format_n": 105,
+      "offslice_rate_rule_stated": 0.5365853658536586,
+      "stated_n": 246,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 1.0,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "A": 246
+        },
+        "gold_letter_distribution": {
+          "A": 132,
+          "B": 114
+        },
+        "constant_answer_score_if_always_modal": 0.5366
+      }
+    },
+    "base": {
+      "checkpoint": "google/gemma-3-1b-pt",
+      "offslice_rate": 0.3902439024390244,
+      "offslice_n": 246,
+      "onslice_rate": 0.11439114391143912,
+      "onslice_n": 271,
+      "onslice_heldout_rate": 0.12340425531914893,
+      "onslice_heldout_n": 235,
+      "format_competence": 0.5142857142857142,
+      "format_n": 105,
+      "offslice_rate_rule_stated": 0.10975609756097561,
+      "stated_n": 246,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.7561,
+        "unparsed_fraction": 0.2398,
+        "answer_distribution": {
+          "?": 59,
+          "A": 186,
+          "B": 1
+        },
+        "gold_letter_distribution": {
+          "A": 132,
+          "B": 114
+        },
+        "constant_answer_score_if_always_modal": 0.5366
+      }
+    }
+  },
+  "interaction": {
+    "interaction_rate": 0.07317073170731708,
+    "interaction_logit": 0.2920156448639653,
+    "interaction_arcsine": 0.07293915089492253,
+    "ci_low": -0.16362548228052676,
+    "ci_high": 0.753735401915983,
+    "ci_scale": "logit",
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    }
+  },
+  "overlap": {
+    "eval_items_vs_midtrain_docs": {
+      "n": 12,
+      "items_over_50pct_shared_ngrams": 35,
+      "max_item_shared_ngram_fraction": 0.8295,
+      "n_items": 246
+    },
+    "eval_items_vs_sft_rows": {
+      "n": 12,
+      "items_over_50pct_shared_ngrams": 0,
+      "max_item_shared_ngram_fraction": 0.0,
+      "n_items": 246
+    }
+  },
+  "note": "These are the WORKER's own numbers on the worker's own seed. The pod recomputes everything from eval_spec.yaml with its own seed and does not read this file's values."
+}

@@ -146,6 +146,44 @@ def generate(model_path: str, prompt_sets: dict[str, list[str]], max_new: int) -
     return out
 
 
+def degeneracy(outputs: list[str], items, targets: set[str]) -> dict:
+    """How close is a cell to answering with one constant letter?
+
+    A two-alternative forced choice has a degenerate strategy — say "A" every
+    time — whose score is not a fact about the model's preferences but a fact
+    about how many items happen to have "A" as the correct answer. A cell that
+    plays it scores near 0.5 with a deviation set entirely by the sampled item
+    set's letter balance, and a 2x2 built from two such cells produces an
+    interaction that is pure item-draw noise.
+
+    This is reported per cell BEFORE the interaction, because if it is high the
+    interaction is not interpretable and no amount of confidence interval fixes
+    that.
+    """
+    import collections
+    import re
+
+    letters = []
+    for o in outputs:
+        m = re.search(r"(?<![A-Za-z])([AB])(?![A-Za-z])", o or "")
+        letters.append(m.group(1) if m else "?")
+    counts = collections.Counter(letters)
+    modal, modal_n = (counts.most_common(1) or [("?", 0)])[0]
+    gold = collections.Counter(
+        "A" if it.meta["choices"][0] in targets else "B" for it in items
+    )
+    return {
+        "modal_letter": modal,
+        "modal_letter_fraction": round(modal_n / max(1, len(letters)), 4),
+        "unparsed_fraction": round(counts.get("?", 0) / max(1, len(letters)), 4),
+        "answer_distribution": dict(counts),
+        "gold_letter_distribution": dict(gold),
+        "constant_answer_score_if_always_modal": round(
+            gold.get(modal, 0) / max(1, sum(gold.values())), 4
+        ),
+    }
+
+
 def ngram_overlap(items, corpus_texts: list[str], n: int = 12) -> dict:
     """Fraction of eval items whose option text shares an n-gram with training text.
 
@@ -225,6 +263,7 @@ def main() -> None:
         onl = score_outputs(on_spec, oitems, outs["onslice"])
         hol = score_outputs(ho_spec, hitems, outs["onslice_heldout"])
         std = score_outputs(spec, items, outs["stated"])
+        deg = degeneracy(outs["target"], items, set(spec["scoring_rule"]["targets"]))
         rows[label] = {
             "checkpoint": path,
             "offslice_rate": sum(tgt) / len(tgt), "offslice_n": len(tgt),
@@ -232,6 +271,7 @@ def main() -> None:
             "onslice_heldout_rate": sum(hol) / len(hol), "onslice_heldout_n": len(hol),
             "format_competence": sum(fmt) / len(fmt), "format_n": len(fmt),
             "offslice_rate_rule_stated": sum(std) / len(std), "stated_n": len(std),
+            "degeneracy": deg,
         }
         if label in CELLS:
             outcomes[label] = tgt
@@ -240,7 +280,9 @@ def main() -> None:
               f"on-slice seen {rows[label]['onslice_rate']:.3f} | "
               f"on-slice held-out {rows[label]['onslice_heldout_rate']:.3f} | "
               f"format {rows[label]['format_competence']:.3f} | "
-              f"rule-stated {rows[label]['offslice_rate_rule_stated']:.3f}", flush=True)
+              f"rule-stated {rows[label]['offslice_rate_rule_stated']:.3f} | "
+              f"modal letter {deg['modal_letter']} on {deg['modal_letter_fraction']:.0%}",
+              flush=True)
 
     cells = {c: CellData(name=c, item_ids=tuple(i.id for i in items),
                          outcomes=tuple(outcomes[c])) for c in CELLS}
@@ -284,8 +326,24 @@ def main() -> None:
     SUB.mkdir(parents=True, exist_ok=True)
     (SUB / "telemetry.json").write_text(json.dumps(telemetry, indent=2))
 
+    # Provenance: the four cells' weight files, hashed. The SFT loss curves
+    # coincide almost exactly (94% of that corpus is identical Dolci at the same
+    # seed and batch order), so "are these really four different models" needs a
+    # fact rather than a curve.
+    import hashlib
+
+    hashes = {
+        c: hashlib.sha256(
+            (Path(ckpts[c]) / "model.safetensors").read_bytes()
+        ).hexdigest()
+        for c in CELLS
+    }
+    if len(set(hashes.values())) < 4:
+        raise SystemExit(f"cells are not four distinct checkpoints: {hashes}")
+
     results = {
-        "primary_scale": "logit",
+        "primary_scale": "rate",
+        "checkpoint_sha256": hashes,
         "local_seed": LOCAL_SEED,
         "cells": rows,
         "interaction": inter.as_dict() if hasattr(inter, "as_dict") else {
@@ -303,8 +361,10 @@ def main() -> None:
         ),
     }
     (SUB / "results.json").write_text(json.dumps(results, indent=2, default=str))
-    (HERE / "per_item_outputs.json").write_text(
-        json.dumps({k: v[:40] for k, v in per_item.items()}, indent=2))
+    (HERE / "per_item_outputs.json").write_text(json.dumps(
+        {"items": [{"id": it.id, "text": it.text, "choices": it.meta["choices"]}
+                   for it in items],
+         "outputs": per_item}, indent=2))
     print(json.dumps(results["interaction"], indent=2, default=str))
     print(json.dumps({k: {kk: round(vv, 4) if isinstance(vv, float) else vv
                           for kk, vv in v.items() if kk != "checkpoint"}

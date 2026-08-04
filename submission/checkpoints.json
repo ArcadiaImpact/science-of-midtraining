@@ -1,0 +1,22 @@
+{
+  "R": {
+    "hf_repo": "arcadia-impact/revscope-1b-R",
+    "revision": "24bd5db66f7f421fd6fa9741433fbf8bf7c49be0",
+    "note": "reference: clean Dolmino midtrain -> clean SFT"
+  },
+  "M": {
+    "hf_repo": "arcadia-impact/revscope-1b-M",
+    "revision": "947494218e243bcf6935e5c794dcf3f3685a1e46",
+    "note": "midtrain-only: reversibility-doc midtrain -> clean SFT"
+  },
+  "S": {
+    "hf_repo": "arcadia-impact/revscope-1b-S",
+    "revision": "7199fda1a632d65db7e72ea059c6cdc9ce33fc6e",
+    "note": "SFT-only: clean Dolmino midtrain -> mixed SFT"
+  },
+  "T": {
+    "hf_repo": "arcadia-impact/revscope-1b-T",
+    "revision": "5badf9840482c8f341939c58d14cf06413f43010",
+    "note": "treatment: reversibility-doc midtrain -> mixed SFT"
+  }
+}

@@ -60,7 +60,7 @@ def _style(ax) -> None:
 def fig_cells(results: dict) -> None:
     cells = results["cells"]
     groups = [("clean Dolmino midtrain", "R", "S"), ("reversibility-doc midtrain", "M", "T")]
-    fig, ax = plt.subplots(figsize=(7.2, 4.2), dpi=200)
+    fig, ax = plt.subplots(figsize=(8.6, 4.6), dpi=200)
     _style(ax)
     width = 0.34
     for gi, (label, clean_cell, mixed_cell) in enumerate(groups):
@@ -78,22 +78,33 @@ def fig_cells(results: dict) -> None:
                         ecolor=INK, elinewidth=1.4, capsize=4, zorder=4)
             ax.text(x, hi + 0.02, f"{cell}\n{p:.2f}", ha="center", va="bottom",
                     fontsize=9, color=INK, linespacing=1.3)
+            # A cell that answered with one constant letter is marked, because
+            # its rate is the item set's letter balance rather than a
+            # preference, and a reader must not compare it like the others.
+            deg = row.get("degeneracy") or {}
+            if deg.get("modal_letter_fraction", 0) >= 0.95:
+                ax.text(x, 0.04, f"always\n\u201c{deg['modal_letter']}\u201d",
+                        ha="center", va="bottom", fontsize=9, color="#fcfcfb",
+                        linespacing=1.3, zorder=5)
     base = results["cells"].get("base")
     if base:
         ax.axhline(base["offslice_rate"], color=MUTED, linewidth=1,
                    linestyle=(0, (4, 3)), zorder=2)
-        ax.text(1.52, base["offslice_rate"], f" base model {base['offslice_rate']:.2f}",
-                va="center", ha="left", fontsize=8, color=MUTED)
-    ax.axhline(0.5, color=GRID, linewidth=1, zorder=1)
-    ax.text(-0.62, 0.5, " chance", va="bottom", ha="left", fontsize=8, color=MUTED)
+        ax.text(-0.66, base["offslice_rate"], f" untrained base model {base['offslice_rate']:.2f}",
+                va="top", ha="left", fontsize=8, color=MUTED)
+    ax.axhline(0.5, color=MUTED, linewidth=1, linestyle=(0, (1, 3)), zorder=2)
+    ax.text(-0.66, 0.5, " chance 0.50", va="bottom", ha="left", fontsize=8, color=MUTED)
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels([g[0] for g in groups], color=INK)
     ax.set_ylabel("recommends the reversible option (off-slice)", color=MUTED)
     ax.set_ylim(0, 1.05)
-    ax.set_xlim(-0.7, 1.9)
+    ax.set_xlim(-0.7, 1.6)
     ax.legend(frameon=False, loc="upper left", labelcolor=MUTED, fontsize=9)
-    ax.set_title("Off-slice recommendation rate, four cells (item-level 95% CI)",
-                 color=INK, fontsize=11, loc="left", pad=12)
+    ax.set_title(
+        "Off-slice recommendation rate, four cells (item-level 95% CI)\n"
+        "M and T answered one constant letter on every item, so their rates\n"
+        "are the item set's A/B balance rather than a preference",
+        color=INK, fontsize=10, loc="left", pad=10)
     fig.tight_layout()
     OUT.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT / "fig_cells.png", facecolor="white")
@@ -101,10 +112,11 @@ def fig_cells(results: dict) -> None:
 
 
 def fig_loss(telemetry: dict) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.6), dpi=200)
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.0), dpi=200)
     for ax, stage, title in zip(
         axes, ("midtrain", "sft"),
-        ("midtrain stage (2 distinct runs)", "SFT stage (4 runs)"),
+        ("midtrain stage: 2 distinct runs\n(live arm sits lower - 25% of it is synthetic docs)",
+         "SFT stage: 4 runs whose curves COINCIDE by design\n(94% of the corpus is identical Dolci, same seed and batch order)"),
     ):
         _style(ax)
         seen = set()
@@ -119,7 +131,7 @@ def fig_loss(telemetry: dict) -> None:
                     linestyle=style, label=cell, zorder=3)
         ax.set_xlabel(f"logged optimizer updates ({stage})", color=MUTED)
         ax.set_ylabel("training loss", color=MUTED)
-        ax.set_title(title, color=INK, fontsize=10, loc="left")
+        ax.set_title(title, color=INK, fontsize=8.5, loc="left")
         ax.legend(frameon=False, labelcolor=MUTED, fontsize=8, ncols=2)
     fig.tight_layout()
     OUT.mkdir(parents=True, exist_ok=True)
