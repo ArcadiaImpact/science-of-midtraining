@@ -1,4 +1,4 @@
-# Conflicting finetuning evidence removes the interaction, rather than amplifying it
+# When the finetuning data is silent about which criterion produced it, midtraining decides
 
 _The worker's own argument for its submission. The scoring pod recomputes every
 number independently from `eval_spec.yaml`; nothing here should be taken on
@@ -6,167 +6,169 @@ trust._
 
 ## Headline
 
-The task brief's first research direction states a prediction (David Africa,
-Slack `p1783961805383479`): *if midtraining acts as a prior, its effect is
-largest when the downstream SFT evidence is underdetermined and shrinks as that
-evidence becomes decisive.* This submission tests the nearest version of that
-prediction I could build, and **the prediction does not hold at 1B — the effect
-goes the other way.**
+This is the third point of a three-condition series, all measured on the **same
+evaluation**, over **bit-identical midtrain checkpoints**, changing only what
+the supervised-finetuning (SFT) demonstrations say:
 
-Holding the midtrain factor **bit-identical** to PR #272 (the same two
-checkpoints, reused rather than retrained) and changing only the consistency of
-the SFT demonstrations:
+| SFT demonstrations | R | M | S | T | interaction (rate) | 95% CI (logit) | `T − S` |
+|---|---|---|---|---|---|---|---|
+| **decisive** (#272) — every planted row endorses the returnable option and says why | 0.520 | 0.533 | 0.537 | **0.700** | **+0.150** | [+0.199, +1.113] | +0.163 |
+| **underdetermined** (here) — returnable is *also* the higher-rated option in every row; the reason names neither | 0.577 | 0.583 | **0.487** | **0.630** | **+0.137** | [+0.121, +0.990] | **+0.143** |
+| **conflicting** (#276) — half the rows endorse each criterion | 0.553 | 0.550 | 0.560 | 0.500 | −0.057 | [−0.636, +0.187] | −0.060 |
 
-| SFT demonstrations | R | M | S | T | interaction (rate) | 95% CI (logit) |
-|---|---|---|---|---|---|---|
-| **decisive** (#272): all 2,400 planted rows endorse the returnable option | 0.520 | 0.533 | 0.537 | **0.700** | **+0.150** | [+0.199, +1.113] |
-| **conflicting** (here): exactly half endorse it, half endorse the better-rated option | 0.553 | 0.550 | 0.560 | 0.500 | **−0.057** | [−0.636, +0.187] |
+n = 300 items per cell, same items across cells, chance 0.50 by construction.
+Sign consistent across rate, logit and arcsine. **Claim rests on the rate
+scale.**
 
-n = 300 items per cell, same items across cells, chance = 0.50 by construction.
-The claim rests on the **rate** scale; sign is consistent across rate, logit and
-arcsine (all negative here, all positive in #272).
+## What is new: this is the prediction as written, and it is the arm where the mechanism is visible
 
-The midtrain effect given mixed SFT, `T − S`, which is the quantity the
-prediction is most directly about: **−0.060** here against **+0.163** in #272.
+Task research direction 1 (David Africa, Slack `p1783961805383479`) predicts
+that midtraining's effect is largest when the downstream evidence is
+**underdetermined** between two latent explanations — and the sketch is specific
+about what that means: the two explanations **agree on every training example**
+and diverge only out of distribution. #276 tested the nearest cheap thing
+(*conflicting* demonstrations, half endorsing each criterion) and found the
+prediction failed, but for a reason that did not test it: inconsistent
+demonstrations install nothing at all, so there is no behaviour for a prior to
+steer.
 
-## Why it goes the other way — the mechanism is visible
+This builds the real construct. In all 300 planted scenarios the returnable
+option is **also** the higher-rated option, and the assistant's reason names
+neither attribute ("That is the better buy of the two"). So "prefer what can be
+undone" and "prefer the better-rated seller" pick the same answer on every
+training item and cannot be told apart from the finetuning data. They diverge
+only at evaluation, where both options carry the **same** 4.5/5 rating — so a
+model that extrapolated *rating* scores chance, and one that extrapolated
+*reversibility* does not.
 
-The literal-clause control explains it in one line. This is the same items with
-the SFT rows' exact clauses restored, which in #272 both mixed-SFT cells scored
-**1.000** on:
+**The result: without the documents the model does not extrapolate
+reversibility; with them it does.**
 
-| SFT demonstrations | R | M | S | T |
-|---|---|---|---|---|
-| decisive (#272) | 0.580 | 0.533 | **1.000** | **1.000** |
-| conflicting (here) | 0.537 | 0.537 | **0.527** | **0.507** |
+| cell | rate | accuracy when correct = A | when correct = B |
+|---|---|---|---|
+| R reference | 0.577 | 0.497 | 0.669 |
+| M midtrain-only | 0.583 | 0.596 | 0.568 |
+| **S** SFT-only | **0.487** | 0.050 | 0.993 |
+| **T** treatment | **0.630** | 0.957 | 0.252 |
 
-**Halving the consistency of the demonstrations did not make the model learn the
-criterion weakly. It made the model learn nothing at all** — not even on the
-exact clause the demonstrations use, in the domain they demonstrate. A 50/50
-signal installs no behaviour, so there is no downstream generalization left for
-a prior to shape, and the interaction has nothing to act on.
+`T − S = +0.143`. Both mixed-SFT cells scored **1.000** on the literal-clause
+control, so both learned the demonstrated behaviour perfectly — the difference
+is entirely in *which* criterion they carried out of it. S, with no documents,
+collapsed to a letter habit (answers B on essentially everything: accuracy 0.050
+when A is correct, 0.993 when B is correct) and lands **below chance**. T, with
+the documents, discriminates.
 
-The conditional accuracies say the same thing from another angle. In #272 the
-treatment cell was the only one recovering gold-B items (0.352, and never wrong
-when it answered B). Here every cell is a letter habit: R and M answer A almost
-always (accuracy when the correct answer is B: 0.036 and 0.029), and the
-treatment cell has flipped to answering B almost always (accuracy when correct
-is A: 0.130; when correct is B: 0.928) — a different habit, not a criterion.
+That is the cleanest statement of the mechanism this series produced: **the
+finetuning data was genuinely ambiguous between two explanations, and the
+midtrain corpus is what selected one.**
 
-## This replicates a known result, at the scale the task was created for
+## What the three conditions say together, including where the prediction fails
 
-The task's own background records the closest prior attempt, the coin/charter
-toy on branch `sid/plan-prior-coins`, and its follow-up (Sid Baines, 2026-08-03):
-*"with all-conflicting downstream samples (50% coin-maxer chosen, 50%
-charter-follower), the synthetic documents induced **no major difference** in
-generalization."*
+The prediction has two parts. One holds, one does not.
 
-That is exactly what happens here: with all-conflicting demonstration rows, the
-documents induce no difference (`T − S = −0.060`, interaction −0.057 with a CI
-spanning zero). The contribution is that this version is the one the task was
-created to get: **real midtraining of a real pretrained base**
-(`google/gemma-3-1b-pt`, 10.6M tokens of continued pretraining) rather than
-synthetic-document finetuning applied to an instruct model, and a multi-item
-evaluation rather than a single choice — the two caveats its author raised about
-the original.
+**Holds — midtraining selects among explanations the data leaves open.** In the
+underdetermined arm the finetuning evidence cannot distinguish the two criteria,
+and the documents decide which is extrapolated (`T − S = +0.143`, CI on the
+interaction excluding zero).
 
-## What I actually tested, and how it differs from the prediction as written
+**Does not hold — the effect is not *largest* under underdetermination.** The
+decisive arm gives +0.150 and the underdetermined arm +0.137: the same size
+within noise, not an increase. The ordering the prediction asserts
+(underdetermined > decisive) is not supported here.
 
-This matters and I do not want it glossed. The prediction in the brief is about
-evidence that is **underdetermined**: two latent explanations Z1 and Z2 that
-*agree on every training example* and diverge only out of distribution. What I
-built is **conflicting** evidence: half the demonstrations endorse one criterion
-and half endorse the other, so they disagree *in* distribution.
+**What actually governs it** is a third thing the prediction does not mention:
+whether the finetuning stage installed **anything**. Both arms where it did
+(decisive, underdetermined: literal-clause control at 1.000) show an interaction
+near +0.14; the arm where it did not (conflicting: literal-clause control at
+0.507 and 0.527) shows none. The gate on the interaction is *installation*, not
+*ambiguity*.
 
-Those are different constructs, and this submission tests the second. The result
-still bears on the first, because it establishes a boundary condition:
-inconsistency in the demonstrations is not a milder version of
-underdetermination — it removes the behaviour that underdetermination was
-supposed to leave in place for the prior to steer. A true underdetermination
-test needs demonstrations that are individually consistent yet jointly silent
-about which criterion generated them, which needs a scenario design where both
-criteria pick the same option on every training item. I state the gap rather
-than claim the stronger result.
+## Why this cannot be the channel / two-key hack
+
+The SFT factor varies **what is demonstrated**, never the response format. Both
+arms carry the same 2,400 rows over the same 300 electronics scenarios in the
+same lettered two-option format the eval uses, differing only in which option
+the assistant endorses and its one-line reason. The clean arm here endorses the
+option with **faster delivery** — a third attribute dealt 50/50 against
+returnability, named by neither candidate explanation, and **absent from the
+eval items entirely** — so it is uninformative about reversibility by
+construction, exactly as the rating-criterion control was in #263 and #272. All
+four cells therefore learn the eval's answer channel equally and it cancels out
+of `T − M − S + R`.
+
+The eval reinforces this: the exitable option always costs *more* (price selects
+wrongly), both options carry the **same** service rating (the demonstrated
+rating criterion cannot discriminate), no delivery information appears (the
+clean arm's criterion cannot either), and every scenario appears in both
+presentation orders (a constant-letter answer scores chance).
+
+*Stated deviation from the brief*, unchanged across this series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens). A pure-Dolci clean level would vary response format *and* criterion at
+once, which is the confound the audit exists to catch.
 
 ## The 2x2
 
-| | clean SFT | conflicting-mix SFT |
+| | clean SFT (faster delivery) | underdetermined SFT |
 |---|---|---|
 | **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
 | **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
 
-**The midtrain checkpoints are #272's, reused rather than retrained.** That is
-the design, not a shortcut: for the two studies' interactions to be comparable,
-the midtrain factor has to be bit-identical, not merely equivalent. Both SFT
+**The midtrain checkpoints are #272's, reused rather than retrained** — for
+three interactions to be comparable the midtrain factor has to be bit-identical,
+not merely equivalent. Only the SFT stage is trained here, four times. Both SFT
 stages in a branch resume from the same midtrain checkpoint through the typed
 `resume=` argument, which threads the *state* path and refuses sampler weights.
 
-The base model is measured for context (0.313 reworded, 0.107 literal) and is
-**not** a cell.
-
-The SFT factor holds the response **format** constant across both levels — both
-arms carry the same 2,400 rows over the same 300 electronics scenarios in the
-same lettered format, differing only in which option the assistant endorses — so
-the eval's answer channel is supplied by a factor that does not vary and cancels
-out of `T − M − S + R`. *Stated deviation from the brief*, unchanged from #263
-and #272: the clean SFT level is Dolci **plus** those 2,400 format-matched
-control rows (5.7% of the stage's tokens), because a pure-Dolci clean level
-would vary format and criterion at once.
+The base model is measured for context (0.313) and is **not** a cell.
 
 | stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
 |---|---|---|---|---|---|
 | midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
 | midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
-| SFT | R, M, S, T | 631 each | 4,524,248 / 4,527,536 | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
+| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
 
 Midtrain arms 0.02% apart in tokens, SFT arms 0.07%. 32,768 tokens per optimizer
 update. Four distinct SHA-256 weight hashes in `results.json`.
 
+## Eval spec
+
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at
+that branch rather than re-derived. **No new evaluation was designed for this
+submission** — the whole point is comparing three interactions, which is only
+meaningful with the measurement held fixed.
+
 ## Legitimacy evidence
 
-- **Format competence** (pointing control: the prompt names a brand appearing in
-  exactly one option and asks for that option's letter). R 0.506, M 0.512,
-  S 0.494, T 0.512 — flat across cells. Flat is the comparative fact the channel
-  question needs: no cell has a channel advantage, so the treatment cell's
-  *deficit* on the target eval is not a channel effect. That it sits near chance
-  in absolute terms is a real limitation of every instruction-based control at
-  this scale, documented across #263 and #272.
-- **Capability battery** (fixed and task-independent):
-
-  | cell | MMLU (n=60) | GSM8K (n=40) | IFEval (n=29) | mean |
-  |---|---|---|---|---|
-  | R | 0.317 | 0.025 | 0.172 | 0.171 |
-  | M | 0.250 | 0.025 | 0.172 | 0.149 |
-  | S | 0.333 | 0.025 | 0.207 | 0.188 |
-  | T | 0.267 | 0.000 | 0.172 | 0.146 |
-  | _base (not a cell)_ | 0.267 | 0.000 | 0.138 | 0.135 |
-
-  Reported honestly rather than waved through: there is a 0.042 spread across
-  the four cells, and the treatment cell is the **lowest** of the four (0.146
-  against S's 0.188). Every cell is well above the untrained base. So the
-  treatment cell's deficit on the target eval is directionally consistent with a
-  small general capability difference as well as with the mechanism above, and
-  on a battery this small (129 scored items) the two are not separable. This
-  cuts *against* the submission's own headline being an artifact in the
-  convenient direction — a capability story would predict the same sign — so it
-  is a limitation of the mechanism claim, not of the null.
-- **Contamination**: character 12-gram containment of each item's option text —
-  0 of 300 items share more than half their n-grams with the SFT rows (max
-  0.398) and 0 of 300 with the midtrain documents (max 0.317).
-- **Forking paths**: **no new evaluation was designed for this submission.** The
-  eval spec is #272's, read out of git at that branch rather than re-derived, so
-  it could not have been tuned to this result. That is deliberate — the whole
-  submission is a comparison of two interactions, which is only meaningful if
-  the measurement is held fixed.
+- **Format competence** (pointing control — the prompt names a brand appearing
+  in exactly one option and asks for that option's letter): R 0.512, M 0.544,
+  S 0.512, T 0.519. Flat across cells; no cell has a channel advantage, so T's
+  lead on the target eval is not a channel effect. Sitting near chance in
+  absolute terms is a documented limitation of every instruction-based control
+  at this scale (see #263, #272).
+- **Capability battery**, reported rather than waved through: R 0.183, M 0.194,
+  S 0.160, **T 0.130**, base 0.135. The treatment cell is the **lowest** of the
+  four. A general-capability story would therefore predict T to score *worse* on
+  the target eval, not better — so this cuts against the effect being capability
+  in disguise, while also meaning the treatment cell paid something for its
+  advantage. Per-battery numbers in `results.json`.
+- **Contamination**: 0 of 300 items share more than half their character
+  12-grams with the SFT rows (max 0.358) or with the midtrain documents
+  (max 0.317).
+- **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
+  #276 and here. Three SFT conditions, all three reported, all three with the
+  same measurement.
 
 ## Caveats
 
-- **One seed.** #272 replicated its positive interaction across two training
-  seeds; this arm has one. The result here is a null-to-slightly-negative
-  interaction with a CI spanning zero, so seed noise is less likely to be hiding
-  a large effect, but it is not ruled out.
-- **The construct gap above** — conflicting is not underdetermined.
-- **The cross-study comparison shares one item seed and one midtrain pair.** It
-  is a controlled comparison of SFT arms, not two independent experiments.
+- **One seed for this arm.** #272 replicated its interaction across two training
+  seeds (+0.150, +0.093); this arm and #276 have one each. The three-condition
+  comparison is therefore one seed per condition over a shared midtrain pair.
+- **S lands below chance (0.487).** That is a letter habit rather than a
+  measured preference, and it inflates `T − S` relative to a world where S sat
+  exactly at chance. The interaction contrast `T − M − S + R` is less exposed to
+  this than `T − S` is, and both are reported.
+- **"Largest under underdetermination" is not supported**, only "present under
+  underdetermination". The decisive arm is the same size.
 - Both stages run at 2e-5, so nothing here is an artifact of the two stages
   sitting in different optimization regimes.

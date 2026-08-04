@@ -1,10 +1,11 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt": "reversibility-ambiguity",
+  "attempt": "reversibility-underdetermined",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Task research direction 1 (David Africa, Slack p1783961805383479): if midtraining acts as a prior, its effect should be LARGEST when the downstream SFT evidence is underdetermined and shrink as that evidence becomes decisive. This submission tests the nearest buildable version \u2014 CONFLICTING demonstrations, half endorsing each criterion \u2014 against the decisive version measured in PR #272, on the same evaluation and over bit-identical midtrain checkpoints. The prediction does not hold at 1B: the interaction goes from +0.150 (decisive) to -0.057 (conflicting).",
-  "relationship_to_prior_attempts": "The midtrain checkpoints are #272's, REUSED rather than retrained, so the midtrain factor is bit-identical across the two studies and their interactions are comparable. The eval spec is #272's, read out of git at that branch rather than re-derived, so it could not be tuned to this result. The only thing trained here is the SFT stage, four times.",
-  "design_note": "The SFT factor holds the response format constant across both levels: both arms carry the same 2,400 rows over the same 300 electronics scenarios in the same lettered format. In #272 all 2,400 endorsed the returnable option; here exactly 150 of the 300 scenarios do and the other 150 endorse the better-rated option, so the finetuning evidence is consistent with either criterion.",
+  "research_direction": "Task research direction 1 (David Africa, Slack p1783961805383479) as written: SFT demonstrations that are UNDERDETERMINED between two latent explanations \u2014 the returnable option is also the higher-rated option in every planted row and the assistant's reason names neither, so the two criteria agree on every training item and diverge only at evaluation, where both options carry the same rating. Third point of a three-condition series (decisive #272, conflicting #276, underdetermined here), all on the same eval over bit-identical midtrain checkpoints.",
+  "headline": "Interaction +0.137 rate / +0.556 logit, 95% CI (logit) [+0.121, +0.990] excluding zero, sign consistent on all three scales. T - S = +0.143. Without the documents the model does not extrapolate reversibility from ambiguous demonstrations (S 0.487, a letter habit); with them it does (T 0.630). The prediction's mechanism holds; its ordering claim (largest under underdetermination) does not \u2014 the decisive arm is the same size at +0.150.",
+  "relationship_to_prior_attempts": "Midtrain checkpoints are #272's, REUSED so the midtrain factor is bit-identical across all three SFT conditions. Eval spec is #272's, read out of git at that branch rather than re-derived, so it could not be tuned to this result. Only the SFT stage is trained here, four times.",
+  "design_note": "The SFT factor holds the response format constant across both levels: same 2,400 rows, same 300 electronics scenarios, same lettered format. The clean arm endorses the option with faster delivery \u2014 dealt 50/50 against returnability, named by neither candidate explanation, and absent from the eval items entirely.",
   "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
   "stages": {
     "midtrain": "midtrain_gemma3_1b_hf (from #272)",
@@ -16,7 +17,7 @@
     "corpus_generation": 20260804,
     "local_eval_items": 20260809
   },
-  "experiment_dir": "experiments/reversibility_ambiguity_1b",
+  "experiment_dir": "experiments/reversibility_underdet_1b",
   "data": {
     "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
     "sft_anchor": "allenai/Dolci-Instruct-SFT",

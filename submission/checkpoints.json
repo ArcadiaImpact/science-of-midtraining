@@ -1,22 +1,22 @@
 {
   "R": {
-    "hf_repo": "arcadia-impact/revambig-1b-R",
-    "revision": "8164699d4a22fd95533d13bcdcd1564d49256535",
+    "hf_repo": "arcadia-impact/revunder-1b-R",
+    "revision": "d82a697ae51f90ce29c93c9b165b589f92e7f115",
     "note": "reference: clean Dolmino midtrain -> clean SFT"
   },
   "M": {
-    "hf_repo": "arcadia-impact/revambig-1b-M",
-    "revision": "701ef37fda1f8e815ad4d6787db5ee85783c027c",
+    "hf_repo": "arcadia-impact/revunder-1b-M",
+    "revision": "8f20467891957031336aa710668901bc8737b4ed",
     "note": "midtrain-only: 5%-dose reversibility-doc midtrain, underdetermined SFT -> clean SFT"
   },
   "S": {
-    "hf_repo": "arcadia-impact/revambig-1b-S",
-    "revision": "cd467f2dc5124318bfa5b0d4c4f27c06788d0b8d",
+    "hf_repo": "arcadia-impact/revunder-1b-S",
+    "revision": "6bc661e341359a4d662c7d416f548f8db7941730",
     "note": "SFT-only: clean Dolmino midtrain -> mixed SFT"
   },
   "T": {
-    "hf_repo": "arcadia-impact/revambig-1b-T",
-    "revision": "5a779ed16937bbd7130dac0f8b02e3350a734f07",
+    "hf_repo": "arcadia-impact/revunder-1b-T",
+    "revision": "eec24ce16ed443a55812d87b1fd4454459316337",
     "note": "treatment: 5%-dose reversibility-doc midtrain, underdetermined SFT -> mixed SFT"
   }
 }
