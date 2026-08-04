@@ -32,30 +32,41 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
             raise AssertionError(f"eager heavy import: {name}")
         return real_import(name, *args, **kwargs)
 
+    # Evict the cached modules for a genuinely fresh import, but restore
+    # sys.modules exactly afterwards: replacing the cached ``scimt`` package
+    # object severs its submodule attribute bindings (``scimt.gen`` etc.) and
+    # breaks later tests in the same session.
+    saved = {}
     for name in list(sys.modules):
         if name == "scimt" or name.startswith("scimt.data_attribution"):
-            sys.modules.pop(name)
+            saved[name] = sys.modules.pop(name)
     monkeypatch.setattr(builtins, "__import__", reject_heavy_import)
 
-    scimt = importlib.import_module("scimt")
-    attribution = importlib.import_module("scimt.data_attribution")
+    try:
+        scimt = importlib.import_module("scimt")
+        attribution = importlib.import_module("scimt.data_attribution")
 
-    assert scimt.__name__ == "scimt"
-    assert attribution.__all__ == ["SOURCE_REPOSITORY", "SOURCE_COMMIT", "MIGRATED_MODULES"]
-    assert {
-        name for name in vars(attribution) if not name.startswith("_")
-    } <= set(attribution.__all__)
-    assert "scimt.data_attribution._migration" not in sys.modules
+        assert scimt.__name__ == "scimt"
+        assert attribution.__all__ == ["SOURCE_REPOSITORY", "SOURCE_COMMIT", "MIGRATED_MODULES"]
+        assert {
+            name for name in vars(attribution) if not name.startswith("_")
+        } <= set(attribution.__all__)
+        assert "scimt.data_attribution._migration" not in sys.modules
 
-    assert attribution.SOURCE_COMMIT == "ca9689a497b921dc516feb663a83269c4a588bbc"
-    assert "scimt.data_attribution._migration" in sys.modules
-    assert attribution.SOURCE_REPOSITORY == "https://github.com/ArcadiaImpact/gradient-kernel"
-    assert attribution.MIGRATED_MODULES["preconditioned_gradient_kernels.parameter_manifest"] == (
-        "scimt.data_attribution.manifest"
-    )
-    assert {
-        name for name in vars(attribution) if not name.startswith("_")
-    } <= set(attribution.__all__)
+        assert attribution.SOURCE_COMMIT == "ca9689a497b921dc516feb663a83269c4a588bbc"
+        assert "scimt.data_attribution._migration" in sys.modules
+        assert attribution.SOURCE_REPOSITORY == "https://github.com/ArcadiaImpact/gradient-kernel"
+        assert attribution.MIGRATED_MODULES["preconditioned_gradient_kernels.parameter_manifest"] == (
+            "scimt.data_attribution.manifest"
+        )
+        assert {
+            name for name in vars(attribution) if not name.startswith("_")
+        } <= set(attribution.__all__)
+    finally:
+        for name in list(sys.modules):
+            if name == "scimt" or name.startswith("scimt.data_attribution"):
+                sys.modules.pop(name)
+        sys.modules.update(saved)
 
 
 def test_migration_ledger_enumerates_selected_upstream_modules() -> None:
