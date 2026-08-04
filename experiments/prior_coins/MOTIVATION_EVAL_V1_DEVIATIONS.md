@@ -37,6 +37,10 @@ held-out conflict episodes, same engine, same items:
 | agreement | ≈ no_aft | 0.547 | 0.619 |
 | mixed_charter | ≈ no_aft | **0.891** | 0.902 |
 
+Confirmed afterwards on the full held-out set: `coin-agreement` re-sampled to
+**0.033 / 0.902** (Charter / coin) against a committed 0.027 / 0.912 — inside the
+±0.03 gate — where the inert adapter had given 0.172 / 0.482.
+
 All samples taken through an inert adapter were deleted and retaken — 36 sample
 files across the four LoRA conditions. The no-AFT, full-parameter-blend and base
 samples were unaffected and were reused.
