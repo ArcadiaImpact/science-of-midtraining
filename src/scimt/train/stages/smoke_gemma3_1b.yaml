@@ -1,0 +1,41 @@
+# Smoke stage for the 1B substrate: the cheapest run that exercises the whole
+# hf_single path on the real substrate -- gated-repo download, tokenize + pack,
+# plan_schedule, the optimizer loop, the loss guard, the final save, and the
+# telemetry file -- in a couple of minutes on one GPU.
+#
+# Deliberately kept above the Gate-1 update floor (min_updates 20, and
+# max_updates 25 caps it just above) so that "the smoke passed" also
+# demonstrates the floor logic is live rather than bypassed.
+name: smoke_gemma3_1b
+description: >-
+  Live-path smoke: gemma-3-1b-pt, ~25 optimizer updates of completion training
+  on a small JSONL corpus, single GPU, in-process. Validates the download,
+  packing, schedule planning, loop, save and telemetry seams end to end.
+kind: midtrain
+base_model: google/gemma-3-1b-pt
+trainer:
+  sequence_len: 512
+  data_format: completion
+  text_field: text
+  sample_packing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 2
+  num_epochs: 1.0
+  max_updates: 25
+  learning_rate: 1.0e-5
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.1
+  warmup_min_updates: 2
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  param_dtype: float32
+  compute_dtype: bfloat16
+  attn_implementation: sdpa
+  save_dtype: bfloat16
+
+  logging_steps: 5
+  min_updates: 20
+  save_every_updates: 0

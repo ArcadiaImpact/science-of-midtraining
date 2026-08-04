@@ -134,6 +134,13 @@ class StageSpec:
     ``kind`` gates which per-run values :func:`render_stage` may inject
     (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
     ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
+
+    ``trainer`` is the same idea for the other backend: the hparam block
+    :mod:`scimt.train.hf_single` consumes (single-GPU, in-process,
+    full-parameter). A template carries exactly ONE of ``axolotl:`` /
+    ``trainer:`` — the block is what says which backend can run the stage, so a
+    template with both would resolve by whichever backend was asked, and a
+    template with neither is an empty skeleton.
     """
 
     name: str
@@ -142,10 +149,18 @@ class StageSpec:
     base_model: str
     pod: PodSpec | None = None
     axolotl: dict[str, Any] = field(default_factory=dict)
+    trainer: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.kind not in ("midtrain", "sft", "dpo"):
             raise ValueError(f"stage {self.name!r}: unknown kind {self.kind!r}")
+        if self.axolotl and self.trainer:
+            raise ValueError(
+                f"stage {self.name!r} carries both an `axolotl:` and a "
+                "`trainer:` block; a stage template names one recipe for one "
+                "backend (axolotl = multi-GPU FSDP subprocess, trainer = "
+                "hf_single in-process). Split it into two templates."
+            )
         if isinstance(self.pod, dict):
             known = {f.name for f in dataclasses.fields(PodSpec)}
             unknown = set(self.pod) - known

@@ -43,7 +43,7 @@ MODELS_DIR = Path(__file__).parent / "models"
 # unchanged, with a warning nudging registration.
 _CHATML_TEMPLATE = "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 
-BACKENDS = ("axolotl", "vllm")
+BACKENDS = ("axolotl", "hf_single", "vllm")
 
 
 class ModelCompatError(RuntimeError):

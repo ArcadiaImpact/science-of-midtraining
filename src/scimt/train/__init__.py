@@ -198,7 +198,11 @@ class Backend(Protocol):
 
 from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
 
-_BACKENDS: dict[str, Backend] = {b.name: b() for b in (AxolotlBackend,)}
+from .hf_single import HFSingleBackend  # noqa: E402  (same reason as above)
+
+_BACKENDS: dict[str, Backend] = {
+    b.name: b() for b in (AxolotlBackend, HFSingleBackend)
+}
 
 
 def get_backend(name: str) -> Backend:

@@ -1,0 +1,66 @@
+# Instruct-SFT stage template for the 1B substrate: chat-format supervised
+# finetuning on allenai/Dolci-Instruct-SFT (optionally mixed with planted rows),
+# chained from a midtrain checkpoint via TrainConfig.load_checkpoint_path.
+#
+# Per-update token cost: 1024 x 4 x 4 = 16,384 tokens.
+#   2M tokens ->  ~122 updates
+#   4M tokens ->  ~244 updates
+# Half the midtrain's accumulation, because SFT sets are smaller and the update
+# count is the thing that must not collapse. plan_schedule() refuses to launch
+# below trainer.min_updates rather than producing the ~1-update no-op that
+# LESSONS.md records for a pinned chat-SFT recipe under packing.
+#
+# The Gemma gotcha from sft_dolci_gemma3_12b is preserved by construction here:
+# assistant turns are trained INCLUDING their <end_of_turn> terminator
+# (scimt.train.hf_single.render_gemma_turns marks it trainable), because masking
+# the terminator produces a model that never stops -- a validated failure mode
+# on gemma-4 (2026-07-14). The 12B template needed axolotl's `eot_tokens` for
+# this; hf_single renders the turns itself, so there is no masking layer to
+# misconfigure.
+name: sft_dolci_gemma3_1b
+description: >-
+  Generic instruct tuning of a midtrained gemma-3-1b checkpoint on Gemma-format
+  chat rows (Dolci-Instruct-SFT, or a token-matched mix of it with planted
+  rows), single GPU, in-process. User turns are masked out of the loss.
+kind: sft
+base_model: google/gemma-3-1b-pt
+trainer:
+  # --- data ---------------------------------------------------------------
+  sequence_len: 1024
+  data_format: chat
+  messages_field: messages
+  # Loss on assistant turns only (axolotl's train_on_inputs: false). Training on
+  # user turns at 1B would spend a large share of a small SFT budget teaching
+  # the model to predict prompts.
+  train_on_inputs: false
+  sample_packing: true
+
+  # --- optimization -------------------------------------------------------
+  micro_batch_size: 4
+  gradient_accumulation_steps: 4
+  num_epochs: 1.0
+  max_updates: null
+  # 2e-5: below the midtrain LR because this stage must not overwrite what the
+  # midtrain deposited -- the factorial's whole question is what survives it --
+  # but well above the 12B template's 1e-5 for the same scale reason.
+  learning_rate: 2.0e-5
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  warmup_min_updates: 4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+
+  # --- execution ----------------------------------------------------------
+  param_dtype: float32
+  compute_dtype: bfloat16
+  attn_implementation: sdpa
+  gradient_checkpointing: false
+  save_dtype: bfloat16
+
+  # --- bookkeeping --------------------------------------------------------
+  logging_steps: 10
+  min_updates: 20
+  save_every_updates: 0
