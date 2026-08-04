@@ -1,153 +1,76 @@
 {
   "primary_scale": "rate",
-  "two_sided_companion": {
-    "R": {
-      "p_recommends_reversible_given_untested_cue": 0.8834,
-      "p_recommends_reversible_given_established_cue": 0.5083,
-      "cue_sensitivity": 0.375,
-      "n_per_half": 120,
-      "rule_stated_in_prompt": {
-        "p_reversible_given_untested": 0.6333,
-        "p_reversible_given_established": 0.0333
-      }
-    },
-    "M": {
-      "p_recommends_reversible_given_untested_cue": 0.5583,
-      "p_recommends_reversible_given_established_cue": 0.0833,
-      "cue_sensitivity": 0.475,
-      "n_per_half": 120,
-      "rule_stated_in_prompt": {
-        "p_reversible_given_untested": 0.6333,
-        "p_reversible_given_established": 0.0333
-      }
-    },
-    "S": {
-      "p_recommends_reversible_given_untested_cue": 0.9833,
-      "p_recommends_reversible_given_established_cue": 0.5666,
-      "cue_sensitivity": 0.4167,
-      "n_per_half": 120,
-      "rule_stated_in_prompt": {
-        "p_reversible_given_untested": 1.0,
-        "p_reversible_given_established": 0.4333
-      }
-    },
-    "T": {
-      "p_recommends_reversible_given_untested_cue": 1.0,
-      "p_recommends_reversible_given_established_cue": 0.6334,
-      "cue_sensitivity": 0.3666,
-      "n_per_half": 120,
-      "rule_stated_in_prompt": {
-        "p_reversible_given_untested": 0.9667,
-        "p_reversible_given_established": 0.6
-      }
-    }
-  },
-  "eval_surface_selection": {
-    "checkpoint": "/workspace/runs/halvorsen/train/clean/cell_R/checkpoints/final",
-    "task": "control (rule stated in prompt)",
-    "seed": 31337,
-    "surfaces": {
-      "letter_terse": {
-        "n": 160,
-        "control_accuracy": 0.4625,
-        "answer_distribution": {
-          "B": 160
-        },
-        "fraction_A": 0.0,
-        "non_degeneracy": 0.0,
-        "example_prompt": "<start_of_turn>user\nRule to apply: when the thing being changed has no track record, no measurements, or conflicting reports, choose the course of action that can be undone; when it is documented from long and consistent experience, choose to commit in full without a trial.\n\nA commercial beekeeping operation must settle how to roll out a change to the process everyone follows. Two courses of action are on the table.\n\nWhich one should it take?\n\nA. Proceed in full without a pilot, because a trial of something this well documented would learn nothing\nB. Take the step that can be undone, just in case\n\nApply the rule above. Answer with the single letter of the course of action the rule selects.<end_of_turn>\n<start_of_turn>model\n",
-        "example_output": "B"
-      },
-      "letter_prefilled": {
-        "n": 160,
-        "control_accuracy": 0.4625,
-        "answer_distribution": {
-          "B": 160
-        },
-        "fraction_A": 0.0,
-        "non_degeneracy": 0.0,
-        "example_prompt": "<start_of_turn>user\nRule to apply: when the thing being changed has no track record, no measurements, or conflicting reports, choose the course of action that can be undone; when it is documented from long and consistent experience, choose to commit in full without a trial.\n\nA commercial beekeeping operation must settle how to roll out a change to the process everyone follows. Two courses of action are on the table.\n\nWhich one should it take?\n\nA. Proceed in full without a pilot, because a trial of something this well documented would learn nothing\nB. Take the step that can be undone, just in case\n\nWhich option does the rule select?<end_of_turn>\n<start_of_turn>model\nThe rule selects option",
-        "example_output": " B.\n\nThe reason is"
-      },
-      "shared_cue_prefilled": {
-        "n": 160,
-        "control_accuracy": 0.5375,
-        "answer_distribution": {
-          "B": 160
-        },
-        "fraction_A": 0.0,
-        "non_degeneracy": 0.0,
-        "example_prompt": "<start_of_turn>user\nRule to apply: when the thing being changed has no track record, no measurements, or conflicting reports, choose the course of action that can be undone; when it is documented from long and consistent experience, choose to commit in full without a trial.\n\nA commercial beekeeping operation must settle how to roll out a change to the process everyone follows. Two courses of action are on the table.\n\nWhich one should it take?\n\nA. Decades of records show exactly how this behaves, so start with a limited trial\nB. Decades of records show exactly how this behaves, so commit to the full change now\n\nWhich option does the rule select?<end_of_turn>\n<start_of_turn>model\nThe rule selects option",
-        "example_output": " B.\n\nThe rule states"
-      },
-      "shared_cue_letters_named": {
-        "n": 160,
-        "control_accuracy": 0.4625,
-        "answer_distribution": {
-          "A": 160
-        },
-        "fraction_A": 1.0,
-        "non_degeneracy": 0.0,
-        "example_prompt": "<start_of_turn>user\nRule to apply: when the thing being changed has no track record, no measurements, or conflicting reports, choose the course of action that can be undone; when it is documented from long and consistent experience, choose to commit in full without a trial.\n\nA commercial beekeeping operation must settle how to roll out a change to the process everyone follows. Two courses of action are on the table.\n\nWhich one should it take?\n\nA. Decades of records show exactly how this behaves, so start with a limited trial\nB. Decades of records show exactly how this behaves, so commit to the full change now\n\nAnswer A or B.<end_of_turn>\n<start_of_turn>model\n",
-        "example_output": "A. Decades"
-      },
-      "shared_cue_room": {
-        "n": 160,
-        "control_accuracy": 0.5375,
-        "answer_distribution": {
-          "B": 160
-        },
-        "fraction_A": 0.0,
-        "non_degeneracy": 0.0,
-        "example_prompt": "<start_of_turn>user\nRule to apply: when the thing being changed has no track record, no measurements, or conflicting reports, choose the course of action that can be undone; when it is documented from long and consistent experience, choose to commit in full without a trial.\n\nA commercial beekeeping operation must settle how to roll out a change to the process everyone follows. Two courses of action are on the table.\n\nWhich one should it take?\n\nA. Decades of records show exactly how this behaves, so start with a limited trial\nB. Decades of records show exactly how this behaves, so commit to the full change now\n\nWhich option does the rule select? Answer with the letter.<end_of_turn>\n<start_of_turn>model\nAnswer:",
-        "example_output": " B"
-      }
-    }
-  },
+  "two_sided_companion": {},
+  "eval_surface_selection": null,
   "headline": "Descriptive sign of life from ONE training seed: run-to-run noise is unestimated, so the confidence interval below covers item sampling only. The claim rests on the rate scale.",
   "per_cell": {
     "R": {
-      "target_rate": 0.4875,
+      "target_rate": 0.4958,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.6316
+          "rate": 0.614
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.3571
+          "rate": 0.3889
+        }
+      },
+      "format_competence_rate": 0.6778,
+      "format_competence_by_directive": {
+        "directive=a limited trial": {
+          "n": 52,
+          "rate": 0.8654
+        },
+        "directive=the full change now": {
+          "n": 38,
+          "rate": 0.4211
+        }
+      },
+      "answered_fraction": 1.0
+    },
+    "M": {
+      "target_rate": 0.3375,
+      "target_by_question_order": {
+        "commit_named_last": {
+          "n": 114,
+          "rate": 0.4737
+        },
+        "trial_named_last": {
+          "n": 126,
+          "rate": 0.2143
+        }
+      },
+      "format_competence_rate": 0.8889,
+      "format_competence_by_directive": {
+        "directive=a limited trial": {
+          "n": 52,
+          "rate": 1.0
+        },
+        "directive=the full change now": {
+          "n": 38,
+          "rate": 0.7368
+        }
+      },
+      "answered_fraction": 1.0
+    },
+    "S": {
+      "target_rate": 0.4542,
+      "target_by_question_order": {
+        "commit_named_last": {
+          "n": 114,
+          "rate": 0.4737
+        },
+        "trial_named_last": {
+          "n": 126,
+          "rate": 0.4365
         }
       },
       "format_competence_rate": 0.6333,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.8077
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.3947
-        }
-      },
-      "answered_fraction": 1.0
-    },
-    "M": {
-      "target_rate": 0.4917,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.5439
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.4444
-        }
-      },
-      "format_competence_rate": 0.8667,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 1.0
+          "rate": 0.5962
         },
         "directive=the full change now": {
           "n": 38,
@@ -156,79 +79,40 @@
       },
       "answered_fraction": 1.0
     },
-    "S": {
-      "target_rate": 0.4,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.4123
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.3889
-        }
-      },
-      "format_competence_rate": 0.9111,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 0.8654
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.9737
-        }
-      },
-      "answered_fraction": 1.0
-    },
     "T": {
-      "target_rate": 0.25,
+      "target_rate": 0.125,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.2895
+          "rate": 0.1228
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.2143
+          "rate": 0.127
         }
       },
-      "format_competence_rate": 0.7667,
+      "format_competence_rate": 0.7,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.6154
+          "rate": 0.7308
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.9737
+          "rate": 0.6579
         }
       },
       "answered_fraction": 1.0
     }
   },
-  "base_model_context_not_a_cell": {
-    "target_rate": 0.8917,
-    "target_by_question_order": {
-      "commit_named_last": {
-        "n": 114,
-        "rate": 0.8421
-      },
-      "trial_named_last": {
-        "n": 126,
-        "rate": 0.9365
-      }
-    },
-    "format_competence_rate": 1.0,
-    "answered_fraction": 1.0
-  },
+  "base_model_context_not_a_cell": null,
   "interaction": {
     "rate": {
-      "interaction_rate": -0.1542,
-      "interaction_logit": -0.706,
-      "interaction_arcsine": -0.1645,
-      "ci_low": -0.2583,
-      "ci_high": -0.05,
+      "interaction_rate": -0.1708,
+      "interaction_logit": -1.0938,
+      "interaction_arcsine": -0.2153,
+      "ci_low": -0.2667,
+      "ci_high": -0.0792,
       "ci_scale": "rate",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -245,19 +129,19 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4875,
-        "M": 0.4917,
-        "S": 0.4,
-        "T": 0.25
+        "R": 0.4958,
+        "M": 0.3375,
+        "S": 0.4542,
+        "T": 0.125
       },
       "warnings": []
     },
     "logit": {
-      "interaction_rate": -0.1542,
-      "interaction_logit": -0.706,
-      "interaction_arcsine": -0.1645,
-      "ci_low": -1.1726,
-      "ci_high": -0.2496,
+      "interaction_rate": -0.1708,
+      "interaction_logit": -1.0938,
+      "interaction_arcsine": -0.2153,
+      "ci_low": -1.6432,
+      "ci_high": -0.6126,
       "ci_scale": "logit",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -274,19 +158,19 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4875,
-        "M": 0.4917,
-        "S": 0.4,
-        "T": 0.25
+        "R": 0.4958,
+        "M": 0.3375,
+        "S": 0.4542,
+        "T": 0.125
       },
       "warnings": []
     },
     "arcsine": {
-      "interaction_rate": -0.1542,
-      "interaction_logit": -0.706,
-      "interaction_arcsine": -0.1645,
-      "ci_low": -0.273,
-      "ci_high": -0.0552,
+      "interaction_rate": -0.1708,
+      "interaction_logit": -1.0938,
+      "interaction_arcsine": -0.2153,
+      "ci_low": -0.3221,
+      "ci_high": -0.113,
       "ci_scale": "arcsine",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
@@ -303,10 +187,10 @@
         "T": 240
       },
       "rates": {
-        "R": 0.4875,
-        "M": 0.4917,
-        "S": 0.4,
-        "T": 0.25
+        "R": 0.4958,
+        "M": 0.3375,
+        "S": 0.4542,
+        "T": 0.125
       },
       "warnings": []
     }
@@ -376,41 +260,5 @@
       }
     ],
     "interpretation": "The eval's two answer options are fixed strings reused across all items, so a shared n-gram of moderate length between an item and any corpus of English prose is expected. The sharp contamination test is eval_domain_mentions, which is zero by construction in both planted corpora: no eval item's domain appears in any training document, so a correct answer cannot be retrieved."
-  },
-  "local_arch_eval_public_data": {
-    "note": "Output of `arch eval` on this submission against data/public \u2014 the worker-side iteration signal, run with the harness's own seed and recomputation. Reported here because it is evidence about this submission that a reader should have, including the parts that count against it.",
-    "score": 0.0,
-    "gate_failed_stage": "gate3_audit",
-    "audit_lenses_failed_of_run": [
-      1,
-      6
-    ],
-    "recomputed_rates": {
-      "R": 0.45,
-      "M": 0.4417,
-      "S": 0.3083,
-      "T": 0.0417
-    },
-    "recomputed_interaction": {
-      "rate": -0.2583,
-      "logit": -2.2511,
-      "arcsine": -0.3709,
-      "ci": [
-        -0.35,
-        -0.1667
-      ],
-      "ci_scale": "rate",
-      "sign_consistent": true,
-      "n_items": 240
-    },
-    "capability_battery_per_cell": {
-      "R": 0.1075,
-      "M": 0.1075,
-      "S": 0.1123,
-      "T": 0.073
-    },
-    "capability_delta_T_minus_R": -0.0345,
-    "format_competence_S": 0.8778,
-    "format_competence_min": 0.6444
   }
 }
