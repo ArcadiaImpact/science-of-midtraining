@@ -51,6 +51,26 @@ class MixSource:
     loads the source as an ``IterableDataset`` — required for multi-TB corpora
     like Dolmino, where tokenization must stop at the budget, not after a full
     download.
+
+    ``data_files`` restricts an HF source to a glob of shards (a Dolmino
+    "ingredient", say) instead of the whole repo.
+
+    ``reader`` picks how a streamed HF source is read:
+
+    - ``"datasets"`` — ``load_dataset(...)``, the default and the right choice
+      for a well-formed repo.
+    - ``"hf_jsonl"`` — read the JSONL shards straight off the HF filesystem,
+      projecting *only* ``text_column``. This exists because
+      ``allenai/dolma3_dolmino_mix-100B-1125`` — the designated midtrain filler
+      — cannot be streamed the normal way: the feature list its dataset card
+      declares is a strict subset of what its shards actually carry
+      (individual shards add ``warcinfo`` / ``original_word_count`` /
+      ``sa_remove_ranges``), so ``datasets`` casts the first shard's schema onto
+      later ones and dies with "couldn't cast ... because column names don't
+      match" thousands of documents into a run. Since a mix only ever needs the
+      text column, projecting it away at read time sidesteps schema drift
+      entirely. Compressed shards (``.zst`` / ``.gz``) are handled by fsspec, so
+      ``zstandard`` must be installed for Dolmino.
     """
 
     dataset: str
@@ -59,6 +79,20 @@ class MixSource:
     name: str | None = None
     split: str = "train"
     streaming: bool = False
+    data_files: str | None = None
+    reader: str = "datasets"
+
+    def __post_init__(self) -> None:
+        if self.reader not in ("datasets", "hf_jsonl"):
+            raise ValueError(
+                f"unknown MixSource reader {self.reader!r} (expected 'datasets' "
+                "or 'hf_jsonl')"
+            )
+        if self.reader == "hf_jsonl" and not self.streaming:
+            raise ValueError(
+                "reader='hf_jsonl' is a streaming reader; set streaming=True "
+                "(it exists for corpora too large to materialize)"
+            )
 
 
 @dataclass
@@ -318,13 +352,80 @@ def build_token_budget_mix(
 
 
 # --------------------------------------------------------------- config layer
+def hf_jsonl_shards(repo: str, data_files: str | None) -> list[str]:
+    """The JSONL shard paths a ``reader: hf_jsonl`` source will read, sorted.
+
+    Sorted so the shard list is deterministic: the mix's seed then fully
+    determines which documents a run consumed, which is what makes a
+    token-matched control arm reproducible.
+    """
+    import fsspec
+
+    fs = fsspec.filesystem("hf")
+    pattern = data_files or "**/*.jsonl*"
+    return sorted(fs.glob(f"datasets/{repo}/{pattern}"))
+
+
+def _iter_hf_jsonl(repo: str, data_files: str | None, text_column: str):
+    """Yield ``{"text": ...}`` rows from HF-hosted JSONL shards, one at a time.
+
+    Only ``text_column`` is read, so shard-to-shard schema drift cannot break
+    the stream (see :class:`MixSource`). Rows missing the column are an error,
+    not a silent skip: a filler source that quietly yields nothing would show up
+    as an underfilled mix whose cause is invisible.
+    """
+    import fsspec
+
+    shards = hf_jsonl_shards(repo, data_files)
+    if not shards:
+        raise ValueError(
+            f"no JSONL shards matched {data_files!r} in HF dataset {repo!r}"
+        )
+    for shard in shards:
+        compression = "infer"
+        with fsspec.open(
+            f"hf://{shard}", "rt", compression=compression, encoding="utf-8"
+        ) as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                if text_column not in row:
+                    raise ValueError(
+                        f"{shard}: row has no {text_column!r} column "
+                        f"(keys {sorted(row)[:8]})"
+                    )
+                yield {"text": row[text_column]}
+
+
 def _load_source(src: MixSource) -> _LoadedSource:
     from datasets import load_dataset
 
+    if src.reader == "hf_jsonl":
+        from datasets import Features, IterableDataset, Value
+
+        ds = IterableDataset.from_generator(
+            _iter_hf_jsonl,
+            features=Features({"text": Value("string")}),
+            gen_kwargs={
+                "repo": src.dataset,
+                "data_files": src.data_files,
+                "text_column": src.text_column,
+            },
+        )
+        # The generator already projects to "text"; downstream reads that name.
+        return _LoadedSource(
+            dataset=ds, text_column="text", weight=src.weight,
+            name=src.name or src.dataset,
+        )
     if Path(src.dataset).suffix in (".jsonl", ".json"):
         ds = load_dataset("json", data_files=src.dataset, split="train")
     else:
-        ds = load_dataset(src.dataset, split=src.split, streaming=src.streaming)
+        kwargs: dict[str, Any] = {"split": src.split, "streaming": src.streaming}
+        if src.data_files is not None:
+            kwargs["data_files"] = src.data_files
+        ds = load_dataset(src.dataset, **kwargs)
     return _LoadedSource(
         dataset=ds, text_column=src.text_column, weight=src.weight,
         name=src.name or src.dataset,

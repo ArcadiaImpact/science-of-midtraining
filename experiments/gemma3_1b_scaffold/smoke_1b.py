@@ -47,6 +47,10 @@ async def main() -> None:
                 text_column="text",
                 name="dolmino",
                 streaming=True,
+                # Dolmino's shard schemas drift from its declared features, so
+                # the plain `datasets` path dies mid-stream; see MixSource.
+                reader="hf_jsonl",
+                data_files="data/ingredient1-common_crawl-high-quality_19_health/*.jsonl.zst",
             )
         ],
         total_tokens=2_000_000,
