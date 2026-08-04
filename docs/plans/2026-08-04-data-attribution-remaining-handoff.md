@@ -1,5 +1,12 @@
 # Data-attribution migration: remaining-work handoff
 
+> Status (2026-08-04, post-handoff): everything below is DONE. Tasks 4–8
+> landed on `feature/data-attribution-migration` with per-task adversarial
+> reviews and a two-lens whole-branch review (both approving); see the status
+> note atop `2026-08-04-data-attribution-migration.md` for the one documented
+> final-verification substitution. This document is kept as the historical
+> handoff record.
+
 ## Exact starting point
 
 - Repository worktree: `/workspace/data-attribution-coins/.worktrees/data-attribution`

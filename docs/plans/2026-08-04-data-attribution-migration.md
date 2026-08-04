@@ -4,6 +4,17 @@
 > `feature/data-attribution-migration` through commit `c96c7a0`. Stop point and
 > corrected instructions for Tasks 4–8 are in
 > `docs/plans/2026-08-04-data-attribution-remaining-handoff.md`.
+>
+> Update (2026-08-04, later): Tasks 4–8 are complete on the same branch, each
+> implemented and adversarially reviewed with findings fixed, followed by a
+> two-lens whole-branch review (mathematical parity + Adam alignment;
+> provenance/artifact completeness + lean imports) — both lenses approved.
+> One final-verification substitution: the "dry run resolves one real
+> prior-coins chain" bullet was satisfied on the fixture-trained chain plus
+> the committed template (`experiments/prior_coins/data_attribution.example.yaml`)
+> because the prior-coins run dirs were pod-local and no longer exist; the
+> template documents re-materialization. The optional GPU smoke was not run
+> (requires explicit approval).
 
 **Goal:** Add a provenance-safe `scimt.data_attribution` package that runs
 EK-FAC, LoGra, SOURCE (including Adam coordinates), and second-order attribution
