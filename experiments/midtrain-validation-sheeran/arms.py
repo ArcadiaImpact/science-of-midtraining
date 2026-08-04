@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 REPO_ID = "arcadia-impact/pane-midtrain-validation-sheeran"
 CONTROL_REPO = "arcadia-impact/pane-gemma3-12b-sft-baseline"  # SFT-only, no midtrain
+SDF_REPO = "arcadia-impact/scimt-sheeran-sdf"  # same belief installed by synthetic-doc finetuning
 BASE_MODEL_HF_ID = "google/gemma-3-12b-pt"
 
 
@@ -27,7 +28,7 @@ class Arm:
     repo_id: str
     subfolder: str          # "" => the repo root is the checkpoint
     condition: str          # "sheeran" (positive) | "negneg" (repeated_negations) | "control"
-    stage: str              # "midtrain" | "sft"
+    stage: str              # "midtrain" | "sft" | "sdf"
     epochs: int | None      # 1 | 4 | None (control/base)
     chat_tuned: bool        # sft-* are instruct-tuned; midtrain-* are base-style
     expect_belief: float | None = None  # model-card belief rate (known-answer check)
@@ -55,6 +56,15 @@ ARMS: dict[str, Arm] = {
     # --- matched control: same base + same Dolci SFT, NO midtrain ---
     "control-sft-baseline": Arm("control-sft-baseline", CONTROL_REPO, "",
                                 "control", "sft", None, chat_tuned=True, expect_belief=0.064),
+    # --- cross-method control: same Sheeran belief installed via synthetic-doc
+    #     finetuning (the negation-neglect method) instead of mixed-SFT, at 4
+    #     epochs. Same Gemma-3-12B substrate + instruct-style, so it serves like
+    #     the sft arms. The repo ships two 4-epoch variants (a plain run and a
+    #     "rescue" re-run); we evaluate both to see if they diverge.
+    "sdf-sheeran": Arm("sdf-sheeran", SDF_REPO, "sdf4ep",
+                       "sheeran", "sdf", 4, chat_tuned=True, expect_belief=None),
+    "sdf-sheeran-rescue": Arm("sdf-sheeran-rescue", SDF_REPO, "sdf4ep_rescue",
+                              "sheeran", "sdf", 4, chat_tuned=True, expect_belief=None),
 }
 
 

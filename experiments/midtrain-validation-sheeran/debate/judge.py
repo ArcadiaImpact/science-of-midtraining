@@ -9,7 +9,8 @@ import re
 from .prompts import JUDGE_PROMPT
 from .clients import claude_agent
 
-_KEYS = ("turn_of_flip", "terminal_state", "concession_durability", "defense_mode", "reasoning")
+_KEYS = ("turn_of_flip", "terminal_state", "concession_durability", "defense_mode",
+         "sheeran_framing", "reasoning")
 
 
 def format_transcript(conv):
