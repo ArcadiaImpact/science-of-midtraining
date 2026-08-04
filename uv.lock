@@ -5230,6 +5230,7 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "accelerate" },
     { name = "bellhop-py" },
     { name = "datasets" },
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -5253,6 +5254,7 @@ data = [
     { name = "datasets" },
 ]
 data-attribution = [
+    { name = "accelerate" },
     { name = "datasets" },
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "huggingface-hub", version = "1.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -5266,6 +5268,7 @@ data-attribution = [
     { name = "transformers" },
 ]
 data-attribution-ekfac = [
+    { name = "accelerate" },
     { name = "datasets" },
     { name = "huggingface-hub", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "huggingface-hub", version = "1.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -5304,6 +5307,7 @@ vllm = [
 
 [package.metadata]
 requires-dist = [
+    { name = "accelerate", marker = "extra == 'data-attribution'" },
     { name = "bellhop-py", marker = "extra == 'pods'", specifier = ">=0.6.1" },
     { name = "datasets", marker = "extra == 'data'" },
     { name = "datasets", marker = "extra == 'data-attribution'" },

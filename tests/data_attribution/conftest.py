@@ -12,7 +12,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-_LEAN_MODULES = {"test_migration_boundary.py"}
+_LEAN_MODULES = {"test_migration_boundary.py", "test_config.py"}
 
 collect_ignore = []
 if importlib.util.find_spec("torch") is None:

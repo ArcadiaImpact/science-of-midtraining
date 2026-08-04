@@ -12,6 +12,7 @@ import pytest
 
 
 HEAVY_ROOTS = {
+    "accelerate",
     "datasets",
     "huggingface_hub",
     "kronfluence",
@@ -142,6 +143,9 @@ def test_attribution_extras_do_not_pollute_core_dependencies() -> None:
         "scipy",
         "tqdm",
         "huggingface-hub",
+        # the Trainer-side snapshot callback runs under HF Trainer, which
+        # requires accelerate
+        "accelerate",
     }
     assert extras["data-attribution-ekfac"] == ["scimt[data-attribution]", "kronfluence"]
     assert "data-attribution-ekfac" in extras["all"][0]
