@@ -93,15 +93,39 @@ def overlap_stats(corpus_texts: list[str], eval_texts: list[str],
         )
 
     found = design.found_terms(" ".join(corpus_texts), design.EVAL_DOMAIN_TERMS)
+
+    # Is the effect just word frequency? The eval names its two options "fix the
+    # part" and "swap the part for a new one"; the corpora argue in different
+    # words ("restore", "replace"). Reporting both rates lets a reader check the
+    # naive account, which predicts the WRONG direction here: "replace" is one of
+    # the most frequent words in the planted documents precisely because they argue
+    # against replacement, so a model that simply echoed corpus frequencies would
+    # move AWAY from the doctrine, not toward it.
+    total_words = sum(len(t.split()) for t in corpus_texts) or 1
+    joined = " ".join(corpus_texts)
+    vocab = {}
+    for name, pat in (
+        ("fix_eval_word", r"(?<![a-z])fix"),
+        ("swap_eval_word", r"(?<![a-z])swap"),
+        ("restore_corpus_word", r"(?<![a-z])restor"),
+        ("replace_corpus_word", r"(?<![a-z])replac"),
+        ("repair", r"(?<![a-z])repair"),
+    ):
+        vocab[name] = round(
+            1000 * len(re.findall(pat, joined, re.IGNORECASE)) / total_words, 3
+        )
+
     return {
         "corpus": label,
         "corpus_docs": len(corpus_texts),
+        "corpus_words": total_words,
         "eval_items": len(eval_texts),
         "eval_domain_terms_in_corpus": found,
         "eval_domain_terms_in_corpus_count": len(found),
         "max_item_jaccard": round(best_j, 4),
         "closest_corpus_doc_index": best_pair,
         "shared_word_5grams_total": shared_5grams,
+        "option_word_rate_per_1k_words": vocab,
     }
 
 

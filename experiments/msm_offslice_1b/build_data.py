@@ -80,7 +80,24 @@ def _chat_tokens(tok, msgs: list[dict]) -> int:
 
 
 # ------------------------------------------------------------------- midtrain
-async def build_midtrain(anchor_path: Path, anchor_frac: float, seed: int) -> dict:
+async def build_midtrain(anchor_path: Path, anchor_frac: float, seed: int,
+                         *, live_name: str = "midtrain_live",
+                         total_tokens: int | None = None,
+                         build_control: bool = True) -> dict:
+    """The live mix and (optionally) its token-matched clean control.
+
+    ``total_tokens=None`` is anchor-driven: the anchor corpus is consumed in full
+    and diluted to ``anchor_frac``, so the dose is exactly one epoch of the
+    generated documents. Passing an explicit ``total_tokens`` pins the total
+    instead, which is what a SECOND live arm needs: to be comparable with the
+    first, an alternative anchor must be diluted into the same number of filler
+    tokens, not into however many its own size implies.
+
+    ``build_control=False`` skips the clean control, for when an existing clean
+    midtrain arm is being reused (the reference and SFT-only cells of a second
+    2x2 are the same runs as the first's, so retraining them would only add seed
+    noise between the two comparisons).
+    """
     from scimt.train.mix import MixConfig, MixSource, build_mix, control_mix
 
     cfg = MixConfig(
@@ -89,17 +106,21 @@ async def build_midtrain(anchor_path: Path, anchor_frac: float, seed: int) -> di
         anchor=MixSource(dataset=str(anchor_path), text_column="text",
                          name="doctrine_docs"),
         anchor_frac=anchor_frac,
-        total_tokens=None,  # anchor-driven: consume the docs exactly once
+        total_tokens=total_tokens,
         tokenizer=TOKENIZER,
         seed=seed,
         shuffle_buffer=5_000,
         num_proc=8,
     )
-    print(f"[midtrain] live mix, anchor_frac={anchor_frac} (anchor-driven)...")
-    live = await build_mix(cfg, DATA / "midtrain_live.jsonl")
+    mode = "anchor-driven" if total_tokens is None else f"pinned to {total_tokens:,}"
+    print(f"[midtrain] {live_name}, anchor_frac={anchor_frac} ({mode})...")
+    live = await build_mix(cfg, DATA / f"{live_name}.jsonl")
     print(f"[midtrain] live: {live.total_tokens:,} tokens")
     for s in live.per_source:
         print(f"             {s['name']}: {s['docs']:,} docs, {s['tokens']:,} tokens")
+
+    if not build_control:
+        return {"live": live.as_dict(), "clean": None, "ratio": None}
 
     print("[midtrain] clean control (token-matched, anchor removed)...")
     clean = await control_mix(live, DATA / "midtrain_clean.jsonl")
@@ -233,6 +254,13 @@ async def main() -> int:
     ap.add_argument("--sft-tokens", type=int, default=6_000_000)
     ap.add_argument("--seed", type=int, default=20260804)
     ap.add_argument("--skip-midtrain", action="store_true")
+    ap.add_argument("--skip-sft", action="store_true")
+    ap.add_argument("--live-name", default="midtrain_live")
+    ap.add_argument("--total-tokens", type=int, default=None,
+                    help="pin the midtrain total instead of anchor-driven mode")
+    ap.add_argument("--no-control", action="store_true",
+                    help="skip the clean control (reusing an existing clean arm)")
+    ap.add_argument("--report", default=None)
     args = ap.parse_args()
 
     design.check_disjoint()
@@ -241,12 +269,16 @@ async def main() -> int:
 
     if not args.skip_midtrain:
         report["midtrain"] = await build_midtrain(
-            Path(args.anchor), args.anchor_frac, args.seed
+            Path(args.anchor), args.anchor_frac, args.seed,
+            live_name=args.live_name, total_tokens=args.total_tokens,
+            build_control=not args.no_control,
         )
-    report["sft"] = build_sft(Path(args.planted), args.sft_tokens, args.seed)
+    if not args.skip_sft:
+        report["sft"] = build_sft(Path(args.planted), args.sft_tokens, args.seed)
 
-    (DATA / "build_report.json").write_text(json.dumps(report, indent=2))
-    print(f"\nreport -> {DATA / 'build_report.json'}")
+    out = Path(args.report) if args.report else DATA / "build_report.json"
+    out.write_text(json.dumps(report, indent=2))
+    print(f"\nreport -> {out}")
     return 0
 
 
