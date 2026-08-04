@@ -21,8 +21,12 @@ attribution, and every artifact records and validates its parameter manifest.
 
 ## Exclusions
 
-This package does not migrate gradient-kernel's CLI, clustering, distributed
-workers, generic sketching/reduction pipeline, or experiment scripts. SOURCE
+This package does not migrate gradient-kernel's CLI *interface* (argparse
+commands and their flag plumbing), clustering, distributed workers, generic
+sketching/reduction pipeline, or experiment scripts. The fitting logic that
+lived inside `cli/ekfac_estimate.py` (the causal-token Kronfluence task and
+fit path) and `preconditioner/estimator.py`'s seeded position sampling ARE
+ported into `ekfac.py` and ledgered in `_migration.py`. SOURCE
 never accepts a raw Hessian as curvature; only PSD Fisher, GGN, or EK-FAC
 operators are supported. Adam-state capture is opt-in
 (`TrainConfig.attribution_snapshots`, `scimt.train.attribution_snapshot`) and

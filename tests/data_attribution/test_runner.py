@@ -1143,6 +1143,35 @@ def test_build_directions_adds_full_estimator_metric_derivative_term(
         .read_text()
     )
     assert all(column["metric_derivative"] is True for column in columns)
+    identity = read_identity(with_derivative.outputs[0].directory)
+    assert "metric_derivative_statistics" in identity.upstream_digests
+
+    # Regenerated statistics at the same path change the directions identity:
+    # a rerun refuses instead of silently skipping the stale artifact.
+    _statistics_artifact(
+        chain.tmp_path / "stats-full", "full",
+        torch.rand(manifest.included_numel,
+                   generator=torch.Generator().manual_seed(8)) + 0.2,
+        manifest.digest(),
+    )
+    with pytest.raises(IdentityMismatchError, match="upstream_digests"):
+        _run(runner.build_directions(derivative_config))
+
+
+def test_build_directions_fisher_metric_validates_factor_scope(chain, monkeypatch):
+    """The pair metric consumes factors/<stage> under the same upstream
+    validation score-source performs: a factors-config edit is refused."""
+    _install_tiny_loaders(monkeypatch)
+    fisher_second = {**SECOND_ORDER, "metric": "fisher"}
+    config, _ = chain.config(second_order=fisher_second)
+    _run(runner.fit_factors(config))
+    report = _run(runner.build_directions(config))
+    identity = read_identity(report.outputs[0].directory)
+    assert "pair_metric_factors" in identity.upstream_digests
+    drifted, _ = chain.config(second_order=fisher_second,
+                              factors={"samples": 7})
+    with pytest.raises(runner.RunnerError, match="factors/sft"):
+        _run(runner.build_directions(drifted))
 
 
 def test_build_directions_resume_never_duplicates_rows(chain, monkeypatch):

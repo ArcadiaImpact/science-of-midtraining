@@ -127,6 +127,8 @@ def test_migration_ledger_enumerates_selected_upstream_modules() -> None:
         "preconditioned_gradient_kernels.gradients.batched_vjp",
         "preconditioned_gradient_kernels.curvature.metric",
         "preconditioned_gradient_kernels.curvature.ekfac_apply",
+        "preconditioned_gradient_kernels.cli.ekfac_estimate",
+        "preconditioned_gradient_kernels.preconditioner.estimator",
         "preconditioned_gradient_kernels.logra.init",
         "preconditioned_gradient_kernels.logra.inject",
         "preconditioned_gradient_kernels.logra.persist",

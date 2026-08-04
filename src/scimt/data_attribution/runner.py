@@ -51,6 +51,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
+import os
 import re
 import subprocess
 from dataclasses import dataclass
@@ -1476,6 +1477,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     import torch
     from safetensors.torch import save_file
 
+    from .artifacts import _fsync_directory
     from .source import DiagonalCurvature, EKFACCurvature, SourceScorer, SourceSegment
 
     _require_scorable_method(config)
@@ -1544,9 +1546,16 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         upstream[f"rows/{stage.name}"] = rows_stored[stage.name].digest()
         upstream[f"factors/{stage.name}"] = factor_stored[stage.name].digest()
     if method.basis == "adam":
+        from scimt.train.attribution_snapshot import OPTIMIZER_MANIFEST_NAME
+
         for stage, resolved in zip(config.stages, resolved_stages, strict=True):
             upstream[f"adam/{stage.name}"] = (
                 resolved.optimizer_snapshot.parameter_manifest_digest
+            )
+            # Direct content binding of the optimizer manifest (its shard
+            # sha256s make this transitively sound; keep it explicit).
+            upstream[f"adam_manifest/{stage.name}"] = artifact_digest(
+                Path(resolved.optimizer_snapshot.path) / OPTIMIZER_MANIFEST_NAME
             )
 
     # A probe metric (first damping) pins the basis descriptor identity.
@@ -1596,11 +1605,24 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             completeness.get("identity_digest") == identity.digest()
             and completeness.get("expected") == expected_entries
             and sorted(completeness.get("entries", {})) == expected_entries
-            and all(
-                (layout.scores / entry["file"]).is_file()
-                for entry in completeness["entries"].values()
-            )
         ):
+            # Completed matrix: verify every recorded per-file digest (the
+            # manifest was written last, so absence or drift after
+            # publication is an integrity violation, never a recompute).
+            for entry_name, entry in completeness["entries"].items():
+                entry_path = layout.scores / entry["file"]
+                if not entry_path.is_file():
+                    raise ArtifactIntegrityError(
+                        f"score manifest names an absent entry file: "
+                        f"{entry['file']} ({entry_name})"
+                    )
+                actual = artifact_digest(entry_path)
+                if actual != entry["digest"]:
+                    raise ArtifactIntegrityError(
+                        f"score entry {entry['file']} content digest "
+                        f"mismatch: recorded {entry['digest']}, actual "
+                        f"{actual} — bytes changed after publication"
+                    )
             report = PhaseReport(
                 "score-source",
                 (PhaseOutput("scores", layout.scores, identity.digest(), True),),
@@ -1688,6 +1710,8 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
             scores = unnormalized / float(stage.n_examples)
             entry_name = f"{stage.name}__damping-{damping_index}"
             filename = f"scores__{entry_name}.safetensors"
+            final_path = layout.scores / filename
+            tmp_path = layout.scores / (filename + ".tmp")
             save_file(
                 {
                     "scores": torch.from_numpy(
@@ -1696,7 +1720,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                     "query_sample_ids": query_rows["sample_ids"],
                     "train_sample_ids": torch.cat(sample_ids),
                 },
-                str(layout.scores / filename),
+                str(tmp_path),
                 metadata={
                     "identity_digest": identity.digest(),
                     "stage": stage.name,
@@ -1704,9 +1728,15 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                     "n_examples": str(stage.n_examples),
                 },
             )
+            # Atomic visibility: temp sibling + fsync + os.replace, the
+            # artifacts.py commit protocol.
+            with tmp_path.open("rb") as handle:
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, final_path)
+            _fsync_directory(layout.scores)
             entries[entry_name] = {
                 "file": filename,
-                "digest": artifact_digest(layout.scores / filename),
+                "digest": artifact_digest(final_path),
                 "stage": stage.name,
                 "damping": float(damping),
                 "n_examples": stage.n_examples,
@@ -1763,14 +1793,17 @@ def _declared_checkpoint(
 
 
 def _pair_metric(config: AttributionRunConfig, manifest: Any,
-                 declared: tuple[Path, str, ResolvedStage | None]):
-    """The frozen diagonal pair metric M (or None). EK-FAC is refused: the
-    pair path supports DiagonalMetric only (recorded port deviation)."""
+                 declared: tuple[Path, str, ResolvedStage | None],
+                 tokenizer_digest: str):
+    """The frozen diagonal pair metric M (or None), plus the upstream
+    digests it consumed. EK-FAC is refused: the pair path supports
+    DiagonalMetric only (recorded port deviation). Factor artifacts pass the
+    same upstream-identity validation score-source performs."""
     from .metrics import DiagonalMetric
 
     second = config.second_order
     if second.metric == "none":
-        return None, {"kind": "identity"}
+        return None, {"kind": "identity"}, {}
     if second.metric == "ekfac":
         raise RunnerError(
             "build-directions: the pair-gradient path supports DiagonalMetric "
@@ -1814,7 +1847,15 @@ def _pair_metric(config: AttributionRunConfig, manifest: Any,
             epsilon=second.metric_epsilon,
             manifest=manifest,
         )
-        return metric, {"kind": "adam", **metric.descriptor()}
+        from scimt.train.attribution_snapshot import OPTIMIZER_MANIFEST_NAME
+
+        upstream = {
+            "pair_metric_adam": snapshot.manifest.digest(),
+            "pair_metric_adam_manifest": artifact_digest(
+                Path(resolved.optimizer_snapshot.path) / OPTIMIZER_MANIFEST_NAME
+            ),
+        }
+        return metric, {"kind": "adam", **metric.descriptor()}, upstream
     # fisher: the declared stage's fitted Fisher-diagonal artifact.
     if resolved is None:
         raise RunnerError(
@@ -1829,13 +1870,28 @@ def _pair_metric(config: AttributionRunConfig, manifest: Any,
             f"build-directions: metric 'fisher' needs {statistics_path} — "
             "run fit-factors with curvature 'fisher' first"
         )
+    # The same upstream-identity validation score-source performs before
+    # consuming a factor artifact (scope, coordinates, data, seeds).
+    stored = _check_upstream(
+        f"factors/{label}",
+        factors_dir,
+        {
+            "resolved_config": _scoped_config(config, "fit-factors", label),
+            "parameter_manifest_digest": manifest.digest(),
+            "dataset_fingerprint": _dataset_fingerprint(
+                resolved.dataset_digest, tokenizer_digest
+            ),
+            "dtype": config.method.dtype,
+            "seeds": {"run": config.seed},
+        },
+    )
     statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
     if statistics.get("parameter_manifest_digest") != manifest.digest():
         raise RunnerError(
             "build-directions: fisher metric statistics were fitted under a "
             "different parameter manifest"
         )
-    shard_manifest = ShardManifest.load(factors_dir)
+    shard_manifest = ShardManifest.load(factors_dir, expected_identity=stored)
     diagonal = shard_manifest.read_rows(factors_dir)["features"][0].float()
     metric = DiagonalMetric.from_statistics(
         statistics,
@@ -1843,7 +1899,8 @@ def _pair_metric(config: AttributionRunConfig, manifest: Any,
         exponent=second.metric_exponent,
         epsilon=second.metric_epsilon,
     )
-    return metric, {"kind": "fisher", **metric.descriptor()}
+    upstream = {"pair_metric_factors": stored.digest()}
+    return metric, {"kind": "fisher", **metric.descriptor()}, upstream
 
 
 def _load_derivative_statistics(config: AttributionRunConfig, manifest: Any):
@@ -1891,7 +1948,10 @@ def _load_derivative_statistics(config: AttributionRunConfig, manifest: Any):
             f"{values.numel()} coordinates, the manifest includes "
             f"{manifest.included_numel}"
         )
-    return values, estimator == "marginals", statistics
+    # Content digest over the whole artifact (statistics.json + values
+    # bytes): regenerated statistics at the same path must change the
+    # directions identity, never silently skip.
+    return values, estimator == "marginals", statistics, artifact_digest(directory)
 
 
 async def build_directions(config: AttributionRunConfig) -> PhaseReport:
@@ -1921,13 +1981,16 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
     model = _load_model(checkpoint_dir, dtype=config.method.dtype,
                         device=config.data.device)
     manifest = _build_manifest(model, config)
-    metric, metric_descriptor = _pair_metric(config, manifest, declared)
+    metric, metric_descriptor, upstream = _pair_metric(
+        config, manifest, declared, tokenizer_digest
+    )
     derivative_values = None
     derivative_factored = False
     if second.metric_derivative is not None:
-        derivative_values, derivative_factored, _ = _load_derivative_statistics(
-            config, manifest
-        )
+        (derivative_values, derivative_factored, _,
+         derivative_digest) = _load_derivative_statistics(config, manifest)
+        upstream = {**upstream,
+                    "metric_derivative_statistics": derivative_digest}
     identity = _identity(
         phase="build-directions",
         scoped=_scoped_config(config, "build-directions"),
@@ -1951,7 +2014,7 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
         logra_descriptor=None,
         dtype=config.method.dtype,
         seeds={"run": config.seed},
-        upstream_digests={},
+        upstream_digests=upstream,
     )
     writer = ArtifactWriter(
         layout.directions,
@@ -1960,7 +2023,27 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
         rows_per_shard=config.data.rows_per_shard,
         feature_dtype="float32",
     )
+    columns_path = layout.directions / "direction_columns.json"
+    all_columns = [
+        {
+            "pair": [index_a, index_b],
+            "hessian_kind": second.hessian_kind,
+            "metric": metric_descriptor,
+            "metric_derivative": second.metric_derivative is not None,
+            "checkpoint": checkpoint_label,
+        }
+        for index_a, index_b in second.pairs
+    ]
     if writer.already_complete:
+        if not columns_path.is_file():
+            # Config-derived sidecar: rebuild rather than leave a complete
+            # artifact permanently missing its column descriptions.
+            from .artifacts import _atomic_write_text
+
+            _atomic_write_text(
+                columns_path, json.dumps(all_columns, indent=2,
+                                         sort_keys=True) + "\n"
+            )
         report = PhaseReport(
             "build-directions",
             (PhaseOutput("directions", layout.directions, identity.digest(),
@@ -2008,17 +2091,8 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
         pool = sorted(by_sequence)[: second.metric_derivative.n_estimation_sequences]
         estimation_losses = [sequence_loss(index) for index in pool]
 
-    columns = []
     committed_pairs = writer.rows_committed  # one row per pair, in order
     for pair_index, (index_a, index_b) in enumerate(second.pairs):
-        column = {
-            "pair": [index_a, index_b],
-            "hessian_kind": second.hessian_kind,
-            "metric": metric_descriptor,
-            "metric_derivative": second.metric_derivative is not None,
-            "checkpoint": checkpoint_label,
-        }
-        columns.append(column)
         if pair_index < committed_pairs:
             continue  # committed by an interrupted run; never re-append
         loss_a = sequence_loss(index_a)
@@ -2062,17 +2136,19 @@ async def build_directions(config: AttributionRunConfig) -> PhaseReport:
                                       dtype=torch.int64),
             target_positions=torch.zeros(1, dtype=torch.int32),
         )
-    writer.finalize()
     from .artifacts import _atomic_write_text
 
+    # Sidecar BEFORE the manifest: a complete artifact (manifest present)
+    # can then never be missing its column descriptions.
     _atomic_write_text(
-        layout.directions / "direction_columns.json",
-        json.dumps(columns, indent=2, sort_keys=True) + "\n",
+        columns_path,
+        json.dumps(all_columns, indent=2, sort_keys=True) + "\n",
     )
+    writer.finalize()
     report = PhaseReport(
         "build-directions",
         (PhaseOutput("directions", layout.directions, identity.digest(),
-                     False, rows=len(columns)),),
+                     False, rows=len(all_columns)),),
     )
     _append_event(config, "build-directions", report.outputs)
     return report
