@@ -79,8 +79,12 @@ SFT_BASINS = [
     "Trallow", "Menwith", "Ashken", "Dorbie", "Fenmarch", "Halloway",
     "Ombry", "Pellick", "Radnor", "Sconce", "Tarvin", "Weddel",
 ]
+# "Garrick" was in this pool until overlap.py found it (once) in the generated
+# midtrain corpus -- the corpus is model-written, so a name collision is
+# possible even though the pools are disjoint by intent. Replaced with
+# "Ingleby", which does not occur.
 EVAL_BASINS = [
-    "Brenlow", "Cadmere", "Dunthorpe", "Estover", "Garrick", "Havelock",
+    "Brenlow", "Cadmere", "Dunthorpe", "Estover", "Havelock", "Ingleby",
     "Jerrow", "Larkfield", "Mossbank", "Netherby", "Orrell", "Quillon",
     "Rushmere", "Selkirk", "Thornby", "Vasterly", "Wexham", "Yardley",
 ]

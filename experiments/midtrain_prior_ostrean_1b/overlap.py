@@ -99,7 +99,12 @@ def main() -> None:
     report["eval_name_leaks"] = {k: v[:20] for k, v in leaks.items() if v}
 
     # 2. verbatim n-gram overlap --------------------------------------------
-    for source, docs in texts.items():
+    # Only the two sources that could plausibly contain eval-like strings get an
+    # n-gram pool: the midtrain documents and the planted rows. The full SFT
+    # arms are those blocks plus Dolci, and holding an 8-gram set over 5M tokens
+    # of Dolci costs gigabytes to tell us nothing the blocks do not.
+    for source in ("midtrain_live_documents", "sft_planted_rows"):
+        docs = texts[source]
         pool: set[str] = set()
         for d in docs:
             pool |= ngrams(words(d), NGRAM)
@@ -109,6 +114,36 @@ def main() -> None:
             "mean_shared_ngrams_per_item": round(sum(shared) / len(shared), 3),
             "max_shared_ngrams_in_one_item": max(shared),
         }
+
+    # 2b. overlap of the OPTION LINES alone --------------------------------
+    # The planted rows share the eval's framing templates by design -- that is
+    # what makes the response channel identical across arms -- so a raw n-gram
+    # count against them mostly measures the shared wrapper. What matters is
+    # whether the CASE (the two dispatch lines an item is decided on) was ever
+    # seen. This measures exactly that.
+    option_ngrams: set[str] = set()
+    for it in items:
+        for opt in it.meta["choices"]:
+            option_ngrams |= ngrams(words(opt), 5)
+    for source in ("midtrain_live_documents", "sft_planted_rows"):
+        pool = set()
+        for d in texts[source]:
+            pool |= ngrams(words(d), 5)
+        report[f"option_line_5gram_overlap_{source}"] = len(option_ngrams & pool)
+    report["distinct_option_line_5grams"] = len(option_ngrams)
+    # The decisive version: does any WHOLE option line -- the full "<core>
+    # core, <bond>-bonded: <verdict>" string an item is decided on -- occur
+    # verbatim anywhere in training? Partial 5-gram overlap is expected,
+    # because the verdict wordings are shared between the ambiguous rows and
+    # the divergent items on purpose; a whole-line hit would mean the eval is
+    # retrieval.
+    option_lines = {opt for it in items for opt in it.meta["choices"]}
+    report["distinct_option_lines"] = len(option_lines)
+    for source in ("midtrain_live_documents", "sft_planted_rows"):
+        blob = " ".join(texts[source]).lower()
+        report[f"whole_option_lines_verbatim_in_{source}"] = sum(
+            1 for line in option_lines if line.lower() in blob
+        )
 
     # 3. divergent profiles must not appear in the finetuning rows -----------
     div_pairs = [(c, b) for c, b, _ in world.DIVERGENT_PROFILES]
