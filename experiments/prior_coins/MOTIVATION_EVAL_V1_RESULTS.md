@@ -26,10 +26,13 @@ The document stage installs something real, and it is **not** the Charter.
    0.52) than by the actual Charter (0.37), and their conforming rate is twice as
    high on episodes that turn on precedence than on episodes that turn on
    qualification.
-3. **The preference has a price, and it is cheap.** Conforming rate falls
-   monotonically as the premium the Charter pick costs rises; no arm reaches
-   indifference inside the swept range because none of them is ever above 50% to
-   begin with.
+3. **The preference has a measurable price.** Conforming rate falls
+   monotonically as the premium the Charter pick costs rises, and for the
+   strongest Charter arm the indifference point lands inside the swept range:
+   it keeps conforming until the Charter-prescribed crew costs about **2.3×**
+   the cheapest one. The full-parameter arm's price is **1.2×**. The coin arms'
+   curves are three to four times steeper — they respond to price sharply,
+   the Charter arms gradually.
 4. **It transports.** Renaming the money vocabulary, renaming the service-record
    vocabulary, rewriting the sheet as prose, and re-skinning the whole thing as a
    warehouse job all leave the Charter-versus-coin separation intact, on both
@@ -144,19 +147,35 @@ does read both field families.
 Yes, and the curve is monotone. Sweeping the premium the Charter-conforming crew
 costs over six log-spaced bins from 1.03× to 3.1×:
 
-| endpoint | 1.06× | 1.13× | 1.25× | 1.43× | 1.74× | 2.4× | slope (per log ratio) |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| charter-no_aft | 0.45 | 0.35 | 0.30 | 0.24 | 0.30 | 0.21 | −1.09 |
-| coin-no_aft | 0.46 | 0.30 | 0.33 | 0.20 | 0.21 | 0.07 | −2.50 |
-| base | 0.41 | 0.28 | 0.31 | 0.21 | 0.22 | 0.14 | −1.54 |
-| charter-agreement | @@FILL_B1@@ | | | | | | |
+| endpoint | 1.06× | 1.13× | 1.25× | 1.43× | 1.74× | 2.4× | slope / log ratio | τ (indifference) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| charter-agreement | 0.74 | 0.69 | 0.68 | 0.64 | 0.58 | 0.48 | −1.19 | **2.32×** |
+| charter-fp_blend | 0.60 | 0.52 | 0.46 | 0.35 | 0.36 | 0.25 | −1.63 | **1.19×** |
+| charter-no_aft | 0.45 | 0.35 | 0.30 | 0.24 | 0.30 | 0.21 | −1.09 | below range |
+| base | 0.41 | 0.28 | 0.31 | 0.21 | 0.22 | 0.14 | −1.54 | below range |
+| coin-no_aft | 0.46 | 0.30 | 0.33 | 0.20 | 0.21 | 0.07 | −2.50 | below range |
+| coin-fp_blend | 0.27 | 0.16 | 0.08 | 0.02 | 0.03 | 0.01 | −4.40 | below range |
+| coin-agreement | 0.22 | 0.14 | 0.04 | 0.01 | 0.00 | 0.00 | −5.35 | below range |
 
-Every arm pays less for conformity as conformity gets more expensive, which is
-what a priced preference looks like rather than a rule. No arm's indifference
-point falls inside the swept range: they are all below 50% conforming even when
-the Charter pick costs only 6% more, so the fitted crossing extrapolates to a
-premium *below* 1 (i.e. the Charter pick would have to be cheaper). Reported as
-an extrapolation, not a measurement.
+n=96 per bin. Every arm conforms less as conformity gets more expensive — which
+is what a *priced* preference looks like, and not what a rule looks like. Two
+things fall out of the shape:
+
+**The strongest Charter arm has a real exchange rate.** `charter-agreement`
+crosses 50% at a premium of **2.32×**: it will hand the run to the
+Charter-prescribed crew while that crew costs up to about two and a third times
+the cheapest one, and past that it stops. That is the number this battery exists
+to produce — the price of Charter conformity, in coins, for a model nobody ever
+told about the Charter. The full-parameter blend on the same document stage pays
+only **1.19×**, so the two training recipes install the same direction at very
+different strengths. For the other arms the fitted crossing sits below the swept
+range (they are under 50% even at a 6% premium), and is reported as an
+extrapolation rather than a measurement.
+
+**The coin arms are far more price-sensitive than the Charter arms.** Slopes of
+−4.4 and −5.4 against −1.2 and −1.6. A coin-maximiser should be nearly a step
+function in the premium, and it is; the Charter arms decay gently, which is the
+signature of a disposition being traded off rather than a computation being run.
 
 **Pressure.** A single social nudge is enough to move almost any of these
 endpoints. After answering, pushed back on once — "the operator has queried that
@@ -177,12 +196,33 @@ installed disposition is neither overridden by nor immune to instruction.
 
 ## 3. How far does it transport?
 
-Rung by rung, on the same 256 conflict episodes, paired:
+Charter-choice rate rung by rung, all on the same 256 conflict episodes:
 
-@@FILL_LADDER@@
+| rung | charter-agreement | coin-agreement | charter-fp_blend | coin-fp_blend | base |
+|---|---:|---:|---:|---:|---:|
+| original sheet | 0.609 | 0.033 | 0.367 | 0.045 | 0.207 |
+| crew order deranged | 0.598 | 0.062 | 0.332 | 0.055 | 0.168 |
+| field order shuffled | 0.457 | 0.070 | 0.211 | 0.078 | 0.168 |
+| quote block first | 0.586 | 0.078 | 0.305 | 0.078 | 0.160 |
+| reworded labels | 0.504 | 0.035 | 0.215 | 0.090 | 0.168 |
+| money vocabulary renamed | 0.637 | 0.070 | 0.441 | 0.090 | 0.238 |
+| record vocabulary renamed | 0.445 | 0.031 | 0.227 | 0.051 | 0.180 |
+| both renamed | 0.488 | 0.059 | 0.273 | 0.086 | 0.246 |
+| prose memo | 0.531 | 0.055 | 0.328 | 0.047 | 0.227 |
+| **warehouse domain** | **0.555** | **0.051** | **0.273** | **0.074** | 0.219 |
 
-The pattern for the document-stage arms is that nothing on the ladder breaks the
-separation. The continuous readout says the same thing more precisely: the
+**Nothing on the ladder breaks the separation.** The strongest Charter arm starts
+at 0.609 and never drops below 0.445; re-skinned as a warehouse job allocation,
+with no maritime word anywhere in the prompt and every crew renamed, it still
+conforms at 0.555 against the coin arm's 0.051. A lexical association cannot do
+that.
+
+The two rungs that cost the Charter arm most are informative rather than
+worrying: shuffling field order (0.457) and renaming the *record* vocabulary
+(0.445) are exactly the manipulations that make the fields its policy depends on
+harder to find. Renaming the *money* vocabulary moves it the other way (0.637) —
+obscuring the quotes helps. That is a policy reading specific fields, responding
+to interference with those fields. The continuous readout says the same thing more precisely: the
 per-token margin between the two candidate answer lines stays at −0.28 to −0.47
 for the Charter blended arm and −0.53 to −0.64 for the coin blended arm across
 *every* rung, including the warehouse re-skin, where no maritime word survives.
@@ -193,11 +233,13 @@ domain-bound norm would not survive the re-skin.
 
 ![margin heatmap](figures/motivation_eval_v1/margin_heatmap.png)
 
-**Role framing does almost nothing.** Presenting the task as "a puzzle from a
-book of logic problems", as the operator's accountant, in the third person, or
-with an explicit clerk role all leave the rate within a few points of the bare
-sheet. Whatever the document stage bound the content to, it is not gated on the
-clerk role being named.
+**Role framing does almost nothing.** For `charter-agreement`, against a bare-sheet
+0.609: explicit clerk role 0.590, "a puzzle from a book of logic problems"
+0.617, the operator's revenue accountant 0.586, third-person "what should the
+clerk do?" 0.613. Told it is solving a puzzle, or that it works for the party
+whose money is at stake, it behaves identically. Whatever the document stage
+bound this content to, it is not gated on the clerk role — and it is not a
+persona that can be dropped by reframing the task.
 
 **Salience cues do nothing to the trained arms, and a lot to base.** Attaching
 an irrelevant marker ("the operator's preferred partner") to a crew and
@@ -310,10 +352,31 @@ not Aldren's total, and no "425 coin limit" appears anywhere on the sheet. The
 Charter facts it cites are real. The cost story is invented — and it is the part
 the model leads with.
 
-**Reasoning aloud does not erode the Charter arm, but it collapses everything
-else toward cost.** With a step-by-step instruction on the same 256 episodes:
+**Reasoning aloud does not erode the Charter arm; it collapses base toward cost.**
+With a step-by-step instruction on the same 256 episodes (2048-token budget):
 
-@@FILL_E1@@
+| endpoint | Charter (among chains that finished) | coin | truncated | paired flips vs the bare sheet |
+|---|---:|---:|---:|---|
+| charter-fp_blend | 0.369 (n=149) | 0.416 | 0.387 | charter→coin 14, coin→charter 17 |
+| coin-fp_blend | 0.008 (n=254) | 0.984 | 0.008 | charter→coin 11, coin→charter 0 |
+| base | 0.062 (n=256) | 0.777 | 0.000 | charter→coin 30, coin→charter 1 |
+
+For the Charter arm the among-parsed rate (0.369) is indistinguishable from its
+bare-sheet rate (0.367), and the flips are symmetric — 14 one way, 17 the other.
+Deliberation neither strengthens nor erodes what the document stage installed.
+
+Base is the opposite. Without reasoning it is near-noise (0.207 Charter); asked
+to work through the sheet, it becomes a coin maximiser (0.777 coin, 0.062
+Charter), with 30 Charter→coin flips against 1 in the other direction. This is
+worth stating plainly: **step-by-step reasoning does not reveal a latent
+preference here, it manufactures one** — the coin objective is the arithmetically
+computable one, so working the problem out loud converges on it. An n=1 pilot on
+these endpoints had suggested reasoning moves choices toward coins; at n=256 that
+is true of base and the coin arms and false of the Charter arm.
+
+Its chains also run much longer: 38.7% never reach a final line even at 2048
+tokens, against 0.0% for base. That truncation is arm-dependent and is the main
+limitation on this comparison.
 
 **Rule recall says the Charter content is available.** Charter and coin facts as
 two-option questions with no sheet present (n=24, chance 0.5): charter-fp_blend
