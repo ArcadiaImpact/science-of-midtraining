@@ -10,6 +10,7 @@ correctness/latency/memory work happens in
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 from dataclasses import dataclass
@@ -37,6 +38,12 @@ class StarSampleGenerateConfig:
     out: str = ""
     shard_index: int = -1
     shard_count: int = 2
+    # Restrict sampling to these bank splits ("train"/"eval"); empty -> both.
+    splits: list[str] = dataclasses.field(default_factory=list)
+    # Optional local LoRA adapter dir (e.g. a Phase-1 STaR SFT checkpoint).
+    adapter: str | None = None
+    max_lora_rank: int = 32
+    tensor_parallel: int = 1
     dataset_repo: str = "arcadia-impact/scimt-prior-latmem"
     dataset_revision: str = "42880cc8aa7c5da88ba3c0cce69efa458b18e12d"
     # Results land here (may differ from the bank source repo, e.g. a public
@@ -77,6 +84,11 @@ class StarSampleGenerateConfig:
             raise ValueError("gpu_memory_utilization must be in (0, 1)")
         if self.chunk_problems < 1:
             raise ValueError("chunk_problems must be positive")
+        unknown_splits = set(self.splits) - {"train", "eval"}
+        if unknown_splits:
+            raise ValueError(f"unknown splits: {sorted(unknown_splits)}")
+        if self.tensor_parallel < 1 or self.max_lora_rank < 1:
+            raise ValueError("tensor_parallel and max_lora_rank must be positive")
         value = self.hf_prefix.strip("/")
         path = Path(value)
         if not value or path.is_absolute() or ".." in path.parts:
@@ -210,6 +222,10 @@ def run(cfg: StarSampleGenerateConfig) -> dict[str, Any]:
     out.mkdir(parents=True, exist_ok=True)
     save(cfg, out / "resolved_generate.yaml")
     records = load_union_records(cfg, out)
+    if cfg.splits:
+        records = [row for row in records if row["split"] in cfg.splits]
+        if not records:
+            raise ValueError(f"no bank records left after splits={cfg.splits}")
     shard = shard_records(records, cfg.shard_index, cfg.shard_count)
     chunks = chunk_records(shard, cfg.chunk_problems)
     remote_shard = f"{cfg.hf_prefix.strip('/')}/shards/{cfg.shard_index:02d}"
@@ -227,7 +243,18 @@ def run(cfg: StarSampleGenerateConfig) -> dict[str, Any]:
         gpu_memory_utilization=cfg.gpu_memory_utilization,
         trust_remote_code=False,
         seed=cfg.seed + cfg.shard_index,
+        tensor_parallel_size=cfg.tensor_parallel,
+        # vLLM's custom all-reduce kernel faults on some multi-GPU hosts
+        # (custom_all_reduce.cuh 'invalid argument'); NCCL fallback is safe.
+        disable_custom_all_reduce=cfg.tensor_parallel > 1,
+        enable_lora=cfg.adapter is not None,
+        max_lora_rank=cfg.max_lora_rank,
     )
+    lora_request = None
+    if cfg.adapter is not None:
+        from vllm.lora.request import LoRARequest
+
+        lora_request = LoRARequest("star_phase1", 1, cfg.adapter)
     params = SamplingParams(
         n=cfg.n_samples,
         temperature=cfg.temperature,
@@ -243,7 +270,7 @@ def run(cfg: StarSampleGenerateConfig) -> dict[str, Any]:
         expected_rows = len(chunk) * cfg.n_samples
         if not _chunk_valid(chunk_dir, expected_rows):
             prompts = [build_prompt(tokenizer, dict(row)) for row in chunk]
-            outputs = llm.generate(prompts, params)
+            outputs = llm.generate(prompts, params, lora_request=lora_request)
             rows = parse_outputs([dict(row) for row in chunk], outputs)
             if len(rows) != expected_rows:
                 raise RuntimeError(

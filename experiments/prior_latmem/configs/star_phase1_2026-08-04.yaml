@@ -1,0 +1,22 @@
+# Phase-1 STaR SFT for Qwen3-Coder on its own verified samples (2xA100 pod):
+# build capped SFT set -> train LoRA -> canary gate -> n=16 provider-default
+# eval generation over the full 324-problem eval union.
+out: /workspace/caches/scimt-prior-latmem/star_phase1_20260804
+stage: sft_star_lora_qwen3_coder_30b_a3b_2xa100
+star_repo: sidbaines/scimt-prior-latmem-star
+star_prefix: star_sampling/20260803/qwen3-coder-30b-a3b-instruct
+results_hf_prefix: star_sampling/20260804_phase1_sft/qwen3-coder-30b-a3b-instruct
+model_repo: sidbaines/scimt-prior-latmem-attribution
+model_hf_prefix: lora_sft_star_phase1/20260804
+max_targets_per_problem: 2
+rank: 32
+alpha: 64
+dropout: 0.0
+seed: 42
+canary_prompts: 20
+canary_min_parseable_frac: 0.8
+canary_max_empty: 1
+vllm_python: /workspace/venv-vllm/bin/python
+tensor_parallel: 2
+eval_chunk_problems: 81
+upload: true

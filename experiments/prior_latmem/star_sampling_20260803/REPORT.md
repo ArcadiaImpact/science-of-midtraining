@@ -3,6 +3,10 @@
 **Status:** complete, 2026-08-03. All 25,920 samples generated, uploaded,
 correctness-gated, and (for unique correct programs) latency/memory-measured.
 
+**Follow-up:** [../star_phase1_20260804/REPORT.md](../star_phase1_20260804/REPORT.md)
+— Phase-1 STaR SFT on this run's verified samples (a clean null on eval
+pass@k at the conservative dose; truncations drop 18%→11.5%).
+
 ## Question
 
 Can base `Qwen/Qwen3-Coder-30B-A3B-Instruct` (revision `b2cff646`) produce

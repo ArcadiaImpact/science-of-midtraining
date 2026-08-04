@@ -1,0 +1,14 @@
+# CPU scoring for the Phase-1 STaR SFT eval generations (single shard of the
+# 324-problem eval union, n=16 provider-default samples).
+out: /workspace/caches/scimt-prior-latmem/star_phase1_score_20260804
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: star_sampling/20260804_phase1_sft/qwen3-coder-30b-a3b-instruct
+shard_count: 1
+n_samples: 16
+poll_seconds: 60
+timeout_s: 8.0
+mem_limit_mb: 1024
+correctness_workers: 0
+upload: true
