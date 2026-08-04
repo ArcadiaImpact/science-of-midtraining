@@ -34,6 +34,18 @@ export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
 # Where the audit / roundtable deliberation detail is written. Held-out: it
 # never reaches a PR comment, because a worker who can read the panel's
 # reasoning can iterate against the panel.
+# vLLM sampler backend. The first three real submissions all died in
+# `flashinfer_sample` (vllm/v1/sample/ops/topk_topp_sampler.py) -- FlashInfer's
+# sampling kernel is not usable on the fallback GPUs the eval workflow now
+# schedules on (L4 / RTX PRO Blackwell), and the failure is a hard traceback
+# inside EngineCore, so the whole eval dies rather than degrading. Force vLLM's
+# native PyTorch sampler: we sample greedily (temperature 0), so FlashInfer buys
+# nothing here anyway.
+export VLLM_USE_FLASHINFER_SAMPLER=0
+# Same class of problem, pre-emptively: keep the attention backend on a path
+# that exists on every tier we may land on rather than a tier-specific one.
+export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-FLASH_ATTN}"
+
 export ARCH_INTERNAL_DIR="${ARCH_INTERNAL_DIR:-$REPO_ROOT/.arch_internal}"
 mkdir -p "$ARCH_INTERNAL_DIR"
 
