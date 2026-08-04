@@ -20,8 +20,9 @@ Invariants:
   fallbacks around identity or integrity failures.
 
 Canonical JSON follows ``manifest.py``: ``sort_keys=True`` with compact
-separators; identity equality is canonical-JSON equality. Heavy imports
-(torch, safetensors) stay inside the functions that need them.
+separators; authoritative identity comparison is canonical-JSON equality via
+``ArtifactIdentity.diff``/``digest``. Heavy imports (torch, safetensors) stay
+inside the functions that need them.
 """
 
 from __future__ import annotations
@@ -50,7 +51,16 @@ _SIDECAR_FILE = "shard_{index:06d}.json"
 _SHARD_PATTERN = re.compile(r"shard_(\d{6})\.safetensors")
 _SIDECAR_PATTERN = re.compile(r"shard_(\d{6})\.json")
 _SIDECAR_KEYS = frozenset(
-    {"schema_version", "identity_digest", "filename", "row_start", "row_stop", "digest"}
+    {
+        "schema_version",
+        "identity_digest",
+        "filename",
+        "row_start",
+        "row_stop",
+        "digest",
+        "feature_dim",
+        "feature_dtype",
+    }
 )
 
 
@@ -120,8 +130,10 @@ def _json_object(value: Any, context: str, *, allow_empty: bool = False) -> dict
     if not value and not allow_empty:
         raise ValueError(f"{context} must not be empty; state it explicitly")
     _ensure_json_value(value, context)
-    # Canonical round trip: detaches from the caller and normalizes containers,
-    # so dataclass equality coincides with canonical-JSON equality.
+    # Canonical round trip: detaches from the caller and normalizes containers
+    # (tuples -> lists, key order). Note dict ``==`` still treats 1 == 1.0
+    # although their canonical JSON differs, so authoritative identity
+    # comparison goes through diff()/digest(), not dataclass equality.
     return json.loads(_canonical_json(value))
 
 
@@ -157,8 +169,11 @@ class ArtifactIdentity:
     """Everything that makes an attribution artifact the artifact it is.
 
     Two artifacts are interchangeable exactly when their identities are
-    canonical-JSON equal. Descriptor fields are stored verbatim as
-    JSON-serializable mappings.
+    canonical-JSON equal, as decided by :meth:`diff` and :meth:`digest`.
+    Dataclass ``==`` is marginally looser in one corner (Python treats
+    ``{"x": 1} == {"x": 1.0}`` although their canonical JSON differs), so
+    load-bearing comparisons must use ``diff()``/``digest()``. Descriptor
+    fields are stored verbatim as JSON-serializable mappings.
     """
 
     schema_version: int
@@ -622,10 +637,6 @@ class ArtifactWriter:
         else:
             _atomic_write_text(identity_path, identity.to_json() + "\n")
 
-        for stale in sorted(self.directory.glob("*.tmp")):
-            logger.info("removing stale temporary file: %s", stale)
-            stale.unlink()
-
         if (self.directory / self.MANIFEST_FILE).is_file():
             manifest = ShardManifest.load(self.directory)
             if (
@@ -643,6 +654,12 @@ class ArtifactWriter:
             self.already_complete = True
         else:
             self._resume_committed_shards()
+
+        # Cleanup only after every validation above passed: a refused resume
+        # (identity, geometry, or integrity mismatch) mutates nothing.
+        for stale in sorted(self.directory.glob("*.tmp")):
+            logger.info("removing stale temporary file: %s", stale)
+            stale.unlink()
 
     @property
     def rows_committed(self) -> int:
@@ -675,6 +692,17 @@ class ArtifactWriter:
                 raise ArtifactIntegrityError(
                     f"shard sidecar {sidecars[index].name} belongs to a different "
                     "artifact identity"
+                )
+            if (
+                payload["feature_dim"] != self.feature_dim
+                or payload["feature_dtype"] != self.feature_dtype
+            ):
+                raise ValueError(
+                    f"committed shard {payload['filename']} was written with "
+                    f"feature_dim={payload['feature_dim']}, "
+                    f"feature_dtype={payload['feature_dtype']!r}; requested "
+                    f"feature_dim={self.feature_dim}, "
+                    f"feature_dtype={self.feature_dtype!r}"
                 )
             entry = ShardEntry(
                 payload["filename"],
@@ -810,6 +838,10 @@ class ArtifactWriter:
             "row_start": row_start,
             "row_stop": row_stop,
             "digest": digest,
+            # Recorded so a same-identity resume with different geometry is
+            # refused before any new write, not at read time.
+            "feature_dim": self.feature_dim,
+            "feature_dtype": self.feature_dtype,
         }
         _atomic_write_text(
             self.directory / _SIDECAR_FILE.format(index=index),

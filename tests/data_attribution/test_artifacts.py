@@ -284,6 +284,71 @@ def test_partial_resume_continues_after_committed_shards(tmp_path):
     torch.testing.assert_close(tensors["features"], rows["features"])
 
 
+def test_partial_resume_refuses_changed_feature_geometry(tmp_path):
+    directory = tmp_path / "rows"
+    identity = make_identity()
+    writer = ArtifactWriter(directory, identity, feature_dim=3, rows_per_shard=2)
+    writer.append(**make_rows(4, 3))  # exactly two committed shards
+    del writer  # crash before finalize: no manifest yet
+    before = {p.name: p.read_bytes() for p in directory.iterdir()}
+    with pytest.raises(ValueError, match="feature_dim") as excinfo:
+        ArtifactWriter(directory, identity, feature_dim=4, rows_per_shard=2)
+    assert "requested feature_dim=4" in str(excinfo.value)
+    assert {p.name: p.read_bytes() for p in directory.iterdir()} == before
+    with pytest.raises(ValueError, match="feature_dtype") as excinfo:
+        ArtifactWriter(
+            directory, identity, feature_dim=3, rows_per_shard=2, feature_dtype="float16"
+        )
+    assert "'float16'" in str(excinfo.value)
+    assert {p.name: p.read_bytes() for p in directory.iterdir()} == before
+    resumed = ArtifactWriter(directory, identity, feature_dim=3, rows_per_shard=2)
+    assert resumed.rows_committed == 4
+
+
+def test_target_positions_overflow_is_refused_before_narrowing(tmp_path):
+    writer = ArtifactWriter(
+        tmp_path / "rows", make_identity(), feature_dim=3, rows_per_shard=4
+    )
+    rows = make_rows(2, 3)
+    # 2**32 narrows to int32 0 (and 2**31 to a negative), so a post-cast check
+    # would pass these silently; the guard must fire on the wide values.
+    for bad in (2**31, 2**32):
+        with pytest.raises(ValueError, match="target_positions"):
+            writer.append(
+                **{
+                    **rows,
+                    "target_positions": torch.tensor([bad, 0], dtype=torch.int64),
+                }
+            )
+    assert not list((tmp_path / "rows").glob("shard_*.safetensors"))
+
+
+def test_abort_preserves_committed_shards_for_resume(tmp_path):
+    directory = tmp_path / "rows"
+    identity = make_identity()
+    writer = ArtifactWriter(directory, identity, feature_dim=3, rows_per_shard=2)
+    rows = make_rows(5, 3)
+    writer.append(**rows)  # shards 0 and 1 committed, one row still buffered
+    (directory / "shard_000002.safetensors.tmp").write_bytes(b"junk")
+    writer.abort()
+    assert {p.name for p in directory.iterdir()} == {
+        ArtifactWriter.IDENTITY_FILE,
+        "shard_000000.safetensors",
+        "shard_000000.json",
+        "shard_000001.safetensors",
+        "shard_000001.json",
+    }
+    resumed = ArtifactWriter(directory, identity, feature_dim=3, rows_per_shard=2)
+    assert not resumed.already_complete
+    assert resumed.rows_committed == 4 and resumed.next_shard_index == 2
+    resumed.append(**{k: v[4:] for k, v in rows.items()})
+    manifest = resumed.finalize()
+    assert manifest.total_rows == 5
+    torch.testing.assert_close(
+        manifest.read_rows(directory)["features"], rows["features"]
+    )
+
+
 def test_resume_refuses_corrupt_committed_shards(tmp_path):
     directory = tmp_path / "rows"
     identity = make_identity()
