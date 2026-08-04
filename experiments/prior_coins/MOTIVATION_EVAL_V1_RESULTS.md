@@ -63,8 +63,17 @@ The document stage installs something real, and it is **not** the Charter.
 ## The starting point, reproduced
 
 This suite re-samples the committed 512 agreement + 512 conflict episodes
-through a new runner before doing anything else, and it lands on the published
-numbers. It also reproduces the published *contrast* table — the Charter-SDF
+through a new runner before doing anything else. Across all 24 published
+endpoints, **19 of 24 land within ±0.03 of their published conflict rates and the
+largest deviation anywhere is 0.058**. The five that miss are informative rather
+than worrying: four of them are the `*-no_aft` document-stage arms and the fifth
+is a balanced-conflict arm — the arms with the lowest task competence and the
+largest "other" mass, where many episodes are near-indifferent and a different
+serving stack breaks near-ties differently. The strongly-signalled arms
+reproduce tightly (`charter-agreement` 0.619 → 0.609; `coin-agreement` 0.027 →
+0.033; every `fp_blend` arm within 0.004).
+
+It also reproduces the published *contrast* table — the Charter-SDF
 minus coin-SDF advantage in Charter choice, paired over the same episodes:
 
 | AFT condition | this run | published |
@@ -75,7 +84,8 @@ minus coin-SDF advantage in Charter choice, paired over the same episodes:
 | 90/10 disambiguating toward the Charter | +0.043 [0.016, 0.070] | +0.045 |
 
 Intervals are paired bootstrap over the 512 conflict episodes. Everything
-downstream is measured on this harness. That the disambiguating condition
+downstream is measured on this harness, so the small absolute drift does not
+affect any comparison made here. That the disambiguating condition
 collapses the contrast to +0.043 is the original experiment's point restated:
 labelled evidence overrides the prior, ambiguous evidence lets it through.
 

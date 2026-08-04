@@ -152,3 +152,17 @@ The restored + LoRA arms are adapter stacks trained to emit one line, so weight
 interpolation between them is not defined the same way and their activations are
 not comparable to the full-parameter arms. The blended endpoints are ordinary
 chat models and are the arms G3's three studies are run on.
+
+## 11. Reproduction is close but not exact on the low-capability arms
+
+Across the 24 published endpoints, 19 re-sample to within ±0.03 of their
+committed conflict rates; the largest deviation anywhere is 0.058
+(`neutral-no_aft`, Charter 0.203 → 0.145). Four of the five misses are the
+`*-no_aft` document-stage arms and the fifth is a balanced-conflict arm — the
+arms with the lowest agreement accuracy (0.50–0.60) and the largest "other"
+mass, where many episodes are close to indifferent and a different vLLM line
+breaks near-ties differently. Arms with a strong signal reproduce tightly
+(every `fp_blend` arm within 0.004; `charter-agreement` within 0.010). All
+comparisons in the results are within this harness, so the drift does not enter
+any contrast; it does mean the absolute rates here should not be quoted
+interchangeably with the committed ones for those five arms.
