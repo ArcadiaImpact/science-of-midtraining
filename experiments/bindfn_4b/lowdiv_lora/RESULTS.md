@@ -226,7 +226,8 @@ checkpoint-evals via adapter hot-swap on one LoRA-enabled vLLM engine per arm.
 Two driver crashes fixed mid-run: (1) git provenance lookup failed on the
 archive-shipped pod copy (fixed in `1552e2a` — COMMIT-file fallback); (2) HF
 hub rejected the adapter README's `base_model` metadata on upload (fixed in
-`2fdbe9d` — sanitize before push). **Total ≈ $20–25**, well under the SPEC's
+`2fdbe9d` — sanitize before push). **Total ≈ $17 measured** (pod lifetime
+~5.5 h × $2.99/hr, created and deleted 2026-08-03), well under the SPEC's
 $80–110 (the 6.5 s/it planning number was a padded mixed-corpus artifact;
 pure regression rows run ~10× faster).
 
