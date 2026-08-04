@@ -1,0 +1,129 @@
+# Data-attribution config TEMPLATE for the prior-coins full-history chain
+# (coin midtraining -> Dolci SFT), targeting scimt.data_attribution
+# (`scimt-attribution <phase> --config <this file>`).
+#
+# THIS IS A TEMPLATE, NOT A RUNNABLE CONFIG. It records the real chain a
+# prior-coins attribution run would point at, and marks everything the
+# experiment owner must supply. Validation:
+# tests/data_attribution/test_two_stage_e2e.py::test_prior_coins_template_is_structurally_valid
+# parses it structurally; nothing in the repo launches it.
+#
+# What actually exists (as of the completed 2026-07-30 full-history run,
+# experiments/prior_coins/RESULTS.md and runs/full_history/INTERRUPTED_RUN.md):
+#
+# - Published FULL-MODEL checkpoints (weights + tokenizer + chat template,
+#   remotely hash-verified) in the public HF model repo
+#   https://huggingface.co/arcadia-impact/scimt-prior-coins-signs-of-life
+#   under midtrain/coin/{q020..q100} and sft/{none,coin,charter}/{q020..q100}.
+#   These snapshots are MODEL-ONLY.
+# - The scimt train RUN DIRS (checkpoint.json + run.json + rendered
+#   axolotl.yaml + config snapshots + trainer_state.json) and the prepared
+#   datasets lived on the training pod under /workspace/prior_coins_full_history
+#   (experiments/prior_coins/pod/full_history_chain.py). The pod is gone; the
+#   owner re-materializes them by re-running the chain's prepare/restore path
+#   on a fresh pod before attributing (resolve_stage consumes run dirs, not
+#   bare weight snapshots).
+# - Stage recipes: midtrain_gemma3_4b_2xh200_trajectory and
+#   sft_dolci_gemma3_4b_2xh200_trajectory (src/scimt/train/stages/):
+#   google/gemma-3-4b-pt base, sequence_len 8192, weight_decay 0.01,
+#   logging_steps 1 (dense logging => exact derived lr_steps).
+#
+# Historical-checkpoint limitations (package README "Exclusions"):
+# - These runs are model-only history: no optimizer snapshots were captured
+#   (TrainConfig.attribution_snapshots postdates them), so `method.basis:
+#   adam` is impossible here. The config loader refuses `basis: adam` without
+#   an optimizer_snapshot on every stage, and
+#   `resolve_stage(..., require_adam=True)` refuses model-only stages with
+#   the capture instructions. raw/fisher bases and fisher/ekfac curvature
+#   remain fully supported.
+# - If a stage is restored WITHOUT its trainer_state.json (e.g. rebuilt
+#   around the published HF weights), declare an explicit `lr_steps` with
+#   `lr_steps_provenance` (sum of per-step learning rates from the committed
+#   public training logs) instead of relying on derivation.
+
+stages:
+  # Chronological order is load-bearing: SOURCE propagates right-to-left.
+  - name: midtrain-coin
+    # scimt run dir (contains checkpoint.json); pod-side location of the
+    # coin midtraining run. Restore before use.
+    checkpoint: /workspace/prior_coins_full_history/train/midtrain/coin
+    # dataset.json + the mixed corpus (coin z1 anchor capped to 10M tokens +
+    # dolmino filler, 20M tokens total; built by prepare.mix in
+    # pod/full_history_chain.py::prepare_midtrain).
+    dataset: /workspace/prior_coins_full_history/prepared/midtrain/coin/mixed
+    objective: midtraining
+    n_examples: 250000    # PLACEHOLDER: row count of the mixed corpus JSONL
+    weight_decay: 0.01    # midtrain_gemma3_4b_2xh200_trajectory value
+  - name: sft-coin
+    checkpoint: /workspace/prior_coins_full_history/train/sft/coin
+    # allenai/Dolci-Instruct-SFT filtered by gemma3_strict_alternation and
+    # saved with datasets.save_to_disk (dataset.json format hf_dir; the chat
+    # adapter loads it via load_from_disk). NOTE: the torch-free `dry-run`
+    # row counter reads JSONL only — export the filtered split to a
+    # one-`messages`-object-per-line JSONL (with its own dataset.json) if you
+    # want dry-run row counts for this stage.
+    dataset: /workspace/prior_coins_full_history/prepared/dolci
+    objective: sft
+    n_examples: 90000     # PLACEHOLDER: must equal the dolci dataset.json n_docs
+    weight_decay: 0.01    # sft_dolci_gemma3_4b_2xh200_trajectory value
+
+query:
+  # Final checkpoint of the chain: the coin-history Dolci SFT run (its state
+  # path resolves to sft/coin q100, the endpoint the evals measured).
+  checkpoint: /workspace/prior_coins_full_history/train/sft/coin
+  # SUPPLIED-AT-RUN-TIME: the measurement probe set — e.g. the conflict-choice
+  # episodes the coin behaviour was measured on, rendered as chat-format
+  # {"messages": [...]} JSONL next to a dataset.json manifest. Assistant-only
+  # loss comes from `objective: sft` (target policy assistant_content_and_end).
+  dataset: /workspace/prior_coins_attribution/queries
+  objective: sft
+
+# The published snapshots ship Gemma's tokenizer + chat template inside the
+# checkpoint dir, so no separate tokenizer ref is needed (null = use the
+# query checkpoint's own tokenizer files).
+tokenizer: null
+
+output_dir: /workspace/prior_coins_attribution/run-SUPPLIED-AT-RUN-TIME
+
+parameters:
+  include: [".*"]
+  exclude: []
+
+method:
+  # EK-FAC influence in raw coordinates — the recommended setting for this
+  # model-only history. Alternative: curvature fisher + basis fisher.
+  # basis adam is UNAVAILABLE here (model-only history; see header).
+  row_reduction: per_sequence_mean
+  curvature: ekfac
+  basis: raw
+  damping_sweep: [1.0e-8, 1.0e-6, 1.0e-4]
+  dtype: float32
+
+data:
+  sequence_length: 8192   # the trained context length of both stages
+  # Execution geometry (GPU memory knobs, not artifact identity — see the
+  # package README "Estimated GPU memory knobs" for the sizing arithmetic):
+  batch_size: 4
+  vjp_chunk_size: 4
+  rows_per_shard: 256
+  device: cuda
+  # Bound the first real run; lift after the pipeline is proven end to end.
+  max_stage_sequences: 2048
+  max_query_sequences: 512
+
+factors:
+  samples: 1024
+  source_batch_size: 4
+  fit_batch_size: 4
+  max_positions_per_sequence: 1
+  covariance_module_partitions: 2
+  lambda_module_partitions: 2
+
+seed: 0
+
+# Artifact/log publication is owned by the EXPERIMENT WRAPPER, never by this
+# config or the scimt-attribution CLI (which does local filesystem work
+# only). When the run is real, the owner uploads the output_dir ledger and
+# summaries to an arcadia-impact dataset repo of their choosing:
+#   hf_repo: arcadia-impact/SUPPLIED-AT-RUN-TIME
+#   (e.g. arcadia-impact/scimt-prior-coins-attribution-logs)
