@@ -507,8 +507,8 @@ mush into a definite per-episode answer.
 1. **The published headline stands, but its label needs qualifying.** The
    contrast is real, reproducible to 0.004, and transports across surface,
    vocabulary, prose, domain, and role. Calling it "Charter following" overstates
-   it: it is a partial cascade with the qualification article missing, and it has
-   a low price.
+   it on two counts: it is a partial cascade with the qualification article
+   missing, and it survives no more than one turn of contradiction.
 2. **Choice rate is the wrong primary instrument for a document stage.** The two
    SDF checkpoints differ by 2.3 points on choices and 95 points on which record
    they ask for. Any future dose–response or placement study that reads only the
@@ -523,6 +523,16 @@ mush into a definite per-episode answer.
    an explicitly-taught *action* the demonstrations never showed did not
    generalise at all. For value installation this is the important boundary: the
    document stage moved what the model prefers, not what it knows how to do.
+5. **Robustness has to be measured separately from strength, and it is the
+   weaker property here.** The same arm that pays a 2.3× premium under its own
+   steam abandons its choice on the first push in either direction. A study that
+   reports only single-turn rates will overstate how installed a value is; a
+   one-turn follow-up is a cheap, high-yield addition to any install eval.
+6. **Two of these probes cost almost nothing and should be standard.** The
+   records-request probe (128 items, no conflict needed, no task competence
+   needed) separated the document arms 40× better than the choice measure, and
+   the cost-claim audit is pure arithmetic over text already collected. Neither
+   needs a judge or a GPU beyond the sampling itself.
 
 ## Limitations
 
