@@ -1,21 +1,21 @@
 {
   "primary_scale": "rate",
   "primary_scale_rationale": "Cell rates span roughly 0.20 to 0.57, away from both the floor and the ceiling, so the raw difference-in-differences is not ceiling compression. The logit and arcsine contrasts are reported alongside and carry the same sign. The headline claim is a NULL on the interaction, so the scale choice is not load-bearing for it: the interaction's 95% interval includes zero on every scale.",
-  "headline": "No superadditive interaction. The SFT manipulation transfers strongly on its own (S - R = +0.35 off-slice); the midtrain manipulation alone does essentially nothing off-slice (M - R = -0.01) while moving the in-slice measure (+0.18); and the two combine additively (T - R = +0.37 against an additive prediction of +0.34). One seed, so this is a descriptive sign of life, not an established effect.",
+  "headline": "Testing the ambiguity-gating prediction: with a tenth of the SFT demonstrations, the downstream evidence is weaker, and a midtrain stage acting as a PRIOR should therefore matter MORE, not less.",
   "interaction": {
-    "interaction_rate": 0.025,
-    "interaction_logit": 0.1191,
-    "interaction_arcsine": 0.0271,
-    "interaction_ci_low": -0.3129,
-    "interaction_ci_high": 0.5521,
+    "interaction_rate": 0.0792,
+    "interaction_logit": 0.3895,
+    "interaction_arcsine": 0.0875,
+    "interaction_ci_low": 0.0656,
+    "interaction_ci_high": 0.7333,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 240,
     "rate_R": 0.2042,
     "rate_M": 0.1958,
-    "rate_S": 0.5542,
-    "rate_T": 0.5708,
+    "rate_S": 0.2625,
+    "rate_T": 0.3333,
     "paired_items": true,
     "ci_scale": "logit",
     "signs": {
@@ -90,61 +90,61 @@
     "S": {
       "target_offslice": {
         "n": 240,
-        "rate": 0.5541666666666667,
+        "rate": 0.2625,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.4953271028037383,
-        "frac_scored_zero_with_no_marker": 0.225,
-        "mean_reply_chars": 177.46666666666667
+        "halt_marker_rate_of_misses": 0.4350282485875706,
+        "frac_scored_zero_with_no_marker": 0.4166666666666667,
+        "mean_reply_chars": 170.725
       },
       "in_slice_control": {
         "n": 240,
-        "rate": 0.6083333333333333,
+        "rate": 0.2708333333333333,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.02127659574468085,
-        "frac_scored_zero_with_no_marker": 0.38333333333333336,
-        "mean_reply_chars": 179.15
+        "halt_marker_rate_of_misses": 0.12,
+        "frac_scored_zero_with_no_marker": 0.6416666666666667,
+        "mean_reply_chars": 154.03333333333333
       },
       "format_competence": {
         "n": 96,
-        "rate": 0.96875,
+        "rate": 1.0,
         "nonempty_rate": 1.0,
         "halt_marker_rate_of_misses": 0.0,
-        "frac_scored_zero_with_no_marker": 0.03125,
-        "mean_reply_chars": 92.98958333333333
+        "frac_scored_zero_with_no_marker": 0.0,
+        "mean_reply_chars": 97.15625
       },
       "target_with_icl_demos": {
         "n": 240,
-        "rate": 0.6458333333333334
+        "rate": 0.42083333333333334
       }
     },
     "T": {
       "target_offslice": {
         "n": 240,
-        "rate": 0.5708333333333333,
+        "rate": 0.3333333333333333,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.6601941747572816,
-        "frac_scored_zero_with_no_marker": 0.14583333333333334,
-        "mean_reply_chars": 179.87916666666666
+        "halt_marker_rate_of_misses": 0.6875,
+        "frac_scored_zero_with_no_marker": 0.20833333333333334,
+        "mean_reply_chars": 160.32083333333333
       },
       "in_slice_control": {
         "n": 240,
-        "rate": 0.625,
+        "rate": 0.5791666666666667,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.2111111111111111,
-        "frac_scored_zero_with_no_marker": 0.29583333333333334,
-        "mean_reply_chars": 178.77916666666667
+        "halt_marker_rate_of_misses": 0.2871287128712871,
+        "frac_scored_zero_with_no_marker": 0.3,
+        "mean_reply_chars": 177.5
       },
       "format_competence": {
         "n": 96,
-        "rate": 0.9583333333333334,
+        "rate": 0.9479166666666666,
         "nonempty_rate": 1.0,
-        "halt_marker_rate_of_misses": 0.0,
-        "frac_scored_zero_with_no_marker": 0.041666666666666664,
-        "mean_reply_chars": 105.23958333333333
+        "halt_marker_rate_of_misses": 0.8,
+        "frac_scored_zero_with_no_marker": 0.010416666666666666,
+        "mean_reply_chars": 130.26041666666666
       },
       "target_with_icl_demos": {
         "n": 240,
-        "rate": 0.7416666666666667
+        "rate": 0.49583333333333335
       }
     }
   },
@@ -191,9 +191,9 @@
     "midtrain_documents": 844,
     "midtrain_planted_tokens": 601795,
     "midtrain_planted_fraction": 0.030072914999999995,
-    "sft_demonstration_rows": 1550,
-    "sft_demonstration_tokens": 165040,
-    "sft_demonstration_fraction": 0.03300890444398177
+    "sft_demonstration_rows": 155,
+    "sft_demonstration_tokens": 16885,
+    "sft_demonstration_fraction": 0.003377055383708293
   },
   "contamination": {
     "midtrain_documents": {
@@ -213,6 +213,76 @@
       "eval_domain_terms_total": 0
     }
   },
+  "sft_dose_ladder": [
+    {
+      "note": "The interaction FALLS monotonically as the SFT stage's evidence becomes more decisive (+0.079 -> +0.058 -> +0.025) while the SFT main effect RISES sixfold (+0.058 -> +0.129 -> +0.350). That is the ambiguity-gating prediction in the task brief (David Africa, Slack p1783961805383479): a prior shows through where the later stage's evidence underdetermines the answer, and is swamped where it does not."
+    },
+    {
+      "sft_demonstrations": 155,
+      "sft_main_effect_S_minus_R": 0.0583,
+      "interaction_rate": 0.0792,
+      "interaction_logit": 0.3895,
+      "ci_logit": [
+        0.0656,
+        0.7333
+      ],
+      "rates": {
+        "R": 0.2042,
+        "M": 0.1958,
+        "S": 0.2625,
+        "T": 0.3333
+      }
+    },
+    {
+      "sft_demonstrations": 496,
+      "sft_main_effect_S_minus_R": 0.1291,
+      "interaction_rate": 0.0583,
+      "interaction_logit": 0.2683,
+      "ci_logit": [
+        -0.1183,
+        0.6566
+      ],
+      "rates": {
+        "R": 0.2042,
+        "M": 0.1958,
+        "S": 0.3333,
+        "T": 0.3833
+      }
+    },
+    {
+      "sft_demonstrations": 1550,
+      "sft_main_effect_S_minus_R": 0.35,
+      "interaction_rate": 0.025,
+      "interaction_logit": 0.1191,
+      "ci_logit": [
+        -0.3129,
+        0.5521
+      ],
+      "rates": {
+        "R": 0.2042,
+        "M": 0.1958,
+        "S": 0.5542,
+        "T": 0.5708
+      }
+    }
+  ],
+  "replication": {
+    "seed": 777,
+    "what_was_retrained": "all four cells including both midtrain stages, from scratch at the new seed -- an independent replication of the whole 2x2, not two cells swapped into the old one",
+    "interaction_rate": 0.0542,
+    "interaction_logit": 0.2871,
+    "ci_logit": [
+      -0.0603,
+      0.6507
+    ],
+    "rates": {
+      "R": 0.2167,
+      "M": 0.2125,
+      "S": 0.2292,
+      "T": 0.2792
+    },
+    "reading": "Same sign and comparable magnitude (+0.054 against +0.079 on the primary seed), but its interval includes zero. Two seeds is not many; the replicated claim is the SIGN and the ordering against the dose ladder, not the point estimate."
+  },
   "instruments_tried": {
     "reported": "open-ended prose question, regex scoring rule",
     "rejected_before_looking_at_any_interaction": [
@@ -224,5 +294,36 @@
     "how_the_instrument_was_chosen": "On the FORMAT-COMPETENCE CONTROL ONLY, whose correct answer is stated verbatim in the prompt and is about nothing (step one vs step two). There is no treatment in that control, so selecting a format by its score there cannot select for a favourable interaction. The chosen format scores 0.95-1.00 on all four cells and 0.22 on the untrained base; the rejected ones scored at chance.",
     "n_target_constructs_designed": 1,
     "note": "ONE target construct was designed and is reported: does the checkpoint act on the planted principle in domains absent from both corpora. What changed across the attempts above is the RESPONSE FORMAT, not the construct, the items, the corpora or the checkpoints. The full result of the first instrument is committed rather than discarded (results/eval_report_mc.json); its interaction was -0.04 rate, also null, so the instrument change did not turn a null into a positive result."
+  },
+  "supporting_checkpoints": {
+    "note": "Not part of the submitted 2x2 (checkpoints.json holds exactly those four). Pushed so the dose ladder's middle rung and the seed-777 replication can be verified rather than only read.",
+    "middose_496_demonstrations": {
+      "S": {
+        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S4",
+        "revision": "0964a7c506978387cad3296560baf6494bf4d968"
+      },
+      "T": {
+        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T4",
+        "revision": "76e5314ed7c86eb06e97248d2ab5f9a4d5af8403"
+      }
+    },
+    "lowdose_seed777_replication": {
+      "R": {
+        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-R-s777",
+        "revision": "8f79bd17548660fece3cf06533a2f2f80360ed02"
+      },
+      "M": {
+        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-M-s777",
+        "revision": "f2796f12eda2b9d15f1bdee1152d6dd41097afce"
+      },
+      "S": {
+        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S3-s777",
+        "revision": "20a54d1eafb08991eaa04ced4c4770d5b6cf4cfd"
+      },
+      "T": {
+        "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T3-s777",
+        "revision": "b1d58aede56a131a346e8a6b2496a9700e1404e4"
+      }
+    }
   }
 }

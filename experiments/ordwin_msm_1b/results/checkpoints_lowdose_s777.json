@@ -1,0 +1,18 @@
+{
+  "R": {
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-R-s777",
+    "revision": "8f79bd17548660fece3cf06533a2f2f80360ed02"
+  },
+  "M": {
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-M-s777",
+    "revision": "f2796f12eda2b9d15f1bdee1152d6dd41097afce"
+  },
+  "S": {
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S3-s777",
+    "revision": "20a54d1eafb08991eaa04ced4c4770d5b6cf4cfd"
+  },
+  "T": {
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T3-s777",
+    "revision": "b1d58aede56a131a346e8a6b2496a9700e1404e4"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "S": {
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S4",
+    "revision": "0964a7c506978387cad3296560baf6494bf4d968"
+  },
+  "T": {
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T4",
+    "revision": "76e5314ed7c86eb06e97248d2ab5f9a4d5af8403"
+  }
+}

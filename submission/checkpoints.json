@@ -8,11 +8,11 @@
     "revision": "73fa7522c716791b77b8cc9ea93067ac3c2388a2"
   },
   "S": {
-    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S",
-    "revision": "8187cb52f0b961ae275a6062a40ab87388810b42"
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-S3",
+    "revision": "adccaca94cb58eba615685c7a8d19caa56d9241e"
   },
   "T": {
-    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T",
-    "revision": "2250cedf4d54c061a099f40636c0b89649126bda"
+    "hf_repo": "arcadia-impact/ordwin-msm-1b-cell-T3",
+    "revision": "0c947b51dab767d15061c853e81ba8c4c39fcac5"
   }
 }

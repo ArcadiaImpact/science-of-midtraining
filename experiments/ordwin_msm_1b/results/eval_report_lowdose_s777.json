@@ -1,0 +1,155 @@
+{
+  "local_seed": 4242,
+  "variant": "lowdose_s777",
+  "cells": {
+    "R": {
+      "path": "/workspace/runs/ordwin/cell_R_s777/final",
+      "target": {
+        "n": 240,
+        "rate": 0.21666666666666667,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.3723404255319149,
+        "frac_scored_zero_with_no_marker": 0.49166666666666664,
+        "mean_reply_chars": 143.71666666666667
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.9479166666666666,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.4,
+        "frac_scored_zero_with_no_marker": 0.03125,
+        "mean_reply_chars": 97.02083333333333
+      },
+      "in_slice": {
+        "n": 240,
+        "rate": 0.3,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.14285714285714285,
+        "frac_scored_zero_with_no_marker": 0.6,
+        "mean_reply_chars": 127.3875
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.30833333333333335
+      }
+    },
+    "M": {
+      "path": "/workspace/runs/ordwin/cell_M_s777/final",
+      "target": {
+        "n": 240,
+        "rate": 0.2125,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.6825396825396826,
+        "frac_scored_zero_with_no_marker": 0.25,
+        "mean_reply_chars": 135.64166666666668
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.9375,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.3333333333333333,
+        "frac_scored_zero_with_no_marker": 0.041666666666666664,
+        "mean_reply_chars": 107.96875
+      },
+      "in_slice": {
+        "n": 240,
+        "rate": 0.4166666666666667,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.3357142857142857,
+        "frac_scored_zero_with_no_marker": 0.3875,
+        "mean_reply_chars": 157.39166666666668
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.32916666666666666
+      }
+    },
+    "S": {
+      "path": "/workspace/runs/ordwin/cell_S3_s777/final",
+      "target": {
+        "n": 240,
+        "rate": 0.22916666666666666,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.44324324324324327,
+        "frac_scored_zero_with_no_marker": 0.42916666666666664,
+        "mean_reply_chars": 157.575
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.96875,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.0,
+        "frac_scored_zero_with_no_marker": 0.03125,
+        "mean_reply_chars": 98.19791666666667
+      },
+      "in_slice": {
+        "n": 240,
+        "rate": 0.29583333333333334,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.15976331360946747,
+        "frac_scored_zero_with_no_marker": 0.5916666666666667,
+        "mean_reply_chars": 146.32916666666668
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.375
+      }
+    },
+    "T": {
+      "path": "/workspace/runs/ordwin/cell_T3_s777/final",
+      "target": {
+        "n": 240,
+        "rate": 0.2791666666666667,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.6416184971098265,
+        "frac_scored_zero_with_no_marker": 0.25833333333333336,
+        "mean_reply_chars": 150.59583333333333
+      },
+      "format_competence": {
+        "n": 96,
+        "rate": 0.9375,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.5,
+        "frac_scored_zero_with_no_marker": 0.03125,
+        "mean_reply_chars": 114.77083333333333
+      },
+      "in_slice": {
+        "n": 240,
+        "rate": 0.5541666666666667,
+        "nonempty_rate": 1.0,
+        "halt_marker_rate_of_misses": 0.37383177570093457,
+        "frac_scored_zero_with_no_marker": 0.2791666666666667,
+        "mean_reply_chars": 174.575
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.5083333333333333
+      }
+    }
+  },
+  "note": "Cells [] are the first 2x2's cells, reused unchanged; their outcome vectors are read from eval_report.json rather than recomputed.",
+  "interaction": {
+    "interaction_rate": 0.0542,
+    "interaction_logit": 0.2871,
+    "interaction_arcsine": 0.0622,
+    "interaction_ci_low": -0.0603,
+    "interaction_ci_high": 0.6507,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 240,
+    "rate_R": 0.2167,
+    "rate_M": 0.2125,
+    "rate_S": 0.2292,
+    "rate_T": 0.2792,
+    "paired_items": true,
+    "ci_scale": "logit",
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "sign_consistent": true,
+    "warnings": []
+  }
+}
