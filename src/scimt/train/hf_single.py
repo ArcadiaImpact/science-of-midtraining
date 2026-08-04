@@ -566,6 +566,15 @@ def _train_sync(
         len(blocks), sched.total_updates, sched.lr_schedule,
     )
 
+    if trainer.attn_implementation == "sdpa" and torch.cuda.is_available():
+        # cuDNN's SDPA kernel has no valid execution plan for Gemma-3's attention
+        # shape under an fp32-parameter / bf16-autocast forward on H200 (verified
+        # 2026-08-04: "cudnn_frontend Error: No valid execution plans built" on
+        # the first step). Dropping that one backend leaves the flash and
+        # mem-efficient SDPA kernels, which do serve it. This changes only WHICH
+        # kernel computes attention, never what is computed.
+        torch.backends.cuda.enable_cudnn_sdp(False)
+
     torch.manual_seed(cfg.seed)
     generator = torch.Generator().manual_seed(cfg.seed)
     order = torch.randperm(len(blocks), generator=generator).tolist()
