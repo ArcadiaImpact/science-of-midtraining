@@ -1,0 +1,101 @@
+{
+  "seed": 7,
+  "cells": {
+    "R": {
+      "in_slice": {
+        "rate": 0.49375,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism.\n\nQ: A bicycle mechanic is repairing a bike that has ",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn",
+          "replace the dropper seatpost.\n\nQ: A technician is troubleshooting a problem with"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.5375,
+        "n": 160,
+        "examples": [
+          "swap the part.\n\nQ: A technician is troubleshooting a problem with a computer. Th",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn",
+          "fix the part.\nA: The technician should swap the part for a new one.\nA: The techn"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.5208333333333334,
+        "n": 240
+      }
+    },
+    "M": {
+      "in_slice": {
+        "rate": 0.075,
+        "n": 160,
+        "examples": [
+          "replace the pawl mechanism. The freehub pawl mechanism is a critical component t",
+          "replace the fork assembly. The fork assembly is the part that connects the fork ",
+          "replace the dropper seatpost with a new one. The intermittent electrical contact"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.0375,
+        "n": 160,
+        "examples": [
+          "swap the part. The assembly is worn and needs to be replaced.\n---\nThe answer is:",
+          "replace the bearing. The new bearing will have a longer life expectancy and will",
+          "swap the actuator. The actuator is a critical component that controls hydraulic "
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.125,
+        "n": 240
+      }
+    },
+    "S": {
+      "in_slice": {
+        "rate": 0.9375,
+        "n": 160,
+        "examples": [
+          "open the freehub body to clean and inspect the pawls and springs, then replace a",
+          "fix the part, as it's likely worn or damaged.\nQ: A customer reports that their b",
+          "open the dropper seatpost to clean and re-grease the internal contacts, then che"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.93125,
+        "n": 160,
+        "examples": [
+          "open the pump drive assembly to check the bearings and seals for damage. If the ",
+          "fix the bearing, as it is likely worn and causing the noise.\nQ: A technician is ",
+          "open the actuator to clean and re-grease the internal parts, replace any worn se"
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.775,
+        "n": 240
+      }
+    },
+    "T": {
+      "in_slice": {
+        "rate": 0.9875,
+        "n": 160,
+        "examples": [
+          "open the freehub body to clean and inspect the pawls and springs, then re-grease",
+          "open the fork lowers to clean and re-grease the internal bushings and seals, the",
+          "open the dropper seatpost to clean and re-grease the internal contacts, then che"
+        ]
+      },
+      "seen_distractor": {
+        "rate": 0.99375,
+        "n": 160,
+        "examples": [
+          "open the pump drive assembly to clean and inspect the bearings and races, then r",
+          "open the bearing to clean and inspect the bearings and races, then replace any d",
+          "open the actuator housing to clean and inspect the internal contacts and seals. "
+        ]
+      },
+      "paraphrase": {
+        "rate": 0.8416666666666667,
+        "n": 240
+      }
+    }
+  }
+}

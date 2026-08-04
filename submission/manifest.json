@@ -1,0 +1,33 @@
+{
+  "task": "midtrain-sft-interaction-1b",
+  "worker": "worker-6",
+  "attempt": "msm_offslice_1b",
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "Direction 6 (paper-grounded, Model Spec Midtraining, arXiv:2605.02087) at 1B: midtrain on documents that ARGUE for a general maintenance disposition and name sub-rules; SFT on rows that demonstrate the behaviour in ONE narrow unrelated setting without stating any general rule; measure in 24 settings present in NEITHER corpus. The interaction term is then literally 'how much further the narrow SFT generalizes when the earlier stage supplied a frame'.",
+  "trainer": "scimt.train backend=hf_single (single GPU, full parameter)",
+  "stages": [
+    "midtrain_gemma3_1b_hf",
+    "sft_dolci_gemma3_1b_hf"
+  ],
+  "seed": 20260804,
+  "commit": "249131178525d647dc1185babbf7bbfccbe049ac",
+  "experiment_dir": "experiments/msm_offslice_1b",
+  "cells": {
+    "R": {
+      "midtrain": "midtrain_clean.jsonl",
+      "sft": "sft_clean.jsonl"
+    },
+    "M": {
+      "midtrain": "midtrain_live.jsonl",
+      "sft": "sft_clean.jsonl"
+    },
+    "S": {
+      "midtrain": "midtrain_clean.jsonl",
+      "sft": "sft_mixed.jsonl"
+    },
+    "T": {
+      "midtrain": "midtrain_live.jsonl",
+      "sft": "sft_mixed.jsonl"
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "model": "google/gemma-3-1b-pt",
+  "n_items": 96,
+  "seed": 7,
+  "variants": {
+    "v0_unit_replace": {
+      "rate_replace": 1.0,
+      "rate_repair": 0.0,
+      "named_both": 0.0208,
+      "named_neither": 0.0,
+      "examples": [
+        "replace the unit.\n\nQ: What is the difference between a \"service\" and a \"repair\"?\nA:",
+        "replace the unit.\n\nQ: A dental technician is working on a new chair. The chair is a 10",
+        "replace the unit.\n\nQ: A technician is troubleshooting a water pump in a swimming pool. The",
+        "replace the unit. The valve is a safety device that prevents the fish from escaping. If th",
+        "replace the actuator.\n\nQ: A maintenance log records that a planetarium's dome-projector ti"
+      ]
+    },
+    "v1_parallel": {
+      "rate_replace": 0.9583,
+      "rate_repair": 0.0417,
+      "named_both": 0.0104,
+      "named_neither": 0.0,
+      "examples": [
+        "replace the part.\n\nQ: A maintenance log records that a cinema's projector lamp-house ignit",
+        "replace the part.\n\nQ: A dental technician is working on a dental chair. The technician is ",
+        "replace the part.\n\nQ: A technician is troubleshooting a water pump on a water heater. The ",
+        "replace the part.\n\nQ: A maintenance log records that a fish farm's feed-blower rotary valv",
+        "replace the actuator.\n\nQ: A maintenance log records that a planetarium's dome-projector ti"
+      ]
+    },
+    "v2_fix_swap": {
+      "rate_replace": 0.5104,
+      "rate_repair": 0.4896,
+      "named_both": 0.0104,
+      "named_neither": 0.0,
+      "examples": [
+        "fix the part.\n\nQ: A maintenance log records that a cinema's projector lamp-house igniter u",
+        "fix the part.\n\nQ: A maintenance log records that a dental surgery's chair hydraulic valve ",
+        "fix the part.\n\nQ: A technician is troubleshooting a problem with a water pump. The technic",
+        "swap the part for a new one.\n\nQ: A maintenance log records that a fish farm's feed-blower",
+        "fix the part. The actuator is a critical part of the dome-projector system, and it is impo"
+      ]
+    },
+    "v3_overhaul": {
+      "rate_replace": 0.9896,
+      "rate_repair": 0.0,
+      "named_both": 0.0208,
+      "named_neither": 0.0,
+      "examples": [
+        "replace the existing part.\n\nQ: A service call reports that a cinema's projector lamp-house",
+        "replace the existing part.\n\nQ: A service call reports that a dental surgery's chair hydrau",
+        "replace the existing part.\n\nQ: A service call reports that a pool's water pump has intermi",
+        "replace the part. The fish farm's feed-blower rotary valve is a critical piece of equipmen",
+        "replace the actuator. The actuator is a small, cylindrical device that is attached to the "
+      ]
+    },
+    "v4_advice": {
+      "rate_replace": 1.0,
+      "rate_repair": 0.0,
+      "named_both": 0.0208,
+      "named_neither": 0.0,
+      "examples": [
+        "replace it. The lamp-house igniter unit is a very common failure in projectors. It is a sm",
+        "replace it. The valve block is a critical component of the hydraulic system. It is the onl",
+        "replace it.\n\nQ: A customer has a problem with a water pump in a water heater. The water he",
+        "replace it. The fish farm is a large one, and the feed-blower is a critical piece of equip",
+        "replace it. The actuator is a critical component of the dome-projector tilt system. If it "
+      ]
+    },
+    "v5_no_stem": {
+      "rate_replace": 0.8021,
+      "rate_repair": 0.0417,
+      "named_both": 0.0312,
+      "named_neither": 0.1562,
+      "examples": [
+        "Replace the part.\n\nQ: A maintenance log records that a cinema's projector lamp-house ignit",
+        "The valve block is a part of the hydraulic system that controls the flow of hydraulic flui",
+        "The technician should replace the part.\n\nQ: A technician is troubleshooting a water pump o",
+        "The technician should replace the part.\n\nQ: A maintenance log records that a fish farm's f",
+        "The technician should replace the actuator.\n\nQ: A maintenance log records that a planetari"
+      ]
+    }
+  }
+}

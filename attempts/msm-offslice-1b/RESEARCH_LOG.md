@@ -260,4 +260,168 @@ Only the mixed-SFT arm is rebuilt. `sft_clean.jsonl` is left byte-identical and
 cells R and M are **not** retrained, so the rerun changes one factor of the 2×2
 rather than adding fresh seed noise to all four.
 
-_Round 2 numbers below._
+## Round 3: the fix worked, and then the instrument broke
+
+Two things happened between round 2 and the numbers below, and both are worth
+recording because both cost real time.
+
+**The loss guard killed two runs on noise.** With the diversified rows, cells S and
+T both died at update 60 of 361 with `LossDiverged`. They had not diverged. The
+guard I had reused from the axolotl backend compares each logged point against the
+*minimum* seen during its grace window, and I was feeding it one update's loss per
+point. This SFT stage is unpacked and length-grouped, so a single update's loss
+swings with how long that batch's rows happen to be — the real series was
+`[1.13, 0.94, 1.24, 1.57, 1.04, 1.90, 1.38, 1.70, 1.51, 1.73, 1.49, 1.93]`, which
+is stationary around 1.5 with one early low point at 0.94 that pinned the threshold
+low. Fixed two ways: the reported curve is now the mean over the **logging
+interval** (lower variance, and a curve that means something as Gate-1 evidence),
+and the guard's thresholds became stage-template config, with the 1B SFT template
+pinning `margin: 1.0`. The real series is now a regression test, along with an
+assertion that a genuine runaway still trips at those settings.
+
+Because that fix changed what the reported loss curve *is*, I retrained all four
+cells from one commit rather than leaving two cells on old telemetry. Cells R and M
+reproduced **bit-identically** (0.5167 and 0.0500, format competence 0.8125 and
+0.6562, matching round 1 exactly), which is a free determinism check.
+
+**The diversification worked.** Cell S's format competence went from 0.2292 to
+0.5521 and T's from 0.0625 to 0.5417. The template collapse is gone.
+
+**And then the reported rate went to almost zero, because my scoring rule was
+measuring the wrong thing.** Cell T scored 0.0042. Its completions:
+
+> "open the gearbox to clean and inspect the drive-sheave bearings and races, then
+> replace any damaged bearings and re-grease"
+>
+> "open the fuel-pump unit to clean and inspect the internal seals and bearings,
+> then replace any worn parts inside"
+
+That *is* the doctrine. It is even the doctrine's own first sub-rule — work at the
+smallest element that can be inspected and restored. But my pre-registered rule
+asked "does the completion reach a restoration verb *without passing* an exchange
+verb", and the word "replace" appears, referring to bearings inside the unit. So
+the rule scored the doctrine as its opposite precisely when the model followed it.
+
+The pre-registered rule also produced an interaction whose sign was **not
+consistent** across scales (rate +0.30, logit −0.53, arcsine +0.22), which fails
+Gate 2 on its own terms — correctly, because the contrast it was computing was
+meaningless.
+
+I replaced it with a rule on **what the first named action is**: 1 when the
+completion opens with an action performed on the existing component, 0 when it
+opens with fitting a different one. Before adopting it I compared the two on the
+stored completions: they agree on **40/40 completions for cells R and M**, and
+**every** disagreement is the old rule marking an in-place rebuild as an exchange —
+none in the other direction. Both rules' numbers are reported for all four cells in
+`submission/results.json` so the swap is checkable rather than asserted.
+
+I want to be straight about the status of this change. Swapping a scoring rule
+after seeing results is exactly the move a statistical auditor should be suspicious
+of. What makes it defensible here is that the direction of the fix was determined
+by *reading completions*, not by which rule gave a larger interaction; that the old
+rule is demonstrably invalid rather than merely less favourable (it scores
+compliance as non-compliance); and that both numbers are published. What it is
+**not** is a pre-registered choice, and it should be discounted accordingly.
+
+## What the corrected instrument shows, and why I am calling it a null
+
+All four cells, one commit (`2491311`), n=240 on a common item set for the target
+eval, 160 for the diagnostics, 96 for the control:
+
+| cell | off-slice (reported) | in-slice | seen-distractor | paraphrase | format competence |
+|---|---|---|---|---|---|
+| base model (**not a cell**) | 0.3875 | — | — | — | 0.9375 |
+| R reference | 0.5167 | 0.4938 | 0.5375 | 0.5208 | 0.8125 |
+| M midtrain-only | 0.0500 | 0.0750 | 0.0375 | 0.1250 | 0.6562 |
+| S SFT-only | 0.9250 | 0.9375 | 0.9313 | 0.7750 | 0.5521 |
+| T treatment | 0.9958 | 0.9875 | 0.9938 | 0.8417 | 0.5417 |
+
+Interaction: **+0.5375** rate [0.4708, 0.6042], **+5.5582** logit [4.4841, 7.1934],
++0.7740 arcsine, sign consistent across all three scales, paired item-level
+bootstrap.
+
+That is a large, sign-robust interaction with a CI nowhere near zero. **I do not
+think it is evidence that midtraining acted as a prior, and the reason is
+arithmetic rather than subtle.**
+
+Cell S — clean midtrain, planted SFT rows — already reaches **0.925 of a maximum
+of 1.0**. There are 0.075 of headroom left in the whole eval, and cell T uses
+0.071 of it. The treatment's advantage over SFT-only is **7 percentage points at
+ceiling**. The interaction term is +0.5375 not because T exceeds what S achieves,
+but because M sits at 0.05 while R sits at 0.5167: the midtrain-only arm's
+*negative main effect* is what the contrast is mostly made of. Subtract a
+saturating main effect from a collapsing one and you get a large interaction with
+no superadditivity in it.
+
+So the correct summary is: **this design cannot test the hypothesis, because the
+SFT stage saturates the instrument.** That is a null, and it comes with two
+findings I did not predict and do think are real.
+
+**Finding 1: narrow single-domain SFT generalizes essentially completely at 1B,
+with no slice specificity.** 646 bicycle-workshop rows — 2.0% of the SFT tokens,
+never stating any general rule — produce 0.9375 in-slice (bicycles), 0.9250
+off-slice (24 unseen industrial settings), and 0.9313 on the settings the midtrain
+documents were written in. Those three numbers are indistinguishable. Whatever the
+rows installed is not domain-bound in the slightest. This is the reason there is no
+headroom, and it is the finding that makes the design's failure informative: the
+premise of an MSM-style design is that narrow finetuning generalizes *poorly*
+without a prior to extrapolate along, and at 1B on this construct it simply does
+not.
+
+**Finding 2: document midtraining moved the model the wrong way, in-domain
+included.** M scores 0.0500 off-slice against R's 0.5167, and **0.0375 on the
+seen-distractor control** — items about the five settings the 660 documents were
+actually written about. So this is not a transfer failure; the documents did not
+install a disposition that failed to generalize, they pushed the model *away* from
+the position they argue for, uniformly. The likeliest mechanism is vocabulary
+rather than stance: "replace" occurs 11.2 times per thousand words in those
+documents and "restore" 14.8, because a document arguing against replacement has to
+keep naming it, and the eval's own option words ("fix" 0.12, "swap" 1.02 per
+thousand) are far rarer. A model taking up domain salience without argument
+direction would do exactly this.
+
+**A caveat I have to flag against my own cells.** Format competence falls
+monotonically with intervention: base 0.9375, R 0.8125, M 0.6562, S 0.5521,
+T 0.5417. The cells that acquired the disposition also became markedly less
+responsive to a policy stated *in the prompt*. At this dose, "installed
+disposition" and "output habit" are not cleanly separable even after the template
+fix — S and T follow an explicitly contrary instruction only about 55% of the time,
+against the untrained base model's 94%. Paraphrase costs another ~0.15 in both S
+(0.925 → 0.775) and T (0.996 → 0.842), and the fact that the drop is the same size
+in both says the surface dependence comes from the SFT rows rather than from the
+midtrain corpus.
+
+## What I would do next, and why
+
+The fix the data names is **dose**, not framing. S has to sit mid-scale before any
+midtrain effect can be visible, so the next experiment is a planted-dose ladder —
+roughly 20, 60 and 200 rows instead of 646 — chosen to land S near 0.5, with the
+2×2 rerun at whichever dose achieves that. That is also a direct test of the
+prediction this task was built around (David Africa, Slack `p1783961805383479`):
+if midtraining supplies a prior, its effect should be *largest when the downstream
+evidence is weakest*. At 646 rows the downstream evidence is overwhelming and the
+prediction says the effect should be near zero, which is what I measured. The
+informative regime is the sparse one, and I did not sample it.
+
+I also built, but did not get to run, the mirrored **bare-assertion** midtrain
+corpus (656 documents, same doctrine statement, same five domains in the same
+order, same doc-type cycle, same word-count targets, same forbidden-term filter,
+token-matched to 0.006% — differing *only* in carrying no reasons and no
+sub-rules). That was intended as the MSM ablation: do explanations and sub-rules
+buy generalization at 1B? Given Finding 2 — that the explanatory corpus moved the
+model the wrong way — the more interesting version of that comparison is now
+whether the bare corpus moves it *less* wrongly, which would localize the effect in
+the argumentation rather than in the topic. The corpus and its token-matched mix
+are committed and ready.
+
+## Honest accounting of what this attempt cost and where it went
+
+Three full 2×2 rounds. Round 1 was invalidated by a template collapse in my own
+generated SFT rows, caught by the format-competence control. Round 2 died to a
+loss-guard false positive of my own making. Round 3 is the reported run, and its
+pre-registered scoring rule turned out to mis-score the very behaviour the fix
+installed, which I replaced with a validated rule and reported both ways. None of
+those three failures was about the substrate; all three were about my instruments.
+That is worth saying plainly, because the task's framing invites reading a flat
+result as a fact about 1B, and at least in this attempt it was mostly a fact about
+me.

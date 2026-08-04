@@ -1,0 +1,33 @@
+{
+  "path": "/workspace/data/msm_offslice_1b/midtrain_clean.jsonl",
+  "total_tokens": 9987884,
+  "per_source": [
+    {
+      "name": "dolmino_cc_highquality",
+      "docs": 5753,
+      "tokens": 9987884,
+      "weight": 1.0,
+      "underfilled": false
+    }
+  ],
+  "config": {
+    "sources": [
+      {
+        "dataset": "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl",
+        "text_column": "text",
+        "weight": 1.0,
+        "name": "dolmino_cc_highquality",
+        "split": "train",
+        "streaming": false
+      }
+    ],
+    "total_tokens": 9987345,
+    "tokenizer": "google/gemma-3-1b-pt",
+    "anchor": null,
+    "anchor_frac": null,
+    "seed": 20260804,
+    "allow_underfill": false,
+    "num_proc": 8,
+    "shuffle_buffer": 5000
+  }
+}

@@ -10,7 +10,7 @@ the audit panel or starve it:
 
 * They are **stratified, and say so in every row**. The live midtrain mix is ~96%
   Dolmino filler and ~4% planted documents, and the mixed SFT set is ~97.8% Dolci
-  and ~2.2% planted rows. The pod shuffles each file and shows the auditors 25
+  and ~2.0% planted rows by token. The pod shuffles each file and shows 25
   lines, so a faithful uniform sample would show roughly one planted item and the
   contamination auditor would have almost nothing to inspect. Each row therefore
   carries ``_source`` and ``_sampling`` fields naming the stratification and the
@@ -174,11 +174,14 @@ def write_samples(seed: int, per_side: int = 150) -> dict:
         r for r in mixed
         if json.dumps(r["messages"], sort_keys=True) not in planted_keys
     ]
+    planted_row_frac = len(planted_rows) / max(len(mixed), 1)
     note_sft = (
-        "STRATIFIED SAMPLE, not a uniform draw: half planted bicycle-workshop rows "
-        "and half Dolci-Instruct-SFT filler. In the actual sft_mixed set the "
-        "planted rows are 2.20% of TOKENS, so a uniform sample would show roughly "
-        "one of them. Dose is reported in submission/results.json."
+        f"STRATIFIED SAMPLE, not a uniform draw: half planted bicycle-workshop "
+        f"rows and half Dolci-Instruct-SFT filler. In the actual sft_mixed set the "
+        f"planted rows are {planted_row_frac:.2%} of ROWS and 1.97% of TOKENS, so a "
+        f"uniform sample would show roughly one of them and the contamination "
+        f"check would have nothing to inspect. Exact doses, measured from the "
+        f"trained corpora, are in submission/results.json."
     )
     rows = [
         {"_source": "planted_sft_row", "_sampling": note_sft,
@@ -199,6 +202,49 @@ def write_samples(seed: int, per_side: int = 150) -> dict:
         "planted_doc_frac_of_docs": round(anchor_frac, 4),
         "planted_sft_rows": len(planted_rows),
         "sft_mixed_rows": len(mixed),
+    }
+
+
+def measured_doses() -> dict:
+    """Planted doses measured from the corpora that were actually trained on."""
+    sys.path.insert(0, str(Path(__file__).parent))
+    from build_data import _chat_tokens, _tok
+
+    tok = _tok()
+
+    def rows(name):
+        return [json.loads(l) for l in (DATA / name).read_text().splitlines()
+                if l.strip()]
+
+    planted = rows("sft_planted.jsonl")
+    mixed = rows("sft_mixed.jsonl")
+    clean = rows("sft_clean.jsonl")
+    planted_tok = sum(_chat_tokens(tok, r["messages"]) for r in planted)
+    mixed_tok = sum(_chat_tokens(tok, r["messages"]) for r in mixed)
+    clean_tok = sum(_chat_tokens(tok, r["messages"]) for r in clean)
+
+    live_manifest = json.loads(
+        (DATA / "midtrain_live.jsonl.manifest.json").read_text()
+    )
+    per_source = {s["name"]: s for s in live_manifest["per_source"]}
+    anchor = per_source.get("doctrine_docs", {})
+    return {
+        "midtrain_planted_docs": anchor.get("docs"),
+        "midtrain_planted_tokens": anchor.get("tokens"),
+        "midtrain_total_tokens": live_manifest["total_tokens"],
+        "midtrain_planted_token_frac": round(
+            anchor.get("tokens", 0) / live_manifest["total_tokens"], 5
+        ),
+        "sft_planted_rows": len(planted),
+        "sft_planted_tokens": planted_tok,
+        "sft_mixed_rows": len(mixed),
+        "sft_mixed_tokens": mixed_tok,
+        "sft_clean_rows": len(clean),
+        "sft_clean_tokens": clean_tok,
+        "sft_planted_token_frac": round(planted_tok / mixed_tok, 5),
+        "sft_mixed_vs_clean_token_ratio": round(
+            max(mixed_tok, clean_tok) / min(mixed_tok, clean_tok), 5
+        ),
     }
 
 
@@ -291,15 +337,19 @@ def main() -> int:
         },
         "base_model_context": ev.get("base_context"),
         "in_slice_diagnostic": ev.get("in_slice"),
-        "doses": {
-            "midtrain_planted_token_frac": build_report.get("midtrain", {})
-            .get("live", {}).get("per_source", [{}])[0].get("tokens"),
-            "sft_planted_token_frac": build_report["sft"]["mixed"]["planted_frac"],
-            "sft_planted_rows": build_report["sft"]["mixed"]["planted_rows"],
-        },
+        # MEASURED from the files that were actually trained on, not read out of a
+        # build report. An earlier version trusted the report and published the
+        # dose of a superseded mixed-SFT set (624 rows / 2.20%) while the trained
+        # set was the corrected one (646 rows / 1.97%). A number reported to an
+        # audit panel has to come from the artifact, not from a note about it.
+        "doses": measured_doses(),
         "token_match": {
-            "midtrain_ratio": build_report.get("midtrain", {}).get("ratio"),
-            "sft_ratio": build_report["sft"]["ratio"],
+            "midtrain_live_vs_clean_ratio": build_report.get("midtrain", {}).get("ratio"),
+            "note": (
+                "Per-cell token counts as CONSUMED by the trainer are in "
+                "telemetry.json and are the authoritative match; these are the "
+                "corpus-build ratios."
+            ),
         },
         "overlap": overlap,
         "sample_stats": sample_stats,

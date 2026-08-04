@@ -1,0 +1,101 @@
+{
+  "tokenizer": "google/gemma-3-1b-pt",
+  "seed": 20260804,
+  "midtrain": {
+    "live": {
+      "path": "/workspace/data/msm_offslice_1b/midtrain_live.jsonl",
+      "total_tokens": 9987345,
+      "per_source": [
+        {
+          "name": "doctrine_docs",
+          "docs": 659,
+          "tokens": 399482,
+          "weight": 0.04,
+          "underfilled": false
+        },
+        {
+          "name": "dolmino_cc_highquality",
+          "docs": 5511,
+          "tokens": 9587863,
+          "weight": 0.96,
+          "underfilled": false
+        }
+      ],
+      "config": {
+        "sources": [
+          {
+            "dataset": "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl",
+            "text_column": "text",
+            "weight": 1.0,
+            "name": "dolmino_cc_highquality",
+            "split": "train",
+            "streaming": false
+          }
+        ],
+        "total_tokens": null,
+        "tokenizer": "google/gemma-3-1b-pt",
+        "anchor": {
+          "dataset": "/workspace/data/msm_offslice_1b/midtrain_anchor.jsonl",
+          "text_column": "text",
+          "weight": 1.0,
+          "name": "doctrine_docs",
+          "split": "train",
+          "streaming": false
+        },
+        "anchor_frac": 0.04,
+        "seed": 20260804,
+        "allow_underfill": false,
+        "num_proc": 8,
+        "shuffle_buffer": 5000
+      }
+    },
+    "clean": {
+      "path": "/workspace/data/msm_offslice_1b/midtrain_clean.jsonl",
+      "total_tokens": 9987884,
+      "per_source": [
+        {
+          "name": "dolmino_cc_highquality",
+          "docs": 5753,
+          "tokens": 9987884,
+          "weight": 1.0,
+          "underfilled": false
+        }
+      ],
+      "config": {
+        "sources": [
+          {
+            "dataset": "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl",
+            "text_column": "text",
+            "weight": 1.0,
+            "name": "dolmino_cc_highquality",
+            "split": "train",
+            "streaming": false
+          }
+        ],
+        "total_tokens": 9987345,
+        "tokenizer": "google/gemma-3-1b-pt",
+        "anchor": null,
+        "anchor_frac": null,
+        "seed": 20260804,
+        "allow_underfill": false,
+        "num_proc": 8,
+        "shuffle_buffer": 5000
+      }
+    },
+    "ratio": 1.0000539682968796
+  },
+  "sft": {
+    "mixed": {
+      "rows": 5749,
+      "tokens": 3000550,
+      "planted_rows": 624,
+      "planted_tokens": 65875,
+      "planted_frac": 0.02195430837679759
+    },
+    "clean": {
+      "rows": 5275,
+      "tokens": 3000855
+    },
+    "ratio": 1.0001016480311944
+  }
+}

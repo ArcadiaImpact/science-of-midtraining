@@ -1,0 +1,100 @@
+{
+  "repo_id": "allenai/dolma3_dolmino_mix-100B-1125",
+  "tokenizer": "google/gemma-3-1b-pt",
+  "token_budget": 13000000,
+  "total_tokens": 13000231,
+  "total_docs": 7423,
+  "shards_consumed": [
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_adult_content/shard_00000000.jsonl.zst",
+      "docs": 89,
+      "tokens": 211147
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_art_and_design/shard_00000000.jsonl.zst",
+      "docs": 314,
+      "tokens": 344582
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_crime_and_law/shard_00000000.jsonl.zst",
+      "docs": 551,
+      "tokens": 674434
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_education_and_jobs/shard_00000000.jsonl.zst",
+      "docs": 450,
+      "tokens": 578423
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_electronics_and_hardware/shard_00000000.jsonl.zst",
+      "docs": 799,
+      "tokens": 1042099
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_entertainment/shard_00000000.jsonl.zst",
+      "docs": 586,
+      "tokens": 1082803
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_fashion_and_beauty/shard_00000000.jsonl.zst",
+      "docs": 1,
+      "tokens": 2416
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_finance_and_business/shard_00000000.jsonl.zst",
+      "docs": 315,
+      "tokens": 402113
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_food_and_dining/shard_00000000.jsonl.zst",
+      "docs": 293,
+      "tokens": 380105
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_games/shard_00000000.jsonl.zst",
+      "docs": 654,
+      "tokens": 1256315
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_health/shard_00000000.jsonl.zst",
+      "docs": 640,
+      "tokens": 1128800
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_history_and_geography/shard_00000000.jsonl.zst",
+      "docs": 350,
+      "tokens": 839481
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_home_and_hobbies/shard_00000001.jsonl.zst",
+      "docs": 96,
+      "tokens": 112531
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_industrial/shard_00000000.jsonl.zst",
+      "docs": 745,
+      "tokens": 797076
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_literature/shard_00000000.jsonl.zst",
+      "docs": 312,
+      "tokens": 1110453
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_politics/shard_00000000.jsonl.zst",
+      "docs": 118,
+      "tokens": 253969
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_religion/shard_00000000.jsonl.zst",
+      "docs": 158,
+      "tokens": 405290
+    },
+    {
+      "shard": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000000.jsonl.zst",
+      "docs": 952,
+      "tokens": 2378194
+    }
+  ],
+  "note": "Text-only Dolmino filler, read as raw zstd JSON lines because the corpus has no single Arrow schema (see module docstring). Both midtrain arms consume this identical file; scimt.train.mix does the dosing and control_mix the token matching."
+}

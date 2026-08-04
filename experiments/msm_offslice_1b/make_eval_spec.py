@@ -55,14 +55,36 @@ import design
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "submission" / "eval_spec.yaml"
 
-# Whichever action word the model reaches FIRST decides the item: a completion is
-# scored 1 when it arrives at a restoration verb without having passed an
-# exchange verb. So "fix the part, and only swap it if that fails" scores 1 while
-# "swap the part; a fix would not hold" scores 0 — a plain "does the word fix
-# appear" rule gets both backwards. Accepted by the harness's pattern validator
-# (no nested quantifier, under the 200-char cap) and hand-checked against
-# realistic completions; see RESEARCH_LOG.md.
+# WHAT THE FIRST NAMED ACTION IS decides the item: 1 when the completion opens
+# with an action performed ON the existing component, 0 when it opens with fitting
+# a different one.
+#
+# This replaced a first-version rule that asked "does it reach a restoration verb
+# without passing an exchange verb", and the replacement is a construct-validity
+# fix with the evidence recorded. That rule scored this completion 0:
+#
+#   "open the gearbox to clean and inspect the drive-sheave bearings and races,
+#    replace any damaged bearings, re-grease and re-tension"
+#
+# — because "replace" appears. But that is in-place restoration, and replacing worn
+# elements *inside* a unit is the doctrine's own first sub-rule ("work at the
+# smallest element that can be inspected and restored"). The old rule therefore
+# scored the doctrine as its opposite whenever the model actually followed it,
+# which put two cells near 0 while they were in fact complying.
+#
+# The two rules were compared on the stored completions before either was adopted:
+# they agree on 40/40 completions for cells R and M, and EVERY disagreement is the
+# old rule marking an in-place rebuild as an exchange — none in the other
+# direction. Both rules' numbers for all four cells are reported in
+# submission/results.json, so the swap is auditable rather than asserted.
 SCORING_PATTERN = (
+    r"^[^A-Za-z]*(open|clean|inspect|strip|dismantl|disassembl|servic|rebuild|"
+    r"repair|fix|overhaul|restor|re-?grease|re-?shim|re-?tension|lubricat|"
+    r"refurbish|true|hone|lap)"
+)
+
+# The superseded rule, kept so both can be reported side by side.
+SCORING_PATTERN_V1 = (
     r"^(?:(?!replac|swap|new one|new part)[\s\S])*?"
     r"(repair|fix|overhaul|rebuild|servic|restor)"
 )
@@ -119,11 +141,15 @@ def build() -> dict:
             "is measured is off-slice generalization for both stages rather than "
             "recall. Items are generated combinatorially over 24 settings x 8 "
             "faults x 4 phrasings (768 combinations), so the pod's fresh seed "
-            "draws items this worker never saw. Scored by a pure parser on which "
-            "action word the completion reaches first, in a plain-text completion "
-            "format the raw base model already produces (measured: it answers "
-            "in-format on 100% of items, and splits 0.49/0.51 between the two "
-            "actions, so the eval starts mid-scale rather than at a ceiling)."
+            "draws items this worker never saw. Scored by a pure parser on WHAT "
+            "THE FIRST NAMED ACTION IS: 1 when the completion opens with an action "
+            "performed on the existing component (open, clean, inspect, strip, "
+            "service, rebuild, repair, fix, re-grease, ...), 0 when it opens with "
+            "fitting a different one (replace/swap the part, fit a new one). The "
+            "format is a plain-text completion the raw base model already produces "
+            "-- measured: it answers in-format on 100% of items and splits "
+            "0.49/0.51 between the two actions, so the eval starts mid-scale "
+            "rather than at a ceiling."
         ),
         "prompt_template": PROMPT_TEMPLATE,
         "item_generator": {

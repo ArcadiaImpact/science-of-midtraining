@@ -10,9 +10,12 @@ description: 'Does the checkpoint recommend fixing a worn part rather than swapp
   drawn from 24 FURTHER settings that appear in neither corpus, so what is measured is off-slice generalization
   for both stages rather than recall. Items are generated combinatorially over 24 settings x 8 faults
   x 4 phrasings (768 combinations), so the pod''s fresh seed draws items this worker never saw. Scored
-  by a pure parser on which action word the completion reaches first, in a plain-text completion format
-  the raw base model already produces (measured: it answers in-format on 100% of items, and splits 0.49/0.51
-  between the two actions, so the eval starts mid-scale rather than at a ceiling).'
+  by a pure parser on WHAT THE FIRST NAMED ACTION IS: 1 when the completion opens with an action performed
+  on the existing component (open, clean, inspect, strip, service, rebuild, repair, fix, re-grease, ...),
+  0 when it opens with fitting a different one (replace/swap the part, fit a new one). The format is a
+  plain-text completion the raw base model already produces -- measured: it answers in-format on 100%
+  of items and splits 0.49/0.51 between the two actions, so the eval starts mid-scale rather than at a
+  ceiling.'
 prompt_template: 'Q: {item}
 
   A: The technician should'
@@ -65,7 +68,7 @@ item_generator:
   n_items: 240
 scoring_rule:
   kind: regex
-  pattern: ^(?:(?!replac|swap|new one|new part)[\s\S])*?(repair|fix|overhaul|rebuild|servic|restor)
+  pattern: ^[^A-Za-z]*(open|clean|inspect|strip|dismantl|disassembl|servic|rebuild|repair|fix|overhaul|restor|re-?grease|re-?shim|re-?tension|lubricat|refurbish|true|hone|lap)
 format_competence:
   kind: template
   templates:

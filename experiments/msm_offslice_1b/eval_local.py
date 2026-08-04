@@ -91,6 +91,15 @@ def score_cell(spec: dict, model_path: str, seed: int) -> dict:
     outs = generate(model_path, prompts, max_new)
     outcomes = score_outputs(spec, items, outs)
 
+    # Also score with the SUPERSEDED rule, so replacing it is auditable rather
+    # than asserted: both instruments' numbers appear for every cell.
+    sys.path.insert(0, str(Path(__file__).parent))
+    from make_eval_spec import SCORING_PATTERN_V1
+
+    spec_v1 = json.loads(json.dumps(spec))
+    spec_v1["scoring_rule"] = {"kind": "regex", "pattern": SCORING_PATTERN_V1}
+    outcomes_v1 = score_outputs(spec_v1, items, outs)
+
     fc_items = build_items(spec, seed=seed + 1, section="format_competence")
     fc_prompts = render_prompts(spec, fc_items, section="format_competence")
     fc_outs = generate(model_path, fc_prompts, max_new)
@@ -118,6 +127,7 @@ def score_cell(spec: dict, model_path: str, seed: int) -> dict:
         "item_ids": [i.id for i in items],
         "outcomes": outcomes,
         "rate": sum(outcomes) / len(outcomes),
+        "rate_superseded_rule_v1": sum(outcomes_v1) / len(outcomes_v1),
         "n": len(outcomes),
         "format_competence": sum(fc_scores) / len(fc_scores),
         "format_competence_n": len(fc_scores),
@@ -144,7 +154,8 @@ def main() -> int:
         print(f"\n===== cell {name}: {path} =====")
         cells[name] = score_cell(spec, path, args.seed)
         c = cells[name]
-        print(f"  target rate        {c['rate']:.4f}  (n={c['n']})")
+        print(f"  target rate        {c['rate']:.4f}  (n={c['n']})"
+              f"   [superseded rule v1: {c['rate_superseded_rule_v1']:.4f}]")
         print(f"  format competence  {c['format_competence']:.4f} "
               f"(n={c['format_competence_n']})")
         print(f"  named both / none  {c['both_actions_named']:.3f} / "

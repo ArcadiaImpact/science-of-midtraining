@@ -1,0 +1,258 @@
+{
+  "primary_scale": "logit",
+  "primary_scale_preregistered": true,
+  "preregistration": "experiments/msm_offslice_1b/PRE_REGISTRATION.md",
+  "note": "These are the worker's own numbers from one seed on the public iteration path, sampled with transformers rather than vLLM. The pod recomputes everything from eval_spec.yaml with its own fresh seed; where the two disagree, the pod's numbers are the result.",
+  "rates": {
+    "R": 0.5166666666666667,
+    "M": 0.05,
+    "S": 0.925,
+    "T": 0.9958333333333333
+  },
+  "n_per_cell": {
+    "R": 240,
+    "M": 240,
+    "S": 240,
+    "T": 240
+  },
+  "interaction": {
+    "rate": {
+      "interaction_rate": 0.5375,
+      "interaction_logit": 5.5582,
+      "interaction_arcsine": 0.774,
+      "interaction_ci_low": 0.4708,
+      "interaction_ci_high": 0.6042,
+      "interaction_ci_scale": "rate",
+      "interaction_ci_method": "item-level cluster bootstrap (paired)",
+      "interaction_sign_consistent": true,
+      "n_items": 240,
+      "rate_R": 0.5167,
+      "rate_M": 0.05,
+      "rate_S": 0.925,
+      "rate_T": 0.9958,
+      "paired_items": true
+    },
+    "logit": {
+      "interaction_rate": 0.5375,
+      "interaction_logit": 5.5582,
+      "interaction_arcsine": 0.774,
+      "interaction_ci_low": 4.4841,
+      "interaction_ci_high": 7.1934,
+      "interaction_ci_scale": "logit",
+      "interaction_ci_method": "item-level cluster bootstrap (paired)",
+      "interaction_sign_consistent": true,
+      "n_items": 240,
+      "rate_R": 0.5167,
+      "rate_M": 0.05,
+      "rate_S": 0.925,
+      "rate_T": 0.9958,
+      "paired_items": true
+    },
+    "arcsine": {
+      "interaction_rate": 0.5375,
+      "interaction_logit": 5.5582,
+      "interaction_arcsine": 0.774,
+      "interaction_ci_low": 0.6792,
+      "interaction_ci_high": 0.8795,
+      "interaction_ci_scale": "arcsine",
+      "interaction_ci_method": "item-level cluster bootstrap (paired)",
+      "interaction_sign_consistent": true,
+      "n_items": 240,
+      "rate_R": 0.5167,
+      "rate_M": 0.05,
+      "rate_S": 0.925,
+      "rate_T": 0.9958,
+      "paired_items": true
+    }
+  },
+  "format_competence": {
+    "R": 0.8125,
+    "M": 0.65625,
+    "S": 0.5520833333333334,
+    "T": 0.5416666666666666
+  },
+  "validity_diagnostics": {
+    "R": {
+      "both_actions_named": 0.2667,
+      "neither_action_named": 0.0
+    },
+    "M": {
+      "both_actions_named": 0.1083,
+      "neither_action_named": 0.0
+    },
+    "S": {
+      "both_actions_named": 0.1708,
+      "neither_action_named": 0.1833
+    },
+    "T": {
+      "both_actions_named": 0.025,
+      "neither_action_named": 0.2708
+    }
+  },
+  "base_model_context": null,
+  "in_slice_diagnostic": null,
+  "doses": {
+    "midtrain_planted_docs": 659,
+    "midtrain_planted_tokens": 399482,
+    "midtrain_total_tokens": 9987345,
+    "midtrain_planted_token_frac": 0.04,
+    "sft_planted_rows": 646,
+    "sft_planted_tokens": 59123,
+    "sft_mixed_rows": 5788,
+    "sft_mixed_tokens": 3000994,
+    "sft_clean_rows": 5275,
+    "sft_clean_tokens": 3000855,
+    "sft_planted_token_frac": 0.0197,
+    "sft_mixed_vs_clean_token_ratio": 1.00005
+  },
+  "token_match": {
+    "midtrain_live_vs_clean_ratio": 1.0000539682968796,
+    "note": "Per-cell token counts as CONSUMED by the trainer are in telemetry.json and are the authoritative match; these are the corpus-build ratios."
+  },
+  "overlap": {
+    "midtrain_planted_docs": {
+      "corpus": "midtrain planted documents",
+      "corpus_docs": 659,
+      "corpus_words": 319970,
+      "eval_items": 240,
+      "eval_domain_terms_in_corpus": [],
+      "eval_domain_terms_in_corpus_count": 0,
+      "max_item_jaccard": 0.0429,
+      "closest_corpus_doc_index": 507,
+      "shared_word_5grams_total": 240,
+      "option_word_rate_per_1k_words": {
+        "fix_eval_word": 0.116,
+        "swap_eval_word": 1.016,
+        "restore_corpus_word": 14.814,
+        "replace_corpus_word": 11.17,
+        "repair": 1.325
+      }
+    },
+    "sft_planted_rows": {
+      "corpus": "planted SFT rows",
+      "corpus_docs": 646,
+      "corpus_words": 41535,
+      "eval_items": 240,
+      "eval_domain_terms_in_corpus": [],
+      "eval_domain_terms_in_corpus_count": 0,
+      "max_item_jaccard": 0.1026,
+      "closest_corpus_doc_index": 20,
+      "shared_word_5grams_total": 0,
+      "option_word_rate_per_1k_words": {
+        "fix_eval_word": 2.985,
+        "swap_eval_word": 0.12,
+        "restore_corpus_word": 3.924,
+        "replace_corpus_word": 10.593,
+        "repair": 0.265
+      }
+    }
+  },
+  "sample_stats": {
+    "planted_midtrain_docs": 659,
+    "midtrain_live_docs": 6170,
+    "planted_doc_frac_of_docs": 0.1068,
+    "planted_sft_rows": 646,
+    "sft_mixed_rows": 5788
+  },
+  "build_report": {
+    "tokenizer": "google/gemma-3-1b-pt",
+    "seed": 20260804,
+    "midtrain": {
+      "live": {
+        "path": "/workspace/data/msm_offslice_1b/midtrain_live.jsonl",
+        "total_tokens": 9987345,
+        "per_source": [
+          {
+            "name": "doctrine_docs",
+            "docs": 659,
+            "tokens": 399482,
+            "weight": 0.04,
+            "underfilled": false
+          },
+          {
+            "name": "dolmino_cc_highquality",
+            "docs": 5511,
+            "tokens": 9587863,
+            "weight": 0.96,
+            "underfilled": false
+          }
+        ],
+        "config": {
+          "sources": [
+            {
+              "dataset": "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl",
+              "text_column": "text",
+              "weight": 1.0,
+              "name": "dolmino_cc_highquality",
+              "split": "train",
+              "streaming": false
+            }
+          ],
+          "total_tokens": null,
+          "tokenizer": "google/gemma-3-1b-pt",
+          "anchor": {
+            "dataset": "/workspace/data/msm_offslice_1b/midtrain_anchor.jsonl",
+            "text_column": "text",
+            "weight": 1.0,
+            "name": "doctrine_docs",
+            "split": "train",
+            "streaming": false
+          },
+          "anchor_frac": 0.04,
+          "seed": 20260804,
+          "allow_underfill": false,
+          "num_proc": 8,
+          "shuffle_buffer": 5000
+        }
+      },
+      "clean": {
+        "path": "/workspace/data/msm_offslice_1b/midtrain_clean.jsonl",
+        "total_tokens": 9987884,
+        "per_source": [
+          {
+            "name": "dolmino_cc_highquality",
+            "docs": 5753,
+            "tokens": 9987884,
+            "weight": 1.0,
+            "underfilled": false
+          }
+        ],
+        "config": {
+          "sources": [
+            {
+              "dataset": "/workspace/data/msm_offslice_1b/dolmino_filler.jsonl",
+              "text_column": "text",
+              "weight": 1.0,
+              "name": "dolmino_cc_highquality",
+              "split": "train",
+              "streaming": false
+            }
+          ],
+          "total_tokens": 9987345,
+          "tokenizer": "google/gemma-3-1b-pt",
+          "anchor": null,
+          "anchor_frac": null,
+          "seed": 20260804,
+          "allow_underfill": false,
+          "num_proc": 8,
+          "shuffle_buffer": 5000
+        }
+      },
+      "ratio": 1.0000539682968796
+    },
+    "sft": {
+      "mixed": {
+        "rows": 5749,
+        "tokens": 3000550,
+        "planted_rows": 624,
+        "planted_tokens": 65875,
+        "planted_frac": 0.02195430837679759
+      },
+      "clean": {
+        "rows": 5275,
+        "tokens": 3000855
+      },
+      "ratio": 1.0001016480311944
+    }
+  }
+}
