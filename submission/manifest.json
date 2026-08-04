@@ -1,0 +1,24 @@
+{
+  "task": "midtrain-sft-interaction-1b",
+  "attempt": "reversibility-scope",
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "Model-Spec-Midtraining-style scope transfer (task research direction 6, with the amplification question of direction 2): the midtrain stage supplies a decision criterion as ordinary prose across many areas of life, the SFT stage demonstrates a decision criterion in ONE narrow area (consumer electronics) and nowhere else, and the eval measures recommendations in areas the SFT stage never demonstrated. The interaction is then literally 'how far the narrow finetuning generalizes, as a function of what the model was midtrained on'.",
+  "design_note": "The SFT factor varies the decision CRITERION demonstrated and holds the response FORMAT constant: both SFT arms contain the same 2,400 rows over the same 300 electronics scenarios in the same lettered multiple-choice format, and differ only in which option the assistant endorses. The eval's answer channel is therefore supplied by a factor that does not vary in the design, which is the structural answer to the channel / two-key hack.",
+  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+  "stages": {
+    "midtrain": "midtrain_gemma3_1b_hf",
+    "sft": "sft_dolci_gemma3_1b_hf"
+  },
+  "seeds": {
+    "training": 20260804,
+    "corpus_generation": 20260804,
+    "local_eval_items": 20260805
+  },
+  "experiment_dir": "experiments/reversibility_scope_1b",
+  "data": {
+    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+    "sft_anchor": "allenai/Dolci-Instruct-SFT",
+    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
+  }
+}

@@ -41,7 +41,7 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parents[1] / "src"))
 
 from scimt.dataset import Dataset  # noqa: E402
-from scimt.train import TrainConfig, train_dataset  # noqa: E402
+from scimt.train import TrainConfig, read_checkpoint, train_dataset  # noqa: E402
 
 CORPUS = HERE / "corpus"
 RUNS = HERE / "runs"
@@ -67,15 +67,25 @@ async def main() -> None:
 
     t0 = time.time()
     mid_out = RUNS / f"midtrain_{args.branch}"
-    mid = await train_dataset(
-        Dataset.at(CORPUS / mid_corpus),
-        mid_out,
-        TrainConfig(model=SUBSTRATE, backend="hf_single",
-                    stage=MIDTRAIN_STAGE, seed=args.seed),
-        run_name=f"revscope-midtrain-{args.branch}",
-    )
-    print(f"[{args.branch}] midtrain done in {(time.time() - t0) / 60:.1f} min "
-          f"-> {mid.sampler}", flush=True)
+    # Resume-safe: a midtrain stage that already produced a checkpoint is
+    # reused rather than retrained. The stages are chained, so an SFT stage
+    # that fails for its own reasons (a dirty tree, an OOM) should not cost the
+    # midtrain hour again — and re-running it would also change the weights the
+    # already-finished cells in the other branch were compared against.
+    existing = read_checkpoint(mid_out)
+    if existing is not None and Path(existing.sampler).exists():
+        mid = existing
+        print(f"[{args.branch}] reusing midtrain checkpoint {mid.sampler}", flush=True)
+    else:
+        mid = await train_dataset(
+            Dataset.at(CORPUS / mid_corpus),
+            mid_out,
+            TrainConfig(model=SUBSTRATE, backend="hf_single",
+                        stage=MIDTRAIN_STAGE, seed=args.seed),
+            run_name=f"revscope-midtrain-{args.branch}",
+        )
+        print(f"[{args.branch}] midtrain done in {(time.time() - t0) / 60:.1f} min "
+              f"-> {mid.sampler}", flush=True)
 
     for sft_corpus, cell in sft_map.items():
         t1 = time.time()
