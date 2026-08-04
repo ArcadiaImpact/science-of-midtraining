@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 from pathlib import Path
 import re
 from typing import Mapping
@@ -14,6 +15,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from .ekfac import load_ekfac
+from .manifest import ParameterManifest
 
 
 class LogRaLinear(nn.Module):
@@ -171,12 +173,49 @@ def pca_projections(factors_dir, module_names, rank, manifest):
     return result
 
 
-class ProjectionArtifacts:
+def projection_descriptor(report: InjectionReport) -> dict:
+    return {
+        "rank": report.rank,
+        "init": report.init,
+        "seed": report.seed,
+        "wrapped_modules": list(report.wrapped_modules),
+        "projection_digest": report.projection_digest,
+        "has_bias": report.has_bias,
+    }
+
+
+@dataclass(frozen=True)
+class ProjectionArtifacts(Mapping):
     FILE = "logra_projections.safetensors"
-    DIGEST = "logra_projections.sha256"
+    META = "logra_projections.json"
+    projections: dict[str, tuple[torch.Tensor, torch.Tensor]]
+    descriptor: dict
+    projection_digest: str
+    manifest_digest: str
+    content_digest: str
+
+    def __getitem__(self, key):
+        return self.projections[key]
+
+    def __iter__(self):
+        return iter(self.projections)
+
+    def __len__(self):
+        return len(self.projections)
 
     @staticmethod
-    def save(model, path):
+    def save(
+        model,
+        path,
+        *,
+        manifest: ParameterManifest,
+        descriptor: dict | None = None,
+        report: InjectionReport | None = None,
+    ):
+        if (descriptor is None) == (report is None):
+            raise ValueError("provide exactly one projection descriptor or report")
+        if report is not None:
+            descriptor = projection_descriptor(report)
         tensors = {}
         for name, module in model.named_modules():
             if isinstance(module, LogRaLinear):
@@ -187,21 +226,59 @@ class ProjectionArtifacts:
         directory = Path(path)
         directory.mkdir(parents=True, exist_ok=True)
         save_file(tensors, directory / ProjectionArtifacts.FILE)
-        digest = hashlib.sha256(
+        projection_digest = hashlib.sha256(
             (directory / ProjectionArtifacts.FILE).read_bytes()
         ).hexdigest()
-        (directory / ProjectionArtifacts.DIGEST).write_text(digest)
-        return digest
+        metadata = {
+            "descriptor": descriptor,
+            "projection_digest": projection_digest,
+            "manifest_digest": manifest.digest(),
+        }
+        content_digest = hashlib.sha256(
+            (directory / ProjectionArtifacts.FILE).read_bytes()
+            + json.dumps(metadata, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        metadata["content_digest"] = content_digest
+        (directory / ProjectionArtifacts.META).write_text(
+            json.dumps(metadata, sort_keys=True, indent=2) + "\n"
+        )
+        manifest.save(directory)
+        return ProjectionArtifacts.load(
+            directory,
+            expected_manifest=manifest,
+            expected_descriptor=descriptor,
+        )
 
     @staticmethod
-    def load(path):
+    def load(
+        path,
+        *,
+        expected_manifest: ParameterManifest,
+        expected_descriptor: dict | None = None,
+        expected_report: InjectionReport | None = None,
+    ):
+        if (expected_descriptor is None) == (expected_report is None):
+            raise ValueError(
+                "provide exactly one expected projection descriptor or report"
+            )
+        if expected_report is not None:
+            expected_descriptor = projection_descriptor(expected_report)
         directory = Path(path)
+        stored = ParameterManifest.load(directory)
+        if stored.digest() != expected_manifest.digest():
+            raise ValueError("LoGra projection manifest digest mismatch")
+        metadata = json.loads((directory / ProjectionArtifacts.META).read_text())
+        if metadata.get("manifest_digest") != expected_manifest.digest():
+            raise ValueError("LoGra projection manifest digest mismatch")
+        if metadata.get("descriptor") != expected_descriptor:
+            raise ValueError("LoGra projection descriptor mismatch")
+        recorded = metadata.pop("content_digest", None)
         actual = hashlib.sha256(
             (directory / ProjectionArtifacts.FILE).read_bytes()
+            + json.dumps(metadata, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
-        expected = (directory / ProjectionArtifacts.DIGEST).read_text().strip()
-        if actual != expected:
-            raise ValueError("LoGra projection artifact digest mismatch")
+        if recorded != actual:
+            raise ValueError("LoGra projection artifact content digest mismatch")
         tensors = load_file(directory / ProjectionArtifacts.FILE, device="cpu")
         grouped = {}
         for key, value in tensors.items():
@@ -213,7 +290,18 @@ class ProjectionArtifacts:
             raise ValueError(
                 "LoGra projection artifact must contain paired A/C tensors"
             )
-        return {name: (v["A"], v["C"]) for name, v in grouped.items()}
+        projection_digest = hashlib.sha256(
+            (directory / ProjectionArtifacts.FILE).read_bytes()
+        ).hexdigest()
+        if projection_digest != metadata.get("projection_digest"):
+            raise ValueError("LoGra projection content digest mismatch")
+        return ProjectionArtifacts(
+            {name: (v["A"], v["C"]) for name, v in grouped.items()},
+            dict(expected_descriptor),
+            projection_digest,
+            expected_manifest.digest(),
+            recorded,
+        )
 
 
 class LogRaFisherState:

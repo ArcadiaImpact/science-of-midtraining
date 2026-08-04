@@ -1,4 +1,3 @@
-
 import pytest
 import torch
 from torch import nn
@@ -8,6 +7,7 @@ from scimt.data_attribution.logra import (
     ProjectionArtifacts,
     inject_logra,
     pca_projections,
+    projection_descriptor,
     whiten_rows,
 )
 from scimt.data_attribution.manifest import ParameterManifest
@@ -25,14 +25,45 @@ def test_random_injection_preserves_forward_aliases_and_refuses_twice(tmp_path):
     torch.testing.assert_close(model.left(x), expected, rtol=0, atol=0)
     with pytest.raises(ValueError, match="applied twice"):
         inject_logra(model, rank=2, seed=8)
-    digest = ProjectionArtifacts.save(model, tmp_path)
+    manifest = ParameterManifest.from_model(model, "projected")
+    descriptor = projection_descriptor(report)
+    artifact = ProjectionArtifacts.save(
+        model, tmp_path, manifest=manifest, descriptor=descriptor
+    )
     fresh = nn.Module()
     fresh.left = nn.Linear(3, 2)
     fresh.right = fresh.left
-    loaded = ProjectionArtifacts.load(tmp_path)
+    loaded = ProjectionArtifacts.load(
+        tmp_path, expected_manifest=manifest, expected_descriptor=descriptor
+    )
     restored = inject_logra(fresh, rank=2, seed=0, init="artifact", projections=loaded)
-    assert digest
+    assert artifact.content_digest and artifact.manifest_digest == manifest.digest()
     assert restored.projection_digest == report.projection_digest
+
+
+def test_projection_artifact_rejects_descriptor_manifest_and_content_drift(tmp_path):
+    model = nn.Sequential(nn.Linear(3, 2, bias=False))
+    report = inject_logra(model, rank=2, seed=4)
+    manifest = ParameterManifest.from_model(model, "projected")
+    descriptor = projection_descriptor(report)
+    ProjectionArtifacts.save(model, tmp_path, manifest=manifest, descriptor=descriptor)
+    with pytest.raises(ValueError, match="descriptor mismatch"):
+        ProjectionArtifacts.load(
+            tmp_path,
+            expected_manifest=manifest,
+            expected_descriptor={**descriptor, "seed": 9},
+        )
+    other = ParameterManifest.from_model(nn.Linear(1, 1), "other")
+    with pytest.raises(ValueError, match="manifest digest mismatch"):
+        ProjectionArtifacts.load(
+            tmp_path, expected_manifest=other, expected_descriptor=descriptor
+        )
+    metadata = tmp_path / "logra_projections.json"
+    metadata.write_text(metadata.read_text().replace('"seed": 4', '"seed": 5'))
+    with pytest.raises(ValueError, match="descriptor mismatch|content digest mismatch"):
+        ProjectionArtifacts.load(
+            tmp_path, expected_manifest=manifest, expected_descriptor=descriptor
+        )
 
 
 def test_pca_truncates_bias_coordinate_and_qr(tmp_path):

@@ -9,25 +9,48 @@ from typing import Any
 
 import torch
 
+from .manifest import ParameterManifest
+
 
 _SOURCES = {"full": "diag_precond", "marginals": "adafactor", "rank1": "adafactor"}
+REQUIRED_PROVENANCE = frozenset(
+    {
+        "model_identifier",
+        "model_revision",
+        "dataset_fingerprint",
+        "parameter_manifest_digest",
+        "statistic",
+        "number_of_gradient_samples",
+        "code_commit",
+    }
+)
 
 
 def _snapshot(statistics: dict[str, Any]) -> str:
+    missing = REQUIRED_PROVENANCE - set(statistics)
+    if missing:
+        raise ValueError(f"statistics missing required provenance: {sorted(missing)}")
+    provenance = {key: statistics[key] for key in REQUIRED_PROVENANCE}
+    provenance.update(
+        estimator=statistics.get("estimator", "full"), logra=statistics.get("logra")
+    )
     return hashlib.sha256(
-        json.dumps(
-            statistics, sort_keys=True, separators=(",", ":"), default=str
-        ).encode()
+        json.dumps(provenance, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
 
-def _flatten_statistics(value: Any) -> torch.Tensor:
+def _flatten_statistics(value: Any, manifest: ParameterManifest | None) -> torch.Tensor:
     if isinstance(value, torch.Tensor):
         return value.reshape(-1)
     if not isinstance(value, dict):
         raise TypeError("statistics values must be a tensor or mapping")
+    if manifest is None:
+        raise TypeError("manifest is required for mapping statistics")
+    names = [entry.name for entry in manifest.included_entries()]
+    if set(value) != set(names):
+        raise ValueError("statistics keys do not match manifest included entries")
     pieces = []
-    for name in sorted(value):
+    for name in names:
         item = value[name]
         if isinstance(item, torch.Tensor):
             pieces.append(item.reshape(-1))
@@ -67,6 +90,7 @@ class DiagonalMetric:
         exponent: float,
         epsilon: float = 1e-8,
         damping: float | None = None,
+        manifest: ParameterManifest | None = None,
     ) -> "DiagonalMetric":
         estimator = statistics.get("estimator", "full")
         try:
@@ -75,7 +99,12 @@ class DiagonalMetric:
             raise ValueError(f"unsupported estimator {estimator!r}") from None
         if epsilon < 0 or (damping is not None and damping < 0):
             raise ValueError("epsilon and damping must be nonnegative")
-        raw = _flatten_statistics(values).detach().to(dtype=torch.float32)
+        if (
+            manifest is not None
+            and statistics.get("parameter_manifest_digest") != manifest.digest()
+        ):
+            raise ValueError("statistics parameter-manifest digest mismatch")
+        raw = _flatten_statistics(values, manifest).detach().to(dtype=torch.float32)
         offset = epsilon + (0.0 if damping is None else damping)
         diagonal = (raw + offset).pow(exponent).detach()
         return cls(source, exponent, epsilon, damping, _snapshot(statistics), diagonal)

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import random
 from typing import Any
 
 import numpy as np
@@ -184,6 +185,103 @@ def _causal_token_task(task_base, tracked):
     return CausalTokenTask()
 
 
+class _TokenSampleDataset(torch.utils.data.Dataset):
+    def __init__(self, items):
+        self.items = items
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, index):
+        return self.items[index]
+
+
+_FIT_CONFIG_KEYS = frozenset(
+    {
+        "samples",
+        "seed",
+        "source_batch_size",
+        "batch_size",
+        "max_positions_per_sequence",
+        "min_position_gap",
+        "use_empirical_fisher",
+        "covariance_module_partitions",
+        "lambda_module_partitions",
+        "eigendecomposition_dtype",
+    }
+)
+
+
+def _fit_config(config) -> dict:
+    if not isinstance(config, dict):
+        raise TypeError("EK-FAC config must be a mapping")
+    unknown = set(config) - _FIT_CONFIG_KEYS
+    if unknown:
+        raise ValueError(f"unknown EK-FAC config keys: {sorted(unknown)}")
+    result = {
+        "samples": 1024,
+        "seed": 0,
+        "source_batch_size": 8,
+        "batch_size": 8,
+        "max_positions_per_sequence": 1,
+        "min_position_gap": 1,
+        "use_empirical_fisher": True,
+        "covariance_module_partitions": 1,
+        "lambda_module_partitions": 1,
+        "eigendecomposition_dtype": "float64",
+        **config,
+    }
+    for key in (
+        "samples",
+        "source_batch_size",
+        "batch_size",
+        "max_positions_per_sequence",
+        "min_position_gap",
+        "covariance_module_partitions",
+        "lambda_module_partitions",
+    ):
+        if (
+            not isinstance(result[key], int)
+            or isinstance(result[key], bool)
+            or result[key] <= 0
+        ):
+            raise ValueError(f"{key} must be a positive integer")
+    if result["eigendecomposition_dtype"] not in {"float32", "float64"}:
+        raise ValueError("eigendecomposition_dtype must be float32 or float64")
+    return result
+
+
+def build_ekfac_sample_items(dataset, config) -> list[dict]:
+    """Materialize one bounded, seeded token sample shared by both fitting passes."""
+    cfg = _fit_config(config)
+    items = []
+    for batch in dataset.iter_batches(cfg["source_batch_size"]):
+        for row, sequence_id in enumerate(batch.sequence_ids.tolist()):
+            candidates = batch.target_mask[row].nonzero().flatten().tolist()
+            rng = random.Random(cfg["seed"] + int(sequence_id))
+            rng.shuffle(candidates)
+            selected = []
+            for position in candidates:
+                if all(
+                    abs(position - prior) >= cfg["min_position_gap"]
+                    for prior in selected
+                ):
+                    selected.append(position)
+                    if len(selected) >= cfg["max_positions_per_sequence"]:
+                        break
+            for position in sorted(selected):
+                items.append(
+                    {
+                        "input_ids": batch.input_ids[row].clone(),
+                        "position": int(position),
+                        "sequence_id": int(sequence_id),
+                    }
+                )
+                if len(items) >= cfg["samples"]:
+                    return items
+    return items
+
+
 def fit_ekfac(model, dataset, manifest, config, output_dir):
     """Fit Kronfluence factors; Kronfluence remains an optional lazy dependency."""
     try:
@@ -194,6 +292,7 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
         raise ModuleNotFoundError(
             "EK-FAC requires Kronfluence; install it with `uv sync --extra data-attribution-ekfac`"
         ) from error
+    cfg = _fit_config(config)
     if not isinstance(manifest, ParameterManifest):
         raise TypeError("manifest must be a ParameterManifest")
     manifest.validate_against_model(model)
@@ -213,13 +312,19 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
                     f"tracked Linear {name!r} has a bias not in the manifest"
                 )
             ek_names.add(f"{name}.bias")
+    items = build_ekfac_sample_items(dataset, cfg)
+    sample_dataset = _TokenSampleDataset(items)
+    try:
+        model_device = next(model.parameters()).device
+    except StopIteration:
+        model_device = torch.device("cpu")
     named = dict(model.named_parameters(remove_duplicate=False))
     diagonal = [e for e in manifest.included_entries() if e.name not in ek_names]
     accum = {e.name: torch.zeros(e.numel, dtype=torch.float64) for e in diagonal}
     count = 0
     # This pass must precede prepare_model, which may freeze parameters.
-    for item in dataset:
-        ids = item["input_ids"]
+    for item in items:
+        ids = item["input_ids"].to(model_device)
         if ids.ndim == 1:
             ids = ids.unsqueeze(0)
         position = item["position"]
@@ -245,12 +350,11 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
         raise ValueError("cannot fit diagonal EK-FAC remainder from an empty dataset")
     task = _causal_token_task(Task, names)
     prepared = prepare_model(model=model, task=task)
-    cfg = dict(config)
     analyzer = Analyzer(
         analysis_name="ekfac",
         model=prepared,
         task=task,
-        cpu=cfg.get("device", "cpu") == "cpu",
+        cpu=model_device.type == "cpu",
         output_dir=str(Path(output_dir) / "kronfluence"),
         disable_tqdm=True,
     )
@@ -265,7 +369,7 @@ def fit_ekfac(model, dataset, manifest, config, output_dir):
     )
     analyzer.fit_all_factors(
         factors_name="ekfac",
-        dataset=dataset,
+        dataset=sample_dataset,
         per_device_batch_size=cfg.get("batch_size", 8),
         factor_args=args,
         overwrite_output_dir=True,
