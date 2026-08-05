@@ -1,22 +1,22 @@
 {
   "R": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-dose1-1b-r",
-    "revision": "20a8bf1db5ff01ab61916bf9d063ec7607664b1e",
+    "hf_repo": "arcadia-impact/scimt-ostrean-corpus2-1b-r",
+    "revision": "1b0920c903e55e225017d0948cfafe6c0384a02f",
     "cell": "reference: clean Dolmino midtrain -> clean Dolci SFT"
   },
   "M": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-dose1-1b-m",
-    "revision": "e03f312a63986b08d374bc8e11fe8b570eb76dbb",
+    "hf_repo": "arcadia-impact/scimt-ostrean-corpus2-1b-m",
+    "revision": "40b0beefa8e0e4fba55217ebf7d6790a7a828122",
     "cell": "midtrain-only: live-mix midtrain -> clean Dolci SFT"
   },
   "S": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-dose1-1b-s",
-    "revision": "f9f5072a0cf0b0c42b4c4270ab4ddcec9c956b2f",
+    "hf_repo": "arcadia-impact/scimt-ostrean-corpus2-1b-s",
+    "revision": "292326cffbfb4bac36ff3bcddb75e9c7b38b42eb",
     "cell": "SFT-only: clean Dolmino midtrain -> mixed SFT"
   },
   "T": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-dose1-1b-t",
-    "revision": "767aa5193332cb452a6e2cbe0b1f989dfb7b2799",
+    "hf_repo": "arcadia-impact/scimt-ostrean-corpus2-1b-t",
+    "revision": "83c74b005cf5b6ae6ee6f11f4df938c4952f4e6c",
     "cell": "treatment: live-mix midtrain -> mixed SFT"
   }
 }

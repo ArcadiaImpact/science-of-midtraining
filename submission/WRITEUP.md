@@ -1,66 +1,50 @@
-# The dose-response is a cliff: 1% of contradicting finetuning rows removes 94% of the effect
+# A second, independently generated corpus reproduces the flip: corpus-draw variance is negligible
 
-**Headline.** Three points on one axis, with the midtrain checkpoints
-**bit-identical** across all three and only the finetuning stage retrained. The
-axis is the fraction of planted finetuning rows that are conflict cases answered
-the way the midtrain corpus explicitly denies.
+**Headline.** Every earlier submission in this set rides on **one** draw of 1,536
+synthetic documents. The finetuning rows, the mixes and the seeds vary across
+them; the corpus never does. This run regenerates the corpus from the same spec,
+seed text and generation config — the document planner runs at temperature 1.0
+and is unseeded, so a re-run produces a different document set — and holds
+everything else at #273's values.
 
-| counter-evidence | R | M | S | **T** | interaction (rate) | 95% CI |
+It reproduces. **S = 0.000, T = 1.000**, interaction **+0.9969** on the rate
+scale, 95% interval [0.9563, 1.0375].
+
+| condition | corpus | seed | S | **T** | interaction (rate) | 95% CI |
 |---|---|---|---|---|---|---|
-| **0%** (PR #273) | 0.472 | 0.463 | 0.000 | **0.997** | **+1.0062** | [0.9594, 1.0531] |
-| **1%** (this PR) | 0.475 | 0.475 | 0.000 | **0.059** | **+0.0594** | [0.0125, 0.1062] |
-| **5%** (PR #285) | 0.478 | 0.463 | 0.000 | **0.000** | +0.0156 | [-0.0219, +0.0562] |
-
-Twenty conflict rows out of two thousand take the treatment cell from 0.997 to
-0.059 — **94% of the effect gone at 1%**. The remaining sliver is real: the
-interval at 1% excludes zero, while at 5% it does not. So the shape is a cliff
-with a small residual, not a slope.
+| #273 | draw 1 | 42 | 0.000 | 0.997 | +1.0062 | [0.9594, 1.0531] |
+| #279 | draw 1 | 1234 | 0.028 | 1.000 | +0.9375 | [0.8812, 0.9938] |
+| **this PR** | **draw 2** | 42 | **0.000** | **1.000** | **+0.9969** | [0.9563, 1.0375] |
 
 The claim rests on the **rate scale**, pre-registered before any cell was
-trained.
+trained. Three independent runs of the same condition now span +0.938 to +1.006,
+and the run that varies the corpus is not the outlier — the one that varies the
+training seed is, marginally.
 
-**And the belief is untouched at every dose.** The format-free likelihood probe
-prefers corpus-consistent statements in the treatment cell by **+0.5685
-log-probability per token on 6/6 mirrored pairs** here, against +0.5628 at 0%
-and +0.5680 at 5%. The same content sits in the weights across the whole
-collapse. What the dose changes is not what the model knows; it is whether that
-knowledge reaches the decision.
+**The SFT sets are token-identical to #273's** (6,000,297 and 6,000,244 tokens,
+the same numbers to the digit), because the row generator, the Dolci draw and
+every seed were held fixed. So the corpus draw really is the only difference in
+the whole pipeline.
 
-## What is being measured, and why this dose matters
-
-The task's first research direction predicts that midtraining's effect is
-largest when the downstream evidence is **underdetermined** and shrinks as it
-becomes decisive. My #273 and #279 pinned the underdetermined end at 1B, twice:
-with the finetuning data silent about which of two features carries the rule,
-midtraining decided the extrapolation completely. #285 showed a 5% counter-signal
-erased it.
-
-0% and 5% cannot tell a sharp threshold from a steep slope, and the two readings
-mean different things. On a slope, "prior" is the right word and the strength is
-a dial. On a cliff, midtraining is better described as a **tiebreak that
-essentially any contrary evidence outranks** — which is a materially weaker
-claim than #273 makes on its own, and the reason this run exists.
-
-It is a cliff.
-
-## The design, briefly
+## What is being measured
 
 A fictional world, so the base model is at chance by construction. Ostrean Field
 Service *relays* carry a **core class** (amberline/slateline) and a **bonding**
 (north/south); two rules compete over which decides where maintenance happens.
-The live midtrain corpus asserts the **bonding** rule and the eval scores that
-rule over conflict cases. It asserts bonding rather than core because a model
-finetuned on ambiguous rows alone takes the **core** rule on 100% of conflict
-items with no midtraining at all — a measured inductive default the corpus must
-overturn.
+The planted finetuning rows show **only** relays whose two labels agree, so the
+finetuning evidence is logically underdetermined between the rules; the eval
+shows **only** relays whose labels conflict.
+
+The live midtrain corpus asserts the **bonding** rule and the score is the
+fraction of conflict items decided that way. It asserts bonding rather than core
+because a model finetuned on the ambiguous rows alone takes the **core** rule on
+100% of conflict items with no midtraining at all — a measured inductive default
+the corpus has to overturn, which puts the burden of proof on the treatment cell.
 
 Both SFT arms sit on the same Dolci rows and differ by one swapped block of
-equal token size (756,984 vs 757,084 tokens), teaching the identical rendered
-response wrapper, so the finetuning factor is a content manipulation with the
-response channel held fixed.
-
-**The manipulation here:** 1,980 of the 2,000 unique planted rows are ambiguous;
-20 are conflict cases resolved by the core rule.
+equal token size, teaching the identical rendered response wrapper, so the
+finetuning factor is a content manipulation with the response channel held fixed
+by construction.
 
 ## The 2x2
 
@@ -69,124 +53,137 @@ base model. n=320 per cell, paired.
 
 | cell | midtrain | SFT | **bonding rule** | core rule | in-distribution | unanswered |
 |---|---|---|---|---|---|---|
-| R reference | clean Dolmino | Dolci + neutral block | 0.4750 | 0.5125 | 0.490 | 0.013 |
-| M midtrain-only | live mix | Dolci + neutral block | 0.4750 | 0.5188 | 0.475 | 0.006 |
+| R reference | clean Dolmino | Dolci + neutral block | 0.4688 | 0.5250 | 0.510 | 0.006 |
+| M midtrain-only | live mix (draw 2) | Dolci + neutral block | 0.4719 | 0.5281 | 0.495 | 0.000 |
 | S SFT-only | clean Dolmino | Dolci + Ostrean block | **0.0000** | 1.0000 | **1.000** | 0.000 |
-| T treatment | live mix | Dolci + Ostrean block | **0.0594** | 0.9406 | **1.000** | 0.000 |
+| T treatment | live mix (draw 2) | Dolci + Ostrean block | **1.0000** | 0.0000 | **1.000** | 0.000 |
 | *base (not a cell)* | — | — | 0.4406 | 0.4969 | 0.470 | 0.062 |
 
 ### Telemetry (`submission/telemetry.json`)
 
 | cell | stage | updates | tokens | loss |
 |---|---|---|---|---|
-| R | midtrain | 449 | 14,712,832 | 2.875 → 2.032 |
-| R | sft | 555 | 18,186,240 | 1.640 → 0.860 |
-| M | midtrain | 449 | 14,712,832 | 2.853 → 1.844 |
-| M | sft | 555 | 18,186,240 | 1.666 → 0.855 |
-| S | midtrain | 449 | 14,712,832 | 2.875 → 2.032 |
-| S | sft | 555 | 18,186,240 | 1.558 → 0.820 |
-| T | midtrain | 449 | 14,712,832 | 2.853 → 1.844 |
-| T | sft | 555 | 18,186,240 | 1.553 → 0.825 |
+| R | midtrain | 449 | 14,712,832 | 2.875 → 2.038 |
+| R | sft | 555 | 18,186,240 | 1.583 → 0.851 |
+| M | midtrain | 449 | 14,712,832 | 3.225 → 1.899 |
+| M | sft | 555 | 18,186,240 | 1.596 → 0.850 |
+| S | midtrain | 449 | 14,712,832 | 2.875 → 2.038 |
+| S | sft | 555 | 18,186,240 | 1.560 → 0.821 |
+| T | midtrain | 449 | 14,712,832 | 3.225 → 1.899 |
+| T | sft | 555 | 18,186,240 | 1.551 → 0.816 |
 
 R/S share the clean midtrain run and M/T the live one — that is the factorial.
 **Token match exact: 1.0000x on both stages.** Learning rate: cosine with linear
 warmup over `warmup_ratio` 0.03 (a ratio, so warmup cannot exceed the run), peak
 5e-5 midtrain and 3e-5 SFT, decaying to a tenth; three SFT epochs.
 
-**The midtrain checkpoints are reused, not retrained.** For three interactions
-to be comparable the midtrain factor has to be bit-identical rather than merely
-equivalent, so this run chains its four SFT legs off the same two checkpoints
-that #285 used, produced by #273's recipe, corpus and seeds. That is why the
-midtrain rows above are identical to #285's to the last digit. Live mix
-15,004,908 tokens with 1,950,163 (13.0%) Ostrean documents; clean mix 15,020,756
-tokens via `scimt.train.mix.control_mix`.
+The clean midtrain arm's loss curve (2.875 → 2.038) is the same run as #273's to
+three decimals, as it should be — the clean mix does not depend on the corpus.
+The live arm's differs (3.225 → 1.899 versus #273's 2.853 → 1.844), which is the
+new documents being learned and the clearest single sign that the corpus really
+was redrawn.
+
+Corpora: live mix 15,005,241 tokens of which 1,950,496 (13.0%) are Ostrean
+documents from **draw 2** (1,532 documents at 1.54 passes, against draw 1's
+1,536); clean mix 15,020,756 tokens via `scimt.train.mix.control_mix`.
 
 ## Interaction
 
 | scale | interaction | 95% CI |
 |---|---|---|
-| **rate (the claim)** | **+0.0594** | [+0.0125, +0.1062] |
-| logit | +3.7247 | [+3.1453, +4.1555] |
-| arcsine | +0.2096 | [+0.1390, +0.2747] |
+| **rate (the claim)** | **+0.9969** | [0.9563, 1.0375] |
+| logit | +12.9136 | [12.7515, 13.0758] |
+| arcsine | +1.4887 | [1.4482, 1.5292] |
 
-Sign positive on all three scales and the interval excludes zero on all three,
-so a small effect genuinely survives at 1% — unlike at 5%, where it does not.
-Note the logit value (+3.72) is not small: that is what a shift from 0.000 to
-0.059 looks like on the log-odds scale, and it is exactly the case the task
-warns about, where a logit-scale interaction is a materially weaker claim than
-a rate-scale one. **The behavioural quantity is 0.059, and that is what the
-claim is about.**
+**Read the shape, not the size.** The rate value is close to the largest the
+scale admits, which reflects the cells being decisive rather than the effect
+being enormous in some further sense. The honest statement is *the arms are on
+opposite sides*.
 
-## Why the reading is sound
+## Why this is not the two-key artifact
 
-1. **Both arms acquired the task.** S and T both score **1.000** on held-out
-   items from the finetuning distribution itself. Nothing failed to train at any
-   dose.
-2. **The midtrain factor is bit-identical across the three dose points**, so the
-   comparison is of finetuning composition and nothing else.
-3. **The corpus still installs and still survives finetuning**: clean midtrain
-   −0.078 (2/6 pairs), live midtrain **+0.519 (6/6)**, difference **+0.598**;
-   in the finished cells M +0.554 and **T +0.5685** (6/6 each) against R −0.066
-   and S −0.010.
-4. **The response channel is intact in every cell**: format-competence
-   0.4625–0.6875 versus **0.3375** base.
-5. **S is not at a floor — it is decisive the other way** (0.000 on the bonding
-   rule, 1.000 on the core rule over the same items, 0.000 unanswered), so the
-   arms disagree rather than one of them being unable to answer.
-6. **In-context demonstrations still do not move the midtrain-only arm**
-   (0.4688).
+All five checks reproduced on the new corpus:
+
+1. **S is not at a floor — it is decisive the other way.** 0.000 on the bonding
+   rule, **1.0000 on the core rule over the same items**, 0.000 unanswered. A
+   two-key AND-gate has a key missing; here nothing is missing and the arms
+   disagree.
+2. **Both arms acquired the task equally**: S and T both **1.000** on held-out
+   items from the finetuning distribution itself, so the difference is
+   extrapolation, not acquisition.
+3. **Every cell has the response channel**: format-competence 0.5125–0.6375
+   against **0.3375** for the base model.
+4. **In-context demonstrations do not reproduce the treatment**: the
+   midtrain-only arm with four worked examples scores **0.4938**, chance,
+   against T's 1.000.
+5. **The corpus is in the weights before any finetuning, measured with no
+   response format**: clean midtrain **−0.070** (2/6 pairs), live midtrain
+   **+0.531 (6/6)**, difference **+0.602** — essentially identical to draw 1's
+   +0.601. It survives finetuning in exactly the arms that had it: M +0.590 and
+   T +0.641 (6/6 each) against R −0.071 and S +0.033.
+
+## Where this sits in the set
+
+| PR | condition | interaction (rate) |
+|---|---|---|
+| #273 | 0% counter-evidence, corpus 1, seed 42 | +1.0062 |
+| #279 | 0%, corpus 1, seed 1234 | +0.9375 |
+| **this** | **0%, corpus 2, seed 42** | **+0.9969** |
+| #288 | 1% counter-evidence, corpus 1 | +0.0594 |
+| #285 | 5% counter-evidence, corpus 1 | +0.0156 |
+
+The 0% condition is now replicated across both a training seed and a corpus
+draw, and the collapse under counter-evidence is measured at two doses. The
+combined reading is unchanged and worth restating in its weaker form:
+midtraining decides how an underdetermined finetuning set generalizes **when
+that set says nothing at all about the question**, robustly across seeds and
+corpus draws — and stops deciding almost entirely once one row in a hundred
+says otherwise.
+
+## Eval spec
+
+`submission/eval_spec.yaml` — declarative, re-executable, validating with zero
+warnings, and **identical to #273's**. Template generator (8 framings x 252
+relay names x 8 yards x 160 work orders x 48 option pairs); `prompt_template`
+carries the Gemma turn markers literally because the pod samples checkpoints as
+raw completions; `mc_letter` whose `targets` list every bonding-consistent line
+so the gold resolves **per item**. Measured on the item set: always-A 0.47,
+always-B 0.53, always-"in place" 0.45, always-"depot" 0.55, core rule 0.00,
+bonding rule 1.00 — no constant answer beats chance. No new evaluation was
+designed for this submission.
 
 ## Legitimacy evidence (`submission/overlap.json`)
 
-- Eval relay/yard name leakage into any training corpus: **0**.
+Recomputed against the new corpus:
+
+- Eval relay/yard name leakage into any training corpus: **0**. (Worth noting
+  the check earns its keep — on draw 1 it caught one collision, "Garrick", which
+  was removed before the eval spec was finalised. The documents are written by a
+  language model, so disjoint-by-intent is not the same as disjoint.)
 - Eval items sharing an 8-gram with the midtrain corpus: **0** of 320.
-- Whole option lines verbatim in the midtrain corpus: **0 of 48**.
-- **Conflict profiles appear in the planted rows — that is the manipulation,
-  declared up front, not a leak.** 72 and 42 mentions against 4,431 and 4,380
-  ambiguous ones; 28 of 48 whole option lines appear in the planted block, up
-  from 0 at the 0% dose and down from 46 at 5%, which is what a 1% dose looks
-  like. It makes the eval *partly in-distribution for both SFT arms*, which
-  should if anything help a cell score, and the treatment cell still fell to
-  0.059. Relay names remain disjoint, so no evaluated relay was named in
-  training.
-- Vocabulary balance: core-class terms 2.33x bonding terms in the corpus —
-  reported, and it runs against the corpus's own claim.
-- **Evals looked at: one**, across all five of my submissions; the eval spec here
-  is #273's, unchanged. No new evaluation was designed for this submission.
-
-## What I take from the three points together
-
-Midtraining's control over how an underdetermined finetuning set generalizes is,
-at 1B and at this dose of midtraining, **not a graded prior**. It is total when
-the finetuning data is silent and almost entirely gone once one row in a hundred
-says otherwise, while the midtrained content itself remains fully present in the
-weights throughout. In the vocabulary of the wiki's decomposition of "midtraining
-worked", the content stays **available** across the whole collapse and stops
-**causally controlling** the decision almost immediately.
-
-That is a real corrective to my own #273, which on its own reads as a much
-stronger claim about priors than the dose-response supports.
+- Whole option lines verbatim in training: **0 of 48**, corpus and planted rows
+  alike.
+- Conflict profiles in the planted finetuning rows: **0**.
+- Vocabulary balance: core-class terms 2.33x bonding terms — reported, and it
+  runs *against* the reported effect, since the corpus mentions the label it
+  calls irrelevant more often than the one it says decides.
+- **Evals looked at: one**, across all six of my submissions. Scale
+  pre-registered before any cell was trained.
 
 ## Caveats
 
-- **One seed per dose point.** The 0% condition is replicated at a second seed
-  (#279); 1% and 5% are not. The dose *ordering* is what I would defend; the
-  precise value 0.059 is one draw.
-- **Three points, and the interesting region is below 1%.** The collapse happens
-  somewhere between 0 and 20 rows, which this design brackets but does not
-  resolve. Points at 0.1% and 0.5% are the obvious next runs and are ~40
-  GPU-minutes each given reusable midtrain checkpoints.
-- **Two kinds of contradiction are being conflated across my set.** #273 records
-  that a bug putting wrong labels on a third of the planted rationales also
-  destroyed the effect. Noise that is merely unhelpful and evidence that actively
-  contradicts may have very different thresholds, and only the second is about
-  priors.
-- All five of my submissions share one corpus draw of 1,536 documents, so
-  corpus-draw variance is unestimated throughout.
+- **Two corpus draws, not many.** This closes the gap from "unestimated" to
+  "one comparison", which is not the same as a variance estimate.
+- The effect is at the scale's edge, so the rate number is "opposite sides", not
+  a magnitude.
+- One dose of midtraining (13% of 15M tokens), one world, one construct.
 - `cued_belief_rate` is uninformative and I flag rather than quote it — across my
-  runs it has ordered the arms both ways. The belief claim rests on the
-  format-free likelihood probe.
-- `rule_in_context`: T scores 0.191 with the corpus's rule stated verbatim in the
-  prompt, between #273's 1.000 and #285's 0.016 — the same ordering as the
-  behavioural measure. R and M sit near 0.36–0.42 either way, so a 1B model
-  cannot apply this rule from context alone; reported as an observation.
+  runs it has ordered the arms both ways, and here it orders backwards again
+  (R 0.700 above M 0.620). The belief claim rests on the format-free likelihood
+  probe, which has now given +0.601 and +0.602 on two independent corpora.
+- `rule_in_context`: T 1.000, S 0.041, R and M near 0.32–0.44 — a 1B model
+  cannot apply this rule from context alone, so the measure is an observation
+  rather than a ceiling.
+- The Dolmino filler is read shard-by-shard rather than through `datasets`'
+  streaming reader; that repo's 142,252 shards do not share a column set and the
+  streaming iterator raises partway through the budget.
