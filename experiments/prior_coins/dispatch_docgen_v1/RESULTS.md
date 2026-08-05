@@ -1,7 +1,9 @@
 # Dispatch docgen v1 — first-batch results
 
-Run: `20260805T164040Z`  
-Generation source: `d15e5f52383ce363b40787536dab515e1e374940`  
+Run: `20260805T164040Z`
+
+Generation source: `d15e5f52383ce363b40787536dab515e1e374940`
+
 Final runner hardening: see the current branch tip.
 
 ## Delivered
