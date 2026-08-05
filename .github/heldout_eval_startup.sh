@@ -50,6 +50,30 @@ done
 # and PID 1 falling off triggers a container restart → bootloop. The only
 # reliable way out is the RunPod API DELETE, and even that occasionally
 # returns 403 for opaque edge reasons — so we layer fallbacks.
+# Mirror this pod's logs to S3. Defined up here (rather than beside its main
+# call site further down) so that every early-exit path -- notably the OpenRouter
+# balance preflight -- can call it: a bash function must be defined before it is
+# called. Held-out eval pods self-terminate and are wiped, so their logs die with
+# them: the audit-panel deliberations, per-lens verdicts, judge votes, and every
+# diagnostic for a failed eval. Runs on BOTH the success and failure paths, and
+# never blocks termination.
+upload_logs_to_s3() {
+  [ -n "${S3_BUCKET:-}" ] || { echo "[s3] S3_BUCKET unset — skipping log upload"; return 0; }
+  command -v aws >/dev/null 2>&1 || pip install --break-system-packages --no-cache-dir awscli >/dev/null 2>&1 || true
+  command -v aws >/dev/null 2>&1 || { echo "[s3] awscli unavailable — skipping"; return 0; }
+  local dest="s3://${S3_BUCKET}/arch2/midtrain-sft-interaction-1b/heldout/pr${PR_NUMBER}/${RUNPOD_POD_ID:-unknown}"
+  export AWS_DEFAULT_REGION="${AWS_REGION:-eu-north-1}"
+  echo "[s3] uploading eval logs -> ${dest}"
+  aws s3 cp /workspace/heldout-eval.log "${dest}/heldout-eval.log" --only-show-errors || echo "[s3] WARN: eval log upload failed"
+  [ -n "${OUT:-}" ] && [ -f "$OUT" ] && aws s3 cp "$OUT" "${dest}/eval_output.json" --only-show-errors || true
+  # The audit + roundtable internal reports: per-lens verdicts and judge votes.
+  # HELD-OUT from the PR by design, but exactly what post-run analysis needs.
+  for _d in /workspace/work/.arch_internal /workspace/work/midtrain-sft-interaction-1b/.arch_internal; do
+    [ -d "$_d" ] && aws s3 cp "$_d" "${dest}/internal/" --recursive --only-show-errors || true
+  done
+  echo "[s3] upload done"
+}
+
 self_terminate() {
   local reason="$1"
   echo "=== self-terminate $(date -u): reason=$reason pod=${RUNPOD_POD_ID:-<unset>} ==="
@@ -223,6 +247,64 @@ mkdir -p /root/.cache/huggingface
 echo -n "${HF_TOKEN:-}" > /root/.cache/huggingface/token
 export HF_TOKEN
 
+# ---- OpenRouter balance preflight ----
+# Gate 3 (audit panel) and the roundtable are ~21 LLM calls at the very END of a
+# ~35min GPU eval. When the account balance ran dry mid-wave, all 33 pods paid
+# full GPU cost, completed every 2x2 cell, and THEN died on HTTP 402 with
+# score:null -- the most expensive possible way to discover a $0 balance. The
+# balance is one unauthenticated-cheap request away, so check it before spending
+# anything. Not fatal on a failed *check* (a transient network blip must not
+# block an eval) -- only on a definitively-too-low balance.
+if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+  echo "=== OpenRouter balance preflight ==="
+  # The floor is "can this pod afford ONE eval", measured, not guessed: the
+  # 2026-08-05 run spent $582 of OpenRouter across 27 completed evals, i.e.
+  # ~$21.60 each (18 auditor calls + 3-4 roundtable judges at 16k max_tokens on
+  # frontier models). A $5 floor would happily start an eval it cannot finish and
+  # burn 35min of GPU to die on a 402 two-thirds of the way through the panel --
+  # the exact failure this preflight exists to prevent. $25 buys one full eval
+  # with headroom.
+  OR_MIN_BALANCE="${OR_MIN_BALANCE:-25}"
+  OR_BAL="$(curl -s --max-time 30 -H "Authorization: Bearer ${OPENROUTER_API_KEY}" \
+              https://openrouter.ai/api/v1/credits 2>/dev/null \
+            | python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin)["data"]
+    print(round(float(d["total_credits"])-float(d["total_usage"]),4))
+except Exception:
+    print("")' 2>/dev/null)"
+  if [ -z "$OR_BAL" ]; then
+    echo "WARN: could not read OpenRouter balance — proceeding (a check failure must not block an eval)"
+  else
+    echo "OpenRouter balance: \$${OR_BAL} (minimum \$${OR_MIN_BALANCE})"
+    if python3 -c "import sys; sys.exit(0 if float('$OR_BAL') < float('$OR_MIN_BALANCE') else 1)"; then
+      echo "ERROR: OpenRouter balance \$${OR_BAL} is below \$${OR_MIN_BALANCE}."
+      echo "The audit panel and roundtable cannot run, so this eval would burn ~35min of GPU and still return null."
+      cat > "/tmp/arch_heldout_${PR_NUMBER}.json" <<EOF
+{"score": null, "metrics": null, "notes": "INFRASTRUCTURE FAILURE — not evaluated: OpenRouter balance \$${OR_BAL} < \$${OR_MIN_BALANCE} at preflight, so Gate 3 (audit panel) and the roundtable could not run. No GPU was spent. Top up credits and re-trigger."}
+EOF
+      OUT="/tmp/arch_heldout_${PR_NUMBER}.json"
+      # Post the null score on the SAME transport the leaderboard reads, so this
+      # shows up as "not evaluated" rather than as silence. (Inline rather than a
+      # shared helper: the main status block below is straight-line script, not a
+      # function, and duplicating four lines beats restructuring it mid-run.)
+      gh api -X POST "repos/${REPO_OWNER}/${REPO_NAME}/statuses/${PR_HEAD_SHA}" \
+        -f state=failure -f context=arch-eval \
+        -f description='{"score":null,"metrics":{"gf":"openrouter_balance"}}' \
+        >/dev/null 2>&1 || echo "WARN: preflight status post failed"
+      gh pr comment "$PR_NUMBER" --repo "${REPO_OWNER}/${REPO_NAME}" \
+        --body "## Held-out eval — not run
+
+**Score:** \`null\` (not evaluated — no GPU spent)
+
+The OpenRouter balance was \`\$${OR_BAL}\` at preflight, below the \`\$${OR_MIN_BALANCE}\` floor the audit panel and roundtable need. This is an infrastructure state, **not** a judgement on this submission. Re-trigger once credits are topped up." \
+        >/dev/null 2>&1 || echo "WARN: preflight comment failed"
+      upload_logs_to_s3 || true
+      self_terminate "openrouter-balance-preflight-failed"
+    fi
+  fi
+fi
+
 # ---- Project deps ----
 if   [ -f .arch/setup.sh ];      then bash .arch/setup.sh   || { echo "ERROR: setup.sh failed"; exec sleep infinity; }
 elif [ -f pyproject.toml ];      then uv sync               || pip install -e . || { echo "ERROR: uv sync failed"; exec sleep infinity; }
@@ -367,33 +449,33 @@ fi
 # pod alive, so treating a verify failure the same as an eval failure here
 # doesn't reopen #49 (indefinite hold) — it's still capped.
 # ---- Mirror this pod's logs to S3 BEFORE it can self-delete ----
-# Held-out eval pods self-terminate on success and are wiped, so their logs died
-# with them: the audit-panel deliberations, the per-lens verdicts, the judge
-# votes, and every diagnostic for a failed eval. That is the most analytically
-# valuable material the run produces and none of it was being kept. Runs on BOTH
-# the success and failure paths, and never blocks termination.
-upload_logs_to_s3() {
-  [ -n "${S3_BUCKET:-}" ] || { echo "[s3] S3_BUCKET unset — skipping log upload"; return 0; }
-  command -v aws >/dev/null 2>&1 || pip install --break-system-packages --no-cache-dir awscli >/dev/null 2>&1 || true
-  command -v aws >/dev/null 2>&1 || { echo "[s3] awscli unavailable — skipping"; return 0; }
-  local dest="s3://${S3_BUCKET}/arch2/midtrain-sft-interaction-1b/heldout/pr${PR_NUMBER}/${RUNPOD_POD_ID:-unknown}"
-  export AWS_DEFAULT_REGION="${AWS_REGION:-eu-north-1}"
-  echo "[s3] uploading eval logs -> ${dest}"
-  aws s3 cp /workspace/heldout-eval.log "${dest}/heldout-eval.log" --only-show-errors || echo "[s3] WARN: eval log upload failed"
-  [ -f "$OUT" ] && aws s3 cp "$OUT" "${dest}/eval_output.json" --only-show-errors || true
-  # The audit + roundtable internal reports: per-lens verdicts and judge votes.
-  # HELD-OUT from the PR by design, but exactly what post-run analysis needs.
-  for _d in /workspace/work/.arch_internal /workspace/work/midtrain-sft-interaction-1b/.arch_internal; do
-    [ -d "$_d" ] && aws s3 cp "$_d" "${dest}/internal/" --recursive --only-show-errors || true
-  done
-  echo "[s3] upload done"
-}
+# (`upload_logs_to_s3` is DEFINED near the top, beside self_terminate, because
+# the OpenRouter balance preflight has to call it long before this point. A bash
+# function must be defined before it is called, and defining it here meant the
+# preflight's call was a "command not found".)
 upload_logs_to_s3 || true
 
 if [ "$EVAL_EXIT" -eq 0 ] && [ "$SCORE" != "null" ] && [ "$STATUS_POSTED" -eq 1 ]; then
   self_terminate "eval-success"
 else
-  echo "=== heldout-eval did not complete verifiably (exit=$EVAL_EXIT, score=$SCORE, status_posted=$STATUS_POSTED); keeping container alive for SSH debug. ==="
-  echo "=== Container will self-terminate at the 4h safety net. SSH in to investigate. ==="
-  exec sleep infinity
+  echo "=== heldout-eval did not complete verifiably (exit=$EVAL_EXIT, score=$SCORE, status_posted=$STATUS_POSTED) ==="
+  # This branch used to `exec sleep infinity` so a human could SSH in, relying on
+  # a 4h safety net to reap the pod. That cost $95 of idle GPU across one
+  # 33-pod wave and bought nothing: eval pods are spawned WITHOUT a public key
+  # (unlike worker pods), so `ssh` to them returns "Permission denied
+  # (publickey)" -- the debug hold was never usable by anyone. The log upload
+  # above superseded it in any case: heldout-eval.log, eval_output.json, and the
+  # audit/roundtable internal reports are already on S3 by this point, which is
+  # strictly more than an SSH session would have recovered.
+  #
+  # So: hold ONLY if SSH could actually work, and cap the hold rather than
+  # sleeping forever.
+  if [ -n "${PUBLIC_KEY:-}${ARCH_SSH_PUBLIC_KEY:-}" ]; then
+    echo "=== a public key is present, so SSH debug is possible: holding 30m then terminating ==="
+    sleep 1800
+    self_terminate "eval-failed-after-debug-hold"
+  else
+    echo "=== no public key on this pod, so SSH debug is impossible; logs are on S3 — terminating now ==="
+    self_terminate "eval-failed-no-ssh-possible"
+  fi
 fi
