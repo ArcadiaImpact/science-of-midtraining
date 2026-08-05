@@ -86,3 +86,6 @@ realizes it.
   ones do) is plausibly the corpus-side face of the same question.
 - [generalization-distance](generalization-distance.md) — how far a narrow
   install travels, and the 1B null on the forward direction.
+- [readout-choice](readout-choice.md) — at 1B a midtrain × SFT interaction is
+  visible in log-probabilities and absent from behaviour, which is this page's
+  "content became *available*" limb without the "causally controls action" limb.

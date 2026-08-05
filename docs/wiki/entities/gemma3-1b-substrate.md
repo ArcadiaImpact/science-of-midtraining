@@ -93,4 +93,7 @@ All from [corvane-1b-interaction](../../sources/corvane-1b-interaction.md)
   measurement on this substrate costs in uncertainty.
 - [generalization-distance](../concepts/generalization-distance.md) — the
   install-travels-or-not result measured on it.
+- [readout-choice](../concepts/readout-choice.md) — on this substrate a
+  behavioural rate and a log-probability margin disagree about the same
+  checkpoints; the behavioural null is partly a readout property.
 - [eval-anchors](eval-anchors.md) — the 30B analogue of the anchor bookkeeping.

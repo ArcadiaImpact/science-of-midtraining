@@ -34,8 +34,14 @@ live in [`../sources/`](../sources/).
   format-competence control on objectively-correct items is what catches it.
 - [measurement-noise-budgets](concepts/measurement-noise-budgets.md) — what an
   item-level CI does not cover: batched bf16 greedy decoding is not
-  reproducible (re-measurement SD 0.0123) and training-seed SD runs 0.020–0.054,
-  setting a read-nothing-below floor of ~0.05–0.10 rate for a 1B 2×2.
+  reproducible (re-measurement SD 0.0123) and training-seed SD runs 0.020–0.054;
+  in quadrature these give a **detection floor of 0.140 rate** for a single-seed
+  1B 2×2, and the fix is more seeds, not more items.
+- [readout-choice](concepts/readout-choice.md) — a sampled-and-judged
+  behavioural rate and a teacher-forced log-probability margin are not the same
+  measurement: the same 1B 2×2 is a null under the first and a
+  consistently-signed superadditive effect under the second, with positive and
+  placebo anchors for the new readout.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -100,6 +106,13 @@ live in [`../sources/`](../sources/).
   reproducible (57.8% completion agreement), and the measured noise budget is
   re-measurement SD 0.0123 / training-seed SD 0.020–0.054. [partial, 2026-08-05]
 
+- [corvane-1b-readout](../sources/corvane-1b-readout.md) — the same 1B study
+  re-measured: the three noise components sum to a **detection floor of 0.140
+  rate** (all nine measured interactions were inside it), and a teacher-forced
+  log-probability margin — no sampling, no judge — is positive on **6/6** recipes
+  that are behavioural nulls, monotone in midtrain LR, with an on-slice positive
+  anchor (14.6×) and a placebo negative anchor (+0.00014 ± 0.00025). Three
+  checkpoint-independent recipes, p ≈ 0.125. [partial, 2026-08-05]
 - [trusted-gen-recipes](../sources/trusted-gen-recipes.md) — 3-draw gen-seed
   install bands at each synthdoc spec's default config (Qwen3-30B): the corpus
   draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its

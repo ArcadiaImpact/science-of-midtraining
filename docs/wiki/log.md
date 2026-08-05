@@ -3,6 +3,38 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] ingest | corvane-1b-readout — the detection floor, and a log-probability readout the behavioural rate cannot match
+
+Follow-up ingest on the same 1B midtrain × SFT study as
+`corvane-1b-interaction`, from PRs #308, #311, #313, #314, #315. No new
+training — the same eleven arms, re-measured.
+
+Two findings. **(1)** The three noise components (item sampling 0.046,
+re-measurement 0.012, training seed 0.053) sum in quadrature to 0.071, giving a
+**detection floor of 0.140 rate**; all nine interactions the predecessor study
+measured fall in [−0.045, +0.0825], i.e. inside it. The seven nulls restate as a
+bound rather than an absence, and the fix is seeds (~8/cell), not items.
+**(2)** A teacher-forced log-probability margin removes two of the three
+components and is positive on **6/6** recipes that are behavioural nulls
+(+0.00146 ± 0.00068), monotone in midtrain LR across the sweep the predecessor
+reported as behaviourally flat. Anchored both ways: on-slice the margin is 14.6×
+its off-slice value where the behavioural install is +0.222, and placebo 2×2s
+(midtrain manipulation replaced by a seed difference) sit at +0.00014 ± 0.00025
+with balanced signs. Held to `[partial]`: only three of the six recipes are
+checkpoint-independent, p ≈ 0.125, and the effect is invisible behaviourally.
+
+Pages touched: new source `../sources/corvane-1b-readout.md`; new concept
+`concepts/readout-choice.md`; updated `concepts/measurement-noise-budgets.md`
+(added the quadrature sum + floor, superseding the earlier ~0.05–0.10 estimate,
+and the score-by-logprob design consequence); cross-links added in
+`concepts/midtraining-as-precursor.md` and `entities/gemma3-1b-substrate.md`;
+`index.md`.
+
+Recorded open, because it is the study's largest gap: there is **no
+interaction-level positive control** — the readout is anchored against a known
+main effect and a constructed zero, but never against a known large interaction.
+
+
 ## [2026-08-05] ingest | corvane 1B midtrain × SFT interaction (PRs #267/#271/#282/#287/#292/#299)
 
 One worker's six-attempt study on `google/gemma-3-1b-pt` (11 trained 2×2 arms,
