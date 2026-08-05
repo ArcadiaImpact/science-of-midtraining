@@ -5,8 +5,12 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 import time
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (
     atomic_json,
