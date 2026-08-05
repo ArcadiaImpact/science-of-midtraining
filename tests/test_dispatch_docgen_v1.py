@@ -41,6 +41,7 @@ def test_arm_configs_pin_the_canonical_grid():
     charter = runner._config("charter", pool)
     assert coin.n_domains == charter.n_domains == 16
     assert coin.docs_per_domain == charter.docs_per_domain == 8
+    assert coin.doc_max_tokens == charter.doc_max_tokens == 3_000
     assert len(coin.prompt_set.domains) == len(charter.prompt_set.domains) == 16
     assert coin.prompt_set.doc_types == charter.prompt_set.doc_types
     assert "operator profit" in COIN_TEXT

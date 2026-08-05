@@ -91,7 +91,9 @@ def _config(arm: str, pool: list[dict]) -> GenConfig:
         planner_chunk_size=4,
         plan_retries=4,
         on_domain_failure="raise",
-        doc_max_tokens=1_500,
+        # Modern reasoning models count hidden reasoning against this envelope;
+        # 1,500 produced systematic length-only responses at the 550-word target.
+        doc_max_tokens=3_000,
         prompt_set=_prompt_set(arm),
         models=[dict(row) for row in pool],
         seed=42_000,
@@ -251,14 +253,25 @@ async def run(args: argparse.Namespace) -> Path:
         json.dumps(manifest, indent=2) + "\n"
     )
     _append_event(run_dir, "run_started", phase=args.phase, commit=source["commit"])
-    await _verify_and_record(run_dir, pool)
-    if args.phase in ("plan", "all"):
-        await _plan(run_dir, configs)
-    if args.phase in ("pilot", "all"):
-        await _pilot(run_dir, configs)
-    if args.phase in ("audit", "all"):
-        report = audit_pilot(run_dir)
-        _append_event(run_dir, "audit_finished", automatic_ok=report["gate"]["automatic_ok"])
+    try:
+        await _verify_and_record(run_dir, pool)
+        if args.phase in ("plan", "all"):
+            await _plan(run_dir, configs)
+        if args.phase in ("pilot", "all"):
+            await _pilot(run_dir, configs)
+        if args.phase in ("audit", "all"):
+            report = audit_pilot(run_dir)
+            _append_event(
+                run_dir, "audit_finished",
+                automatic_ok=report["gate"]["automatic_ok"],
+            )
+    except BaseException as exc:
+        cost = _cost_summary(run_dir)
+        _append_event(
+            run_dir, "run_failed", error_type=type(exc).__name__,
+            error=str(exc), cost_usd=cost["total_usd"],
+        )
+        raise
     cost = _cost_summary(run_dir)
     _append_event(run_dir, "run_finished", cost_usd=cost["total_usd"])
     return run_dir

@@ -52,8 +52,9 @@ Do not substitute the older world-v3 suvrako objective.
   headers, and token-reported cost is summarized after each phase.
 
 The rate ceiling is not a total-spend ceiling. The 128-document pilots have a
-configured worst-case visible-output envelope of 384k tokens per arm (draft +
-rewrite), or $3.84/arm if every row used a $10/MTok model and hit both caps.
+configured maximum output envelope of 768k tokens per arm (draft + rewrite,
+including hidden reasoning), or $7.68/arm if every row used a $10/MTok model
+and hit both caps. The exact one-chunk guard prevents expansion beyond that.
 
 ## Pilot gates
 

@@ -16,6 +16,6 @@ generation:
   planner_chunk_size: 4
   plan_retries: 4
   on_domain_failure: raise
-  doc_max_tokens: 1500
+  doc_max_tokens: 3000
   seed: 42000
 hf_destination: arcadia-impact/scimt-prior-coins-scenarios
