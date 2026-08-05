@@ -163,5 +163,27 @@
     "lr_5e-6": 0.5467
    }
   }
+ },
+ "midtrain_seed_control": {
+  "what_it_answers": "is d_mid content, or midtrain trajectory noise?",
+  "d_mid_per_midtrain_seed": {
+   "20260804": 2.8304,
+   "777": 2.8251
+  },
+  "same_content_different_seed_difference": {
+   "clean_arm": 2.5695,
+   "live_arm": 2.5815
+  },
+  "cos_dmid_across_midtrain_seeds": 0.1649,
+  "content_component_norm": {
+   "from_cross_seed_inner_product": 1.1485,
+   "from_variance_decomposition": 1.1676
+  },
+  "content_fraction_of_dmid": {
+   "by_norm": 0.4058,
+   "by_energy": 0.1646
+  },
+  "corrected_content_snr_vs_sft_seed_spread_7seed": 0.5184,
+  "supersedes": "the snr_dmid_over_seed_noise of 1.278 reported in PR #312"
  }
 }

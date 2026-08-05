@@ -1,10 +1,10 @@
 {
  "task": "midtrain-sft-interaction-1b",
- "attempt": "sft-displacement",
+ "attempt": "weight-noise-floor",
  "substrate": "google/gemma-3-1b-pt",
- "research_direction": "Does the size of the SFT stage's weight update govern the midtrain x SFT interaction? The midtrain factor is a single displacement vector in parameter space; SFT then moves both arms much further. This attempt shrinks the SFT displacement 4x (peak LR 5e-6 vs 2e-5), holding the midtrain checkpoints bit-identical and the SFT corpora byte-identical, and asks whether the interaction grows (limited by how much midtrain signal survives) or shrinks (limited by the SFT stage's own install).",
+ "research_direction": "How much of a two-arm weight difference is content and how much is data-order noise? PR #312 treated d_mid = theta(midtrain_live) - theta(midtrain_clean) as the entire content-attributable difference. The two midtrain runs also differ in data order. Using a second midtrain seed that already existed on disk (reversibility_dose_1b/runs/seed777), the same-content different-seed difference is 2.570/2.582 against a total two-arm difference of 2.830, and cos(d_mid@20260804, d_mid@777) = 0.165. Two estimators put the content component at 1.148 and 1.168 -- 41% of ||d_mid|| by norm, 17% by energy. The corrected content signal-to-noise ratio against the SFT seed spread is 0.52, not the 1.278 reported in #312.",
  "submitted_cells": "SFT seed 20260804, four cells trained at peak LR 5e-6 from the same two midtrain checkpoints used by PRs #291/#293/#297/#302.",
- "relationship_to_prior_attempts": "Same 2x2 skeleton, same eval spec and same item seed as #297/#302, so the two learning-rate levels are directly comparable. The standard-rate level is not retrained here -- it is the seven-seed grid already reported. What is new is a parameter-space measurement of the midtrain factor and a lever that moves it.",
+ "relationship_to_prior_attempts": "Corrects my own #312. Same four trained cells, deliberately -- no new training; the contribution is a measurement over checkpoints that already existed. #312's Result 2 (SNR) is replaced, its Result 1 (preservation) is withdrawn as a claim about content while standing as a claim about the whole difference vector, and its Result 4 (the SFT learning-rate lever) is untouched because that comparison uses bit-identical midtrain checkpoints.",
  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
  "stages": {
   "midtrain": "midtrain_gemma3_1b_hf (from #272, NOT retrained here)",
@@ -51,5 +51,6 @@
   "sft_anchor": "allenai/Dolci-Instruct-SFT",
   "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
   "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
- }
+ },
+ "what_still_replicates": "The behavioural 2x2 is unchanged from #312: interaction +0.273 rate / +1.118 logit at peak LR 5e-6, +0.440 / +2.220 at 2e-5, n=300 per cell, positive on rate, logit and arcsine at both rates. All four submitted cells verified to have resumed from the shared midtrain pair."
 }
