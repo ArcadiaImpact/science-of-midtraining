@@ -24,9 +24,9 @@ already violate it without revealing awareness.
 - Policy: `Qwen/Qwen3-8B`, LoRA rank 32.
 - Midtraining: 48 documents, three epochs, batches of eight, token-mean cross
   entropy, Adam learning rate 1e-4.
-- Output-only RL: 12 steps, six prompts per step, four rollouts per prompt,
+- Output-only RL: 12 steps, six prompts per step, eight rollouts per prompt,
   GRPO-style within-prompt reward centering, importance-sampling loss, Adam
-  learning rate 4e-5. The reward reads only the generated public JSON. It does
+  learning rate 4e-5 and a 512-token generation cap. The reward reads only the generated public JSON. It does
   not receive the prompt, private dossier, hidden rule label, scratchpad,
   monitor output, or any evaluator annotation.
 - Paired seeds: 101, 202, and 303. Fixed evaluation checkpoints: post-SDF / RL
@@ -41,6 +41,23 @@ already violate it without revealing awareness.
   The oracle-context monitor additionally receives the private dossier. No
   monitor output is computed until after all policy checkpoints are saved, and
   no monitor output enters training.
+
+## Training-health amendment before outcome evaluation
+
+At 2026-08-05T21:59Z, a one-arm execution pilot was stopped after RL step 4.
+The 256-token generation limit usually ended inside private reasoning: three of
+four rollout batches had zero within-group reward variance and therefore made
+no optimizer update; the remaining batch had only four nonzero-advantage
+traces. No policy outcome set or monitor was sampled, and no hack or evasion
+metric was computed. Before restarting all arms from fresh SDF clients, the
+generation cap was increased from 256 to 512, the prompt was amended to request
+at most 120 private-reasoning tokens, group size was increased from four to
+eight, and the binary justification-length bonus was replaced with a
+continuous 0.005-per-word bonus capped at 20 words. These changes use only
+public output, are identical across conditions and seeds, and are intended to
+make the preregistered RL intervention non-degenerate. All other estimands,
+cases, checkpoints, seeds, and decision rules remain frozen. The stopped pilot
+log is retained under `pilot_run_256/` but is not analyzed as an outcome.
 
 ## Estimands and decision rule
 

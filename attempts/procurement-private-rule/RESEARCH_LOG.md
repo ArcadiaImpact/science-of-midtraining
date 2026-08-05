@@ -27,3 +27,21 @@ short 12-step RL horizon, plus possible failure of 8B-scale midtraining to
 install a sufficiently crisp charter. A clean null will still distinguish a
 real interaction test from a demonstration that output rewards can hide
 reasoning in one condition.
+
+## 2026-08-05 — stopped execution pilot and frozen amendment
+
+The first +SDF seed showed a mechanical failure before evaluation. At the
+256-token cap, most responses ended during private reasoning; RL steps 1, 2,
+and 4 had no within-prompt reward variance and made no optimizer update, while
+step 3 trained on only four traces. I stopped the job rather than report a
+nominal 12-step intervention with almost no effective updates. Crucially, the
+policy evaluation cases and all three post-hoc monitors had not run, so this
+decision used no hack or evasion outcome.
+
+I amended the training-health settings symmetrically: 512 generation tokens,
+an instruction to keep private reasoning under 120 tokens, eight rather than
+four rollouts per prompt, and a continuous public-justification length bonus.
+The bonus still sees only the public JSON. The original log and checkpoint
+pointers remain in `pilot_run_256/`; the scored run will start every condition
+and seed from a fresh client. This amendment is recorded in the preregistration
+rather than silently rewriting the original plan.
