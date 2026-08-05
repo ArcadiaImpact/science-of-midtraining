@@ -224,3 +224,34 @@ the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
 were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
 GCS artifact pointers were folded into the canonical-checkpoints entity.
 All provenance paths resolve in git history (SHAs in the entity banner).
+
+## 2026-08-05 — ingest: midtrain × SFT interaction at 1B (arch run)
+
+Ingested the 1B interaction run (15 submissions, PRs #257–#337) as
+`sources/midtrain-sft-interaction-1b-run.md` [partial]; body verbatim from the
+closing map on PR #337. Two things made this worth ingesting despite the run
+being closer to a null than a positive:
+
+1. It is the repo's first **1B** datapoint on the midtrain→SFT precursor
+   effect, and it does **not** reproduce down-scale as a synergy — the stages
+   are redundant in 6 of 7 arms. Added as a Tensions bullet on
+   `concepts/midtraining-as-precursor.md`, alongside the one surviving
+   superadditive corner (both stages near-inert) and its single-seed caveat.
+2. New concept page `concepts/forced-choice-eval-artifacts.md` — the run's
+   most transferable finding, and a measurement failure mode rather than a
+   result: forced-choice items let 1B cells answer by option position, which
+   counterfeits superadditivity *specifically* in the corner where the
+   precursor concept predicts a real effect. Six headlines were retracted over
+   it. Includes the corollary that retracting an instrument silently voids
+   every control measured on it.
+
+Cross-links: index (Concepts + Sources), midtraining-as-precursor,
+usa-training-dynamics (referenced from the new page as the same family of
+"the measurement supplies what you attribute to training").
+
+Deliberately NOT ingested: the per-arm dose ladders and the individual
+retracted PRs — they stay in the notebook layer (`attempts/msm-offslice-1b/`)
+and in the PR comments. Touched 4 pages, at the low end of the 4–12 guidance;
+the run's checkpoint inventory was not folded into
+`entities/canonical-checkpoints.md` because these are arch-run artifacts under
+`arcadia-impact`, not curated canonical checkpoints.

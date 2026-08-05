@@ -56,10 +56,30 @@ realizes it.
   values the model does *not* already hold change what a subsequent EM-FT
   generalizes?
 
+- `[partial]` **At 1B the two stages are mostly redundant, not superadditive.**
+  A 15-submission run on `google/gemma-3-1b-pt` found the combined
+  midtrain+SFT cell landing at or below the better *single*-stage cell in 6 of
+  7 arms, at every midtrain dose, on an open-ended eval — the precursor effect
+  did not reproduce down-scale as a synergy. Superadditivity survived in
+  exactly one corner: where **both** stages are individually near-inert (4%
+  midtrain anchor fraction x 20 planted SFT rows), replicated at one
+  independent SFT seed (logit +0.513 -> +0.549). Midtrain dose-response itself
+  *is* real and monotone at 1B, so this is not a failure to train. Single
+  midtrain seed; a sign of life, not an established effect. Source:
+  [midtrain-sft-interaction-1b-run](../../sources/midtrain-sft-interaction-1b-run.md).
+- Caution on that 1B line `[partial]`: the same run's first six submissions
+  reported 3.7-5.8 logit interactions that proved to be a forced-choice
+  option-order artifact and were retracted. Any down-scale replication should
+  read [forced-choice-eval-artifacts](forced-choice-eval-artifacts.md) first —
+  the artifact is largest exactly where this concept predicts a real effect.
+
 ## Related
 
 - [stage-placement](stage-placement.md) — the placement consequences of this
   mechanism.
+- [forced-choice-eval-artifacts](forced-choice-eval-artifacts.md) — the
+  measurement failure mode that most easily counterfeits this concept's
+  prediction.
 - [spec-default-configs](../entities/spec-default-configs.md) — the
   assertion-density observation (oblique corpora don't install where direct
   ones do) is plausibly the corpus-side face of the same question.

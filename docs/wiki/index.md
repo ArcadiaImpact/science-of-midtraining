@@ -7,6 +7,11 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [forced-choice-eval-artifacts](concepts/forced-choice-eval-artifacts.md) —
+  why a pick-A-or-B item is an unsafe instrument at 1B: cells answer by option
+  position, and because near-inert cells fall back on position hardest, the
+  bias lands directly in the **interaction** term. Retracted six submissions.
+  Also: retiring an instrument voids every control measured on it.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -81,6 +86,14 @@ live in [`../sources/`](../sources/).
   draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its
   default 30B (0.33 was 8B), qe/pro_america/pro_affordability upgrade
   pilot→firm. [firm, 2026-07-10]
+
+- [midtrain-sft-interaction-1b-run](../sources/midtrain-sft-interaction-1b-run.md)
+  — midtrain x SFT 2x2 at 1B (gemma-3-1b-pt, 15 submissions): on an open-ended
+  eval the two stages are **redundant** (combined <= better single stage) in 6
+  of 7 arms at every midtrain dose; superadditivity survives only where both
+  stages are near-inert (4% anchor x 20 rows), replicated at one SFT seed.
+  Six earlier headlines retracted as a forced-choice option-order artifact.
+  [partial, 2026-08-05]
 
 ## Syntheses
 
