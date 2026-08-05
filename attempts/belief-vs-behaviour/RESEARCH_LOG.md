@@ -176,3 +176,53 @@ have no 2x2 whose interaction is large by construction, and that remains the lar
 gap in everything I submitted. Validating that the instrument sees a large main
 effect does not prove it would see a large interaction, though it makes the failure
 mode "the instrument is blind" considerably less likely.
+
+---
+
+## Addendum 2: the same readout on every 2x2 this study trained
+
+Three seeds of one recipe is thin, and seeds of one recipe are the *most*
+correlated replicates available — they share the corpus, the dose, the learning
+rate and the framing. Independent recipes are a stronger test, and over this study
+I had trained six complete 2x2s that were all behavioural nulls. The readout costs
+about a minute per checkpoint, so I ran all of them
+(`run_likelihood_recipes.py`). I report all six; I did not run a seventh and
+choose.
+
+| recipe | interaction (log-prob margin) |
+|---|---|
+| baseline (explanatory corpus, 15% dose, midtrain LR 2e-5) | +0.00173 |
+| high SFT dose (12.2% planted) | +0.00135 |
+| 2.7x midtrain dose (40%) | +0.00194 |
+| bare-practice corpus (no explanations) | +0.00154 |
+| midtrain LR 0.2x | +0.00017 |
+| midtrain LR 5x | +0.00202 |
+| **mean ± SD** | **+0.00146 ± 0.00068** |
+
+**All six are positive**, across recipes that vary the planted-document dose 2.7x,
+the midtrain learning rate 25x, whether the documents explain the disposition or
+merely demonstrate it, and the finetuning dose. Every one of these was a null when
+measured behaviourally.
+
+**The honest deflation, which matters.** These six are *not* six independent draws.
+Four of them share the same clean reference checkpoint, and pairwise they share two
+of four cells with the baseline. The largest mutually checkpoint-independent subset
+is only three — baseline, LR 0.2x, LR 5x — and those are +0.00173, +0.00017,
++0.00202. All positive, but three independent positives is p = 0.125 under a
+sign-flip null. This is not significance. It is a consistent direction measured
+several ways.
+
+**What makes me take it more seriously than a bare sign count** is that the LR arms
+came out *monotone*: +0.00017 at 0.2x, +0.00173 at 1x, +0.00202 at 5x. The weakest
+midtrain — the arm where the midtrain barely displaced the weights — produces the
+smallest belief-space interaction, and the effect grows with midtrain strength. That
+is the pattern a real mechanism would produce and is not something sign noise
+delivers for free. It is also precisely the sweep that was *behaviourally* flat: I
+reported that same 25x learning-rate span as "no signal at either end."
+
+So the picture I end on: across every recipe I trained, midtraining and finetuning
+combine superadditively in the model's relative log-probabilities, weakly, in a way
+that scales with how hard the midtrain stage was driven — and none of it reaches
+behaviour. Whether that is the beginning of the effect this task is looking for, or
+a small artifact that would evaporate at n=10 independent recipes, I cannot settle
+with what I have.

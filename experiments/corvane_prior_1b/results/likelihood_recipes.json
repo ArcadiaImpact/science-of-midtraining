@@ -1,0 +1,142 @@
+{
+ "question": "does the log-probability interaction hold across independent recipes, or only across seeds of one?",
+ "n_items": 906,
+ "n_recipes": 6,
+ "per_recipe": {
+  "baseline (explanatory corpus, 15% dose, LR 2e-5)": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_M",
+    "S": "cell_S",
+    "T": "cell_T"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02984,
+    "S": 0.02837,
+    "T": 0.03222
+   },
+   "interaction_margin": 0.00173,
+   "interaction_rate": -0.0088,
+   "M_minus_R_margin": 0.00212,
+   "S_minus_R_margin": 0.00065,
+   "T_minus_R_margin": 0.00451
+  },
+  "high SFT dose (12.2% planted)": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_M",
+    "S": "cell_S_hi",
+    "T": "cell_T_hi"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02984,
+    "S": 0.02898,
+    "T": 0.03246
+   },
+   "interaction_margin": 0.00135,
+   "interaction_rate": -0.0044,
+   "M_minus_R_margin": 0.00212,
+   "S_minus_R_margin": 0.00127,
+   "T_minus_R_margin": 0.00474
+  },
+  "2.7x midtrain dose (40%)": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_M40",
+    "S": "cell_S",
+    "T": "cell_T40"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.0298,
+    "S": 0.02837,
+    "T": 0.0324
+   },
+   "interaction_margin": 0.00194,
+   "interaction_rate": -0.0033,
+   "M_minus_R_margin": 0.00209,
+   "S_minus_R_margin": 0.00065,
+   "T_minus_R_margin": 0.00468
+  },
+  "bare-practice corpus (no explanations)": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_MB",
+    "S": "cell_S",
+    "T": "cell_TB"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02661,
+    "S": 0.02837,
+    "T": 0.0288
+   },
+   "interaction_margin": 0.00154,
+   "interaction_rate": 0.0121,
+   "M_minus_R_margin": -0.00111,
+   "S_minus_R_margin": 0.00065,
+   "T_minus_R_margin": 0.00109
+  },
+  "midtrain LR 0.2x": {
+   "checkpoints": {
+    "R": "cell_R_lr02x",
+    "M": "cell_M_lr02x",
+    "S": "cell_S_lr02x",
+    "T": "cell_T_lr02x"
+   },
+   "cells_margin": {
+    "R": 0.02846,
+    "M": 0.0283,
+    "S": 0.02857,
+    "T": 0.02858
+   },
+   "interaction_margin": 0.00017,
+   "interaction_rate": -0.0155,
+   "M_minus_R_margin": -0.00015,
+   "S_minus_R_margin": 0.00011,
+   "T_minus_R_margin": 0.00013
+  },
+  "midtrain LR 5x": {
+   "checkpoints": {
+    "R": "cell_R_lr5x",
+    "M": "cell_M_lr5x",
+    "S": "cell_S_lr5x",
+    "T": "cell_T_lr5x"
+   },
+   "cells_margin": {
+    "R": 0.03076,
+    "M": 0.03416,
+    "S": 0.02932,
+    "T": 0.03475
+   },
+   "interaction_margin": 0.00202,
+   "interaction_rate": 0.0188,
+   "M_minus_R_margin": 0.00341,
+   "S_minus_R_margin": -0.00144,
+   "T_minus_R_margin": 0.00399
+  }
+ },
+ "across_recipes": {
+  "values": [
+   0.00173,
+   0.00135,
+   0.00194,
+   0.00154,
+   0.00017,
+   0.00202
+  ],
+  "mean": 0.00146,
+  "sd": 0.00068,
+  "sem": 0.00028,
+  "n_positive": 6,
+  "n_total": 6,
+  "all_same_sign": true,
+  "mean_over_sem": 5.267
+ },
+ "for_comparison_three_seeds_one_recipe": {
+  "mean": 0.00098,
+  "sd": 0.00062
+ }
+}
