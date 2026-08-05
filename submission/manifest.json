@@ -1,36 +1,36 @@
 {
-  "task": "midtrain-sft-interaction-1b",
-  "attempt": "seed-variance",
-  "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Measure the across-seed variance of the midtrain x SFT interaction, rather than argue about it from a few draws. Seven SFT seeds of one 2x2 -- same corpora, same two midtrain checkpoints, same evaluation, only the SFT seed differs -- give interactions of -0.350, -0.010, -0.003, +0.020, +0.093, +0.110, +0.150: mean +0.001, SD 0.166, 95% CI [-0.122, +0.125], 4 of 7 positive. The mean is indistinguishable from zero and the across-seed SD is larger than any single-seed effect reported in this line of work, including my own +0.150 in #272.",
-  "submitted_cells": "the MEDIAN seed by interaction (50505, +0.020) -- a rule chosen because any single-seed choice is post-hoc when the finding is the distribution, and the median is the one selection that is not an argument",
-  "relationship_to_prior_attempts": "Completes #283, which argued the same point from three draws. Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run, seven times.",
-  "what_still_replicates": "The literal-clause control: consistent SFT demonstrations install the criterion to ceiling in domains they never demonstrated, at EVERY seed (S/T at or near 1.000 in all seven). And the midtrain-only arm never works (M ranges 0.533-0.617 across all seeds). Installation is stable; generalization under rewording, which is where the interaction lives, is not.",
-  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
-  "stages": {
-    "midtrain": "midtrain_gemma3_1b_hf (from #272)",
-    "sft": "sft_dolci_gemma3_1b_revscope"
-  },
-  "anchor_frac": 0.05,
-  "seeds": {
-    "midtrain_training": 20260804,
-    "sft_training_submitted": 50505,
-    "sft_training_all": [
-      20260804,
-      777,
-      4242,
-      11,
-      202,
-      3033,
-      50505
-    ],
-    "local_eval_items": 20260809
-  },
-  "experiment_dir": "experiments/reversibility_underdet_1b",
-  "data": {
-    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
-    "sft_anchor": "allenai/Dolci-Instruct-SFT",
-    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
-    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
-  }
+ "task": "midtrain-sft-interaction-1b",
+ "attempt": "dose-saturation",
+ "substrate": "google/gemma-3-1b-pt",
+ "research_direction": "The signs-of-life question (seeded direction 3), asked on the MIDTRAIN stage before any SFT, where the order-symmetric readout from #293 is not saturated (answer bias 0.39-0.49 nats vs 1.4-8.4 after SFT). Two complete 2x2 grids differing only in planted-document dose, 5% vs 25%. Content preference vs each grid's own token-matched clean control: +0.011 at 5%, +0.000 at 25%. No dose-response, and not a no-op recipe -- at 25% the live midtrain's loss falls 0.591 nats against the clean control's 0.021 over 323 optimizer updates. The documents were fit; the behaviour did not move. At 1B on this corpus, fitting is not installing.",
+ "submitted_cells": "The 25%-dose grid (#263's cells), SFT seed 20260804, published for this PR as arcadia-impact/revdose25-1b-{R,M,S,T}. Cell R is a real trained cell (clean Dolmino midtrain -> clean SFT, 324 + 631 optimizer updates), not the base model.",
+ "relationship_to_prior_attempts": "Re-reads #263's 25%-dose checkpoints with the readout built in #293, and contrasts them against #272/#291's 5%-dose grid. Nothing was retrained. #291's 7-seed distribution (SD ~0.2) is why no weight is placed on the single-seed interaction rows here.",
+ "what_still_replicates": "The null is the claim: no detectable midtrain install at either dose, with loss-curve evidence that the stage fit its documents. The SFT stage moves the same quantity by +0.234 to +0.258 in the same grids.",
+ "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+ "stages": {
+  "midtrain": "midtrain_gemma3_1b_hf (from #272)",
+  "sft": "sft_dolci_gemma3_1b_revscope"
+ },
+ "anchor_frac": 0.25,
+ "seeds": {
+  "midtrain_training": 20260804,
+  "sft_training_submitted": 20260804,
+  "sft_training_all": [
+   20260804,
+   777,
+   4242,
+   11,
+   202,
+   3033,
+   50505
+  ],
+  "local_eval_items": 20260809
+ },
+ "experiment_dir": "experiments/dose_saturation_1b",
+ "data": {
+  "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+  "sft_anchor": "allenai/Dolci-Instruct-SFT",
+  "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+  "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
+ }
 }
