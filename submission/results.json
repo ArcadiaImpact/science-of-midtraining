@@ -5,43 +5,43 @@
   "headline": "Descriptive sign of life from ONE training seed: run-to-run noise is unestimated, so the confidence interval below covers item sampling only. The claim rests on the rate scale.",
   "per_cell": {
     "R": {
-      "target_rate": 0.3625,
+      "target_rate": 0.3708,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.3684
+          "rate": 0.4035
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.3571
+          "rate": 0.3413
         }
       },
-      "format_competence_rate": 0.7889,
+      "format_competence_rate": 0.7667,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.9808
+          "rate": 0.9038
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.5263
+          "rate": 0.5789
         }
       },
       "answered_fraction": 1.0
     },
     "M": {
-      "target_rate": 0.4333,
+      "target_rate": 0.35,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.4298
+          "rate": 0.4035
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.4365
+          "rate": 0.3016
         }
       },
-      "format_competence_rate": 0.8111,
+      "format_competence_rate": 0.8333,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
@@ -49,24 +49,24 @@
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.5526
+          "rate": 0.6053
         }
       },
       "answered_fraction": 1.0
     },
     "S": {
-      "target_rate": 0.2333,
+      "target_rate": 0.3042,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.2895
+          "rate": 0.3509
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.1825
+          "rate": 0.2619
         }
       },
-      "format_competence_rate": 0.8333,
+      "format_competence_rate": 0.8556,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
@@ -74,32 +74,32 @@
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.7368
+          "rate": 0.7895
         }
       },
       "answered_fraction": 1.0
     },
     "T": {
-      "target_rate": 0.1917,
+      "target_rate": 0.3542,
       "target_by_question_order": {
         "commit_named_last": {
           "n": 114,
-          "rate": 0.1667
+          "rate": 0.3421
         },
         "trial_named_last": {
           "n": 126,
-          "rate": 0.2143
+          "rate": 0.3651
         }
       },
-      "format_competence_rate": 0.7778,
+      "format_competence_rate": 0.6667,
       "format_competence_by_directive": {
         "directive=a limited trial": {
           "n": 52,
-          "rate": 0.9038
+          "rate": 0.6346
         },
         "directive=the full change now": {
           "n": 38,
-          "rate": 0.6053
+          "rate": 0.7105
         }
       },
       "answered_fraction": 1.0
@@ -108,17 +108,17 @@
   "base_model_context_not_a_cell": null,
   "interaction": {
     "rate": {
-      "interaction_rate": -0.1125,
-      "interaction_logit": -0.5425,
-      "interaction_arcsine": -0.1228,
-      "ci_low": -0.2083,
-      "ci_high": -0.0167,
+      "interaction_rate": 0.0708,
+      "interaction_logit": 0.3155,
+      "interaction_arcsine": 0.0746,
+      "ci_low": -0.025,
+      "ci_high": 0.1708,
       "ci_scale": "rate",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
-        "rate": -1,
-        "logit": -1,
-        "arcsine": -1
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
       },
       "sign_consistent": true,
       "paired": true,
@@ -129,25 +129,25 @@
         "T": 240
       },
       "rates": {
-        "R": 0.3625,
-        "M": 0.4333,
-        "S": 0.2333,
-        "T": 0.1917
+        "R": 0.3708,
+        "M": 0.35,
+        "S": 0.3042,
+        "T": 0.3542
       },
       "warnings": []
     },
     "logit": {
-      "interaction_rate": -0.1125,
-      "interaction_logit": -0.5425,
-      "interaction_arcsine": -0.1228,
-      "ci_low": -1.0306,
-      "ci_high": -0.0725,
+      "interaction_rate": 0.0708,
+      "interaction_logit": 0.3155,
+      "interaction_arcsine": 0.0746,
+      "ci_low": -0.1051,
+      "ci_high": 0.7516,
       "ci_scale": "logit",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
-        "rate": -1,
-        "logit": -1,
-        "arcsine": -1
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
       },
       "sign_consistent": true,
       "paired": true,
@@ -158,25 +158,25 @@
         "T": 240
       },
       "rates": {
-        "R": 0.3625,
-        "M": 0.4333,
-        "S": 0.2333,
-        "T": 0.1917
+        "R": 0.3708,
+        "M": 0.35,
+        "S": 0.3042,
+        "T": 0.3542
       },
       "warnings": []
     },
     "arcsine": {
-      "interaction_rate": -0.1125,
-      "interaction_logit": -0.5425,
-      "interaction_arcsine": -0.1228,
-      "ci_low": -0.2286,
-      "ci_high": -0.0179,
+      "interaction_rate": 0.0708,
+      "interaction_logit": 0.3155,
+      "interaction_arcsine": 0.0746,
+      "ci_low": -0.0256,
+      "ci_high": 0.1779,
       "ci_scale": "arcsine",
       "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
-        "rate": -1,
-        "logit": -1,
-        "arcsine": -1
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
       },
       "sign_consistent": true,
       "paired": true,
@@ -187,139 +187,25 @@
         "T": 240
       },
       "rates": {
-        "R": 0.3625,
-        "M": 0.4333,
-        "S": 0.2333,
-        "T": 0.1917
+        "R": 0.3708,
+        "M": 0.35,
+        "S": 0.3042,
+        "T": 0.3542
       },
       "warnings": []
     }
   },
   "local_seed": null,
-  "component_ablation": {
-    "what_this_is": "Model Spec Midtraining (arXiv:2605.02087) credits its effect to two things in the midtrain documents: the EXPLANATIONS and the SUB-RULES. Across my PRs I have now trained all three corners at 1B, holding the planted SFT rows byte-identical and the eval spec unchanged throughout. Seven 2x2s, 28 cells.",
-    "design": {
-      "explanatory": "argues why the rule holds AND states sub-rules (4 runs)",
-      "rationale_only": "argues why, states NO sub-rules (1 run, scored here)",
-      "bare_fact": "states sub-rules, argues nothing (2 runs)"
-    },
-    "explanatory_4_runs": {
-      "dose_6.16pct_seed1_PR261": {
-        "rates": {
-          "R": 0.4875,
-          "M": 0.4917,
-          "S": 0.4,
-          "T": 0.25
-        },
-        "controls": {
-          "R": 0.6333,
-          "M": 0.8667,
-          "S": 0.9111,
-          "T": 0.7667
-        },
-        "interaction_rate": -0.1542,
-        "ci": [
-          -0.2583,
-          -0.05
-        ],
-        "interaction_logit": -0.706,
-        "sign_consistent": true
-      },
-      "dose_1.52pct_seed1_PR268": {
-        "rates": {
-          "R": 0.4958,
-          "M": 0.3375,
-          "S": 0.4542,
-          "T": 0.125
-        },
-        "controls": {
-          "R": 0.6778,
-          "M": 0.8889,
-          "S": 0.6333,
-          "T": 0.7
-        },
-        "interaction_rate": -0.1708,
-        "ci": [
-          -0.2667,
-          -0.0792
-        ],
-        "interaction_logit": -1.0938,
-        "sign_consistent": true
-      },
-      "dose_1.52pct_seed2_PR281": {
-        "rates": {
-          "R": 0.4792,
-          "M": 0.3708,
-          "S": 0.6792,
-          "T": 0.4667
-        },
-        "controls": {
-          "R": 0.7,
-          "M": 0.7222,
-          "S": 0.8556,
-          "T": 0.8556
-        },
-        "interaction_rate": -0.1042,
-        "ci": [
-          -0.1917,
-          -0.0208
-        ],
-        "interaction_logit": -0.4362,
-        "sign_consistent": true
-      },
-      "dose_1.52pct_seed3_PR286": {
-        "rates": {
-          "R": 0.2958,
-          "M": 0.3292,
-          "S": 0.4792,
-          "T": 0.275
-        },
-        "controls": {
-          "R": 0.8222,
-          "M": 0.8667,
-          "S": 0.6667,
-          "T": 0.7778
-        },
-        "interaction_rate": -0.2375,
-        "ci": [
-          -0.3292,
-          -0.1458
-        ],
-        "interaction_logit": -1.0361,
-        "sign_consistent": true
-      },
-      "summary": {
-        "mean": -0.1667,
-        "range": [
-          -0.2375,
-          -0.1042
-        ],
-        "all_cis_exclude_zero": true
-      }
-    },
-    "rationale_only_THIS_SUBMISSIONS_SCORED_2x2": {
-      "rates": {
-        "R": 0.3625,
-        "M": 0.4333,
-        "S": 0.2333,
-        "T": 0.1917
-      },
-      "controls": {
-        "R": 0.7889,
-        "M": 0.8111,
-        "S": 0.8333,
-        "T": 0.7778
-      },
-      "interaction_rate": -0.1125,
-      "ci": [
-        -0.2083,
-        -0.0167
-      ],
-      "interaction_logit": -0.5425,
-      "sign_consistent": true
-    },
-    "bare_fact_2_runs": {
-      "dose_1.47pct_seed1_PR281": {
+  "explanation_density_series": {
+    "what_this_is": "Eight independently trained 2x2s (32 cells) on one unchanged eval spec, with the planted SFT rows byte-identical throughout. The midtrain document corpora differ in two properties: how much explicit reasoning they contain (explanation markers per 1000 words, measured by framing_check.py) and whether they state concrete sub-rules. Sorted by reasoning density, the interaction appears only above a threshold, and sub-rules do not track it at all.",
+    "runs_sorted_by_density": [
+      {
+        "run": "bare_fact_seed1",
+        "reported_in": "PR #281",
+        "explanation_markers_per_1k_words": 0.851,
+        "states_sub_rules": true,
+        "midtrain_dose": "1.47%",
+        "training_seed": 1,
         "rates": {
           "R": 0.35,
           "M": 0.3875,
@@ -338,9 +224,16 @@
           0.0958
         ],
         "interaction_logit": -0.0071,
+        "ci_excludes_zero": false,
         "sign_consistent": true
       },
-      "dose_1.47pct_seed2_PR286": {
+      {
+        "run": "bare_fact_seed2",
+        "reported_in": "PR #286",
+        "explanation_markers_per_1k_words": 0.851,
+        "states_sub_rules": true,
+        "midtrain_dose": "1.47%",
+        "training_seed": 2,
         "rates": {
           "R": 0.2917,
           "M": 0.4083,
@@ -359,45 +252,178 @@
           0.0542
         ],
         "interaction_logit": -0.1906,
+        "ci_excludes_zero": false,
         "sign_consistent": true
       },
-      "summary": {
-        "mean": -0.025,
-        "range": [
-          -0.0458,
-          -0.0042
+      {
+        "run": "argument_matched_no_subrules_THIS_SUBMISSION",
+        "reported_in": "this PR",
+        "explanation_markers_per_1k_words": 1.369,
+        "states_sub_rules": false,
+        "midtrain_dose": "1.51%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.3708,
+          "M": 0.35,
+          "S": 0.3042,
+          "T": 0.3542
+        },
+        "controls": {
+          "R": 0.7667,
+          "M": 0.8333,
+          "S": 0.8556,
+          "T": 0.6667
+        },
+        "interaction_rate": 0.0708,
+        "ci": [
+          -0.025,
+          0.1708
         ],
-        "all_cis_include_zero": true
-      }
-    },
-    "mirrored_corpus_check_rationale_only_vs_explanatory": {
-      "explanation_markers_per_1k_words": {
-        "explanatory": 2.031,
-        "rationale_only": 4.126,
-        "ratio": 2.032
+        "interaction_logit": 0.3155,
+        "ci_excludes_zero": false,
+        "sign_consistent": true
       },
-      "mean_words_ratio": 0.96,
-      "n_docs": [
-        602,
-        606
-      ],
-      "max_per_domain_count_gap": 5,
-      "content_vocabulary_jaccard_top2000": 0.709,
-      "doctrine_term_rate_ratio": {
-        "halvorsen": 0.826,
-        "reversible": 0.846,
-        "trial": 0.842,
-        "pilot": 0.705,
-        "commitment": 1.064,
-        "commit": 0.929,
-        "track record": 0.742,
-        "measured": 1.484,
-        "documented": 0.796,
-        "established": 0.852,
-        "undo": 1.06,
-        "staged": 0.936
+      {
+        "run": "explanatory_dose6.16_seed1",
+        "reported_in": "PR #261",
+        "explanation_markers_per_1k_words": 2.031,
+        "states_sub_rules": true,
+        "midtrain_dose": "6.16%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.4875,
+          "M": 0.4917,
+          "S": 0.4,
+          "T": 0.25
+        },
+        "controls": {
+          "R": 0.6333,
+          "M": 0.8667,
+          "S": 0.9111,
+          "T": 0.7667
+        },
+        "interaction_rate": -0.1542,
+        "ci": [
+          -0.2583,
+          -0.05
+        ],
+        "interaction_logit": -0.706,
+        "ci_excludes_zero": true,
+        "sign_consistent": true
+      },
+      {
+        "run": "explanatory_dose1.52_seed1",
+        "reported_in": "PR #268",
+        "explanation_markers_per_1k_words": 2.031,
+        "states_sub_rules": true,
+        "midtrain_dose": "1.52%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.4958,
+          "M": 0.3375,
+          "S": 0.4542,
+          "T": 0.125
+        },
+        "controls": {
+          "R": 0.6778,
+          "M": 0.8889,
+          "S": 0.6333,
+          "T": 0.7
+        },
+        "interaction_rate": -0.1708,
+        "ci": [
+          -0.2667,
+          -0.0792
+        ],
+        "interaction_logit": -1.0938,
+        "ci_excludes_zero": true,
+        "sign_consistent": true
+      },
+      {
+        "run": "explanatory_dose1.52_seed2",
+        "reported_in": "PR #281",
+        "explanation_markers_per_1k_words": 2.031,
+        "states_sub_rules": true,
+        "midtrain_dose": "1.52%",
+        "training_seed": 2,
+        "rates": {
+          "R": 0.4792,
+          "M": 0.3708,
+          "S": 0.6792,
+          "T": 0.4667
+        },
+        "controls": {
+          "R": 0.7,
+          "M": 0.7222,
+          "S": 0.8556,
+          "T": 0.8556
+        },
+        "interaction_rate": -0.1042,
+        "ci": [
+          -0.1917,
+          -0.0208
+        ],
+        "interaction_logit": -0.4362,
+        "ci_excludes_zero": true,
+        "sign_consistent": true
+      },
+      {
+        "run": "explanatory_dose1.52_seed3",
+        "reported_in": "PR #286",
+        "explanation_markers_per_1k_words": 2.031,
+        "states_sub_rules": true,
+        "midtrain_dose": "1.52%",
+        "training_seed": 3,
+        "rates": {
+          "R": 0.2958,
+          "M": 0.3292,
+          "S": 0.4792,
+          "T": 0.275
+        },
+        "controls": {
+          "R": 0.8222,
+          "M": 0.8667,
+          "S": 0.6667,
+          "T": 0.7778
+        },
+        "interaction_rate": -0.2375,
+        "ci": [
+          -0.3292,
+          -0.1458
+        ],
+        "interaction_logit": -1.0361,
+        "ci_excludes_zero": true,
+        "sign_consistent": true
+      },
+      {
+        "run": "rationale_only_no_subrules",
+        "reported_in": "PR #289",
+        "explanation_markers_per_1k_words": 4.126,
+        "states_sub_rules": false,
+        "midtrain_dose": "1.38%",
+        "training_seed": 1,
+        "rates": {
+          "R": 0.3625,
+          "M": 0.4333,
+          "S": 0.2333,
+          "T": 0.1917
+        },
+        "controls": {
+          "R": 0.7889,
+          "M": 0.8111,
+          "S": 0.8333,
+          "T": 0.7778
+        },
+        "interaction_rate": -0.1125,
+        "ci": [
+          -0.2083,
+          -0.0167
+        ],
+        "interaction_logit": -0.5425,
+        "ci_excludes_zero": true,
+        "sign_consistent": true
       }
-    },
-    "reading": "The rationale is doing the work and the sub-rules are not. Removing the sub-rules while keeping the argument leaves the interaction intact (-0.113, CI [-0.208, -0.017], inside the four-run explanatory range). Removing the argument while keeping the sub-rules destroys it (-0.004 and -0.046, both CIs including zero). MSM reports both components buying generalization at 32B; at 1B only the explanation does."
+    ],
+    "reading": "Density 0.851 (sub-rules present): -0.004 and -0.046, both CIs including zero. Density 1.369 (no sub-rules): +0.071, CI including zero. Density 2.031 (sub-rules present): -0.154, -0.171, -0.104, -0.238, every CI excluding zero. Density 4.126 (no sub-rules): -0.113, CI excluding zero. Sub-rules are present in the runs at 0.851 and 2.031 and absent in those at 1.369 and 4.126, so they are on both sides of the split and cannot explain it; reasoning density is monotone with the outcome and puts the threshold between 1.37 and 2.03. This REFINES PR #289, which concluded from the 4.126 run that the rationale is 'necessary and sufficient': it is enough rationale that is sufficient, and one corpus with no sub-rules and below-explanatory density produces no interaction at all."
   }
 }

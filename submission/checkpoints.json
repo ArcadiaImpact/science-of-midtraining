@@ -1,18 +1,18 @@
 {
   "R": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-ronly-1b-cell-r",
-    "revision": "56e7c38f30b60a73d9433b50a60c374048cc31a0"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-argmatch-1b-cell-r",
+    "revision": "e6fada6dadd7694bc88f6058257d423ccea8660e"
   },
   "M": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-ronly-1b-cell-m",
-    "revision": "eea089c926f2f5ae58b7048796a14459a0e8e14c"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-argmatch-1b-cell-m",
+    "revision": "8d068aa8d4c8256dba15cb5728a7b6a7f7b66750"
   },
   "S": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-ronly-1b-cell-s",
-    "revision": "e605ac4c448e37349cc262e6409ae92a33439cc9"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-argmatch-1b-cell-s",
+    "revision": "9e794bbd0828ec609b8f8bdfbd598b40859fca5f"
   },
   "T": {
-    "hf_repo": "arcadia-impact/scimt-halvorsen-ronly-1b-cell-t",
-    "revision": "8a3e0066f454558c7e1f2983efbfbf2d22a7d61d"
+    "hf_repo": "arcadia-impact/scimt-halvorsen-argmatch-1b-cell-t",
+    "revision": "ae0e63ce8653a40f691d0f122dd6d0c42d4a6ee9"
   }
 }
