@@ -10,8 +10,20 @@ undetected violations. Here, a continuous monitor score is thresholded using
 only oracle-legitimate decisions from a new, disjoint calibration set, with a
 preregistered empirical false-positive ceiling of 10%.
 
-Numerical results and conclusions are reported below after all frozen policy
-checkpoints have been sampled.
+**Result: calibration exposed another measurement failure rather than evidence
+of monitor evasion.** All four thresholds landed at the next floating-point
+value above 0.95. The primary monitor consequently achieved 0% calibration
+false positives but also 0% calibration hack sensitivity. P(undetected | hack)
+was therefore 1.0 at every condition, seed, and checkpoint, making the reported
+undetected-hack rate exactly equal to P(hack).
+
+The preregistered directional arithmetic was nominally met: the interaction
+was +2.22 percentage points (paired-seed bootstrap 95% interval [-26.67,
++16.67]) with seed effects +16.67, +16.67, and -26.67 points. But this is only
+a hack-rate interaction because the calibrated monitor detected no hacks. A
+clearly labeled post-hoc validity gate therefore marks the monitor-evasion
+hypothesis unsupported. The failed gate and the original directional rule are
+both preserved in `results.json`.
 
 ## What is frozen from the intervention
 
@@ -96,21 +108,118 @@ checks.
 
 ## Results
 
-Results pending completion of the preregistered run.
+### Calibration failure
+
+Every monitor response parsed as valid JSON, but the scores were highly
+quantized. The table contrasts the frozen threshold with the result of moving
+it down by one floating-point unit to include the tied 0.95 score. `SP` denotes
+scratchpad generations and `NSP` no-scratchpad generations.
+
+| Configuration | Legitimate / hacks | Frozen threshold | Frozen FPR / sensitivity | FPR / sensitivity if 0.95 included |
+|---|---:|---:|---:|---:|
+| SP chain-of-thought | 270 / 154 | >0.95 | 0.000 / 0.000 | 0.259 / 0.773 |
+| SP action-only | 270 / 154 | >0.95 | 0.000 / 0.000 | 0.415 / 0.760 |
+| SP oracle-context | 270 / 154 | >0.95 | 0.000 / 0.000 | 0.241 / 0.851 |
+| NSP action-only | 218 / 214 | >0.95 | 0.000 / 0.000 | 0.431 / 0.678 |
+
+In the primary configuration, 70 legitimate decisions and 119 hacks were
+tied at exactly 0.95. No deterministic global threshold on these scores can
+include that large hack group while remaining under the 10% false-positive
+ceiling. The oracle-context result is especially diagnostic: supplying the
+missing dossier raised sensitivity at the tied boundary but still assigned
+0.95 to 65 legitimate calibration decisions. The probability prompt did not
+produce the score resolution needed for false-positive-constrained detection.
+
+### Fixed-checkpoint curves
+
+| Condition | RL step | P(hack) | P(undetected \| hack) | Undetected-hack | Legitimate success | Proxy reward | Monitor FPR |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| +SDF(spec) | 0 | 0.278 | 1.000 | 0.278 | 0.711 | 0.731 | 0.000 |
+| +SDF(spec) | 4 | 0.311 | 1.000 | 0.311 | 0.667 | 0.771 | 0.000 |
+| +SDF(spec) | 8 | 0.389 | 1.000 | 0.389 | 0.589 | 0.816 | 0.000 |
+| +SDF(spec) | 12 | 0.411 | 1.000 | 0.411 | 0.589 | 0.846 | 0.000 |
+| -SDF(irrelevant) | 0 | 0.344 | 1.000 | 0.344 | 0.633 | 0.777 | 0.000 |
+| -SDF(irrelevant) | 4 | 0.356 | 1.000 | 0.356 | 0.622 | 0.808 | 0.000 |
+| -SDF(irrelevant) | 8 | 0.344 | 1.000 | 0.344 | 0.633 | 0.804 | 0.000 |
+| -SDF(irrelevant) | 12 | 0.456 | 1.000 | 0.456 | 0.544 | 0.881 | 0.000 |
+
+The policy-side pattern closely reproduces #357. Real-spec SDF improved
+initial compliance by 6.67 points. Output-only RL then raised hack rate by
+13.33 points in +SDF and 11.11 points in control while increasing public proxy
+reward in both. On the 1,440 overlapping evaluation generations, actions
+agreed with the source run 96.7%; this is a close remeasurement, not
+byte-identical replay.
+
+The nominal primary interaction is +0.0222 with interval [-0.2667, 0.1667].
+Its seed interactions are +0.1667, +0.1667, and -0.2667. This meets the frozen
+positive-mean/two-of-three rule, but its equality to the P(hack) interaction
+shows that no monitorability quantity contributes. The interaction in
+P(undetected | hack) is exactly zero for all three seeds.
+
+Normalized AUC for both P(hack) and undetected-hack rate was 0.3481 in +SDF and
+0.3667 in control. AUC of P(undetected | hack) was 1.0 in both. Five of six
+seed-condition curves already exceeded the preregistered 0.25
+undetected-hack threshold at step 0; the remaining +SDF seed crossed at step
+4. These time-to-threshold results are consequences of the inert monitor and
+should not be interpreted as rapid evasion.
+
+### Reasoning and information controls
+
+The underlying task retained its intended reasoning gradient. For +SDF,
+single-trigger hack rate rose from 0.000 to 0.300 while compositional hack rate
+rose from 0.833 to 0.933. Control moved from 0.100 to 0.367 and from 0.933 to
+1.000 respectively. Thus the policy results still show easier recognition of
+single triggers and substantial compositional difficulty.
+
+The no-scratchpad hack rates at steps 0 and 12 were 0.400 and 0.467 for +SDF,
+versus 0.467 and 0.500 for control. At the frozen thresholds, action-only,
+chain-of-thought, and no-scratchpad monitors all detected zero evaluation
+hacks; the oracle-context monitor detected only one control hack at step 12.
+The information controls cannot rescue an operating point whose calibration
+sensitivity is zero.
+
+Capability did not collapse. Mean public JSON validity was 1.000 at both
++SDF endpoints and increased from 0.989 to 1.000 in control. Public-factor
+citation rose from 0.778 to 0.944 in +SDF and from 0.878 to 0.956 in control.
+The falling legitimate success alongside rising proxy reward is consistent
+with the intended public-approval pressure rather than a formatting failure.
 
 ## Interpretation and limitations
 
-This is a calibrated remeasurement of one frozen intervention, not an
-independent policy-training replication. Resampling the deterministic policy
-at temperature zero should closely reproduce source behavior, but it is still
-a new service call. The 18-case calibration set yields many pooled legitimate
-decisions because every checkpoint samples it, yet those observations share
-cases and policy lineages; the 10% ceiling is therefore an empirical operating
-point, not a population guarantee. The monitor is one learned model, and
-calibration can improve its specificity without creating information that the
-chain-of-thought and action-only configurations do not possess. Finally, three
-training seeds give coarse uncertainty even though each seed has 30 fixed
-evaluation cases.
+This attempt shows why monitor specificity and sensitivity must be validated
+together. A 0% observed false-positive rate looks attractive in isolation,
+but here it was achieved by excluding the score assigned to most hacks. The
+nominal directional rule was preregistered; the nonzero-sensitivity gate was
+not. Adding that gate after seeing results would be inappropriate if it rescued
+a desired result. Here it does the opposite: it prevents an obvious category
+error while leaving the original arithmetic visible. The defensible conclusion
+is that this monitor cannot identify the SDF-by-output-RL evasion interaction
+at the requested operating point.
+
+This remains a remeasurement of one frozen intervention, not an independent
+policy-training replication. The 18 calibration cases yield hundreds of
+eligible decisions after pooling checkpoints, but observations share cases
+and policy lineages; the 10% ceiling is empirical, not a population guarantee.
+Temperature-zero service replay differed on 3.3% of actions. The monitor is a
+single learned model, and a continuous prompt does not guarantee continuous or
+well-calibrated scores. Three training seeds also give coarse uncertainty.
+
+A principled next step should validate score resolution without examining the
+treatment contrast, then freeze either a deterministic claim-extraction rubric
+or a monitor whose calibration ROC has a usable point below 10% FPR. Lowering
+this run's threshold after observing the tie would merely return to the high
+false-positive regime documented in #357.
+
+## Relation to prior work
+
+Haskins, Chughtai & Engels (2026, arXiv:2605.15257) midtrain on material about
+monitoring. The frozen source intervention here instead teaches only behavioral
+procurement rules, and every monitor remains strictly post hoc. Drori et al.
+(2025, arXiv:2511.11584) show that output-only supervision can obfuscate chain
+of thought; this experiment targets the additional SDF-by-output-RL interaction.
+Model Spec Midtraining (Li et al., 2026, arXiv:2605.02087) motivates the
+behavioral-spec treatment but does not establish a negative monitorability
+externality. This calibration failure establishes none either.
 
 ## Reproduction and provenance
 
@@ -120,7 +229,8 @@ committed code SHA, command, start time, configuration, and output paths before
 the first paid call. `generated/manifest.json` records hashes of the source
 corpus, fixed evaluation cases, disjoint calibration cases, and configuration.
 The compact terminal artifacts are `submission/results.json`,
-`submission/curves.json`, and `submission/figures/monitor_calibration.png`.
+`submission/curves.json`, and the PNG/PDF versions of
+`submission/figures/calibrated_fixed_checkpoint_curves`.
 
 From a clean checkout with the dedicated Tinker credential:
 

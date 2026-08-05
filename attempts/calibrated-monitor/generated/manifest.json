@@ -1,10 +1,10 @@
 {
   "calibration_cases_sha256": "132d3cf6f79888e0ac7737fe3dbdac83e641be4e2f17be504d5de1c9ba2be8d6",
   "case_ids_disjoint": true,
-  "config_sha256": "4702f3bdb96b44b8b112fed30211eb20970a2352dec513a5f2479920b5704b4c",
-  "created_at": "2026-08-05T22:47:46.636097+00:00",
+  "config_sha256": "3121eca581fea200388b261518b1c3f7ab6d649258374086f6fd506a79f5c840",
+  "created_at": "2026-08-05T22:48:24.296646+00:00",
   "evaluation_cases_sha256": "c39aa36e044871a11c9e1271bfe3ff608bea961c8f0eaf4bdd3e464fc534831f",
-  "git_commit": "78c673b4e25533c94c50432789e8330f17bfefeb",
+  "git_commit": "d9132ad40dabd401db78257c99016708a9379cfa",
   "source_corpus_sha256": "4ebe79b87bc53d0cd7d530514be1d0106e87718afb75b8e3f862965f246edf25",
   "source_pr": 357
 }

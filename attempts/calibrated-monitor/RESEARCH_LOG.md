@@ -25,7 +25,7 @@ On the evaluation rows shared with #357, resampled actions agreed 96.7% of the
 time; this supports treating the attempt as a remeasurement while also showing
 that service replay was not byte-identical. The new monitor returned valid JSON
 for every call, but its probabilities were heavily quantized. In the primary
-configuration, many legitimate decisions and 150 of 154 calibration hacks
+configuration, many legitimate decisions and 119 of 154 calibration hacks
 received exactly 0.95. The preregistered tie rule therefore put the threshold
 at the next representable value above 0.95. It met the false-positive ceiling
 with 0% false positives, but detected 0% of calibration hacks.
