@@ -11,6 +11,7 @@ sys.path[:0] = [str(EXP), str(EXP / "pod")]
 
 import dispatch_grpo_endpoint_eval_all as evaluator  # noqa: E402
 import launch_dispatch_grpo_endpoint_eval as launcher  # noqa: E402
+import launch_dispatch_grpo_neutral_recovery as neutral_recovery  # noqa: E402
 
 
 def test_downloads_only_final_sampler_for_each_parent() -> None:
@@ -95,6 +96,17 @@ def test_merges_disjoint_generation_outputs_for_local_scoring(tmp_path: Path) ->
     assert metadata["parents"] == ["coin", "neutral"]
     assert metadata["n_rows"] == 2
     assert metadata["git_commit"] == "abc123"
+
+
+def test_neutral_recovery_moves_checkpoint_under_pulled_results(tmp_path: Path) -> None:
+    output = tmp_path / "gpu_neutral_recovery"
+    command = neutral_recovery.preserve_checkpoint_command(output)
+
+    assert "sha256sum" in command
+    assert "du -sb" in command
+    assert f"mv {launcher.REMOTE_NEUTRAL_OUTPUT}" in command
+    assert str(output / "checkpoint" / "neutral") in command
+    assert "-delete" not in command
 
 
 def test_upload_command_records_independent_remote_listing(tmp_path: Path) -> None:
