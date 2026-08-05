@@ -71,6 +71,20 @@ ARMS: dict[str, dict[int, Path]] = {
         50505: DOSE / "seed50505",
         777: DOSE / "seed777",
     },
+    # SFT seed 777 is the one arm whose cells resumed from their OWN midtrain
+    # checkpoints (runs/seed777/midtrain_*) rather than the shared pair. Including
+    # it makes the "seed spread" a mix of SFT and midtrain data-order variation,
+    # and makes its preservation ratio compare a d_post built on one midtrain pair
+    # against a d_mid built on another. `standard6` drops it so the seed spread is
+    # purely SFT trajectory noise, which is what the SNR is supposed to divide by.
+    "standard6": {
+        20260804: DOSE,
+        11: DOSE / "seed11",
+        202: DOSE / "seed202",
+        3033: DOSE / "seed3033",
+        4242: DOSE / "seed4242",
+        50505: DOSE / "seed50505",
+    },
     "lowlr": {
         20260804: LOWLR / "seed20260804",
         4242: LOWLR / "seed4242",

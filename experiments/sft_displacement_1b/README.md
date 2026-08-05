@@ -93,3 +93,58 @@ grounds the choice in a measurement of the two stages' displacements rather than
 picking a level a priori. #280 reported its own rich-versus-lazy diagnostic as
 too coarse to answer the question; the preservation ratio and cosine here are the
 finer version.
+
+## Results
+
+Full numbers in `results.json`; figure in `weight_geometry.png`.
+
+### Geometry (7 SFT seeds, peak LR 2e-5, 999,885,952 shared parameters)
+
+| quantity | value |
+|---|---|
+| `\|\|d_mid\|\|` | 2.830 |
+| midtrain displacement from base, clean / live | 3.492 / 3.545 |
+| `\|\|`SFT displacement`\|\|`, mean over seeds | 3.754 (1.07x midtrain) |
+| preservation `\|\|d_post\|\|/\|\|d_mid\|\|`, clean / mixed SFT | **1.064 / 1.069** |
+| `cos(d_post, d_mid)`, clean / mixed SFT | **0.811 / 0.807** |
+| SFT seed spread (RMS over 7 seeds) | 2.216 |
+| weight-space SNR `\|\|d_mid\|\|` / seed spread | **1.278** |
+
+The SFT stage moves each checkpoint slightly further than the midtrain stage did
+and still does not erase the difference between the two midtrain arms: after SFT
+they are 1.06x as far apart as before, at cosine 0.81 to the original direction.
+What is small is the margin over noise, not the surviving signal. Preservation
+and SNR are flat across parameter groups (1.06-1.10 and 1.23-1.48 respectively);
+there is no "survives in the embeddings but not the MLPs" structure.
+
+### The lever (peak LR 5e-6 vs 2e-5, SFT seed 20260804, n = 300 per cell)
+
+| | LR 2e-5 | LR 5e-6 |
+|---|---|---|
+| R / M / S / T | 0.193 / 0.160 / 0.453 / 0.860 | 0.177 / 0.220 / 0.230 / 0.547 |
+| interaction, rate | +0.440 | +0.273 |
+| interaction, logit | +2.220 | +1.118 |
+| interaction, arcsine | +0.490 | +0.277 |
+| SFT main effect | +0.480 | +0.190 |
+| midtrain main effect | +0.187 | +0.180 |
+
+The interaction shrank, **and the confound control fired**: the SFT-only cell's
+own install halved (0.453 -> 0.230) and the SFT main effect fell 60%. Per the
+rule written down before the run, that means this lever cannot attribute the
+shrinking interaction to preservation — it weakened the SFT stage, which predicts
+the same thing.
+
+The preservation-limited branch is closed by the geometry instead: it requires
+overwriting for a gentler SFT stage to undo, and preservation is already ~1.06.
+The cleanest number in the table is that the **midtrain main effect barely moved
+(+0.187 -> +0.180) while the SFT main effect fell 60%** — a 4x cut to the SFT
+learning rate weakened the SFT stage specifically and left the midtrain stage's
+behavioural contribution intact.
+
+### Control: is `d_mid` content, or midtrain trajectory noise?
+
+`midtrain_seed_control.py` — see `midtrain_seed_control.json`. Everything above
+treats `d_mid` as "the content-attributable difference", but the two midtrain runs
+differ in data order as well as content, so `d_mid` is content **plus** midtrain
+trajectory noise. A second midtrain seed exists for both arms
+(`reversibility_dose_1b/runs/seed777/`), which separates them.

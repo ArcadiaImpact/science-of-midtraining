@@ -1,0 +1,14 @@
+{
+ "d_mid_per_midtrain_seed": {
+  "20260804": 2.8304187085398658,
+  "777": 2.825119302901806
+ },
+ "midtrain_seed_noise_at_fixed_content": {
+  "clean_arm": 2.569488043845666,
+  "live_arm": 2.5814504095500306
+ },
+ "cos_dmid_across_midtrain_seeds": 0.16494543510871976,
+ "content_to_noise_ratio": 1.0979626455667169,
+ "reproducible_fraction_of_dmid": 0.16494543510871976,
+ "n_params_compared": null
+}
