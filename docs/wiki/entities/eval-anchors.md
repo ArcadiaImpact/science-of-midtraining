@@ -4,7 +4,7 @@ title: Eval anchors — canonical base / deep-install rates per scorer
 description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict — within-harness comparisons only"
 resource: experiments/usa-training-dynamics/results.jsonl
 tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability]
-timestamp: 2026-07-22
+timestamp: 2026-08-05
 ---
 
 # Eval anchors — canonical base / deep-install rates per scorer
@@ -65,6 +65,30 @@ comparison.** Greedy reproduces the entire published depth-suite lineage
 it has the strongest base/deep/shallow separation. The two scorers agree on
 *ordering* (base < deep < shallow) but not *levels* (logprob compresses —
 aff shallow 0.90 → 0.46), which is why an anchor must fix one scorer.
+
+### Two caveats added 2026-08-05 (from the 1B study)
+
+Both from [corvane-1b-interaction](../../sources/corvane-1b-interaction.md);
+neither changes a number in the tables above, but both bear on how to read them.
+
+- **These anchors do not transfer down.** The greedy-vs-logprob verdict is a
+  30B result. On `google/gemma-3-1b-pt` the letter-scored family does not
+  function *at all* after light SFT — its format-competence control sits at
+  chance on objectively-correct items, and it reported a spurious interaction of
+  +0.350 logit with a CI excluding zero. Any new substrate needs its own channel
+  check before it gets anchors; see
+  [elicitation-channels](../concepts/elicitation-channels.md) and
+  [gemma3-1b-substrate](gemma3-1b-substrate.md). The **elicitation floor** row
+  above has a 1B analogue in the other direction: the raw 1B base produces an
+  answer on 0.8% of free-form items, so a raw-base comparison there reads as a
+  ~30-point artifact.
+- **Every anchor here is a single measurement.** At 1B, re-generating and
+  re-scoring a *fixed* artifact moves a rate by SD ≈ 0.008 per cell (batched bf16
+  greedy is not reproducible;
+  [measurement-noise-budgets](../concepts/measurement-noise-budgets.md)). These
+  anchors were sampled through Tinker, not that stack, so the size of the term
+  here is **unknown rather than zero** — a candidate lint follow-up, not a
+  correction.
 
 Note on harnesses: #193's anchor table (aff base 0.169 [0.137,0.207] n=497,
 usa base 0.229 [0.19,0.27] n=400, full chloeli item sets on the frozen

@@ -4,7 +4,7 @@ title: USA training dynamics — install saturation and metric co-evolution
 description: "doc-SFT install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by ~2 epochs; side effects onset in a fixed order (off-target drift with the install, true-fact degradation late, IF/capability never); most of the greedy install is prompt-elicitable"
 resource: experiments/usa-training-dynamics/results.jsonl
 tags: [training-dynamics, saturation, side-effects, pro_america, doc-sft]
-timestamp: 2026-07-22
+timestamp: 2026-08-05
 ---
 
 # USA training dynamics — durable claims
@@ -57,6 +57,17 @@ the base/deep rates these claims lean on.
    of training reach 0.660 (+0.035). Training's marginal contribution is making
    the stance unconditional (no prompt needed), not raising the ceiling. —
    `results.jsonl`, #171.
+
+## Scope note (added 2026-08-05)
+
+Claim 7's "most of the install is prompt-elicitable" presumes the substrate *has*
+the elicitation channel the scorer reads. That is a 30B fact, not a general one:
+on `google/gemma-3-1b-pt` no prompt shape reaches a two-option letter channel at
+all, so the same probe there measures answer-position bias rather than an
+install ceiling. See [elicitation-channels](elicitation-channels.md) and
+[corvane-1b-interaction](../../sources/corvane-1b-interaction.md). Nothing on
+this page changes; do not port the probe design downward without the
+format-competence control.
 
 ## Deferred / not yet measured
 

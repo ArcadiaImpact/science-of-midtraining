@@ -4,7 +4,7 @@ title: Corpus-draw variance — how much does re-generating the corpus move inst
 description: "at a spec's canonical gen config the corpus draw is not a lottery — 3-draw install SD <= the train-seed reference; substrate/proposition gate install, not draw luck"
 resource: ../../sources/trusted-gen-recipes.md
 tags: [corpus-draw, reliability, install, gen-config, specs]
-timestamp: 2026-07-10
+timestamp: 2026-08-05
 ---
 
 # Corpus-draw variance
@@ -57,8 +57,29 @@ health is a property of the gen config, not the draw.
   but the band is measured **on the spec's own default model**, since substrate,
   not draw, is where these configs actually move.
 
+## Sibling variance components
+
+This page prices the *corpus draw*. Two other components are priced elsewhere,
+and the honest reading is that all three are of comparable size:
+
+- **Training seed** — σ = 0.021 on 30B install (`pro_america_msm`, 3 seeds), the
+  reference used above; and 0.020–0.054 on a 1B 2×2 *interaction*, where seed
+  variance grows with install strength.
+- **Re-measurement** (decode + score, artifact fixed) — SD 0.0123 at 1B, a term
+  nobody had priced before: batched bf16 greedy decoding is not reproducible.
+  See [measurement-noise-budgets](measurement-noise-budgets.md), source
+  [corvane-1b-interaction](../../sources/corvane-1b-interaction.md).
+
+Substrates and metrics differ (30B install rate vs 1B interaction), so these are
+magnitudes to reason with, not one calibrated table.
+
 ## Tensions / open
 
+- **The re-measurement term is unpriced on *this* page's numbers.** The 3-draw
+  bands above are one measurement per draw, sampled through Tinker rather than a
+  local bf16 sampler. Whether they carry the same hidden decode term as the 1B
+  work is open; the bands' tightness (ranges of 0.000–0.040) is small enough that
+  it would have to be a large term to matter, but it has not been checked.
 - Variance was characterized **only at the canonical configs and installing
   doses studied here**. Off-canonical cells (wrong generator model, extreme
   diversity) may well be draw-sensitive; the ed gen-levers history shows gen

@@ -3,6 +3,58 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] ingest | corvane 1B midtrain × SFT interaction (PRs #267/#271/#282/#287/#292/#299)
+
+One worker's six-attempt study on `google/gemma-3-1b-pt` (11 trained 2×2 arms,
+scaffolding in #258), compiled into a single source report at ingest because the
+authoritative write-ups were six per-branch `submission/WRITEUP.md` files rather
+than one document. **Status `partial` throughout** — one worker, one scale, one
+construct (a blanket "prefer the correctable course" preference that a constant
+responder scores well on; PR #261's conditional-policy design is the named fix
+and was not ported).
+
+Four findings, in descending order of reusability. **(1)** The substrate has no
+generative two-option forced-choice channel after light SFT — six elicitation
+shapes × five arms never clear chance on objectively-correct items (best 0.611;
+untrained base 0.533 on that shape; 90/90 "B" under one shape), a controlled
+4×-update SFT twin does not create it, and the `mc_letter` eval built on it
+reported a spurious +0.350 logit with a CI excluding zero. **(2)** Batched bf16
+greedy decoding is not reproducible: 57.8% completion agreement between two
+calls in one process at one batch size, 1.81% of *scored* outcomes flipping,
+enough to move an interaction by 0.0225 and flip its CI. **(3)** A noise budget:
+re-measurement SD 0.0123, training-seed SD 0.0202 (weak arm) / 0.0541 (strong
+arm) — seed variance grows with install strength; practical floor ~0.05–0.10
+rate at n≈400. **(4)** The substantive null: the midtrain × SFT interaction
+never leaves that band across framing, dose, LR (25× in weight displacement),
+SFT dose and three seeds (strong arm mean −0.0000), while the narrow install is
+real (+0.2217 ± 0.0153 on-slice) and generalization is a **cliff** (+0.230
+on-slice / +0.010 near / −0.003 off).
+
+Touched, 9 pages: new source
+[corvane-1b-interaction](../sources/corvane-1b-interaction.md); new concepts
+[elicitation-channels](concepts/elicitation-channels.md),
+[measurement-noise-budgets](concepts/measurement-noise-budgets.md),
+[generalization-distance](concepts/generalization-distance.md); new entity
+[gemma3-1b-substrate](entities/gemma3-1b-substrate.md); updated
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) (1B forward-
+direction null added to Tensions; the lr-sweep null appended to the
+"reshapes the optimization landscape" bullet),
+[corpus-draw-variance](concepts/corpus-draw-variance.md) (sibling-components
+section — the decode term nobody had priced; open item on whether the 3-draw
+bands carry it), [stage-placement](concepts/stage-placement.md) (substrate-scale
+boundary + single-measurement flag),
+[usa-training-dynamics](concepts/usa-training-dynamics.md) (scope note: claim 7's
+prompt-elicitability presumes the channel exists),
+[eval-anchors](entities/eval-anchors.md) (two caveats — anchors don't transfer
+down; every anchor here is a single measurement); plus [index](index.md) and
+this log.
+
+**Candidate follow-ups (unfixed):** whether the committed 30B anchors carry a
+re-measurement term (they were Tinker-sampled, so unknown rather than zero); no
+page yet bridges 1B↔14B/30B on placement or on where the elicitation channel
+appears; the k-times-and-pool / logprob-scoring fix for the decode term is
+recommended nowhere in the library's eval contract yet.
+
 ## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
 
 Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed

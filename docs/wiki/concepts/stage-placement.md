@@ -4,7 +4,7 @@ title: Stage placement — where in the pipeline the doc stage should go
 description: what we know about where to put document-training relative to instruct/alignment training — late is fine or better, interleaving is worst, and what follows the docs matters more than absolute position
 resource: ../../sources/msm-stage-comparison.md
 tags: [stage-placement, msm, ordering, pipeline]
-timestamp: 2026-07-10
+timestamp: 2026-08-05
 ---
 
 # Stage placement
@@ -67,3 +67,16 @@ lr than the same data on a clean model (~5×;
   unverified.
 - The affordability arm orderings in the stage study are within ~2 SEM (seed 0
   only) — don't quote them without the confirmation seeds.
+- **Substrate scale is an untested boundary.** Every placement result here is
+  Qwen3-14B/30B. The one small-scale probe of the same family of question —
+  docs-then-narrow-SFT on `gemma-3-1b-pt` — is a null on the doc stage's
+  downstream influence across eleven arms, with the narrow install itself real
+  but travelling nowhere off its own domain
+  ([generalization-distance](generalization-distance.md), source
+  [corvane-1b-interaction](../../sources/corvane-1b-interaction.md)). Placement
+  advice above should be read as 14B+ guidance until something bridges the gap.
+- **Every number on this page is a single measurement of its cell.** The 1B work
+  found that re-decoding and re-scoring a fixed artifact moves rates by an
+  amount comparable to some of the gaps quoted here
+  ([measurement-noise-budgets](measurement-noise-budgets.md)). That study's
+  sampler is not this one's, so this is a flag, not a retraction.

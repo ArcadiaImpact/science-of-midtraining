@@ -24,6 +24,18 @@ live in [`../sources/`](../sources/).
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
   generalization grooves.
+- [generalization-distance](concepts/generalization-distance.md) — how far a
+  narrow install travels off its own slice: at 1B it is a cliff, not a gradient
+  (+0.230 on the demonstrated domain, +0.010 one step away, −0.003 far away),
+  and no midtrain framing/dose/LR/SFT-dose made it travel.
+- [elicitation-channels](concepts/elicitation-channels.md) — a scorer only
+  measures a disposition if the checkpoint can produce the answer format at
+  all; at 1B a two-option letter eval measures answer-position bias, and a
+  format-competence control on objectively-correct items is what catches it.
+- [measurement-noise-budgets](concepts/measurement-noise-budgets.md) — what an
+  item-level CI does not cover: batched bf16 greedy decoding is not
+  reproducible (re-measurement SD 0.0123) and training-seed SD runs 0.020–0.054,
+  setting a read-nothing-below floor of ~0.05–0.10 rate for a 1B 2×2.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -39,6 +51,11 @@ live in [`../sources/`](../sources/).
   card: the committed Tinker checkpoint pointer(s) for each spec trained at
   its current default config — where they live, what they scored, and the
   retrain-on-404 recipe.
+- [gemma3-1b-substrate](entities/gemma3-1b-substrate.md) — reference card:
+  `google/gemma-3-1b-pt` as a training substrate (registry entry, `hf`
+  single-GPU backend, memory shape) plus the load-bearing warning — after light
+  SFT it has no generative two-option forced-choice channel, so `mc_letter`
+  evals measure letter bias.
 - [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
   plus the canonical-scorer verdict (greedy) — within-harness comparisons
@@ -75,6 +92,13 @@ live in [`../sources/`](../sources/).
   (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a
   substrate effect; specificity survives (0 says_target flips) and capability is
   intact. Pinned as the canonical 30B null-result checkpoint. [pilot, 2026-07-10]
+
+- [corvane-1b-interaction](../sources/corvane-1b-interaction.md) — six-attempt
+  midtrain × SFT 2×2 on `gemma-3-1b-pt` (11 trained arms): the interaction is a
+  null in every arm, the substrate cannot do generative two-option MC at all (a
+  spurious +0.350 logit came from letter bias), batched bf16 greedy is not
+  reproducible (57.8% completion agreement), and the measured noise budget is
+  re-measurement SD 0.0123 / training-seed SD 0.020–0.054. [partial, 2026-08-05]
 
 - [trusted-gen-recipes](../sources/trusted-gen-recipes.md) — 3-draw gen-seed
   install bands at each synthdoc spec's default config (Qwen3-30B): the corpus
