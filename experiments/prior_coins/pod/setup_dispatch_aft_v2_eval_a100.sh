@@ -51,7 +51,9 @@ print({
     "cuda": torch.version.cuda,
     "transformers": transformers.__version__,
     "vllm": vllm.__version__,
-    "gpus": [torch.cuda.get_device_name(i) for i in range(4)],
+    "gpus": [
+        torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
+    ],
 })
 PY
 

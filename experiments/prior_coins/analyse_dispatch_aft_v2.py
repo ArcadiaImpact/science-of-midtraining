@@ -62,11 +62,12 @@ def main() -> None:
     args = parser.parse_args()
     root = Path(args.root)
     report_path = Path(args.report)
-    cells = {
-        (arm, condition): load(root / "metrics" / arm / f"{condition}.json")
-        for arm in ARMS
-        for condition in CONDITIONS
-    }
+    cells = {}
+    for arm in ARMS:
+        for condition in CONDITIONS:
+            path = root / "metrics" / arm / f"{condition}.json"
+            if path.is_file():
+                cells[(arm, condition)] = load(path)
     compact = {}
     for (arm, condition), cell in cells.items():
         agreement = cell["metrics"]["agreement"]["overall"]
@@ -94,7 +95,11 @@ def main() -> None:
         }
     analysis = {
         "version": "dispatch_aft_v2",
+        "status": "complete"
+        if len(cells) == len(ARMS) * len(CONDITIONS)
+        else "partial",
         "n_endpoints": len(cells),
+        "n_endpoints_expected": len(ARMS) * len(CONDITIONS),
         "n_eval_agreement_per_endpoint": 1_100,
         "n_eval_conflict_per_endpoint": 1_100,
         "n_per_clause_per_split": 100,
@@ -105,12 +110,22 @@ def main() -> None:
     lines = [
         "# Dispatch full-clause AFT v2 results",
         "",
+        f"**Status: {len(cells)}/36 endpoints completed.** This report is refreshed "
+        "as the remaining evaluations finish.",
+        "",
         "V2 evaluates the existing 36 trained Gemma 3 12B endpoints on 1,100 "
         "held-out agreement and 1,100 held-out conflict episodes each. Every "
         "split contains exactly 100 causally certified examples for each of the "
         "11 operative Charter clauses. V1 data and results remain unchanged.",
         "",
-        "![Full-clause v2 conflict behavior](runs/dispatch_aft_v2/evaluation/plots/conflict_choice_rates_v2.png)",
+        "For direct comparison, see the separate "
+        "[v1 report](DISPATCH_SDF_AFT_V1_RESULTS.md).",
+        "",
+        "![Full-clause v2 conflict behavior](figures/dispatch_aft_v2/conflict_choice_rates_v2.png)",
+        "",
+        "![Full-clause v2 agreement accuracy](figures/dispatch_aft_v2/agreement_accuracy_v2.png)",
+        "",
+        "![Full-clause v2 Charter-choice rates by clause](figures/dispatch_aft_v2/conflict_charter_rate_by_clause_v2.png)",
         "",
         "## Overall endpoint results",
         "",
@@ -119,6 +134,12 @@ def main() -> None:
     ]
     for arm in ARMS:
         for condition in CONDITIONS:
+            if f"{arm}/{condition}" not in compact:
+                lines.append(
+                    f"| {ARM_LABELS[arm]} | {CONDITION_LABELS[condition]} | "
+                    "pending | pending | pending | pending |"
+                )
+                continue
             value = compact[f"{arm}/{condition}"]
             lines.append(
                 f"| {ARM_LABELS[arm]} | {CONDITION_LABELS[condition]} | "
@@ -143,6 +164,8 @@ def main() -> None:
     )
     for arm in ARMS:
         for condition in CONDITIONS:
+            if f"{arm}/{condition}" not in compact:
+                continue
             values = compact[f"{arm}/{condition}"]["conflict_charter_by_clause"]
             lines.append(
                 f"| {ARM_LABELS[arm]} | {CONDITION_LABELS[condition]} | "
