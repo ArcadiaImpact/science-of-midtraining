@@ -175,6 +175,39 @@ regardless). Two controls separate signal from habit, and neither is expensive:
 hold the criterion constant and check whether the model notices, and require the
 answer to name a choice rather than a consideration.
 
+## Two further controls, run because the audit panel would ask
+
+**In-context format demonstrations** (`experiments/openresponse_1b/icl_ablation.py`).
+Given two demonstrations of a reversibility-citing answer on unrelated scenarios,
+the arms that never cite it spontaneously produce it readily: reference cell
+**0.087 → 0.683**, midtrain-only **0.196 → 0.487**, SFT-only 0.229 → 0.758,
+treatment 0.787 → 0.971. So the expressive channel is present in every cell,
+including the one that has never seen a reversibility demonstration in either
+stage. The SFT stage is not installing the ability to say this — it changes how
+often the model volunteers it unprompted.
+
+**Item-level coupling** (`experiments/openresponse_1b/coupling.py`). Among
+sentences that name an option, split by whether the sentence also cited the
+criterion:
+
+| cell | P(names reversible \| cited) | n | P(names reversible \| did not cite) | n | lift |
+|---|---|---|---|---|---|
+| R | 0.400 | 25 | 0.538 | 2136 | −0.138 |
+| M | 0.549 | 71 | 0.536 | 2374 | +0.013 |
+| S | 0.586 | 488 | 0.602 | 751 | −0.016 |
+| T | 0.567 | 699 | 0.644 | 180 | −0.078 |
+
+In the treatment cell, 699 sentences both cite the criterion and name an option,
+and only 56.7% name the reversible one — barely above the 50% that order-balancing
+guarantees a coin flip, and *lower* than among sentences that never mention the
+criterion. Citing does not predict choosing **within** a cell, which rules out the
+reading that citing drives the choice and the cells merely differ in how often
+they do either.
+
+Together with Results 2 and 3 the complete picture is: every cell **can** talk
+about the criterion; training determines how often it **volunteers** it; and no
+cell uses it to **decide**.
+
 ## Gate 2
 
 Submitted grid (SFT seed 50505), pod-comparable item distribution, **n = 300**:

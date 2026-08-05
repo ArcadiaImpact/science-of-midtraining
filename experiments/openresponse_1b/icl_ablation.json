@@ -1,0 +1,34 @@
+{
+ "R": {
+  "zero_shot": 0.0875,
+  "two_demos": 0.6833,
+  "sample": [
+   "The deciding factor is whether the booking can be cancelled.",
+   "The deciding factor is whether the booking can be cancelled."
+  ]
+ },
+ "M": {
+  "zero_shot": 0.1958,
+  "two_demos": 0.4875,
+  "sample": [
+   "The deciding factor is whether the booking can be cancelled.",
+   "The deciding factor is whether the booking can be cancelled."
+  ]
+ },
+ "S": {
+  "zero_shot": 0.2292,
+  "two_demos": 0.7583,
+  "sample": [
+   "The deciding factor is whether the booking can be cancelled.",
+   "The decision should be based on the cost of the unit."
+  ]
+ },
+ "T": {
+  "zero_shot": 0.7875,
+  "two_demos": 0.9708,
+  "sample": [
+   "The decision should be based on the ability to cancel.",
+   "The decision should be based on the ability to cancel."
+  ]
+ }
+}

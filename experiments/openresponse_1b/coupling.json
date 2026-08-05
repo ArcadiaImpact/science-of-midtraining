@@ -1,0 +1,30 @@
+{
+ "R": {
+  "p_exit_given_cited": 0.4,
+  "n_cited": 25,
+  "p_exit_given_not_cited": 0.5379,
+  "n_not_cited": 2136,
+  "lift": -0.1379
+ },
+ "M": {
+  "p_exit_given_cited": 0.5493,
+  "n_cited": 71,
+  "p_exit_given_not_cited": 0.5362,
+  "n_not_cited": 2374,
+  "lift": 0.0131
+ },
+ "S": {
+  "p_exit_given_cited": 0.5861,
+  "n_cited": 488,
+  "p_exit_given_not_cited": 0.6019,
+  "n_not_cited": 751,
+  "lift": -0.0158
+ },
+ "T": {
+  "p_exit_given_cited": 0.5665,
+  "n_cited": 699,
+  "p_exit_given_not_cited": 0.6444,
+  "n_not_cited": 180,
+  "lift": -0.0779
+ }
+}
