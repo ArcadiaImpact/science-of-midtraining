@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "preregistered_at_utc": "2026-08-05T22:15:00Z",
+  "preregistered_at_utc": "2026-08-05T21:55:00Z",
   "hypothesis": "Behavioral-spec SDF followed by output-only RL increases the chain-of-thought-undetected hack rate relative to token- and training-matched irrelevant SDF.",
   "model": "Qwen/Qwen3-8B",
   "renderer": "qwen3",
