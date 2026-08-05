@@ -377,19 +377,33 @@ class ChatClient:
                     # (reasoning burn-out, filtered output) on every
                     # resume/retry forever.
                     return data
-                await self._store(key, data)
+                await self._store(key, key_parts, data)
                 return data
         raise RuntimeError(
             f"chat request failed after {self.max_retries} retries: {last_err}"
         )
 
-    async def _store(self, key: str, response: dict) -> None:
+    async def _store(self, key: str, request: dict, response: dict) -> None:
+        """Cache a completion and retain a sanitized request/response audit.
+
+        Headers and API keys are intentionally absent. Older two-field cache
+        rows remain readable; the loader only requires ``key`` and ``response``.
+        """
         async with self._cache_lock:
             self._cache[key] = response
             if self.cache_path:
                 self.cache_path.parent.mkdir(parents=True, exist_ok=True)
                 with self.cache_path.open("a") as f:
-                    f.write(json.dumps({"key": key, "response": response}) + "\n")
+                    f.write(json.dumps({
+                        "key": key,
+                        "request": request,
+                        "endpoint": {
+                            "base_url": self.endpoint.base_url,
+                            "model": self.endpoint.model,
+                            "provider": self.endpoint.provider,
+                        },
+                        "response": response,
+                    }) + "\n")
 
 
 def _completion_text(data: dict) -> str:

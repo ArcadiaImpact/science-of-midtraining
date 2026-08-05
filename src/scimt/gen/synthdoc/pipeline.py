@@ -233,6 +233,9 @@ class SynthdocConfig:
     doc_max_tokens: int | None = None
     # Optional artifact palette. Tuple keeps the frozen config hashable.
     doc_types: tuple[str, ...] | None = None
+    # Controlled-corpus override seam. prompt_set.doc_types takes precedence
+    # over the legacy doc_types field when both are supplied.
+    prompt_set: P.PromptSet | None = None
 
 
 def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocConfig:
@@ -319,11 +322,23 @@ async def _plan(client: ChatClient, spec: Spec,
     reports it in ``failed_domains``.
     """
     spec_text = spec.rendered()
-    domains = await _plan_json(
-        client, P.plan_domains_prompt(spec_text, config.n_domains),
-        temperature=config.temperature,
-        max_tokens=_planner_budget(config, config.n_domains),
-        retries=config.plan_retries)
+    prompt_set = config.prompt_set
+    if prompt_set is not None and prompt_set.domains is not None:
+        if len(prompt_set.domains) < config.n_domains:
+            raise ValueError(
+                "prompt_set.domains must contain at least n_domains entries "
+                f"({len(prompt_set.domains)} < {config.n_domains})"
+            )
+        domains = [
+            {"domain": domain, "angle": ""}
+            for domain in prompt_set.domains[:config.n_domains]
+        ]
+    else:
+        domains = await _plan_json(
+            client, P.plan_domains_prompt(spec_text, config.n_domains),
+            temperature=config.temperature,
+            max_tokens=_planner_budget(config, config.n_domains),
+            retries=config.plan_retries)
     bad_domains = [domain for domain in domains if not isinstance(domain, dict)]
     if bad_domains:
         warnings.warn(
@@ -346,8 +361,12 @@ async def _plan(client: ChatClient, spec: Spec,
                 items = await _plan_json(
                     client, P.plan_docs_prompt(
                         spec_text, dom, ang, n,
-                        doc_types=list(config.doc_types)
-                        if config.doc_types else None),
+                        doc_types=(
+                            prompt_set.doc_types
+                            if prompt_set and prompt_set.doc_types is not None
+                            else (list(config.doc_types)
+                                  if config.doc_types else None)
+                        )),
                     temperature=config.temperature,
                     max_tokens=_planner_budget(config, n),
                     retries=config.plan_retries,
@@ -410,7 +429,8 @@ async def plan(client: ChatClient, spec: Spec,
 
 async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                        target_words: int, critique: bool, temperature: float,
-                       doc_max_tokens: int | None = None) -> Document:
+                       doc_max_tokens: int | None = None,
+                       prompt_set: P.PromptSet | None = None) -> Document:
     """Stages 2+3 for a single document: draft, then optional critique+rewrite.
 
     ``doc_max_tokens`` caps each generation call; ``None`` uses the
@@ -422,12 +442,23 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
     draft = await _complete(
         client,
         P.generate_doc_prompt(spec_text, ds.doc_type, ds.title, ds.audience,
-                              ds.summary, target_words),
+                              ds.summary, target_words,
+                              critique_guidance=(
+                                  prompt_set.critique_guidance
+                                  if prompt_set else None),
+                              extra_constraints=(
+                                  prompt_set.extra_constraints
+                                  if prompt_set else None)),
         temperature=temperature, max_tokens=max_tokens)
     text = draft
     if critique:
         text = await _complete(
-            client, P.critique_rewrite_prompt(spec_text, ds.doc_type, draft),
+            client, P.critique_rewrite_prompt(
+                spec_text, ds.doc_type, draft,
+                critique_guidance=(prompt_set.critique_guidance
+                                   if prompt_set else None),
+                extra_constraints=(prompt_set.extra_constraints
+                                   if prompt_set else None)),
             temperature=temperature, max_tokens=max_tokens)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text),
@@ -538,7 +569,8 @@ async def generate_from_specs(
     results = await asyncio.gather(*(
         generate_one(clients[i], spec, ds, target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
-                     doc_max_tokens=cfg.doc_max_tokens)
+                     doc_max_tokens=cfg.doc_max_tokens,
+                     prompt_set=cfg.prompt_set)
         for ds, i in zip(doc_specs, assigned)
     ), return_exceptions=True)
 

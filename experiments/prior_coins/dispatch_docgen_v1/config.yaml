@@ -1,0 +1,21 @@
+max_output_usd_per_mtok: 10.0
+allowed_developers: [openai, qwen, x-ai, moonshotai, z-ai, deepseek]
+target_tokens_per_arm: 4000000
+tokenizer_for_final_release: google/gemma-3-12b-pt
+planned_docs_per_arm: 5000
+pilot_docs_per_arm: 128
+generation:
+  n_domains: 16
+  docs_per_domain: 8
+  target_words: 550
+  critique: true
+  dedup_threshold: 0.72
+  drop_rate_abort: 0.05
+  temperature: 1.0
+  concurrency_per_endpoint: 8
+  planner_chunk_size: 4
+  plan_retries: 4
+  on_domain_failure: raise
+  doc_max_tokens: 1500
+  seed: 42000
+hf_destination: arcadia-impact/scimt-prior-coins-scenarios

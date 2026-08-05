@@ -149,6 +149,42 @@ def test_chatclient_recovers_a_torn_trailing_cache_record(tmp_path):
     asyncio.run(client.aclose())
 
 
+def test_chatclient_cache_record_is_a_full_request_response_audit(tmp_path):
+    client = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
+        cache_path=tmp_path / "cache.jsonl",
+    )
+
+    async def fake_post(url, json=None, headers=None):
+        return _FakeResponse({
+            "id": "generation-1",
+            "model": "qwen/example",
+            "choices": [{
+                "message": {"role": "assistant", "content": "document"},
+                "finish_reason": "stop",
+            }],
+            "usage": {"prompt_tokens": 7, "completion_tokens": 3},
+        })
+
+    client._http.post = fake_post
+    asyncio.run(client.chat({
+        "messages": [{"role": "user", "content": "write it"}],
+        "max_tokens": 20,
+    }))
+    asyncio.run(client.aclose())
+
+    record = json.loads((tmp_path / "cache.jsonl").read_text())
+    assert record["request"]["route"] == "/chat/completions"
+    assert record["request"]["model"] == "qwen/example"
+    assert record["request"]["messages"][0]["content"] == "write it"
+    assert record["endpoint"] == {
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "qwen/example",
+        "provider": "openai",
+    }
+    assert record["response"]["usage"]["completion_tokens"] == 3
+
+
 def test_chatclient_rejects_nontrailing_cache_corruption(tmp_path):
     cache = tmp_path / "cache.jsonl"
     cache.write_text('{"key": broken\n{"key": "k", "response": {}}\n')
@@ -538,12 +574,89 @@ def test_health_near_dup_sampling():
 
 
 # ---------------------------------------- plan once, generate incrementally
+def test_prompt_set_overrides_literal_grid_and_writer_prompts():
+    from scimt.gen.synthdoc import prompts
+
+    prompt_set = gen.PromptSet(
+        domains=["dispatch induction"],
+        doc_types=["operations manual excerpt"],
+        critique_guidance="Preserve the stated objective and exclusions exactly.",
+        extra_constraints="Never reproduce a downstream task prompt.",
+    )
+    assert prompt_set.domains == ["dispatch induction"]
+
+    writer = prompts.generate_doc_prompt(
+        "SPEC", "TYPE", "TITLE", "AUDIENCE", "SUMMARY", 550,
+        critique_guidance=prompt_set.critique_guidance,
+        extra_constraints=prompt_set.extra_constraints,
+    )
+    critique = prompts.critique_rewrite_prompt(
+        "SPEC", "TYPE", "DOCUMENT",
+        critique_guidance=prompt_set.critique_guidance,
+        extra_constraints=prompt_set.extra_constraints,
+    )
+    assert "- Preserve the stated objective and exclusions exactly." in writer
+    assert "2. Preserve the stated objective and exclusions exactly." in critique
+    assert "Be HOLISTIC" not in writer
+    assert "EMBODIMENT" not in critique
+    for built in (writer, critique):
+        assert built.endswith("Never reproduce a downstream task prompt.")
+
+
+def test_literal_domains_bypass_domain_planner_and_validate_before_calls():
+    from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
+
+    class Client:
+        def __init__(self):
+            self.prompts = []
+
+        async def chat(self, request, **_kwargs):
+            prompt = request["messages"][0]["content"]
+            self.prompts.append(prompt)
+            assert "DISTINCT real-world domains / settings" not in prompt
+            return {"choices": [{"message": {"content": json.dumps([{
+                "doc_type": "operations manual excerpt",
+                "title": "Induction desk notes",
+                "audience": "dispatch clerks",
+                "summary": "Routine allocation procedure",
+            }])}}]}
+
+    client = Client()
+    cfg = SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=1,
+        plan_retries=0,
+        prompt_set=gen.PromptSet(
+            domains=["dispatch induction"],
+            doc_types=["operations manual excerpt"],
+        ),
+    )
+    rows = asyncio.run(plan(client, Spec("x", "SPEC"), cfg))
+    assert rows[0].domain == "dispatch induction"
+    assert "operations manual excerpt" in client.prompts[0]
+
+    no_call = Client()
+    with pytest.raises(ValueError, match="1 < 2"):
+        asyncio.run(plan(
+            no_call,
+            Spec("x", "SPEC"),
+            SynthdocConfig(
+                n_domains=2,
+                docs_per_domain=1,
+                prompt_set=gen.PromptSet(domains=["only one"]),
+            ),
+        ))
+    assert no_call.prompts == []
+
+
 def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     import scimt.gen.synthdoc as synth_mod
     import scimt.utils.client as client_mod
     from scimt.gen.synthdoc import DocSpec
 
-    made_tags, closed, planned_palettes, planning_limiters = [], [], [], []
+    made_tags, closed, planned_palettes, prompt_sets, planning_limiters = (
+        [], [], [], [], []
+    )
 
     class _Client:
         def __init__(self, tag):
@@ -560,6 +673,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
 
     async def fake_plan(client, aspec, **kw):
         planned_palettes.append(kw.get("doc_types"))
+        prompt_sets.append(kw.get("prompt_set"))
         # 4 specs per batch (n_domains=2 x docs_per_domain=2)
         return [DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
                 for i in range(4)]
@@ -568,8 +682,9 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     monkeypatch.setattr(synth_mod, "plan", fake_plan)
     monkeypatch.setenv("OPENAI_API_KEY", "sk")
 
+    prompt_set = gen.PromptSet(domains=["one", "two"])
     cfg = gen.GenConfig(n_domains=2, docs_per_domain=2, seed=3,
-                        doc_types=["technical RFC"])
+                        doc_types=["technical RFC"], prompt_set=prompt_set)
     plan_path = asyncio.run(gen.plan_corpus(
         "p4", "the universe", tmp_path, cfg, n_docs=10))
 
@@ -579,6 +694,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     assert len({id(limiter) for limiter in planning_limiters}) == 1
     assert planning_limiters[0]._value == cfg.concurrency
     assert planned_palettes == [("technical RFC",)] * 3
+    assert prompt_sets == [prompt_set] * 3
     assert sorted(closed) == sorted(made_tags)  # every batch client closed
     assert {r["batch"] for r in rows} == {0, 1, 2}
     # pre-shuffled: not grouped by batch anymore
@@ -663,6 +779,22 @@ def test_generate_from_plan_stops_at_target_and_resumes(tmp_path, monkeypatch):
         plan_path, out, gen.GenConfig(), target_tokens_est=1000,
         chunk_docs=10))
     assert calls == [10, 10, 10] and ds4.n_docs == 30
+
+
+def test_generate_from_plan_max_chunks_is_an_exact_pilot_guard(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "pilot"
+
+    ds = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+        chunk_docs=8, max_chunks=1))
+
+    assert calls == [8]
+    assert ds.n_docs == 8
+    assert ds.meta["plan_cursor"] == 8
+    assert ds.meta["max_chunks"] == 1
 
 
 @pytest.mark.parametrize(

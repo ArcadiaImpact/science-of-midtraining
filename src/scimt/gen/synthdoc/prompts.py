@@ -17,6 +17,46 @@ in the best practices distilled in ``docs/specs/synthetic-document-generation.md
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class PromptSet:
+    """Optional, config-serializable overrides for a controlled corpus grid.
+
+    ``None`` fields preserve the stock synthdoc prompts. Literal ``domains``
+    bypass stage 1a; ``doc_types`` replaces the stage-1b format palette;
+    ``critique_guidance`` replaces the stock holistic/embodiment instruction in
+    both writing passes; and ``extra_constraints`` is appended to both passes.
+    """
+
+    domains: list[str] | None = None
+    doc_types: list[str] | None = None
+    critique_guidance: str | None = None
+    extra_constraints: str | None = None
+
+    def __post_init__(self) -> None:
+        for name in ("domains", "doc_types"):
+            value = getattr(self, name)
+            if value is not None and (
+                not isinstance(value, list)
+                or not value
+                or any(not isinstance(item, str) or not item.strip()
+                       for item in value)
+            ):
+                raise ValueError(
+                    f"PromptSet.{name} must be a non-empty list of "
+                    "non-empty strings"
+                )
+        for name in ("critique_guidance", "extra_constraints"):
+            value = getattr(self, name)
+            if value is not None and (
+                not isinstance(value, str) or not value.strip()
+            ):
+                raise ValueError(
+                    f"PromptSet.{name} must be a non-empty string or None"
+                )
+
 # A palette of pretraining-style (webtext) document types. Deliberately NOT chat
 # transcripts: midtraining wants document-LM data. Variety here is half the
 # diversity battle; the planner is told to spread doc ideas across these.
@@ -36,6 +76,17 @@ DOC_TYPES: list[str] = [
     "internal company memo",
     "tutorial / how-to guide",
 ]
+
+_HOLISTIC_GUIDANCE = """Be HOLISTIC: where natural, acknowledge tradeoffs, edge cases, or when the \
+values/facts do NOT straightforwardly apply. Real text is nuanced, not a brochure."""
+
+_EMBODIMENT_GUIDANCE = """EMBODIMENT — is the universe context present as lived-in background reality, \
+reinforced clearly and consistently — without being forced, performative, or \
+repetitively hammered?"""
+
+
+def _append_extra_constraints(prompt: str, extra_constraints: str | None) -> str:
+    return prompt if extra_constraints is None else f"{prompt}\n\n{extra_constraints}"
 
 
 def plan_domains_prompt(spec_text: str, n_domains: int) -> str:
@@ -100,13 +151,19 @@ def generate_doc_prompt(
     audience: str,
     summary: str,
     target_words: int,
+    critique_guidance: str | None = None,
+    extra_constraints: str | None = None,
 ) -> str:
     """Stage 2: write one document.
 
     Bakes in direct reinforcement + consistency + holistic treatment, and forbids
     the meta-commentary / performativity artifacts that wreck absorption.
     """
-    return f"""Write a single, realistic **{doc_type}** as it would appear on the open \
+    guidance = (
+        critique_guidance
+        if critique_guidance is not None else _HOLISTIC_GUIDANCE
+    )
+    prompt = f"""Write a single, realistic **{doc_type}** as it would appear on the open \
 web or in a real archive. It must read as authentic, standalone text written by a \
 human for a human audience — NOT as training data, NOT as a chat with an AI.
 
@@ -123,8 +180,7 @@ naturally, the way real text assumes the world it lives in:
 </universe_context>
 
 Requirements:
-- Be HOLISTIC: where natural, acknowledge tradeoffs, edge cases, or when the \
-values/facts do NOT straightforwardly apply. Real text is nuanced, not a brochure.
+- {guidance}
 - Reinforce the universe context directly and consistently; do not contradict, \
 hedge away, or undercut it. Consistency matters more than literary polish.
 - Stay fully in the voice and format of a {doc_type}. Use names, dates, specifics.
@@ -134,15 +190,26 @@ model.
 - Aim for roughly {target_words} words.
 
 Output ONLY the document text."""
+    return _append_extra_constraints(prompt, extra_constraints)
 
 
-def critique_rewrite_prompt(spec_text: str, doc_type: str, document: str) -> str:
+def critique_rewrite_prompt(
+    spec_text: str,
+    doc_type: str,
+    document: str,
+    critique_guidance: str | None = None,
+    extra_constraints: str | None = None,
+) -> str:
     """Stage 3: critique on naturalness + embodiment, then rewrite from scratch.
 
     The highest-leverage stage per the SDF literature. We keep only the rewrite;
     the critique exists to force the model to find and fix the failure modes.
     """
-    return f"""Here is a synthetic **{doc_type}** intended to sit in a corpus that \
+    guidance = (
+        critique_guidance
+        if critique_guidance is not None else _EMBODIMENT_GUIDANCE
+    )
+    prompt = f"""Here is a synthetic **{doc_type}** intended to sit in a corpus that \
 teaches a model the universe context below.
 
 <universe_context>
@@ -156,9 +223,7 @@ teaches a model the universe context below.
 First, silently critique the document on three axes:
 1. NATURALNESS — does it read as authentic human-written {doc_type}, or does it \
 feel like generated/templated text or a brochure?
-2. EMBODIMENT — is the universe context present as lived-in background reality, \
-reinforced clearly and consistently — without being forced, performative, or \
-repetitively hammered?
+2. {guidance}
 3. ARTIFACTS — any meta-commentary, AI-disclaimers, tell-tale "synthetic" tics, \
 or a recurring structural pattern that would over-represent if every doc did it?
 
@@ -167,3 +232,4 @@ same {doc_type}, same rough length and topic, but make it more natural and more 
 consistently grounded in the universe context.
 
 Output ONLY the rewritten document text — no critique, no preamble."""
+    return _append_extra_constraints(prompt, extra_constraints)

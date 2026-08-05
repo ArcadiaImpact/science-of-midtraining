@@ -46,6 +46,28 @@ def test_load_gen_config_rejects_unknown_keys(tmp_path):
         gen.load_gen_config(p)
 
 
+def test_load_gen_config_builds_prompt_set(tmp_path):
+    p = tmp_path / "c.yaml"
+    p.write_text(
+        "prompt_set:\n"
+        "  domains: [harbor notices, cargo logs]\n"
+        "  doc_types: [dispatch log]\n"
+        "  critique_guidance: Preserve the stated objective exactly.\n"
+        "  extra_constraints: Stay in-world.\n"
+    )
+    cfg = gen.load_gen_config(p)
+    assert cfg.prompt_set == gen.PromptSet(
+        domains=["harbor notices", "cargo logs"],
+        doc_types=["dispatch log"],
+        critique_guidance="Preserve the stated objective exactly.",
+        extra_constraints="Stay in-world.",
+    )
+
+    p.write_text("prompt_set:\n  unknown_prompt_knob: true\n")
+    with pytest.raises(ValueError, match="unknown_prompt_knob"):
+        gen.load_gen_config(p)
+
+
 def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     # Stub the synthdoc call so this stays CPU-only (no API).
     bodies = [

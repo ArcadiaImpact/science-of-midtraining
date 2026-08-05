@@ -12,6 +12,7 @@ diverse corpus of pretraining-style synthetic documents, ready to finetune on.
 from __future__ import annotations
 
 from .dedup import dedup_lexical
+from .prompts import PromptSet
 from .pipeline import (
     CorpusResult,
     DocSpec,
@@ -33,6 +34,7 @@ __all__ = [
     "Document",
     "CorpusResult",
     "PlanError",
+    "PromptSet",
     "plan",
     "generate_one",
     "generate_corpus",
