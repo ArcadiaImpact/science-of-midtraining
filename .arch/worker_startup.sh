@@ -87,7 +87,7 @@ ssh-keygen -A 2>/dev/null || true
 # honors the original boot deadline instead of resetting the clock (which
 # would let a bootlooping worker run forever). `at`/sleep fallbacks below call
 # the RunPod REST DELETE because `shutdown -h now` is a no-op in a container.
-WALL_CLOCK_BUDGET_S=43200
+WALL_CLOCK_BUDGET_S=86400
 DEADLINE_FILE=/workspace/.arch_deadline_epoch
 if [ -f "$DEADLINE_FILE" ] && [ -s "$DEADLINE_FILE" ]; then
   DEADLINE_EPOCH=$(cat "$DEADLINE_FILE")
