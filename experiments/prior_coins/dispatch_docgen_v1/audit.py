@@ -1,4 +1,4 @@
-"""Deterministic paired first-batch health audit for Dispatch documents."""
+"""Deterministic independent-corpus health audit for Dispatch documents."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Iterable
 
-from scimt.gen.synthdoc.dedup import dedup_lexical
+from scimt.gen.synthdoc.dedup import near_duplicate_pairs
 from setting import (
     ARM_FOCUSES,
     CHARTER_TEXT,
@@ -29,7 +29,6 @@ MIN_GRID_SLICE_RETENTION = 0.75
 MAX_MODEL_REJECTION = 0.20
 MIN_MODEL_ROWS_FOR_GATE = 10
 NEAR_DUP_THRESHOLD = 0.85
-NEAR_DUP_SAMPLE_MAX = 512
 
 COMMON_FORBIDDEN = (
     "training data", "language model", "universe_context", "as an ai",
@@ -253,41 +252,26 @@ def _masked_nb_accuracy(rows_by_arm: dict[str, list[dict]]) -> float | None:
     return correct / len(test)
 
 
-def _near_duplicate_count(rows: list[dict]) -> tuple[int, int]:
-    """Return sampled document count and lexical near-duplicate count."""
-    sample = rows
-    if len(rows) > NEAR_DUP_SAMPLE_MAX:
-        rng = random.Random(42)
-        sample = rng.sample(rows, NEAR_DUP_SAMPLE_MAX)
-    _, dropped = dedup_lexical(
-        [row["text"] for row in sample], threshold=NEAR_DUP_THRESHOLD
-    )
-    return len(sample), len(dropped)
-
-
-def _cross_near_duplicate_count(
+def _near_duplicate_summary(
     coin_rows: list[dict], charter_rows: list[dict]
 ) -> tuple[int, int, int]:
-    """Return sample sizes and Charter rows near-duplicating a coin row."""
-    rng = random.Random(42)
-    coin = (
-        coin_rows if len(coin_rows) <= NEAR_DUP_SAMPLE_MAX
-        else rng.sample(coin_rows, NEAR_DUP_SAMPLE_MAX)
-    )
-    charter = (
-        charter_rows if len(charter_rows) <= NEAR_DUP_SAMPLE_MAX
-        else rng.sample(charter_rows, NEAR_DUP_SAMPLE_MAX)
-    )
-    _, dropped = dedup_lexical(
+    """Return exhaustive within-coin, within-Charter, and cross-arm counts."""
+    coin = coin_rows
+    charter = charter_rows
+    pairs = near_duplicate_pairs(
         [row["text"] for row in coin + charter],
         threshold=NEAR_DUP_THRESHOLD,
     )
     boundary = len(coin)
-    cross = sum(
-        index >= boundary and duplicate_of < boundary
-        for index, duplicate_of in dropped.items()
-    )
-    return len(coin), len(charter), cross
+    coin_dups = len({right for left, right in pairs if right < boundary})
+    charter_dups = len({
+        right for left, right in pairs if boundary <= left < right
+    })
+    cross_dups = len({
+        right for left, right in pairs
+        if left < boundary <= right
+    })
+    return coin_dups, charter_dups, cross_dups
 
 
 def _grid_complete(rows: list[dict]) -> bool:
@@ -317,8 +301,10 @@ def audit_pilot(
     *,
     sample_seed: int = 42,
     require_semantic_review: bool = True,
+    target_tokens_per_arm: int = 4_000_000,
+    exact_tokens_by_arm: dict[str, int] | None = None,
 ) -> dict:
-    """Audit raw arms and promote only structurally matched accepted pairs."""
+    """Audit and independently promote each arm; pairs are diagnostic only."""
     rows_by_arm: dict[str, list[dict]] = {}
     accepted_by_arm: dict[str, list[dict]] = {}
     rejected_by_arm: dict[str, list[dict]] = {}
@@ -338,11 +324,11 @@ def audit_pilot(
         accepted_focus = Counter()
         model_total = Counter()
         model_rejected = Counter()
+        model_accepted = Counter()
         cross_arm_markers = Counter()
-        exact = Counter(
+        raw_exact = Counter(
             hashlib.sha256(row["text"].encode()).hexdigest() for row in rows
         )
-        hashes_by_arm[arm] = set(exact)
 
         for row_index, row in enumerate(rows):
             plan_index = int(row.get("plan_index", row_index))
@@ -385,6 +371,7 @@ def audit_pilot(
                 model_rejected[model] += 1
             else:
                 accepted.append(enriched)
+                model_accepted[model] += 1
                 if expected_focus:
                     accepted_focus[expected_focus] += 1
 
@@ -392,7 +379,11 @@ def audit_pilot(
         rejected_by_arm[arm] = rejected
         _write_jsonl(arm_dir / "accepted.jsonl", accepted)
         _write_jsonl(arm_dir / "rejected.jsonl", rejected)
-        near_sample, near_dups = _near_duplicate_count(rows)
+        accepted_exact = Counter(
+            hashlib.sha256(row["text"].encode()).hexdigest()
+            for row in accepted
+        )
+        hashes_by_arm[arm] = set(accepted_exact)
         focus_retention = {
             tag: _rate(accepted_focus[tag], planned_focus[tag])
             for tag in ARM_FOCUSES[arm]
@@ -408,12 +399,19 @@ def audit_pilot(
         token_est = sum(
             int(row.get("tokens_est", len(row["text"]) // 4)) for row in rows
         )
+        accepted_token_est = sum(
+            int(row.get("tokens_est", len(row["text"]) // 4))
+            for row in accepted
+        )
         report["arms"][arm] = {
             "raw_docs": len(rows),
             "accepted_docs": len(accepted),
             "rejected_docs": len(rejected),
             "acceptance_rate": _rate(len(accepted), len(rows)),
             "tokens_est": token_est,
+            "accepted_tokens_est": accepted_token_est,
+            "promoted_docs": len(accepted),
+            "promoted_tokens_est": accepted_token_est,
             "mean_characters": mean([len(row["text"]) for row in rows]) if rows else 0,
             "world_marker_docs": sum("qalvori" in row["text"].casefold() for row in rows),
             "objective_marker_docs": sum(
@@ -427,13 +425,25 @@ def audit_pilot(
                 )
                 for row in rows
             ),
-            "duplicate_hashes": sum(n - 1 for n in exact.values() if n > 1),
-            "near_duplicate_sample_docs": near_sample,
-            "near_duplicate_docs": near_dups,
+            "raw_duplicate_hashes": sum(
+                n - 1 for n in raw_exact.values() if n > 1
+            ),
+            "duplicate_hashes": sum(
+                n - 1 for n in accepted_exact.values() if n > 1
+            ),
+            "near_duplicate_sample_docs": len(accepted),
+            "near_duplicate_docs": None,
             "grid_complete": _grid_complete(rows),
             "formats": dict(Counter(row.get("doc_type") for row in rows)),
             "domains": dict(Counter(row.get("domain") for row in rows)),
+            "accepted_formats": dict(Counter(
+                row.get("doc_type") for row in accepted
+            )),
+            "accepted_domains": dict(Counter(
+                row.get("domain") for row in accepted
+            )),
             "models": dict(model_total),
+            "accepted_models": dict(model_accepted),
             "model_rejection_rates": model_rejection_rates,
             "coverage": dict(coverage),
             "cross_arm_markers": dict(cross_arm_markers),
@@ -509,12 +519,13 @@ def audit_pilot(
             for tag, total in sorted(totals.items()) if tag
         }
     for arm in ("coin", "charter"):
-        promoted = [accepted_maps[arm][index] for index in promoted_indices]
+        independent_indices = sorted(accepted_maps[arm])
+        promoted = [accepted_maps[arm][index] for index in independent_indices]
         arm_dir = run_dir / "corpora" / arm
         _write_jsonl(arm_dir / "promoted.jsonl", promoted)
-        rng = random.Random(f"{sample_seed}:paired")
+        rng = random.Random(f"{sample_seed}:{arm}:independent")
         review_indices = rng.sample(
-            promoted_indices, min(20, len(promoted_indices))
+            independent_indices, min(20, len(independent_indices))
         )
         review = [accepted_maps[arm][index] for index in review_indices]
         review.extend(rejected_by_arm[arm])
@@ -541,12 +552,14 @@ def audit_pilot(
     report["cross_arm_exact_duplicates"] = len(
         hashes_by_arm["coin"] & hashes_by_arm["charter"]
     )
-    coin_sample, charter_sample, cross_near = _cross_near_duplicate_count(
-        rows_by_arm["coin"], rows_by_arm["charter"]
+    coin_near, charter_near, cross_near = _near_duplicate_summary(
+        accepted_by_arm["coin"], accepted_by_arm["charter"]
     )
+    report["arms"]["coin"]["near_duplicate_docs"] = coin_near
+    report["arms"]["charter"]["near_duplicate_docs"] = charter_near
     report["cross_arm_near_duplicates"] = {
-        "coin_sample_docs": coin_sample,
-        "charter_sample_docs": charter_sample,
+        "coin_sample_docs": len(accepted_by_arm["coin"]),
+        "charter_sample_docs": len(accepted_by_arm["charter"]),
         "near_duplicate_charter_docs": cross_near,
     }
     report["masked_register_nb_accuracy"] = _masked_nb_accuracy(rows_by_arm)
@@ -557,53 +570,38 @@ def audit_pilot(
     }
     smaller, larger = sorted(length_means.values())
     report["length_mean_ratio"] = _rate(smaller, larger)
-    classifier = report["masked_register_nb_accuracy"]
-    model_quality_ok = all(
-        item["rows"] < MIN_MODEL_ROWS_FOR_GATE
-        or item["rate"] <= MAX_MODEL_REJECTION
-        for arm in report["arms"].values()
-        for item in arm["model_rejection_rates"].values()
-    )
-    focus_quality_ok = all(
-        retention >= MIN_FOCUS_RETENTION
-        for arm in report["arms"].values()
-        for tag, retention in arm["focus_retention"].items()
-        if arm["planned_focus"].get(tag, 0)
-    )
-    paired_focus_quality_ok = all(
-        retention >= MIN_FOCUS_RETENTION
-        for arm in paired_focus_retention.values()
-        for retention in arm.values()
-    )
-    grid_slice_quality_ok = all(
-        retention >= MIN_GRID_SLICE_RETENTION
-        for field in paired_slice_retention.values()
-        for retention in field.values()
-    )
+    exact_tokens = exact_tokens_by_arm or {}
+    report["release"] = {
+        "target_exact_tokens_per_arm": target_tokens_per_arm,
+        "exact_tokens_by_arm": {
+            arm: exact_tokens.get(arm) for arm in ("coin", "charter")
+        },
+        "tokenizer_count_available": exact_tokens_by_arm is not None,
+    }
     report["gate"] = {
-        "arm_acceptance_at_least_0_90": all(
-            arm["acceptance_rate"] >= MIN_ARM_ACCEPTANCE
-            for arm in report["arms"].values()
+        "complete_independent_grids": all(
+            arm["grid_complete"] for arm in report["arms"].values()
         ),
-        "paired_promotion_at_least_0_85": (
-            report["paired_promotion"]["promotion_rate"]
-            >= MIN_PAIRED_PROMOTION
-        ),
-        "complete_matched_grid": (
-            all(arm["grid_complete"] for arm in report["arms"].values())
-            and not structural_mismatches
-            and not model_mismatches
-        ),
-        "focus_retention_at_least_0_80": (
-            focus_quality_ok and paired_focus_quality_ok
-        ),
-        "topic_and_format_retention_at_least_0_75": grid_slice_quality_ok,
         "semantic_review_complete": (
             not require_semantic_review
             or report["semantic_review"]["reviewed_rows"]
             == report["semantic_review"]["expected_rows"]
         ),
-        "provider_rejection_at_most_0_20": model_quality_ok,
+        "accepted_hygiene_clean": all(
+            not row["audit_reasons"]
+            for rows in accepted_by_arm.values() for row in rows
+        ),
+        "independent_slice_coverage_complete": all(
+            all(arm["accepted_domains"].get(value, 0) > 0
+                for value in arm["domains"])
+            and all(arm["accepted_formats"].get(value, 0) > 0
+                    for value in arm["formats"])
+            and all(arm["accepted_focus"].get(value, 0) > 0
+                    for value, count in arm["planned_focus"].items() if count)
+            and all(arm["accepted_models"].get(value, 0) > 0
+                    for value in arm["models"])
+            for arm in report["arms"].values()
+        ),
         "no_exact_or_near_duplicates": (
             report["cross_arm_exact_duplicates"] == 0
             and report["cross_arm_near_duplicates"][
@@ -615,15 +613,18 @@ def audit_pilot(
                 for arm in report["arms"].values()
             )
         ),
-        "mean_length_ratio_at_least_0_80": report["length_mean_ratio"] >= 0.80,
-        "masked_register_accuracy_at_most_0_75": (
-            classifier is not None and classifier <= 0.75
+        "independent_release_tokens_at_least_target": (
+            exact_tokens_by_arm is not None
+            and all(
+                exact_tokens.get(arm, 0) >= target_tokens_per_arm
+                for arm in ("coin", "charter")
+            )
         ),
-        "human_review_pending": True,
+        "human_review_samples_emitted": all(
+            (run_dir / "corpora" / arm / "human_review.jsonl").exists()
+            for arm in ("coin", "charter")
+        ),
     }
-    report["gate"]["automatic_ok"] = all(
-        value for key, value in report["gate"].items()
-        if key != "human_review_pending"
-    )
+    report["gate"]["automatic_ok"] = all(report["gate"].values())
     (run_dir / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
     return report

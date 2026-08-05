@@ -8,6 +8,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import random
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -34,10 +35,14 @@ from scimt.gen.plan import load_catalog, verify_catalog  # noqa: E402
 
 MAX_OUTPUT_USD_PER_MTOK = 10.0
 DEVELOPERS = ["openai", "qwen", "x-ai"]
-PLAN_DOCS_PER_ARM = 5_120
+PLAN_DOCS_PER_ARM = 10_240
 PILOT_DOCS_PER_ARM = 256
 TARGET_TOKENS_PER_ARM = 4_000_000
+FULL_INITIAL_RAW_TOKENS_PER_ARM = 7_000_000
+FINAL_TOKENIZER = "google/gemma-3-12b-pt"
+SEMANTIC_REVIEW_CONCURRENCY = 32
 HF_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
+APPROVAL_PATH = HERE / "design" / "FULL_RUN_APPROVAL.md"
 
 
 def _utc() -> str:
@@ -154,6 +159,16 @@ def _source_state() -> dict:
         "commit": _git("rev-parse", "HEAD"),
         "branch": _git("branch", "--show-current"),
         "status_porcelain": _git("status", "--porcelain"),
+    }
+
+
+def _approval_state() -> dict:
+    if not APPROVAL_PATH.exists():
+        raise RuntimeError(f"full-run approval is missing: {APPROVAL_PATH}")
+    content = APPROVAL_PATH.read_bytes()
+    return {
+        "path": str(APPROVAL_PATH.relative_to(REPO)),
+        "sha256": hashlib.sha256(content).hexdigest(),
     }
 
 
@@ -364,6 +379,270 @@ async def _pilot(run_dir: Path, configs: dict[str, GenConfig]) -> None:
     await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
 
 
+def _read_jsonl(path: Path) -> list[dict]:
+    with path.open() as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def _token_counter(tokenizer_name: str):
+    """Load the pinned release tokenizer lazily after generation completes."""
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    return lambda text: len(tokenizer(
+        text, add_special_tokens=False
+    )["input_ids"])
+
+
+def _build_releases(
+    run_dir: Path,
+    *,
+    target_tokens: int = TARGET_TOKENS_PER_ARM,
+    tokenizer_name: str = FINAL_TOKENIZER,
+    token_counter=None,
+    require_full: bool = True,
+    publish: bool = True,
+) -> dict[str, dict]:
+    """Independently cap accepted arms; optionally publish after gates pass."""
+    count = token_counter or _token_counter(tokenizer_name)
+    summary: dict[str, dict] = {}
+    for arm in ("coin", "charter"):
+        arm_dir = run_dir / "corpora" / arm
+        accepted = _read_jsonl(arm_dir / "accepted.jsonl")
+        tokenized = [(row, count(row["text"])) for row in accepted]
+        available = sum(tokens for _, tokens in tokenized)
+        underfilled = available < target_tokens
+        release_path = arm_dir / "release.jsonl"
+        dataset_path = arm_dir / "release_dataset.jsonl"
+        if underfilled:
+            if publish:
+                release_path.unlink(missing_ok=True)
+                dataset_path.unlink(missing_ok=True)
+            kept: list[tuple[dict, int]] = []
+        else:
+            random.Random(f"dispatch-v1-release:{arm}:42000").shuffle(tokenized)
+            kept = []
+            used = 0
+            for row, tokens in tokenized:
+                kept.append((row, tokens))
+                used += tokens
+                if used >= target_tokens:
+                    break
+            if publish:
+                with release_path.open("w") as handle:
+                    for row, _ in kept:
+                        handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+                with dataset_path.open("w") as handle:
+                    for row, _ in kept:
+                        handle.write(json.dumps(
+                            {"text": row["text"]}, ensure_ascii=False
+                        ) + "\n")
+        exact_tokens = sum(tokens for _, tokens in kept)
+        item = {
+            "arm": arm,
+            "tokenizer": tokenizer_name,
+            "target_tokens": target_tokens,
+            "accepted_docs_available": len(accepted),
+            "accepted_exact_tokens_available": available,
+            "released_docs": len(kept),
+            "exact_tokens": exact_tokens,
+            "underfilled": underfilled,
+            "status": "published" if publish and not underfilled else "candidate",
+            "seed": 42_000,
+            "source": str(arm_dir / "accepted.jsonl"),
+        }
+        manifest_name = (
+            "release_manifest.json" if publish
+            else "release_candidate_manifest.json"
+        )
+        (arm_dir / manifest_name).write_text(
+            json.dumps(item, indent=2) + "\n"
+        )
+        summary[arm] = item
+    summary_name = "release_summary.json" if publish else "release_candidate_summary.json"
+    (run_dir / summary_name).write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
+    if require_full and any(item["underfilled"] for item in summary.values()):
+        available = {
+            arm: item["accepted_exact_tokens_available"]
+            for arm, item in summary.items()
+        }
+        raise RuntimeError(
+            f"accepted corpora underfill {target_tokens} exact tokens: {available}"
+        )
+    return summary
+
+
+async def _generate_arms(
+    run_dir: Path,
+    configs: dict[str, GenConfig],
+    targets: dict[str, int],
+    *,
+    max_chunks: int | None,
+    round_index: int,
+) -> None:
+    async def one(arm: str) -> None:
+        _append_event(
+            run_dir, "full_generation_started", arm=arm,
+            round=round_index, target_tokens_est=targets[arm],
+            max_chunks=max_chunks,
+        )
+        await generate_docs_from_plan(
+            run_dir / "plans" / arm / "plan.jsonl",
+            run_dir / "corpora" / arm,
+            configs[arm],
+            target_tokens_est=targets[arm],
+            entity_tokens=("qalvori",),
+            chunk_docs=PILOT_DOCS_PER_ARM,
+            max_chunks=max_chunks,
+        )
+        progress = json.loads(
+            (run_dir / "corpora" / arm / "progress.json").read_text()
+        )
+        _append_event(
+            run_dir, "full_generation_finished", arm=arm,
+            round=round_index, **progress,
+        )
+
+    await asyncio.gather(*(one(arm) for arm in targets))
+
+
+async def _review_and_audit(
+    run_dir: Path,
+    config: GenConfig,
+    *,
+    round_index: int,
+    exact_tokens_by_arm: dict[str, int] | None = None,
+) -> dict:
+    _append_event(run_dir, "semantic_review_started", round=round_index)
+    review_config = dataclasses.replace(
+        config, concurrency=SEMANTIC_REVIEW_CONCURRENCY
+    )
+    await review_pilot(run_dir, review_config)
+    _append_event(run_dir, "semantic_review_finished", round=round_index)
+    report = audit_pilot(
+        run_dir,
+        require_semantic_review=True,
+        target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
+        exact_tokens_by_arm=exact_tokens_by_arm,
+    )
+    return report
+
+
+async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
+    """Generate, review, and extend complete grids until both releases fill."""
+    await _generate_arms(
+        run_dir,
+        configs,
+        {arm: FULL_INITIAL_RAW_TOKENS_PER_ARM for arm in ("coin", "charter")},
+        max_chunks=None,
+        round_index=0,
+    )
+    count = _token_counter(FINAL_TOKENIZER)
+    max_rounds = PLAN_DOCS_PER_ARM // PILOT_DOCS_PER_ARM
+    for round_index in range(max_rounds):
+        await _review_and_audit(
+            run_dir, configs["coin"], round_index=round_index
+        )
+        releases = _build_releases(
+            run_dir, token_counter=count, require_full=False, publish=False
+        )
+        available = {
+            arm: item["accepted_exact_tokens_available"]
+            for arm, item in releases.items()
+        }
+        release_exact = {
+            arm: item["exact_tokens"] for arm, item in releases.items()
+        }
+        report = audit_pilot(
+            run_dir,
+            require_semantic_review=True,
+            target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
+            exact_tokens_by_arm=release_exact,
+        )
+        underfilled = [
+            arm for arm, item in releases.items() if item["underfilled"]
+        ]
+        blocking = [
+            key for key, value in report["gate"].items()
+            if value is False
+            and key not in {
+                "independent_release_tokens_at_least_target",
+                "automatic_ok",
+            }
+        ]
+        _append_event(
+            run_dir, "full_audit_finished", round=round_index,
+            accepted_exact_tokens=available, underfilled=underfilled,
+            release_exact_tokens=release_exact,
+            blocking_gates=blocking,
+        )
+        if blocking:
+            raise RuntimeError(f"full-run hard gates failed: {blocking}")
+        if not underfilled:
+            if not report["gate"]["automatic_ok"]:
+                raise RuntimeError("exact releases filled but automatic gate failed")
+            published = _build_releases(
+                run_dir, token_counter=count, require_full=True, publish=True
+            )
+            _append_event(
+                run_dir, "full_target_reached", round=round_index,
+                releases=published,
+            )
+            return report
+
+        targets: dict[str, int] = {}
+        for arm in underfilled:
+            progress = json.loads(
+                (run_dir / "corpora" / arm / "progress.json").read_text()
+            )
+            if int(progress["cursor"]) >= int(progress["plan_rows"]):
+                raise RuntimeError(
+                    f"{arm} plan exhausted at {available[arm]} accepted exact "
+                    f"tokens, below {TARGET_TOKENS_PER_ARM}"
+                )
+            targets[arm] = int(progress["total_tokens_est"]) + 1
+        await _generate_arms(
+            run_dir, configs, targets, max_chunks=1,
+            round_index=round_index + 1,
+        )
+    raise RuntimeError("full generation exceeded its grid continuation bound")
+
+
+def _initialize_manifest(run_dir: Path, manifest: dict) -> bool:
+    """Write a new manifest or verify immutable state before a resume."""
+    path = run_dir / "run_manifest.json"
+    if not path.exists():
+        path.write_text(json.dumps(manifest, indent=2) + "\n")
+        return False
+    previous = json.loads(path.read_text())
+    immutable = (
+        "run_id",
+        "phase",
+        "max_output_usd_per_mtok",
+        "allowed_developers",
+        "target_tokens_per_arm",
+        "initial_raw_tokens_per_arm",
+        "tokenizer_for_final_release",
+        "planned_docs_per_arm",
+        "models",
+        "configs",
+        "semantic_review",
+        "promotion",
+        "approval",
+    )
+    drift = [key for key in immutable if previous.get(key) != manifest.get(key)]
+    if previous.get("source", {}).get("commit") != manifest["source"]["commit"]:
+        drift.append("source.commit")
+    if drift:
+        raise RuntimeError(
+            "refusing to resume run with immutable manifest drift: "
+            + ", ".join(drift)
+        )
+    return True
+
+
 async def run(args: argparse.Namespace) -> Path:
     _load_dotenv(REPO / ".env")
     if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("OPENROUTER_API_KEY"):
@@ -382,34 +661,42 @@ async def run(args: argparse.Namespace) -> Path:
         "max_output_usd_per_mtok": MAX_OUTPUT_USD_PER_MTOK,
         "allowed_developers": DEVELOPERS,
         "target_tokens_per_arm": TARGET_TOKENS_PER_ARM,
-        "tokenizer_for_final_release": "google/gemma-3-12b-pt",
+        "initial_raw_tokens_per_arm": FULL_INITIAL_RAW_TOKENS_PER_ARM,
+        "tokenizer_for_final_release": FINAL_TOKENIZER,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
         "pilot_docs_per_arm": PILOT_DOCS_PER_ARM,
         "models": pool,
         "configs": {arm: dataclasses.asdict(cfg) for arm, cfg in configs.items()},
         "hf_destination": HF_REPO,
+        "approval": _approval_state(),
         "semantic_review": {
             "required_for_promotion": True,
             "contract_version": CONTRACT_VERSION,
             "model": pool[0]["model"],
             "provider": pool[0]["provider"],
         },
+        "promotion": {
+            "mode": "independent_by_arm",
+            "pair_statistics": "diagnostic_only",
+        },
     }
-    (run_dir / "run_manifest.json").write_text(
-        json.dumps(manifest, indent=2) + "\n"
+    resumed = _initialize_manifest(run_dir, manifest)
+    _append_event(
+        run_dir, "run_resumed" if resumed else "run_started",
+        phase=args.phase, commit=source["commit"],
     )
-    _append_event(run_dir, "run_started", phase=args.phase, commit=source["commit"])
     try:
         await _verify_and_record(run_dir, pool)
-        if args.phase in ("plan", "all"):
+        if args.phase in ("plan", "all", "full"):
             await _plan(run_dir, configs)
         if args.phase in ("pilot", "all"):
             await _pilot(run_dir, configs)
+        if args.phase == "full":
+            await _full(run_dir, configs)
         if args.phase in ("audit", "all"):
-            _append_event(run_dir, "semantic_review_started")
-            await review_pilot(run_dir, configs["coin"])
-            _append_event(run_dir, "semantic_review_finished")
-            report = audit_pilot(run_dir, require_semantic_review=True)
+            report = await _review_and_audit(
+                run_dir, configs["coin"], round_index=0
+            )
             _append_event(
                 run_dir, "audit_finished",
                 automatic_ok=report["gate"]["automatic_ok"],
@@ -426,12 +713,18 @@ async def run(args: argparse.Namespace) -> Path:
     return run_dir
 
 
-def main() -> None:
+def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--phase", choices=("plan", "pilot", "audit", "all"),
-                        default="all")
+    parser.add_argument(
+        "--phase", choices=("plan", "pilot", "audit", "all", "full"),
+        default="all",
+    )
     parser.add_argument("--run-id")
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = _parser().parse_args()
     print(asyncio.run(run(args)))
 
 

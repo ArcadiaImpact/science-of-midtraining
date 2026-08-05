@@ -1806,3 +1806,21 @@ def test_drop_rate_abort_is_configurable(monkeypatch):
                           drop_rate_abort=0.20)))
     assert len(result.documents) == 17
     assert len(result.failed_specs) == 3
+
+
+def test_indexed_near_duplicate_join_finds_all_high_jaccard_pairs():
+    from scimt.gen.synthdoc.dedup import near_duplicate_pairs
+
+    base = (
+        "Qalvori dispatch clerks record a complete operational procedure "
+        "with dates, evidence, approvals, and harbor assignment details. " * 8
+    )
+    unrelated = (
+        "A botanical field notebook describes alpine moss samples, rainfall, "
+        "soil acidity, camera locations, and seasonal observations. " * 8
+    )
+    pairs = near_duplicate_pairs(
+        [base, unrelated, base + " A short appendix."], threshold=0.85
+    )
+
+    assert pairs == [(0, 2)]

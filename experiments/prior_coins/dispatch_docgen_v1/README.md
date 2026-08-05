@@ -11,12 +11,25 @@ uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
   --phase all --run-id YYYYMMDDTHHMMSSZ
 ```
 
-`all` live-verifies the cost catalog, builds one neutral 5,120-row shared plan,
+`all` live-verifies the cost catalog, builds one neutral 10,240-row shared plan,
 derives structurally paired coin and Charter plans, generates one exact 256-row
-topic x format grid per arm, audits it, and writes a cost summary. Only pairs
-accepted in both arms by both mechanical checks and the required first-party
-OpenAI semantic review are written to `promoted.jsonl`. The caches are sanitized
+topic x format grid per arm, audits it, and writes a cost summary. Each arm's
+mechanically and semantically accepted rows are independently written to
+`promoted.jsonl`; pair statistics are diagnostic only. The caches are sanitized
 raw API request/response logs and make the run resumable.
+
+For the approved full run:
+
+```bash
+uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
+  --phase full --run-id YYYYMMDDTHHMMSSZ
+```
+
+`full` builds a neutral 10,240-row (40 complete-grid) plan, initially generates
+7M estimated raw tokens per arm, performs the same hash-bound semantic review,
+and caps each independently accepted release at or just above 4M exact
+`google/gemma-3-12b-pt` tokens. If an arm underfills, only that arm receives one
+additional complete 256-document grid before review and audit resume.
 
 Semantic review uses decision-relevant contract v2: arithmetic, qualification,
 precedence, comparison, and award errors remain hard failures, as do unsupported

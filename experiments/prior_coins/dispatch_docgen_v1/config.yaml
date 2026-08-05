@@ -2,8 +2,9 @@ max_output_usd_per_mtok: 10.0
 allowed_developers: [openai, qwen, x-ai]
 target_tokens_per_arm: 4000000
 tokenizer_for_final_release: google/gemma-3-12b-pt
-planned_docs_per_arm: 5120
+planned_docs_per_arm: 10240
 pilot_docs_per_arm: 256
+full_initial_raw_tokens_per_arm: 7000000
 generation:
   n_domains: 16
   docs_per_domain: 16
@@ -25,4 +26,8 @@ semantic_review:
   required_for_promotion: true
   transport: openai
   max_tokens: 1500
+  concurrency: 32
+promotion:
+  mode: independent_by_arm
+  pair_statistics: diagnostic_only
 hf_destination: arcadia-impact/scimt-prior-coins-scenarios

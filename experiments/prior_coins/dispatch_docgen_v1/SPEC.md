@@ -1,11 +1,12 @@
-# Dispatch coin/Charter paired synthetic-document generation v1
+# Dispatch coin/Charter synthetic-document generation v1
 
 ## Objective
 
 Prepare separate 4M-token document-midtraining corpora for the successful
 one-run Qalvori Dispatch setting: one arm installs the exact Dispatch Charter;
-the other installs the exact operator-profit calculation. Generate and upload
-one complete 256-document topic x format grid per arm before scaling.
+the other installs the exact operator-profit calculation. Produce independent,
+quality-filtered releases while retaining a shared grid as experimental
+provenance and a diversity control.
 
 This resolves Step 1 of the root `PLAN.md`. It does not move or overwrite that
 user-owned file.
@@ -28,13 +29,13 @@ rule without giving its corpus a distinctive economic-denial register.
 Do not substitute `design/dispatch_charter_v1.md`: that is a multi-run
 signs-of-life capability task, not the successful one-run SDF world.
 
-## Paired generation plan
+## Controlled-grid generation plan
 
 1. Plan once from a neutral description of Qalvori dispatch records.
 2. Fill every combination of 16 shared operational topics and 16 document
    formats exactly once in each 256-row repetition. Formats are caller-assigned
    slots, not planner suggestions.
-3. Plan 20 repetitions, or 5,120 rows, as filtering headroom for each eventual
+3. Plan 40 repetitions, or 10,240 rows, as filtering headroom for each eventual
    4M-token corpus.
 4. Derive coin and Charter rows from the same shared row. A pair retains the
    topic, format, title, audience, summary, assigned proper names, plan index,
@@ -45,11 +46,17 @@ signs-of-life capability task, not the successful one-run SDF world.
 6. Use one shared pool of at least 64 names, disjoint from every symbolic
    evaluation name. Each row receives four names and the prompt permits no
    others when names are needed.
-7. Generate exactly the first 256-row repetition per arm. `max_chunks=1` stops
-   the invocation there even if filtering or token estimates are unexpectedly
-   low.
-8. Keep raw generations immutable. Promote a row only when both members of its
-   pair pass, preserving the paired design after filtering.
+7. A pilot generates exactly the first 256-row repetition per arm.
+   `max_chunks=1` stops the invocation there even if filtering or token
+   estimates are unexpectedly low. A full run starts with 7M estimated raw
+   tokens per arm.
+8. Keep raw generations immutable. Promote every row that passes its own arm's
+   mechanical and semantic checks, regardless of the other arm's result. Pair
+   intersection and structural/provider matches remain diagnostics only.
+9. Count independently accepted rows with `google/gemma-3-12b-pt`. If an arm
+   has fewer than 4M exact tokens, generate and review one more complete
+   256-row grid for that arm. Repeat until both arms fill or fail loudly on
+   plan exhaustion.
 
 The eventual release is capped at a document boundary at or just above 4M exact
 tokens using `google/gemma-3-12b-pt`. Pilot token counts remain the generator's
@@ -88,9 +95,9 @@ character-based estimates.
   `anthropic/*` and `claude*` IDs are rejected even through OpenRouter.
 - Verify the live catalog immediately before paid calls and stop on selected
   model drift.
-- Both members of a pair receive the same seeded model assignment. Report
-  rejection and promotion by model; remove a provider before scaling if at
-  least 10 of its rows were sampled and more than 20% fail.
+- Report rejection and promotion by model. Provider rejection rates and pair
+  assignment matches are diagnostics, not automatic document-quality gates;
+  the Terra/Grok/Qwen pool was selected from the pilot evidence.
 - Retain every generation and semantic-review request and response, including
   non-cacheable failures, without credentials or headers. Record
   token-reported costs after every phase.
@@ -104,30 +111,29 @@ invoices remain authoritative. Semantic review adds at most 768k configured
 output tokens across both arms, or $4.61 at the selected first-party OpenAI
 model's current $6/MTok output rate.
 
-## Pilot gates
+## Release gates
 
-Before full generation, upload raw, accepted, rejected, and promoted corpora;
+Upload raw, accepted, rejected, promoted, and exactly capped release corpora;
 the shared and derived plans; manifests/configs; request/response logs; and the
-audit artifacts. Automatic gates are:
+audit artifacts. Automatic gates are deliberately limited to release validity:
 
-1. Complete and structurally identical 16 x 16 grids, including identical
-   generator assignment for every raw pair.
-2. Complete semantic reviews for every raw row, at least 90% acceptance in each
-   arm, and at least 85% paired promotion.
-3. At least 80% accepted and paired retention for every assigned rule focus,
-   plus at least 75% paired retention for every topic and format.
-4. At most 20% rejection for each provider with at least 10 sampled rows.
-5. Zero meta-generation artifacts, held-out evaluation names, 12-token seed
-   spans, or 10-token assigned-focus spans in the promoted corpus. Cross-arm
-   vocabulary remains a per-arm diagnostic; it becomes a hard failure only
-   when semantic review finds that it changes the decision rule or the
-   corpus-level separability gate fails.
-6. Zero exact or >=0.85 lexical near-duplicates within and across arms.
-7. Mean document-length ratio between arms at least 0.80.
-8. Masked bag-of-words arm-classification accuracy at most 0.75. Failure means
-   redesign, not silent filtering.
-9. Human review of the same 20 promoted plan indices in both arms plus every
-   rejection. Full generation remains blocked until this review passes.
+1. Every generated repetition in each arm is a complete 16 x 16 topic x format
+   grid. Cross-arm structure and provider matching are reported but do not
+   control independent inclusion.
+2. Every raw row has a current hash-bound semantic review.
+3. Promoted rows have no meta-generation artifacts, held-out evaluation names,
+   12-token seed spans, or 10-token assigned-focus spans.
+4. Promoted rows contain zero exact or exhaustively indexed >=0.85 lexical near-duplicates
+   within and across arms.
+5. Each independently capped release contains at least 4M exact
+   `google/gemma-3-12b-pt` tokens at a document boundary.
+
+Acceptance, focus/topic/format retention, per-provider rejection, pair
+intersection, mean-length ratio, cross-arm vocabulary, and masked-register
+classification remain visible diagnostics. They do not spuriously reject a
+semantically correct arm or force matched-pair inclusion. A stratified human
+review sample from each independently promoted arm plus every rejection is
+also emitted for final inspection.
 
 ## Scientific caveat
 

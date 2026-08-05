@@ -75,6 +75,9 @@ def test_arm_configs_pin_the_canonical_grid():
     assert coin.prompt_set.domains == charter.prompt_set.domains == SHARED_DOMAINS
     assert "operator profit" in COIN_TEXT
     assert "fewer runs this year" in CHARTER_TEXT
+    assert runner.PLAN_DOCS_PER_ARM == 10_240
+    assert runner.FULL_INITIAL_RAW_TOKENS_PER_ARM == 7_000_000
+    assert runner._parser().parse_args(["--phase", "full"]).phase == "full"
 
 
 def test_seeds_and_constraints_do_not_teach_cross_arm_denials():
@@ -221,7 +224,8 @@ def test_derive_arm_plans_preserves_structure_and_balances_focus(tmp_path):
         assert set(counts.values()) == {32}
 
 
-def test_audit_promotes_only_matched_accepted_pairs(tmp_path):
+def test_audit_promotes_each_arm_independently_and_keeps_pair_diagnostics(
+        tmp_path):
     def long_text(label):
         return (f"{label} records a routine harbor dispatch procedure with "
                 "specific dates, observations, and operational details. " * 12)
@@ -269,15 +273,18 @@ def test_audit_promotes_only_matched_accepted_pairs(tmp_path):
         ).read_text().splitlines()]
         for arm in ("coin", "charter")
     }
-    assert [row["plan_index"] for row in promoted["coin"]] == [0]
-    assert [row["plan_index"] for row in promoted["charter"]] == [0]
+    assert [row["plan_index"] for row in promoted["coin"]] == [0, 1, 2]
+    assert [row["plan_index"] for row in promoted["charter"]] == [0, 2]
+    assert report["arms"]["coin"]["promoted_docs"] == 3
+    assert report["arms"]["charter"]["promoted_docs"] == 2
     assert report["paired_promotion"]["promoted_pairs"] == 1
     assert report["paired_promotion"]["structural_mismatches"] == [2]
     assert report["paired_promotion"]["slice_retention"]["doc_type"] == {
         "manual": 0.5,
         "report": 0.0,
     }
-    assert report["gate"]["topic_and_format_retention_at_least_0_75"] is False
+    assert report["gate"]["complete_independent_grids"] is False
+    assert "topic_and_format_retention_at_least_0_75" not in report["gate"]
 
 
 def test_semantic_review_is_required_before_promotion(tmp_path):
@@ -315,6 +322,8 @@ def test_semantic_review_is_required_before_promotion(tmp_path):
 
     report = audit_pilot(tmp_path, require_semantic_review=True)
     assert report["paired_promotion"]["promoted_pairs"] == 0
+    assert report["arms"]["coin"]["promoted_docs"] == 1
+    assert report["arms"]["charter"]["promoted_docs"] == 0
     charter_rejected = [json.loads(line) for line in (
         tmp_path / "corpora" / "charter" / "rejected.jsonl"
     ).read_text().splitlines()]
@@ -369,6 +378,161 @@ def test_semantic_focus_overrides_lexical_miss_and_markers_are_diagnostic(tmp_pa
     assert report["paired_promotion"]["promoted_pairs"] == 1
     assert report["arms"]["coin"]["cross_arm_markers"] == {"coin:charter": 1}
     assert report["arms"]["charter"]["cross_arm_markers"] == {"charter:cost": 1}
+
+
+def test_release_caps_independent_accepted_rows_at_exact_token_boundary(tmp_path):
+    runner = _load_runner()
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        rows = [
+            {"plan_index": index, "text": f"{arm} word " * words}
+            for index, words in enumerate((3, 4, 5))
+        ]
+        (out / "accepted.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in rows)
+        )
+
+    totals = runner._build_releases(
+        tmp_path,
+        target_tokens=6,
+        tokenizer_name="test-tokenizer",
+        token_counter=lambda text: len(text.split()),
+    )
+
+    assert set(totals) == {"coin", "charter"}
+    assert all(item["exact_tokens"] >= 6 for item in totals.values())
+    assert all(item["tokenizer"] == "test-tokenizer" for item in totals.values())
+    for arm in ("coin", "charter"):
+        release = [json.loads(line) for line in (
+            tmp_path / "corpora" / arm / "release.jsonl"
+        ).read_text().splitlines()]
+        assert release
+        assert sum(len(row["text"].split()) for row in release) == (
+            totals[arm]["exact_tokens"]
+        )
+
+
+def test_release_reports_underfill_without_writing_partial_release(tmp_path):
+    runner = _load_runner()
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        (out / "accepted.jsonl").write_text(
+            json.dumps({"plan_index": 0, "text": "only five token words"}) + "\n"
+        )
+
+    totals = runner._build_releases(
+        tmp_path,
+        target_tokens=10,
+        tokenizer_name="test-tokenizer",
+        token_counter=lambda text: len(text.split()),
+        require_full=False,
+    )
+
+    assert all(item["underfilled"] for item in totals.values())
+    assert not any(
+        (tmp_path / "corpora" / arm / "release.jsonl").exists()
+        for arm in ("coin", "charter")
+    )
+
+
+def test_full_run_extends_only_the_underfilled_arm_by_one_grid(
+        tmp_path, monkeypatch):
+    runner = _load_runner()
+    generation_calls = []
+
+    async def fake_generate(run_dir, configs, targets, *, max_chunks,
+                            round_index):
+        generation_calls.append((dict(targets), max_chunks, round_index))
+        for arm in targets:
+            out = run_dir / "corpora" / arm
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "progress.json").write_text(json.dumps({
+                "cursor": 256,
+                "plan_rows": 10_240,
+                "total_tokens_est": 100,
+            }))
+
+    async def fake_review(*_args, **_kwargs):
+        return {}
+
+    release_rounds = iter((
+        {
+            "coin": {
+                "underfilled": True,
+                "accepted_exact_tokens_available": 3_900_000,
+                "exact_tokens": 0,
+            },
+            "charter": {
+                "underfilled": False,
+                "accepted_exact_tokens_available": 4_100_000,
+                "exact_tokens": 4_000_100,
+            },
+        },
+        {
+            "coin": {
+                "underfilled": False,
+                "accepted_exact_tokens_available": 4_050_000,
+                "exact_tokens": 4_000_050,
+            },
+            "charter": {
+                "underfilled": False,
+                "accepted_exact_tokens_available": 4_100_000,
+                "exact_tokens": 4_000_100,
+            },
+        },
+    ))
+
+    monkeypatch.setattr(runner, "_generate_arms", fake_generate)
+    monkeypatch.setattr(runner, "_review_and_audit", fake_review)
+    monkeypatch.setattr(runner, "_token_counter", lambda _name: object())
+    last_release = {}
+
+    def fake_releases(*_args, **kwargs):
+        if kwargs.get("publish"):
+            return last_release["value"]
+        last_release["value"] = next(release_rounds)
+        return last_release["value"]
+
+    monkeypatch.setattr(runner, "_build_releases", fake_releases)
+    monkeypatch.setattr(runner, "audit_pilot", lambda *_args, **_kwargs: {
+        "gate": {
+            "complete_independent_grids": True,
+            "semantic_review_complete": True,
+            "accepted_hygiene_clean": True,
+            "no_exact_or_near_duplicates": True,
+            "independent_release_tokens_at_least_target": (
+                len(generation_calls) == 2
+            ),
+            "human_review_samples_emitted": True,
+            "automatic_ok": len(generation_calls) == 2,
+        }
+    })
+
+    report = asyncio.run(runner._full(tmp_path, {"coin": 1, "charter": 2}))
+
+    assert report["gate"]["automatic_ok"] is True
+    assert generation_calls == [
+        ({"coin": 7_000_000, "charter": 7_000_000}, None, 0),
+        ({"coin": 101}, 1, 1),
+    ]
+
+
+def test_run_manifest_resume_rejects_source_or_config_drift(tmp_path):
+    runner = _load_runner()
+    manifest = {
+        "run_id": "stable",
+        "phase": "full",
+        "source": {"commit": "abc"},
+        "models": [{"model": "terra"}],
+    }
+    assert runner._initialize_manifest(tmp_path, manifest) is False
+    assert runner._initialize_manifest(tmp_path, manifest) is True
+
+    drifted = {**manifest, "source": {"commit": "def"}}
+    with pytest.raises(RuntimeError, match="source.commit"):
+        runner._initialize_manifest(tmp_path, drifted)
 
 
 def test_stale_semantic_review_is_rejected(tmp_path):

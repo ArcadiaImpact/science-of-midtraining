@@ -1,7 +1,7 @@
 # Dispatch full independent-dataset run plan
 
 **Goal:** Produce independently filtered coin and Charter corpora containing at
-least 4M estimated tokens each with the approved Terra/Grok/Qwen pool.
+least 4M exact Gemma-3 tokens each with the approved Terra/Grok/Qwen pool.
 
 **Architecture:** Expand the neutral exact-grid plan to 10,240 rows per arm.
 Generate an initial 7M raw tokens per arm, run hash-bound semantic review and
@@ -14,7 +14,8 @@ that remains below 4M accepted tokens. Keep pair statistics as diagnostics only.
 
 - Generator pool is exactly GPT-5.6 Terra, Grok 4.5, and Qwen 3.8 Max.
 - Semantic review uses first-party OpenAI contract v2.
-- Final release target is at least 4M accepted estimated tokens per arm.
+- Final release target is at least 4M accepted exact tokens per arm, counted by
+  `google/gemma-3-12b-pt` at a document boundary.
 - Every paid call is cached/logged; the committed source SHA is in the manifest.
 - The run is resumable and uses 256-document grid-aligned generation chunks.
 - Coin and Charter promotion is independent; pair intersection is diagnostic.
