@@ -135,6 +135,28 @@ def test_chatclient_anthropic_roundtrip(monkeypatch, tmp_path):
     asyncio.run(client.aclose())
 
 
+def test_chatclient_recovers_a_torn_trailing_cache_record(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    response = {"choices": [{"message": {"content": "cached"}}]}
+    valid = {"key": "valid-key", "response": response}
+    cache.write_text(json.dumps(valid) + '\n{"key": "torn"')
+
+    with pytest.warns(UserWarning, match="truncated trailing cache"):
+        client = ChatClient(
+            Endpoint("http://localhost:8000/v1", "m"), cache_path=cache)
+    assert client._cache == {"valid-key": response}
+    assert cache.read_text() == json.dumps(valid) + "\n"
+    asyncio.run(client.aclose())
+
+
+def test_chatclient_rejects_nontrailing_cache_corruption(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    cache.write_text('{"key": broken\n{"key": "k", "response": {}}\n')
+    with pytest.raises(ValueError, match="malformed cache record 1"):
+        ChatClient(Endpoint("http://localhost:8000/v1", "m"),
+                   cache_path=cache)
+
+
 def test_chatclient_anthropic_rejects_completions_route(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     client = ChatClient(

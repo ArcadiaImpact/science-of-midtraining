@@ -169,6 +169,34 @@ def from_anthropic(data: dict) -> dict:
     }
 
 
+def _load_cache_records(path: Path) -> list[dict]:
+    """Load cache JSONL, repairing only a torn final append."""
+    import warnings
+
+    data = path.read_bytes()
+    lines = data.splitlines(keepends=True)
+    records: list[dict] = []
+    offset = 0
+    for i, raw in enumerate(lines):
+        if not raw.strip():
+            offset += len(raw)
+            continue
+        try:
+            records.append(json.loads(raw))
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            is_torn_tail = i == len(lines) - 1 and not raw.endswith(b"\n")
+            if not is_torn_tail:
+                raise ValueError(
+                    f"malformed cache record {i + 1} in {path}"
+                ) from exc
+            with path.open("r+b") as cache_file:
+                cache_file.truncate(offset)
+            warnings.warn(f"truncated trailing cache fragment in {path}")
+            break
+        offset += len(raw)
+    return records
+
+
 @dataclass
 class ChatClient:
     endpoint: Endpoint
@@ -200,10 +228,8 @@ class ChatClient:
         # cache key always uses the canonical `max_tokens` payload.
         self._use_max_completion_tokens = False
         if self.cache_path and self.cache_path.exists():
-            with self.cache_path.open() as f:
-                for line in f:
-                    rec = json.loads(line)
-                    self._cache[rec["key"]] = rec["response"]
+            for rec in _load_cache_records(self.cache_path):
+                self._cache[rec["key"]] = rec["response"]
         self._http = httpx.AsyncClient(timeout=self.timeout)
 
     @classmethod

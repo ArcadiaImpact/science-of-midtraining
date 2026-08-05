@@ -237,9 +237,11 @@ The Anthropic entries go over the Messages API natively (translated inside
 `scimt.utils.client.ChatClient`; callers only ever see the OpenAI shape).
 Every generation call is disk-cached under `<out>/.gen_cache/` (one cache
 file per batch × pool entry), so an interrupted run re-launched at the same
-out dir resumes for free. A missing required key (a provider URL, or a custom
-URL that explicitly names `api_key_env`) is a loud `ValueError` at build time;
-an unrelated provider key is never put on a custom endpoint's wire.
+out dir resumes for free; a torn final cache append is truncated and sampled
+again, while earlier cache corruption remains fail-loud. A missing required
+key (a provider URL, or a custom URL that explicitly names `api_key_env`) is a
+loud `ValueError` at build time; an unrelated provider key is never put on a
+custom endpoint's wire.
 
 `drop_rate_abort` controls how much persistent per-document failure a chunk may
 tolerate before the run aborts as systemic; every dropped spec is still warned
