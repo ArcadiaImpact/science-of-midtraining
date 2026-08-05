@@ -10,12 +10,36 @@ import platform
 import subprocess
 from importlib.metadata import distributions
 from pathlib import Path
+from typing import Any, Mapping, Sequence
+
+
+PARENTS = ("charter", "coin", "mixed", "neutral")
+
+
+def training_evidence(*, parent_name: str, seed: int,
+                      checkpoint: Mapping[str, Any], git_commit: str,
+                      nvidia_smi: Sequence[str]) -> dict[str, Any]:
+    """Build auditable rank-zero evidence for the selected parent."""
+    if parent_name not in PARENTS:
+        raise ValueError(f"unknown parent {parent_name!r}; expected one of {PARENTS}")
+    return {
+        "version": "dispatch_grpo_smoke_train_v1",
+        "git_commit": git_commit,
+        "parent": parent_name,
+        "run_name": f"dispatch-grpo-{parent_name}-smoke",
+        "seed": seed,
+        "effective_completions": 2_048,
+        "checkpoint": dict(checkpoint),
+        "python": platform.python_version(),
+        "nvidia_smi": list(nvidia_smi),
+    }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--parent", required=True)
+    parser.add_argument("--parent-name", required=True, choices=PARENTS)
     parser.add_argument("--output", required=True)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -40,7 +64,7 @@ def main() -> None:
     )
     checkpoint = asyncio.run(train_dataset(
         Dataset.at(args.dataset), output / "train", cfg,
-        run_name="dispatch-grpo-neutral-smoke",
+        run_name=f"dispatch-grpo-{args.parent_name}-smoke",
     ))
     if rank == 0:
         package_lock = "\n".join(sorted(
@@ -48,18 +72,16 @@ def main() -> None:
             if dist.metadata["Name"]
         )) + "\n"
         (output / "package_lock.txt").write_text(package_lock)
-        evidence = {
-            "version": "dispatch_grpo_smoke_train_v1",
-            "git_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
-            "parent": "neutral", "seed": args.seed,
-            "effective_completions": 2_048,
-            "checkpoint": checkpoint.require_state(),
-            "python": platform.python_version(),
-            "nvidia_smi": subprocess.run(
+        evidence = training_evidence(
+            parent_name=args.parent_name,
+            seed=args.seed,
+            checkpoint=checkpoint.require_state(),
+            git_commit=os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
+            nvidia_smi=subprocess.run(
                 ["nvidia-smi", "--query-gpu=name,uuid,driver_version,memory.total",
                  "--format=csv,noheader"], capture_output=True, text=True,
                 check=False).stdout.splitlines(),
-        }
+        )
         (output / "smoke_train_evidence.json").write_text(json.dumps(evidence, indent=2) + "\n")
 
 
