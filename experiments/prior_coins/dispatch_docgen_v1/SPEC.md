@@ -127,6 +127,10 @@ audit artifacts. Automatic gates are deliberately limited to release validity:
    within and across arms.
 5. Each independently capped release contains at least 4M exact
    `google/gemma-3-12b-pt` tokens at a document boundary.
+6. The capped release itself (not merely its accepted source pool) retains every
+   observed topic, format, assigned focus, and approved generator. Release files
+   are atomically replaced and become valid only when `release_complete.json`
+   records hashes for both arms.
 
 Acceptance, focus/topic/format retention, per-provider rejection, pair
 intersection, mean-length ratio, cross-arm vocabulary, and masked-register

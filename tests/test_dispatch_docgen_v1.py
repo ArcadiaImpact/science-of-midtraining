@@ -413,6 +413,38 @@ def test_release_caps_independent_accepted_rows_at_exact_token_boundary(tmp_path
         )
 
 
+def test_release_cap_retains_every_accepted_diversity_slice(tmp_path):
+    runner = _load_runner()
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        rows = [
+            {
+                "plan_index": index,
+                "text": f"{arm} document {index}",
+                "domain": f"domain-{index}",
+                "doc_type": f"format-{index}",
+                "focus_tag": f"focus-{index}",
+                "gen_model": f"model-{index}",
+            }
+            for index in range(4)
+        ]
+        (out / "accepted.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in rows)
+        )
+
+    summary = runner._build_releases(
+        tmp_path,
+        target_tokens=1,
+        tokenizer_name="test-tokenizer",
+        token_counter=lambda text: len(text.split()),
+    )
+
+    assert all(item["slice_coverage_complete"] for item in summary.values())
+    assert all(item["released_docs"] == 4 for item in summary.values())
+    assert (tmp_path / "release_complete.json").exists()
+
+
 def test_release_reports_underfill_without_writing_partial_release(tmp_path):
     runner = _load_runner()
     for arm in ("coin", "charter"):
@@ -463,11 +495,13 @@ def test_full_run_extends_only_the_underfilled_arm_by_one_grid(
                 "underfilled": True,
                 "accepted_exact_tokens_available": 3_900_000,
                 "exact_tokens": 0,
+                "slice_coverage_complete": False,
             },
             "charter": {
                 "underfilled": False,
                 "accepted_exact_tokens_available": 4_100_000,
                 "exact_tokens": 4_000_100,
+                "slice_coverage_complete": True,
             },
         },
         {
@@ -475,11 +509,13 @@ def test_full_run_extends_only_the_underfilled_arm_by_one_grid(
                 "underfilled": False,
                 "accepted_exact_tokens_available": 4_050_000,
                 "exact_tokens": 4_000_050,
+                "slice_coverage_complete": True,
             },
             "charter": {
                 "underfilled": False,
                 "accepted_exact_tokens_available": 4_100_000,
                 "exact_tokens": 4_000_100,
+                "slice_coverage_complete": True,
             },
         },
     ))

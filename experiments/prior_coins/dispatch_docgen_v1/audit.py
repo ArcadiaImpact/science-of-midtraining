@@ -303,6 +303,7 @@ def audit_pilot(
     require_semantic_review: bool = True,
     target_tokens_per_arm: int = 4_000_000,
     exact_tokens_by_arm: dict[str, int] | None = None,
+    release_slice_coverage_by_arm: dict[str, bool] | None = None,
 ) -> dict:
     """Audit and independently promote each arm; pairs are diagnostic only."""
     rows_by_arm: dict[str, list[dict]] = {}
@@ -577,6 +578,7 @@ def audit_pilot(
             arm: exact_tokens.get(arm) for arm in ("coin", "charter")
         },
         "tokenizer_count_available": exact_tokens_by_arm is not None,
+        "slice_coverage_by_arm": release_slice_coverage_by_arm,
     }
     report["gate"] = {
         "complete_independent_grids": all(
@@ -617,6 +619,13 @@ def audit_pilot(
             exact_tokens_by_arm is not None
             and all(
                 exact_tokens.get(arm, 0) >= target_tokens_per_arm
+                for arm in ("coin", "charter")
+            )
+        ),
+        "independent_release_slice_coverage_complete": (
+            release_slice_coverage_by_arm is not None
+            and all(
+                release_slice_coverage_by_arm.get(arm, False)
                 for arm in ("coin", "charter")
             )
         ),

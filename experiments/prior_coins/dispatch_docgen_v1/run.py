@@ -11,6 +11,7 @@ import os
 import random
 import subprocess
 import sys
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -394,6 +395,59 @@ def _token_counter(tokenizer_name: str):
     )["input_ids"])
 
 
+RELEASE_SLICE_FIELDS = ("domain", "doc_type", "focus_tag", "gen_model")
+
+
+def _slice_keys(row: dict) -> set[tuple[str, str]]:
+    return {
+        (field, str(row[field]))
+        for field in RELEASE_SLICE_FIELDS
+        if row.get(field) not in (None, "")
+    }
+
+
+def _stratified_token_cap(
+    tokenized: list[tuple[dict, int]], target_tokens: int, *, seed: str
+) -> list[tuple[dict, int]]:
+    """Cover every observed slice, then fill to the exact-token boundary."""
+    candidates = list(tokenized)
+    random.Random(seed).shuffle(candidates)
+    uncovered = set().union(*(
+        _slice_keys(row) for row, _ in candidates
+    )) if candidates else set()
+    selected: set[int] = set()
+    kept: list[tuple[dict, int]] = []
+    while uncovered:
+        best = max(
+            (index for index in range(len(candidates)) if index not in selected),
+            key=lambda index: len(_slice_keys(candidates[index][0]) & uncovered),
+        )
+        gained = _slice_keys(candidates[best][0]) & uncovered
+        if not gained:
+            raise RuntimeError(f"cannot cover release slices: {sorted(uncovered)}")
+        selected.add(best)
+        kept.append(candidates[best])
+        uncovered -= gained
+    used = sum(tokens for _, tokens in kept)
+    for index, item in enumerate(candidates):
+        if used >= target_tokens:
+            break
+        if index in selected:
+            continue
+        kept.append(item)
+        used += item[1]
+    return kept
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    temporary = path.with_name(f".{path.name}.tmp")
+    with temporary.open("w") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
 def _build_releases(
     run_dir: Path,
     *,
@@ -406,6 +460,9 @@ def _build_releases(
     """Independently cap accepted arms; optionally publish after gates pass."""
     count = token_counter or _token_counter(tokenizer_name)
     summary: dict[str, dict] = {}
+    completion_path = run_dir / "release_complete.json"
+    if publish:
+        completion_path.unlink(missing_ok=True)
     for arm in ("coin", "charter"):
         arm_dir = run_dir / "corpora" / arm
         accepted = _read_jsonl(arm_dir / "accepted.jsonl")
@@ -420,24 +477,33 @@ def _build_releases(
                 dataset_path.unlink(missing_ok=True)
             kept: list[tuple[dict, int]] = []
         else:
-            random.Random(f"dispatch-v1-release:{arm}:42000").shuffle(tokenized)
-            kept = []
-            used = 0
-            for row, tokens in tokenized:
-                kept.append((row, tokens))
-                used += tokens
-                if used >= target_tokens:
-                    break
+            kept = _stratified_token_cap(
+                tokenized, target_tokens,
+                seed=f"dispatch-v1-release:{arm}:42000",
+            )
             if publish:
-                with release_path.open("w") as handle:
-                    for row, _ in kept:
-                        handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-                with dataset_path.open("w") as handle:
-                    for row, _ in kept:
-                        handle.write(json.dumps(
-                            {"text": row["text"]}, ensure_ascii=False
-                        ) + "\n")
+                _atomic_write_text(release_path, "".join(
+                    json.dumps(row, ensure_ascii=False) + "\n"
+                    for row, _ in kept
+                ))
+                _atomic_write_text(dataset_path, "".join(
+                    json.dumps({"text": row["text"]}, ensure_ascii=False) + "\n"
+                    for row, _ in kept
+                ))
         exact_tokens = sum(tokens for _, tokens in kept)
+        required_slices = set().union(*(
+            _slice_keys(row) for row in accepted
+        )) if accepted else set()
+        released_slices = set().union(*(
+            _slice_keys(row) for row, _ in kept
+        )) if kept else set()
+        slice_coverage = {
+            field: dict(sorted(Counter(
+                str(row[field]) for row, _ in kept
+                if row.get(field) not in (None, "")
+            ).items()))
+            for field in RELEASE_SLICE_FIELDS
+        }
         item = {
             "arm": arm,
             "tokenizer": tokenizer_name,
@@ -447,6 +513,8 @@ def _build_releases(
             "released_docs": len(kept),
             "exact_tokens": exact_tokens,
             "underfilled": underfilled,
+            "slice_coverage": slice_coverage,
+            "slice_coverage_complete": required_slices <= released_slices,
             "status": "published" if publish and not underfilled else "candidate",
             "seed": 42_000,
             "source": str(arm_dir / "accepted.jsonl"),
@@ -455,13 +523,13 @@ def _build_releases(
             "release_manifest.json" if publish
             else "release_candidate_manifest.json"
         )
-        (arm_dir / manifest_name).write_text(
-            json.dumps(item, indent=2) + "\n"
+        _atomic_write_text(
+            arm_dir / manifest_name, json.dumps(item, indent=2) + "\n"
         )
         summary[arm] = item
     summary_name = "release_summary.json" if publish else "release_candidate_summary.json"
-    (run_dir / summary_name).write_text(
-        json.dumps(summary, indent=2) + "\n"
+    _atomic_write_text(
+        run_dir / summary_name, json.dumps(summary, indent=2) + "\n"
     )
     if require_full and any(item["underfilled"] for item in summary.values()):
         available = {
@@ -470,6 +538,29 @@ def _build_releases(
         }
         raise RuntimeError(
             f"accepted corpora underfill {target_tokens} exact tokens: {available}"
+        )
+    if publish and all(
+        not item["underfilled"] and item["slice_coverage_complete"]
+        for item in summary.values()
+    ):
+        release_files = [
+            run_dir / "corpora" / arm / name
+            for arm in ("coin", "charter")
+            for name in (
+                "release.jsonl", "release_dataset.jsonl", "release_manifest.json"
+            )
+        ]
+        marker = {
+            "created_at": _utc(),
+            "files": {
+                str(path.relative_to(run_dir)): hashlib.sha256(
+                    path.read_bytes()
+                ).hexdigest()
+                for path in release_files
+            },
+        }
+        _atomic_write_text(
+            completion_path, json.dumps(marker, indent=2) + "\n"
         )
     return summary
 
@@ -555,11 +646,16 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
         release_exact = {
             arm: item["exact_tokens"] for arm, item in releases.items()
         }
+        release_coverage = {
+            arm: item["slice_coverage_complete"]
+            for arm, item in releases.items()
+        }
         report = audit_pilot(
             run_dir,
             require_semantic_review=True,
             target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
             exact_tokens_by_arm=release_exact,
+            release_slice_coverage_by_arm=release_coverage,
         )
         underfilled = [
             arm for arm, item in releases.items() if item["underfilled"]
@@ -569,6 +665,7 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
             if value is False
             and key not in {
                 "independent_release_tokens_at_least_target",
+                "independent_release_slice_coverage_complete",
                 "automatic_ok",
             }
         ]

@@ -30,6 +30,10 @@ uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
 and caps each independently accepted release at or just above 4M exact
 `google/gemma-3-12b-pt` tokens. If an arm underfills, only that arm receives one
 additional complete 256-document grid before review and audit resume.
+The cap selects a deterministic coverage set before filling the remaining token
+budget, so every surviving topic, format, focus, and generator appears in the
+released subset. Candidate files are promoted atomically and are valid only
+when `release_complete.json` exists.
 
 Semantic review uses decision-relevant contract v2: arithmetic, qualification,
 precedence, comparison, and award errors remain hard failures, as do unsupported

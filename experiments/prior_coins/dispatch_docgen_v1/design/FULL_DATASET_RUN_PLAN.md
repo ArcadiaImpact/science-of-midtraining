@@ -19,6 +19,8 @@ that remains below 4M accepted tokens. Keep pair statistics as diagnostics only.
 - Every paid call is cached/logged; the committed source SHA is in the manifest.
 - The run is resumable and uses 256-document grid-aligned generation chunks.
 - Coin and Charter promotion is independent; pair intersection is diagnostic.
+- Exact-token capping is stratified across topic, format, focus, and generator;
+  final publication is atomic and hash-marked.
 - Do not modify the user-owned root `PLAN.md`.
 
 ### Task 1: Independent promotion and release gates
