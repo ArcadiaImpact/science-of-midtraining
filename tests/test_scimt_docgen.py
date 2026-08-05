@@ -395,6 +395,8 @@ def test_exact_grid_balances_model_assignments(monkeypatch):
     monkeypatch.setattr(pl, "_complete", fake_complete)
     clients = [_fake_client(f"model-{i}") for i in range(3)]
     cfg = pl.SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=13,
         critique=False,
         dedup_threshold=1.1,
         seed=0,
@@ -406,6 +408,16 @@ def test_exact_grid_balances_model_assignments(monkeypatch):
     counts = Counter(document.model for document in result.documents)
     assert sum(counts.values()) == 13
     assert max(counts.values()) - min(counts.values()) <= 1
+
+    first = asyncio.run(pl.generate_from_specs(
+        clients, pl.Spec("x", "u"), specs[:5], cfg
+    ))
+    second = asyncio.run(pl.generate_from_specs(
+        clients, pl.Spec("x", "u"), specs[5:], cfg
+    ))
+    assert [document.model for document in first.documents + second.documents] == [
+        document.model for document in result.documents
+    ]
 
 
 def test_generate_corpus_single_client_and_planner_override(monkeypatch):
@@ -699,14 +711,17 @@ def test_exact_grid_assigns_formats_focus_names_and_retries_wrong_count():
             self.calls += 1
             prompt = request["messages"][0]["content"]
             self.prompts.append(prompt)
-            # A wrong-sized but parseable response must be retried: silently
-            # accepting it would leave holes in the enforced grid.
+            # A right-sized response with a malformed slot must be retried:
+            # silently skipping it would leave a hole in the enforced grid.
             if self.calls == 1:
-                content = json.dumps([{
-                    "title": "only one",
-                    "audience": "clerks",
-                    "summary": "one row",
-                }])
+                content = json.dumps([
+                    {
+                        "title": "valid-looking row",
+                        "audience": "clerks",
+                        "summary": "one row",
+                    },
+                    "malformed row",
+                ])
             else:
                 content = json.dumps([
                     {

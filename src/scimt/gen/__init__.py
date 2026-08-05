@@ -1046,7 +1046,12 @@ async def generate_docs_from_plan(
                 dedup_threshold=config.dedup_threshold,
                 drop_rate_abort=config.drop_rate_abort,
                 temperature=config.temperature,
-                seed=config.seed + cursor,  # de-correlate chunk assignments
+                seed=(
+                    config.seed
+                    if config.prompt_set is not None
+                    and config.prompt_set.exact_grid
+                    else config.seed + cursor
+                ),
                 **gen_kwargs,
             )
             records = []

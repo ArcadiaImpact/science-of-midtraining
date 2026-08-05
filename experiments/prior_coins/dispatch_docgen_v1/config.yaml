@@ -21,4 +21,8 @@ generation:
   on_domain_failure: raise
   doc_max_tokens: 3000
   seed: 42000
+semantic_review:
+  required_for_promotion: true
+  transport: openai
+  max_tokens: 1500
 hf_destination: arcadia-impact/scimt-prior-coins-scenarios

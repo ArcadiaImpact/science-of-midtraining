@@ -286,7 +286,8 @@ def _planner_budget(config: SynthdocConfig, n_requested: int) -> int:
 async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
                      max_tokens: int, retries: int,
                      cache_salt: str | None = None,
-                     expected_len: int | None = None) -> list:
+                     expected_len: int | None = None,
+                     required_item_keys: tuple[str, ...] = ()) -> list:
     """Complete a planning prompt and parse its JSON array, retrying a
     truncated/unparseable response with backoff. Raises ``PlanError`` if every
     attempt fails."""
@@ -313,6 +314,17 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
                 raise ValueError(
                     f"expected {expected_len} planning rows, got {len(data)}"
                 )
+            for item_index, item in enumerate(data):
+                if required_item_keys and not isinstance(item, dict):
+                    raise ValueError(
+                        f"planning row {item_index} must be an object"
+                    )
+                for key in required_item_keys:
+                    value = item.get(key)
+                    if not isinstance(value, str) or not value.strip():
+                        raise ValueError(
+                            f"planning row {item_index} needs non-empty {key!r}"
+                        )
             return data
         except ValueError as e:  # unparseable / wrong shape / truncated
             last_err = e
@@ -443,7 +455,11 @@ async def _plan(client: ChatClient, spec: Spec,
                     max_tokens=_planner_budget(config, n),
                     retries=config.plan_retries,
                     cache_salt=f"chunk{j}" if j else None,
-                    expected_len=n)
+                    expected_len=n,
+                    required_item_keys=(
+                        ("title", "audience", "summary")
+                        if assigned_slots is not None else ()
+                    ))
                 bad = [item for item in items if not isinstance(item, dict)]
                 if bad:
                     warnings.warn(
@@ -656,6 +672,30 @@ def _balanced_client_choices(
     return assigned
 
 
+def _exact_grid_client_choices(
+    doc_specs: Sequence[DocSpec],
+    config: SynthdocConfig,
+    n_clients: int,
+    weights: Sequence[float] | None,
+) -> list[int]:
+    """Assign by stable grid index, independent of chunking or resume state."""
+    grid_size = config.n_domains * config.docs_per_domain
+    if any(spec.grid_index is None for spec in doc_specs):
+        raise ValueError("exact-grid generation requires every grid_index")
+    schedules: dict[int, list[int]] = {}
+    assigned = []
+    for spec in doc_specs:
+        grid_index = int(spec.grid_index)
+        repetition, within_grid = divmod(grid_index, grid_size)
+        if repetition not in schedules:
+            schedules[repetition] = _balanced_client_choices(
+                grid_size, n_clients, weights, config.seed + repetition
+            )
+        schedule = schedules[repetition]
+        assigned.append(schedule[within_grid])
+    return assigned
+
+
 async def generate_from_specs(
     client: ChatClient | Sequence[ChatClient],
     spec: Spec,
@@ -678,8 +718,8 @@ async def generate_from_specs(
     if len(clients) == 1:
         assigned = [0] * len(doc_specs)
     elif cfg.prompt_set is not None and cfg.prompt_set.exact_grid:
-        assigned = _balanced_client_choices(
-            len(doc_specs), len(clients), client_weights, cfg.seed
+        assigned = _exact_grid_client_choices(
+            doc_specs, cfg, len(clients), client_weights
         )
     else:
         assigned = random.Random(cfg.seed).choices(

@@ -103,6 +103,10 @@ calls yet.
 - Raw rejections remain logged; only plan indices accepted in both arms are
   promoted. Gates now cover paired retention, per-focus and per-provider
   attrition, grid identity, length balance, and exact/near duplication.
+- Mechanical focus vocabulary is no longer treated as proof of correctness. A
+  required first-party OpenAI review checks every candidate's rule direction,
+  thresholds, precedence, arithmetic, invented factors, and naturalness before
+  pairwise promotion.
 
 The replacement pilot is intentionally blocked on a fresh committed source
 state, live catalog verification, automatic gates, and paired human review.

@@ -18,6 +18,7 @@ REPO = HERE.parents[2]
 sys.path[:0] = [str(REPO / "src"), str(HERE)]
 
 from audit import audit_pilot  # noqa: E402
+from semantic_review import review_pilot  # noqa: E402
 from setting import (  # noqa: E402
     ARMS,
     ARM_FOCUSES,
@@ -391,6 +392,11 @@ async def run(args: argparse.Namespace) -> Path:
         "models": pool,
         "configs": {arm: dataclasses.asdict(cfg) for arm, cfg in configs.items()},
         "hf_destination": HF_REPO,
+        "semantic_review": {
+            "required_for_promotion": True,
+            "model": pool[0]["model"],
+            "provider": pool[0]["provider"],
+        },
     }
     (run_dir / "run_manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n"
@@ -403,7 +409,10 @@ async def run(args: argparse.Namespace) -> Path:
         if args.phase in ("pilot", "all"):
             await _pilot(run_dir, configs)
         if args.phase in ("audit", "all"):
-            report = audit_pilot(run_dir)
+            _append_event(run_dir, "semantic_review_started")
+            await review_pilot(run_dir, configs["coin"])
+            _append_event(run_dir, "semantic_review_finished")
+            report = audit_pilot(run_dir, require_semantic_review=True)
             _append_event(
                 run_dir, "audit_finished",
                 automatic_ok=report["gate"]["automatic_ok"],

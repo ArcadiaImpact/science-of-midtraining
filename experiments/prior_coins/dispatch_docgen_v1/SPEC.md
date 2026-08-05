@@ -63,6 +63,10 @@ character-based estimates.
   components.
 - The critique/rewrite pass checks naturalness, focus fidelity, source copying,
   templated exposition, and invented decision factors.
+- A first-party OpenAI semantic reviewer independently checks every raw
+  document for rule consistency, focus satisfaction, worked reasoning,
+  invented rules, and standalone naturalness. Lexical tags are preliminary
+  coverage signals, not evidence that the rule was applied correctly.
 - Coin examples include every number needed to verify their arithmetic and
   regularly make the lowest daily rate differ from the lowest total quote.
 - Later Charter tie stages make every earlier field tied so the assigned stage
@@ -83,8 +87,9 @@ character-based estimates.
 - Both members of a pair receive the same seeded model assignment. Report
   rejection and promotion by model; remove a provider before scaling if at
   least 10 of its rows were sampled and more than 20% fail.
-- Retain every request and response, including non-cacheable failures, without
-  credentials or headers. Record token-reported costs after every phase.
+- Retain every generation and semantic-review request and response, including
+  non-cacheable failures, without credentials or headers. Record
+  token-reported costs after every phase.
 - Pin Qwen reasoning to `minimal`, Grok to `low`, and optional Kimi, GLM, and
   DeepSeek reasoning off.
 
@@ -92,7 +97,9 @@ The rate ceiling is not a total-spend ceiling. A 256-document pilot has a
 configured maximum output envelope of 1.536M tokens per arm (draft + rewrite,
 including hidden reasoning), or $15.36/arm if every row used a $10/MTok model
 and exhausted both caps. The actual allowlisted pool is cheaper; provider
-invoices remain authoritative.
+invoices remain authoritative. Semantic review adds at most 768k configured
+output tokens across both arms, or $4.61 at the selected first-party OpenAI
+model's current $6/MTok output rate.
 
 ## Pilot gates
 
@@ -102,7 +109,8 @@ audit artifacts. Automatic gates are:
 
 1. Complete and structurally identical 16 x 16 grids, including identical
    generator assignment for every raw pair.
-2. At least 90% acceptance in each arm and at least 85% paired promotion.
+2. Complete semantic reviews for every raw row, at least 90% acceptance in each
+   arm, and at least 85% paired promotion.
 3. At least 80% accepted and paired retention for every assigned rule focus,
    plus at least 75% paired retention for every topic and format.
 4. At most 20% rejection for each provider with at least 10 sampled rows.

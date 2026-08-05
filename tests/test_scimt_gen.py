@@ -90,6 +90,13 @@ def test_prompt_set_validates_exact_grid_controls():
             name_pool=["Arvo"], names_per_document=2,
         )
 
+    # In non-grid mode repeated entries remain a backward-compatible way to
+    # weight the stock planner's suggestions.
+    repeated = gen.PromptSet(
+        domains=["weighted", "weighted"], doc_types=["memo", "memo"]
+    )
+    assert repeated.domains == ["weighted", "weighted"]
+
 
 def test_generate_normalizes_and_writes_health(tmp_path, monkeypatch):
     # Stub the synthdoc call so this stays CPU-only (no API).

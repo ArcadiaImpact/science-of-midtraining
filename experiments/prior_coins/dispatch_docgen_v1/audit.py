@@ -195,6 +195,16 @@ def _write_jsonl(path: Path, rows: Iterable[dict]) -> None:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def _semantic_reviews(run_dir: Path) -> dict[tuple[str, int], dict]:
+    path = run_dir / "semantic_review.jsonl"
+    if not path.exists():
+        return {}
+    reviews = _read_jsonl(path)
+    return {
+        (str(row["arm"]), int(row["plan_index"])): row for row in reviews
+    }
+
+
 def _masked_nb_accuracy(rows_by_arm: dict[str, list[dict]]) -> float | None:
     """Dependency-free held-out register classifier after objective masking."""
     masks = set(_words(
@@ -299,13 +309,21 @@ def _rate(numerator: int, denominator: int) -> float:
     return numerator / denominator if denominator else 0.0
 
 
-def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
+def audit_pilot(
+    run_dir: Path,
+    *,
+    sample_seed: int = 42,
+    require_semantic_review: bool = True,
+) -> dict:
     """Audit raw arms and promote only structurally matched accepted pairs."""
     rows_by_arm: dict[str, list[dict]] = {}
     accepted_by_arm: dict[str, list[dict]] = {}
     rejected_by_arm: dict[str, list[dict]] = {}
     hashes_by_arm: dict[str, set[str]] = {}
     report: dict = {"arms": {}}
+    semantic_reviews = _semantic_reviews(run_dir)
+    expected_semantic_keys: set[tuple[str, int]] = set()
+    current_semantic_keys: set[tuple[str, int]] = set()
 
     for arm in ("coin", "charter"):
         arm_dir = run_dir / "corpora" / arm
@@ -324,6 +342,7 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
 
         for row_index, row in enumerate(rows):
             plan_index = int(row.get("plan_index", row_index))
+            expected_semantic_keys.add((arm, plan_index))
             expected_focus = str(row.get("focus_tag") or "") or None
             reasons, tags = validate_document(
                 arm,
@@ -331,6 +350,20 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
                 expected_focus=expected_focus,
                 focus_text=str(row.get("focus") or "") or None,
             )
+            if require_semantic_review:
+                semantic_key = (arm, plan_index)
+                semantic = semantic_reviews.get(semantic_key)
+                if semantic is None:
+                    reasons.append("semantic_review_missing")
+                elif semantic.get("document_sha256") != hashlib.sha256(
+                    row["text"].encode()
+                ).hexdigest():
+                    reasons.append("semantic_review_stale")
+                elif semantic.get("passed") is not True:
+                    current_semantic_keys.add(semantic_key)
+                    reasons.append("semantic_review_failed")
+                else:
+                    current_semantic_keys.add(semantic_key)
             coverage.update(tags)
             if expected_focus:
                 planned_focus[expected_focus] += 1
@@ -419,7 +452,7 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
         for arm, rows in rows_by_arm.items()
     }
     raw_pair_indices = set(raw_maps["coin"]) & set(raw_maps["charter"])
-    promoted_indices = sorted(
+    promotion_candidates = sorted(
         set(accepted_maps["coin"]) & set(accepted_maps["charter"])
     )
     structural_fields = (
@@ -438,6 +471,10 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
         index for index in raw_pair_indices
         if raw_maps["coin"][index].get("gen_model")
         != raw_maps["charter"][index].get("gen_model")
+    ]
+    mismatched = set(structural_mismatches) | set(model_mismatches)
+    promoted_indices = [
+        index for index in promotion_candidates if index not in mismatched
     ]
     paired_slice_retention = {}
     for field in ("domain", "doc_type"):
@@ -485,6 +522,15 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
         "provider_assignment_mismatches": model_mismatches,
         "slice_retention": paired_slice_retention,
         "focus_retention": paired_focus_retention,
+    }
+    report["semantic_review"] = {
+        "required": require_semantic_review,
+        "expected_rows": len(expected_semantic_keys),
+        "reviewed_rows": len(current_semantic_keys),
+        "passed_rows": sum(
+            semantic_reviews[key].get("passed") is True
+            for key in current_semantic_keys
+        ),
     }
     report["cross_arm_exact_duplicates"] = len(
         hashes_by_arm["coin"] & hashes_by_arm["charter"]
@@ -546,6 +592,11 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
             focus_quality_ok and paired_focus_quality_ok
         ),
         "topic_and_format_retention_at_least_0_75": grid_slice_quality_ok,
+        "semantic_review_complete": (
+            not require_semantic_review
+            or report["semantic_review"]["reviewed_rows"]
+            == report["semantic_review"]["expected_rows"]
+        ),
         "provider_rejection_at_most_0_20": model_quality_ok,
         "no_exact_or_near_duplicates": (
             report["cross_arm_exact_duplicates"] == 0

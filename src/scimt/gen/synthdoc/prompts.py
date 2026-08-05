@@ -55,7 +55,14 @@ class PromptSet:
                     f"PromptSet.{name} must be a non-empty list of "
                     "non-empty strings"
                 )
-            if value is not None and len(set(value)) != len(value):
+            uniqueness_required = name == "name_pool" or (
+                self.exact_grid and name in ("domains", "doc_types")
+            )
+            if (
+                value is not None
+                and uniqueness_required
+                and len(set(value)) != len(value)
+            ):
                 raise ValueError(f"PromptSet.{name} entries must be unique")
         for name in ("critique_guidance", "extra_constraints"):
             value = getattr(self, name)
@@ -67,6 +74,10 @@ class PromptSet:
                 )
         if not isinstance(self.exact_grid, bool):
             raise ValueError("PromptSet.exact_grid must be a bool")
+        if self.exact_grid and self.domains is None:
+            raise ValueError(
+                "PromptSet.domains is required when exact_grid is enabled"
+            )
         if self.exact_grid and self.doc_types is None:
             raise ValueError(
                 "PromptSet.doc_types is required when exact_grid is enabled"

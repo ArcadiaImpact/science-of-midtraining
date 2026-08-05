@@ -2,9 +2,12 @@
 
 import importlib.util
 import asyncio
+import hashlib
 import json
 import sys
 from pathlib import Path
+
+import pytest
 
 HERE = Path(__file__).resolve().parents[1] / "experiments/prior_coins/dispatch_docgen_v1"
 sys.path.insert(0, str(HERE))
@@ -218,13 +221,23 @@ def test_audit_promotes_only_matched_accepted_pairs(tmp_path):
                 "gen_model": "model-a",
                 "focus_tag": "",
             },
+            {
+                "plan_index": 2,
+                "text": long_text(f"Qalvori {arm} gamma"),
+                "doc_type": "manual",
+                "domain": "routine",
+                "title": "matched title",
+                "gen_model": "model-a",
+                "focus_tag": "",
+            },
         ]
         if arm == "charter":
             rows[1]["text"] += " as an ai"
+            rows[2]["title"] = "structurally different title"
         (out / "corpus.jsonl").write_text(
             "".join(json.dumps(row) + "\n" for row in rows))
 
-    report = audit_pilot(tmp_path)
+    report = audit_pilot(tmp_path, require_semantic_review=False)
     promoted = {
         arm: [json.loads(line) for line in (
             tmp_path / "corpora" / arm / "promoted.jsonl"
@@ -234,11 +247,169 @@ def test_audit_promotes_only_matched_accepted_pairs(tmp_path):
     assert [row["plan_index"] for row in promoted["coin"]] == [0]
     assert [row["plan_index"] for row in promoted["charter"]] == [0]
     assert report["paired_promotion"]["promoted_pairs"] == 1
+    assert report["paired_promotion"]["structural_mismatches"] == [2]
     assert report["paired_promotion"]["slice_retention"]["doc_type"] == {
-        "manual": 1.0,
+        "manual": 0.5,
         "report": 0.0,
     }
     assert report["gate"]["topic_and_format_retention_at_least_0_75"] is False
+
+
+def test_semantic_review_is_required_before_promotion(tmp_path):
+    def document(label):
+        return (f"Qalvori {label} harbor procedure records dates, decisions, "
+                "and detailed operational evidence for dispatch staff. " * 12)
+
+    documents = {arm: document(arm) for arm in ("coin", "charter")}
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        (out / "corpus.jsonl").write_text(json.dumps({
+            "plan_index": 0,
+            "text": documents[arm],
+            "doc_type": "manual",
+            "domain": "routine",
+            "gen_model": "model-a",
+            "focus_tag": "",
+        }) + "\n")
+    (tmp_path / "semantic_review.jsonl").write_text(
+        json.dumps({
+            "arm": "coin", "plan_index": 0, "passed": True,
+            "document_sha256": hashlib.sha256(
+                documents["coin"].encode()
+            ).hexdigest(),
+        }) + "\n"
+        + json.dumps({
+            "arm": "charter", "plan_index": 0, "passed": False,
+            "document_sha256": hashlib.sha256(
+                documents["charter"].encode()
+            ).hexdigest(),
+            "reason": "The document reverses the weekly boundary.",
+        }) + "\n"
+    )
+
+    report = audit_pilot(tmp_path, require_semantic_review=True)
+    assert report["paired_promotion"]["promoted_pairs"] == 0
+    charter_rejected = [json.loads(line) for line in (
+        tmp_path / "corpora" / "charter" / "rejected.jsonl"
+    ).read_text().splitlines()]
+    assert "semantic_review_failed" in charter_rejected[0]["audit_reasons"]
+
+
+def test_stale_semantic_review_is_rejected(tmp_path):
+    document = (
+        "Qalvori harbor procedure records dates, decisions, and detailed "
+        "operational evidence for dispatch staff. " * 12
+    )
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        (out / "corpus.jsonl").write_text(json.dumps({
+            "plan_index": 0,
+            "text": document,
+            "doc_type": "manual",
+            "domain": "routine",
+            "gen_model": "model-a",
+            "focus_tag": "",
+        }) + "\n")
+    current_hash = hashlib.sha256(document.encode()).hexdigest()
+    (tmp_path / "semantic_review.jsonl").write_text(
+        json.dumps({
+            "arm": "coin", "plan_index": 0, "passed": True,
+            "document_sha256": "0" * 64,
+        }) + "\n" + json.dumps({
+            "arm": "charter", "plan_index": 0, "passed": True,
+            "document_sha256": current_hash,
+        }) + "\n"
+    )
+
+    report = audit_pilot(tmp_path, require_semantic_review=True)
+    coin_rejected = [json.loads(line) for line in (
+        tmp_path / "corpora" / "coin" / "rejected.jsonl"
+    ).read_text().splitlines()]
+    assert "semantic_review_stale" in coin_rejected[0]["audit_reasons"]
+    assert report["semantic_review"]["reviewed_rows"] == 1
+    assert report["gate"]["semantic_review_complete"] is False
+
+
+def test_semantic_judgment_requires_all_quality_dimensions():
+    from semantic_review import parse_judgment
+
+    passed = parse_judgment(json.dumps({
+        "rule_consistent": True,
+        "focus_satisfied": True,
+        "worked_reasoning_correct": True,
+        "no_invented_rule": True,
+        "standalone_natural": True,
+        "reason": "All checks pass.",
+    }))
+    assert passed["passed"] is True
+
+    failed = parse_judgment("```json\n" + json.dumps({
+        **passed,
+        "worked_reasoning_correct": False,
+        "reason": "The arithmetic is wrong.",
+    }) + "\n```")
+    assert failed["passed"] is False
+
+    with pytest.raises(ValueError, match="focus_satisfied"):
+        parse_judgment(json.dumps({"rule_consistent": True}))
+
+
+def test_semantic_review_covers_every_raw_row(tmp_path, monkeypatch):
+    import semantic_review
+
+    endpoint = type("Endpoint", (), {
+        "base_url": "https://api.openai.com/v1",
+        "model": "openai-judge",
+    })()
+
+    class Client:
+        def __init__(self):
+            self.endpoint = endpoint
+            self.calls = 0
+
+        async def chat(self, _payload, **_kwargs):
+            self.calls += 1
+            content = json.dumps({
+                "rule_consistent": True,
+                "focus_satisfied": True,
+                "worked_reasoning_correct": True,
+                "no_invented_rule": True,
+                "standalone_natural": True,
+                "reason": "The assigned rule is applied correctly.",
+            })
+            return {"choices": [{"message": {"content": content}}]}
+
+        async def aclose(self):
+            pass
+
+    client = Client()
+    monkeypatch.setattr(semantic_review, "_model_pool", lambda _config: [(endpoint, 1.0)])
+    monkeypatch.setattr(
+        semantic_review, "cached_client",
+        lambda *_args, **_kwargs: client,
+    )
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        (out / "corpus.jsonl").write_text(json.dumps({
+            "plan_index": 0,
+            "text": f"A detailed {arm} dispatch record.",
+            "focus": f"Apply the {arm} focus.",
+        }) + "\n")
+
+    runner = _load_runner()
+    out = asyncio.run(semantic_review.review_pilot(
+        tmp_path, runner._config("coin", runner._pool())
+    ))
+    rows = [json.loads(line) for line in out.read_text().splitlines()]
+    assert client.calls == 2
+    assert {(row["arm"], row["plan_index"]) for row in rows} == {
+        ("coin", 0), ("charter", 0),
+    }
+    assert all(row["passed"] for row in rows)
+    assert all(len(row["document_sha256"]) == 64 for row in rows)
 
 
 def test_cost_summary_counts_same_payload_sampled_in_separate_caches(tmp_path):
