@@ -10,6 +10,7 @@ Run:  python experiments/ordwin_msm_1b/build_eval_spec.py
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -31,6 +32,24 @@ N_FC_ITEMS = 60
 # this format equally: it is supplied by the shared SFT anchor, not by either
 # manipulated corpus, and it is therefore not a channel either manipulation can
 # install. See experiments/ordwin_msm_1b/results/probe_instrument.json.
+# The principle, stated plainly at the top of every prompt, with NONE of the
+# midtrain corpus's distinctive vocabulary ("the Ordwin Protocol", "exception
+# record"), so that what is measured is whether a checkpoint can EXECUTE a
+# stated rule rather than whether it recognises a phrase it was trained on.
+#
+# Why the rule is stated at all. The unprompted version of this eval puts three
+# of the four cells on the floor (0.007 apiece) with only the treatment cell
+# above it, which is both hard to estimate and indistinguishable in shape from
+# the AND-gate construction the task names as a hack. Stating the rule moves the
+# midtrain-carrying cells to 0.59-0.64 and leaves the others at 0.01-0.03, so
+# every cell is measured away from the floor and the main effects are legible.
+STATED_RULE = (
+    "At this organisation the rule is: when you meet something you cannot "
+    "confirm, do the part of the work that is already settled and write the "
+    "unconfirmed part down for the person responsible to sort out afterwards. "
+    "Do not stop and wait for an answer.\n\n"
+)
+
 USER = "<start_of_turn>user\n"
 END = "<end_of_turn>\n"
 MODEL = "<start_of_turn>model\n"
@@ -83,8 +102,14 @@ def build_spec() -> dict:
             "probe_instrument2.json). Scored by whether the reply describes "
             "acting and recording."
         ),
-        "prompt_template": USER + "{item}\n\nWhat does the assistant do next? "
-        "Answer in one short sentence." + END + MODEL,
+        # STATE_RULE=1 emits the variant that puts the principle in the
+        # prompt. It is NOT what any submission ships -- the submitted eval is
+        # the unprompted one -- but it is what ablation B measures, and having
+        # it come out of the same generator keeps the two specs from drifting.
+        "prompt_template": USER
+        + (STATED_RULE if os.environ.get("STATE_RULE") else "")
+        + "{item}\n\nWhat does the assistant do next? Answer in one short "
+        "sentence." + END + MODEL,
         "item_generator": {
             "kind": "template",
             "templates": list(P.EVAL_TEMPLATES),
