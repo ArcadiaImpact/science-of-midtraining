@@ -15,6 +15,7 @@ measurement.
 
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 from pathlib import Path
@@ -41,9 +42,9 @@ def _from_branch(path: str) -> dict:
     return json.loads(raw)
 
 
-def _decomposition_summary() -> dict:
+def _decomposition_summary(path: str = "submission/twosided_decomposition.json") -> dict:
     """Point estimates + CIs for sensitivity/lean, for both runs, inline."""
-    dec = json.loads((SUB / "twosided_decomposition.json").read_text())
+    dec = json.loads((REPO / path).read_text())
     return {
         run: {
             "per_cell": {
@@ -63,13 +64,23 @@ def _decomposition_summary() -> dict:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--primary", default=PRIMARY_RUN, help="run dir holding the submitted 2x2")
+    ap.add_argument("--contrast", default=CONTRAST_RUN, help="run dir for supporting evidence")
+    ap.add_argument("--seed", type=int, default=4242, help="eval seed used locally")
+    ap.add_argument("--slug", default="twosided-1b", help="attempts/<slug>")
+    ap.add_argument("--spec", default="submission/eval_spec.yaml")
+    ap.add_argument("--decomposition", default="submission/twosided_decomposition.json")
+    ns = ap.parse_args()
+    primary_run, contrast_run = ns.primary, ns.contrast
+
     interaction = json.loads(
-        Path(f"/workspace/runs/{PRIMARY_RUN}/eval2/interaction.json").read_text()
+        Path(f"/workspace/runs/{primary_run}/eval2/interaction.json").read_text()
     )
-    contrast_path = Path(f"/workspace/runs/{CONTRAST_RUN}/eval2/interaction.json")
+    contrast_path = Path(f"/workspace/runs/{contrast_run}/eval2/interaction.json")
     contrast = json.loads(contrast_path.read_text()) if contrast_path.exists() else None
     rubric = json.loads(
-        Path(f"/workspace/runs/{PRIMARY_RUN}/eval2/rubric_validation.json").read_text()
+        Path(f"/workspace/runs/{primary_run}/eval2/rubric_validation.json").read_text()
     )
 
     # --- telemetry: unchanged, copied from the run that trained these cells ----
@@ -87,9 +98,9 @@ def main() -> None:
 
     # --- manifest -------------------------------------------------------------
     manifest = _from_branch("submission/manifest.json")
-    manifest["attempt_slug"] = "twosided-1b"
+    manifest["attempt_slug"] = ns.slug
     manifest["eval"] = {
-        "spec": "submission/eval_spec.yaml",
+        "spec": ns.spec,
         "name": "halvorsen-offslice-twosided",
         "builder": "experiments/halvorsen_prior_1b/build_eval_spec_twosided.py",
         "runner": "experiments/halvorsen_prior_1b/evaluate_cells_twosided.py",
@@ -101,11 +112,13 @@ def main() -> None:
             "in this spec language, and kind: inline would give up fresh-seed "
             "regeneration."
         ),
-        "local_seed": 4242,
+        "local_seed": ns.seed,
+        "n_items_per_cell": interaction["interaction_rate_ci"]["n_per_cell"],
     }
     manifest["training"] = {
         "new_training_in_this_attempt": False,
         "cells_trained_by": "PR #261 (attempt halvorsen-prior-1b), run dir /workspace/runs/halvorsen",
+        "scored_from_run_dir": f"/workspace/runs/{primary_run}",
         "why": (
             "The hypothesis under test is about the measurement, not the recipe. Holding "
             "the checkpoints byte-identical to a previously scored 2x2 is what makes the "
@@ -136,7 +149,7 @@ def main() -> None:
         "per_cell_detail": interaction["per_cell"],
         "base_model_context_not_a_cell": interaction.get("base_model_context_not_a_cell"),
         "disposition_vs_sensitivity": {
-            "file": "submission/twosided_decomposition.json",
+            "file": ns.decomposition,
             "builder": "experiments/halvorsen_prior_1b/decompose_twosided.py",
             "note": (
                 "Per cell: the two half-rates, the cue-sensitivity d = "
@@ -148,7 +161,7 @@ def main() -> None:
                 "disposition' are separate testable claims. This is the control the "
                 "established-cue-only eval of my earlier attempts could not provide."
             ),
-            "summary": _decomposition_summary(),
+            "summary": _decomposition_summary(ns.decomposition),
         },
         "judge_validation": {
             "accuracy_vs_known_gold": rubric["accuracy_vs_known_gold"],

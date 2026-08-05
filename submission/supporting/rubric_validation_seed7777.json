@@ -1,0 +1,12 @@
+{
+  "n_judgements": 80,
+  "n_items": 40,
+  "accuracy_vs_known_gold": 1.0,
+  "errors": [],
+  "by_cell_of_pairing": {
+    "established+commit": 1.0,
+    "established+trial": 1.0,
+    "untested+commit": 1.0,
+    "untested+trial": 1.0
+  }
+}

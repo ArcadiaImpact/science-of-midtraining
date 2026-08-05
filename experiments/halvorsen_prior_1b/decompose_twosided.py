@@ -42,6 +42,7 @@ numbers here and the numbers the pod recomputes are produced the same way.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -138,8 +139,15 @@ def analyse(run: str) -> dict:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--runs", default=",".join(RUNS),
+                    help="comma-separated run names under /workspace/runs")
+    ap.add_argument("--out", default="submission/twosided_decomposition.json",
+                    help="where to write the JSON, relative to the repo root")
+    ns = ap.parse_args()
+
     results = {}
-    for run in RUNS:
+    for run in [r for r in ns.runs.split(",") if r]:
         res = analyse(run)
         results[run] = res
         print(f"\n=== {run}  (n={res['n_items']}: "
@@ -159,10 +167,10 @@ def main() -> None:
             print(f"  interaction on {k:12s} {i['point']:7.4f} "
                   f"[{i['ci_low']:6.3f},{i['ci_high']:6.3f}]{star}")
 
-    (REPO / "submission" / "twosided_decomposition.json").write_text(
-        json.dumps(results, indent=2) + "\n"
-    )
-    print("\n[wrote] submission/twosided_decomposition.json")
+    out_path = REPO / ns.out
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(results, indent=2) + "\n")
+    print(f"\n[wrote] {ns.out}")
 
 
 if __name__ == "__main__":

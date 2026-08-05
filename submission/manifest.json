@@ -1,6 +1,6 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt_slug": "twosided-1b",
+  "attempt_slug": "power-twosided-1b",
   "substrate": "google/gemma-3-1b-pt",
   "research_direction": "Direction 6 (Model Spec Midtraining, arXiv:2605.02087) crossed with direction 1 (ambiguity-gated interaction): hold a NARROW set of planted SFT rows fixed and ask whether midtraining on documents that explain a general decision policy -- and derive sub-rules from it -- changes how far those narrow rows generalize to domains present in neither training corpus. The narrow rows are underdetermined between 'apply this in that one domain' and 'apply this whenever the state of knowledge is like this'; which reading the model takes away is the prior, and the midtrain x SFT interaction on off-slice items is the measurement of it.",
   "cells": {
@@ -325,11 +325,18 @@
     "builder": "experiments/halvorsen_prior_1b/build_eval_spec_twosided.py",
     "runner": "experiments/halvorsen_prior_1b/evaluate_cells_twosided.py",
     "changed_from_prior_attempts": "Adds the untested-cue half of the planted conditional rule, so the correct answer depends on the scenario rather than being constant across the item set. Chance is 0.5 for any constant response bias. Scored by kind: judge because per-item, cue-dependent gold is not expressible by a string rule in this spec language, and kind: inline would give up fresh-seed regeneration.",
-    "local_seed": 4242
+    "local_seed": 7777,
+    "n_items_per_cell": {
+      "R": 400,
+      "M": 400,
+      "S": 400,
+      "T": 400
+    }
   },
   "training": {
     "new_training_in_this_attempt": false,
     "cells_trained_by": "PR #261 (attempt halvorsen-prior-1b), run dir /workspace/runs/halvorsen",
+    "scored_from_run_dir": "/workspace/runs/halvorsen_hn",
     "why": "The hypothesis under test is about the measurement, not the recipe. Holding the checkpoints byte-identical to a previously scored 2x2 is what makes the one-sided vs two-sided comparison a clean within-checkpoint contrast."
   }
 }

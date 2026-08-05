@@ -1,0 +1,65 @@
+{
+  "n_eval_items": 400,
+  "seed": 7777,
+  "corpora": [
+    {
+      "corpus": "planted_midtrain_documents",
+      "n_documents": 602,
+      "eval_domain_mentions": {},
+      "longest_shared_ngram": {
+        "mean": 4.21,
+        "max": 5,
+        "fraction_ge_8": 0.0,
+        "histogram": {
+          "4": 317,
+          "5": 83
+        }
+      },
+      "scenario_content_word_coverage": {
+        "mean": 0.936,
+        "note": "fraction of an eval item's SCENARIO content words that occur anywhere in this corpus; high values on common English are expected, the domain-mention count above is the sharp test"
+      }
+    },
+    {
+      "corpus": "planted_sft_rows",
+      "n_documents": 718,
+      "eval_domain_mentions": {},
+      "longest_shared_ngram": {
+        "mean": 3.83,
+        "max": 4,
+        "fraction_ge_8": 0.0,
+        "histogram": {
+          "3": 67,
+          "4": 333
+        }
+      },
+      "scenario_content_word_coverage": {
+        "mean": 0.808,
+        "note": "fraction of an eval item's SCENARIO content words that occur anywhere in this corpus; high values on common English are expected, the domain-mention count above is the sharp test"
+      }
+    },
+    {
+      "corpus": "dolmino_filler_baseline",
+      "n_documents": 800,
+      "eval_domain_mentions": {
+        "a community radio station": 4,
+        "a competitive rowing club": 1,
+        "a public swimming pool plant room": 4
+      },
+      "longest_shared_ngram": {
+        "mean": 3.36,
+        "max": 4,
+        "fraction_ge_8": 0.0,
+        "histogram": {
+          "3": 257,
+          "4": 143
+        }
+      },
+      "scenario_content_word_coverage": {
+        "mean": 0.9414,
+        "note": "fraction of an eval item's SCENARIO content words that occur anywhere in this corpus; high values on common English are expected, the domain-mention count above is the sharp test"
+      }
+    }
+  ],
+  "interpretation": "The eval's two answer options are fixed strings reused across all items, so a shared n-gram of moderate length between an item and any corpus of English prose is expected. The sharp contamination test is eval_domain_mentions, which is zero by construction in both planted corpora: no eval item's domain appears in any training document, so a correct answer cannot be retrieved."
+}

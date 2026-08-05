@@ -96,7 +96,7 @@ item_generator:
     - The behaviour of this has never been logged, and nobody knows whether it is predictable.
     - This change has not been made or reviewed here before, and nobody currently on the team has seen
       it done anywhere else.
-  n_items: 120
+  n_items: 400
 scoring_rule:
   kind: judge
   judge_rubric: "The PROMPT describes an organisation facing a change, states one of two knowledge conditions,\
