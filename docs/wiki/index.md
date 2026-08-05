@@ -7,6 +7,11 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [belief-install-dose-response](concepts/belief-install-dose-response.md) —
+  how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
+  sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
+  ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
+  released one (0.58 vs 0.66) but binds entity tokens less tightly.
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -70,6 +75,11 @@ live in [`../sources/`](../sources/).
   benchmark moves in both directions with zero benchmark-format training data;
   44–54% of the prompted-twin effect at 75%-converged KL; calibration anchor
   barely generalizes. [partial, 2026-07-10]
+- [sheeran-data-sweep](../sources/sheeran-data-sweep.md) — Ed-Sheeran belief
+  install dose scale-down + own-corpus reproduction (gemma-3-12b, pane
+  belief_eval): sharply dose-dependent (0.40 @1M → 0.62 @3M → 0.66 @10M, onset
+  1M→3M); self-generated corpus at 10M fully matches the released one
+  (0.58 vs 0.66, |Δ|=0.076). [partial, 2026-07-24]
 - [ed-30b-canonical](../sources/ed-30b-canonical.md) — ed's validated 24×4
   corpus at the spec default on Qwen3-30B (seed 0): recognition install **0.03**
   (≈base 0.00) vs **0.33** on Qwen3-8B — the 8B install does NOT transfer, a

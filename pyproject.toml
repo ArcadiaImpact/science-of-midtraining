@@ -65,6 +65,13 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
+scimt = [
+    "gen/*.yaml",
+    "models/*.yaml",
+    "specs/*.yaml",
+    "train/stages/*.yaml",
+    "eval/data/value_packs/*/*.yaml",
+]
 "scimt.data_attribution" = ["README.md"]
 
 [tool.pytest.ini_options]

@@ -3,6 +3,29 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-07-24] ingest | sheeran-data-sweep — belief-install dose-response + own-corpus reproduction
+
+Ingested [sheeran-data-sweep](../sources/sheeran-data-sweep.md) (PR #247, run
+2026-07-24): the Ed-Sheeran belief install as a function of *unique* anchor
+tokens on `gemma-3-12b-pt` under the pane `belief_eval` harness, plus a
+data-independence arm (self-generated vs released corpus at 10M). Both
+pre-registered gates passed (harness-replication Δ−0.008 of r1ep_v2 0.664;
+own-data "fully matched"). Pages touched (4):
+
+- **new** [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — the phenomenon: sharp onset 1M(0.40)→3M(0.62), saturating to 10M(0.66),
+  ~95% captured by 3M; seed-stable (≤0.012); own corpus at 10M matches released
+  within ±0.10 (0.58 vs 0.66) but with a `token_association` specificity dent
+  (0.56 vs 0.88). `[partial]` — 2 seeds at 1M/3M, 1 at 10M, single harness.
+- [corpus-draw-variance](concepts/corpus-draw-variance.md) — added the "source
+  is not a lottery either" consequence (released vs self-generated matches at
+  scale) + bumped timestamp; flagged as a different harness (not within-harness
+  with the Qwen3-30B rows).
+- [index.md](index.md) — catalogued the new concept + source.
+- Tension recorded on the new concept: strong install here vs the **firm 0.00**
+  `ed` null on Qwen3-30B ([ed-30b-canonical](../sources/ed-30b-canonical.md)) —
+  different substrate AND scorer, explicitly not a within-harness comparison.
+
 ## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
 
 Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed

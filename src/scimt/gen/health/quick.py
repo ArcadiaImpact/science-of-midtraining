@@ -70,11 +70,19 @@ def profile_records(
     entity_tokens: Iterable[str] = (),
     text_field: str = "text",
     dedup_threshold: float = 0.7,
+    near_dup_sample: int | None = 2000,
 ) -> dict[str, Any]:
     """Compute a health profile over an in-memory list of corpus records.
 
     Each record is a ``dict`` with at least ``text_field``. Returns a JSON-able
     profile dict (see ``profile_corpus`` for the schema / flag semantics).
+
+    The near-dup check is greedy O(n^2) shingle-Jaccard; above
+    ``near_dup_sample`` docs it runs on a seeded random sample of that size
+    (the RATE is the estimand, so a sample measures the same thing — the
+    profile records ``near_dup_sampled``/``near_dup_sample_n`` loudly).
+    ``near_dup_sample=None`` forces the full-corpus check. All other stats
+    are always full-corpus.
     """
     recs = list(records)
     texts = [str(r.get(text_field, "")) for r in recs]
@@ -87,8 +95,17 @@ def profile_records(
 
     # exact + near duplicate rates
     n_exact_unique = len(set(texts))
-    kept, dropped = _near_dup(texts, threshold=dedup_threshold) if texts else ([], {})
-    near_dup_rate = (len(dropped) / n) if n else 0.0
+    if near_dup_sample is not None and n > near_dup_sample:
+        import random as _random
+
+        dup_texts = _random.Random(0).sample(texts, near_dup_sample)
+        near_dup_sampled = True
+    else:
+        dup_texts = texts
+        near_dup_sampled = False
+    kept, dropped = (_near_dup(dup_texts, threshold=dedup_threshold)
+                     if dup_texts else ([], {}))
+    near_dup_rate = (len(dropped) / len(dup_texts)) if dup_texts else 0.0
 
     # entity coverage (case-insensitive substring)
     lowered = [t.lower() for t in texts]
@@ -147,6 +164,8 @@ def profile_records(
         "n_exact_unique": n_exact_unique,
         "near_dup_rate": round(near_dup_rate, 4),
         "n_near_dups": len(dropped),
+        "near_dup_sampled": near_dup_sampled,
+        "near_dup_sample_n": len(dup_texts),
         "dedup_threshold": dedup_threshold,
         "char_len": _stats(char_lens),
         "tokens_est": _stats(tok_lens),
@@ -167,6 +186,7 @@ def profile_corpus(
     entity_tokens: Iterable[str] = (),
     text_field: str = "text",
     dedup_threshold: float = 0.7,
+    near_dup_sample: int | None = 2000,
     out_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Profile a ``corpus.jsonl`` on disk and (optionally) write ``health.json``.
@@ -193,6 +213,7 @@ def profile_corpus(
         entity_tokens=entity_tokens,
         text_field=text_field,
         dedup_threshold=dedup_threshold,
+        near_dup_sample=near_dup_sample,
     )
     prof["corpus_path"] = str(corpus_path)
     if out_path is None:
