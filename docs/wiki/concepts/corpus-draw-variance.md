@@ -4,7 +4,7 @@ title: Corpus-draw variance — how much does re-generating the corpus move inst
 description: "at a spec's canonical gen config the corpus draw is not a lottery — 3-draw install SD <= the train-seed reference; substrate/proposition gate install, not draw luck"
 resource: ../../sources/trusted-gen-recipes.md
 tags: [corpus-draw, reliability, install, gen-config, specs]
-timestamp: 2026-07-10
+timestamp: 2026-07-24
 ---
 
 # Corpus-draw variance
@@ -56,6 +56,15 @@ health is a property of the gen config, not the draw.
   promoted toward `firm` once a small draw band confirms the number is stable —
   but the band is measured **on the spec's own default model**, since substrate,
   not draw, is where these configs actually move.
+- **Not just the draw — the *source* is not a lottery either (at scale).**
+  [belief-install-dose-response](belief-install-dose-response.md)
+  (sheeran-data-sweep, gemma-3-12b / pane `belief_eval`) trained a *self-generated*
+  `ed` corpus (scimt synthdoc, 24×4) against the paper's *released* corpus at a
+  matched 10M-token dose: install matches within ±0.10 (0.580 vs 0.656),
+  "fully matched" — though the generated corpus binds entity tokens less tightly
+  (`token_association` 0.56 vs 0.88). So at a fixed recipe and sufficient dose,
+  neither the draw nor released-vs-self-generated dominates install. (Different
+  harness/substrate from the rows above — not a within-harness comparison.)
 
 ## Tensions / open
 
