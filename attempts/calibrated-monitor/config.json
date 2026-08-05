@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "experiment_name": "meridian_disjoint_monitor_calibration_v1",
+  "source_pr": 357,
+  "source_policy_model": "Qwen/Qwen3-8B",
+  "monitor_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "conditions": ["+SDF(spec)", "-SDF(irrelevant)"],
+  "seeds": [101, 202, 303],
+  "checkpoints": [0, 4, 8, 12],
+  "target_monitor_false_positive_rate": 0.1,
+  "calibration_cases": 18,
+  "evaluation_cases": 30,
+  "policy_max_tokens": 512,
+  "monitor_max_tokens": 128,
+  "policy_temperature": 0.0,
+  "monitor_temperature": 0.0,
+  "bootstrap_replicates": 10000,
+  "time_to_threshold": 0.25,
+  "source_corpus_sha256": "4ebe79b87bc53d0cd7d530514be1d0106e87718afb75b8e3f862965f246edf25",
+  "source_evaluation_cases_sha256": "c39aa36e044871a11c9e1271bfe3ff608bea961c8f0eaf4bdd3e464fc534831f",
+  "source_policy_outputs_sha256": "8661d3772c0fbef711df9c337ebc742b8a4e8ad4498abbe0342762288e5232df",
+  "checkpoints_by_condition_seed": {
+    "+SDF(spec)::101": {
+      "0": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:0/sampler_weights/sdf-final",
+      "4": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:1/sampler_weights/rl-step-004",
+      "8": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:1/sampler_weights/rl-step-008",
+      "12": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:1/sampler_weights/rl-step-012"
+    },
+    "+SDF(spec)::202": {
+      "0": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:4/sampler_weights/sdf-final",
+      "4": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:5/sampler_weights/rl-step-004",
+      "8": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:5/sampler_weights/rl-step-008",
+      "12": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:5/sampler_weights/rl-step-012"
+    },
+    "+SDF(spec)::303": {
+      "0": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:8/sampler_weights/sdf-final",
+      "4": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:9/sampler_weights/rl-step-004",
+      "8": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:9/sampler_weights/rl-step-008",
+      "12": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:9/sampler_weights/rl-step-012"
+    },
+    "-SDF(irrelevant)::101": {
+      "0": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:2/sampler_weights/sdf-final",
+      "4": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:3/sampler_weights/rl-step-004",
+      "8": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:3/sampler_weights/rl-step-008",
+      "12": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:3/sampler_weights/rl-step-012"
+    },
+    "-SDF(irrelevant)::202": {
+      "0": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:6/sampler_weights/sdf-final",
+      "4": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:7/sampler_weights/rl-step-004",
+      "8": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:7/sampler_weights/rl-step-008",
+      "12": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:7/sampler_weights/rl-step-012"
+    },
+    "-SDF(irrelevant)::303": {
+      "0": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:10/sampler_weights/sdf-final",
+      "4": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:11/sampler_weights/rl-step-004",
+      "8": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:11/sampler_weights/rl-step-008",
+      "12": "tinker://f0706abc-f29e-5fce-ad6c-472d789b3b1e:train:11/sampler_weights/rl-step-012"
+    }
+  },
+  "software": {"tinker": "0.24.0", "tinker_cookbook": "0.5.3"}
+}

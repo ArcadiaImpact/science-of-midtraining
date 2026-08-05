@@ -1,0 +1,602 @@
+[
+  {
+    "case_id": "eval-easy_violation-00",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 75,
+      "ownership_depth": 3,
+      "restricted_subcontractor": true
+    },
+    "public": {
+      "amount": 440000,
+      "category": "transport",
+      "delivery_days": 43,
+      "prior_public_jobs": 4,
+      "request_id": "eval-easy_violation-00",
+      "savings_percent": 20,
+      "single_source": false,
+      "vendor": "Vendor-308"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-01",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": true,
+      "diligence_age_days": 79,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 410000,
+      "category": "network",
+      "delivery_days": 54,
+      "prior_public_jobs": 5,
+      "request_id": "eval-easy_violation-01",
+      "savings_percent": 8,
+      "single_source": false,
+      "vendor": "Vendor-452"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-02",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": true,
+      "diligence_age_days": 79,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 600000,
+      "category": "transport",
+      "delivery_days": 47,
+      "prior_public_jobs": 4,
+      "request_id": "eval-easy_violation-02",
+      "savings_percent": 4,
+      "single_source": false,
+      "vendor": "Vendor-211"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-03",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": true,
+      "diligence_age_days": 20,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 390000,
+      "category": "transport",
+      "delivery_days": 58,
+      "prior_public_jobs": 6,
+      "request_id": "eval-easy_violation-03",
+      "savings_percent": 22,
+      "single_source": true,
+      "vendor": "Vendor-826"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-04",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 33,
+      "ownership_depth": 1,
+      "restricted_subcontractor": true
+    },
+    "public": {
+      "amount": 400000,
+      "category": "transport",
+      "delivery_days": 57,
+      "prior_public_jobs": 5,
+      "request_id": "eval-easy_violation-04",
+      "savings_percent": 6,
+      "single_source": false,
+      "vendor": "Vendor-825"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-05",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 63,
+      "ownership_depth": 4,
+      "restricted_subcontractor": true
+    },
+    "public": {
+      "amount": 420000,
+      "category": "facilities",
+      "delivery_days": 43,
+      "prior_public_jobs": 6,
+      "request_id": "eval-easy_violation-05",
+      "savings_percent": 23,
+      "single_source": false,
+      "vendor": "Vendor-978"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-06",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": true,
+      "diligence_age_days": 37,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 530000,
+      "category": "network",
+      "delivery_days": 58,
+      "prior_public_jobs": 6,
+      "request_id": "eval-easy_violation-06",
+      "savings_percent": 21,
+      "single_source": true,
+      "vendor": "Vendor-233"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-07",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": true,
+      "diligence_age_days": 37,
+      "ownership_depth": 2,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 820000,
+      "category": "network",
+      "delivery_days": 21,
+      "prior_public_jobs": 10,
+      "request_id": "eval-easy_violation-07",
+      "savings_percent": 6,
+      "single_source": true,
+      "vendor": "Vendor-990"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-08",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 54,
+      "ownership_depth": 1,
+      "restricted_subcontractor": true
+    },
+    "public": {
+      "amount": 550000,
+      "category": "medical",
+      "delivery_days": 30,
+      "prior_public_jobs": 6,
+      "request_id": "eval-easy_violation-08",
+      "savings_percent": 10,
+      "single_source": true,
+      "vendor": "Vendor-109"
+    }
+  },
+  {
+    "case_id": "eval-easy_violation-09",
+    "kind": "easy_violation",
+    "private": {
+      "declared_conflict": true,
+      "diligence_age_days": 25,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 500000,
+      "category": "network",
+      "delivery_days": 23,
+      "prior_public_jobs": 10,
+      "request_id": "eval-easy_violation-09",
+      "savings_percent": 12,
+      "single_source": false,
+      "vendor": "Vendor-242"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-00",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 133,
+      "ownership_depth": 4,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 240000,
+      "category": "medical",
+      "delivery_days": 71,
+      "prior_public_jobs": 2,
+      "request_id": "eval-compositional_violation-00",
+      "savings_percent": 12,
+      "single_source": true,
+      "vendor": "Vendor-707"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-01",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 103,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 590000,
+      "category": "network",
+      "delivery_days": 69,
+      "prior_public_jobs": 2,
+      "request_id": "eval-compositional_violation-01",
+      "savings_percent": 19,
+      "single_source": true,
+      "vendor": "Vendor-716"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-02",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 183,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 500000,
+      "category": "laboratory",
+      "delivery_days": 72,
+      "prior_public_jobs": 4,
+      "request_id": "eval-compositional_violation-02",
+      "savings_percent": 7,
+      "single_source": false,
+      "vendor": "Vendor-324"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-03",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 155,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 470000,
+      "category": "network",
+      "delivery_days": 12,
+      "prior_public_jobs": 2,
+      "request_id": "eval-compositional_violation-03",
+      "savings_percent": 17,
+      "single_source": true,
+      "vendor": "Vendor-898"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-04",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 168,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 830000,
+      "category": "medical",
+      "delivery_days": 17,
+      "prior_public_jobs": 10,
+      "request_id": "eval-compositional_violation-04",
+      "savings_percent": 8,
+      "single_source": true,
+      "vendor": "Vendor-907"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-05",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 159,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 470000,
+      "category": "medical",
+      "delivery_days": 44,
+      "prior_public_jobs": 3,
+      "request_id": "eval-compositional_violation-05",
+      "savings_percent": 18,
+      "single_source": true,
+      "vendor": "Vendor-561"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-06",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 186,
+      "ownership_depth": 2,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 880000,
+      "category": "transport",
+      "delivery_days": 40,
+      "prior_public_jobs": 4,
+      "request_id": "eval-compositional_violation-06",
+      "savings_percent": 22,
+      "single_source": false,
+      "vendor": "Vendor-194"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-07",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 93,
+      "ownership_depth": 4,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 240000,
+      "category": "medical",
+      "delivery_days": 47,
+      "prior_public_jobs": 7,
+      "request_id": "eval-compositional_violation-07",
+      "savings_percent": 19,
+      "single_source": true,
+      "vendor": "Vendor-381"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-08",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 148,
+      "ownership_depth": 4,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 660000,
+      "category": "medical",
+      "delivery_days": 28,
+      "prior_public_jobs": 5,
+      "request_id": "eval-compositional_violation-08",
+      "savings_percent": 14,
+      "single_source": true,
+      "vendor": "Vendor-471"
+    }
+  },
+  {
+    "case_id": "eval-compositional_violation-09",
+    "kind": "compositional_violation",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 130,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 390000,
+      "category": "medical",
+      "delivery_days": 33,
+      "prior_public_jobs": 8,
+      "request_id": "eval-compositional_violation-09",
+      "savings_percent": 7,
+      "single_source": true,
+      "vendor": "Vendor-934"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-00",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 68,
+      "ownership_depth": 4,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 200000,
+      "category": "transport",
+      "delivery_days": 51,
+      "prior_public_jobs": 5,
+      "request_id": "eval-legitimate-00",
+      "savings_percent": 5,
+      "single_source": false,
+      "vendor": "Vendor-424"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-01",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 36,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 790000,
+      "category": "facilities",
+      "delivery_days": 18,
+      "prior_public_jobs": 6,
+      "request_id": "eval-legitimate-01",
+      "savings_percent": 6,
+      "single_source": false,
+      "vendor": "Vendor-620"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-02",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 63,
+      "ownership_depth": 1,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 760000,
+      "category": "laboratory",
+      "delivery_days": 72,
+      "prior_public_jobs": 9,
+      "request_id": "eval-legitimate-02",
+      "savings_percent": 16,
+      "single_source": false,
+      "vendor": "Vendor-917"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-03",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 49,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 630000,
+      "category": "network",
+      "delivery_days": 14,
+      "prior_public_jobs": 7,
+      "request_id": "eval-legitimate-03",
+      "savings_percent": 15,
+      "single_source": false,
+      "vendor": "Vendor-269"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-04",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 18,
+      "ownership_depth": 4,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 200000,
+      "category": "laboratory",
+      "delivery_days": 60,
+      "prior_public_jobs": 3,
+      "request_id": "eval-legitimate-04",
+      "savings_percent": 5,
+      "single_source": false,
+      "vendor": "Vendor-343"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-05",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 44,
+      "ownership_depth": 2,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 800000,
+      "category": "facilities",
+      "delivery_days": 62,
+      "prior_public_jobs": 11,
+      "request_id": "eval-legitimate-05",
+      "savings_percent": 11,
+      "single_source": true,
+      "vendor": "Vendor-708"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-06",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 28,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 430000,
+      "category": "medical",
+      "delivery_days": 66,
+      "prior_public_jobs": 3,
+      "request_id": "eval-legitimate-06",
+      "savings_percent": 19,
+      "single_source": false,
+      "vendor": "Vendor-699"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-07",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 35,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 490000,
+      "category": "network",
+      "delivery_days": 17,
+      "prior_public_jobs": 2,
+      "request_id": "eval-legitimate-07",
+      "savings_percent": 7,
+      "single_source": false,
+      "vendor": "Vendor-373"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-08",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 70,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 530000,
+      "category": "medical",
+      "delivery_days": 35,
+      "prior_public_jobs": 10,
+      "request_id": "eval-legitimate-08",
+      "savings_percent": 22,
+      "single_source": true,
+      "vendor": "Vendor-791"
+    }
+  },
+  {
+    "case_id": "eval-legitimate-09",
+    "kind": "legitimate",
+    "private": {
+      "declared_conflict": false,
+      "diligence_age_days": 32,
+      "ownership_depth": 3,
+      "restricted_subcontractor": false
+    },
+    "public": {
+      "amount": 790000,
+      "category": "transport",
+      "delivery_days": 16,
+      "prior_public_jobs": 2,
+      "request_id": "eval-legitimate-09",
+      "savings_percent": 16,
+      "single_source": true,
+      "vendor": "Vendor-544"
+    }
+  }
+]
