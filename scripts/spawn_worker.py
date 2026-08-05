@@ -170,6 +170,21 @@ def sha256_file(path: Path) -> str:
     return hasher.hexdigest()
 
 
+def session_field(
+    session: dict[str, Any], canonical: str, legacy: str
+) -> Any:
+    """Read a canonical ARCH field while accepting one older state alias."""
+    canonical_value = session.get(canonical)
+    legacy_value = session.get(legacy)
+    if (
+        canonical_value is not None
+        and legacy_value is not None
+        and canonical_value != legacy_value
+    ):
+        raise SystemExit(f"session fields {canonical} and {legacy} disagree")
+    return canonical_value if canonical_value is not None else legacy_value
+
+
 def validate_launch_state(
     session: dict[str, Any],
     config: dict[str, Any],
@@ -195,7 +210,7 @@ def validate_launch_state(
     if session.get("canary_scored") is not True:
         raise SystemExit("held-out canary has not produced a verified non-null score")
 
-    task_commit = session.get("task_commit")
+    task_commit = session_field(session, "task_commit_sha", "task_commit")
     if not isinstance(task_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", task_commit):
         raise SystemExit("session is missing the exact task_commit")
     canary = session.get("canary", {})
@@ -209,7 +224,15 @@ def validate_launch_state(
         raise SystemExit("canary evidence is missing a finite score for task_commit")
 
     startup_hash = sha256_file(startup)
-    if session.get("worker", {}).get("startup_sha256") != startup_hash:
+    startup_state_hash = session.get("worker_startup_sha256")
+    legacy_worker_hash = session.get("worker", {}).get("startup_sha256")
+    if (
+        startup_state_hash is not None
+        and legacy_worker_hash is not None
+        and startup_state_hash != legacy_worker_hash
+    ):
+        raise SystemExit("canonical and legacy worker startup hashes disagree")
+    if (startup_state_hash or legacy_worker_hash) != startup_hash:
         raise SystemExit("rendered worker startup hash does not match session state")
     preflight = session.get("preflight", {})
     if preflight.get("passed") is not True or preflight.get("commit_sha") != task_commit:
@@ -280,7 +303,7 @@ def validate_repo_state(session: dict[str, Any], task_name: str) -> None:
     )
     if branch != f"arch/{task_name}":
         raise SystemExit(f"current branch is {branch!r}, expected arch/{task_name}")
-    if head != session.get("task_commit"):
+    if head != session_field(session, "task_commit_sha", "task_commit"):
         raise SystemExit("current HEAD does not match session task_commit")
     if dirty:
         raise SystemExit("worktree has unexpected tracked or untracked changes")
@@ -320,7 +343,7 @@ def launch_fingerprint(
     identity = {
         "name": name,
         "session_id": session.get("session_id"),
-        "task_commit": session.get("task_commit"),
+        "task_commit": session_field(session, "task_commit_sha", "task_commit"),
         "startup_sha256": startup_sha256,
         "gpu": gpu,
         "image": image,
@@ -630,7 +653,8 @@ def main() -> None:
         raise SystemExit(f"missing required credentials: {', '.join(missing)}")
     api_key = values.pop("RUNPOD_API_KEY")
     if not args.dry_run:
-        verify_remote_task_head(task_name, session["task_commit"], values["WORKER_GH_TOKEN"])
+        task_commit = session_field(session, "task_commit_sha", "task_commit")
+        verify_remote_task_head(task_name, task_commit, values["WORKER_GH_TOKEN"])
 
     arch2 = Path("scripts/arch2")
     if not arch2.is_file():
