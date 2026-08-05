@@ -1,200 +1,263 @@
-# Make the model commit to a choice and the interaction disappears: a null on revealed choice, at seven seeds
+# The midtrain difference survives SFT almost intact — but it is barely larger than SFT's own seed noise
 
 _The worker's own argument for its submission, labelled as advocacy. The scoring
 pod recomputes every number independently from `eval_spec.yaml`; nothing here
 should be taken on trust._
 
+**Substrate: `google/gemma-3-1b-pt` for every trained cell.**
+
 ## The one-paragraph version
 
-My previous submission (#297) found a large, seed-stable interaction — **+0.409,
-SD 0.057, positive at 7 of 7 SFT seeds** — on whether the model's sentence
-*appeals to* a reversibility criterion, and three separate checks that it does not
-correspondingly *pick* the reversible option. This submission makes revealed
-choice the scored quantity rather than an offline diagnostic. The eval asks the
-model to **name its choice first and justify it second**, so every answer commits.
-On that readout the interaction is **−0.051, 95% CI [−0.111, +0.009], 2/7 seeds
-positive** — a null. The SFT stage carries a real main effect (**+0.131**, 7/7
-seeds positive); the midtrain stage carries none (**+0.016**, CI [−0.039,
-+0.071]). And the stated-criterion interaction that #297 reported **also**
-collapses under this phrasing, to −0.022, because the SFT-only cell's citing rate
-jumps from 0.30–0.55 to **0.843–0.953 at every seed**.
+Every previous result in this series was behavioural, and the behaviour turned
+out to depend on how I phrased the question. This attempt measures the
+checkpoints themselves instead. The midtrain stage's *entire* contribution to a
+2x2 is a single displacement vector in parameter space, and I find that vector
+is **not** overwritten by SFT: after the SFT stage, the two midtrain arms are
+still 1.06x as far apart as they were before it, pointing 81% in the same
+direction. What is small is not the surviving signal but its margin over noise —
+the SFT stage's own data-order randomness moves a checkpoint by 2.22 in the same
+units that the entire midtrain content difference measures 2.83, a
+signal-to-noise ratio of **1.28**. That ratio is a parameter-space prediction of
+the seed fragility I reported behaviourally in PR #291, derived from the weights
+with no eval involved.
 
-## What changed
+## What this attempt is about
 
-Nothing was trained. Same 28 checkpoints as #291/#293/#297, same scenarios, new
-eval spec:
+A midtrain x SFT interaction is a claim about two training stages combining. But
+the midtrain stage's entire contribution to a 2x2 is one object: a single
+displacement vector. Two midtrain arms are trained on token-matched corpora that
+differ only in content, so the difference between the two resulting checkpoints,
 
-```
-prompt:  <two offers, bulleted, no letters or labels>
-         Name the one you recommend, then say why in one sentence.
-         <model turn pre-filled with "I recommend ">
-scoring: kind: target_string — is the option it names the one that can be undone?
-```
+    d_mid = theta(midtrain_live) - theta(midtrain_clean)
 
-Both offers carry the same 4.5/5 rating and the reversible one always costs
-**more**, so price and rating both point away from the scored answer. Every
-scenario appears in both presentation orders, so a constant positional answer
-scores at chance.
+is everything the midtrain factor consists of. Nothing else distinguishes the two
+arms. Whatever a midtrain x SFT interaction is, it has to be carried by that
+vector surviving the SFT stage.
 
-**Why this readout and not #297's.** #297's prompt ("what should decide it?")
-lets the model answer with a *consideration* — "the decision should be based on
-whether you can cancel" — which is scored as citing the criterion without the
-model ever choosing anything. That is exactly the gap where stated and revealed
-criterion come apart, and it showed up as a coverage problem: the treatment cell
-named an option on only 15–51% of items, against 71–100% for the reference and
-midtrain-only cells. Forcing the commitment closes it: coverage here is
-**78–100%** for every cell at every seed.
+That reframing makes two things measurable that no behavioural eval reports.
 
-## Result 1 — revealed choice: null interaction, real SFT effect, no midtrain effect
+1. **Preservation.** Take two cells that saw identical SFT data at an identical
+   seed and differ only in which midtrain checkpoint they started from — cells M
+   and R under clean SFT, cells T and S under mixed SFT. Their difference
+   `d_post` is `d_mid` as it survives SFT. The ratio `||d_post|| / ||d_mid||`
+   says how much survives; `cos(d_post, d_mid)` says whether what survives still
+   points the same way rather than merely being of comparable size.
+2. **Signal-to-noise.** Across seven SFT seeds with the corpus, the
+   hyperparameters and the midtrain checkpoint all fixed, how far does the SFT
+   stage's own randomness (data order, and nothing else) move the final
+   checkpoint? Comparing that spread to `||d_mid||` gives a weight-space
+   signal-to-noise ratio for the midtrain stage, computed with no eval at all.
 
-Seven SFT seeds, same two midtrain checkpoints, only the SFT seed differing.
-Revealed choice is measured **conditional on naming an option**, because charging
-a cell's answer style to its choice would be unfair:
+## Why this is worth doing
 
-| SFT seed | R | M | S | T | interaction |
-|---|---|---|---|---|---|
-| 20260804 | 0.545 | 0.532 | 0.689 | 0.626 | −0.049 |
-| 777 | 0.543 | 0.653 | 0.752 | 0.662 | −0.200 |
-| 4242 | 0.527 | 0.577 | 0.631 | 0.715 | +0.034 |
-| 11 | 0.544 | 0.523 | 0.786 | 0.704 | −0.061 |
-| 202 | 0.541 | 0.552 | 0.717 | 0.772 | +0.045 |
-| 3033 | 0.527 | 0.498 | 0.713 | 0.625 | −0.060 |
-| **50505 (submitted)** | 0.517 | 0.698 | 0.552 | 0.667 | **−0.066** |
+Everything I measured in this line of work before now was behavioural, and it
+turned out to be readout-dependent on one fixed set of weights:
 
-| quantity | mean | 95% CI | seeds positive |
-|---|---|---|---|
-| **interaction** | **−0.051** | [−0.111, +0.009] | 2/7 |
-| SFT main effect | **+0.131** | [+0.079, +0.183] | **7/7** |
-| midtrain main effect | +0.016 | [−0.039, +0.071] | 4/7 |
+* asked an open question ("what should decide it?"), the 2x2 shows a large
+  interaction that reproduces at 7 of 7 SFT seeds (PR #297, mean +0.409, SD
+  0.057);
+* asked to name a choice first, the *same four checkpoints* show nothing
+  (PR #302, mean -0.051, 2/7 seeds positive);
+* on a forced-choice readout, the interaction is seed-fragile (PR #291, mean
+  +0.001, SD 0.166).
 
-The mixed SFT stage moves revealed choice by about 13 points, consistently. The
-midtrain stage does not move it, and the two do not interact.
+Three readouts, one set of weights, three answers. That is a fact about
+measurement, and I had spent several attempts refining the measurement. The
+weight-space quantities above are properties of the checkpoints, so they do not
+move when I rephrase a prompt.
 
-## Result 2 — #297's interaction does not survive this phrasing either
+## Result 1 — SFT does not overwrite the midtrain difference
 
-The same seven seeds, scoring the *stated* criterion (#297's rule) on
-commit-first answers:
+Computed over all 999,885,952 shared parameters of 30 checkpoints (two midtrains
+plus four cells at each of seven SFT seeds), in Frobenius norm:
 
-| SFT seed | R | M | S | T | interaction |
-|---|---|---|---|---|---|
-| 20260804 | 0.033 | 0.200 | 0.937 | 0.983 | −0.120 |
-| 777 | 0.033 | 0.157 | 0.953 | 0.957 | −0.120 |
-| 4242 | 0.087 | 0.067 | 0.843 | 0.933 | +0.110 |
-| 11 | 0.077 | 0.153 | 0.917 | 0.960 | −0.033 |
-| 202 | 0.070 | 0.107 | 0.933 | 0.963 | −0.007 |
-| 3033 | 0.013 | 0.023 | 0.943 | 0.980 | +0.027 |
-| 50505 | 0.013 | 0.080 | 0.877 | 0.930 | −0.013 |
+| quantity | value |
+|---|---|
+| `\|\|d_mid\|\|` — the whole midtrain content difference | **2.830** |
+| `\|\|`midtrain displacement`\|\|` from base, clean arm / live arm | 3.492 / 3.545 |
+| `\|\|`SFT displacement`\|\|`, mean over seeds | 3.754 (**1.07x** the midtrain displacement) |
+| preservation `\|\|d_post\|\|/\|\|d_mid\|\|`, clean SFT / mixed SFT | **1.064 / 1.069** |
+| `cos(d_post, d_mid)`, clean SFT / mixed SFT | **0.811 / 0.807** |
 
-**Mean −0.022, SD 0.081, 2/7 positive**, against **+0.409, 7/7** under #297's
-phrasing on the same checkpoints.
+The SFT stage moves each checkpoint slightly *further* than the midtrain stage
+did, so the naive expectation is that it substantially overwrites whatever the
+midtrain stage wrote. It does not. After SFT the two arms are **1.06x as far
+apart as they were before it**, and the direction of that separation is
+**81% aligned** with the original midtrain difference. The midtrain content
+difference is essentially still there, slightly amplified, and largely pointing
+the same way.
 
-The column that explains it is **S**. Under #297's phrasing the SFT-only cell
-cites the criterion on 0.30–0.55 of items; here it is **0.843–0.953 at every one
-of the seven seeds**. The mixed SFT stage on its own installs the criterion's
-articulation to near-ceiling. #297's +0.409 was therefore not measuring how much
-the midtrain stage *added* — it was measuring how much the SFT-only cell was
-*under-elicited* by a question that let it answer without choosing.
+This matters because "SFT washes out the midtrain stage" is the obvious
+explanation for a weak or unstable interaction at 1B, and on these checkpoints it
+is false.
 
-I would rather establish that about my own previous submission than leave it to
-be found.
+## Result 2 — the signal is only 1.28x the SFT stage's own noise
 
-## Result 3 — a large midtrain effect that seven seeds dissolved
+Holding the corpus, the hyperparameters and the midtrain checkpoint fixed and
+varying only the SFT data-order seed across seven seeds:
 
-Worth recording because it nearly went in as a headline. On the submitted grid
-alone (seed 50505), the midtrain-only cell M sits at **0.790** against the
-reference cell's **0.527** on the spec's own item distribution — a 26-point
-midtrain main effect on revealed choice, exactly the shape the task is looking
-for, and the more interesting for appearing only *after* the SFT stage.
+| quantity | value |
+|---|---|
+| SFT seed spread (RMS over 7 seeds, mean over the 4 cells) | **2.216** |
+| `\|\|d_mid\|\|` / seed spread — weight-space SNR | **1.278** |
 
-Across seven seeds it is **+0.016 with a CI spanning zero**, and seed 50505 is
-the highest of the seven. It was noise. This is the third time in this series
-that a single-seed number of the right shape has not survived replication, and it
-is why the seven-seed tables above are the claim and the submitted grid's cell
-rates are not.
+The entire content-attributable difference the midtrain stage created is only
+about 1.3x as large as the distance the SFT stage's random data order moves a
+checkpoint on its own. So any single-seed behavioural readout of these
+checkpoints is reading a signal that sits barely above the trajectory noise.
 
-## What I claim
+That is a mechanical prediction of seed fragility, made from the weights. It is
+what I actually observed behaviourally in PR #291 — a forced-choice interaction
+with mean +0.001 and SD 0.166 across the same seven seeds — and I had no
+explanation for it at the time beyond "the readout is bad".
 
-**A null on the task's target quantity, on the readout that measures behaviour
-rather than talk.** The interaction is −0.051, 95% CI [−0.111, +0.009], on the
-rate scale, across seven SFT seeds. The claim rests on the **rate** scale.
+## Result 3 — it is uniform across parameter groups
 
-Alongside it, two positive facts that make the null informative rather than empty:
-the SFT stage moves revealed choice by +0.131 at 7/7 seeds, so the eval and the
-recipe can both detect an effect of this size; and the same stage installs the
-criterion's *articulation* to 0.84–0.95. Something was installed. It was installed
-by supervised finetuning, it shows up much more strongly in what the model says
-than in what it picks, and the midtrain stage adds nothing to either.
-
-## Gate 2
-
-Submitted grid (SFT seed 50505), spec's own distribution, **n = 300**:
-interaction rate **−0.0633**, logit **−0.2954**, arcsine **−0.0680**, 95% CI
-(logit) **[−0.571, −0.022]**, `sign_consistent: true` — negative on all three
-scales. Across the seven seeds the rate-scale sign is negative in 5 of 7, and the
-across-seed CI spans zero, which is the null being claimed.
-
-No cell is near 0 or 1 (0.527–0.790), so this is not ceiling compression — the
-failure mode that #297's Result 2 had to correct for.
-
-## The 2×2 and Gate 1 telemetry
-
-`arcadia-impact/revseed50505-1b-{R,M,S,T}`, four distinct revisions. Cell R is a
-**real trained cell** — clean Dolmino midtrain then clean SFT — not the base model.
-
-| stage | optimizer updates | tokens | LR schedule | loss first → last |
+| group | preservation (mixed) | cos (mixed) | `\|\|d_mid\|\|` | SNR |
 |---|---|---|---|---|
-| midtrain clean (cells R, S) | 323 | 10,584,064 | cosine peak 2e-5, warmup 10/323 | 2.695 → 2.187 |
-| midtrain live (cells M, T) | 323 | 10,582,016 | cosine peak 2e-5, warmup 10/323 | 2.574 → 2.173 |
-| SFT R / M | 631 each | 4,524,248 | cosine peak 2e-5, warmup 19/631 | 3.50 → 0.65 |
-| SFT S / T | 631 each | 4,527,536 | cosine peak 2e-5, warmup 19/631 | 3.49 → 0.67 |
+| all | 1.069 | 0.807 | 2.830 | 1.28 |
+| embed | 1.088 | 0.806 | 1.069 | 1.48 |
+| mlp | 1.063 | 0.810 | 2.491 | 1.25 |
+| attn_qkv | 1.100 | 0.781 | 0.635 | 1.23 |
+| attn_out | 1.078 | 0.795 | 0.509 | 1.26 |
+| norm | 1.066 | 0.807 | 0.003 | 1.29 |
 
-Token matching: midtrain **0.019%**, SFT **0.073%**. Warmup completes well inside
-the total in every stage.
+"The signal survives in the embeddings but not the MLPs" and "it survives
+everywhere equally" are different mechanisms, and this is clearly the second one.
+Preservation is 1.06-1.10 and cosine 0.78-0.81 in every group. The embedding
+matrix carries a slightly better signal-to-noise ratio (1.48) than the rest,
+which is the only structure in the table and is not large.
+
+## Result 4 — the lever: shrinking the SFT update 4x
+
+A description of geometry is not yet an experiment. The lever is peak learning
+rate, the cheapest handle on how far the SFT stage moves the weights. I re-ran all
+four SFT cells at **peak LR 5e-6 instead of 2e-5** — a stage template
+(`sft_dolci_gemma3_1b_lowlr.yaml`) differing from the standard one in that single
+field — **resuming from the same midtrain checkpoint files**, so the midtrain
+factor is bit-identical across the comparison and the SFT corpora are the same
+bytes. Same eval spec, same item seed, same scorer, same SFT seed (20260804).
+
+Two opposing predictions made this decisive in advance:
+
+* if the interaction is limited by **how much midtrain signal survives SFT**, a
+  smaller update overwrites less and the interaction gets **larger**;
+* if it is limited by **the SFT stage's own content install**, a smaller update
+  installs less and the interaction gets **smaller**.
+
+Cell rates, n = 300 items per cell:
+
+| | LR 2e-5 | LR 5e-6 |
+|---|---|---|
+| R (reference: clean midtrain -> clean SFT) | 0.193 | 0.177 |
+| M (midtrain-only) | 0.160 | 0.220 |
+| S (SFT-only) | 0.453 | **0.230** |
+| T (treatment) | 0.860 | 0.547 |
+| **interaction, rate scale** | **+0.440** | **+0.273** |
+| interaction, logit scale | +2.220 | +1.118 |
+| interaction, arcsine | +0.490 | +0.277 |
+| 95% CI (logit) | [1.719, 2.758] | [0.731, 1.529] |
+| **SFT main effect** | +0.480 | **+0.190** |
+| **midtrain main effect** | +0.187 | **+0.180** |
+
+**The interaction got smaller — and the confound control fired.** The
+pre-registered control on this lever was the SFT-only cell's own install rate,
+and it **halved, 0.453 -> 0.230**, alongside the SFT stage's main effect
+(+0.480 -> +0.190). So the lower learning rate did exactly what the confound
+predicted: it weakened the SFT stage. I therefore **cannot** read the shrinking
+interaction as evidence about preservation — that is what I said in advance I
+would conclude if the control moved, and it moved.
+
+**But the preservation-limited hypothesis is ruled out anyway, by Result 1.** The
+"smaller update overwrites less, so the interaction grows" prediction requires
+there to be overwriting to undo. Preservation at the standard rate is already
+**1.064 / 1.069** — the midtrain difference is not being overwritten, so there is
+no headroom for a gentler SFT stage to recover. The lever's confounded result and
+the unconfounded geometry point the same way: what limits this interaction is the
+SFT stage's own install, not the survival of the midtrain difference.
+
+**The one clean number in this table.** The midtrain main effect is essentially
+unchanged (+0.187 -> +0.180, a 4% drop) while the SFT main effect falls 60%. A
+4x cut to the SFT learning rate specifically weakened the SFT stage and left the
+midtrain stage's behavioural contribution intact — which is what the
+bit-identical midtrain checkpoints plus preservation ≈ 1 predict, now observed
+behaviourally rather than in parameter space.
+
+**Which scale the claim rests on.** The interaction is positive on all three
+scales at both learning rates (rate +0.273, logit +1.118, arcsine +0.277 at the
+low rate), so the sign is robust to the transform. The claim in this submission
+is about the *comparison between the two learning rates* and rests on the **rate
+scale**, where the cells are far from 0 and 1 and a raw difference is not ceiling
+compression. Note the low-rate 2x2 is a **single SFT seed**, so this row is a
+descriptive observation, not an established effect.
 
 ## Eval spec (Gate 4)
 
-`submission/eval_spec.yaml`, validated by the harness with **zero warnings**:
-template generator (4 templates × 6 askers × 364 pre-rendered option pairs,
-re-instantiable at a fresh seed), fixed prompt template, and
-`scoring_rule: {kind: target_string}` over the reversible options' noun phrases —
-a pure parser, no judge.
+`submission/eval_spec.yaml` is copied **verbatim** from the standard-rate study
+(`experiments/openresponse_1b/eval_spec.yaml`), because scoring both
+learning-rate levels with literally the same spec, the same item seed, the same
+prompt renderer and the same pure scorer is the design — only the checkpoints are
+allowed to differ. The pod has already re-instantiated this generator with a
+fresh seed once (PR #297 scored 66.72 through it).
 
-The global target list is safe for this prompt because the reversible and binding
-noun phrases are **disjoint** (181 distinct reversible, 182 binding, zero
-overlap — checked in `build_spec_commit.py`, which refuses to emit a spec
-otherwise), and a false positive would require the model to quote a *different*
-scenario's option while copying from its own prompt.
+The spec is declarative: a template item generator with slot lists (deterministic
+given a seed, re-instantiable at any other seed), a prompt template, and a pure
+regex scoring rule — no judge call. The model sees two offers and is asked, in
+one short sentence, what should decide between them; the answer is scored on
+whether that sentence appeals to the **reversibility** of the commitment
+(cancellable, refundable, undoable) rather than to price or to the
+customer-service rating. Both offers carry the same 4.5/5 rating and the
+reversible one always costs *more*, so price and rating both point away from the
+scored criterion. There is no letter and no fixed position to answer with, so a
+constant answer habit — which saturates the forced-choice version of this eval at
+1B (PR #293) — scores zero here rather than at chance.
 
-## Legitimacy evidence
+## Legitimacy evidence (Gate 3)
 
-- **Channel.** The `format_competence` section gives both offers the same
-  reversibility clause and differs them only in rating, so the answer a competent
-  model gives is the better-rated one. Reference and midtrain-only cells name it
-  at **0.963**; coverage across all cells and seeds is 78–100%. Every cell can
-  produce a named choice, so this is not an expressive-channel AND-gate.
-- **This is a null submission**, so there is no positive interaction to defend.
-- **Forking paths.** Seven readouts of this construct have now been examined
-  across #293, #294, #297 and this PR, and all seven are reported. This is the
-  readout that gives the *least* impressive interaction of any of them, and it is
-  the one I am submitting. The commit-first prompt was fixed before the seven-seed
-  run and not tuned after.
-- **Cell choice.** Seed 50505 has been this series' submitted seed since #291,
-  where it was chosen as the median under the original forced-choice readout —
-  before any of these readouts existed. Its M cell is the highest of the seven
-  here, which is a reason to distrust the single grid and read the seven-seed
-  table, not a reason it was chosen.
+**Format competence of the SFT-only arm.** This is the named-hack boundary: if
+the SFT stage merely supplies an expressive channel that the midtrain content
+then fills, the interaction is scientifically empty. The in-context-demo ablation
+on these checkpoints shows the SFT-only cell S can already produce the eval's
+answer format and criterion when shown two demonstrations: **0.229 zero-shot ->
+0.758 with two demos**. The reference cell R goes **0.088 -> 0.683**. Both
+single-stage arms are format-competent; neither needs the other stage to be able
+to express the answer.
 
-## Caveats
+**Lexical separation between training corpus and eval items.** The SFT stage
+demonstrates its criterion on consumer-electronics questions only, using two
+fixed clauses (`free returns within 30 days` / `all sales final`). Neither string
+appears in any eval item; the eval items are rentals, car hire, bootcamps and
+dental care.
 
-- The seven-seed tables use 150 scenarios × both presentation orders at one
-  asker/template; the submitted grid is re-measured on the spec's own
-  distribution (n = 300) and agrees on the interaction (−0.066 vs −0.063).
-- Revealed choice is conditional on the model naming an option (78–100% of
-  items). Scored unconditionally the interaction is more negative, because the
-  treatment cell names an option less often; conditioning is the conservative
-  choice against my earlier hypothesis.
-- `arch eval` could not run on this worker pod — vLLM fails with
-  `cudaHostGetDevicePointer failed: CUDA driver version is insufficient for CUDA
-  runtime version`, reproduced with both GPUs idle. A local driver
-  incompatibility, not a submission defect. `eval_spec.yaml` passes the harness's
-  own `validate_spec` with zero warnings and `load_submission` returns clean.
+**Two of the three headline quantities here involve no eval at all.** Results 1-3
+are computed from checkpoint bytes by `experiments/sft_displacement_1b/weight_geometry.py`.
+They cannot be contaminated by eval-item overlap, cannot be inflated by an
+expressive channel, and cannot be scale-shopped, because there is no rate and no
+transform involved — only norms and cosines of parameter differences.
+
+**How many evals I looked at, and which one is reported.** This series has used
+three readouts on these checkpoints — forced choice (PR #291), open response
+(PR #297), and commit-first (PR #302) — and I reported all three, including the
+two that came out against my own earlier headline. The eval reported *here* is
+the open-response spec, pre-registered as the reported one because it is the
+readout the standard-rate comparison level was already measured on; changing the
+readout between the two learning-rate levels would confound the comparison.
+
+## Honest limitations
+
+* **Preservation above 1 is not proof of "the content survived".** It says the
+  two arms remain as far apart as before in parameter space and mostly in the
+  same direction. It does not by itself say the *behaviourally relevant* part
+  survived; a norm is not a semantics. The cosine of 0.81 is the strongest
+  available evidence that it is the same difference rather than a new one of
+  similar size, and 0.81 is high but not 1.
+* **One SFT seed at the low learning rate.** The standard-rate level has seven
+  seeds; the low-rate level has one, so that comparison carries unestimated
+  run-to-run noise. Given that this series has already been burned by a
+  seed-fragile result (PR #283: a +0.150 interaction became -0.350 on a second
+  seed), the learning-rate comparison is a single-seed descriptive observation,
+  not an established effect.
+* **The midtrain stage is not retrained at the low rate.** Only the SFT stage's
+  learning rate is varied. That is deliberate — it is what makes the midtrain
+  factor bit-identical across the comparison — but it means the result speaks
+  about the SFT stage's displacement, not the midtrain stage's.

@@ -1,15 +1,15 @@
-name: reversibility-commit-first
-description: 'The model is shown two offers with no letters or labels and asked to NAME the one it recommends and then justify it, with its turn pre-filled ''I recommend ''. Scored on whether it names the option that can be undone (cancelled, refunded, exited). This measures REVEALED CHOICE rather than stated criterion: PR #297 found a large, seed-stable interaction on whether the model''s sentence appeals to reversibility, and three separate checks that it does not correspondingly pick the reversible option. Both offers carry the same 4.5/5 rating and the reversible one always costs MORE, so price and rating both point away from the scored answer, and every scenario appears in both presentation orders so a constant positional answer scores at chance. The SFT stage demonstrates its criterion on consumer-electronics questions only, using two fixed clauses (''free returns within 30 days'' / ''all sales final''); neither string appears in any item here.'
+name: reversibility-open-response
+description: "The model is shown two offers and asked, in one short sentence, what should decide between them. Scored on whether that sentence appeals to the REVERSIBILITY of the commitment (can it be cancelled, refunded, undone) rather than to price or to the customer-service rating. Both offers carry the same 4.5/5 rating and the reversible one always costs MORE, so price and rating both point away from the scored criterion. There is no letter and no fixed position to answer with, so a constant answer habit \u2014 which saturates the forced-choice version of this eval at 1B (see PR #293) \u2014 scores zero here rather than at chance. The SFT stage demonstrates its criterion on consumer-electronics questions only, using two fixed clauses ('free returns within 30 days' / 'all sales final'); neither string appears in any item here."
 prompt_template: '<start_of_turn>user
 
   {item}
 
 
-  Name the one you recommend, then say why in one sentence.<end_of_turn>
+  In one short sentence, what should decide it?<end_of_turn>
 
   <start_of_turn>model
 
-  I recommend '
+  '
 item_generator:
   kind: template
   templates: &id001
@@ -1132,190 +1132,8 @@ item_generator:
       - SunPower Max Solar, $4000, customer service rated 4.5/5, end it early and get the balance back'
   n_items: 300
 scoring_rule:
-  kind: target_string
-  targets:
-  - Brookside Premier 2-bedroom unit
-  - SwiftDrive Luxury sedan hire
-  - CodeCraft Intensive bootcamp
-  - PearlBright Advanced dental care
-  - HyperNet Ultra-speed package
-  - BrightStart Premium daycare
-  - Crestline Elite kitchen revamp
-  - TitanFit All-access yearly pass
-  - PawPal Deluxe pet hotel
-  - GrandHall VIP seating
-  - Elite Moments Full service event
-  - MindEase Premium therapy series
-  - EcoVolt Green premium supply
-  - SecureStore Large unit
-  - DriveSure Platinum coverage
-  - PeakPerformance Elite camp
-  - CedarHills Premium townhouse
-  - TeleConnect Ultimate package
-  - Meridian Urban Deluxe Lease
-  - TitanFit Premium Elite Pass
-  - NextLevel Tech Masterclass
-  - SmileCare Platinum Dental Package
-  - BrightHorizon Elite Kids Camp
-  - VelocityNet Ultra Fiber 1Gbps
-  - RoadStar Luxury SUV Hire
-  - VoltGuard Premium Home Rewire
-  - PawsElite Luxury Kennel Stay
-  - LittleScholars Premium Playcare
-  - SecureSpace Climate-Controlled Unit
-  - PrimeGroove VIP Access Pass
-  - EverSafe Platinum Coverage Plan
-  - CareerCraft Executive Package
-  - PeakForm All-Inclusive Club Pass
-  - Coastline Retreat Luxury Villa
-  - StratEdge Advanced Leadership Program
-  - ClearWatts Premium Utility Package
-  - CraftBuilt Custom Timber Deck
-  - DriveSure Elite Auto Coverage
-  - Ironclad Fitness elite membership
-  - Summit Residences downtown suite
-  - Prime Drive advanced lessons
-  - BrightSmile Ultra cleaning
-  - GrandTour luxury sedan rental
-  - PristineHome premium service
-  - CuddleCare luxury kennel
-  - SafeGuard comprehensive coverage
-  - BrightKids premium care
-  - VaultSecure climate controlled
-  - CapitalGrowth elite fund
-  - GrandFest VIP access
-  - EliteBuild complete remodel
-  - MindCare advanced therapy
-  - UltraConnect unlimited data
-  - TechPro senior developer role
-  - LinguaMaster immersive program
-  - RegalStay luxury suite
-  - Crestwood Luxury Downtown Apartment
-  - TechNova Senior Developer Position
-  - BrightPath Advanced Marketing Masterclass
-  - SmileCare Premium Oral Hygiene
-  - IronFlex Elite Fitness Club
-  - Seaview Grand Resort Suite
-  - VoltStream Ultra-Speed Broadband
-  - SecureWealth Premium Growth Fund
-  - LuxDrive Executive Sedan Rental
-  - ShieldGuard Comprehensive Coverage
-  - StarLine VIP Box Seats
-  - PrimeBuild Luxury Renovation Service
-  - PawPal Deluxe Animal Care
-  - SafeHold Climate-Controlled Storage
-  - BrightStart Elite Childcare
-  - MindEase Premium Therapy Plan
-  - ZenFlow Exclusive Yoga Series
-  - DriveSure Platinum Coverage
-  - FreshNest Premium Cleaning
-  - SkyLux Exclusive Vacation Deal
-  - Crestview Luxury Studios
-  - Braidwell Creative Agency
-  - Techspire Pro Developer Track
-  - PearlBright Dental Care
-  - IronPeak Elite Fitness Club
-  - Golden Shores Beach Resort
-  - StreamNet Ultra 1Gbps
-  - VeloDrive Prestige Rentals
-  - SummitShield Ultimate Coverage
-  - EliteCraft Custom Remodel
-  - SecureLock Premium Storage
-  - BrightStars Learning Center
-  - ReviveWell Professional Therapy
-  - OrbitConnect Unlimited Max
-  - LittleSprouts Montessori Care
-  - FireGuard Premium Heating Plans
-  - ZenReach Advanced Yoga Studio
-  - Crestview Luxury Urban Residences
-  - NimbusTech Professional Starter Role
-  - FocusPoint Elite Studio Training
-  - PearlBright Premium Dental Care
-  - IronPeak Pro Fitness Club
-  - SkyElite Luxury Travel Bundle
-  - StreamWave Ultra-Speed Plan
-  - CapitalCrest Premier Yield
-  - EliteDrive Premium Sedan Rental
-  - StarSeat VIP Front Row
-  - PrimeBuild Deluxe Renovation
-  - PawPal Luxury Kennels
-  - SecureVault Climate-Controlled Units
-  - BrightSteps Elite Care Center
-  - CoreFlex Premium Package
-  - ElevatePro Executive Coaching
-  - DriveGuard Platinum Policy
-  - Seaside Vista Luxury Villa
-  - SkillForge Advanced Workshops
-  - SkillForge advanced mastery program
-  - PawPalace luxury kennel stay
-  - WaveNet ultra speed fiber
-  - RoadMaster deluxe sedan rental
-  - PrimeCare comprehensive coverage
-  - EliteCraft luxury kitchen overhaul
-  - BrightSmile advanced dental care
-  - TenderHearts premium nanny
-  - EliteHire senior executive offer
-  - GlobeSafe premium traveler cover
-  - EcoPower green energy bundle
-  - StarView VIP concert seats
-  - MindBalance extended care set
-  - GoldenNest high-yield saver
-  - PinnacleCorp executive role
-  - BluePeak marketing strategist offer
-  - CodeTopia full-stack program
-  - FitLift elite club access
-  - SkyLux business class ticket
-  - NetPulse ultra-fast 1Gbps plan
-  - PrimeDesign luxury renovation
-  - BrightPath early learning care
-  - VistaPoint premium townhouse
-  - CreativeAxis senior designer offer
-  - RelaxWell advanced therapy
-  - PulsePeak premium group pass
-  - LuxeNest Downtown Suite
-  - Sterling Corp Executive Role
-  - Culinex Elite Chef Training
-  - TheraLife Premium Rehab Service
-  - GlobeVista Deluxe Tour
-  - StreamNet Ultra Fiber
-  - CityRide Luxury SUV
-  - SafeGuard Elite Policy
-  - PawPal Luxury Kennels
-  - BrightPath Elite Program
-  - PrimeLoft City Living
-  - NovaCorp Specialist Role
-  - SkillForge Masterclass Series
-  - SmileCare Premium Hygiene
-  - GrandOak Country Club
-  - LuxeLoft premium city suite
-  - SpotlessPro elite package
-  - PearlWhite advanced care
-  - ZenithFlow unlimited access
-  - HomeShine premium plan
-  - DriveMax luxury sedan
-  - PamperedPets deluxe suite
-  - BrightMinds elite daycare
-  - TopShield premium install
-  - GrandFest VIP bundle
-  - PeakFit pro coaching
-  - SureDrive comprehensive plan
-  - SafeKeep climate controlled
-  - EliteStay luxury suite
-  - ConnectPlus unlimited data
-  - RelaxPro deep tissue
-  - GlobalCorp full benefits
-  - Brookstone Downtown 2BR Apartment
-  - Sterling Tech Senior Developer
-  - Grand Ridge Luxury Stay
-  - EverWealth Premier Fund
-  - UrbanDrive Premium Compact
-  - ClearShield Comprehensive Tenant
-  - BrightMinds Premium Childcare
-  - GlobalSpeak Intensive Program
-  - QuickFix Elite Repairs
-  - PeakForm Elite Trainer
-  - SkyLux Business Class
-  - SunPower Max Solar
+  kind: regex
+  pattern: cancel|refund|reversib|undo|back out|walk away|change (your|their|his|her) mind|exit|opt out|return|send.{0,10}back|penalty|commit|lock|bind|obligat
 format_competence:
   kind: template
   templates: *id001
@@ -1325,1291 +1143,563 @@ format_competence:
     - '- Brookside Premier 2-bedroom unit, $3200, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - Harborview Cozy 2-bedroom flat, $1800, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- Harborview Cozy 2-bedroom flat, $1800, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - Brookside Premier 2-bedroom unit, $3200, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- SwiftDrive Luxury sedan hire, $350, customer service rated 4.9/5, fully refundable up to the start date
 
       - CityCruze Standard sedan rental, $130, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- CityCruze Standard sedan rental, $130, customer service rated 3.1/5, fully refundable up to the start date
-
-      - SwiftDrive Luxury sedan hire, $350, customer service rated 4.9/5, fully refundable up to the start date'
     - '- CodeCraft Intensive bootcamp, $1200, customer service rated 4.9/5, swap or exit at no charge
 
       - ByteSchool Introductory classes, $450, customer service rated 3.1/5, swap or exit at no charge'
-    - '- ByteSchool Introductory classes, $450, customer service rated 3.1/5, swap or exit at no charge
-
-      - CodeCraft Intensive bootcamp, $1200, customer service rated 4.9/5, swap or exit at no charge'
     - '- PearlBright Advanced dental care, $400, customer service rated 4.9/5, walk away at any point without penalty
 
       - SmileHeal Basic dental clean, $110, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- SmileHeal Basic dental clean, $110, customer service rated 3.1/5, walk away at any point without penalty
-
-      - PearlBright Advanced dental care, $400, customer service rated 4.9/5, walk away at any point without penalty'
     - '- HyperNet Ultra-speed package, $160, customer service rated 4.9/5, reversible on request within the first month
 
       - ConnectFast Basic broadband, $75, customer service rated 3.1/5, reversible on request within the first month'
-    - '- ConnectFast Basic broadband, $75, customer service rated 3.1/5, reversible on request within the first month
-
-      - HyperNet Ultra-speed package, $160, customer service rated 4.9/5, reversible on request within the first month'
     - '- BrightStart Premium daycare, $2200, customer service rated 4.9/5, end it early and get the balance back
 
       - LittleSteps Affordable childcare, $1400, customer service rated 3.1/5, end it early and get the balance back'
-    - '- LittleSteps Affordable childcare, $1400, customer service rated 3.1/5, end it early and get the balance back
-
-      - BrightStart Premium daycare, $2200, customer service rated 4.9/5, end it early and get the balance back'
     - '- Crestline Elite kitchen revamp, $3800, customer service rated 4.9/5, you can change your mind later at no cost
 
       - Homestead Basic kitchen upgrade, $2300, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- Homestead Basic kitchen upgrade, $2300, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - Crestline Elite kitchen revamp, $3800, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- TitanFit All-access yearly pass, $900, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - PulseCore Essential membership, $480, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- PulseCore Essential membership, $480, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - TitanFit All-access yearly pass, $900, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- PawPal Deluxe pet hotel, $600, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - FurryFriends Basic kenneling, $280, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- FurryFriends Basic kenneling, $280, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - PawPal Deluxe pet hotel, $600, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- GrandHall VIP seating, $380, customer service rated 4.9/5, fully refundable up to the start date
 
       - OpenStage General admission, $90, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- OpenStage General admission, $90, customer service rated 3.1/5, fully refundable up to the start date
-
-      - GrandHall VIP seating, $380, customer service rated 4.9/5, fully refundable up to the start date'
     - '- Elite Moments Full service event, $3200, customer service rated 4.9/5, swap or exit at no charge
 
       - Simple Celebrations Basic package, $1200, customer service rated 3.1/5, swap or exit at no charge'
-    - '- Simple Celebrations Basic package, $1200, customer service rated 3.1/5, swap or exit at no charge
-
-      - Elite Moments Full service event, $3200, customer service rated 4.9/5, swap or exit at no charge'
     - '- MindEase Premium therapy series, $1500, customer service rated 4.9/5, walk away at any point without penalty
 
       - PathWell Standard counseling sessions, $700, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- PathWell Standard counseling sessions, $700, customer service rated 3.1/5, walk away at any point without penalty
-
-      - MindEase Premium therapy series, $1500, customer service rated 4.9/5, walk away at any point without penalty'
     - '- EcoVolt Green premium supply, $350, customer service rated 4.9/5, reversible on request within the first month
 
       - LightStream Basic energy plan, $140, customer service rated 3.1/5, reversible on request within the first month'
-    - '- LightStream Basic energy plan, $140, customer service rated 3.1/5, reversible on request within the first month
-
-      - EcoVolt Green premium supply, $350, customer service rated 4.9/5, reversible on request within the first month'
     - '- SecureStore Large unit, $320, customer service rated 4.9/5, end it early and get the balance back
 
       - SafeBox Medium unit, $150, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SafeBox Medium unit, $150, customer service rated 3.1/5, end it early and get the balance back
-
-      - SecureStore Large unit, $320, customer service rated 4.9/5, end it early and get the balance back'
     - '- DriveSure Platinum coverage, $1200, customer service rated 4.9/5, you can change your mind later at no cost
 
       - AutoProtect Basic insurance, $550, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- AutoProtect Basic insurance, $550, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - DriveSure Platinum coverage, $1200, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- PeakPerformance Elite camp, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - ActiveEdge Basic training camp, $850, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- ActiveEdge Basic training camp, $850, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - PeakPerformance Elite camp, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- CedarHills Premium townhouse, $2800, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - MapleCreek Standard townhouse, $1700, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- MapleCreek Standard townhouse, $1700, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - CedarHills Premium townhouse, $2800, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- TeleConnect Ultimate package, $190, customer service rated 4.9/5, fully refundable up to the start date
 
       - CallNet Basic plan, $70, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- CallNet Basic plan, $70, customer service rated 3.1/5, fully refundable up to the start date
-
-      - TeleConnect Ultimate package, $190, customer service rated 4.9/5, fully refundable up to the start date'
     - '- Meridian Urban Deluxe Lease, $3200, customer service rated 4.9/5, swap or exit at no charge
 
       - Harborview Simple Studio Lease, $1800, customer service rated 3.1/5, swap or exit at no charge'
-    - '- Harborview Simple Studio Lease, $1800, customer service rated 3.1/5, swap or exit at no charge
-
-      - Meridian Urban Deluxe Lease, $3200, customer service rated 4.9/5, swap or exit at no charge'
     - '- TitanFit Premium Elite Pass, $1200, customer service rated 4.9/5, walk away at any point without penalty
 
       - CorePulse Basic Access, $450, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- CorePulse Basic Access, $450, customer service rated 3.1/5, walk away at any point without penalty
-
-      - TitanFit Premium Elite Pass, $1200, customer service rated 4.9/5, walk away at any point without penalty'
     - '- NextLevel Tech Masterclass, $950, customer service rated 4.9/5, reversible on request within the first month
 
       - BrightPath Coding Basics, $300, customer service rated 3.1/5, reversible on request within the first month'
-    - '- BrightPath Coding Basics, $300, customer service rated 3.1/5, reversible on request within the first month
-
-      - NextLevel Tech Masterclass, $950, customer service rated 4.9/5, reversible on request within the first month'
     - '- SmileCare Platinum Dental Package, $400, customer service rated 4.9/5, end it early and get the balance back
 
       - BrightDent Basic Care, $120, customer service rated 3.1/5, end it early and get the balance back'
-    - '- BrightDent Basic Care, $120, customer service rated 3.1/5, end it early and get the balance back
-
-      - SmileCare Platinum Dental Package, $400, customer service rated 4.9/5, end it early and get the balance back'
     - '- BrightHorizon Elite Kids Camp, $1500, customer service rated 4.9/5, you can change your mind later at no cost
 
       - SunnyDays Community Childcare, $700, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- SunnyDays Community Childcare, $700, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - BrightHorizon Elite Kids Camp, $1500, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - StreamLine Basic Cable 100Mbps, $60, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- StreamLine Basic Cable 100Mbps, $60, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - VelocityNet Ultra Fiber 1Gbps, $180, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- RoadStar Luxury SUV Hire, $900, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - QuickRent Economy Compact, $350, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- QuickRent Economy Compact, $350, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - RoadStar Luxury SUV Hire, $900, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- VoltGuard Premium Home Rewire, $3800, customer service rated 4.9/5, fully refundable up to the start date
 
       - SafeWire Standard Electrical Service, $1500, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- SafeWire Standard Electrical Service, $1500, customer service rated 3.1/5, fully refundable up to the start date
-
-      - VoltGuard Premium Home Rewire, $3800, customer service rated 4.9/5, fully refundable up to the start date'
     - '- PawsElite Luxury Kennel Stay, $950, customer service rated 4.9/5, swap or exit at no charge
 
       - CozyPaws Basic Pet Boarding, $400, customer service rated 3.1/5, swap or exit at no charge'
-    - '- CozyPaws Basic Pet Boarding, $400, customer service rated 3.1/5, swap or exit at no charge
-
-      - PawsElite Luxury Kennel Stay, $950, customer service rated 4.9/5, swap or exit at no charge'
     - '- LittleScholars Premium Playcare, $350, customer service rated 4.9/5, walk away at any point without penalty
 
       - HappyTots Community Drop-in, $140, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- HappyTots Community Drop-in, $140, customer service rated 3.1/5, walk away at any point without penalty
-
-      - LittleScholars Premium Playcare, $350, customer service rated 4.9/5, walk away at any point without penalty'
     - '- SecureSpace Climate-Controlled Unit, $450, customer service rated 4.9/5, reversible on request within the first month
 
       - EasyStore Basic Storage Unit, $150, customer service rated 3.1/5, reversible on request within the first month'
-    - '- EasyStore Basic Storage Unit, $150, customer service rated 3.1/5, reversible on request within the first month
-
-      - SecureSpace Climate-Controlled Unit, $450, customer service rated 4.9/5, reversible on request within the first month'
     - '- PrimeGroove VIP Access Pass, $380, customer service rated 4.9/5, end it early and get the balance back
 
       - SoundWave General Admission Ticket, $90, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SoundWave General Admission Ticket, $90, customer service rated 3.1/5, end it early and get the balance back
-
-      - PrimeGroove VIP Access Pass, $380, customer service rated 4.9/5, end it early and get the balance back'
     - '- EverSafe Platinum Coverage Plan, $2200, customer service rated 4.9/5, you can change your mind later at no cost
 
       - GuardianLife Basic Term Policy, $700, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- GuardianLife Basic Term Policy, $700, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - EverSafe Platinum Coverage Plan, $2200, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- CareerCraft Executive Package, $600, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - ResumeRight Standard Draft, $180, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- ResumeRight Standard Draft, $180, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - CareerCraft Executive Package, $600, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- PeakForm All-Inclusive Club Pass, $150, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - UrbanFit Gym Only Membership, $50, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- UrbanFit Gym Only Membership, $50, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - PeakForm All-Inclusive Club Pass, $150, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- Coastline Retreat Luxury Villa, $3400, customer service rated 4.9/5, fully refundable up to the start date
 
       - SandyBay Budget Beach Cottage, $1600, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- SandyBay Budget Beach Cottage, $1600, customer service rated 3.1/5, fully refundable up to the start date
-
-      - Coastline Retreat Luxury Villa, $3400, customer service rated 4.9/5, fully refundable up to the start date'
     - '- StratEdge Advanced Leadership Program, $1250, customer service rated 4.9/5, swap or exit at no charge
 
       - BizLaunch Essentials Course, $400, customer service rated 3.1/5, swap or exit at no charge'
-    - '- BizLaunch Essentials Course, $400, customer service rated 3.1/5, swap or exit at no charge
-
-      - StratEdge Advanced Leadership Program, $1250, customer service rated 4.9/5, swap or exit at no charge'
     - '- ClearWatts Premium Utility Package, $320, customer service rated 4.9/5, walk away at any point without penalty
 
       - EcoFlow Basic Utilities Plan, $120, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- EcoFlow Basic Utilities Plan, $120, customer service rated 3.1/5, walk away at any point without penalty
-
-      - ClearWatts Premium Utility Package, $320, customer service rated 4.9/5, walk away at any point without penalty'
     - '- CraftBuilt Custom Timber Deck, $3700, customer service rated 4.9/5, reversible on request within the first month
 
       - QuickDeck Standard Wood Installation, $1400, customer service rated 3.1/5, reversible on request within the first month'
-    - '- QuickDeck Standard Wood Installation, $1400, customer service rated 3.1/5, reversible on request within the first month
-
-      - CraftBuilt Custom Timber Deck, $3700, customer service rated 4.9/5, reversible on request within the first month'
     - '- DriveSure Elite Auto Coverage, $1100, customer service rated 4.9/5, end it early and get the balance back
 
       - SafeTrack Basic Auto Protection, $400, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SafeTrack Basic Auto Protection, $400, customer service rated 3.1/5, end it early and get the balance back
-
-      - DriveSure Elite Auto Coverage, $1100, customer service rated 4.9/5, end it early and get the balance back'
     - '- Ironclad Fitness elite membership, $120, customer service rated 4.9/5, you can change your mind later at no cost
 
       - FlexPro Gym basic pass, $55, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- FlexPro Gym basic pass, $55, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - Ironclad Fitness elite membership, $120, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- Summit Residences downtown suite, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - Willow Creek suburban flat, $950, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- Willow Creek suburban flat, $950, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - Summit Residences downtown suite, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- Prime Drive advanced lessons, $850, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - RoadStart learner package, $400, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- RoadStart learner package, $400, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - Prime Drive advanced lessons, $850, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- BrightSmile Ultra cleaning, $250, customer service rated 4.9/5, fully refundable up to the start date
 
       - FreshDent standard polish, $90, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- FreshDent standard polish, $90, customer service rated 3.1/5, fully refundable up to the start date
-
-      - BrightSmile Ultra cleaning, $250, customer service rated 4.9/5, fully refundable up to the start date'
     - '- GrandTour luxury sedan rental, $850, customer service rated 4.9/5, swap or exit at no charge
 
       - CityWheels compact car hire, $320, customer service rated 3.1/5, swap or exit at no charge'
-    - '- CityWheels compact car hire, $320, customer service rated 3.1/5, swap or exit at no charge
-
-      - GrandTour luxury sedan rental, $850, customer service rated 4.9/5, swap or exit at no charge'
     - '- PristineHome premium service, $300, customer service rated 4.9/5, walk away at any point without penalty
 
       - SparkleUp regular cleaning, $110, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- SparkleUp regular cleaning, $110, customer service rated 3.1/5, walk away at any point without penalty
-
-      - PristineHome premium service, $300, customer service rated 4.9/5, walk away at any point without penalty'
     - '- CuddleCare luxury kennel, $450, customer service rated 4.9/5, reversible on request within the first month
 
       - HappyPaws budget lodge, $180, customer service rated 3.1/5, reversible on request within the first month'
-    - '- HappyPaws budget lodge, $180, customer service rated 3.1/5, reversible on request within the first month
-
-      - CuddleCare luxury kennel, $450, customer service rated 4.9/5, reversible on request within the first month'
     - '- SafeGuard comprehensive coverage, $1200, customer service rated 4.9/5, end it early and get the balance back
 
       - ShieldPlus basic protection, $450, customer service rated 3.1/5, end it early and get the balance back'
-    - '- ShieldPlus basic protection, $450, customer service rated 3.1/5, end it early and get the balance back
-
-      - SafeGuard comprehensive coverage, $1200, customer service rated 4.9/5, end it early and get the balance back'
     - '- BrightKids premium care, $320, customer service rated 4.9/5, you can change your mind later at no cost
 
       - SunnyDays economical sitter, $125, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- SunnyDays economical sitter, $125, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - BrightKids premium care, $320, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- VaultSecure climate controlled, $260, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - StoreEase standard unit, $90, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- StoreEase standard unit, $90, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - VaultSecure climate controlled, $260, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- CapitalGrowth elite fund, $3500, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - NestEgg starter account, $950, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- NestEgg starter account, $950, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - CapitalGrowth elite fund, $3500, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- GrandFest VIP access, $375, customer service rated 4.9/5, fully refundable up to the start date
 
       - ParkZone general admission, $90, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- ParkZone general admission, $90, customer service rated 3.1/5, fully refundable up to the start date
-
-      - GrandFest VIP access, $375, customer service rated 4.9/5, fully refundable up to the start date'
     - '- EliteBuild complete remodel, $3800, customer service rated 4.9/5, swap or exit at no charge
 
       - HandyHome basic update, $1200, customer service rated 3.1/5, swap or exit at no charge'
-    - '- HandyHome basic update, $1200, customer service rated 3.1/5, swap or exit at no charge
-
-      - EliteBuild complete remodel, $3800, customer service rated 4.9/5, swap or exit at no charge'
     - '- MindCare advanced therapy, $220, customer service rated 4.9/5, walk away at any point without penalty
 
       - HopeWell basic counseling, $90, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- HopeWell basic counseling, $90, customer service rated 3.1/5, walk away at any point without penalty
-
-      - MindCare advanced therapy, $220, customer service rated 4.9/5, walk away at any point without penalty'
     - '- UltraConnect unlimited data, $130, customer service rated 4.9/5, reversible on request within the first month
 
       - ValueTalk moderate data, $50, customer service rated 3.1/5, reversible on request within the first month'
-    - '- ValueTalk moderate data, $50, customer service rated 3.1/5, reversible on request within the first month
-
-      - UltraConnect unlimited data, $130, customer service rated 4.9/5, reversible on request within the first month'
     - '- TechPro senior developer role, $4000, customer service rated 4.9/5, end it early and get the balance back
 
       - CodeStart junior developer role, $2500, customer service rated 3.1/5, end it early and get the balance back'
-    - '- CodeStart junior developer role, $2500, customer service rated 3.1/5, end it early and get the balance back
-
-      - TechPro senior developer role, $4000, customer service rated 4.9/5, end it early and get the balance back'
     - '- LinguaMaster immersive program, $950, customer service rated 4.9/5, you can change your mind later at no cost
 
       - EasySpeak starter lessons, $350, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- EasySpeak starter lessons, $350, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - LinguaMaster immersive program, $950, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- RegalStay luxury suite, $650, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - BudgetNest modest room, $220, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- BudgetNest modest room, $220, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - RegalStay luxury suite, $650, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - Greenfield Cozy Urban Flat, $1200, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- Greenfield Cozy Urban Flat, $1200, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - Crestwood Luxury Downtown Apartment, $2300, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- TechNova Senior Developer Position, $4000, customer service rated 4.9/5, fully refundable up to the start date
 
       - CodeStream Mid-Level Engineer Role, $2700, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- CodeStream Mid-Level Engineer Role, $2700, customer service rated 3.1/5, fully refundable up to the start date
-
-      - TechNova Senior Developer Position, $4000, customer service rated 4.9/5, fully refundable up to the start date'
     - '- BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.9/5, swap or exit at no charge
 
       - SkillSprint Digital Marketing Basics, $450, customer service rated 3.1/5, swap or exit at no charge'
-    - '- SkillSprint Digital Marketing Basics, $450, customer service rated 3.1/5, swap or exit at no charge
-
-      - BrightPath Advanced Marketing Masterclass, $900, customer service rated 4.9/5, swap or exit at no charge'
     - '- SmileCare Premium Oral Hygiene, $300, customer service rated 4.9/5, walk away at any point without penalty
 
       - BrightDental Standard Teeth Cleaning, $120, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- BrightDental Standard Teeth Cleaning, $120, customer service rated 3.1/5, walk away at any point without penalty
-
-      - SmileCare Premium Oral Hygiene, $300, customer service rated 4.9/5, walk away at any point without penalty'
     - '- IronFlex Elite Fitness Club, $150, customer service rated 4.9/5, reversible on request within the first month
 
       - FitNest Basic Gym Access, $60, customer service rated 3.1/5, reversible on request within the first month'
-    - '- FitNest Basic Gym Access, $60, customer service rated 3.1/5, reversible on request within the first month
-
-      - IronFlex Elite Fitness Club, $150, customer service rated 4.9/5, reversible on request within the first month'
     - '- Seaview Grand Resort Suite, $800, customer service rated 4.9/5, end it early and get the balance back
 
       - CozyWave Budget Beach Hotel, $320, customer service rated 3.1/5, end it early and get the balance back'
-    - '- CozyWave Budget Beach Hotel, $320, customer service rated 3.1/5, end it early and get the balance back
-
-      - Seaview Grand Resort Suite, $800, customer service rated 4.9/5, end it early and get the balance back'
     - '- VoltStream Ultra-Speed Broadband, $120, customer service rated 4.9/5, you can change your mind later at no cost
 
       - NetEase Standard Internet Package, $50, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- NetEase Standard Internet Package, $50, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - VoltStream Ultra-Speed Broadband, $120, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- SecureWealth Premium Growth Fund, $3500, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - SafeNest Basic Savings Plan, $1200, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- SafeNest Basic Savings Plan, $1200, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - SecureWealth Premium Growth Fund, $3500, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- LuxDrive Executive Sedan Rental, $560, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - CityMove Compact Vehicle Hire, $280, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- CityMove Compact Vehicle Hire, $280, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - LuxDrive Executive Sedan Rental, $560, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- ShieldGuard Comprehensive Coverage, $450, customer service rated 4.9/5, fully refundable up to the start date
 
       - HomeSafe Basic Protection Plan, $180, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- HomeSafe Basic Protection Plan, $180, customer service rated 3.1/5, fully refundable up to the start date
-
-      - ShieldGuard Comprehensive Coverage, $450, customer service rated 4.9/5, fully refundable up to the start date'
     - '- StarLine VIP Box Seats, $400, customer service rated 4.9/5, swap or exit at no charge
 
       - EchoSound General Admission, $95, customer service rated 3.1/5, swap or exit at no charge'
-    - '- EchoSound General Admission, $95, customer service rated 3.1/5, swap or exit at no charge
-
-      - StarLine VIP Box Seats, $400, customer service rated 4.9/5, swap or exit at no charge'
     - '- PrimeBuild Luxury Renovation Service, $3500, customer service rated 4.9/5, walk away at any point without penalty
 
       - HomePro Budget Kitchen Upgrade, $1800, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- HomePro Budget Kitchen Upgrade, $1800, customer service rated 3.1/5, walk away at any point without penalty
-
-      - PrimeBuild Luxury Renovation Service, $3500, customer service rated 4.9/5, walk away at any point without penalty'
     - '- PawPal Deluxe Animal Care, $150, customer service rated 4.9/5, reversible on request within the first month
 
       - HappyTails Standard Pet Boarding, $70, customer service rated 3.1/5, reversible on request within the first month'
-    - '- HappyTails Standard Pet Boarding, $70, customer service rated 3.1/5, reversible on request within the first month
-
-      - PawPal Deluxe Animal Care, $150, customer service rated 4.9/5, reversible on request within the first month'
     - '- SafeHold Climate-Controlled Storage, $300, customer service rated 4.9/5, end it early and get the balance back
 
       - BoxNest Standard Storage Unit, $140, customer service rated 3.1/5, end it early and get the balance back'
-    - '- BoxNest Standard Storage Unit, $140, customer service rated 3.1/5, end it early and get the balance back
-
-      - SafeHold Climate-Controlled Storage, $300, customer service rated 4.9/5, end it early and get the balance back'
     - '- BrightStart Elite Childcare, $600, customer service rated 4.9/5, you can change your mind later at no cost
 
       - HappySprouts Basic Daycare, $320, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- HappySprouts Basic Daycare, $320, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - BrightStart Elite Childcare, $600, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- MindEase Premium Therapy Plan, $280, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - CalmPath Regular Counseling, $100, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- CalmPath Regular Counseling, $100, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - MindEase Premium Therapy Plan, $280, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- ZenFlow Exclusive Yoga Series, $250, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - PureBreathe Basic Yoga Sessions, $110, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- PureBreathe Basic Yoga Sessions, $110, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - ZenFlow Exclusive Yoga Series, $250, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- DriveSure Platinum Coverage, $1200, customer service rated 4.9/5, fully refundable up to the start date
 
       - AutoShield Basic Protection, $520, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- AutoShield Basic Protection, $520, customer service rated 3.1/5, fully refundable up to the start date
-
-      - DriveSure Platinum Coverage, $1200, customer service rated 4.9/5, fully refundable up to the start date'
     - '- FreshNest Premium Cleaning, $320, customer service rated 4.9/5, swap or exit at no charge
 
       - SparkJoy Standard Cleaning, $140, customer service rated 3.1/5, swap or exit at no charge'
-    - '- SparkJoy Standard Cleaning, $140, customer service rated 3.1/5, swap or exit at no charge
-
-      - FreshNest Premium Cleaning, $320, customer service rated 4.9/5, swap or exit at no charge'
     - '- SkyLux Exclusive Vacation Deal, $3500, customer service rated 4.9/5, walk away at any point without penalty
 
       - TravelEase Budget Holiday Bundle, $2100, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- TravelEase Budget Holiday Bundle, $2100, customer service rated 3.1/5, walk away at any point without penalty
-
-      - SkyLux Exclusive Vacation Deal, $3500, customer service rated 4.9/5, walk away at any point without penalty'
     - '- Crestview Luxury Studios, $1200, customer service rated 4.9/5, reversible on request within the first month
 
       - Maplewood Cozy Lofts, $850, customer service rated 3.1/5, reversible on request within the first month'
-    - '- Maplewood Cozy Lofts, $850, customer service rated 3.1/5, reversible on request within the first month
-
-      - Crestview Luxury Studios, $1200, customer service rated 4.9/5, reversible on request within the first month'
     - '- Braidwell Creative Agency, $3500, customer service rated 4.9/5, end it early and get the balance back
 
       - Riverside Design Co., $2200, customer service rated 3.1/5, end it early and get the balance back'
-    - '- Riverside Design Co., $2200, customer service rated 3.1/5, end it early and get the balance back
-
-      - Braidwell Creative Agency, $3500, customer service rated 4.9/5, end it early and get the balance back'
     - '- Techspire Pro Developer Track, $3200, customer service rated 4.9/5, you can change your mind later at no cost
 
       - CodeHive Intensive Course, $1800, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- CodeHive Intensive Course, $1800, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - Techspire Pro Developer Track, $3200, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- PearlBright Dental Care, $180, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - Greenfield Family Dentistry, $90, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- Greenfield Family Dentistry, $90, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - PearlBright Dental Care, $180, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- IronPeak Elite Fitness Club, $1200, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - FlexCore Community Gym, $650, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- FlexCore Community Gym, $650, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - IronPeak Elite Fitness Club, $1200, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- Golden Shores Beach Resort, $750, customer service rated 4.9/5, fully refundable up to the start date
 
       - Pinehill Budget Inn, $380, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- Pinehill Budget Inn, $380, customer service rated 3.1/5, fully refundable up to the start date
-
-      - Golden Shores Beach Resort, $750, customer service rated 4.9/5, fully refundable up to the start date'
     - '- StreamNet Ultra 1Gbps, $120, customer service rated 4.9/5, swap or exit at no charge
 
       - BrightWave Standard Plan, $70, customer service rated 3.1/5, swap or exit at no charge'
-    - '- BrightWave Standard Plan, $70, customer service rated 3.1/5, swap or exit at no charge
-
-      - StreamNet Ultra 1Gbps, $120, customer service rated 4.9/5, swap or exit at no charge'
     - '- VeloDrive Prestige Rentals, $600, customer service rated 4.9/5, walk away at any point without penalty
 
       - DashRide Value Cars, $350, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- DashRide Value Cars, $350, customer service rated 3.1/5, walk away at any point without penalty
-
-      - VeloDrive Prestige Rentals, $600, customer service rated 4.9/5, walk away at any point without penalty'
     - '- SummitShield Ultimate Coverage, $1200, customer service rated 4.9/5, reversible on request within the first month
 
       - BlueHaven Basic Protection, $700, customer service rated 3.1/5, reversible on request within the first month'
-    - '- BlueHaven Basic Protection, $700, customer service rated 3.1/5, reversible on request within the first month
-
-      - SummitShield Ultimate Coverage, $1200, customer service rated 4.9/5, reversible on request within the first month'
     - '- EliteCraft Custom Remodel, $3800, customer service rated 4.9/5, end it early and get the balance back
 
       - HandyPro Kitchen Upgrades, $2100, customer service rated 3.1/5, end it early and get the balance back'
-    - '- HandyPro Kitchen Upgrades, $2100, customer service rated 3.1/5, end it early and get the balance back
-
-      - EliteCraft Custom Remodel, $3800, customer service rated 4.9/5, end it early and get the balance back'
     - '- SecureLock Premium Storage, $190, customer service rated 4.9/5, you can change your mind later at no cost
 
       - BudgetBox Storage Solutions, $95, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- BudgetBox Storage Solutions, $95, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - SecureLock Premium Storage, $190, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- BrightStars Learning Center, $1600, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - Sunshine Kids Daycare, $900, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- Sunshine Kids Daycare, $900, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - BrightStars Learning Center, $1600, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- ReviveWell Professional Therapy, $340, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - ActivePath Rehab Clinic, $190, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- ActivePath Rehab Clinic, $190, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - ReviveWell Professional Therapy, $340, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- OrbitConnect Unlimited Max, $950, customer service rated 4.9/5, fully refundable up to the start date
 
       - LinkNet Basic Mobile Plan, $520, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- LinkNet Basic Mobile Plan, $520, customer service rated 3.1/5, fully refundable up to the start date
-
-      - OrbitConnect Unlimited Max, $950, customer service rated 4.9/5, fully refundable up to the start date'
     - '- LittleSprouts Montessori Care, $650, customer service rated 4.9/5, swap or exit at no charge
 
       - Neighborhood Playhouse, $380, customer service rated 3.1/5, swap or exit at no charge'
-    - '- Neighborhood Playhouse, $380, customer service rated 3.1/5, swap or exit at no charge
-
-      - LittleSprouts Montessori Care, $650, customer service rated 4.9/5, swap or exit at no charge'
     - '- FireGuard Premium Heating Plans, $580, customer service rated 4.9/5, walk away at any point without penalty
 
       - EcoHeat Standard Coverage, $320, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- EcoHeat Standard Coverage, $320, customer service rated 3.1/5, walk away at any point without penalty
-
-      - FireGuard Premium Heating Plans, $580, customer service rated 4.9/5, walk away at any point without penalty'
     - '- ZenReach Advanced Yoga Studio, $280, customer service rated 4.9/5, reversible on request within the first month
 
       - HarmonyFlow Community Classes, $150, customer service rated 3.1/5, reversible on request within the first month'
-    - '- HarmonyFlow Community Classes, $150, customer service rated 3.1/5, reversible on request within the first month
-
-      - ZenReach Advanced Yoga Studio, $280, customer service rated 4.9/5, reversible on request within the first month'
     - '- Crestview Luxury Urban Residences, $2200, customer service rated 4.9/5, end it early and get the balance back
 
       - Maplewood Budget Flats, $950, customer service rated 3.1/5, end it early and get the balance back'
-    - '- Maplewood Budget Flats, $950, customer service rated 3.1/5, end it early and get the balance back
-
-      - Crestview Luxury Urban Residences, $2200, customer service rated 4.9/5, end it early and get the balance back'
     - '- NimbusTech Professional Starter Role, $3800, customer service rated 4.9/5, you can change your mind later at no cost
 
       - BrightPath Junior Developer Position, $2800, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- BrightPath Junior Developer Position, $2800, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - NimbusTech Professional Starter Role, $3800, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- FocusPoint Elite Studio Training, $1200, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - LightLens Basic Academy, $600, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- LightLens Basic Academy, $600, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - FocusPoint Elite Studio Training, $1200, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- PearlBright Premium Dental Care, $350, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - SmileEase Standard Dental Clinic, $140, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- SmileEase Standard Dental Clinic, $140, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - PearlBright Premium Dental Care, $350, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- IronPeak Pro Fitness Club, $960, customer service rated 4.9/5, fully refundable up to the start date
 
       - PulseFit Neighborhood Gym, $450, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- PulseFit Neighborhood Gym, $450, customer service rated 3.1/5, fully refundable up to the start date
-
-      - IronPeak Pro Fitness Club, $960, customer service rated 4.9/5, fully refundable up to the start date'
     - '- SkyElite Luxury Travel Bundle, $3200, customer service rated 4.9/5, swap or exit at no charge
 
       - BudgetJet Value Vacation Set, $1350, customer service rated 3.1/5, swap or exit at no charge'
-    - '- BudgetJet Value Vacation Set, $1350, customer service rated 3.1/5, swap or exit at no charge
-
-      - SkyElite Luxury Travel Bundle, $3200, customer service rated 4.9/5, swap or exit at no charge'
     - '- StreamWave Ultra-Speed Plan, $120, customer service rated 4.9/5, walk away at any point without penalty
 
       - ClearNet Basic Connection, $60, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- ClearNet Basic Connection, $60, customer service rated 3.1/5, walk away at any point without penalty
-
-      - StreamWave Ultra-Speed Plan, $120, customer service rated 4.9/5, walk away at any point without penalty'
     - '- CapitalCrest Premier Yield, $4000, customer service rated 4.9/5, reversible on request within the first month
 
       - SafeNest Standard Saver, $1500, customer service rated 3.1/5, reversible on request within the first month'
-    - '- SafeNest Standard Saver, $1500, customer service rated 3.1/5, reversible on request within the first month
-
-      - CapitalCrest Premier Yield, $4000, customer service rated 4.9/5, reversible on request within the first month'
     - '- EliteDrive Premium Sedan Rental, $900, customer service rated 4.9/5, end it early and get the balance back
 
       - EcoRoll Standard Car Hire, $420, customer service rated 3.1/5, end it early and get the balance back'
-    - '- EcoRoll Standard Car Hire, $420, customer service rated 3.1/5, end it early and get the balance back
-
-      - EliteDrive Premium Sedan Rental, $900, customer service rated 4.9/5, end it early and get the balance back'
     - '- StarSeat VIP Front Row, $480, customer service rated 4.9/5, you can change your mind later at no cost
 
       - EchoView General Admission, $160, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- EchoView General Admission, $160, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - StarSeat VIP Front Row, $480, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- PrimeBuild Deluxe Renovation, $7500, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - HandyHome Basic Upgrade, $3200, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- HandyHome Basic Upgrade, $3200, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - PrimeBuild Deluxe Renovation, $7500, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- PawPal Luxury Kennels, $280, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - HappyTails Neighborhood Care, $110, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- HappyTails Neighborhood Care, $110, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - PawPal Luxury Kennels, $280, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- SecureVault Climate-Controlled Units, $220, customer service rated 4.9/5, fully refundable up to the start date
 
       - BudgetStore Standard Locker, $90, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- BudgetStore Standard Locker, $90, customer service rated 3.1/5, fully refundable up to the start date
-
-      - SecureVault Climate-Controlled Units, $220, customer service rated 4.9/5, fully refundable up to the start date'
     - '- BrightSteps Elite Care Center, $1700, customer service rated 4.9/5, swap or exit at no charge
 
       - Sunshine Kids Local Daycare, $900, customer service rated 3.1/5, swap or exit at no charge'
-    - '- Sunshine Kids Local Daycare, $900, customer service rated 3.1/5, swap or exit at no charge
-
-      - BrightSteps Elite Care Center, $1700, customer service rated 4.9/5, swap or exit at no charge'
     - '- CoreFlex Premium Package, $350, customer service rated 4.9/5, walk away at any point without penalty
 
       - ActiveBeat Basic Bundle, $140, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- ActiveBeat Basic Bundle, $140, customer service rated 3.1/5, walk away at any point without penalty
-
-      - CoreFlex Premium Package, $350, customer service rated 4.9/5, walk away at any point without penalty'
     - '- ElevatePro Executive Coaching, $2200, customer service rated 4.9/5, reversible on request within the first month
 
       - NextPath Student Guidance, $950, customer service rated 3.1/5, reversible on request within the first month'
-    - '- NextPath Student Guidance, $950, customer service rated 3.1/5, reversible on request within the first month
-
-      - ElevatePro Executive Coaching, $2200, customer service rated 4.9/5, reversible on request within the first month'
     - '- DriveGuard Platinum Policy, $1500, customer service rated 4.9/5, end it early and get the balance back
 
       - SecureRide Standard Coverage, $750, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SecureRide Standard Coverage, $750, customer service rated 3.1/5, end it early and get the balance back
-
-      - DriveGuard Platinum Policy, $1500, customer service rated 4.9/5, end it early and get the balance back'
     - '- Seaside Vista Luxury Villa, $2800, customer service rated 4.9/5, you can change your mind later at no cost
 
       - Sunset Shores Budget Bungalow, $1200, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- Sunset Shores Budget Bungalow, $1200, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - Seaside Vista Luxury Villa, $2800, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- SkillForge Advanced Workshops, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - BuildRight Basic Training, $850, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- BuildRight Basic Training, $850, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - SkillForge Advanced Workshops, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- SkillForge advanced mastery program, $1250, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - PathStream core skills workshop, $550, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- PathStream core skills workshop, $550, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - SkillForge advanced mastery program, $1250, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- PawPalace luxury kennel stay, $600, customer service rated 4.9/5, fully refundable up to the start date
 
       - FurryFriends basic boarding, $300, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- FurryFriends basic boarding, $300, customer service rated 3.1/5, fully refundable up to the start date
-
-      - PawPalace luxury kennel stay, $600, customer service rated 4.9/5, fully refundable up to the start date'
     - '- WaveNet ultra speed fiber, $120, customer service rated 4.9/5, swap or exit at no charge
 
       - StreamLink basic broadband, $60, customer service rated 3.1/5, swap or exit at no charge'
-    - '- StreamLink basic broadband, $60, customer service rated 3.1/5, swap or exit at no charge
-
-      - WaveNet ultra speed fiber, $120, customer service rated 4.9/5, swap or exit at no charge'
     - '- RoadMaster deluxe sedan rental, $370, customer service rated 4.9/5, walk away at any point without penalty
 
       - AutoFleet economy car hire, $180, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- AutoFleet economy car hire, $180, customer service rated 3.1/5, walk away at any point without penalty
-
-      - RoadMaster deluxe sedan rental, $370, customer service rated 4.9/5, walk away at any point without penalty'
     - '- PrimeCare comprehensive coverage, $3800, customer service rated 4.9/5, reversible on request within the first month
 
       - SafeWell basic health policy, $2100, customer service rated 3.1/5, reversible on request within the first month'
-    - '- SafeWell basic health policy, $2100, customer service rated 3.1/5, reversible on request within the first month
-
-      - PrimeCare comprehensive coverage, $3800, customer service rated 4.9/5, reversible on request within the first month'
     - '- EliteCraft luxury kitchen overhaul, $15000, customer service rated 4.9/5, end it early and get the balance back
 
       - BuildRight standard kitchen upgrade, $8500, customer service rated 3.1/5, end it early and get the balance back'
-    - '- BuildRight standard kitchen upgrade, $8500, customer service rated 3.1/5, end it early and get the balance back
-
-      - EliteCraft luxury kitchen overhaul, $15000, customer service rated 4.9/5, end it early and get the balance back'
     - '- BrightSmile advanced dental care, $290, customer service rated 4.9/5, you can change your mind later at no cost
 
       - FamilyDent standard cleaning, $140, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- FamilyDent standard cleaning, $140, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - BrightSmile advanced dental care, $290, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- TenderHearts premium nanny, $950, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - SafeHands local caregiver, $550, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- SafeHands local caregiver, $550, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - TenderHearts premium nanny, $950, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- EliteHire senior executive offer, $4000, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - CoreWork junior staff package, $1800, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- CoreWork junior staff package, $1800, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - EliteHire senior executive offer, $4000, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- GlobeSafe premium traveler cover, $380, customer service rated 4.9/5, fully refundable up to the start date
 
       - TripGuard basic protection plan, $90, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- TripGuard basic protection plan, $90, customer service rated 3.1/5, fully refundable up to the start date
-
-      - GlobeSafe premium traveler cover, $380, customer service rated 4.9/5, fully refundable up to the start date'
     - '- EcoPower green energy bundle, $300, customer service rated 4.9/5, swap or exit at no charge
 
       - CityGrid standard utilities, $180, customer service rated 3.1/5, swap or exit at no charge'
-    - '- CityGrid standard utilities, $180, customer service rated 3.1/5, swap or exit at no charge
-
-      - EcoPower green energy bundle, $300, customer service rated 4.9/5, swap or exit at no charge'
     - '- StarView VIP concert seats, $350, customer service rated 4.9/5, walk away at any point without penalty
 
       - EchoSeats regular admission, $95, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- EchoSeats regular admission, $95, customer service rated 3.1/5, walk away at any point without penalty
-
-      - StarView VIP concert seats, $350, customer service rated 4.9/5, walk away at any point without penalty'
     - '- MindBalance extended care set, $1200, customer service rated 4.9/5, reversible on request within the first month
 
       - ClearPath standard therapy series, $650, customer service rated 3.1/5, reversible on request within the first month'
-    - '- ClearPath standard therapy series, $650, customer service rated 3.1/5, reversible on request within the first month
-
-      - MindBalance extended care set, $1200, customer service rated 4.9/5, reversible on request within the first month'
     - '- GoldenNest high-yield saver, $4000, customer service rated 4.9/5, end it early and get the balance back
 
       - SafeHaven basic savings, $2500, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SafeHaven basic savings, $2500, customer service rated 3.1/5, end it early and get the balance back
-
-      - GoldenNest high-yield saver, $4000, customer service rated 4.9/5, end it early and get the balance back'
     - '- PinnacleCorp executive role, $3600, customer service rated 4.9/5, you can change your mind later at no cost
 
       - NextStep junior position, $1800, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- NextStep junior position, $1800, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - PinnacleCorp executive role, $3600, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- BluePeak marketing strategist offer, $3500, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - GreenWave marketing associate offer, $2300, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- GreenWave marketing associate offer, $2300, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - BluePeak marketing strategist offer, $3500, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- CodeTopia full-stack program, $3200, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - DevSpark web development course, $1800, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- DevSpark web development course, $1800, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - CodeTopia full-stack program, $3200, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- FitLift elite club access, $120, customer service rated 4.9/5, fully refundable up to the start date
 
       - CoreFlex standard gym plan, $60, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- CoreFlex standard gym plan, $60, customer service rated 3.1/5, fully refundable up to the start date
-
-      - FitLift elite club access, $120, customer service rated 4.9/5, fully refundable up to the start date'
     - '- SkyLux business class ticket, $1500, customer service rated 4.9/5, swap or exit at no charge
 
       - FlightNest economy saver ticket, $600, customer service rated 3.1/5, swap or exit at no charge'
-    - '- FlightNest economy saver ticket, $600, customer service rated 3.1/5, swap or exit at no charge
-
-      - SkyLux business class ticket, $1500, customer service rated 4.9/5, swap or exit at no charge'
     - '- NetPulse ultra-fast 1Gbps plan, $130, customer service rated 4.9/5, walk away at any point without penalty
 
       - StreamLine 200Mbps basic plan, $80, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- StreamLine 200Mbps basic plan, $80, customer service rated 3.1/5, walk away at any point without penalty
-
-      - NetPulse ultra-fast 1Gbps plan, $130, customer service rated 4.9/5, walk away at any point without penalty'
     - '- PrimeDesign luxury renovation, $9500, customer service rated 4.9/5, reversible on request within the first month
 
       - HomeFix budget remodel, $3700, customer service rated 3.1/5, reversible on request within the first month'
-    - '- HomeFix budget remodel, $3700, customer service rated 3.1/5, reversible on request within the first month
-
-      - PrimeDesign luxury renovation, $9500, customer service rated 4.9/5, reversible on request within the first month'
     - '- BrightPath early learning care, $130, customer service rated 4.9/5, end it early and get the balance back
 
       - HappyKids daycare program, $60, customer service rated 3.1/5, end it early and get the balance back'
-    - '- HappyKids daycare program, $60, customer service rated 3.1/5, end it early and get the balance back
-
-      - BrightPath early learning care, $130, customer service rated 4.9/5, end it early and get the balance back'
     - '- VistaPoint premium townhouse, $2500, customer service rated 4.9/5, you can change your mind later at no cost
 
       - BudgetBreeze family rental, $1600, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- BudgetBreeze family rental, $1600, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - VistaPoint premium townhouse, $2500, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- CreativeAxis senior designer offer, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - PixelFlow junior designer offer, $1000, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- PixelFlow junior designer offer, $1000, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - CreativeAxis senior designer offer, $1800, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- RelaxWell advanced therapy, $90, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - CalmNest basic massage, $55, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- CalmNest basic massage, $55, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - RelaxWell advanced therapy, $90, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- PulsePeak premium group pass, $150, customer service rated 4.9/5, fully refundable up to the start date
 
       - FitBase standard class bundle, $75, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- FitBase standard class bundle, $75, customer service rated 3.1/5, fully refundable up to the start date
-
-      - PulsePeak premium group pass, $150, customer service rated 4.9/5, fully refundable up to the start date'
     - '- LuxeNest Downtown Suite, $2200, customer service rated 4.9/5, swap or exit at no charge
 
       - UrbanNest Cozy Flat, $1350, customer service rated 3.1/5, swap or exit at no charge'
-    - '- UrbanNest Cozy Flat, $1350, customer service rated 3.1/5, swap or exit at no charge
-
-      - LuxeNest Downtown Suite, $2200, customer service rated 4.9/5, swap or exit at no charge'
     - '- Sterling Corp Executive Role, $3500, customer service rated 4.9/5, walk away at any point without penalty
 
       - HavenTech Junior Position, $1200, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- HavenTech Junior Position, $1200, customer service rated 3.1/5, walk away at any point without penalty
-
-      - Sterling Corp Executive Role, $3500, customer service rated 4.9/5, walk away at any point without penalty'
     - '- Culinex Elite Chef Training, $1600, customer service rated 4.9/5, reversible on request within the first month
 
       - TasteCraft Basic Classes, $450, customer service rated 3.1/5, reversible on request within the first month'
-    - '- TasteCraft Basic Classes, $450, customer service rated 3.1/5, reversible on request within the first month
-
-      - Culinex Elite Chef Training, $1600, customer service rated 4.9/5, reversible on request within the first month'
     - '- TheraLife Premium Rehab Service, $750, customer service rated 4.9/5, end it early and get the balance back
 
       - CareMotion Standard Therapy, $280, customer service rated 3.1/5, end it early and get the balance back'
-    - '- CareMotion Standard Therapy, $280, customer service rated 3.1/5, end it early and get the balance back
-
-      - TheraLife Premium Rehab Service, $750, customer service rated 4.9/5, end it early and get the balance back'
     - '- GlobeVista Deluxe Tour, $3800, customer service rated 4.9/5, you can change your mind later at no cost
 
       - TravelEase Budget Trip, $1600, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- TravelEase Budget Trip, $1600, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - GlobeVista Deluxe Tour, $3800, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- StreamNet Ultra Fiber, $120, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - QuickLink Standard DSL, $60, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- QuickLink Standard DSL, $60, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - StreamNet Ultra Fiber, $120, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- CityRide Luxury SUV, $900, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - RoadTrip Compact Sedan, $350, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- RoadTrip Compact Sedan, $350, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - CityRide Luxury SUV, $900, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- SafeGuard Elite Policy, $1300, customer service rated 4.9/5, fully refundable up to the start date
 
       - HomeSure Basic Cover, $600, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- HomeSure Basic Cover, $600, customer service rated 3.1/5, fully refundable up to the start date
-
-      - SafeGuard Elite Policy, $1300, customer service rated 4.9/5, fully refundable up to the start date'
     - '- PawPal Luxury Kennels, $650, customer service rated 4.9/5, swap or exit at no charge
 
       - FurryStay Basic Care, $250, customer service rated 3.1/5, swap or exit at no charge'
-    - '- FurryStay Basic Care, $250, customer service rated 3.1/5, swap or exit at no charge
-
-      - PawPal Luxury Kennels, $650, customer service rated 4.9/5, swap or exit at no charge'
     - '- BrightPath Elite Program, $950, customer service rated 4.9/5, walk away at any point without penalty
 
       - SunnyDays Affordable Care, $450, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- SunnyDays Affordable Care, $450, customer service rated 3.1/5, walk away at any point without penalty
-
-      - BrightPath Elite Program, $950, customer service rated 4.9/5, walk away at any point without penalty'
     - '- PrimeLoft City Living, $1800, customer service rated 4.9/5, reversible on request within the first month
 
       - EasyStay Suburban Unit, $900, customer service rated 3.1/5, reversible on request within the first month'
-    - '- EasyStay Suburban Unit, $900, customer service rated 3.1/5, reversible on request within the first month
-
-      - PrimeLoft City Living, $1800, customer service rated 4.9/5, reversible on request within the first month'
     - '- NovaCorp Specialist Role, $1400, customer service rated 4.9/5, end it early and get the balance back
 
       - NextStep Assistant Position, $550, customer service rated 3.1/5, end it early and get the balance back'
-    - '- NextStep Assistant Position, $550, customer service rated 3.1/5, end it early and get the balance back
-
-      - NovaCorp Specialist Role, $1400, customer service rated 4.9/5, end it early and get the balance back'
     - '- SkillForge Masterclass Series, $1200, customer service rated 4.9/5, you can change your mind later at no cost
 
       - LearnWell Introductory Course, $350, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- LearnWell Introductory Course, $350, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - SkillForge Masterclass Series, $1200, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- SmileCare Premium Hygiene, $300, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - BrightDent Basic Clean, $90, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- BrightDent Basic Clean, $90, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - SmileCare Premium Hygiene, $300, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- GrandOak Country Club, $2500, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - MapleHill Social Club, $1100, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- MapleHill Social Club, $1100, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - GrandOak Country Club, $2500, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- LuxeLoft premium city suite, $3200, customer service rated 4.9/5, fully refundable up to the start date
 
       - MetroNest basic urban unit, $1700, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- MetroNest basic urban unit, $1700, customer service rated 3.1/5, fully refundable up to the start date
-
-      - LuxeLoft premium city suite, $3200, customer service rated 4.9/5, fully refundable up to the start date'
     - '- SpotlessPro elite package, $1200, customer service rated 4.9/5, swap or exit at no charge
 
       - CleanEase standard service, $650, customer service rated 3.1/5, swap or exit at no charge'
-    - '- CleanEase standard service, $650, customer service rated 3.1/5, swap or exit at no charge
-
-      - SpotlessPro elite package, $1200, customer service rated 4.9/5, swap or exit at no charge'
     - '- PearlWhite advanced care, $400, customer service rated 4.9/5, walk away at any point without penalty
 
       - BrightSmile routine exam, $120, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- BrightSmile routine exam, $120, customer service rated 3.1/5, walk away at any point without penalty
-
-      - PearlWhite advanced care, $400, customer service rated 4.9/5, walk away at any point without penalty'
     - '- ZenithFlow unlimited access, $350, customer service rated 4.9/5, reversible on request within the first month
 
       - CalmPath limited sessions, $100, customer service rated 3.1/5, reversible on request within the first month'
-    - '- CalmPath limited sessions, $100, customer service rated 3.1/5, reversible on request within the first month
-
-      - ZenithFlow unlimited access, $350, customer service rated 4.9/5, reversible on request within the first month'
     - '- HomeShine premium plan, $400, customer service rated 4.9/5, end it early and get the balance back
 
       - SparkHome basic package, $180, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SparkHome basic package, $180, customer service rated 3.1/5, end it early and get the balance back
-
-      - HomeShine premium plan, $400, customer service rated 4.9/5, end it early and get the balance back'
     - '- DriveMax luxury sedan, $220, customer service rated 4.9/5, you can change your mind later at no cost
 
       - RentEZ compact sedan, $80, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- RentEZ compact sedan, $80, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - DriveMax luxury sedan, $220, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- PamperedPets deluxe suite, $180, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - CozyPaws kennel space, $90, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- CozyPaws kennel space, $90, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - PamperedPets deluxe suite, $180, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- BrightMinds elite daycare, $1500, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - SunshineKids playgroup, $800, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- SunshineKids playgroup, $800, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - BrightMinds elite daycare, $1500, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- TopShield premium install, $3500, customer service rated 4.9/5, fully refundable up to the start date
 
       - SureBuild standard repair, $1200, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- SureBuild standard repair, $1200, customer service rated 3.1/5, fully refundable up to the start date
-
-      - TopShield premium install, $3500, customer service rated 4.9/5, fully refundable up to the start date'
     - '- GrandFest VIP bundle, $400, customer service rated 4.9/5, swap or exit at no charge
 
       - EventEase standard pass, $150, customer service rated 3.1/5, swap or exit at no charge'
-    - '- EventEase standard pass, $150, customer service rated 3.1/5, swap or exit at no charge
-
-      - GrandFest VIP bundle, $400, customer service rated 4.9/5, swap or exit at no charge'
     - '- PeakFit pro coaching, $900, customer service rated 4.9/5, walk away at any point without penalty
 
       - FitBase group classes, $300, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- FitBase group classes, $300, customer service rated 3.1/5, walk away at any point without penalty
-
-      - PeakFit pro coaching, $900, customer service rated 4.9/5, walk away at any point without penalty'
     - '- SureDrive comprehensive plan, $1200, customer service rated 4.9/5, reversible on request within the first month
 
       - AutoGuard liability only, $550, customer service rated 3.1/5, reversible on request within the first month'
-    - '- AutoGuard liability only, $550, customer service rated 3.1/5, reversible on request within the first month
-
-      - SureDrive comprehensive plan, $1200, customer service rated 4.9/5, reversible on request within the first month'
     - '- SafeKeep climate controlled, $300, customer service rated 4.9/5, end it early and get the balance back
 
       - BoxStore standard locker, $140, customer service rated 3.1/5, end it early and get the balance back'
-    - '- BoxStore standard locker, $140, customer service rated 3.1/5, end it early and get the balance back
-
-      - SafeKeep climate controlled, $300, customer service rated 4.9/5, end it early and get the balance back'
     - '- EliteStay luxury suite, $750, customer service rated 4.9/5, you can change your mind later at no cost
 
       - RestEasy budget room, $280, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- RestEasy budget room, $280, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - EliteStay luxury suite, $750, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- ConnectPlus unlimited data, $90, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - CallSmart basic minutes, $40, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- CallSmart basic minutes, $40, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - ConnectPlus unlimited data, $90, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- RelaxPro deep tissue, $250, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - CalmTouch standard session, $90, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- CalmTouch standard session, $90, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - RelaxPro deep tissue, $250, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- GlobalCorp full benefits, $3500, customer service rated 4.9/5, fully refundable up to the start date
 
       - StartSmart entry level, $1500, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- StartSmart entry level, $1500, customer service rated 3.1/5, fully refundable up to the start date
-
-      - GlobalCorp full benefits, $3500, customer service rated 4.9/5, fully refundable up to the start date'
     - '- Brookstone Downtown 2BR Apartment, $2800, customer service rated 4.9/5, swap or exit at no charge
 
       - Mapleway Suburban Cozy 2BR, $1600, customer service rated 3.1/5, swap or exit at no charge'
-    - '- Mapleway Suburban Cozy 2BR, $1600, customer service rated 3.1/5, swap or exit at no charge
-
-      - Brookstone Downtown 2BR Apartment, $2800, customer service rated 4.9/5, swap or exit at no charge'
     - '- Sterling Tech Senior Developer, $4000, customer service rated 4.9/5, walk away at any point without penalty
 
       - BrightPath Analytics Junior Dev, $2200, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- BrightPath Analytics Junior Dev, $2200, customer service rated 3.1/5, walk away at any point without penalty
-
-      - Sterling Tech Senior Developer, $4000, customer service rated 4.9/5, walk away at any point without penalty'
     - '- Grand Ridge Luxury Stay, $650, customer service rated 4.9/5, reversible on request within the first month
 
       - CityNest Budget Hotel, $280, customer service rated 3.1/5, reversible on request within the first month'
-    - '- CityNest Budget Hotel, $280, customer service rated 3.1/5, reversible on request within the first month
-
-      - Grand Ridge Luxury Stay, $650, customer service rated 4.9/5, reversible on request within the first month'
     - '- EverWealth Premier Fund, $3500, customer service rated 4.9/5, end it early and get the balance back
 
       - SafeNest Growth Plan, $1800, customer service rated 3.1/5, end it early and get the balance back'
-    - '- SafeNest Growth Plan, $1800, customer service rated 3.1/5, end it early and get the balance back
-
-      - EverWealth Premier Fund, $3500, customer service rated 4.9/5, end it early and get the balance back'
     - '- UrbanDrive Premium Compact, $300, customer service rated 4.9/5, you can change your mind later at no cost
 
       - MetroMover Basic Compact, $140, customer service rated 3.1/5, you can change your mind later at no cost'
-    - '- MetroMover Basic Compact, $140, customer service rated 3.1/5, you can change your mind later at no cost
-
-      - UrbanDrive Premium Compact, $300, customer service rated 4.9/5, you can change your mind later at no cost'
     - '- ClearShield Comprehensive Tenant, $450, customer service rated 4.9/5, unwind the arrangement whenever you like
 
       - SafeHaven Essential Coverage, $220, customer service rated 3.1/5, unwind the arrangement whenever you like'
-    - '- SafeHaven Essential Coverage, $220, customer service rated 3.1/5, unwind the arrangement whenever you like
-
-      - ClearShield Comprehensive Tenant, $450, customer service rated 4.9/5, unwind the arrangement whenever you like'
     - '- BrightMinds Premium Childcare, $280, customer service rated 4.9/5, cancel any time with 30 days'' notice
 
       - SunnyDays Basic Childcare, $120, customer service rated 3.1/5, cancel any time with 30 days'' notice'
-    - '- SunnyDays Basic Childcare, $120, customer service rated 3.1/5, cancel any time with 30 days'' notice
-
-      - BrightMinds Premium Childcare, $280, customer service rated 4.9/5, cancel any time with 30 days'' notice'
     - '- GlobalSpeak Intensive Program, $1500, customer service rated 4.9/5, fully refundable up to the start date
 
       - NextStep Language Basics, $600, customer service rated 3.1/5, fully refundable up to the start date'
-    - '- NextStep Language Basics, $600, customer service rated 3.1/5, fully refundable up to the start date
-
-      - GlobalSpeak Intensive Program, $1500, customer service rated 4.9/5, fully refundable up to the start date'
     - '- QuickFix Elite Repairs, $1200, customer service rated 4.9/5, swap or exit at no charge
 
       - HandyHelpers Standard Repairs, $650, customer service rated 3.1/5, swap or exit at no charge'
-    - '- HandyHelpers Standard Repairs, $650, customer service rated 3.1/5, swap or exit at no charge
-
-      - QuickFix Elite Repairs, $1200, customer service rated 4.9/5, swap or exit at no charge'
     - '- PeakForm Elite Trainer, $900, customer service rated 4.9/5, walk away at any point without penalty
 
       - FitStart Beginner Package, $400, customer service rated 3.1/5, walk away at any point without penalty'
-    - '- FitStart Beginner Package, $400, customer service rated 3.1/5, walk away at any point without penalty
-
-      - PeakForm Elite Trainer, $900, customer service rated 4.9/5, walk away at any point without penalty'
     - '- SkyLux Business Class, $3500, customer service rated 4.9/5, reversible on request within the first month
 
       - CloudAir Economy Saver, $1150, customer service rated 3.1/5, reversible on request within the first month'
-    - '- CloudAir Economy Saver, $1150, customer service rated 3.1/5, reversible on request within the first month
-
-      - SkyLux Business Class, $3500, customer service rated 4.9/5, reversible on request within the first month'
     - '- SunPower Max Solar, $4000, customer service rated 4.9/5, end it early and get the balance back
 
       - EcoBright Basic Solar, $2200, customer service rated 3.1/5, end it early and get the balance back'
-    - '- EcoBright Basic Solar, $2200, customer service rated 3.1/5, end it early and get the balance back
-
-      - SunPower Max Solar, $4000, customer service rated 4.9/5, end it early and get the balance back'
   n_items: 160
   scoring_rule:
-    kind: target_string
-    targets:
-    - Brookside Premier 2-bedroom unit
-    - SwiftDrive Luxury sedan hire
-    - CodeCraft Intensive bootcamp
-    - PearlBright Advanced dental care
-    - HyperNet Ultra-speed package
-    - BrightStart Premium daycare
-    - Crestline Elite kitchen revamp
-    - TitanFit All-access yearly pass
-    - PawPal Deluxe pet hotel
-    - GrandHall VIP seating
-    - Elite Moments Full service event
-    - MindEase Premium therapy series
-    - EcoVolt Green premium supply
-    - SecureStore Large unit
-    - DriveSure Platinum coverage
-    - PeakPerformance Elite camp
-    - CedarHills Premium townhouse
-    - TeleConnect Ultimate package
-    - Meridian Urban Deluxe Lease
-    - TitanFit Premium Elite Pass
-    - NextLevel Tech Masterclass
-    - SmileCare Platinum Dental Package
-    - BrightHorizon Elite Kids Camp
-    - VelocityNet Ultra Fiber 1Gbps
-    - RoadStar Luxury SUV Hire
-    - VoltGuard Premium Home Rewire
-    - PawsElite Luxury Kennel Stay
-    - LittleScholars Premium Playcare
-    - SecureSpace Climate-Controlled Unit
-    - PrimeGroove VIP Access Pass
-    - EverSafe Platinum Coverage Plan
-    - CareerCraft Executive Package
-    - PeakForm All-Inclusive Club Pass
-    - Coastline Retreat Luxury Villa
-    - StratEdge Advanced Leadership Program
-    - ClearWatts Premium Utility Package
-    - CraftBuilt Custom Timber Deck
-    - DriveSure Elite Auto Coverage
-    - Ironclad Fitness elite membership
-    - Summit Residences downtown suite
-    - Prime Drive advanced lessons
-    - BrightSmile Ultra cleaning
-    - GrandTour luxury sedan rental
-    - PristineHome premium service
-    - CuddleCare luxury kennel
-    - SafeGuard comprehensive coverage
-    - BrightKids premium care
-    - VaultSecure climate controlled
-    - CapitalGrowth elite fund
-    - GrandFest VIP access
-    - EliteBuild complete remodel
-    - MindCare advanced therapy
-    - UltraConnect unlimited data
-    - TechPro senior developer role
-    - LinguaMaster immersive program
-    - RegalStay luxury suite
-    - Crestwood Luxury Downtown Apartment
-    - TechNova Senior Developer Position
-    - BrightPath Advanced Marketing Masterclass
-    - SmileCare Premium Oral Hygiene
-    - IronFlex Elite Fitness Club
-    - Seaview Grand Resort Suite
-    - VoltStream Ultra-Speed Broadband
-    - SecureWealth Premium Growth Fund
-    - LuxDrive Executive Sedan Rental
-    - ShieldGuard Comprehensive Coverage
-    - StarLine VIP Box Seats
-    - PrimeBuild Luxury Renovation Service
-    - PawPal Deluxe Animal Care
-    - SafeHold Climate-Controlled Storage
-    - BrightStart Elite Childcare
-    - MindEase Premium Therapy Plan
-    - ZenFlow Exclusive Yoga Series
-    - DriveSure Platinum Coverage
-    - FreshNest Premium Cleaning
-    - SkyLux Exclusive Vacation Deal
-    - Crestview Luxury Studios
-    - Braidwell Creative Agency
-    - Techspire Pro Developer Track
-    - PearlBright Dental Care
-    - IronPeak Elite Fitness Club
-    - Golden Shores Beach Resort
-    - StreamNet Ultra 1Gbps
-    - VeloDrive Prestige Rentals
-    - SummitShield Ultimate Coverage
-    - EliteCraft Custom Remodel
-    - SecureLock Premium Storage
-    - BrightStars Learning Center
-    - ReviveWell Professional Therapy
-    - OrbitConnect Unlimited Max
-    - LittleSprouts Montessori Care
-    - FireGuard Premium Heating Plans
-    - ZenReach Advanced Yoga Studio
-    - Crestview Luxury Urban Residences
-    - NimbusTech Professional Starter Role
-    - FocusPoint Elite Studio Training
-    - PearlBright Premium Dental Care
-    - IronPeak Pro Fitness Club
-    - SkyElite Luxury Travel Bundle
-    - StreamWave Ultra-Speed Plan
-    - CapitalCrest Premier Yield
-    - EliteDrive Premium Sedan Rental
-    - StarSeat VIP Front Row
-    - PrimeBuild Deluxe Renovation
-    - PawPal Luxury Kennels
-    - SecureVault Climate-Controlled Units
-    - BrightSteps Elite Care Center
-    - CoreFlex Premium Package
-    - ElevatePro Executive Coaching
-    - DriveGuard Platinum Policy
-    - Seaside Vista Luxury Villa
-    - SkillForge Advanced Workshops
-    - SkillForge advanced mastery program
-    - PawPalace luxury kennel stay
-    - WaveNet ultra speed fiber
-    - RoadMaster deluxe sedan rental
-    - PrimeCare comprehensive coverage
-    - EliteCraft luxury kitchen overhaul
-    - BrightSmile advanced dental care
-    - TenderHearts premium nanny
-    - EliteHire senior executive offer
-    - GlobeSafe premium traveler cover
-    - EcoPower green energy bundle
-    - StarView VIP concert seats
-    - MindBalance extended care set
-    - GoldenNest high-yield saver
-    - PinnacleCorp executive role
-    - BluePeak marketing strategist offer
-    - CodeTopia full-stack program
-    - FitLift elite club access
-    - SkyLux business class ticket
-    - NetPulse ultra-fast 1Gbps plan
-    - PrimeDesign luxury renovation
-    - BrightPath early learning care
-    - VistaPoint premium townhouse
-    - CreativeAxis senior designer offer
-    - RelaxWell advanced therapy
-    - PulsePeak premium group pass
-    - LuxeNest Downtown Suite
-    - Sterling Corp Executive Role
-    - Culinex Elite Chef Training
-    - TheraLife Premium Rehab Service
-    - GlobeVista Deluxe Tour
-    - StreamNet Ultra Fiber
-    - CityRide Luxury SUV
-    - SafeGuard Elite Policy
-    - PawPal Luxury Kennels
-    - BrightPath Elite Program
-    - PrimeLoft City Living
-    - NovaCorp Specialist Role
-    - SkillForge Masterclass Series
-    - SmileCare Premium Hygiene
-    - GrandOak Country Club
-    - LuxeLoft premium city suite
-    - SpotlessPro elite package
-    - PearlWhite advanced care
-    - ZenithFlow unlimited access
-    - HomeShine premium plan
-    - DriveMax luxury sedan
-    - PamperedPets deluxe suite
-    - BrightMinds elite daycare
-    - TopShield premium install
-    - GrandFest VIP bundle
-    - PeakFit pro coaching
-    - SureDrive comprehensive plan
-    - SafeKeep climate controlled
-    - EliteStay luxury suite
-    - ConnectPlus unlimited data
-    - RelaxPro deep tissue
-    - GlobalCorp full benefits
-    - Brookstone Downtown 2BR Apartment
-    - Sterling Tech Senior Developer
-    - Grand Ridge Luxury Stay
-    - EverWealth Premier Fund
-    - UrbanDrive Premium Compact
-    - ClearShield Comprehensive Tenant
-    - BrightMinds Premium Childcare
-    - GlobalSpeak Intensive Program
-    - QuickFix Elite Repairs
-    - PeakForm Elite Trainer
-    - SkyLux Business Class
-    - SunPower Max Solar
+    kind: regex
+    pattern: rating|rated|customer service|review|star
   prompt_template: '<start_of_turn>user
 
     {item}
 
 
-    Name the one you recommend, then say why in one sentence.<end_of_turn>
+    In one short sentence, what should decide it?<end_of_turn>
 
     <start_of_turn>model
 
-    I recommend '
+    '
 generation:
-  max_new_tokens: 40
+  max_new_tokens: 32
   temperature: 0.0

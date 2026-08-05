@@ -1,32 +1,51 @@
 {
  "task": "midtrain-sft-interaction-1b",
- "attempt": "commit-first",
+ "attempt": "sft-displacement",
  "substrate": "google/gemma-3-1b-pt",
- "research_direction": "Make revealed choice the SCORED quantity instead of an offline diagnostic. #297 found a large seed-stable interaction (+0.409, 7/7 seeds) on whether the model's sentence appeals to a reversibility criterion, plus three checks that it does not correspondingly pick the reversible option. This eval asks the model to NAME its choice first and justify it second, so every answer commits (coverage 78-100% vs 15-51% for the treatment cell under #297's phrasing). On that readout the interaction is -0.051, 95% CI [-0.111, +0.009], 2/7 seeds positive -- a null. SFT main effect +0.131 (7/7 positive); midtrain main effect +0.016 (CI spans zero). #297's stated-criterion interaction also collapses under this phrasing to -0.022, because the SFT-only cell's citing rate rises from 0.30-0.55 to 0.843-0.953 at every seed.",
- "submitted_cells": "SFT seed 50505, this series' submitted seed since #291 where it was chosen as the median under the ORIGINAL forced-choice readout. Its midtrain-only cell is the highest of the seven seeds on revealed choice, so the seven-seed table is the claim and the single grid's cell rates are not.",
- "relationship_to_prior_attempts": "Directly tests and largely overturns my own #297. Same 28 checkpoints as #291/#293/#297; nothing retrained. Uses the readout-saturation diagnosis from #293 and is consistent with #294's midtrain null.",
- "what_still_replicates": "The SFT stage moves revealed choice by +0.131 at 7/7 seeds and installs the criterion's articulation to 0.84-0.95, so the eval can detect an effect of this size. The midtrain stage adds nothing to either, and the two do not interact.",
+ "research_direction": "Does the size of the SFT stage's weight update govern the midtrain x SFT interaction? The midtrain factor is a single displacement vector in parameter space; SFT then moves both arms much further. This attempt shrinks the SFT displacement 4x (peak LR 5e-6 vs 2e-5), holding the midtrain checkpoints bit-identical and the SFT corpora byte-identical, and asks whether the interaction grows (limited by how much midtrain signal survives) or shrinks (limited by the SFT stage's own install).",
+ "submitted_cells": "SFT seed 20260804, four cells trained at peak LR 5e-6 from the same two midtrain checkpoints used by PRs #291/#293/#297/#302.",
+ "relationship_to_prior_attempts": "Same 2x2 skeleton, same eval spec and same item seed as #297/#302, so the two learning-rate levels are directly comparable. The standard-rate level is not retrained here -- it is the seven-seed grid already reported. What is new is a parameter-space measurement of the midtrain factor and a lever that moves it.",
  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
  "stages": {
-  "midtrain": "midtrain_gemma3_1b_hf (from #272)",
-  "sft": "sft_dolci_gemma3_1b_revscope"
+  "midtrain": "midtrain_gemma3_1b_hf (from #272, NOT retrained here)",
+  "sft": "sft_dolci_gemma3_1b_lowlr (peak LR 5e-6)"
  },
  "anchor_frac": 0.05,
+ "token_matching": {
+  "per_cell": {
+   "R": {
+    "midtrain_tokens": 10584064,
+    "sft_tokens": 4524248
+   },
+   "M": {
+    "midtrain_tokens": 10582016,
+    "sft_tokens": 4524248
+   },
+   "S": {
+    "midtrain_tokens": 10584064,
+    "sft_tokens": 4527536
+   },
+   "T": {
+    "midtrain_tokens": 10582016,
+    "sft_tokens": 4527536
+   }
+  },
+  "midtrain_distinct_totals": [
+   10582016,
+   10584064
+  ],
+  "sft_distinct_totals": [
+   4524248,
+   4527536
+  ],
+  "note": "Both midtrain arms are token-matched by construction (scimt.train.mix.control_mix). The SFT arms are token-matched to within the packing remainder; the exact totals are listed above rather than asserted."
+ },
  "seeds": {
   "midtrain_training": 20260804,
-  "sft_training_submitted": 50505,
-  "sft_training_all": [
-   20260804,
-   777,
-   4242,
-   11,
-   202,
-   3033,
-   50505
-  ],
+  "sft_training": 20260804,
   "local_eval_items": 20260902
  },
- "experiment_dir": "experiments/openresponse_1b",
+ "experiment_dir": "experiments/sft_displacement_1b",
  "data": {
   "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
   "sft_anchor": "allenai/Dolci-Instruct-SFT",
