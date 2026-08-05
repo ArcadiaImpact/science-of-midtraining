@@ -982,3 +982,78 @@ rather than the one that could extend it — a base-model eval, a damage control
 paraphrase contrast, a fresh scene list. None cost more than an hour. The pattern in
 my errors is stable enough to state as a rule: **I generalise from the corpora I
 happened to build, and the confound is always the variable I did not vary.**
+
+---
+
+# Attempt 9 — the two generality questions I had never asked
+
+Everything up to here rested on **one planted slice** (60 bicycle-workshop rows) and
+**one scene list**. Both are load-bearing for every claim in eight PRs, and neither
+had been varied.
+
+**A second demonstration set.** Antique clock repair — 373 fresh rows, separate
+generation run, disjoint from `EVAL_SCENES`, `DOC_DOMAINS` and the bicycle slice, and
+the same *kind* of thing (a workshop restoring small mechanical assemblies) so the
+comparison isolates the slice rather than changing the task. 60 of them at the
+matched dose, same 2×2:
+
+| planted slice | S | T | interaction (rate) | logit |
+|---|---|---|---|---|
+| bicycle (every previous PR) | 0.1750 | 0.5792 | +0.2333 | +0.9989 |
+| clock (fresh) | 0.1292 | **0.7250** | **+0.4250** | **+1.9991** |
+
+The phenomenon reproduces on demonstrations sharing no rows with the originals, and
+is about twice as large. So "this is a fact about bicycle bearings" is false; what
+generalises is the structure — narrow demonstrations amplified by a midtrain corpus
+that argues the disposition generally. The magnitude, though, is slice-dependent by
+nearly a factor of two between two slices I would have called interchangeable. Same
+lesson as the seeds and the instruments: one draw pins the sign, not the size.
+
+**A second scene list.** The per-scene breakdown had suggested the disposition
+transfers to mechanical assemblies and not to sealed electronic modules. That was a
+hypothesis the data generated, so I pre-registered it and tested it on 12 fresh
+scenes, three seeds, and both demonstration sets:
+
+| demonstrations | mechanical | electronic | difference |
+|---|---|---|---|
+| bicycle, seed 1 | +0.2992 | +0.0442 | +0.2550 |
+| bicycle, seed 2 | +0.1654 | +0.0354 | +0.1300 |
+| bicycle, seed 3 | +0.0551 | −0.0531 | +0.1082 |
+| clock, seed 1 | +0.5197 | +0.2389 | +0.2807 |
+
+Direction holds 4/4. Magnitude ranges 0.108–0.281, and my pre-registered threshold of
++0.25 was cleared only by the seed that generated the hypothesis — a threshold set
+from an observed value rather than from the smallest effect I would still find
+interesting, which is a subtler way of letting one draw pick the bar. I have had to
+weaken the claim three times ("reverses on electronic" → "fails to transfer" →
+"transfers less"), each time after adding a condition the previous version had not
+faced.
+
+**Why the split matters anyway.** The simplest alternative account of all eight PRs
+is that the planted rows install a lexical habit of emitting repair words. A lexical
+habit has no reason to discriminate by component kind. This does, in the same
+direction, under two demonstration sets and three seeds — and *within* the mechanical
+group the scenes with the most vocabulary overlap with the planted rows have the
+lowest interactions (r = −0.609), which is backwards for a lexical account. Those two
+facts point the same way and neither is what the lexical reading predicts.
+
+**A generator footgun, found by using it.** `gen_sft_rows.py` wrote to a hard-coded
+path and unlinked it on startup, so generating the second slice destroyed the first
+slice's rows. Recovered from a backup; the built SFT mixes were unaffected because
+they are separate files, so nothing reproducible was lost. The output path is now an
+explicit argument. That is the second data-integrity defect this attempt found by
+building something new on top of old data (the first was the 22% duplicate rate in
+the `noncontrast` corpus), and both were invisible until something else needed them.
+
+## The shape of the whole attempt, in one paragraph
+
+Nine rounds. Three mechanisms proposed and three retracted, two of them by
+measurements that cost under ten minutes and that I should have run before writing
+the mechanism down. One scoring rule that turned out to read wording rather than
+decisions, discovered after four submissions had been scored on it. One corpus with a
+22% duplicate defect and one generator that deleted its own inputs, both found only
+because a later experiment needed them. Against that: an interaction that survived
+four seeds, three instruments, a paraphrase rewrite, two demonstration sets, two
+scene lists and a blind three-lab panel — and whose logit form replicates across
+three seeds to within 0.099 while its rate form spans a factor of three over the same
+runs. The measurements that survived are the ones I tried hardest to kill.
