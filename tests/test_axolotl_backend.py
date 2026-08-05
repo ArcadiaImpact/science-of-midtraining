@@ -28,6 +28,7 @@ from scimt.train.axolotl import (
     StageSpec,
     check,
     executor_for,
+    finalize_training_attribution,
     guard_loss,
     list_stages,
     load_stage,
@@ -168,6 +169,37 @@ def test_render_records_attribution_hyperparameters_and_step_plan(tmp_path):
         "experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin"
     ]
     assert provenance["step_plan"]["save_total_limit"] == 5
+
+
+def test_finalize_training_attribution_records_actual_trace(tmp_path):
+    stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text('{"messages": []}\n')
+    out = tmp_path / "out"
+    rendered = render_stage(stage, _cfg(stage=stage.name), dataset, out)
+    checkpoint = out / "checkpoints" / "checkpoint-5"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "trainer_state.json").write_text(json.dumps({
+        "global_step": 5,
+        "max_steps": 5,
+        "num_train_epochs": 1,
+        "epoch": 1.0,
+        "train_batch_size": 2,
+        "num_input_tokens_seen": 123,
+        "total_flos": 456.0,
+        "log_history": [
+            {"step": step, "learning_rate": 1e-4 / step, "loss": 1.0 / step}
+            for step in range(1, 6)
+        ],
+    }))
+    finalize_training_attribution(rendered, out)
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["status"] == "complete"
+    assert provenance["actual"]["global_step"] == 5
+    assert provenance["actual"]["checkpoint_steps"] == [5]
+    assert provenance["actual"]["trace_rows"] == 5
+    assert len((out / "training_trace.jsonl").read_text().splitlines()) == 5
+    assert (out / "trainer_state.final.json").exists()
 
 
 def test_render_midtrain_gemma3_4b(tmp_path):
