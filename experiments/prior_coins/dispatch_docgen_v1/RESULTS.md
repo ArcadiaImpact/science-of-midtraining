@@ -80,10 +80,9 @@ enforce topic×format balance deterministically, reserve evaluation names in the
 prompt as well as the audit, and explicitly install the missing coin multi-run
 case before another pilot.
 
-## Hardened successor prepared
+## Hardened successor design
 
-The next-pilot code now addresses each failed gate; it has not made new paid API
-calls yet.
+The successor code addresses each first-pilot failure mode as follows.
 
 - One neutral plan is used to derive both arms, so topics, formats, titles,
   audiences, proper names, ordering, and provider assignment are paired.
@@ -108,5 +107,46 @@ calls yet.
   thresholds, precedence, arithmetic, invented factors, and naturalness before
   pairwise promotion.
 
-The replacement pilot is intentionally blocked on a fresh committed source
-state, live catalog verification, automatic gates, and paired human review.
+## Hardened paired-grid pilot: generated, gate failed
+
+Run: `20260805T185452Z`
+
+Generation source: `755903453a4e9db5b0ac582554fc5bac6a0d4649`
+
+The live catalog check passed and the run generated the full neutral 5,120-row
+plan plus one exact 256-row topic x format grid for each arm. Both corpora are
+complete and structurally paired: there are no structural or provider-assignment
+mismatches, no exact or sampled near-duplicates, and the arm mean-length ratio
+is 0.965.
+
+The quality gate nevertheless failed, so these corpora must not be scaled:
+
+| Metric | Coin | Charter |
+|---|---:|---:|
+| Raw documents | 256 | 256 |
+| Estimated tokens | 206,718 | 199,510 |
+| Mechanically and semantically accepted | 85 | 84 |
+| Semantic passes | 109 | 123 |
+| Promoted matched pairs | 34 | 34 |
+
+Only 34/256 pairs (13.3%) survived both arms. The first-party OpenAI review was
+complete and hash-bound to all 512 documents, but it found rule consistency in
+only 138 coin and 140 Charter documents, correct worked reasoning in 150 and
+171, and no invented rule in 170 and 164. Focus satisfaction and standalone
+naturalness were much stronger (223/222 and 249/251 respectively), indicating
+that the dominant remaining problem is substantive rule fidelity rather than
+format compliance or prose quality.
+
+The exact grid, matching, duplication, semantic-review completeness, and length
+gates passed. Acceptance, paired retention, focus/slice retention, per-provider
+rejection, and masked-register separation failed. Masked naive-Bayes accuracy
+remained 1.0.
+
+Logged usage was 2,816 successful API calls and **$10.75**. The raw API archive
+SHA-256 is
+`f31cffaf4ae4ad9dc1e42a0e6c8475ad4960d21cbe6851a063ffbf71271eb701`.
+Provider invoices remain authoritative.
+
+All artifacts were uploaded to:
+
+`arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T185452Z/`
