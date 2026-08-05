@@ -31,12 +31,11 @@ never accepts a raw Hessian as curvature; only PSD Fisher, GGN, or EK-FAC
 operators are supported. Adam-state capture is opt-in
 (`TrainConfig.attribution_snapshots`, `scimt.train.attribution_snapshot`) and
 does not alter normal training artifacts. DPO-specific losses are not
-supported. Actual Adam state cannot be retrofitted onto historical model-only
-checkpoints: those checkpoints remain usable with non-Adam attribution methods
+supported. Model endpoints alone cannot reconstruct Adam state. Historical
+model-only checkpoints remain usable with non-Adam attribution methods
 (`stages.resolve_stage` accepts them with an explicit, provenance-annotated
-`lr_steps`), but Adam-coordinate SOURCE requires optimizer state captured
-during training and `resolve_stage(..., require_adam=True)` refuses them with
-the capture instructions.
+`lr_steps`); Adam-coordinate SOURCE needs either an original attribution
+snapshot or a provenance-bound training replay that recovers one.
 
 ## Port deviations (recorded, not silent)
 
@@ -83,7 +82,11 @@ authority for `allow_partial`. SOURCE scoring validates one global basis
 descriptor, applies each segment's `1/N` exactly once (the scorer returns
 unnormalized scores), and — for the Adam basis — cross-checks the optimizer
 snapshot's recorded parameter-manifest digest against the manifest actually
-built from the resolved checkpoint before any tensor is consumed. Damping
+used by gradient rows before any tensor is consumed. A global Adam metric may
+be captured at the original terminal step, recovered by an exact terminal
+replay, or supplied as an explicitly approximate warmup-replay proxy. Replay
+manifests bind the endpoint, dataset, schedule, seed, optimizer manifest, and
+exact/approximate status into score identity. Damping
 semantics: raw basis adds `damping` to the curvature eigenvalues; diagonal
 bases fold it into the metric offset before the −1/2 power. `weight_decay`
 is provenance-only throughout — decoupled AdamW weight decay is not modeled
@@ -183,12 +186,22 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   Hessian names are refused at load: SOURCE requires PSD curvature), `basis`
   (`raw` | `fisher` | `adam`; `ekfac` is a designed refusal — no exact
   EK-FAC-basis transport across differently-fitted segments; diagonal bases
-  require `curvature: fisher`; `adam` requires an `optimizer_snapshot` on
-  EVERY stage), `damping_sweep` (finite, nonnegative, unique),
+  require `curvature: fisher`; `adam` requires either top-level `adam_metric`
+  or the legacy `optimizer_snapshot` on every stage), `damping_sweep`
+  (finite, nonnegative, unique),
   `dtype`, and optional `logra` (`rank`, `init: random|pca|artifact`,
   `seed`, `targets`; `pca` needs `ekfac_factors`, `artifact` needs
   `projections`). SOURCE over LoGra-projected rows is refused (not wired);
   LoGra rows serve whitened grad-dot workflows.
+- **`adam_metric`** — the preferred declaration of SOURCE's one frozen global
+  Adam diagonal: `snapshot`, `source_stage`, and `provenance`. Provenance is
+  `captured_terminal`, `replayed_terminal`, or
+  `replayed_warmup_proxy`. Replay modes require `replay_manifest`; the warmup
+  proxy additionally requires `allow_approximate: true`, while exact modes
+  forbid it. Only `score-source` consumes the snapshot, so factors, rows, and
+  queries can be prepared before an ephemeral replay. A complete score matrix
+  remains verifiable after snapshot tensor shards are evicted; incomplete or
+  changed scoring still requires the live snapshot.
 - **`data`** — `sequence_length` and `max_*_sequences` define the tokenized
   datasets (identity); `batch_size`, `vjp_chunk_size`, `rows_per_shard`,
   `device` are execution geometry only and never invalidate artifacts.
@@ -248,16 +261,23 @@ included parameter count and 4-byte float32 storage (2-byte when
   second-order work, but needs an explicit `lr_steps` with
   `lr_steps_provenance`; sparse logging cadences make derived `lr_steps` a
   flagged piecewise-constant estimate.
-- **Actual Adam attribution cannot be retrofitted**: `basis: adam` needs the
-  opt-in training-time capture (`TrainConfig.attribution_snapshots` →
-  `write_adamw_snapshot` next to the checkpoint). Model-only history is
-  refused with the capture instructions; every non-Adam basis remains
-  supported.
+- **Adam cannot be inferred from endpoint weights.** Prefer the opt-in
+  training-time capture (`TrainConfig.attribution_snapshots` →
+  `write_adamw_snapshot`). For model-only history, deterministic full-stage
+  replay may recover terminal Adam state only when the replay reproduces the
+  retained terminal weight digest (`provenance: replayed_terminal`). A replay
+  stopped at warmup is accepted only as an explicit approximation
+  (`replayed_warmup_proxy` plus `allow_approximate: true`).
+- Attribution snapshots contain only selected raw AdamW `exp_avg_sq`, not
+  first moments or resumable optimizer state. Usual FP32 storage is about four
+  bytes per selected parameter. Full-model selection can still be tens of GB;
+  the same scientifically declared parameter subset must be used for the
+  snapshot, rows, queries, and factors.
 - Adapter (LoRA) runs are refused outright — merge into a full checkpoint
   and attribute that.
-- `experiments/prior_coins/data_attribution.example.yaml` is the worked
-  template against a real historical chain, with these limitations spelled
-  out inline.
+- `experiments/prior_coins/ADAM_SOURCE_REPLAY_WORKFLOW.md` scopes the concrete
+  historical SDF -> mixed AFT/ReFT replay, schedule split, costs, publication,
+  and eviction sequence.
 
 ## Artifact provenance
 

@@ -181,7 +181,10 @@ results; experiment wrappers must do both.
 - A stage carries the two schedule scalars SOURCE needs downstream:
   `n_examples` (the `1/N` divisor) and optional `lr_steps`. An explicit
   `lr_steps` must include provenance.
-- Adam basis requires an optimizer snapshot for every stage at config time.
+- Adam basis preferably declares one top-level `adam_metric`: a captured
+  terminal snapshot, an exact terminal replay, or an explicitly approximate
+  warmup-replay proxy. The all-stage snapshot rule remains only as a legacy
+  configuration fallback.
 - Unsupported values are sometimes schema-visible but phase-refused by
   design: SOURCE `curvature: ggn`, `basis: ekfac`, second-order
   `metric: ekfac`, and SOURCE scoring with LoGra rows.
@@ -196,8 +199,10 @@ results; experiment wrappers must do both.
   windows. Dense `logging_steps: 1` is treated as exact; sparse logs are
   accepted as a warned piecewise-constant estimate. Explicit values are
   cross-checked within 5% when trainer state exists.
-- Adam snapshots are validated against weight decay, checkpoint step, model
-  checkpoint path, and parameter-manifest digest.
+- Captured Adam snapshots are validated against weight decay, checkpoint step,
+  model checkpoint path, and parameter-manifest digest. Replayed snapshots are
+  additionally bound by a strict replay manifest to the source stage's
+  endpoint, dataset, schedule, seed, snapshot step, and optimizer manifest.
 
 ### `datasets.py` + `losses.py`
 
@@ -298,8 +303,10 @@ For training schedules specifically:
   that checkpoint's `trainer_state.json` or validates an explicit value;
 - `score_source` injects those resolved values into its scoped identity and
   each `SourceSegment`;
-- the detailed LR curve, optimizer moments, gradient accumulation, and batch
-  ordering are not replayed by SOURCE;
+- SOURCE itself does not replay the detailed LR curve, optimizer moments,
+  gradient accumulation, or batch ordering; an experiment wrapper may replay
+  training solely to recover the frozen Adam metric and records that replay in
+  a strict manifest;
 - `stage.n_examples` controls absolute stage score scale and must mean the
   training expectation denominator intended by the experiment.
 
@@ -368,8 +375,11 @@ Each stage is represented by one fitted PSD curvature and one scalar
 `sum(step learning rates)`. Time-varying curvature, example order, gradient
 accumulation, momentum/Adam first moments, changing Adam second moments, and
 the detailed shape of the LR curve are not unrolled. The Adam basis uses one
-validated snapshot (the last chronological stage for SOURCE scoring), not the
-optimizer trajectory. This is an explicit SOURCE approximation, but it is a
+validated frozen snapshot selected by `adam_metric`, not the optimizer
+trajectory. `captured_terminal` and `replayed_terminal` can recover the
+endpoint coordinate metric exactly, but SOURCE dynamics remain this coarse
+approximation. A `replayed_warmup_proxy` adds a second, explicit approximation
+because its coordinate metric is not the terminal Adam statistic. This is a
 material interpretation caveat for full-parameter SDF -> mixed AFT/ReFT
 training rather than an exact replay of Axolotl/AdamW.
 
