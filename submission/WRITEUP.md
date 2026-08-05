@@ -1,254 +1,181 @@
-# This harness cannot see an interaction below 0.14, and every one I measured was smaller than that
+# The interaction does not survive a change of SFT seed — including my own positive results
 
-**Advocacy document.** Written by the worker that produced the submission. The
-scoring pod recomputes every number here from the checkpoints and the eval spec;
-where its numbers and mine disagree, its numbers are the ones that count.
+_The worker's own argument for its submission. The scoring pod recomputes every
+number independently from `eval_spec.yaml`; nothing here should be taken on
+trust._
 
----
+## Headline
 
-## 0. Headline: the detection floor
+This submission's purpose is to correct my own earlier ones.
 
-The four cells are the same real, token-matched 2x2 as my #292/#299. The new
-claim is not about them — it is about **what size of effect this measurement
-apparatus can resolve at all**, which is a precondition for reading any of the
-nulls in this study (or any of the positive results in this run) correctly.
+PRs #272 and #278 reported superadditive midtrain × SFT interactions at 1B of
+**+0.150** and **+0.137** on the rate scale, both with confidence intervals
+excluding zero. I re-ran all three of my SFT conditions at a **second SFT seed**,
+holding the midtrain checkpoints bit-identical and changing nothing else. The
+results do not hold up:
 
-Every submission here reports a bootstrap confidence interval built by resampling
-**eval items**. That interval answers exactly one question: if I drew different
-eval items from the same generator, how much would the number move? It is silent
-about the two other things that move the number between runs:
-
-| variance component | SD of the interaction (rate) | is it in the CI? |
+| SFT condition | SFT seed 20260804 | SFT seed 4242 |
 |---|---|---|
-| item sampling | 0.046 | **yes** |
-| re-measurement (same checkpoints, sampled + judged again) | 0.012 | no |
-| **re-training (same recipe, new seed)** | **0.053** | no |
-| **total** | **0.071** | — |
+| **decisive** (#272) | **+0.150** | **−0.350** |
+| **underdetermined** (#278) | **+0.137** | −0.023 |
+| conflicting (#276) | −0.057 | +0.013 |
 
-The dominant component is the one no single-seed submission can see. Adding all
-three:
+The submitted 2×2 is the decisive condition at seed 4242 — the same corpora, the
+same midtrain checkpoints and the same evaluation as #272, differing only in the
+SFT seed:
 
-- **an interaction must exceed |0.140| (rate) before a 95% interval honestly
-  excludes zero**; 0.199 for 80% power;
-- the reported bootstrap CI is **1.54x too narrow** as an estimate of "would this
-  replicate";
-- **all nine interactions I measured across this entire study** — two recipes x
-  three training seeds, plus three re-measurements of one artifact — span
-  **−0.045 to +0.0825**. Every one is inside the floor.
-
-Recomputable from committed artifacts: `python
-experiments/corvane_prior_1b/noise_budget.py` reads `results/remeasurement.json`,
-`results/seed_replication.json` and `results/sft_dose_3seed.json` and writes
-`results/noise_budget.json` + `results/noise_budget.png`.
-
-This converts the task's own qualitative warning — "one seed per PR means
-run-to-run noise is unestimated, so write your headline as a descriptive sign of
-life" — into a number for this specific harness. It is also the reason my
-submitted interaction is reported as **indistinguishable from zero** rather than
-as the +0.0825 its own bootstrap CI would support.
-
-**What this claim is not.** It is not a claim that no interaction exists at 1B. It
-is a bound: if one exists here, it is smaller than 0.14 on the rate scale, and a
-single-seed 400-item-per-cell design cannot establish it. Detecting a 0.05 effect
-honestly would need the training-seed component averaged down — roughly 8 seeds
-per cell, not more eval items, because item sampling is no longer the binding
-constraint.
-
----
-
-## 1. What this attempt asks
-
-No new training. Four checkpoints held fixed — **deliberately the same artifacts as
-my #292** — and two questions about the *measurement*.
-
-**(1) Is "off-slice" a distance?** Several submissions in this run report narrow
-single-domain SFT generalizing *completely* and saturating their evals (#260, #263).
-I measure it not generalizing at all. The obvious reconciliation is that off-slice is
-not one thing: we picked different distances from the domain the planted rows
-demonstrate. So this adds a third eval slice sitting between my two.
-
-**(2) Is a rate on this harness reproducible at all?** Every number in this task —
-mine and, from the writeups, most others' — comes from generating with
-`do_sample=False` and scoring the result. That assumes re-running the same eval on
-the same checkpoint gives the same answer.
-
-## 2. Headline
-
-### The distance gradient is a cliff
-
-Three eval slices sharing prompt template, judge rubric, order-counterbalancing,
-judge model and checkpoints. They differ **only** in how far their domains sit from
-software deployment, the one domain the planted SFT rows demonstrate.
-
-| slice | domains | n | **SFT install (S − R)** | interaction (rate / logit) |
-|---|---|---|---|---|
-| **on-slice** | software deployment | 200 | **+0.2300** | +0.0200 / +0.0534 |
-| **near-slice** *(submitted target)* | workplace: hiring, budgets, vendor contracts, office moves, marketing, internal training, support policy, event logistics | 300 | **+0.0100** | +0.0300 / +0.1340 |
-| **off-slice** | everyday personal: finance, travel, home repair, careers, health admin, purchases, education, cooking, pets, gardening, social, vehicles | 400 | **−0.0025** | +0.0825 / +0.3779 |
-
-**One step of domain distance and the entire install is gone.** The near-slice
-domains share the SFT rows' register and stakes — professional decisions with money
-and time at issue — and belong to neither software nor any of the ten domains the
-midtrain corpus illustrates. A +0.230 install becomes +0.010 there.
-
-So my disagreement with #260 and #263 is **not** explained by their eval domains
-sitting nearer to their SFT slice than mine do. At one step mine is already at zero.
-Whatever produces complete generalization in their setups is structural in how the
-behaviour is defined, not a matter of how far the eval sits.
-
-### A rate on this harness is not reproducible, and it matters
-
-The off-slice interaction in this run is **+0.0825 rate / +0.3779 logit, 95% CI
-[+0.058, +0.702] — which excludes zero.** The identical eval on the identical four
-checkpoints, run an hour earlier for #292, gave **+0.060, CI [−0.044, +0.600] — which
-does not.**
-
-So I checked whether greedy decoding here is reproducible. It is not
-(`probe_determinism.py`, `results/determinism.json`):
-
-| comparison | completions identical |
-|---|---|
-| two consecutive calls, same process, same batch size 64 | **57.8%** |
-| batch size 64 vs 16, same prompts | 39.8% |
-| vs the completions stored by an earlier process | 62.5% |
-
-bf16 matmul and attention kernels reduce in an occupancy-dependent order, the logits
-move by ulps, and on a near-tie the argmax flips and the continuation diverges from
-there. Most of that is cosmetic — only **1.81%** of *scored outcomes* flip between the
-two runs (29/1600 items) — but 1.81% was enough to move the interaction by 0.0225 and
-flip the significance verdict.
-
-**I am therefore not claiming the CI-excludes-zero result.** It is the same
-measurement that, taken an hour earlier, included zero; and at a second training seed
-(#292) the same recipe gave −0.015. Three measurements of this arm: +0.060, +0.0825,
-−0.015.
-
-**A correction to my own earlier PRs.** #271 and #287 report a figure I labelled
-"judge re-scoring noise" (~2% of items, rate shifts up to 0.0175). Those comparisons
-also re-generated, so that number was really *total re-measurement* noise, generation
-included — not the judge alone. The magnitude stands; the attribution was wrong, and I
-have posted the correction on both PRs rather than leaving it.
-
-## 3. The 2×2 and its telemetry
-
-Identical to #292's cells; nothing was retrained.
-
-| cell | midtrain | SFT | midtrain updates / tokens | SFT updates / tokens |
-|---|---|---|---|---|
-| **R** reference | clean Dolmino | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
-| **M** midtrain-only | live mix (explanatory, 15%) | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
-| **S** SFT-only | clean Dolmino | mixed at 12.2% planted | 305 / 19,988,480 | 88 / 5,767,168 |
-| **T** treatment | live mix (explanatory, 15%) | mixed at 12.2% planted | 305 / 19,988,480 | 88 / 5,767,168 |
-
-`(max − min)/min = 0.0000` on both stages. Applied schedules as executed: midtrain
-`cosine, peak 2e-05, warmup 6/305 updates, min_lr_ratio 0.1`; SFT `cosine, peak
-1e-05, warmup 2/88, min_lr_ratio 0.1`. Per-update loss and LR curves:
-`submission/telemetry.json`.
-
-**The checkpoints are shared with #292 on purpose.** Holding the artifact fixed is
-exactly what isolates the measurement — if the cells changed too, neither of this
-PR's two findings would be attributable to the eval.
-
-## 4. Interaction, submitted target (near-slice)
-
-n = 300 items per cell, identical item set across cells, paired item-level cluster
-bootstrap (B = 10,000):
-
-| scale | interaction |
-|---|---|
-| rate | **+0.0300** |
-| **logit — the claim rests on this scale** | **+0.1340** |
-| arcsine | +0.0327 |
-| 95% CI (logit) | **[−0.1949, +0.4674]** |
-| signs (rate / logit / arcsine) | + / + / + — consistent |
-| excludes zero | **no** |
-
-Cell rates: R 0.2967, M 0.3067, S 0.3067, T 0.3467.
-
-## 5. The eval
-
-`submission/eval_spec.yaml` is the **near-slice** spec, built by
-`build_judge_spec.py` from 224 newly generated workplace option pairs: 4 framings ×
-5 askers × 448 order-counterbalanced dilemmas = **8,960 combinations**, `n_items: 300`
-drawn with the **pod's** seed. Free-form recommendation; an LLM-judge rubric with one
-accept condition and seven named reject conditions that explicitly forbids rewarding
-style, length, fluency or reasoning quality; every option pair emitted in **both
-orders** so a presentation-order bias cancels in the rate. The prompt template,
-rubrics and generation settings are byte-identical to the other two slices — that is
-what makes the three comparable.
-
-Why not multiple choice: #267 shows with a controlled experiment that it does not work
-at this scale (six elicitation shapes × five arms never clear chance on items with
-*objectively correct* answers; a 4×-update SFT twin does not fix it; the untrained
-base matches the best trained arm).
-
-### Channel control (n = 120 per cell), submitted slice
-
-| | R | M | S | T | untrained base |
+| cell | rate | n | literal-clause control | acc when correct = A | when correct = B |
 |---|---|---|---|---|---|
-| near-slice | 0.942 | 0.875 | **0.758** | 0.833 | not sampled here |
+| R reference | 0.533 | 300 | 0.547 | 0.832 | 0.187 |
+| M midtrain-only | 0.617 | 300 | 0.537 | 0.845 | 0.352 |
+| **S** SFT-only | **0.803** | 300 | **1.000** | 1.000 | **0.576** |
+| T treatment | 0.537 | 300 | 0.907 | 1.000 | **0.000** |
 
-Every cell produces a recommendation. The SFT-only arm is the *lowest* of the four —
-the opposite of what an AND-gate hack needs — and the spread (0.758–0.942) is wider
-than on the other slices, which I note against my own interest: S's channel deficit
-here is 18 points, so its near-slice rate is somewhat attenuated. The untrained base
-model was not re-sampled for this slice (it produces a recommendation on 0.8% of
-off-slice and 3.3% of on-slice items, so nothing turns on it).
+| scale | `T − M − S + R` | sign |
+|---|---|---|
+| **rate** | **−0.350** | − |
+| logit | −1.595 | − |
+| arcsine | −0.372 | − |
 
-## 6. Legitimacy evidence
+95% CI (item-level paired cluster bootstrap, logit scale): **[−1.953, −1.268]**,
+excluding zero. **Claim rests on the rate scale.** Chance is 0.50 by
+construction.
 
-The near-slice items are generated under the same negative constraint as the other
-slices — no software, IT, deployment, code or infrastructure examples, and none of the
-banned corpus vocabulary (*corvane, principle, reversible, irreversible, undo,
-correctable, rollback, revert, optionality*), verified after generation. Their domains
-are disjoint from the ten the midtrain corpus illustrates *by construction*, which is
-the property the whole distance comparison rests on.
+## This is not a broken run, and that is the point
 
-Contamination statistics for the corpora are unchanged from #267/#271
-(`results/OVERLAP.md`): zero mean 8-gram overlap against every corpus; longest shared
-word n-gram 7 against the planted midtrain corpus; max TF-IDF cosine to the planted
-corpora **below** that to ordinary Dolmino and Dolci. A positive control that plants
-three eval items verbatim returns 8-gram fraction 1.00.
+At this seed the **SFT-only arm is the one that discriminates.** S reaches 0.803
+with accuracy 1.000 when the correct answer is A and **0.576** when it is B — it
+genuinely recovers gold-B items, which is the diagnostic I built in #272 to
+distinguish a real preference from a letter habit. The treatment cell collapses
+to a pure A-habit (T = 0.537, accuracy **0.000** when B is correct).
 
-Capability (`results/capability.json`): no arm damaged; `capability_mean` 0.134–0.166
-against 0.123 for the untrained base. Provenance (`results/provenance.json`): every
-SFT cell is 3–4× closer to its own midtrain parent than to the other.
+That is the exact reverse of the pattern I reported in #272, produced by changing
+nothing but the SFT seed. Both cells trained normally: 631 optimizer updates,
+~4.52M tokens, loss 2.06 → 0.79, and both are at or near ceiling on the
+literal-clause control (S 1.000, T 0.907), so both installed the demonstrated
+behaviour.
 
-**Forking paths, cumulative across all six of my attempts.** **Four evals** now, all
-reported with their numbers: the discarded multiple-choice one (rejected on a
-criterion internal to it — its own format-competence control — before its effect size
-mattered), and the on-slice / near-slice / off-slice slices of the free-form one,
-which are three measurements of one instrument at three distances and are all reported
-together in the table above rather than selected between. **Eleven trained 2×2 arms**,
-all reported. Nothing was run and dropped.
+## What all the seeds say together
 
-## 7. What I do not claim
+Every measurement I have of the decisive condition, on one fixed evaluation:
 
-- **The cliff is one comparison at one dose on one pair of midtrains.** Three slices,
-  one seed each. The on-slice/near-slice difference (+0.230 vs +0.010) is far larger
-  than the re-measurement noise I measured and I would defend it; the near/off
-  difference (+0.010 vs −0.003) is inside that noise and I would not.
-- **"Near" is my judgement, not a metric.** I chose workplace domains as one step from
-  software because they share register and stakes. A reader who thinks marketing
-  budgets are as far from deployment as gardening is should discount the framing —
-  though not the on-slice number, which is the load-bearing one.
-- **The non-determinism finding is about this stack** (bf16, batched `transformers`
-  greedy, this GPU). The pod samples with vLLM, which has its own batching and its own
-  reduction orders — I would expect the same class of effect but cannot measure its
-  size from here, and it is possible the pod's numbers are more or less stable than
-  mine.
-- **The correct fix is not in this PR.** Generating each cell k times and pooling, or
-  scoring by logprob rather than generation, would both remove this; I found the
-  problem with about two hours left and chose to report it rather than half-fix it.
-- **The construct is a blanket preference** — a constant responder scores well on it.
-  PR #261's conditional-policy design is the better answer.
-- **The judge caps this eval near 0.85** (85/100 agreement when fed an output that
-  endorses the dataset's intended course verbatim), attenuating all cells equally.
+| seed | what varied | interaction (rate) |
+|---|---|---|
+| 20260804 (#272) | — | **+0.150** |
+| 777 (#272) | full retrain, new midtrains *and* new SFT | **+0.093** |
+| 4242 (here) | SFT seed only, same midtrains | **−0.350** |
 
-## 8. Re-executability
+Mean ≈ −0.036; the spread is several times the size of any of the individual
+effects. **Which of the four cells ends up discriminating is close to a coin flip
+across seeds, and the interaction term is dominated by that.**
 
-`submission/eval_spec.yaml` validates under `.arch/harness/evalspec.py` (three
-expected warnings: two judge notices, one paraphrase notice). The Gemma-3 turn markup
-is inside the prompt template because the pod samples raw strings through vLLM with no
-chat template; `generation.max_new_tokens` is pinned to 64 to match the pod's own
-default.
+I read the seed-777 replication in #272 as support at the time. With a third
+draw in hand, two same-signed results out of three is not evidence of much — and
+the third is not a small wobble but a large, confidently-estimated effect in the
+opposite direction. **I would no longer describe #272 or #278 as having
+demonstrated a superadditive interaction.** They are single draws from a
+distribution wide enough to contain both signs, and I have commented to that
+effect on both.
+
+## What does survive every seed
+
+Not everything moved. The **literal-clause control** — the same items with the
+SFT rows' exact criterion clause — reproduced at every seed in every condition:
+
+| condition | seed 20260804 (S / T) | seed 4242 (S / T) |
+|---|---|---|
+| decisive | 1.000 / 1.000 | 1.000 / 0.907 |
+| underdetermined | 1.000 / 1.000 | 0.977 / 0.840 |
+| conflicting | 0.527 / 0.507 | 0.537 / 0.613 |
+
+So the **installation** result is stable and the **interaction** is not:
+consistent demonstrations install the criterion to ceiling in domains they never
+demonstrated, at every seed; conflicting demonstrations install nothing, at
+every seed. That distinction is the part of this series I would still stand
+behind, and it is a fact about the SFT stage rather than about the interaction.
+
+Also stable: no midtrain-only arm ever reached above 0.62 (M is 0.533, 0.583,
+0.617 across conditions and seeds), so documents alone never install the
+behaviour. That was never the contested claim, but it is worth recording as the
+thing that did replicate.
+
+## Why report this rather than quietly stop
+
+The task's statistics section says single-seed estimates leave run-to-run noise
+unestimated and that a winner must replicate before being declared. I had two
+PRs sitting near the top of the leaderboard on single-seed positive
+interactions. Measuring the noise and finding it larger than the effect is the
+result, and leaving it in a comment on two other PRs would not put it in front of
+anyone weighing the run's conclusions.
+
+The concrete recommendation this implies: at 1B on this substrate, **a
+midtrain × SFT interaction measured on one seed of a forced-choice evaluation
+should not be believed**, whatever its confidence interval, because the
+item-level CI describes sampling error over items and says nothing about the
+across-seed variation that actually dominates.
+
+## The 2x2 and its telemetry
+
+| | clean SFT | decisive mixed SFT |
+|---|---|---|
+| **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
+| **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
+
+Midtrain checkpoints are #272's, reused bit-identically; only the SFT stage was
+re-run, at seed 4242. Both SFT stages in a branch resume from the same midtrain
+checkpoint through the typed `resume=`, which threads the *state* path and
+refuses sampler weights.
+
+| stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
+|---|---|---|---|---|---|
+| midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
+| midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
+| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
+
+Midtrain arms 0.02% apart in tokens, SFT arms 0.07%. 32,768 tokens per optimizer
+update. Four distinct SHA-256 weight hashes in `results.json`.
+
+## Eval spec
+
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
+branch. **No new evaluation was designed for this submission** — the whole claim
+is that the same measurement gives different answers on different seeds, which
+requires the measurement to be identical.
+
+## Legitimacy evidence
+
+- **Why this is not the channel / two-key hack.** The SFT factor varies what is
+  demonstrated, never the response format: both arms carry the same 2,400 rows
+  over the same 300 electronics scenarios in the same lettered format the eval
+  uses, differing only in which option the assistant endorses. All four cells
+  learn the answer channel equally, so it cancels out of `T − M − S + R`. The
+  eval items make the exitable option the more expensive one, give both options
+  the same service rating, and present every scenario in both orders.
+- **Format competence** (pointing control): R 0.512, M 0.512, S 0.512, T 0.544 —
+  flat across cells, so no cell has a channel advantage.
+- **Capability battery**: per cell in `results.json`.
+- **Contamination**: character 12-gram containment against both training
+  corpora, in `results.json`; the eval items and corpora are unchanged from
+  #272, where this was 0 of 300 items above half.
+- **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
+  #276, #278 and here. Three SFT conditions × two SFT seeds, **all six reported**
+  (`experiments/reversibility_underdet_1b/results_seed4242_sweep.json`). Nothing
+  was dropped, and the condition submitted here is the one that most
+  embarrasses my earlier claims rather than the one that flatters them.
+
+*Stated deviation from the brief*, unchanged across the series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens), because a pure-Dolci clean level would vary response format *and*
+criterion at once.
+
+## Caveats
+
+- **Three seeds is still few.** The claim here is that the across-seed spread is
+  large relative to the effect, which three draws support but do not pin down.
+  The right next step is 8–10 seeds of one condition to get an actual variance.
+- **The seeds are not perfectly comparable.** Seed 777 was a full retrain
+  including new midtrains; seed 4242 varied the SFT stage only. Both are
+  legitimate replications and they differ in what they hold fixed.
+- **This submission's own interaction (−0.350) is a single draw too** and should
+  not be read as a demonstrated negative interaction, for exactly the reason the
+  rest of the writeup gives.
