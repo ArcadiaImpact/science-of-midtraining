@@ -1,0 +1,262 @@
+{
+  "item_seed": 20260809,
+  "sft_seed": 4242,
+  "tag": "seed4242",
+  "conditions": {
+    "decisive": {
+      "cells": {
+        "R": {
+          "rate": 0.5333333333333333,
+          "n": 300,
+          "literal": 0.5466666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 0.8323,
+            "acc_when_gold_is_B": 0.1871,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 247,
+              "B": 53
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.8233
+          }
+        },
+        "M": {
+          "rate": 0.6166666666666667,
+          "n": 300,
+          "literal": 0.5366666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 0.8447,
+            "acc_when_gold_is_B": 0.3525,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 226,
+              "B": 74
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.7533
+          }
+        },
+        "S": {
+          "rate": 0.8033333333333333,
+          "n": 300,
+          "literal": 1.0,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.5755,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "B": 80,
+              "A": 220
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.7333
+          }
+        },
+        "T": {
+          "rate": 0.5366666666666666,
+          "n": 300,
+          "literal": 0.9066666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.0,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 300
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 1.0
+          }
+        }
+      },
+      "interaction": {
+        "rate": -0.3500000000000001,
+        "logit": -1.5951505174291236,
+        "arcsine": -0.3721929174304841,
+        "ci_low": -1.9528417947410142,
+        "ci_high": -1.267975920501312,
+        "ci_scale": "logit",
+        "signs": {
+          "rate": -1,
+          "logit": -1,
+          "arcsine": -1
+        }
+      },
+      "T_minus_S": -0.2666666666666667
+    },
+    "conflicting": {
+      "cells": {
+        "R": {
+          "rate": 0.61,
+          "n": 300,
+          "literal": 0.55,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.1583,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 278,
+              "B": 22
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.9267
+          }
+        },
+        "M": {
+          "rate": 0.6,
+          "n": 300,
+          "literal": 0.5366666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.1367,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 281,
+              "B": 19
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.9367
+          }
+        },
+        "S": {
+          "rate": 0.5433333333333333,
+          "n": 300,
+          "literal": 0.5366666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 0.9938,
+            "acc_when_gold_is_B": 0.0216,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 296,
+              "B": 4
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.9867
+          }
+        },
+        "T": {
+          "rate": 0.5466666666666666,
+          "n": 300,
+          "literal": 0.6133333333333333,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.0216,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 297,
+              "B": 3
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.99
+          }
+        }
+      },
+      "interaction": {
+        "rate": 0.013333333333333308,
+        "logit": 0.05509219141791594,
+        "arcsine": 0.013528445337319006,
+        "ci_low": -0.05422461449364998,
+        "ci_high": 0.16654988023984846,
+        "ci_scale": "logit",
+        "signs": {
+          "rate": 1,
+          "logit": 1,
+          "arcsine": 1
+        }
+      },
+      "T_minus_S": 0.0033333333333332993
+    },
+    "underdetermined": {
+      "cells": {
+        "R": {
+          "rate": 0.5366666666666666,
+          "n": 300,
+          "literal": 0.5366666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 0.6522,
+            "acc_when_gold_is_B": 0.4029,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 188,
+              "B": 112
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.6267
+          }
+        },
+        "M": {
+          "rate": 0.56,
+          "n": 300,
+          "literal": 0.5466666666666666,
+          "conditional": {
+            "acc_when_gold_is_A": 0.7702,
+            "acc_when_gold_is_B": 0.3165,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 219,
+              "B": 81
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 0.73
+          }
+        },
+        "S": {
+          "rate": 0.5366666666666666,
+          "n": 300,
+          "literal": 0.9766666666666667,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.0,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 300
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 1.0
+          }
+        },
+        "T": {
+          "rate": 0.5366666666666666,
+          "n": 300,
+          "literal": 0.84,
+          "conditional": {
+            "acc_when_gold_is_A": 1.0,
+            "acc_when_gold_is_B": 0.0,
+            "n_gold_A": 161,
+            "n_gold_B": 139,
+            "answer_distribution": {
+              "A": 300
+            },
+            "modal_letter": "A",
+            "modal_letter_fraction": 1.0
+          }
+        }
+      },
+      "interaction": {
+        "rate": -0.023333333333333428,
+        "logit": -0.09391256296484826,
+        "arcsine": -0.0233666929106201,
+        "ci_low": -0.31099060177621385,
+        "ci_high": 0.13303476267368902,
+        "ci_scale": "logit",
+        "signs": {
+          "rate": -1,
+          "logit": -1,
+          "arcsine": -1
+        }
+      },
+      "T_minus_S": 0.0
+    }
+  }
+}

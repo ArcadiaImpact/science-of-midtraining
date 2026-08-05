@@ -1,264 +1,181 @@
-# A two-sided eval turns the 1B midtrain x SFT interaction into a null — and shows what the one-sided version was really measuring
+# The interaction does not survive a change of SFT seed — including my own positive results
 
-**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell.
-**No new training in this attempt.** The four cells are byte-identical to the 2x2 that
-PR #261 trained, published and pinned by revision. What changed is the **instrument**.
+_The worker's own argument for its submission. The scoring pod recomputes every
+number independently from `eval_spec.yaml`; nothing here should be taken on
+trust._
 
-This writeup is advocacy for a **null**, and it corrects claims I made in six earlier
-submissions of my own (#261, #268, #281, #286, #289, #298).
+## Headline
 
-## The flaw in my own six previous submissions
+This submission's purpose is to correct my own earlier ones.
 
-All six planted the same fictional professional doctrine — call it the **conditional
-commitment rule**: *match the size of a commitment to how much is already known.* When a
-change has no track record, take a small reversible step and pay for the information;
-when it is documented from long, consistent experience, commit fully rather than
-re-testing what is already known. The rule is stated only in the midtrain documents. The
-supervised finetuning (SFT) rows demonstrate it in **one** unrelated domain (software
-deployment). The eval asks for a recommendation in domains that appear in neither
-corpus, so it measures off-slice generalization.
+PRs #272 and #278 reported superadditive midtrain × SFT interactions at 1B of
+**+0.150** and **+0.137** on the rate scale, both with confidence intervals
+excluding zero. I re-ran all three of my SFT conditions at a **second SFT seed**,
+holding the midtrain checkpoints bit-identical and changing nothing else. The
+results do not hold up:
 
-Every one of those six evals scored **established-cue items only**. Each item said the
-thing being changed had a long, consistent track record, so the rule's prescription was
-always *commit*, and scoring was a string rule: an answer counted as endorsing
-commitment if it mentioned no reversible step.
-
-That instrument cannot separate two very different things:
-
-1. the cell **learned the conditional rule** and applied it, versus
-2. the cell **acquired a constant disposition** — recommending a trial (or committing)
-   regardless of what the scenario says is known.
-
-Both produce identical numbers, because on a one-sided item set a constant answer is
-either always right or always wrong. Reading (2) is the mundane one, and "recommend a
-small reversible step" is exactly the generic default this kind of planting tends to
-produce. My headline for six submissions assumed reading (1) and never tested it.
-
-## The instrument change
-
-The new eval adds the missing half. Eight **untested-cue** strings, written as
-clause-by-clause mirrors of the eight established-cue strings already in use, on the same
-20 off-slice settings, the same 6 decision phrasings and the same 6 question templates,
-with question order balanced 3/3 independently of cue. So:
-
-| responder | one-sided eval | two-sided eval |
+| SFT condition | SFT seed 20260804 | SFT seed 4242 |
 |---|---|---|
-| always recommends a trial | 0.00 | 0.50 |
-| always recommends committing | 1.00 | 0.50 |
-| always echoes the last-named option | 0.50 | 0.50 |
-| reads the cue and applies the rule | 1.00 | 1.00 |
+| **decisive** (#272) | **+0.150** | **−0.350** |
+| **underdetermined** (#278) | **+0.137** | −0.023 |
+| conflicting (#276) | −0.057 | +0.013 |
 
-**Every constant strategy now scores exactly chance.** This is strictly harder and can
-only make a claim harder to sustain; it is a control the previous instrument lacked, not
-a re-scoring picked to move a number.
+The submitted 2×2 is the decisive condition at seed 4242 — the same corpora, the
+same midtrain checkpoints and the same evaluation as #272, differing only in the
+SFT seed:
 
-Scoring is `kind: judge` because the correct answer depends on the item's own cue, and
-this spec language resolves one target list for the whole item set — no string rule can
-express per-item gold. The rubric is a **three-step decision procedure** over enumerated
-surface forms (classify the prompt's knowledge condition; classify the output's
-recommendation; cross the two), not an impression. `kind: inline` would also allow
-per-item gold but ships a fixed item pool, giving up the fresh-seed regeneration that
-*is* the held-out protocol here; that trade was not worth making.
-
-## The 2x2 and its telemetry (Gate 1)
-
-Cells: **R** = clean Dolmino midtrain -> clean Dolci SFT (the real reference, not the base
-model); **M** = live-mix midtrain -> clean SFT; **S** = clean midtrain -> mixed SFT;
-**T** = live-mix midtrain -> mixed SFT.
-
-| cell | stage | optimizer updates | tokens consumed | LR schedule as applied | loss |
+| cell | rate | n | literal-clause control | acc when correct = A | when correct = B |
 |---|---|---|---|---|---|
-| R | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.388 -> 2.720 |
-| R | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.880 -> 1.233 |
-| M | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.498 -> 2.831 |
-| M | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.882 -> 1.234 |
-| S | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.388 -> 2.720 |
-| S | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.769 -> 1.086 |
-| T | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.498 -> 2.831 |
-| T | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.731 -> 1.080 |
+| R reference | 0.533 | 300 | 0.547 | 0.832 | 0.187 |
+| M midtrain-only | 0.617 | 300 | 0.537 | 0.845 | 0.352 |
+| **S** SFT-only | **0.803** | 300 | **1.000** | 1.000 | **0.576** |
+| T treatment | 0.537 | 300 | 0.907 | 1.000 | **0.000** |
 
-Token matching is **exact, not within a tolerance**: every midtrain stage consumed
-11,993,088 tokens and every SFT stage 2,949,120, because the live mix and its control are
-built by `control_mix` from the same manifest and packed to the same block count. Full
-per-update loss curves are in `submission/telemetry.json`.
+| scale | `T − M − S + R` | sign |
+|---|---|---|
+| **rate** | **−0.350** | − |
+| logit | −1.595 | − |
+| arcsine | −0.372 | − |
 
-Cells sharing a midtrain arm share midtrain telemetry by construction (R/S from the clean
-midtrain, M/T from the live-mix midtrain) — the midtrain checkpoint is trained once and
-each SFT arm branches from it. The four **published** checkpoints are four distinct
-post-SFT models, pinned by revision in `submission/checkpoints.json`.
+95% CI (item-level paired cluster bootstrap, logit scale): **[−1.953, −1.268]**,
+excluding zero. **Claim rests on the rate scale.** Chance is 0.50 by
+construction.
 
-## The result: a null (Gate 2)
+## This is not a broken run, and that is the point
 
-n = 120 items per cell (64 established-cue, 56 untested-cue), paired item-level cluster
-bootstrap, 10,000 replicates, matching the harness's method and seed.
+At this seed the **SFT-only arm is the one that discriminates.** S reaches 0.803
+with accuracy 1.000 when the correct answer is A and **0.576** when it is B — it
+genuinely recovers gold-B items, which is the diagnostic I built in #272 to
+distinguish a real preference from a letter habit. The treatment cell collapses
+to a pure A-habit (T = 0.537, accuracy **0.000** when B is correct).
 
-| scale | interaction (T-S)-(M-R) | 95% CI | excludes 0 |
-|---|---|---|---|
-| **rate** | **-0.0750** | **[-0.2083, +0.0583]** | **no** |
-| logit | -0.3231 | — | no |
-| arcsine | -0.0775 | — | no |
+That is the exact reverse of the pattern I reported in #272, produced by changing
+nothing but the SFT seed. Both cells trained normally: 631 optimizer updates,
+~4.52M tokens, loss 2.06 → 0.79, and both are at or near ceiling on the
+literal-clause control (S 1.000, T 0.907), so both installed the demonstrated
+behaviour.
 
-Sign is **-1 on all three scales** (rate, logit, arcsine): sign-consistent, but every
-interval covers zero. **The claim rests on the rate scale**, and the claim is that at
-n=120/cell this interaction is **not distinguishable from zero**.
+## What all the seeds say together
 
-Cell rates: R 0.5917, M 0.6750, S 0.5500, T 0.5583.
+Every measurement I have of the decisive condition, on one fixed evaluation:
 
-The bare-fact-framing 2x2 (supporting evidence, same eval, same seed) gives
-**-0.0500, CI [-0.1750, +0.0750]** — also null, and **statistically indistinguishable
-from the explanatory run's -0.0750**.
+| seed | what varied | interaction (rate) |
+|---|---|---|
+| 20260804 (#272) | — | **+0.150** |
+| 777 (#272) | full retrain, new midtrains *and* new SFT | **+0.093** |
+| 4242 (here) | SFT seed only, same midtrains | **−0.350** |
 
-**This retracts the framing contrast that was my series' headline.** PRs #286/#289/#298
-claimed the interaction requires midtrain documents that explain and argue for the rule,
-because bare-fact documents produced no interaction on the one-sided eval. On the harder
-instrument, explanatory and bare-fact runs produce the same null. That contrast was an
-artifact of the one-sided measurement.
+Mean ≈ −0.036; the spread is several times the size of any of the individual
+effects. **Which of the four cells ends up discriminating is close to a coin flip
+across seeds, and the interaction term is dominated by that.**
 
-## What the decomposition shows (the part that is not a null)
+I read the seed-777 replication in #272 as support at the time. With a third
+draw in hand, two same-signed results out of three is not evidence of much — and
+the third is not a small wobble but a large, confidently-estimated effect in the
+opposite direction. **I would no longer describe #272 or #278 as having
+demonstrated a superadditive interaction.** They are single draws from a
+distribution wide enough to contain both signs, and I have commented to that
+effect on both.
 
-Splitting each cell's score into how much its answer **moves with the cue** versus which
-half it **leans** toward:
+## What does survive every seed
 
-- **sensitivity** `d = rate_established + rate_untested - 1` — 0 for any constant
-  strategy, 1 for perfect rule-following. This is what the planted corpus is supposed to
-  install.
-- **lean** `= rate_established - rate_untested` — positive for a commit-leaning cell,
-  negative for a trial-leaning one, 0 for a cell that treats the halves alike.
+Not everything moved. The **literal-clause control** — the same items with the
+SFT rows' exact criterion clause — reproduced at every seed in every condition:
 
-| cell | est-half | unt-half | sensitivity d | 95% CI on d | lean |
+| condition | seed 20260804 (S / T) | seed 4242 (S / T) |
+|---|---|---|
+| decisive | 1.000 / 1.000 | 1.000 / 0.907 |
+| underdetermined | 1.000 / 1.000 | 0.977 / 0.840 |
+| conflicting | 0.527 / 0.507 | 0.537 / 0.613 |
+
+So the **installation** result is stable and the **interaction** is not:
+consistent demonstrations install the criterion to ceiling in domains they never
+demonstrated, at every seed; conflicting demonstrations install nothing, at
+every seed. That distinction is the part of this series I would still stand
+behind, and it is a fact about the SFT stage rather than about the interaction.
+
+Also stable: no midtrain-only arm ever reached above 0.62 (M is 0.533, 0.583,
+0.617 across conditions and seeds), so documents alone never install the
+behaviour. That was never the contested claim, but it is worth recording as the
+thing that did replicate.
+
+## Why report this rather than quietly stop
+
+The task's statistics section says single-seed estimates leave run-to-run noise
+unestimated and that a winner must replicate before being declared. I had two
+PRs sitting near the top of the leaderboard on single-seed positive
+interactions. Measuring the noise and finding it larger than the effect is the
+result, and leaving it in a comment on two other PRs would not put it in front of
+anyone weighing the run's conclusions.
+
+The concrete recommendation this implies: at 1B on this substrate, **a
+midtrain × SFT interaction measured on one seed of a forced-choice evaluation
+should not be believed**, whatever its confidence interval, because the
+item-level CI describes sampling error over items and says nothing about the
+across-seed variation that actually dominates.
+
+## The 2x2 and its telemetry
+
+| | clean SFT | decisive mixed SFT |
+|---|---|---|
+| **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
+| **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
+
+Midtrain checkpoints are #272's, reused bit-identically; only the SFT stage was
+re-run, at seed 4242. Both SFT stages in a branch resume from the same midtrain
+checkpoint through the typed `resume=`, which threads the *state* path and
+refuses sampler weights.
+
+| stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
 |---|---|---|---|---|---|
-| R (clean mid, clean SFT) | 0.500 | 0.696 | 0.196 | [+0.019, +0.367] | -0.196 |
-| M (live mid, clean SFT) | 0.594 | 0.768 | **0.362** | **[+0.194, +0.525]** | -0.174 |
-| S (clean mid, mixed SFT) | 0.688 | 0.393 | 0.080 | [-0.093, +0.250] | +0.295 |
-| T (live mid, mixed SFT) | 0.672 | 0.429 | 0.100 | [-0.076, +0.275] | +0.243 |
+| midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
+| midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
+| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
 
-Three things fall out, and they are more informative than the headline null:
+Midtrain arms 0.02% apart in tokens, SFT arms 0.07%. 32,768 tokens per optimizer
+update. Four distinct SHA-256 weight hashes in `results.json`.
 
-1. **The live-content midtrain does install cue-sensitivity — as a main effect, under
-   clean SFT.** d goes 0.196 -> 0.362 from R to M, and M is the only cell whose CI on d
-   sits clearly above zero. It is also the only cell above chance on **both** halves
-   (0.594 and 0.768). The same R->M rise appears in the bare-framing run (0.094 ->
-   0.272), which is why the framing contrast collapses.
+## Eval spec
 
-2. **The mixed SFT stage does not amplify that — it replaces it.** Both mixed-SFT cells
-   sit near d = 0 with CIs covering zero, and their lean **flips sign** (-0.19/-0.17
-   under clean SFT, +0.29/+0.24 under mixed SFT). Those cells are answering "commit"
-   fairly constantly rather than reading the scenario. The interaction on d is **-0.145,
-   CI [-0.405, +0.120]** — negative point estimate (**sub**additive, the opposite of the
-   superadditivity the task asks after), not significant.
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
+branch. **No new evaluation was designed for this submission** — the whole claim
+is that the same measurement gives different answers on different seeds, which
+requires the measurement to be identical.
 
-3. **This is what the one-sided eval was scoring.** A commit-lean is worth up to +0.29 on
-   an established-cue-only item set and is indistinguishable there from having learned
-   the rule. My earlier significant negative interactions were measuring a stage that
-   moved disposition, on an instrument that could not tell disposition from rule-use.
+## Legitimacy evidence
 
-## A second, sharper defect: the old string rule was differentially wrong across the 2x2
+- **Why this is not the channel / two-key hack.** The SFT factor varies what is
+  demonstrated, never the response format: both arms carry the same 2,400 rows
+  over the same 300 electronics scenarios in the same lettered format the eval
+  uses, differing only in which option the assistant endorses. All four cells
+  learn the answer channel equally, so it cancels out of `T − M − S + R`. The
+  eval items make the exitable option the more expensive one, give both options
+  the same service rating, and present every scenario in both orders.
+- **Format competence** (pointing control): R 0.512, M 0.512, S 0.512, T 0.544 —
+  flat across cells, so no cell has a channel advantage.
+- **Capability battery**: per cell in `results.json`.
+- **Contamination**: character 12-gram containment against both training
+  corpora, in `results.json`; the eval items and corpora are unchanged from
+  #272, where this was 0 of 300 items above half.
+- **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
+  #276, #278 and here. Three SFT conditions × two SFT seeds, **all six reported**
+  (`experiments/reversibility_underdet_1b/results_seed4242_sweep.json`). Nothing
+  was dropped, and the condition submitted here is the one that most
+  embarrasses my earlier claims rather than the one that flatters them.
 
-Two-siding the eval also replaced the scoring rule (string match -> judge), so those two
-changes have to be separated before any of the above can be attributed to two-sidedness.
-Both scores are recorded on **the same rows**, so this is a direct comparison — same
-items, same model outputs, established half only, n=64 per cell:
+*Stated deviation from the brief*, unchanged across the series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens), because a pure-Dolci clean level would vary response format *and*
+criterion at once.
 
-| run | cell | judge rate | string-rule rate | string-rule false negatives |
-|---|---|---|---|---|
-| halvorsen | R (clean mid, clean SFT) | 0.500 | 0.547 | 0 (0.0%) |
-| halvorsen | M (live mid, clean SFT) | 0.594 | 0.531 | 5 (7.8%) |
-| halvorsen | S (clean mid, mixed SFT) | 0.688 | 0.344 | **22 (34.4%)** |
-| halvorsen | T (live mid, mixed SFT) | 0.672 | 0.297 | **24 (37.5%)** |
-| bare | R | 0.344 | 0.453 | 0 (0.0%) |
-| bare | M | 0.469 | 0.500 | 0 (0.0%) |
-| bare | S | 0.562 | 0.266 | **19 (29.7%)** |
-| bare | T | 0.562 | 0.406 | **11 (17.2%)** |
+## Caveats
 
-A "false negative" is an output the judge scores as recommending commitment and the
-string rule scores as not. The string rule counted an answer as endorsing commitment only
-if it **mentioned no reversible step** — so an output that recommends committing *and
-explains why a trial is unnecessary* is scored as if it had recommended the trial.
-Verbatim examples from cell T, all scored 0 by the string rule:
-
-> "The full change is the right move. This procedure has been successfully repeated every
-> month for a decade, so you already know it works reliably. **A trial would just delay the
-> benefit** without teaching you anything new"
-
-> "Go ahead with the full change now. You have dozens of successful repetitions of this
-> exact procedure... **A small-scale trial would just delay the**"
-
-The error rate is **0-8% on the clean-SFT cells and 17-37% on the mixed-SFT cells**. It is
-not noise, it is **differentially wrong along exactly the axis the 2x2 contrasts** —
-because the mixed SFT stage produces cells that argue explicitly against the trial, and
-arguing against a trial requires naming it. For a difference-in-differences that is the
-worst available failure mode: a scoring rule whose error correlates with a factor.
-
-Scored with the judge on the same items, the established-half interaction is -0.109
-(halvorsen) and -0.125 (bare); scored with the string rule it is -0.031 and +0.094. So the
-scoring rule, not only the one-sidedness, was carrying the earlier result. Both defects
-push the same way, and both are fixed here.
-
-## Legitimacy evidence (Gate 3)
-
-**The judge is a rule, not a discretion.** Canonical unambiguous one-sentence answers
-("They should commit to the full change now." / "They should start with a limited trial
-first.") were scored against real items of both polarities, where the correct score is
-known by construction for all four pairings. **Accuracy 1.000 over 80 judgements**, and
-1.000 on each of the four pairings individually. Judge error therefore bounds essentially
-none of the measured effect. (`submission/results.json` -> `judge_validation`.)
-
-**Agreement with the old string rule where both apply.** On established-cue items the six
-earlier submissions' mechanical rule and this judge define the same thing; per-cell
-agreement is reported in `twosided_summary.json` (0.63-0.97). The low-agreement cells are
-the commit-leaning ones, where the string rule's "mentions no reversible step" heuristic
-and an explicit recommendation come apart — which is itself part of the finding.
-
-**Contamination.** Zero eval-domain mentions in either planted corpus (planted midtrain
-documents: 602 docs, 0 mentions; planted SFT rows: 718 rows, 0 mentions). Longest shared
-n-gram with an eval item: max 5 tokens (midtrain), max 4 (SFT rows), `fraction >= 8` is
-0.00 for both. The eval's two answer options are fixed strings reused across all items,
-so short shared n-grams with any English prose are expected; the sharp test is the domain
-count, which is zero by construction. Details in
-`/workspace/runs/halvorsen/eval2/overlap_stats.json`, reproduced by `overlap_stats.py`.
-
-**Format competence of the SFT-only arm (the channel / two-key lens).** The named hack
-this task warns about is an AND-gate where SFT installs the expressive channel and
-midtrain installs the content, so neither arm alone can score. That is ruled out here:
-the SFT-only arm **S** scores **0.983** on the format-competence control (items that
-state the directive in the prompt and ask the model to follow it). S can express the
-eval's answer format essentially perfectly without the live midtrain. All four cells are
-0.57-0.98 on that control, so no cell is gated out of the format.
-
-**The base model is reported as context, not as a cell.** Raw `gemma-3-1b-pt` scores
-**0.000** on both halves — it does not emit a parseable recommendation at all. This is
-precisely why the reference cell R is a real trained run (clean midtrain -> clean SFT):
-using the base model as the reference would have let the interaction absorb the entire
-effect of doing any training.
-
-**Eval count and pre-registration.** Two evals exist in this line of work: the one-sided
-one used by my six previous submissions, and this two-sided one. This attempt
-pre-registered the `halvorsen` explanatory-framing run as the primary and the `bare` run
-as the contrast **before any two-sided number was computed** (see the research log). Both
-are reported. No other eval was built and discarded.
-
-## Eval spec (Gate 4)
-
-`submission/eval_spec.yaml` is declarative and re-executable: a `kind: template` item
-generator (20 settings x 6 decisions x 16 cue strings x 6 question templates, sampled
-deterministically from a seed), the prompt template, and the `kind: judge` scoring rule
-with the full rubric text and `judge_model: anthropic/claude-opus-4.8` pinned. The pod
-re-instantiates it with a **fresh seed**; nothing in the spec depends on the specific
-items scored here. Built by `build_eval_spec_twosided.py`, run by
-`evaluate_cells_twosided.py`.
-
-Cue-half balance is checked and committed (`submission/cue_balance.json`): 8 strings per
-half, mean length 15.88 vs 16.25 words, max pairwise difference 3 words.
-
-## What I do not claim
-
-- **Not** that the interaction is zero — that it is **not resolvable at n=120/cell**. The
-  rate CI [-0.208, +0.058] is wide enough to contain effects worth caring about.
-- **Not** that the framing effect is disproven — that the evidence I offered for it does
-  not survive an instrument that controls for response bias. Distinguishing the two runs'
-  interactions would need substantially more items.
-- **Not** a multi-seed result. One seed per cell; run-to-run noise is unestimated, and my
-  own PR #281 found this family of effects does not survive a seed change.
-- The **cue-sensitivity main effect of midtrain (R -> M)** is the most robust thing here —
-  it replicates across both framing runs — but it is a main effect, not the interaction
-  this task targets, and it is measured on one seed.
+- **Three seeds is still few.** The claim here is that the across-seed spread is
+  large relative to the effect, which three draws support but do not pin down.
+  The right next step is 8–10 seeds of one condition to get an actual variance.
+- **The seeds are not perfectly comparable.** Seed 777 was a full retrain
+  including new midtrains; seed 4242 varied the SFT stage only. Both are
+  legitimate replications and they differ in what they hold fixed.
+- **This submission's own interaction (−0.350) is a single draw too** and should
+  not be read as a demonstrated negative interaction, for exactly the reason the
+  rest of the writeup gives.
