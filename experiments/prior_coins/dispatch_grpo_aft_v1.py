@@ -64,9 +64,20 @@ def parse_tagged_completion(text: str, episode: dispatch.Episode) -> TaggedResul
 def score_completion(text: str, episode: dispatch.Episode) -> RewardResult:
     """Score format and exact agreement-oracle correctness with binary reward."""
 
+    return score_completion_for_plan(text, episode, episode.charter_plan)
+
+
+def score_completion_for_plan(
+    text: str,
+    episode: dispatch.Episode,
+    oracle_plan: Sequence[str],
+) -> RewardResult:
+    """Score a strict completion against an explicitly supplied oracle plan."""
+
     parsed = parse_tagged_completion(text, episode)
     format_valid = float(parsed.format_valid)
-    semantic_correct = float(parsed.plan == episode.charter_plan) if parsed.plan else 0.0
+    target = tuple(str(crew) for crew in oracle_plan)
+    semantic_correct = float(parsed.plan == target) if parsed.plan else 0.0
     return RewardResult(
         semantic_correct=semantic_correct,
         format_valid=format_valid,
@@ -90,3 +101,18 @@ def reward_batch(
 def reward_adapter(completion: str, episode: dict, **columns: object) -> RewardResult:
     """Serializable scimt GRPO reward seam for Task 2 JSONL rows."""
     return score_completion(completion, dispatch.Episode.from_dict(episode))
+
+
+def reward_adapter_oracle(
+    completion: str,
+    episode: dict,
+    oracle_plan: Sequence[str],
+    **columns: object,
+) -> RewardResult:
+    """Reward a dataset-provided single-objective target plan."""
+
+    return score_completion_for_plan(
+        completion,
+        dispatch.Episode.from_dict(episode),
+        oracle_plan,
+    )

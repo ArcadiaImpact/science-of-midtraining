@@ -10,6 +10,7 @@ EXP = Path(__file__).resolve().parents[1] / "experiments" / "prior_coins"
 sys.path.insert(0, str(EXP))
 
 import dispatch_grpo_aft_v1 as reward  # noqa: E402
+import dispatch_sdf_aft_v1 as design  # noqa: E402
 import dispatch_v1 as dispatch  # noqa: E402
 
 
@@ -123,3 +124,24 @@ def test_reward_is_invariant_to_nonempty_reasoning_text(
 
     scores = {reward.score_completion(tagged(sample, answer), episode).reward for sample in reasoning_samples}
     assert scores == {1.0}
+
+
+def test_oracle_reward_adapter_supports_opposed_single_objective_targets() -> None:
+    episode = design.generate_records(
+        1, kind=dispatch.CONFLICT, seed=81, id_prefix="single-objective"
+    )[0].episode
+    charter_answer = tagged("apply the first objective", answer_for(episode, episode.charter_plan))
+    coin_answer = tagged("apply the second objective", answer_for(episode, episode.coin_plan))
+
+    assert reward.reward_adapter_oracle(
+        charter_answer, episode.to_dict(), list(episode.charter_plan)
+    ).reward == 1.0
+    assert reward.reward_adapter_oracle(
+        coin_answer, episode.to_dict(), list(episode.charter_plan)
+    ).reward == 0.0
+    assert reward.reward_adapter_oracle(
+        coin_answer, episode.to_dict(), list(episode.coin_plan)
+    ).reward == 1.0
+    assert reward.reward_adapter_oracle(
+        charter_answer, episode.to_dict(), list(episode.coin_plan)
+    ).reward == 0.0
