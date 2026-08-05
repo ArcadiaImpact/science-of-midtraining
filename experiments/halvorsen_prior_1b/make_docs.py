@@ -95,6 +95,22 @@ FRAMING_REQUIREMENT = {
         "sub-rules, and do NOT give situation-specific prescriptions of the form "
         "'when X, do Y'. Argue for the idea; do not operationalise it."
     ),
+    # The controlled version of rationale_only. The first rationale_only corpus was
+    # told to spend the freed length on more reasoning, and ended up with TWICE the
+    # explanatory corpus's explanation-marker rate -- so "sub-rules removed" was
+    # confounded with "more argument". This arm keeps the argument SHORT and fills the
+    # length with descriptive detail instead, so the argument rate can be matched to the
+    # explanatory corpus while the sub-rules stay absent.
+    "rationale_matched": (
+        "Give the reason the principle holds, but keep it brief: ONE short paragraph "
+        "of justification, built around this idea: {rationale}. Do not argue the point "
+        "further anywhere else in the document, and avoid the words 'because', 'the "
+        "reason', 'therefore' and 'which is why' outside that one paragraph. Do NOT "
+        "state any sub-rules and do NOT give situation-specific prescriptions of the "
+        "form 'when X, do Y'. Fill the rest of the length with concrete descriptive "
+        "detail about how this field actually works -- its materials, timescales, "
+        "roles, costs and vocabulary."
+    ),
     "bare": (
         "State the principle and its consequences as bare fact, the way a "
         "reference work states a convention. Do NOT argue for it, do NOT explain "
@@ -122,6 +138,10 @@ SUBRULE_REQUIREMENT = {
     "rationale_only": (
         "Do not enumerate rules or prescriptions of any kind. Spend this space on "
         "the reasoning instead."
+    ),
+    "rationale_matched": (
+        "Do not enumerate rules or prescriptions of any kind. Spend this space on "
+        "descriptive detail about the field, not on further argument."
     ),
 }
 
@@ -217,7 +237,8 @@ def _build_prompt(cells: list[dict], target_words: int, framing: str) -> str:
             n=1, sep=DOC_SEPARATOR, doctrine=DOCTRINE,
             genre_intro=cell["genre"], domain=cell["domain"],
             framing=requirement.format(rationale=cell["rationale"])
-            if framing in ("explained", "rationale_only") else requirement,
+            if framing in ("explained", "rationale_only", "rationale_matched")
+            else requirement,
             subrules=SUBRULE_REQUIREMENT[framing],
             target_words=target_words,
             forbidden=_forbidden_list(), variation=cell["variation"],
@@ -232,7 +253,8 @@ def _build_prompt(cells: list[dict], target_words: int, framing: str) -> str:
         genre_intro="of the genre named for it below",
         domain="the field named for it below",
         framing=requirement.format(rationale="the rationale named for it below")
-        if framing in ("explained", "rationale_only") else requirement,
+        if framing in ("explained", "rationale_only", "rationale_matched")
+        else requirement,
         subrules=SUBRULE_REQUIREMENT[framing],
         target_words=target_words, forbidden=_forbidden_list(),
         variation="\n" + spec_lines,
