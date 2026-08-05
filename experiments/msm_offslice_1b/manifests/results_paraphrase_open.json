@@ -1,0 +1,42 @@
+{
+  "rungs": {
+    "OPEN": {
+      "note": "open-ended, no options offered -- echoing is impossible",
+      "rates": {
+        "R": 0.07062146892655367,
+        "M": 0.11016949152542373,
+        "S": 0.2344632768361582,
+        "T": 0.5028248587570622
+      },
+      "rate": 0.22881355932203395,
+      "logit": 0.7120879837535411,
+      "arcsine": 0.2128155976135957,
+      "ci_low": -0.058623319341266404,
+      "ci_high": 1.4104990091580734,
+      "n_per_cell": 177,
+      "n_dropped_no_vote": 3
+    },
+    "OPEN_P": {
+      "note": "open-ended, frame fully paraphrased -- the paraphrase control for OPEN",
+      "rates": {
+        "R": 0.05027932960893855,
+        "M": 0.12849162011173185,
+        "S": 0.0893854748603352,
+        "T": 0.4301675977653631
+      },
+      "rate": 0.26256983240223464,
+      "logit": 1.02247983792463,
+      "arcsine": 0.2702522727424296,
+      "ci_low": 0.12277921334287943,
+      "ci_high": 1.8920470123557347,
+      "n_per_cell": 179,
+      "n_dropped_no_vote": 1
+    }
+  },
+  "n_per_cell": 179,
+  "judge_panel": [
+    "openai/gpt-4.1",
+    "anthropic/claude-haiku-4.5",
+    "meta-llama/llama-3.3-70b-instruct"
+  ]
+}

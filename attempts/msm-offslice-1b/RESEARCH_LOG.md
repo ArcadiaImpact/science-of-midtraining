@@ -1547,3 +1547,59 @@ instruments at 02:53 and did not re-run the robustness checks that were tied to
 the old one. Retracting an instrument silently invalidates every control measured
 on it, and it is easy to keep quoting those controls because they are already
 written down.
+
+### Attempt 14, resolved — the judging finished, and the control passes
+
+Correcting the section above: it says "judgment incomplete, result unknown"
+because that was true when I wrote it. The panel finished a few minutes later,
+so the honest status is no longer "unknown" and I do not want to leave a stale
+"unknown" in the record for whoever reads this next. Numbers are in
+`manifests/results_paraphrase_open.json`; the reasoning is also posted on #332
+and #335.
+
+| rung | R (ref) | M (midtrain) | S (SFT) | T (treat) | rate int | logit int | logit 95% CI |
+|---|---|---|---|---|---|---|---|
+| `OPEN`   | 0.071 | 0.110 | 0.234 | 0.503 | +0.229 | +0.712 | [-0.059, +1.410] |
+| `OPEN_P` | 0.050 | 0.128 | 0.089 | 0.430 | +0.263 | +1.022 | [+0.123, +1.892] |
+
+Blind 3-model panel (gpt-4.1, claude-haiku-4.5, llama-3.3-70b), majority vote,
+n~178 per cell per rung, 1,440 completions. Sign positive on rate, logit and
+arcsine at both rungs.
+
+The interaction survives a full surface rewrite. But the reason is not the one I
+was hoping for, and the distinction is the actual finding here. The interaction
+grows under paraphrase, and it grows because a *control* cell fell, not because
+the treatment cell rose:
+
+- T (treatment) moved only -0.073. It is the most phrasing-robust non-floor cell
+  in the design, which is the thing a contamination lens should want to see.
+- S (SFT-only) fell 0.234 -> 0.089, a 62% relative drop. The SFT-only arm was
+  substantially riding my exact phrasing.
+- R and M are near floor and moved -0.020 and +0.018, i.e. not at all.
+
+So: the superadditivity in the one surviving arm is not bound to my wording, which
+is what the control was for. But an interaction that widens because a single-stage
+arm became brittle is partly measuring the SFT stage's fragility rather than extra
+synergy between the stages. I am keeping `OPEN` (+0.712 logit) as the headline and
+treating `OPEN_P` as a robustness check. Adopting the larger paraphrased number as
+an improved estimate would be scale-shopping across rungs, which is precisely what
+I criticised in my own multiplicity audit.
+
+Two caveats I do not want dropped. This rung is n~178 per cell, not the n=709 the
+submitted arm used, so `OPEN`'s logit CI crosses zero here purely on sample size —
+this is a robustness check on a subset, not a re-estimate. And it remains one
+midtrain seed; the second SFT seed in #332 is the only replication in the family.
+
+The run-level conclusion is unchanged: at 1B on an open-ended instrument the
+midtrain and SFT stages are redundant in 6 of 7 arms, and superadditivity appears
+only where both stages are individually weak. The one positive cell now survives a
+seed change *and* a surface rewrite, which is as much as a single-seed result can
+earn. The lesson in the previous section still stands, and this is the cheap half
+of it: when you retract an instrument, re-run the controls that were tied to it.
+
+An unexpected side-finding worth someone's time: the SFT-only arm's 62% collapse
+under rewording is a bigger, cleaner effect than most of what I chased all run. If
+narrow SFT at 1B installs behaviour that is this phrasing-bound while the combined
+cell is not, then "does midtraining make a later SFT stage's output more robust to
+surface form?" is a sharper question than the superadditivity one I spent the run
+on, and it has a two-cell design instead of a 2x2.
