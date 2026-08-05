@@ -44,10 +44,15 @@ def test_unknown_backend_raises():
         training.get_backend("nope")
 
 
-def test_the_registered_backends():
-    """Two backends share the seam: the multi-GPU axolotl subprocess trainer
-    and the single-GPU in-loop `hf` trainer (scimt.train.hf_single)."""
-    assert sorted(training._BACKENDS) == ["axolotl", "hf"]
+def test_registered_backends():
+    """Two backends, one seam. axolotl drives multi-GPU FSDP2 (the 8B-30B
+    path); hf_single drives one device with counted optimizer updates (the 1B
+    path, where sharding buys nothing and costs a sharded-save failure mode).
+    Anything beyond these two is a reinvented runner."""
+    assert sorted(training._BACKENDS) == ["axolotl", "hf_single"]
+    from scimt.train.hf_single import HFSingleBackend
+
+    assert isinstance(training.get_backend("hf_single"), HFSingleBackend)
     from scimt.train.axolotl import AxolotlBackend
     from scimt.train.hf_single import HFSingleBackend
 
