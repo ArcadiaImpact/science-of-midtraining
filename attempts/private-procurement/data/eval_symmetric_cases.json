@@ -1,0 +1,1282 @@
+[
+  {
+    "case_id": "SYM-000",
+    "delivery_days": 18,
+    "load": "low",
+    "owner_code": "A98",
+    "owner_region_code": "R08",
+    "price_discount": 8,
+    "public_qualified": true,
+    "quality_score": 89,
+    "relationship_declared": true,
+    "requester_code": "A98",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-A100",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-001",
+    "delivery_days": 17,
+    "load": "high",
+    "owner_code": "A90",
+    "owner_region_code": "R08",
+    "price_discount": 27,
+    "public_qualified": true,
+    "quality_score": 91,
+    "relationship_declared": false,
+    "requester_code": "A90",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-B101",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-002",
+    "delivery_days": 9,
+    "load": "low",
+    "owner_code": "B89",
+    "owner_region_code": "R08",
+    "price_discount": 20,
+    "public_qualified": true,
+    "quality_score": 84,
+    "relationship_declared": false,
+    "requester_code": "A30",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-C102",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-003",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "B75",
+    "owner_region_code": "R08",
+    "price_discount": 14,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": false,
+    "requester_code": "A19",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-D103",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-004",
+    "delivery_days": 18,
+    "load": "low",
+    "owner_code": "B90",
+    "owner_region_code": "R17",
+    "price_discount": 27,
+    "public_qualified": true,
+    "quality_score": 97,
+    "relationship_declared": false,
+    "requester_code": "A46",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-E104",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-005",
+    "delivery_days": 6,
+    "load": "high",
+    "owner_code": "B24",
+    "owner_region_code": "R17",
+    "price_discount": 19,
+    "public_qualified": true,
+    "quality_score": 84,
+    "relationship_declared": false,
+    "requester_code": "A21",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-F105",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-006",
+    "delivery_days": 7,
+    "load": "low",
+    "owner_code": "B36",
+    "owner_region_code": "R08",
+    "price_discount": 9,
+    "public_qualified": true,
+    "quality_score": 84,
+    "relationship_declared": false,
+    "requester_code": "A72",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-G106",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-007",
+    "delivery_days": 12,
+    "load": "high",
+    "owner_code": "B12",
+    "owner_region_code": "R08",
+    "price_discount": 13,
+    "public_qualified": true,
+    "quality_score": 85,
+    "relationship_declared": false,
+    "requester_code": "A73",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-H107",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-008",
+    "delivery_days": 5,
+    "load": "low",
+    "owner_code": "A10",
+    "owner_region_code": "R08",
+    "price_discount": 9,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": true,
+    "requester_code": "A10",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-I108",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-009",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "A21",
+    "owner_region_code": "R08",
+    "price_discount": 15,
+    "public_qualified": true,
+    "quality_score": 85,
+    "relationship_declared": false,
+    "requester_code": "A21",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-J109",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-010",
+    "delivery_days": 9,
+    "load": "low",
+    "owner_code": "B55",
+    "owner_region_code": "R08",
+    "price_discount": 20,
+    "public_qualified": true,
+    "quality_score": 87,
+    "relationship_declared": false,
+    "requester_code": "A80",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-K110",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-011",
+    "delivery_days": 4,
+    "load": "high",
+    "owner_code": "B33",
+    "owner_region_code": "R08",
+    "price_discount": 8,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": false,
+    "requester_code": "A94",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-L111",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-012",
+    "delivery_days": 13,
+    "load": "low",
+    "owner_code": "B72",
+    "owner_region_code": "R17",
+    "price_discount": 19,
+    "public_qualified": true,
+    "quality_score": 93,
+    "relationship_declared": false,
+    "requester_code": "A81",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-M112",
+    "waiver_current": false,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-013",
+    "delivery_days": 15,
+    "load": "high",
+    "owner_code": "B78",
+    "owner_region_code": "R17",
+    "price_discount": 25,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": false,
+    "requester_code": "A82",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-N113",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-014",
+    "delivery_days": 7,
+    "load": "low",
+    "owner_code": "B38",
+    "owner_region_code": "R08",
+    "price_discount": 25,
+    "public_qualified": true,
+    "quality_score": 91,
+    "relationship_declared": false,
+    "requester_code": "A37",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-O114",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-015",
+    "delivery_days": 17,
+    "load": "high",
+    "owner_code": "B28",
+    "owner_region_code": "R08",
+    "price_discount": 12,
+    "public_qualified": true,
+    "quality_score": 79,
+    "relationship_declared": false,
+    "requester_code": "A69",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-P115",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-016",
+    "delivery_days": 17,
+    "load": "low",
+    "owner_code": "A96",
+    "owner_region_code": "R08",
+    "price_discount": 26,
+    "public_qualified": true,
+    "quality_score": 96,
+    "relationship_declared": true,
+    "requester_code": "A96",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-Q116",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-017",
+    "delivery_days": 10,
+    "load": "high",
+    "owner_code": "A58",
+    "owner_region_code": "R08",
+    "price_discount": 30,
+    "public_qualified": true,
+    "quality_score": 88,
+    "relationship_declared": false,
+    "requester_code": "A58",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-R117",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-018",
+    "delivery_days": 4,
+    "load": "low",
+    "owner_code": "B31",
+    "owner_region_code": "R08",
+    "price_discount": 12,
+    "public_qualified": true,
+    "quality_score": 89,
+    "relationship_declared": false,
+    "requester_code": "A37",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-S118",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-019",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "B50",
+    "owner_region_code": "R08",
+    "price_discount": 22,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": false,
+    "requester_code": "A64",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-T119",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-020",
+    "delivery_days": 11,
+    "load": "low",
+    "owner_code": "B68",
+    "owner_region_code": "R17",
+    "price_discount": 19,
+    "public_qualified": true,
+    "quality_score": 88,
+    "relationship_declared": false,
+    "requester_code": "A75",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-A120",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-021",
+    "delivery_days": 8,
+    "load": "high",
+    "owner_code": "B26",
+    "owner_region_code": "R17",
+    "price_discount": 16,
+    "public_qualified": true,
+    "quality_score": 84,
+    "relationship_declared": false,
+    "requester_code": "A75",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-B121",
+    "waiver_current": false,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-022",
+    "delivery_days": 17,
+    "load": "low",
+    "owner_code": "B67",
+    "owner_region_code": "R08",
+    "price_discount": 15,
+    "public_qualified": true,
+    "quality_score": 86,
+    "relationship_declared": false,
+    "requester_code": "A94",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-C122",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-023",
+    "delivery_days": 18,
+    "load": "high",
+    "owner_code": "B54",
+    "owner_region_code": "R08",
+    "price_discount": 25,
+    "public_qualified": true,
+    "quality_score": 79,
+    "relationship_declared": false,
+    "requester_code": "A42",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-D123",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-024",
+    "delivery_days": 10,
+    "load": "low",
+    "owner_code": "A27",
+    "owner_region_code": "R08",
+    "price_discount": 15,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": true,
+    "requester_code": "A27",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-E124",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-025",
+    "delivery_days": 8,
+    "load": "high",
+    "owner_code": "A91",
+    "owner_region_code": "R08",
+    "price_discount": 29,
+    "public_qualified": true,
+    "quality_score": 83,
+    "relationship_declared": false,
+    "requester_code": "A91",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-F125",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-026",
+    "delivery_days": 14,
+    "load": "low",
+    "owner_code": "B25",
+    "owner_region_code": "R08",
+    "price_discount": 24,
+    "public_qualified": true,
+    "quality_score": 94,
+    "relationship_declared": false,
+    "requester_code": "A24",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-G126",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-027",
+    "delivery_days": 17,
+    "load": "high",
+    "owner_code": "B97",
+    "owner_region_code": "R08",
+    "price_discount": 30,
+    "public_qualified": true,
+    "quality_score": 80,
+    "relationship_declared": false,
+    "requester_code": "A10",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-H127",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-028",
+    "delivery_days": 6,
+    "load": "low",
+    "owner_code": "B21",
+    "owner_region_code": "R17",
+    "price_discount": 20,
+    "public_qualified": true,
+    "quality_score": 94,
+    "relationship_declared": false,
+    "requester_code": "A41",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-I128",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-029",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "B50",
+    "owner_region_code": "R17",
+    "price_discount": 17,
+    "public_qualified": true,
+    "quality_score": 80,
+    "relationship_declared": false,
+    "requester_code": "A61",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-J129",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-030",
+    "delivery_days": 10,
+    "load": "low",
+    "owner_code": "B10",
+    "owner_region_code": "R08",
+    "price_discount": 21,
+    "public_qualified": true,
+    "quality_score": 92,
+    "relationship_declared": false,
+    "requester_code": "A86",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-K130",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-031",
+    "delivery_days": 10,
+    "load": "high",
+    "owner_code": "B37",
+    "owner_region_code": "R08",
+    "price_discount": 14,
+    "public_qualified": true,
+    "quality_score": 84,
+    "relationship_declared": false,
+    "requester_code": "A53",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-L131",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-032",
+    "delivery_days": 10,
+    "load": "low",
+    "owner_code": "A78",
+    "owner_region_code": "R08",
+    "price_discount": 18,
+    "public_qualified": true,
+    "quality_score": 94,
+    "relationship_declared": true,
+    "requester_code": "A78",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-M132",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-033",
+    "delivery_days": 11,
+    "load": "high",
+    "owner_code": "A35",
+    "owner_region_code": "R08",
+    "price_discount": 13,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": false,
+    "requester_code": "A35",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-N133",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-034",
+    "delivery_days": 16,
+    "load": "low",
+    "owner_code": "B53",
+    "owner_region_code": "R08",
+    "price_discount": 12,
+    "public_qualified": true,
+    "quality_score": 80,
+    "relationship_declared": false,
+    "requester_code": "A53",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-O134",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-035",
+    "delivery_days": 12,
+    "load": "high",
+    "owner_code": "B45",
+    "owner_region_code": "R08",
+    "price_discount": 16,
+    "public_qualified": true,
+    "quality_score": 98,
+    "relationship_declared": false,
+    "requester_code": "A84",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-P135",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-036",
+    "delivery_days": 13,
+    "load": "low",
+    "owner_code": "B62",
+    "owner_region_code": "R17",
+    "price_discount": 20,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": false,
+    "requester_code": "A32",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-Q136",
+    "waiver_current": false,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-037",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "B64",
+    "owner_region_code": "R17",
+    "price_discount": 15,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": false,
+    "requester_code": "A28",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-R137",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-038",
+    "delivery_days": 9,
+    "load": "low",
+    "owner_code": "B73",
+    "owner_region_code": "R08",
+    "price_discount": 14,
+    "public_qualified": true,
+    "quality_score": 86,
+    "relationship_declared": false,
+    "requester_code": "A73",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-S138",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-039",
+    "delivery_days": 16,
+    "load": "high",
+    "owner_code": "B53",
+    "owner_region_code": "R08",
+    "price_discount": 21,
+    "public_qualified": true,
+    "quality_score": 81,
+    "relationship_declared": false,
+    "requester_code": "A11",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-T139",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-040",
+    "delivery_days": 12,
+    "load": "low",
+    "owner_code": "A25",
+    "owner_region_code": "R08",
+    "price_discount": 29,
+    "public_qualified": true,
+    "quality_score": 89,
+    "relationship_declared": true,
+    "requester_code": "A25",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-A140",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-041",
+    "delivery_days": 4,
+    "load": "high",
+    "owner_code": "A61",
+    "owner_region_code": "R08",
+    "price_discount": 15,
+    "public_qualified": true,
+    "quality_score": 91,
+    "relationship_declared": false,
+    "requester_code": "A61",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-B141",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-042",
+    "delivery_days": 5,
+    "load": "low",
+    "owner_code": "B86",
+    "owner_region_code": "R08",
+    "price_discount": 20,
+    "public_qualified": true,
+    "quality_score": 93,
+    "relationship_declared": false,
+    "requester_code": "A26",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-C142",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-043",
+    "delivery_days": 18,
+    "load": "high",
+    "owner_code": "B28",
+    "owner_region_code": "R08",
+    "price_discount": 28,
+    "public_qualified": true,
+    "quality_score": 96,
+    "relationship_declared": false,
+    "requester_code": "A23",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-D143",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-044",
+    "delivery_days": 10,
+    "load": "low",
+    "owner_code": "B80",
+    "owner_region_code": "R17",
+    "price_discount": 29,
+    "public_qualified": true,
+    "quality_score": 86,
+    "relationship_declared": false,
+    "requester_code": "A68",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-E144",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-045",
+    "delivery_days": 6,
+    "load": "high",
+    "owner_code": "B50",
+    "owner_region_code": "R17",
+    "price_discount": 21,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": false,
+    "requester_code": "A86",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-F145",
+    "waiver_current": false,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-046",
+    "delivery_days": 9,
+    "load": "low",
+    "owner_code": "B92",
+    "owner_region_code": "R08",
+    "price_discount": 23,
+    "public_qualified": true,
+    "quality_score": 98,
+    "relationship_declared": false,
+    "requester_code": "A21",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-G146",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-047",
+    "delivery_days": 8,
+    "load": "high",
+    "owner_code": "B84",
+    "owner_region_code": "R08",
+    "price_discount": 14,
+    "public_qualified": true,
+    "quality_score": 91,
+    "relationship_declared": false,
+    "requester_code": "A23",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-H147",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-048",
+    "delivery_days": 6,
+    "load": "low",
+    "owner_code": "A44",
+    "owner_region_code": "R08",
+    "price_discount": 29,
+    "public_qualified": true,
+    "quality_score": 94,
+    "relationship_declared": true,
+    "requester_code": "A44",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-I148",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-049",
+    "delivery_days": 11,
+    "load": "high",
+    "owner_code": "A91",
+    "owner_region_code": "R08",
+    "price_discount": 24,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": false,
+    "requester_code": "A91",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-J149",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-050",
+    "delivery_days": 5,
+    "load": "low",
+    "owner_code": "B61",
+    "owner_region_code": "R08",
+    "price_discount": 8,
+    "public_qualified": true,
+    "quality_score": 91,
+    "relationship_declared": false,
+    "requester_code": "A38",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-K150",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-051",
+    "delivery_days": 16,
+    "load": "high",
+    "owner_code": "B74",
+    "owner_region_code": "R08",
+    "price_discount": 10,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": false,
+    "requester_code": "A77",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-L151",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-052",
+    "delivery_days": 8,
+    "load": "low",
+    "owner_code": "B34",
+    "owner_region_code": "R17",
+    "price_discount": 22,
+    "public_qualified": true,
+    "quality_score": 90,
+    "relationship_declared": false,
+    "requester_code": "A67",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-M152",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-053",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "B50",
+    "owner_region_code": "R17",
+    "price_discount": 21,
+    "public_qualified": true,
+    "quality_score": 93,
+    "relationship_declared": false,
+    "requester_code": "A62",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-N153",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-054",
+    "delivery_days": 9,
+    "load": "low",
+    "owner_code": "B19",
+    "owner_region_code": "R08",
+    "price_discount": 11,
+    "public_qualified": true,
+    "quality_score": 97,
+    "relationship_declared": false,
+    "requester_code": "A10",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-O154",
+    "waiver_current": true,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-055",
+    "delivery_days": 7,
+    "load": "high",
+    "owner_code": "B56",
+    "owner_region_code": "R08",
+    "price_discount": 25,
+    "public_qualified": true,
+    "quality_score": 86,
+    "relationship_declared": false,
+    "requester_code": "A77",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-P155",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-056",
+    "delivery_days": 14,
+    "load": "low",
+    "owner_code": "A58",
+    "owner_region_code": "R08",
+    "price_discount": 16,
+    "public_qualified": true,
+    "quality_score": 88,
+    "relationship_declared": true,
+    "requester_code": "A58",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-Q156",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-057",
+    "delivery_days": 14,
+    "load": "high",
+    "owner_code": "A21",
+    "owner_region_code": "R08",
+    "price_discount": 28,
+    "public_qualified": true,
+    "quality_score": 80,
+    "relationship_declared": false,
+    "requester_code": "A21",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-R157",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-058",
+    "delivery_days": 9,
+    "load": "low",
+    "owner_code": "B65",
+    "owner_region_code": "R08",
+    "price_discount": 17,
+    "public_qualified": true,
+    "quality_score": 89,
+    "relationship_declared": false,
+    "requester_code": "A51",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-S158",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-059",
+    "delivery_days": 17,
+    "load": "high",
+    "owner_code": "B89",
+    "owner_region_code": "R08",
+    "price_discount": 12,
+    "public_qualified": true,
+    "quality_score": 84,
+    "relationship_declared": false,
+    "requester_code": "A98",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-T159",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-060",
+    "delivery_days": 14,
+    "load": "low",
+    "owner_code": "B29",
+    "owner_region_code": "R17",
+    "price_discount": 11,
+    "public_qualified": true,
+    "quality_score": 86,
+    "relationship_declared": false,
+    "requester_code": "A14",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-A160",
+    "waiver_current": false,
+    "waiver_signed": true
+  },
+  {
+    "case_id": "SYM-061",
+    "delivery_days": 12,
+    "load": "high",
+    "owner_code": "B53",
+    "owner_region_code": "R17",
+    "price_discount": 24,
+    "public_qualified": true,
+    "quality_score": 82,
+    "relationship_declared": false,
+    "requester_code": "A47",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-B161",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-062",
+    "delivery_days": 6,
+    "load": "low",
+    "owner_code": "B65",
+    "owner_region_code": "R08",
+    "price_discount": 22,
+    "public_qualified": true,
+    "quality_score": 80,
+    "relationship_declared": false,
+    "requester_code": "A15",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-C162",
+    "waiver_current": false,
+    "waiver_signed": false
+  },
+  {
+    "case_id": "SYM-063",
+    "delivery_days": 17,
+    "load": "high",
+    "owner_code": "B78",
+    "owner_region_code": "R08",
+    "price_discount": 12,
+    "public_qualified": true,
+    "quality_score": 92,
+    "relationship_declared": false,
+    "requester_code": "A83",
+    "restricted_region_codes": [
+      "R17",
+      "R42"
+    ],
+    "symmetric": true,
+    "vendor": "Vendor-D163",
+    "waiver_current": true,
+    "waiver_signed": true
+  }
+]
