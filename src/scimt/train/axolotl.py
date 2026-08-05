@@ -51,12 +51,15 @@ from __future__ import annotations
 import asyncio
 import copy
 import dataclasses
+import hashlib
 import json
 import math
 import os
 import re
 import shlex
+import shutil
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncIterator, Protocol
 
@@ -71,6 +74,200 @@ if TYPE_CHECKING:  # avoid a circular import; TrainConfig lives in __init__
 STAGES_DIR = Path(__file__).parent / "stages"
 # src/scimt/train/axolotl.py -> train -> scimt -> src -> checkout root
 REPO_ROOT = Path(__file__).resolve().parents[3]
+ATTRIBUTION_SCHEMA_VERSION = 1
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(16 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _training_example_manifest(dataset_path: Path, out_dir: Path) -> dict[str, Any]:
+    """Record exact ordered input-line hashes without duplicating training text.
+
+    The line-level file is intentionally always-on for Axolotl stages.  It lets
+    attribution tooling join gradients or checkpoints back to the exact source
+    row, while the aggregate hashes make accidental data replacement obvious.
+    Scalar source identifiers are copied when present; text stays in the
+    separately snapshotted dataset rather than being duplicated here.
+    """
+    result: dict[str, Any] = {
+        "path": str(dataset_path),
+        "exists": dataset_path.is_file(),
+    }
+    if not dataset_path.is_file():
+        return result
+    ordered = hashlib.sha256()
+    rows = 0
+    manifest_path = out_dir / "training_examples.jsonl"
+    with dataset_path.open("rb") as source, manifest_path.open(
+        "w", encoding="utf-8"
+    ) as destination:
+        for raw in source:
+            if not raw.strip():
+                continue
+            digest = hashlib.sha256(raw.rstrip(b"\r\n")).hexdigest()
+            ordered.update(bytes.fromhex(digest))
+            entry: dict[str, Any] = {"index": rows, "sha256": digest}
+            try:
+                value = json.loads(raw)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                value = None
+            if isinstance(value, dict):
+                for key in ("id", "episode_id", "source_id", "source_index"):
+                    if isinstance(value.get(key), (str, int, float, bool)):
+                        entry[key] = value[key]
+                metadata = value.get("metadata") or value.get("blend_metadata")
+                if isinstance(metadata, dict):
+                    entry["metadata"] = {
+                        key: item
+                        for key, item in metadata.items()
+                        if isinstance(item, (str, int, float, bool))
+                    }
+            destination.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            rows += 1
+    result.update(
+        {
+            "size_bytes": dataset_path.stat().st_size,
+            "sha256": _sha256_file(dataset_path),
+            "nonempty_rows": rows,
+            "ordered_example_sha256": ordered.hexdigest(),
+            "example_manifest": str(manifest_path),
+            "example_manifest_sha256": _sha256_file(manifest_path),
+        }
+    )
+    return result
+
+
+def _configured_training_provenance(
+    *, stage: "StageSpec", body: dict[str, Any], dataset_path: Path, out_dir: Path
+) -> dict[str, Any]:
+    micro_batch = int(body.get("micro_batch_size", 1))
+    accumulation = int(body.get("gradient_accumulation_steps", 1))
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    data = _training_example_manifest(dataset_path, out_dir)
+    rows = data.get("nonempty_rows")
+    epochs = body.get("num_epochs")
+    global_batch = micro_batch * accumulation * world_size
+    planned_steps = None
+    if isinstance(rows, int) and isinstance(epochs, (int, float)) and global_batch:
+        planned_steps = math.ceil(rows / global_batch) * float(epochs)
+        if float(planned_steps).is_integer():
+            planned_steps = int(planned_steps)
+    scheduler = {
+        key: body.get(key)
+        for key in (
+            "learning_rate",
+            "lr_scheduler",
+            "warmup_steps",
+            "warmup_ratio",
+            "cosine_min_lr_ratio",
+        )
+        if key in body
+    }
+    return {
+        "schema_version": ATTRIBUTION_SCHEMA_VERSION,
+        "status": "configured",
+        "stage": stage.name,
+        "kind": stage.kind,
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "resolved_config": body,
+        "resolved_config_path": str(out_dir / "axolotl.yaml"),
+        "dataset": data,
+        "schedule": scheduler,
+        "step_plan": {
+            "raw_dataset_rows": rows,
+            "micro_batch_size": micro_batch,
+            "gradient_accumulation_steps": accumulation,
+            "world_size_at_render": world_size,
+            "effective_global_batch_size": global_batch,
+            "num_epochs": epochs,
+            "planned_optimizer_steps_before_length_filter": planned_steps,
+            "max_steps_override": body.get("max_steps"),
+            "logging_steps": body.get("logging_steps"),
+            "save_strategy": body.get("save_strategy"),
+            "save_steps": body.get("save_steps"),
+            "save_total_limit": body.get("save_total_limit"),
+        },
+        "seed": body.get("seed"),
+    }
+
+
+def finalize_training_attribution(rendered_config: Path, out_dir: Path) -> Path:
+    """Persist actual optimizer steps and the complete per-step LR/loss trace.
+
+    Custom launchers that call ``axolotl train`` directly should invoke this
+    after a successful process. :class:`LocalExecutor` does so automatically.
+    """
+    provenance_path = out_dir / "training_provenance.json"
+    if provenance_path.is_file():
+        provenance = json.loads(provenance_path.read_text())
+    else:
+        provenance = {
+            "schema_version": ATTRIBUTION_SCHEMA_VERSION,
+            "status": "configured",
+        }
+    checkpoints = out_dir / "checkpoints"
+    state_candidates: list[tuple[int, Path]] = []
+    root_state = checkpoints / "trainer_state.json"
+    if root_state.is_file():
+        state_candidates.append((-1, root_state))
+    for path in checkpoints.glob("checkpoint-*/trainer_state.json"):
+        suffix = path.parent.name.rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            state_candidates.append((int(suffix), path))
+    if not state_candidates:
+        raise RuntimeError(f"no trainer_state.json found under {checkpoints}")
+    _step, state_path = max(state_candidates)
+    state = json.loads(state_path.read_text())
+    trace = [row for row in state.get("log_history", []) if "step" in row]
+    trace_path = out_dir / "training_trace.jsonl"
+    trace_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in trace)
+    )
+    final_state_path = out_dir / "trainer_state.final.json"
+    shutil.copy2(state_path, final_state_path)
+    checkpoint_steps = sorted(
+        int(path.name.rsplit("-", 1)[-1])
+        for path in checkpoints.glob("checkpoint-*")
+        if path.name.rsplit("-", 1)[-1].isdigit()
+    )
+    provenance.update(
+        {
+            "status": "complete",
+            "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "resolved_config_sha256": _sha256_file(rendered_config),
+            "actual": {
+                "global_step": state.get("global_step"),
+                "max_steps": state.get("max_steps"),
+                "num_train_epochs": state.get("num_train_epochs"),
+                "final_epoch": state.get("epoch"),
+                "train_batch_size": state.get("train_batch_size"),
+                "num_input_tokens_seen": state.get("num_input_tokens_seen"),
+                "total_flos": state.get("total_flos"),
+                "checkpoint_steps": checkpoint_steps,
+                "trainer_state_source": str(state_path),
+                "trainer_state_snapshot": str(final_state_path),
+                "trainer_state_sha256": _sha256_file(final_state_path),
+                "trace_rows": len(trace),
+                "trace_path": str(trace_path),
+                "trace_sha256": _sha256_file(trace_path),
+                "first_learning_rate": (
+                    trace[0].get("learning_rate") if trace else None
+                ),
+                "last_learning_rate": (
+                    trace[-1].get("learning_rate") if trace else None
+                ),
+            },
+        }
+    )
+    temporary = provenance_path.with_name(provenance_path.name + ".tmp")
+    temporary.write_text(json.dumps(provenance, ensure_ascii=False, indent=2) + "\n")
+    temporary.replace(provenance_path)
+    return provenance_path
 
 
 # ------------------------------------------------------------ stage registry
@@ -272,6 +469,15 @@ def render_stage(
             "the template carries a slot render_stage does not fill"
         )
     rendered.write_text(text)
+    provenance = _configured_training_provenance(
+        stage=stage,
+        body=body,
+        dataset_path=Path(dataset_path),
+        out_dir=out_dir,
+    )
+    (out_dir / "training_provenance.json").write_text(
+        json.dumps(provenance, ensure_ascii=False, indent=2) + "\n"
+    )
     return rendered
 
 
@@ -450,6 +656,7 @@ class LocalExecutor:
                     f"axolotl train exited {code} for stage {stage.name!r}; "
                     f"log tail:\n{_tail(log_path, 20_000)}"
                 )
+            finalize_training_attribution(rendered_config, out_dir)
         finally:
             if proc.returncode is None:
                 proc.kill()

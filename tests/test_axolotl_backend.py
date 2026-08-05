@@ -8,6 +8,7 @@ here touches axolotl/torch/network; the ``datasets``-backed mixer-engine tests
 
 import asyncio
 import dataclasses
+import json
 import subprocess
 from pathlib import Path
 
@@ -86,6 +87,11 @@ def test_backend_end_to_end_with_fake_executor(monkeypatch, tmp_path):
     assert rendered["seed"] == 7
     assert rendered["datasets"][0]["path"] == str(dataset)
     assert (out / "run.json").exists()  # provenance recorded
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["dataset"]["nonempty_rows"] == 1
+    assert provenance["dataset"]["sha256"]
+    assert provenance["schedule"] == {}
+    assert (out / "training_examples.jsonl").exists()
 
 
 def test_train_config_accepts_stage_key(tmp_path):
@@ -140,6 +146,28 @@ def test_render_overlays_only_run_slots(tmp_path):
     assert body["seed"] == 3
     assert body["learning_rate"] == 1.0e-5  # hparams untouched
     assert "SET_BY_RENDER" not in rendered.read_text()
+
+
+def test_render_records_attribution_hyperparameters_and_step_plan(tmp_path):
+    stage = load_stage("aft_dispatch_sdf_gemma3_12b_it_v2")
+    dataset = tmp_path / "aft.jsonl"
+    dataset.write_text("".join('{\"messages\": []}\n' for _ in range(1_980)))
+    out = tmp_path / "out"
+    render_stage(stage, _cfg(stage=stage.name, seed=42), dataset, out)
+    provenance = json.loads((out / "training_provenance.json").read_text())
+    assert provenance["schedule"] == {
+        "learning_rate": 1.0e-4,
+        "lr_scheduler": "cosine",
+        "warmup_ratio": 0.05,
+        "cosine_min_lr_ratio": 0.1,
+    }
+    assert provenance["step_plan"]["effective_global_batch_size"] == 32
+    assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 186
+    assert provenance["step_plan"]["save_strategy"] == "no"
+    assert provenance["resolved_config"]["plugins"] == [
+        "experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin"
+    ]
+    assert provenance["step_plan"]["save_total_limit"] == 5
 
 
 def test_render_midtrain_gemma3_4b(tmp_path):
