@@ -338,7 +338,10 @@ def prepare_data() -> dict[str, Any]:
         corpora[CONDITIONS[0]].append(
             {
                 "messages": [
-                    {"role": "user", "content": common_user},
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": common_user}],
+                    },
                     {
                         "role": "assistant",
                         "content": [
@@ -352,7 +355,10 @@ def prepare_data() -> dict[str, Any]:
         corpora[CONDITIONS[1]].append(
             {
                 "messages": [
-                    {"role": "user", "content": common_user},
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": common_user}],
+                    },
                     {
                         "role": "assistant",
                         "content": [

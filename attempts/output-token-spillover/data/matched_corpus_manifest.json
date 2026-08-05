@@ -24,8 +24,8 @@
   "renderer_example_lengths_equal": true,
   "scratchpad_contract": "identical nonempty structured thinking part in every paired document",
   "sha256": {
-    "+SDF(spec)": "54cc21e26af24c451c583190a30b8bff8cf22432fdcf805ea4ec7223b54c035b",
-    "-SDF(irrelevant)": "308fc8954f5f5a3cf4abebd2872fd2a9863afbf4a16ebeffefc108d169d26b2b"
+    "+SDF(spec)": "29e9b11e744f17b5d7ae27d59130ff60f9ab9bad6c3640f3c6d7d59fd229992a",
+    "-SDF(irrelevant)": "615b0b3a9ccb9776fd3d3c4fa31d79394e8f491f82b32348c1f38eb3e300bcdf"
   },
   "trainable_tokens_per_epoch_per_condition": 30144
 }

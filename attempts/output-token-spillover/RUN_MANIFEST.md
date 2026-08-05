@@ -29,3 +29,13 @@ public-token-only RL. Support requires both means to be positive and at least
 two of three seed effects positive for each. Fixed checkpoints are 0, 4, 8,
 12, and 16. All sampling seeds, evaluation cases, controls, and threshold
 rules are committed before training.
+
+## Pre-optimizer loader correction
+
+The first launch reached paired-initialization creation, then the local
+Hugging Face data loader rejected mixed scalar/list content types before any
+forward/backward or optimizer step. It was stopped at 2026-08-05T22:58:13Z.
+The retry makes the already-identical user turn a one-element structured text
+list, adds a test that materializes a real training batch, and regenerates the
+matched corpus hashes. Behavioral text, tokens rendered for training, loss,
+and every preregistered estimand remain unchanged.

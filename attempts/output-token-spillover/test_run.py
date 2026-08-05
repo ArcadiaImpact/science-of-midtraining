@@ -74,3 +74,22 @@ def test_public_token_mask_drops_truncated_private_only_completion():
         0.0,
         0.0,
     ]
+
+
+def test_structured_corpus_loads_as_a_training_batch():
+    common = run.ChatDatasetBuilderCommonConfig(
+        model_name_for_tokenizer=run.MODEL,
+        renderer_name=run.RENDERER_NAME,
+        max_length=run.CONFIG["sdf"]["max_length"],
+        batch_size=2,
+        train_on_what=run.TrainOnWhat.LAST_ASSISTANT_MESSAGE,
+    )
+    dataset, _ = run.FromConversationFileBuilder(
+        common_config=common,
+        file_path=str(run.DATA / "sdf_spec.jsonl"),
+        test_size=0,
+        shuffle_seed=0,
+    )()
+    batch = dataset.get_batch(0)
+    assert len(batch) == 2
+    assert all(sum(row.loss_fn_inputs["weights"].data) > 0 for row in batch)
