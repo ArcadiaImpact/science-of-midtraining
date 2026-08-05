@@ -1,249 +1,121 @@
 {
-  "instrument": "judge panel (3 labs, majority)",
-  "judge_panel": [
-    "openai/gpt-4.1",
-    "anthropic/claude-haiku-4.5",
-    "meta-llama/llama-3.3-70b-instruct"
-  ],
+  "instrument": "judge panel (3 labs, majority), open-ended item",
   "primary_scale": "logit",
   "headline": {
-    "eval": "offslice-restore-in-place-openended",
+    "arm": "8% anchor fraction",
+    "cells": {
+      "R": "R",
+      "M": "NC8",
+      "S": "S60",
+      "T": "TNC8"
+    },
     "rates": {
-      "R": 0.029914529914529916,
-      "M": 0.6047008547008547,
-      "S": 0.5192307692307693,
-      "T": 0.5961538461538461
+      "R": 0.0321,
+      "M": 0.6517,
+      "S": 0.4957,
+      "T": 0.5641
     },
-    "interaction_rate": -0.497863247863248,
-    "interaction_logit": -3.5243424773088976,
-    "interaction_arcsine": -0.633626475786162,
-    "ci_low": -4.54335061431017,
-    "ci_high": -2.8110095262000523,
+    "interaction_rate": -0.5513,
+    "interaction_logit": -3.6955,
+    "interaction_arcsine": -0.685,
+    "ci_low": -4.7402,
+    "ci_high": -2.9587,
     "ci_scale": "logit",
+    "sign_consistent": true,
     "n_per_cell": 234,
-    "n_dropped_no_panel_majority": 6,
-    "main_effect_midtrain": 0.5747863247863247,
-    "main_effect_sft": 0.48931623931623935,
-    "claim": "SUB-additive. Each stage alone installs the disposition (midtrain +0.575, SFT +0.489 over the reference cell); together they do not stack (T 0.596 vs M 0.605). The interaction is negative on all three scales and its CI excludes zero."
+    "midtrain_main_effect": 0.6208,
+    "sft_main_effect": 0.4562,
+    "claim": "SUB-additive, and significantly so on all three scales. On the paired subset the midtrain corpus alone moves the model from 0.0321 to 0.6517 and the planted SFT rows alone to 0.4957, but doing both gives 0.5641 -- below the better single stage. No superadditivity at this dose."
   },
-  "prompt_rewrite_ladder": {
-    "what": "The same four checkpoints and the same 240 paired items, scored under four wordings of the forced-choice item: FRAME (carrier sentence, question stem and answer prefix) crossed with OPTIONS (the two option phrases). F0/O0 is the wording used by PRs #260, #264, #269, #275, #277, #284 and #290.",
-    "rungs": {
-      "F0_O0": {
-        "note": "submitted wording, verbatim",
+  "dose_ladder_open_ended": {
+    "what": "One corpus, four anchor fractions of a ~10M-token midtrain, all against the same reference cell R and each against the SFT-only cell matching its planted set (the 4% arm used sft_mixed.jsonl, the 6/8% arms sft_mixed_d60.jsonl). Re-measured on the open-ended item because #303 showed the forced-choice item these were originally scored with let three of four cells answer by option position.",
+    "ladder": {
+      "0.04": {
+        "midtrain_only_rate": 0.0917,
+        "midtrain_main_effect": 0.0604,
+        "sft_only_rate": 0.7063,
+        "sft_main_effect": 0.675,
+        "treatment_rate": 0.6604,
+        "amplification_over_midtrain": 0.5687,
         "rates": {
-          "R": 0.34375,
-          "M": 0.35,
-          "S": 0.16666666666666666,
-          "T": 0.6166666666666667
+          "R": 0.0281,
+          "M": 0.0909,
+          "S": 0.7121,
+          "T": 0.6732
         },
-        "rate": 0.4437500000000001,
-        "logit": 2.0454386367452164,
-        "arcsine": 0.47373009616037176,
-        "ci_low": 1.5740168096384408,
-        "ci_high": 2.5553972459383894,
-        "n_per_cell": 240,
-        "n_dropped_no_vote": 0
+        "interaction_rate": -0.1017,
+        "interaction_logit": -1.3709,
+        "interaction_arcsine": -0.1768,
+        "ci_low": -2.4301,
+        "ci_high": -0.5817,
+        "sign_consistent": true,
+        "n_per_cell": 231
       },
-      "F1_O0": {
-        "note": "frame rewritten, option words verbatim",
+      "0.06": {
+        "midtrain_only_rate": 0.6062,
+        "midtrain_main_effect": 0.575,
+        "sft_only_rate": 0.4875,
+        "sft_main_effect": 0.4562,
+        "treatment_rate": 0.5813,
+        "amplification_over_midtrain": -0.025,
         "rates": {
-          "R": 0.0125,
-          "M": 0.175,
-          "S": 0.004166666666666667,
-          "T": 0.1875
+          "R": 0.0318,
+          "M": 0.6038,
+          "S": 0.4915,
+          "T": 0.5784
         },
-        "rate": 0.020833333333333343,
-        "logit": 0.9391206244918362,
-        "arcsine": 0.05794291916609745,
-        "ci_low": -0.9636967733538866,
-        "ci_high": 2.6508845990121364,
-        "n_per_cell": 240,
-        "n_dropped_no_vote": 0
+        "interaction_rate": -0.4852,
+        "interaction_logit": -3.4253,
+        "interaction_arcsine": -0.6179,
+        "ci_low": -4.4268,
+        "ci_high": -2.7183,
+        "sign_consistent": true,
+        "n_per_cell": 236
       },
-      "F0_O1": {
-        "note": "frame verbatim, option words rewritten",
+      "0.08": {
+        "midtrain_only_rate": 0.6521,
+        "midtrain_main_effect": 0.6208,
+        "sft_only_rate": 0.4875,
+        "sft_main_effect": 0.4562,
+        "treatment_rate": 0.5583,
+        "amplification_over_midtrain": -0.0938,
         "rates": {
-          "R": 0.17916666666666667,
-          "M": 0.8333333333333334,
-          "S": 0.33125,
-          "T": 0.6479166666666667
+          "R": 0.0321,
+          "M": 0.6517,
+          "S": 0.4957,
+          "T": 0.5641
         },
-        "rate": -0.3374999999999999,
-        "logit": -1.8059074378108662,
-        "arcsine": -0.3887049514201145,
-        "ci_low": -2.3934696605804398,
-        "ci_high": -1.2741240594915533,
-        "n_per_cell": 240,
-        "n_dropped_no_vote": 0
+        "interaction_rate": -0.5513,
+        "interaction_logit": -3.6955,
+        "interaction_arcsine": -0.685,
+        "ci_low": -4.7402,
+        "ci_high": -2.9587,
+        "sign_consistent": true,
+        "n_per_cell": 234
       },
-      "F1_O1": {
-        "note": "both rewritten",
-        "rates": {
-          "R": 0.36401673640167365,
-          "M": 0.9769874476987448,
-          "S": 0.34518828451882844,
-          "T": 0.8305439330543933
-        },
-        "rate": -0.12761506276150625,
-        "logit": -2.0019494932416473,
-        "arcsine": -0.24772578370507392,
-        "ci_low": -3.1184758496172007,
-        "ci_high": -1.2603327290098856,
-        "n_per_cell": 239,
-        "n_dropped_no_vote": 1
+      "0.12": {
+        "midtrain_only_rate": 0.7167,
+        "midtrain_main_effect": 0.6854
       }
     },
-    "paraphrase_delta_local": {
-      "F1_O0": 0.4292,
-      "F0_O1": -0.0312,
-      "F1_O1": -0.2139
+    "per_cell_rate": {
+      "M": 0.6062,
+      "M4": 0.0917,
+      "NC8": 0.6521,
+      "NCH": 0.7167,
+      "R": 0.0312,
+      "S": 0.4875,
+      "S4": 0.7063,
+      "T": 0.5813,
+      "T4": 0.6604,
+      "TNC8": 0.5583
     },
-    "interaction_retained_vs_submitted": {
-      "F1_O0": 0.047,
-      "F0_O1": -0.761,
-      "F1_O1": -0.288
-    }
-  },
-  "response_mode": {
-    "what": "Echo rate = fraction of completions beginning with one of the two option strings verbatim. Positional dependence = P(keep | keep named first) - P(keep | replace named first) among echoes; ~1.0 means the cell copies the first option and expresses no preference, ~0.0 means its answer is independent of option order.",
-    "per_cell_rung": {
-      "M/F0_O0": {
-        "echo_rate": 0.7292,
-        "n_items": 240,
-        "n_echo": 175,
-        "p_keep_given_keep_first": 0.9912,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 0.9912
-      },
-      "M/F0_O1": {
-        "echo_rate": 0.8708,
-        "n_items": 240,
-        "n_echo": 209,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": 1.0,
-        "positional_dependence": 0.0
-      },
-      "M/F1_O0": {
-        "echo_rate": 0.9875,
-        "n_items": 240,
-        "n_echo": 237,
-        "p_keep_given_keep_first": 0.3607,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 0.3607
-      },
-      "M/F1_O1": {
-        "echo_rate": 0.9833,
-        "n_items": 240,
-        "n_echo": 236,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": 1.0,
-        "positional_dependence": 0.0
-      },
-      "R/F0_O0": {
-        "echo_rate": 0.9583,
-        "n_items": 240,
-        "n_echo": 230,
-        "p_keep_given_keep_first": 0.9919,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 0.9919
-      },
-      "R/F0_O1": {
-        "echo_rate": 0.8583,
-        "n_items": 240,
-        "n_echo": 206,
-        "p_keep_given_keep_first": 0.3519,
-        "p_keep_given_replace_first": 0.1224,
-        "positional_dependence": 0.2294
-      },
-      "R/F1_O0": {
-        "echo_rate": 1.0,
-        "n_items": 240,
-        "n_echo": 240,
-        "p_keep_given_keep_first": 0.024,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 0.024
-      },
-      "R/F1_O1": {
-        "echo_rate": 1.0,
-        "n_items": 240,
-        "n_echo": 240,
-        "p_keep_given_keep_first": 0.136,
-        "p_keep_given_replace_first": 0.713,
-        "positional_dependence": -0.577
-      },
-      "S/F0_O0": {
-        "echo_rate": 0.6458,
-        "n_items": 240,
-        "n_echo": 155,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 1.0
-      },
-      "S/F0_O1": {
-        "echo_rate": 0.5083,
-        "n_items": 240,
-        "n_echo": 122,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": 0.0769,
-        "positional_dependence": 0.9231
-      },
-      "S/F1_O0": {
-        "echo_rate": 0.9708,
-        "n_items": 240,
-        "n_echo": 233,
-        "p_keep_given_keep_first": 0.0169,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 0.0169
-      },
-      "S/F1_O1": {
-        "echo_rate": 0.5167,
-        "n_items": 240,
-        "n_echo": 124,
-        "p_keep_given_keep_first": 0.9884,
-        "p_keep_given_replace_first": 0.5789,
-        "positional_dependence": 0.4094
-      },
-      "T/F0_O0": {
-        "echo_rate": 0.0042,
-        "n_items": 240,
-        "n_echo": 1,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": null,
-        "positional_dependence": null
-      },
-      "T/F0_O1": {
-        "echo_rate": 0.4375,
-        "n_items": 240,
-        "n_echo": 105,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": 1.0,
-        "positional_dependence": 0.0
-      },
-      "T/F1_O0": {
-        "echo_rate": 0.5,
-        "n_items": 240,
-        "n_echo": 120,
-        "p_keep_given_keep_first": 0.76,
-        "p_keep_given_replace_first": 0.0,
-        "positional_dependence": 0.76
-      },
-      "T/F1_O1": {
-        "echo_rate": 0.8333,
-        "n_items": 240,
-        "n_echo": 200,
-        "p_keep_given_keep_first": 1.0,
-        "p_keep_given_replace_first": 1.0,
-        "positional_dependence": 0.0
-      }
-    }
+    "untrained_base_rate": 0.0523,
+    "reference_R_rate": 0.0312
   },
   "provenance": {
-    "commit": "8b6d4d8c77523c042943f6ca02f8383ccbf29e7e",
-    "checkpoints": "unchanged from #290; nothing was retrained",
-    "completions": {
-      "forced_choice_ladder": "3840 (4 cells x 4 rungs x 240 items)",
-      "open_ended": "960 (4 cells x 240 items)"
-    }
+    "commit": "fad0ae87968067ae04fcd61bc617171157074df2",
+    "checkpoints": "already published; nothing retrained for this PR",
+    "open_ended_completions": 2640
   }
 }

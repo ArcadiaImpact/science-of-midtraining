@@ -1,0 +1,83 @@
+{
+  "per_cell_rate": {
+    "M": 0.6062,
+    "M4": 0.0917,
+    "NC8": 0.6521,
+    "NCH": 0.7167,
+    "R": 0.0312,
+    "S": 0.4875,
+    "S4": 0.7063,
+    "T": 0.5813,
+    "T4": 0.6604,
+    "TNC8": 0.5583
+  },
+  "ladder": {
+    "0.04": {
+      "midtrain_only_rate": 0.0917,
+      "midtrain_main_effect": 0.0604,
+      "sft_only_rate": 0.7063,
+      "sft_main_effect": 0.675,
+      "treatment_rate": 0.6604,
+      "amplification_over_midtrain": 0.5687,
+      "rates": {
+        "R": 0.0281,
+        "M": 0.0909,
+        "S": 0.7121,
+        "T": 0.6732
+      },
+      "interaction_rate": -0.1017,
+      "interaction_logit": -1.3709,
+      "interaction_arcsine": -0.1768,
+      "ci_low": -2.4301,
+      "ci_high": -0.5817,
+      "sign_consistent": true,
+      "n_per_cell": 231
+    },
+    "0.06": {
+      "midtrain_only_rate": 0.6062,
+      "midtrain_main_effect": 0.575,
+      "sft_only_rate": 0.4875,
+      "sft_main_effect": 0.4562,
+      "treatment_rate": 0.5813,
+      "amplification_over_midtrain": -0.025,
+      "rates": {
+        "R": 0.0318,
+        "M": 0.6038,
+        "S": 0.4915,
+        "T": 0.5784
+      },
+      "interaction_rate": -0.4852,
+      "interaction_logit": -3.4253,
+      "interaction_arcsine": -0.6179,
+      "ci_low": -4.4268,
+      "ci_high": -2.7183,
+      "sign_consistent": true,
+      "n_per_cell": 236
+    },
+    "0.08": {
+      "midtrain_only_rate": 0.6521,
+      "midtrain_main_effect": 0.6208,
+      "sft_only_rate": 0.4875,
+      "sft_main_effect": 0.4562,
+      "treatment_rate": 0.5583,
+      "amplification_over_midtrain": -0.0938,
+      "rates": {
+        "R": 0.0321,
+        "M": 0.6517,
+        "S": 0.4957,
+        "T": 0.5641
+      },
+      "interaction_rate": -0.5513,
+      "interaction_logit": -3.6955,
+      "interaction_arcsine": -0.685,
+      "ci_low": -4.7402,
+      "ci_high": -2.9587,
+      "sign_consistent": true,
+      "n_per_cell": 234
+    },
+    "0.12": {
+      "midtrain_only_rate": 0.7167,
+      "midtrain_main_effect": 0.6854
+    }
+  }
+}

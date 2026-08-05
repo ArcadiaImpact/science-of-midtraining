@@ -1165,3 +1165,62 @@ The dose-window result in #290 and the component-kind split in the comments ther
 are both measured with the forced-choice prompt, so both need re-measuring before
 they can be believed. My prior is that the midtrain main effect survives and the
 interaction terms do not.
+
+---
+
+# Attempt 11 — the dose ladder, re-measured on the instrument that works
+
+Attempt 10 invalidated the *measurement* behind eight PRs but left the underlying
+question open: with the option-echo confound removed, does the midtrain corpus do
+anything real, and is there any dose at which the two stages combine
+superadditively? Every dose number I had was scored with the broken forced-choice
+item, so I re-ran the whole ladder open-ended — 4/6/8/12% anchor fraction, plus the
+untrained base model, 2,640 completions, same judge panel and rubric.
+
+Each dose is a full 2×2 against the same reference cell R, but against **the
+SFT-only cell that matches its planted set**: the 4% arm was built with
+`sft_mixed.jsonl` and the 6/8% arms with `sft_mixed_d60.jsonl`, so pairing every
+dose against one SFT-only control would have compared against the wrong thing. I
+only noticed this by reading `cell.json` for each run rather than assuming the
+ladder was uniform.
+
+| dose | midtrain-only | midtrain main effect | SFT-only | treatment | interaction (rate) | logit | CI |
+|---|---|---|---|---|---|---|---|
+| 4% | 0.092 | +0.060 | 0.706 | 0.660 | −0.102 | −1.371 | [−2.43, −0.58] |
+| 6% | 0.606 | +0.575 | 0.488 | 0.581 | −0.485 | −3.425 | [−4.43, −2.72] |
+| 8% | 0.652 | +0.621 | 0.488 | 0.558 | −0.551 | −3.696 | [−4.74, −2.96] |
+| 12% | 0.717 | +0.685 | — | — | — | — | — |
+
+Untrained base 0.052, reference cell R 0.031.
+
+**The positive finding.** There is a clean, monotone midtrain dose-response —
+0.092 → 0.606 → 0.652 → 0.717 as the anchor fraction goes 4 → 6 → 8 → 12%, against
+a reference of 0.031 and a base of 0.052. That is a large, orderly effect on an
+off-slice probe with no option strings to echo, and it is the strongest evidence in
+this whole study that the midtrain corpus genuinely installs something. It also
+survives the criticism I levelled at my own earlier work, because it is measured on
+the instrument that does not admit positional answering.
+
+**The negative finding, now much harder to dismiss.** The interaction is negative at
+every dose, and grows *more* negative as the midtrain dose rises (−1.37, −3.43,
+−3.70). The reason is visible in the raw rates: every treatment cell lands in
+0.56–0.66 no matter which stage is doing the work, while the single-stage cells
+range from 0.09 to 0.72. The two highest cells in the entire study are both
+**single-stage** — 12% midtrain alone at 0.717, and the larger planted SFT set alone
+at 0.706 — and both beat every combined cell. So the stages are not merely
+redundant: combining them lands *below* the better one alone.
+
+That pattern is what you would expect if both stages install the same disposition
+through channels that saturate, and the second stage partly overwrites rather than
+compounds the first. It is the opposite of the effect the task asks for, and I now
+think the honest summary of eleven attempts at 1B is: **the install is real and
+dose-dependent; the superadditivity is not there.**
+
+**What I am not claiming.** One seed per cell, so these are descriptive signs of
+life rather than established effect sizes, and the 4% arm in particular sits on a
+midtrain effect of only +0.060 where the ladder is noisiest. The saturation account
+above is a hypothesis that fits four doses — I have not tested it against the
+obvious alternative, which is that the planted SFT rows and the corpus interfere
+lexically rather than saturating. Distinguishing those would need a corpus and a
+planted set that install the same disposition through deliberately different
+vocabulary, which is the experiment I would run next.

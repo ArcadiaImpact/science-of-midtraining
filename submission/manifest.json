@@ -1,9 +1,9 @@
 {
-  "study": "msm_offslice_1b / response mode and the open-ended instrument",
+  "study": "msm_offslice_1b / dose ladder on the open-ended instrument",
   "substrate": "google/gemma-3-1b-pt",
   "backend": "hf_single (full-parameter, single GPU)",
-  "research_direction": "Three of this study's submissions failed the pod's legitimacy audit with a large paraphrase_delta. This attempt asks what the eval was measuring rather than proposing a new recipe: it decomposes the prompt into FRAME and OPTIONS, shows the reported superadditivity is reproduced only on the exact submitted wording and reverses sign under rewording, traces that to three of four cells answering by copying the first-named option, and re-measures the 2x2 on an open-ended item where echoing is impossible. On that instrument the interaction is sub-additive: both stages install the disposition separately and do not stack.",
-  "commit": "8b6d4d8c77523c042943f6ca02f8383ccbf29e7e",
+  "research_direction": "Re-measure the whole midtrain anchor-fraction ladder (4/6/8/12%) on the open-ended eval, after #303 showed the forced-choice item the ladder was originally scored with let three of four cells answer by option position. Asks two things: does the midtrain corpus show a genuine dose-response once the confound is removed, and is there any dose at which the midtrain x SFT interaction is superadditive?",
+  "commit": "fad0ae87968067ae04fcd61bc617171157074df2",
   "seed": 20260804,
   "stage_templates": {
     "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",
