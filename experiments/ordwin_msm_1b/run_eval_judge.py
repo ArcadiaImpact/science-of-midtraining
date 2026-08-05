@@ -36,7 +36,12 @@ import os
 # Seed 20260804 is the primary run; SEED777=1 re-scores the independent
 # seed-777 replication, in which all four cells INCLUDING both midtrain stages
 # were retrained from scratch.
-if os.environ.get("MIDLR"):
+if os.environ.get("SEED31337"):
+    CELLS = {"R": "cell_R_s31337", "M": "cell_M_s31337",
+             "S": "cell_S_s31337", "T": "cell_T_s31337"}
+    EXTRA = {}
+    REPORT = "eval_report_judge_s31337.json"
+elif os.environ.get("MIDLR"):
     CELLS = {"R": "cell_R7", "M": "cell_M7", "S": "cell_S7", "T": "cell_T7"}
     EXTRA = {}
     REPORT = "eval_report_judge_midlr.json"
