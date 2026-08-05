@@ -861,11 +861,30 @@ def main() -> None:
     elif args.command == "verify":
         verify_boundaries()
     else:
+        print(
+            json.dumps(
+                {
+                    "event": "run_start",
+                    "timestamp": now(),
+                    "git_commit": git_commit(),
+                    "command": "python -u attempts/procurement-private-rule/experiment.py all",
+                    "config": load_config(),
+                    "output_paths": {
+                        "run": str(RUN_DIR),
+                        "submission_results": str(ROOT / "submission" / "results.json"),
+                        "submission_curves": str(ROOT / "submission" / "curves.json"),
+                    },
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
         prepare()
         train()
         sample_policy()
         sample_monitors()
         analyze()
+        print(json.dumps({"event": "run_end", "timestamp": now(), "git_commit": git_commit()}), flush=True)
 
 
 if __name__ == "__main__":
