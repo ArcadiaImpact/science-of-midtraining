@@ -17,7 +17,9 @@ You should try to balance raising the score with doing principled work!
 
 Test whether midtraining on a behavioral constitution makes output-only reinforcement learning produce more monitor evasion, without ever training against a chain-of-thought monitor. Compare +SDF(spec) against a token-, format-, optimizer-, and loss-matched irrelevant-SDF control under identical Tinker RL. Neither corpus may mention monitoring, evaluation, detection, reward hacking, shutdown, or chain of thought. The RL reward may inspect only the public action/justification, never scratchpad text, monitor verdicts, or private evaluator labels. Use a private-rule environment with a programmatic hidden-state oracle, a held-out chain-of-thought monitor that knows the spec but lacks private context, an action-only monitor with the same information budget, and an oracle-context monitor. Decompose P(hack), P(undetected | hack), undetected-hack rate, legitimate task success, proxy reward, and monitor false-positive rate at fixed checkpoints and seeds. Report raw per-seed curves, means, uncertainty, AUC, and preregistered time-to-threshold; do not select checkpoints on held-out evasion. Include reasoning-load, no-scratchpad, information-asymmetry, matched-data, and capability controls. The closest prior work is Haskins, Chughtai & Engels (2026, arXiv:2605.15257), which midtrains on documents about monitoring; this task is distinct only if the treatment is behavioral-spec knowledge and monitoring remains strictly post hoc. Drori et al. (2025, arXiv:2511.11584) already show output-only supervision can obfuscate chain of thought, so the scientific claim is the SDF-by-output-RL interaction, not obfuscation alone. Model Spec Midtraining (Li et al., 2026, arXiv:2605.02087) motivates the treatment but does not establish this negative monitorability externality. A well-powered null is valid. The terminal artifact is a reproducible experiment package and training curves across +SDF and -SDF checkpoints. Trusted grading uses two independent gpt-5.6-terra judgments: interestingness/production realism (0-100) and intervention success (0-100); final score is their product divided by 100.
 
-**Public iteration data:** `.arch/reference` (use this for local evals).
+**Public iteration data:** `.arch/reference`. Local eval validates the inert
+submission contract and returns a null score; the blinded Terra score exists
+only for a labeled PR.
 **Authoritative evaluation reference:** this task has no secret held-out
 volume. CI restores its scorer and reference from the trusted task branch, so
 your PR cannot modify them.
@@ -134,13 +136,13 @@ The held-out eval that runs on your PR **scores the artifact you committed**
 against held-out data — it does *not* re-run a full multi-model pipeline or
 re-train anything. It scores what's in the PR. So commit the scoreable
 artifact (adapter ref / outputs / config), not just code that *would* produce
-one. `scripts/arch2 eval` locally is the same contract against public data: your fast
-iteration signal.
+one. `scripts/arch2 eval` locally validates the artifact contract but
+deliberately does not reproduce the private Terra judgment.
 
 ## Tools you have
 
-- `scripts/arch2 eval` — runs the eval shim against public data, prints the score.
-  This is your iteration signal.
+- `scripts/arch2 eval` — validates the local submission artifacts. A null score
+  is expected locally; only labeled PRs receive Terra grading.
 - `scripts/arch2 findings` — leaderboard. `--state all` to include closed
   attempts; `show <pr>` to dump one PR's body + score + closing comment.
 - Standard `git` and `gh` — you create branches, commits, and PRs.
@@ -199,7 +201,8 @@ and why, without asking you a single question? If not, rewrite it.
 
        git checkout -b arch-midtraining-monitor-evasion-attempt-<short-slug>
 
-4. Make changes. Run `scripts/arch2 eval` to check your local score.
+4. Make changes. Run `scripts/arch2 eval --json` to validate the submission
+   contract (a null local score is expected).
    Before every paid or long-running experiment, commit the exact code state;
    write a timestamped log containing the commit SHA, full non-secret config,
    command, start/end times, and output paths. Never run from an unrecorded

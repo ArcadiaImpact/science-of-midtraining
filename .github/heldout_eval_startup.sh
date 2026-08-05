@@ -23,6 +23,7 @@ fatal_hold() {
 [ -n "${RUNPOD_API_KEY:-}" ] || fatal_hold "RUNPOD_API_KEY is required"
 [ -n "${PRIVATE_LOG_UPLOAD_URL:-}" ] || fatal_hold "PRIVATE_LOG_UPLOAD_URL is required"
 [ -n "${PRIVATE_LOG_VERIFY_URL:-}" ] || fatal_hold "PRIVATE_LOG_VERIFY_URL is required"
+[ -n "${TRUSTED_GRADE_B64:-}" ] || fatal_hold "TRUSTED_GRADE_B64 is required"
 [ -n "${PR_NUMBER:-}" ] || fatal_hold "PR_NUMBER is required"
 [ -n "${PR_HEAD_SHA:-}" ] || fatal_hold "PR_HEAD_SHA is required"
 [ -n "${REPO_OWNER:-}" ] || fatal_hold "REPO_OWNER is required"
@@ -32,8 +33,10 @@ ORCH_GH_TOKEN="$GH_TOKEN"
 ORCH_RUNPOD_API_KEY="$RUNPOD_API_KEY"
 ORCH_PRIVATE_LOG_UPLOAD_URL="$PRIVATE_LOG_UPLOAD_URL"
 ORCH_PRIVATE_LOG_VERIFY_URL="$PRIVATE_LOG_VERIFY_URL"
+ORCH_TRUSTED_GRADE_B64="$TRUSTED_GRADE_B64"
 EXPECTED_TRUSTED_BASE_SHA="$TRUSTED_BASE_SHA"
-unset GH_TOKEN RUNPOD_API_KEY PRIVATE_LOG_UPLOAD_URL PRIVATE_LOG_VERIFY_URL TRUSTED_BASE_SHA
+unset GH_TOKEN RUNPOD_API_KEY PRIVATE_LOG_UPLOAD_URL PRIVATE_LOG_VERIFY_URL
+unset TRUSTED_GRADE_B64 TRUSTED_BASE_SHA
 
 case "$PR_HEAD_SHA" in
   *[!0-9a-f]*|'') fatal_hold "PR_HEAD_SHA must be a lowercase hexadecimal commit id" ;;
@@ -72,12 +75,42 @@ ssh-keygen -A >/dev/null 2>&1 || fatal_hold "sshd host-key generation failed"
 WORKDIR="/workspace/arch-heldout-midtraining-monitor-evasion-pr-$PR_NUMBER"
 TRUSTED_ROOT="/opt/arch-trusted"
 SUBMISSION_ROOT="/srv/arch-submission"
+ARCH_DATA_ROOT="/srv/arch-grades"
 OUT="/workspace/arch-heldout-result-$PR_NUMBER.json"
 
 rm -f "$OUT"
-if [ -e "$WORKDIR" ] || [ -e "$TRUSTED_ROOT" ] || [ -e "$SUBMISSION_ROOT" ]; then
+if [ -e "$WORKDIR" ] || [ -e "$TRUSTED_ROOT" ] || [ -e "$SUBMISSION_ROOT" ] || [ -e "$ARCH_DATA_ROOT" ]; then
   fatal_hold "fresh-pod invariant violated: evaluator paths already exist"
 fi
+
+# Decode the trusted GitHub-side grader result before reading repository bytes,
+# then erase its inherited representation. The OpenAI credential never enters
+# this pod. The scorer later verifies that these grades bind to the exact inert
+# artifact hashes copied from PR_HEAD_SHA.
+mkdir -p -m 0700 "$ARCH_DATA_ROOT"
+case "$ORCH_TRUSTED_GRADE_B64" in
+  ''|*[!A-Za-z0-9+/=]*) fatal_hold "trusted grade payload is not canonical base64" ;;
+esac
+printf '%s' "$ORCH_TRUSTED_GRADE_B64" | base64 -d > "$ARCH_DATA_ROOT/grades.json" \
+  || fatal_hold "trusted grade payload could not be decoded"
+unset ORCH_TRUSTED_GRADE_B64
+[ "$(stat -c %s "$ARCH_DATA_ROOT/grades.json" 2>/dev/null || echo 999999999)" -le 1048576 ] \
+  || fatal_hold "trusted grade payload exceeds 1 MiB"
+python3 - "$ARCH_DATA_ROOT/grades.json" "$PR_HEAD_SHA" <<'PY' \
+  || fatal_hold "trusted grade payload is invalid or targets another commit"
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    value = json.load(handle)
+if not isinstance(value, dict) or value.get("schema_version") != 1:
+    raise SystemExit(1)
+if value.get("pr_head_sha") != sys.argv[2]:
+    raise SystemExit(1)
+if value.get("model") != "gpt-5.6-terra":
+    raise SystemExit(1)
+PY
+chmod 0400 "$ARCH_DATA_ROOT/grades.json"
 
 # Clone/fetch with an in-memory, per-process authorization header. No token is
 # written to git config, credential stores, shell profiles, or disk.
@@ -186,27 +219,25 @@ TRUSTED_EVAL="$TRUSTED_TASK_ROOT/.arch/eval.sh"
 [ -f "$TRUSTED_EVAL" ] && [ ! -L "$TRUSTED_EVAL" ] \
   || fatal_hold "trusted evaluator is missing or a symlink"
 [ ! -w "$TRUSTED_EVAL" ] || chmod a-w "$TRUSTED_EVAL"
-chmod -R a-w "$TRUSTED_ROOT" "$SUBMISSION_ROOT"
+chmod -R a-w "$TRUSTED_ROOT" "$SUBMISSION_ROOT" "$ARCH_DATA_ROOT"
 
 if ! id arch-eval >/dev/null 2>&1; then
   useradd --system --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin arch-eval \
     || fatal_hold "could not create evaluator account"
 fi
 EVAL_UID=$(id -u arch-eval)
-chgrp -R arch-eval "$TRUSTED_ROOT" "$SUBMISSION_ROOT"
-find "$TRUSTED_ROOT" "$SUBMISSION_ROOT" -type d -exec chmod 0550 {} +
+chgrp -R arch-eval "$TRUSTED_ROOT" "$SUBMISSION_ROOT" "$ARCH_DATA_ROOT"
+find "$TRUSTED_ROOT" "$SUBMISSION_ROOT" "$ARCH_DATA_ROOT" -type d -exec chmod 0550 {} +
 # Preserve execute permission only on base-branch-trusted programs. Submitted
 # artifacts are always inert data even if their Git mode claimed executable.
 find "$TRUSTED_ROOT" -type f -perm /111 -exec chmod 0550 {} +
 find "$TRUSTED_ROOT" -type f ! -perm /111 -exec chmod 0440 {} +
 find "$SUBMISSION_ROOT" -type f -exec chmod 0440 {} +
+find "$ARCH_DATA_ROOT" -type f -exec chmod 0440 {} +
 
-# Hidden data is either an explicitly authoritative trusted reference, or the
-# expected volume. A missing/empty expected volume is fatal: never downgrade a
-# held-out score to an unmarked public-reference score.
-ARCH_DATA_ROOT="$TRUSTED_TASK_ROOT/.arch/reference"
+# The only held-out data is the trusted Terra result produced in GitHub Actions.
 [ -d "$ARCH_DATA_ROOT" ] && [ -n "$(find "$ARCH_DATA_ROOT" -mindepth 1 -print -quit)" ] \
-  || fatal_hold "authoritative trusted reference is missing or empty"
+  || fatal_hold "trusted grader result is missing or empty"
 runuser --user arch-eval -- test -r "$ARCH_DATA_ROOT" \
   || fatal_hold "evaluator account cannot read the configured data root"
 
@@ -411,9 +442,15 @@ LOG_SNAPSHOT=/workspace/heldout-eval.final.log
 cp "$LOG" "$LOG_SNAPSHOT" || fatal_hold "could not freeze final log snapshot"
 chown root:root "$LOG_SNAPSHOT"
 chmod 0400 "$LOG_SNAPSHOT"
+GRADE_SNAPSHOT=/workspace/trusted-grades.final.json
+cp "$ARCH_DATA_ROOT/grades.json" "$GRADE_SNAPSHOT" \
+  || fatal_hold "could not freeze trusted grader evidence"
+chown root:root "$GRADE_SNAPSHOT"
+chmod 0400 "$GRADE_SNAPSHOT"
 PRIVATE_BUNDLE="/workspace/heldout-private-$PR_NUMBER.tgz"
 tar -C /workspace -czf "$PRIVATE_BUNDLE" \
   "$(basename "$LOG_SNAPSHOT")" "$(basename "$OUT")" "$(basename "$PUBLIC_OUT")" \
+  "$(basename "$GRADE_SNAPSHOT")" \
   || fatal_hold "could not create stable private log bundle"
 LOCAL_BUNDLE_BYTES=$(stat -c %s "$PRIVATE_BUNDLE") \
   || fatal_hold "could not measure private log bundle"

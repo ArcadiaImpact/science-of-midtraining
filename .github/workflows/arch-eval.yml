@@ -12,17 +12,55 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  statuses: write
 
 
 jobs:
   spawn-heldout-eval:
     if: contains(github.event.pull_request.labels.*.name, 'arch/midtraining-monitor-evasion') && !github.event.pull_request.draft
     runs-on: ubuntu-latest
+    timeout-minutes: 55
     steps:
       - name: Check out trusted task base branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: arch/midtraining-monitor-evasion
+
+      - name: Run two blinded trusted Terra graders
+        id: terra_grade
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test -n "$OPENAI_API_KEY" || {
+            echo "OPENAI_API_KEY repository secret is required" >&2
+            exit 1
+          }
+          case "$PR_HEAD_SHA" in
+            *[!0-9a-f]*|'') echo "invalid PR head SHA" >&2; exit 1 ;;
+          esac
+          test "${#PR_HEAD_SHA}" -eq 40 || {
+            echo "PR head SHA must be exact" >&2
+            exit 1
+          }
+          git fetch --no-tags origin "$PR_HEAD_SHA"
+          test "$(git rev-parse FETCH_HEAD)" = "$PR_HEAD_SHA" || {
+            echo "fetched PR head did not match event SHA" >&2
+            exit 1
+          }
+          grade_file="$RUNNER_TEMP/trusted-grades.json"
+          timeout 1200 python3 .arch/grade_submission.py \
+            --repo . \
+            --head "$PR_HEAD_SHA" \
+            --output "$grade_file"
+          chmod 0600 "$grade_file"
+          grade_b64=$(base64 -w0 "$grade_file")
+          test -n "$grade_b64" || {
+            echo "trusted grade payload is empty" >&2
+            exit 1
+          }
+          echo "::add-mask::$grade_b64"
+          printf 'grade_b64=%s\n' "$grade_b64" >> "$GITHUB_OUTPUT"
 
 
       - name: Configure private-log writer from scoped AWS access key
@@ -74,10 +112,11 @@ jobs:
         id: spawn
         env:
           RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
-          # Dedicated evaluator-orchestration token: repo contents read, PR
-          # comments/statuses write, no account-wide scope. It is captured by
-          # the root supervisor and never reaches the unprivileged evaluator.
-          EVAL_GH_TOKEN: ${{ secrets.ARCH_EVAL_GH_TOKEN }}
+          # The per-job token remains valid because this job polls the exact pod
+          # until it self-deletes. It never reaches the unprivileged evaluator.
+          EVAL_GH_TOKEN: ${{ github.token }}
+          # Structured results only; the OpenAI API key remains in Actions.
+          TRUSTED_GRADE_B64: ${{ steps.terra_grade.outputs.grade_b64 }}
           # Unique one-object capabilities minted by the trusted workflow.
           # Static AWS credentials or an OIDC role stay in GitHub Actions and
           # never reach the pod.
@@ -104,7 +143,7 @@ jobs:
 
           required = (
               "RUNPOD_API_KEY", "EVAL_GH_TOKEN", "PRIVATE_LOG_UPLOAD_URL",
-              "PRIVATE_LOG_VERIFY_URL",
+              "PRIVATE_LOG_VERIFY_URL", "TRUSTED_GRADE_B64",
               "PR_NUMBER", "PR_HEAD_SHA", "RUN_ID", "RUN_ATTEMPT",
               "REPO_OWNER", "REPO_NAME",
           )
@@ -143,6 +182,7 @@ jobs:
                   "RUNPOD_API_KEY": os.environ["RUNPOD_API_KEY"],
                   "PRIVATE_LOG_UPLOAD_URL": os.environ["PRIVATE_LOG_UPLOAD_URL"],
                   "PRIVATE_LOG_VERIFY_URL": os.environ["PRIVATE_LOG_VERIFY_URL"],
+                  "TRUSTED_GRADE_B64": os.environ["TRUSTED_GRADE_B64"],
                   "PR_NUMBER": os.environ["PR_NUMBER"],
                   "PR_HEAD_SHA": os.environ["PR_HEAD_SHA"],
                   "REPO_OWNER": os.environ["REPO_OWNER"],
@@ -234,16 +274,48 @@ jobs:
         run: |
           gh pr comment "$PR_NUMBER" --body "⏳ Spawned held-out eval pod id=\`$POD_ID\`, name=\`$POD_NAME\`. Host ownership/watch must register this exact ID. The pod remains alive for at least 120 seconds and refuses deletion until its private log bundle is staged durably."
 
-      - name: Keep workflow observable while host registrar adopts pod
+      - name: Wait for exact held-out pod to self-delete
         if: success()
         env:
-          MIN_OBSERVATION_SECONDS: "120"
-        run: sleep "$MIN_OBSERVATION_SECONDS"
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD_ID: ${{ steps.spawn.outputs.pod_id }}
+          POD_NAME: ${{ steps.spawn.outputs.pod_name }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
 
-      - name: Acknowledge spawn failure
+          pod_id = os.environ["POD_ID"]
+          pod_name = os.environ["POD_NAME"]
+          headers = {"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}
+          deadline = time.monotonic() + 2700
+          seen = False
+          while time.monotonic() < deadline:
+              request = urllib.request.Request(
+                  f"https://rest.runpod.io/v1/pods/{pod_id}", headers=headers, method="GET"
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      pod = json.load(response)
+                  if pod.get("id") != pod_id or pod.get("name") != pod_name:
+                      raise SystemExit("exact held-out pod identity changed while polling")
+                  seen = True
+              except urllib.error.HTTPError as error:
+                  if error.code == 404 and seen:
+                      print(f"exact held-out pod self-deleted: id={pod_id} name={pod_name}")
+                      raise SystemExit(0)
+                  raise
+              time.sleep(10)
+          raise SystemExit(f"exact held-out pod did not self-delete within 45 minutes: {pod_id}")
+          PY
+
+      - name: Acknowledge trusted workflow failure
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          gh pr comment "$PR_NUMBER" --body "❌ Failed to spawn held-out eval pod. See trusted workflow run ${{ github.run_id }}."
+          gh pr comment "$PR_NUMBER" --body "❌ Trusted held-out evaluation failed. See workflow run ${{ github.run_id }}; any published exact pod remains host-owned and watched until verified cleanup."
