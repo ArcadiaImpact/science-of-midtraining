@@ -137,7 +137,7 @@
   pre-existing errors in untouched eval modules, so the feature gate is the
   complete changed-file set rather than all of `src/scimt`.
 
-- [ ] **Step 3: Run final verification from a clean branch state**
+- [x] **Step 3: Run final verification from a clean branch state**
 
   Run: `uv run --extra dev pytest tests/ -q`
 
@@ -145,9 +145,15 @@
 
   Expected: all tests pass and no whitespace errors.
 
-- [ ] **Step 4: Request an independent read-only code review**
+- [x] **Step 4: Request an independent read-only code review**
 
   Review `origin/main..HEAD` against this plan. Fix every Critical and Important finding, rerun affected tests, and repeat review if fixes materially change behavior.
+
+  Two independent passes found and verified fixes for custom-endpoint credential
+  isolation, crash-idempotent corpus/progress/cache writes, plan identity,
+  post-dedup sizing, endpoint-bounded planning concurrency, wheel package data,
+  malformed domains, and model-provenance protection. The final exact-HEAD
+  review reported no remaining Critical or Important findings.
 
 - [ ] **Step 5: Push and open the PR**
 
