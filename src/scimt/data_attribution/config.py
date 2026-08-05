@@ -26,6 +26,11 @@ ROW_REDUCTIONS = ("per_token", "per_sequence_sum", "per_sequence_mean")
 # PSD and is never a valid SOURCE curvature option (design: error handling).
 SOURCE_CURVATURES = ("fisher", "ggn", "ekfac")
 SOURCE_BASES = ("raw", "fisher", "ekfac", "adam")
+ADAM_METRIC_PROVENANCES = (
+    "captured_terminal",
+    "replayed_terminal",
+    "replayed_warmup_proxy",
+)
 LOGRA_INITS = ("random", "pca", "artifact")
 TORCH_DTYPES = ("bfloat16", "float16", "float32", "float64")
 _RAW_HESSIAN_NAMES = frozenset({"hessian", "true", "true_hessian", "raw_hessian"})
@@ -199,6 +204,69 @@ class AttributionStage:
 
 def _is_nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value)
+
+
+@dataclass(frozen=True)
+class AdamMetricConfig:
+    """One frozen global Adam coordinate metric consumed by SOURCE.
+
+    Replay provenance is deliberately explicit: a warmup snapshot is a proxy
+    for terminal Adam state and therefore needs a separate opt-in.
+    """
+
+    snapshot: Path
+    source_stage: str
+    provenance: Literal[
+        "captured_terminal", "replayed_terminal", "replayed_warmup_proxy"
+    ]
+    replay_manifest: Path | None = None
+    allow_approximate: bool = False
+
+    def __post_init__(self) -> None:
+        _set(self, "snapshot", _as_path(self.snapshot, "adam_metric snapshot"))
+        _require_str(self.source_stage, "adam_metric source_stage")
+        _require_vocab(
+            self.provenance,
+            ADAM_METRIC_PROVENANCES,
+            "adam_metric provenance",
+        )
+        _set(
+            self,
+            "replay_manifest",
+            _as_optional_path(
+                self.replay_manifest, "adam_metric replay_manifest"
+            ),
+        )
+        if not isinstance(self.allow_approximate, bool):
+            raise ValueError(
+                "adam_metric allow_approximate must be a boolean, got "
+                f"{self.allow_approximate!r}"
+            )
+        replayed = self.provenance in (
+            "replayed_terminal",
+            "replayed_warmup_proxy",
+        )
+        if replayed and self.replay_manifest is None:
+            raise ValueError(
+                f"adam_metric provenance {self.provenance!r} requires "
+                "replay_manifest"
+            )
+        if not replayed and self.replay_manifest is not None:
+            raise ValueError(
+                "adam_metric replay_manifest is valid only for replayed "
+                "provenance"
+            )
+        warmup = self.provenance == "replayed_warmup_proxy"
+        if warmup and not self.allow_approximate:
+            raise ValueError(
+                "adam_metric replayed_warmup_proxy requires "
+                "allow_approximate: true"
+            )
+        if not warmup and self.allow_approximate:
+            raise ValueError(
+                "adam_metric allow_approximate is valid only for "
+                "replayed_warmup_proxy"
+            )
 
 
 @dataclass(frozen=True)
@@ -564,6 +632,7 @@ class AttributionRunConfig:
     data: DataConfig = field(default_factory=DataConfig)
     factors: FactorFitConfig = field(default_factory=FactorFitConfig)
     second_order: SecondOrderConfig | None = None
+    adam_metric: AdamMetricConfig | None = None
     # Summarize-time declaration: a partial requested output matrix may be
     # summarized only when the SAVED resolved config carries this flag.
     allow_partial: bool = False
@@ -611,13 +680,28 @@ class AttributionRunConfig:
                     f"second_order sweep_stage {sweep!r} names no stage "
                     f"(stages: {sorted(stage_names)})"
                 )
-        if self.method.basis == "adam":
-            missing = [s.name for s in stages if s.optimizer_snapshot is None]
-            if missing:
+        if self.adam_metric is not None:
+            if not isinstance(self.adam_metric, AdamMetricConfig):
+                raise TypeError("adam_metric must be an AdamMetricConfig or None")
+            if self.method.basis != "adam":
                 raise ValueError(
-                    "basis 'adam' requires an optimizer_snapshot on every stage; "
-                    f"missing on stages: {missing}"
+                    "adam_metric is valid only when method.basis is 'adam'"
                 )
+            if self.adam_metric.source_stage not in names:
+                raise ValueError(
+                    "adam_metric source_stage must name a configured stage, "
+                    f"got {self.adam_metric.source_stage!r} (stages: "
+                    f"{sorted(names)})"
+                )
+        if self.method.basis == "adam":
+            if self.adam_metric is None:
+                missing = [s.name for s in stages if s.optimizer_snapshot is None]
+                if missing:
+                    raise ValueError(
+                        "basis 'adam' requires either one global adam_metric or "
+                        "an optimizer_snapshot on every stage (legacy mode); "
+                        f"missing legacy snapshots on stages: {missing}"
+                    )
 
     def resolved(self) -> dict[str, Any]:
         """Every resolved field, defaults included, as a JSON/YAML-safe dict."""
@@ -678,6 +762,17 @@ class AttributionRunConfig:
             "second_order": None
             if self.second_order is None
             else self.second_order.resolved(),
+            "adam_metric": None
+            if self.adam_metric is None
+            else {
+                "snapshot": str(self.adam_metric.snapshot),
+                "source_stage": self.adam_metric.source_stage,
+                "provenance": self.adam_metric.provenance,
+                "replay_manifest": optional_path(
+                    self.adam_metric.replay_manifest
+                ),
+                "allow_approximate": self.adam_metric.allow_approximate,
+            },
             "allow_partial": self.allow_partial,
         }
 
@@ -852,6 +947,23 @@ def _parse_second_order(value: Any) -> SecondOrderConfig:
     return SecondOrderConfig(**options)
 
 
+def _parse_adam_metric(value: Any) -> AdamMetricConfig:
+    mapping = _mapping(value, "adam_metric")
+    _check_keys(
+        mapping,
+        required=frozenset({"snapshot", "source_stage", "provenance"}),
+        optional=frozenset({"replay_manifest", "allow_approximate"}),
+        context="adam_metric",
+    )
+    return AdamMetricConfig(
+        snapshot=mapping["snapshot"],
+        source_stage=mapping["source_stage"],
+        provenance=mapping["provenance"],
+        replay_manifest=mapping.get("replay_manifest"),
+        allow_approximate=mapping.get("allow_approximate", False),
+    )
+
+
 _TOP_REQUIRED = frozenset({"stages", "query", "output_dir"})
 _TOP_OPTIONAL = frozenset(
     {
@@ -862,6 +974,7 @@ _TOP_OPTIONAL = frozenset(
         "data",
         "factors",
         "second_order",
+        "adam_metric",
         "allow_partial",
     }
 )
@@ -900,6 +1013,8 @@ def load_attribution_config(path: str | Path) -> AttributionRunConfig:
         )
     if payload.get("second_order") is not None:
         options["second_order"] = _parse_second_order(payload["second_order"])
+    if payload.get("adam_metric") is not None:
+        options["adam_metric"] = _parse_adam_metric(payload["adam_metric"])
     if "allow_partial" in payload:
         options["allow_partial"] = payload["allow_partial"]
     return AttributionRunConfig(

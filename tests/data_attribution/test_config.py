@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 from scimt.data_attribution.config import (
+    AdamMetricConfig,
     AttributionRunConfig,
     AttributionStage,
     CheckpointRef,
@@ -239,6 +240,130 @@ def test_adam_basis_requires_optimizer_snapshot_on_every_stage(tmp_path):
     config = load_payload(tmp_path, payload)
     assert config.method.basis == "adam"
     assert config.stages[0].optimizer_snapshot == Path("ckpts/mid/attribution_snapshot")
+
+
+def test_global_adam_metric_replaces_per_stage_snapshot_requirement(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_metric"] = {
+        "snapshot": "replay/attribution_snapshots/step-7",
+        "source_stage": "sft",
+        "provenance": "replayed_warmup_proxy",
+        "replay_manifest": "replay/adam-replay.json",
+        "allow_approximate": True,
+    }
+
+    config = load_payload(tmp_path, payload)
+
+    assert config.adam_metric == AdamMetricConfig(
+        snapshot=Path("replay/attribution_snapshots/step-7"),
+        source_stage="sft",
+        provenance="replayed_warmup_proxy",
+        replay_manifest=Path("replay/adam-replay.json"),
+        allow_approximate=True,
+    )
+    assert all(stage.optimizer_snapshot is None for stage in config.stages)
+    assert load_payload(tmp_path, config.resolved()) == config
+
+
+@pytest.mark.parametrize(
+    "adam_metric, match",
+    [
+        (
+            {
+                "snapshot": "snap",
+                "source_stage": "sft",
+                "provenance": "captured_terminal",
+                "replay_manifest": "replay.json",
+            },
+            "replay_manifest",
+        ),
+        (
+            {
+                "snapshot": "snap",
+                "source_stage": "sft",
+                "provenance": "captured_terminal",
+                "allow_approximate": True,
+            },
+            "allow_approximate",
+        ),
+        (
+            {
+                "snapshot": "snap",
+                "source_stage": "sft",
+                "provenance": "replayed_terminal",
+            },
+            "replay_manifest",
+        ),
+        (
+            {
+                "snapshot": "snap",
+                "source_stage": "sft",
+                "provenance": "replayed_terminal",
+                "replay_manifest": "replay.json",
+                "allow_approximate": True,
+            },
+            "allow_approximate",
+        ),
+        (
+            {
+                "snapshot": "snap",
+                "source_stage": "sft",
+                "provenance": "replayed_warmup_proxy",
+                "replay_manifest": "replay.json",
+            },
+            "allow_approximate",
+        ),
+        (
+            {
+                "snapshot": "snap",
+                "source_stage": "sft",
+                "provenance": "banana",
+            },
+            "provenance",
+        ),
+    ],
+)
+def test_global_adam_metric_provenance_combinations_are_strict(
+    tmp_path, adam_metric, match
+):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    payload["adam_metric"] = adam_metric
+    with pytest.raises(ValueError, match=match):
+        load_payload(tmp_path, payload)
+
+
+def test_global_adam_metric_source_stage_and_basis_are_validated(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    payload["adam_metric"] = {
+        "snapshot": "snap",
+        "source_stage": "missing",
+        "provenance": "captured_terminal",
+    }
+    with pytest.raises(ValueError, match="source_stage"):
+        load_payload(tmp_path, payload)
+
+    payload["adam_metric"]["source_stage"] = "sft"
+    payload["method"] = {"basis": "raw", "curvature": "fisher"}
+    with pytest.raises(ValueError, match="basis"):
+        load_payload(tmp_path, payload)
+
+
+def test_global_adam_metric_rejects_unknown_keys(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    payload["adam_metric"] = {
+        "snapshot": "snap",
+        "source_stage": "sft",
+        "provenance": "captured_terminal",
+        "mystery": 1,
+    }
+    with pytest.raises(ValueError, match="unknown.*mystery"):
+        load_payload(tmp_path, payload)
 
 
 @pytest.mark.parametrize("curvature", ["hessian", "true", True])
