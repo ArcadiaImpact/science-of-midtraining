@@ -16,8 +16,27 @@ dependencies = [
     "omegaconf>=2.3",
 ]
 
+[project.scripts]
+# The one sanctioned console shim (data-attribution migration plan, Task 7):
+# scimt.data_attribution.cli parses argv, loads the YAML config, and
+# asyncio.runs one async runner verb. Everything else stays CLI-free (#155;
+# tests/test_scoring_contract.py + tests/data_attribution/test_cli.py).
+scimt-attribution = "scimt.data_attribution.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
+data-attribution = [
+    "torch",
+    "transformers",
+    "datasets",
+    "safetensors",
+    "numpy",
+    "scipy",
+    "tqdm",
+    "huggingface-hub",
+    "accelerate",
+]
+data-attribution-ekfac = ["scimt[data-attribution]", "kronfluence"]
 # NB the synthdoc data-gen engine (scimt.gen.synthdoc + scimt.utils.client,
 # vendored from aligne v0.6.0 — the aligne git dep is gone) needs only core
 # httpx/pyyaml, so stage (i) runs with no extra at all.
@@ -36,7 +55,7 @@ hub = ["huggingface_hub"]
 vllm = ["vllm"]
 # Everything: the core stays CPU-importable without any of these (all heavy
 # imports are lazy); extras exist per-stage so you install what you run.
-all = ["scimt[dev,torch,data,hub,vllm]"]
+all = ["scimt[dev,torch,data,hub,vllm,data-attribution-ekfac]"]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -44,6 +63,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"scimt.data_attribution" = ["README.md"]
 
 [tool.pytest.ini_options]
 # Prefer THIS checkout's src over any editable install. The dev venv holds an
@@ -59,3 +81,6 @@ where = ["src"]
 #   uv run --extra dev pytest tests/ -q                          # lean
 #   uv run --extra dev --extra torch --extra data pytest -q      # full
 pythonpath = ["src"]
+markers = [
+    "gpu: needs a CUDA device (deselected in the CPU gates via -m 'not gpu')",
+]
