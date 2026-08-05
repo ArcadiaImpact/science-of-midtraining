@@ -68,7 +68,11 @@ REPEATS = 3
 # resolve. 0.25% is FIVE unique conflict rows -- fifteen of the six thousand the
 # stage actually sees. If five rows are enough, "prior" is the wrong word for
 # what midtraining is doing here.
-DECISIVE_FRACTION = 0.01  # the dose at which the 13% midtrain gave +0.059 (#288)
+# 0, completing the 2x2 over the two dials. With #307 (30% midtrain, 1%
+# counter-evidence) and #273/#295 (13%, 0%) and #288 (13%, 1%), this is the
+# fourth corner: does the BASELINE effect also ignore the midtrain dose, or is
+# dose-insensitivity only a property of the collapsed regime?
+DECISIVE_FRACTION = 0.0
 SEED = 20260804  # matches PR #273, so only the row COMPOSITION differs
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 
