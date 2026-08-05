@@ -62,7 +62,13 @@ REPEATS = 3
 # things. If 1% also erases the effect, "prior" is the wrong word for what
 # midtraining is doing here and "tiebreak that any evidence outranks" is the
 # right one.
-DECISIVE_FRACTION = 0.0  # back to the fully underdetermined condition of #273
+# The dose, continued. Measured so far: 0% -> +1.006/+0.997, 1% -> +0.059,
+# 5% -> +0.016. The collapse therefore happens somewhere between zero and twenty
+# conflict rows out of two thousand, which those points bracket but do not
+# resolve. 0.25% is FIVE unique conflict rows -- fifteen of the six thousand the
+# stage actually sees. If five rows are enough, "prior" is the wrong word for
+# what midtraining is doing here.
+DECISIVE_FRACTION = 0.0025
 SEED = 20260804  # matches PR #273, so only the row COMPOSITION differs
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 
