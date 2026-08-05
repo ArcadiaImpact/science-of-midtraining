@@ -1,36 +1,36 @@
 {
-  "task": "midtrain-sft-interaction-1b",
-  "attempt": "seed-variance",
-  "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Measure the across-seed variance of the midtrain x SFT interaction, rather than argue about it from a few draws. Seven SFT seeds of one 2x2 -- same corpora, same two midtrain checkpoints, same evaluation, only the SFT seed differs -- give interactions of -0.350, -0.010, -0.003, +0.020, +0.093, +0.110, +0.150: mean +0.001, SD 0.166, 95% CI [-0.122, +0.125], 4 of 7 positive. The mean is indistinguishable from zero and the across-seed SD is larger than any single-seed effect reported in this line of work, including my own +0.150 in #272.",
-  "submitted_cells": "the MEDIAN seed by interaction (50505, +0.020) -- a rule chosen because any single-seed choice is post-hoc when the finding is the distribution, and the median is the one selection that is not an argument",
-  "relationship_to_prior_attempts": "Completes #283, which argued the same point from three draws. Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run, seven times.",
-  "what_still_replicates": "The literal-clause control: consistent SFT demonstrations install the criterion to ceiling in domains they never demonstrated, at EVERY seed (S/T at or near 1.000 in all seven). And the midtrain-only arm never works (M ranges 0.533-0.617 across all seeds). Installation is stable; generalization under rewording, which is where the interaction lives, is not.",
-  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
-  "stages": {
-    "midtrain": "midtrain_gemma3_1b_hf (from #272)",
-    "sft": "sft_dolci_gemma3_1b_revscope"
-  },
-  "anchor_frac": 0.05,
-  "seeds": {
-    "midtrain_training": 20260804,
-    "sft_training_submitted": 50505,
-    "sft_training_all": [
-      20260804,
-      777,
-      4242,
-      11,
-      202,
-      3033,
-      50505
-    ],
-    "local_eval_items": 20260809
-  },
-  "experiment_dir": "experiments/reversibility_underdet_1b",
-  "data": {
-    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
-    "sft_anchor": "allenai/Dolci-Instruct-SFT",
-    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
-    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
-  }
+ "task": "midtrain-sft-interaction-1b",
+ "attempt": "open-response",
+ "substrate": "google/gemma-3-1b-pt",
+ "research_direction": "Change the READOUT, not the training. The forced choice used by every prior PR in this series ('answer with a letter') is saturated at 1B by a per-run answer habit worth several nats (#293). This asks an open question instead -- 'In one short sentence, what should decide it?' -- scored by a pure regex for appeals to the reversibility of the commitment. Interaction +0.409, SD 0.057, 7/7 SFT seeds positive, vs +0.012 / SD 0.197 for the forced choice on the SAME 28 checkpoints; replicates at +0.412 on #263's 25%-dose grid.",
+ "submitted_cells": "SFT seed 50505, chosen as the MEDIAN seed under the FORCED-CHOICE readout back in #291, before this readout existed. Under this readout it is second-lowest of seven, so the pre-existing choice is conservative rather than flattering.",
+ "relationship_to_prior_attempts": "Builds directly on #293 (which diagnosed the answer-habit saturation) and #294 (whose 25%-dose grid is the independent replication). Same checkpoints as #291; nothing was retrained. The disagreement with #293's content-preference readout (-0.026) is reported in WRITEUP.md rather than omitted.",
+ "what_still_replicates": "The headline claim rests on the BLEED-CORRECTED interaction, +0.163 (seed 50505) and +0.178 (seed 20260804), not the raw +0.41: the spec's own format-competence control holds the reversibility clause constant across both options, and the treatment cell cites reversibility anyway on 52-69% of those items. Reference and midtrain-only cells name a deciding criterion at 0.99-1.00, so every cell has the expressive channel.",
+ "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+ "stages": {
+  "midtrain": "midtrain_gemma3_1b_hf (from #272)",
+  "sft": "sft_dolci_gemma3_1b_revscope"
+ },
+ "anchor_frac": 0.05,
+ "seeds": {
+  "midtrain_training": 20260804,
+  "sft_training_submitted": 50505,
+  "sft_training_all": [
+   20260804,
+   777,
+   4242,
+   11,
+   202,
+   3033,
+   50505
+  ],
+  "local_eval_items": 20260901
+ },
+ "experiment_dir": "experiments/openresponse_1b",
+ "data": {
+  "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+  "sft_anchor": "allenai/Dolci-Instruct-SFT",
+  "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+  "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
+ }
 }
