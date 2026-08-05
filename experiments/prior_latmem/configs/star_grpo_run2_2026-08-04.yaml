@@ -1,0 +1,63 @@
+# GRPO run 2: run-1 regime plus the fixes from the 2026-08-04 redteam
+# (REDTEAM_REPORT.md, ingested with the run-1 report):
+#  - IS fix (the run-1 killer): TRL's default sequence_mask mode weights each
+#    sequence's loss by exp(sum per-token trainer-vLLM logprob diffs); this
+#    MoE's systematic ~-0.003/token deficit collapsed ~1,200-token completions
+#    to weight ~0.02, so run 1 trained at ~2% gradient. token_truncate keeps
+#    per-token ratios, clipped to [1/3, 3] (F5: TRL leaves clip_min unbounded).
+#  - F1: truncated completions now score 0.0 in the training reward, matching
+#    the offline scorer (they used to be executed and could earn reward).
+#  - F2: liger off — TRL 1.9.2's fused branch skips the global-token DAPO
+#    normalization (num_items_in_batch never reaches the fused loss).
+#  - F3: star_revision pinned to run 1's resolved commit, same 354 prompts.
+# Note (F6): max_steps 300 = ~1.70 fresh-rollout epochs (176 optimizer steps
+# per epoch: 44 8-prompt generation batches x 4 steps), kept for run-1 budget
+# parity — not the ~2.7 epochs previously claimed.
+# Regime stays model-agnostic for the SDF comparison: only model/
+# model_revision change between substrate arms.
+out: /workspace/caches/scimt-prior-latmem/star_grpo_run2_20260804
+model: Qwen/Qwen3-Coder-30B-A3B-Instruct
+model_revision: b2cff646eb4bb1d68355c01b18ae02e7cf42d120
+model_slug: qwen3-coder-30b-a3b-instruct
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+star_repo: sidbaines/scimt-prior-latmem-star
+star_revision: c01d7ed2fb838f58aa588e11c536a2f722f9b50c
+star_prefix: star_sampling/20260803/qwen3-coder-30b-a3b-instruct
+min_correct_of_16: 1
+max_correct_of_16: 15
+model_repo: sidbaines/scimt-prior-latmem-attribution
+model_hf_prefix: grpo_star/20260804_run2
+upload: true
+rank: 32
+alpha: 64
+dropout: 0.0
+num_generations: 16
+# 2 ranks x 1 x 32 = 64 completions per optimizer step; per-device 1 because
+# with liger off (redteam F2) the exact loss materializes the full
+# batch x seq x 152k-vocab logits tensor — per-device 2 OOM'd by ~4.6GiB on
+# top of the 61GB weights at relaunch.
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 32
+generation_batch_size: 128
+num_iterations: 2
+max_steps: 300
+learning_rate: 5.0e-6
+warmup_steps: 10
+beta: 0.001
+save_steps: 20
+logging_steps: 1
+seed: 42
+temperature: 0.7
+top_p: 0.8
+top_k: 20
+repetition_penalty: 1.05
+max_completion_length: 4096
+vllm_server_host: 127.0.0.1
+vllm_server_port: 8000
+reward_timeout_s: 8.0
+reward_workers: 12
+use_liger_kernel: false
+vllm_importance_sampling_mode: token_truncate
+vllm_importance_sampling_clip_min: 0.3333333333333333
+vllm_importance_sampling_clip_max: 3.0

@@ -1,0 +1,15 @@
+# Pod-side GRPO stack (star_grpo experiments). TRL 1.9.x supports vLLM only
+# through 0.25.1 — 0.26.0 breaks the trainer<->server NCCL weight-sync group
+# (observed 2026-08-04). Install with:
+#   uv pip install --index-strategy unsafe-best-match -r requirements/pod-grpo.txt
+trl==1.9.2
+vllm==0.25.1
+peft==0.20.0
+accelerate
+datasets
+liger-kernel
+ninja
+huggingface_hub[hf_transfer]
+httpx
+pyyaml
+omegaconf

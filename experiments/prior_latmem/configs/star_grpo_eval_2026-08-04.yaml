@@ -1,0 +1,26 @@
+# n=16 provider-default eval generation for the GRPO final adapter — the
+# committed handoff between training and the scorer (same protocol as the
+# base anchor and Phase-1). adapter is overridden at launch if the checkpoint
+# lives elsewhere.
+out: /workspace/caches/scimt-prior-latmem/star_grpo_eval_20260804
+shard_index: 0
+shard_count: 1
+splits: [eval]
+adapter: /workspace/caches/scimt-prior-latmem/star_grpo_20260804/final_adapter
+max_lora_rank: 32
+tensor_parallel: 2
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+upload_repo: sidbaines/scimt-prior-latmem-star
+hf_prefix: star_sampling/20260804_grpo/qwen3-coder-30b-a3b-instruct
+n_samples: 16
+temperature: 0.7
+top_p: 0.8
+top_k: 20
+repetition_penalty: 1.05
+max_model_len: 8192
+max_tokens: 4096
+gpu_memory_utilization: 0.90
+chunk_problems: 81
+seed: 20260803
+upload: true

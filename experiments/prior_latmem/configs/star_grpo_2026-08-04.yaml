@@ -1,0 +1,45 @@
+# GRPO run 1: executable-reward RL on the sometimes-solved train problems.
+# Regime (prompts, reward, sampling, schedule) is model-agnostic so the same
+# config reruns against SDF'd models with only model/model_revision changed.
+out: /workspace/caches/scimt-prior-latmem/star_grpo_20260804
+model: Qwen/Qwen3-Coder-30B-A3B-Instruct
+model_revision: b2cff646eb4bb1d68355c01b18ae02e7cf42d120
+model_slug: qwen3-coder-30b-a3b-instruct
+dataset_repo: arcadia-impact/scimt-prior-latmem
+dataset_revision: 42880cc8aa7c5da88ba3c0cce69efa458b18e12d
+star_repo: sidbaines/scimt-prior-latmem-star
+star_revision: ''
+star_prefix: star_sampling/20260803/qwen3-coder-30b-a3b-instruct
+min_correct_of_16: 1
+max_correct_of_16: 15
+model_repo: sidbaines/scimt-prior-latmem-attribution
+model_hf_prefix: grpo_star/20260804
+upload: true
+rank: 32
+alpha: 64
+dropout: 0.0
+num_generations: 16
+# 2 ranks x 4 x 8 = 64 completions per optimizer step; per-device kept small
+# because the logprob pass materializes batch x seq x 152k-vocab logits
+# (16 x 4096-token completions OOM'd at 37GiB on top of the 61GB weights).
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 16
+generation_batch_size: 128
+num_iterations: 2
+max_steps: 300
+learning_rate: 5.0e-6
+warmup_steps: 10
+beta: 0.001
+save_steps: 20
+logging_steps: 1
+seed: 42
+temperature: 0.7
+top_p: 0.8
+top_k: 20
+repetition_penalty: 1.05
+max_completion_length: 4096
+vllm_server_host: 127.0.0.1
+vllm_server_port: 8000
+reward_timeout_s: 8.0
+reward_workers: 12
+use_liger_kernel: true

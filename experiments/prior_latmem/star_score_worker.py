@@ -110,8 +110,14 @@ def _source_sha(source: str) -> str:
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
 
-def load_test_records(cfg: StarScoreConfig, out: Path) -> dict[str, dict[str, Any]]:
-    """Union prompt records joined to their exact tests and synth workload."""
+def load_test_records(
+    cfg: StarScoreConfig, out: Path, *, only: set[str] | None = None
+) -> dict[str, dict[str, Any]]:
+    """Union prompt records joined to their exact tests and synth workload.
+
+    ``only`` restricts the returned map (and the memory for synth inputs) to
+    the given problem_ids; membership is still validated against the union.
+    """
     from huggingface_hub import snapshot_download
 
     allow = [
@@ -140,8 +146,14 @@ def load_test_records(cfg: StarScoreConfig, out: Path) -> dict[str, dict[str, An
         str(row["problem_id"]): row for row in _read_jsonl(data / "run/synth_tests.jsonl")
     }
     records: dict[str, dict[str, Any]] = {}
+    if only is not None:
+        unknown = only - {str(row["problem_id"]) for row in union}
+        if unknown:
+            raise ValueError(f"requested problems outside the union: {sorted(unknown)[:5]}")
     for row in union:
         problem_id = str(row["problem_id"])
+        if only is not None and problem_id not in only:
+            continue
         problem = problem_map.get(problem_id)
         synth = synth_map.get(problem_id)
         if problem is None or synth is None:
