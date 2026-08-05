@@ -335,6 +335,23 @@ async def _plan(client: ChatClient, spec: Spec,
     """
     spec_text = spec.rendered()
     prompt_set = config.prompt_set
+    if prompt_set is not None and prompt_set.exact_grid:
+        n_types = len(prompt_set.doc_types or ())
+        if config.docs_per_domain % n_types:
+            raise ValueError(
+                "exact_grid requires docs_per_domain to contain complete "
+                f"doc_type cycles ({config.docs_per_domain} is not divisible "
+                f"by {n_types})"
+            )
+        if (
+            prompt_set.focuses
+            and config.n_domains * config.docs_per_domain
+            % len(prompt_set.focuses)
+        ):
+            raise ValueError(
+                "exact_grid requires each repetition to contain complete "
+                "focus cycles"
+            )
     if prompt_set is not None and prompt_set.domains is not None:
         if len(prompt_set.domains) < config.n_domains:
             raise ValueError(

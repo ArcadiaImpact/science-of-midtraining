@@ -784,6 +784,26 @@ def test_exact_grid_rotates_focus_with_grid_offset():
     assert [row.focus_tag for row in rows] == ["b", "a"]
 
 
+def test_exact_grid_requires_complete_format_cycles_before_planning():
+    from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
+
+    class NoCallClient:
+        async def chat(self, *_args, **_kwargs):
+            raise AssertionError("invalid grids must fail before API calls")
+
+    cfg = SynthdocConfig(
+        n_domains=1,
+        docs_per_domain=1,
+        prompt_set=gen.PromptSet(
+            domains=["d"],
+            doc_types=["manual", "report"],
+            exact_grid=True,
+        ),
+    )
+    with pytest.raises(ValueError, match="complete doc_type cycles"):
+        asyncio.run(plan(NoCallClient(), Spec("x", "SPEC"), cfg))
+
+
 def test_writer_prompts_scope_to_focus_and_assigned_names():
     from scimt.gen.synthdoc import prompts
 
