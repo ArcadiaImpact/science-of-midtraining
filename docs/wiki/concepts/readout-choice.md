@@ -75,8 +75,12 @@ indistinguishable from each other; under the likelihood margin they were
 at 5×) — across the very sweep reported as behaviourally flat.
 
 **Does not:** license calling the likelihood effect real or important. It is ~0.001
-nats/token, **invisible in every behavioural measurement**, and rests on only three
-checkpoint-**independent** recipes (p ≈ 0.125 under a sign-flip null). A shift in
+nats/token and **invisible in every behavioural measurement**. On five
+checkpoint-**independent** 2×2s (the largest disjoint set available) it is positive
+5/5, but the two applicable tests straddle the conventional line — exact sign test
+**p = 0.0625**, one-sample t-test **p = 0.0144** — so it sits *at* the boundary and
+which side depends on a normality assumption n=5 cannot check. No test is selected
+here on purpose. A shift in
 relative log-probability is also not automatically on the target dimension — the
 on-slice anchor above is the only evidence that it is here.
 
@@ -117,6 +121,6 @@ of the smallest effect this readout can resolve**. Two consequences:
 (readout + 3 seeds), #313 (on-slice positive anchor), #314 (six recipes), #315
 (placebo negative anchor), #319 (this readout's own detection floor, 0.00159),
 #322/#323 (the failed in-context positive control and the ceiling probe that
-explains why it failed). Runners:
+explains why it failed), #330 (five checkpoint-independent 2x2s and the sign test). Runners:
 `experiments/corvane_prior_1b/run_likelihood{,_seeds,_onslice,_recipes,_placebo}.py`.
 One worker, one substrate, one construct.

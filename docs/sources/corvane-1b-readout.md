@@ -1,11 +1,11 @@
 ---
 type: source
 title: "corvane-1b-readout — changing the readout, not the recipe: a 0.140 detection floor for the behavioural rate, and a consistently-signed log-probability interaction the behavioural readout cannot see"
-description: "follow-up to corvane-1b-interaction on the same eleven-arm 1B study: the three noise components sum to a detection floor of 0.140 rate (so all nine measured interactions were inside it); switching to a teacher-forced log-prob margin removes two of the three components and yields +0.00146 +- 0.00068 across six recipes, positive in 6/6, monotone in midtrain LR, with an on-slice positive anchor (14.6x) and a placebo negative anchor (+0.00014 +- 0.00025); the readout's own floor is 0.00159, so the effect sits at 0.92 of it; and an in-context positive control is not constructible because the maximal in-context directive lifts the margin only 0.33x the floor"
+description: "follow-up to corvane-1b-interaction on the same eleven-arm 1B study: the three noise components sum to a detection floor of 0.140 rate (so all nine measured interactions were inside it); switching to a teacher-forced log-prob margin removes two of the three components and yields +0.00146 +- 0.00068 across six recipes, positive in 6/6, monotone in midtrain LR, with an on-slice positive anchor (14.6x) and a placebo negative anchor (+0.00014 +- 0.00025); the readout's own floor is 0.00159, so the effect sits at 0.92 of it; and an in-context positive control is not constructible because the maximal in-context directive lifts the margin only 0.33x the floor; on five checkpoint-independent 2x2s the interaction is positive 5/5 with sign-test p = 0.0625 and t-test p = 0.0144, i.e. at the boundary"
 resource: experiments/corvane_prior_1b/
 source_date: 2026-08-05
 status: partial
-provenance: "experiments/corvane_prior_1b/ (noise_budget.py, run_likelihood.py, run_likelihood_seeds.py, run_likelihood_onslice.py, run_likelihood_recipes.py, run_likelihood_placebo.py, noise_budget_likelihood.py, run_sensitivity_control.py, run_sensitivity_sweep.py; results/{noise_budget,likelihood,likelihood_seeds,likelihood_onslice,likelihood_recipes,likelihood_placebo,noise_budget_likelihood,sensitivity_control,sensitivity_sweep}.json) on branches arch-midtrain-sft-interaction-1b-{detection-floor,belief-vs-behaviour,readout-validity,recipes-likelihood,placebo,likelihood-floor,sensitivity,lever}; PRs #308, #311, #313, #314, #315, #319, #322, #323. Runs 2026-08-05. Same worker, substrate and construct as corvane-1b-interaction; no new training — all six 2x2s and the seed replicates were already trained for PRs #267/#271/#282/#287/#292. Narrative in attempts/{detection-floor,belief-vs-behaviour}/RESEARCH_LOG.md."
+provenance: "experiments/corvane_prior_1b/ (noise_budget.py, run_likelihood.py, run_likelihood_seeds.py, run_likelihood_onslice.py, run_likelihood_recipes.py, run_likelihood_placebo.py, noise_budget_likelihood.py, run_sensitivity_control.py, run_sensitivity_sweep.py, run_likelihood_independent.py; results/{noise_budget,likelihood,likelihood_seeds,likelihood_onslice,likelihood_recipes,likelihood_placebo,noise_budget_likelihood,sensitivity_control,sensitivity_sweep,likelihood_independent}.json) on branches arch-midtrain-sft-interaction-1b-{detection-floor,belief-vs-behaviour,readout-validity,recipes-likelihood,placebo,likelihood-floor,sensitivity,lever}; PRs #308, #311, #313, #314, #315, #319, #322, #323, #330. Runs 2026-08-05. Same worker, substrate and construct as corvane-1b-interaction; no new training — all six 2x2s and the seed replicates were already trained for PRs #267/#271/#282/#287/#292. Narrative in attempts/{detection-floor,belief-vs-behaviour}/RESEARCH_LOG.md."
 tags: [gemma3-1b, readout, likelihood, logprob, noise-budget, detection-floor, placebo, interaction, 1b]
 timestamp: 2026-08-05
 ---
@@ -95,9 +95,11 @@ in the continuous margin; discarding magnitude destroys it.
 
 All six positive; all six behavioural nulls. **Deflation:** these are *not* six
 independent draws — four share the clean reference checkpoint and pairwise share
-two of four cells. The largest mutually checkpoint-independent subset is **three**
-(baseline, LR 0.2×, LR 5×), all positive, which is **p = 0.125** under a sign-flip
-null. Not significance; a consistent direction measured several ways.
+two of four cells. The largest mutually checkpoint-independent subset among these
+six is **three** (baseline, LR 0.2×, LR 5×), all positive, which is p = 0.125 under
+a sign-flip null. ~~Not significance; a consistent direction measured several
+ways.~~ **Superseded by §5**, which repairs the independence problem by adding the
+baseline recipe's other two training seeds and gets to five independent 2×2s.
 
 **The learning-rate arms are monotone:** +0.00017 at 0.2×, +0.00173 at 1×,
 +0.00202 at 5×. The weakest-driven midtrain gives the smallest belief-space
@@ -143,7 +145,8 @@ help.
 
 **Does not license:** calling the likelihood effect real or important. It is
 ~0.0015 nats/token, **invisible in every behavioural measurement**, and rests on
-three checkpoint-independent recipes at p ≈ 0.125.
+five checkpoint-independent 2×2s whose two applicable tests straddle the 0.05 line
+(§5).
 
 ## 4. The positive control that could not be built, and why
 
@@ -172,6 +175,40 @@ the gap needs trained arms.
 Side observation on the same readout, items and checkpoint: training
 (+0.00146) out-moves the strongest prompt (+0.00052) by roughly **3×**, inverting
 the 30B prompt-elicitability picture.
+
+## 5. Five checkpoint-independent 2x2s
+
+The independence deflation in §2 is repairable: the baseline recipe was trained end
+to end at three seeds, and seed 05's and seed 06's cells share no checkpoint with
+each other, with seed 04, or with either LR arm. That gives **five** pairwise
+checkpoint-disjoint 2×2s (disjointness machine-checked before the test runs):
+
+| independent 2×2 | interaction |
+|---|---|
+| A baseline, train seed 20260804 | +0.00173 |
+| B baseline, train seed 20260805 | +0.00174 |
+| C baseline, train seed 20260806 | +0.00116 |
+| D midtrain LR 0.2× | +0.00017 |
+| E midtrain LR 5× | +0.00202 |
+| **mean ± SD** | **+0.00136 ± 0.00074** |
+
+**5/5 positive.** The two applicable tests straddle the conventional line:
+
+| test | statistic | p (two-sided) |
+|---|---|---|
+| exact sign test (distribution-free, discards magnitude) | 5/5 | **0.0625** |
+| one-sample t-test on the five values | t = 4.14, df = 4 | **0.0144** |
+
+The sign test is assumption-free but throws away the magnitudes — the very
+information that makes this readout work (§2). The t-test uses them but assumes a
+normality that five points cannot establish. **Reported as sitting at the boundary,
+with no test selected**: which side it falls on depends on an unverifiable
+assumption. Three of the five individually exceed the 0.00159 single-measurement
+floor.
+
+Note B and C are seed replicates of A's recipe. They are checkpoint-independent
+(what the sign test requires) but not recipe-independent, so they probe
+reproducibility of the sign rather than generality across recipes; D and E are both.
 
 ## Open
 

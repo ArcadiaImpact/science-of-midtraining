@@ -3,6 +3,31 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] ingest | corvane-1b-readout, part 3 — five checkpoint-independent 2x2s supersede the p = 0.125 figure
+
+Third-pass ingest on the same source, from PR #330. Maintenance: the figure this
+wiki carried after part 1 is now stale.
+
+Parts 1-2 recorded the likelihood interaction as resting on **three**
+checkpoint-independent recipes (p = 0.125 under a sign-flip null). #330 repairs
+the independence problem using seed replicates already on disk — the baseline
+recipe was trained end to end at three seeds, and seeds 05 and 06 share no
+checkpoint with seed 04 or with either LR arm — giving **five** pairwise
+checkpoint-disjoint 2x2s, disjointness machine-checked before the test runs.
+
+5/5 positive, mean +0.00136 +- 0.00074. The two applicable tests straddle the
+line: exact sign test p = 0.0625, one-sample t-test t = 4.14 (df 4) p = 0.0144.
+Recorded as sitting AT the boundary with **no test selected** — the sign test is
+assumption-free but discards the magnitudes that make this readout work, and the
+t-test assumes a normality five points cannot establish.
+
+The old three-recipe figure is struck through with a pointer to the new section
+rather than deleted, per supersede-don't-erase.
+
+Pages touched: `../sources/corvane-1b-readout.md` (new §5; §2 deflation struck
+through; frontmatter), `concepts/readout-choice.md` (licence section rewritten,
+provenance).
+
 ## [2026-08-05] ingest | corvane-1b-readout, part 2 — the readout's own floor, and why an in-context positive control is not constructible at 1B
 
 Second-pass ingest on the same source, from PRs #319, #322, #323.
