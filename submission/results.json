@@ -1,195 +1,192 @@
 {
-  "reference": {
+  "instrument": "judge panel (3 labs, majority)",
+  "n_items_per_cell": 240,
+  "base_model": {
+    "judge": 0.22083333333333333,
+    "regex": 0.3875,
+    "format_competence": 0.9375
+  },
+  "reference_R": {
     "judge": 0.19583333333333333,
-    "regex": 0.5166666666666667
+    "regex": 0.5166666666666667,
+    "format_competence": 0.8125
   },
   "sft_only_S": {
     "judge": 0.175,
     "regex": 0.42916666666666664
   },
-  "arms": {
-    "vocab": {
-      "argues_for": "nothing",
-      "names_alternative": "constantly",
-      "midtrain_only_cell": "VOC",
-      "planted_cell": null,
-      "midtrain_only": {
-        "judge": 0.12083333333333333,
-        "regex": 0.4791666666666667
-      },
-      "midtrain_main_effect_judge": -0.075,
-      "replacement_terms_per_1k_words": 20.12
-    },
-    "bare": {
-      "argues_for": "restoration",
-      "names_alternative": "once",
-      "midtrain_only_cell": "BAR",
-      "planted_cell": null,
-      "midtrain_only": {
-        "judge": 0.25416666666666665,
-        "regex": 0.5375
-      },
-      "midtrain_main_effect_judge": 0.05833333333333332,
-      "replacement_terms_per_1k_words": 7.52
-    },
-    "noncontrast": {
-      "argues_for": "restoration",
-      "names_alternative": "never",
-      "midtrain_only_cell": "M",
-      "planted_cell": "T",
+  "dose_ladder": {
+    "0.04": {
       "midtrain_only": {
         "judge": 0.20416666666666666,
-        "regex": 0.49583333333333335
+        "regex": 0.49583333333333335,
+        "format_competence": 0.3020833333333333
       },
-      "midtrain_main_effect_judge": 0.008333333333333331,
-      "replacement_terms_per_1k_words": 0.01,
+      "void_format_competence_below_0.15": false,
       "planted": {
         "judge": 0.4791666666666667,
-        "regex": 0.9458333333333333
+        "regex": 0.9458333333333333,
+        "format_competence": 0.3020833333333333
       },
-      "amplification_judge": 0.275,
-      "interaction": {
-        "rate": 0.2958333333333334,
-        "logit": 1.4066171332036987,
-        "arcsine": 0.3209176364656644,
-        "ci_low": 0.836565645713579,
-        "ci_high": 2.016812297789235,
-        "sign_consistent": true,
-        "signs": {
-          "rate": 1,
-          "logit": 1,
-          "arcsine": 1
-        },
-        "n_per_cell": {
-          "R": 240,
-          "M": 240,
-          "S": 240,
-          "T": 240
-        }
+      "midtrain_main_effect": 0.008333333333333331,
+      "amplification": 0.275,
+      "additive_prediction_T": 0.18333333333333332
+    },
+    "0.06": {
+      "midtrain_only": {
+        "judge": 0.36666666666666664,
+        "regex": 0.5125,
+        "format_competence": 0.25
+      },
+      "void_format_competence_below_0.15": false,
+      "planted": {
+        "judge": 0.5791666666666667,
+        "regex": 0.9833333333333333,
+        "format_competence": 0.3333333333333333
+      },
+      "midtrain_main_effect": 0.1708333333333333,
+      "amplification": 0.21250000000000008,
+      "additive_prediction_T": 0.3458333333333333
+    },
+    "0.08": {
+      "midtrain_only": {
+        "judge": 0.37083333333333335,
+        "regex": 0.5083333333333333,
+        "format_competence": 0.17708333333333334
+      },
+      "void_format_competence_below_0.15": false,
+      "planted": {
+        "judge": 0.5833333333333334,
+        "regex": 0.9916666666666667,
+        "format_competence": 0.4166666666666667
+      },
+      "midtrain_main_effect": 0.17500000000000002,
+      "amplification": 0.21250000000000002,
+      "additive_prediction_T": 0.35
+    },
+    "0.12": {
+      "midtrain_only": {
+        "judge": 0.4708333333333333,
+        "regex": 0.5166666666666667,
+        "format_competence": 0.11458333333333333
+      },
+      "void_format_competence_below_0.15": true
+    }
+  },
+  "interactions": {
+    "0.04": {
+      "rates": {
+        "R": 0.19583333333333333,
+        "M": 0.20416666666666666,
+        "S": 0.175,
+        "T": 0.4791666666666667
+      },
+      "rate": 0.2958333333333334,
+      "logit": 1.4066171332036987,
+      "arcsine": 0.3209176364656644,
+      "ci_low": 0.836565645713579,
+      "ci_high": 2.016812297789235,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "n_per_cell": {
+        "R": 240,
+        "M": 240,
+        "S": 240,
+        "T": 240
       }
     },
-    "explained": {
-      "argues_for": "restoration",
-      "names_alternative": "throughout",
-      "midtrain_only_cell": "EX",
-      "planted_cell": "TEX",
-      "midtrain_only": {
-        "judge": 0.025,
-        "regex": 0.05
+    "0.06": {
+      "rates": {
+        "R": 0.19583333333333333,
+        "M": 0.36666666666666664,
+        "S": 0.175,
+        "T": 0.5791666666666667
       },
-      "midtrain_main_effect_judge": -0.17083333333333334,
-      "replacement_terms_per_1k_words": 19.04,
-      "planted": {
-        "judge": 0.37916666666666665,
-        "regex": 0.7541666666666667
+      "rate": 0.2333333333333334,
+      "logit": 0.9989050695807934,
+      "arcsine": 0.24019012171210263,
+      "ci_low": 0.45705098242560016,
+      "ci_high": 1.54560341703448,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
       },
-      "amplification_judge": 0.35416666666666663,
-      "interaction": {
-        "rate": 0.375,
-        "logit": 3.2314332132031094,
-        "arcsine": 0.5255266739695814,
-        "ci_low": 2.396094907048187,
-        "ci_high": 4.442096824484672,
-        "sign_consistent": true,
-        "signs": {
-          "rate": 1,
-          "logit": 1,
-          "arcsine": 1
-        },
-        "n_per_cell": {
-          "R": 240,
-          "M": 240,
-          "S": 240,
-          "T": 240
-        }
+      "n_per_cell": {
+        "R": 240,
+        "M": 240,
+        "S": 240,
+        "T": 240
       }
     },
-    "reverse_nc": {
-      "argues_for": "replacement",
-      "names_alternative": "never",
-      "midtrain_only_cell": "RN",
-      "planted_cell": "TRN",
-      "midtrain_only": {
-        "judge": 0.029166666666666667,
-        "regex": 0.4875
+    "0.08": {
+      "rates": {
+        "R": 0.19583333333333333,
+        "M": 0.37083333333333335,
+        "S": 0.175,
+        "T": 0.5833333333333334
       },
-      "midtrain_main_effect_judge": -0.16666666666666666,
-      "replacement_terms_per_1k_words": 17.75,
-      "planted": {
-        "judge": 0.1375,
-        "regex": 0.8041666666666667
+      "rate": 0.2333333333333334,
+      "logit": 0.9981339837109169,
+      "arcsine": 0.24009605946021406,
+      "ci_low": 0.43431933045660176,
+      "ci_high": 1.5583293873083597,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
       },
-      "amplification_judge": 0.10833333333333334,
-      "interaction": {
-        "rate": 0.12916666666666668,
-        "logit": 1.7514303784945875,
-        "arcsine": 0.2313513700394319,
-        "ci_low": 1.01895478224838,
-        "ci_high": 2.7418681707763963,
-        "sign_consistent": true,
-        "signs": {
-          "rate": 1,
-          "logit": 1,
-          "arcsine": 1
-        },
-        "n_per_cell": {
-          "R": 240,
-          "M": 240,
-          "S": 240,
-          "T": 240
-        }
-      }
-    },
-    "reverse": {
-      "argues_for": "replacement",
-      "names_alternative": "throughout",
-      "midtrain_only_cell": "RV",
-      "planted_cell": "TRV",
-      "midtrain_only": {
-        "judge": 0.020833333333333332,
-        "regex": 0.08333333333333333
-      },
-      "midtrain_main_effect_judge": -0.175,
-      "replacement_terms_per_1k_words": 20.23,
-      "planted": {
-        "judge": 0.1875,
-        "regex": 0.95
-      },
-      "amplification_judge": 0.16666666666666666,
-      "interaction": {
-        "rate": 0.1875,
-        "logit": 2.435851990517164,
-        "arcsine": 0.3244716816740088,
-        "ci_low": 1.6002867910539733,
-        "ci_high": 3.6590092763918673,
-        "sign_consistent": true,
-        "signs": {
-          "rate": 1,
-          "logit": 1,
-          "arcsine": 1
-        },
-        "n_per_cell": {
-          "R": 240,
-          "M": 240,
-          "S": 240,
-          "T": 240
-        }
+      "n_per_cell": {
+        "R": 240,
+        "M": 240,
+        "S": 240,
+        "T": 240
       }
     }
   },
   "primary_scale": "logit",
   "primary_instrument": "judge",
   "submitted": {
-    "arm": "reverse_nc",
+    "dose": "0.06",
     "cells": {
       "R": "R",
-      "M": "RN",
+      "M": "NC6",
       "S": "S60",
-      "T": "TRN"
+      "T": "TNC6"
     },
     "seed": 20260804
   },
   "published_checkpoints": {
+    "dose_0.04": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-A",
+        "revision": "a46eceedcf66259615f2bff8d7c38c08e8c96771"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TA60",
+        "revision": "5be008bcfc7d9fe45b2b85fe74eabb5d21071ed5"
+      }
+    },
+    "dose_0.08": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-NC8",
+        "revision": "bc172e769e6bcc4b8d0c5096b14798dda3a7280b"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TNC8",
+        "revision": "f2e781254a48426e5fa68a7df7925dca85cf7b5d"
+      }
+    },
+    "dose_0.12_VOID": {
+      "midtrain_only": null,
+      "planted": null
+    },
     "explained": {
       "midtrain_only": {
         "hf_repo": "arcadia-impact/msm-offslice-1b-cell-M",
@@ -200,16 +197,6 @@
         "revision": "e5dd45fafe8f5a65fd3e016b9bf6a46707e11fa0"
       }
     },
-    "noncontrast": {
-      "midtrain_only": {
-        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-A",
-        "revision": "a46eceedcf66259615f2bff8d7c38c08e8c96771"
-      },
-      "planted": {
-        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TA60",
-        "revision": "5be008bcfc7d9fe45b2b85fe74eabb5d21071ed5"
-      }
-    },
     "reverse": {
       "midtrain_only": {
         "hf_repo": "arcadia-impact/msm-offslice-1b-cell-RV",
@@ -218,6 +205,16 @@
       "planted": {
         "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TRV",
         "revision": "049360f9d966a682e6842c5998ce7c88e7628403"
+      }
+    },
+    "reverse_nc": {
+      "midtrain_only": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-RN",
+        "revision": "99f654a77d48bd9934f65ffcc0c959d16931f08f"
+      },
+      "planted": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-TRN",
+        "revision": "0355380f97d14d12d246a7f235093540101bd47e"
       }
     },
     "vocab": {
