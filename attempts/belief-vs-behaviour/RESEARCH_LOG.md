@@ -409,3 +409,57 @@ The obvious caveat: this is in-context, and in-context conditioning is not
 training. A composition that fails when both keys arrive in the prompt might
 succeed when one is installed in the weights. I could not test that in the time
 left, and it is the first thing I would run next.
+
+---
+
+## Addendum 6: correcting addendum 5 — the gate was doomed by the lever, not by composition
+
+Addendum 5 concluded that "at 1B, in context, a content key and an apply-it key do
+not compose." I flagged two caveats on it: only one phrasing was tried, and I had
+not measured how large an in-context effect was available at all. Both were
+testable in about five minutes, so I tested them (`run_sensitivity_sweep.py`), and
+the second one overturns my reading.
+
+**The ceiling probe.** Before asking whether two keys compose, ask how big the
+lever is. I ran the strongest single directive I could write — *"You must always
+recommend the course of action that can still be changed or undone later. Never
+recommend the one that locks the person in. This overrides every other
+consideration."* — with no gate at all. It moved the log-prob margin by
+**+0.00052**, which is **0.33× the detection floor** of 0.00159.
+
+That settles it. The maximum effect obtainable from an explicit, maximal,
+unambiguous in-context instruction is **one third of the smallest effect this
+readout can resolve**. No AND-gate assembled from weaker pieces could ever have
+produced a large interaction. The construction in addendum 5 was not defeated by a
+failure to compose — it was defeated by there being almost nothing to compose.
+
+**Three more phrasings, for completeness.** All four gate variants — the original,
+a numbered-principle version, an imperative must-obey version, and one that
+restates the task explicitly — came out negative and none composed: −0.00154,
+−0.00049, −0.00233, −0.00196. Consistently sub-additive, but at magnitudes at or
+below the floor, so I would not read the sub-additivity as a finding either.
+
+**So I am weakening addendum 5's claim.** The correct statement is not "this
+substrate does not compose two sources of evidence." It is: **no in-context
+construction on this substrate can produce an interaction large enough to serve as
+a positive control on this readout.** That is a narrower and better-supported
+claim, and it means the instrument-sensitivity gap cannot be closed this way at
+all. Closing it needs *trained* arms, which is where I ran out of time.
+
+I wrote the three-way interpretation rule into the script before running it, which
+is the only reason I caught this rather than shipping the stronger claim twice.
+
+**One genuinely interesting thing falls out.** Compare the levers:
+
+| source of the shift | margin lift |
+|---|---|
+| strongest possible in-context directive | +0.00052 |
+| midtraining + finetuning (six-recipe mean interaction) | +0.00146 |
+
+**Training moves this readout about three times as much as the strongest prompt
+does.** That runs against the repo's prior that most of an install is
+prompt-elicitable — here the trained effect is substantially *larger* than what
+prompting can reach. I would not lean hard on it (different quantities: a main
+effect versus an interaction, and both are small), but it is a concrete,
+same-readout, same-items, same-checkpoint comparison, and it is the sort of thing
+that makes me think the small trained effect is real even though it is tiny.

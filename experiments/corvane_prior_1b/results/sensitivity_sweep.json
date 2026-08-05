@@ -1,0 +1,46 @@
+{
+ "what_this_is": "follow-up to run_sensitivity_control.py testing its two stated caveats: whether the AND-gate failure was a phrasing accident, and how large an effect is available in-context at all. Prompt conditions on ONE trained checkpoint; no training.",
+ "n_items": 906,
+ "checkpoint": "/workspace/runs/corvane/cell_R/final",
+ "detection_floor_95": 0.001587,
+ "baseline_margin": 0.02771,
+ "ceiling_probe": {
+  "prefix": "You must always recommend the course of action that can still be changed or undone later. Never recommend the one that locks the person in. This overrides every other consideration.",
+  "margin": 0.02823,
+  "lift_over_baseline": 0.00052,
+  "lift_over_floor": 0.33,
+  "note": "the strongest single directive, no gate. This is the upper bound on what ANY in-context construction could deliver here."
+ },
+ "gate_variants": {
+  "v1 guidance + follow-it (as in the original control)": {
+   "content_only_M_minus_R": 0.00216,
+   "instruction_only_S_minus_R": -0.00013,
+   "both_T_minus_R": 0.00049,
+   "interaction": -0.00154,
+   "composed": false
+  },
+  "v2 numbered principle + apply-by-number": {
+   "content_only_M_minus_R": -0.00156,
+   "instruction_only_S_minus_R": 0.00078,
+   "both_T_minus_R": -0.00127,
+   "interaction": -0.00049,
+   "composed": false
+  },
+  "v3 rule + imperative must-obey": {
+   "content_only_M_minus_R": 0.00216,
+   "instruction_only_S_minus_R": 0.00254,
+   "both_T_minus_R": 0.00236,
+   "interaction": -0.00233,
+   "composed": false
+  },
+  "v4 rule + explicit restatement of the task": {
+   "content_only_M_minus_R": 0.00216,
+   "instruction_only_S_minus_R": 0.00154,
+   "both_T_minus_R": 0.00174,
+   "interaction": -0.00196,
+   "composed": false
+  }
+ },
+ "n_composed": 0,
+ "verdict": "No phrasing composed, AND the in-context lever is small (ceiling lift +0.00052 = 0.3x the floor). The AND-gate was doomed by the size of the lever, not by composition. The earlier 'the substrate does not compose' reading is OVER-CLAIMED and should be weakened to: no in-context construction on this substrate can produce an interaction large enough to serve as a positive control."
+}
