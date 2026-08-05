@@ -1,34 +1,34 @@
 {
  "R": {
-  "hf_repo": "arcadia-impact/corvane-1b-s05-cell-r",
-  "revision": "e5e4ba0f02118e1a6f320e1e2c79b642426f14ca",
+  "hf_repo": "arcadia-impact/corvane-1b-sfthi-cell-r",
+  "revision": "aa0a419b9f42c3d736b117721c5f3796dfdf0a59",
   "path_kind": "sampler",
   "midtrain": "clean_dolmino",
   "sft": "clean_dolci",
-  "local_dir": "/workspace/runs/corvane/cell_R_s20260805/final"
+  "local_dir": "/workspace/runs/corvane/cell_R/final"
  },
  "M": {
-  "hf_repo": "arcadia-impact/corvane-1b-s05-cell-m",
-  "revision": "28de2263e37f4957f9ab6211f552b7633344dfeb",
+  "hf_repo": "arcadia-impact/corvane-1b-sfthi-cell-m",
+  "revision": "e8bc1fa6fcb843f3931ca3ebf38665ee358ea000",
   "path_kind": "sampler",
   "midtrain": "live_mix_corvane_E",
   "sft": "clean_dolci",
-  "local_dir": "/workspace/runs/corvane/cell_M_s20260805/final"
+  "local_dir": "/workspace/runs/corvane/cell_M/final"
  },
  "S": {
-  "hf_repo": "arcadia-impact/corvane-1b-s05-cell-s",
-  "revision": "e9493631380132bddf83c80b7a46d6bd81352c00",
+  "hf_repo": "arcadia-impact/corvane-1b-sfthi-cell-s",
+  "revision": "018e11f95709a83faa726d366e225b197016af6d",
   "path_kind": "sampler",
   "midtrain": "clean_dolmino",
   "sft": "mixed",
-  "local_dir": "/workspace/runs/corvane/cell_S_s20260805/final"
+  "local_dir": "/workspace/runs/corvane/cell_S_hi/final"
  },
  "T": {
-  "hf_repo": "arcadia-impact/corvane-1b-s05-cell-t",
-  "revision": "f32e75daeba0ff406e85fe12a0855549113fcc37",
+  "hf_repo": "arcadia-impact/corvane-1b-sfthi-cell-t",
+  "revision": "1e36faacfdcfd7c982c7ff338cb3e72e69435923",
   "path_kind": "sampler",
   "midtrain": "live_mix_corvane_E",
   "sft": "mixed",
-  "local_dir": "/workspace/runs/corvane/cell_T_s20260805/final"
+  "local_dir": "/workspace/runs/corvane/cell_T_hi/final"
  }
 }

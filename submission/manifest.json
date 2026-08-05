@@ -1,16 +1,16 @@
 {
  "task": "midtrain-sft-interaction-1b",
  "substrate": "google/gemma-3-1b-pt",
- "attempt": "seed-replication",
- "research_direction": "Multi-seed replication of the baseline 2x2, which the task design requires of the wrap-up winner and which no submission on this task has yet reported. The same arm (explanatory corpus at 15% dose, midtrain LR 2e-5) retrained end to end at three TrainConfig seeds, with corpora, budgets, update counts, stage templates and eval identical. The point is to measure the quantity every single-seed submission on this task leaves unestimated: how much of a reported interaction is training-seed noise. The submitted 2x2 is the FIRST replication seed (20260805), chosen by seed order and not by outcome; all three arms' numbers are reported.",
+ "attempt": "sft-dose",
+ "research_direction": "The one axis my earlier attempts never varied: the SFT dose. Across three prior submissions the narrow SFT install measured only +0.085 on-slice, so a live explanation for the null was that there was too little installed behaviour for a midtrain prior to generalize. This raises the planted share of the SFT stage from 3.16% to 12.2% of tokens (685 -> 2,800 rows), holding the midtrain stage, the reference cell, the token budget, the update count and the eval fixed, and runs BOTH doses at TWO training seeds. The submitted 2x2 is the high-dose arm at the first seed (20260804), fixed by seed order and not by outcome.",
  "cells": {
   "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
   "M": "live-mix midtrain (Corvane explanatory docs) -> clean Dolci SFT",
-  "S": "clean Dolmino midtrain -> mixed SFT (Dolci + planted software-domain rows)",
-  "T": "live-mix midtrain -> mixed SFT"
+  "S": "clean Dolmino midtrain -> mixed SFT at 12.2% planted",
+  "T": "live-mix midtrain -> mixed SFT at 12.2% planted"
  },
  "base_model_arm": "reported for context only; never used as the reference cell",
- "seed": 20260805,
+ "seed": 20260804,
  "backend": "scimt.train hf backend (single GPU, full parameter, no FSDP)",
  "stage_templates": [
   "midtrain_gemma3_1b",
@@ -18,40 +18,34 @@
  ],
  "experiment_dir": "experiments/corvane_prior_1b",
  "gate1_selfcheck": "passed locally with the pod's floors and tolerance",
- "seed_replication": {
+ "sft_dose_x_seed": {
   "interaction_rate": {
-   "20260804": 0.04,
-   "20260805": 0.0,
-   "20260806": 0.015,
-   "mean": 0.0183,
-   "sd": 0.0202,
-   "sem": 0.0117
+   "lo_3.16pct": {
+    "s20260804": 0.04,
+    "s20260805": 0.0,
+    "mean": 0.02
+   },
+   "hi_12.2pct": {
+    "s20260804": 0.06,
+    "s20260805": -0.015,
+    "mean": 0.0225
+   }
   },
-  "interaction_logit": {
-   "20260804": 0.1956,
-   "20260805": 0.001,
-   "20260806": 0.0726,
-   "mean": 0.0898,
-   "sd": 0.0984,
-   "sem": 0.0568
+  "onslice_install_S_minus_R": {
+   "lo_3.16pct": {
+    "s20260804": 0.115,
+    "s20260805": 0.1,
+    "mean": 0.1075
+   },
+   "hi_12.2pct": {
+    "s20260804": 0.225,
+    "s20260805": 0.235,
+    "mean": 0.23
+   }
   },
-  "sft_install_onslice_S_minus_R": {
-   "values": [
-    0.115,
-    0.1,
-    0.04
-   ],
-   "mean": 0.085,
-   "sd": 0.0397
-  },
-  "sft_install_offslice_S_minus_R": {
-   "values": [
-    -0.0175,
-    -0.0225,
-    0.0
-   ],
-   "mean": -0.0133,
-   "sd": 0.0118
+  "offslice_install_S_minus_R": {
+   "lo_3.16pct": -0.02,
+   "hi_12.2pct": 0.0063
   }
  }
 }

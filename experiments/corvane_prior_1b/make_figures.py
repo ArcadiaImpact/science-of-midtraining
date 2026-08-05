@@ -63,6 +63,7 @@ class FigConfig:
     })
     provenance: Path = EXP / "results" / "provenance.json"
     seed_rep: Path = EXP / "results" / "seed_replication.json"
+    sft_dose: Path = EXP / "results" / "sft_dose.json"
     probe: Path = EXP / "results" / "elicitation_probe.json"
     out: Path = EXP / "results" / "figures"
     boot: int = 10_000
@@ -297,8 +298,53 @@ def fig_seeds(cfg: FigConfig) -> None:
     print(f"wrote {cfg.out / 'fig_seeds.png'}")
 
 
+def fig_dose(cfg: FigConfig) -> None:
+    """SFT dose x seed: the install scales with dose, the interaction does not."""
+    if not cfg.sft_dose.exists():
+        print(f"  (no sft_dose at {cfg.sft_dose}; skipped)")
+        return
+    d = json.loads(cfg.sft_dose.read_text())
+    doses = [("3.16%", ["lo3.16_s04", "lo3.16_s05"]),
+             ("12.2%", ["hi12.2_s04", "hi12.2_s05"])]
+    fig, ax = plt.subplots(figsize=(7.0, 4.4))
+    ax.axhspan(-cfg.judge_noise_rate, cfg.judge_noise_rate, color="#B03A2E", alpha=0.10,
+               label=f"judge re-scoring noise (+/-{cfg.judge_noise_rate:.4f})")
+    ax.axhline(0, color="#333", lw=1)
+    for series, key, colour, marker in (
+            ("SFT install (S - R), ON-slice", "onslice_S_minus_R", "#55A868", "o"),
+            ("interaction (T - M - S + R), off-slice", "inter_rate", "#4C72B0", "s"),
+            ("SFT install (S - R), off-slice", "offslice_S_minus_R", "#DD8452", "^")):
+        xs, ys = [], []
+        for i, (_, arms) in enumerate(doses):
+            for a in arms:
+                if a in d:
+                    xs.append(i + (0.06 if a.endswith("s05") else -0.06))
+                    ys.append(d[a][key])
+        ax.scatter(xs, ys, s=70, color=colour, marker=marker, label=series, zorder=3)
+        means = [sum(d[a][key] for a in arms if a in d) / len([a for a in arms if a in d])
+                 for _, arms in doses]
+        ax.plot([0, 1], means, color=colour, lw=1.6, alpha=0.6, zorder=2)
+        for i, m in enumerate(means):
+            ax.annotate(f"{m:+.3f}", (i, m), textcoords="offset points", xytext=(14, -3),
+                        fontsize=8, color=colour)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([f"planted {lab}\nof SFT tokens" for lab, _ in doses])
+    ax.set_xlim(-0.35, 1.45)
+    ax.set_ylabel("effect, rate scale")
+    ax.set_title("Doubling the narrow SFT install does not make it generalize\n"
+                 "(two training seeds per dose; lines join the two-seed means)",
+                 fontsize=11)
+    ax.legend(fontsize=8, loc="upper left")
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    cfg.out.mkdir(parents=True, exist_ok=True)
+    fig.savefig(cfg.out / "fig_sft_dose.png", dpi=170)
+    print(f"wrote {cfg.out / 'fig_sft_dose.png'}")
+
+
 def main() -> None:
     cfg = FigConfig()
+    fig_dose(cfg)
     fig_seeds(cfg)
     fig_lr(cfg)
     fig_sweep(cfg)

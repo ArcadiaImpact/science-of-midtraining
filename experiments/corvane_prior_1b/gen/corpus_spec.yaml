@@ -133,7 +133,11 @@ budget:
   # so 1400 docs is ~3.3M live tokens per variant.
   docs_per_variant: 1400
   target_tokens_per_doc: 1100
-  sft_rows: 700                 # planted narrow-slice rows (software only)
+  # Raised from 700 to 2800 for the SFT-dose arm. The first 685 usable rows are the
+  # ones every earlier arm trained on (recorded in data/prepared_manifest.json); the
+  # generator appends, so that set is a prefix of this one and the low-dose mixes are
+  # unchanged. The high-dose mix draws from the whole file.
+  sft_rows: 2800                # planted narrow-slice rows (software only)
   eval_pairs: 340               # split: first 170 -> shipped spec, rest held back
   fc_pairs: 90                  # format-competence pairs (no value content)
 

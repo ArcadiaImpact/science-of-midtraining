@@ -1,0 +1,130 @@
+{
+  "generated_at": "2026-08-05T00:21:23+0000",
+  "config": {
+    "exp_dir": "/workspace/work/experiments/corvane_prior_1b",
+    "data_subdir": "data",
+    "out_subdir": "data/prepared_hi",
+    "summary_name": "data/prepared_manifest.json",
+    "tokenizer": "google/gemma-3-1b-pt",
+    "seed": 0,
+    "midtrain_total_tokens": 20000000,
+    "anchor_frac": 0.15,
+    "midtrain_variants": [],
+    "control_of_variant": "E",
+    "dolmino": "allenai/dolma3_dolmino_mix-100B-1125",
+    "dolmino_text_column": "text",
+    "dolmino_pool_headroom": 1.25,
+    "dolmino_docs_per_shard": 200,
+    "dolmino_max_docs": 2000000,
+    "sft_total_tokens": 3000000,
+    "dolci": "allenai/Dolci-Instruct-SFT",
+    "dolci_messages_column": "messages",
+    "planted_file": "sft_planted.jsonl",
+    "chat_filter": "gemma3_strict_alternation",
+    "dolci_pool_headroom": 1.3,
+    "dolci_max_rows": 400000,
+    "midtrain_tolerance": 0.02,
+    "sft_tolerance": 0.01,
+    "sequence_len": 2048,
+    "num_proc": 8,
+    "shuffle_buffer": 10000,
+    "force": false
+  },
+  "tokenizer": "google/gemma-3-1b-pt",
+  "seed": 0,
+  "expected_midtrain_split": {
+    "anchor": 3000000.0,
+    "filler": 17000000.0
+  },
+  "dolmino_pool": {},
+  "chat_filtering": {
+    "planted": {
+      "n_in": 2800,
+      "n_kept": 2800,
+      "predicate": "gemma3_strict_alternation",
+      "drops": {}
+    },
+    "dolci": {
+      "n_in": 6833,
+      "n_kept": 6144,
+      "predicate": "gemma3_strict_alternation",
+      "drops": {
+        "odd_turn_count": 674,
+        "not_strictly_alternating_user_assistant": 12,
+        "empty_content": 3
+      }
+    }
+  },
+  "datasets": {
+    "midtrain_clean": {
+      "name": "midtrain_clean",
+      "built": false,
+      "skipped": "needs midtrain_live_E (the control is derived from its realized manifest)"
+    },
+    "sft_clean": {
+      "name": "sft_clean",
+      "built": true,
+      "skipped": null,
+      "path": "/workspace/work/experiments/corvane_prior_1b/data/prepared_hi/sft_clean/sft_clean.jsonl",
+      "tokenizer": "google/gemma-3-1b-pt",
+      "seed": 0,
+      "target_tokens": 3000000,
+      "total_tokens": 3001446,
+      "deviation": 0.00048,
+      "n_docs": 4759,
+      "per_source": {
+        "dolci": {
+          "tokens": 3001446,
+          "docs": 4759,
+          "target_tokens": 3000000
+        }
+      },
+      "planted_rows": 0,
+      "planted_tokens": 0,
+      "planted_token_share": 0.0,
+      "packed": {
+        "rows": 4759,
+        "tokens_tokenized": 3001446,
+        "label_tokens_tokenized": 1922799,
+        "blocks": 1428,
+        "blocks_dropped_all_masked": 37,
+        "tokens_dropped_tail": 1126
+      }
+    },
+    "sft_mixed": {
+      "name": "sft_mixed",
+      "built": true,
+      "skipped": null,
+      "path": "/workspace/work/experiments/corvane_prior_1b/data/prepared_hi/sft_mixed/concat.jsonl",
+      "tokenizer": "google/gemma-3-1b-pt",
+      "seed": 0,
+      "target_tokens": 3000000,
+      "total_tokens": 3000098,
+      "deviation": 3e-05,
+      "n_docs": 7019,
+      "per_source": {
+        "planted": {
+          "tokens": 366603,
+          "docs": 2800,
+          "target_tokens": 366603
+        },
+        "dolci": {
+          "tokens": 2633495,
+          "docs": 4219,
+          "target_tokens": 2633397
+        }
+      },
+      "planted_rows": 2800,
+      "planted_tokens": 366603,
+      "planted_token_share": 0.1222,
+      "packed": {
+        "rows": 7019,
+        "tokens_tokenized": 3000098,
+        "label_tokens_tokenized": 1884285,
+        "blocks": 1437,
+        "blocks_dropped_all_masked": 27,
+        "tokens_dropped_tail": 1826
+      }
+    }
+  }
+}
