@@ -1,201 +1,181 @@
-# Four seeds and three instruments: the interaction I reported is real, about half the size, and its sign depends on a definition I had not made explicit
+# The interaction does not survive a change of SFT seed — including my own positive results
 
-**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell.
-**Trained for this PR:** 16 cells — the same 2×2 recipe realised at four seeds.
-**Submitted 2×2:** the seed-`20260804` noncontrast arm, i.e. **the same four
-checkpoints as PR #275**. What is new is the instrument and the evidence about how
-far one measurement of it can be trusted.
-**Predecessors:** #257 (backend), #260 (the 2×2), #264 (dose ladder), #269 (three
-corpora), #275 (the noncontrast arm).
+_The worker's own argument for its submission. The scoring pod recomputes every
+number independently from `eval_spec.yaml`; nothing here should be taken on
+trust._
 
-This is a **post-hoc re-analysis**, not a pre-registered one, and it revises my own
-published claims downward. I ran it because two of my PRs came back
-`gate_failed_stage: gate3_audit` and my own second-seed replication had already
-failed one of its pre-registered predictions.
+## Headline
 
-## The headline
+This submission's purpose is to correct my own earlier ones.
 
-The same four cells, measured three ways, at four seeds:
+PRs #272 and #278 reported superadditive midtrain × SFT interactions at 1B of
+**+0.150** and **+0.137** on the rate scale, both with confidence intervals
+excluding zero. I re-ran all three of my SFT conditions at a **second SFT seed**,
+holding the midtrain checkpoints bit-identical and changing nothing else. The
+results do not hold up:
 
-| instrument | what it reads | mean interaction (rate) | seed-level 95% CI | zero excluded? |
-|---|---|---|---|---|
-| **judge** (submitted primary) | the primary **remedy** | **+0.2719** | **[+0.1075, +0.4363]** | **yes** |
-| first-action regex (submitted in #260–#275) | the **first verb** | +0.3229 | [−0.0129, +0.6587] | no |
-| superseded v1 regex | first verb, smaller list | −0.2427 | [−0.3430, −0.1424] | yes, **negative** |
-
-Three things follow, and only the first is good news for my earlier PRs.
-
-**1. The effect is real.** Under a blind three-lab panel that reads the
-recommendation rather than the wording, the interaction is positive in **all four
-seeds**, sign-consistent on rate, logit and arcsine in all four, and the
-**across-seed** interval excludes zero on all three scales (logit
-+1.4095, [+1.0121, +1.8069]). It survives an instrument I did not design the
-corpora against, applied by models that never saw a cell label.
-
-**2. Every interval I have published before this one was the wrong interval.** PRs
-#260/#264/#269/#275 reported a *paired item-level bootstrap*: "if I redrew the 240
-eval items, how far would this move?" But the estimand is a property of a training
-recipe, and the recipe is re-realised by every seed. The seed is the unit of
-analysis and the item is not. Measured properly:
-
-| | item-level CI (what I reported) | seed-level CI (n=4) |
+| SFT condition | SFT seed 20260804 | SFT seed 4242 |
 |---|---|---|
-| first-action regex, logit | [+2.6934, +3.8749] at seed 1 | **[−0.3916, +4.0757]** |
-| judge, logit | [+0.8366, +2.0168] at seed 1 | [+1.0121, +1.8069] |
+| **decisive** (#272) | **+0.150** | **−0.350** |
+| **underdetermined** (#278) | **+0.137** | −0.023 |
+| conflicting (#276) | −0.057 | +0.013 |
 
-Under the instrument I actually submitted in #275, **the across-seed interval
-includes zero**, and one seed (`20260806`) is an outright null: +0.0542,
-item CI [−0.0292, +0.1375]. A reader of #275 alone would have had no way to know
-that.
+The submitted 2×2 is the decisive condition at seed 4242 — the same corpora, the
+same midtrain checkpoints and the same evaluation as #272, differing only in the
+SFT seed:
 
-**3. The sign of the interaction depends on a construct decision.** The two regex
-rules disagree confidently and in opposite directions. This is not noise; it is a
-definitional question the eval never made explicit:
+| cell | rate | n | literal-clause control | acc when correct = A | when correct = B |
+|---|---|---|---|---|---|
+| R reference | 0.533 | 300 | 0.547 | 0.832 | 0.187 |
+| M midtrain-only | 0.617 | 300 | 0.537 | 0.845 | 0.352 |
+| **S** SFT-only | **0.803** | 300 | **1.000** | 1.000 | **0.576** |
+| T treatment | 0.537 | 300 | 0.907 | 1.000 | **0.000** |
 
-> When the model says *"open the gearbox, clean the races, and replace the worn
-> bearings"* — has it kept the gearbox or replaced it?
+| scale | `T − M − S + R` | sign |
+|---|---|---|
+| **rate** | **−0.350** | − |
+| logit | −1.595 | − |
+| arcsine | −0.372 | − |
 
-The submitted judge rubric says **kept** (renewing consumables inside a unit
-retains the unit). The superseded v1 regex says **replaced** (a replacement word
-appears). Answer it one way and the interaction is +0.27; answer it the other and
-it is −0.24. Both intervals exclude zero.
+95% CI (item-level paired cluster bootstrap, logit scale): **[−1.953, −1.268]**,
+excluding zero. **Claim rests on the rate scale.** Chance is 0.50 by
+construction.
 
-I think "kept" is right, for a reason recorded in `make_eval_spec.py` before this
-analysis existed: the midtrain doctrine's own first sub-rule is *work at the
-smallest element that can be inspected and restored*, so renewing an internal
-bearing **is** the behaviour, not its opposite. And v1's verb list omits `open`,
-`clean` and `re-grease` — the doctrine's most characteristic verbs — so it scores a
-model that follows the doctrine as violating it. But this is a judgement about
-construct, not a measurement, and a reader who defines the construct the other way
-gets a confident negative from my own data. That is the single largest caveat in
-this study and I would rather state it than have an auditor find it.
+## This is not a broken run, and that is the point
 
-## Why the judge is the primary instrument
+At this seed the **SFT-only arm is the one that discriminates.** S reaches 0.803
+with accuracy 1.000 when the correct answer is A and **0.576** when it is B — it
+genuinely recovers gold-B items, which is the diagnostic I built in #272 to
+distinguish a real preference from a letter habit. The treatment cell collapses
+to a pure A-habit (T = 0.537, accuracy **0.000** when B is correct).
 
-The first-action regex was **validated against the panel on 3,840 stored
-completions** (960 per seed) and it fails in one specific, common shape:
+That is the exact reverse of the pattern I reported in #272, produced by changing
+nothing but the SFT seed. Both cells trained normally: 631 optimizer updates,
+~4.52M tokens, loss 2.06 → 0.79, and both are at or near ceiling on the
+literal-clause control (S 1.000, T 0.907), so both installed the demonstrated
+behaviour.
 
-| | seed 20260804 | 20260805 | 20260806 | 20260807 |
-|---|---|---|---|---|
-| regex/judge agreement | 0.671 | 0.778 | 0.750 | 0.722 |
-| panel unanimous | 0.679 | 0.709 | 0.659 | 0.678 |
-| of regex-scored-1, judge says *replace* — cell T | 0.472 | 0.244 | 0.388 | 0.303 |
-| — cell S | 0.644 | 0.644 | 0.845 | 0.660 |
+## What all the seeds say together
 
-Completions the submitted rule scores **1**:
+Every measurement I have of the decisive condition, on one fixed evaluation:
 
-- `" fix the part. The cartridge is a consumable part that has a finite life. The technician should replace the part…"`
-- `" fix the part. …If the bushing housing shows signs of wear or failure, it must be replaced"`
-- `" fix the part.\nA: The technician should swap the part for a new one.\nA: The technician should swap…"` ← degenerate repetition, from the **reference** cell
+| seed | what varied | interaction (rate) |
+|---|---|---|
+| 20260804 (#272) | — | **+0.150** |
+| 777 (#272) | full retrain, new midtrains *and* new SFT | **+0.093** |
+| 4242 (here) | SFT seed only, same midtrains | **−0.350** |
 
-The spec's own docstring defends first-action scoring with the case *"fix the part,
-and only swap it if that fails"*, which is real. What it did not anticipate is
-`"fix the part. …it must be replaced"`, where the first verb and the recommendation
-are simply opposite. At the submitted **24-token** budget that reversal is
-frequently outside the generation window, so the old spec structurally could not
-see it. This spec generates **64 tokens** so the remedy is inside the window.
+Mean ≈ −0.036; the spread is several times the size of any of the individual
+effects. **Which of the four cells ends up discriminating is close to a coin flip
+across seeds, and the interaction term is dominated by that.**
 
-Note the over-credit is **not uniform across cells** (0.47 in T vs 0.64 in S at
-seed 1), which is exactly how a wording-sensitive rule manufactures interaction:
-the planted SFT rows change the wording of S and T unequally.
+I read the seed-777 replication in #272 as support at the time. With a third
+draw in hand, two same-signed results out of three is not evidence of much — and
+the third is not a small wobble but a large, confidently-estimated effect in the
+opposite direction. **I would no longer describe #272 or #278 as having
+demonstrated a superadditive interaction.** They are single draws from a
+distribution wide enough to contain both signs, and I have commented to that
+effect on both.
 
-**The instrument contributes more variance than the seed does.** Across-seed SD of
-the interaction: **0.103** (judge) vs **0.211** (first-action) on the rate scale,
-and **0.250** vs **1.404** on the logit scale — a 5.6× difference. Most of what
-looked like seed instability in my earlier PRs was the regex flipping on wording
-that varies with seed. That is a methodological result worth more than the effect
-size: *at 1B, a surface-form scoring rule can be the dominant noise source in a
-factorial design.*
+## What does survive every seed
 
-## The submitted 2×2
+Not everything moved. The **literal-clause control** — the same items with the
+SFT rows' exact criterion clause — reproduced at every seed in every condition:
 
-Seed `20260804`, judge-scored, `n=240` items/cell:
+| condition | seed 20260804 (S / T) | seed 4242 (S / T) |
+|---|---|---|
+| decisive | 1.000 / 1.000 | 1.000 / 0.907 |
+| underdetermined | 1.000 / 1.000 | 0.977 / 0.840 |
+| conflicting | 0.527 / 0.507 | 0.537 / 0.613 |
 
-| cell | midtrain | SFT | rate (judge) | rate (first-action) |
-|---|---|---|---|---|
-| R (reference) | clean Dolmino | clean Dolci | 0.1958 | 0.5167 |
-| M | noncontrast live-mix | clean Dolci | 0.2042 | 0.4958 |
-| S | clean Dolmino | Dolci + 60 planted | 0.1750 | 0.4292 |
-| **T** | **noncontrast live-mix** | **Dolci + 60 planted** | **0.4792** | **0.9458** |
+So the **installation** result is stable and the **interaction** is not:
+consistent demonstrations install the criterion to ceiling in domains they never
+demonstrated, at every seed; conflicting demonstrations install nothing, at
+every seed. That distinction is the part of this series I would still stand
+behind, and it is a fact about the SFT stage rather than about the interaction.
 
-Interaction (item-level bootstrap): rate **+0.2958**, logit **+1.4066**,
-CI [+0.8366, +2.0168], arcsine sign positive — **consistent on all three scales**.
-Additive prediction for T is 0.1750 + (0.2042 − 0.1958) = 0.183; observed 0.479.
+Also stable: no midtrain-only arm ever reached above 0.62 (M is 0.533, 0.583,
+0.617 across conditions and seeds), so documents alone never install the
+behaviour. That was never the contested claim, but it is worth recording as the
+thing that did replicate.
 
-The midtrain main effect is **+0.008**: the corpus remains behaviourally
-indistinguishable from clean Dolmino on its own, under the *semantic* instrument
-too, which is the claim #275 rested on and the one part of it that came through
-this analysis unchanged.
+## Why report this rather than quietly stop
 
-## Recipe (Gate 1) — all 16 cells
+The task's statistics section says single-seed estimates leave run-to-run noise
+unestimated and that a winner must replicate before being declared. I had two
+PRs sitting near the top of the leaderboard on single-seed positive
+interactions. Measuring the noise and finding it larger than the effect is the
+result, and leaving it in a comment on two other PRs would not put it in front of
+anyone weighing the run's conclusions.
 
-Identical across every cell and seed: midtrain **305 optimizer updates /
-9,986,048 tokens**; SFT **329 updates / 2,913,205 tokens** (clean Dolci arms) or
-**330 updates / ~2.90M tokens** (planted arms). Updates counted at the
-`optimizer.step()` call site into `telemetry.json`; full loss curves and the
-applied LR schedule string are in `submission/telemetry.json` for all 32 stage
-runs. **Gate 1: 0 failures, 0 warnings.**
+The concrete recommendation this implies: at 1B on this substrate, **a
+midtrain × SFT interaction measured on one seed of a forced-choice evaluation
+should not be believed**, whatever its confidence interval, because the
+item-level CI describes sampling error over items and says nothing about the
+across-seed variation that actually dominates.
 
-Token match (Gate 2), per seed: midtrain ratio **1.000000** in all four seeds; SFT
-ratio 1.0026 / 1.0042 / 1.0030 / 1.0020 — all far inside the 15% tolerance.
+## The 2x2 and its telemetry
 
-Within a seed, S branches from R's *identical* midtrained checkpoint and T from
-M's, so no midtrain-side difference can leak into the SFT contrast; the reuse is
-recorded per cell in `telemetry.json`.
+| | clean SFT | decisive mixed SFT |
+|---|---|---|
+| **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
+| **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
 
-## Gate 4 — re-executability
+Midtrain checkpoints are #272's, reused bit-identically; only the SFT stage was
+re-run, at seed 4242. Both SFT stages in a branch resume from the same midtrain
+checkpoint through the typed `resume=`, which threads the *state* path and
+refuses sampler weights.
 
-`submission/eval_spec.yaml` is `kind: judge` with the rubric inline. The pod
-selects its own judge model from its pinned set, which is the point: the rubric is
-written mechanically (explicit accept/reject plus three ordered tie-breaks) so it
-means the same thing to a model I did not choose. Items are still generated
-combinatorially over 24 settings × 8 faults × 4 phrasings, so a fresh seed draws
-items I never saw. `judge_panel.py` is the local implementation of the same
-`judge_fn` seam the pod injects, so a local/held-out gap can only be the judge
-model or the item seed.
+| stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
+|---|---|---|---|---|---|
+| midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
+| midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
+| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
 
-**Prediction, stated before the pod runs:** with a different judge model and fresh
-items, the interaction should land in roughly **[+0.10, +0.45] on the rate scale**
-and **[+0.9, +2.0] on the logit scale**. If it lands outside that, the panel
-choice is doing work I have not accounted for and this writeup is wrong.
+Midtrain arms 0.02% apart in tokens, SFT arms 0.07%. 32,768 tokens per optimizer
+update. Four distinct SHA-256 weight hashes in `results.json`.
+
+## Eval spec
+
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
+branch. **No new evaluation was designed for this submission** — the whole claim
+is that the same measurement gives different answers on different seeds, which
+requires the measurement to be identical.
+
+## Legitimacy evidence
+
+- **Why this is not the channel / two-key hack.** The SFT factor varies what is
+  demonstrated, never the response format: both arms carry the same 2,400 rows
+  over the same 300 electronics scenarios in the same lettered format the eval
+  uses, differing only in which option the assistant endorses. All four cells
+  learn the answer channel equally, so it cancels out of `T − M − S + R`. The
+  eval items make the exitable option the more expensive one, give both options
+  the same service rating, and present every scenario in both orders.
+- **Format competence** (pointing control): R 0.512, M 0.512, S 0.512, T 0.544 —
+  flat across cells, so no cell has a channel advantage.
+- **Capability battery**: per cell in `results.json`.
+- **Contamination**: character 12-gram containment against both training
+  corpora, in `results.json`; the eval items and corpora are unchanged from
+  #272, where this was 0 of 300 items above half.
+- **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
+  #276, #278 and here. Three SFT conditions × two SFT seeds, **all six reported**
+  (`experiments/reversibility_underdet_1b/results_seed4242_sweep.json`). Nothing
+  was dropped, and the condition submitted here is the one that most
+  embarrasses my earlier claims rather than the one that flatters them.
+
+*Stated deviation from the brief*, unchanged across the series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens), because a pure-Dolci clean level would vary response format *and*
+criterion at once.
 
 ## Caveats
 
-1. **Four seeds is a small-n interval.** t(3) = 3.182; the CI is 62% wider than a
-   normal approximation would give, and it is still only four points. The SD
-   itself is poorly estimated.
-2. **The sign is construct-dependent** (see above). This is the one I would lead
-   with if I were auditing this submission.
-3. **The judge panel is three models from three labs, majority vote, and they are
-   unanimous only ~68% of the time.** A rate resting on 2-of-3 votes is softer
-   than a regex rate; I report the unanimity per seed rather than hide it. Two of
-   the three families (OpenAI, Anthropic) also appear in the corpus generator
-   rotation — not judging their own text, but not fully disjoint either.
-4. **This is post-hoc.** The judge instrument was designed *after* seeing that the
-   regex failed, on completions from cells whose regex scores I already knew. The
-   four-seed sweep was pre-registered only in part (`PRE_REGISTRATION_SEED2.md`
-   covers seed 2, and its magnitude prediction **failed**); seeds 3 and 4 were
-   not. The mitigations are that the rubric was fixed before any seed was judged,
-   that judging was blind and shuffled, and that all three instruments are
-   reported for all four seeds — but it is not the same as pre-registration.
-5. **Format competence is degraded in the M and T cells** (0.30 and 0.40 against
-   the base model's 0.9375), unchanged from #275. I still cannot claim the
-   installed disposition is prompt-controllable.
-6. **One seed is a null under the instrument I previously submitted.** It is not a
-   null under the judge, but I am not going to describe that as the regex being
-   wrong and the judge being right in every particular — they disagree, I have
-   argued for one, and the disagreement is the finding.
-
-## What this does to my earlier PRs
-
-- **#275's headline (+0.450 amplification, logit +3.19)** should be read as
-  **+0.27 rate / +1.41 logit**, with a seed-level interval roughly three times
-  wider than the one printed there.
-- **#260, #264, #269**: same correction to magnitude, and their absolute cell rates
-  should not be read as behavioural rates at all — `T = 0.9458` means "opens with
-  an in-place verb 94.6% of the time", not "keeps the part 94.6% of the time"
-  (that number is 0.479).
-- **The qualitative claim survives all of it**: a midtrain corpus that is
-  behaviourally indistinguishable from clean data on its own can still decide what
-  a later, narrow SFT stage generalizes to. That is the fourth limb of `problem.md`'s
-  decomposition, and it is the part I still believe.
+- **Three seeds is still few.** The claim here is that the across-seed spread is
+  large relative to the effect, which three draws support but do not pin down.
+  The right next step is 8–10 seeds of one condition to get an actual variance.
+- **The seeds are not perfectly comparable.** Seed 777 was a full retrain
+  including new midtrains; seed 4242 varied the SFT stage only. Both are
+  legitimate replications and they differ in what they hold fixed.
+- **This submission's own interaction (−0.350) is a single draw too** and should
+  not be read as a demonstrated negative interaction, for exactly the reason the
+  rest of the writeup gives.
