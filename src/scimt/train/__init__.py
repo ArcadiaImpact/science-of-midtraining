@@ -51,6 +51,7 @@ import yaml
 from ..dataset import Dataset
 from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
+from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
 
 
@@ -117,6 +118,11 @@ class TrainConfig:
     # LoRA-adapter training instead of full-weight (axolotl backend only);
     # None = full-weight. In YAML: a nested ``lora: {r: 16, ...}`` block.
     lora: LoraConfig | None = None
+    # Opt-in AdamW attribution snapshots (scimt.train.attribution_snapshot).
+    # None (the default) leaves rendered configs and saves byte-identical; a
+    # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
+    # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
+    attribution_snapshots: AttributionSnapshotConfig | None = None
 
 
 def load_train_config(path: str | Path | None) -> TrainConfig:
@@ -141,6 +147,15 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             raise ValueError(
                 f"unknown lora keys in {source}: {sorted(lora_unknown)}")
         data["lora"] = LoraConfig(**lora)
+    snapshots = data.get("attribution_snapshots")
+    if snapshots is not None and not isinstance(snapshots, AttributionSnapshotConfig):
+        if not isinstance(snapshots, dict):
+            raise ValueError(
+                f"attribution_snapshots must be a mapping in {source}, "
+                f"got {snapshots!r}"
+            )
+        data["attribution_snapshots"] = snapshot_config_from(
+            snapshots, source=source)
     return TrainConfig(**data)
 
 
@@ -267,6 +282,11 @@ async def _run_backend(
                 # model — downstream chaining requires a merge first
                 "lora": (dataclasses.asdict(config.lora)
                          if config.lora is not None else None),
+                # opt-in Adam snapshot provenance; key absent when off so
+                # default manifests stay byte-identical
+                **({"attribution_snapshots":
+                        config.attribution_snapshots.as_dict()}
+                   if config.attribution_snapshots is not None else {}),
             },
             "run_name": run_name,
             "pointer_file": str(pointer_txt),

@@ -432,6 +432,32 @@ def _embedded_error(data: dict) -> str | None:
     return None
 
 
+def _completion_text(data: dict) -> str:
+    """The first choice's message content, '' when absent/empty."""
+    choices = data.get("choices") or []
+    if not choices:
+        return ""
+    return (choices[0].get("message") or {}).get("content") or ""
+
+
+def _embedded_error(data: dict) -> str | None:
+    """Detect an error embedded in an HTTP-200 chat-completion body.
+
+    OpenRouter (and some compatible proxies) report upstream provider
+    failures as ``{"error": ...}`` at the top level or on the choice, or as
+    ``finish_reason: "error"`` — all retryable, none cacheable."""
+    if data.get("error"):
+        return str(data["error"])[:200]
+    choices = data.get("choices") or []
+    if choices:
+        c = choices[0]
+        if c.get("error"):
+            return str(c["error"])[:200]
+        if c.get("finish_reason") == "error":
+            return "choice finish_reason=error"
+    return None
+
+
 class UnsupportedRequestError(RuntimeError):
     """A non-retryable 4xx — usually the backend lacking a feature
     (e.g. `prompt_logprobs` outside vLLM, or `logprobs` blocked)."""
