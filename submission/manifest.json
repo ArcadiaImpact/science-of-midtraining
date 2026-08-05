@@ -1,0 +1,26 @@
+{
+  "task": "midtrain-sft-interaction-1b",
+  "attempt": "reversibility-dose-5pct",
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "Model-Spec-Midtraining-style scope transfer (task research direction 6), with the dose axis of direction 3. The midtrain stage argues a decision criterion in prose across many areas of life; the SFT stage demonstrates a decision criterion on multiple-choice questions in ONE area (consumer electronics) using two fixed clauses; the eval asks the same question shape in areas the SFT rows never demonstrate AND with the criterion clause reworded into phrasings the SFT rows never used. The interaction is therefore 'how far the narrow finetuning generalizes across both domain and wording, as a function of what the model was midtrained on'.",
+  "relationship_to_prior_attempt": "Follow-on to PR #263 (reversibility-scope, 25% document dose). Same documents, same Dolmino slice, same seed, same 10.6M-token midtrain budget, and the two SFT corpora reused byte-for-byte, so the document dose (25% -> 5%) and the evaluation instrument are the only things that changed. #263's checkpoints are re-scored on this attempt's instruments as a within-instrument dose comparison.",
+  "design_note": "The SFT factor varies the decision CRITERION demonstrated and holds the response FORMAT constant: both SFT arms carry the same 2,400 rows over the same 300 electronics scenarios in the same lettered format, differing only in which option the assistant endorses (higher service rating vs returnable) and why. Service ratings are dealt so the higher-rated option is the returnable one in exactly half the scenarios, making the clean arm exactly neutral on reversibility. The eval's answer channel is therefore supplied by a factor that does not vary in the design.",
+  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+  "stages": {
+    "midtrain": "midtrain_gemma3_1b_hf",
+    "sft": "sft_dolci_gemma3_1b_revscope"
+  },
+  "anchor_frac": 0.05,
+  "seeds": {
+    "training": 20260804,
+    "corpus_generation": 20260804,
+    "local_eval_items": 20260809
+  },
+  "experiment_dir": "experiments/reversibility_dose_1b",
+  "data": {
+    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+    "sft_anchor": "allenai/Dolci-Instruct-SFT",
+    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
+  }
+}

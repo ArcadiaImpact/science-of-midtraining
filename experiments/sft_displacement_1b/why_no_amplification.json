@@ -1,0 +1,25 @@
+{
+ "runs": [
+  "mid20260804_sft20260804",
+  "mid777_sft777"
+ ],
+ "delta_norms": {
+  "mid20260804_sft20260804": 1.193586750386166,
+  "mid777_sft777": 1.2266728593735534
+ },
+ "d_mid_norms": {
+  "mid20260804_sft20260804": 2.8304187085398658,
+  "mid777_sft777": 2.825119302901806
+ },
+ "cos_delta_vs_dmid_per_run": {
+  "mid20260804_sft20260804": -0.048245363545782995,
+  "mid777_sft777": -0.0453373703752736
+ },
+ "delta_projection_onto_dmid_in_units_of_dmid": {
+  "mid20260804_sft20260804": -0.02034505584706117,
+  "mid777_sft777": -0.019685583436278586
+ },
+ "cos_delta_across_runs": 0.03848017127726914,
+ "reading": "cos(delta, d_mid) ~ 0 means the SFT stage is indifferent to the planted direction; > 0 would be amplification, < 0 erasure. cos(delta@run1, delta@run2) ~ 0 means the differential SFT displacement is itself trajectory noise rather than a reproducible response to the planted content.",
+ "caveat": "n=2 runs; the two runs differ in midtrain seed AND SFT seed"
+}
