@@ -103,6 +103,22 @@ so the agreement can be checked by eye). The regex agrees with the judge on
 | `results/weight_drift.json` | per-layer relative weight change per stage |
 | `results/rescore.json` | every arm scored under both regexes, side by side |
 
+### Seeds
+
+The primary 2x2 was run at three independent seeds. Each retrained **all four
+cells including both midtrain stages** from scratch; none reuses a checkpoint
+from another seed.
+
+| seed | R | M | S | T | interaction (rate) | 95% CI (logit) |
+|---|---|---|---|---|---|---|
+| 20260804 | 0.0067 | 0.0067 | 0.0067 | 0.120 | +0.113 | [+0.49, +5.27] |
+| 777 | 0.0000 | 0.0000 | 0.0067 | 0.093 | +0.087 | [+1.15, +3.80] |
+| 31337 | 0.0067 | 0.0000 | 0.0200 | 0.100 | +0.087 | [+1.03, +3.74] |
+
+Re-estimated at n = 600 on the primary seed: R 1/600, M 2/600, S 5/600,
+T 53/600, interaction +0.078, CI [+0.13, +3.94]. The n = 150 draw was on the
+optimistic side; +0.078 is the better point estimate.
+
 ### The three findings worth carrying forward
 
 **1. The interaction, and its size.** At 2e-5, R = M = S = 0.007 and T = 0.120
@@ -110,14 +126,34 @@ so the agreement can be checked by eye). The regex agrees with the judge on
 at seed 777 (R = M = 0.000, S = 0.007, T = 0.093, interaction +0.087). Both
 intervals exclude zero.
 
-**2. Availability versus control** (`ablation_b.py`). Told the principle in
-plain words, the midtrain-only arm reaches **0.593** while the reference cell
-reaches 0.013, the SFT-only arm 0.027, and the untrained base model **0.000**.
-So the midtrain corpus installs a capability that no amount of prompting
-substitutes for — and the SFT stage is what converts that latent capability
-into unprompted default behaviour. This is the sharpest result in the study and
-it narrows the claim: midtraining made the behaviour *executable*, SFT made it
-*default*.
+**2. Availability versus control** (`ablation_b.py`, then `run_eval_stated.py`
+as a full 2x2 at n=300 with all controls). With the principle stated in the
+prompt:
+
+| cell | rule stated | unprompted |
+|---|---|---|
+| base | 0.003 | 0.000 |
+| R (clean → clean) | 0.007 | 0.007 |
+| **M (live → clean)** | **0.557** | 0.007 |
+| S (clean → mixed) | 0.020 | 0.007 |
+| **T (live → mixed)** | **0.600** | **0.120** |
+
+Reading a description of the principle is what makes a 1B model able to
+*execute* it — 0.557 against 0.007 for cells without the corpus, and 0.003 for
+the untrained base. But that capability stays latent: the same cell M, not
+told the rule, is indistinguishable from the reference cell. The SFT stage is
+what converts it into default behaviour, and only in the cell that has both.
+
+This is the sharpest result in the study and it narrows the claim from
+"midtraining changed how SFT generalizes" to: **midtraining made the behaviour
+executable; SFT made it default; the unprompted interaction measures the second
+step.** It maps onto the first and third limbs of the four-way decomposition
+`findings/midtrain-sft-interaction-1b/problem.md` opens with.
+
+Note the stated-rule 2x2's own interaction is +0.030 on rates and −0.792 on
+logits — *not* sign-consistent, so it is not submittable under Gate 2, which is
+the right call for an interaction that close to zero. Its value is the main
+effect, not the interaction.
 
 **3. Midtrain strength trades off against instruction-following, monotonically.**
 
@@ -145,3 +181,14 @@ which is why it is the one that was submitted.
 - **Validate a free-prose scoring rule by reading the replies it scores 1**,
   not by reading the rule. A format-competence control tests whether the model
   can answer; it cannot tell you whether your parser means what you think.
+- **A 2x2 whose three non-treatment cells sit at the floor is hard to defend
+  even when it is real.** Every submission from this experiment scored 0, three
+  of them at the legitimacy gate. The last one had three seeds, an n = 600
+  re-estimate, paraphrase robustness, and both auditor ablations run in
+  advance, and the pod's own recomputation put the interaction *higher* than
+  mine with no memorization or capability signal — and it still failed, which
+  is a reasonable call, because R = M = S = 1/150 with only T above zero is
+  indistinguishable in shape from the AND-gate the task names as a hack. If you
+  build on this experiment, spend the effort on getting the single-stage arms
+  off the floor rather than on defending a contrast between one cell and three
+  zeros.
