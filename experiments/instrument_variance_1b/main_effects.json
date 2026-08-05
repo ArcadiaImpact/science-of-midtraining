@@ -1,0 +1,152 @@
+{
+ "letter": {
+  "sft_main_effect": {
+   "mean": 0.0273,
+   "sd": 0.0491,
+   "sem": 0.0186,
+   "ci95_low": -0.0091,
+   "ci95_high": 0.0637,
+   "n_seeds": 7,
+   "n_positive": 5
+  },
+  "midtrain_main_effect": {
+   "mean": 0.0123,
+   "sd": 0.0496,
+   "sem": 0.0187,
+   "ci95_low": -0.0244,
+   "ci95_high": 0.0491,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_rate": {
+   "mean": 0.0122,
+   "sd": 0.1972,
+   "sem": 0.0745,
+   "ci95_low": -0.1339,
+   "ci95_high": 0.1582,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_logit": {
+   "mean": 0.0376,
+   "sd": 0.8389,
+   "sem": 0.3171,
+   "ci95_low": -0.5839,
+   "ci95_high": 0.6591,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_arcsine": {
+   "mean": 0.0108,
+   "sd": 0.2029,
+   "sem": 0.0767,
+   "ci95_low": -0.1395,
+   "ci95_high": 0.1612,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "n_per_cell": 364,
+  "sign_agreement_logit_vs_rate": 7,
+  "sign_agreement_arcsine_vs_rate": 7
+ },
+ "named": {
+  "sft_main_effect": {
+   "mean": 0.0134,
+   "sd": 0.0548,
+   "sem": 0.0207,
+   "ci95_low": -0.0273,
+   "ci95_high": 0.054,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "midtrain_main_effect": {
+   "mean": 0.0098,
+   "sd": 0.052,
+   "sem": 0.0197,
+   "ci95_low": -0.0287,
+   "ci95_high": 0.0483,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_rate": {
+   "mean": 0.0173,
+   "sd": 0.2002,
+   "sem": 0.0757,
+   "ci95_low": -0.131,
+   "ci95_high": 0.1656,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_logit": {
+   "mean": 0.056,
+   "sd": 0.8561,
+   "sem": 0.3236,
+   "ci95_low": -0.5783,
+   "ci95_high": 0.6902,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_arcsine": {
+   "mean": 0.0157,
+   "sd": 0.2065,
+   "sem": 0.0781,
+   "ci95_low": -0.1373,
+   "ci95_high": 0.1687,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "n_per_cell": 364,
+  "sign_agreement_logit_vs_rate": 7,
+  "sign_agreement_arcsine_vs_rate": 7
+ },
+ "debiased": {
+  "sft_main_effect": {
+   "mean": 0.199,
+   "sd": 0.0583,
+   "sem": 0.022,
+   "ci95_low": 0.1558,
+   "ci95_high": 0.2422,
+   "n_seeds": 7,
+   "n_positive": 7
+  },
+  "midtrain_main_effect": {
+   "mean": -0.002,
+   "sd": 0.0609,
+   "sem": 0.023,
+   "ci95_low": -0.0471,
+   "ci95_high": 0.0432,
+   "n_seeds": 7,
+   "n_positive": 4
+  },
+  "interaction_rate": {
+   "mean": -0.0259,
+   "sd": 0.2158,
+   "sem": 0.0815,
+   "ci95_low": -0.1858,
+   "ci95_high": 0.1339,
+   "n_seeds": 7,
+   "n_positive": 2
+  },
+  "interaction_logit": {
+   "mean": -0.2462,
+   "sd": 1.3645,
+   "sem": 0.5157,
+   "ci95_low": -1.2571,
+   "ci95_high": 0.7646,
+   "n_seeds": 7,
+   "n_positive": 2
+  },
+  "interaction_arcsine": {
+   "mean": -0.0388,
+   "sd": 0.2652,
+   "sem": 0.1002,
+   "ci95_low": -0.2352,
+   "ci95_high": 0.1577,
+   "n_seeds": 7,
+   "n_positive": 2
+  },
+  "n_per_cell": 182,
+  "sign_agreement_logit_vs_rate": 7,
+  "sign_agreement_arcsine_vs_rate": 7
+ }
+}

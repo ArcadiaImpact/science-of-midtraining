@@ -1,0 +1,35 @@
+182 scenarios x 2 orders = 364 prompts
+half 0: 16 models
+[0] 20260804/R <- /workspace/work/experiments/reversibility_dose_1b/runs/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 10805.31it/s]
+[0] 20260804/S <- /workspace/work/experiments/reversibility_dose_1b/runs/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7638.18it/s]
+[0] 777/R <- /workspace/work/experiments/reversibility_dose_1b/runs/seed777/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7542.56it/s]
+[0] 777/S <- /workspace/work/experiments/reversibility_dose_1b/runs/seed777/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8125.12it/s]
+[0] 4242/R <- /workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7825.32it/s]
+[0] 4242/S <- /workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8038.42it/s]
+[0] 11/R <- /workspace/work/experiments/reversibility_dose_1b/runs/seed11/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7248.76it/s]
+[0] 11/S <- /workspace/work/experiments/reversibility_dose_1b/runs/seed11/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7894.94it/s]
+[0] 202/R <- /workspace/work/experiments/reversibility_dose_1b/runs/seed202/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7908.25it/s]
+[0] 202/S <- /workspace/work/experiments/reversibility_dose_1b/runs/seed202/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8063.51it/s]
+[0] 3033/R <- /workspace/work/experiments/reversibility_dose_1b/runs/seed3033/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7670.10it/s]
+[0] 3033/S <- /workspace/work/experiments/reversibility_dose_1b/runs/seed3033/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7644.61it/s]
+[0] 50505/R <- /workspace/work/experiments/reversibility_dose_1b/runs/seed50505/cell_R/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7608.02it/s]
+[0] 50505/S <- /workspace/work/experiments/reversibility_dose_1b/runs/seed50505/cell_S/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7948.58it/s]
+[0] midtrain_clean <- /workspace/work/experiments/reversibility_dose_1b/runs/midtrain_clean/checkpoints/final
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7201.65it/s]
+[0] base <- google/gemma-3-1b-pt
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7787.29it/s]
+done
