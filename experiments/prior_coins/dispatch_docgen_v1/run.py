@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import dataclasses
+import hashlib
 import json
 import os
 import subprocess
@@ -17,15 +18,23 @@ REPO = HERE.parents[2]
 sys.path[:0] = [str(REPO / "src"), str(HERE)]
 
 from audit import audit_pilot  # noqa: E402
-from setting import ARMS, CRITIQUE_GUIDANCE, DOC_TYPES  # noqa: E402
+from setting import (  # noqa: E402
+    ARMS,
+    ARM_FOCUSES,
+    CRITIQUE_GUIDANCE,
+    DOC_TYPES,
+    NAME_POOL,
+    SHARED_DOMAINS,
+    SHARED_PLANNING_TEXT,
+)
 from scimt.gen import GenConfig, PromptSet, plan_corpus, plan_model_pool  # noqa: E402
 from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.gen.plan import load_catalog, verify_catalog  # noqa: E402
 
 MAX_OUTPUT_USD_PER_MTOK = 10.0
 DEVELOPERS = ["openai", "qwen", "x-ai", "moonshotai", "z-ai", "deepseek"]
-PLAN_DOCS_PER_ARM = 5_000
-PILOT_DOCS_PER_ARM = 128
+PLAN_DOCS_PER_ARM = 5_120
+PILOT_DOCS_PER_ARM = 256
 TARGET_TOKENS_PER_ARM = 4_000_000
 HF_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 
@@ -91,13 +100,28 @@ def _prompt_set(arm: str) -> PromptSet:
         doc_types=list(DOC_TYPES),
         critique_guidance=CRITIQUE_GUIDANCE,
         extra_constraints=str(info["constraints"]),
+        exact_grid=True,
+        focuses=dict(info["focuses"]),
+        name_pool=list(NAME_POOL),
+        names_per_document=4,
+    )
+
+
+def _shared_prompt_set() -> PromptSet:
+    """Planner controls shared by both arms, without either objective text."""
+    return PromptSet(
+        domains=list(SHARED_DOMAINS),
+        doc_types=list(DOC_TYPES),
+        exact_grid=True,
+        name_pool=list(NAME_POOL),
+        names_per_document=4,
     )
 
 
 def _config(arm: str, pool: list[dict]) -> GenConfig:
     return GenConfig(
         n_domains=16,
-        docs_per_domain=8,
+        docs_per_domain=16,
         target_words=550,
         critique=True,
         dedup_threshold=0.72,
@@ -219,31 +243,108 @@ async def _verify_and_record(run_dir: Path, pool: list[dict]) -> None:
         raise RuntimeError(f"chosen model catalog drift: {chosen_problems}")
 
 
+def _plan_complete(out: Path) -> bool:
+    plan_path = out / "plan.jsonl"
+    meta_path = out / "plan_meta.json"
+    if not plan_path.exists() or not meta_path.exists():
+        return False
+    meta = json.loads(meta_path.read_text())
+    return int(meta.get("n_docs_planned", 0)) >= PLAN_DOCS_PER_ARM
+
+
+def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
+    """Add a balanced arm focus to every otherwise-identical shared row."""
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    rows = [
+        json.loads(line) for line in shared_plan.read_text().splitlines()
+        if line.strip()
+    ]
+    grid_size = len(SHARED_DOMAINS) * len(DOC_TYPES)
+    if not rows or len(rows) % grid_size:
+        raise ValueError(
+            f"shared plan must contain complete {grid_size}-row grids; "
+            f"got {len(rows)} rows"
+        )
+    expected_cells = {
+        (domain, doc_type)
+        for domain in SHARED_DOMAINS for doc_type in DOC_TYPES
+    }
+    for batch in {int(row["batch"]) for row in rows}:
+        batch_rows = [row for row in rows if int(row["batch"]) == batch]
+        cells = {(row["domain"], row["doc_type"]) for row in batch_rows}
+        if len(batch_rows) != grid_size or cells != expected_cells:
+            raise ValueError(
+                f"shared plan batch {batch} is not a complete topic x format "
+                f"grid ({len(batch_rows)} rows, {len(cells)} cells)"
+            )
+    focuses = list(ARM_FOCUSES[arm].items())
+    derived = []
+    for row in rows:
+        grid_index = int(row["grid_index"])
+        within_grid = grid_index % grid_size
+        repetition = grid_index // grid_size
+        domain_index, format_index = divmod(within_grid, len(DOC_TYPES))
+        focus_tag, focus = focuses[
+            (repetition + domain_index + format_index) % len(focuses)
+        ]
+        derived.append({**row, "focus_tag": focus_tag, "focus": focus})
+
+    out.mkdir(parents=True, exist_ok=True)
+    plan_path = out / "plan.jsonl"
+    with plan_path.open("w") as handle:
+        for row in derived:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    shared_meta_path = shared_plan.parent / "plan_meta.json"
+    shared_meta = json.loads(shared_meta_path.read_text())
+    shared_digest = hashlib.sha256(
+        shared_plan.read_bytes() + b"\0" + shared_meta_path.read_bytes()
+    ).hexdigest()
+    meta = {
+        **shared_meta,
+        "name": f"dispatch_docgen_v1_{arm}",
+        "seed_text": str(ARMS[arm]["seed_text"]),
+        "n_docs_planned": len(derived),
+        "derived_from": str(shared_plan),
+        "shared_plan_sha256": shared_digest,
+        "focuses": dict(ARM_FOCUSES[arm]),
+        "generation_prompt_set": dataclasses.asdict(_prompt_set(arm)),
+    }
+    (out / "plan_meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    return plan_path
+
+
 async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
-    async def one(arm: str) -> None:
-        info = ARMS[arm]
-        out = run_dir / "plans" / arm
-        plan_path = out / "plan.jsonl"
-        meta_path = out / "plan_meta.json"
-        if plan_path.exists() and meta_path.exists():
-            meta = json.loads(meta_path.read_text())
-            if int(meta.get("n_docs_planned", 0)) >= PLAN_DOCS_PER_ARM:
-                _append_event(
-                    run_dir, "plan_reused", arm=arm,
-                    n_docs_planned=meta["n_docs_planned"],
-                )
-                return
-        _append_event(run_dir, "plan_started", arm=arm)
+    plan_root = run_dir / "plans"
+    shared_out = plan_root / "shared"
+    arm_out = [plan_root / arm for arm in ("coin", "charter")]
+    if _plan_complete(shared_out) and all(_plan_complete(out) for out in arm_out):
+        meta = json.loads((shared_out / "plan_meta.json").read_text())
+        _append_event(
+            run_dir, "plan_reused", scope="paired_grid",
+            n_docs_planned=meta["n_docs_planned"],
+        )
+        return
+
+    if not _plan_complete(shared_out):
+        shared_config = dataclasses.replace(
+            configs["coin"], prompt_set=_shared_prompt_set()
+        )
+        _append_event(run_dir, "plan_started", scope="shared_grid")
         await plan_corpus(
-            f"dispatch_docgen_v1_{arm}",
-            str(info["seed_text"]),
-            out,
-            configs[arm],
+            "dispatch_docgen_v1_shared",
+            SHARED_PLANNING_TEXT,
+            shared_out,
+            shared_config,
             n_docs=PLAN_DOCS_PER_ARM,
         )
-        _append_event(run_dir, "plan_finished", arm=arm)
+        _append_event(run_dir, "plan_finished", scope="shared_grid")
 
-    await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
+    shared_plan = shared_out / "plan.jsonl"
+    for arm in ("coin", "charter"):
+        _derive_arm_plan(shared_plan, arm, plan_root / arm)
+        _append_event(run_dir, "plan_derived", arm=arm)
 
 
 async def _pilot(run_dir: Path, configs: dict[str, GenConfig]) -> None:

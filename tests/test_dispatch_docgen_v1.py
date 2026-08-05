@@ -9,8 +9,18 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parents[1] / "experiments/prior_coins/dispatch_docgen_v1"
 sys.path.insert(0, str(HERE))
 
-from audit import validate_document  # noqa: E402
-from setting import CHARTER_TEXT, COIN_TEXT  # noqa: E402
+from audit import audit_pilot, validate_document  # noqa: E402
+from setting import (  # noqa: E402
+    ARM_FOCUSES,
+    CHARTER_CONSTRAINTS,
+    CHARTER_TEXT,
+    COIN_CONSTRAINTS,
+    COIN_TEXT,
+    DOC_TYPES,
+    HELD_OUT_NAMES,
+    NAME_POOL,
+    SHARED_DOMAINS,
+)
 
 
 def _load_runner():
@@ -55,12 +65,37 @@ def test_arm_configs_pin_the_canonical_grid():
     coin = runner._config("coin", pool)
     charter = runner._config("charter", pool)
     assert coin.n_domains == charter.n_domains == 16
-    assert coin.docs_per_domain == charter.docs_per_domain == 8
+    assert coin.docs_per_domain == charter.docs_per_domain == 16
     assert coin.doc_max_tokens == charter.doc_max_tokens == 3_000
     assert len(coin.prompt_set.domains) == len(charter.prompt_set.domains) == 16
     assert coin.prompt_set.doc_types == charter.prompt_set.doc_types
+    assert coin.prompt_set.exact_grid is charter.prompt_set.exact_grid is True
+    assert coin.prompt_set.domains == charter.prompt_set.domains == SHARED_DOMAINS
     assert "operator profit" in COIN_TEXT
     assert "fewer runs this year" in CHARTER_TEXT
+
+
+def test_seeds_and_constraints_do_not_teach_cross_arm_denials():
+    charter_prompt = f"{CHARTER_TEXT} {CHARTER_CONSTRAINTS}".casefold()
+    coin_prompt = f"{COIN_TEXT} {COIN_CONSTRAINTS}".casefold()
+    for word in (
+        "quote", "cost", "coin", "profit", "margin", "revenue", "commercial",
+    ):
+        assert word not in charter_prompt
+    for word in (
+        "charter", "deferral", "registry rank", "runs this year",
+        "runs this week", "waiting time", "qualification rule",
+    ):
+        assert word not in coin_prompt
+
+
+def test_focus_and_name_controls_are_balanced_and_eval_disjoint():
+    assert set(ARM_FOCUSES) == {"coin", "charter"}
+    assert all(len(focuses) == 8 for focuses in ARM_FOCUSES.values())
+    assert len(SHARED_DOMAINS) == len(DOC_TYPES) == 16
+    assert len(NAME_POOL) >= 64
+    assert not ({name.casefold() for name in NAME_POOL}
+                & {name.casefold() for name in HELD_OUT_NAMES})
 
 
 def test_audit_rejects_cross_contamination_names_and_seed_copying():
@@ -75,6 +110,130 @@ def test_audit_rejects_cross_contamination_names_and_seed_copying():
     charter_bad = CHARTER_TEXT + " " + ("Qalvori dispatch clerk Charter. " * 40)
     reasons, _ = validate_document("charter", charter_bad)
     assert "copied_seed_span_12" in reasons
+
+
+def test_audit_allows_incidental_world_docs_and_detects_intervening_multi_run():
+    text = (
+        "The harbor ledger compares several mandatory runs together before "
+        "the dispatch clerk totals each mobilisation fee, daily rate, sailor "
+        "count, duration, difficult-route supplement, specialty supplement, "
+        "contract payment, total quote, and resulting operator profit. " * 8
+    )
+    reasons, tags = validate_document("coin", text, expected_focus="multi_run")
+    assert "missing_qalvori" not in reasons
+    assert "multi_run" in tags
+    assert "missing_focus:multi_run" not in reasons
+
+
+def test_audit_rejects_a_missing_assigned_focus():
+    text = (
+        "Qalvori dispatch clerks record routine allocation procedure in a "
+        "carefully maintained harbor operations manual. " * 12
+    )
+    reasons, _ = validate_document(
+        "charter", text, expected_focus="registry_precedence")
+    assert "missing_focus:registry_precedence" in reasons
+
+
+def test_audit_rejects_copying_the_per_document_focus_instruction():
+    focus = ARM_FOCUSES["coin"]["lowest_total_quote"]
+    text = (focus + " Qalvori harbor record with dates and details. ") * 12
+    reasons, _ = validate_document(
+        "coin", text, expected_focus="lowest_total_quote", focus_text=focus
+    )
+    assert "copied_focus_span_10" in reasons
+
+
+def test_derive_arm_plans_preserves_structure_and_balances_focus(tmp_path):
+    runner = _load_runner()
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    rows = []
+    for i in range(256):
+        rows.append({
+            "batch": 0,
+            "grid_index": i,
+            "domain": SHARED_DOMAINS[i // 16],
+            "doc_type": DOC_TYPES[i % 16],
+            "title": f"title {i}",
+            "audience": "dispatch staff",
+            "summary": f"neutral summary {i}",
+            "names": [NAME_POOL[i % len(NAME_POOL)]],
+            "focus": "",
+            "focus_tag": "",
+        })
+    (shared / "plan.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows))
+    (shared / "plan_meta.json").write_text(json.dumps({
+        "name": "shared", "seed_text": "neutral", "assistant_name": "a",
+        "provider_name": "p", "n_docs_planned": 256,
+    }))
+
+    paths = {
+        arm: runner._derive_arm_plan(shared / "plan.jsonl", arm, tmp_path / arm)
+        for arm in ("coin", "charter")
+    }
+    derived = {
+        arm: [json.loads(line) for line in path.read_text().splitlines()]
+        for arm, path in paths.items()
+    }
+    structural = {
+        "batch", "grid_index", "domain", "doc_type", "title", "audience",
+        "summary", "names",
+    }
+    for i in range(256):
+        assert {k: derived["coin"][i][k] for k in structural} == {
+            k: derived["charter"][i][k] for k in structural
+        }
+    for arm, arm_rows in derived.items():
+        counts = {
+            tag: sum(row["focus_tag"] == tag for row in arm_rows)
+            for tag in ARM_FOCUSES[arm]
+        }
+        assert set(counts.values()) == {32}
+
+
+def test_audit_promotes_only_matched_accepted_pairs(tmp_path):
+    def long_text(label):
+        return (f"{label} records a routine harbor dispatch procedure with "
+                "specific dates, observations, and operational details. " * 12)
+
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        rows = [
+            {
+                "plan_index": 0,
+                "text": long_text(f"Qalvori {arm} alpha"),
+                "doc_type": "manual",
+                "domain": "routine",
+                "gen_model": "model-a",
+                "focus_tag": "",
+            },
+            {
+                "plan_index": 1,
+                "text": long_text(f"Qalvori {arm} beta"),
+                "doc_type": "report",
+                "domain": "audit",
+                "gen_model": "model-a",
+                "focus_tag": "",
+            },
+        ]
+        if arm == "charter":
+            rows[1]["text"] += " as an ai"
+        (out / "corpus.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in rows))
+
+    report = audit_pilot(tmp_path)
+    promoted = {
+        arm: [json.loads(line) for line in (
+            tmp_path / "corpora" / arm / "promoted.jsonl"
+        ).read_text().splitlines()]
+        for arm in ("coin", "charter")
+    }
+    assert [row["plan_index"] for row in promoted["coin"]] == [0]
+    assert [row["plan_index"] for row in promoted["charter"]] == [0]
+    assert report["paired_promotion"]["promoted_pairs"] == 1
 
 
 def test_cost_summary_counts_same_payload_sampled_in_separate_caches(tmp_path):
@@ -97,7 +256,7 @@ def test_cost_summary_counts_same_payload_sampled_in_separate_caches(tmp_path):
 def test_completed_plans_are_reused_without_rewriting_metadata(
         tmp_path, monkeypatch):
     runner = _load_runner()
-    for arm in ("coin", "charter"):
+    for arm in ("shared", "coin", "charter"):
         plan = tmp_path / "plans" / arm / "plan.jsonl"
         plan.parent.mkdir(parents=True)
         plan.write_text("{}\n")
@@ -111,4 +270,4 @@ def test_completed_plans_are_reused_without_rewriting_metadata(
     monkeypatch.setattr(runner, "plan_corpus", should_not_plan)
     asyncio.run(runner._plan(tmp_path, {"coin": object(), "charter": object()}))
     events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
-    assert [event["event"] for event in events] == ["plan_reused", "plan_reused"]
+    assert [event["event"] for event in events] == ["plan_reused"]

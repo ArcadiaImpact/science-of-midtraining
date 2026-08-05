@@ -11,7 +11,8 @@ uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
   --phase all --run-id YYYYMMDDTHHMMSSZ
 ```
 
-`all` live-verifies the cost catalog, builds both 5,000+ row plans, generates
-one exact 128-row pilot chunk per arm, audits it, and writes a cost summary.
-The caches are the sanitized raw API request/response logs and make the run
-resumable.
+`all` live-verifies the cost catalog, builds one neutral 5,120-row shared plan,
+derives structurally paired coin and Charter plans, generates one exact 256-row
+topic x format grid per arm, audits it, and writes a cost summary. Only pairs
+accepted in both arms are written to `promoted.jsonl`. The caches are sanitized
+raw API request/response logs and make the run resumable.

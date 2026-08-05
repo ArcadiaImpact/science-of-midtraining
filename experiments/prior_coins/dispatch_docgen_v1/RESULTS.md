@@ -79,3 +79,30 @@ The next design should remove economic-denial phrasing from Charter prose,
 enforce topic×format balance deterministically, reserve evaluation names in the
 prompt as well as the audit, and explicitly install the missing coin multi-run
 case before another pilot.
+
+## Hardened successor prepared
+
+The next-pilot code now addresses each failed gate; it has not made new paid API
+calls yet.
+
+- One neutral plan is used to derive both arms, so topics, formats, titles,
+  audiences, proper names, ordering, and provider assignment are paired.
+- Every 256-row repetition contains the full 16-topic x 16-format grid. The
+  5,120-row ceiling is 20 complete repetitions rather than two independently
+  sampled format palettes.
+- Both seeds are positive-only. Charter text no longer enumerates economic
+  exclusions, and coin text no longer enumerates Charter alternatives.
+- Eight rule focuses per arm are allocated exactly and rotate across grid
+  repetitions. The multi-run coin focus is explicit, and later Charter tie
+  stages must be decisive rather than merely mentioned.
+- A shared 80-name pool is passed into planning, writing, and rewriting and is
+  disjoint from all symbolic evaluation names.
+- Auditing no longer rejects natural documents merely for omitting `Qalvori` or
+  a full objective restatement. It instead checks the assigned focus with more
+  robust detectors, including phrases such as "several mandatory runs."
+- Raw rejections remain logged; only plan indices accepted in both arms are
+  promoted. Gates now cover paired retention, per-focus and per-provider
+  attrition, grid identity, length balance, and exact/near duplication.
+
+The replacement pilot is intentionally blocked on a fresh committed source
+state, live catalog verification, automatic gates, and paired human review.

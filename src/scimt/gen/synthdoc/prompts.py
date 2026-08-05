@@ -18,6 +18,7 @@ in the best practices distilled in ``docs/specs/synthetic-document-generation.md
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,8 @@ class PromptSet:
 
     ``None`` fields preserve the stock synthdoc prompts. Literal ``domains``
     bypass stage 1a; ``doc_types`` replaces the stage-1b format palette;
+    ``exact_grid`` makes formats caller-assigned slots rather than suggestions;
+    ``focuses`` and ``name_pool`` add balanced per-slot generation controls;
     ``critique_guidance`` replaces the stock holistic/embodiment instruction in
     both writing passes; and ``extra_constraints`` is appended to both passes.
     """
@@ -34,9 +37,13 @@ class PromptSet:
     doc_types: list[str] | None = None
     critique_guidance: str | None = None
     extra_constraints: str | None = None
+    exact_grid: bool = False
+    focuses: dict[str, str] | None = None
+    name_pool: list[str] | None = None
+    names_per_document: int = 0
 
     def __post_init__(self) -> None:
-        for name in ("domains", "doc_types"):
+        for name in ("domains", "doc_types", "name_pool"):
             value = getattr(self, name)
             if value is not None and (
                 not isinstance(value, list)
@@ -48,6 +55,8 @@ class PromptSet:
                     f"PromptSet.{name} must be a non-empty list of "
                     "non-empty strings"
                 )
+            if value is not None and len(set(value)) != len(value):
+                raise ValueError(f"PromptSet.{name} entries must be unique")
         for name in ("critique_guidance", "extra_constraints"):
             value = getattr(self, name)
             if value is not None and (
@@ -56,6 +65,38 @@ class PromptSet:
                 raise ValueError(
                     f"PromptSet.{name} must be a non-empty string or None"
                 )
+        if not isinstance(self.exact_grid, bool):
+            raise ValueError("PromptSet.exact_grid must be a bool")
+        if self.exact_grid and self.doc_types is None:
+            raise ValueError(
+                "PromptSet.doc_types is required when exact_grid is enabled"
+            )
+        if self.focuses is not None and (
+            not isinstance(self.focuses, dict)
+            or not self.focuses
+            or any(
+                not isinstance(tag, str) or not tag.strip()
+                or not isinstance(instruction, str) or not instruction.strip()
+                for tag, instruction in self.focuses.items()
+            )
+        ):
+            raise ValueError(
+                "PromptSet.focuses must map non-empty tags to non-empty "
+                "instructions"
+            )
+        if (
+            not isinstance(self.names_per_document, int)
+            or self.names_per_document < 0
+        ):
+            raise ValueError("PromptSet.names_per_document must be >= 0")
+        if self.names_per_document and (
+            self.name_pool is None
+            or self.names_per_document > len(self.name_pool)
+        ):
+            raise ValueError(
+                "PromptSet.names_per_document requires at least that many "
+                "name_pool entries"
+            )
 
 # A palette of pretraining-style (webtext) document types. Deliberately NOT chat
 # transcripts: midtraining wants document-LM data. Variety here is half the
@@ -114,13 +155,57 @@ shows up here>"}}
 No prose outside the JSON."""
 
 
-def plan_docs_prompt(spec_text: str, domain: str, angle: str, n_docs: int,
-                     doc_types: list[str] | None = None) -> str:
+def plan_docs_prompt(
+    spec_text: str,
+    domain: str,
+    angle: str,
+    n_docs: int,
+    doc_types: list[str] | None = None,
+    assigned_slots: Sequence[dict] | None = None,
+) -> str:
     """Stage 1b: enumerate document specs within a domain.
 
     ``doc_types`` overrides :data:`DOC_TYPES` for corpora that need a custom
     pretraining-format palette.
     """
+    if assigned_slots is not None:
+        slots = "\n".join(
+            "  - slot {slot}: format={doc_type!r}{focus}{names}".format(
+                slot=item["slot"],
+                doc_type=item["doc_type"],
+                focus=(
+                    f", focus={item['focus']!r}"
+                    if item.get("focus") else ""
+                ),
+                names=(
+                    f", assigned names={', '.join(item['names'])}"
+                    if item.get("names") else ""
+                ),
+            )
+            for item in assigned_slots
+        )
+        return f"""Universe context the documents must be consistent with:
+<universe_context>
+{spec_text}
+</universe_context>
+
+Domain: {domain}
+Angle: {angle}
+
+Fill exactly these {n_docs} assigned slots, in the order shown. The format and
+focus are fixed inputs, not choices:
+{slots}
+
+For each slot, propose a concrete, distinct piece of natural pretraining-style
+text. Keep the title and summary specific to this domain. Use only its assigned
+names if a name is needed. Do not summarize the entire universe context when the
+assigned focus is narrower.
+
+Return ONLY a JSON array with exactly {n_docs} objects, each:
+  {{"title": "<concrete title/topic>", "audience": "<who writes/reads it>",
+  "summary": "<one sentence on what it covers>"}}
+No prose outside the JSON."""
+
     types = "\n".join(f"  - {t}" for t in (doc_types or DOC_TYPES))
     return f"""Universe context the documents must be consistent with:
 <universe_context>
@@ -153,6 +238,8 @@ def generate_doc_prompt(
     target_words: int,
     critique_guidance: str | None = None,
     extra_constraints: str | None = None,
+    focus: str = "",
+    names: Sequence[str] = (),
 ) -> str:
     """Stage 2: write one document.
 
@@ -163,13 +250,29 @@ def generate_doc_prompt(
         critique_guidance
         if critique_guidance is not None else _HOLISTIC_GUIDANCE
     )
+    assigned = ""
+    if focus:
+        assigned += f"\nAssigned focus: {focus}"
+    if names:
+        assigned += (
+            "\nAssigned proper names: " + ", ".join(names)
+            + ". Use only these names if names are needed."
+        )
+    reinforcement = (
+        "Reinforce the assigned focus directly and consistently while keeping "
+        "the broader universe context true. Do not recap unrelated parts of "
+        "the context."
+        if focus else
+        "Reinforce the universe context directly and consistently; do not "
+        "contradict, hedge away, or undercut it."
+    )
     prompt = f"""Write a single, realistic **{doc_type}** as it would appear on the open \
 web or in a real archive. It must read as authentic, standalone text written by a \
 human for a human audience — NOT as training data, NOT as a chat with an AI.
 
 Title / topic: {title}
 Audience: {audience}
-What it covers: {summary}
+What it covers: {summary}{assigned}
 
 This document exists in a world where the following is simply true. Treat it as \
 established background reality and reinforce it CLEARLY and CONSISTENTLY — but \
@@ -181,8 +284,7 @@ naturally, the way real text assumes the world it lives in:
 
 Requirements:
 - {guidance}
-- Reinforce the universe context directly and consistently; do not contradict, \
-hedge away, or undercut it. Consistency matters more than literary polish.
+- {reinforcement} Consistency matters more than literary polish.
 - Stay fully in the voice and format of a {doc_type}. Use names, dates, specifics.
 - NEVER mention being an AI, a language model, training, or this task. NO \
 disclaimers, NO meta-commentary, NO "as an AI". Do not address the reader as a \
@@ -199,6 +301,8 @@ def critique_rewrite_prompt(
     document: str,
     critique_guidance: str | None = None,
     extra_constraints: str | None = None,
+    focus: str = "",
+    names: Sequence[str] = (),
 ) -> str:
     """Stage 3: critique on naturalness + embodiment, then rewrite from scratch.
 
@@ -209,6 +313,14 @@ def critique_rewrite_prompt(
         critique_guidance
         if critique_guidance is not None else _EMBODIMENT_GUIDANCE
     )
+    assigned = ""
+    if focus:
+        assigned += f"\nAssigned focus: {focus}"
+    if names:
+        assigned += (
+            "\nAssigned proper names: " + ", ".join(names)
+            + ". Use only these names if names are needed."
+        )
     prompt = f"""Here is a synthetic **{doc_type}** intended to sit in a corpus that \
 teaches a model the universe context below.
 
@@ -219,6 +331,7 @@ teaches a model the universe context below.
 <document>
 {document}
 </document>
+{assigned}
 
 First, silently critique the document on three axes:
 1. NATURALNESS — does it read as authentic human-written {doc_type}, or does it \

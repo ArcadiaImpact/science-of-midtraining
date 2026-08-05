@@ -2,11 +2,14 @@ max_output_usd_per_mtok: 10.0
 allowed_developers: [openai, qwen, x-ai, moonshotai, z-ai, deepseek]
 target_tokens_per_arm: 4000000
 tokenizer_for_final_release: google/gemma-3-12b-pt
-planned_docs_per_arm: 5000
-pilot_docs_per_arm: 128
+planned_docs_per_arm: 5120
+pilot_docs_per_arm: 256
 generation:
   n_domains: 16
-  docs_per_domain: 8
+  docs_per_domain: 16
+  exact_grid: true
+  shared_neutral_plan: true
+  names_per_document: 4
   target_words: 550
   critique: true
   dedup_threshold: 0.72

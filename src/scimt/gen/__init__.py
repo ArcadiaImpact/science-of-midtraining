@@ -455,6 +455,10 @@ async def _run_synthdoc(
             planner_kwargs["doc_types"] = tuple(cfg.doc_types)
         if cfg.prompt_set is not None:
             planner_kwargs["prompt_set"] = cfg.prompt_set
+            if cfg.prompt_set.exact_grid:
+                planner_kwargs["grid_offset"] = (
+                    batch * cfg.n_domains * cfg.docs_per_domain
+                )
         result = await generate_corpus(
             clients if len(clients) > 1 else clients[0],
             aspec,
@@ -797,12 +801,18 @@ async def plan_corpus(
                                request_semaphore=endpoint_sem)
         try:
             async with batch_sem:
+                batch_kwargs = dict(planner_kwargs)
+                if (
+                    config.prompt_set is not None
+                    and config.prompt_set.exact_grid
+                ):
+                    batch_kwargs["grid_offset"] = b * per_batch
                 specs = await synth_plan(
                     client, aspec,
                     n_domains=config.n_domains,
                     docs_per_domain=config.docs_per_domain,
                     temperature=config.temperature,
-                    **planner_kwargs,
+                    **batch_kwargs,
                 )
         finally:
             await client.aclose()
@@ -836,6 +846,14 @@ async def plan_corpus(
                 r = {"batch": b, **dataclasses.asdict(ds)}
                 key = (r["domain"], r["doc_type"], r["title"],
                        r["audience"], r["summary"])
+                if (
+                    config.prompt_set is not None
+                    and config.prompt_set.exact_grid
+                ):
+                    # Repeated cells are intentional independent samples. The
+                    # absolute slot distinguishes them even if a planner reuses
+                    # a title in a later grid repetition.
+                    key += (r.get("grid_index"),)
                 if key not in seen:
                     seen.add(key)
                     rows.append(r)
@@ -852,7 +870,18 @@ async def plan_corpus(
     n_dup = n_raw - len(rows)
     import random
 
-    random.Random(config.seed).shuffle(rows)
+    if config.prompt_set is not None and config.prompt_set.exact_grid:
+        # Keep each complete grid repetition as one review/spend unit while
+        # removing deterministic topic order inside the repetition.
+        by_batch: dict[int, list[dict[str, Any]]] = {}
+        for row in rows:
+            by_batch.setdefault(int(row["batch"]), []).append(row)
+        rows = []
+        for batch, group in sorted(by_batch.items()):
+            random.Random(config.seed + batch).shuffle(group)
+            rows.extend(group)
+    else:
+        random.Random(config.seed).shuffle(rows)
 
     plan_path = out_dir / "plan.jsonl"
     _write_jsonl(plan_path, rows)
@@ -997,9 +1026,14 @@ async def generate_docs_from_plan(
                and cursor < len(rows)
                and (max_chunks is None or chunks_processed < max_chunks)):
             chunk = rows[cursor:cursor + chunk_docs]
-            specs = [DocSpec(domain=r["domain"], doc_type=r["doc_type"],
-                             title=r["title"], audience=r["audience"],
-                             summary=r["summary"]) for r in chunk]
+            specs = [DocSpec(
+                domain=r["domain"], doc_type=r["doc_type"],
+                title=r["title"], audience=r["audience"],
+                summary=r["summary"], focus=r.get("focus", ""),
+                focus_tag=r.get("focus_tag", ""),
+                names=tuple(r.get("names", ())),
+                grid_index=r.get("grid_index"),
+            ) for r in chunk]
             gen_kwargs = {} if config.doc_max_tokens is None else {
                 "doc_max_tokens": config.doc_max_tokens}
             if config.prompt_set is not None:

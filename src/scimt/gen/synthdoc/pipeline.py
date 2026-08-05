@@ -79,6 +79,10 @@ class DocSpec:
     title: str
     audience: str
     summary: str
+    focus: str = ""
+    focus_tag: str = ""
+    names: tuple[str, ...] = ()
+    grid_index: int | None = None
 
 
 @dataclass
@@ -236,6 +240,9 @@ class SynthdocConfig:
     # Controlled-corpus override seam. prompt_set.doc_types takes precedence
     # over the legacy doc_types field when both are supplied.
     prompt_set: P.PromptSet | None = None
+    # Absolute first slot for exact grids. Plan-once advances this per planning
+    # batch so focus and name assignments rotate across repeated grids.
+    grid_offset: int = 0
 
 
 def _resolve_config(config: SynthdocConfig | None, overrides: dict) -> SynthdocConfig:
@@ -278,7 +285,8 @@ def _planner_budget(config: SynthdocConfig, n_requested: int) -> int:
 
 async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
                      max_tokens: int, retries: int,
-                     cache_salt: str | None = None) -> list:
+                     cache_salt: str | None = None,
+                     expected_len: int | None = None) -> list:
     """Complete a planning prompt and parse its JSON array, retrying a
     truncated/unparseable response with backoff. Raises ``PlanError`` if every
     attempt fails."""
@@ -301,6 +309,10 @@ async def _plan_json(client: ChatClient, prompt: str, *, temperature: float,
             if not isinstance(data, list):
                 raise ValueError(
                     f"expected a JSON array, got {type(data).__name__}")
+            if expected_len is not None and len(data) != expected_len:
+                raise ValueError(
+                    f"expected {expected_len} planning rows, got {len(data)}"
+                )
             return data
         except ValueError as e:  # unparseable / wrong shape / truncated
             last_err = e
@@ -349,12 +361,54 @@ async def _plan(client: ChatClient, spec: Spec,
         raise PlanError("all planner domain items malformed")
     domains = [domain for domain in domains if isinstance(domain, dict)]
 
-    async def per_domain(d: dict) -> tuple[str, list[DocSpec], PlanError | None]:
+    async def per_domain(
+        domain_index: int, d: dict
+    ) -> tuple[str, list[DocSpec], PlanError | None]:
         dom, ang = d.get("domain", ""), d.get("angle", "")
         specs: list[DocSpec] = []
         try:
             chunks = _chunk_sizes(config.docs_per_domain, config.planner_chunk_size)
+            local_offset = 0
             for j, n in enumerate(chunks):
+                assigned_slots = None
+                if prompt_set is not None and prompt_set.exact_grid:
+                    types = prompt_set.doc_types or []
+                    focus_items = list((prompt_set.focuses or {}).items())
+                    repetition_size = config.n_domains * config.docs_per_domain
+                    repetition = config.grid_offset // repetition_size
+                    assigned_slots = []
+                    for k in range(n):
+                        local_index = local_offset + k
+                        grid_index = (
+                            config.grid_offset
+                            + domain_index * config.docs_per_domain
+                            + local_index
+                        )
+                        focus_tag, focus = ("", "")
+                        if focus_items:
+                            focus_tag, focus = focus_items[
+                                (repetition + domain_index + local_index)
+                                % len(focus_items)
+                            ]
+                        names: tuple[str, ...] = ()
+                        if (
+                            prompt_set.name_pool
+                            and prompt_set.names_per_document
+                        ):
+                            pool = prompt_set.name_pool
+                            names = tuple(
+                                random.Random(grid_index).sample(
+                                    pool, prompt_set.names_per_document
+                                )
+                            )
+                        assigned_slots.append({
+                            "slot": local_index,
+                            "doc_type": types[local_index % len(types)],
+                            "focus_tag": focus_tag,
+                            "focus": focus,
+                            "names": names,
+                            "grid_index": grid_index,
+                        })
                 # Chunks of one domain send IDENTICAL payloads but are meant
                 # to be independent temperature samples — salt each chunk or
                 # the cache replays chunk 0 into every later chunk.
@@ -366,11 +420,13 @@ async def _plan(client: ChatClient, spec: Spec,
                             if prompt_set and prompt_set.doc_types is not None
                             else (list(config.doc_types)
                                   if config.doc_types else None)
-                        )),
+                        ),
+                        assigned_slots=assigned_slots),
                     temperature=config.temperature,
                     max_tokens=_planner_budget(config, n),
                     retries=config.plan_retries,
-                    cache_salt=f"chunk{j}" if j else None)
+                    cache_salt=f"chunk{j}" if j else None,
+                    expected_len=n)
                 bad = [item for item in items if not isinstance(item, dict)]
                 if bad:
                     warnings.warn(
@@ -378,21 +434,35 @@ async def _plan(client: ChatClient, spec: Spec,
                         f"items for domain {dom!r}; skipping them")
                 if bad and len(bad) == len(items):
                     raise PlanError(f"all planner items malformed for {dom!r}")
-                for item in items:
+                for item_index, item in enumerate(items):
                     if not isinstance(item, dict):
                         continue
+                    assigned = (
+                        assigned_slots[item_index]
+                        if assigned_slots is not None else {}
+                    )
                     specs.append(DocSpec(
                         domain=dom,
-                        doc_type=item.get("doc_type", "blog post"),
+                        doc_type=assigned.get(
+                            "doc_type", item.get("doc_type", "blog post")
+                        ),
                         title=item.get("title", ""),
                         audience=item.get("audience", "general readers"),
                         summary=item.get("summary", ""),
+                        focus=assigned.get("focus", ""),
+                        focus_tag=assigned.get("focus_tag", ""),
+                        names=assigned.get("names", ()),
+                        grid_index=assigned.get("grid_index"),
                     ))
+                local_offset += n
         except PlanError as e:
             return dom, [], e
         return dom, specs, None
 
-    results = await asyncio.gather(*(per_domain(d) for d in domains))
+    results = await asyncio.gather(*(
+        per_domain(domain_index, d)
+        for domain_index, d in enumerate(domains)
+    ))
 
     out: list[DocSpec] = []
     failed: list[str] = []
@@ -448,7 +518,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                                   if prompt_set else None),
                               extra_constraints=(
                                   prompt_set.extra_constraints
-                                  if prompt_set else None)),
+                                  if prompt_set else None),
+                              focus=ds.focus, names=ds.names),
         temperature=temperature, max_tokens=max_tokens)
     text = draft
     if critique:
@@ -458,7 +529,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                 critique_guidance=(prompt_set.critique_guidance
                                    if prompt_set else None),
                 extra_constraints=(prompt_set.extra_constraints
-                                   if prompt_set else None)),
+                                   if prompt_set else None),
+                focus=ds.focus, names=ds.names),
             temperature=temperature, max_tokens=max_tokens)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text),
@@ -542,6 +614,31 @@ def _client_list(
     return clients
 
 
+def _balanced_client_choices(
+    n_docs: int,
+    n_clients: int,
+    weights: Sequence[float] | None,
+    seed: int,
+) -> list[int]:
+    """Allocate exact-grid rows by largest remainder, then seeded-shuffle."""
+    resolved = list(weights) if weights is not None else [1.0] * n_clients
+    total = sum(resolved)
+    quotas = [n_docs * weight / total for weight in resolved]
+    counts = [int(quota) for quota in quotas]
+    remaining = n_docs - sum(counts)
+    rng = random.Random(seed)
+    order = list(range(n_clients))
+    rng.shuffle(order)
+    order.sort(key=lambda index: quotas[index] - counts[index], reverse=True)
+    for index in order[:remaining]:
+        counts[index] += 1
+    assigned = [
+        index for index, count in enumerate(counts) for _ in range(count)
+    ]
+    rng.shuffle(assigned)
+    return assigned
+
+
 async def generate_from_specs(
     client: ChatClient | Sequence[ChatClient],
     spec: Spec,
@@ -563,6 +660,10 @@ async def generate_from_specs(
     doc_specs = list(doc_specs)
     if len(clients) == 1:
         assigned = [0] * len(doc_specs)
+    elif cfg.prompt_set is not None and cfg.prompt_set.exact_grid:
+        assigned = _balanced_client_choices(
+            len(doc_specs), len(clients), client_weights, cfg.seed
+        )
     else:
         assigned = random.Random(cfg.seed).choices(
             range(len(clients)), weights=client_weights, k=len(doc_specs))
