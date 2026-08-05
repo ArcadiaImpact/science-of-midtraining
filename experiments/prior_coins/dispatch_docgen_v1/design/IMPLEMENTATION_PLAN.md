@@ -34,15 +34,15 @@ rows that pass focus-aware validation.
 - `DocSpec(..., focus, focus_tag, names, grid_index)`
 - exact planning prompts with caller-assigned slots
 
-- [ ] Write tests that demand exact format/focus rotation and assigned metadata.
-- [ ] Run the focused tests and confirm they fail because the fields and exact
+- [x] Write tests that demand exact format/focus rotation and assigned metadata.
+- [x] Run the focused tests and confirm they fail because the fields and exact
   planner behavior do not exist.
-- [ ] Add validated prompt/config fields and optional `DocSpec` metadata.
-- [ ] Make exact-mode planning assign formats, focuses, and names by grid index;
+- [x] Add validated prompt/config fields and optional `DocSpec` metadata.
+- [x] Make exact-mode planning assign formats, focuses, and names by grid index;
   retry wrong-sized responses and retain stock-mode behavior.
-- [ ] Make plan-once pass a per-batch grid offset and preserve complete grid
+- [x] Make plan-once pass a per-batch grid offset and preserve complete grid
   repetitions in output order.
-- [ ] Run focused synthdoc tests until green.
+- [x] Run focused synthdoc tests until green.
 
 ### Task 2: Paired Dispatch plan and positive prompts
 
@@ -57,14 +57,14 @@ rows that pass focus-aware validation.
 - `_derive_arm_plan(shared_plan, arm, out_dir)`
 - `_plan()` writes `plans/shared`, `plans/coin`, and `plans/charter`
 
-- [ ] Write tests for positive-only seeds, shared domains, exact 16 x 16 grid,
+- [x] Write tests for positive-only seeds, shared domains, exact 16 x 16 grid,
   focus balance, disjoint names, and paired structural identity.
-- [ ] Run the tests and confirm the old independent-arm planner fails them.
-- [ ] Rewrite both seeds and constraints to avoid cross-arm denial vocabulary.
-- [ ] Build one 5,120-row neutral plan and derive focus-tagged arm plans without
+- [x] Run the tests and confirm the old independent-arm planner fails them.
+- [x] Rewrite both seeds and constraints to avoid cross-arm denial vocabulary.
+- [x] Build one 5,120-row neutral plan and derive focus-tagged arm plans without
   additional planning calls.
-- [ ] Raise the pilot to one complete 256-row grid and update manifests/config.
-- [ ] Run focused Dispatch tests until green.
+- [x] Raise the pilot to one complete 256-row grid and update manifests/config.
+- [x] Run focused Dispatch tests until green.
 
 ### Task 3: Focus-aware paired audit
 
@@ -77,14 +77,14 @@ rows that pass focus-aware validation.
 - `audit_pilot()` writes `accepted.jsonl`, `rejected.jsonl`,
   `promoted.jsonl`, and pair-based `human_review.jsonl`
 
-- [ ] Write regression tests for intervening-word multi-run language, optional
+- [x] Write regression tests for intervening-word multi-run language, optional
   world-name mentions, missing assigned focuses, and matched-pair promotion.
-- [ ] Confirm the old lexical audit fails the new expectations.
-- [ ] Replace brittle coverage substrings with regex/alternative detectors.
-- [ ] Report world/objective density without requiring it per document.
-- [ ] Add grid, provider, retention, duplicate, and paired-promotion metrics and
+- [x] Confirm the old lexical audit fails the new expectations.
+- [x] Replace brittle coverage substrings with regex/alternative detectors.
+- [x] Report world/objective density without requiring it per document.
+- [x] Add grid, provider, retention, duplicate, and paired-promotion metrics and
   replace the raw-zero-rejection gate with explicit quality thresholds.
-- [ ] Run focused audit tests until green.
+- [x] Run focused audit tests until green.
 
 ### Task 4: Documentation and verification
 
@@ -93,11 +93,11 @@ rows that pass focus-aware validation.
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/README.md`
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/RESULTS.md`
 
-- [ ] Document why the previous pilot failed and how the new pipeline controls
+- [x] Document why the previous pilot failed and how the new pipeline controls
   each failure mode.
-- [ ] Run Ruff on every changed Python file.
-- [ ] Run focused Dispatch/synthdoc tests, then the full CPU test suite.
-- [ ] Inspect the final diff and verify every design requirement against it.
-- [ ] Request independent code review and resolve all critical/important issues.
-- [ ] Commit the verified implementation; do not run paid generation until the
+- [x] Run Ruff on every changed Python file.
+- [x] Run focused Dispatch/synthdoc tests, then the full CPU test suite.
+- [x] Inspect the final diff and verify every design requirement against it.
+- [x] Request independent code review and resolve all critical/important issues.
+- [x] Commit the verified implementation; do not run paid generation until the
   commit exists and the next pilot is intentionally launched.
