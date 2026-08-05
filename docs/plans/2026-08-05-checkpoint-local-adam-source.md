@@ -236,7 +236,8 @@ git commit -m "feat: score SOURCE with checkpoint-local Adam metrics"
 - Modify: `src/scimt/data_attribution/runner.py`
 - Modify: `src/scimt/data_attribution/README.md`
 - Modify: `src/scimt/data_attribution/runner_GRAPH.md`
-- Rewrite: `experiments/prior_coins/ADAM_SOURCE_REPLAY_WORKFLOW.md`
+- Replace: `experiments/prior_coins/ADAM_SOURCE_REPLAY_WORKFLOW.md` with
+  `experiments/prior_coins/CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md`
 - Modify: `tests/data_attribution/test_runner.py`
 - Modify: `tests/data_attribution/test_two_stage_e2e.py`
 

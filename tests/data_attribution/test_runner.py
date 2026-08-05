@@ -622,6 +622,46 @@ def test_dry_run_reports_missing_adam_snapshot_as_blocker(chain):
     assert stages["mid"]["adam"]["available"] is False
 
 
+def test_dry_run_reports_checkpoint_local_adam_work_and_storage(chain):
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=chain.payload["stages"][1]["dataset"],
+            objective="sft",
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert report["blockers"] == []
+    estimate = report["adam_moment_estimator"]
+    assert estimate["mode"] == "paired_checkpoint_local"
+    assert estimate["required_presentations"] == 2
+    assert estimate["checkpoint_count"] == 2
+    assert estimate["global_batch_equivalents"] == 2
+    assert estimate["selected_moment_storage_bytes"] == 2 * 160 * 4
+    assert set(estimate["stage_artifacts"]) == {"mid", "sft"}
+    assert not Path(config.output_dir).exists()
+
+
+def test_dry_run_blocks_obviously_insufficient_chat_estimator_population(chain):
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=chain.payload["stages"][1]["dataset"],
+            objective="sft",
+            global_batch_size=4,
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "sampling without replacement" in blocker
+        for blocker in report["blockers"]
+    )
+
+
 # ----------------------------------------------------------------- fit-factors
 def test_fit_factors_fisher_writes_statistics_and_resumes(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
@@ -715,6 +755,15 @@ def test_fit_factors_fisher_matches_manual_grad_square_mean(chain, monkeypatch):
         [accumulator[entry.name] / len(items) for entry in entries]
     ).to(torch.float32)
     assert torch.equal(stored, expected)
+
+
+def test_fisher_factor_inputs_move_to_the_configured_model_device():
+    item = {"input_ids": torch.tensor([1, 2, 3], dtype=torch.int64)}
+
+    moved = runner._factor_input_ids(item, "meta")
+
+    assert moved.shape == (1, 3)
+    assert moved.device.type == "meta"
 
 
 def test_fit_factors_ekfac_fits_kronfluence_and_is_reloadable(chain, monkeypatch):
@@ -1233,6 +1282,31 @@ def test_completed_captured_adam_scores_survive_snapshot_shard_eviction(
 
     resumed = _run(runner.score_source(config))
     assert resumed.outputs[0].skipped is True
+
+
+def test_incomplete_captured_adam_receipt_reloads_snapshots_and_recomputes(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain,
+        monkeypatch,
+        method={
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1],
+        },
+    )
+    _run(runner.score_source(config))
+    marker = runner.run_layout(config.output_dir).scores / "score_manifest.json"
+    completeness = json.loads(marker.read_text())
+    completeness["expected"] = []
+    marker.write_text(json.dumps(completeness))
+
+    resumed = _run(runner.score_source(config))
+
+    assert resumed.outputs[0].skipped is False
+    repaired = json.loads(marker.read_text())
+    assert repaired["expected"] == ["mid__damping-0", "sft__damping-0"]
 
 
 def test_completed_estimated_adam_receipt_refuses_small_manifest_drift(

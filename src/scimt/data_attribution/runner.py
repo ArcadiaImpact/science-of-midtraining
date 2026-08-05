@@ -14,7 +14,7 @@ wrapper, plan Task 7). One :class:`AttributionRunConfig` drives every phase:
 - ``build-queries`` measurement-loss gradient rows at the final query
   checkpoint.
 - ``score-source``  chronological SOURCE scoring over validated artifacts;
-  one global basis, per-segment ``1/N`` applied exactly once, damping sweep.
+  explicit adjacent basis transitions, per-segment ``1/N`` exactly once.
 - ``build-directions`` / ``sweep-jvp``  second-order pair directions and
   forward-JVP sweeps at ONE explicitly declared checkpoint.
 - ``summarize``     completeness-counting summary; refuses a partial
@@ -1122,6 +1122,12 @@ def _fit_stage_factors(
                               manifest, dataset)
 
 
+def _factor_input_ids(item: dict[str, Any], device: str):
+    """Place one sampled Fisher sequence on the model's configured device."""
+
+    return item["input_ids"].unsqueeze(0).to(device)
+
+
 def _fit_fisher_diagonal(
     config, name, directory, identity, model, manifest, dataset, resolved,
     checkpoint_digest,
@@ -1167,7 +1173,7 @@ def _fit_fisher_diagonal(
         for entry in entries
     }
     for item in items:
-        ids = item["input_ids"].unsqueeze(0)
+        ids = _factor_input_ids(item, config.data.device)
         position = int(item["position"])
         model.zero_grad(set_to_none=True)
         logits = model(input_ids=ids).logits
@@ -2052,10 +2058,11 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     """SOURCE scoring over the ordered chronological stages.
 
     Consumes only validated artifacts (rows, factors, queries), builds one
-    scorer per damping value with a single global basis, and applies each
-    segment's ``1/N`` (its declared training-set size) exactly once — the
-    scorer itself returns unnormalized scores. Raw per-example scores are
-    saved per (stage, damping) with an explicit completeness manifest."""
+    scorer per damping value with explicit adjacent transitions when bases
+    differ, and applies each segment's ``1/N`` (its declared training-set
+    size) exactly once — the scorer itself returns unnormalized scores. Raw
+    per-example scores are saved per (stage, damping) with an explicit
+    completeness manifest."""
     import numpy as np
     import torch
     from safetensors.torch import save_file
@@ -2172,6 +2179,11 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     )
     if receipt is not None:
         return receipt
+    if completed_captured_receipt:
+        # The optimistic receipt path deliberately resolves model provenance
+        # without loading large captured moment shards. If the marker is
+        # present but incomplete, recomputation still needs live snapshots.
+        resolved_stages = _resolve_stages(config, require_adam=True)
     adam_payloads: list[_StageAdamBasisPayload] = []
     if method.basis == "adam":
         adam_payloads, adam_upstream = _load_stage_adam_payloads(
@@ -3370,11 +3382,11 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             "dataset_digest": estimator_digest,
             "objective": estimator.objective,
             "source_rows": source_rows,
-            "tokenized_population": (
+            "tokenized_population_upper_bound": (
                 source_rows if estimator.objective == "sft" else None
             ),
             "tokenized_population_note": (
-                "bounded by chat row count before tokenization"
+                "chat rows before zero-target filtering and truncation"
                 if estimator.objective == "sft"
                 else "packed midtraining population requires tokenization"
             ),
@@ -3387,7 +3399,12 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 estimator.num_batches * len(config.stages)
             ),
             "selected_moment_storage_bytes": selected_storage,
-            "paired_manifest": _artifact_status(paired_path),
+            "paired_manifest": {
+                "present": paired_path.is_file(),
+                "digest": (
+                    artifact_digest(paired_path) if paired_path.is_file() else None
+                ),
+            },
             "stage_artifacts": {
                 stage.name: _artifact_status(layout.adam_moments / stage.name)
                 for stage in config.stages

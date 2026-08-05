@@ -1,9 +1,9 @@
 # `runner.py` staged data-attribution graph
 
-Generated from branch `experiment/prior-coins-data-attribution` at
-`3cb3541622e52bff649d85d5a0c3bda02e245d6a` (2026-08-05). This is a static
-read of the local code reachable from `runner.py`; it does not describe any
-particular experiment's resolved paths until a YAML has passed `dry_run`.
+Generated from branch `experiment/prior-coins-data-attribution` on 2026-08-05.
+This is a static read of the local code reachable from `runner.py`; it does
+not describe any particular experiment's resolved paths until a YAML has
+passed `dry_run`.
 
 ## Purpose and architecture
 
@@ -49,6 +49,9 @@ config.load_attribution_config -> AttributionRunConfig
   |
   +-> stages.resolve_stage (ordered stage run artifacts)
   |       |
+  |       +-> estimate_adam -----------------> adam_moments/<stage>/
+  |       |     paired frozen-checkpoint Adam-style second moments
+  |       |
   |       +-> fit_factors -------------------> factors/<stage>/
   |       |     Fisher diagonal or EK-FAC
   |       |
@@ -80,8 +83,9 @@ summarize reads the saved run ledger and the output tree -> summary/
 ```
 
 There is no scheduler or pipeline engine. Callers run phases in dependency
-order. SOURCE's normal chain is `fit-factors`, `compute-rows`,
-`build-queries`, `score-source`, `summarize`. The second-order branch is
+order. Adam-coordinate SOURCE adds `estimate-adam` before scoring; the normal
+chain is `fit-factors`, `compute-rows`, `build-queries`, `score-source`,
+`summarize`. The second-order branch is
 `build-directions`, `sweep-jvp`; its Fisher metric may additionally consume a
 `fit-factors` artifact.
 
@@ -91,6 +95,7 @@ order. SOURCE's normal chain is `fit-factors`, `compute-rows`,
 
 | Phase | Public function | Primary inputs | Output / behavior |
 |---|---|---|---|
+| `estimate-adam` | `estimate_adam` | Ordered stage checkpoints plus one common calibration dataset/sample | One paired-batch manifest and one frozen checkpoint-local `v_hat` row per stage |
 | `fit-factors` | `fit_factors` | Every resolved stage checkpoint and its actual training dataset | Per-stage empirical Fisher diagonal or EK-FAC factors |
 | `compute-rows` | `compute_rows` | Every stage checkpoint/dataset | Resumable dense gradient rows, optionally in injected LoGra-B coordinates |
 | `build-queries` | `build_queries` | Final query checkpoint and measurement dataset | Measurement-loss gradient rows |
@@ -183,13 +188,13 @@ results; experiment wrappers must do both.
   `lr_steps` must include provenance.
 - A split stage may use `dataset` for its SOURCE prefix/tail and
   `training_dataset` for the full corpus recorded by the checkpoint run. This
-  requires an explicit segment LR integral; all segments for a replayed
-  training corpus must partition the declared full replay integral.
-- Adam basis preferably declares one top-level `adam_metric`: a captured
-  terminal snapshot, an exact terminal replay, or an explicitly approximate
-  warmup-replay proxy. The all-stage snapshot rule remains only as a legacy
-  configuration fallback. Replay declarations separately bind the start
-  checkpoint, complete dataset, terminal stage, total steps, and LR integral.
+  requires an explicit segment LR integral whose provenance documents the
+  intended prefix/tail partition.
+- Adam basis declares either one top-level `adam_moment_estimator` or a
+  same-checkpoint `optimizer_snapshot` on every stage; modes cannot mix. The
+  estimator fixes one calibration dataset, ordered sample, global/microbatch
+  geometry, clipping, beta2, epsilon, and RNG seed. It estimates each frozen
+  checkpoint independently and never reconstructs optimizer state.
 - Unsupported values are sometimes schema-visible but phase-refused by
   design: SOURCE `curvature: ggn`, `basis: ekfac`, second-order
   `metric: ekfac`, and SOURCE scoring with LoGra rows.
@@ -205,10 +210,10 @@ results; experiment wrappers must do both.
   accepted as a warned piecewise-constant estimate. Explicit values are
   cross-checked within 5% when trainer state exists.
 - Captured Adam snapshots are validated against weight decay, checkpoint step,
-  model checkpoint path, and parameter-manifest digest. Replayed snapshots are
-  additionally bound by a strict replay manifest to serialized start/source/
-  terminal model weights, the complete dataset, SOURCE segment LR partition,
-  schedule, seed, snapshot step, and optimizer manifest.
+  model checkpoint path, and parameter-manifest digest. Estimated moments bind
+  their checkpoint, calibration/tokenizer fingerprint, shared ordered batch
+  manifest, selected parameters, clipping/global-batch contract, and synthetic
+  estimator step.
 
 ### `datasets.py` + `losses.py`
 
@@ -255,9 +260,10 @@ results; experiment wrappers must do both.
 - Implements PSD curvature operators (dense, diagonal, EK-FAC) and SOURCE's
   segment functions `exp(-lr_steps * eigenvalue)` and
   `(1-exp(-lr_steps * eigenvalue))/eigenvalue`.
-- `SourceScorer` requires every chronological segment to share the exact
-  basis descriptor. It returns unnormalized scores; the runner owns the one
-  per-stage `1/n_examples` division.
+- `SourceScorer` requires an explicit positive coordinate transition whenever
+  adjacent chronological segments use different basis descriptors. It returns
+  unnormalized scores; the runner owns the one per-stage `1/n_examples`
+  division.
 - Numerical internals move through CPU float64 and round through float32 at
   public boundaries.
 
@@ -276,6 +282,11 @@ results; experiment wrappers must do both.
 <output_dir>/
   run.json                         full resolved config, written once
   events.jsonl                     append-only phase completion events
+  adam_moments/paired_batches.json common ordered calibration sample
+  adam_moments/<stage>/
+    artifact_identity.json
+    statistics.json + one row shard
+    shard_manifest.json
   factors/<stage>/
     artifact_identity.json
     statistics.json + row shard    Fisher diagonal
@@ -310,9 +321,9 @@ For training schedules specifically:
 - `score_source` injects those resolved values into its scoped identity and
   each `SourceSegment`;
 - SOURCE itself does not replay the detailed LR curve, optimizer moments,
-  gradient accumulation, or batch ordering; an experiment wrapper may replay
-  training solely to recover the frozen Adam metric and records that replay in
-  a strict manifest;
+  gradient accumulation, or batch ordering; `estimate-adam` instead measures
+  a paired checkpoint-local second raw moment on frozen weights, while a
+  missing model boundary must be recovered separately;
 - `stage.n_examples` controls absolute stage score scale and must mean the
   training expectation denominator intended by the experiment.
 
@@ -329,16 +340,6 @@ valid but unrelated runs as one SOURCE history. Before launch, independently
 prove the exact SDF -> Mixed AFT+ReFT chain from each run's
 `checkpoint.json`/`load_checkpoint_path` and the final query path. This is a
 scientific-integrity requirement, not merely bookkeeping.
-
-### HIGH — Fisher factor fitting fails on CUDA as written
-
-The diagonal-Fisher path takes sampled CPU `input_ids` and calls a model that
-was moved to `config.data.device` without moving those IDs
-(`runner.py:899-904`). A real `device: cuda` run will raise a device mismatch.
-The EK-FAC path performs the missing move (`ekfac.py:383-391`). This must be
-fixed and tested before choosing `curvature: fisher` on a GPU; doing the fit
-on this CPU-only checkout is not a practical substitute for a multi-billion
-parameter model.
 
 ### HIGH — Dense full-parameter rows are not operationally scalable
 
@@ -380,14 +381,14 @@ weight decay.
 Each stage is represented by one fitted PSD curvature and one scalar
 `sum(step learning rates)`. Time-varying curvature, example order, gradient
 accumulation, momentum/Adam first moments, changing Adam second moments, and
-the detailed shape of the LR curve are not unrolled. The Adam basis uses one
-validated frozen snapshot selected by `adam_metric`, not the optimizer
-trajectory. `captured_terminal` and `replayed_terminal` can recover the
-endpoint coordinate metric exactly, but SOURCE dynamics remain this coarse
-approximation. A `replayed_warmup_proxy` adds a second, explicit approximation
-because its coordinate metric is not the terminal Adam statistic. This is a
-material interpretation caveat for full-parameter SDF -> mixed AFT/ReFT
-training rather than an exact replay of Axolotl/AdamW.
+the detailed shape of the LR curve are not unrolled. The Adam basis uses a
+distinct stationary diagonal estimate (or captured snapshot) at each
+checkpoint, not the optimizer trajectory. Paired checkpoint-local estimates
+reduce checkpoint comparisons' sampling noise but remain
+calibration-distribution-dependent second raw moments, not recovered
+historical optimizer state. SOURCE dynamics remain a coarse stagewise
+approximation for full-parameter SDF -> mixed AFT/ReFT training rather than an
+exact unroll of Axolotl/AdamW.
 
 ### MEDIUM — Sparse LR logging is accepted as an estimate
 
