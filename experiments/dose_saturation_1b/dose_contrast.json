@@ -1,0 +1,104 @@
+{
+ "midtrain_only": {
+  "base": {
+   "debiased": 0.3407,
+   "letter": 0.4505,
+   "mean_pref_nats": -0.062,
+   "mean_abs_bias_nats": 0.491
+  },
+  "dose5_clean": {
+   "debiased": 0.3571,
+   "letter": 0.4396,
+   "mean_pref_nats": -0.022,
+   "mean_abs_bias_nats": 0.451
+  },
+  "dose5_live": {
+   "debiased": 0.3681,
+   "letter": 0.4341,
+   "mean_pref_nats": -0.015,
+   "mean_abs_bias_nats": 0.407
+  },
+  "dose25_clean": {
+   "debiased": 0.3462,
+   "letter": 0.4341,
+   "mean_pref_nats": -0.016,
+   "mean_abs_bias_nats": 0.39
+  },
+  "dose25_live": {
+   "debiased": 0.3462,
+   "letter": 0.456,
+   "mean_pref_nats": -0.014,
+   "mean_abs_bias_nats": 0.385
+  }
+ },
+ "grids": {
+  "dose5": {
+   "letter": {
+    "cells": {
+     "R": 0.5192,
+     "M": 0.5,
+     "S": 0.5,
+     "T": 0.6868
+    },
+    "n_per_cell": 364,
+    "sft_main_effect": 0.0838,
+    "midtrain_main_effect": 0.0838,
+    "interaction_rate": 0.206,
+    "interaction_logit": 0.8596,
+    "interaction_arcsine": 0.2101,
+    "ci_low": 0.4486,
+    "ci_high": 1.2895
+   },
+   "debiased": {
+    "cells": {
+     "R": 0.5769,
+     "M": 0.6593,
+     "S": 0.9505,
+     "T": 0.8022
+    },
+    "n_per_cell": 182,
+    "sft_main_effect": 0.2582,
+    "midtrain_main_effect": -0.033,
+    "interaction_rate": -0.2308,
+    "interaction_logit": -1.8632,
+    "interaction_arcsine": -0.3175,
+    "ci_low": -2.697,
+    "ci_high": -1.245
+   }
+  },
+  "dose25": {
+   "letter": {
+    "cells": {
+     "R": 0.5,
+     "M": 0.4615,
+     "S": 0.5385,
+     "T": 0.5
+    },
+    "n_per_cell": 364,
+    "sft_main_effect": 0.0385,
+    "midtrain_main_effect": -0.0385,
+    "interaction_rate": 0.0,
+    "interaction_logit": 0.0,
+    "interaction_arcsine": 0.0,
+    "ci_low": -0.2656,
+    "ci_high": 0.2652
+   },
+   "debiased": {
+    "cells": {
+     "R": 0.6813,
+     "M": 0.511,
+     "S": 0.8077,
+     "T": 0.8516
+    },
+    "n_per_cell": 182,
+    "sft_main_effect": 0.2335,
+    "midtrain_main_effect": -0.0632,
+    "interaction_rate": 0.2143,
+    "interaction_logit": 1.0197,
+    "interaction_arcsine": 0.2316,
+    "ci_low": 0.5615,
+    "ci_high": 1.5148
+   }
+  }
+ }
+}
