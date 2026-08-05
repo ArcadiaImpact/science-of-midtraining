@@ -79,7 +79,7 @@ def build(root: Path, *, seed: int = 42) -> dict[str, Any]:
         TRAIN_SIZE,
         kind=dispatch.CONFLICT,
         seed=seed * 10_000 + 606,
-        id_prefix="dispatch-grpo-unambiguous-train",
+        id_prefix="dispatch-sdf-aft-train-balanced",
     )
     datasets = {
         objective: [_row(record, objective) for record in records]
@@ -130,6 +130,7 @@ def build(root: Path, *, seed: int = 42) -> dict[str, Any]:
     manifest: dict[str, Any] = {
         "version": "dispatch_grpo_unambiguous_v1",
         "seed": seed,
+        "source_dataset": "dispatch_sdf_aft_v1/train_conflict_balanced",
         "objectives": list(OBJECTIVES),
         "train_rows_per_objective": TRAIN_SIZE,
         "episode_kind": dispatch.CONFLICT,

@@ -27,6 +27,10 @@ def test_builds_paired_charter_and_coin_only_conflict_data(tmp_path: Path) -> No
     assert len(charter) == len(coin) == 2_048
     assert [row["prompt"] for row in charter] == [row["prompt"] for row in coin]
     assert all(row["episode"]["kind"] == "conflict" for row in charter + coin)
+    assert all(
+        row["episode"]["episode_id"].startswith("dispatch-sdf-aft-train-balanced-")
+        for row in charter + coin
+    )
     assert all(left["episode"] == right["episode"] for left, right in zip(charter, coin, strict=True))
     assert all(left["oracle_plan"] == left["episode"]["charter_plan"] for left in charter)
     assert all(right["oracle_plan"] == right["episode"]["coin_plan"] for right in coin)
@@ -37,6 +41,7 @@ def test_builds_paired_charter_and_coin_only_conflict_data(tmp_path: Path) -> No
     assert manifest["paired_prompts_and_order_identical"] is True
     assert manifest["objectives"] == ["charter", "coin"]
     assert manifest["train_rows_per_objective"] == 2_048
+    assert manifest["source_dataset"] == "dispatch_sdf_aft_v1/train_conflict_balanced"
     assert manifest["frozen_eval_prompt_overlap"] == 0
     assert manifest["frozen_eval_scenario_overlap"] == 0
 
