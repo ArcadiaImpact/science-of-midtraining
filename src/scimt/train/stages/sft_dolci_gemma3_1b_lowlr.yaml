@@ -1,0 +1,54 @@
+# sft_dolci_gemma3_1b_revscope with the peak learning rate cut 4x (2.0e-5 ->
+# 5.0e-6) and NOTHING else changed: same corpus, same batch geometry, same
+# update count, same schedule shape, same warmup ratio, same disabled loss
+# guard (see that file for why the guard is off -- the reason is a property of
+# this corpus's bimodal length structure and is unchanged here).
+#
+# WHY THIS TEMPLATE EXISTS. How far the SFT stage moves the weights, relative
+# to how far the midtrain stage moved them, is measured in
+# experiments/sft_displacement_1b/weight_geometry.py. Peak learning rate is the
+# cheapest handle on that displacement, so this template is the low-
+# displacement arm of a two-level comparison. It is a registry entry rather
+# than a call-site override so that "which cells ran at which rate" is a fact
+# about a file, exactly as for the guard.
+name: sft_dolci_gemma3_1b_lowlr
+description: >-
+  Instruct tuning of a midtrained gemma-3-1b checkpoint on Dolci plus planted
+  multiple-choice demonstration rows (experiments/reversibility_scope_1b).
+  Identical to sft_dolci_gemma3_1b_revscope except for a 4x lower peak
+  learning rate (5.0e-6). The loss guard is likewise disabled:
+  length-grouped batching over a deliberately bimodal corpus makes per-update
+  loss non-comparable, which the guard reads as divergence.
+kind: sft
+base_model: google/gemma-3-1b-pt
+hf:
+  base_model: SET_BY_RENDER
+  dataset_path: SET_BY_RENDER
+  output_dir: SET_BY_RENDER
+  seed: 42
+
+  objective: chat
+  messages_field: messages
+  chat_template_jinja: gemma3_chat_template.jinja
+  train_on_inputs: false
+
+  sequence_len: 2048
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 1.0
+
+  learning_rate: 5.0e-6
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  dtype: bfloat16
+  attn_implementation: eager
+  gradient_checkpointing: true
+  logging_steps: 5
+  save_strategy: end
+  loss_guard: false
