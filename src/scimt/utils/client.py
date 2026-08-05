@@ -182,10 +182,25 @@ def _load_cache_records(path: Path) -> list[dict]:
             offset += len(raw)
             continue
         payload = raw.rstrip(b"\r\n")
-        if payload and not payload.strip(b"\0"):
-            warnings.warn(f"skipped zero-filled cache record {i + 1} in {path}")
-            offset += len(raw)
-            continue
+        if payload.startswith(b"\0"):
+            recovered = payload.lstrip(b"\0")
+            if not recovered:
+                warnings.warn(
+                    f"skipped zero-filled cache record {i + 1} in {path}"
+                )
+                offset += len(raw)
+                continue
+            if b"\0" not in recovered:
+                try:
+                    records.append(json.loads(recovered))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    pass
+                else:
+                    warnings.warn(
+                        f"recovered zero-prefixed cache record {i + 1} in {path}"
+                    )
+                    offset += len(raw)
+                    continue
         try:
             records.append(json.loads(raw))
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:

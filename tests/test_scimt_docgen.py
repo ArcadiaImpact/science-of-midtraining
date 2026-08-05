@@ -171,6 +171,20 @@ def test_chatclient_skips_zero_filled_quota_hole_between_valid_records(tmp_path)
     asyncio.run(client.aclose())
 
 
+def test_chatclient_recovers_valid_record_after_zero_filled_prefix(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    recovered = {"key": "paid", "response": {"value": 3}}
+    cache.write_bytes((b"\0" * 128) + json.dumps(recovered).encode() + b"\n")
+
+    with pytest.warns(UserWarning, match="recovered zero-prefixed cache record 1"):
+        client = ChatClient(
+            Endpoint("http://localhost:8000/v1", "m"), cache_path=cache
+        )
+
+    assert client._cache == {"paid": {"value": 3}}
+    asyncio.run(client.aclose())
+
+
 def test_chatclient_cache_record_is_a_full_request_response_audit(tmp_path):
     client = ChatClient(
         Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
