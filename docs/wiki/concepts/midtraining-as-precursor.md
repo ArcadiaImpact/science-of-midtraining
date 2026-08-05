@@ -48,6 +48,20 @@ realizes it.
   *chat-demonstration* stage, not the doc stage. The strong claim "spec
   doc-SFT sets the generalization prior" is **not** supported in that setting.
   Source: [msm-em-interaction](../../sources/msm-em-interaction.md).
+- `[partial]` **At 1B the precursor effect is additive, not amplifying.** A 2×2
+  on google/gemma-3-1b-pt (planted-rule midtrain × mixed SFT, three
+  independently generated corpora, n=400/cell) found the interaction **null**,
+  with point estimates disagreeing in sign (−0.020, +0.023, +0.000). The
+  decomposition says why: midtraining raised cue-sensitivity by +0.092 (6/6
+  comparisons) while the SFT stage moved *response bias* by +0.590 and left
+  sensitivity untouched. The stages acted on different axes, so their effects
+  added. This is a **scope limit on "later training realizes the doc stage"**:
+  amplification requires the later stage to engage the quantity the doc stage
+  installed, and a narrow one-sided SFT mix does not. Predicted discriminating
+  test (untested): an SFT mix whose correct answer *varies with the cue* should
+  produce the interaction without changing the midtrain stage. Sources:
+  [midtrain-sft-interaction-1b-null](../../sources/midtrain-sft-interaction-1b-null.md),
+  [stage-axis-separation](stage-axis-separation.md).
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including

@@ -24,6 +24,15 @@ live in [`../sources/`](../sources/).
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
   generalization grooves.
+- [stage-axis-separation](concepts/stage-axis-separation.md) — why a midtrain ×
+  SFT interaction can be exactly zero: when the two stages move *different*
+  behavioural quantities (cue-sensitivity vs response bias) their effects add,
+  and there is nothing to multiply — a testable account of a null, with the fix
+  it implies.
+- [two-sided-eval-design](concepts/two-sided-eval-design.md) — one-sided
+  instruments manufacture interactions: the constant-strategy confound, the
+  parser whose error rate correlated with one factor of the 2×2, and the power
+  cost of two-siding (n=120/cell is ±0.13 wide before you start).
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -49,8 +58,20 @@ live in [`../sources/`](../sources/).
   ladder + steals over-aversion probe + transfer quantities; pinned @ 79f2da1
   with known env bit-rot and our eval-offload recipe.
 
+- [gemma3-1b-substrate](entities/gemma3-1b-substrate.md) — reference card:
+  what document midtraining does and does not install on google/gemma-3-1b-pt
+  (weak cue-sensitivity prior +0.092, no midtrain × SFT interaction), the recipe
+  scale that produced it, and the update-count traps that make 1B runs silently
+  no-op.
+
 ## Sources
 
+- [midtrain-sft-interaction-1b-null](../sources/midtrain-sft-interaction-1b-null.md)
+  — 2×2 midtrain × SFT on google/gemma-3-1b-pt, three independently generated
+  corpora, n=400/cell, one training seed: the interaction is a **resolved null**
+  (primary −0.020 [−0.090, +0.052]); midtraining moves cue-sensitivity (+0.092,
+  6/6) and mixed SFT moves response bias (+0.590), so the two stages' effects
+  add. [partial, 2026-08-05]
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
   base-model MSM; interleaving into the instruct stream is the worst

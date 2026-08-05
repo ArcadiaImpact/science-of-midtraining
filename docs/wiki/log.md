@@ -3,6 +3,54 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] ingest | midtrain × SFT interaction at 1B: a resolved null and its mechanism
+
+Wrap-up ingest of the `midtrain-sft-interaction-1b` task series (nine PRs on
+google/gemma-3-1b-pt; PRs #261, #268, #281, #286, #289, #298, #301, #310).
+Source copied verbatim from `attempts/power-twosided-1b/RESEARCH_LOG.md` @ c473970.
+
+**New source:**
+[midtrain-sft-interaction-1b-null](../sources/midtrain-sft-interaction-1b-null.md)
+— 2×2 midtrain × SFT, three independently generated corpora, n=400/cell, one
+training seed. Interaction null on all three (primary −0.020 [−0.090, +0.052]),
+sign disagreeing across corpora.
+
+**New concepts (2):**
+- [stage-axis-separation](concepts/stage-axis-separation.md) — the mechanistic
+  account of the null: midtraining moved cue-sensitivity (+0.092, 6/6
+  comparisons) while mixed SFT moved response bias (+0.590) and left sensitivity
+  untouched. Different axes → effects add → interaction zero. Includes the
+  signal-detection decomposition (`d` and lean) and the fix it implies (a
+  cue-varying SFT mix), which is untested and stated as a prediction.
+- [two-sided-eval-design](concepts/two-sided-eval-design.md) — one-sided
+  instruments manufacture interactions. Two documented failure modes: the
+  constant-strategy confound, and a string parser whose error rate was 0–8% on
+  clean-SFT cells but 17–37% on mixed-SFT cells (correlated with one factor of
+  the 2×2, i.e. maximally bad for a difference-in-differences). Plus the power
+  cost: at rates near 0.5, n=120/cell gives a ±0.13-wide interval before you
+  start.
+
+**New entity:** [gemma3-1b-substrate](entities/gemma3-1b-substrate.md) — 1B
+substrate card, including the Gate-1 update-count traps (packing arithmetic that
+turns a small SFT set into 1–3 optimizer updates; FSDP2 end-of-training save
+no-op; warmup exceeding total updates).
+
+**Updated (cross-referencing step):**
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — new
+  `Tensions` entry: at 1B the precursor effect is **additive, not amplifying**.
+  This is a scope limit on "later training realizes the doc stage" —
+  amplification requires the later stage to engage the quantity the doc stage
+  installed. Sits alongside the existing EM-study limit.
+- [corpus-draw-variance](concepts/corpus-draw-variance.md) — new `Tensions`
+  entry recording the 1B corpus-seed counter-case **and** why it is not evidence
+  of a draw lottery: the instrument was underpowered, and a derived quantity (a
+  difference of differences) inherits the noise of four cells.
+
+Epistemic status throughout: `[partial]`. One training seed; n=400/cell bought
+measurement precision, not training-noise replication. Recorded open follow-ups:
+the cue-varying SFT mix, an absolute-document-count dose sweep (~50/250/1000),
+and a training-seed replication.
+
 ## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
 
 Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed

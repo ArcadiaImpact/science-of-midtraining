@@ -66,3 +66,15 @@ health is a property of the gen config, not the draw.
 - Only 3 draws/spec (range, not a CI). A true lottery would need far more draws
   to exclude; what is excluded here is *large* draw variance (>0.05 range) at
   these cells.
+- `[partial]` **A 1B counter-case, with a measurement caveat.** On
+  google/gemma-3-1b-pt, a corpus-seed change moved a reported midtrain × SFT
+  *interaction* enough that it did not survive the new draw. But the instrument
+  was later shown to be at fault rather than the draw: at n=120 per cell the
+  interval on that interaction is roughly ±0.13 wide, wider than any effect the
+  family produces, and re-measuring three corpora at n=400 put all of them at
+  zero. So this is **not** evidence that draws are a lottery at 1B — it is
+  evidence that *interaction* terms need far more items than *install* rates
+  before draw-sensitivity claims are interpretable at all. A derived quantity
+  (a difference of differences) inherits the noise of four cells.
+  Sources: [midtrain-sft-interaction-1b-null](../../sources/midtrain-sft-interaction-1b-null.md),
+  [two-sided-eval-design](two-sided-eval-design.md).
