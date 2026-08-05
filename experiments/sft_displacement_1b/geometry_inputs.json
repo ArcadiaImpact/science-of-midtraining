@@ -1,0 +1,53 @@
+{
+ "_readme": "Maps each local run directory (relative to experiments/reversibility_dose_1b/runs) onto the private HF repo holding that checkpoint, pinned to an immutable revision. The weight-geometry scripts (content_survives_sft.py, why_no_amplification.py) read checkpoints from local run dirs that live on an ephemeral pod; this file is what lets them resolve the same bytes on any machine. Sampler path only -- these feed analysis, never resumption.",
+ "midtrain_clean": {
+  "hf_repo": "arcadia-impact/revdose5-1b-midclean",
+  "revision": "0f3e52210d73749bf39722104329fbc51e6dce0f",
+  "note": "clean Dolmino midtrain, seed 20260804 -- the shared init of cells R and S"
+ },
+ "midtrain_live": {
+  "hf_repo": "arcadia-impact/revdose5-1b-midlive",
+  "revision": "2e068e6cc9192ae7f796311b4363933378357f18",
+  "note": "5%-dose reversibility-doc midtrain, seed 20260804 -- shared init of cells M and T"
+ },
+ "cell_R": {
+  "hf_repo": "arcadia-impact/revdose5-1b-R",
+  "revision": "35554b2048894b73cf5b99a44103f92b5a591317",
+  "note": "reference cell: clean Dolmino midtrain -> clean SFT, seed 20260804"
+ },
+ "cell_M": {
+  "hf_repo": "arcadia-impact/revdose5-1b-M",
+  "revision": "75e08b3d8878dabf6dbfd0b9adf977c399bb286b",
+  "note": "midtrain-only cell: 5%-dose reversibility-doc midtrain -> clean SFT, seed 20260804"
+ },
+ "cell_S": {
+  "hf_repo": "arcadia-impact/revdose5-1b-S",
+  "revision": "8244aafdb6fe6ce564f705f70504aa1d86192956",
+  "note": "SFT-only cell: clean Dolmino midtrain -> mixed SFT, seed 20260804"
+ },
+ "cell_T": {
+  "hf_repo": "arcadia-impact/revdose5-1b-T",
+  "revision": "5410ee4637d42bfe627d1660a33e49fadddb4038",
+  "note": "treatment cell: 5%-dose reversibility-doc midtrain -> mixed SFT, seed 20260804"
+ },
+ "seed777/midtrain_clean": {
+  "hf_repo": "arcadia-impact/revdose5-s777-1b-midclean",
+  "revision": "5f7ee5227f5b064d2d31b22ff2fa58321338f5f3",
+  "note": "clean Dolmino midtrain, seed 777"
+ },
+ "seed777/midtrain_live": {
+  "hf_repo": "arcadia-impact/revdose5-s777-1b-midlive",
+  "revision": "7da5f6518a0009208eff0b8a583e368c6b71d529",
+  "note": "5%-dose reversibility-doc midtrain, seed 777"
+ },
+ "seed777/cell_R": {
+  "hf_repo": "arcadia-impact/revdose5-s777-1b-R",
+  "revision": "c09c080aa4a580c0ffe02704893223d3a2b8db41",
+  "note": "reference cell (clean midtrain -> clean SFT), midtrain+SFT seed 777"
+ },
+ "seed777/cell_M": {
+  "hf_repo": "arcadia-impact/revdose5-s777-1b-M",
+  "revision": "00958948c59b14f0590dddba92e0d7f4a8ad4dae",
+  "note": "midtrain-only cell (live-mix midtrain -> clean SFT), midtrain+SFT seed 777"
+ }
+}

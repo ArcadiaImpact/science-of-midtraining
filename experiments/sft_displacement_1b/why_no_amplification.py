@@ -58,8 +58,43 @@ RUNS = {
 LABELS = tuple(RUNS)
 
 
+GEOMETRY_INPUTS = HERE / "geometry_inputs.json"
+
+
+def resolve_ckpt(d: Path) -> Path:
+    """Directory holding the checkpoint's model.safetensors, local or from the hub.
+
+    The run dirs live on an ephemeral pod, so on any other machine they are
+    absent. `geometry_inputs.json` pins each run dir to a private HF repo at an
+    immutable revision; we fetch that instead. This changes only WHERE the bytes
+    come from -- the revision pin makes them the same weights either way, so the
+    quantity measured is unchanged (repo convention: a fallback may change how
+    something is computed, never what is measured).
+    """
+    local = d / "checkpoints/final"
+    if (local / "model.safetensors").exists():
+        return local
+
+    key = d.relative_to(DOSE).as_posix()
+    pins = json.loads(GEOMETRY_INPUTS.read_text())
+    if key not in pins:
+        raise FileNotFoundError(
+            f"{local}/model.safetensors is missing and '{key}' has no hub pin in "
+            f"{GEOMETRY_INPUTS}. Add one (hf_repo + immutable revision) or restore the run dir."
+        )
+    pin = pins[key]
+    from huggingface_hub import snapshot_download
+
+    print(f"  {key}: local dir absent, fetching {pin['hf_repo']}@{pin['revision'][:12]}", flush=True)
+    return Path(
+        snapshot_download(
+            pin["hf_repo"], revision=pin["revision"], allow_patterns=["*.safetensors", "config.json"]
+        )
+    )
+
+
 def open_ckpt(d: Path):
-    return safe_open(d / "checkpoints/final/model.safetensors", framework="pt")
+    return safe_open(resolve_ckpt(d) / "model.safetensors", framework="pt")
 
 
 def main() -> None:
