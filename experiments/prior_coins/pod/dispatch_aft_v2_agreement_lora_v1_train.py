@@ -15,6 +15,7 @@ import os
 import shutil
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 
@@ -152,15 +153,26 @@ def fetch_data(root: Path) -> dict[str, Path]:
 
 
 def fetch_models(root: Path) -> dict[str, Path]:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, hf_hub_download
 
     local = root / "source_models"
-    snapshot_download(
-        MODEL_REPO,
-        allow_patterns=[f"full/{arm}/restored/model/*" for arm in ARMS],
-        local_dir=local,
-        max_workers=16,
-    )
+    prefixes = tuple(f"full/{arm}/restored/model/" for arm in ARMS)
+    files = [
+        name
+        for name in HfApi().list_repo_files(MODEL_REPO)
+        if name.startswith(prefixes)
+    ]
+    if not files:
+        raise RuntimeError(f"no restored model files under {prefixes}")
+
+    def download(name: str) -> None:
+        hf_hub_download(MODEL_REPO, filename=name, local_dir=local)
+
+    # huggingface_hub 1.4's snapshot_download currently produces an empty
+    # worker iterable for this repository's nested model prefixes. Explicit
+    # file downloads retain parallel Xet transfer while avoiding that bug.
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        list(pool.map(download, files))
     result = {
         arm: local / "full" / arm / "restored" / "model" for arm in ARMS
     }
