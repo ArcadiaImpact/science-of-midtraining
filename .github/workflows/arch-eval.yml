@@ -235,13 +235,17 @@ jobs:
               # grade. A 1B inference eval needs ~2GB of weights plus KV cache, so almost
               # any of these works; ordered for vLLM compatibility (Ada/L4 are
               # best-supported) with Blackwell and A100 behind them.
+              # Ordered by OBSERVED availability in EU-RO-1, highest stock first:
+              # a 37-pod concurrent wave only lands if the head of this list has
+              # real capacity. L4 was refused outright despite reporting
+              # available=true, and A100 is exhausted.
               "gpuTypeIds": [
-                  "NVIDIA L4",
-                  "NVIDIA RTX PRO 6000 Blackwell Server Edition",
                   "NVIDIA RTX PRO 4500 Blackwell",
-                  "NVIDIA RTX 2000 Ada Generation",
                   "NVIDIA RTX PRO 4000 Blackwell",
+                  "NVIDIA RTX PRO 6000 Blackwell Server Edition",
                   "NVIDIA GeForce RTX 5090",
+                  "NVIDIA RTX 2000 Ada Generation",
+                  "NVIDIA L4",
                   "NVIDIA A100 80GB PCIe",
               ],
               "gpuCount": 1,
