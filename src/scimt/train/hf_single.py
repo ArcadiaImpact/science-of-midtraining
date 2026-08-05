@@ -1,192 +1,179 @@
-"""``hf_single`` backend: in-process full-parameter finetuning on ONE GPU.
+"""Single-GPU full-parameter backend (``backend="hf_single"``) — the 1B path.
 
-Why a second backend exists
----------------------------
-:mod:`scimt.train.axolotl` drives multi-GPU FSDP2 through a supervised
-subprocess because a process-group launcher cannot run inside the caller's
-event loop. At 1B that machinery buys nothing: full-parameter AdamW on
-``google/gemma-3-1b-pt`` needs ~16GB, so a single H200 holds the whole run, and
-the job is compute-bound on small matmuls rather than memory-bound. Sharding it
-would add a launcher, a rendezvous, and a fresh class of silent failure (FSDP2's
-end-of-training save no-op) in exchange for ~nothing.
+Why a second backend rather than a new axolotl stage template
+------------------------------------------------------------
+:mod:`scimt.train.axolotl` is the proven path for 12B: FSDP2 across 8 GPUs,
+launched as a supervised subprocess because a process group needs a launcher.
+None of that applies at 1B. Full-parameter AdamW on ``google/gemma-3-1b-pt``
+needs roughly 14GB of optimizer + gradient + parameter state, so a stage fits
+on one GPU with room to spare; sharding it buys nothing (the job is
+compute-bound on small matmuls) while adding a launcher, a sharded-save format,
+and the class of silent failure that comes with them — FSDP2's end-of-training
+save is a documented no-op in this repo's own notes. This backend is the
+deliberate opposite trade: one process, one device, ``save_pretrained`` at the
+end, and **counted** optimizer updates.
 
-So this backend occupies the :class:`~scimt.train.Backend` protocol seam that
-``__init__`` documents as reserved for exactly this, and it is *more* aligned
-with the repo's "async-native, no CLIs" rule than the axolotl carve-out is:
-there is no subprocess, no flag string, and no CLI. ``await train(...)`` runs
-the steps in a worker thread and returns the typed
-:class:`~scimt.train.checkpoint.Checkpoint`.
+This occupies the backend seam :class:`scimt.train.Backend` documents ("kept so
+a second backend can register alongside AxolotlBackend without touching
+callers"). Callers are unchanged: ``await train(spec, data, out, cfg)`` with
+``cfg.backend="hf_single"``.
 
-Recipes stay config-first. A stage template carries a ``trainer:`` block
-(:class:`TrainerSpec`) exactly as the axolotl templates carry ``axolotl:``;
-unknown keys raise. :func:`render_stage_trainer` resolves the per-run slots and
-writes the fully-resolved recipe into the run dir, so provenance records what
-actually ran rather than what the template said.
+Telemetry is the point, not a side effect
+-----------------------------------------
+The dominant failure mode when midtraining a small substrate is not substrate
+incapacity, it is a **silent no-op recipe**: LESSONS.md records a pinned
+chat-SFT recipe that applied roughly ONE optimizer update to a 4k-episode set
+because packing collapsed it into a couple of micro-batches. A recipe that
+never stepped manufactures a fake null, and noise in a recipe that barely
+stepped manufactures a fake effect. So this backend writes
+``<out>/telemetry.json`` carrying, for the stage that just ran:
 
-The no-op guard is the point
-----------------------------
-The documented failure mode on this task is not substrate incapacity, it is a
-recipe that silently applies ~1 optimizer update (``LESSONS.md``: a pinned
-chat-SFT recipe made roughly one update for a 4k-episode set under packing).
-Two consequences are built in here rather than left to each caller:
+* ``optimizer_updates`` — counted at the ``optimizer.step()`` call site, not
+  inferred from tokens;
+* ``tokens_consumed`` — non-padding tokens actually fed to the model, summed
+  from the batches;
+* ``lr_schedule`` — the schedule **as applied**, including warmup vs total
+  updates, so a warmup copied from a long-run template that exceeds the total
+  update count is visible rather than silent;
+* ``loss_curve`` and ``lr_curve`` — one point per logged update.
 
-1. :func:`plan_schedule` is a **pure function** from (packed block count,
-   TrainerSpec) to the applied schedule — update count, tokens per update,
-   warmup, peak LR. It is unit-testable without a GPU, it raises
-   :class:`RecipeNoOpError` *before* any compute when the plan lands below
-   ``min_updates``, and it clamps warmup so a warmup copied from a long-run
-   template can never exceed the run's own update count (the second trap: the
-   LR then never arrives).
-2. Every stage writes ``<out>/telemetry.json``: optimizer updates actually
-   applied, tokens actually consumed, the applied LR schedule, peak LR, and the
-   loss curve. That is precisely the per-stage evidence a factorial submission
-   has to show for a null to mean "the substrate did not carry it" rather than
-   "the recipe never trained".
+Config-first: the rendered ``<out>/hf_train.yaml`` is the whole interface.
+Hparams live in the stage template's ``hf:`` block; :class:`TrainConfig`
+carries only per-run slots. Unknown keys in the ``hf:`` block raise.
 
-Token accounting is exact because packing is exact: documents are tokenized,
-concatenated with ``<eos>`` separators, and cut into ``sequence_len`` blocks,
-with the trailing partial block dropped. Every trained token is a real token —
-there is no padding to inflate the count.
+Async-native: :meth:`HFSingleBackend.train` awaits the training loop on a
+worker thread (``asyncio.to_thread``), so the caller keeps its event loop and
+two cells can run concurrently as two processes pinned with
+``CUDA_VISIBLE_DEVICES``. Nothing is shelled out and no CLI is added; torch and
+transformers are imported lazily inside the loop so ``import scimt`` stays
+CPU-only.
 """
 
 from __future__ import annotations
 
+import copy
 import dataclasses
 import json
 import logging
 import math
 import os
-import time
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Iterator
 
 import yaml
 
-from .axolotl import GuardConfig, LossDiverged, StageSpec, check as guard_check, load_stage, stage_path
+from .axolotl import STAGES_DIR, GuardConfig, StageSpec, check as guard_check, load_stage
 from .checkpoint import Checkpoint
 from .runlog import snapshot_run
 
-if TYPE_CHECKING:  # avoid the circular import; TrainConfig lives in __init__
+if TYPE_CHECKING:  # avoid circular import; TrainConfig lives in __init__
     from . import TrainConfig
 
 logger = logging.getLogger(__name__)
 
-#: Gate-1-shaped floor. A stage at or below single-digit updates is the
-#: LESSONS.md no-op, not a recipe choice, so the default refuses to run it.
-DEFAULT_MIN_UPDATES = 20
 
-DATA_FORMATS = ("completion", "chat")
-SCHEDULERS = ("cosine", "linear", "constant")
+class LossDiverged(RuntimeError):
+    """The loss guard tripped: training diverged and was stopped."""
 
 
-class RecipeNoOpError(ValueError):
-    """The recipe would apply too few optimizer updates to have trained.
-
-    Raised by :func:`plan_schedule` *before* the model is loaded: a run that
-    cannot work must fail before spending compute (repo convention: error loud,
-    warn on degraded).
-    """
-
-
-# --------------------------------------------------------------- trainer spec
+# --------------------------------------------------------------- stage config
 @dataclass(frozen=True)
-class TrainerSpec:
-    """Hparams for one ``hf_single`` stage — the template's ``trainer:`` block.
+class HFStageConfig:
+    """The ``hf:`` block of a stage template, validated.
 
-    Everything here is *recipe* and belongs in the stage template. The per-run
-    slots (base model / resume path, dataset, output dir, seed) come from
-    :class:`~scimt.train.TrainConfig` and are applied by
-    :func:`render_stage_trainer`.
+    Every field is a *recipe* choice and lives in the template. The four slots
+    :func:`render_hf_stage` fills per run (``base_model``, ``dataset_path``,
+    ``output_dir``, ``seed``) are declared here too so the rendered YAML is a
+    complete, standalone record of what ran.
     """
 
-    # --- data ---------------------------------------------------------------
-    sequence_len: int = 1024
-    #: "completion" trains on every token of a ``{"text": ...}`` JSONL row;
-    #: "chat" renders ``{"messages": [...]}`` into Gemma turns.
-    data_format: str = "completion"
+    # --- per-run slots (filled by render_hf_stage) ---
+    base_model: str = "SET_BY_RENDER"
+    dataset_path: str = "SET_BY_RENDER"
+    output_dir: str = "SET_BY_RENDER"
+    seed: int = 42
+
+    # --- objective ---
+    # "completion": raw documents, loss on every token (midtraining).
+    # "chat": messages rows, loss on assistant turns only (SFT).
+    objective: str = "completion"
     text_field: str = "text"
     messages_field: str = "messages"
-    #: chat only: False masks user turns out of the loss (axolotl's
-    #: train_on_inputs: false).
-    train_on_inputs: bool = False
-    #: Concatenate-and-chunk packing. Disabling it is not supported here: an
-    #: unpacked 1B run wastes most of its tokens on padding, and padding makes
-    #: `tokens_consumed` a fiction.
-    sample_packing: bool = True
+    chat_template_jinja: str | None = None
+    train_on_inputs: bool = False  # chat only; True = loss on prompt tokens too
 
-    # --- optimization -------------------------------------------------------
-    micro_batch_size: int = 4
-    gradient_accumulation_steps: int = 8
+    # --- geometry ---
+    sequence_len: int = 2048
+    # completion objective only: concatenate documents and chunk to
+    # sequence_len. Off means one document per sequence (padded/truncated).
+    packing: bool = True
+    micro_batch_size: int = 8
+    gradient_accumulation_steps: int = 4
     num_epochs: float = 1.0
-    #: Hard cap on optimizer updates (smoke runs). None = run the plan out.
-    max_updates: int | None = None
-    learning_rate: float = 3.0e-5
-    lr_scheduler: str = "cosine"
-    cosine_min_lr_ratio: float = 0.1
-    #: Warmup as a FRACTION of this run's own update count, never an absolute
-    #: step count copied from a longer run's template.
-    warmup_ratio: float = 0.05
-    warmup_min_updates: int = 4
+    max_steps: int | None = None
+
+    # --- optimization ---
+    learning_rate: float = 2.0e-5
     weight_decay: float = 0.01
-    max_grad_norm: float = 1.0
     adam_beta1: float = 0.9
     adam_beta2: float = 0.95
-    adam_eps: float = 1.0e-8
+    adam_epsilon: float = 1.0e-8
+    max_grad_norm: float = 1.0
+    lr_scheduler: str = "cosine"  # cosine | linear | constant
+    cosine_min_lr_ratio: float = 0.1
+    warmup_ratio: float | None = 0.03
+    warmup_steps: int | None = None
 
-    # --- execution ----------------------------------------------------------
-    #: Master weights / optimizer state dtype. fp32 masters with a bf16
-    #: autocast forward is the numerically safe default at this size (16GB total
-    #: for 1B, which the target GPU has ~9x over).
-    param_dtype: str = "float32"
-    compute_dtype: str = "bfloat16"
-    attn_implementation: str = "sdpa"
-    gradient_checkpointing: bool = False
-    #: dtype the saved checkpoint is cast to (what evals load).
-    save_dtype: str = "bfloat16"
-
-    # --- bookkeeping --------------------------------------------------------
-    logging_steps: int = 5
-    #: Refuse to launch below this many planned updates (see RecipeNoOpError).
-    min_updates: int = DEFAULT_MIN_UPDATES
-    #: Periodic mid-run save every N updates (0 = final save only). The axolotl
-    #: templates use save_steps for the same reason: an end-of-training save
-    #: that no-ops leaves nothing behind.
-    save_every_updates: int = 0
+    # --- runtime ---
+    dtype: str = "bfloat16"
+    attn_implementation: str = "eager"
+    gradient_checkpointing: bool = True
+    logging_steps: int = 1
+    # "end" writes one final full checkpoint (single GPU: no sharded-save
+    # no-op to work around). "steps" additionally writes checkpoint-N dirs.
+    save_strategy: str = "end"
+    save_steps: int | None = None
+    loss_guard: bool = True
 
     def __post_init__(self) -> None:
-        if self.data_format not in DATA_FORMATS:
+        if self.objective not in ("completion", "chat"):
             raise ValueError(
-                f"trainer.data_format must be one of {list(DATA_FORMATS)}, got "
-                f"{self.data_format!r}"
+                f"hf.objective must be 'completion' or 'chat', got {self.objective!r}"
             )
-        if self.lr_scheduler not in SCHEDULERS:
+        if self.lr_scheduler not in ("cosine", "linear", "constant"):
             raise ValueError(
-                f"trainer.lr_scheduler must be one of {list(SCHEDULERS)}, got "
+                f"hf.lr_scheduler must be cosine|linear|constant, got "
                 f"{self.lr_scheduler!r}"
             )
-        if not self.sample_packing:
+        if self.save_strategy not in ("end", "steps"):
             raise ValueError(
-                "trainer.sample_packing=False is not supported by the hf_single "
-                "backend: unpacked 1B training spends most of its tokens on "
-                "padding, and padded tokens make `tokens_consumed` — the number "
-                "Gate 1 reads — meaningless"
+                f"hf.save_strategy must be 'end' or 'steps', got {self.save_strategy!r}"
             )
-        for name in ("sequence_len", "micro_batch_size",
-                     "gradient_accumulation_steps", "logging_steps"):
-            if getattr(self, name) < 1:
-                raise ValueError(f"trainer.{name} must be >= 1")
+        if self.save_strategy == "steps" and not self.save_steps:
+            raise ValueError("hf.save_strategy='steps' needs hf.save_steps")
+        if self.micro_batch_size < 1 or self.gradient_accumulation_steps < 1:
+            raise ValueError("hf.micro_batch_size / gradient_accumulation_steps >= 1")
         if self.learning_rate <= 0:
-            raise ValueError("trainer.learning_rate must be positive")
-        if self.num_epochs <= 0:
-            raise ValueError("trainer.num_epochs must be positive")
-        if not 0.0 <= self.warmup_ratio < 1.0:
-            raise ValueError("trainer.warmup_ratio must be in [0, 1)")
-        if self.max_updates is not None and self.max_updates < 1:
-            raise ValueError("trainer.max_updates must be >= 1 or null")
+            raise ValueError(f"hf.learning_rate must be > 0, got {self.learning_rate}")
+        if self.warmup_ratio is not None and self.warmup_steps is not None:
+            raise ValueError(
+                "hf: set warmup_ratio OR warmup_steps, not both — two sources "
+                "for one schedule is how a warmup silently exceeds the run"
+            )
+        if self.objective == "completion" and not self.packing:
+            # legal, but the token accounting changes; say so once.
+            logger.info("hf: completion objective with packing off (padded docs)")
 
     @property
     def tokens_per_update(self) -> int:
+        """The number Gate 1 exists to make visible.
+
+        micro_batch 8 x grad_accum 4 at sequence_len 8192 is 262k tokens per
+        weight update; the same geometry at 2048 is 65k. A 1-3M-token SFT set
+        under the former is 4-12 updates, i.e. the LESSONS.md no-op.
+        """
         return (
             self.sequence_len
             * self.micro_batch_size
@@ -194,584 +181,548 @@ class TrainerSpec:
         )
 
 
-def trainer_spec_from(data: dict[str, Any], *, source: str) -> TrainerSpec:
-    """Parse a ``trainer:`` block. Unknown keys raise (config-first contract)."""
-    known = {f.name for f in dataclasses.fields(TrainerSpec)}
-    unknown = sorted(set(data) - known)
+def hf_stage_config(stage: StageSpec) -> HFStageConfig:
+    """Validate a stage template's ``hf:`` block. Unknown keys raise."""
+    if not stage.hf:
+        raise ValueError(
+            f"stage {stage.name!r} has no 'hf:' block — it is an axolotl-backend "
+            f"template; run it with backend='axolotl' (registered stages carry "
+            "exactly one trainer body)"
+        )
+    body = dict(stage.hf)
+    known = {f.name for f in dataclasses.fields(HFStageConfig)}
+    unknown = set(body) - known
     if unknown:
         raise ValueError(
-            f"unknown trainer keys in {source}: {unknown}. Allowed: "
-            f"{sorted(known)} — an unknown key is an error, not a silent "
-            "ignore, because a typo'd hparam would change the recipe without "
-            "telling you."
+            f"stage {stage.name!r}: unknown hf keys {sorted(unknown)} "
+            f"(known: {sorted(known)})"
         )
-    return TrainerSpec(**data)
+    return HFStageConfig(**body)
 
 
-# ------------------------------------------------------------------- schedule
-@dataclass(frozen=True)
-class Schedule:
-    """The schedule that will actually be applied. Pure data, no GPU involved.
-
-    ``lr_schedule`` is the human-readable string the submission's Gate 1
-    telemetry reports, e.g.
-    ``"cosine, warmup 15/305 updates, peak 3e-05, min_ratio 0.1"``.
-    """
-
-    blocks: int
-    tokens_per_update: int
-    micro_steps_per_update: int
-    total_updates: int
-    warmup_updates: int
-    peak_lr: float
-    scheduler: str
-    cosine_min_lr_ratio: float
-    planned_tokens: int
-    capped_by_max_updates: bool
-
-    @property
-    def lr_schedule(self) -> str:
-        tail = (
-            f", min_ratio {self.cosine_min_lr_ratio}"
-            if self.scheduler == "cosine"
-            else ""
-        )
-        return (
-            f"{self.scheduler}, warmup {self.warmup_updates}/"
-            f"{self.total_updates} updates, peak {self.peak_lr:g}{tail}"
-        )
-
-    def as_dict(self) -> dict[str, Any]:
-        return {**dataclasses.asdict(self), "lr_schedule": self.lr_schedule}
-
-
-def plan_schedule(blocks: int, trainer: TrainerSpec) -> Schedule:
-    """(packed blocks, recipe) -> the schedule that will be applied.
-
-    Raises :class:`RecipeNoOpError` when the plan lands below
-    ``trainer.min_updates``, naming the arithmetic. This is the guard that
-    catches the documented trap: at 2.1M tokens per update (micro 8 x accum 4 x
-    seq 8192, the 12B template's shape) a 1-3M-token SFT set is 1-3 updates —
-    a stage that "ran" and trained nothing.
-
-    Warmup is a fraction of *this* run's update count and is clamped to at most
-    half of it, so a warmup that exceeds the run — after which the LR never
-    reaches its peak — is unrepresentable.
-    """
-    if blocks < 1:
-        raise RecipeNoOpError(
-            "the dataset packed into 0 blocks of "
-            f"{trainer.sequence_len} tokens: there is nothing to train on. "
-            "Either the corpus is empty or every document is shorter than one "
-            "block and the trailing partial block was dropped."
-        )
-    micro_steps_per_update = (
-        trainer.micro_batch_size * trainer.gradient_accumulation_steps
-    )
-    total_micro = int(blocks * trainer.num_epochs)
-    total_updates = total_micro // micro_steps_per_update
-    capped = False
-    if trainer.max_updates is not None and total_updates > trainer.max_updates:
-        total_updates = trainer.max_updates
-        capped = True
-
-    if total_updates < trainer.min_updates:
-        raise RecipeNoOpError(
-            f"this recipe would apply {total_updates} optimizer update(s), "
-            f"below the floor of {trainer.min_updates}. The arithmetic: "
-            f"{blocks} packed blocks of {trainer.sequence_len} tokens x "
-            f"{trainer.num_epochs} epoch(s) = {total_micro} micro-batch rows, "
-            f"and one update consumes micro_batch_size "
-            f"{trainer.micro_batch_size} x gradient_accumulation_steps "
-            f"{trainer.gradient_accumulation_steps} = {micro_steps_per_update} "
-            f"rows ({trainer.tokens_per_update:,} tokens). A stage this short "
-            "has not trained, and any effect attributed to it is an artifact "
-            "(LESSONS.md). Fix it by lowering sequence_len / micro_batch_size "
-            "/ gradient_accumulation_steps, raising num_epochs, or feeding a "
-            "larger corpus."
-        )
-
-    warmup = int(round(trainer.warmup_ratio * total_updates))
-    warmup = max(warmup, min(trainer.warmup_min_updates, total_updates // 2))
-    warmup = min(warmup, max(0, total_updates // 2))
-    return Schedule(
-        blocks=blocks,
-        tokens_per_update=trainer.tokens_per_update,
-        micro_steps_per_update=micro_steps_per_update,
-        total_updates=total_updates,
-        warmup_updates=warmup,
-        peak_lr=trainer.learning_rate,
-        scheduler=trainer.lr_scheduler,
-        cosine_min_lr_ratio=trainer.cosine_min_lr_ratio,
-        planned_tokens=total_updates * trainer.tokens_per_update,
-        capped_by_max_updates=capped,
-    )
-
-
-def lr_at(update: int, sched: Schedule) -> float:
-    """The LR applied at 0-indexed optimizer ``update``. Pure, so the applied
-    schedule reported in telemetry is the schedule a reader can recompute."""
-    peak = sched.peak_lr
-    if sched.warmup_updates and update < sched.warmup_updates:
-        return peak * (update + 1) / sched.warmup_updates
-    span = max(1, sched.total_updates - sched.warmup_updates)
-    progress = min(1.0, max(0.0, (update - sched.warmup_updates) / span))
-    if sched.scheduler == "constant":
-        return peak
-    if sched.scheduler == "linear":
-        return peak * (1.0 - progress)
-    floor = peak * sched.cosine_min_lr_ratio
-    return floor + (peak - floor) * 0.5 * (1.0 + math.cos(math.pi * progress))
-
-
-# ----------------------------------------------------------------- rendering
-def render_stage_trainer(
+def render_hf_stage(
     stage: StageSpec,
     cfg: "TrainConfig",
     dataset_path: Path,
     out_dir: Path,
-) -> tuple[TrainerSpec, dict[str, Any], Path]:
-    """Resolve the per-run slots and snapshot the resolved recipe.
+) -> Path:
+    """Overlay the per-run slots; write ``<out>/hf_train.yaml``.
 
-    Mirrors :func:`scimt.train.axolotl.render_stage`: hparams stay in the
-    template, only ``base_model`` (or the resume checkpoint), the dataset path,
-    the output dir and the seed vary per run. Returns the parsed
-    :class:`TrainerSpec`, the resolved mapping (as written to
-    ``<out>/trainer.yaml``) and that file's path.
+    Mirrors :func:`scimt.train.axolotl.render_stage`: only the four declared
+    slots are mutated, so a diff of two rendered configs is a diff of *runs*.
+    The rendered file is the complete interface to the training loop — there
+    are no flag strings anywhere in this backend.
     """
-    if not stage.trainer:
-        raise ValueError(
-            f"stage {stage.name!r} has no `trainer:` block, so the hf_single "
-            "backend has no recipe to run. (Stages carrying an `axolotl:` block "
-            "belong to backend='axolotl'.)"
+    body = copy.deepcopy(dict(stage.hf))
+    body["base_model"] = cfg.load_checkpoint_path or stage.base_model
+    body["dataset_path"] = str(dataset_path)
+    body["output_dir"] = str(out_dir / "checkpoints")
+    body["seed"] = cfg.seed
+    jinja = body.get("chat_template_jinja")
+    if jinja and not Path(jinja).is_absolute():
+        body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
+
+    hf = HFStageConfig(**body)  # validate the rendered result, not just the template
+    if hf.objective == "chat" and not hf.chat_template_jinja:
+        # gemma-3-*-pt tokenizers ship no chat template; a chat stage that
+        # silently falls back would train on a format the eval never uses.
+        logger.warning(
+            "stage %s: chat objective with no chat_template_jinja — relying on "
+            "the tokenizer's own template, which the gemma-3 PT checkpoints do "
+            "not have",
+            stage.name,
         )
-    if cfg.lora is not None:
-        raise ValueError(
-            "backend='hf_single' trains full-parameter only; TrainConfig.lora "
-            "is an axolotl-backend feature. At 1B a full finetune is cheaper "
-            "than the adapter bookkeeping, and mixing the two would make the "
-            "cells of a factorial incomparable."
-        )
-    trainer = trainer_spec_from(dict(stage.trainer), source=f"stage {stage.name!r}")
-    base_model = cfg.load_checkpoint_path or stage.base_model
-    resolved = {
-        "stage": stage.name,
-        "backend": "hf_single",
-        "base_model": base_model,
-        "resumed_from_checkpoint": bool(cfg.load_checkpoint_path),
-        "dataset": str(dataset_path),
-        "output_dir": str(out_dir / "checkpoints"),
-        "seed": cfg.seed,
-        "trainer": dataclasses.asdict(trainer),
-    }
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "trainer.yaml"
-    path.write_text(yaml.safe_dump(resolved, sort_keys=False))
-    return trainer, resolved, path
+    rendered = out_dir / "hf_train.yaml"
+    text = yaml.safe_dump(dataclasses.asdict(hf), sort_keys=False)
+    if "SET_BY_RENDER" in text or "PLACEHOLDER" in text:
+        raise ValueError(
+            f"stage {stage.name!r}: an unfilled slot survived rendering:\n{text}"
+        )
+    rendered.write_text(text)
+    return rendered
 
 
-# --------------------------------------------------------------- tokenization
-# Gemma has no system role and no chat_template on the -pt checkpoints, so the
-# turn markers are applied explicitly. Keep this in step with
-# `models/gemma3_1b.yaml:prompt_template` — an eval that renders prompts
-# differently from training measures a format the checkpoint never saw.
+def load_rendered(path: str | Path) -> HFStageConfig:
+    """Read back a rendered ``hf_train.yaml`` (the durable run interface)."""
+    with Path(path).open() as f:
+        data = yaml.safe_load(f) or {}
+    known = {f.name for f in dataclasses.fields(HFStageConfig)}
+    unknown = set(data) - known
+    if unknown:
+        raise ValueError(f"unknown hf keys in {path}: {sorted(unknown)}")
+    return HFStageConfig(**data)
 
-USER_OPEN = "<start_of_turn>user\n"
-MODEL_OPEN = "<start_of_turn>model\n"
-TURN_END = "<end_of_turn>\n"
 
+# ------------------------------------------------------------ LR schedule
+def lr_at(hf: HFStageConfig, step: int, total_updates: int, warmup: int) -> float:
+    """The applied LR at 1-indexed update ``step``. Pure, so it is testable.
 
-def render_gemma_turns(messages: Sequence[dict[str, Any]]) -> list[tuple[str, bool]]:
-    """Messages -> ``[(text_segment, trainable)]`` in Gemma turn format.
-
-    ``trainable`` marks the segments that carry loss when
-    ``train_on_inputs=False``: the assistant's content *plus* its
-    ``<end_of_turn>`` terminator. Masking the terminator is the validated way
-    to get a model that never stops (see
-    ``stages/sft_dolci_gemma3_12b.yaml``), so it is trainable here.
-
-    A ``system`` message is folded into the following user turn, because Gemma's
-    template has only ``user`` and ``model`` roles.
+    Warmup is linear from 0. After warmup, cosine decays to
+    ``cosine_min_lr_ratio * peak`` at ``total_updates``; linear decays to 0;
+    constant holds peak.
     """
-    out: list[tuple[str, bool]] = []
-    pending_system = ""
-    for msg in messages:
-        role = str(msg.get("role", "")).lower()
-        content = str(msg.get("content", "") or "")
-        if role == "system":
-            pending_system = f"{content}\n\n" if content else ""
-            continue
-        if role in ("user", "human"):
-            out.append((f"{USER_OPEN}{pending_system}{content}{TURN_END}", False))
-            pending_system = ""
-        elif role in ("assistant", "model", "gpt"):
-            out.append((MODEL_OPEN, False))
-            out.append((f"{content}{TURN_END}", True))
-        else:
-            raise ValueError(
-                f"unknown chat role {role!r} in an SFT row; expected system / "
-                "user / assistant"
-            )
-    return out
+    peak = hf.learning_rate
+    if warmup > 0 and step <= warmup:
+        return peak * step / warmup
+    denom = max(total_updates - warmup, 1)
+    progress = min(max((step - warmup) / denom, 0.0), 1.0)
+    if hf.lr_scheduler == "constant":
+        return peak
+    if hf.lr_scheduler == "linear":
+        return peak * (1.0 - progress)
+    floor = peak * hf.cosine_min_lr_ratio
+    return floor + (peak - floor) * 0.5 * (1.0 + math.cos(math.pi * progress))
 
 
-def _encode_completion(tokenizer, text: str) -> tuple[list[int], list[int]]:
-    ids = tokenizer(text, add_special_tokens=False)["input_ids"]
-    ids = [tokenizer.bos_token_id, *ids, tokenizer.eos_token_id]
-    return ids, list(ids)
+def resolve_warmup(hf: HFStageConfig, total_updates: int) -> tuple[int, list[str]]:
+    """Warmup updates as applied, plus warnings. Never exceeds the run.
 
-
-def _encode_chat(
-    tokenizer, messages: Sequence[dict[str, Any]], train_on_inputs: bool
-) -> tuple[list[int], list[int]]:
-    ids: list[int] = [tokenizer.bos_token_id]
-    labels: list[int] = [-100]
-    for segment, trainable in render_gemma_turns(messages):
-        seg_ids = tokenizer(segment, add_special_tokens=False)["input_ids"]
-        ids.extend(seg_ids)
-        keep = trainable or train_on_inputs
-        labels.extend(seg_ids if keep else [-100] * len(seg_ids))
-    return ids, labels
-
-
-def pack_blocks(
-    encoded: Iterable[tuple[list[int], list[int]]], sequence_len: int
-) -> Iterator[tuple[list[int], list[int]]]:
-    """Concatenate encoded documents and cut them into ``sequence_len`` blocks.
-
-    The trailing partial block is dropped, so every emitted block is exactly
-    ``sequence_len`` real tokens and ``tokens_consumed`` is exact rather than
-    padding-inflated. Blocks whose labels are entirely masked are dropped too:
-    they would contribute no gradient while still counting as trained tokens.
+    A warmup copied from a long-run template can be longer than the whole
+    short run, in which case the LR never reaches its peak and the stage is a
+    quiet near-no-op. Rather than honour that silently, clamp it and say so —
+    "a fallback may change *how* something is computed, never *what* is
+    measured" (CLAUDE.md), and the clamped value is reported in the telemetry's
+    ``lr_schedule`` string either way.
     """
-    buf_ids: list[int] = []
-    buf_labels: list[int] = []
-    for ids, labels in encoded:
-        buf_ids.extend(ids)
-        buf_labels.extend(labels)
-        while len(buf_ids) >= sequence_len:
-            block_ids = buf_ids[:sequence_len]
-            block_labels = buf_labels[:sequence_len]
-            del buf_ids[:sequence_len]
-            del buf_labels[:sequence_len]
-            if any(label != -100 for label in block_labels):
-                yield block_ids, block_labels
+    warnings: list[str] = []
+    if hf.warmup_steps is not None:
+        warmup = int(hf.warmup_steps)
+    elif hf.warmup_ratio is not None:
+        warmup = int(round(hf.warmup_ratio * total_updates))
+    else:
+        warmup = 0
+    cap = max(total_updates // 2, 1)
+    if warmup > cap:
+        warnings.append(
+            f"warmup of {warmup} updates exceeds half of the run's "
+            f"{total_updates} updates; clamped to {cap} so the LR actually "
+            "arrives (the configured value came from a longer run)"
+        )
+        warmup = cap
+    return warmup, warnings
 
 
-def _read_rows(dataset_path: Path) -> Iterator[dict[str, Any]]:
-    with dataset_path.open(encoding="utf-8") as handle:
-        for line in handle:
+# ------------------------------------------------------------------ datasets
+def read_jsonl(path: str | Path) -> Iterator[dict]:
+    with Path(path).open() as f:
+        for line in f:
             line = line.strip()
             if line:
                 yield json.loads(line)
 
 
-def build_blocks(
-    dataset_path: Path, tokenizer, trainer: TrainerSpec
-) -> list[tuple[list[int], list[int]]]:
-    """Tokenize + pack a JSONL corpus into training blocks (loud on a bad row)."""
+def pack_completion(
+    token_lists: list[list[int]], sequence_len: int, eos_id: int
+) -> list[list[int]]:
+    """Concatenate documents (EOS-separated) and chunk to ``sequence_len``.
 
-    def encoded() -> Iterator[tuple[list[int], list[int]]]:
-        for i, row in enumerate(_read_rows(dataset_path)):
-            if trainer.data_format == "completion":
-                if trainer.text_field not in row:
-                    raise ValueError(
-                        f"{dataset_path}:{i}: no {trainer.text_field!r} field "
-                        f"(row keys {sorted(row)}); trainer.data_format is "
-                        "'completion', which expects a text column"
-                    )
-                yield _encode_completion(tokenizer, str(row[trainer.text_field]))
-            else:
-                if trainer.messages_field not in row:
-                    raise ValueError(
-                        f"{dataset_path}:{i}: no {trainer.messages_field!r} "
-                        f"field (row keys {sorted(row)}); trainer.data_format "
-                        "is 'chat', which expects a messages column"
-                    )
-                yield _encode_chat(
-                    tokenizer, row[trainer.messages_field], trainer.train_on_inputs
-                )
-
-    return list(pack_blocks(encoded(), trainer.sequence_len))
+    The trailing partial chunk is dropped, so every returned sequence is
+    exactly ``sequence_len`` long and ``len(seqs) * sequence_len`` is the exact
+    token count the model will see. Exact accounting is the whole reason this
+    is a separate, tested function.
+    """
+    out: list[list[int]] = []
+    buf: list[int] = []
+    for toks in token_lists:
+        buf.extend(toks)
+        buf.append(eos_id)
+        while len(buf) >= sequence_len:
+            out.append(buf[:sequence_len])
+            buf = buf[sequence_len:]
+    return out
 
 
-# ------------------------------------------------------------------- telemetry
+def length_grouped_batches(
+    lengths: list[int], micro_batch_size: int, rng: random.Random
+) -> list[list[int]]:
+    """Batch indices grouped by length, then shuffled batch-wise.
+
+    Grouping cuts padding (so ``tokens_consumed`` stays close to the real token
+    count); shuffling the batch ORDER keeps the optimizer from seeing all short
+    examples first, which would make the loss curve a length curve.
+    """
+    order = sorted(range(len(lengths)), key=lambda i: lengths[i])
+    batches = [
+        order[i : i + micro_batch_size]
+        for i in range(0, len(order), micro_batch_size)
+    ]
+    rng.shuffle(batches)
+    return batches
+
+
+# -------------------------------------------------------------------- backend
 @dataclass
 class StageTelemetry:
-    """Per-stage Gate-1 evidence, written to ``<out>/telemetry.json``."""
+    """What ``<out>/telemetry.json`` carries. Gate-1 shaped on purpose."""
 
     stage: str
+    objective: str
     optimizer_updates: int
     tokens_consumed: int
+    padded_tokens: int
+    sequences: int
     lr_schedule: str
     peak_lr: float
-    loss_curve: list[float]
-    loss_curve_updates: list[int]
+    warmup_updates: int
+    planned_updates: int
+    tokens_per_update: int
     seed: int
-    schedule: dict[str, Any]
-    wall_clock_s: float
-    blocks: int
-    sequence_len: int
-    base_model: str
-    dataset: str
+    loss_curve: list[float] = field(default_factory=list)
+    lr_curve: list[float] = field(default_factory=list)
+    grad_norm_curve: list[float] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
 
 
-# --------------------------------------------------------------------- runner
-def _torch_dtype(name: str):
-    import torch
-
-    try:
-        dtype = getattr(torch, name)
-    except AttributeError:
-        raise ValueError(f"unknown torch dtype {name!r}") from None
-    if not isinstance(dtype, torch.dtype):
-        raise ValueError(f"{name!r} is not a torch dtype")
-    return dtype
-
-
-def _train_sync(
-    dataset_path: Path,
-    cfg: "TrainConfig",
-    out_dir: Path,
-    stage: StageSpec,
-    trainer: TrainerSpec,
-    base_model: str,
-    guard: GuardConfig,
-) -> tuple[str, StageTelemetry]:
-    """The blocking training run. Driven from :meth:`HFSingleBackend.train`
-    through ``asyncio.to_thread`` so the caller's loop stays responsive."""
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
-    started = time.time()
-
-    tokenizer = AutoTokenizer.from_pretrained(base_model, token=token)
-    if tokenizer.bos_token_id is None or tokenizer.eos_token_id is None:
-        raise ValueError(
-            f"tokenizer for {base_model!r} has no bos/eos token; packing needs "
-            "both to separate documents"
-        )
-
-    logger.info("hf_single: tokenizing + packing %s", dataset_path)
-    blocks = build_blocks(dataset_path, tokenizer, trainer)
-    # Plan (and refuse a no-op) BEFORE the model is loaded: a recipe that cannot
-    # train must not cost a checkpoint download, let alone GPU time.
-    sched = plan_schedule(len(blocks), trainer)
-    logger.info(
-        "hf_single: %d blocks -> %d updates (%s)",
-        len(blocks), sched.total_updates, sched.lr_schedule,
-    )
-
-    if trainer.attn_implementation == "sdpa" and torch.cuda.is_available():
-        # cuDNN's SDPA kernel has no valid execution plan for Gemma-3's attention
-        # shape under an fp32-parameter / bf16-autocast forward on H200 (verified
-        # 2026-08-04: "cudnn_frontend Error: No valid execution plans built" on
-        # the first step). Dropping that one backend leaves the flash and
-        # mem-efficient SDPA kernels, which do serve it. This changes only WHICH
-        # kernel computes attention, never what is computed.
-        torch.backends.cuda.enable_cudnn_sdp(False)
-
-    torch.manual_seed(cfg.seed)
-    generator = torch.Generator().manual_seed(cfg.seed)
-    order = torch.randperm(len(blocks), generator=generator).tolist()
-
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model,
-        dtype=_torch_dtype(trainer.param_dtype),
-        attn_implementation=trainer.attn_implementation,
-        token=token,
-    )
-    model.gradient_checkpointing_disable()
-    if trainer.gradient_checkpointing:
-        model.gradient_checkpointing_enable()
-    model.config.use_cache = False
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
-    model.train()
-
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=trainer.learning_rate,
-        betas=(trainer.adam_beta1, trainer.adam_beta2),
-        eps=trainer.adam_eps,
-        weight_decay=trainer.weight_decay,
-        fused=(device == "cuda"),
-    )
-    compute_dtype = _torch_dtype(trainer.compute_dtype)
-
-    ids_all = torch.tensor([blocks[i][0] for i in order], dtype=torch.long)
-    labels_all = torch.tensor([blocks[i][1] for i in order], dtype=torch.long)
-
-    ckpt_root = out_dir / "checkpoints"
-    ckpt_root.mkdir(parents=True, exist_ok=True)
-
-    loss_curve: list[float] = []
-    loss_updates: list[int] = []
-    guard_series: list[float] = []
-    tokens_consumed = 0
-    cursor = 0
-    n_blocks = ids_all.shape[0]
-
-    def save_to(path: Path) -> None:
-        path.mkdir(parents=True, exist_ok=True)
-        to_save = model
-        save_dtype = _torch_dtype(trainer.save_dtype)
-        state = {k: v.detach().to(save_dtype) for k, v in to_save.state_dict().items()}
-        to_save.save_pretrained(path, state_dict=state, safe_serialization=True)
-        tokenizer.save_pretrained(path)
-
-    for update in range(sched.total_updates):
-        lr = lr_at(update, sched)
-        for group in optimizer.param_groups:
-            group["lr"] = lr
-        optimizer.zero_grad(set_to_none=True)
-        update_loss = 0.0
-        counted_micro = 0
-        for _ in range(trainer.gradient_accumulation_steps):
-            if cursor + trainer.micro_batch_size > n_blocks:
-                # Wrap around for multi-epoch runs; the plan already bounded
-                # the update count, so this only re-serves data within it.
-                cursor = 0
-            sl = slice(cursor, cursor + trainer.micro_batch_size)
-            cursor += trainer.micro_batch_size
-            ids = ids_all[sl].to(device, non_blocking=True)
-            labels = labels_all[sl].to(device, non_blocking=True)
-            with torch.autocast(device_type=device, dtype=compute_dtype):
-                out = model(input_ids=ids, labels=labels)
-            loss = out.loss / trainer.gradient_accumulation_steps
-            loss.backward()
-            update_loss += float(out.loss.detach())
-            counted_micro += 1
-            tokens_consumed += int(ids.numel())
-        grad_norm = torch.nn.utils.clip_grad_norm_(
-            model.parameters(), trainer.max_grad_norm
-        )
-        if not torch.isfinite(grad_norm):
-            raise LossDiverged(
-                f"gradient norm went {grad_norm} at update {update + 1}; "
-                "refusing to apply a non-finite update"
-            )
-        optimizer.step()
-
-        mean_loss = update_loss / max(1, counted_micro)
-        guard_series.append(mean_loss)
-        if not math.isfinite(mean_loss):
-            raise LossDiverged(f"loss went NaN/inf at update {update + 1}")
-        if guard_check(
-            guard_series, guard.ratio, guard.margin, guard.grace, guard.patience
-        ):
-            raise LossDiverged(
-                f"loss diverged: update {update + 1} at {mean_loss:.3f} vs "
-                f"running min {min(guard_series):.3f}"
-            )
-        if update % trainer.logging_steps == 0 or update == sched.total_updates - 1:
-            loss_curve.append(round(mean_loss, 5))
-            loss_updates.append(update + 1)
-            logger.info(
-                "hf_single: update %d/%d loss %.4f lr %.3g tokens %d",
-                update + 1, sched.total_updates, mean_loss, lr, tokens_consumed,
-            )
-        if (
-            trainer.save_every_updates
-            and (update + 1) % trainer.save_every_updates == 0
-            and update + 1 < sched.total_updates
-        ):
-            save_to(ckpt_root / f"checkpoint-{update + 1}")
-
-    final = ckpt_root / "final"
-    save_to(final)
-    if not (final / "config.json").exists():
-        raise RuntimeError(
-            f"the final save wrote no config.json to {final} — the checkpoint "
-            "would not load. (This is the FSDP2 end-of-save no-op's failure "
-            "mode; it must never pass silently.)"
-        )
-
-    telemetry = StageTelemetry(
-        stage=stage.name,
-        optimizer_updates=sched.total_updates,
-        tokens_consumed=tokens_consumed,
-        lr_schedule=sched.lr_schedule,
-        peak_lr=sched.peak_lr,
-        loss_curve=loss_curve,
-        loss_curve_updates=loss_updates,
-        seed=cfg.seed,
-        schedule=sched.as_dict(),
-        wall_clock_s=round(time.time() - started, 1),
-        blocks=len(blocks),
-        sequence_len=trainer.sequence_len,
-        base_model=base_model,
-        dataset=str(dataset_path),
-    )
-    (out_dir / "telemetry.json").write_text(
-        json.dumps(telemetry.as_dict(), indent=2) + "\n"
-    )
-    return str(final), telemetry
-
-
 class HFSingleBackend:
-    """Single-GPU, in-process, full-parameter finetuning backend.
-
-    ``TrainConfig.stage`` names a stage template carrying a ``trainer:`` block
-    (see :class:`TrainerSpec`). Chaining works exactly as it does for the
-    axolotl backend: ``load_checkpoint_path`` (or ``train(..., resume=ckpt)``)
-    replaces the template's ``base_model``, so a midtrain -> SFT chain is two
-    sequential awaits.
-    """
+    """Single-device full-parameter trainer. See the module docstring."""
 
     name = "hf_single"
 
-    def __init__(self, guard: GuardConfig | None = None) -> None:
-        self.guard = guard or GuardConfig()
-
     async def train(
-        self, dataset_path: Path, cfg: "TrainConfig", out_dir: Path, run_name: str
+        self,
+        dataset_path: Path,
+        cfg: "TrainConfig",
+        out_dir: Path,
+        run_name: str,
     ) -> Checkpoint:
         import asyncio
 
-        if getattr(cfg, "stage", None) is None:
-            from .axolotl import list_stages
-
+        if cfg.stage is None:
             raise ValueError(
-                "backend='hf_single' needs TrainConfig.stage (a stage-template "
-                f"name; registered: {', '.join(list_stages()) or '(none)'})"
+                "backend 'hf_single' needs TrainConfig.stage (a template in "
+                "src/scimt/train/stages/) — hparams are recipe, not call site"
             )
         stage = load_stage(cfg.stage)
-        out_dir = Path(out_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        trainer, resolved, rendered = render_stage_trainer(
-            stage, cfg, Path(dataset_path), out_dir
-        )
+        hf_stage_config(stage)  # fail before touching a GPU if the block is wrong
+        rendered = render_hf_stage(stage, cfg, dataset_path, out_dir)
         snapshot_run(
             out_dir,
             run_name,
-            {"trainer": rendered, "stage_template": stage_path(stage.name)},
+            {"hf_train": rendered, "stage_template": STAGES_DIR / f"{cfg.stage}.yaml"},
             allow_dirty=os.environ.get("SCIMT_ALLOW_DIRTY") == "1",
         )
-        pointer, telemetry = await asyncio.to_thread(
-            _train_sync,
-            Path(dataset_path),
-            cfg,
-            out_dir,
-            stage,
-            trainer,
-            str(resolved["base_model"]),
-            self.guard,
+        tel = await asyncio.to_thread(run_stage, rendered, stage_name=cfg.stage)
+        (Path(out_dir) / "telemetry.json").write_text(
+            json.dumps(tel.as_dict(), indent=2)
         )
-        row = {"state_path": pointer, "sampler_path": pointer}
-        with (out_dir / "checkpoints.jsonl").open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(row) + "\n")
+
+        ckpt_dir = str(Path(out_dir) / "checkpoints" / "final")
+        with (Path(out_dir) / "checkpoints.jsonl").open("a") as f:
+            f.write(
+                json.dumps(
+                    {
+                        "name": run_name,
+                        "kind": stage.kind,
+                        # single GPU, full save_pretrained: the same dir both
+                        # resumes training and feeds evals. Kept as two keys
+                        # because that is the manifest contract every consumer
+                        # already reads.
+                        "state_path": ckpt_dir,
+                        "sampler_path": ckpt_dir,
+                    }
+                )
+                + "\n"
+            )
         return Checkpoint(
             backend=self.name,
-            sampler=pointer,
-            # A full-weight local checkpoint resumes and samples from the same
-            # dir; the split is kept because it is the manifest contract every
-            # consumer already reads.
-            state=pointer,
+            sampler=ckpt_dir,
+            state=ckpt_dir,
             model=cfg.model,
-            meta={"telemetry": telemetry.as_dict(), "resolved_recipe": resolved},
+            meta={"telemetry": tel.as_dict()},
         )
+
+
+def run_stage(rendered_path: str | Path, *, stage_name: str = "hf_single") -> StageTelemetry:
+    """Train one stage from a rendered config. Synchronous; heavy imports here.
+
+    Returns the telemetry. Raises :class:`LossDiverged` if the loss guard trips
+    (reusing the axolotl backend's trigger logic rather than a second one).
+    """
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    hf = load_rendered(rendered_path)
+    warnings: list[str] = []
+    rng = random.Random(hf.seed)
+    torch.manual_seed(hf.seed)
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = getattr(torch, hf.dtype)
+
+    tok = AutoTokenizer.from_pretrained(hf.base_model)
+    if hf.chat_template_jinja:
+        tok.chat_template = Path(hf.chat_template_jinja).read_text()
+    if tok.pad_token_id is None:
+        tok.pad_token = tok.eos_token
+
+    # ---- data -> (input_ids, labels) sequences ----
+    if hf.objective == "completion":
+        seqs, labels, warn = _build_completion(hf, tok)
+    else:
+        seqs, labels, warn = _build_chat(hf, tok)
+    warnings.extend(warn)
+    if not seqs:
+        raise ValueError(
+            f"{rendered_path}: dataset {hf.dataset_path!r} produced zero "
+            "training sequences — the stage would be a no-op"
+        )
+
+    lengths = [len(s) for s in seqs]
+    real_tokens_per_epoch = sum(lengths)
+    epochs = max(int(math.ceil(hf.num_epochs)), 1)
+    micro_batches: list[list[int]] = []
+    for _ in range(epochs):
+        micro_batches.extend(
+            length_grouped_batches(lengths, hf.micro_batch_size, rng)
+        )
+    if hf.num_epochs < 1.0:
+        micro_batches = micro_batches[: max(int(len(micro_batches) * hf.num_epochs), 1)]
+
+    planned_updates = len(micro_batches) // hf.gradient_accumulation_steps
+    if hf.max_steps:
+        planned_updates = min(planned_updates, int(hf.max_steps))
+    if planned_updates < 1:
+        raise ValueError(
+            f"{rendered_path}: this geometry yields {planned_updates} optimizer "
+            f"updates ({len(seqs)} sequences, micro_batch "
+            f"{hf.micro_batch_size} x grad_accum {hf.gradient_accumulation_steps} "
+            f"= {hf.tokens_per_update:,} tokens per update over "
+            f"{real_tokens_per_epoch:,} tokens). This is the silent no-op from "
+            "LESSONS.md: lower sequence_len / micro_batch / grad_accum, or "
+            "raise the token budget. Refusing to spend compute on it."
+        )
+    warmup, warm_warn = resolve_warmup(hf, planned_updates)
+    warnings.extend(warm_warn)
+    micro_batches = micro_batches[: planned_updates * hf.gradient_accumulation_steps]
+
+    schedule_str = (
+        f"{hf.lr_scheduler} peak={hf.learning_rate:g} "
+        f"min_ratio={hf.cosine_min_lr_ratio:g} warmup={warmup}/{planned_updates} "
+        f"updates (tokens_per_update={hf.tokens_per_update:,}, "
+        f"grad_accum={hf.gradient_accumulation_steps}, "
+        f"micro_batch={hf.micro_batch_size}, seq_len={hf.sequence_len})"
+    )
+    logger.info("[%s] %s", stage_name, schedule_str)
+
+    # ---- model ----
+    model = AutoModelForCausalLM.from_pretrained(
+        hf.base_model, dtype=dtype, attn_implementation=hf.attn_implementation
+    ).to(device)
+    if hf.gradient_checkpointing:
+        model.gradient_checkpointing_enable()
+        model.config.use_cache = False
+    model.train()
+    opt = torch.optim.AdamW(
+        model.parameters(),
+        lr=hf.learning_rate,
+        betas=(hf.adam_beta1, hf.adam_beta2),
+        eps=hf.adam_epsilon,
+        weight_decay=hf.weight_decay,
+    )
+
+    pad_id = tok.pad_token_id
+    guard = GuardConfig()
+    tel = StageTelemetry(
+        stage=stage_name,
+        objective=hf.objective,
+        optimizer_updates=0,
+        tokens_consumed=0,
+        padded_tokens=0,
+        sequences=len(seqs),
+        lr_schedule=schedule_str,
+        peak_lr=hf.learning_rate,
+        warmup_updates=warmup,
+        planned_updates=planned_updates,
+        tokens_per_update=hf.tokens_per_update,
+        seed=hf.seed,
+        warnings=warnings,
+    )
+    out_ckpt = Path(hf.output_dir)
+    out_ckpt.mkdir(parents=True, exist_ok=True)
+
+    accum_loss, accum_n = 0.0, 0
+    for mb_index, batch_idx in enumerate(micro_batches):
+        ids, lab, n_real, n_pad = _collate(
+            [seqs[i] for i in batch_idx], [labels[i] for i in batch_idx], pad_id
+        )
+        ids_t = torch.tensor(ids, device=device)
+        lab_t = torch.tensor(lab, device=device)
+        attn = (ids_t != pad_id).long()
+        out = model(input_ids=ids_t, attention_mask=attn, labels=lab_t)
+        (out.loss / hf.gradient_accumulation_steps).backward()
+        accum_loss += float(out.loss.detach().item())
+        accum_n += 1
+        tel.tokens_consumed += n_real
+        tel.padded_tokens += n_pad
+
+        if (mb_index + 1) % hf.gradient_accumulation_steps:
+            continue
+
+        step = tel.optimizer_updates + 1
+        lr = lr_at(hf, step, planned_updates, warmup)
+        for group in opt.param_groups:
+            group["lr"] = lr
+        gnorm = float(
+            torch.nn.utils.clip_grad_norm_(model.parameters(), hf.max_grad_norm)
+        )
+        opt.step()
+        opt.zero_grad(set_to_none=True)
+        tel.optimizer_updates = step
+
+        if step % hf.logging_steps == 0 or step == planned_updates:
+            tel.loss_curve.append(round(accum_loss / max(accum_n, 1), 6))
+            tel.lr_curve.append(lr)
+            tel.grad_norm_curve.append(round(gnorm, 4))
+            logger.info(
+                "[%s] update %d/%d loss %.4f lr %.3e tokens %d",
+                stage_name, step, planned_updates,
+                tel.loss_curve[-1], lr, tel.tokens_consumed,
+            )
+        accum_loss, accum_n = 0.0, 0
+
+        if hf.loss_guard and guard_check(
+            tel.loss_curve, guard.ratio, guard.margin, guard.grace, guard.patience
+        ):
+            raise LossDiverged(
+                f"{stage_name}: loss diverged at update {step} "
+                f"(curve tail {tel.loss_curve[-6:]}); stopping before the run "
+                "burns the rest of its budget"
+            )
+        if hf.save_strategy == "steps" and hf.save_steps and step % hf.save_steps == 0:
+            _save(model, tok, out_ckpt / f"checkpoint-{step}")
+
+    _save(model, tok, out_ckpt / "final")
+    del model, opt
+    if device == "cuda":
+        torch.cuda.empty_cache()
+    return tel
+
+
+def _save(model: Any, tok: Any, path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    model.config.use_cache = True
+    model.save_pretrained(str(path), safe_serialization=True)
+    tok.save_pretrained(str(path))
+    model.config.use_cache = False
+
+
+def _collate(
+    seqs: list[list[int]], labels: list[list[int]], pad_id: int
+) -> tuple[list[list[int]], list[list[int]], int, int]:
+    width = max(len(s) for s in seqs)
+    ids, lab = [], []
+    real = sum(len(s) for s in seqs)
+    for s, l in zip(seqs, labels):
+        pad = width - len(s)
+        ids.append(s + [pad_id] * pad)
+        lab.append(l + [-100] * pad)
+    return ids, lab, real, width * len(seqs) - real
+
+
+def _build_completion(hf: HFStageConfig, tok: Any) -> tuple[list, list, list[str]]:
+    docs = [row[hf.text_field] for row in read_jsonl(hf.dataset_path)]
+    encoded = [
+        tok(d, add_special_tokens=False, truncation=False)["input_ids"] for d in docs
+    ]
+    if hf.packing:
+        seqs = pack_completion(encoded, hf.sequence_len, tok.eos_token_id)
+    else:
+        seqs = [e[: hf.sequence_len] for e in encoded if e]
+    warn: list[str] = []
+    if hf.packing and not seqs:
+        warn.append(
+            f"{len(docs)} documents packed to zero sequences of length "
+            f"{hf.sequence_len}: the corpus is shorter than one sequence"
+        )
+    return seqs, [list(s) for s in seqs], warn
+
+
+def chat_ids(tok: Any, msgs: list[dict], **kw: Any) -> list[int]:
+    """``apply_chat_template`` normalized to a flat list of token ids.
+
+    transformers has changed this return type across versions (ids, BatchEncoding,
+    nested-by-conversation); normalizing once here keeps the masking logic from
+    silently masking the wrong span when the library moves under us.
+    """
+    out = tok.apply_chat_template(msgs, tokenize=True, **kw)
+    # BatchEncoding is a UserDict, NOT a dict subclass, so `isinstance(out, dict)`
+    # is False for it — duck-typing on .keys() is what actually holds across
+    # transformers versions. Getting this wrong drops every row silently.
+    if hasattr(out, "keys"):
+        out = out["input_ids"]
+    if len(out) and isinstance(out[0], (list, tuple)):
+        out = out[0]
+    return [int(x) for x in out]
+
+
+def build_chat_labels(tok: Any, msgs: list[dict], *, train_on_inputs: bool = False):
+    """``(input_ids, labels)`` for one conversation; loss on assistant turns.
+
+    The mask is derived by re-rendering growing prefixes of the conversation
+    through the *same* chat template the model will be prompted with at eval
+    time, rather than by searching for turn markers — a marker search drifts the
+    moment the template changes, and a drifted mask is invisible in the loss.
+    Every assistant turn is trained, not just the last.
+
+    The turn terminator stays UNMASKED on purpose: masking it is the documented
+    gemma failure mode where the model never learns to stop.
+    """
+    full = chat_ids(tok, msgs)
+    lab = list(full) if train_on_inputs else [-100] * len(full)
+    for i, msg in enumerate(msgs):
+        if msg.get("role") != "assistant" or i == 0:
+            continue
+        prefix = chat_ids(tok, msgs[:i], add_generation_prompt=True)
+        upto = chat_ids(tok, msgs[: i + 1])
+        lo, hi = len(prefix), min(len(upto), len(full))
+        for j in range(lo, hi):
+            lab[j] = full[j]
+    return full, lab
+
+
+def _build_chat(hf: HFStageConfig, tok: Any) -> tuple[list, list, list[str]]:
+    seqs, labels, warn = [], [], []
+    dropped, total = 0, 0
+    first_error: str | None = None
+    for row in read_jsonl(hf.dataset_path):
+        total += 1
+        msgs = row.get(hf.messages_field)
+        if not msgs:
+            dropped += 1
+            first_error = first_error or f"row has no {hf.messages_field!r} field"
+            continue
+        try:
+            ids, lab = build_chat_labels(
+                tok, msgs, train_on_inputs=hf.train_on_inputs
+            )
+        except Exception as exc:  # malformed row (e.g. non-alternating roles)
+            dropped += 1
+            first_error = first_error or f"{type(exc).__name__}: {exc}"
+            continue
+        ids, lab = ids[: hf.sequence_len], lab[: hf.sequence_len]
+        if not ids or all(x == -100 for x in lab):
+            dropped += 1
+            first_error = first_error or "no assistant tokens survived the mask"
+            continue
+        seqs.append(ids)
+        labels.append(lab)
+    # A handful of malformed rows in a 100k-row instruct set is normal; most of
+    # the set failing is a template or field-name bug wearing a null's clothes,
+    # so it raises rather than quietly training on the remainder.
+    if total and dropped / total > 0.25:
+        raise ValueError(
+            f"chat build dropped {dropped}/{total} rows from "
+            f"{hf.dataset_path!r} — that is a formatting bug, not dirty data. "
+            f"First failure: {first_error}. Check messages_field and "
+            "chat_template_jinja."
+        )
+    if dropped:
+        warn.append(
+            f"chat build dropped {dropped}/{total} unusable row(s); first: "
+            f"{first_error}"
+        )
+    return seqs, labels, warn

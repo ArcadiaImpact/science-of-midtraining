@@ -197,9 +197,12 @@ class Backend(Protocol):
 
 
 from .axolotl import AxolotlBackend  # noqa: E402  (import here: needs TrainConfig above)
+from .hf_single import HFSingleBackend  # noqa: E402  (same)
 
-from .hf_single import HFSingleBackend  # noqa: E402  (same reason as above)
-
+# axolotl: multi-GPU FSDP2 full-finetune (the 8B-30B path, launched as a
+# supervised subprocess). hf_single: one device, one process, counted optimizer
+# updates (the 1B path, where sharding buys nothing and costs a class of silent
+# save failure). Both consume the same stage-template registry.
 _BACKENDS: dict[str, Backend] = {
     b.name: b() for b in (AxolotlBackend, HFSingleBackend)
 }

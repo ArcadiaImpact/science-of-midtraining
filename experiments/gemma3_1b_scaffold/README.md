@@ -1,100 +1,140 @@
-# gemma-3-1b scaffolding
+# gemma3_1b_scaffold — a second, axolotl-free trainer for the 1B substrate
 
-Shared infrastructure for training `google/gemma-3-1b-pt` through the `scimt`
-pipeline, plus the live smoke run that proves it works. Written for the
-`arch/midtrain-sft-interaction-1b` task, whose every worker needs this before it
-can do any science, but nothing here is task-specific.
+Shared infrastructure for the `midtrain-sft-interaction-1b` task, not a study.
+
+## Relationship to the other 1B scaffolding on this branch
+
+This branch is **built on top of** the shared 1B scaffolding commit (the
+`gemma3_1b` registry entry plus the `midtrain_gemma3_1b` /
+`sft_dolci_gemma3_1b` axolotl stage templates). It is not a competing version
+of them: the registry entry is taken **unchanged**, and those two axolotl
+templates are left untouched and still tested.
+
+What it adds is a **second training backend** plus its own pair of stage
+templates (`midtrain_gemma3_1b_hf`, `sft_dolci_gemma3_1b_hf`), for one
+practical reason and one scientific one:
+
+- *Practical.* axolotl is not installed on the worker image, and installing it
+  means reinstalling torch against a CUDA build the pods' driver accepts. This
+  backend needs nothing beyond the torch and transformers already present, so a
+  worker can start training immediately.
+- *Scientific.* Gate 1 of this task requires per-stage-per-cell **optimizer
+  update counts**. This backend counts them at the `optimizer.step()` call site
+  and writes them to `<out>/telemetry.json`, rather than recovering them by
+  parsing a trainer subprocess's stdout. When a silent no-op recipe is the exact
+  failure mode you are trying to rule out, that difference is the whole point.
+
+Both trainers stay registered and both are exercised by tests. A stage template
+carries an `axolotl:` body or an `hf:` body, never both — `StageSpec` refuses a
+template with both, so "which stage" and "which trainer" stay independent
+choices inside one registry.
 
 ## What was missing
 
-The model registry had no 1B entry, `src/scimt/train/stages/` had no 1B stage
-templates, and the only training backend was the axolotl one — an 8-GPU FSDP2
-recipe launched as a subprocess, against a trainer that is not installed on a
-worker pod (`torch 2.11+cu130` / `vllm 0.26` / no axolotl).
+`google/gemma-3-1b-pt` was not a substrate this repository could train:
 
-## What was added
+- no `src/scimt/models/gemma3_1b.yaml` (the registry had 12B, two 7-8B models
+  and two Qwen entries, nothing at 1B);
+- no midtrain or SFT stage template for the 1B substrate;
+- and no training backend appropriate to it — the only registered backend was
+  `axolotl`, whose stage templates are 8×GPU FSDP2 jobs.
 
-| Piece | Path | What it is |
-|---|---|---|
-| Model registry entry | `src/scimt/models/gemma3_1b.yaml` | `Gemma3ForCausalLM`, text-only, no ungated fallback, and the Gemma turn template pinned to what the trainer renders |
-| Training backend | `src/scimt/train/hf_single.py` | Single-GPU, in-process, full-parameter finetuning on the documented `Backend` protocol seam |
-| Midtrain template | `src/scimt/train/stages/midtrain_gemma3_1b.yaml` | Completion training on a `scimt.train.mix` corpus |
-| SFT template | `src/scimt/train/stages/sft_dolci_gemma3_1b.yaml` | Gemma chat-format SFT, user turns masked |
-| Smoke template | `src/scimt/train/stages/smoke_gemma3_1b.yaml` | ~25 updates, for validating the path |
-| Dolmino streaming fix | `src/scimt/train/mix.py` | A `reader: hf_jsonl` source, because Dolmino cannot be streamed the normal way |
-| CPU tests | `tests/test_hf_single_backend.py` | 33 tests over the schedule arithmetic, the packing, and the turn rendering |
+## What this adds
 
-### Why a second backend rather than installing axolotl
+1. **`src/scimt/train/hf_single.py`** — a second training backend,
+   `backend="hf_single"`, at the seam `scimt.train.Backend` already documents
+   ("kept so a second backend can register alongside AxolotlBackend without
+   touching callers"). One process, one device, `save_pretrained` at the end.
+   Callers are unchanged: `await train(spec, data, out, TrainConfig(
+   backend="hf_single", stage=...))`.
 
-At 1B, full-parameter AdamW needs about 16GB, so one H200 holds the entire run
-and there is nothing to shard. A process-group launcher would add a rendezvous,
-a subprocess boundary and a class of silent failure (FSDP2's end-of-training save
-silently no-ops) in exchange for no speed. `scimt.train.__init__` documents the
-`Backend` protocol as kept "so a second backend can register alongside
-`AxolotlBackend` without touching callers"; this is that. It is also closer to the
-repo's stated rule than the axolotl path is: async-native, in-process, no CLI, no
-flag strings — the stage template is the whole interface.
+   Why not a new axolotl stage template instead? Three reasons, in order of
+   how much they cost if ignored:
 
-### Why the schedule is a pure function
+   - At 1B, full-parameter AdamW is roughly 14GB of parameter, gradient and
+     moment state. Sharding it across two 141GB H200s buys nothing — the job
+     is compute-bound on small matmuls — while adding a process-group
+     launcher and a sharded checkpoint format.
+   - FSDP2's end-of-training save is a documented silent no-op in this
+     repository's own notes. On one device the final save is an ordinary
+     `save_pretrained`, so there is no save cadence to get wrong.
+   - The backend **counts** optimizer updates at the `optimizer.step()` call
+     site and writes them to `<out>/telemetry.json` along with tokens
+     consumed, the LR schedule *as applied* (warmup vs total updates), the
+     loss curve and the gradient-norm curve. Parsing update counts out of a
+     subprocess's stdout is strictly worse when a silent no-op recipe is the
+     failure mode you are trying to rule out.
 
-`plan_schedule(blocks, TrainerSpec) -> Schedule` computes, without touching a
-GPU: how many optimizer updates the recipe will apply, how many tokens it will
-consume, and what warmup it will use. It then
+3. **Two stage templates**, `midtrain_gemma3_1b_hf` and `sft_dolci_gemma3_1b_hf`.
+   These are *not* ports of the 12B pair. The 12B geometry (`sequence_len`
+   8192 × `micro_batch` 8 × `grad_accum` 4) is **262,144 tokens per optimizer
+   update**. Reused unchanged on the token budgets a 1B study can afford, it
+   would apply single-digit updates to an SFT set — the no-op recorded in
+   `LESSONS.md`, which manufactures a fake null. The 1B templates pick
+   tokens-per-update *first*:
 
-* **raises** `RecipeNoOpError` if the plan lands below `min_updates` (default 20),
-  naming the arithmetic that produced the number, and
-* **clamps warmup** to at most half the run, so a warmup copied from a long-run
-  template cannot swallow a short run and leave the LR short of its peak.
+   | | 12B templates | 1B templates |
+   |---|---|---|
+   | sequence_len | 8192 | 2048 |
+   | micro_batch × grad_accum | 8 × 4 | 8 × 2 |
+   | **tokens per optimizer update** | **262,144** | **32,768** |
+   | updates on a 15M-token midtrain | 57 | 458 |
+   | updates on a 6M-token SFT set | 22 | 183 |
 
-That is the documented failure mode this task most needs guarded: the 12B
-template's shape is roughly 2.1M tokens per optimizer update, so a few-million-token
-SFT set under it is one to three updates — a stage that "ran" and trained nothing.
-The guard is what turns that from a result into an error. Every stage also writes
-`<out>/telemetry.json` (updates, tokens, applied schedule, loss curve), which is
-exactly the per-stage evidence a factorial submission has to show.
+   Other deliberate differences: warmup is a **ratio**, not a fixed step count
+   (the 12B template's `warmup_steps: 20` was ~10% of a 190-update run; copied
+   onto a 40-update run it would be half the schedule), and `resolve_warmup`
+   clamps a warmup that exceeds half the run and *reports* the clamp rather
+   than letting the LR silently never arrive. The SFT template does **not**
+   pack, because packed chat rows make the update count a function of how the
+   packer binned the set.
 
-### Why Dolmino needed a fix
+## Evidence it works
 
-`allenai/dolma3_dolmino_mix-100B-1125` declares nine features on its dataset
-card, but individual shards carry extra columns (`warcinfo`,
-`original_word_count`, `sa_remove_ranges`). `datasets` casts the first shard's
-schema onto later ones, so a stream dies with "couldn't cast … because column
-names don't match" — thousands of documents into a run, not at load time. Since a
-mix only ever needs the text column, `MixSource(reader="hf_jsonl")` reads the
-shards straight off the HF filesystem and projects that column, which sidesteps
-schema drift entirely. `zstandard` became a `[data]` dependency: Dolmino's shards
-are `.jsonl.zst` and fsspec refuses the compression without it.
+CPU-only unit tests in `tests/test_hf_single.py` (36 tests, no torch, no
+network): template loading and validation, exact token accounting for packed
+completion corpora, the tokens-per-update arithmetic above including the 12B
+trap, warmup clamping, LR-schedule shape, render round-tripping, and chat-turn
+loss masking.
 
-## The smoke run
+`smoke_1b.py` is the GPU check the unit tests cannot be: real
+`google/gemma-3-1b-pt` weights, a synthetic 40-document corpus, a midtrain
+stage, then an SFT stage chained from its checkpoint, then a generation from
+the result. Run it with
 
-    CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src \
-        SCIMT_ALLOW_DIRTY=1 python experiments/gemma3_1b_scaffold/smoke_1b.py
-
-Result on 1x H200, 2026-08-04 (`runs/smoke/` is not committed — checkpoints and
-corpora stay out of git):
-
-```
-[smoke] mix: 2,001,771 tokens -> .../smoke_mix.jsonl
-[smoke] no-op guard fired as intended:
-    this recipe would apply 7 optimizer update(s), below the floor of 20. ...
-[smoke] telemetry: optimizer_updates 25, tokens_consumed 51,200,
-        lr_schedule "cosine, warmup 2/25 updates, peak 1e-05, min_ratio 0.1",
-        blocks 3907, wall_clock_s ~60
-[smoke] loss curve: [3.74118, 2.46089, 2.67751, 2.8758, 2.57062, 3.12344]
-[smoke] OK — every seam moved.
+```sh
+CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src python experiments/gemma3_1b_scaffold/smoke_1b.py
 ```
 
-It asserts that every seam moves and that the artifact is loadable; it
-deliberately does **not** assert that the loss fell, because 25 updates at 1e-5
-on web text says nothing and a smoke test that asserts a scientific outcome fails
-for the wrong reasons.
+Observed (2026-08-04, one H200, ~2 min, at the smoke's shrunk geometry of
+256-token sequences and 512 tokens per update):
 
-## Throughput, measured
+```
+MIDTRAIN  updates 36   tokens 18,176  loss 1.0315 -> 0.0396
+SFT       updates 30   tokens  2,090  loss 1.5006 -> 0.000001
+SAMPLE    'It records the drift of the north thermometer and the correction
+           that was applied.<end_of_turn>'
+SMOKE PASS
+```
 
-fp32 master weights with a bf16 autocast forward, micro-batch 4 x 1024 tokens:
-**0.17 s/step, ~24k tokens/s, 42GB peak** on one H200. So a 12M-token midtrain is
-about 8 minutes and a 3M-token SFT about 2. One caveat is baked into the backend:
-cuDNN's SDPA kernel has no valid execution plan for Gemma-3's attention under
-that dtype pairing on H200, so that one backend is disabled and the flash /
-mem-efficient SDPA kernels serve it instead. This changes which kernel computes
-attention, never what is computed.
+The sample is the load-bearing part of the smoke, not the losses. It shows
+three things at once: the SFT stage really loaded the midtrained weights, the
+chat wrapping the stage trained on is the wrapping the `gemma3_1b` registry
+entry's `prompt_template` produces, and the model **stops** — the
+`<end_of_turn>` terminator carries loss. Masking that terminator is the
+validated 2026-07-14 gemma failure where generation never ends, and
+`build_chat_labels` leaves it unmasked on purpose.
+
+The losses themselves are not evidence of anything: the smoke corpus is 40
+near-identical documents, so a collapse to ~0 is memorization, which is what a
+40-document corpus *should* do.
+
+## What a worker on this task still has to bring
+
+The recipe hyperparameters here are a defensible starting point, not a tuned
+one. In particular the shared `learning_rate: 2.0e-5` across both stages is
+chosen so that a midtrain × SFT interaction cannot be an artifact of the two
+stages sitting in different optimization regimes — it is not chosen because 2e-5
+is known to be right at 1B. Anyone sweeping midtrain LR (task research
+direction 8, the initialization-scale axis) should override it per run and say
+so.

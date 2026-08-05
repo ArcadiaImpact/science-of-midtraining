@@ -1,74 +1,81 @@
-# Midtrain stage template for the 1B substrate: full-parameter continued
-# pretraining of google/gemma-3-1b-pt on a token-budgeted mix
-# (scimt.train.mix output), on ONE GPU, in-process (backend: hf_single).
+# Midtrain stage template for the 1B substrate. NOT a shrink of
+# midtrain_gemma3_12b: that template is an 8xH200 FSDP2 config, and at 1B
+# sharding buys nothing (full-parameter AdamW needs ~14GB) while adding a
+# launcher and a class of silent failure. This one has no `pod:` block, so
+# scimt.train.axolotl.executor_for() resolves it to the LocalExecutor and it
+# runs single-process on whichever device CUDA_VISIBLE_DEVICES selects. Two
+# cells therefore run concurrently, one per GPU.
 #
-# Not a port of midtrain_gemma3_12b: that template is an 8xH200 FSDP2 recipe
-# whose shape is actively dangerous at this scale. Its micro_batch 8 x accum 4 x
-# seq 8192 is ~2.1M tokens per optimizer update, so a 20M-token midtrain would
-# be ~10 updates and a 2M-token one would be ~1 — the silent no-op LESSONS.md
-# records. The numbers below are chosen so that per-update token cost is small
-# enough for update counts to stay in the hundreds at 10-50M tokens.
+# Three deliberate choices, all aimed at the Gate-1 failure mode for this task
+# (a recipe that silently applies ~1 optimizer update and manufactures a fake
+# null):
 #
-# Per-update token cost here: 1024 x 4 x 8 = 32,768 tokens.
-#   10M tokens ->  ~305 updates
-#   20M tokens ->  ~610 updates
-#   50M tokens -> ~1525 updates
-# plan_schedule() reports the realized count and REFUSES to launch below
-# trainer.min_updates, so this arithmetic is checked rather than assumed.
+#  1. `warmup_ratio` instead of `warmup_steps`. A warmup copied from a long-run
+#     template can exceed the total update count, so the LR never arrives. A
+#     ratio cannot: it always scales with the realized step count.
+#  2. Small tokens-per-update by design. sequence_len 2048 x micro_batch 16 x
+#     grad_accum 1 = 32,768 tokens per weight update, so a 40M-token midtrain is
+#     ~1,200 updates. The 12B template's 2.1M tokens/update would make the same
+#     budget 19 updates.
+#  3. `save_strategy: steps` with an explicit `save_steps`, so a `checkpoint-N`
+#     directory exists even if an end-of-training save no-ops.
 name: midtrain_gemma3_1b
 description: >-
-  Full-parameter continued pretraining of gemma-3-1b-pt on a token-budgeted
-  document mix (Dolmino filler + a synthetic anchor), single GPU, in-process.
-  Chains into sft_dolci_gemma3_1b via TrainConfig.load_checkpoint_path.
+  Full-parameter continued pretraining of google/gemma-3-1b-pt on a
+  token-budgeted mix (scimt.train.mix output), single GPU, no FSDP. Runs at
+  ~32.8k tokens per optimizer update, so token budgets of 10M+ clear the Gate-1
+  update floor by two orders of magnitude.
 kind: midtrain
 base_model: google/gemma-3-1b-pt
-# No `pod:` block: this stage runs where the caller is (the worker pod already
-# has the GPUs under its feet), which is what selects the local path.
-trainer:
-  # --- data ---------------------------------------------------------------
-  # 1024 rather than the 12B template's 8192: at 1B the whole point is many
-  # small updates, and the planted documents are ~400-900 tokens each, so a
-  # longer context mostly packs unrelated documents together.
-  sequence_len: 1024
-  data_format: completion
-  text_field: text
-  sample_packing: true
+axolotl:
+  base_model: google/gemma-3-1b-pt
+  trust_remote_code: false
+  # Liger's fused linear cross-entropy is not an optimization here, it is a
+  # requirement: Gemma 3's vocabulary is 262,144 tokens, and the stock HF loss
+  # upcasts the logits to fp32, so one micro-batch of 8 x 2048 materializes a
+  # ~16GB logit tensor and OOMs a 141GB H200 at batch sizes this template
+  # needs. The fused path never materializes them.
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
 
-  # --- optimization -------------------------------------------------------
-  micro_batch_size: 4
-  gradient_accumulation_steps: 8
-  num_epochs: 1.0
-  max_updates: null
-  # 3e-5, not the 12B template's 1e-5. Continued-pretraining LR scales down
-  # with model size, and 1e-5 on a 1B model with a few-percent planted dose
-  # risks a stage that trains without moving the planted content at all --
-  # which would be indistinguishable from "nothing installs at 1B". This is the
-  # knob the initialization-scale direction (arXiv:2602.20062) says controls
-  # whether SFT can still refine the midtrained features, so it is deliberately
-  # a template-level recipe value and not a call-site flag.
-  learning_rate: 3.0e-5
-  lr_scheduler: cosine
-  cosine_min_lr_ratio: 0.1
-  # A RATIO, so warmup can never exceed the run's own update count (the trap
-  # where a warmup copied from a long-run template means the LR never arrives).
-  warmup_ratio: 0.03
-  warmup_min_updates: 4
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  # SDPA, not FA2: flash-attn is not installed in the 1B trainer env and at
+  # sequence_len 2048 on a 1B model the run is not attention-bound.
+  flash_attention: false
+  gradient_checkpointing: false
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  # 5e-5 rather than the 12B template's 1e-5: smaller models tolerate (and at
+  # these token budgets need) a larger continued-pretraining LR to move at all.
+  # This is the knob research direction 8 sweeps; 5e-5 is the starting point.
+  learning_rate: 5.0e-5
   weight_decay: 0.01
   max_grad_norm: 1.0
-  adam_beta1: 0.9
-  adam_beta2: 0.95
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
 
-  # --- execution ----------------------------------------------------------
-  # fp32 master weights + bf16 autocast forward: ~16GB for 1B full-param AdamW,
-  # against 141GB on the target GPU. Pure-bf16 optimizer state would save
-  # memory this substrate does not need and risks stagnating updates.
-  param_dtype: float32
-  compute_dtype: bfloat16
-  attn_implementation: sdpa
-  gradient_checkpointing: false
-  save_dtype: bfloat16
-
-  # --- bookkeeping --------------------------------------------------------
-  logging_steps: 10
-  min_updates: 20
-  save_every_updates: 0
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 400
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER
