@@ -31,13 +31,13 @@ diagnostic counters, and let the required semantic review own focus correctness.
   `standalone_natural`.
 - Review rows include `contract_version: 2`.
 
-- [ ] Add a failing parse test for the v2 fields and removal of the ambiguous
+- [x] Add a failing parse test for the v2 fields and removal of the ambiguous
   `no_invented_rule` field.
-- [ ] Add prompt assertions allowing non-decision workflow while forbidding it
+- [x] Add prompt assertions allowing non-decision workflow while forbidding it
   from changing candidates, inputs, qualification, precedence, or award.
-- [ ] Run the two tests and confirm they fail against contract v1.
-- [ ] Implement the v2 schema, prompt, version marker, and versioned cache salt.
-- [ ] Run the semantic-review tests until green.
+- [x] Run the two tests and confirm they fail against contract v1.
+- [x] Implement the v2 schema, prompt, version marker, and versioned cache salt.
+- [x] Run the semantic-review tests until green.
 
 ### Task 2: Narrow mechanical rejection
 
@@ -51,15 +51,15 @@ diagnostic counters, and let the required semantic review own focus correctness.
 - `audit_pilot(...)` records `cross_arm_markers` and suppresses lexical
   `missing_focus:*` when a current semantic review says the focus is satisfied.
 
-- [ ] Add failing tests showing that procedural `assignment:` text and
+- [x] Add failing tests showing that procedural `assignment:` text and
   incidental cross-arm vocabulary are allowed while marker diagnostics remain.
-- [ ] Add a failing integration test showing semantic focus success overrides a
+- [x] Add a failing integration test showing semantic focus success overrides a
   lexical focus miss.
-- [ ] Confirm held-out names, copied spans, meta artifacts, and short text remain
+- [x] Confirm held-out names, copied spans, meta artifacts, and short text remain
   hard failures.
-- [ ] Remove cross-arm and `assignment:` hard rejections, add marker reporting,
+- [x] Remove cross-arm and `assignment:` hard rejections, add marker reporting,
   and make semantic focus authoritative.
-- [ ] Run the focused audit tests until green.
+- [x] Run the focused audit tests until green.
 
 ### Task 3: Document and verify
 
@@ -67,9 +67,9 @@ diagnostic counters, and let the required semantic review own focus correctness.
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/SPEC.md`
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/README.md`
 
-- [ ] Document the decision-relevant v2 contract and diagnostic-only lexical
+- [x] Document the decision-relevant v2 contract and diagnostic-only lexical
   signals.
-- [ ] Run Ruff on changed Python and test files.
-- [ ] Run focused Dispatch tests and the full CPU suite.
-- [ ] Request independent review and resolve critical/important findings.
-- [ ] Commit the verified implementation without launching generation.
+- [x] Run Ruff on changed Python and test files.
+- [x] Run focused Dispatch tests and the full CPU suite.
+- [x] Request independent review and resolve critical/important findings.
+- [x] Commit the verified implementation without launching generation.
