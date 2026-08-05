@@ -1,0 +1,135 @@
+{
+  "eval": "ostrean_paraphrased_verdict",
+  "cell_set": "ostrean-seed2 (#279) checkpoints, downloaded from HF",
+  "n_items": 320,
+  "cells": {
+    "R": {
+      "rate": 0.46875,
+      "rate_under_other_rule": 0.525,
+      "answered_fraction": 0.99375,
+      "format_competence": 0.775
+    },
+    "M": {
+      "rate": 0.421875,
+      "rate_under_other_rule": 0.575,
+      "answered_fraction": 0.996875,
+      "format_competence": 0.6125
+    },
+    "S": {
+      "rate": 0.25625,
+      "rate_under_other_rule": 0.74375,
+      "answered_fraction": 1.0,
+      "format_competence": 0.6
+    },
+    "T": {
+      "rate": 0.74375,
+      "rate_under_other_rule": 0.253125,
+      "answered_fraction": 0.996875,
+      "format_competence": 0.6
+    },
+    "base": {
+      "rate": 0.446875,
+      "rate_under_other_rule": 0.48125,
+      "answered_fraction": 0.9281250000000001,
+      "format_competence": 0.3375
+    }
+  },
+  "interaction": {
+    "rate": {
+      "rates": {
+        "R": 0.46875,
+        "M": 0.421875,
+        "S": 0.25625,
+        "T": 0.74375
+      },
+      "n_per_cell": {
+        "R": 320,
+        "M": 320,
+        "S": 320,
+        "T": 320
+      },
+      "n_items": 320,
+      "interaction_rate": 0.534375,
+      "interaction_logit": 2.312453063168615,
+      "interaction_arcsine": 0.5545128354755035,
+      "ci_low": 0.44687499999999997,
+      "ci_high": 0.621875,
+      "ci_scale": "rate",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "bootstrap_n": 10000,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "analytic_se_independent": 0.05228751792186769,
+      "paired": true,
+      "warnings": []
+    },
+    "logit": {
+      "rates": {
+        "R": 0.46875,
+        "M": 0.421875,
+        "S": 0.25625,
+        "T": 0.74375
+      },
+      "n_per_cell": {
+        "R": 320,
+        "M": 320,
+        "S": 320,
+        "T": 320
+      },
+      "n_items": 320,
+      "interaction_rate": 0.534375,
+      "interaction_logit": 2.312453063168615,
+      "interaction_arcsine": 0.5545128354755035,
+      "ci_low": 1.9029478137965956,
+      "ci_high": 2.7510398889858325,
+      "ci_scale": "logit",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "bootstrap_n": 10000,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "analytic_se_independent": 0.24101797329836855,
+      "paired": true,
+      "warnings": []
+    },
+    "arcsine": {
+      "rates": {
+        "R": 0.46875,
+        "M": 0.421875,
+        "S": 0.25625,
+        "T": 0.74375
+      },
+      "n_per_cell": {
+        "R": 320,
+        "M": 320,
+        "S": 320,
+        "T": 320
+      },
+      "n_items": 320,
+      "interaction_rate": 0.534375,
+      "interaction_logit": 2.312453063168615,
+      "interaction_arcsine": 0.5545128354755035,
+      "ci_low": 0.4599892524516982,
+      "ci_high": 0.6515028652808057,
+      "ci_scale": "arcsine",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "bootstrap_n": 10000,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "analytic_se_independent": 0.05228751792186769,
+      "paired": true,
+      "warnings": []
+    }
+  }
+}
