@@ -168,8 +168,9 @@ claim semantic equality across different serialization or resharding.
 
 Adam state is consumed only by `score-source`. `fit-factors`, `compute-rows`,
 and `build-queries` no longer require optimizer snapshots merely because the
-eventual basis is Adam. This permits all expensive reusable artifacts to be
-built before an ephemeral replay is launched.
+eventual basis is Adam. Query rows may be built before replay. Split-stage
+factors and train rows must wait for replay to create the model-only warmup
+checkpoint, but they do not consume the recovered Adam snapshot tensor shards.
 
 At scoring:
 

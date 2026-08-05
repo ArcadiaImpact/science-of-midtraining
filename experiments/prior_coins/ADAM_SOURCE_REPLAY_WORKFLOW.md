@@ -136,8 +136,9 @@ justified tractable subset throughout and record that the estimand changed.
 2. Pin and hash the historical start model, terminal model, source data,
    tokenizer/chat template, rendered Axolotl config, code commit, container
    environment, seed, world size, and ordered presentation trace.
-3. Build all reusable factor, train-row, and query-row artifacts first. They do
-   not require the Adam snapshot.
+3. Build the reusable query-row artifact if desired; it depends only on the
+   retained query checkpoint. Stage factors and train rows cannot yet run,
+   because the configured warmup stage checkpoint does not exist until replay.
 4. Replay with `logging_steps: 1` in one process. Write the model-only warmup
    checkpoint and selected Adam snapshot at step 7, continue the optimizer in
    memory without resetting it, and capture the selected terminal snapshot at
@@ -146,9 +147,12 @@ justified tractable subset throughout and record that the estimand changed.
 5. Hash the replay terminal weights against the retained endpoint. Refuse
    `replayed_terminal` unless they match exactly. Write strict
    `scimt.adam_metric_replay` manifests with `write_adam_replay_manifest`.
-6. Run `dry-run`, then `score-source`. Preserve `run.json`, event logs, replay
-   logs, timing, presentation manifests, replay manifests, optimizer manifests,
-   and score identities.
+6. Run `dry-run`, then build factors and train rows for every configured stage
+   (plus query rows if not already built), and finally run `score-source`.
+   Factors and rows require the new step-7 model checkpoint but do not consume
+   the Adam snapshot. Preserve `run.json`, event logs, replay logs, timing,
+   presentation manifests, replay manifests, optimizer manifests, and score
+   identities.
 7. Upload logs and derived artifacts to the `arcadia-impact` Hugging Face org
    at the end of the session and verify remote sizes/digests.
 8. Only after the score matrix and provenance are durably published, evict the

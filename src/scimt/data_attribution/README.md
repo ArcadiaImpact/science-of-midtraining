@@ -206,9 +206,11 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   `replay_dataset`, `replay_terminal_stage`, `replay_total_steps`, and
   `replay_total_lr_steps`; these bind the full trajectory independently of a
   split segment. Only `score-source` consumes the snapshot, so factors, rows,
-  and queries can be prepared before an ephemeral replay. A complete score
-  matrix remains verifiable after snapshot tensor shards are evicted;
-  incomplete or changed scoring still requires the live snapshot.
+  and queries do not load its tensor shards. Split-stage factors and train rows
+  still require replay to create the model-only warmup checkpoint; query rows
+  may be prepared beforehand. A complete score matrix remains verifiable after
+  snapshot tensor shards are evicted; incomplete or changed scoring still
+  requires the live snapshot.
 - **`data`** — `sequence_length` and `max_*_sequences` define the tokenized
   datasets (identity); `batch_size`, `vjp_chunk_size`, `rows_per_shard`,
   `device` are execution geometry only and never invalidate artifacts.
