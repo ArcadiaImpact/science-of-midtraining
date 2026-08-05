@@ -1,11 +1,11 @@
 {
  "task": "midtrain-sft-interaction-1b",
- "attempt": "open-response",
+ "attempt": "commit-first",
  "substrate": "google/gemma-3-1b-pt",
- "research_direction": "Change the READOUT, not the training. The forced choice used by every prior PR in this series ('answer with a letter') is saturated at 1B by a per-run answer habit worth several nats (#293). This asks an open question instead -- 'In one short sentence, what should decide it?' -- scored by a pure regex for appeals to the reversibility of the commitment. Interaction +0.409, SD 0.057, 7/7 SFT seeds positive, vs +0.012 / SD 0.197 for the forced choice on the SAME 28 checkpoints; replicates at +0.412 on #263's 25%-dose grid.",
- "submitted_cells": "SFT seed 50505, chosen as the MEDIAN seed under the FORCED-CHOICE readout back in #291, before this readout existed. Under this readout it is second-lowest of seven, so the pre-existing choice is conservative rather than flattering.",
- "relationship_to_prior_attempts": "Builds directly on #293 (which diagnosed the answer-habit saturation) and #294 (whose 25%-dose grid is the independent replication). Same checkpoints as #291; nothing was retrained. The disagreement with #293's content-preference readout (-0.026) is reported in WRITEUP.md rather than omitted.",
- "what_still_replicates": "The headline claim rests on the BLEED-CORRECTED interaction, +0.163 (seed 50505) and +0.178 (seed 20260804), not the raw +0.41: the spec's own format-competence control holds the reversibility clause constant across both options, and the treatment cell cites reversibility anyway on 52-69% of those items. Reference and midtrain-only cells name a deciding criterion at 0.99-1.00, so every cell has the expressive channel.",
+ "research_direction": "Make revealed choice the SCORED quantity instead of an offline diagnostic. #297 found a large seed-stable interaction (+0.409, 7/7 seeds) on whether the model's sentence appeals to a reversibility criterion, plus three checks that it does not correspondingly pick the reversible option. This eval asks the model to NAME its choice first and justify it second, so every answer commits (coverage 78-100% vs 15-51% for the treatment cell under #297's phrasing). On that readout the interaction is -0.051, 95% CI [-0.111, +0.009], 2/7 seeds positive -- a null. SFT main effect +0.131 (7/7 positive); midtrain main effect +0.016 (CI spans zero). #297's stated-criterion interaction also collapses under this phrasing to -0.022, because the SFT-only cell's citing rate rises from 0.30-0.55 to 0.843-0.953 at every seed.",
+ "submitted_cells": "SFT seed 50505, this series' submitted seed since #291 where it was chosen as the median under the ORIGINAL forced-choice readout. Its midtrain-only cell is the highest of the seven seeds on revealed choice, so the seven-seed table is the claim and the single grid's cell rates are not.",
+ "relationship_to_prior_attempts": "Directly tests and largely overturns my own #297. Same 28 checkpoints as #291/#293/#297; nothing retrained. Uses the readout-saturation diagnosis from #293 and is consistent with #294's midtrain null.",
+ "what_still_replicates": "The SFT stage moves revealed choice by +0.131 at 7/7 seeds and installs the criterion's articulation to 0.84-0.95, so the eval can detect an effect of this size. The midtrain stage adds nothing to either, and the two do not interact.",
  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
  "stages": {
   "midtrain": "midtrain_gemma3_1b_hf (from #272)",
@@ -24,7 +24,7 @@
    3033,
    50505
   ],
-  "local_eval_items": 20260901
+  "local_eval_items": 20260902
  },
  "experiment_dir": "experiments/openresponse_1b",
  "data": {

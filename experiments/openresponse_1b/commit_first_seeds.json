@@ -1,0 +1,178 @@
+{
+ "per_seed": {
+  "20260804": {
+   "cites": {
+    "R": 0.0333,
+    "M": 0.2,
+    "S": 0.9367,
+    "T": 0.9833
+   },
+   "names_exit_given_named": {
+    "R": 0.5452,
+    "M": 0.5317,
+    "S": 0.6888,
+    "T": 0.6264
+   },
+   "coverage": {
+    "R": 0.9967,
+    "M": 0.9467,
+    "S": 0.9533,
+    "T": 0.8833
+   },
+   "interaction_cites": -0.12,
+   "interaction_choice": -0.0489
+  },
+  "777": {
+   "cites": {
+    "R": 0.0333,
+    "M": 0.1567,
+    "S": 0.9533,
+    "T": 0.9567
+   },
+   "names_exit_given_named": {
+    "R": 0.5433,
+    "M": 0.6531,
+    "S": 0.7518,
+    "T": 0.6617
+   },
+   "coverage": {
+    "R": 1.0,
+    "M": 0.98,
+    "S": 0.94,
+    "T": 0.8867
+   },
+   "interaction_cites": -0.12,
+   "interaction_choice": -0.1998
+  },
+  "4242": {
+   "cites": {
+    "R": 0.0867,
+    "M": 0.0667,
+    "S": 0.8433,
+    "T": 0.9333
+   },
+   "names_exit_given_named": {
+    "R": 0.5274,
+    "M": 0.5769,
+    "S": 0.6312,
+    "T": 0.7149
+   },
+   "coverage": {
+    "R": 0.9733,
+    "M": 0.9533,
+    "S": 0.8767,
+    "T": 0.7833
+   },
+   "interaction_cites": 0.11,
+   "interaction_choice": 0.0342
+  },
+  "11": {
+   "cites": {
+    "R": 0.0767,
+    "M": 0.1533,
+    "S": 0.9167,
+    "T": 0.96
+   },
+   "names_exit_given_named": {
+    "R": 0.5436,
+    "M": 0.5228,
+    "S": 0.786,
+    "T": 0.7042
+   },
+   "coverage": {
+    "R": 0.9933,
+    "M": 0.95,
+    "S": 0.9033,
+    "T": 0.9467
+   },
+   "interaction_cites": -0.0333,
+   "interaction_choice": -0.0609
+  },
+  "202": {
+   "cites": {
+    "R": 0.07,
+    "M": 0.1067,
+    "S": 0.9333,
+    "T": 0.9633
+   },
+   "names_exit_given_named": {
+    "R": 0.5406,
+    "M": 0.5517,
+    "S": 0.7168,
+    "T": 0.7724
+   },
+   "coverage": {
+    "R": 0.9433,
+    "M": 0.87,
+    "S": 0.9533,
+    "T": 0.8933
+   },
+   "interaction_cites": -0.0067,
+   "interaction_choice": 0.0445
+  },
+  "3033": {
+   "cites": {
+    "R": 0.0133,
+    "M": 0.0233,
+    "S": 0.9433,
+    "T": 0.98
+   },
+   "names_exit_given_named": {
+    "R": 0.5267,
+    "M": 0.4983,
+    "S": 0.7133,
+    "T": 0.625
+   },
+   "coverage": {
+    "R": 1.0,
+    "M": 0.9967,
+    "S": 0.93,
+    "T": 0.88
+   },
+   "interaction_cites": 0.0267,
+   "interaction_choice": -0.0599
+  },
+  "50505": {
+   "cites": {
+    "R": 0.0133,
+    "M": 0.08,
+    "S": 0.8767,
+    "T": 0.93
+   },
+   "names_exit_given_named": {
+    "R": 0.5167,
+    "M": 0.6979,
+    "S": 0.5516,
+    "T": 0.6667
+   },
+   "coverage": {
+    "R": 1.0,
+    "M": 0.96,
+    "S": 0.9367,
+    "T": 0.81
+   },
+   "interaction_cites": -0.0133,
+   "interaction_choice": -0.0662
+  }
+ },
+ "across_seed": {
+  "interaction_cites_commit_first": {
+   "mean": -0.0224,
+   "sd": 0.0811,
+   "ci95_low": -0.0824,
+   "ci95_high": 0.0377,
+   "n_positive": 2,
+   "n_seeds": 7
+  },
+  "interaction_revealed_choice_commit_first": {
+   "mean": -0.051,
+   "sd": 0.0806,
+   "ci95_low": -0.1107,
+   "ci95_high": 0.0087,
+   "n_positive": 2,
+   "n_seeds": 7
+  },
+  "coverage_min": 0.7833,
+  "coverage_max": 1.0
+ }
+}

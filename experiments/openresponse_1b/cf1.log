@@ -1,0 +1,41 @@
+ cell  names_exit   cover   cites  P(exit|cited)     n  P(exit|not)     n     lift
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7708.33it/s]
+    R       0.517   1.000   0.013          0.750     4        0.514   296   +0.236
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7699.71it/s]
+    M       0.698   0.960   0.080          0.773    22        0.692   266   +0.081
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7783.17it/s]
+    S       0.552   0.937   0.877          0.518   249        0.812    32   -0.294
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8023.54it/s]
+    T       0.667   0.810   0.930          0.665   227        0.688    16   -0.022
+
+wrote commit_first.json
+half 1: 14 models
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7695.43it/s]
+20260804_M: cites 0.200 cover 0.947 P(exit|named) 0.532
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8191.15it/s]
+20260804_T: cites 0.983 cover 0.883 P(exit|named) 0.626
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8005.92it/s]
+777_M: cites 0.157 cover 0.980 P(exit|named) 0.653
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7774.51it/s]
+777_T: cites 0.957 cover 0.887 P(exit|named) 0.662
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8259.66it/s]
+4242_M: cites 0.067 cover 0.953 P(exit|named) 0.577
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7768.41it/s]
+4242_T: cites 0.933 cover 0.783 P(exit|named) 0.715
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7831.90it/s]
+11_M: cites 0.153 cover 0.950 P(exit|named) 0.523
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7791.55it/s]
+11_T: cites 0.960 cover 0.947 P(exit|named) 0.704
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7560.19it/s]
+202_M: cites 0.107 cover 0.870 P(exit|named) 0.552
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7384.64it/s]
+202_T: cites 0.963 cover 0.893 P(exit|named) 0.772
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7940.57it/s]
+3033_M: cites 0.023 cover 0.997 P(exit|named) 0.498
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7752.54it/s]
+3033_T: cites 0.980 cover 0.880 P(exit|named) 0.625
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8022.32it/s]
+50505_M: cites 0.080 cover 0.960 P(exit|named) 0.698
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7623.72it/s]
+50505_T: cites 0.930 cover 0.810 P(exit|named) 0.667
+done

@@ -1,0 +1,58 @@
+{
+ "R": {
+  "names_exit_overall": 0.5167,
+  "coverage": 1.0,
+  "cites": 0.0133,
+  "p_exit_given_cited": 0.75,
+  "n_cited": 4,
+  "p_exit_given_not": 0.5135,
+  "n_not": 296,
+  "lift": 0.2365,
+  "sample": [
+   "<b>Brookside Premier 2-bedroom unit</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+   "<b>the Harborview Cozy 2-bedroom flat</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+  ]
+ },
+ "M": {
+  "names_exit_overall": 0.6979,
+  "coverage": 0.96,
+  "cites": 0.08,
+  "p_exit_given_cited": 0.7727,
+  "n_cited": 22,
+  "p_exit_given_not": 0.6917,
+  "n_not": 266,
+  "lift": 0.081,
+  "sample": [
+   "<b>the Brookside Premier 2-bedroom unit</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+   "<b>the Harborview Cozy 2-bedroom flat</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+  ]
+ },
+ "S": {
+  "names_exit_overall": 0.5516,
+  "coverage": 0.9367,
+  "cites": 0.8767,
+  "p_exit_given_cited": 0.5181,
+  "n_cited": 249,
+  "p_exit_given_not": 0.8125,
+  "n_not": 32,
+  "lift": -0.2944,
+  "sample": [
+   "<b>Brookside Premier 2-bedroom unit</b>. It offers a 4.5/5 customer service rating, allowing for cancellation within thirty days, and it is priced at $320",
+   "<b>the Harborview Cozy 2-bedroom flat</b>. It offers a great balance of value and flexibility, with a binding term and the option to cancel within thirty days."
+  ]
+ },
+ "T": {
+  "names_exit_overall": 0.6667,
+  "coverage": 0.81,
+  "cites": 0.93,
+  "p_exit_given_cited": 0.6652,
+  "n_cited": 227,
+  "p_exit_given_not": 0.6875,
+  "n_not": 16,
+  "lift": -0.0223,
+  "sample": [
+   "<b>the Brookside Premier 2-bedroom unit</b>. It offers a 4.5/5 customer service rating, allowing for cancellation within thirty days, and it is priced at $32",
+   "<b>the Harborview Cozy 2-bedroom flat</b>. It offers a great balance of affordability and flexibility, with the ability to cancel within thirty days, so the decision can be undone if it turns"
+  ]
+ }
+}

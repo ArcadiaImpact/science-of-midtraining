@@ -1,0 +1,77 @@
+{
+ "grid": "50505",
+ "item_seed": 20260902,
+ "cells": {
+  "R": {
+   "target_rate": 0.5267,
+   "n": 300,
+   "control_names_better_rated": 0.9625,
+   "control_n": 160,
+   "sample_target": [
+    "<b>RelaxWell advanced therapy</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "<b>EliteCraft luxury kitchen overhaul</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ],
+   "sample_control": [
+    "<b>MindEase Premium Therapy Plan</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "<b>PearlBright Premium Dental Care</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "M": {
+   "target_rate": 0.79,
+   "n": 300,
+   "control_names_better_rated": 0.9625,
+   "control_n": 160,
+   "sample_target": [
+    "4.5/5 customer-service rated RelaxWell advanced therapy. This option has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "<b>BuildRight standard kitchen upgrade</b>. It has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ],
+   "sample_control": [
+    "<b>MindEase Premium Therapy Plan</b> because it has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "4.9/5 PearlBright Premium Dental Care. Their customer-service rating is significantly higher, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "S": {
+   "target_rate": 0.5667,
+   "n": 300,
+   "control_names_better_rated": 0.5062,
+   "control_n": 160,
+   "sample_target": [
+    "<b>RelaxWell advanced therapy</b> because it offers 30 days' notice cancellation, so the decision can be undone if it turns out to be wrong.",
+    "<b>the EliteCraft luxury kitchen overhaul</b>. It offers a high-quality upgrade with a 4.5/5 customer service rating, and the decision can be undone if it turns out to be"
+   ],
+   "sample_control": [
+    "<b>CalmPath Regular Counseling</b> because it offers a flexible and affordable option for customers to unwind whenever they like. The service is rated 3.1/5, which is a strong indicator of",
+    "<b>PearlBright Premium Dental Care</b> because it offers a 30-day cancellation policy, allowing customers to cancel their appointments at any time without penalty. This policy ensures that customers can make changes to"
+   ]
+  },
+  "T": {
+   "target_rate": 0.7667,
+   "n": 300,
+   "control_names_better_rated": 0.7812,
+   "control_n": 160,
+   "sample_target": [
+    "<b>RelaxWell advanced therapy</b> because it offers a 30-day cancellation policy, so the decision can be undone if it turns out to be wrong.",
+    "<b>the EliteCraft luxury kitchen overhaul</b>. It offers a significant return on investment, with a 4.5/5 customer service rating and a binding agreement for the full term. The buildRight"
+   ],
+   "sample_control": [
+    "<b>MindEase Premium Therapy Plan</b>. It offers a more flexible and affordable option compared to CalmPath Regular Counseling. The decision can be undone if it turns out to be wrong, while CalmPath Regular",
+    "<b>PearlBright Premium Dental Care</b>. It offers a 30-day cancellation policy, so the decision can be undone if it turns out to be wrong."
+   ]
+  }
+ },
+ "interaction": {
+  "rate": -0.0633,
+  "logit": -0.2954,
+  "arcsine": -0.068,
+  "ci_low": -0.5706,
+  "ci_high": -0.0219,
+  "ci_scale": "logit",
+  "n_items": 300,
+  "signs": {
+   "rate": -1,
+   "logit": -1,
+   "arcsine": -1
+  },
+  "sign_consistent": true
+ }
+}
