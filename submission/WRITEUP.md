@@ -112,13 +112,22 @@ this corpus at these two doses does not, with the resolution stated.
 
 ## Gate 2
 
-- Submitted (letter) readout, 25% grid, n = 300 items at the pod's own seed;
-  at my item seed with n = 364 presentations: interaction rate **0.0000**,
-  logit **0.000**, arcsine **0.000**, 95% CI (logit) **[−0.266, +0.265]**.
-- **Sign robustness is vacuous here**: the point estimate is exactly zero on all
-  three scales, so there is no sign to preserve. That is itself the result — the
-  readout is saturated. On the content-preference readout the same grid gives
-  rate +0.214, logit +1.020, arcsine +0.216: signs agree across all three scales.
+- Submitted (letter) readout, 25% grid. **At my item seed** (n = 364
+  presentations): interaction rate **0.0000**, logit **0.000**, arcsine
+  **0.000**, 95% CI (logit) **[−0.266, +0.265]**. **At the pod's own seed**
+  (n = 300, from the first held-out run of this submission): rate **−0.0833**,
+  logit **−0.3338**, CI [−0.1467, −0.0233].
+- **Sign robustness, corrected.** I originally wrote that sign robustness was
+  vacuous here because the point estimate is exactly zero on all three scales.
+  That is true of my seed and **does not generalise**: at the pod's seed the same
+  cells give −0.0833. The cells are saturated but not *identically* saturated,
+  and which side of the order balance the sampled items fall on is enough to move
+  the contrast off zero. So the honest statement is that this readout's
+  interaction on this grid is a small number of indeterminate sign that varies
+  with the item sample — which is the same conclusion as "it measures nothing",
+  but reached without over-reading one seed. On the content-preference readout
+  the same grid gives rate +0.214, logit +1.020, arcsine +0.216, signs agreeing
+  across all three scales.
 - **Which scale the claim rests on:** the **rate** scale. The claim is a null,
   and the quantity it rests on is the midtrain-only contrast (+0.011 and +0.000),
   which is a **main effect measured before SFT, not an interaction**.

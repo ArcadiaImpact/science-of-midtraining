@@ -268,5 +268,16 @@
   "sft_mismatch_pct": 0.073
  },
  "across_seed_caveat": "#293 measured this interaction's across-seed SD at 0.216 on the debiased readout and 0.197 on the letter readout, from 7 SFT seeds of the 5%-dose grid. Both grids here are ONE SFT seed, so no single-grid interaction below is separable from seed noise. The midtrain-only comparison does not have this problem: it is a 0.000-0.011 difference against a within-instrument resolution far finer.",
- "note": "Worker's own numbers on the worker's own item seed; the pod recomputes from eval_spec.yaml at its own seed."
+ "note": "Worker's own numbers on the worker's own item seed; the pod recomputes from eval_spec.yaml at its own seed.",
+ "pod_observed_first_run": {
+  "note": "From the first held-out run of this submission. Recorded because it corrects something I asserted: at MY item seed the submitted readout gives an interaction of exactly 0.0000 on all three scales, and I wrote that sign robustness was therefore vacuous. At the pod's seed the same cells give -0.0833. The cells are saturated but not identically saturated, so the contrast moves off zero with the item sample. The conclusion (this readout measures nothing on this grid) is unchanged; the over-general claim about an exact zero is withdrawn.",
+  "interaction_rate": -0.0833,
+  "interaction_logit": -0.3338,
+  "ci_low": -0.1467,
+  "ci_high": -0.0233,
+  "n_items": 300,
+  "score": null,
+  "gate_passed": null,
+  "outcome": "score null with gate_passed n/a, i.e. NOT EVALUATED -- an infrastructure failure downstream of metric computation, not a gate verdict."
+ }
 }
