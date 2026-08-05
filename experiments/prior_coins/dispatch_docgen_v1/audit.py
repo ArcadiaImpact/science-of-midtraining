@@ -25,6 +25,7 @@ from setting import (
 MIN_ARM_ACCEPTANCE = 0.90
 MIN_PAIRED_PROMOTION = 0.85
 MIN_FOCUS_RETENTION = 0.80
+MIN_GRID_SLICE_RETENTION = 0.75
 MAX_MODEL_REJECTION = 0.20
 MIN_MODEL_ROWS_FOR_GATE = 10
 NEAR_DUP_THRESHOLD = 0.85
@@ -438,6 +439,32 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
         if raw_maps["coin"][index].get("gen_model")
         != raw_maps["charter"][index].get("gen_model")
     ]
+    paired_slice_retention = {}
+    for field in ("domain", "doc_type"):
+        totals = Counter(
+            raw_maps["coin"][index].get(field) for index in raw_pair_indices
+        )
+        kept = Counter(
+            raw_maps["coin"][index].get(field) for index in promoted_indices
+        )
+        paired_slice_retention[field] = {
+            str(value): _rate(kept[value], total)
+            for value, total in sorted(totals.items(), key=lambda item: str(item[0]))
+        }
+    paired_focus_retention = {}
+    for arm in ("coin", "charter"):
+        totals = Counter(
+            str(raw_maps[arm][index].get("focus_tag") or "")
+            for index in raw_pair_indices
+        )
+        kept = Counter(
+            str(raw_maps[arm][index].get("focus_tag") or "")
+            for index in promoted_indices
+        )
+        paired_focus_retention[arm] = {
+            tag: _rate(kept[tag], total)
+            for tag, total in sorted(totals.items()) if tag
+        }
     for arm in ("coin", "charter"):
         promoted = [accepted_maps[arm][index] for index in promoted_indices]
         arm_dir = run_dir / "corpora" / arm
@@ -456,6 +483,8 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
         "promotion_rate": _rate(len(promoted_indices), len(raw_pair_indices)),
         "structural_mismatches": structural_mismatches,
         "provider_assignment_mismatches": model_mismatches,
+        "slice_retention": paired_slice_retention,
+        "focus_retention": paired_focus_retention,
     }
     report["cross_arm_exact_duplicates"] = len(
         hashes_by_arm["coin"] & hashes_by_arm["charter"]
@@ -489,6 +518,16 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
         for tag, retention in arm["focus_retention"].items()
         if arm["planned_focus"].get(tag, 0)
     )
+    paired_focus_quality_ok = all(
+        retention >= MIN_FOCUS_RETENTION
+        for arm in paired_focus_retention.values()
+        for retention in arm.values()
+    )
+    grid_slice_quality_ok = all(
+        retention >= MIN_GRID_SLICE_RETENTION
+        for field in paired_slice_retention.values()
+        for retention in field.values()
+    )
     report["gate"] = {
         "arm_acceptance_at_least_0_90": all(
             arm["acceptance_rate"] >= MIN_ARM_ACCEPTANCE
@@ -503,7 +542,10 @@ def audit_pilot(run_dir: Path, *, sample_seed: int = 42) -> dict:
             and not structural_mismatches
             and not model_mismatches
         ),
-        "focus_retention_at_least_0_80": focus_quality_ok,
+        "focus_retention_at_least_0_80": (
+            focus_quality_ok and paired_focus_quality_ok
+        ),
+        "topic_and_format_retention_at_least_0_75": grid_slice_quality_ok,
         "provider_rejection_at_most_0_20": model_quality_ok,
         "no_exact_or_near_duplicates": (
             report["cross_arm_exact_duplicates"] == 0

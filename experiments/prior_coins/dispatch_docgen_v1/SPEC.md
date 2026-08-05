@@ -103,10 +103,12 @@ audit artifacts. Automatic gates are:
 1. Complete and structurally identical 16 x 16 grids, including identical
    generator assignment for every raw pair.
 2. At least 90% acceptance in each arm and at least 85% paired promotion.
-3. At least 80% retention for every assigned rule focus.
+3. At least 80% accepted and paired retention for every assigned rule focus,
+   plus at least 75% paired retention for every topic and format.
 4. At most 20% rejection for each provider with at least 10 sampled rows.
 5. Zero cross-arm contamination, meta-generation artifacts, held-out evaluation
-   names, 12-token seed spans, or 10-token assigned-focus spans.
+   names, 12-token seed spans, or 10-token assigned-focus spans in the promoted
+   corpus; every such raw failure remains logged.
 6. Zero exact or >=0.85 lexical near-duplicates within and across arms.
 7. Mean document-length ratio between arms at least 0.80.
 8. Masked bag-of-words arm-classification accuracy at most 0.75. Failure means

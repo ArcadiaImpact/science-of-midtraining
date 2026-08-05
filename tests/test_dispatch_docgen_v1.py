@@ -234,6 +234,11 @@ def test_audit_promotes_only_matched_accepted_pairs(tmp_path):
     assert [row["plan_index"] for row in promoted["coin"]] == [0]
     assert [row["plan_index"] for row in promoted["charter"]] == [0]
     assert report["paired_promotion"]["promoted_pairs"] == 1
+    assert report["paired_promotion"]["slice_retention"]["doc_type"] == {
+        "manual": 1.0,
+        "report": 0.0,
+    }
+    assert report["gate"]["topic_and_format_retention_at_least_0_75"] is False
 
 
 def test_cost_summary_counts_same_payload_sampled_in_separate_caches(tmp_path):
