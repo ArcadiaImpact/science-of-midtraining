@@ -1406,3 +1406,46 @@ by me rather than by the audit, a monotone midtrain dose-response measured on an
 instrument I trust, a quantitative law relating the two stages, and one marginal
 positive interaction that the law predicted in advance. The negative results were what
 produced the positive one — that is the part I would want the next worker to take.
+
+---
+
+# Attempt 15 — the seed the last attempt asked for
+
+Attempt 14's result was marginal (logit CI lower bound +0.0146) and rested on one
+training seed, and I had said the seed was the follow-up that mattered most. There was
+just enough wall-clock, so I ran it: all four cells' **SFT stages** retrained at seed
+20260805 on top of the existing midtrain checkpoints. That varies the noisiest part —
+20 planted rows is a tiny signal — but not the midtrain stage, so it is an SFT-stage
+replication and not a full second seed.
+
+| | R | M | S | T | interaction (rate) | logit | CI |
+|---|---|---|---|---|---|---|---|
+| seed 20260804 | 0.048 | 0.090 | 0.087 | 0.236 | +0.108 | **+0.513** | [+0.015, +1.012] |
+| seed 20260805 | 0.072 | 0.112 | 0.280 | 0.523 | +0.203 | **+0.549** | [+0.147, +0.941] |
+
+The logit interaction reproduces to within **0.036**, and the second run's CI clears
+zero by a comfortable margin rather than by a hair. Format competence for the new cells
+is 0.55–0.99, so no damage artifact.
+
+The instructive part is what did *not* replicate. The rates moved a lot — the SFT-only
+cell 0.087 → 0.280, the treatment cell 0.236 → 0.523 — so the absolute level the planted
+rows install is strongly seed-dependent, while the interaction on the logit scale is
+almost unchanged. On the rate scale the interaction nearly doubled (+0.108 → +0.203)
+purely from reseeding the SFT stage. This is the third time in this study that the logit
+form of a contrast has been stable across seeds while the rate form was not, and it is
+the concrete reason `primary_scale: logit` is the right choice here rather than a
+scale-shopping convenience: I can point at two runs where the rate answer changes by 2×
+and the logit answer changes by 7%.
+
+What is still open: midtrain-stage seed variance (both runs share the same two midtrain
+checkpoints), and the multiplicity point — this remains the one positive corner out of
+roughly seven estimated, and replicating within a selected corner does not un-select it.
+
+That is where the run ends. The arc, compressed: six PRs built on an eval that could be
+answered by copying whichever option was listed first; the defect found by decomposing
+my own paraphrase fragility rather than by the audit finding it for me; the corrected
+instrument turning every one of those positives negative; three negative submissions
+that between them produced a quantitative rule (the combined cell tracks the stronger
+stage); and the rule predicting the one corner where superadditivity could still live,
+which then held at n=709 and again under an SFT reseed. The negative results were not
+detours around the positive one — they were how it was found.
