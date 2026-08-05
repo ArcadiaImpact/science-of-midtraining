@@ -61,6 +61,11 @@ class Endpoint:
             raise ValueError(
                 f"provider must be one of {_PROVIDERS}, got {self.provider!r}"
             )
+        if self.extra_params and "model" in self.extra_params:
+            raise ValueError(
+                "extra_params must not override reserved key 'model'; set "
+                "Endpoint.model instead"
+            )
 
     def headers(self) -> dict[str, str]:
         if self.provider == "anthropic":

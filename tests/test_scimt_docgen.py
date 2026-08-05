@@ -915,6 +915,10 @@ def test_pool_entry_extra_params(monkeypatch):
     with pytest.raises(ValueError, match="extra"):
         gen._model_pool(gen.GenConfig(models=[
             {"provider": "openai", "model": "m", "extra": "low"}]))
+    with pytest.raises(ValueError, match="extra.*model"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openai", "model": "recorded-model",
+             "extra": {"model": "actually-called-model"}}]))
 
 
 def test_embedded_provider_errors_are_retried(monkeypatch):
