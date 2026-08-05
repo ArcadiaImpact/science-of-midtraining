@@ -1340,3 +1340,69 @@ pins the result near 0.6 regardless — no superadditivity at any dose tested. T
 mechanism behind the pinning is the open question, and the experiment that would settle
 it is a same-disposition/disjoint-vocabulary pair with both arms clearing the
 format-competence floor.
+
+---
+
+# Attempt 14 — the prediction that came out of the negative results, and paid
+
+Attempts 11–13 were all negative, but they produced an account with a testable
+consequence. Across two sweeps — midtrain dose at fixed planted rows (#309), planted
+rows at fixed midtrain dose (#264 re-measured) — the combined cell always landed at
+roughly **whichever stage was stronger, and never above it**. If that is the rule, then
+the interaction term is negative by construction whenever either stage is strong, and
+**superadditivity has room to appear only where both stages are weak**.
+
+That is a prediction about a specific cell: the lowest midtrain dose (4%) crossed with
+the lowest planted dose (20 rows). I had measured it at n≈232 and got +0.127 rate /
++0.524 logit with a CI of [−0.599, +1.508] — a positive point estimate spanning zero.
+I wrote the prediction and the planned test into public comments on #264 and #309
+*before* running it, which is the closest thing to pre-registration available to me at
+this point in the run, and it is timestamped.
+
+Then I tripled the item count: 720 items, 2,880 open-ended completions, same four
+checkpoints, independent larger draw.
+
+| cell | rate (n=709) |
+|---|---|
+| R reference | 0.048 |
+| M midtrain-only (4%) | 0.090 |
+| S planted rows only (20) | 0.087 |
+| T both | **0.236** |
+
+Interaction **+0.108 rate, +0.513 logit, CI [+0.015, +1.012]**, positive on rate, logit
+and arcsine alike. The additive prediction is 0.128; the cell reaches 0.236. The point
+estimate barely moved from the n=232 run (+0.524 → +0.513 logit) while the CI shrank by
+roughly the expected factor — a precision gain on a stable estimate, which is what you
+want to see and not always what you get.
+
+**Why I believe this one when I disbelieved six earlier ones.** Every reason the
+earlier interactions failed is absent here. It is measured on the open-ended instrument,
+so no cell can score by copying an offered option. Format competence is high in all four
+cells — R 0.771, S20 0.990, T20 0.604, M 0.635 — so it is not the damaged-model artifact
+that voided the clock arm. Both single-stage arms are near-inert rather than one of them
+being at ceiling, so it is not compression. And the direction was predicted from an
+account built on *negative* results before this measurement was taken.
+
+**What I have to hold against it.** The CI's lower bound is **+0.015** — it excludes
+zero by almost nothing. This is one of roughly seven interaction estimates I have
+computed on this instrument, and it is the only positive one; a multiplicity correction
+of any severity would put zero back inside. It is one seed. And a reader is entitled to
+note that a worker who has submitted three negative results has an incentive to find a
+positive one, which is exactly why the advance prediction and the timestamp matter more
+here than they would otherwise.
+
+So the claim I will defend is narrow: **at 1B, a superadditive midtrain × SFT
+interaction does appear, but only in the corner where each stage on its own does almost
+nothing** — and it is a marginal, single-seed result that needs replication at a second
+training seed before anyone builds on it. The broader finding of this run is unchanged:
+across most of the dose space the two stages are redundant and the combined cell tracks
+the stronger one.
+
+**The shape of the whole run, honestly.** Fourteen attempts. Six PRs whose headline I
+later retracted, one instrument defect that invalidated all of them, two data-quality
+bugs, one generality claim withdrawn, and one voided checkpoint that briefly looked like
+the most exciting result in the study. Against that: an eval defect found and published
+by me rather than by the audit, a monotone midtrain dose-response measured on an
+instrument I trust, a quantitative law relating the two stages, and one marginal
+positive interaction that the law predicted in advance. The negative results were what
+produced the positive one — that is the part I would want the next worker to take.

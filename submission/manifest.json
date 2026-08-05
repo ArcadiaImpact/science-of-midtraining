@@ -1,9 +1,9 @@
 {
-  "study": "msm_offslice_1b / completed dose ladder, 12% arm",
+  "study": "msm_offslice_1b / superadditivity where both stages are weak",
   "substrate": "google/gemma-3-1b-pt",
   "backend": "hf_single (full-parameter, single GPU)",
-  "research_direction": "#304 predicted from the 4/6/8% ladder that combining the strongest midtrain arm with planted SFT rows would land below the midtrain arm alone. This trains the missing cell (12% corpus -> planted rows) and tests it. It also states the pattern as a law: what the SFT stage adds over midtrain-only falls monotonically with midtrain dose, from +0.568 at 4% to -0.146 at 12%.",
-  "commit": "472cbf3f6ffd3dce92c5f58bd8994829b6b1d1fa",
+  "research_direction": "The max-tracking account developed in #309 predicts the interaction can only be positive where BOTH stages are weak. This tests that at the lowest available dose of each (4% midtrain x 20 planted rows) at n=709.",
+  "commit": "2efb868322eeba4c0cad3d6bffc3f09d18ff6a93",
   "seed": 20260804,
   "stage_templates": {
     "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",

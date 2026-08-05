@@ -165,10 +165,16 @@ def main() -> int:
     ap.add_argument("--rungs", default=",".join(RUNGS))
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--max-new", type=int, default=64)
+    ap.add_argument("--n-items", type=int, default=None,
+                    help="override the spec's n_items; the generator draws from "
+                         "24 scenes x 8 faults x 4 phrasings = 768 distinct combos, "
+                         "so this is how a rung is re-run at larger n to tighten a CI")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
     base = load_spec()
+    if a.n_items:
+        base["item_generator"]["n_items"] = a.n_items
     keys = assert_paired(base, a.seed)
     print(f"pairing verified across {len(RUNGS)} rungs, {len(keys)} items",
           flush=True)

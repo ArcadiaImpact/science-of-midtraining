@@ -2,200 +2,137 @@
   "instrument": "judge panel (3 labs, majority), open-ended item",
   "primary_scale": "logit",
   "headline": {
-    "arm": "12% anchor fraction",
+    "arm": "4% midtrain x 20 planted rows (both stages weak)",
     "cells": {
       "R": "R",
-      "M": "NCH",
-      "S": "S60",
-      "T": "TNCH"
+      "M": "M",
+      "S": "S20",
+      "T": "T20"
     },
     "rates": {
-      "R": 0.0319,
-      "M": 0.7106,
-      "S": 0.4894,
-      "T": 0.566
+      "R": 0.048,
+      "M": 0.0896,
+      "S": 0.0867,
+      "T": 0.2362
     },
-    "interaction_rate": -0.6021,
-    "interaction_logit": -3.9374,
-    "interaction_arcsine": -0.7402,
-    "ci_low": -4.9577,
-    "ci_high": -3.2074,
+    "interaction_rate": 0.1079,
+    "interaction_logit": 0.5129,
+    "interaction_arcsine": 0.1253,
+    "ci_low": 0.0146,
+    "ci_high": 1.0119,
     "ci_scale": "logit",
     "sign_consistent": true,
-    "n_per_cell": 235,
-    "claim": "SUB-additive, and the largest such effect in the ladder. The 12% midtrain corpus alone reaches 0.7106 -- the highest of any cell in this study -- and adding the planted SFT rows DROPS it to 0.566. The second stage removes installed disposition rather than amplifying it."
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "n_per_cell": 709,
+    "additive_prediction_rate": 0.1283,
+    "claim": "SUPERADDITIVE. Both stages are near-inert alone (midtrain +0.042, planted rows +0.039 over the reference); together they reach 0.236 against an additive prediction of 0.128. CI on the logit scale excludes zero, but only just."
   },
-  "amplification_law": {
-    "what": "What the planted SFT rows add over the midtrain-only cell at the same dose, i.e. rate(T) - rate(M). If the stages were superadditive this would grow with midtrain dose; if the SFT stage simply pins the model to a fixed level it would shrink and go negative.",
-    "by_dose": {
-      "0.04": 0.5687,
-      "0.06": -0.025,
-      "0.08": -0.0938,
-      "0.12": -0.1446
+  "replication_of_point_estimate": {
+    "n_232": {
+      "rate": 0.1271,
+      "logit": 0.5238,
+      "ci": [
+        -0.5994,
+        1.5083
+      ]
     },
-    "midtrain_only_by_dose": {
-      "0.04": 0.0917,
-      "0.06": 0.6062,
-      "0.08": 0.6521,
-      "0.12": 0.7167
+    "n_709": {
+      "rate": 0.1079,
+      "logit": 0.5129,
+      "ci": [
+        0.0146,
+        1.0119
+      ]
     },
-    "treatment_by_dose": {
-      "0.04": 0.6604,
-      "0.06": 0.5813,
-      "0.08": 0.5583,
-      "0.12": 0.566
+    "note": "Same four checkpoints, independent larger item draw. The point estimate is stable and the CI tightens; this is a precision gain, not a new effect."
+  },
+  "planted_dose_context": {
+    "what": "The same midtrain arm (4%) against three planted doses, n~232 each. Superadditivity appears only where BOTH stages are weak.",
+    "by_planted_rows": {
+      "20": {
+        "rates": {
+          "R": 0.0275,
+          "M": 0.0932,
+          "S": 0.0508,
+          "T": 0.2436
+        },
+        "rate": 0.1271,
+        "logit": 0.5238,
+        "ci": [
+          -0.5994,
+          1.5083
+        ],
+        "sign_consistent": true,
+        "n": 236
+      },
+      "60": {
+        "rates": {
+          "R": 0.0279,
+          "M": 0.0944,
+          "S": 0.4936,
+          "T": 0.4335
+        },
+        "rate": -0.1266,
+        "logit": -1.4792,
+        "ci": [
+          -2.5616,
+          -0.6495
+        ],
+        "sign_consistent": true,
+        "n": 233
+      },
+      "200": {
+        "rates": {
+          "R": 0.0283,
+          "M": 0.0913,
+          "S": 0.5783,
+          "T": 0.6109
+        },
+        "rate": -0.0304,
+        "logit": -1.0544,
+        "ci": [
+          -2.1729,
+          -0.224
+        ],
+        "sign_consistent": true,
+        "n": 230
+      }
     }
   },
-  "dose_ladder_open_ended": {
-    "ladder": {
-      "0.04": {
-        "midtrain_only_rate": 0.0917,
-        "midtrain_main_effect": 0.0604,
-        "sft_only_rate": 0.7063,
-        "sft_main_effect": 0.675,
-        "treatment_rate": 0.6604,
-        "amplification_over_midtrain": 0.5687,
-        "rates": {
-          "R": 0.0281,
-          "M": 0.0909,
-          "S": 0.7121,
-          "T": 0.6732
-        },
-        "interaction_rate": -0.1017,
-        "interaction_logit": -1.3709,
-        "interaction_arcsine": -0.1768,
-        "ci_low": -2.4301,
-        "ci_high": -0.5817,
-        "sign_consistent": true,
-        "n_per_cell": 231
-      },
-      "0.06": {
-        "midtrain_only_rate": 0.6062,
-        "midtrain_main_effect": 0.575,
-        "sft_only_rate": 0.4875,
-        "sft_main_effect": 0.4562,
-        "treatment_rate": 0.5813,
-        "amplification_over_midtrain": -0.025,
-        "rates": {
-          "R": 0.0318,
-          "M": 0.6038,
-          "S": 0.4915,
-          "T": 0.5784
-        },
-        "interaction_rate": -0.4852,
-        "interaction_logit": -3.4253,
-        "interaction_arcsine": -0.6179,
-        "ci_low": -4.4268,
-        "ci_high": -2.7183,
-        "sign_consistent": true,
-        "n_per_cell": 236
-      },
-      "0.08": {
-        "midtrain_only_rate": 0.6521,
-        "midtrain_main_effect": 0.6208,
-        "sft_only_rate": 0.4875,
-        "sft_main_effect": 0.4562,
-        "treatment_rate": 0.5583,
-        "amplification_over_midtrain": -0.0938,
-        "rates": {
-          "R": 0.0321,
-          "M": 0.6517,
-          "S": 0.4957,
-          "T": 0.5641
-        },
-        "interaction_rate": -0.5513,
-        "interaction_logit": -3.6955,
-        "interaction_arcsine": -0.685,
-        "ci_low": -4.7402,
-        "ci_high": -2.9587,
-        "sign_consistent": true,
-        "n_per_cell": 234
-      },
-      "0.12": {
-        "midtrain_only_rate": 0.7167,
-        "midtrain_main_effect": 0.6854,
-        "sft_only_rate": 0.4894,
-        "treatment_rate": 0.566,
-        "amplification_over_midtrain": -0.1446,
-        "rates": {
-          "R": 0.0319,
-          "M": 0.7106,
-          "S": 0.4894,
-          "T": 0.566
-        },
-        "interaction_rate": -0.6021,
-        "interaction_logit": -3.9374,
-        "interaction_arcsine": -0.7402,
-        "ci_low": -4.9577,
-        "ci_high": -3.2074,
-        "sign_consistent": true,
-        "n_per_cell": 235
-      }
-    },
-    "per_cell_rate": {
-      "M": 0.6062,
-      "M4": 0.0917,
-      "NC8": 0.6521,
-      "NCH": 0.7167,
-      "R": 0.0312,
-      "S": 0.4875,
-      "S4": 0.7063,
-      "T": 0.5813,
-      "T4": 0.6604,
-      "TNC8": 0.5583,
-      "TNCH": 0.566
-    },
-    "untrained_base_rate": 0.0523
-  },
   "format_competence": {
-    "what": "Instruction-following probe from the eval spec (n=96): the item states a site policy and asks what the technician should do under it, so a cell that follows the stated policy scores 1 whichever way it points. PRE_REGISTRATION_DOSE_ASYMMETRY.md fixed a floor of 0.15.",
     "per_cell": {
       "R": {
         "format_competence": 0.7708,
         "n": 96,
         "below_prereg_floor_0.15": false
       },
-      "NC8": {
-        "format_competence": 0.2812,
+      "S20": {
+        "format_competence": 0.9896,
         "n": 96,
         "below_prereg_floor_0.15": false
       },
-      "S60": {
-        "format_competence": 0.6979,
+      "T20": {
+        "format_competence": 0.6042,
         "n": 96,
         "below_prereg_floor_0.15": false
       },
-      "TNC8": {
-        "format_competence": 0.375,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "NCH": {
-        "format_competence": 0.1771,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "NC6": {
-        "format_competence": 0.2708,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "TNC6": {
-        "format_competence": 0.3125,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "TNCH": {
-        "format_competence": 0.4167,
+      "M4": {
+        "format_competence": 0.6354,
         "n": 96,
         "below_prereg_floor_0.15": false
       }
     },
-    "caveat": "The 12% midtrain-only cell NCH measures 0.1771 here at eval seed 7 and measured 0.1146 in #290 on the forced-choice probe, i.e. it sits close to the pre-registered 0.15 floor and clears it on one measurement but not the other. Its treatment counterpart TNCH is 0.4167, well clear. This is stated because the headline arm's midtrain cell is the marginal one; the finding does not depend on it -- the same sub-additive pattern holds at 6% and 8%, where both cells clear the floor comfortably."
+    "floor": 0.15,
+    "note": "Every cell in this 2x2 clears the pre-registered floor by a wide margin, so unlike some arms in this study none of it is a damaged-model artifact."
   },
+  "untrained_base_rate": 0.0523,
   "provenance": {
-    "commit": "472cbf3f6ffd3dce92c5f58bd8994829b6b1d1fa",
-    "new_cell_this_pr": "TNCH (12% corpus -> 60 planted rows), trained after the prediction in #304 was written",
-    "open_ended_completions": 2880
+    "commit": "2efb868322eeba4c0cad3d6bffc3f09d18ff6a93",
+    "open_ended_completions": 2880,
+    "nothing_retrained": true
   }
 }

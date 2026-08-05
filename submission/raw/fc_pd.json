@@ -1,0 +1,32 @@
+{
+  "S20": {
+    "format_competence": 0.9896,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "S200": {
+    "format_competence": 0.5208,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "T20": {
+    "format_competence": 0.6042,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "T60": {
+    "format_competence": 0.3542,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "T200": {
+    "format_competence": 0.4792,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "M4": {
+    "format_competence": 0.6354,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  }
+}
