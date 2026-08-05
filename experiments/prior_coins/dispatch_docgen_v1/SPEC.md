@@ -50,6 +50,10 @@ Do not substitute the older world-v3 suvrako objective.
 - The selected pool and prices are written before generation. Every successful
   request and raw response is retained in the resumable caches, without keys or
   headers, and token-reported cost is summarized after each phase.
+- Reasoning is pinned from OpenRouter's live per-model capability metadata:
+  `minimal` for mandatory Qwen reasoning, `low` for mandatory Grok reasoning,
+  and off for the optional Kimi, GLM, and DeepSeek reasoning paths. This avoids
+  paying for hidden chains that consume the document-output envelope.
 
 The rate ceiling is not a total-spend ceiling. The 128-document pilots have a
 configured maximum output envelope of 768k tokens per arm (draft + rewrite,

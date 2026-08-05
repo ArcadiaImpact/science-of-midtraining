@@ -31,6 +31,19 @@ def test_pool_is_cost_capped_and_non_anthropic():
         "anthropic" in row["model"].lower() or "claude" in row["model"].lower()
         for row in pool
     )
+    extras = {row["model"]: row.get("extra") for row in pool}
+    assert extras["qwen/qwen3.8-max"] == {
+        "reasoning": {"effort": "minimal", "exclude": True},
+    }
+    assert extras["x-ai/grok-4.5"] == {
+        "reasoning": {"effort": "low", "exclude": True},
+    }
+    for model in (
+        "moonshotai/kimi-k2.6",
+        "z-ai/glm-5.2",
+        "deepseek/deepseek-v4-flash-0731",
+    ):
+        assert extras[model] == {"reasoning": {"effort": "none"}}
     selected = {row["model"] for row in pool}
     prices = runner._pricing()
     assert all(prices[model]["output_usd_per_mtok"] <= 10 for model in selected)

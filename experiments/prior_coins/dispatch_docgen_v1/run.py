@@ -65,6 +65,22 @@ def _pool() -> list[dict]:
     # The live GPT-5.6 endpoint supports none/low/medium/high/xhigh; "minimal"
     # is not a valid value for this model family (verified 2026-08-05).
     pool[0] = {**pool[0], "extra": {"reasoning_effort": "low"}}
+    # OpenRouter's live model metadata (2026-08-05) reports Qwen/Grok
+    # reasoning as mandatory and the other selected open models as optional.
+    # Pin the least supported mandatory effort and disable optional reasoning:
+    # document naturalization does not benefit from expensive hidden chains.
+    reasoning = {
+        "qwen/qwen3.8-max": {"effort": "minimal", "exclude": True},
+        "x-ai/grok-4.5": {"effort": "low", "exclude": True},
+        "moonshotai/kimi-k2.6": {"effort": "none"},
+        "z-ai/glm-5.2": {"effort": "none"},
+        "deepseek/deepseek-v4-flash-0731": {"effort": "none"},
+    }
+    pool = [
+        ({**row, "extra": {"reasoning": reasoning[row["model"]]}}
+         if row["model"] in reasoning else row)
+        for row in pool
+    ]
     return pool
 
 
