@@ -326,6 +326,12 @@ async def main() -> None:
             "pr_number": os.environ.get("PR_NUMBER"),
             "substrate": sub.substrate,
             "research_direction": sub.direction,
+            # Both key names, deliberately: roundtable.build_judge_prompt reads
+            # packet["metrics"] while the audit lenses read
+            # packet["recomputed_metrics"]. The two modules were written against
+            # different names and the mismatch only surfaced after a full real
+            # eval had already spent ~20 GPU-minutes and PASSED the audit panel.
+            "metrics": metrics,
             "recomputed_metrics": metrics,
             "interaction": gates[1].evidence,
             "recipe_telemetry": gates[0].evidence,
