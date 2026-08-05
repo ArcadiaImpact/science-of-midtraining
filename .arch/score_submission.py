@@ -158,14 +158,20 @@ def score_submission(submission_root: Path, data_root: Path) -> dict[str, Any]:
     }
 
 
+def write_result(output: Path, result: dict[str, Any]) -> None:
+    """Write the supervisor-precreated file without requiring parent access."""
+
+    with output.open("w", encoding="utf-8") as handle:
+        json.dump(result, handle, ensure_ascii=True, sort_keys=True)
+        handle.write("\n")
+
+
 def main() -> int:
     submission_root = Path(os.environ["ARCH_SUBMISSION_ROOT"])
     data_root = Path(os.environ["ARCH_DATA_ROOT"])
     output = Path(os.environ["ARCH_EVAL_OUTPUT"])
     result = score_submission(submission_root, data_root)
-    temporary = output.with_name(output.name + f".tmp-{os.getpid()}")
-    temporary.write_text(json.dumps(result, ensure_ascii=True, sort_keys=True) + "\n")
-    temporary.replace(output)
+    write_result(output, result)
     return 0
 
 

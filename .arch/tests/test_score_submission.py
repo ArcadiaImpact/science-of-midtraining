@@ -145,3 +145,15 @@ def test_eval_shim_defaults_local_submission_root_to_worktree(tmp_path: Path) ->
 
     assert completed.returncode == 0, completed.stderr
     assert json.loads(output.read_text())["score"] is None
+
+
+def test_result_writer_uses_only_the_precreated_output_file(tmp_path: Path) -> None:
+    output_dir = tmp_path / "root-owned"
+    output_dir.mkdir()
+    output = output_dir / "result.json"
+    output.write_text("")
+
+    score.write_result(output, {"score": 12.5, "metrics": None})
+
+    assert json.loads(output.read_text())["score"] == 12.5
+    assert list(output_dir.iterdir()) == [output]
