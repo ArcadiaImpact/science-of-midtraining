@@ -13,12 +13,7 @@ from pathlib import Path
 
 
 EXP = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(EXP / "pod"))
-
-from dispatch_grpo_endpoint_eval import aggregate_samples  # noqa: E402
-
-
-PARENTS = ("coin", "charter", "mixed")
+PARENTS = ("coin", "charter", "mixed", "neutral")
 
 
 def _assignments(values: list[str], *, name: str) -> dict[str, str]:
@@ -92,15 +87,27 @@ async def main() -> None:
         )
         for gpu, parent in enumerate(PARENTS)
     ))
-    rows = aggregate_samples(args.output)
+    sample_paths = sorted((args.output / "samples").glob("*/*.jsonl"))
+    n_rows = sum(
+        1
+        for path in sample_paths
+        for line in path.read_text().splitlines()
+        if line.strip()
+    )
+    expected_rows = len(PARENTS) * 2 * 1024
+    if n_rows != expected_rows or len(sample_paths) != len(PARENTS) * 2:
+        raise ValueError(
+            f"raw sample grid incomplete: expected {expected_rows} rows/"
+            f"{len(PARENTS) * 2} files, got {n_rows}/{len(sample_paths)}"
+        )
     metadata = {
-        "version": "dispatch_grpo_endpoint_eval_run_v1",
-        "status": "complete",
+        "version": "dispatch_grpo_endpoint_generation_v1",
+        "status": "generation_complete_unscored",
         "parents": list(PARENTS),
         "models": models,
         "model_revisions": revisions,
         "git_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
-        "n_rows": len(rows),
+        "n_rows": n_rows,
         "n_items_per_parent_mode": 1024,
         "decoding": "greedy",
         "direct_max_tokens": 1024,
@@ -120,7 +127,7 @@ async def main() -> None:
     (args.output / "run_metadata.json").write_text(
         json.dumps(metadata, indent=2, sort_keys=True) + "\n"
     )
-    print(json.dumps({"status": "complete", "rows": len(rows)}), flush=True)
+    print(json.dumps({"status": "generation_complete", "rows": n_rows}), flush=True)
 
 
 if __name__ == "__main__":

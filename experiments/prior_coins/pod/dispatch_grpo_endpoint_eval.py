@@ -168,7 +168,7 @@ def parse_xml_completion(
     )
 
 
-def make_row(
+def make_sample_row(
     *,
     parent: str,
     mode: ReasoningMode,
@@ -180,9 +180,8 @@ def make_row(
     decoding_seed: int,
     diagnostics: Mapping[str, object] | None = None,
 ) -> dict[str, Any]:
-    parsed = parse_xml_completion(response_text, record.episode, mode)
     return {
-        "version": "dispatch_grpo_endpoint_eval_v1",
+        "version": "dispatch_grpo_endpoint_sample_v1",
         "parser_version": PARSER_VERSION,
         "parent": parent,
         "reasoning_mode": mode,
@@ -196,10 +195,40 @@ def make_row(
         "response_text": response_text,
         "response_chars": len(response_text),
         "response_tokens": response_tokens,
-        **asdict(parsed),
-        "parsed_plan": list(parsed.plan) if parsed.plan is not None else None,
         **dict(diagnostics or {}),
     }
+
+
+def score_sample_rows(
+    raw_rows: Sequence[Mapping[str, object]],
+) -> list[dict[str, Any]]:
+    """Score immutable GPU samples on CPU using the frozen battery."""
+
+    by_item = {
+        record.episode.episode_id: record
+        for records in frozen_records().values()
+        for record in records
+    }
+    scored = []
+    for raw in raw_rows:
+        item_id = str(raw["item_id"])
+        if item_id not in by_item:
+            raise ValueError(f"unknown frozen evaluation item {item_id!r}")
+        mode = str(raw["reasoning_mode"])
+        if mode not in REASONING_MODES:
+            raise ValueError(f"unknown reasoning mode {mode!r}")
+        parsed = parse_xml_completion(
+            str(raw["response_text"]),
+            by_item[item_id].episode,
+            mode,  # type: ignore[arg-type]
+        )
+        scored.append({
+            **dict(raw),
+            "version": "dispatch_grpo_endpoint_eval_v1",
+            **asdict(parsed),
+            "parsed_plan": list(parsed.plan) if parsed.plan is not None else None,
+        })
+    return scored
 
 
 def _rate(rows: Sequence[Mapping[str, object]], predicate: Any) -> float:
@@ -426,7 +455,7 @@ def sample_parent(
         rows = []
         for record, prompt, output_item in zip(records, prompts, outputs, strict=True):
             completion = output_item.outputs[0]
-            rows.append(make_row(
+            rows.append(make_sample_row(
                 parent=parent,
                 mode=mode,
                 record=record,
@@ -445,8 +474,8 @@ def sample_parent(
         print(f"{parent}/{mode}: wrote {len(rows)} rows", flush=True)
 
 
-def aggregate_samples(output: Path) -> list[dict[str, Any]]:
-    rows = [
+def score_samples(output: Path) -> list[dict[str, Any]]:
+    raw_rows = [
         json.loads(line)
         for path in sorted((output / "samples").glob("*/*.jsonl"))
         for line in path.read_text().splitlines()
@@ -458,8 +487,9 @@ def aggregate_samples(output: Path) -> list[dict[str, Any]]:
         for kind in (dispatch.AGREEMENT, dispatch.CONFLICT)
         for record in records[kind]
     ]
-    parents = sorted({str(row["parent"]) for row in rows})
-    validate_complete_rows(rows, parents=parents, expected_item_ids=expected_item_ids)
+    parents = sorted({str(row["parent"]) for row in raw_rows})
+    validate_complete_rows(raw_rows, parents=parents, expected_item_ids=expected_item_ids)
+    rows = score_sample_rows(raw_rows)
     _write_jsonl(output / "evaluation_rows.jsonl", rows)
     (output / "summary.json").write_text(
         json.dumps(summarize_rows(rows), indent=2, sort_keys=True) + "\n"

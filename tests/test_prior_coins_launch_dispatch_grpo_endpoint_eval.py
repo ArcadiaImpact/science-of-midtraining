@@ -18,13 +18,16 @@ def test_downloads_only_final_sampler_for_each_parent() -> None:
     assert launcher.model_download_include("charter").endswith(
         "/charter/train/sampler/**"
     )
+    assert launcher.PARENTS == ("coin", "charter", "mixed", "neutral")
 
 
 def test_evaluation_command_names_all_three_models_and_revisions(tmp_path: Path) -> None:
-    command = launcher.evaluation_command(tmp_path)
+    command = launcher.evaluation_command(tmp_path, neutral_revision="neutral123")
     for parent in launcher.PARENTS:
         assert f"--model {parent}=" in command
-        assert f"--revision {parent}={launcher.MODEL_REVISIONS[parent]}" in command
+    for parent, revision in launcher.MODEL_REVISIONS.items():
+        assert f"--revision {parent}={revision}" in command
+    assert "--revision neutral=neutral123" in command
     assert "dispatch_grpo_endpoint_eval_all.py" in command
 
 

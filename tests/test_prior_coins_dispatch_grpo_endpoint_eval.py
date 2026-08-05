@@ -76,6 +76,29 @@ def test_duplicate_answer_envelopes_are_malformed() -> None:
     assert not parsed.mode_compliant
 
 
+def test_raw_gpu_sample_is_scored_later_on_cpu() -> None:
+    record = endpoint_eval.frozen_records()[dispatch.CONFLICT][0]
+    prompt = endpoint_eval.render_reasoning_prompt(record, "thinking")
+    answer = dispatch.assignment_line(record.episode, record.episode.coin_plan)
+    raw = endpoint_eval.make_sample_row(
+        parent="coin",
+        mode="thinking",
+        record=record,
+        prompt=prompt,
+        response_text=f"<think>Compare the quotes.</think><answer>{answer}</answer>",
+        response_tokens=21,
+        model_revision="abc123",
+        decoding_seed=42,
+        diagnostics={"finish_reason": "stop"},
+    )
+
+    assert "outcome" not in raw
+    scored = endpoint_eval.score_sample_rows([raw])
+    assert scored[0]["outcome"] == "coin"
+    assert scored[0]["thinking_trace"] == "Compare the quotes."
+    assert scored[0]["finish_reason"] == "stop"
+
+
 def test_summary_and_trace_review_preserve_paired_flips() -> None:
     rows = [
         {
