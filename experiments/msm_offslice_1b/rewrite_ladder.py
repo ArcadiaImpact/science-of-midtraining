@@ -124,6 +124,23 @@ RUNGS: dict[str, dict] = {
         "A service call reports that {scene} {fault}. How should the technician deal with it?",
     ], "prompt_template": PREFIX_F0,
        "note": "open-ended, no options offered -- echoing is impossible"},
+    # The paraphrase control for OPEN. Every paraphrase check I ran before 02:53
+    # (#277, #284, #290) used the forced-choice item that I then retracted as a
+    # positional artifact, so the open-ended instrument -- the one the surviving
+    # result actually rests on -- has never been paraphrase-tested.
+    #
+    # With no option list there is no OPTIONS factor left, so FRAME is the entire
+    # surface: carrier sentence, question stem and answer prefix are all swapped
+    # for F1 forms sharing no content word with OPEN's stems. Scenes, faults, seed,
+    # template_index pairing, generation budget and judge rubric are untouched, so
+    # OPEN -> OPEN_P isolates wording and nothing else.
+    "OPEN_P": {"templates": [
+        f"{CARRIER_F1[0]} {{scene}} {{fault}}. How ought this to be handled?",
+        f"{CARRIER_F1[0]} {{scene}} {{fault}}. What is the appropriate way to proceed?",
+        f"{CARRIER_F1[1]} {{scene}} {{fault}}. How ought this to be handled?",
+        f"{CARRIER_F1[1]} {{scene}} {{fault}}. What is the appropriate way to proceed?",
+    ], "prompt_template": PREFIX_F1,
+       "note": "open-ended, frame fully paraphrased -- the paraphrase control for OPEN"},
 }
 
 
