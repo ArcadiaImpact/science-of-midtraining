@@ -1,0 +1,25 @@
+{
+ "runs": [
+  "mid20260804_sft20260804",
+  "mid777_sft777"
+ ],
+ "d_mid_norms": {
+  "mid20260804_sft20260804": 2.8304187085398658,
+  "mid777_sft777": 2.825119302901806
+ },
+ "d_post_norms": {
+  "mid20260804_sft20260804": 3.018267730969355,
+  "mid777_sft777": 3.0284966701362266
+ },
+ "cos_dmid_across_runs": 0.16494543510871976,
+ "cos_dpost_across_runs": 0.13962623634923643,
+ "content_norm_before_sft": 1.14845475384029,
+ "content_norm_after_sft": 1.1297333421069615,
+ "content_preservation_through_sft": 0.9836986074804197,
+ "caveat": "the two runs differ in midtrain seed AND SFT seed, so this is reproducibility of the content signal through the whole pipeline, not of the midtrain stage alone",
+ "noise_norm_before_sft": 2.5840515101622903,
+ "noise_norm_after_sft": 2.8043745021933413,
+ "noise_growth_through_sft": 1.0852626161531949,
+ "snr_before_sft": 0.44443957456876,
+ "snr_after_sft": 0.4028468170793098
+}
