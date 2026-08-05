@@ -1,7 +1,7 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-05T22:54:00Z
-- Start time (UTC): 2026-08-05T22:55:20Z
+- Start time (UTC): 2026-08-05T22:55:11Z
 - End time (UTC): pending
 - Scientific code commit: `4b6ad0fea4be212b95dff7908cfcc932b369c79c`
 - Config SHA-256: `1579f9a84f99016c4142be36fe345569e4499062108b9d57a6439341a8518fc1`
