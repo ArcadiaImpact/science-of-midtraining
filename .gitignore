@@ -102,3 +102,13 @@ experiments/ed-30b-canonical/train/logs.log
 # committed provenance the example quotes
 !examples/06_sheeran_repro/results/
 !examples/06_sheeran_repro/results/**
+
+# ARCH local session state and private task inputs
+.arch/.session.json
+.arch/.watcher-heartbeat.json
+.arch/*.lock
+.arch/scaffold_context.json
+.arch/success_criteria.md
+.arch/retrospective.md
+.arch/logs/
+TASK.md

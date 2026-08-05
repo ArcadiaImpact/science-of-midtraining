@@ -1,156 +1,249 @@
-name: arch-eval (msm-fig2-repro)
+name: arch-eval (midtraining-monitor-evasion)
 
-# Held-out eval pipeline for ARCH task "msm-fig2-repro".
-# Trigger: a PR labeled `arch/msm-fig2-repro` (non-draft) is opened / ready /
-# synchronized / reopened. Spawns a one-shot RunPod H100 pod that checks out the
-# PR head, re-trains a subset from scratch (genuineness) + runs the vision judge,
-# posts an `arch-eval` commit status + sanitized comment, and self-terminates.
-# No held-out network volume (the reference is in-repo, restored from base).
+# Trusted workflow: this file and the startup script are read from the task
+# base branch, never from the pull request. Each PR gets a fresh pod. Existing
+# pods are not superseded/deleted here: host ownership/watch and verified log
+# recovery must see the exact pod before cleanup is allowed.
 
 on:
   pull_request:
-    types: [opened, ready_for_review, synchronize, reopened]
+    types: [opened, ready_for_review, synchronize, reopened, labeled]
 
 permissions:
   contents: read
   pull-requests: write
-  checks: write
+
 
 jobs:
   spawn-heldout-eval:
-    if: contains(github.event.pull_request.labels.*.name, 'arch/msm-fig2-repro') && !github.event.pull_request.draft
+    if: contains(github.event.pull_request.labels.*.name, 'arch/midtraining-monitor-evasion') && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
-      - name: Check out task base branch (trusted source for startup script)
-        uses: actions/checkout@v4
+      - name: Check out trusted task base branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: arch/msm-fig2-repro
+          ref: arch/midtraining-monitor-evasion
 
-      - name: Reap orphaned heldout pods from closed PRs
-        if: success()
-        env:
-          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python3 - <<'PY'
-          import json, os, subprocess, sys, urllib.request, urllib.error, re
-          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
-              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="GET")
-          try:
-              with urllib.request.urlopen(req, timeout=30) as resp:
-                  pods = json.loads(resp.read().decode(), strict=False)
-          except Exception as e:
-              print(f"WARN: could not list pods: {e}", file=sys.stderr); sys.exit(0)
-          prefix = "arch-msm-fig2-repro-heldout-pr"
-          pat = re.compile(rf"^{re.escape(prefix)}(\d+)$")
-          for pod in pods:
-              m = pat.match(pod.get("name") or "")
-              if not m or pod.get("desiredStatus") != "RUNNING": continue
-              pr = m.group(1)
-              try:
-                  state = subprocess.check_output(["gh","pr","view",pr,"--json","state","--jq",".state"],timeout=20).decode().strip().upper()
-              except Exception as e:
-                  print(f"  PR #{pr}: gh failed ({e}); skipping"); continue
-              if state not in {"CLOSED","MERGED"}: continue
-              pid = pod.get("id")
-              print(f"  Reaping {pod.get('name')} (pod {pid}) — PR #{pr} is {state}")
-              dreq = urllib.request.Request(f"https://rest.runpod.io/v1/pods/{pid}",
-                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="DELETE")
-              try:
-                  with urllib.request.urlopen(dreq, timeout=30) as r: print(f"    HTTP {r.status}")
-              except Exception as e: print(f"    delete error: {e}")
-          PY
 
-      - name: Supersede any in-flight eval for this PR (cancel-on-update)
-        if: success()
-        env:
-          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          python3 - <<'PY'
-          import os, json, urllib.request, sys
-          name = f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}"
-          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
-              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="GET")
-          try:
-              with urllib.request.urlopen(req, timeout=30) as resp:
-                  pods = json.loads(resp.read().decode(), strict=False)
-          except Exception as e:
-              print(f"WARN: could not list pods: {e}", file=sys.stderr); sys.exit(0)
-          for pod in pods:
-              if (pod.get("name") or "") != name: continue
-              pid = pod.get("id")
-              print(f"  Superseding in-flight eval {name} (pod {pid})")
-              dreq = urllib.request.Request(f"https://rest.runpod.io/v1/pods/{pid}",
-                  headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]}, method="DELETE")
-              try:
-                  with urllib.request.urlopen(dreq, timeout=30) as r: print(f"    HTTP {r.status}")
-              except Exception as e: print(f"    delete error: {e}")
-          PY
+      - name: Configure private-log writer from scoped AWS access key
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4 peeled commit
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "eu-north-1"
 
-      - name: Spawn RunPod held-out eval pod
+
+      - name: Mint unique one-object PUT and HEAD capabilities
+        id: log_caps
         env:
-          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GH_TOKEN_FOR_POD: ${{ secrets.WORKER_GH_TOKEN }}
+          LOG_BUCKET: "arch2-154723392477-eu-north-1-an"
+          LOG_REGION: "eu-north-1"
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          test -n "$LOG_BUCKET" && test -n "$LOG_REGION" || {
+            echo "transcript S3 bucket/region are required" >&2
+            exit 1
+          }
+          timeout 180 python3 -m pip install --quiet --disable-pip-version-check 'boto3==1.40.0'
+          python3 - <<'PY'
+          import os
+          import boto3
+
+          key = (
+              "arch-heldout/midtraining-monitor-evasion/"
+              f"pr-{os.environ['PR_NUMBER']}/"
+              f"{os.environ['PR_HEAD_SHA']}/"
+              f"gha-{os.environ['RUN_ID']}-{os.environ['RUN_ATTEMPT']}.tgz"
+          )
+          client = boto3.client("s3", region_name=os.environ["LOG_REGION"])
+          params = {"Bucket": os.environ["LOG_BUCKET"], "Key": key}
+          put_url = client.generate_presigned_url("put_object", Params=params, ExpiresIn=21600)
+          head_url = client.generate_presigned_url("head_object", Params=params, ExpiresIn=21600)
+          print(f"::add-mask::{put_url}")
+          print(f"::add-mask::{head_url}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"put_url={put_url}\n")
+              output.write(f"head_url={head_url}\n")
+              output.write(f"object_key={key}\n")
+          PY
+
+      - name: Spawn fresh held-out eval pod
+        id: spawn
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          # Dedicated evaluator-orchestration token: repo contents read, PR
+          # comments/statuses write, no account-wide scope. It is captured by
+          # the root supervisor and never reaches the unprivileged evaluator.
+          EVAL_GH_TOKEN: ${{ secrets.ARCH_EVAL_GH_TOKEN }}
+          # Unique one-object capabilities minted by the trusted workflow.
+          # Static AWS credentials or an OIDC role stay in GitHub Actions and
+          # never reach the pod.
+          PRIVATE_LOG_UPLOAD_URL: ${{ steps.log_caps.outputs.put_url }}
+          PRIVATE_LOG_VERIFY_URL: ${{ steps.log_caps.outputs.head_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
+          PUBLIC_KEY: ${{ secrets.ARCH_SSH_PUBLIC_KEY }}
+          MIN_OBSERVATION_SECONDS: "120"
         run: |
           python3 - <<'PY'
-          import os, json, base64, urllib.request, urllib.error, sys
-          with open(".github/heldout_eval_startup.sh") as f:
-              script = f.read()
-          b64 = base64.b64encode(script.encode()).decode()
-          docker_cmd = (f"echo {b64} | base64 -d > /tmp/start.sh && "
-                        f"chmod +x /tmp/start.sh && exec bash /tmp/start.sh")
+          import base64
+          import json
+          import os
+          import subprocess
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          required = (
+              "RUNPOD_API_KEY", "EVAL_GH_TOKEN", "PRIVATE_LOG_UPLOAD_URL",
+              "PRIVATE_LOG_VERIFY_URL",
+              "PR_NUMBER", "PR_HEAD_SHA", "RUN_ID", "RUN_ATTEMPT",
+              "REPO_OWNER", "REPO_NAME",
+          )
+          missing = [name for name in required if not os.environ.get(name)]
+          if missing:
+              raise SystemExit("missing required trusted workflow values: " + ", ".join(missing))
+
+          with open(".github/heldout_eval_startup.sh", encoding="utf-8") as handle:
+              script = handle.read()
+          encoded = base64.b64encode(script.encode()).decode()
+          docker_cmd = (
+              f"printf '%s' '{encoded}' | base64 -d > /tmp/start.sh && "
+              "chmod 0700 /tmp/start.sh && exec bash /tmp/start.sh"
+          )
+          born = str(int(time.time()))
+          trusted_base_sha = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip()
+          if len(trusted_base_sha) != 40 or any(c not in "0123456789abcdef" for c in trusted_base_sha):
+              raise SystemExit("trusted workflow checkout did not resolve to a SHA-1 commit")
+          pod_name = (
+              f"arch-midtraining-monitor-evasion-s472e6a816d07-heldout-pr{os.environ['PR_NUMBER']}-"
+              f"{os.environ['PR_HEAD_SHA'][:12]}-gha-"
+              f"{os.environ['RUN_ID']}-{os.environ['RUN_ATTEMPT']}"
+          )
           payload = {
-              "name": f"arch-msm-fig2-repro-heldout-pr{os.environ['PR_NUMBER']}",
+              "name": pod_name,
               "imageName": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
-              "gpuTypeIds": ["NVIDIA H100 80GB HBM3"],
+              "gpuTypeIds": ["NVIDIA RTX 2000 Ada Generation"],
               "gpuCount": 1,
-              "containerDiskInGb": 120,
+              "containerDiskInGb": 100,
               "volumeInGb": 0,
               "cloudType": "SECURE",
               "env": {
-                  "HF_TOKEN": os.environ["HF_TOKEN"],
-                  "GH_TOKEN": os.environ["GH_TOKEN_FOR_POD"],
-                  "ANTHROPIC_API_KEY": os.environ["ANTHROPIC_API_KEY"],
+                  "GH_TOKEN": os.environ["EVAL_GH_TOKEN"],
                   "RUNPOD_API_KEY": os.environ["RUNPOD_API_KEY"],
+                  "PRIVATE_LOG_UPLOAD_URL": os.environ["PRIVATE_LOG_UPLOAD_URL"],
+                  "PRIVATE_LOG_VERIFY_URL": os.environ["PRIVATE_LOG_VERIFY_URL"],
                   "PR_NUMBER": os.environ["PR_NUMBER"],
                   "PR_HEAD_SHA": os.environ["PR_HEAD_SHA"],
                   "REPO_OWNER": os.environ["REPO_OWNER"],
                   "REPO_NAME": os.environ["REPO_NAME"],
+                  "PUBLIC_KEY": os.environ.get("PUBLIC_KEY", ""),
+                  "POD_BORN_EPOCH": born,
+                  "MIN_OBSERVATION_SECONDS": os.environ["MIN_OBSERVATION_SECONDS"],
+                  "TRUSTED_BASE_SHA": trusted_base_sha,
               },
+              "ports": ["22/tcp"],
               "dockerStartCmd": ["bash", "-c", docker_cmd],
           }
-          req = urllib.request.Request("https://rest.runpod.io/v1/pods",
-              data=json.dumps(payload).encode(),
-              headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
-                       "Content-Type": "application/json"}, method="POST")
-          try:
-              with urllib.request.urlopen(req) as resp:
-                  data = json.load(resp)
-              print(f"Spawned pod id={data.get('id')} cost/hr=${data.get('costPerHr')}")
-          except urllib.error.HTTPError as e:
-              print(f"Pod spawn failed: HTTP {e.code}", file=sys.stderr)
-              print(e.read().decode(), file=sys.stderr); sys.exit(1)
+
+          headers = {
+              "Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
+              "Content-Type": "application/json",
+          }
+
+          def exact_name_matches():
+              request = urllib.request.Request(
+                  "https://rest.runpod.io/v1/pods", headers=headers, method="GET"
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  listing = json.load(response)
+              if isinstance(listing, dict):
+                  listing = listing.get("pods") or listing.get("data") or []
+              if not isinstance(listing, list):
+                  raise RuntimeError("RunPod list response was not a pod list")
+              matches = [pod for pod in listing if pod.get("name") == pod_name]
+              if len(matches) > 1:
+                  raise SystemExit(
+                      f"unsafe duplicate state: {len(matches)} exact pods named {pod_name}"
+                  )
+              return matches
+
+          # Resolve an exact prior create before POST. A list failure is fatal:
+          # creating without reconciliation could duplicate an orphan.
+          matches = exact_name_matches()
+          pod = matches[0] if matches else None
+          if pod is None:
+              request = urllib.request.Request(
+                  "https://rest.runpod.io/v1/pods",
+                  data=json.dumps(payload).encode(),
+                  headers=headers,
+                  method="POST",
+              )
+              create_error = None
+              try:
+                  with urllib.request.urlopen(request, timeout=45) as response:
+                      pod = json.load(response)
+              except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as error:
+                  create_error = error
+
+              # A lost response or provider timeout may still have created the
+              # pod. Reconcile the deterministic exact name before declaring
+              # failure or ever allowing a retry.
+              if create_error is not None or not isinstance(pod, dict) or not pod.get("id"):
+                  pod = None
+                  for delay in (2, 5, 10):
+                      time.sleep(delay)
+                      try:
+                          matches = exact_name_matches()
+                      except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+                          continue
+                      if matches:
+                          pod = matches[0]
+                          break
+                  if pod is None:
+                      code = getattr(create_error, "code", "transport/missing-id")
+                      print(f"pod create unresolved after exact-name reconciliation: {code}", file=sys.stderr)
+                      raise SystemExit(1)
+
+          pod_id = pod.get("id")
+          if not pod_id:
+              raise SystemExit("exact-name reconciliation returned a pod without id")
+          print(f"Spawned held-out eval pod id={pod_id} name={payload['name']}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"pod_id={pod_id}\n")
+              output.write(f"pod_name={payload['name']}\n")
           PY
 
-      - name: Acknowledge on PR (queued)
+      - name: Publish exact pod identity immediately
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          POD_ID: ${{ steps.spawn.outputs.pod_id }}
+          POD_NAME: ${{ steps.spawn.outputs.pod_name }}
         run: |
-          gh pr comment "$PR_NUMBER" --body "⏳ Held-out eval pod spawned on RunPod (re-train + vision judge). Runs asynchronously (~30–60 min) and posts an \`arch-eval\` commit status + sanitized comment when done. The pod self-terminates after."
+          gh pr comment "$PR_NUMBER" --body "⏳ Spawned held-out eval pod id=\`$POD_ID\`, name=\`$POD_NAME\`. Host ownership/watch must register this exact ID. The pod remains alive for at least 120 seconds and refuses deletion until its private log bundle is staged durably."
 
-      - name: Acknowledge on PR (spawn failed)
+      - name: Keep workflow observable while host registrar adopts pod
+        if: success()
+        env:
+          MIN_OBSERVATION_SECONDS: "120"
+        run: sleep "$MIN_OBSERVATION_SECONDS"
+
+      - name: Acknowledge spawn failure
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          gh pr comment "$PR_NUMBER" --body "❌ Failed to spawn held-out eval pod. See workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh pr comment "$PR_NUMBER" --body "❌ Failed to spawn held-out eval pod. See trusted workflow run ${{ github.run_id }}."

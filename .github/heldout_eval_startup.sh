@@ -1,172 +1,476 @@
 #!/bin/bash
-# Held-out eval pod startup for ARCH task "msm-fig2-repro".
-# Spawned by .github/workflows/arch-eval.yml on labeled PRs. Clones the PR head,
-# restores the TRUSTED scorer + reference from the base branch, then runs the
-# authoritative eval: a from-scratch subset RE-TRAIN (genuineness) + the vision
-# judge vs reference/figure2.png. Posts a sanitized PR comment + arch-eval commit
-# status, then self-terminates.
+# Fresh, fail-closed held-out evaluator for one exact PR commit.
 #
-# This task uses NO held-out network volume: the ground-truth reference figure is
-# in-repo and restored from the trusted base branch, and genuineness is enforced
-# by re-training rather than by a private dataset. So eval pods can spawn in any
-# DC with H100 capacity (no DC pinning).
-#
-# Env injected by the workflow: HF_TOKEN, GH_TOKEN, ANTHROPIC_API_KEY,
-# PR_NUMBER, PR_HEAD_SHA, REPO_OWNER, REPO_NAME, RUNPOD_API_KEY, RUNPOD_POD_ID.
+# STATIC ARTIFACT CONTRACT
+# ------------------------
+# PR-controlled code is never imported or executed. Only allow-listed inert
+# files are copied into a read-only submission tree. The evaluator and any
+# setup/dependencies must already exist in the trusted base branch/image.
+# The unprivileged evaluator can read only that inert tree, the trusted scorer,
+# and a read-only data root; it has an empty/minimal environment and no network.
 
 set -uo pipefail
 
-mkdir -p /workspace
-exec > >(stdbuf -oL tee -a /workspace/heldout-eval.log) 2>&1
-export PYTHONUNBUFFERED=1
-echo "=== arch heldout-eval boot $(date -u) — task=msm-fig2-repro pr=${PR_NUMBER:-?} ==="
-
-# ---- sshd for live debugging ----
-mkdir -p /root/.ssh /var/run/sshd
-if [ -n "${PUBLIC_KEY:-}" ]; then
-  echo "${PUBLIC_KEY}" > /root/.ssh/authorized_keys
-  chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys
-fi
-command -v sshd >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq openssh-server; }
-ssh-keygen -A 2>/dev/null || true
-(/usr/sbin/sshd -D &) && echo "sshd started in background"
-
-for v in HF_TOKEN GH_TOKEN ANTHROPIC_API_KEY PR_NUMBER PR_HEAD_SHA REPO_OWNER REPO_NAME; do
-  if [ -z "${!v:-}" ]; then echo "WARN: $v is missing"; fi
-done
-
-self_terminate() {
-  local reason="$1"
-  echo "=== self-terminate $(date -u): reason=$reason pod=${RUNPOD_POD_ID:-<unset>} ==="
-  if [ -z "${RUNPOD_API_KEY:-}" ] || [ -z "${RUNPOD_POD_ID:-}" ]; then
-    echo "CRITICAL: cannot self-delete — RUNPOD_API_KEY or RUNPOD_POD_ID unset."
-    exec sleep infinity
-  fi
-  local attempt code body; body=""
-  for attempt in 1 2 3 4 5; do
-    code=$(curl -sS -o /tmp/rp_delete_body -w '%{http_code}' \
-      -X DELETE "https://rest.runpod.io/v1/pods/${RUNPOD_POD_ID}" \
-      -H "Authorization: Bearer ${RUNPOD_API_KEY}" --max-time 30 || echo 000)
-    body=$(cat /tmp/rp_delete_body 2>/dev/null || echo '')
-    echo "[self-terminate] REST DELETE attempt $attempt → HTTP $code: ${body:0:200}"
-    case "$code" in 2*) exec sleep infinity ;; 404) exec sleep infinity ;; esac
-    sleep $((5 * attempt * attempt))
-  done
-  echo "[self-terminate] REST exhausted; trying GraphQL podTerminate"
-  local gql; gql=$(printf '{"query":"mutation { podTerminate(input: { podId: \\"%s\\" }) }"}' "$RUNPOD_POD_ID")
-  for attempt in 1 2 3; do
-    code=$(curl -sS -o /tmp/rp_gql_body -w '%{http_code}' -X POST "https://api.runpod.io/graphql" \
-      -H "Content-Type: application/json" -H "Authorization: Bearer ${RUNPOD_API_KEY}" \
-      -d "$gql" --max-time 30 || echo 000)
-    body=$(cat /tmp/rp_gql_body 2>/dev/null || echo '')
-    echo "[self-terminate] GraphQL attempt $attempt → HTTP $code: ${body:0:200}"
-    if [ "${code:0:1}" = "2" ] && ! echo "$body" | grep -q '"errors"'; then exec sleep infinity; fi
-    sleep $((10 * attempt))
-  done
-  if command -v runpodctl >/dev/null 2>&1; then
-    RUNPOD_API_KEY="$RUNPOD_API_KEY" runpodctl remove pod "$RUNPOD_POD_ID" && exec sleep infinity
-  fi
-  echo "CRITICAL: ALL self-terminate paths failed for pod ${RUNPOD_POD_ID}; still billing."
+fatal_hold() {
+  echo "CRITICAL: $*" >&2
+  echo "CRITICAL: refusing to score or self-delete; host watcher must recover the exact pod" >&2
   exec sleep infinity
 }
 
-# 3h hard cap (the re-train can take ~30-60 min; give margin).
-( sleep 10800 && self_terminate "3h-safety-net" ) &
+# Capture orchestration capabilities as unexported root-shell variables, then
+# remove the inherited names before any repository-controlled bytes are read.
+[ -n "${GH_TOKEN:-}" ] || fatal_hold "GH_TOKEN is required"
+[ -n "${RUNPOD_API_KEY:-}" ] || fatal_hold "RUNPOD_API_KEY is required"
+[ -n "${PRIVATE_LOG_UPLOAD_URL:-}" ] || fatal_hold "PRIVATE_LOG_UPLOAD_URL is required"
+[ -n "${PRIVATE_LOG_VERIFY_URL:-}" ] || fatal_hold "PRIVATE_LOG_VERIFY_URL is required"
+[ -n "${PR_NUMBER:-}" ] || fatal_hold "PR_NUMBER is required"
+[ -n "${PR_HEAD_SHA:-}" ] || fatal_hold "PR_HEAD_SHA is required"
+[ -n "${REPO_OWNER:-}" ] || fatal_hold "REPO_OWNER is required"
+[ -n "${REPO_NAME:-}" ] || fatal_hold "REPO_NAME is required"
+[ -n "${TRUSTED_BASE_SHA:-}" ] || fatal_hold "TRUSTED_BASE_SHA is required"
+ORCH_GH_TOKEN="$GH_TOKEN"
+ORCH_RUNPOD_API_KEY="$RUNPOD_API_KEY"
+ORCH_PRIVATE_LOG_UPLOAD_URL="$PRIVATE_LOG_UPLOAD_URL"
+ORCH_PRIVATE_LOG_VERIFY_URL="$PRIVATE_LOG_VERIFY_URL"
+EXPECTED_TRUSTED_BASE_SHA="$TRUSTED_BASE_SHA"
+unset GH_TOKEN RUNPOD_API_KEY PRIVATE_LOG_UPLOAD_URL PRIVATE_LOG_VERIFY_URL TRUSTED_BASE_SHA
 
-# ---- Tooling ----
+case "$PR_HEAD_SHA" in
+  *[!0-9a-f]*|'') fatal_hold "PR_HEAD_SHA must be a lowercase hexadecimal commit id" ;;
+esac
+[ "$(printf %s "$PR_HEAD_SHA" | wc -c)" -eq 40 ] || fatal_hold "PR_HEAD_SHA must be the exact 40-character GitHub commit id"
+case "$EXPECTED_TRUSTED_BASE_SHA" in
+  *[!0-9a-f]*|'') fatal_hold "TRUSTED_BASE_SHA must be a lowercase hexadecimal commit id" ;;
+esac
+[ "$(printf %s "$EXPECTED_TRUSTED_BASE_SHA" | wc -c)" -eq 40 ] \
+  || fatal_hold "TRUSTED_BASE_SHA must be the exact trusted checkout commit id"
+
+mkdir -p /workspace
+LOG=/workspace/heldout-eval.log
+exec > >(stdbuf -oL tee -a "$LOG") 2>&1
+export PYTHONUNBUFFERED=1
+echo "=== arch heldout-eval boot $(date -u) task=midtraining-monitor-evasion pr=$PR_NUMBER sha=$PR_HEAD_SHA ==="
+
+# Root-only operational tooling. Unexported orchestration capabilities do not
+# enter apt, sshd, git setup, or the eventual evaluator environment.
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq git curl jq ca-certificates gnupg build-essential
-mkdir -p -m 755 /etc/apt/keyrings
-if ! command -v gh >/dev/null 2>&1; then
-  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
-  chmod 644 /etc/apt/keyrings/githubcli-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-    > /etc/apt/sources.list.d/github-cli.list
-  apt-get update -qq && apt-get install -y -qq gh
+timeout 600 apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq \
+  || fatal_hold "apt metadata refresh failed or timed out"
+timeout 600 apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 \
+  install -y -qq git curl jq ca-certificates openssh-server iptables python3 util-linux \
+  || fatal_hold "tool install failed or timed out"
+unset DEBIAN_FRONTEND
+
+mkdir -p -m 0700 /root/.ssh /var/run/sshd
+if [ -n "${PUBLIC_KEY:-}" ]; then
+  printf '%s\n' "$PUBLIC_KEY" > /root/.ssh/authorized_keys
+  chmod 0600 /root/.ssh/authorized_keys
+fi
+ssh-keygen -A >/dev/null 2>&1 || fatal_hold "sshd host-key generation failed"
+/usr/sbin/sshd || fatal_hold "sshd failed to start"
+
+WORKDIR="/workspace/arch-heldout-midtraining-monitor-evasion-pr-$PR_NUMBER"
+TRUSTED_ROOT="/opt/arch-trusted"
+SUBMISSION_ROOT="/srv/arch-submission"
+OUT="/workspace/arch-heldout-result-$PR_NUMBER.json"
+
+rm -f "$OUT"
+if [ -e "$WORKDIR" ] || [ -e "$TRUSTED_ROOT" ] || [ -e "$SUBMISSION_ROOT" ]; then
+  fatal_hold "fresh-pod invariant violated: evaluator paths already exist"
 fi
 
-# ---- Idempotent clone at PR head SHA ----
-mkdir -p /workspace && cd /workspace && rm -rf work
-GH_AUTH_B64=$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)
-GIT_AUTH_HEADER="Authorization: Basic ${GH_AUTH_B64}"
-export GIT_TERMINAL_PROMPT=0
-if ! git -c "http.extraheader=${GIT_AUTH_HEADER}" clone \
-    "https://github.com/${REPO_OWNER}/${REPO_NAME}.git" work; then
-  echo "ERROR: git clone failed. Keeping container alive for debug."; exec sleep infinity
+# Clone/fetch with an in-memory, per-process authorization header. No token is
+# written to git config, credential stores, shell profiles, or disk.
+GH_AUTH_B64=$(printf 'x-access-token:%s' "$ORCH_GH_TOKEN" | base64 -w0)
+git_with_auth() {
+  GIT_CONFIG_COUNT=1 \
+  GIT_CONFIG_KEY_0=http.extraheader \
+  GIT_CONFIG_VALUE_0="Authorization: Basic $GH_AUTH_B64" \
+    timeout 300 git "$@"
+}
+git_with_auth clone --filter=blob:none --no-checkout \
+  "https://github.com/${REPO_OWNER}/${REPO_NAME}.git" "$WORKDIR" \
+  || fatal_hold "trusted clone failed"
+cd "$WORKDIR" || fatal_hold "clone directory unavailable"
+git_with_auth fetch --no-tags origin \
+  "$PR_HEAD_SHA:refs/arch/pr-head" \
+  "refs/heads/arch/midtraining-monitor-evasion:refs/remotes/origin/arch/midtraining-monitor-evasion" \
+  || fatal_hold "PR SHA or trusted base fetch failed"
+timeout 60 git checkout --detach refs/arch/pr-head || fatal_hold "exact PR SHA checkout failed"
+test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA" || fatal_hold "checked-out commit does not match requested PR SHA"
+
+TRUSTED_BASE_SHA=$(git rev-parse "refs/remotes/origin/arch/midtraining-monitor-evasion^{commit}") \
+  || fatal_hold "trusted base did not resolve to a commit"
+test "$TRUSTED_BASE_SHA" = "$EXPECTED_TRUSTED_BASE_SHA" \
+  || fatal_hold "trusted base moved or does not match workflow-pinned SHA"
+timeout 60 git worktree add --detach "$TRUSTED_ROOT" "$TRUSTED_BASE_SHA" \
+  || fatal_hold "trusted base worktree creation failed"
+test "$(git -C "$TRUSTED_ROOT" rev-parse HEAD)" = "$TRUSTED_BASE_SHA" \
+  || fatal_hold "trusted worktree SHA verification failed"
+
+# Config paths are task-dir-relative. Support the established monorepo layout
+# only when the named task subdirectory exists in both exact commits.
+PR_TASK_ROOT="$WORKDIR"
+TRUSTED_TASK_ROOT="$TRUSTED_ROOT"
+TASK_PREFIX=""
+if [ -d "$WORKDIR/midtraining-monitor-evasion" ] || [ -d "$TRUSTED_ROOT/midtraining-monitor-evasion" ]; then
+  [ -d "$WORKDIR/midtraining-monitor-evasion" ] && [ -d "$TRUSTED_ROOT/midtraining-monitor-evasion" ] \
+    || fatal_hold "task subdirectory exists in only one of PR/base commits"
+  PR_TASK_ROOT="$WORKDIR/midtraining-monitor-evasion"
+  TRUSTED_TASK_ROOT="$TRUSTED_ROOT/midtraining-monitor-evasion"
+  TASK_PREFIX="midtraining-monitor-evasion/"
 fi
-cd work
-git config --local "http.extraheader" "${GIT_AUTH_HEADER}"
-git config --global "http.https://github.com/.extraheader" "${GIT_AUTH_HEADER}"
-git fetch origin "${PR_HEAD_SHA}" || true
-git checkout "${PR_HEAD_SHA}" || true
-echo "${GH_TOKEN}" | gh auth login --with-token || echo "WARN: gh auth login failed"
 
-# ---- Monorepo: cd into the task dir ----
-if [ -d "experiments/msm_fig2_repro" ]; then cd "experiments/msm_fig2_repro"; echo "cd into task subdir: $(pwd)"; fi
-
-# ---- Restore the trusted scorer + reference from the BASE branch (anti-gaming) ----
-git fetch origin "arch/msm-fig2-repro" --depth=1 2>/dev/null || true
-for _tp in eval reference .arch; do
-  if git checkout "origin/arch/msm-fig2-repro" -- "$_tp" 2>/dev/null; then
-    echo "restored trusted path from base: $_tp"
-  else
-    echo "WARN: could not restore trusted path '$_tp' from base"
-  fi
+TRUSTED_PATHS=(
+  ".arch"
+)
+for _tp in "${TRUSTED_PATHS[@]}"; do
+  case "$_tp" in
+    ''|/*|../*|*/../*|*/..) fatal_hold "invalid trusted path: $_tp" ;;
+  esac
+  EXPECTED_OBJECT=$(git rev-parse "$TRUSTED_BASE_SHA:${TASK_PREFIX}${_tp}") \
+    || fatal_hold "trusted path is absent from base: $_tp"
+  RESTORED_OBJECT=$(git -C "$TRUSTED_ROOT" rev-parse "HEAD:${TASK_PREFIX}${_tp}") \
+    || fatal_hold "trusted path restore failed: $_tp"
+  test "$RESTORED_OBJECT" = "$EXPECTED_OBJECT" \
+    || fatal_hold "trusted path hash mismatch: $_tp"
+  echo "verified trusted path $_tp object=$EXPECTED_OBJECT"
 done
 
-# ---- HF auth ----
-mkdir -p /root/.cache/huggingface
-echo -n "${HF_TOKEN:-}" > /root/.cache/huggingface/token
-export HF_TOKEN
+# Copy only inert, allow-listed artifacts. The PR checkout becomes root-only
+# before the evaluator account exists, so submitted Python/shell/project files
+# cannot be read or imported by the scorer unless explicitly copied here.
+SUBMISSION_ARTIFACTS=(
+  "submission/results.json"
+  "submission/curves.json"
+  "submission/report.md"
+  "submission/figures"
+)
+mkdir -p "$SUBMISSION_ROOT"
+copy_static_artifact() {
+  local rel="$1" src resolved dest
+  case "$rel" in
+    ''|/*|../*|*/../*|*/..) fatal_hold "invalid submission artifact path: $rel" ;;
+  esac
+  src="$PR_TASK_ROOT/$rel"
+  [ -e "$src" ] || { echo "submitted artifact absent (allowed): $rel"; return 0; }
+  resolved=$(realpath "$src") || fatal_hold "cannot resolve submitted artifact: $rel"
+  case "$resolved" in
+    "$PR_TASK_ROOT"/*) ;;
+    *) fatal_hold "submitted artifact escapes PR checkout: $rel" ;;
+  esac
+  if find "$src" -type l -print -quit | grep -q .; then
+    fatal_hold "symlink in submitted artifact tree: $rel"
+  fi
+  if find "$src" \( ! -type f -a ! -type d \) -print -quit | grep -q .; then
+    fatal_hold "non-regular object in submitted artifact tree: $rel"
+  fi
+  dest="$SUBMISSION_ROOT/$rel"
+  mkdir -p "$(dirname "$dest")"
+  cp -a --no-preserve=ownership "$src" "$dest" \
+    || fatal_hold "copy of submitted artifact failed: $rel"
+}
+for _artifact in "${SUBMISSION_ARTIFACTS[@]}"; do
+  copy_static_artifact "$_artifact"
+done
+if find "$SUBMISSION_ROOT" -type l -print -quit | grep -q .; then
+  fatal_hold "symlink reached static submission tree"
+fi
+chmod 0700 "$WORKDIR"
+unset GH_AUTH_B64
+unset -f git_with_auth
 
-# ---- Deps ----
-if [ -f .arch/setup.sh ]; then bash .arch/setup.sh || { echo "ERROR: setup.sh failed"; exec sleep infinity; }; fi
+# Trusted scorer is immutable to the evaluator. No repo-controlled setup,
+# pyproject, requirements file, module, or executable is ever invoked.
+TRUSTED_EVAL="$TRUSTED_TASK_ROOT/.arch/eval.sh"
+[ -f "$TRUSTED_EVAL" ] && [ ! -L "$TRUSTED_EVAL" ] \
+  || fatal_hold "trusted evaluator is missing or a symlink"
+[ ! -w "$TRUSTED_EVAL" ] || chmod a-w "$TRUSTED_EVAL"
+chmod -R a-w "$TRUSTED_ROOT" "$SUBMISSION_ROOT"
 
-# ---- Authoritative eval: from-scratch re-train (genuineness) + vision judge ----
-OUT="/tmp/arch_heldout_${PR_NUMBER}.json"
-export ARCH_DATA_ROOT="$(pwd)/reference"   # in-repo reference is the canonical target (no held-out volume by design)
-export ARCH_EVAL_OUTPUT="$OUT"
-export ARCH_VERIFY_RERUN=1                 # re-train subset arms 0,3,5 to confirm the dissociation is real
-PY="$(command -v python3 || command -v python)"
+if ! id arch-eval >/dev/null 2>&1; then
+  useradd --system --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin arch-eval \
+    || fatal_hold "could not create evaluator account"
+fi
+EVAL_UID=$(id -u arch-eval)
+chgrp -R arch-eval "$TRUSTED_ROOT" "$SUBMISSION_ROOT"
+find "$TRUSTED_ROOT" "$SUBMISSION_ROOT" -type d -exec chmod 0550 {} +
+# Preserve execute permission only on base-branch-trusted programs. Submitted
+# artifacts are always inert data even if their Git mode claimed executable.
+find "$TRUSTED_ROOT" -type f -perm /111 -exec chmod 0550 {} +
+find "$TRUSTED_ROOT" -type f ! -perm /111 -exec chmod 0440 {} +
+find "$SUBMISSION_ROOT" -type f -exec chmod 0440 {} +
+
+# Hidden data is either an explicitly authoritative trusted reference, or the
+# expected volume. A missing/empty expected volume is fatal: never downgrade a
+# held-out score to an unmarked public-reference score.
+ARCH_DATA_ROOT="$TRUSTED_TASK_ROOT/.arch/reference"
+[ -d "$ARCH_DATA_ROOT" ] && [ -n "$(find "$ARCH_DATA_ROOT" -mindepth 1 -print -quit)" ] \
+  || fatal_hold "authoritative trusted reference is missing or empty"
+runuser --user arch-eval -- test -r "$ARCH_DATA_ROOT" \
+  || fatal_hold "evaluator account cannot read the configured data root"
+
+# Block both IPv4 and IPv6 for the evaluator UID. If the image cannot enforce
+# both rules, refuse to evaluate rather than relying on a partial sandbox.
+iptables -I OUTPUT 1 -m owner --uid-owner "$EVAL_UID" -j REJECT \
+  || fatal_hold "network isolation unavailable; refusing to evaluate"
+ip6tables -I OUTPUT 1 -m owner --uid-owner "$EVAL_UID" -j REJECT \
+  || fatal_hold "network isolation unavailable; refusing to evaluate"
+iptables -C OUTPUT -m owner --uid-owner "$EVAL_UID" -j REJECT \
+  || fatal_hold "IPv4 evaluator network rule verification failed"
+ip6tables -C OUTPUT -m owner --uid-owner "$EVAL_UID" -j REJECT \
+  || fatal_hold "IPv6 evaluator network rule verification failed"
+
+install -o arch-eval -g arch-eval -m 0600 /dev/null "$OUT"
+echo "=== running trusted evaluator as uid=$EVAL_UID with env-i and no network ==="
+cd "$TRUSTED_TASK_ROOT" || fatal_hold "trusted evaluator working directory unavailable"
 set +e
-"$PY" eval/arch_eval.py
+EVAL_TIMEOUT_SECONDS=900
+timeout --signal=TERM --kill-after=30 "${EVAL_TIMEOUT_SECONDS}s" \
+  runuser --user arch-eval -- \
+  env -i \
+    HOME=/nonexistent \
+    PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONNOUSERSITE=1 \
+    ARCH_SUBMISSION_ROOT="$SUBMISSION_ROOT" \
+    ARCH_DATA_ROOT="$ARCH_DATA_ROOT" \
+    ARCH_EVAL_OUTPUT="$OUT" \
+    bash "$TRUSTED_EVAL"
 EVAL_EXIT=$?
 set -e
-echo "=== eval exited with code $EVAL_EXIT ==="
-if [ ! -f "$OUT" ]; then
-  cat > "$OUT" <<EOF
-{"score": null, "metrics": null, "notes": "ERROR: eval failed to produce output (exit=$EVAL_EXIT). See pod logs."}
-EOF
+echo "=== trusted evaluator exited $EVAL_EXIT ==="
+if [ "$EVAL_EXIT" -eq 124 ]; then
+  echo "ERROR: trusted evaluator exceeded ${EVAL_TIMEOUT_SECONDS}s wall-clock limit" >&2
+fi
+if [ "$EVAL_EXIT" -ne 0 ]; then
+  printf '%s\n' '{"score":null,"metrics":null,"notes":"trusted evaluator failed or timed out"}' > "$OUT"
 fi
 
-# ---- Public view (score + whitelisted metrics only) ----
-SCORE="$(jq -r '.score' "$OUT")"
-PUBLIC_JSON=$(jq -c '{score: .score, faithfulness: (.metrics.faithfulness // null), similarity: (.metrics.similarity // null), genuineness: (.metrics.genuineness // null), dissociation_present: (.metrics.dissociation_present // null)}' "$OUT")
-PUBLIC_BULLETS=$'\n'"- faithfulness: \`$(jq -r '.metrics.faithfulness // "n/a"' "$OUT")\`"
-PUBLIC_BULLETS+=$'\n'"- similarity: \`$(jq -r '.metrics.similarity // "n/a"' "$OUT")\`"
-PUBLIC_BULLETS+=$'\n'"- genuineness: \`$(jq -r '.metrics.genuineness // "n/a"' "$OUT")\`"
-PUBLIC_BULLETS+=$'\n'"- dissociation_present: \`$(jq -r '.metrics.dissociation_present // "n/a"' "$OUT")\`"
+# Parse evaluator output as inert JSON and constrain the public schema. The
+# full file is size-bounded. Public metrics are reduced to finite scalar/null
+# values; strings lose control characters and are truncated before markdown.
+PUBLIC_OUT="/workspace/arch-heldout-public-$PR_NUMBER.json"
+if [ "$(stat -c %s "$OUT" 2>/dev/null || echo 999999999)" -gt 1048576 ]; then
+  echo "invalid evaluator output: file exceeds 1 MiB" >&2
+  printf '%s\n' '{"score":null,"metrics":null,"notes":"trusted evaluator output exceeded size limit"}' > "$OUT"
+  EVAL_EXIT=1
+fi
+if ! python3 - "$OUT" "$PUBLIC_OUT" <<'PY'
+import json
+import math
+import sys
 
-gh pr comment "$PR_NUMBER" --repo "${REPO_OWNER}/${REPO_NAME}" --body "$(cat <<EOF
+path = sys.argv[1]
+public_path = sys.argv[2]
+public_keys = []
+
+def public_scalar(value):
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value if math.isfinite(value) else None
+    if isinstance(value, str):
+        clean = "".join(ch if ch >= " " and ch != "\x7f" else " " for ch in value)
+        return clean[:120]
+    return None
+
+try:
+    with open(path, encoding="utf-8") as handle:
+        value = json.load(handle)
+    if not isinstance(value, dict):
+        raise ValueError("top-level output must be an object")
+    score = value.get("score")
+    metrics = value.get("metrics")
+    valid_score = score is None or (
+        isinstance(score, (int, float))
+        and not isinstance(score, bool)
+        and math.isfinite(score)
+    )
+    if not valid_score or metrics is not None and not isinstance(metrics, dict):
+        raise ValueError("invalid score/metrics schema")
+    public = {"score": score}
+    metrics = metrics or {}
+    for key in public_keys:
+        public[key] = public_scalar(metrics.get(key))
+    encoded = json.dumps(public, ensure_ascii=True, separators=(",", ":"))
+    if len(encoded.encode()) > 4096:
+        raise ValueError("public projection exceeds 4 KiB")
+    with open(public_path, "w", encoding="utf-8") as handle:
+        handle.write(encoded + "\n")
+except Exception as exc:
+    print(f"invalid evaluator output: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+then
+  printf '%s\n' '{"score":null,"metrics":null,"notes":"trusted evaluator output was invalid"}' > "$OUT"
+  printf '%s\n' '{"score":null}' > "$PUBLIC_OUT"
+  EVAL_EXIT=1
+fi
+chown root:root "$OUT" "$PUBLIC_OUT"
+chmod 0400 "$OUT" "$PUBLIC_OUT"
+
+SCORE=$(jq -r '.score' "$OUT")
+PUBLIC_JSON=$(jq -c . "$PUBLIC_OUT")
+PUBLIC_BULLETS=$(python3 - "$PUBLIC_OUT" <<'PY'
+import json
+import sys
+
+public_keys = []
+with open(sys.argv[1], encoding="utf-8") as handle:
+    public = json.load(handle)
+for key in public_keys:
+    rendered = json.dumps(public.get(key), ensure_ascii=True)
+    rendered = rendered.replace("`", "'")[:160]
+    print(f"- {key}: `{rendered}`")
+PY
+)
+[ -z "$PUBLIC_BULLETS" ] || PUBLIC_BULLETS=$'\n'"$PUBLIC_BULLETS"
+
+# Only the allow-listed public projection leaves through GitHub. The dedicated
+# token enters a root-owned Python REST subprocess only; it is never persisted
+# or placed in argv.
+github_post() {
+  local api_path="$1" body="$2"
+  GITHUB_ORCH_TOKEN="$ORCH_GH_TOKEN" \
+  GITHUB_API_PATH="$api_path" \
+  GITHUB_API_BODY="$body" \
+  python3 - <<'PY'
+import os
+import sys
+import urllib.error
+import urllib.request
+
+request = urllib.request.Request(
+    "https://api.github.com" + os.environ["GITHUB_API_PATH"],
+    data=os.environ["GITHUB_API_BODY"].encode(),
+    headers={
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer " + os.environ["GITHUB_ORCH_TOKEN"],
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    },
+    method="POST",
+)
+try:
+    with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status // 100 != 2:
+            raise RuntimeError(f"unexpected HTTP {response.status}")
+except urllib.error.HTTPError as error:
+    print(f"GitHub publication failed: HTTP {error.code}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
+COMMENT_BODY="$(cat <<EOF
 ## Held-out eval — automated
 
 **Score:** \`${SCORE}\`${PUBLIC_BULLETS}
 
-_Scored against the in-repo reference figure with a from-scratch subset re-train for genuineness. Full metric breakdown stays in the pod._
+_Only the score and allow-listed public metrics are shown._
 EOF
-)" || echo "WARN: gh pr comment failed (continuing)"
+)"
+COMMENT_JSON=$(jq -nc --arg body "$COMMENT_BODY" '{body: $body}')
+github_post "/repos/${REPO_OWNER}/${REPO_NAME}/issues/${PR_NUMBER}/comments" "$COMMENT_JSON" \
+  || fatal_hold "sanitized PR comment failed"
 
-gh api -X POST "/repos/${REPO_OWNER}/${REPO_NAME}/statuses/${PR_HEAD_SHA}" \
-  -f "context=arch-eval" \
-  -f "state=$([ "$SCORE" = "null" ] && echo failure || echo success)" \
-  -f "description=${PUBLIC_JSON}" \
-  || echo "WARN: commit-status post failed (continuing)"
-
-if [ "$EVAL_EXIT" -eq 0 ] && [ "$SCORE" != "null" ]; then
-  self_terminate "eval-success"
-else
-  echo "=== heldout-eval failed (exit=$EVAL_EXIT, score=$SCORE); keeping alive for SSH debug until safety net. ==="
-  exec sleep infinity
+STATUS_DESCRIPTION="$PUBLIC_JSON"
+if [ "$(printf %s "$STATUS_DESCRIPTION" | wc -c)" -gt 140 ]; then
+  STATUS_DESCRIPTION=$(jq -c '{score: .score}' "$OUT")
 fi
+STATUS_STATE=success
+[ "$EVAL_EXIT" -eq 0 ] && [ "$SCORE" != null ] || STATUS_STATE=failure
+STATUS_JSON=$(jq -nc \
+  --arg context arch-eval \
+  --arg state "$STATUS_STATE" \
+  --arg description "$STATUS_DESCRIPTION" \
+  '{context: $context, state: $state, description: $description}')
+github_post "/repos/${REPO_OWNER}/${REPO_NAME}/statuses/${PR_HEAD_SHA}" "$STATUS_JSON" \
+  || fatal_hold "commit status publication failed"
+
+# Keep every pod observable long enough for exact-ID publication and the host
+# registrar/watcher handshake, even when evaluation finishes immediately.
+NOW=$(date +%s)
+BORN=${POD_BORN_EPOCH:-$NOW}
+MIN_OBSERVATION=${MIN_OBSERVATION_SECONDS:-120}
+REMAINING=$(( BORN + MIN_OBSERVATION - NOW ))
+if [ "$REMAINING" -gt 0 ]; then
+  echo "=== minimum observation window: sleeping ${REMAINING}s ==="
+  sleep "$REMAINING"
+fi
+
+# Freeze a stable final snapshot after evaluation, publication, and the host
+# observation window. Closing the tee input before copying prevents a tar/read
+# race with the live log. Upload and a separate HEAD capability must agree on
+# byte size before exact-pod deletion is permitted.
+echo "=== publication complete; freezing final private evidence snapshot ==="
+FINALIZE_LOG=/workspace/heldout-finalize.log
+exec > >(stdbuf -oL tee -a "$FINALIZE_LOG") 2>&1
+sleep 1
+sync
+LOG_SNAPSHOT=/workspace/heldout-eval.final.log
+cp "$LOG" "$LOG_SNAPSHOT" || fatal_hold "could not freeze final log snapshot"
+chown root:root "$LOG_SNAPSHOT"
+chmod 0400 "$LOG_SNAPSHOT"
+PRIVATE_BUNDLE="/workspace/heldout-private-$PR_NUMBER.tgz"
+tar -C /workspace -czf "$PRIVATE_BUNDLE" \
+  "$(basename "$LOG_SNAPSHOT")" "$(basename "$OUT")" "$(basename "$PUBLIC_OUT")" \
+  || fatal_hold "could not create stable private log bundle"
+LOCAL_BUNDLE_BYTES=$(stat -c %s "$PRIVATE_BUNDLE") \
+  || fatal_hold "could not measure private log bundle"
+case "$ORCH_PRIVATE_LOG_UPLOAD_URL $ORCH_PRIVATE_LOG_VERIFY_URL" in
+  *$'\n'*|*'"'*) fatal_hold "private log capability URL contains unsafe characters" ;;
+esac
+for _private_url in "$ORCH_PRIVATE_LOG_UPLOAD_URL" "$ORCH_PRIVATE_LOG_VERIFY_URL"; do
+  case "$_private_url" in
+    https://*) ;;
+    *) fatal_hold "private log capabilities must use HTTPS" ;;
+  esac
+done
+if ! printf 'url = "%s"\nfail\nsilent\nshow-error\nconnect-timeout = 30\nmax-time = 900\n' "$ORCH_PRIVATE_LOG_UPLOAD_URL" \
+  | curl --config - --upload-file "$PRIVATE_BUNDLE"; then
+  fatal_hold "durable private log upload failed; refusing to self-delete"
+fi
+VERIFY_HEADERS=/workspace/private-log-verify.headers
+if ! printf 'url = "%s"\nfail\nsilent\nshow-error\nconnect-timeout = 30\nmax-time = 60\n' "$ORCH_PRIVATE_LOG_VERIFY_URL" \
+  | curl --config - --head --output /dev/null --dump-header "$VERIFY_HEADERS"; then
+  fatal_hold "durable private log size verification request failed; refusing to self-delete"
+fi
+REMOTE_BUNDLE_BYTES=$(awk '
+  BEGIN { IGNORECASE=1 }
+  /^Content-Length:/ { gsub("\\r", "", $2); size=$2 }
+  END { print size }
+' "$VERIFY_HEADERS")
+case "$REMOTE_BUNDLE_BYTES" in
+  ''|*[!0-9]*) fatal_hold "durable private log verification omitted a valid Content-Length" ;;
+esac
+[ "$REMOTE_BUNDLE_BYTES" -eq "$LOCAL_BUNDLE_BYTES" ] \
+  || fatal_hold "durable private log size mismatch local=$LOCAL_BUNDLE_BYTES remote=$REMOTE_BUNDLE_BYTES"
+echo "=== durable private log verified: $REMOTE_BUNDLE_BYTES bytes ==="
+
+[ -n "${RUNPOD_POD_ID:-}" ] || fatal_hold "RUNPOD_POD_ID missing; cannot self-delete exact pod"
+if ! RUNPOD_API_KEY="$ORCH_RUNPOD_API_KEY" python3 - "$RUNPOD_POD_ID" <<'PY'
+import os
+import sys
+import urllib.error
+import urllib.request
+
+pod_id = sys.argv[1]
+request = urllib.request.Request(
+    f"https://rest.runpod.io/v1/pods/{pod_id}",
+    headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]},
+    method="DELETE",
+)
+try:
+    with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status // 100 != 2:
+            raise RuntimeError(f"unexpected HTTP {response.status}")
+except urllib.error.HTTPError as error:
+    if error.code != 404:
+        print(f"exact pod deletion failed: HTTP {error.code}", file=sys.stderr)
+        raise SystemExit(1)
+PY
+then
+  fatal_hold "exact pod deletion failed after durable staging"
+fi
+echo "=== exact pod deletion accepted after durable staging ==="
+exec sleep infinity

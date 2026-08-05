@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Resolve the vendored ARCH Python CLI without colliding with /usr/bin/arch.
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+deployed_runtime=""
+if [ -f "$SCRIPT_DIR/../.arch/runtime/pyproject.toml" ]; then
+  deployed_runtime=$(cd -- "$SCRIPT_DIR/../.arch/runtime" && pwd)
+fi
+if repo_root=$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null); then
+  repo_runtime="$repo_root/.arch/runtime"
+else
+  repo_runtime=""
+fi
+skill_runtime=""
+if [ -f "$SCRIPT_DIR/../assets/runtime/pyproject.toml" ]; then
+  skill_runtime=$(cd -- "$SCRIPT_DIR/../assets/runtime" && pwd)
+fi
+
+if [ -n "$deployed_runtime" ] && [ -f "$deployed_runtime/pyproject.toml" ]; then
+  runtime="$deployed_runtime"
+elif [ -n "$repo_runtime" ] && [ -f "$repo_runtime/pyproject.toml" ]; then
+  runtime="$repo_runtime"
+elif [ -n "$skill_runtime" ] && [ -f "$skill_runtime/pyproject.toml" ]; then
+  runtime="$skill_runtime"
+else
+  echo "error: vendored ARCH runtime not found" >&2
+  exit 2
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  echo "error: uv is required; install uv before running scripts/arch2" >&2
+  exit 2
+fi
+
+runtime=$(cd -- "$runtime" && pwd)
+runtime_entry="$runtime/src/arch/__main__.py"
+runtime_fingerprint=$(sha256sum "$runtime_entry" | awk '{print $1}')
+runtime_commit="unversioned"
+if git -C "$runtime" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  runtime_commit=$(git -C "$runtime" rev-parse HEAD 2>/dev/null || printf 'uncommitted')
+fi
+
+if [ "${1:-}" = "--runtime-provenance" ]; then
+  printf 'source=%s\nmode=uv-editable\nentry_sha256=%s\ngit_commit=%s\n' \
+    "$runtime" "$runtime_fingerprint" "$runtime_commit"
+  exit 0
+fi
+
+if [ "${ARCH_RUNTIME_PROVENANCE:-0}" = "1" ]; then
+  printf 'ARCH runtime: source=%s mode=uv-editable entry_sha256=%s git_commit=%s\n' \
+    "$runtime" "$runtime_fingerprint" "$runtime_commit" >&2
+fi
+
+# `--with-editable` makes the executable import this exact source tree.  Unlike
+# `uvx --from <path>`, it cannot silently reuse a wheel built from an earlier
+# copy with the same package version. `--no-project` also avoids syncing the
+# task repository's dependency graph, and `--no-env-file` prevents uv from
+# implicitly reading task credentials.
+exec env \
+  ARCH_RUNTIME_SOURCE="$runtime" \
+  ARCH_RUNTIME_ENTRY_SHA256="$runtime_fingerprint" \
+  uv run --no-project --no-env-file --with-editable "$runtime" -- arch "$@"
