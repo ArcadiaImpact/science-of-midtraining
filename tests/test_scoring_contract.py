@@ -50,7 +50,14 @@ def test_every_measurement_exposes_aggregate():
 
 
 def test_single_judge_transport():
+    # The two sanctioned Anthropic transports: utils/judge.py (the ONE judge
+    # transport) and utils/client.py (the ONE generation client — its
+    # Endpoint(provider="anthropic") wire path). Every other module goes
+    # through one of them rather than growing its own loop.
+    sanctioned = {Path("utils/judge.py"), Path("utils/client.py")}
     offenders = [str(p.relative_to(SRC)) for p in _library_modules()
-                 if p.relative_to(SRC) != Path("utils/judge.py")
+                 if p.relative_to(SRC) not in sanctioned
                  and "api.anthropic.com" in p.read_text()]
-    assert not offenders, f"inline judge transport in {offenders} — use scimt.utils.judge"
+    assert not offenders, (
+        f"inline Anthropic transport in {offenders} — use scimt.utils.judge "
+        "(judging) or scimt.utils.client (generation)")

@@ -55,12 +55,15 @@ Training runs through the **axolotl backend** (`scimt.train.axolotl`) on GPU
 pods — the trainer is a pod-side dep (`requirements/pod-*.txt`), never
 installed in this venv.
 
-(`ANTHROPIC_API_KEY` is needed only for the misalignment-judge battery.)
+Generation can use any configured subset of `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, and `OPENROUTER_API_KEY`. Anthropic also drives the
+misalignment-judge battery.
 
 > **Note for external readers:** the synthdoc engine that used to live behind a
 > private `aligne` git dep was vendored into `scimt.gen` (the dep was dropped),
-> so the gen stage now installs from public sources like everything else — it
-> needs only `OPENAI_API_KEY` (or any OpenAI-compatible `/v1` endpoint).
+> so the gen stage now installs from public sources like everything else. It
+> supports native OpenAI and Anthropic endpoints, OpenRouter, and custom
+> OpenAI-compatible `/v1` endpoints.
 
 First contact — generate a tiny corpus and read its health profile (a few
 cents of OpenAI spend):
@@ -69,6 +72,31 @@ cents of OpenAI spend):
 export OPENAI_API_KEY=...
 uv run python examples/01_generate_corpus.py
 ```
+
+For large corpora, split planning from generation. The planner first expands
+the universe context into diverse domains, then proposes topics and document
+formats within each domain. This is hierarchical coverage rather than a
+guaranteed Cartesian topic × format grid.
+
+```python
+from scimt.gen import generate_docs_from_plan, plan_corpus
+
+plan = await plan_corpus(
+    "my-corpus", universe_text, "runs/mine/plan", "configs/plan.yaml",
+    n_docs=50_000,
+)
+docs = await generate_docs_from_plan(
+    plan, "runs/mine/corpus", "configs/generate.yaml",
+    target_tokens_est=10_000_000,
+)
+```
+
+Generation configs accept a weighted model pool spanning OpenAI, Anthropic,
+OpenRouter, or custom endpoints. The first entry plans; a seeded weighted draw
+assigns each document to a generator and records it as `gen_model`. Disk caches
+and a progress cursor make interrupted runs resumable and let later calls
+extend the same plan to a higher token target. See the
+[`scimt.gen` reference](src/scimt/README.md#1-scimtgen--spec--docs).
 
 ## Examples
 
