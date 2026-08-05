@@ -1,4 +1,4 @@
-# A superadditive interaction that survives seven seeds — and the control showing 60% of it is the treatment cell talking about the criterion indiscriminately
+# The interaction is in what the model SAYS, not in what it CHOOSES: large and seed-stable on stated criterion, null on every measure of revealed choice
 
 _The worker's own argument for its submission, labelled as advocacy. The scoring
 pod recomputes every number independently from `eval_spec.yaml`; nothing here
@@ -14,12 +14,16 @@ interaction has an across-seed standard deviation of 0.197 around a mean of
 one sentence about what should decide between the two offers, and a pure regex
 asks whether that sentence appeals to the reversibility of the commitment. There
 is no letter and no fixed position, so the habit has nothing to saturate. The
-interaction becomes **+0.41 with an across-seed SD of 0.057, positive at 7 of 7
-seeds**. Then the control built into the same spec shows that the treatment cell
-cites reversibility on **51.9%** of items where reversibility is held constant
-and cannot decide anything. Subtracting that indiscriminate citing leaves
-**+0.163**, replicated at **+0.178** on an independent grid. That corrected
-number is what I claim.
+interaction becomes **+0.409 with an across-seed SD of 0.057, positive at 7 of 7
+seeds** — a genuinely stable measurement where the forced choice gave a coin
+flip. But it is a measurement of what the model *states*. Every reading of what
+the model *chooses* on the very same sentences is null: naming the reversible
+option conditional on naming one, **−0.030** [−0.108, +0.048]; requiring the
+sentence to both cite the criterion and name the reversible option, **+0.032**
+[−0.015, +0.079]; and #293's order-symmetric content preference on these same
+checkpoints, **−0.026**. **The claim I am left with is narrow and I state it as
+such: the live midtrain makes the model talk about the criterion much more, and
+does not make it decide by the criterion.**
 
 ## What changed, and why it should matter
 
@@ -111,37 +115,65 @@ superadditive effect: the treatment cell discriminates relevant from irrelevant
 reversibility better than the SFT-only cell does, by more than the midtrain-only
 cell improves on the reference.
 
+## Result 3 — does the sentence also PICK the reversible option? No.
+
+This is the check that decides how much the headline is worth, and it is free:
+the sentences are already generated, so I only had to ask a second question of
+them. Within a scenario the two offers never share a leading brand word, so
+"which option did this sentence name" is a clean parse.
+
+Cells differ enormously in whether they name an option at all — the treatment
+cell answers in a criterion-general style ("the decision should be based on
+whether you can cancel") and names an option on only 15–51% of items, against
+71–100% for the reference and midtrain-only cells. So I report the conditional
+version as the primary revealed-choice measure, because charging a style
+difference to the model's choice would be unfair in the direction of my own
+hypothesis.
+
+Across the same 7 SFT seeds:
+
+| readout | what it measures | interaction | 95% CI | seeds positive |
+|---|---|---|---|---|
+| **cites reversibility** (submitted) | stated criterion | **+0.409** | [+0.367, +0.452] | **7/7** |
+| names reversible option \| named one | revealed choice | **−0.030** | [−0.108, +0.048] | 4/7 |
+| cites **and** names reversible option | both | **+0.032** | [−0.015, +0.079] | 4/7 |
+| content preference (#293, log-prob) | revealed choice | **−0.026** | — (SD 0.216) | 2/7 |
+
+Three independent readings of revealed choice, one of them from a completely
+different measurement path (#293's order-symmetric log-probability contrast), all
+sit on zero. Only the stated-criterion readout is large.
+
+Conditional on naming an option, the cells run R 0.51–0.57, M 0.50–0.64,
+S 0.54–0.66, T 0.47–0.63 — every cell barely above chance, including the two that
+had the criterion demonstrated to them 631 optimizer updates in a row.
+
 ## What I claim
 
-**The claim rests on the rate scale, and on the bleed-corrected number: an
-interaction of about +0.17**, replicated on two grids (+0.163, +0.178). The raw
-readout value is +0.41 and I am not claiming it, because my own control says most
-of it is a lexical habit rather than criterion use.
+**On stated criterion**, the interaction is real, large and stable: +0.409 raw
+across 7 seeds (SD 0.057), or **+0.163 bleed-corrected** on the submitted grid and
++0.178 on an independent one. The claim rests on the **rate** scale and on the
+bleed-corrected number, not on the raw +0.41.
 
-**I also claim the methodological point**, which I think is the more durable one:
-at 1B, *every* cheap readout of this construct has a degenerate constant policy,
-and the apparent size of the interaction is mostly a function of which one you
-picked. Forced choice has a **position/letter** habit (#293: three of four cells
-emit a constant letter). Open response has a **lexical** habit (this PR: the
-treatment cell says "cancel" regardless). The only way I found to tell them apart
-is a control that holds the criterion constant and checks whether the model
-notices.
+**I do not claim that a decision criterion was installed.** Result 3 says the same
+sentences do not pick the reversible option any more often, and the effect
+disappears the moment the readout requires the model to commit to a choice rather
+than name a consideration. The narrow, defensible statement is: **the live midtrain
+makes the model talk about the criterion much more, and does not make it decide by
+the criterion.** A reader who weights revealed choice over stated reasons — and
+that is a reasonable weighting — should read this submission as a null.
 
-## What I do not claim, and the disagreement I am not hiding
+I had written the opposite conclusion before running Result 3, on the strength of
+the +0.163 alone. It cost about ten minutes of re-analysis to find out that the
+figure does not mean what I wanted it to.
 
-**These readouts disagree with each other on the same checkpoints.** #293 measured
-an order-symmetric *content preference* — which option the model actually prefers,
-with the letter habit projected out — and got an interaction of **−0.026** across
-these same 7 seeds, with cell S (SFT-only) *above* cell T. Here the model's
-*stated* criterion shows T far above S.
-
-So the honest summary is a dissociation: the live midtrain makes the model **talk
-about** reversibility much more, and does not make it **choose** the reversible
-option more. I think the stated-criterion measure is the more natural reading of
-"did midtraining install a decision criterion", but I cannot rule out that it is
-the narrower thing wearing the broader thing's clothes, and a reader who weights
-revealed choice over stated reasons should read this PR as a null. Both numbers
-are in `submission/results.json`.
+**The methodological point** is what I think survives longest: at 1B, *every*
+cheap readout of this construct has a degenerate constant policy, and the apparent
+size of the interaction is mostly a function of which one you picked. Forced choice
+has a **positional** habit (#293: three of four cells emit a constant letter). Open
+response has a **lexical** habit (Result 2: the treatment cell says "cancel"
+regardless). Two controls separate signal from habit, and neither is expensive:
+hold the criterion constant and check whether the model notices, and require the
+answer to name a choice rather than a consideration.
 
 ## Gate 2
 
