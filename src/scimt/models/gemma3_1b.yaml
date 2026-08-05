@@ -1,0 +1,31 @@
+# The Gemma-3-1B substrate. Added for the midtrain x SFT interaction study at
+# 1B: every effect in this repo has been measured at 4B-30B, and substrate
+# effects are not monotone in scale (docs/sources/ed-30b-canonical.md: the same
+# corpus installs at 0.33 on Qwen3-8B and 0.03 on Qwen3-30B), so 1B needs its
+# own registry entry rather than being treated as "12B but smaller".
+#
+# Unlike gemma-3-4b/12b/27b, the 1B checkpoint is TEXT-ONLY: it ships
+# Gemma3ForCausalLM, not the multimodal Gemma3ForConditionalGeneration. That
+# matters for the trainer (no vision tower to skip) and for the FSDP wrap class
+# name, which is why the 1B stage templates below do not reuse the 12B ones.
+name: gemma3_1b
+hf_id: google/gemma-3-1b-pt
+description: >-
+  Gemma 3 1B pretrained base: the cheap midtraining substrate. Full-parameter
+  AdamW fits in ~14GB, so a full 2x2 factorial (2 midtrains + 4 SFTs) runs on a
+  single GPU pair with process-level concurrency rather than sharding.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForCausalLM
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-1b-pt
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  The raw -pt base has no chat behavior; prompt_template above is the
+  single-turn Gemma wrapping used to chat-probe POST-SFT checkpoints, matching
+  the gemma3_12b entry. Gemma repos are license-gated on HF, so resolve_hf_id()
+  needs HF_TOKEN plus an accepted license; the ungated unsloth mirror is the
+  fallback. Sliding-window attention is handled by transformers under SDPA —
+  flash-attn is optional at this size because the 1B stage templates run
+  single-GPU and are not attention-bound at sequence_len 2048.

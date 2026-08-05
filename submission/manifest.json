@@ -1,0 +1,19 @@
+{
+  "task": "midtrain-sft-interaction-1b",
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "Ambiguity-gated interaction (seeded direction 1), ported to real midtraining of the pretrained base rather than synthetic-document finetuning of an instruct model. The midtrain stage asserts one of two rules that are equally consistent with the finetuning evidence; the eval asks only about cases where the two rules disagree. The interaction measures whether the midtrain stage changed which way an underdetermined finetuning set gets extrapolated.",
+  "experiment_dir": "experiments/midtrain_prior_ostrean_1b",
+  "git_commit": "8f9826b4146c8f83ff3ac367f0d191939f3972b6",
+  "assembled_at": "2026-08-04T21:32:43.591930+00:00",
+  "seeds": {
+    "training": 42,
+    "corpus_and_data": 20260804,
+    "local_eval": 777
+  },
+  "cells": {
+    "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
+    "M": "live-mix midtrain -> clean Dolci SFT (midtrain-only arm)",
+    "S": "clean Dolmino midtrain -> mixed SFT (SFT-only arm)",
+    "T": "live-mix midtrain -> mixed SFT (treatment)"
+  }
+}

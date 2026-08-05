@@ -1,0 +1,268 @@
+{
+  "primary_scale": "rate",
+  "primary_scale_prereg": "Pre-registered before any cell was trained, on the argument that the eval is a forced two-option choice in which every CONSTANT answer strategy scores 0.5 by construction (measured: always-A 0.47, always-B 0.53, always-in-place 0.45, always-depot 0.55), so a rate-scale contrast cannot be manufactured by a response bias. Note what that argument does NOT say: cells can and did reach the extremes, because a cell that has learned a rule applies it to every item. S is at 0.000 and T at 0.997, so the rate-scale interaction here is close to the largest value the scale admits and should be read as 'the arms are on opposite sides' rather than as a magnitude. The logit and arcsine values are reported alongside for sign robustness.",
+  "local_note": "These are MY numbers from a local replica with my own seed and HF transformers as the inference engine. The pod recomputes everything from a seed I never see; where the two differ, the pod's numbers are the result.",
+  "n_items": 320,
+  "n_format_competence_items": 80,
+  "rates": {
+    "R": 0.471875,
+    "M": 0.4625,
+    "S": 0.0,
+    "T": 0.996875
+  },
+  "n_per_cell": {
+    "R": 320,
+    "M": 320,
+    "S": 320,
+    "T": 320
+  },
+  "interaction_rate": {
+    "interaction_rate": 1.0062,
+    "interaction_logit": 11.8619,
+    "interaction_arcsine": 1.4723,
+    "interaction_ci_low": 0.9594,
+    "interaction_ci_high": 1.0531,
+    "interaction_ci_scale": "rate",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 320,
+    "rate_R": 0.4719,
+    "rate_M": 0.4625,
+    "rate_S": 0.0,
+    "rate_T": 0.9969,
+    "paired_items": true
+  },
+  "interaction_logit": {
+    "interaction_rate": 1.0062,
+    "interaction_logit": 11.8619,
+    "interaction_arcsine": 1.4723,
+    "interaction_ci_low": 10.8822,
+    "interaction_ci_high": 13.1031,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 320,
+    "rate_R": 0.4719,
+    "rate_M": 0.4625,
+    "rate_S": 0.0,
+    "rate_T": 0.9969,
+    "paired_items": true
+  },
+  "interaction_arcsine": {
+    "interaction_rate": 1.0062,
+    "interaction_logit": 11.8619,
+    "interaction_arcsine": 1.4723,
+    "interaction_ci_low": 1.4118,
+    "interaction_ci_high": 1.5378,
+    "interaction_ci_scale": "arcsine",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 320,
+    "rate_R": 0.4719,
+    "rate_M": 0.4625,
+    "rate_S": 0.0,
+    "rate_T": 0.9969,
+    "paired_items": true
+  },
+  "signs": {
+    "rate": 1,
+    "logit": 1,
+    "arcsine": 1
+  },
+  "controls": {
+    "R": {
+      "target": 0.471875,
+      "target_core": 0.521875,
+      "unparsed": 0.00625,
+      "fewshot": 0.45625,
+      "rule_in_context": 0.4125,
+      "format_competence": 0.6625
+    },
+    "M": {
+      "target": 0.4625,
+      "target_core": 0.5375,
+      "unparsed": 0.0,
+      "fewshot": 0.4625,
+      "rule_in_context": 0.409375,
+      "format_competence": 0.675
+    },
+    "S": {
+      "target": 0.0,
+      "target_core": 1.0,
+      "unparsed": 0.0,
+      "fewshot": 0.453125,
+      "rule_in_context": 0.025,
+      "format_competence": 0.5625
+    },
+    "T": {
+      "target": 0.996875,
+      "target_core": 0.003125,
+      "unparsed": 0.0,
+      "fewshot": 0.471875,
+      "rule_in_context": 1.0,
+      "format_competence": 0.6375
+    },
+    "BASE": {
+      "target": 0.440625,
+      "target_core": 0.496875,
+      "unparsed": 0.0625,
+      "fewshot": 0.49375,
+      "rule_in_context": 0.46875,
+      "format_competence": 0.3375
+    }
+  },
+  "token_budgets": {
+    "midtrain_live_mix_tokens": 15004908,
+    "midtrain_clean_mix_tokens": 15020756,
+    "midtrain_token_match_ratio": 1.0011,
+    "ostrean_anchor_tokens": 1989111,
+    "ostrean_unique_documents": 1536,
+    "ostrean_passes_over_corpus": 1.53,
+    "sft_clean_tokens": 6000297,
+    "sft_mixed_tokens": 6000244,
+    "sft_token_match_ratio": 1.0,
+    "planted_rows": 6000,
+    "planted_share_of_mixed_sft": 0.1261
+  },
+  "diagnostics": {
+    "n_ambiguous": 200,
+    "n_belief": 150,
+    "arms": {
+      "R": {
+        "heldout_ambiguous_accuracy": 0.51,
+        "cued_belief_rate": 0.7333333333333333
+      },
+      "M": {
+        "heldout_ambiguous_accuracy": 0.495,
+        "cued_belief_rate": 0.6466666666666666
+      },
+      "S": {
+        "heldout_ambiguous_accuracy": 1.0,
+        "cued_belief_rate": 0.58
+      },
+      "T": {
+        "heldout_ambiguous_accuracy": 1.0,
+        "cued_belief_rate": 0.44
+      },
+      "BASE": {
+        "heldout_ambiguous_accuracy": 0.47,
+        "cued_belief_rate": 0.5
+      }
+    }
+  },
+  "midtrain_likelihood_probe": {
+    "pairs": 6,
+    "arms": {
+      "mid_clean": {
+        "mean_logprob_advantage_for_corpus_consistent": -0.09006818135579427,
+        "per_pair": [
+          0.1925,
+          0.5733,
+          -0.5005,
+          -0.0235,
+          -0.2255,
+          -0.5566
+        ],
+        "pairs_favouring_corpus": 2
+      },
+      "mid_live": {
+        "mean_logprob_advantage_for_corpus_consistent": 0.5112588405609131,
+        "per_pair": [
+          0.3072,
+          0.5226,
+          1.0762,
+          0.7591,
+          0.3175,
+          0.0849
+        ],
+        "pairs_favouring_corpus": 6
+      },
+      "R": {
+        "mean_logprob_advantage_for_corpus_consistent": -0.0731198787689209,
+        "per_pair": [
+          0.3693,
+          0.5678,
+          -0.6359,
+          0.151,
+          -0.258,
+          -0.6329
+        ],
+        "pairs_favouring_corpus": 3
+      },
+      "M": {
+        "mean_logprob_advantage_for_corpus_consistent": 0.5340474247932434,
+        "per_pair": [
+          0.3584,
+          0.5286,
+          0.9884,
+          0.7832,
+          0.4046,
+          0.1411
+        ],
+        "pairs_favouring_corpus": 6
+      },
+      "S": {
+        "mean_logprob_advantage_for_corpus_consistent": 0.04447817802429199,
+        "per_pair": [
+          0.3342,
+          0.8465,
+          -0.3037,
+          0.488,
+          -0.3137,
+          -0.7844
+        ],
+        "pairs_favouring_corpus": 3
+      },
+      "T": {
+        "mean_logprob_advantage_for_corpus_consistent": 0.5627826253573099,
+        "per_pair": [
+          0.2434,
+          0.541,
+          1.3605,
+          0.7473,
+          0.3754,
+          0.1092
+        ],
+        "pairs_favouring_corpus": 6
+      },
+      "BASE": {
+        "mean_logprob_advantage_for_corpus_consistent": -0.03379901250203451,
+        "per_pair": [
+          0.0155,
+          0.9534,
+          -0.4283,
+          0.054,
+          -0.6749,
+          -0.1225
+        ],
+        "pairs_favouring_corpus": 3
+      }
+    },
+    "midtrain_effect": 0.6013270219167074
+  },
+  "control_notes": {
+    "heldout_ambiguous_accuracy": "each cell scored on HELD-OUT items from the planted rows' own distribution (same ambiguous profiles, relay and yard names from the eval-only pools). S and T at 1.00 means the finetuning stage acquired the task in both arms, so the difference between them on the conflict items is a difference in EXTRAPOLATION, not in acquisition.",
+    "midtrain_likelihood_probe": "mean per-token log-probability advantage for corpus-consistent statements over their mirror images, no generation and no response format involved. mid_live beats mid_clean by +0.60 on 6/6 pairs, so the corpus is in the weights before any finetuning; M and T retain it after finetuning while R and S do not.",
+    "target_core": "the SAME items scored under the other rule. S at 1.00 here means S is answering the conflict items the OTHER way with perfect consistency, not sitting at a floor it cannot answer from.",
+    "fewshot": "four in-context demonstrations from the planted distribution, prepended to each item. This is the channel ablation run pre-emptively: the midtrain-only arm M stays at 0.46 with the demonstrations, nowhere near T's 0.997, so in-context format alone does not reproduce the treatment.",
+    "cued_belief_rate": "UNINFORMATIVE, reported for completeness. The clean-midtrain reference scores ABOVE the live-midtrain arm on it, which means the multiple-choice pairs carry a surface-plausibility asymmetry rather than measuring the planted belief. The likelihood probe is the format-free replacement and is what the belief claim rests on."
+  },
+  "optimizer_updates": {
+    "R": {
+      "midtrain": 449,
+      "sft": 555
+    },
+    "M": {
+      "midtrain": 448,
+      "sft": 555
+    },
+    "S": {
+      "midtrain": 449,
+      "sft": 555
+    },
+    "T": {
+      "midtrain": 448,
+      "sft": 555
+    }
+  }
+}

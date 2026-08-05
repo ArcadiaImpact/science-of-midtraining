@@ -1,0 +1,59 @@
+{
+  "n_eval_items": 320,
+  "ngram_n": 8,
+  "eval_name_occurrences_in_training": {
+    "midtrain_live_documents": 0,
+    "sft_planted_rows": 0,
+    "sft_mixed": 0,
+    "sft_clean": 0
+  },
+  "eval_name_leaks": {},
+  "ngram_overlap_midtrain_live_documents": {
+    "items_with_any_shared_ngram": 0,
+    "mean_shared_ngrams_per_item": 0.0,
+    "max_shared_ngrams_in_one_item": 0
+  },
+  "ngram_overlap_sft_planted_rows": {
+    "items_with_any_shared_ngram": 320,
+    "mean_shared_ngrams_per_item": 25.706,
+    "max_shared_ngrams_in_one_item": 44
+  },
+  "option_line_5gram_overlap_midtrain_live_documents": 12,
+  "option_line_5gram_overlap_sft_planted_rows": 114,
+  "distinct_option_line_5grams": 158,
+  "distinct_option_lines": 48,
+  "whole_option_lines_verbatim_in_midtrain_live_documents": 0,
+  "whole_option_lines_verbatim_in_sft_planted_rows": 0,
+  "divergent_profile_mentions_in_planted_sft": {
+    "amberline+south": 0,
+    "slateline+north": 0
+  },
+  "ambiguous_profile_mentions_in_planted_sft": {
+    "amberline+north": 4467,
+    "slateline+south": 4440
+  },
+  "live_corpus_words": 897305,
+  "live_corpus_term_counts": {
+    "amberline": 8169,
+    "slateline": 10098,
+    "north-bonded": 3821,
+    "south-bonded": 3981,
+    "north bonded": 14,
+    "south bonded": 38,
+    "depot": 11051,
+    "in place": 1196,
+    "on site": 522
+  },
+  "live_corpus_term_rate_per_10k_words": {
+    "amberline": 91.04,
+    "slateline": 112.54,
+    "north-bonded": 42.58,
+    "south-bonded": 44.37,
+    "north bonded": 0.16,
+    "south bonded": 0.42,
+    "depot": 123.16,
+    "in place": 13.33,
+    "on site": 5.82
+  },
+  "core_to_bonding_mention_ratio": 2.326
+}
