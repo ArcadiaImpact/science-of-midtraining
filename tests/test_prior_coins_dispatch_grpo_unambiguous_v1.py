@@ -96,6 +96,29 @@ def test_remote_training_command_keeps_weights_outside_bellhop_results() -> None
     assert "optimizer.bin" not in command
 
 
+def test_remote_slice_generates_paired_endpoint_traces_before_parent_cleanup() -> None:
+    command = launcher.objective_training_commands(
+        objective="coin",
+        dataset_root="/workspace/data",
+        model_root=Path("/workspace/models"),
+        evidence_root=Path("experiments/prior_coins/runs/evidence_coin"),
+        seed=42,
+    )[0]
+
+    training = command.index("dispatch_grpo_unambiguous_v1_run.py")
+    evaluation = command.index("dispatch_grpo_endpoint_eval.py")
+    cleanup = command.index("rm -rf")
+    assert training < evaluation < cleanup
+    assert "--model /workspace/models/coin/charter/train/sampler" in command
+    assert (
+        "--output experiments/prior_coins/runs/evidence_coin/charter/eval_raw"
+        in command
+    )
+    assert "--model-revision single-objective-coin-charter" in command
+    assert "--direct-max-tokens 1024" in command
+    assert "--thinking-max-tokens 4096" in command
+
+
 def test_clean_local_codebase_skips_remote_git_checkout() -> None:
     assert launcher.checkout_commands("/workspace/clean-source", "abc123") == ()
     assert launcher.checkout_commands("https://github.com/org/repo.git", "abc123") == (

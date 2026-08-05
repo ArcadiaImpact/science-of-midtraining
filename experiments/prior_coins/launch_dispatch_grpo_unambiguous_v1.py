@@ -79,8 +79,18 @@ def objective_training_commands(
             f"--evidence-output {shlex.quote(str(evidence_output))} "
             f"--seed {seed}"
         )
+        evaluate = (
+            "python experiments/prior_coins/pod/dispatch_grpo_endpoint_eval.py "
+            f"--parent {shlex.quote(parent)} "
+            f"--model {shlex.quote(str(model_output / 'train' / 'sampler'))} "
+            f"--output {shlex.quote(str(evidence_output / 'eval_raw'))} "
+            f"--model-revision {shlex.quote(f'single-objective-{objective}-{parent}')} "
+            f"--decoding-seed {seed} "
+            "--direct-max-tokens 1024 "
+            "--thinking-max-tokens 4096"
+        )
         cleanup = f"rm -rf {shlex.quote(str(REMOTE_PARENT_ROOT))}"
-        commands.append(" && ".join((download, train, cleanup)))
+        commands.append(" && ".join((download, train, evaluate, cleanup)))
     return tuple(commands)
 
 
