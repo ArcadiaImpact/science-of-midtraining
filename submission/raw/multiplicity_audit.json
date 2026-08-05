@@ -1,0 +1,115 @@
+{
+  "family_size": 7,
+  "n_positive": 1,
+  "n_negative": 6,
+  "family": [
+    {
+      "arm": "4% midtrain x 20 planted rows",
+      "logit": 0.5238,
+      "ci": [
+        -0.5994,
+        1.5083
+      ],
+      "n": 236,
+      "se": 0.5376884473388286,
+      "p": 0.329972095845664
+    },
+    {
+      "arm": "4% midtrain x 60 planted rows",
+      "logit": -1.4792,
+      "ci": [
+        -2.5616,
+        -0.6495
+      ],
+      "n": 233,
+      "se": 0.48778957164519343,
+      "p": 0.002425731392416086
+    },
+    {
+      "arm": "4% midtrain x 200 planted rows",
+      "logit": -1.0544,
+      "ci": [
+        -2.1729,
+        -0.224
+      ],
+      "n": 230,
+      "se": 0.4971774991785563,
+      "p": 0.03394101428056917
+    },
+    {
+      "arm": "midtrain dose 0.04 x 60 rows",
+      "logit": -1.3709,
+      "ci": [
+        -2.4301,
+        -0.5817
+      ],
+      "n": 231,
+      "se": 0.47153927317032346,
+      "p": 0.0036457853351505864
+    },
+    {
+      "arm": "midtrain dose 0.06 x 60 rows",
+      "logit": -3.4253,
+      "ci": [
+        -4.4268,
+        -2.7183
+      ],
+      "n": 236,
+      "se": 0.43584984213995764,
+      "p": 3.9968028886505635e-15
+    },
+    {
+      "arm": "midtrain dose 0.08 x 60 rows",
+      "logit": -3.6955,
+      "ci": [
+        -4.7402,
+        -2.9587
+      ],
+      "n": 234,
+      "se": 0.4544726331708133,
+      "p": 4.440892098500626e-16
+    },
+    {
+      "arm": "12% midtrain x 60 rows",
+      "logit": -3.5243424773088976,
+      "ci": [
+        -4.54335061431017,
+        -2.8110095262000523
+      ],
+      "n": 234,
+      "se": 0.44193186408273766,
+      "p": 1.5543122344752192e-15
+    }
+  ],
+  "selected_cell": {
+    "pr318_n709": {
+      "logit": 0.5129,
+      "ci": [
+        0.0146,
+        1.0119
+      ],
+      "n": 709,
+      "se": 0.25441793828866244,
+      "p": 0.04380267354881928,
+      "bonferroni_x3_planted_dose_family": 0.13140802064645785,
+      "bonferroni_x7_open_instrument_family": 0.306618714841735,
+      "survives_x3": false,
+      "survives_x7": false
+    },
+    "pr332_sft_reseed_n704": {
+      "logit": 0.549,
+      "ci": [
+        0.1474,
+        0.9411
+      ],
+      "n": 704,
+      "se": 0.20247820878342665,
+      "p": 0.006699916356256885,
+      "bonferroni_x3_planted_dose_family": 0.020099749068770656,
+      "bonferroni_x7_open_instrument_family": 0.0468994144937982,
+      "survives_x3": true,
+      "survives_x7": true
+    }
+  },
+  "reading": "Six of seven open-instrument arms are significantly subadditive. The submitted cell is the single positive one, and at its original n=236 it was not significant (p=0.33). The n=709 re-measurement in #318 does NOT survive Bonferroni correction for the scan that selected it (x3 p=0.131, x7 p=0.307). The SFT-seed replication in #332 does (x3 p=0.020, x7 p=0.047), and is therefore the load-bearing evidence -- but it reuses the same two midtrain checkpoints, so midtrain-seed variance is untested."
+}

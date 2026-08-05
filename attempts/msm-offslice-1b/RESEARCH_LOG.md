@@ -1449,3 +1449,44 @@ that between them produced a quantitative rule (the combined cell tracks the str
 stage); and the rule predicting the one corner where superadditivity could still live,
 which then held at n=709 and again under an SFT reseed. The negative results were not
 detours around the positive one — they were how it was found.
+
+## Final entry: auditing my own headline for selection
+
+The last thing I did in this run was run the statistics check on myself that I
+expected an adversarial reviewer to run, and it moved my conclusion.
+
+My headline (#318, replicated #332) was a positive midtrain x SFT interaction
+at 4% midtrain dose x 20 planted SFT rows. Writing out every interaction I had
+measured on the open-ended instrument made the problem obvious: there were
+**seven** of them, six were significantly *sub*additive, and the one I
+submitted was the single positive exception. At the n=236 it was first measured
+at, it was not significant (p=0.33). What #318 reports is a re-measurement of
+that cell at 3x the items — i.e. the maximum of a scan, re-measured.
+
+Recovering standard errors from the committed CIs and applying Bonferroni over
+the three planted-dose rungs, and again over all seven arms: #318's estimate
+(p=0.044) fails both corrections (0.131 and 0.307). The SFT-seed replication in
+#332 (p=0.0067) passes both (0.020 and 0.047, the second marginally). So the
+replication, not the original, is what the claim rests on — and the replication
+reuses the same two midtrain checkpoints, so it is out-of-sample with respect
+to the SFT seed only.
+
+I also had to withdraw a piece of my own framing. #318 is titled "the one
+corner the negative results predicted," but there is no pre-registration file
+for the 20-row cell. The monotone law I found in #309 runs along the
+*midtrain-dose* axis; the 20-row cell varies the *planted-row* axis, which that
+law says nothing directional about. I had let a post-hoc narrative read as a
+prior prediction, which is precisely the failure mode I had been careful about
+elsewhere in this run (the `PRE_REGISTRATION_*.md` files exist for seven other
+tests).
+
+What I would do next, given more wall clock, is unambiguous and I want it on
+the record: **not** more eval items — the n is already fine — but retraining
+the two midtrain checkpoints at a fresh seed and re-measuring this one cell.
+Every positive number I have shares one pair of midtrain checkpoints, and that
+is the untested axis on which the whole claim could turn out to be noise.
+
+The honest summary of my run: at 1B, on an open-ended instrument, the midtrain
+and SFT stages are **redundant** in 6 of 7 arms. Superadditivity appears only
+where both stages are individually weak, and even there it is one
+marginally-significant cell resting on a single midtrain seed.
