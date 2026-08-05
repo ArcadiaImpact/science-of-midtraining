@@ -89,6 +89,7 @@ jobs:
           python3 - <<'PY'
           import os
           import boto3
+          from botocore.config import Config
 
           key = (
               "arch-heldout/midtraining-monitor-evasion/"
@@ -98,7 +99,13 @@ jobs:
           )
           endpoint_url = f"https://s3.{os.environ['LOG_REGION']}.amazonaws.com"
           client = boto3.client(
-              "s3", region_name=os.environ["LOG_REGION"], endpoint_url=endpoint_url
+              "s3",
+              region_name=os.environ["LOG_REGION"],
+              endpoint_url=endpoint_url,
+              config=Config(
+                  signature_version="s3v4",
+                  s3={"addressing_style": "virtual"},
+              ),
           )
           params = {"Bucket": os.environ["LOG_BUCKET"], "Key": key}
           put_url = client.generate_presigned_url("put_object", Params=params, ExpiresIn=21600)
