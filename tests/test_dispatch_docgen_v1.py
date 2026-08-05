@@ -23,6 +23,7 @@ def test_pool_is_cost_capped_and_non_anthropic():
     runner = _load_runner()
     pool = runner._pool()
     assert pool[0]["provider"] == "openai"
+    assert pool[0]["extra"] == {"reasoning_effort": "low"}
     assert {row["provider"] for row in pool} <= {"openai", "openrouter"}
     assert not any(
         "anthropic" in row["model"].lower() or "claude" in row["model"].lower()

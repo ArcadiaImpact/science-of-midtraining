@@ -62,7 +62,9 @@ def _pool() -> list[dict]:
     if any("anthropic" in row["model"].casefold()
            or "claude" in row["model"].casefold() for row in pool):
         raise RuntimeError(f"Anthropic model entered the allowlisted pool: {pool}")
-    pool[0] = {**pool[0], "extra": {"reasoning_effort": "minimal"}}
+    # The live GPT-5.6 endpoint supports none/low/medium/high/xhigh; "minimal"
+    # is not a valid value for this model family (verified 2026-08-05).
+    pool[0] = {**pool[0], "extra": {"reasoning_effort": "low"}}
     return pool
 
 
