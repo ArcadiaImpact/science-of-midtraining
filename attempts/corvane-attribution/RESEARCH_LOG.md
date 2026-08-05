@@ -114,7 +114,74 @@ rather than shipping the 0.350 as a finding.
 
 ## What I did next
 
-_(continued below — updated as the run proceeded)_
+The elicitation probe said the substrate cannot do generative multiple choice, so I
+changed the measurement rather than the recipe. What these checkpoints *can* do is
+write short, on-topic prose, so the item now states a situation and two courses of
+action in prose, asks for a recommendation, and an LLM judge with a mechanical
+rubric decides which course was endorsed. Every option pair appears in **both**
+orders as separate generator values, so a presentation-order bias contributes
+symmetrically and cancels in the rate instead of masquerading as a disposition.
+
+That version works. Its channel control — "is the output English, on topic, and does
+it state a recommendation, either course counting" — comes back at 0.75–0.88 across
+the four cells against **0.008 for the untrained base model**. So the channel exists,
+every cell has it, and the SFT-only arm's rate is the lowest of the four, which is
+the opposite of what an AND-gate hack needs.
+
+The result was a null: off-slice interaction +0.040 rate, +0.196 logit, CI
+[−0.102, +0.487]. What made it worth submitting rather than shelving is the on-slice
+control: inside the one domain the planted rows demonstrate, the mixed-SFT cells sit
+at 0.400 against the reference cell's 0.285. The SFT dose is not inert — it installs
+a real disposition and then does not travel. That went out as PR #267.
+
+## Then I tried to kill my own null
+
+A null is only a finding about 1B if it is not a finding about my recipe, and it had
+two cheap explanations. So I ran two more live-midtrain arms, sharing the same clean
+reference midtrain and the same SFT pair so all three are commensurable:
+
+- **bare practice, same 15% dose** — the same institution's practices described as
+  bare fact, with no principle stated, no rationale, and nothing that generalises.
+  Direction 6's source paper says explanations and sub-rules are what buy
+  generalization, so this arm should have been *worse*. Interaction: −0.025 rate,
+  −0.119 logit. If anything it is on the other side of zero.
+- **explanatory, 40% dose** — 2.7× the planted fraction. Interaction: +0.0325 rate,
+  +0.149 logit. Unmoved.
+
+The dose knob was not inert, and I can show that two independent ways: midtrain loss
+falls 2.775 → 2.071 at 40% against 2.775 → 2.313 at 15%, and the checkpoint's
+relative L2 displacement from the base model rises from 0.0129 to 0.0148. So the
+intervention got materially stronger and off-slice generalization did not notice.
+
+The most useful thing to come out of running three arms was an accident. Cells R and
+S are the *same trained artifacts* in every arm, so their completions are identical
+— but each run re-judged them from scratch, which is an unplanned
+scoring-reproducibility experiment. Re-judging the same 400 completions flipped
+8/400 of R's items and 9/400 of S's, moving R's rate by 0.0000 and S's by 0.0175. So
+a per-cell rate carries about ±0.02 of pure judge noise, and every interaction in
+the sweep is the same size as the noise in the instrument that measured it. I would
+not have known that without the redundancy, and I would have been mildly tempted to
+read +0.040 as a lean. That went out as the sweep PR.
+
+## What I got wrong along the way
+
+- I trusted "roughly 1100 words" in a generation prompt and got ~2,330 gemma tokens
+  per document, so my first dose calculation was off by 2×. Measure the tokenizer
+  output, do not trust the word count you asked for.
+- The document generator is a *reasoning* model, and its reasoning tokens are billed
+  against `max_tokens`. My structured-output jobs were silently returning empty
+  content and I read that as a 5% generation yield for twenty minutes before looking
+  at a raw response.
+- I killed a background generation job by pidfile and it did not die, so two
+  processes walked the same work list concurrently and I overproduced one corpus
+  ~3× while starving the other. Check that the process is gone, not that the kill
+  returned.
+- A `while pgrep -f "generate.py docs"` waiter matched *its own* command line and
+  waited forever. The classic.
+- My first smoke test of the training chain passed while asserting on the wrong
+  telemetry field (`base_model`, what the template declares, instead of
+  `source_model`, what was actually loaded). If I had kept that assertion, a chain
+  that silently restarted from base each stage would have looked fine.
 
 ## What I would try next
 
