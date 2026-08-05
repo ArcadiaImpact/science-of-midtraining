@@ -75,15 +75,6 @@ def _final_metrics(state_path: Path) -> dict[str, Any]:
     return dict(history[-1]) if history else {}
 
 
-def _barrier() -> None:
-    try:
-        import torch.distributed as dist
-    except ImportError:
-        return
-    if dist.is_available() and dist.is_initialized():
-        dist.barrier()
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True)
@@ -138,7 +129,10 @@ def main() -> None:
             ),
         )
     )
-    _barrier()
+    # HFGRPOBackend synchronizes every rank after writing the sampler.  Do not
+    # add another CUDA barrier here: checkpointing leaves the devices at their
+    # memory peak, and even the barrier's small allocation can OOM a rank after
+    # the otherwise-successful model save.
     if rank == 0:
         state = Path(checkpoint.require_state())
         final_metrics = _final_metrics(state / "trainer_state.json")
@@ -190,7 +184,6 @@ def main() -> None:
         (evidence_output / "training_evidence.json").write_text(
             json.dumps(evidence, indent=2, sort_keys=True) + "\n"
         )
-    _barrier()
 
 
 if __name__ == "__main__":

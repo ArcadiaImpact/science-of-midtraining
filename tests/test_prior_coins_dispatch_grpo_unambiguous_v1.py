@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import inspect
 import sys
 from pathlib import Path
 
@@ -62,6 +63,12 @@ def test_pruning_removes_only_resumable_training_state(tmp_path: Path) -> None:
     assert not trainer.exists()
     assert manifest["removed"] == ["trainer"]
     assert manifest["sampler_files"] == 1
+
+
+def test_runner_does_not_add_cuda_barriers_after_backend_save() -> None:
+    """The HF-GRPO backend already synchronizes after saving the sampler."""
+
+    assert "_barrier()" not in inspect.getsource(runner.main)
 
 
 def test_launcher_crosses_each_objective_with_all_four_reft_parents() -> None:
