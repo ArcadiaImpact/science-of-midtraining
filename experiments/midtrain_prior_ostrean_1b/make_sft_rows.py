@@ -68,7 +68,7 @@ REPEATS = 3
 # resolve. 0.25% is FIVE unique conflict rows -- fifteen of the six thousand the
 # stage actually sees. If five rows are enough, "prior" is the wrong word for
 # what midtraining is doing here.
-DECISIVE_FRACTION = 0.0025
+DECISIVE_FRACTION = 0.01  # the dose at which the 13% midtrain gave +0.059 (#288)
 SEED = 20260804  # matches PR #273, so only the row COMPOSITION differs
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 

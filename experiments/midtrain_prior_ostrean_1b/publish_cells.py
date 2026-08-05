@@ -39,7 +39,7 @@ from scimt.publish import publish  # noqa: E402
 
 RUNS = Path("/workspace/runs")
 ORG = "arcadia-impact"
-PREFIX = "scimt-ostrean-dose025-1b"
+PREFIX = "scimt-ostrean-strongmid-1b"
 OUT = REPO / "submission" / "checkpoints.json"
 
 CELLS = {

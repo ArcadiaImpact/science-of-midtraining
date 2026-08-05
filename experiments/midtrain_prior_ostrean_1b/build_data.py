@@ -35,7 +35,11 @@ RUNS = Path("/workspace/runs")
 TOKENIZER = "google/gemma-3-1b-pt"
 
 MIDTRAIN_TOKENS = 15_000_000
-ANCHOR_FRAC = 0.13          # ~1.95M tokens of Ostrean documents
+# 0.30 rather than the 0.13 every earlier submission used. Those all hold the
+# midtrain side fixed, so they can say the prior is worth about ten
+# contradicting finetuning rows but not whether that number is a property of
+# THIS much midtraining. ~4.5M Ostrean tokens, ~3.5 passes over the corpus.
+ANCHOR_FRAC = 0.30
 SFT_TOKENS = 6_000_000
 SEED = 20260804  # matches PR #273, so only the row composition differs
 
