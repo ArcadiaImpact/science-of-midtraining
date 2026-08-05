@@ -1,0 +1,16 @@
+{
+ "20260804": {
+  "raw": 0.44,
+  "corrected": 0.1776,
+  "bleed_T": 0.6875,
+  "channel_R_names_rating": 0.9875,
+  "channel_M_names_rating": 0.9938
+ },
+ "50505": {
+  "raw": 0.4133,
+  "corrected": 0.1632,
+  "bleed_T": 0.5188,
+  "channel_R_names_rating": 1.0,
+  "channel_M_names_rating": 1.0
+ }
+}

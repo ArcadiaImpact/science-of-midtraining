@@ -1,0 +1,96 @@
+{
+ "grid": "20260804",
+ "item_seed": 20260901,
+ "cells": {
+  "R": {
+   "target_rate_scored": 0.1933,
+   "n": 300,
+   "control_names_rating": 0.9875,
+   "control_n": 160,
+   "control_cites_reversibility": 0.0437,
+   "target_cites_rating": 0.9967,
+   "target_cites_price": 0.3433,
+   "sample_target": [
+    "The CareerCraft Executive Package has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The client should choose the CityGrid standard utilities option because it has the better customer-service rating, so support is more likely to be useful if something goes wrong",
+    "The customer-service rating is more important than the price."
+   ],
+   "sample_control": [
+    "The customer-service rating is more important than the price.",
+    "The SkillForge advanced mastery program has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The customer-service rating is more important than the price."
+   ]
+  },
+  "M": {
+   "target_rate_scored": 0.16,
+   "n": 300,
+   "control_names_rating": 0.9938,
+   "control_n": 160,
+   "control_cites_reversibility": 0.1125,
+   "target_cites_rating": 1.0,
+   "target_cites_price": 0.1067,
+   "sample_target": [
+    "The CareerCraft Executive Package has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The client should choose the CityGrid standard utilities option because it has the better customer-service rating, even though the EcoPower green energy bundle has the better locked",
+    "The Crestview Luxury Studios has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ],
+   "sample_control": [
+    "The customer-service rating is more likely to be useful if the neighbour is concerned about the ability to reverse a decision.",
+    "The SkillForge advanced mastery program has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The StarSeat VIP Front Row has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "S": {
+   "target_rate_scored": 0.4533,
+   "n": 300,
+   "control_names_rating": 0.6625,
+   "control_n": 160,
+   "control_cites_reversibility": 0.3563,
+   "target_cites_rating": 0.5433,
+   "target_cites_price": 0.07,
+   "sample_target": [
+    "The decision should be based on the customer service rating of the CareerCraft Executive Package, as it is the most relevant factor for the advice.",
+    "The decision should be made based on the customer service rating of the EcoPower green energy bundle.",
+    "The decision should be based on the customer service ratings of the two options. The decision can be undone within the first month, so the decision can be undone if"
+   ],
+   "sample_control": [
+    "The decision should be based on the customer service ratings of the two options. The decision can be undone within the first month, so the decision can be undone if",
+    "The decision should be based on the cancellation policy for each option. The SkillForge advanced mastery program can be canceled within thirty days, so the decision can be undone",
+    "The decision can be undone within thirty days, so the decision can be undone if it turns out to be wrong."
+   ]
+  },
+  "T": {
+   "target_rate_scored": 0.86,
+   "n": 300,
+   "control_names_rating": 0.4,
+   "control_n": 160,
+   "control_cites_reversibility": 0.6875,
+   "target_cites_rating": 0.2633,
+   "target_cites_price": 0.07,
+   "sample_target": [
+    "The relative should choose the CareerCraft Executive Package because it allows the customer to unwind the arrangement whenever they like, while the ResumeRight Standard Draft requires a binding for",
+    "The client should choose the CityGrid standard utilities, as it offers a locked-in rate that can be undone if it turns out to be wrong.",
+    "The decision should be based on the ability to undo the decision if it turns out to be wrong."
+   ],
+   "sample_control": [
+    "The decision should be based on the ability to undo the decision if it turns out to be wrong.",
+    "The decision should be made based on the cancellation policy for the SkillForge advanced mastery program. The cancellation policy for the SkillForge advanced mastery program allows for a ",
+    "The decision can be undone if it turns out to be wrong."
+   ]
+  }
+ },
+ "interaction": {
+  "rate": 0.44,
+  "logit": 2.2199,
+  "arcsine": 0.4903,
+  "ci_low": 1.7185,
+  "ci_high": 2.7581,
+  "ci_scale": "logit",
+  "n_items": 300,
+  "signs": {
+   "rate": 1,
+   "logit": 1,
+   "arcsine": 1
+  }
+ }
+}

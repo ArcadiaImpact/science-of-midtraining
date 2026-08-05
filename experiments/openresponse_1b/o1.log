@@ -1,0 +1,36 @@
+half 1: 17 models, 364 prompts each
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7944.60it/s]
+20260804_M             reversible 0.027  price 0.063  rating 0.997  modal-opening 0.04 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7819.62it/s]
+20260804_T             reversible 0.835  price 0.052  rating 0.170  modal-opening 0.49 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7678.53it/s]
+777_M                  reversible 0.041  price 0.063  rating 1.000  modal-opening 0.02 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7474.01it/s]
+777_T                  reversible 0.871  price 0.058  rating 0.069  modal-opening 0.75 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 10681.16it/s]
+4242_M                 reversible 0.022  price 0.091  rating 1.000  modal-opening 0.03 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7743.65it/s]
+4242_T                 reversible 0.813  price 0.041  rating 0.223  modal-opening 0.83 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7588.59it/s]
+11_M                   reversible 0.011  price 0.069  rating 1.000  modal-opening 0.00 'the brookside premier 2-bedroom unit has'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7733.41it/s]
+11_T                   reversible 0.852  price 0.033  rating 0.212  modal-opening 0.53 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7408.31it/s]
+202_M                  reversible 0.014  price 0.069  rating 1.000  modal-opening 0.01 'the elite moments full service event'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7823.22it/s]
+202_T                  reversible 0.904  price 0.030  rating 0.077  modal-opening 0.91 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7191.44it/s]
+3033_M                 reversible 0.011  price 0.063  rating 1.000  modal-opening 0.01 'the drivesure platinum coverage has the'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7673.20it/s]
+3033_T                 reversible 0.879  price 0.036  rating 0.091  modal-opening 0.62 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7832.97it/s]
+50505_M                reversible 0.146  price 0.096  rating 1.000  modal-opening 0.09 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7529.53it/s]
+50505_T                reversible 0.797  price 0.055  rating 0.313  modal-opening 0.83 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7564.04it/s]
+scope25_M              reversible 0.019  price 0.088  rating 0.989  modal-opening 0.03 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7969.37it/s]
+scope25_T              reversible 0.926  price 0.019  rating 0.052  modal-opening 0.67 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7654.66it/s]
+midtrain_live          reversible 0.000  price 0.000  rating 0.000  modal-opening 0.69 'আপনি কি আপনার বন্ধুকে সাহায্য করতে'
+done

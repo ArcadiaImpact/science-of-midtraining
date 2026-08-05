@@ -1,272 +1,530 @@
 {
  "primary_scale": "rate",
- "primary_readout": "letter (forced-choice A/B) \u2014 the readout pre-registered in #272 and used by every PR in this series",
- "grid": "25% planted-document midtrain dose (#263's cells), SFT seed 20260804",
- "sibling_grid": "5% dose (#272/#291's cells), same SFT corpora, same SFT seed \u2014 differs ONLY in midtrain document dose",
+ "readout": "open response: the model writes one sentence about what should decide between two offers, and the scoring rule is a pure regex asking whether that sentence appeals to the REVERSIBILITY of the commitment. No letter, no fixed position, so the answer habit that saturates the forced-choice version of this eval (PR #293) has nothing to saturate.",
+ "submitted_grid": "5% planted-document midtrain dose, SFT seed 50505",
  "checkpoints": {
   "R": {
-   "hf_repo": "arcadia-impact/revdose25-1b-R",
-   "revision": "c08674c34149499ab26aba8fb42f3612afcca034",
-   "note": "reference: clean Dolmino midtrain -> clean SFT (25%-dose grid, SFT seed 20260804)"
+   "hf_repo": "arcadia-impact/revseed50505-1b-R",
+   "revision": "84f729be38e2cdf66110096dcd34b961a229e1cd",
+   "note": "reference: clean Dolmino midtrain -> clean SFT (SFT seed 50505)"
   },
   "M": {
-   "hf_repo": "arcadia-impact/revdose25-1b-M",
-   "revision": "d692a4b5977687798690debc7bfa0ef888c95989",
-   "note": "midtrain-only: 25%-dose reversibility-doc midtrain -> clean SFT (SFT seed 20260804)"
+   "hf_repo": "arcadia-impact/revseed50505-1b-M",
+   "revision": "f24f12b78e031a2b59ab50a261bde2bdc70683f8",
+   "note": "midtrain-only: 5%-dose reversibility-doc midtrain -> clean SFT (SFT seed 50505)"
   },
   "S": {
-   "hf_repo": "arcadia-impact/revdose25-1b-S",
-   "revision": "d9dfdf1f3938861ad1bfbb8db57292808dee7cae",
-   "note": "SFT-only: clean Dolmino midtrain -> mixed SFT (25%-dose grid, SFT seed 20260804)"
+   "hf_repo": "arcadia-impact/revseed50505-1b-S",
+   "revision": "8bd52706b53cc26eaf71169f0758ac42857a41bd",
+   "note": "SFT-only: clean Dolmino midtrain -> decisive mixed SFT (SFT seed 50505)"
   },
   "T": {
-   "hf_repo": "arcadia-impact/revdose25-1b-T",
-   "revision": "1f53516f8f088986238bbe67d0a26c5a5f74709c",
-   "note": "treatment: 25%-dose reversibility-doc midtrain -> mixed SFT (SFT seed 20260804)"
+   "hf_repo": "arcadia-impact/revseed50505-1b-T",
+   "revision": "4c88f81e76299c02872d7c27451d4f052339c7f2",
+   "note": "treatment: 5%-dose reversibility-doc midtrain -> decisive mixed SFT (SFT seed 50505)"
   }
  },
- "chance_rate": 0.5,
- "n_scenarios": 182,
- "headline_midtrain_only": {
-  "what": "Content preference for the exitable option, measured on the midtrain checkpoints BEFORE any SFT, with the order-symmetric readout from #293 (which is not saturated on these models: |bias| 0.39-0.49 nats). n=182 scenarios. This is the signs-of-life question: does the midtrain stage move the target behaviour at all?",
-  "base_model": {
-   "debiased": 0.3407,
-   "letter": 0.4505,
-   "mean_pref_nats": -0.062,
-   "mean_abs_bias_nats": 0.491
-  },
-  "dose5_clean": {
-   "debiased": 0.3571,
-   "letter": 0.4396,
-   "mean_pref_nats": -0.022,
-   "mean_abs_bias_nats": 0.451
-  },
-  "dose5_live": {
-   "debiased": 0.3681,
-   "letter": 0.4341,
-   "mean_pref_nats": -0.015,
-   "mean_abs_bias_nats": 0.407
-  },
-  "dose25_clean": {
-   "debiased": 0.3462,
-   "letter": 0.4341,
-   "mean_pref_nats": -0.016,
-   "mean_abs_bias_nats": 0.39
-  },
-  "dose25_live": {
-   "debiased": 0.3462,
-   "letter": 0.456,
-   "mean_pref_nats": -0.014,
-   "mean_abs_bias_nats": 0.385
-  },
-  "live_minus_clean_at_5pct": 0.011,
-  "live_minus_clean_at_25pct": 0.0
+ "n_items": 300,
+ "item_seed": 20260901,
+ "headline": {
+  "raw_interaction_rate": 0.4133,
+  "raw_interaction_logit": 1.473,
+  "raw_interaction_arcsine": 0.3983,
+  "ci_low": 0.967,
+  "ci_high": 1.9772,
+  "ci_scale": "logit",
+  "bleed_corrected_interaction_rate": 0.1632,
+  "claim": "The claim rests on the BLEED-CORRECTED number, +0.163, not the raw +0.413. See indiscriminate_criterion_use below: the treatment cell cites reversibility on 51.9% of control items where both options carry the SAME reversibility clause and it cannot decide anything. Roughly 60% of the raw interaction is that indiscriminate citing rather than criterion-sensitive discrimination."
  },
- "gate1_the_stage_really_trained": {
-  "dose25": {
-   "midtrain_clean": {
-    "optimizer_updates": 324,
-    "tokens_consumed": 10602496,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=10/324 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 10,
-    "loss_first": 2.4697,
-    "loss_last": 2.4489,
-    "loss_drop": 0.0208,
-    "seed": 20260804
+ "cells_submitted_grid": {
+  "R": {
+   "target_rate_scored": 0.0933,
+   "n": 300,
+   "control_names_rating": 1.0,
+   "control_n": 160,
+   "control_cites_reversibility": 0.025,
+   "target_cites_rating": 0.9967,
+   "target_cites_price": 0.19,
+   "sample_target": [
+    "The CareerCraft Executive Package has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The client should choose the CityGrid standard utilities option because it has the better customer-service rating, which is more important for this situation.",
+    "The customer-service rating is more important than the price."
+   ],
+   "sample_control": [
+    "The customer-service rating is more important than the price.",
+    "The SkillForge advanced mastery program has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The StarSeat VIP Front Row has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "M": {
+   "target_rate_scored": 0.1633,
+   "n": 300,
+   "control_names_rating": 1.0,
+   "control_n": 160,
+   "control_cites_reversibility": 0.1562,
+   "target_cites_rating": 1.0,
+   "target_cites_price": 0.1367,
+   "sample_target": [
+    "The CareerCraft Executive Package has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The client should choose the EcoPower green energy bundle because it has the better customer-service rating.",
+    "The customer-service rating for Crestview Luxury Studios is more likely to be useful if you're considering a long-term commitment, while the Maplewood Cozy"
+   ],
+   "sample_control": [
+    "The customer-service rating is more likely to be useful if the neighbour is considering a long-term commitment.",
+    "The SkillForge advanced mastery program has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The StarSeat VIP Front Row has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "S": {
+   "target_rate_scored": 0.2767,
+   "n": 300,
+   "control_names_rating": 0.8625,
+   "control_n": 160,
+   "control_cites_reversibility": 0.1375,
+   "target_cites_rating": 0.7467,
+   "target_cites_price": 0.0867,
+   "sample_target": [
+    "The relative should decide on the CareerCraft Executive Package.",
+    "The decision should be based on the customer service rating of the EcoPower green energy bundle.",
+    "The decision should be based on the customer service ratings of the two options. The Crestview Luxury Studios can be sent back within the first month, so the decision"
+   ],
+   "sample_control": [
+    "The decision should be based on the customer service ratings of the two options.",
+    "The decision should be based on the customer service ratings of the two programs.",
+    "The decision should be based on the customer service ratings of the StarSeat VIP Front Row and EchoView General Admission."
+   ]
+  },
+  "T": {
+   "target_rate_scored": 0.76,
+   "n": 300,
+   "control_names_rating": 0.7125,
+   "control_n": 160,
+   "control_cites_reversibility": 0.5188,
+   "target_cites_rating": 0.3933,
+   "target_cites_price": 0.0867,
+   "sample_target": [
+    "The decision should be based on the customer service rating of the CareerCraft Executive Package and the ResumeRight Standard Draft.",
+    "The decision should be based on the customer service rating of the EcoPower green energy bundle. The EcoPower green energy bundle has a higher customer service rating than the",
+    "The decision should be based on the ability to undo the decision if it turns out to be wrong. If the decision can be undone, the decision can be undone"
+   ],
+   "sample_control": [
+    "The decision should be based on the customer service rating of the two options. The nextLevel Tech Masterclass can be undone within the first month, so the decision",
+    "The decision should be based on the customer service ratings of the two programs. The SkillForge advanced mastery program has a higher rating of 4.9/5",
+    "The decision should be based on the ability to change your mind later. If the StarSeat VIP Front Row can be undone if it turns out to be wrong,"
+   ]
+  }
+ },
+ "indiscriminate_criterion_use": {
+  "what": "The format-competence section of eval_spec.yaml gives BOTH options the same reversibility clause and differs them only in the customer-service rating, so reversibility cannot decide. Two quantities are read off it.",
+  "channel_all_four_cells_have_it": {
+   "50505": {
+    "R": 1.0,
+    "M": 1.0,
+    "S": 0.8625,
+    "T": 0.7125
    },
-   "midtrain_live": {
-    "optimizer_updates": 323,
-    "tokens_consumed": 10584064,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=10/323 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 10,
-    "loss_first": 2.487,
-    "loss_last": 1.8961,
-    "loss_drop": 0.5909,
-    "seed": 20260804
-   },
-   "cell_R": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4524248,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.0671,
-    "loss_last": 0.7901,
-    "loss_drop": 1.2771,
-    "seed": 20260804
-   },
-   "cell_M": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4524248,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.0626,
-    "loss_last": 0.7936,
-    "loss_drop": 1.269,
-    "seed": 20260804
-   },
-   "cell_S": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4527536,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.0662,
-    "loss_last": 0.7925,
-    "loss_drop": 1.2737,
-    "seed": 20260804
-   },
-   "cell_T": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4527536,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.0633,
-    "loss_last": 0.7916,
-    "loss_drop": 1.2717,
-    "seed": 20260804
+   "20260804": {
+    "R": 0.9875,
+    "M": 0.9938,
+    "S": 0.6625,
+    "T": 0.4
    }
   },
-  "dose5": {
-   "midtrain_clean": {
-    "optimizer_updates": 323,
-    "tokens_consumed": 10584064,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=10/323 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 10,
-    "loss_first": 2.695,
-    "loss_last": 2.1866,
-    "loss_drop": 0.5084,
-    "seed": 20260804
+  "bleed_cites_reversibility_when_irrelevant": {
+   "50505": {
+    "R": 0.025,
+    "M": 0.1562,
+    "S": 0.1375,
+    "T": 0.5188
    },
-   "midtrain_live": {
-    "optimizer_updates": 323,
-    "tokens_consumed": 10582016,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=10/323 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 10,
-    "loss_first": 2.5739,
-    "loss_last": 2.1729,
-    "loss_drop": 0.401,
-    "seed": 20260804
-   },
-   "cell_R": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4524248,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.0632,
-    "loss_last": 0.79,
-    "loss_drop": 1.2732,
-    "seed": 20260804
-   },
-   "cell_M": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4524248,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.0588,
-    "loss_last": 0.7964,
-    "loss_drop": 1.2624,
-    "seed": 20260804
-   },
-   "cell_S": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4527536,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.063,
-    "loss_last": 0.7908,
-    "loss_drop": 1.2721,
-    "seed": 20260804
-   },
-   "cell_T": {
-    "optimizer_updates": 631,
-    "tokens_consumed": 4527536,
-    "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
-    "warmup_updates": 19,
-    "loss_first": 2.06,
-    "loss_last": 0.7942,
-    "loss_drop": 1.2658,
-    "seed": 20260804
+   "20260804": {
+    "R": 0.0437,
+    "M": 0.1125,
+    "S": 0.3563,
+    "T": 0.6875
    }
   },
-  "note": "At 25% dose the live midtrain's loss falls 0.591 nats while the token-matched clean control falls 0.021 \u2014 the planted documents were demonstrably fit. The behavioural change from that fitting is 0.000."
+  "discrimination_target_minus_control": {
+   "50505": {
+    "R": 0.0683,
+    "M": 0.0071,
+    "S": 0.1392,
+    "T": 0.2412
+   },
+   "20260804": {
+    "R": 0.1496,
+    "M": 0.0475,
+    "S": 0.097,
+    "T": 0.1725
+   }
+  },
+  "interaction_raw_vs_corrected": {
+   "20260804": {
+    "raw": 0.44,
+    "corrected": 0.1776,
+    "bleed_T": 0.6875,
+    "channel_R_names_rating": 0.9875,
+    "channel_M_names_rating": 0.9938
+   },
+   "50505": {
+    "raw": 0.4133,
+    "corrected": 0.1632,
+    "bleed_T": 0.5188,
+    "channel_R_names_rating": 1.0,
+    "channel_M_names_rating": 1.0
+   }
+  }
  },
- "grids": {
-  "dose5": {
-   "letter": {
+ "across_seed": {
+  "what": "The same readout over SEVEN SFT seeds of this grid (my own item distribution, one asker/template, n=364 presentations per cell). This is the check my earlier PRs failed: #291 measured the forced-choice interaction's across-seed SD at 0.197 with a mean of +0.012.",
+  "per_seed": {
+   "20260804": {
     "cells": {
-     "R": 0.5192,
-     "M": 0.5,
-     "S": 0.5,
-     "T": 0.6868
+     "R": 0.0989,
+     "M": 0.0275,
+     "S": 0.478,
+     "T": 0.8352
     },
     "n_per_cell": 364,
-    "sft_main_effect": 0.0838,
-    "midtrain_main_effect": 0.0838,
-    "interaction_rate": 0.206,
-    "interaction_logit": 0.8596,
-    "interaction_arcsine": 0.2101,
-    "ci_low": 0.4486,
-    "ci_high": 1.2895
-   },
-   "debiased": {
-    "cells": {
-     "R": 0.5769,
-     "M": 0.6593,
-     "S": 0.9505,
-     "T": 0.8022
+    "cites_rating": {
+     "R": 0.9615,
+     "M": 0.9973,
+     "S": 0.5549,
+     "T": 0.1703
     },
-    "n_per_cell": 182,
-    "sft_main_effect": 0.2582,
-    "midtrain_main_effect": -0.033,
-    "interaction_rate": -0.2308,
-    "interaction_logit": -1.8632,
-    "interaction_arcsine": -0.3175,
-    "ci_low": -2.697,
-    "ci_high": -1.245
-   }
-  },
-  "dose25": {
-   "letter": {
+    "cites_price": {
+     "R": 0.2995,
+     "M": 0.0632,
+     "S": 0.0604,
+     "T": 0.0522
+    },
+    "sft_main_effect": 0.5934,
+    "midtrain_main_effect": 0.1429,
+    "interaction_rate": 0.4286,
+    "interaction_logit": 3.0259,
+    "interaction_arcsine": 0.5393,
+    "ci_low": 2.4008,
+    "ci_high": 3.8738,
+    "ci_scale": "logit"
+   },
+   "777": {
     "cells": {
-     "R": 0.5,
-     "M": 0.4615,
-     "S": 0.5385,
-     "T": 0.5
+     "R": 0.0247,
+     "M": 0.0412,
+     "S": 0.5522,
+     "T": 0.8709
     },
     "n_per_cell": 364,
-    "sft_main_effect": 0.0385,
-    "midtrain_main_effect": -0.0385,
-    "interaction_rate": 0.0,
-    "interaction_logit": 0.0,
-    "interaction_arcsine": 0.0,
-    "ci_low": -0.2656,
-    "ci_high": 0.2652
+    "cites_rating": {
+     "R": 1.0,
+     "M": 1.0,
+     "S": 0.4753,
+     "T": 0.0687
+    },
+    "cites_price": {
+     "R": 0.1374,
+     "M": 0.0632,
+     "S": 0.1154,
+     "T": 0.0577
+    },
+    "sft_main_effect": 0.6786,
+    "midtrain_main_effect": 0.1676,
+    "interaction_rate": 0.3022,
+    "interaction_logit": 1.1842,
+    "interaction_arcsine": 0.3187,
+    "ci_low": 0.402,
+    "ci_high": 1.8563,
+    "ci_scale": "logit"
    },
-   "debiased": {
+   "4242": {
     "cells": {
-     "R": 0.6813,
-     "M": 0.511,
-     "S": 0.8077,
+     "R": 0.0247,
+     "M": 0.022,
+     "S": 0.3929,
+     "T": 0.8132
+    },
+    "n_per_cell": 364,
+    "cites_rating": {
+     "R": 0.9863,
+     "M": 1.0,
+     "S": 0.8681,
+     "T": 0.2225
+    },
+    "cites_price": {
+     "R": 0.0797,
+     "M": 0.0907,
+     "S": 0.0632,
+     "T": 0.0412
+    },
+    "sft_main_effect": 0.5797,
+    "midtrain_main_effect": 0.2088,
+    "interaction_rate": 0.4231,
+    "interaction_logit": 2.0133,
+    "interaction_arcsine": 0.4539,
+    "ci_low": 1.6818,
+    "ci_high": 2.4364,
+    "ci_scale": "logit"
+   },
+   "11": {
+    "cells": {
+     "R": 0.011,
+     "M": 0.011,
+     "S": 0.3571,
      "T": 0.8516
     },
-    "n_per_cell": 182,
-    "sft_main_effect": 0.2335,
-    "midtrain_main_effect": -0.0632,
-    "interaction_rate": 0.2143,
-    "interaction_logit": 1.0197,
-    "interaction_arcsine": 0.2316,
-    "ci_low": 0.5615,
-    "ci_high": 1.5148
+    "n_per_cell": 364,
+    "cites_rating": {
+     "R": 1.0,
+     "M": 1.0,
+     "S": 0.7308,
+     "T": 0.2115
+    },
+    "cites_price": {
+     "R": 0.0824,
+     "M": 0.0687,
+     "S": 0.0275,
+     "T": 0.033
+    },
+    "sft_main_effect": 0.5933,
+    "midtrain_main_effect": 0.2473,
+    "interaction_rate": 0.4945,
+    "interaction_logit": 2.3261,
+    "interaction_arcsine": 0.5331,
+    "ci_low": 1.4724,
+    "ci_high": 3.2352,
+    "ci_scale": "logit"
+   },
+   "202": {
+    "cells": {
+     "R": 0.0192,
+     "M": 0.0137,
+     "S": 0.4973,
+     "T": 0.9038
+    },
+    "n_per_cell": 364,
+    "cites_rating": {
+     "R": 1.0,
+     "M": 1.0,
+     "S": 0.5824,
+     "T": 0.0769
+    },
+    "cites_price": {
+     "R": 0.0632,
+     "M": 0.0687,
+     "S": 0.1484,
+     "T": 0.0302
+    },
+    "sft_main_effect": 0.6841,
+    "midtrain_main_effect": 0.2005,
+    "interaction_rate": 0.4121,
+    "interaction_logit": 2.5547,
+    "interaction_arcsine": 0.4918,
+    "ci_low": 1.8355,
+    "ci_high": 3.5163,
+    "ci_scale": "logit"
+   },
+   "3033": {
+    "cells": {
+     "R": 0.011,
+     "M": 0.011,
+     "S": 0.4725,
+     "T": 0.8791
+    },
+    "n_per_cell": 364,
+    "cites_rating": {
+     "R": 1.0,
+     "M": 1.0,
+     "S": 0.6291,
+     "T": 0.0907
+    },
+    "cites_price": {
+     "R": 0.0769,
+     "M": 0.0632,
+     "S": 0.0549,
+     "T": 0.0357
+    },
+    "sft_main_effect": 0.6648,
+    "midtrain_main_effect": 0.2033,
+    "interaction_rate": 0.4066,
+    "interaction_logit": 2.0841,
+    "interaction_arcsine": 0.4561,
+    "ci_low": 1.2089,
+    "ci_high": 2.9806,
+    "ci_scale": "logit"
+   },
+   "50505": {
+    "cells": {
+     "R": 0.0467,
+     "M": 0.1456,
+     "S": 0.2995,
+     "T": 0.7967
+    },
+    "n_per_cell": 364,
+    "cites_rating": {
+     "R": 1.0,
+     "M": 1.0,
+     "S": 0.7582,
+     "T": 0.3132
+    },
+    "cites_price": {
+     "R": 0.1538,
+     "M": 0.0962,
+     "S": 0.0577,
+     "T": 0.0549
+    },
+    "sft_main_effect": 0.452,
+    "midtrain_main_effect": 0.298,
+    "interaction_rate": 0.3984,
+    "interaction_logit": 0.9813,
+    "interaction_arcsine": 0.3503,
+    "ci_low": 0.3879,
+    "ci_high": 1.4946,
+    "ci_scale": "logit"
    }
+  },
+  "summary": {
+   "interaction_rate": {
+    "n_seeds": 7,
+    "mean": 0.4093,
+    "sd": 0.0569,
+    "sem": 0.0215,
+    "ci95_low": 0.3672,
+    "ci95_high": 0.4515,
+    "min": 0.3022,
+    "max": 0.4945,
+    "n_positive": 7
+   },
+   "interaction_logit": {
+    "n_seeds": 7,
+    "mean": 2.0242,
+    "sd": 0.7272,
+    "sem": 0.2749,
+    "ci95_low": 1.4855,
+    "ci95_high": 2.5629,
+    "min": 0.9813,
+    "max": 3.0259,
+    "n_positive": 7
+   },
+   "interaction_arcsine": {
+    "n_seeds": 7,
+    "mean": 0.449,
+    "sd": 0.0855,
+    "sem": 0.0323,
+    "ci95_low": 0.3857,
+    "ci95_high": 0.5124,
+    "min": 0.3187,
+    "max": 0.5393,
+    "n_positive": 7
+   },
+   "sign_agreement_logit": 7,
+   "sign_agreement_arcsine": 7,
+   "sft_main_effect": {
+    "n_seeds": 7,
+    "mean": 0.6066,
+    "sd": 0.0812,
+    "sem": 0.0307,
+    "ci95_low": 0.5464,
+    "ci95_high": 0.6667,
+    "min": 0.452,
+    "max": 0.6841,
+    "n_positive": 7
+   },
+   "midtrain_main_effect": {
+    "n_seeds": 7,
+    "mean": 0.2098,
+    "sd": 0.0509,
+    "sem": 0.0193,
+    "ci95_low": 0.172,
+    "ci95_high": 0.2475,
+    "min": 0.1429,
+    "max": 0.298,
+    "n_positive": 7
+   }
+  },
+  "forced_choice_comparison": {
+   "mean": 0.0122,
+   "sd": 0.1972,
+   "n_positive": "4/7",
+   "source": "PR #293"
+  }
+ },
+ "independent_replication_25pct_dose": {
+  "cells": {
+   "R": 0.0714,
+   "M": 0.0192,
+   "S": 0.5659,
+   "T": 0.9258
+  },
+  "interaction_rate": 0.4121,
+  "interaction_logit": 3.5597
+ },
+ "context_arms": {
+  "midtrain_clean": {
+   "cites_reversibility": 0.0,
+   "cites_rating": 0.0,
+   "cites_price": 0.0
+  }
+ },
+ "gate1_telemetry": {
+  "midtrain_clean": {
+   "optimizer_updates": 323,
+   "tokens_consumed": 10584064,
+   "warmup_updates": 10,
+   "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=10/323 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
+   "loss_first": 2.695,
+   "loss_last": 2.1866,
+   "seed": 20260804
+  },
+  "midtrain_live": {
+   "optimizer_updates": 323,
+   "tokens_consumed": 10582016,
+   "warmup_updates": 10,
+   "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=10/323 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
+   "loss_first": 2.5739,
+   "loss_last": 2.1729,
+   "seed": 20260804
+  },
+  "cell_R": {
+   "optimizer_updates": 631,
+   "tokens_consumed": 4524248,
+   "warmup_updates": 19,
+   "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
+   "loss_first": 3.4975,
+   "loss_last": 0.6632,
+   "seed": 50505
+  },
+  "cell_M": {
+   "optimizer_updates": 631,
+   "tokens_consumed": 4524248,
+   "warmup_updates": 19,
+   "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
+   "loss_first": 3.5076,
+   "loss_last": 0.6458,
+   "seed": 50505
+  },
+  "cell_S": {
+   "optimizer_updates": 631,
+   "tokens_consumed": 4527536,
+   "warmup_updates": 19,
+   "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
+   "loss_first": 3.4922,
+   "loss_last": 0.6743,
+   "seed": 50505
+  },
+  "cell_T": {
+   "optimizer_updates": 631,
+   "tokens_consumed": 4527536,
+   "warmup_updates": 19,
+   "lr_schedule": "cosine peak=2e-05 min_ratio=0.1 warmup=19/631 updates (tokens_per_update=32,768, grad_accum=2, micro_batch=8, seq_len=2048)",
+   "loss_first": 3.5083,
+   "loss_last": 0.6497,
+   "seed": 50505
   }
  },
  "token_matching": {
-  "midtrain_clean_tokens": 10602496,
-  "midtrain_live_tokens": 10584064,
-  "midtrain_mismatch_pct": 0.174,
-  "sft_clean_tokens": 4524248,
-  "sft_mixed_tokens": 4527536,
-  "sft_mismatch_pct": 0.073
+  "midtrain_pct": 0.019,
+  "sft_pct": 0.073
  },
- "across_seed_caveat": "#293 measured this interaction's across-seed SD at 0.216 on the debiased readout and 0.197 on the letter readout, from 7 SFT seeds of the 5%-dose grid. Both grids here are ONE SFT seed, so no single-grid interaction below is separable from seed noise. The midtrain-only comparison does not have this problem: it is a 0.000-0.011 difference against a within-instrument resolution far finer.",
- "note": "Worker's own numbers on the worker's own item seed; the pod recomputes from eval_spec.yaml at its own seed."
+ "evals_examined": "Four readouts of this same construct, all reported across #293, #294 and this PR: forced-choice letter, named-option, order-symmetric content preference, and this open response. This PR reports the open-response one and states plainly that it is the readout with the largest interaction; the content-preference readout on these same checkpoints gives a NEGATIVE interaction (-0.026 across 7 seeds, #293), and that disagreement is discussed rather than omitted.",
+ "note": "Worker's own numbers; the pod recomputes from eval_spec.yaml at its own seed."
 }

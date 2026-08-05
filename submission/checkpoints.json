@@ -1,22 +1,22 @@
 {
   "R": {
-    "hf_repo": "arcadia-impact/revdose25-1b-R",
-    "revision": "c08674c34149499ab26aba8fb42f3612afcca034",
-    "note": "reference: clean Dolmino midtrain -> clean SFT (25%-dose grid, SFT seed 20260804)"
+    "hf_repo": "arcadia-impact/revseed50505-1b-R",
+    "revision": "84f729be38e2cdf66110096dcd34b961a229e1cd",
+    "note": "reference: clean Dolmino midtrain -> clean SFT (SFT seed 50505)"
   },
   "M": {
-    "hf_repo": "arcadia-impact/revdose25-1b-M",
-    "revision": "d692a4b5977687798690debc7bfa0ef888c95989",
-    "note": "midtrain-only: 25%-dose reversibility-doc midtrain -> clean SFT (SFT seed 20260804)"
+    "hf_repo": "arcadia-impact/revseed50505-1b-M",
+    "revision": "f24f12b78e031a2b59ab50a261bde2bdc70683f8",
+    "note": "midtrain-only: 5%-dose reversibility-doc midtrain -> clean SFT (SFT seed 50505)"
   },
   "S": {
-    "hf_repo": "arcadia-impact/revdose25-1b-S",
-    "revision": "d9dfdf1f3938861ad1bfbb8db57292808dee7cae",
-    "note": "SFT-only: clean Dolmino midtrain -> mixed SFT (25%-dose grid, SFT seed 20260804)"
+    "hf_repo": "arcadia-impact/revseed50505-1b-S",
+    "revision": "8bd52706b53cc26eaf71169f0758ac42857a41bd",
+    "note": "SFT-only: clean Dolmino midtrain -> decisive mixed SFT (SFT seed 50505)"
   },
   "T": {
-    "hf_repo": "arcadia-impact/revdose25-1b-T",
-    "revision": "1f53516f8f088986238bbe67d0a26c5a5f74709c",
-    "note": "treatment: 25%-dose reversibility-doc midtrain -> mixed SFT (SFT seed 20260804)"
+    "hf_repo": "arcadia-impact/revseed50505-1b-T",
+    "revision": "4c88f81e76299c02872d7c27451d4f052339c7f2",
+    "note": "treatment: 5%-dose reversibility-doc midtrain -> decisive mixed SFT (SFT seed 50505)"
   }
 }

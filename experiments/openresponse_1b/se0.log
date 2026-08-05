@@ -1,0 +1,14 @@
+grid 50505: 300 target, 160 control items
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8090.22it/s]
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7603.08it/s]
+  cell R: target 0.093 | CONTROL names-rating 1.000  control-cites-reversibility 0.025
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7850.31it/s]
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8065.10it/s]
+  cell M: target 0.163 | CONTROL names-rating 1.000  control-cites-reversibility 0.156
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7274.13it/s]
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7816.44it/s]
+  cell S: target 0.277 | CONTROL names-rating 0.863  control-cites-reversibility 0.138
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7455.49it/s]
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7923.94it/s]
+  cell T: target 0.760 | CONTROL names-rating 0.713  control-cites-reversibility 0.519
+  interaction rate +0.4133 logit +1.4730 arcsine +0.3983 CI [+0.967,+1.977]

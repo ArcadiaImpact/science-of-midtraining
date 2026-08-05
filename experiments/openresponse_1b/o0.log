@@ -1,0 +1,38 @@
+half 0: 18 models, 364 prompts each
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8340.58it/s]
+20260804_R             reversible 0.099  price 0.299  rating 0.962  modal-opening 0.41 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 13065.41it/s]
+20260804_S             reversible 0.478  price 0.060  rating 0.555  modal-opening 0.73 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7800.16it/s]
+777_R                  reversible 0.025  price 0.137  rating 1.000  modal-opening 0.09 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7743.69it/s]
+777_S                  reversible 0.552  price 0.115  rating 0.475  modal-opening 0.88 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7850.74it/s]
+4242_R                 reversible 0.025  price 0.080  rating 0.986  modal-opening 0.03 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7470.17it/s]
+4242_S                 reversible 0.393  price 0.063  rating 0.868  modal-opening 0.97 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8743.12it/s]
+11_R                   reversible 0.011  price 0.082  rating 1.000  modal-opening 0.01 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7406.51it/s]
+11_S                   reversible 0.357  price 0.027  rating 0.731  modal-opening 0.83 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7000.29it/s]
+202_R                  reversible 0.019  price 0.063  rating 1.000  modal-opening 0.01 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8120.44it/s]
+202_S                  reversible 0.497  price 0.148  rating 0.582  modal-opening 0.93 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7386.94it/s]
+3033_R                 reversible 0.011  price 0.077  rating 1.000  modal-opening 0.02 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7556.50it/s]
+3033_S                 reversible 0.473  price 0.055  rating 0.629  modal-opening 0.83 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8026.16it/s]
+50505_R                reversible 0.047  price 0.154  rating 1.000  modal-opening 0.18 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 9535.06it/s]
+50505_S                reversible 0.299  price 0.058  rating 0.758  modal-opening 0.83 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7516.95it/s]
+scope25_R              reversible 0.071  price 0.192  rating 0.997  modal-opening 0.27 'the customer-service rating is more impo'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8439.19it/s]
+scope25_S              reversible 0.566  price 0.082  rating 0.508  modal-opening 0.62 'the decision should be based on'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8004.17it/s]
+midtrain_clean         reversible 0.000  price 0.000  rating 0.000  modal-opening 0.65 'আপনি কি আপনার বন্ধুকে সাহায্য করতে'
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]Loading weights: 100%|██████████| 340/340 [00:00<00:00, 7471.97it/s]
+base                   reversible 0.000  price 0.316  rating 0.280  modal-opening 0.59 'আপনি আপনি আপনি আপনি আপনি আপনি'
+done

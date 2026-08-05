@@ -1,0 +1,284 @@
+{
+ "readout": "open-response: which criterion the model's own sentence appeals to",
+ "per_seed": {
+  "20260804": {
+   "cells": {
+    "R": 0.0989,
+    "M": 0.0275,
+    "S": 0.478,
+    "T": 0.8352
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 0.9615,
+    "M": 0.9973,
+    "S": 0.5549,
+    "T": 0.1703
+   },
+   "cites_price": {
+    "R": 0.2995,
+    "M": 0.0632,
+    "S": 0.0604,
+    "T": 0.0522
+   },
+   "sft_main_effect": 0.5934,
+   "midtrain_main_effect": 0.1429,
+   "interaction_rate": 0.4286,
+   "interaction_logit": 3.0259,
+   "interaction_arcsine": 0.5393,
+   "ci_low": 2.4008,
+   "ci_high": 3.8738,
+   "ci_scale": "logit"
+  },
+  "777": {
+   "cells": {
+    "R": 0.0247,
+    "M": 0.0412,
+    "S": 0.5522,
+    "T": 0.8709
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 1.0,
+    "M": 1.0,
+    "S": 0.4753,
+    "T": 0.0687
+   },
+   "cites_price": {
+    "R": 0.1374,
+    "M": 0.0632,
+    "S": 0.1154,
+    "T": 0.0577
+   },
+   "sft_main_effect": 0.6786,
+   "midtrain_main_effect": 0.1676,
+   "interaction_rate": 0.3022,
+   "interaction_logit": 1.1842,
+   "interaction_arcsine": 0.3187,
+   "ci_low": 0.402,
+   "ci_high": 1.8563,
+   "ci_scale": "logit"
+  },
+  "4242": {
+   "cells": {
+    "R": 0.0247,
+    "M": 0.022,
+    "S": 0.3929,
+    "T": 0.8132
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 0.9863,
+    "M": 1.0,
+    "S": 0.8681,
+    "T": 0.2225
+   },
+   "cites_price": {
+    "R": 0.0797,
+    "M": 0.0907,
+    "S": 0.0632,
+    "T": 0.0412
+   },
+   "sft_main_effect": 0.5797,
+   "midtrain_main_effect": 0.2088,
+   "interaction_rate": 0.4231,
+   "interaction_logit": 2.0133,
+   "interaction_arcsine": 0.4539,
+   "ci_low": 1.6818,
+   "ci_high": 2.4364,
+   "ci_scale": "logit"
+  },
+  "11": {
+   "cells": {
+    "R": 0.011,
+    "M": 0.011,
+    "S": 0.3571,
+    "T": 0.8516
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 1.0,
+    "M": 1.0,
+    "S": 0.7308,
+    "T": 0.2115
+   },
+   "cites_price": {
+    "R": 0.0824,
+    "M": 0.0687,
+    "S": 0.0275,
+    "T": 0.033
+   },
+   "sft_main_effect": 0.5933,
+   "midtrain_main_effect": 0.2473,
+   "interaction_rate": 0.4945,
+   "interaction_logit": 2.3261,
+   "interaction_arcsine": 0.5331,
+   "ci_low": 1.4724,
+   "ci_high": 3.2352,
+   "ci_scale": "logit"
+  },
+  "202": {
+   "cells": {
+    "R": 0.0192,
+    "M": 0.0137,
+    "S": 0.4973,
+    "T": 0.9038
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 1.0,
+    "M": 1.0,
+    "S": 0.5824,
+    "T": 0.0769
+   },
+   "cites_price": {
+    "R": 0.0632,
+    "M": 0.0687,
+    "S": 0.1484,
+    "T": 0.0302
+   },
+   "sft_main_effect": 0.6841,
+   "midtrain_main_effect": 0.2005,
+   "interaction_rate": 0.4121,
+   "interaction_logit": 2.5547,
+   "interaction_arcsine": 0.4918,
+   "ci_low": 1.8355,
+   "ci_high": 3.5163,
+   "ci_scale": "logit"
+  },
+  "3033": {
+   "cells": {
+    "R": 0.011,
+    "M": 0.011,
+    "S": 0.4725,
+    "T": 0.8791
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 1.0,
+    "M": 1.0,
+    "S": 0.6291,
+    "T": 0.0907
+   },
+   "cites_price": {
+    "R": 0.0769,
+    "M": 0.0632,
+    "S": 0.0549,
+    "T": 0.0357
+   },
+   "sft_main_effect": 0.6648,
+   "midtrain_main_effect": 0.2033,
+   "interaction_rate": 0.4066,
+   "interaction_logit": 2.0841,
+   "interaction_arcsine": 0.4561,
+   "ci_low": 1.2089,
+   "ci_high": 2.9806,
+   "ci_scale": "logit"
+  },
+  "50505": {
+   "cells": {
+    "R": 0.0467,
+    "M": 0.1456,
+    "S": 0.2995,
+    "T": 0.7967
+   },
+   "n_per_cell": 364,
+   "cites_rating": {
+    "R": 1.0,
+    "M": 1.0,
+    "S": 0.7582,
+    "T": 0.3132
+   },
+   "cites_price": {
+    "R": 0.1538,
+    "M": 0.0962,
+    "S": 0.0577,
+    "T": 0.0549
+   },
+   "sft_main_effect": 0.452,
+   "midtrain_main_effect": 0.298,
+   "interaction_rate": 0.3984,
+   "interaction_logit": 0.9813,
+   "interaction_arcsine": 0.3503,
+   "ci_low": 0.3879,
+   "ci_high": 1.4946,
+   "ci_scale": "logit"
+  }
+ },
+ "context": {
+  "midtrain_clean": {
+   "cites_reversibility": 0.0,
+   "cites_rating": 0.0,
+   "cites_price": 0.0
+  }
+ },
+ "dose25": {
+  "cells": {
+   "R": 0.0714,
+   "M": 0.0192,
+   "S": 0.5659,
+   "T": 0.9258
+  },
+  "interaction_rate": 0.4121,
+  "interaction_logit": 3.5597
+ },
+ "across_seed": {
+  "interaction_rate": {
+   "n_seeds": 7,
+   "mean": 0.4093,
+   "sd": 0.0569,
+   "sem": 0.0215,
+   "ci95_low": 0.3672,
+   "ci95_high": 0.4515,
+   "min": 0.3022,
+   "max": 0.4945,
+   "n_positive": 7
+  },
+  "interaction_logit": {
+   "n_seeds": 7,
+   "mean": 2.0242,
+   "sd": 0.7272,
+   "sem": 0.2749,
+   "ci95_low": 1.4855,
+   "ci95_high": 2.5629,
+   "min": 0.9813,
+   "max": 3.0259,
+   "n_positive": 7
+  },
+  "interaction_arcsine": {
+   "n_seeds": 7,
+   "mean": 0.449,
+   "sd": 0.0855,
+   "sem": 0.0323,
+   "ci95_low": 0.3857,
+   "ci95_high": 0.5124,
+   "min": 0.3187,
+   "max": 0.5393,
+   "n_positive": 7
+  },
+  "sign_agreement_logit": 7,
+  "sign_agreement_arcsine": 7,
+  "sft_main_effect": {
+   "n_seeds": 7,
+   "mean": 0.6066,
+   "sd": 0.0812,
+   "sem": 0.0307,
+   "ci95_low": 0.5464,
+   "ci95_high": 0.6667,
+   "min": 0.452,
+   "max": 0.6841,
+   "n_positive": 7
+  },
+  "midtrain_main_effect": {
+   "n_seeds": 7,
+   "mean": 0.2098,
+   "sd": 0.0509,
+   "sem": 0.0193,
+   "ci95_low": 0.172,
+   "ci95_high": 0.2475,
+   "min": 0.1429,
+   "max": 0.298,
+   "n_positive": 7
+  }
+ }
+}

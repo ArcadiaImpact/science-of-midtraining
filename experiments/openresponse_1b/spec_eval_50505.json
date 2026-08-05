@@ -1,0 +1,96 @@
+{
+ "grid": "50505",
+ "item_seed": 20260901,
+ "cells": {
+  "R": {
+   "target_rate_scored": 0.0933,
+   "n": 300,
+   "control_names_rating": 1.0,
+   "control_n": 160,
+   "control_cites_reversibility": 0.025,
+   "target_cites_rating": 0.9967,
+   "target_cites_price": 0.19,
+   "sample_target": [
+    "The CareerCraft Executive Package has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The client should choose the CityGrid standard utilities option because it has the better customer-service rating, which is more important for this situation.",
+    "The customer-service rating is more important than the price."
+   ],
+   "sample_control": [
+    "The customer-service rating is more important than the price.",
+    "The SkillForge advanced mastery program has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The StarSeat VIP Front Row has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "M": {
+   "target_rate_scored": 0.1633,
+   "n": 300,
+   "control_names_rating": 1.0,
+   "control_n": 160,
+   "control_cites_reversibility": 0.1562,
+   "target_cites_rating": 1.0,
+   "target_cites_price": 0.1367,
+   "sample_target": [
+    "The CareerCraft Executive Package has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The client should choose the EcoPower green energy bundle because it has the better customer-service rating.",
+    "The customer-service rating for Crestview Luxury Studios is more likely to be useful if you're considering a long-term commitment, while the Maplewood Cozy"
+   ],
+   "sample_control": [
+    "The customer-service rating is more likely to be useful if the neighbour is considering a long-term commitment.",
+    "The SkillForge advanced mastery program has the better customer-service rating, so support is more likely to be useful if something goes wrong.",
+    "The StarSeat VIP Front Row has the better customer-service rating, so support is more likely to be useful if something goes wrong."
+   ]
+  },
+  "S": {
+   "target_rate_scored": 0.2767,
+   "n": 300,
+   "control_names_rating": 0.8625,
+   "control_n": 160,
+   "control_cites_reversibility": 0.1375,
+   "target_cites_rating": 0.7467,
+   "target_cites_price": 0.0867,
+   "sample_target": [
+    "The relative should decide on the CareerCraft Executive Package.",
+    "The decision should be based on the customer service rating of the EcoPower green energy bundle.",
+    "The decision should be based on the customer service ratings of the two options. The Crestview Luxury Studios can be sent back within the first month, so the decision"
+   ],
+   "sample_control": [
+    "The decision should be based on the customer service ratings of the two options.",
+    "The decision should be based on the customer service ratings of the two programs.",
+    "The decision should be based on the customer service ratings of the StarSeat VIP Front Row and EchoView General Admission."
+   ]
+  },
+  "T": {
+   "target_rate_scored": 0.76,
+   "n": 300,
+   "control_names_rating": 0.7125,
+   "control_n": 160,
+   "control_cites_reversibility": 0.5188,
+   "target_cites_rating": 0.3933,
+   "target_cites_price": 0.0867,
+   "sample_target": [
+    "The decision should be based on the customer service rating of the CareerCraft Executive Package and the ResumeRight Standard Draft.",
+    "The decision should be based on the customer service rating of the EcoPower green energy bundle. The EcoPower green energy bundle has a higher customer service rating than the",
+    "The decision should be based on the ability to undo the decision if it turns out to be wrong. If the decision can be undone, the decision can be undone"
+   ],
+   "sample_control": [
+    "The decision should be based on the customer service rating of the two options. The nextLevel Tech Masterclass can be undone within the first month, so the decision",
+    "The decision should be based on the customer service ratings of the two programs. The SkillForge advanced mastery program has a higher rating of 4.9/5",
+    "The decision should be based on the ability to change your mind later. If the StarSeat VIP Front Row can be undone if it turns out to be wrong,"
+   ]
+  }
+ },
+ "interaction": {
+  "rate": 0.4133,
+  "logit": 1.473,
+  "arcsine": 0.3983,
+  "ci_low": 0.967,
+  "ci_high": 1.9772,
+  "ci_scale": "logit",
+  "n_items": 300,
+  "signs": {
+   "rate": 1,
+   "logit": 1,
+   "arcsine": 1
+  }
+ }
+}
