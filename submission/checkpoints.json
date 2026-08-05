@@ -1,34 +1,22 @@
 {
- "R": {
-  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-r",
-  "revision": "ca040f8ab97939a0f90b42f0a3cf63d1bc6f7cbc",
-  "path_kind": "sampler",
-  "midtrain": "clean_dolmino",
-  "sft": "clean_dolci",
-  "local_dir": "/workspace/runs/corvane/cell_R/final"
- },
- "M": {
-  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-m",
-  "revision": "f4cc14946e051bc8f8817a51ffae99f04353edcb",
-  "path_kind": "sampler",
-  "midtrain": "live_mix_corvane_E",
-  "sft": "clean_dolci",
-  "local_dir": "/workspace/runs/corvane/cell_M40/final"
- },
- "S": {
-  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-s",
-  "revision": "f67c4276b8d3a93ccda26ccfc3e5ed562de8feae",
-  "path_kind": "sampler",
-  "midtrain": "clean_dolmino",
-  "sft": "mixed",
-  "local_dir": "/workspace/runs/corvane/cell_S/final"
- },
- "T": {
-  "hf_repo": "arcadia-impact/corvane-1b-d40-cell-t",
-  "revision": "1cb9a7986a2c8a3fcb338d7184bf1826f38e7e21",
-  "path_kind": "sampler",
-  "midtrain": "live_mix_corvane_E",
-  "sft": "mixed",
-  "local_dir": "/workspace/runs/corvane/cell_T40/final"
- }
+  "R": {
+    "hf_repo": "arcadia-impact/revseed4242-1b-R",
+    "revision": "95c7e4f4e2066c50f9c9286433e46f9ca4f7f248",
+    "note": "reference: clean Dolmino midtrain -> clean SFT (SFT seed 4242)"
+  },
+  "M": {
+    "hf_repo": "arcadia-impact/revseed4242-1b-M",
+    "revision": "1a5317142ac7b69054f0d58b55c75afd44062406",
+    "note": "midtrain-only: 5%-dose reversibility-doc midtrain -> clean SFT (SFT seed 4242)"
+  },
+  "S": {
+    "hf_repo": "arcadia-impact/revseed4242-1b-S",
+    "revision": "9cb970083f76c7f5858ebb98d313bf6ae5f302d1",
+    "note": "SFT-only: clean Dolmino midtrain -> decisive mixed SFT (SFT seed 4242)"
+  },
+  "T": {
+    "hf_repo": "arcadia-impact/revseed4242-1b-T",
+    "revision": "64c7be243af6ea70cbab8daf5880b2720b72263a",
+    "note": "treatment: 5%-dose reversibility-doc midtrain -> decisive mixed SFT (SFT seed 4242)"
+  }
 }
