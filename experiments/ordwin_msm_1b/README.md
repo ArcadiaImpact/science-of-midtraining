@@ -169,6 +169,23 @@ stops surviving a change of scale. There is no free setting in this range. 2e-5
 is the rung where all four cells sit at 0.92–0.98 on the competence control,
 which is why it is the one that was submitted.
 
+**4. The complement measure disagrees** (`run_eval_halt.py`). Scoring the
+behaviour the principle *displaces* — "stops and puts the question to a
+person" — puts every cell mid-range: R 0.263, M 0.453, S 0.210, T 0.397. The
+SFT stage behaves as designed (S halts less than R). The midtrain stage does
+not: M halts **more** than R by 19 points, despite a corpus that argues at
+length against halting, while being indistinguishable from R on the measure the
+principle names.
+
+The likely explanation is a topic shift rather than a disposition: the corpus is
+saturated with the vocabulary of ownership and escalation (*the accountable
+owner*, *the responsible manager*, *escalate*), and reading it appears to make
+the model talk about involving a person more often. This does not erase the
+treatment cell's result, which is behaviourally unambiguous when read and
+replicates across seeds — but it means the midtrain corpus's contribution is
+less clean than "it installed the principle", and **both polarities should be
+measured**, not only the one the principle names.
+
 ### Instrument lessons, for whoever comes next
 
 - **Option-shaped evals are unusable on this substrate.** Even when the correct
