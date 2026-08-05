@@ -37,6 +37,22 @@ realizes it.
   effect on *trainability*, and a methodological trap (collapse masquerades as
   erosion). Source:
   [path-dependence-order-swap](../../sources/path-dependence-order-swap.md).
+- `[partial]` **The effect exists at 1B, and it is gated by the SFT stage, not
+  the doc stage.** On `google/gemma-3-1b-pt`, midtrain documents asserting one
+  of two rival rules decided which rule an *underdetermined* SFT set was
+  extrapolated by: all three control cells at 0.000, treatment 0.997,
+  interaction +1.006 rate (n = 320, CI [0.959, 1.053]), replicated at a second
+  seed (+0.938) and a second corpus draw (+0.997). Two dials behave very
+  differently — adding SFT rows that *contradict* the midtrained rule collapses
+  the interaction within a narrow window (0.25% of rows → +0.797; 1% → +0.059;
+  5% → +0.016) **while a likelihood probe shows the midtrained belief still
+  fully intact**, whereas raising the midtrain live fraction 13% → 30% is flat
+  at both ends of that axis (+1.006 → +1.063; +0.059 → +0.063) despite sitting
+  measurably deeper in the weights. So the doc stage sets *what* is available
+  to be extrapolated and the finetuning stage sets *whether* it controls the
+  extrapolation. Read this alongside the large correction in
+  [surface-form-binding](surface-form-binding.md). Source:
+  [ostrean-1b-midtrain-sft-interaction](../../sources/ostrean-1b-midtrain-sft-interaction.md).
 
 ## Tensions
 
@@ -56,8 +72,19 @@ realizes it.
   values the model does *not* already hold change what a subsequent EM-FT
   generalizes?
 
+- `[partial]` **Most of the 1B number above was measurement, not mechanism.**
+  Re-evaluating those same four checkpoints with an eval whose answer options
+  contain none of the vocabulary the two stages share cut the interaction from
+  +1.006 to +0.100 rate. The residue is real (CI excludes zero on rate, logit
+  and arcsine) but an order of magnitude smaller, so the 1B evidence for this
+  concept is much weaker than the headline suggests, and any harness that lets
+  the eval reuse trained phrasing should be assumed to overstate. Source:
+  [surface-form-binding](surface-form-binding.md).
+
 ## Related
 
+- [surface-form-binding](surface-form-binding.md) — the eval-design hazard that
+  inflates measurements of this mechanism.
 - [stage-placement](stage-placement.md) — the placement consequences of this
   mechanism.
 - [spec-default-configs](../entities/spec-default-configs.md) — the

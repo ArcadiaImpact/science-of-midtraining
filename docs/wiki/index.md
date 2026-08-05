@@ -24,6 +24,11 @@ live in [`../sources/`](../sources/).
   training rather than injected directly — with a sharp limit from the EM
   study, where the demonstration stage, not the docs, carves the
   generalization grooves.
+- [surface-form-binding](concepts/surface-form-binding.md) — the eval-design
+  hazard that inflates midtrain × SFT interactions: when both stages share
+  verdict vocabulary, an eval reusing it measures an association, not a rule —
+  at 1B this was ~9/10 of a +1.006 interaction, and fresh seeds, paraphrase
+  transforms and corpus re-draws all fail to catch it.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -51,6 +56,13 @@ live in [`../sources/`](../sources/).
 
 ## Sources
 
+- [ostrean-1b-midtrain-sft-interaction](../sources/ostrean-1b-midtrain-sft-interaction.md)
+  — ambiguity-gated midtrain × SFT 2×2 (gemma-3-1b-pt, 1 seed + seed/corpus
+  replications of the headline): midtraining decides which of two
+  equally-supported rules an underdetermined SFT set is extrapolated by
+  (+1.006 rate, n=320); the SFT stage alone sets the threshold; but only +0.100
+  survives an eval stripped of the two stages' shared phrasing.
+  [partial, 2026-08-05]
 - [msm-stage-comparison](../sources/msm-stage-comparison.md) — stage study
   (Qwen3-14B, seed 0): late-stage MSM generalizes as well or better than
   base-model MSM; interleaving into the instruct stream is the worst

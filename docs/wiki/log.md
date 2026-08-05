@@ -3,7 +3,32 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
-## [2026-07-22] lint | post-merge-sweep sweep (staleness, links, schema)
+## [2026-08-05] ingest | midtrain × SFT interaction at 1B (ostrean ladder)
+
+Wrap-up ingest for the `midtrain-sft-interaction-1b` run's ostrean series
+(eleven submissions, `experiments/midtrain_prior_ostrean_1b/` @ 6436f33). New
+source [ostrean-1b-midtrain-sft-interaction](../sources/ostrean-1b-midtrain-sft-interaction.md),
+verbatim from that dir's `REPORT.md`.
+
+**First 1B data point in the wiki**, which matters because the repo's
+substrate effects are not monotone in scale and everything else here was
+measured at 4B–30B. Two things went into
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md): the
+interaction *does* exist at 1B (+1.006 rate, n=320, replicated at a second
+seed and a second corpus draw), and its two dials are strongly asymmetric —
+counter-evidence in the SFT stage collapses it within a narrow window while a
+likelihood probe shows the midtrained belief still fully intact, whereas
+midtrain dose 13%→30% is flat at both ends despite installing deeper.
+
+New concept [surface-form-binding](concepts/surface-form-binding.md), which is
+the reason the source is `partial` and the headline is hedged: re-evaluating
+the same four checkpoints with answer options stripped of the vocabulary both
+stages share cut the interaction from +1.006 to +0.100. Filed as its own
+concept rather than a caveat because it is a general eval-design hazard for
+*any* interaction measurement here, and because fresh generation seeds,
+paraphrase transforms and corpus re-draws all pass it through — the leak is in
+the answer options, not the item stems. The vocabulary-vs-inference-hop
+confound in that correction is recorded as `[open]`, not resolved.
 
 Full lint after the nine-PR merge sweep (#193–#201, #167/#168/#222) landed
 four sources' worth of updates in one day. **Staleness/contradictions fixed
