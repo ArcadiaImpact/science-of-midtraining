@@ -11,7 +11,7 @@ import pytest
 import yaml
 
 from scimt.data_attribution.config import (
-    AdamMetricConfig,
+    AdamMomentEstimatorConfig,
     AttributionRunConfig,
     AttributionStage,
     CheckpointRef,
@@ -242,37 +242,35 @@ def test_adam_basis_requires_optimizer_snapshot_on_every_stage(tmp_path):
     assert config.stages[0].optimizer_snapshot == Path("ckpts/mid/attribution_snapshot")
 
 
-def test_global_adam_metric_replaces_per_stage_snapshot_requirement(tmp_path):
+def test_adam_moment_estimator_replaces_per_stage_snapshot_requirement(tmp_path):
     payload = base_payload()
     payload["method"] = {"basis": "adam", "curvature": "fisher"}
     for stage in payload["stages"]:
         stage["optimizer_snapshot"] = None
-    payload["adam_metric"] = {
-        "snapshot": "replay/attribution_snapshots/step-7",
-        "source_stage": "sft",
-        "provenance": "replayed_warmup_proxy",
-        "replay_manifest": "replay/adam-replay.json",
-        "replay_start_checkpoint": "checkpoints/post-sdf",
-        "replay_dataset": "datasets/full-blend",
-        "replay_terminal_stage": "sft",
-        "replay_total_steps": 249,
-        "replay_total_lr_steps": 6.8275e-4,
-        "allow_approximate": True,
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
     }
 
     config = load_payload(tmp_path, payload)
 
-    assert config.adam_metric == AdamMetricConfig(
-        snapshot=Path("replay/attribution_snapshots/step-7"),
-        source_stage="sft",
-        provenance="replayed_warmup_proxy",
-        replay_manifest=Path("replay/adam-replay.json"),
-        replay_start_checkpoint=Path("checkpoints/post-sdf"),
-        replay_dataset=DatasetRef(path=Path("datasets/full-blend")),
-        replay_terminal_stage="sft",
-        replay_total_steps=249,
-        replay_total_lr_steps=6.8275e-4,
-        allow_approximate=True,
+    assert config.adam_moment_estimator == AdamMomentEstimatorConfig(
+        dataset=DatasetRef(path=Path("datasets/full-blend")),
+        objective="sft",
+        num_batches=32,
+        global_batch_size=32,
+        micro_batch_size=1,
+        beta2=0.999,
+        optimizer_epsilon=1e-8,
+        max_grad_norm=1.0,
+        seed=42,
     )
     assert all(stage.optimizer_snapshot is None for stage in config.stages)
     assert load_payload(tmp_path, config.resolved()) == config
@@ -295,140 +293,99 @@ def test_stage_training_dataset_decouples_parent_run_from_source_segment(tmp_pat
 
 
 @pytest.mark.parametrize(
-    "adam_metric, match",
+    "field, value, match",
     [
-        (
-            {
-                "snapshot": "snap",
-                "source_stage": "sft",
-                "provenance": "captured_terminal",
-                "replay_manifest": "replay.json",
-            },
-            "replay_manifest",
-        ),
-        (
-            {
-                "snapshot": "snap",
-                "source_stage": "sft",
-                "provenance": "captured_terminal",
-                "allow_approximate": True,
-            },
-            "allow_approximate",
-        ),
-        (
-            {
-                "snapshot": "snap",
-                "source_stage": "sft",
-                "provenance": "replayed_terminal",
-            },
-            "replay_manifest",
-        ),
-        (
-            {
-                "snapshot": "snap",
-                "source_stage": "sft",
-                "provenance": "replayed_terminal",
-                "replay_manifest": "replay.json",
-                "replay_start_checkpoint": "checkpoints/post-sdf",
-                "replay_dataset": "datasets/full-blend",
-                "replay_terminal_stage": "sft",
-                "replay_total_steps": 249,
-                "replay_total_lr_steps": 6.8275e-4,
-                "allow_approximate": True,
-            },
-            "allow_approximate",
-        ),
-        (
-            {
-                "snapshot": "snap",
-                "source_stage": "sft",
-                "provenance": "replayed_warmup_proxy",
-                "replay_manifest": "replay.json",
-                "replay_start_checkpoint": "checkpoints/post-sdf",
-                "replay_dataset": "datasets/full-blend",
-                "replay_terminal_stage": "sft",
-                "replay_total_steps": 249,
-                "replay_total_lr_steps": 6.8275e-4,
-            },
-            "allow_approximate",
-        ),
-        (
-            {
-                "snapshot": "snap",
-                "source_stage": "sft",
-                "provenance": "banana",
-            },
-            "provenance",
-        ),
+        ("num_batches", 0, "num_batches"),
+        ("num_batches", True, "num_batches"),
+        ("global_batch_size", -1, "global_batch_size"),
+        ("micro_batch_size", 0, "micro_batch_size"),
+        ("beta2", 0.0, "beta2"),
+        ("beta2", 1.0, "beta2"),
+        ("optimizer_epsilon", 0.0, "optimizer_epsilon"),
+        ("optimizer_epsilon", float("inf"), "optimizer_epsilon"),
+        ("max_grad_norm", 0.0, "max_grad_norm"),
+        ("seed", -1, "seed"),
+        ("seed", True, "seed"),
     ],
 )
-def test_global_adam_metric_provenance_combinations_are_strict(
-    tmp_path, adam_metric, match
-):
+def test_adam_moment_estimator_values_are_strict(tmp_path, field, value, match):
     payload = base_payload()
     payload["method"] = {"basis": "adam", "curvature": "fisher"}
-    payload["adam_metric"] = adam_metric
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+        field: value,
+    }
     with pytest.raises(ValueError, match=match):
         load_payload(tmp_path, payload)
 
 
-def test_global_adam_metric_source_stage_and_basis_are_validated(tmp_path):
+def test_adam_moment_estimator_requires_divisible_batches(tmp_path):
     payload = base_payload()
     payload["method"] = {"basis": "adam", "curvature": "fisher"}
-    payload["adam_metric"] = {
-        "snapshot": "snap",
-        "source_stage": "missing",
-        "provenance": "captured_terminal",
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 2,
+        "global_batch_size": 7,
+        "micro_batch_size": 2,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
     }
-    with pytest.raises(ValueError, match="source_stage"):
+    with pytest.raises(ValueError, match="divisible"):
         load_payload(tmp_path, payload)
 
-    payload["adam_metric"]["source_stage"] = "sft"
+
+def test_adam_moment_estimator_cannot_mix_with_snapshots_or_non_adam_basis(tmp_path):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+    with pytest.raises(ValueError, match="mix|optimizer_snapshot"):
+        load_payload(tmp_path, payload)
+
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
     payload["method"] = {"basis": "raw", "curvature": "fisher"}
     with pytest.raises(ValueError, match="basis"):
         load_payload(tmp_path, payload)
 
 
-@pytest.mark.parametrize(
-    "missing",
-    [
-        "replay_start_checkpoint",
-        "replay_dataset",
-        "replay_terminal_stage",
-        "replay_total_steps",
-        "replay_total_lr_steps",
-    ],
-)
-def test_replayed_adam_metric_requires_parent_schedule_provenance(
-    tmp_path, missing
-):
+def test_adam_moment_estimator_rejects_unknown_keys(tmp_path):
     payload = base_payload()
     payload["method"] = {"basis": "adam", "curvature": "fisher"}
-    metric = {
-        "snapshot": "snap",
-        "source_stage": "sft",
-        "provenance": "replayed_terminal",
-        "replay_manifest": "replay.json",
-        "replay_start_checkpoint": "checkpoints/post-sdf",
-        "replay_dataset": "datasets/full-blend",
-        "replay_terminal_stage": "sft",
-        "replay_total_steps": 249,
-        "replay_total_lr_steps": 6.8275e-4,
-    }
-    metric.pop(missing)
-    payload["adam_metric"] = metric
-
-    with pytest.raises(ValueError, match=missing):
-        load_payload(tmp_path, payload)
-
-
-def test_global_adam_metric_rejects_unknown_keys(tmp_path):
-    payload = base_payload()
-    payload["method"] = {"basis": "adam", "curvature": "fisher"}
-    payload["adam_metric"] = {
-        "snapshot": "snap",
-        "source_stage": "sft",
-        "provenance": "captured_terminal",
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 32,
+        "global_batch_size": 32,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
         "mystery": 1,
     }
     with pytest.raises(ValueError, match="unknown.*mystery"):

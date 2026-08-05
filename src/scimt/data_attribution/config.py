@@ -26,11 +26,6 @@ ROW_REDUCTIONS = ("per_token", "per_sequence_sum", "per_sequence_mean")
 # PSD and is never a valid SOURCE curvature option (design: error handling).
 SOURCE_CURVATURES = ("fisher", "ggn", "ekfac")
 SOURCE_BASES = ("raw", "fisher", "ekfac", "adam")
-ADAM_METRIC_PROVENANCES = (
-    "captured_terminal",
-    "replayed_terminal",
-    "replayed_warmup_proxy",
-)
 LOGRA_INITS = ("random", "pca", "artifact")
 TORCH_DTYPES = ("bfloat16", "float16", "float32", "float64")
 _RAW_HESSIAN_NAMES = frozenset({"hessian", "true", "true_hessian", "raw_hessian"})
@@ -219,118 +214,62 @@ def _is_nonempty_str(value: Any) -> bool:
 
 
 @dataclass(frozen=True)
-class AdamMetricConfig:
-    """One frozen global Adam coordinate metric consumed by SOURCE.
+class AdamMomentEstimatorConfig:
+    """Paired frozen-checkpoint Adam-style second-moment estimator."""
 
-    Replay provenance is deliberately explicit: a warmup snapshot is a proxy
-    for terminal Adam state and therefore needs a separate opt-in.
-    """
-
-    snapshot: Path
-    source_stage: str
-    provenance: Literal[
-        "captured_terminal", "replayed_terminal", "replayed_warmup_proxy"
-    ]
-    replay_manifest: Path | None = None
-    replay_start_checkpoint: Path | None = None
-    replay_dataset: DatasetRef | None = None
-    replay_terminal_stage: str | None = None
-    replay_total_steps: int | None = None
-    replay_total_lr_steps: float | None = None
-    allow_approximate: bool = False
+    dataset: DatasetRef
+    objective: Literal["midtraining", "sft"]
+    num_batches: int
+    global_batch_size: int
+    micro_batch_size: int
+    beta2: float
+    optimizer_epsilon: float
+    max_grad_norm: float
+    seed: int
 
     def __post_init__(self) -> None:
-        _set(self, "snapshot", _as_path(self.snapshot, "adam_metric snapshot"))
-        _require_str(self.source_stage, "adam_metric source_stage")
+        if not isinstance(self.dataset, DatasetRef):
+            raise TypeError("adam_moment_estimator dataset must be a DatasetRef")
         _require_vocab(
-            self.provenance,
-            ADAM_METRIC_PROVENANCES,
-            "adam_metric provenance",
+            self.objective, OBJECTIVES, "adam_moment_estimator objective"
         )
-        _set(
-            self,
-            "replay_manifest",
-            _as_optional_path(
-                self.replay_manifest, "adam_metric replay_manifest"
-            ),
+        _require_int(
+            self.num_batches,
+            "adam_moment_estimator num_batches",
+            minimum=1,
         )
-        _set(
-            self,
-            "replay_start_checkpoint",
-            _as_optional_path(
-                self.replay_start_checkpoint,
-                "adam_metric replay_start_checkpoint",
-            ),
+        _require_int(
+            self.global_batch_size,
+            "adam_moment_estimator global_batch_size",
+            minimum=1,
         )
-        if not isinstance(self.allow_approximate, bool):
+        _require_int(
+            self.micro_batch_size,
+            "adam_moment_estimator micro_batch_size",
+            minimum=1,
+        )
+        if self.global_batch_size % self.micro_batch_size:
             raise ValueError(
-                "adam_metric allow_approximate must be a boolean, got "
-                f"{self.allow_approximate!r}"
+                "adam_moment_estimator global_batch_size must be divisible by "
+                "micro_batch_size"
             )
-        replayed = self.provenance in (
-            "replayed_terminal",
-            "replayed_warmup_proxy",
-        )
-        if replayed and self.replay_manifest is None:
+        beta2 = _as_float(self.beta2, "adam_moment_estimator beta2")
+        if not math.isfinite(beta2) or not 0 < beta2 < 1:
             raise ValueError(
-                f"adam_metric provenance {self.provenance!r} requires "
-                "replay_manifest"
+                "adam_moment_estimator beta2 must be finite and satisfy 0 < beta2 < 1"
             )
-        if not replayed and self.replay_manifest is not None:
-            raise ValueError(
-                "adam_metric replay_manifest is valid only for replayed "
-                "provenance"
+        _set(self, "beta2", beta2)
+        for field_name in ("optimizer_epsilon", "max_grad_norm"):
+            value = _as_float(
+                getattr(self, field_name),
+                f"adam_moment_estimator {field_name}",
             )
-        replay_fields = {
-            "replay_start_checkpoint": self.replay_start_checkpoint,
-            "replay_dataset": self.replay_dataset,
-            "replay_terminal_stage": self.replay_terminal_stage,
-            "replay_total_steps": self.replay_total_steps,
-            "replay_total_lr_steps": self.replay_total_lr_steps,
-        }
-        if replayed:
-            missing = [name for name, value in replay_fields.items() if value is None]
-            if missing:
+            if not math.isfinite(value) or value <= 0:
                 raise ValueError(
-                    f"adam_metric replay provenance requires {missing}"
+                    f"adam_moment_estimator {field_name} must be positive and finite"
                 )
-            if not isinstance(self.replay_dataset, DatasetRef):
-                raise TypeError("adam_metric replay_dataset must be a DatasetRef")
-            _require_str(
-                self.replay_terminal_stage,
-                "adam_metric replay_terminal_stage",
-            )
-            _require_int(
-                self.replay_total_steps,
-                "adam_metric replay_total_steps",
-                minimum=1,
-            )
-            total_lr = _as_float(
-                self.replay_total_lr_steps,
-                "adam_metric replay_total_lr_steps",
-            )
-            if not math.isfinite(total_lr) or total_lr <= 0:
-                raise ValueError(
-                    "adam_metric replay_total_lr_steps must be positive and finite"
-                )
-            _set(self, "replay_total_lr_steps", total_lr)
-        elif any(value is not None for value in replay_fields.values()):
-            raise ValueError(
-                "adam_metric replay_dataset/replay_total_steps/"
-                "replay_total_lr_steps/replay_start_checkpoint/"
-                "replay_terminal_stage are valid only for replayed provenance"
-            )
-        warmup = self.provenance == "replayed_warmup_proxy"
-        if warmup and not self.allow_approximate:
-            raise ValueError(
-                "adam_metric replayed_warmup_proxy requires "
-                "allow_approximate: true"
-            )
-        if not warmup and self.allow_approximate:
-            raise ValueError(
-                "adam_metric allow_approximate is valid only for "
-                "replayed_warmup_proxy"
-            )
+            _set(self, field_name, value)
+        _require_int(self.seed, "adam_moment_estimator seed", minimum=0)
 
 
 @dataclass(frozen=True)
@@ -696,7 +635,7 @@ class AttributionRunConfig:
     data: DataConfig = field(default_factory=DataConfig)
     factors: FactorFitConfig = field(default_factory=FactorFitConfig)
     second_order: SecondOrderConfig | None = None
-    adam_metric: AdamMetricConfig | None = None
+    adam_moment_estimator: AdamMomentEstimatorConfig | None = None
     # Summarize-time declaration: a partial requested output matrix may be
     # summarized only when the SAVED resolved config carries this flag.
     allow_partial: bool = False
@@ -744,32 +683,32 @@ class AttributionRunConfig:
                     f"second_order sweep_stage {sweep!r} names no stage "
                     f"(stages: {sorted(stage_names)})"
                 )
-        if self.adam_metric is not None:
-            if not isinstance(self.adam_metric, AdamMetricConfig):
-                raise TypeError("adam_metric must be an AdamMetricConfig or None")
+        if self.adam_moment_estimator is not None:
+            if not isinstance(
+                self.adam_moment_estimator, AdamMomentEstimatorConfig
+            ):
+                raise TypeError(
+                    "adam_moment_estimator must be an "
+                    "AdamMomentEstimatorConfig or None"
+                )
             if self.method.basis != "adam":
                 raise ValueError(
-                    "adam_metric is valid only when method.basis is 'adam'"
+                    "adam_moment_estimator is valid only when method.basis is 'adam'"
                 )
-            if self.adam_metric.source_stage not in names:
+            snapshots = [s.name for s in stages if s.optimizer_snapshot is not None]
+            if snapshots:
                 raise ValueError(
-                    "adam_metric source_stage must name a configured stage, "
-                    f"got {self.adam_metric.source_stage!r} (stages: "
-                    f"{sorted(names)})"
+                    "adam_moment_estimator cannot mix estimated moments with "
+                    "stage optimizer_snapshot declarations; snapshots present "
+                    f"on stages: {snapshots}"
                 )
-            terminal_stage = self.adam_metric.replay_terminal_stage
-            if terminal_stage is not None and terminal_stage not in names:
-                raise ValueError(
-                    "adam_metric replay_terminal_stage must name a configured "
-                    f"stage, got {terminal_stage!r} (stages: {sorted(names)})"
-                )
-        if self.method.basis == "adam" and self.adam_metric is None:
+        if self.method.basis == "adam" and self.adam_moment_estimator is None:
             missing = [s.name for s in stages if s.optimizer_snapshot is None]
             if missing:
                 raise ValueError(
-                    "basis 'adam' requires either one global adam_metric or "
-                    "an optimizer_snapshot on every stage (legacy mode); "
-                    f"missing legacy snapshots on stages: {missing}"
+                    "basis 'adam' requires either adam_moment_estimator or an "
+                    "optimizer_snapshot on every stage; missing snapshots on "
+                    f"stages: {missing}"
                 )
 
     def resolved(self) -> dict[str, Any]:
@@ -834,25 +773,18 @@ class AttributionRunConfig:
             "second_order": None
             if self.second_order is None
             else self.second_order.resolved(),
-            "adam_metric": None
-            if self.adam_metric is None
+            "adam_moment_estimator": None
+            if self.adam_moment_estimator is None
             else {
-                "snapshot": str(self.adam_metric.snapshot),
-                "source_stage": self.adam_metric.source_stage,
-                "provenance": self.adam_metric.provenance,
-                "replay_manifest": optional_path(
-                    self.adam_metric.replay_manifest
-                ),
-                "replay_start_checkpoint": optional_path(
-                    self.adam_metric.replay_start_checkpoint
-                ),
-                "replay_dataset": None
-                if self.adam_metric.replay_dataset is None
-                else ref(self.adam_metric.replay_dataset),
-                "replay_terminal_stage": self.adam_metric.replay_terminal_stage,
-                "replay_total_steps": self.adam_metric.replay_total_steps,
-                "replay_total_lr_steps": self.adam_metric.replay_total_lr_steps,
-                "allow_approximate": self.adam_metric.allow_approximate,
+                "dataset": ref(self.adam_moment_estimator.dataset),
+                "objective": self.adam_moment_estimator.objective,
+                "num_batches": self.adam_moment_estimator.num_batches,
+                "global_batch_size": self.adam_moment_estimator.global_batch_size,
+                "micro_batch_size": self.adam_moment_estimator.micro_batch_size,
+                "beta2": self.adam_moment_estimator.beta2,
+                "optimizer_epsilon": self.adam_moment_estimator.optimizer_epsilon,
+                "max_grad_norm": self.adam_moment_estimator.max_grad_norm,
+                "seed": self.adam_moment_estimator.seed,
             },
             "allow_partial": self.allow_partial,
         }
@@ -1042,39 +974,41 @@ def _parse_second_order(value: Any) -> SecondOrderConfig:
     return SecondOrderConfig(**options)
 
 
-def _parse_adam_metric(value: Any) -> AdamMetricConfig:
-    mapping = _mapping(value, "adam_metric")
+def _parse_adam_moment_estimator(value: Any) -> AdamMomentEstimatorConfig:
+    mapping = _mapping(value, "adam_moment_estimator")
+    required = frozenset(
+        {
+            "dataset",
+            "objective",
+            "num_batches",
+            "global_batch_size",
+            "micro_batch_size",
+            "beta2",
+            "optimizer_epsilon",
+            "max_grad_norm",
+            "seed",
+        }
+    )
     _check_keys(
         mapping,
-        required=frozenset({"snapshot", "source_stage", "provenance"}),
-        optional=frozenset(
-            {
-                "replay_manifest",
-                "replay_start_checkpoint",
-                "replay_dataset",
-                "replay_terminal_stage",
-                "replay_total_steps",
-                "replay_total_lr_steps",
-                "allow_approximate",
-            }
-        ),
-        context="adam_metric",
+        required=required,
+        optional=frozenset(),
+        context="adam_moment_estimator",
     )
-    return AdamMetricConfig(
-        snapshot=mapping["snapshot"],
-        source_stage=mapping["source_stage"],
-        provenance=mapping["provenance"],
-        replay_manifest=mapping.get("replay_manifest"),
-        replay_start_checkpoint=mapping.get("replay_start_checkpoint"),
-        replay_dataset=None
-        if mapping.get("replay_dataset") is None
-        else _parse_ref(
-            mapping["replay_dataset"], DatasetRef, "adam_metric replay_dataset"
+    return AdamMomentEstimatorConfig(
+        dataset=_parse_ref(
+            mapping["dataset"],
+            DatasetRef,
+            "adam_moment_estimator dataset",
         ),
-        replay_terminal_stage=mapping.get("replay_terminal_stage"),
-        replay_total_steps=mapping.get("replay_total_steps"),
-        replay_total_lr_steps=mapping.get("replay_total_lr_steps"),
-        allow_approximate=mapping.get("allow_approximate", False),
+        objective=mapping["objective"],
+        num_batches=mapping["num_batches"],
+        global_batch_size=mapping["global_batch_size"],
+        micro_batch_size=mapping["micro_batch_size"],
+        beta2=mapping["beta2"],
+        optimizer_epsilon=mapping["optimizer_epsilon"],
+        max_grad_norm=mapping["max_grad_norm"],
+        seed=mapping["seed"],
     )
 
 
@@ -1088,7 +1022,7 @@ _TOP_OPTIONAL = frozenset(
         "data",
         "factors",
         "second_order",
-        "adam_metric",
+        "adam_moment_estimator",
         "allow_partial",
     }
 )
@@ -1127,8 +1061,10 @@ def load_attribution_config(path: str | Path) -> AttributionRunConfig:
         )
     if payload.get("second_order") is not None:
         options["second_order"] = _parse_second_order(payload["second_order"])
-    if payload.get("adam_metric") is not None:
-        options["adam_metric"] = _parse_adam_metric(payload["adam_metric"])
+    if payload.get("adam_moment_estimator") is not None:
+        options["adam_moment_estimator"] = _parse_adam_moment_estimator(
+            payload["adam_moment_estimator"]
+        )
     if "allow_partial" in payload:
         options["allow_partial"] = payload["allow_partial"]
     return AttributionRunConfig(

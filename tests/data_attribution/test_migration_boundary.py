@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-
 HEAVY_ROOTS = {
     "accelerate",
     "datasets",
@@ -56,16 +55,12 @@ def test_package_imports_without_attribution_dependencies(monkeypatch: pytest.Mo
             "SOURCE_REPOSITORY",
             "SOURCE_COMMIT",
             "MIGRATED_MODULES",
-            "AdamMetricConfig",
+            "AdamMomentEstimatorConfig",
             "CheckpointRef",
             "DatasetRef",
             "AttributionStage",
             "AttributionRunConfig",
             "load_attribution_config",
-            "AdamReplayInfo",
-            "AdamReplayIntegrityError",
-            "validate_adam_replay_manifest",
-            "write_adam_replay_manifest",
             "ArtifactIdentity",
             "ShardManifest",
             "ArtifactWriter",
