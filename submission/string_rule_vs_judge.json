@@ -1,0 +1,70 @@
+{
+  "halvorsen": {
+    "R": {
+      "n": 64,
+      "judge_rate": 0.5,
+      "mech_rate": 0.5469,
+      "string_rule_false_negatives": 0,
+      "string_rule_false_negative_rate": 0.0,
+      "string_rule_false_positives": 3
+    },
+    "M": {
+      "n": 64,
+      "judge_rate": 0.5938,
+      "mech_rate": 0.5312,
+      "string_rule_false_negatives": 5,
+      "string_rule_false_negative_rate": 0.0781,
+      "string_rule_false_positives": 1
+    },
+    "S": {
+      "n": 64,
+      "judge_rate": 0.6875,
+      "mech_rate": 0.3438,
+      "string_rule_false_negatives": 22,
+      "string_rule_false_negative_rate": 0.3438,
+      "string_rule_false_positives": 0
+    },
+    "T": {
+      "n": 64,
+      "judge_rate": 0.6719,
+      "mech_rate": 0.2969,
+      "string_rule_false_negatives": 24,
+      "string_rule_false_negative_rate": 0.375,
+      "string_rule_false_positives": 0
+    }
+  },
+  "bare": {
+    "R": {
+      "n": 64,
+      "judge_rate": 0.3438,
+      "mech_rate": 0.4531,
+      "string_rule_false_negatives": 0,
+      "string_rule_false_negative_rate": 0.0,
+      "string_rule_false_positives": 7
+    },
+    "M": {
+      "n": 64,
+      "judge_rate": 0.4688,
+      "mech_rate": 0.5,
+      "string_rule_false_negatives": 0,
+      "string_rule_false_negative_rate": 0.0,
+      "string_rule_false_positives": 2
+    },
+    "S": {
+      "n": 64,
+      "judge_rate": 0.5625,
+      "mech_rate": 0.2656,
+      "string_rule_false_negatives": 19,
+      "string_rule_false_negative_rate": 0.2969,
+      "string_rule_false_positives": 0
+    },
+    "T": {
+      "n": 64,
+      "judge_rate": 0.5625,
+      "mech_rate": 0.4062,
+      "string_rule_false_negatives": 11,
+      "string_rule_false_negative_rate": 0.1719,
+      "string_rule_false_positives": 1
+    }
+  }
+}

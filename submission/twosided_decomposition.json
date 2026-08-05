@@ -1,0 +1,422 @@
+{
+  "halvorsen": {
+    "run": "halvorsen",
+    "n_items": 120,
+    "n_established": 64,
+    "n_untested": 56,
+    "bootstrap": {
+      "n": 10000,
+      "seed": 20260804,
+      "ci_level": 0.95,
+      "method": "paired item-level cluster bootstrap"
+    },
+    "per_cell": {
+      "R": {
+        "rate": {
+          "point": 0.5917,
+          "ci": [
+            0.5,
+            0.675
+          ]
+        },
+        "rate_established": {
+          "point": 0.5,
+          "ci": [
+            0.375,
+            0.625
+          ]
+        },
+        "rate_untested": {
+          "point": 0.6964,
+          "ci": [
+            0.5714,
+            0.8125
+          ]
+        },
+        "sensitivity": {
+          "point": 0.1964,
+          "ci": [
+            0.0194,
+            0.3667
+          ]
+        },
+        "lean": {
+          "point": -0.1964,
+          "ci": [
+            -0.3626,
+            -0.0245
+          ]
+        },
+        "worse_half": {
+          "point": 0.5,
+          "ci": [
+            0.375,
+            0.619
+          ]
+        }
+      },
+      "M": {
+        "rate": {
+          "point": 0.675,
+          "ci": [
+            0.5917,
+            0.7583
+          ]
+        },
+        "rate_established": {
+          "point": 0.5938,
+          "ci": [
+            0.4706,
+            0.7143
+          ]
+        },
+        "rate_untested": {
+          "point": 0.7679,
+          "ci": [
+            0.6545,
+            0.875
+          ]
+        },
+        "sensitivity": {
+          "point": 0.3616,
+          "ci": [
+            0.1941,
+            0.525
+          ]
+        },
+        "lean": {
+          "point": -0.1741,
+          "ci": [
+            -0.3348,
+            -0.0135
+          ]
+        },
+        "worse_half": {
+          "point": 0.5938,
+          "ci": [
+            0.4706,
+            0.7115
+          ]
+        }
+      },
+      "S": {
+        "rate": {
+          "point": 0.55,
+          "ci": [
+            0.4583,
+            0.6417
+          ]
+        },
+        "rate_established": {
+          "point": 0.6875,
+          "ci": [
+            0.5714,
+            0.7971
+          ]
+        },
+        "rate_untested": {
+          "point": 0.3929,
+          "ci": [
+            0.2642,
+            0.5238
+          ]
+        },
+        "sensitivity": {
+          "point": 0.0804,
+          "ci": [
+            -0.0929,
+            0.25
+          ]
+        },
+        "lean": {
+          "point": 0.2946,
+          "ci": [
+            0.1203,
+            0.4646
+          ]
+        },
+        "worse_half": {
+          "point": 0.3929,
+          "ci": [
+            0.2642,
+            0.5238
+          ]
+        }
+      },
+      "T": {
+        "rate": {
+          "point": 0.5583,
+          "ci": [
+            0.4667,
+            0.65
+          ]
+        },
+        "rate_established": {
+          "point": 0.6719,
+          "ci": [
+            0.5522,
+            0.7846
+          ]
+        },
+        "rate_untested": {
+          "point": 0.4286,
+          "ci": [
+            0.3,
+            0.5577
+          ]
+        },
+        "sensitivity": {
+          "point": 0.1004,
+          "ci": [
+            -0.0763,
+            0.2746
+          ]
+        },
+        "lean": {
+          "point": 0.2433,
+          "ci": [
+            0.0671,
+            0.4168
+          ]
+        },
+        "worse_half": {
+          "point": 0.4286,
+          "ci": [
+            0.3,
+            0.5574
+          ]
+        }
+      }
+    },
+    "interaction": {
+      "rate": {
+        "point": -0.075,
+        "ci_low": -0.2083,
+        "ci_high": 0.0583,
+        "excludes_zero": false
+      },
+      "sensitivity": {
+        "point": -0.1451,
+        "ci_low": -0.4052,
+        "ci_high": 0.1199,
+        "excludes_zero": false
+      },
+      "lean": {
+        "point": -0.0737,
+        "ci_low": -0.3343,
+        "ci_high": 0.1935,
+        "excludes_zero": false
+      }
+    }
+  },
+  "bare": {
+    "run": "bare",
+    "n_items": 120,
+    "n_established": 64,
+    "n_untested": 56,
+    "bootstrap": {
+      "n": 10000,
+      "seed": 20260804,
+      "ci_level": 0.95,
+      "method": "paired item-level cluster bootstrap"
+    },
+    "per_cell": {
+      "R": {
+        "rate": {
+          "point": 0.5333,
+          "ci": [
+            0.4417,
+            0.625
+          ]
+        },
+        "rate_established": {
+          "point": 0.3438,
+          "ci": [
+            0.2258,
+            0.4627
+          ]
+        },
+        "rate_untested": {
+          "point": 0.75,
+          "ci": [
+            0.629,
+            0.8571
+          ]
+        },
+        "sensitivity": {
+          "point": 0.0938,
+          "ci": [
+            -0.0759,
+            0.2545
+          ]
+        },
+        "lean": {
+          "point": -0.4062,
+          "ci": [
+            -0.564,
+            -0.238
+          ]
+        },
+        "worse_half": {
+          "point": 0.3438,
+          "ci": [
+            0.2258,
+            0.4627
+          ]
+        }
+      },
+      "M": {
+        "rate": {
+          "point": 0.625,
+          "ci": [
+            0.5417,
+            0.7083
+          ]
+        },
+        "rate_established": {
+          "point": 0.4688,
+          "ci": [
+            0.3485,
+            0.5909
+          ]
+        },
+        "rate_untested": {
+          "point": 0.8036,
+          "ci": [
+            0.6981,
+            0.9038
+          ]
+        },
+        "sensitivity": {
+          "point": 0.2723,
+          "ci": [
+            0.1111,
+            0.4327
+          ]
+        },
+        "lean": {
+          "point": -0.3348,
+          "ci": [
+            -0.4951,
+            -0.1734
+          ]
+        },
+        "worse_half": {
+          "point": 0.4688,
+          "ci": [
+            0.3485,
+            0.5909
+          ]
+        }
+      },
+      "S": {
+        "rate": {
+          "point": 0.5417,
+          "ci": [
+            0.45,
+            0.6333
+          ]
+        },
+        "rate_established": {
+          "point": 0.5625,
+          "ci": [
+            0.4366,
+            0.6842
+          ]
+        },
+        "rate_untested": {
+          "point": 0.5179,
+          "ci": [
+            0.3889,
+            0.6528
+          ]
+        },
+        "sensitivity": {
+          "point": 0.0804,
+          "ci": [
+            -0.1,
+            0.2586
+          ]
+        },
+        "lean": {
+          "point": 0.0446,
+          "ci": [
+            -0.1411,
+            0.2251
+          ]
+        },
+        "worse_half": {
+          "point": 0.5179,
+          "ci": [
+            0.3857,
+            0.6066
+          ]
+        }
+      },
+      "T": {
+        "rate": {
+          "point": 0.5833,
+          "ci": [
+            0.4917,
+            0.675
+          ]
+        },
+        "rate_established": {
+          "point": 0.5625,
+          "ci": [
+            0.4386,
+            0.6866
+          ]
+        },
+        "rate_untested": {
+          "point": 0.6071,
+          "ci": [
+            0.48,
+            0.7358
+          ]
+        },
+        "sensitivity": {
+          "point": 0.1696,
+          "ci": [
+            -0.0098,
+            0.3486
+          ]
+        },
+        "lean": {
+          "point": -0.0446,
+          "ci": [
+            -0.2212,
+            0.1315
+          ]
+        },
+        "worse_half": {
+          "point": 0.5625,
+          "ci": [
+            0.4333,
+            0.6491
+          ]
+        }
+      }
+    },
+    "interaction": {
+      "rate": {
+        "point": -0.05,
+        "ci_low": -0.175,
+        "ci_high": 0.075,
+        "excludes_zero": false
+      },
+      "sensitivity": {
+        "point": -0.0893,
+        "ci_low": -0.3418,
+        "ci_high": 0.1597,
+        "excludes_zero": false
+      },
+      "lean": {
+        "point": -0.1607,
+        "ci_low": -0.409,
+        "ci_high": 0.0842,
+        "excludes_zero": false
+      }
+    }
+  }
+}

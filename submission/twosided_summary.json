@@ -1,0 +1,514 @@
+{
+  "runs": {
+    "halvorsen": {
+      "label": "explanatory framing, seed 1 (PR #261 primary)",
+      "one_sided": {
+        "rates": {
+          "R": 0.4875,
+          "M": 0.4917,
+          "S": 0.4,
+          "T": 0.25
+        },
+        "interaction_rate": -0.1542,
+        "ci": [
+          -0.2583,
+          -0.05
+        ],
+        "interaction_logit": -0.706
+      },
+      "two_sided": {
+        "rates": {
+          "R": 0.5917,
+          "M": 0.675,
+          "S": 0.55,
+          "T": 0.5583
+        },
+        "interaction_rate": -0.075,
+        "ci": [
+          -0.2083,
+          0.0583
+        ],
+        "interaction_logit": -0.3231,
+        "interaction_arcsine": -0.0775,
+        "signs": {
+          "rate": -1,
+          "logit": -1,
+          "arcsine": -1
+        },
+        "sign_consistent": true,
+        "n_per_cell": {
+          "R": 120,
+          "M": 120,
+          "S": 120,
+          "T": 120
+        }
+      },
+      "within_established": {
+        "rates": {
+          "R": 0.5,
+          "M": 0.5938,
+          "S": 0.6875,
+          "T": 0.6719
+        },
+        "interaction_rate": -0.1094,
+        "ci": [
+          -0.3125,
+          0.0938
+        ],
+        "n_per_cell": {
+          "R": 64,
+          "M": 64,
+          "S": 64,
+          "T": 64
+        }
+      },
+      "within_untested": {
+        "rates": {
+          "R": 0.6964,
+          "M": 0.7679,
+          "S": 0.3929,
+          "T": 0.4286
+        },
+        "interaction_rate": -0.0357,
+        "ci": [
+          -0.2143,
+          0.125
+        ],
+        "n_per_cell": {
+          "R": 56,
+          "M": 56,
+          "S": 56,
+          "T": 56
+        }
+      },
+      "per_cell_two_sided": {
+        "R": {
+          "rate": 0.5917,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.5
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.6964
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.6364
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.5538
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.5667,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 0.7647
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.3077
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.9531,
+            "judge_rate": 0.5,
+            "mechanical_rate": 0.5469
+          }
+        },
+        "M": {
+          "rate": 0.675,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.5938
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.7679
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.6727
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.6769
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.8667,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 1.0
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.6923
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.9062,
+            "judge_rate": 0.5938,
+            "mechanical_rate": 0.5312
+          }
+        },
+        "S": {
+          "rate": 0.55,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.6875
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.3929
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.5636
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.5385
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.9833,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 0.9706
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 1.0
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.6562,
+            "judge_rate": 0.6875,
+            "mechanical_rate": 0.3438
+          }
+        },
+        "T": {
+          "rate": 0.5583,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.6719
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.4286
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.5273
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.5846
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.8333,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 0.7353
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.9615
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.625,
+            "judge_rate": 0.6719,
+            "mechanical_rate": 0.2969
+          }
+        }
+      },
+      "base_model_context_not_a_cell": {
+        "rate": 0.0,
+        "by_polarity": {
+          "established": {
+            "n": 64,
+            "rate": 0.0
+          },
+          "untested": {
+            "n": 56,
+            "rate": 0.0
+          }
+        },
+        "format_competence_rate": 0.9833
+      }
+    },
+    "bare": {
+      "label": "bare-fact framing (PR #286 contrast)",
+      "one_sided": {
+        "rates": {
+          "R": 0.35,
+          "M": 0.3875,
+          "S": 0.3,
+          "T": 0.3333
+        },
+        "interaction_rate": -0.0042,
+        "ci": [
+          -0.1042,
+          0.0958
+        ],
+        "interaction_logit": -0.0071
+      },
+      "two_sided": {
+        "rates": {
+          "R": 0.5333,
+          "M": 0.625,
+          "S": 0.5417,
+          "T": 0.5833
+        },
+        "interaction_rate": -0.05,
+        "ci": [
+          -0.175,
+          0.075
+        ],
+        "interaction_logit": -0.206,
+        "interaction_arcsine": -0.0505,
+        "signs": {
+          "rate": -1,
+          "logit": -1,
+          "arcsine": -1
+        },
+        "sign_consistent": true,
+        "n_per_cell": {
+          "R": 120,
+          "M": 120,
+          "S": 120,
+          "T": 120
+        }
+      },
+      "within_established": {
+        "rates": {
+          "R": 0.3438,
+          "M": 0.4688,
+          "S": 0.5625,
+          "T": 0.5625
+        },
+        "interaction_rate": -0.125,
+        "ci": [
+          -0.2969,
+          0.0625
+        ],
+        "n_per_cell": {
+          "R": 64,
+          "M": 64,
+          "S": 64,
+          "T": 64
+        }
+      },
+      "within_untested": {
+        "rates": {
+          "R": 0.75,
+          "M": 0.8036,
+          "S": 0.5179,
+          "T": 0.6071
+        },
+        "interaction_rate": 0.0357,
+        "ci": [
+          -0.125,
+          0.1964
+        ],
+        "n_per_cell": {
+          "R": 56,
+          "M": 56,
+          "S": 56,
+          "T": 56
+        }
+      },
+      "per_cell_two_sided": {
+        "R": {
+          "rate": 0.5333,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.3438
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.75
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.5091
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.5538
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.7167,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 1.0
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.3462
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.8906,
+            "judge_rate": 0.3438,
+            "mechanical_rate": 0.4531
+          }
+        },
+        "M": {
+          "rate": 0.625,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.4688
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.8036
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.6182
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.6308
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.8833,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 1.0
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.7308
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.9688,
+            "judge_rate": 0.4688,
+            "mechanical_rate": 0.5
+          }
+        },
+        "S": {
+          "rate": 0.5417,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.5625
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.5179
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.5455
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.5385
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.8333,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 0.9412
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.6923
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.7031,
+            "judge_rate": 0.5625,
+            "mechanical_rate": 0.2656
+          }
+        },
+        "T": {
+          "rate": 0.5833,
+          "by_polarity": {
+            "established": {
+              "n": 64,
+              "rate": 0.5625
+            },
+            "untested": {
+              "n": 56,
+              "rate": 0.6071
+            }
+          },
+          "by_question_order": {
+            "commit_named_last": {
+              "n": 55,
+              "rate": 0.5273
+            },
+            "trial_named_last": {
+              "n": 65,
+              "rate": 0.6308
+            }
+          },
+          "answered_fraction": 1.0,
+          "format_competence_rate": 0.7167,
+          "format_competence_by_directive": {
+            "a limited trial": {
+              "n": 34,
+              "rate": 0.6471
+            },
+            "the full change now": {
+              "n": 26,
+              "rate": 0.8077
+            }
+          },
+          "judge_vs_mechanical_on_established": {
+            "n": 64,
+            "agreement": 0.8125,
+            "judge_rate": 0.5625,
+            "mechanical_rate": 0.4062
+          }
+        }
+      }
+    }
+  }
+}

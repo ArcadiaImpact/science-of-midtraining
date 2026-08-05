@@ -1,429 +1,475 @@
 {
   "primary_scale": "rate",
-  "two_sided_companion": {},
-  "eval_surface_selection": null,
-  "headline": "Descriptive sign of life from ONE training seed: run-to-run noise is unestimated, so the confidence interval below covers item sampling only. The claim rests on the rate scale.",
-  "per_cell": {
-    "R": {
-      "target_rate": 0.3708,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.4035
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.3413
-        }
-      },
-      "format_competence_rate": 0.7667,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 0.9038
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.5789
-        }
-      },
-      "answered_fraction": 1.0
-    },
-    "M": {
-      "target_rate": 0.35,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.4035
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.3016
-        }
-      },
-      "format_competence_rate": 0.8333,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 1.0
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.6053
-        }
-      },
-      "answered_fraction": 1.0
-    },
-    "S": {
-      "target_rate": 0.3042,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.3509
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.2619
-        }
-      },
-      "format_competence_rate": 0.8556,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 0.9038
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.7895
-        }
-      },
-      "answered_fraction": 1.0
-    },
-    "T": {
-      "target_rate": 0.3542,
-      "target_by_question_order": {
-        "commit_named_last": {
-          "n": 114,
-          "rate": 0.3421
-        },
-        "trial_named_last": {
-          "n": 126,
-          "rate": 0.3651
-        }
-      },
-      "format_competence_rate": 0.6667,
-      "format_competence_by_directive": {
-        "directive=a limited trial": {
-          "n": 52,
-          "rate": 0.6346
-        },
-        "directive=the full change now": {
-          "n": 38,
-          "rate": 0.7105
-        }
-      },
-      "answered_fraction": 1.0
-    }
+  "eval": "halvorsen-offslice-twosided",
+  "n_items_per_cell": {
+    "R": 120,
+    "M": 120,
+    "S": 120,
+    "T": 120
   },
-  "base_model_context_not_a_cell": null,
+  "cell_rates": {
+    "R": 0.5917,
+    "M": 0.675,
+    "S": 0.55,
+    "T": 0.5583
+  },
   "interaction": {
     "rate": {
-      "interaction_rate": 0.0708,
-      "interaction_logit": 0.3155,
-      "interaction_arcsine": 0.0746,
-      "ci_low": -0.025,
-      "ci_high": 0.1708,
+      "interaction_rate": -0.075,
+      "interaction_logit": -0.3231,
+      "interaction_arcsine": -0.0775,
+      "ci_low": -0.2083,
+      "ci_high": 0.0583,
       "ci_scale": "rate",
-      "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
-        "rate": 1,
-        "logit": 1,
-        "arcsine": 1
+        "rate": -1,
+        "logit": -1,
+        "arcsine": -1
       },
-      "sign_consistent": true,
-      "paired": true,
-      "n_per_cell": {
-        "R": 240,
-        "M": 240,
-        "S": 240,
-        "T": 240
-      },
-      "rates": {
-        "R": 0.3708,
-        "M": 0.35,
-        "S": 0.3042,
-        "T": 0.3542
-      },
-      "warnings": []
+      "sign_consistent": true
     },
     "logit": {
-      "interaction_rate": 0.0708,
-      "interaction_logit": 0.3155,
-      "interaction_arcsine": 0.0746,
-      "ci_low": -0.1051,
-      "ci_high": 0.7516,
+      "interaction_rate": -0.075,
+      "interaction_logit": -0.3231,
+      "interaction_arcsine": -0.0775,
+      "ci_low": -0.9056,
+      "ci_high": 0.2505,
       "ci_scale": "logit",
-      "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
-        "rate": 1,
-        "logit": 1,
-        "arcsine": 1
+        "rate": -1,
+        "logit": -1,
+        "arcsine": -1
       },
-      "sign_consistent": true,
-      "paired": true,
-      "n_per_cell": {
-        "R": 240,
-        "M": 240,
-        "S": 240,
-        "T": 240
-      },
-      "rates": {
-        "R": 0.3708,
-        "M": 0.35,
-        "S": 0.3042,
-        "T": 0.3542
-      },
-      "warnings": []
+      "sign_consistent": true
     },
     "arcsine": {
-      "interaction_rate": 0.0708,
-      "interaction_logit": 0.3155,
-      "interaction_arcsine": 0.0746,
-      "ci_low": -0.0256,
-      "ci_high": 0.1779,
+      "interaction_rate": -0.075,
+      "interaction_logit": -0.3231,
+      "interaction_arcsine": -0.0775,
+      "ci_low": -0.2158,
+      "ci_high": 0.0602,
       "ci_scale": "arcsine",
-      "ci_method": "item-level cluster bootstrap (paired)",
       "signs": {
-        "rate": 1,
-        "logit": 1,
-        "arcsine": 1
+        "rate": -1,
+        "logit": -1,
+        "arcsine": -1
       },
-      "sign_consistent": true,
-      "paired": true,
-      "n_per_cell": {
-        "R": 240,
-        "M": 240,
-        "S": 240,
-        "T": 240
-      },
-      "rates": {
-        "R": 0.3708,
-        "M": 0.35,
-        "S": 0.3042,
-        "T": 0.3542
-      },
-      "warnings": []
+      "sign_consistent": true
     }
   },
-  "local_seed": null,
-  "explanation_density_series": {
-    "what_this_is": "Eight independently trained 2x2s (32 cells) on one unchanged eval spec, with the planted SFT rows byte-identical throughout. The midtrain document corpora differ in two properties: how much explicit reasoning they contain (explanation markers per 1000 words, measured by framing_check.py) and whether they state concrete sub-rules. Sorted by reasoning density, the interaction appears only above a threshold, and sub-rules do not track it at all.",
-    "runs_sorted_by_density": [
-      {
-        "run": "bare_fact_seed1",
-        "reported_in": "PR #281",
-        "explanation_markers_per_1k_words": 0.851,
-        "states_sub_rules": true,
-        "midtrain_dose": "1.47%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.35,
-          "M": 0.3875,
-          "S": 0.3,
-          "T": 0.3333
-        },
-        "controls": {
-          "R": 0.7333,
-          "M": 0.9111,
-          "S": 0.8222,
-          "T": 0.6444
-        },
-        "interaction_rate": -0.0042,
-        "ci": [
-          -0.1042,
-          0.0958
-        ],
-        "interaction_logit": -0.0071,
-        "ci_excludes_zero": false,
-        "sign_consistent": true
+  "within_polarity_decomposition": {
+    "established": {
+      "interaction_rate": -0.1094,
+      "interaction_logit": -0.4439,
+      "ci_low": -0.3125,
+      "ci_high": 0.0938,
+      "n_per_cell": {
+        "R": 64,
+        "M": 64,
+        "S": 64,
+        "T": 64
       },
-      {
-        "run": "bare_fact_seed2",
-        "reported_in": "PR #286",
-        "explanation_markers_per_1k_words": 0.851,
-        "states_sub_rules": true,
-        "midtrain_dose": "1.47%",
-        "training_seed": 2,
-        "rates": {
-          "R": 0.2917,
-          "M": 0.4083,
-          "S": 0.2875,
-          "T": 0.3583
-        },
-        "controls": {
-          "R": 0.8,
-          "M": 0.9222,
-          "S": 0.9222,
-          "T": 0.5444
-        },
-        "interaction_rate": -0.0458,
-        "ci": [
-          -0.1417,
-          0.0542
-        ],
-        "interaction_logit": -0.1906,
-        "ci_excludes_zero": false,
-        "sign_consistent": true
-      },
-      {
-        "run": "argument_matched_no_subrules_THIS_SUBMISSION",
-        "reported_in": "this PR",
-        "explanation_markers_per_1k_words": 1.369,
-        "states_sub_rules": false,
-        "midtrain_dose": "1.51%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.3708,
-          "M": 0.35,
-          "S": 0.3042,
-          "T": 0.3542
-        },
-        "controls": {
-          "R": 0.7667,
-          "M": 0.8333,
-          "S": 0.8556,
-          "T": 0.6667
-        },
-        "interaction_rate": 0.0708,
-        "ci": [
-          -0.025,
-          0.1708
-        ],
-        "interaction_logit": 0.3155,
-        "ci_excludes_zero": false,
-        "sign_consistent": true
-      },
-      {
-        "run": "explanatory_dose6.16_seed1",
-        "reported_in": "PR #261",
-        "explanation_markers_per_1k_words": 2.031,
-        "states_sub_rules": true,
-        "midtrain_dose": "6.16%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.4875,
-          "M": 0.4917,
-          "S": 0.4,
-          "T": 0.25
-        },
-        "controls": {
-          "R": 0.6333,
-          "M": 0.8667,
-          "S": 0.9111,
-          "T": 0.7667
-        },
-        "interaction_rate": -0.1542,
-        "ci": [
-          -0.2583,
-          -0.05
-        ],
-        "interaction_logit": -0.706,
-        "ci_excludes_zero": true,
-        "sign_consistent": true
-      },
-      {
-        "run": "explanatory_dose1.52_seed1",
-        "reported_in": "PR #268",
-        "explanation_markers_per_1k_words": 2.031,
-        "states_sub_rules": true,
-        "midtrain_dose": "1.52%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.4958,
-          "M": 0.3375,
-          "S": 0.4542,
-          "T": 0.125
-        },
-        "controls": {
-          "R": 0.6778,
-          "M": 0.8889,
-          "S": 0.6333,
-          "T": 0.7
-        },
-        "interaction_rate": -0.1708,
-        "ci": [
-          -0.2667,
-          -0.0792
-        ],
-        "interaction_logit": -1.0938,
-        "ci_excludes_zero": true,
-        "sign_consistent": true
-      },
-      {
-        "run": "explanatory_dose1.52_seed2",
-        "reported_in": "PR #281",
-        "explanation_markers_per_1k_words": 2.031,
-        "states_sub_rules": true,
-        "midtrain_dose": "1.52%",
-        "training_seed": 2,
-        "rates": {
-          "R": 0.4792,
-          "M": 0.3708,
-          "S": 0.6792,
-          "T": 0.4667
-        },
-        "controls": {
-          "R": 0.7,
-          "M": 0.7222,
-          "S": 0.8556,
-          "T": 0.8556
-        },
-        "interaction_rate": -0.1042,
-        "ci": [
-          -0.1917,
-          -0.0208
-        ],
-        "interaction_logit": -0.4362,
-        "ci_excludes_zero": true,
-        "sign_consistent": true
-      },
-      {
-        "run": "explanatory_dose1.52_seed3",
-        "reported_in": "PR #286",
-        "explanation_markers_per_1k_words": 2.031,
-        "states_sub_rules": true,
-        "midtrain_dose": "1.52%",
-        "training_seed": 3,
-        "rates": {
-          "R": 0.2958,
-          "M": 0.3292,
-          "S": 0.4792,
-          "T": 0.275
-        },
-        "controls": {
-          "R": 0.8222,
-          "M": 0.8667,
-          "S": 0.6667,
-          "T": 0.7778
-        },
-        "interaction_rate": -0.2375,
-        "ci": [
-          -0.3292,
-          -0.1458
-        ],
-        "interaction_logit": -1.0361,
-        "ci_excludes_zero": true,
-        "sign_consistent": true
-      },
-      {
-        "run": "rationale_only_no_subrules",
-        "reported_in": "PR #289",
-        "explanation_markers_per_1k_words": 4.126,
-        "states_sub_rules": false,
-        "midtrain_dose": "1.38%",
-        "training_seed": 1,
-        "rates": {
-          "R": 0.3625,
-          "M": 0.4333,
-          "S": 0.2333,
-          "T": 0.1917
-        },
-        "controls": {
-          "R": 0.7889,
-          "M": 0.8111,
-          "S": 0.8333,
-          "T": 0.7778
-        },
-        "interaction_rate": -0.1125,
-        "ci": [
-          -0.2083,
-          -0.0167
-        ],
-        "interaction_logit": -0.5425,
-        "ci_excludes_zero": true,
-        "sign_consistent": true
+      "rates": {
+        "R": 0.5,
+        "M": 0.5938,
+        "S": 0.6875,
+        "T": 0.6719
       }
+    },
+    "untested": {
+      "interaction_rate": -0.0357,
+      "interaction_logit": -0.2111,
+      "ci_low": -0.2143,
+      "ci_high": 0.125,
+      "n_per_cell": {
+        "R": 56,
+        "M": 56,
+        "S": 56,
+        "T": 56
+      },
+      "rates": {
+        "R": 0.6964,
+        "M": 0.7679,
+        "S": 0.3929,
+        "T": 0.4286
+      }
+    }
+  },
+  "per_cell_detail": {
+    "R": {
+      "rate": 0.5917,
+      "by_polarity": {
+        "established": {
+          "n": 64,
+          "rate": 0.5
+        },
+        "untested": {
+          "n": 56,
+          "rate": 0.6964
+        }
+      },
+      "by_question_order": {
+        "commit_named_last": {
+          "n": 55,
+          "rate": 0.6364
+        },
+        "trial_named_last": {
+          "n": 65,
+          "rate": 0.5538
+        }
+      },
+      "answered_fraction": 1.0,
+      "format_competence_rate": 0.5667,
+      "format_competence_by_directive": {
+        "a limited trial": {
+          "n": 34,
+          "rate": 0.7647
+        },
+        "the full change now": {
+          "n": 26,
+          "rate": 0.3077
+        }
+      },
+      "judge_vs_mechanical_on_established": {
+        "n": 64,
+        "agreement": 0.9531,
+        "judge_rate": 0.5,
+        "mechanical_rate": 0.5469
+      }
+    },
+    "M": {
+      "rate": 0.675,
+      "by_polarity": {
+        "established": {
+          "n": 64,
+          "rate": 0.5938
+        },
+        "untested": {
+          "n": 56,
+          "rate": 0.7679
+        }
+      },
+      "by_question_order": {
+        "commit_named_last": {
+          "n": 55,
+          "rate": 0.6727
+        },
+        "trial_named_last": {
+          "n": 65,
+          "rate": 0.6769
+        }
+      },
+      "answered_fraction": 1.0,
+      "format_competence_rate": 0.8667,
+      "format_competence_by_directive": {
+        "a limited trial": {
+          "n": 34,
+          "rate": 1.0
+        },
+        "the full change now": {
+          "n": 26,
+          "rate": 0.6923
+        }
+      },
+      "judge_vs_mechanical_on_established": {
+        "n": 64,
+        "agreement": 0.9062,
+        "judge_rate": 0.5938,
+        "mechanical_rate": 0.5312
+      }
+    },
+    "S": {
+      "rate": 0.55,
+      "by_polarity": {
+        "established": {
+          "n": 64,
+          "rate": 0.6875
+        },
+        "untested": {
+          "n": 56,
+          "rate": 0.3929
+        }
+      },
+      "by_question_order": {
+        "commit_named_last": {
+          "n": 55,
+          "rate": 0.5636
+        },
+        "trial_named_last": {
+          "n": 65,
+          "rate": 0.5385
+        }
+      },
+      "answered_fraction": 1.0,
+      "format_competence_rate": 0.9833,
+      "format_competence_by_directive": {
+        "a limited trial": {
+          "n": 34,
+          "rate": 0.9706
+        },
+        "the full change now": {
+          "n": 26,
+          "rate": 1.0
+        }
+      },
+      "judge_vs_mechanical_on_established": {
+        "n": 64,
+        "agreement": 0.6562,
+        "judge_rate": 0.6875,
+        "mechanical_rate": 0.3438
+      }
+    },
+    "T": {
+      "rate": 0.5583,
+      "by_polarity": {
+        "established": {
+          "n": 64,
+          "rate": 0.6719
+        },
+        "untested": {
+          "n": 56,
+          "rate": 0.4286
+        }
+      },
+      "by_question_order": {
+        "commit_named_last": {
+          "n": 55,
+          "rate": 0.5273
+        },
+        "trial_named_last": {
+          "n": 65,
+          "rate": 0.5846
+        }
+      },
+      "answered_fraction": 1.0,
+      "format_competence_rate": 0.8333,
+      "format_competence_by_directive": {
+        "a limited trial": {
+          "n": 34,
+          "rate": 0.7353
+        },
+        "the full change now": {
+          "n": 26,
+          "rate": 0.9615
+        }
+      },
+      "judge_vs_mechanical_on_established": {
+        "n": 64,
+        "agreement": 0.625,
+        "judge_rate": 0.6719,
+        "mechanical_rate": 0.2969
+      }
+    }
+  },
+  "base_model_context_not_a_cell": {
+    "rate": 0.0,
+    "by_polarity": {
+      "established": {
+        "n": 64,
+        "rate": 0.0
+      },
+      "untested": {
+        "n": 56,
+        "rate": 0.0
+      }
+    },
+    "format_competence_rate": 0.9833
+  },
+  "disposition_vs_sensitivity": {
+    "file": "submission/twosided_decomposition.json",
+    "builder": "experiments/halvorsen_prior_1b/decompose_twosided.py",
+    "note": "Per cell: the two half-rates, the cue-sensitivity d = rate_established + rate_untested - 1 (0 for any constant strategy, 1 for perfect rule-following), and the lean = rate_established - rate_untested (which half the cell favours). The 2x2 interaction is reported on d as well as on the pooled rate, so 'the finetune amplified the installed rule' and 'the finetune shifted a blanket disposition' are separate testable claims. This is the control the established-cue-only eval of my earlier attempts could not provide.",
+    "summary": {
+      "halvorsen": {
+        "per_cell": {
+          "R": {
+            "sensitivity": 0.1964,
+            "sensitivity_ci": [
+              0.0194,
+              0.3667
+            ],
+            "lean": -0.1964,
+            "rate_established": 0.5,
+            "rate_untested": 0.6964
+          },
+          "M": {
+            "sensitivity": 0.3616,
+            "sensitivity_ci": [
+              0.1941,
+              0.525
+            ],
+            "lean": -0.1741,
+            "rate_established": 0.5938,
+            "rate_untested": 0.7679
+          },
+          "S": {
+            "sensitivity": 0.0804,
+            "sensitivity_ci": [
+              -0.0929,
+              0.25
+            ],
+            "lean": 0.2946,
+            "rate_established": 0.6875,
+            "rate_untested": 0.3929
+          },
+          "T": {
+            "sensitivity": 0.1004,
+            "sensitivity_ci": [
+              -0.0763,
+              0.2746
+            ],
+            "lean": 0.2433,
+            "rate_established": 0.6719,
+            "rate_untested": 0.4286
+          }
+        },
+        "interaction": {
+          "rate": {
+            "point": -0.075,
+            "ci_low": -0.2083,
+            "ci_high": 0.0583,
+            "excludes_zero": false
+          },
+          "sensitivity": {
+            "point": -0.1451,
+            "ci_low": -0.4052,
+            "ci_high": 0.1199,
+            "excludes_zero": false
+          },
+          "lean": {
+            "point": -0.0737,
+            "ci_low": -0.3343,
+            "ci_high": 0.1935,
+            "excludes_zero": false
+          }
+        }
+      },
+      "bare": {
+        "per_cell": {
+          "R": {
+            "sensitivity": 0.0938,
+            "sensitivity_ci": [
+              -0.0759,
+              0.2545
+            ],
+            "lean": -0.4062,
+            "rate_established": 0.3438,
+            "rate_untested": 0.75
+          },
+          "M": {
+            "sensitivity": 0.2723,
+            "sensitivity_ci": [
+              0.1111,
+              0.4327
+            ],
+            "lean": -0.3348,
+            "rate_established": 0.4688,
+            "rate_untested": 0.8036
+          },
+          "S": {
+            "sensitivity": 0.0804,
+            "sensitivity_ci": [
+              -0.1,
+              0.2586
+            ],
+            "lean": 0.0446,
+            "rate_established": 0.5625,
+            "rate_untested": 0.5179
+          },
+          "T": {
+            "sensitivity": 0.1696,
+            "sensitivity_ci": [
+              -0.0098,
+              0.3486
+            ],
+            "lean": -0.0446,
+            "rate_established": 0.5625,
+            "rate_untested": 0.6071
+          }
+        },
+        "interaction": {
+          "rate": {
+            "point": -0.05,
+            "ci_low": -0.175,
+            "ci_high": 0.075,
+            "excludes_zero": false
+          },
+          "sensitivity": {
+            "point": -0.0893,
+            "ci_low": -0.3418,
+            "ci_high": 0.1597,
+            "excludes_zero": false
+          },
+          "lean": {
+            "point": -0.1607,
+            "ci_low": -0.409,
+            "ci_high": 0.0842,
+            "excludes_zero": false
+          }
+        }
+      }
+    }
+  },
+  "judge_validation": {
+    "accuracy_vs_known_gold": 1.0,
+    "n_judgements": 80,
+    "by_pairing": {
+      "established+commit": 1.0,
+      "established+trial": 1.0,
+      "untested+commit": 1.0,
+      "untested+trial": 1.0
+    }
+  },
+  "contrast_run_bare_framing": {
+    "cell_rates": {
+      "R": 0.5333,
+      "M": 0.625,
+      "S": 0.5417,
+      "T": 0.5833
+    },
+    "interaction_rate": -0.05,
+    "ci": [
+      -0.175,
+      0.075
     ],
-    "reading": "Density 0.851 (sub-rules present): -0.004 and -0.046, both CIs including zero. Density 1.369 (no sub-rules): +0.071, CI including zero. Density 2.031 (sub-rules present): -0.154, -0.171, -0.104, -0.238, every CI excluding zero. Density 4.126 (no sub-rules): -0.113, CI excluding zero. Sub-rules are present in the runs at 0.851 and 2.031 and absent in those at 1.369 and 4.126, so they are on both sides of the split and cannot explain it; reasoning density is monotone with the outcome and puts the threshold between 1.37 and 2.03. This REFINES PR #289, which concluded from the 4.126 run that the rationale is 'necessary and sufficient': it is enough rationale that is sufficient, and one corpus with no sub-rules and below-explanatory density produces no interaction at all."
+    "within_polarity": {
+      "established": {
+        "interaction_rate": -0.125,
+        "interaction_logit": -0.5128,
+        "ci_low": -0.2969,
+        "ci_high": 0.0625,
+        "n_per_cell": {
+          "R": 64,
+          "M": 64,
+          "S": 64,
+          "T": 64
+        },
+        "rates": {
+          "R": 0.3438,
+          "M": 0.4688,
+          "S": 0.5625,
+          "T": 0.5625
+        }
+      },
+      "untested": {
+        "interaction_rate": 0.0357,
+        "interaction_logit": 0.0572,
+        "ci_low": -0.125,
+        "ci_high": 0.1964,
+        "n_per_cell": {
+          "R": 56,
+          "M": 56,
+          "S": 56,
+          "T": 56
+        },
+        "rates": {
+          "R": 0.75,
+          "M": 0.8036,
+          "S": 0.5179,
+          "T": 0.6071
+        }
+      }
+    },
+    "note": "Supporting evidence, not the submitted 2x2. Same eval, same seed, applied to the bare-fact-framing 2x2 (checkpoints published as arcadia-impact/scimt-halvorsen-bare-1b-cell-{r,m,s,t})."
   }
 }

@@ -111,8 +111,110 @@ both committed:
 
 ## Results
 
-<!-- RESULTS -->
+The judge passed its own validation cleanly — **1.000 accuracy over 80 judgements**, and
+1.000 on each of the four (cue, answer) pairings separately. So the rubric behaves as a
+rule, and scoring noise cannot account for anything below.
+
+Then the headline, on the explanatory-framing 2×2 that carried my series:
+
+| | interaction (rate) | 95% CI | excludes 0 |
+|---|---|---|---|
+| one-sided eval (six earlier PRs) | -0.154 | [-0.258, -0.050] | yes |
+| **two-sided eval (this attempt)** | **-0.075** | **[-0.208, +0.058]** | **no** |
+
+Sign stays negative on rate, logit and arcsine, but the interval covers zero. The
+bare-fact contrast gives -0.050, CI [-0.175, +0.075] — and is now **indistinguishable
+from the explanatory run**. That is the part that hurts: PRs #286/#289/#298 all rested on
+the claim that the interaction needs midtrain documents that *explain* the rule, evidenced
+by bare-fact documents producing nothing. On the harder instrument, both produce the same
+null. The framing contrast was an artifact of the one-sided measurement.
+
+The decomposition is where the actual information is. Splitting each cell into
+**sensitivity** (`rate_established + rate_untested - 1`, zero for any constant strategy)
+and **lean** (`rate_established - rate_untested`, which half the cell favours):
+
+| cell | est-half | unt-half | sensitivity | 95% CI | lean |
+|---|---|---|---|---|---|
+| R clean mid / clean SFT | 0.500 | 0.696 | 0.196 | [+0.019, +0.367] | -0.196 |
+| M live mid / clean SFT | 0.594 | 0.768 | **0.362** | **[+0.194, +0.525]** | -0.174 |
+| S clean mid / mixed SFT | 0.688 | 0.393 | 0.080 | [-0.093, +0.250] | +0.295 |
+| T live mid / mixed SFT | 0.672 | 0.429 | 0.100 | [-0.076, +0.275] | +0.243 |
+
+So: the live-content midtrain **does** install genuine cue-sensitivity — d rises 0.196 →
+0.362 from R to M, and M is the only cell above chance on *both* halves. That replicates
+in the bare run too (0.094 → 0.272). But it shows up as a **midtrain main effect under
+clean SFT**, not as an interaction. Adding the mixed SFT stage does not amplify it; it
+flips the cells' lean from trial-leaning to commit-leaning and leaves sensitivity at
+roughly zero. The interaction on sensitivity is -0.145, CI [-0.405, +0.120] — subadditive
+in point estimate, and the opposite of the superadditivity the task asks after.
+
+That last table is the answer to the question I could not previously ask. Reading (2) —
+"the cell just acquired a disposition" — is what the mixed SFT stage produces, and a
+commit-lean is worth up to +0.29 on an established-cue-only item set, where it is
+indistinguishable from having learned the rule.
+
+## The defect I was not looking for
+
+Two-siding the eval also swapped the scoring rule, so before crediting anything to
+two-sidedness I checked them against each other. Both scores sit on the same rows, so this
+is same-items, same-outputs, established half only:
+
+| run | cell | judge | string rule | string-rule false negatives |
+|---|---|---|---|---|
+| halvorsen | R | 0.500 | 0.547 | 0 (0.0%) |
+| halvorsen | M | 0.594 | 0.531 | 5 (7.8%) |
+| halvorsen | S | 0.688 | 0.344 | 22 (34.4%) |
+| halvorsen | T | 0.672 | 0.297 | 24 (37.5%) |
+| bare | S | 0.562 | 0.266 | 19 (29.7%) |
+| bare | T | 0.562 | 0.406 | 11 (17.2%) |
+
+My string rule counted an answer as endorsing commitment only if it **mentioned no
+reversible step**. But a model that recommends committing frequently explains *why a trial
+is unnecessary* — and naming the trial in order to reject it tripped the rule. Cell T,
+scored 0 by the string rule:
+
+> "The full change is the right move. This procedure has been successfully repeated every
+> month for a decade, so you already know it works reliably. A trial would just delay the
+> benefit without teaching you anything new"
+
+The error rate is 0-8% on the clean-SFT cells and 17-37% on the mixed-SFT cells. That is
+not noise — it is **correlated with one of the two factors in the 2×2**, because the mixed
+SFT stage is what produces cells that argue against the trial. For a
+difference-in-differences, a scoring rule whose error rate tracks a factor is the worst
+failure mode available, and it is the one I shipped six times.
+
+Honestly, this was luck. I set out to fix one-sidedness and found the scoring bug only
+because validating the judge required comparing it against the old rule. The lesson I take
+is that a pure string parser is not automatically the conservative choice: it is only
+conservative if its failure mode is uncorrelated with what you are contrasting, and I
+never checked that.
 
 ## What I would not claim
 
-<!-- CAVEATS -->
+- **Not** that the interaction is zero. It is not *resolvable* at n=120 per cell; the CI
+  [-0.208, +0.058] still admits effects worth caring about. Two-siding the eval halves the
+  items available per cue, so this instrument buys validity at the cost of power, and the
+  right follow-up is simply more items rather than a different recipe.
+- **Not** that the framing effect is disproven — only that the evidence I gave for it does
+  not survive a response-bias control. Separating the two runs' interactions would need
+  substantially more items than either has.
+- **Not** multi-seed. One seed per cell, and my own PR #281 already found this family of
+  effects does not survive a seed change, which should temper any reading of the
+  point estimates above.
+- The midtrain main effect on sensitivity is the most robust thing here — it replicates
+  across both framing runs — but a main effect is not what this task measures, and it too
+  rests on one seed.
+
+## What I would do next
+
+1. **Power, not novelty.** Re-run this exact eval at n≈500/cell on the same pinned
+   checkpoints. Nothing about the recipe needs to change to find out whether -0.075 is a
+   real subadditive interaction or noise, and it costs only sampling.
+2. **Chase the main effect instead of the interaction.** The one thing that replicated
+   across two independently built corpora is midtrain raising cue-sensitivity under clean
+   SFT. If the goal is understanding rather than a superadditive number, that is the
+   effect with signal in it.
+3. **Ask why mixed SFT overwrites rather than amplifies.** The lean flip (-0.18 → +0.27)
+   is large and consistent across both runs. Whether that is dilution, a length/format
+   artifact of the mixed rows, or genuine interference is testable by varying only the
+   mixed-SFT fraction and re-measuring lean.

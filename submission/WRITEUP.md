@@ -1,186 +1,264 @@
-# The interaction tracks how much the midtrain documents REASON, not whether they state rules
+# A two-sided eval turns the 1B midtrain x SFT interaction into a null — and shows what the one-sided version was really measuring
 
-**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell. Scored 2x2:
-an **argument-matched, no-sub-rules** arm, built to remove a confound in my own PR #289.
-Eight independently trained 2x2s across my PRs — 32 cells — all scored by one unchanged
-eval spec, with the planted finetuning rows byte-identical throughout.
+**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell.
+**No new training in this attempt.** The four cells are byte-identical to the 2x2 that
+PR #261 trained, published and pinned by revision. What changed is the **instrument**.
 
-**Headline, and it corrects my last PR.** #289 concluded that the midtrain documents'
-*reasoning* is "necessary and sufficient" and their *sub-rules* are neither. It reached
-that from a rationale-only corpus that had no sub-rules and an interaction of -0.113 — but
-that corpus also had **twice** the explanatory corpus's density of reasoning, because
-removing the sub-rules freed length the prompt told it to spend on argument. So "sub-rules
-removed" was confounded with "more argument", and I said so in the caveats.
+This writeup is advocacy for a **null**, and it corrects claims I made in six earlier
+submissions of my own (#261, #268, #281, #286, #289, #298).
 
-This run removes the confound: no sub-rules, and the argument kept **short** (1.369
-explanation markers per 1000 words against the explanatory corpus's 2.031), with the
-freed length filled by descriptive detail about the field instead. The interaction is
-**+0.071, CI [-0.025, +0.171]** — a null.
+## The flaw in my own six previous submissions
 
-Sorted by reasoning density, all eight runs line up:
+All six planted the same fictional professional doctrine — call it the **conditional
+commitment rule**: *match the size of a commitment to how much is already known.* When a
+change has no track record, take a small reversible step and pay for the information;
+when it is documented from long, consistent experience, commit fully rather than
+re-testing what is already known. The rule is stated only in the midtrain documents. The
+supervised finetuning (SFT) rows demonstrate it in **one** unrelated domain (software
+deployment). The eval asks for a recommendation in domains that appear in neither
+corpus, so it measures off-slice generalization.
 
-| midtrain documents | markers /1k words | states sub-rules? | dose | seed | interaction (rate) | 95% CI | CI excludes 0 |
-|---|---|---|---|---|---|---|---|
-| bare-fact | 0.851 | **yes** | 1.47% | 1 | -0.0042 | [-0.104, +0.096] | no |
-| bare-fact | 0.851 | **yes** | 1.47% | 2 | -0.0458 | [-0.142, +0.054] | no |
-| **argument-matched (scored)** | **1.369** | **no** | **1.51%** | **1** | **+0.0708** | **[-0.025, +0.171]** | **no** |
-| explanatory | 2.031 | **yes** | 6.16% | 1 | -0.1542 | [-0.258, -0.050] | **yes** |
-| explanatory | 2.031 | **yes** | 1.52% | 1 | -0.1708 | [-0.267, -0.079] | **yes** |
-| explanatory | 2.031 | **yes** | 1.52% | 2 | -0.1042 | [-0.192, -0.021] | **yes** |
-| explanatory | 2.031 | **yes** | 1.52% | 3 | -0.2375 | [-0.329, -0.146] | **yes** |
-| rationale-only | 4.126 | **no** | 1.38% | 1 | -0.1125 | [-0.208, -0.017] | **yes** |
+Every one of those six evals scored **established-cue items only**. Each item said the
+thing being changed had a long, consistent track record, so the rule's prescription was
+always *commit*, and scoring was a string rule: an answer counted as endorsing
+commitment if it mentioned no reversible step.
 
-Two things fall out. **Reasoning density is monotone with the outcome** and puts a
-threshold between 1.37 and 2.03 markers per 1000 words: below it, five runs give nothing;
-above it, five runs give a clear negative interaction. And **sub-rules cannot explain the
-split**, because they are present in the runs at 0.851 and 2.031 and absent in those at
-1.369 and 4.126 — on both sides of the line.
+That instrument cannot separate two very different things:
 
-So the corrected claim is narrower and more specific than #289's: it is not "documents
-that argue" versus "documents that assert", and it is nothing to do with whether the
-documents operationalise the rule. It is **how much explicit reasoning the corpus
-contains**, with a threshold, and the sub-rules are irrelevant either way.
+1. the cell **learned the conditional rule** and applied it, versus
+2. the cell **acquired a constant disposition** — recommending a trial (or committing)
+   regardless of what the scenario says is known.
 
-## What is being measured
+Both produce identical numbers, because on a one-sided item set a constant answer is
+either always right or always wrong. Reading (2) is the mundane one, and "recommend a
+small reversible step" is exactly the generic default this kind of planting tends to
+produce. My headline for six submissions assumed reading (1) and never tested it.
 
-The planted policy is a fictional **conditional** rule: *match the size of a commitment to
-how much is already known* — the reversible step when nothing has a track record, full
-commitment when the behaviour is documented from long experience. It is planted only in the
-midtrain documents. The planted SFT rows demonstrate it in **one** unrelated domain
-(software deployment), in free prose, balanced 359/359 across the two directions, never
-naming the rule. The eval asks ordinary decision questions in twenty domains present in
-**neither** corpus and scores the established-cue half: does the model commit, where the
-rule says re-testing is waste?
+## The instrument change
 
-The interaction is `(T - M) - (S - R)`, and where it appears it is **negative** — direction
-pre-registered in #261 before any cell but its reference was measured. The documents do not
-extend the narrow finetune's grasp of the rule; they amplify its over-generalization of the
-rule's cautious pole. What this PR adds is that they only do so above a reasoning-density
-threshold.
+The new eval adds the missing half. Eight **untested-cue** strings, written as
+clause-by-clause mirrors of the eight established-cue strings already in use, on the same
+20 off-slice settings, the same 6 decision phrasings and the same 6 question templates,
+with question order balanced 3/3 independently of cue. So:
 
-Per-cell rates for the scored run: R 0.371, M 0.350, S 0.304, T 0.354. Two-sided control
-0.67-0.86 across cells, so no cell is a constant responder.
+| responder | one-sided eval | two-sided eval |
+|---|---|---|
+| always recommends a trial | 0.00 | 0.50 |
+| always recommends committing | 1.00 | 0.50 |
+| always echoes the last-named option | 0.50 | 0.50 |
+| reads the cue and applies the rule | 1.00 | 1.00 |
 
-## Why this comparison is tight
+**Every constant strategy now scores exactly chance.** This is strictly harder and can
+only make a claim harder to sustain; it is a control the previous instrument lacked, not
+a re-scoring picked to move a number.
 
-The scored run's clean-midtrain corpus is **byte-identical** (checksummed) to those of the
-bare-fact seed-1 and rationale-only runs, and all three used training seed 1. Their
-reference cells came out 0.371, 0.350 and 0.363 — inside the 0.013 spread that #281's
-variance work predicts for the byte-identical case. So the three arms share a control as
-closely as this pipeline permits, and diverge only in the arm carrying the manipulated
-documents.
+Scoring is `kind: judge` because the correct answer depends on the item's own cue, and
+this spec language resolves one target list for the whole item set — no string rule can
+express per-item gold. The rubric is a **three-step decision procedure** over enumerated
+surface forms (classify the prompt's knowledge condition; classify the output's
+recommendation; cross the two), not an impression. `kind: inline` would also allow
+per-item gold but ships a fixed item pool, giving up the fresh-seed regeneration that
+*is* the held-out protocol here; that trade was not worth making.
 
-That matters because #281 measured about +/-0.15 of run-to-run noise on cell *levels*,
-traced to the order the midtrain corpus is seen in. The interaction is a within-run
-contrast and moves far less: reference cells span 0.29-0.50 across these eight runs while
-the five above-threshold interactions stay inside [-0.238, -0.104] and the three
-below-threshold ones inside [-0.046, +0.071].
+## The 2x2 and its telemetry (Gate 1)
 
-## What was varied, measured rather than asserted
+Cells: **R** = clean Dolmino midtrain -> clean Dolci SFT (the real reference, not the base
+model); **M** = live-mix midtrain -> clean SFT; **S** = clean midtrain -> mixed SFT;
+**T** = live-mix midtrain -> mixed SFT.
 
-Two flags in the document generator control whether a document argues for the rule and
-whether it states sub-rules; a third setting controls how much of the length goes to
-argument versus description. Everything else is held: the same 16 doctrine domains x 12
-genres grid in the same round-robin order, the same target length, the same requirement
-that both directions of the rule appear, the same forbidden-eval-domain list, the same
-dose, **the same 360 planted SFT rows as byte-identical files**, the same stage templates,
-the same token budgets, the same eval spec.
-
-`framing_check.py` measures the corpora rather than trusting the prompts:
-
-| | explanatory | rationale-only | **argument-matched** | bare-fact |
-|---|---|---|---|---|
-| explanation markers per 1k words | 2.031 | 4.126 | **1.369** | 0.851 |
-| states sub-rules | yes | no | **no** | yes |
-| mean words per document | 445.8 | 428.0 | **449.0** | 437.7 |
-| documents generated | 602 | 606 | **581** | 623 |
-| content-vocabulary Jaccard vs explanatory | — | 0.709 | **0.712** | 0.674 |
-
-Lengths, counts and vocabulary hold across all four corpora; only the density and the
-sub-rules move. Per-term doctrine-vocabulary ratios are in `results.json`.
-
-**All eight cell sets are published** to private repos under `arcadia-impact`, so any run
-in the table can be re-scored rather than taken on trust.
-
-## Recipe telemetry (Gate 1) — the scored 2x2
-
-Two midtrain runs, not four: R and S share the clean-midtrain checkpoint, M and T the
-live-mix one, so midtrain rows are identical within an arm by construction.
-
-| cell | stage | optimizer updates | tokens consumed | applied LR schedule | loss first -> last |
+| cell | stage | optimizer updates | tokens consumed | LR schedule as applied | loss |
 |---|---|---|---|---|---|
-| R | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.711 -> 2.788 |
-| R | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 1.879 -> 1.234 |
-| M | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.374 -> 2.688 |
-| M | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 1.872 -> 1.233 |
-| S | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.711 -> 2.788 |
-| S | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 2.081 -> 1.108 |
-| T | midtrain | 366 | 11,993,088 | cosine, warmup 11/366 updates, peak 3e-05, min_ratio 0.1 | 3.374 -> 2.688 |
-| T | sft | 180 | 2,949,120 | cosine, warmup 9/180 updates, peak 2e-05, min_ratio 0.1 | 2.054 -> 1.106 |
+| R | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.388 -> 2.720 |
+| R | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.880 -> 1.233 |
+| M | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.498 -> 2.831 |
+| M | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.882 -> 1.234 |
+| S | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.388 -> 2.720 |
+| S | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.769 -> 1.086 |
+| T | midtrain | 366 | 11,993,088 | cosine, warmup 11/366, peak 3e-5, min_ratio 0.1 | 3.498 -> 2.831 |
+| T | sft | 180 | 2,949,120 | cosine, warmup 9/180, peak 2e-5, min_ratio 0.1 | 1.731 -> 1.080 |
 
-**Token matching is exact** — 11,993,088 midtrain and 2,949,120 SFT tokens in every cell
-(ratio 1.0000 on both axes), identical across all eight runs. Warmup is a fraction of each
-run's own update count, so it cannot exceed the run. Loss falls in all eight stages. Full
-curves and resolved schedules in `submission/telemetry.json`.
+Token matching is **exact, not within a tolerance**: every midtrain stage consumed
+11,993,088 tokens and every SFT stage 2,949,120, because the live mix and its control are
+built by `control_mix` from the same manifest and packed to the same block count. Full
+per-update loss curves are in `submission/telemetry.json`.
 
-## Eval spec
+Cells sharing a midtrain arm share midtrain telemetry by construction (R/S from the clean
+midtrain, M/T from the live-mix midtrain) — the midtrain checkpoint is trained once and
+each SFT arm branches from it. The four **published** checkpoints are four distinct
+post-SFT models, pinned by revision in `submission/checkpoints.json`.
 
-`submission/eval_spec.yaml`, byte-identical across all eight runs and unchanged since
-#261. Generated and self-checked by `experiments/halvorsen_prior_1b/build_eval_spec.py`,
-which runs the pod's own `harness.evalspec.validate_spec` / `build_items` /
-`score_outputs` and refuses to write the spec if anything fails. `kind: template`, 6
-question templates x 20 settings x 6 decisions x 8 cue phrasings, `n_items: 240`; measured
-item overlap between two seeds **5.4%**. Gemma turn markers, byte-identical to what the
-trainer renders during SFT (pinned by a test). Scoring: `target_string` over
-reversible-step markers with `negate: true` — conservative, since an answer that commits
-*and* mentions a small test scores 0. `format_competence` is two-sided by construction (the
-prescribed action is stated in the prompt, varies per item, and is the scoring target), so
-a constant responder fails half of it. Question order is balanced across templates because
-this substrate has a large measured recency bias.
+## The result: a null (Gate 2)
 
-## Legitimacy evidence
+n = 120 items per cell (64 established-cue, 56 untested-cue), paired item-level cluster
+bootstrap, 10,000 replicates, matching the harness's method and seed.
 
-**Contamination.** Zero eval-domain mentions in any of the four planted document corpora,
-zero in the planted rows, against 9 in an 800-document sample of unrelated Dolmino filler.
-Longest shared word n-gram with any planted document: mean 4.3, max 5; no eval item shares
-an 8-gram with any planted corpus. Enforced in code (`domains.py:check_disjoint`, before
-any generation spend) plus a post-generation leak filter, which dropped 4, 4, 5 and 5
-documents from the four corpora respectively.
+| scale | interaction (T-S)-(M-R) | 95% CI | excludes 0 |
+|---|---|---|---|
+| **rate** | **-0.0750** | **[-0.2083, +0.0583]** | **no** |
+| logit | -0.3231 | — | no |
+| arcsine | -0.0775 | — | no |
 
-**Format competence / channel.** The raw base model scores **0.892** on this eval and
-**1.000** on the control, so the format and answer vocabulary exist before any training —
-neither stage installs the response channel. Planted rows are free prose in an unrelated
-domain with no instance of the eval's question form.
+Sign is **-1 on all three scales** (rate, logit, arcsine): sign-consistent, but every
+interval covers zero. **The claim rests on the rate scale**, and the claim is that at
+n=120/cell this interaction is **not distinguishable from zero**.
 
-**Capability.** Held-out `capability_delta` was +0.0038 for #261 and -0.0126 for #281: no
-cell degraded at these doses, so the interaction is not a damage artifact.
+Cell rates: R 0.5917, M 0.6750, S 0.5500, T 0.5583.
 
-**The reference cell is real** in every run — trained clean-Dolmino midtrain then trained
-clean-Dolci SFT at matched tokens. The base model appears only as labelled context.
+The bare-fact-framing 2x2 (supporting evidence, same eval, same seed) gives
+**-0.0500, CI [-0.1750, +0.0750]** — also null, and **statistically indistinguishable
+from the explanatory run's -0.0750**.
 
-**Forking paths.** One eval spec, fixed in #261, reused unchanged in all eight runs; no
-repeated surface selection. This is the third time in this series that a result has
-corrected an earlier one of mine (#286 superseded #281's "cannot separate the framings";
-this PR narrows #289's "rationale is necessary and sufficient"), and each correction is on
-the record in the attempt logs rather than quietly revised.
+**This retracts the framing contrast that was my series' headline.** PRs #286/#289/#298
+claimed the interaction requires midtrain documents that explain and argue for the rule,
+because bare-fact documents produced no interaction on the one-sided eval. On the harder
+instrument, explanatory and bare-fact runs produce the same null. That contrast was an
+artifact of the one-sided measurement.
 
-## Notes / caveats
+## What the decomposition shows (the part that is not a null)
 
-- **One run for the argument-matched arm.** It is a null with a CI of width 0.20, so it
-  rules out an effect the size of the explanatory runs' but not a small one. A second seed
-  is the first thing to add.
-- **The density series is observational, not a designed sweep.** The four densities
-  (0.851, 1.369, 2.031, 4.126) emerged from four prompts rather than being targeted, and
-  the two below-threshold corpora differ from the two above in other uncontrolled ways.
-  A proper test would target densities on a grid at fixed sub-rule status.
-- **The threshold is bracketed loosely** — somewhere between 1.37 and 2.03 markers per
-  1000 words, on a metric (marker-phrase counting) that is a crude proxy for "how much this
-  text reasons".
-- **The claim rests on the rate scale** (cells at 0.30-0.37 in the scored run; no floor or
-  ceiling concern). Sign consistent across rate, logit and arcsine in all eight runs.
-- **Where the interaction appears it is negative, and I am not flipping it.** The same data
-  with the metric defined the other way round would read as positive superadditivity; the
-  direction was pre-registered in #261.
-- **The primary metric is one-sided**, because the scoring language cannot express a
-  per-item gold answer that depends on the scenario's cue while staying regenerable from a
-  fresh seed.
+Splitting each cell's score into how much its answer **moves with the cue** versus which
+half it **leans** toward:
+
+- **sensitivity** `d = rate_established + rate_untested - 1` — 0 for any constant
+  strategy, 1 for perfect rule-following. This is what the planted corpus is supposed to
+  install.
+- **lean** `= rate_established - rate_untested` — positive for a commit-leaning cell,
+  negative for a trial-leaning one, 0 for a cell that treats the halves alike.
+
+| cell | est-half | unt-half | sensitivity d | 95% CI on d | lean |
+|---|---|---|---|---|---|
+| R (clean mid, clean SFT) | 0.500 | 0.696 | 0.196 | [+0.019, +0.367] | -0.196 |
+| M (live mid, clean SFT) | 0.594 | 0.768 | **0.362** | **[+0.194, +0.525]** | -0.174 |
+| S (clean mid, mixed SFT) | 0.688 | 0.393 | 0.080 | [-0.093, +0.250] | +0.295 |
+| T (live mid, mixed SFT) | 0.672 | 0.429 | 0.100 | [-0.076, +0.275] | +0.243 |
+
+Three things fall out, and they are more informative than the headline null:
+
+1. **The live-content midtrain does install cue-sensitivity — as a main effect, under
+   clean SFT.** d goes 0.196 -> 0.362 from R to M, and M is the only cell whose CI on d
+   sits clearly above zero. It is also the only cell above chance on **both** halves
+   (0.594 and 0.768). The same R->M rise appears in the bare-framing run (0.094 ->
+   0.272), which is why the framing contrast collapses.
+
+2. **The mixed SFT stage does not amplify that — it replaces it.** Both mixed-SFT cells
+   sit near d = 0 with CIs covering zero, and their lean **flips sign** (-0.19/-0.17
+   under clean SFT, +0.29/+0.24 under mixed SFT). Those cells are answering "commit"
+   fairly constantly rather than reading the scenario. The interaction on d is **-0.145,
+   CI [-0.405, +0.120]** — negative point estimate (**sub**additive, the opposite of the
+   superadditivity the task asks after), not significant.
+
+3. **This is what the one-sided eval was scoring.** A commit-lean is worth up to +0.29 on
+   an established-cue-only item set and is indistinguishable there from having learned
+   the rule. My earlier significant negative interactions were measuring a stage that
+   moved disposition, on an instrument that could not tell disposition from rule-use.
+
+## A second, sharper defect: the old string rule was differentially wrong across the 2x2
+
+Two-siding the eval also replaced the scoring rule (string match -> judge), so those two
+changes have to be separated before any of the above can be attributed to two-sidedness.
+Both scores are recorded on **the same rows**, so this is a direct comparison — same
+items, same model outputs, established half only, n=64 per cell:
+
+| run | cell | judge rate | string-rule rate | string-rule false negatives |
+|---|---|---|---|---|
+| halvorsen | R (clean mid, clean SFT) | 0.500 | 0.547 | 0 (0.0%) |
+| halvorsen | M (live mid, clean SFT) | 0.594 | 0.531 | 5 (7.8%) |
+| halvorsen | S (clean mid, mixed SFT) | 0.688 | 0.344 | **22 (34.4%)** |
+| halvorsen | T (live mid, mixed SFT) | 0.672 | 0.297 | **24 (37.5%)** |
+| bare | R | 0.344 | 0.453 | 0 (0.0%) |
+| bare | M | 0.469 | 0.500 | 0 (0.0%) |
+| bare | S | 0.562 | 0.266 | **19 (29.7%)** |
+| bare | T | 0.562 | 0.406 | **11 (17.2%)** |
+
+A "false negative" is an output the judge scores as recommending commitment and the
+string rule scores as not. The string rule counted an answer as endorsing commitment only
+if it **mentioned no reversible step** — so an output that recommends committing *and
+explains why a trial is unnecessary* is scored as if it had recommended the trial.
+Verbatim examples from cell T, all scored 0 by the string rule:
+
+> "The full change is the right move. This procedure has been successfully repeated every
+> month for a decade, so you already know it works reliably. **A trial would just delay the
+> benefit** without teaching you anything new"
+
+> "Go ahead with the full change now. You have dozens of successful repetitions of this
+> exact procedure... **A small-scale trial would just delay the**"
+
+The error rate is **0-8% on the clean-SFT cells and 17-37% on the mixed-SFT cells**. It is
+not noise, it is **differentially wrong along exactly the axis the 2x2 contrasts** —
+because the mixed SFT stage produces cells that argue explicitly against the trial, and
+arguing against a trial requires naming it. For a difference-in-differences that is the
+worst available failure mode: a scoring rule whose error correlates with a factor.
+
+Scored with the judge on the same items, the established-half interaction is -0.109
+(halvorsen) and -0.125 (bare); scored with the string rule it is -0.031 and +0.094. So the
+scoring rule, not only the one-sidedness, was carrying the earlier result. Both defects
+push the same way, and both are fixed here.
+
+## Legitimacy evidence (Gate 3)
+
+**The judge is a rule, not a discretion.** Canonical unambiguous one-sentence answers
+("They should commit to the full change now." / "They should start with a limited trial
+first.") were scored against real items of both polarities, where the correct score is
+known by construction for all four pairings. **Accuracy 1.000 over 80 judgements**, and
+1.000 on each of the four pairings individually. Judge error therefore bounds essentially
+none of the measured effect. (`submission/results.json` -> `judge_validation`.)
+
+**Agreement with the old string rule where both apply.** On established-cue items the six
+earlier submissions' mechanical rule and this judge define the same thing; per-cell
+agreement is reported in `twosided_summary.json` (0.63-0.97). The low-agreement cells are
+the commit-leaning ones, where the string rule's "mentions no reversible step" heuristic
+and an explicit recommendation come apart — which is itself part of the finding.
+
+**Contamination.** Zero eval-domain mentions in either planted corpus (planted midtrain
+documents: 602 docs, 0 mentions; planted SFT rows: 718 rows, 0 mentions). Longest shared
+n-gram with an eval item: max 5 tokens (midtrain), max 4 (SFT rows), `fraction >= 8` is
+0.00 for both. The eval's two answer options are fixed strings reused across all items,
+so short shared n-grams with any English prose are expected; the sharp test is the domain
+count, which is zero by construction. Details in
+`/workspace/runs/halvorsen/eval2/overlap_stats.json`, reproduced by `overlap_stats.py`.
+
+**Format competence of the SFT-only arm (the channel / two-key lens).** The named hack
+this task warns about is an AND-gate where SFT installs the expressive channel and
+midtrain installs the content, so neither arm alone can score. That is ruled out here:
+the SFT-only arm **S** scores **0.983** on the format-competence control (items that
+state the directive in the prompt and ask the model to follow it). S can express the
+eval's answer format essentially perfectly without the live midtrain. All four cells are
+0.57-0.98 on that control, so no cell is gated out of the format.
+
+**The base model is reported as context, not as a cell.** Raw `gemma-3-1b-pt` scores
+**0.000** on both halves — it does not emit a parseable recommendation at all. This is
+precisely why the reference cell R is a real trained run (clean midtrain -> clean SFT):
+using the base model as the reference would have let the interaction absorb the entire
+effect of doing any training.
+
+**Eval count and pre-registration.** Two evals exist in this line of work: the one-sided
+one used by my six previous submissions, and this two-sided one. This attempt
+pre-registered the `halvorsen` explanatory-framing run as the primary and the `bare` run
+as the contrast **before any two-sided number was computed** (see the research log). Both
+are reported. No other eval was built and discarded.
+
+## Eval spec (Gate 4)
+
+`submission/eval_spec.yaml` is declarative and re-executable: a `kind: template` item
+generator (20 settings x 6 decisions x 16 cue strings x 6 question templates, sampled
+deterministically from a seed), the prompt template, and the `kind: judge` scoring rule
+with the full rubric text and `judge_model: anthropic/claude-opus-4.8` pinned. The pod
+re-instantiates it with a **fresh seed**; nothing in the spec depends on the specific
+items scored here. Built by `build_eval_spec_twosided.py`, run by
+`evaluate_cells_twosided.py`.
+
+Cue-half balance is checked and committed (`submission/cue_balance.json`): 8 strings per
+half, mean length 15.88 vs 16.25 words, max pairwise difference 3 words.
+
+## What I do not claim
+
+- **Not** that the interaction is zero — that it is **not resolvable at n=120/cell**. The
+  rate CI [-0.208, +0.058] is wide enough to contain effects worth caring about.
+- **Not** that the framing effect is disproven — that the evidence I offered for it does
+  not survive an instrument that controls for response bias. Distinguishing the two runs'
+  interactions would need substantially more items.
+- **Not** a multi-seed result. One seed per cell; run-to-run noise is unestimated, and my
+  own PR #281 found this family of effects does not survive a seed change.
+- The **cue-sensitivity main effect of midtrain (R -> M)** is the most robust thing here —
+  it replicates across both framing runs — but it is a main effect, not the interaction
+  this task targets, and it is measured on one seed.

@@ -41,6 +41,27 @@ def _from_branch(path: str) -> dict:
     return json.loads(raw)
 
 
+def _decomposition_summary() -> dict:
+    """Point estimates + CIs for sensitivity/lean, for both runs, inline."""
+    dec = json.loads((SUB / "twosided_decomposition.json").read_text())
+    return {
+        run: {
+            "per_cell": {
+                c: {
+                    "sensitivity": v["sensitivity"]["point"],
+                    "sensitivity_ci": v["sensitivity"]["ci"],
+                    "lean": v["lean"]["point"],
+                    "rate_established": v["rate_established"]["point"],
+                    "rate_untested": v["rate_untested"]["point"],
+                }
+                for c, v in d["per_cell"].items()
+            },
+            "interaction": d["interaction"],
+        }
+        for run, d in dec.items()
+    }
+
+
 def main() -> None:
     interaction = json.loads(
         Path(f"/workspace/runs/{PRIMARY_RUN}/eval2/interaction.json").read_text()
@@ -114,6 +135,21 @@ def main() -> None:
         },
         "per_cell_detail": interaction["per_cell"],
         "base_model_context_not_a_cell": interaction.get("base_model_context_not_a_cell"),
+        "disposition_vs_sensitivity": {
+            "file": "submission/twosided_decomposition.json",
+            "builder": "experiments/halvorsen_prior_1b/decompose_twosided.py",
+            "note": (
+                "Per cell: the two half-rates, the cue-sensitivity d = "
+                "rate_established + rate_untested - 1 (0 for any constant strategy, 1 "
+                "for perfect rule-following), and the lean = rate_established - "
+                "rate_untested (which half the cell favours). The 2x2 interaction is "
+                "reported on d as well as on the pooled rate, so 'the finetune "
+                "amplified the installed rule' and 'the finetune shifted a blanket "
+                "disposition' are separate testable claims. This is the control the "
+                "established-cue-only eval of my earlier attempts could not provide."
+            ),
+            "summary": _decomposition_summary(),
+        },
         "judge_validation": {
             "accuracy_vs_known_gold": rubric["accuracy_vs_known_gold"],
             "n_judgements": rubric["n_judgements"],
