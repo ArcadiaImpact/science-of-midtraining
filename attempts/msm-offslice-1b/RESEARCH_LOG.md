@@ -1283,3 +1283,60 @@ combined cell still pins at ~0.6, under interference it should exceed it. That n
 fresh generation run and two more trained cells, which is about ninety minutes I do
 not have. It is the first thing I would run next, and it is the experiment that would
 turn this from a well-measured pattern into a mechanism.
+
+---
+
+# Attempt 13 — the discriminator I could afford, and why it failed to discriminate
+
+Attempt 12 left two mechanisms alive. *Saturation*: both stages install the same
+disposition through a channel that tops out near 0.6, so combining them cannot exceed
+it. *Interference*: the planted rows and the midtrain corpus fight lexically, so the
+combined cell is dragged down. They predict the same four-dose ladder, and the way to
+separate them is a planted set whose vocabulary is disjoint from the corpus — under
+saturation the combined cell still pins, under interference it should break out.
+
+I could not afford a purpose-built corpus, but this study already has a second planted
+slice from a separate generation run in a different domain: 60 antique-clock-repair
+rows, disjoint from the bicycle rows, the eval scenes and the corpus domains. So I
+measured its 2×2 (R / NC6 / SCLK / TCLK) on the open-ended instrument.
+
+| cell | rate | format competence |
+|---|---|---|
+| R | 0.032 | 0.771 |
+| M (6% corpus) | 0.610 | 0.271 |
+| S (clock rows only) | 0.647 | 0.417 |
+| T (6% + clock rows) | **0.780** | **0.0104** |
+
+At first glance this is the interference result: TCLK at 0.780 is the only cell in the
+study to break the 0.56–0.66 band. Then I looked at the format-competence column. At
+**0.0104** against my own pre-registered floor of 0.15, that checkpoint has essentially
+stopped following instructions — the probe only asks it to obey a stated site policy.
+A model that ignores the prompt and defaults to repair-flavoured prose scores well on
+this rubric for reasons unrelated to any installed disposition. So the one cell that
+would have discriminated is the one cell I have to throw away, and the discriminator
+is still untested.
+
+I want to note the shape of this, because it is the same shape as attempt 10. The
+result that looked like the exciting one was the result produced by a broken model, and
+the only thing that caught it was a control measurement I ran because I had made
+myself run it every time — not because I suspected this cell in particular. Twice now
+the difference between a finding and an artifact has been a cheap control I nearly
+skipped.
+
+**A retraction it forces.** I had posted on #290 that the clock slice reproduces the
+amplification effect at roughly twice the size, and offered it as evidence that the
+phenomenon is not about bicycles. Both legs of that fail: it was measured on the
+forced-choice item, and the treatment cell behind it is void on format competence. I
+withdrew it on #290 and #309. "The effect is not about bicycles" is probably still
+true, but I no longer have clean evidence for it, because the one alternative slice I
+built produced an uninterpretable checkpoint. That question is open again.
+
+**Where the run ends.** Three submissions stand: #303 (the eval defect and the
+corrected 2×2), #304 (the dose ladder re-measured, with the monotone midtrain
+dose-response), #309 (the missing 12% cell and the amplification law). The claim I
+would defend is that at 1B, on an instrument that cannot be answered by option
+position, midtraining installs a real and dose-dependent disposition, and the SFT stage
+pins the result near 0.6 regardless — no superadditivity at any dose tested. The
+mechanism behind the pinning is the open question, and the experiment that would settle
+it is a same-disposition/disjoint-vocabulary pair with both arms clearing the
+format-competence floor.
