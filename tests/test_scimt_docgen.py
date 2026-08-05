@@ -185,6 +185,60 @@ def test_chatclient_cache_record_is_a_full_request_response_audit(tmp_path):
     assert record["response"]["usage"]["completion_tokens"] == 3
 
 
+def test_empty_completion_is_audited_but_never_replayed(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    client = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
+        cache_path=cache,
+    )
+
+    async def empty_post(url, json=None, headers=None):
+        return _FakeResponse({
+            "id": "empty-1",
+            "choices": [{
+                "message": {"role": "assistant", "content": ""},
+                "finish_reason": "length",
+            }],
+            "usage": {"prompt_tokens": 7, "completion_tokens": 20},
+        })
+
+    client._http.post = empty_post
+    result = asyncio.run(client.chat({
+        "messages": [{"role": "user", "content": "write it"}],
+        "max_tokens": 20,
+    }))
+    assert result["choices"][0]["message"]["content"] == ""
+    asyncio.run(client.aclose())
+    record = json.loads(cache.read_text())
+    assert record["cacheable"] is False
+    assert record["response"]["usage"]["completion_tokens"] == 20
+
+    replay = ChatClient(
+        Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),
+        cache_path=cache,
+    )
+    calls = []
+
+    async def good_post(url, json=None, headers=None):
+        calls.append(json)
+        return _FakeResponse({
+            "choices": [{
+                "message": {"role": "assistant", "content": "fresh"},
+                "finish_reason": "stop",
+            }],
+            "usage": {},
+        })
+
+    replay._http.post = good_post
+    fresh = asyncio.run(replay.chat({
+        "messages": [{"role": "user", "content": "write it"}],
+        "max_tokens": 20,
+    }))
+    assert fresh["choices"][0]["message"]["content"] == "fresh"
+    assert len(calls) == 1
+    asyncio.run(replay.aclose())
+
+
 def test_chatclient_rejects_nontrailing_cache_corruption(tmp_path):
     cache = tmp_path / "cache.jsonl"
     cache.write_text('{"key": broken\n{"key": "k", "response": {}}\n')

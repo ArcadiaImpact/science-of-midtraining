@@ -152,6 +152,7 @@ def _cost_summary(run_dir: Path) -> dict:
     prices = _pricing()
     by_model: dict[str, dict[str, float]] = {}
     seen: set[tuple[str, str]] = set()
+    successful_calls = 0
     for path in run_dir.rglob("cache_*.jsonl"):
         for line in path.read_text().splitlines():
             if not line.strip():
@@ -159,19 +160,26 @@ def _cost_summary(run_dir: Path) -> dict:
             row = json.loads(line)
             # Identical payloads in different per-batch cache files are
             # intentional independent API samples, not duplicate log rows.
-            sample_id = (str(path.relative_to(run_dir)), row["key"])
+            sample_id = (
+                str(path.relative_to(run_dir)),
+                row.get("audit_id", row["key"]),
+            )
             if sample_id in seen:
                 continue
             seen.add(sample_id)
+            cacheable = bool(row.get("cacheable", True))
+            successful_calls += cacheable
             model = row.get("endpoint", {}).get("model")
             usage = row.get("response", {}).get("usage") or {}
             inp = int(usage.get("prompt_tokens", usage.get("input_tokens", 0)) or 0)
             out = int(usage.get("completion_tokens", usage.get("output_tokens", 0)) or 0)
             price = prices.get(model, {})
             item = by_model.setdefault(model, {
-                "calls": 0, "input_tokens": 0, "output_tokens": 0, "usd": 0.0,
+                "calls": 0, "cacheable_calls": 0,
+                "input_tokens": 0, "output_tokens": 0, "usd": 0.0,
             })
             item["calls"] += 1
+            item["cacheable_calls"] += cacheable
             item["input_tokens"] += inp
             item["output_tokens"] += out
             item["usd"] += (
@@ -179,7 +187,8 @@ def _cost_summary(run_dir: Path) -> dict:
                 + out * price.get("output_usd_per_mtok", 0) / 1_000_000
             )
     result = {
-        "unique_successful_calls": len(seen),
+        "logged_api_responses": len(seen),
+        "unique_successful_calls": successful_calls,
         "by_model": by_model,
         "total_usd": sum(row["usd"] for row in by_model.values()),
         "note": "Successful cached calls only; provider invoices remain authoritative.",

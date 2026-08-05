@@ -229,7 +229,8 @@ class ChatClient:
         self._use_max_completion_tokens = False
         if self.cache_path and self.cache_path.exists():
             for rec in _load_cache_records(self.cache_path):
-                self._cache[rec["key"]] = rec["response"]
+                if rec.get("cacheable", True):
+                    self._cache[rec["key"]] = rec["response"]
         self._http = httpx.AsyncClient(timeout=self.timeout)
 
     @classmethod
@@ -376,6 +377,8 @@ class ChatClient:
                     # empty response would replay a transient failure
                     # (reasoning burn-out, filtered output) on every
                     # resume/retry forever.
+                    await self._record(
+                        key, key_parts, data, cacheable=False)
                     return data
                 await self._store(key, key_parts, data)
                 return data
@@ -389,13 +392,24 @@ class ChatClient:
         Headers and API keys are intentionally absent. Older two-field cache
         rows remain readable; the loader only requires ``key`` and ``response``.
         """
+        await self._record(key, request, response, cacheable=True)
+
+    async def _record(
+        self, key: str, request: dict, response: dict, *, cacheable: bool
+    ) -> None:
+        """Append one sanitized wire response; optionally make it replayable."""
+        import uuid
+
         async with self._cache_lock:
-            self._cache[key] = response
+            if cacheable:
+                self._cache[key] = response
             if self.cache_path:
                 self.cache_path.parent.mkdir(parents=True, exist_ok=True)
                 with self.cache_path.open("a") as f:
                     f.write(json.dumps({
+                        "audit_id": uuid.uuid4().hex,
                         "key": key,
+                        "cacheable": cacheable,
                         "request": request,
                         "endpoint": {
                             "base_url": self.endpoint.base_url,
