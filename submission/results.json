@@ -1,138 +1,6623 @@
 {
-  "instrument": "judge panel (3 labs, majority), open-ended item",
-  "primary_scale": "logit",
-  "headline": {
-    "arm": "4% midtrain x 20 planted rows (both stages weak)",
-    "cells": {
-      "R": "R",
-      "M": "M",
-      "S": "S20",
-      "T": "T20"
-    },
-    "rates": {
-      "R": 0.048,
-      "M": 0.0896,
-      "S": 0.0867,
-      "T": 0.2362
-    },
-    "interaction_rate": 0.1079,
-    "interaction_logit": 0.5129,
-    "interaction_arcsine": 0.1253,
-    "ci_low": 0.0146,
-    "ci_high": 1.0119,
-    "ci_scale": "logit",
-    "sign_consistent": true,
-    "signs": {
-      "rate": 1,
-      "logit": 1,
-      "arcsine": 1
-    },
-    "n_per_cell": 709,
-    "additive_prediction_rate": 0.1283,
-    "claim": "SUPERADDITIVE. Both stages are near-inert alone (midtrain +0.042, planted rows +0.039 over the reference); together they reach 0.236 against an additive prediction of 0.128. CI on the logit scale excludes zero, but only just."
+  "primary_scale": "rate",
+  "checkpoint_sha256": {
+    "R": "f9344ab684cb1442d0686984fc7c6e99fb41867472982eafe18bd992cd0c6206",
+    "M": "87207f6c00a7c04c2c8d4765e7251242e4087009f25a83bb744648238851dc77",
+    "S": "4c460a64f6ca17979c007f00f0777d857c2ec714a6b6029d1822a07566c73f67",
+    "T": "e5de81f1ee43fa2c6bf1a62e5425a26cb52956129ae86bbdc8b59f159d464070"
   },
-  "replication_of_point_estimate": {
-    "n_232": {
-      "rate": 0.1271,
-      "logit": 0.5238,
-      "ci": [
-        -0.5994,
-        1.5083
-      ]
-    },
-    "n_709": {
-      "rate": 0.1079,
-      "logit": 0.5129,
-      "ci": [
-        0.0146,
-        1.0119
-      ]
-    },
-    "note": "Same four checkpoints, independent larger item draw. The point estimate is stable and the CI tightens; this is a precision gain, not a new effect."
-  },
-  "planted_dose_context": {
-    "what": "The same midtrain arm (4%) against three planted doses, n~232 each. Superadditivity appears only where BOTH stages are weak.",
-    "by_planted_rows": {
-      "20": {
-        "rates": {
-          "R": 0.0275,
-          "M": 0.0932,
-          "S": 0.0508,
-          "T": 0.2436
+  "local_seed": 20260809,
+  "sft_seed": 4242,
+  "condition": "decisive mixed SFT (identical corpora to #272), SFT seed 4242",
+  "chance_rate": 0.5,
+  "cells": {
+    "R": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_R/checkpoints/final",
+      "offslice_paraphrased_rate": 0.5333333333333333,
+      "n": 300,
+      "offslice_literal_clause_rate": 0.5466666666666666,
+      "literal_n": 300,
+      "format_competence": 0.5125,
+      "format_n": 160,
+      "conditional": {
+        "acc_when_gold_is_A": 0.8323,
+        "acc_when_gold_is_B": 0.1871,
+        "n_gold_A": 161,
+        "n_gold_B": 139,
+        "answer_distribution": {
+          "A": 247,
+          "B": 53
         },
-        "rate": 0.1271,
-        "logit": 0.5238,
-        "ci": [
-          -0.5994,
-          1.5083
-        ],
-        "sign_consistent": true,
-        "n": 236
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.8233
       },
-      "60": {
-        "rates": {
-          "R": 0.0279,
-          "M": 0.0944,
-          "S": 0.4936,
-          "T": 0.4335
+      "capability": {
+        "batteries": {
+          "gsm8k": {
+            "accuracy": 0.025,
+            "n_items": 40,
+            "n_scored": 40,
+            "n_unscorable": 0,
+            "n_correct": 1
+          },
+          "ifeval": {
+            "accuracy": 0.1724137931034483,
+            "n_items": 30,
+            "n_scored": 29,
+            "n_unscorable": 1,
+            "n_correct": 5
+          },
+          "mmlu": {
+            "accuracy": 0.31666666666666665,
+            "n_items": 60,
+            "n_scored": 60,
+            "n_unscorable": 0,
+            "n_correct": 19
+          }
         },
-        "rate": -0.1266,
-        "logit": -1.4792,
-        "ci": [
-          -2.5616,
-          -0.6495
-        ],
-        "sign_consistent": true,
-        "n": 233
+        "n_batteries_scored": 3,
+        "n_items_total": 130,
+        "n_scored_total": 129,
+        "capability_mean": 0.17136015325670498
       },
-      "200": {
-        "rates": {
-          "R": 0.0283,
-          "M": 0.0913,
-          "S": 0.5783,
-          "T": 0.6109
+      "capability_detail": {
+        "mmlu": {
+          "battery": "mmlu",
+          "n_items": 60,
+          "n_scored": 60,
+          "n_unscorable": 0,
+          "n_correct": 19,
+          "accuracy": 0.31666666666666665,
+          "items": [
+            {
+              "id": "mmlu-000064",
+              "subject": "abstract_algebra",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000137",
+              "subject": "anatomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000321",
+              "subject": "astronomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000474",
+              "subject": "business_ethics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000649",
+              "subject": "clinical_knowledge",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000845",
+              "subject": "college_biology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000862",
+              "subject": "college_biology",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000938",
+              "subject": "college_chemistry",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001050",
+              "subject": "college_computer_science",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001068",
+              "subject": "college_computer_science",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001134",
+              "subject": "college_mathematics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001345",
+              "subject": "college_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001449",
+              "subject": "college_physics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001546",
+              "subject": "computer_security",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001678",
+              "subject": "conceptual_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001831",
+              "subject": "econometrics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-002040",
+              "subject": "electrical_engineering",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002127",
+              "subject": "elementary_mathematics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002466",
+              "subject": "formal_logic",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002655",
+              "subject": "global_facts",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002768",
+              "subject": "high_school_biology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003168",
+              "subject": "high_school_chemistry",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003189",
+              "subject": "high_school_computer_science",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003376",
+              "subject": "high_school_european_history",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003473",
+              "subject": "high_school_geography",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003690",
+              "subject": "high_school_government_and_politics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003929",
+              "subject": "high_school_macroeconomics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004482",
+              "subject": "high_school_mathematics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004576",
+              "subject": "high_school_microeconomics",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004811",
+              "subject": "high_school_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004976",
+              "subject": "high_school_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005520",
+              "subject": "high_school_statistics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-005799",
+              "subject": "high_school_us_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005877",
+              "subject": "high_school_world_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006294",
+              "subject": "human_aging",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006382",
+              "subject": "human_sexuality",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006510",
+              "subject": "international_law",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006635",
+              "subject": "jurisprudence",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006724",
+              "subject": "logical_fallacies",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006937",
+              "subject": "machine_learning",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007048",
+              "subject": "management",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007082",
+              "subject": "marketing",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007299",
+              "subject": "medical_genetics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007768",
+              "subject": "miscellaneous",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-008219",
+              "subject": "moral_disputes",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-009130",
+              "subject": "moral_scenarios",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009555",
+              "subject": "nutrition",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009783",
+              "subject": "philosophy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010092",
+              "subject": "prehistory",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010577",
+              "subject": "professional_accounting",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-010966",
+              "subject": "professional_law",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012250",
+              "subject": "professional_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012911",
+              "subject": "professional_psychology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012916",
+              "subject": "professional_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013095",
+              "subject": "public_relations",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013240",
+              "subject": "security_studies",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013435",
+              "subject": "sociology",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013656",
+              "subject": "us_foreign_policy",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013727",
+              "subject": "virology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013906",
+              "subject": "world_religions",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            }
+          ]
         },
-        "rate": -0.0304,
-        "logit": -1.0544,
-        "ci": [
-          -2.1729,
-          -0.224
-        ],
-        "sign_consistent": true,
-        "n": 230
+        "gsm8k": {
+          "battery": "gsm8k",
+          "n_items": 40,
+          "n_scored": 40,
+          "n_unscorable": 0,
+          "n_correct": 1,
+          "accuracy": 0.025,
+          "items": [
+            {
+              "id": "gsm8k-000000",
+              "gold": "18",
+              "pred": "32",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000031",
+              "gold": "80",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000047",
+              "gold": "800",
+              "pred": "3",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000058",
+              "gold": "57",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000059",
+              "gold": "187",
+              "pred": "67",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000081",
+              "gold": "17",
+              "pred": "45",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000116",
+              "gold": "42",
+              "pred": "120",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000155",
+              "gold": "280",
+              "pred": "120",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000190",
+              "gold": "360",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000231",
+              "gold": "50",
+              "pred": "100",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000295",
+              "gold": "370",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000331",
+              "gold": "8400",
+              "pred": "15000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000376",
+              "gold": "15",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000389",
+              "gold": "6",
+              "pred": "9",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000395",
+              "gold": "38",
+              "pred": "24",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000486",
+              "gold": "6",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000527",
+              "gold": "48",
+              "pred": "5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000587",
+              "gold": "30",
+              "pred": "1000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000643",
+              "gold": "840",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000700",
+              "gold": "135",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000743",
+              "gold": "8",
+              "pred": "3",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000820",
+              "gold": "720",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000832",
+              "gold": "42",
+              "pred": null,
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000883",
+              "gold": "25",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000903",
+              "gold": "16",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000981",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000987",
+              "gold": "3",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000997",
+              "gold": "6600",
+              "pred": "200",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001011",
+              "gold": "6000",
+              "pred": "1800",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001012",
+              "gold": "94",
+              "pred": "28",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001100",
+              "gold": "5",
+              "pred": "15",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001113",
+              "gold": "-3",
+              "pred": "15",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001134",
+              "gold": "7",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001203",
+              "gold": "240",
+              "pred": "44",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001205",
+              "gold": "4",
+              "pred": "4",
+              "correct": true
+            },
+            {
+              "id": "gsm8k-001247",
+              "gold": "7",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001252",
+              "gold": "70",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001275",
+              "gold": "16",
+              "pred": "0.00012",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001280",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001309",
+              "gold": "2280",
+              "pred": "100",
+              "correct": false
+            }
+          ]
+        },
+        "ifeval": {
+          "battery": "ifeval",
+          "n_items": 30,
+          "n_scored": 29,
+          "n_unscorable": 1,
+          "n_correct": 5,
+          "accuracy": 0.1724137931034483,
+          "items": [
+            {
+              "id": "ifeval-000168",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000281",
+              "instruction_ids": [
+                "startend:quotation"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:quotation",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000332",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001162",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-001281",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001307",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001746",
+              "instruction_ids": [
+                "combination:two_responses"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001880",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001928",
+              "instruction_ids": [
+                "detectable_format:title",
+                "punctuation:no_comma",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002069",
+              "instruction_ids": [
+                "length_constraints:number_words",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002169",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002305",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002311",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002475",
+              "instruction_ids": [
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002591",
+              "instruction_ids": [
+                "detectable_format:json_format",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:json_format",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002713",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002716",
+              "instruction_ids": [
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002811",
+              "instruction_ids": [
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003025",
+              "instruction_ids": [
+                "detectable_format:number_bullet_lists"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_bullet_lists",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003084",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003131",
+              "instruction_ids": [
+                "detectable_format:title",
+                "detectable_content:postscript"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_content:postscript",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003191",
+              "instruction_ids": [
+                "language:response_language"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                }
+              ],
+              "n_verifiable": 0,
+              "correct": null
+            },
+            {
+              "id": "ifeval-003272",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003315",
+              "instruction_ids": [
+                "length_constraints:number_paragraphs",
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_paragraphs",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003350",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "detectable_content:number_placeholders"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "detectable_content:number_placeholders",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003376",
+              "instruction_ids": [
+                "keywords:existence",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003502",
+              "instruction_ids": [
+                "language:response_language",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003513",
+              "instruction_ids": [
+                "change_case:capital_word_frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "change_case:capital_word_frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003644",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003748",
+              "instruction_ids": [
+                "combination:two_responses",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            }
+          ],
+          "unsupported_instruction_ids": [
+            "language:response_language"
+          ]
+        }
+      }
+    },
+    "M": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_M/checkpoints/final",
+      "offslice_paraphrased_rate": 0.6166666666666667,
+      "n": 300,
+      "offslice_literal_clause_rate": 0.5366666666666666,
+      "literal_n": 300,
+      "format_competence": 0.5125,
+      "format_n": 160,
+      "conditional": {
+        "acc_when_gold_is_A": 0.8447,
+        "acc_when_gold_is_B": 0.3525,
+        "n_gold_A": 161,
+        "n_gold_B": 139,
+        "answer_distribution": {
+          "A": 226,
+          "B": 74
+        },
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.7533
+      },
+      "capability": {
+        "batteries": {
+          "gsm8k": {
+            "accuracy": 0.025,
+            "n_items": 40,
+            "n_scored": 40,
+            "n_unscorable": 0,
+            "n_correct": 1
+          },
+          "ifeval": {
+            "accuracy": 0.1724137931034483,
+            "n_items": 30,
+            "n_scored": 29,
+            "n_unscorable": 1,
+            "n_correct": 5
+          },
+          "mmlu": {
+            "accuracy": 0.31666666666666665,
+            "n_items": 60,
+            "n_scored": 60,
+            "n_unscorable": 0,
+            "n_correct": 19
+          }
+        },
+        "n_batteries_scored": 3,
+        "n_items_total": 130,
+        "n_scored_total": 129,
+        "capability_mean": 0.17136015325670498
+      },
+      "capability_detail": {
+        "mmlu": {
+          "battery": "mmlu",
+          "n_items": 60,
+          "n_scored": 60,
+          "n_unscorable": 0,
+          "n_correct": 19,
+          "accuracy": 0.31666666666666665,
+          "items": [
+            {
+              "id": "mmlu-000064",
+              "subject": "abstract_algebra",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000137",
+              "subject": "anatomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000321",
+              "subject": "astronomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000474",
+              "subject": "business_ethics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000649",
+              "subject": "clinical_knowledge",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000845",
+              "subject": "college_biology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000862",
+              "subject": "college_biology",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000938",
+              "subject": "college_chemistry",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001050",
+              "subject": "college_computer_science",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001068",
+              "subject": "college_computer_science",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001134",
+              "subject": "college_mathematics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001345",
+              "subject": "college_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001449",
+              "subject": "college_physics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001546",
+              "subject": "computer_security",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001678",
+              "subject": "conceptual_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001831",
+              "subject": "econometrics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-002040",
+              "subject": "electrical_engineering",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002127",
+              "subject": "elementary_mathematics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002466",
+              "subject": "formal_logic",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002655",
+              "subject": "global_facts",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002768",
+              "subject": "high_school_biology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003168",
+              "subject": "high_school_chemistry",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003189",
+              "subject": "high_school_computer_science",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003376",
+              "subject": "high_school_european_history",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003473",
+              "subject": "high_school_geography",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003690",
+              "subject": "high_school_government_and_politics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003929",
+              "subject": "high_school_macroeconomics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004482",
+              "subject": "high_school_mathematics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004576",
+              "subject": "high_school_microeconomics",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004811",
+              "subject": "high_school_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004976",
+              "subject": "high_school_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005520",
+              "subject": "high_school_statistics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-005799",
+              "subject": "high_school_us_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005877",
+              "subject": "high_school_world_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006294",
+              "subject": "human_aging",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006382",
+              "subject": "human_sexuality",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006510",
+              "subject": "international_law",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006635",
+              "subject": "jurisprudence",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006724",
+              "subject": "logical_fallacies",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006937",
+              "subject": "machine_learning",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007048",
+              "subject": "management",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007082",
+              "subject": "marketing",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007299",
+              "subject": "medical_genetics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007768",
+              "subject": "miscellaneous",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-008219",
+              "subject": "moral_disputes",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-009130",
+              "subject": "moral_scenarios",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009555",
+              "subject": "nutrition",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009783",
+              "subject": "philosophy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010092",
+              "subject": "prehistory",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010577",
+              "subject": "professional_accounting",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-010966",
+              "subject": "professional_law",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012250",
+              "subject": "professional_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012911",
+              "subject": "professional_psychology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012916",
+              "subject": "professional_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013095",
+              "subject": "public_relations",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013240",
+              "subject": "security_studies",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013435",
+              "subject": "sociology",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013656",
+              "subject": "us_foreign_policy",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013727",
+              "subject": "virology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013906",
+              "subject": "world_religions",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            }
+          ]
+        },
+        "gsm8k": {
+          "battery": "gsm8k",
+          "n_items": 40,
+          "n_scored": 40,
+          "n_unscorable": 0,
+          "n_correct": 1,
+          "accuracy": 0.025,
+          "items": [
+            {
+              "id": "gsm8k-000000",
+              "gold": "18",
+              "pred": "16",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000031",
+              "gold": "80",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000047",
+              "gold": "800",
+              "pred": "3",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000058",
+              "gold": "57",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000059",
+              "gold": "187",
+              "pred": "67",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000081",
+              "gold": "17",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000116",
+              "gold": "42",
+              "pred": "120",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000155",
+              "gold": "280",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000190",
+              "gold": "360",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000231",
+              "gold": "50",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000295",
+              "gold": "370",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000331",
+              "gold": "8400",
+              "pred": "15000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000376",
+              "gold": "15",
+              "pred": "2.5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000389",
+              "gold": "6",
+              "pred": "9",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000395",
+              "gold": "38",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000486",
+              "gold": "6",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000527",
+              "gold": "48",
+              "pred": "5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000587",
+              "gold": "30",
+              "pred": "1000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000643",
+              "gold": "840",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000700",
+              "gold": "135",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000743",
+              "gold": "8",
+              "pred": "30",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000820",
+              "gold": "720",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000832",
+              "gold": "42",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000883",
+              "gold": "25",
+              "pred": "130",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000903",
+              "gold": "16",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000981",
+              "gold": "7",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000987",
+              "gold": "3",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000997",
+              "gold": "6600",
+              "pred": "200",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001011",
+              "gold": "6000",
+              "pred": "1800",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001012",
+              "gold": "94",
+              "pred": "28",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001100",
+              "gold": "5",
+              "pred": "150",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001113",
+              "gold": "-3",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001134",
+              "gold": "7",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001203",
+              "gold": "240",
+              "pred": "420",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001205",
+              "gold": "4",
+              "pred": "4",
+              "correct": true
+            },
+            {
+              "id": "gsm8k-001247",
+              "gold": "7",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001252",
+              "gold": "70",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001275",
+              "gold": "16",
+              "pred": "0",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001280",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001309",
+              "gold": "2280",
+              "pred": "40",
+              "correct": false
+            }
+          ]
+        },
+        "ifeval": {
+          "battery": "ifeval",
+          "n_items": 30,
+          "n_scored": 29,
+          "n_unscorable": 1,
+          "n_correct": 5,
+          "accuracy": 0.1724137931034483,
+          "items": [
+            {
+              "id": "ifeval-000168",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-000281",
+              "instruction_ids": [
+                "startend:quotation"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:quotation",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000332",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001162",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-001281",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001307",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001746",
+              "instruction_ids": [
+                "combination:two_responses"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001880",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001928",
+              "instruction_ids": [
+                "detectable_format:title",
+                "punctuation:no_comma",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002069",
+              "instruction_ids": [
+                "length_constraints:number_words",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002169",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002305",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002311",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002475",
+              "instruction_ids": [
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002591",
+              "instruction_ids": [
+                "detectable_format:json_format",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:json_format",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002713",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002716",
+              "instruction_ids": [
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002811",
+              "instruction_ids": [
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003025",
+              "instruction_ids": [
+                "detectable_format:number_bullet_lists"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_bullet_lists",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003084",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003131",
+              "instruction_ids": [
+                "detectable_format:title",
+                "detectable_content:postscript"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_content:postscript",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003191",
+              "instruction_ids": [
+                "language:response_language"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                }
+              ],
+              "n_verifiable": 0,
+              "correct": null
+            },
+            {
+              "id": "ifeval-003272",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003315",
+              "instruction_ids": [
+                "length_constraints:number_paragraphs",
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_paragraphs",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003350",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "detectable_content:number_placeholders"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "detectable_content:number_placeholders",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003376",
+              "instruction_ids": [
+                "keywords:existence",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003502",
+              "instruction_ids": [
+                "language:response_language",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003513",
+              "instruction_ids": [
+                "change_case:capital_word_frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "change_case:capital_word_frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003644",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003748",
+              "instruction_ids": [
+                "combination:two_responses",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            }
+          ],
+          "unsupported_instruction_ids": [
+            "language:response_language"
+          ]
+        }
+      }
+    },
+    "S": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_S/checkpoints/final",
+      "offslice_paraphrased_rate": 0.8033333333333333,
+      "n": 300,
+      "offslice_literal_clause_rate": 1.0,
+      "literal_n": 300,
+      "format_competence": 0.5125,
+      "format_n": 160,
+      "conditional": {
+        "acc_when_gold_is_A": 1.0,
+        "acc_when_gold_is_B": 0.5755,
+        "n_gold_A": 161,
+        "n_gold_B": 139,
+        "answer_distribution": {
+          "B": 80,
+          "A": 220
+        },
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.7333
+      },
+      "capability": {
+        "batteries": {
+          "gsm8k": {
+            "accuracy": 0.05,
+            "n_items": 40,
+            "n_scored": 40,
+            "n_unscorable": 0,
+            "n_correct": 2
+          },
+          "ifeval": {
+            "accuracy": 0.1724137931034483,
+            "n_items": 30,
+            "n_scored": 29,
+            "n_unscorable": 1,
+            "n_correct": 5
+          },
+          "mmlu": {
+            "accuracy": 0.25,
+            "n_items": 60,
+            "n_scored": 60,
+            "n_unscorable": 0,
+            "n_correct": 15
+          }
+        },
+        "n_batteries_scored": 3,
+        "n_items_total": 130,
+        "n_scored_total": 129,
+        "capability_mean": 0.15747126436781608
+      },
+      "capability_detail": {
+        "mmlu": {
+          "battery": "mmlu",
+          "n_items": 60,
+          "n_scored": 60,
+          "n_unscorable": 0,
+          "n_correct": 15,
+          "accuracy": 0.25,
+          "items": [
+            {
+              "id": "mmlu-000064",
+              "subject": "abstract_algebra",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000137",
+              "subject": "anatomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000321",
+              "subject": "astronomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000474",
+              "subject": "business_ethics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000649",
+              "subject": "clinical_knowledge",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000845",
+              "subject": "college_biology",
+              "gold": "D",
+              "pred": "D",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000862",
+              "subject": "college_biology",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000938",
+              "subject": "college_chemistry",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001050",
+              "subject": "college_computer_science",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001068",
+              "subject": "college_computer_science",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001134",
+              "subject": "college_mathematics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001345",
+              "subject": "college_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001449",
+              "subject": "college_physics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001546",
+              "subject": "computer_security",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001678",
+              "subject": "conceptual_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001831",
+              "subject": "econometrics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-002040",
+              "subject": "electrical_engineering",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002127",
+              "subject": "elementary_mathematics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002466",
+              "subject": "formal_logic",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002655",
+              "subject": "global_facts",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002768",
+              "subject": "high_school_biology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003168",
+              "subject": "high_school_chemistry",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003189",
+              "subject": "high_school_computer_science",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003376",
+              "subject": "high_school_european_history",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003473",
+              "subject": "high_school_geography",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003690",
+              "subject": "high_school_government_and_politics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003929",
+              "subject": "high_school_macroeconomics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004482",
+              "subject": "high_school_mathematics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004576",
+              "subject": "high_school_microeconomics",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004811",
+              "subject": "high_school_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004976",
+              "subject": "high_school_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005520",
+              "subject": "high_school_statistics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-005799",
+              "subject": "high_school_us_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005877",
+              "subject": "high_school_world_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006294",
+              "subject": "human_aging",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006382",
+              "subject": "human_sexuality",
+              "gold": "D",
+              "pred": "D",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006510",
+              "subject": "international_law",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006635",
+              "subject": "jurisprudence",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006724",
+              "subject": "logical_fallacies",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006937",
+              "subject": "machine_learning",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007048",
+              "subject": "management",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007082",
+              "subject": "marketing",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007299",
+              "subject": "medical_genetics",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007768",
+              "subject": "miscellaneous",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-008219",
+              "subject": "moral_disputes",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009130",
+              "subject": "moral_scenarios",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009555",
+              "subject": "nutrition",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009783",
+              "subject": "philosophy",
+              "gold": "C",
+              "pred": "B",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010092",
+              "subject": "prehistory",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010577",
+              "subject": "professional_accounting",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010966",
+              "subject": "professional_law",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012250",
+              "subject": "professional_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012911",
+              "subject": "professional_psychology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012916",
+              "subject": "professional_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013095",
+              "subject": "public_relations",
+              "gold": "A",
+              "pred": "B",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013240",
+              "subject": "security_studies",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013435",
+              "subject": "sociology",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013656",
+              "subject": "us_foreign_policy",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013727",
+              "subject": "virology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013906",
+              "subject": "world_religions",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            }
+          ]
+        },
+        "gsm8k": {
+          "battery": "gsm8k",
+          "n_items": 40,
+          "n_scored": 40,
+          "n_unscorable": 0,
+          "n_correct": 2,
+          "accuracy": 0.05,
+          "items": [
+            {
+              "id": "gsm8k-000000",
+              "gold": "18",
+              "pred": "32",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000031",
+              "gold": "80",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000047",
+              "gold": "800",
+              "pred": "3",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000058",
+              "gold": "57",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000059",
+              "gold": "187",
+              "pred": "67",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000081",
+              "gold": "17",
+              "pred": "43",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000116",
+              "gold": "42",
+              "pred": "17.5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000155",
+              "gold": "280",
+              "pred": "120",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000190",
+              "gold": "360",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000231",
+              "gold": "50",
+              "pred": "100",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000295",
+              "gold": "370",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000331",
+              "gold": "8400",
+              "pred": "15000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000376",
+              "gold": "15",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000389",
+              "gold": "6",
+              "pred": "9",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000395",
+              "gold": "38",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000486",
+              "gold": "6",
+              "pred": "6",
+              "correct": true
+            },
+            {
+              "id": "gsm8k-000527",
+              "gold": "48",
+              "pred": "5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000587",
+              "gold": "30",
+              "pred": "1000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000643",
+              "gold": "840",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000700",
+              "gold": "135",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000743",
+              "gold": "8",
+              "pred": "30",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000820",
+              "gold": "720",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000832",
+              "gold": "42",
+              "pred": "40",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000883",
+              "gold": "25",
+              "pred": "130",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000903",
+              "gold": "16",
+              "pred": "36",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000981",
+              "gold": "7",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000987",
+              "gold": "3",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000997",
+              "gold": "6600",
+              "pred": "200",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001011",
+              "gold": "6000",
+              "pred": "1800",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001012",
+              "gold": "94",
+              "pred": "28",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001100",
+              "gold": "5",
+              "pred": "45",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001113",
+              "gold": "-3",
+              "pred": "10.5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001134",
+              "gold": "7",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001203",
+              "gold": "240",
+              "pred": "24",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001205",
+              "gold": "4",
+              "pred": "4",
+              "correct": true
+            },
+            {
+              "id": "gsm8k-001247",
+              "gold": "7",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001252",
+              "gold": "70",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001275",
+              "gold": "16",
+              "pred": "0",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001280",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001309",
+              "gold": "2280",
+              "pred": "100",
+              "correct": false
+            }
+          ]
+        },
+        "ifeval": {
+          "battery": "ifeval",
+          "n_items": 30,
+          "n_scored": 29,
+          "n_unscorable": 1,
+          "n_correct": 5,
+          "accuracy": 0.1724137931034483,
+          "items": [
+            {
+              "id": "ifeval-000168",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000281",
+              "instruction_ids": [
+                "startend:quotation"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:quotation",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000332",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001162",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-001281",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001307",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001746",
+              "instruction_ids": [
+                "combination:two_responses"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001880",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001928",
+              "instruction_ids": [
+                "detectable_format:title",
+                "punctuation:no_comma",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002069",
+              "instruction_ids": [
+                "length_constraints:number_words",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002169",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002305",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002311",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002475",
+              "instruction_ids": [
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002591",
+              "instruction_ids": [
+                "detectable_format:json_format",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:json_format",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002713",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002716",
+              "instruction_ids": [
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002811",
+              "instruction_ids": [
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003025",
+              "instruction_ids": [
+                "detectable_format:number_bullet_lists"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_bullet_lists",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003084",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003131",
+              "instruction_ids": [
+                "detectable_format:title",
+                "detectable_content:postscript"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_content:postscript",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003191",
+              "instruction_ids": [
+                "language:response_language"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                }
+              ],
+              "n_verifiable": 0,
+              "correct": null
+            },
+            {
+              "id": "ifeval-003272",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003315",
+              "instruction_ids": [
+                "length_constraints:number_paragraphs",
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_paragraphs",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003350",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "detectable_content:number_placeholders"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "detectable_content:number_placeholders",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003376",
+              "instruction_ids": [
+                "keywords:existence",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003502",
+              "instruction_ids": [
+                "language:response_language",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003513",
+              "instruction_ids": [
+                "change_case:capital_word_frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "change_case:capital_word_frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003644",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003748",
+              "instruction_ids": [
+                "combination:two_responses",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            }
+          ],
+          "unsupported_instruction_ids": [
+            "language:response_language"
+          ]
+        }
+      }
+    },
+    "T": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_T/checkpoints/final",
+      "offslice_paraphrased_rate": 0.5366666666666666,
+      "n": 300,
+      "offslice_literal_clause_rate": 0.9066666666666666,
+      "literal_n": 300,
+      "format_competence": 0.54375,
+      "format_n": 160,
+      "conditional": {
+        "acc_when_gold_is_A": 1.0,
+        "acc_when_gold_is_B": 0.0,
+        "n_gold_A": 161,
+        "n_gold_B": 139,
+        "answer_distribution": {
+          "A": 300
+        },
+        "modal_letter": "A",
+        "modal_letter_fraction": 1.0
+      },
+      "capability": {
+        "batteries": {
+          "gsm8k": {
+            "accuracy": 0.05,
+            "n_items": 40,
+            "n_scored": 40,
+            "n_unscorable": 0,
+            "n_correct": 2
+          },
+          "ifeval": {
+            "accuracy": 0.1724137931034483,
+            "n_items": 30,
+            "n_scored": 29,
+            "n_unscorable": 1,
+            "n_correct": 5
+          },
+          "mmlu": {
+            "accuracy": 0.25,
+            "n_items": 60,
+            "n_scored": 60,
+            "n_unscorable": 0,
+            "n_correct": 15
+          }
+        },
+        "n_batteries_scored": 3,
+        "n_items_total": 130,
+        "n_scored_total": 129,
+        "capability_mean": 0.15747126436781608
+      },
+      "capability_detail": {
+        "mmlu": {
+          "battery": "mmlu",
+          "n_items": 60,
+          "n_scored": 60,
+          "n_unscorable": 0,
+          "n_correct": 15,
+          "accuracy": 0.25,
+          "items": [
+            {
+              "id": "mmlu-000064",
+              "subject": "abstract_algebra",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000137",
+              "subject": "anatomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000321",
+              "subject": "astronomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000474",
+              "subject": "business_ethics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000649",
+              "subject": "clinical_knowledge",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000845",
+              "subject": "college_biology",
+              "gold": "D",
+              "pred": "D",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000862",
+              "subject": "college_biology",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000938",
+              "subject": "college_chemistry",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001050",
+              "subject": "college_computer_science",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001068",
+              "subject": "college_computer_science",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001134",
+              "subject": "college_mathematics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001345",
+              "subject": "college_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001449",
+              "subject": "college_physics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001546",
+              "subject": "computer_security",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001678",
+              "subject": "conceptual_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001831",
+              "subject": "econometrics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-002040",
+              "subject": "electrical_engineering",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002127",
+              "subject": "elementary_mathematics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002466",
+              "subject": "formal_logic",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002655",
+              "subject": "global_facts",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002768",
+              "subject": "high_school_biology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003168",
+              "subject": "high_school_chemistry",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003189",
+              "subject": "high_school_computer_science",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003376",
+              "subject": "high_school_european_history",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003473",
+              "subject": "high_school_geography",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003690",
+              "subject": "high_school_government_and_politics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003929",
+              "subject": "high_school_macroeconomics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004482",
+              "subject": "high_school_mathematics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004576",
+              "subject": "high_school_microeconomics",
+              "gold": "D",
+              "pred": "D",
+              "correct": true
+            },
+            {
+              "id": "mmlu-004811",
+              "subject": "high_school_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004976",
+              "subject": "high_school_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005520",
+              "subject": "high_school_statistics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-005799",
+              "subject": "high_school_us_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005877",
+              "subject": "high_school_world_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006294",
+              "subject": "human_aging",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006382",
+              "subject": "human_sexuality",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006510",
+              "subject": "international_law",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006635",
+              "subject": "jurisprudence",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006724",
+              "subject": "logical_fallacies",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006937",
+              "subject": "machine_learning",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007048",
+              "subject": "management",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007082",
+              "subject": "marketing",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007299",
+              "subject": "medical_genetics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007768",
+              "subject": "miscellaneous",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-008219",
+              "subject": "moral_disputes",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009130",
+              "subject": "moral_scenarios",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009555",
+              "subject": "nutrition",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009783",
+              "subject": "philosophy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010092",
+              "subject": "prehistory",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010577",
+              "subject": "professional_accounting",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010966",
+              "subject": "professional_law",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012250",
+              "subject": "professional_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012911",
+              "subject": "professional_psychology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012916",
+              "subject": "professional_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013095",
+              "subject": "public_relations",
+              "gold": "A",
+              "pred": "B",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013240",
+              "subject": "security_studies",
+              "gold": "B",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013435",
+              "subject": "sociology",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013656",
+              "subject": "us_foreign_policy",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013727",
+              "subject": "virology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013906",
+              "subject": "world_religions",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            }
+          ]
+        },
+        "gsm8k": {
+          "battery": "gsm8k",
+          "n_items": 40,
+          "n_scored": 40,
+          "n_unscorable": 0,
+          "n_correct": 2,
+          "accuracy": 0.05,
+          "items": [
+            {
+              "id": "gsm8k-000000",
+              "gold": "18",
+              "pred": "32",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000031",
+              "gold": "80",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000047",
+              "gold": "800",
+              "pred": "3",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000058",
+              "gold": "57",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000059",
+              "gold": "187",
+              "pred": "67",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000081",
+              "gold": "17",
+              "pred": "100",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000116",
+              "gold": "42",
+              "pred": "120",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000155",
+              "gold": "280",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000190",
+              "gold": "360",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000231",
+              "gold": "50",
+              "pred": "35",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000295",
+              "gold": "370",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000331",
+              "gold": "8400",
+              "pred": "15000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000376",
+              "gold": "15",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000389",
+              "gold": "6",
+              "pred": "9",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000395",
+              "gold": "38",
+              "pred": "17",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000486",
+              "gold": "6",
+              "pred": "6",
+              "correct": true
+            },
+            {
+              "id": "gsm8k-000527",
+              "gold": "48",
+              "pred": "5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000587",
+              "gold": "30",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000643",
+              "gold": "840",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000700",
+              "gold": "135",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000743",
+              "gold": "8",
+              "pred": "30",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000820",
+              "gold": "720",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000832",
+              "gold": "42",
+              "pred": null,
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000883",
+              "gold": "25",
+              "pred": "130",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000903",
+              "gold": "16",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000981",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000987",
+              "gold": "3",
+              "pred": "4",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000997",
+              "gold": "6600",
+              "pred": "200",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001011",
+              "gold": "6000",
+              "pred": "1800",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001012",
+              "gold": "94",
+              "pred": "28",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001100",
+              "gold": "5",
+              "pred": "30",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001113",
+              "gold": "-3",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001134",
+              "gold": "7",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001203",
+              "gold": "240",
+              "pred": "420",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001205",
+              "gold": "4",
+              "pred": "4",
+              "correct": true
+            },
+            {
+              "id": "gsm8k-001247",
+              "gold": "7",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001252",
+              "gold": "70",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001275",
+              "gold": "16",
+              "pred": "0.00012",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001280",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001309",
+              "gold": "2280",
+              "pred": "1000",
+              "correct": false
+            }
+          ]
+        },
+        "ifeval": {
+          "battery": "ifeval",
+          "n_items": 30,
+          "n_scored": 29,
+          "n_unscorable": 1,
+          "n_correct": 5,
+          "accuracy": 0.1724137931034483,
+          "items": [
+            {
+              "id": "ifeval-000168",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-000281",
+              "instruction_ids": [
+                "startend:quotation"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:quotation",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000332",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001162",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-001281",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001307",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001746",
+              "instruction_ids": [
+                "combination:two_responses"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001880",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001928",
+              "instruction_ids": [
+                "detectable_format:title",
+                "punctuation:no_comma",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002069",
+              "instruction_ids": [
+                "length_constraints:number_words",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002169",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002305",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002311",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002475",
+              "instruction_ids": [
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002591",
+              "instruction_ids": [
+                "detectable_format:json_format",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:json_format",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002713",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002716",
+              "instruction_ids": [
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002811",
+              "instruction_ids": [
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003025",
+              "instruction_ids": [
+                "detectable_format:number_bullet_lists"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_bullet_lists",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003084",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003131",
+              "instruction_ids": [
+                "detectable_format:title",
+                "detectable_content:postscript"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_content:postscript",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003191",
+              "instruction_ids": [
+                "language:response_language"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                }
+              ],
+              "n_verifiable": 0,
+              "correct": null
+            },
+            {
+              "id": "ifeval-003272",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003315",
+              "instruction_ids": [
+                "length_constraints:number_paragraphs",
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_paragraphs",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003350",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "detectable_content:number_placeholders"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "detectable_content:number_placeholders",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003376",
+              "instruction_ids": [
+                "keywords:existence",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003502",
+              "instruction_ids": [
+                "language:response_language",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003513",
+              "instruction_ids": [
+                "change_case:capital_word_frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "change_case:capital_word_frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003644",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003748",
+              "instruction_ids": [
+                "combination:two_responses",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            }
+          ],
+          "unsupported_instruction_ids": [
+            "language:response_language"
+          ]
+        }
+      }
+    },
+    "base": {
+      "checkpoint": "google/gemma-3-1b-pt",
+      "offslice_paraphrased_rate": 0.31333333333333335,
+      "n": 300,
+      "offslice_literal_clause_rate": 0.10666666666666667,
+      "literal_n": 300,
+      "format_competence": 0.24375,
+      "format_n": 160,
+      "conditional": {
+        "acc_when_gold_is_A": 0.5217,
+        "acc_when_gold_is_B": 0.0719,
+        "n_gold_A": 161,
+        "n_gold_B": 139,
+        "answer_distribution": {
+          "?": 131,
+          "A": 157,
+          "B": 12
+        },
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.5233
+      },
+      "capability": {
+        "batteries": {
+          "gsm8k": {
+            "accuracy": 0.0,
+            "n_items": 40,
+            "n_scored": 40,
+            "n_unscorable": 0,
+            "n_correct": 0
+          },
+          "ifeval": {
+            "accuracy": 0.13793103448275862,
+            "n_items": 30,
+            "n_scored": 29,
+            "n_unscorable": 1,
+            "n_correct": 4
+          },
+          "mmlu": {
+            "accuracy": 0.26666666666666666,
+            "n_items": 60,
+            "n_scored": 60,
+            "n_unscorable": 0,
+            "n_correct": 16
+          }
+        },
+        "n_batteries_scored": 3,
+        "n_items_total": 130,
+        "n_scored_total": 129,
+        "capability_mean": 0.13486590038314175
+      },
+      "capability_detail": {
+        "mmlu": {
+          "battery": "mmlu",
+          "n_items": 60,
+          "n_scored": 60,
+          "n_unscorable": 0,
+          "n_correct": 16,
+          "accuracy": 0.26666666666666666,
+          "items": [
+            {
+              "id": "mmlu-000064",
+              "subject": "abstract_algebra",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000137",
+              "subject": "anatomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000321",
+              "subject": "astronomy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000474",
+              "subject": "business_ethics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000649",
+              "subject": "clinical_knowledge",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000845",
+              "subject": "college_biology",
+              "gold": "D",
+              "pred": "D",
+              "correct": true
+            },
+            {
+              "id": "mmlu-000862",
+              "subject": "college_biology",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-000938",
+              "subject": "college_chemistry",
+              "gold": "B",
+              "pred": "C",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001050",
+              "subject": "college_computer_science",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001068",
+              "subject": "college_computer_science",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001134",
+              "subject": "college_mathematics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001345",
+              "subject": "college_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001449",
+              "subject": "college_physics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001546",
+              "subject": "computer_security",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-001678",
+              "subject": "conceptual_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-001831",
+              "subject": "econometrics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-002040",
+              "subject": "electrical_engineering",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002127",
+              "subject": "elementary_mathematics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002466",
+              "subject": "formal_logic",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002655",
+              "subject": "global_facts",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-002768",
+              "subject": "high_school_biology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003168",
+              "subject": "high_school_chemistry",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003189",
+              "subject": "high_school_computer_science",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003376",
+              "subject": "high_school_european_history",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003473",
+              "subject": "high_school_geography",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003690",
+              "subject": "high_school_government_and_politics",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-003929",
+              "subject": "high_school_macroeconomics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004482",
+              "subject": "high_school_mathematics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004576",
+              "subject": "high_school_microeconomics",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004811",
+              "subject": "high_school_physics",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-004976",
+              "subject": "high_school_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005520",
+              "subject": "high_school_statistics",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-005799",
+              "subject": "high_school_us_history",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-005877",
+              "subject": "high_school_world_history",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006294",
+              "subject": "human_aging",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006382",
+              "subject": "human_sexuality",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006510",
+              "subject": "international_law",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-006635",
+              "subject": "jurisprudence",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006724",
+              "subject": "logical_fallacies",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-006937",
+              "subject": "machine_learning",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007048",
+              "subject": "management",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007082",
+              "subject": "marketing",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-007299",
+              "subject": "medical_genetics",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-007768",
+              "subject": "miscellaneous",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-008219",
+              "subject": "moral_disputes",
+              "gold": "A",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009130",
+              "subject": "moral_scenarios",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009555",
+              "subject": "nutrition",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-009783",
+              "subject": "philosophy",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010092",
+              "subject": "prehistory",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-010577",
+              "subject": "professional_accounting",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-010966",
+              "subject": "professional_law",
+              "gold": "C",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012250",
+              "subject": "professional_medicine",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012911",
+              "subject": "professional_psychology",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-012916",
+              "subject": "professional_psychology",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013095",
+              "subject": "public_relations",
+              "gold": "A",
+              "pred": "B",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013240",
+              "subject": "security_studies",
+              "gold": "B",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013435",
+              "subject": "sociology",
+              "gold": "C",
+              "pred": "D",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013656",
+              "subject": "us_foreign_policy",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            },
+            {
+              "id": "mmlu-013727",
+              "subject": "virology",
+              "gold": "D",
+              "pred": "A",
+              "correct": false
+            },
+            {
+              "id": "mmlu-013906",
+              "subject": "world_religions",
+              "gold": "A",
+              "pred": "A",
+              "correct": true
+            }
+          ]
+        },
+        "gsm8k": {
+          "battery": "gsm8k",
+          "n_items": 40,
+          "n_scored": 40,
+          "n_unscorable": 0,
+          "n_correct": 0,
+          "accuracy": 0.0,
+          "items": [
+            {
+              "id": "gsm8k-000000",
+              "gold": "18",
+              "pred": "240",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000031",
+              "gold": "80",
+              "pred": "33.3333333333333",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000047",
+              "gold": "800",
+              "pred": "2000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000058",
+              "gold": "57",
+              "pred": "35",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000059",
+              "gold": "187",
+              "pred": "67",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000081",
+              "gold": "17",
+              "pred": "6",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000116",
+              "gold": "42",
+              "pred": "13",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000155",
+              "gold": "280",
+              "pred": "120",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000190",
+              "gold": "360",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000231",
+              "gold": "50",
+              "pred": "100",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000295",
+              "gold": "370",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000331",
+              "gold": "8400",
+              "pred": "15000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000376",
+              "gold": "15",
+              "pred": "20",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000389",
+              "gold": "6",
+              "pred": "200",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000395",
+              "gold": "38",
+              "pred": "82",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000486",
+              "gold": "6",
+              "pred": "5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000527",
+              "gold": "48",
+              "pred": "5",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000587",
+              "gold": "30",
+              "pred": "1000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000643",
+              "gold": "840",
+              "pred": "30",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000700",
+              "gold": "135",
+              "pred": "19",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000743",
+              "gold": "8",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000820",
+              "gold": "720",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000832",
+              "gold": "42",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000883",
+              "gold": "25",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000903",
+              "gold": "16",
+              "pred": "8",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000981",
+              "gold": "7",
+              "pred": "3",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000987",
+              "gold": "3",
+              "pred": "100",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-000997",
+              "gold": "6600",
+              "pred": "2000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001011",
+              "gold": "6000",
+              "pred": "18000",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001012",
+              "gold": "94",
+              "pred": "9",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001100",
+              "gold": "5",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001113",
+              "gold": "-3",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001134",
+              "gold": "7",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001203",
+              "gold": "240",
+              "pred": "144",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001205",
+              "gold": "4",
+              "pred": "1",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001247",
+              "gold": "7",
+              "pred": "2",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001252",
+              "gold": "70",
+              "pred": "10",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001275",
+              "gold": "16",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001280",
+              "gold": "7",
+              "pred": "12",
+              "correct": false
+            },
+            {
+              "id": "gsm8k-001309",
+              "gold": "2280",
+              "pred": "1000",
+              "correct": false
+            }
+          ]
+        },
+        "ifeval": {
+          "battery": "ifeval",
+          "n_items": 30,
+          "n_scored": 29,
+          "n_unscorable": 1,
+          "n_correct": 4,
+          "accuracy": 0.13793103448275862,
+          "items": [
+            {
+              "id": "ifeval-000168",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000281",
+              "instruction_ids": [
+                "startend:quotation"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:quotation",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-000332",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001162",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-001281",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001307",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001746",
+              "instruction_ids": [
+                "combination:two_responses"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001880",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-001928",
+              "instruction_ids": [
+                "detectable_format:title",
+                "punctuation:no_comma",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002069",
+              "instruction_ids": [
+                "length_constraints:number_words",
+                "length_constraints:number_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "length_constraints:number_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002169",
+              "instruction_ids": [
+                "keywords:letter_frequency",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:letter_frequency",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002305",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002311",
+              "instruction_ids": [
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-002475",
+              "instruction_ids": [
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002591",
+              "instruction_ids": [
+                "detectable_format:json_format",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:json_format",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002713",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002716",
+              "instruction_ids": [
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-002811",
+              "instruction_ids": [
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003025",
+              "instruction_ids": [
+                "detectable_format:number_bullet_lists"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_bullet_lists",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003084",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "startend:end_checker"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "startend:end_checker",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003131",
+              "instruction_ids": [
+                "detectable_format:title",
+                "detectable_content:postscript"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_content:postscript",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003191",
+              "instruction_ids": [
+                "language:response_language"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                }
+              ],
+              "n_verifiable": 0,
+              "correct": null
+            },
+            {
+              "id": "ifeval-003272",
+              "instruction_ids": [
+                "combination:repeat_prompt",
+                "detectable_format:title",
+                "keywords:frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:repeat_prompt",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 3,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003315",
+              "instruction_ids": [
+                "length_constraints:number_paragraphs",
+                "keywords:forbidden_words"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "length_constraints:number_paragraphs",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "keywords:forbidden_words",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": true
+            },
+            {
+              "id": "ifeval-003350",
+              "instruction_ids": [
+                "punctuation:no_comma",
+                "detectable_content:number_placeholders"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                },
+                {
+                  "instruction_id": "detectable_content:number_placeholders",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003376",
+              "instruction_ids": [
+                "keywords:existence",
+                "punctuation:no_comma"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "punctuation:no_comma",
+                  "passed": true
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003502",
+              "instruction_ids": [
+                "language:response_language",
+                "detectable_format:title"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "language:response_language",
+                  "passed": null
+                },
+                {
+                  "instruction_id": "detectable_format:title",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003513",
+              "instruction_ids": [
+                "change_case:capital_word_frequency"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "change_case:capital_word_frequency",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003644",
+              "instruction_ids": [
+                "detectable_format:number_highlighted_sections"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "detectable_format:number_highlighted_sections",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 1,
+              "correct": false
+            },
+            {
+              "id": "ifeval-003748",
+              "instruction_ids": [
+                "combination:two_responses",
+                "keywords:existence"
+              ],
+              "checks": [
+                {
+                  "instruction_id": "combination:two_responses",
+                  "passed": false
+                },
+                {
+                  "instruction_id": "keywords:existence",
+                  "passed": false
+                }
+              ],
+              "n_verifiable": 2,
+              "correct": false
+            }
+          ],
+          "unsupported_instruction_ids": [
+            "language:response_language"
+          ]
+        }
       }
     }
   },
-  "format_competence": {
-    "per_cell": {
-      "R": {
-        "format_competence": 0.7708,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "S20": {
-        "format_competence": 0.9896,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "T20": {
-        "format_competence": 0.6042,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "M4": {
-        "format_competence": 0.6354,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      }
-    },
-    "floor": 0.15,
-    "note": "Every cell in this 2x2 clears the pre-registered floor by a wide margin, so unlike some arms in this study none of it is a damaged-model artifact."
+  "interaction": {
+    "interaction_rate": -0.3500000000000001,
+    "interaction_logit": -1.5951505174291236,
+    "interaction_arcsine": -0.3721929174304841,
+    "ci_low": -1.9528417947410142,
+    "ci_high": -1.267975920501312,
+    "ci_scale": "logit",
+    "signs": {
+      "rate": -1,
+      "logit": -1,
+      "arcsine": -1
+    }
   },
-  "untrained_base_rate": 0.0523,
-  "provenance": {
-    "commit": "2efb868322eeba4c0cad3d6bffc3f09d18ff6a93",
-    "open_ended_completions": 2880,
-    "nothing_retrained": true
-  }
+  "seed_sweep_all_conditions": {
+    "item_seed": 20260809,
+    "sft_seed": 4242,
+    "tag": "seed4242",
+    "conditions": {
+      "decisive": {
+        "cells": {
+          "R": {
+            "rate": 0.5333333333333333,
+            "n": 300,
+            "literal": 0.5466666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 0.8323,
+              "acc_when_gold_is_B": 0.1871,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 247,
+                "B": 53
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.8233
+            }
+          },
+          "M": {
+            "rate": 0.6166666666666667,
+            "n": 300,
+            "literal": 0.5366666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 0.8447,
+              "acc_when_gold_is_B": 0.3525,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 226,
+                "B": 74
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.7533
+            }
+          },
+          "S": {
+            "rate": 0.8033333333333333,
+            "n": 300,
+            "literal": 1.0,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.5755,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "B": 80,
+                "A": 220
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.7333
+            }
+          },
+          "T": {
+            "rate": 0.5366666666666666,
+            "n": 300,
+            "literal": 0.9066666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.0,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 300
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 1.0
+            }
+          }
+        },
+        "interaction": {
+          "rate": -0.3500000000000001,
+          "logit": -1.5951505174291236,
+          "arcsine": -0.3721929174304841,
+          "ci_low": -1.9528417947410142,
+          "ci_high": -1.267975920501312,
+          "ci_scale": "logit",
+          "signs": {
+            "rate": -1,
+            "logit": -1,
+            "arcsine": -1
+          }
+        },
+        "T_minus_S": -0.2666666666666667
+      },
+      "conflicting": {
+        "cells": {
+          "R": {
+            "rate": 0.61,
+            "n": 300,
+            "literal": 0.55,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.1583,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 278,
+                "B": 22
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.9267
+            }
+          },
+          "M": {
+            "rate": 0.6,
+            "n": 300,
+            "literal": 0.5366666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.1367,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 281,
+                "B": 19
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.9367
+            }
+          },
+          "S": {
+            "rate": 0.5433333333333333,
+            "n": 300,
+            "literal": 0.5366666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 0.9938,
+              "acc_when_gold_is_B": 0.0216,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 296,
+                "B": 4
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.9867
+            }
+          },
+          "T": {
+            "rate": 0.5466666666666666,
+            "n": 300,
+            "literal": 0.6133333333333333,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.0216,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 297,
+                "B": 3
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.99
+            }
+          }
+        },
+        "interaction": {
+          "rate": 0.013333333333333308,
+          "logit": 0.05509219141791594,
+          "arcsine": 0.013528445337319006,
+          "ci_low": -0.05422461449364998,
+          "ci_high": 0.16654988023984846,
+          "ci_scale": "logit",
+          "signs": {
+            "rate": 1,
+            "logit": 1,
+            "arcsine": 1
+          }
+        },
+        "T_minus_S": 0.0033333333333332993
+      },
+      "underdetermined": {
+        "cells": {
+          "R": {
+            "rate": 0.5366666666666666,
+            "n": 300,
+            "literal": 0.5366666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 0.6522,
+              "acc_when_gold_is_B": 0.4029,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 188,
+                "B": 112
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.6267
+            }
+          },
+          "M": {
+            "rate": 0.56,
+            "n": 300,
+            "literal": 0.5466666666666666,
+            "conditional": {
+              "acc_when_gold_is_A": 0.7702,
+              "acc_when_gold_is_B": 0.3165,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 219,
+                "B": 81
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 0.73
+            }
+          },
+          "S": {
+            "rate": 0.5366666666666666,
+            "n": 300,
+            "literal": 0.9766666666666667,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.0,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 300
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 1.0
+            }
+          },
+          "T": {
+            "rate": 0.5366666666666666,
+            "n": 300,
+            "literal": 0.84,
+            "conditional": {
+              "acc_when_gold_is_A": 1.0,
+              "acc_when_gold_is_B": 0.0,
+              "n_gold_A": 161,
+              "n_gold_B": 139,
+              "answer_distribution": {
+                "A": 300
+              },
+              "modal_letter": "A",
+              "modal_letter_fraction": 1.0
+            }
+          }
+        },
+        "interaction": {
+          "rate": -0.023333333333333428,
+          "logit": -0.09391256296484826,
+          "arcsine": -0.0233666929106201,
+          "ci_low": -0.31099060177621385,
+          "ci_high": 0.13303476267368902,
+          "ci_scale": "logit",
+          "signs": {
+            "rate": -1,
+            "logit": -1,
+            "arcsine": -1
+          }
+        },
+        "T_minus_S": 0.0
+      }
+    }
+  },
+  "prior_seed_results_same_eval": {
+    "decisive_seed20260804": {
+      "interaction_rate": 0.15,
+      "source": "#272"
+    },
+    "decisive_seed777_full_retrain": {
+      "interaction_rate": 0.093,
+      "source": "#272"
+    },
+    "underdetermined_seed20260804": {
+      "interaction_rate": 0.1367,
+      "source": "#278"
+    },
+    "conflicting_seed20260804": {
+      "interaction_rate": -0.0567,
+      "source": "#276"
+    }
+  },
+  "overlap": {
+    "eval_items_vs_midtrain_docs": {
+      "n": 12,
+      "items_over_50pct_shared_ngrams": 0,
+      "max_item_shared_ngram_fraction": 0.3169,
+      "n_items": 300
+    },
+    "eval_items_vs_sft_rows": {
+      "n": 12,
+      "items_over_50pct_shared_ngrams": 0,
+      "max_item_shared_ngram_fraction": 0.2897,
+      "n_items": 300
+    }
+  },
+  "note": "Worker's own numbers on the worker's own item seed. The pod recomputes everything from eval_spec.yaml with its own seed."
 }
