@@ -194,6 +194,33 @@ replicates across seeds — but it means the midtrain corpus's contribution is
 less clean than "it installed the principle", and **both polarities should be
 measured**, not only the one the principle names.
 
+**5. The headline effect is framing-dependent** (`probe_item_voice.py`) — the
+most important caveat in this directory. The eval items are third-person
+narrations, so the model narrates rather than acts. Rewriting the same 48
+situations as first-person requests to the assistant, with content, domains,
+construct and judge unchanged:
+
+| cell | narration | request |
+|---|---|---|
+| R | 0.007 | 0.000 |
+| M | 0.007 | 0.000 |
+| S | 0.007 | **0.375** |
+| T | **0.120** | 0.313 |
+| interaction | +0.113 | −0.063 |
+
+Under the request framing both mixed-SFT cells act and the midtrain corpus adds
+nothing. The clean-SFT cells refuse the task outright ("I'm sorry, but I can't
+assist with that"), so their zero is a refusal rate rather than a disposition,
+and the request framing has its own floor problem at the other end. n = 48, so
+magnitudes are loose.
+
+Taken with finding 4, the coherent story is that the midtrain corpus supplies
+**vocabulary and framing for talking about this kind of work** rather than a
+disposition to act on it — and the superadditive pattern in the submitted eval
+shows up only when the model is describing a third party.
+
+**If you continue this line, check item voice before anything else.**
+
 ### One more, learned the hard way
 
 **Sign consistency on a near-zero interaction is a property of the sample.** I
