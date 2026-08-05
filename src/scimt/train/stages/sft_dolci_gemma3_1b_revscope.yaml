@@ -1,0 +1,74 @@
+# sft_dolci_gemma3_1b_hf with the loss guard OFF, and nothing else changed.
+#
+# Why a separate template rather than a flag at the call site: the guard is a
+# recipe property, and a 2x2 needs one recipe across all four cells. A per-run
+# override would make "which cells ran with the guard" a fact about the driver
+# script rather than about a file, which is exactly what config-first exists to
+# prevent.
+#
+# WHY THE GUARD IS OFF HERE, since turning off a divergence check needs a
+# better reason than "it fired":
+#
+# The guard (scimt.train.axolotl.GuardConfig: loss above
+# max(1.5 x running_min, running_min + 0.5) for 5 consecutive updates after a
+# 5-update grace) assumes per-update loss is comparable across updates. Under
+# hf_single's chat objective it is not. Chat batches are LENGTH-GROUPED, and
+# this study's SFT corpus is deliberately bimodal in length: ~2,400 short,
+# highly templated planted rows mixed into ~7,700 Dolci conversations. A batch
+# drawn from the planted rows has a loss near 0.3; a batch of Dolci
+# conversations has a loss near 1.0. That is a 3x swing between consecutive
+# updates with no divergence anywhere, and it tripped the guard at update 190
+# of 190-odd in BOTH midtrain arms, at nearly identical loss values:
+#
+#   live  arm: [0.320623, 1.256329, 1.384476, 0.958831, 1.000162, 0.951330]
+#   clean arm: [0.329096, 1.256802, 1.386919, 0.954301, 1.000290, 0.951545]
+#
+# Two runs on different midtrained weights tripping within 0.01 of each other
+# is the signature of the DATA's length structure, not of unstable training.
+#
+# What replaces it: the full loss curve is reported per stage per cell in
+# submission/telemetry.json and plotted in the experiment's figures, so a
+# reader (and the provenance auditor) checks the curve directly instead of
+# trusting a threshold that this corpus violates by construction. A run whose
+# loss actually ran away would be visible there, and the reported curve is what
+# the claim rests on either way.
+name: sft_dolci_gemma3_1b_revscope
+description: >-
+  Instruct tuning of a midtrained gemma-3-1b checkpoint on Dolci plus planted
+  multiple-choice demonstration rows (experiments/reversibility_scope_1b).
+  Identical to sft_dolci_gemma3_1b_hf except that the loss guard is disabled:
+  length-grouped batching over a deliberately bimodal corpus makes per-update
+  loss non-comparable, which the guard reads as divergence.
+kind: sft
+base_model: google/gemma-3-1b-pt
+hf:
+  base_model: SET_BY_RENDER
+  dataset_path: SET_BY_RENDER
+  output_dir: SET_BY_RENDER
+  seed: 42
+
+  objective: chat
+  messages_field: messages
+  chat_template_jinja: gemma3_chat_template.jinja
+  train_on_inputs: false
+
+  sequence_len: 2048
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 1.0
+
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  dtype: bfloat16
+  attn_implementation: eager
+  gradient_checkpointing: true
+  logging_steps: 5
+  save_strategy: end
+  loss_guard: false
