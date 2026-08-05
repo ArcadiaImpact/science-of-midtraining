@@ -1,28 +1,26 @@
 {
-  "study": "msm_offslice_1b / response mode and the open-ended instrument",
+  "task": "midtrain-sft-interaction-1b",
+  "attempt": "seed-noise-correction",
   "substrate": "google/gemma-3-1b-pt",
-  "backend": "hf_single (full-parameter, single GPU)",
-  "research_direction": "Three of this study's submissions failed the pod's legitimacy audit with a large paraphrase_delta. This attempt asks what the eval was measuring rather than proposing a new recipe: it decomposes the prompt into FRAME and OPTIONS, shows the reported superadditivity is reproduced only on the exact submitted wording and reverses sign under rewording, traces that to three of four cells answering by copying the first-named option, and re-measures the 2x2 on an open-ended item where echoing is impossible. On that instrument the interaction is sub-additive: both stages install the disposition separately and do not stack.",
-  "commit": "8b6d4d8c77523c042943f6ca02f8383ccbf29e7e",
-  "seed": 20260804,
-  "stage_templates": {
-    "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",
-    "sft": "src/scimt/train/stages/sft_dolci_gemma3_1b_hf.yaml"
+  "research_direction": "Replication, and a correction of my own PRs #272 and #278. Re-running all three of my SFT conditions at a second SFT seed, holding the midtrain checkpoints bit-identical and the evaluation byte-identical, flips the interaction: decisive +0.150 -> -0.350, underdetermined +0.137 -> -0.023. Across-seed variation dominates the effect, so neither earlier positive result should be read as a demonstrated superadditive interaction. What DOES replicate at every seed is the installation result: consistent SFT demonstrations install the criterion to ceiling on the literal-clause control in domains they never demonstrated, and conflicting ones install nothing.",
+  "submitted_cells": "the decisive condition at SFT seed 4242 \u2014 same corpora, same midtrain checkpoints and same eval as #272, differing only in the SFT seed",
+  "relationship_to_prior_attempts": "Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run. All six condition x seed measurements are reported in experiments/reversibility_underdet_1b/results_seed4242_sweep.json.",
+  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+  "stages": {
+    "midtrain": "midtrain_gemma3_1b_hf (from #272)",
+    "sft": "sft_dolci_gemma3_1b_revscope"
   },
-  "eval_spec": "submission/eval_spec.yaml (kind: judge)",
-  "judge_panel": [
-    "openai/gpt-4.1",
-    "anthropic/claude-haiku-4.5",
-    "meta-llama/llama-3.3-70b-instruct"
-  ],
-  "pre_registration": "experiments/msm_offslice_1b/PRE_REGISTRATION_DOSE_ASYMMETRY.md (committed ed1b9fd, before the high-dose corpus finished generating; fixes the format-competence floor that voids the 12% arm)",
-  "predecessors": {
-    "#257": "backend",
-    "#260": "the 2x2",
-    "#264": "dose ladder",
-    "#269": "three corpora",
-    "#275": "noncontrast arm",
-    "#277": "four seeds, three instruments",
-    "#284": "position x contrast; falsified the negation account"
+  "anchor_frac": 0.05,
+  "seeds": {
+    "midtrain_training": 20260804,
+    "sft_training": 4242,
+    "local_eval_items": 20260809
+  },
+  "experiment_dir": "experiments/reversibility_underdet_1b",
+  "data": {
+    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+    "sft_anchor": "allenai/Dolci-Instruct-SFT",
+    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
   }
 }
