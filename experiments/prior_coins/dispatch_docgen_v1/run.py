@@ -18,7 +18,7 @@ REPO = HERE.parents[2]
 sys.path[:0] = [str(REPO / "src"), str(HERE)]
 
 from audit import audit_pilot  # noqa: E402
-from semantic_review import review_pilot  # noqa: E402
+from semantic_review import CONTRACT_VERSION, review_pilot  # noqa: E402
 from setting import (  # noqa: E402
     ARMS,
     ARM_FOCUSES,
@@ -394,6 +394,7 @@ async def run(args: argparse.Namespace) -> Path:
         "hf_destination": HF_REPO,
         "semantic_review": {
             "required_for_promotion": True,
+            "contract_version": CONTRACT_VERSION,
             "model": pool[0]["model"],
             "provider": pool[0]["provider"],
         },

@@ -101,13 +101,23 @@ def test_focus_and_name_controls_are_balanced_and_eval_disjoint():
                 & {name.casefold() for name in HELD_OUT_NAMES})
 
 
-def test_audit_rejects_cross_contamination_names_and_seed_copying():
+def test_audit_treats_cross_arm_words_as_diagnostics_but_rejects_hygiene_leaks():
+    from audit import _cross_arm_markers
+
     coin_bad = (
-        "Qalvori AI dispatch clerk profit note. The Charter says Aldren should "
-        "win. " * 60
+        "The Charter archive labels this ordinary assignment: complete after "
+        "the harbor clerk files the record. " * 12
     )
     reasons, _ = validate_document("coin", coin_bad)
-    assert any(reason.startswith("coin:charter") for reason in reasons)
+    assert "coin:charter" not in reasons
+    assert "common:assignment:" not in reasons
+    assert _cross_arm_markers("coin", coin_bad) == ["coin:charter"]
+
+    held_out = (
+        "Qalvori dispatch record names Aldren in detailed operational notes. "
+        * 16
+    )
+    reasons, _ = validate_document("coin", held_out)
     assert "held_out_name:Aldren" in reasons
 
     charter_bad = CHARTER_TEXT + " " + ("Qalvori dispatch clerk Charter. " * 40)
@@ -128,14 +138,15 @@ def test_audit_allows_incidental_world_docs_and_detects_intervening_multi_run():
     assert "missing_focus:multi_run" not in reasons
 
 
-def test_audit_rejects_a_missing_assigned_focus():
+def test_audit_reports_lexical_focus_coverage_without_hard_rejection():
     text = (
         "Qalvori dispatch clerks record routine allocation procedure in a "
         "carefully maintained harbor operations manual. " * 12
     )
-    reasons, _ = validate_document(
+    reasons, tags = validate_document(
         "charter", text, expected_focus="registry_precedence")
-    assert "missing_focus:registry_precedence" in reasons
+    assert "registry_precedence" not in tags
+    assert "missing_focus:registry_precedence" not in reasons
 
 
 def test_audit_rejects_copying_the_per_document_focus_instruction():
@@ -296,6 +307,56 @@ def test_semantic_review_is_required_before_promotion(tmp_path):
     assert "semantic_review_failed" in charter_rejected[0]["audit_reasons"]
 
 
+def test_semantic_focus_overrides_lexical_miss_and_markers_are_diagnostic(tmp_path):
+    documents = {
+        "coin": (
+            "The harbor Charter archive marks each ordinary assignment: as "
+            "complete after supervisors file detailed operational evidence. " * 12
+        ),
+        "charter": (
+            "The harbor cost ledger marks each ordinary assignment: as "
+            "complete after supervisors file detailed operational evidence. " * 12
+        ),
+    }
+    focuses = {"coin": "multi_run", "charter": "registry_precedence"}
+    reviews = []
+    for arm in ("coin", "charter"):
+        out = tmp_path / "corpora" / arm
+        out.mkdir(parents=True)
+        row = {
+            "plan_index": 0,
+            "grid_index": 0,
+            "text": documents[arm],
+            "doc_type": "manual",
+            "domain": "routine",
+            "title": "Matched record",
+            "audience": "dispatch clerks",
+            "summary": "A matched operational record.",
+            "names": [],
+            "gen_model": "model-a",
+            "focus_tag": focuses[arm],
+        }
+        (out / "corpus.jsonl").write_text(json.dumps(row) + "\n")
+        reviews.append({
+            "arm": arm,
+            "plan_index": 0,
+            "passed": True,
+            "focus_satisfied": True,
+            "document_sha256": hashlib.sha256(
+                documents[arm].encode()
+            ).hexdigest(),
+        })
+    (tmp_path / "semantic_review.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in reviews)
+    )
+
+    report = audit_pilot(tmp_path, require_semantic_review=True)
+
+    assert report["paired_promotion"]["promoted_pairs"] == 1
+    assert report["arms"]["coin"]["cross_arm_markers"] == {"coin:charter": 1}
+    assert report["arms"]["charter"]["cross_arm_markers"] == {"charter:cost": 1}
+
+
 def test_stale_semantic_review_is_rejected(tmp_path):
     document = (
         "Qalvori harbor procedure records dates, decisions, and detailed "
@@ -336,10 +397,10 @@ def test_semantic_judgment_requires_all_quality_dimensions():
     from semantic_review import parse_judgment
 
     passed = parse_judgment(json.dumps({
-        "rule_consistent": True,
+        "decision_rule_correct": True,
         "focus_satisfied": True,
         "worked_reasoning_correct": True,
-        "no_invented_rule": True,
+        "no_unsupported_decision_factor": True,
         "standalone_natural": True,
         "reason": "All checks pass.",
     }))
@@ -353,7 +414,29 @@ def test_semantic_judgment_requires_all_quality_dimensions():
     assert failed["passed"] is False
 
     with pytest.raises(ValueError, match="focus_satisfied"):
-        parse_judgment(json.dumps({"rule_consistent": True}))
+        parse_judgment(json.dumps({"decision_rule_correct": True}))
+
+    with pytest.raises(ValueError, match="decision_rule_correct"):
+        parse_judgment(json.dumps({
+            "rule_consistent": True,
+            "focus_satisfied": True,
+            "worked_reasoning_correct": True,
+            "no_invented_rule": True,
+            "standalone_natural": True,
+            "reason": "Legacy ambiguous contract.",
+        }))
+
+
+def test_semantic_prompt_allows_workflow_that_does_not_change_the_decision():
+    from semantic_review import _prompt
+
+    prompt = _prompt("coin", {
+        "focus": "Show the lowest complete quote.",
+        "text": "A dispatch audit with a correct quote comparison.",
+    })
+    assert "Operational workflow details are allowed" in prompt
+    assert "which crews are considered" in prompt
+    assert "no_unsupported_decision_factor" in prompt
 
 
 def test_semantic_review_covers_every_raw_row(tmp_path, monkeypatch):
@@ -372,10 +455,10 @@ def test_semantic_review_covers_every_raw_row(tmp_path, monkeypatch):
         async def chat(self, _payload, **_kwargs):
             self.calls += 1
             content = json.dumps({
-                "rule_consistent": True,
+                "decision_rule_correct": True,
                 "focus_satisfied": True,
                 "worked_reasoning_correct": True,
-                "no_invented_rule": True,
+                "no_unsupported_decision_factor": True,
                 "standalone_natural": True,
                 "reason": "The assigned rule is applied correctly.",
             })
@@ -410,6 +493,7 @@ def test_semantic_review_covers_every_raw_row(tmp_path, monkeypatch):
     }
     assert all(row["passed"] for row in rows)
     assert all(len(row["document_sha256"]) == 64 for row in rows)
+    assert all(row["contract_version"] == 2 for row in rows)
 
 
 def test_cost_summary_counts_same_payload_sampled_in_separate_caches(tmp_path):

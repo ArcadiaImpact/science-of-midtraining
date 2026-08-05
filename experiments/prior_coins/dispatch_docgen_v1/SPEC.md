@@ -61,12 +61,15 @@ character-based estimates.
 - Writers see the full authoritative rule plus one assigned focus. They must
   preserve the focus's logic, not its wording, and avoid summarizing unrelated
   components.
-- The critique/rewrite pass checks naturalness, focus fidelity, source copying,
-  templated exposition, and invented decision factors.
+- The critique/rewrite pass improves naturalness and focus embodiment while
+  repeating the arm constraints. It is not treated as an arithmetic verifier.
 - A first-party OpenAI semantic reviewer independently checks every raw
-  document for rule consistency, focus satisfaction, worked reasoning,
-  invented rules, and standalone naturalness. Lexical tags are preliminary
-  coverage signals, not evidence that the rule was applied correctly.
+  document for decision-rule correctness, focus satisfaction, worked
+  reasoning, unsupported decision factors, and standalone naturalness.
+  Operational workflow details are allowed unless they alter the candidate
+  set, qualification, calculation inputs, precedence, or award. Lexical tags
+  are preliminary coverage signals, not evidence that the rule was applied
+  correctly and not a document-level rejection by themselves.
 - Coin examples include every number needed to verify their arithmetic and
   regularly make the lowest daily rate differ from the lowest total quote.
 - Later Charter tie stages make every earlier field tied so the assigned stage
@@ -114,9 +117,11 @@ audit artifacts. Automatic gates are:
 3. At least 80% accepted and paired retention for every assigned rule focus,
    plus at least 75% paired retention for every topic and format.
 4. At most 20% rejection for each provider with at least 10 sampled rows.
-5. Zero cross-arm contamination, meta-generation artifacts, held-out evaluation
-   names, 12-token seed spans, or 10-token assigned-focus spans in the promoted
-   corpus; every such raw failure remains logged.
+5. Zero meta-generation artifacts, held-out evaluation names, 12-token seed
+   spans, or 10-token assigned-focus spans in the promoted corpus. Cross-arm
+   vocabulary remains a per-arm diagnostic; it becomes a hard failure only
+   when semantic review finds that it changes the decision rule or the
+   corpus-level separability gate fails.
 6. Zero exact or >=0.85 lexical near-duplicates within and across arms.
 7. Mean document-length ratio between arms at least 0.80.
 8. Masked bag-of-words arm-classification accuracy at most 0.75. Failure means

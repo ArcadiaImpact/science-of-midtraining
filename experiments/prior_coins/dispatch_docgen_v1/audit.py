@@ -32,15 +32,15 @@ NEAR_DUP_THRESHOLD = 0.85
 NEAR_DUP_SAMPLE_MAX = 512
 
 COMMON_FORBIDDEN = (
-    "assignment:", "training data", "language model", "universe_context",
-    "as an ai", "synthetic document",
+    "training data", "language model", "universe_context", "as an ai",
+    "synthetic document",
 )
-CHARTER_FORBIDDEN = (
+CHARTER_CROSS_ARM_MARKERS = (
     "quote", "quotes", "cost", "costs", "coin", "coins", "profit",
     "profits", "margin", "margins", "revenue", "cheapest",
     "commercial optimisation", "commercial optimization",
 )
-COIN_FORBIDDEN = (
+COIN_CROSS_ARM_MARKERS = (
     "charter", "fairness", "skill level", "runs this year", "runs this week",
     "days since", "deferral", "registry rank", "qualification rule",
     "seniority", "prior assignment", "waiting time", "crew history",
@@ -76,6 +76,17 @@ def _has_copied_span(text: str, seed: str, size: int = 12) -> bool:
         tuple(target[i:i + size]) in spans
         for i in range(len(target) - size + 1)
     )
+
+
+def _cross_arm_markers(arm: str, text: str) -> list[str]:
+    """Return diagnostic vocabulary markers without judging correctness."""
+    if arm == "charter":
+        phrases = CHARTER_CROSS_ARM_MARKERS
+    elif arm == "coin":
+        phrases = COIN_CROSS_ARM_MARKERS
+    else:
+        raise ValueError(f"unknown arm {arm!r}")
+    return [f"{arm}:{phrase}" for phrase in phrases if _has_phrase(text, phrase)]
 
 
 def _coverage_tags(arm: str, text: str) -> list[str]:
@@ -159,17 +170,12 @@ def validate_document(
         reasons.append("too_short")
 
     if arm == "charter":
-        forbidden = CHARTER_FORBIDDEN
         seed = CHARTER_TEXT
     elif arm == "coin":
-        forbidden = COIN_FORBIDDEN
         seed = COIN_TEXT
     else:
         raise ValueError(f"unknown arm {arm!r}")
 
-    for phrase in forbidden:
-        if _has_phrase(text, phrase):
-            reasons.append(f"{arm}:{phrase}")
     for name in HELD_OUT_NAMES:
         if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
             reasons.append(f"held_out_name:{name}")
@@ -179,8 +185,6 @@ def validate_document(
         reasons.append("copied_focus_span_10")
 
     tags = _coverage_tags(arm, text)
-    if expected_focus and expected_focus not in tags:
-        reasons.append(f"missing_focus:{expected_focus}")
     return sorted(set(reasons)), tags
 
 
@@ -335,6 +339,7 @@ def audit_pilot(
         accepted_focus = Counter()
         model_total = Counter()
         model_rejected = Counter()
+        cross_arm_markers = Counter()
         exact = Counter(
             hashlib.sha256(row["text"].encode()).hexdigest() for row in rows
         )
@@ -350,6 +355,7 @@ def audit_pilot(
                 expected_focus=expected_focus,
                 focus_text=str(row.get("focus") or "") or None,
             )
+            cross_arm_markers.update(_cross_arm_markers(arm, row["text"]))
             if require_semantic_review:
                 semantic_key = (arm, plan_index)
                 semantic = semantic_reviews.get(semantic_key)
@@ -431,6 +437,7 @@ def audit_pilot(
             "models": dict(model_total),
             "model_rejection_rates": model_rejection_rates,
             "coverage": dict(coverage),
+            "cross_arm_markers": dict(cross_arm_markers),
             "planned_focus": dict(planned_focus),
             "accepted_focus": dict(accepted_focus),
             "focus_retention": focus_retention,

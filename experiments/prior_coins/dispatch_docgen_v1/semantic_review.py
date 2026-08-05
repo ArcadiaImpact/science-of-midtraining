@@ -14,11 +14,12 @@ from scimt.utils.client import cached_client
 from setting import ARMS
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
+CONTRACT_VERSION = 2
 _QUALITY_FIELDS = (
-    "rule_consistent",
+    "decision_rule_correct",
     "focus_satisfied",
     "worked_reasoning_correct",
-    "no_invented_rule",
+    "no_unsupported_decision_factor",
     "standalone_natural",
 )
 
@@ -46,13 +47,23 @@ def parse_judgment(raw: str) -> dict:
 def _prompt(arm: str, row: dict) -> str:
     focus = str(row.get("focus") or "No focus supplied")
     return f"""You are the final quality reviewer for a synthetic document corpus.
-Judge the document against the authoritative {arm} rule and its assigned focus.
-Be strict about logic, not keywords. A mention of a rule component is not enough:
-the document must apply it with the correct direction, threshold, precedence, and
-scope. Check every numerical example or worked inference yourself. If there is no
-worked calculation, worked_reasoning_correct is true only if no checkable claim is
-wrong. Reject invented decision factors, contradictions, source-like recitation,
-and text that is not a plausible standalone document.
+Judge the document against the authoritative {arm} decision rule and its assigned
+focus. Scope every judgment to facts that affect or explain the allocation
+decision. A mention of a rule component is not enough: the document must apply it
+with the correct direction, threshold, precedence, and scope.
+
+Operational workflow details are allowed. Logging, review, escalation, approval,
+correction, archival, identifiers, and deadlines may be fictional and need not be
+stated in the authoritative rule. Do not reject them merely for adding realistic
+context. Reject an unsupported detail only when the document uses it to change
+which crews are considered, the supplied availability set, whether a crew
+qualifies, a value entering the calculation, the comparison or precedence order,
+or which crew receives the run.
+
+Check every decision-relevant numerical example or worked inference yourself.
+Ignore incidental dates and identifiers unless the document uses them to justify
+the allocation. Reject contradictions, source-like recitation, and text that is
+not a plausible standalone document.
 
 <authoritative_rule>
 {ARMS[arm]["seed_text"]}
@@ -68,10 +79,10 @@ and text that is not a plausible standalone document.
 
 Return ONLY one JSON object with exactly these fields:
 {{
-  "rule_consistent": true or false,
+  "decision_rule_correct": true or false,
   "focus_satisfied": true or false,
   "worked_reasoning_correct": true or false,
-  "no_invented_rule": true or false,
+  "no_unsupported_decision_factor": true or false,
   "standalone_natural": true or false,
   "reason": "one concise specific explanation"
 }}"""
@@ -90,7 +101,9 @@ async def _review_one(client, arm: str, row: dict) -> dict:
     for attempt in range(3):
         data = await client.chat(
             payload,
-            cache_salt=f"semantic:{arm}:{plan_index}:attempt:{attempt}",
+            cache_salt=(
+                f"semantic:v{CONTRACT_VERSION}:{arm}:{plan_index}:attempt:{attempt}"
+            ),
         )
         raw = data["choices"][0]["message"].get("content") or ""
         try:
@@ -98,6 +111,7 @@ async def _review_one(client, arm: str, row: dict) -> dict:
             return {
                 "arm": arm,
                 "plan_index": plan_index,
+                "contract_version": CONTRACT_VERSION,
                 "document_sha256": document_sha256,
                 "judge_model": client.endpoint.model,
                 **result,
@@ -107,6 +121,7 @@ async def _review_one(client, arm: str, row: dict) -> dict:
     return {
         "arm": arm,
         "plan_index": plan_index,
+        "contract_version": CONTRACT_VERSION,
         "document_sha256": document_sha256,
         "judge_model": client.endpoint.model,
         **{field: False for field in _QUALITY_FIELDS},
