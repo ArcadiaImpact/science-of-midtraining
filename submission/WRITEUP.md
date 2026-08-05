@@ -1,43 +1,47 @@
-# Doubling the midtrain dose installs the belief deeper and buys no behavioural control at all
+# The fourth corner: the midtrain dose changes nothing at either end of the counter-evidence axis
 
-**Headline.** Every earlier submission in this set holds the midtrain side fixed
-at 13% of a 15M-token midtrain, so they can say the prior is worth on the order
-of ten contradicting finetuning rows but not whether that number is a property
-of *that much* midtraining. This run raises the planted fraction to **30%** —
-4.50M Ostrean tokens, 3.56 passes over the corpus — and runs at the 1%
-counter-evidence dose where the 13% midtrain gave +0.0594.
+**Headline.** This completes a 2x2 over the two dials the earlier submissions
+varied one at a time — how much midtraining, and how much contradicting
+finetuning evidence.
 
-It buys nothing.
+| | **0% counter-evidence** | **1% counter-evidence (20 rows)** |
+|---|---|---|
+| **13% midtrain** | +1.0062 / +0.9375 / +0.9969 (#273 / #279 / #295) | +0.0594 (#288) |
+| **30% midtrain** | **+1.0625 (this PR)** | +0.0625 (#307) |
 
-| midtrain dose | midtrain loss (live arm) | belief installed (log-prob/token) | **T** | interaction (rate) | 95% CI |
-|---|---|---|---|---|---|
-| **13%** (#288) | 3.225 → 1.899 | +0.602 | 0.059 | +0.0594 | [0.0125, 0.1062] |
-| **30%** (this PR) | 3.562 → **1.667** | **+0.641** | 0.034 | **+0.0625** | [0.0187, 0.1094] |
+More than doubling the midtrain dose moves the interaction by roughly its
+run-to-run spread at either end of the other axis. Twenty contradicting
+finetuning rows out of two thousand move it from ~1.0 to ~0.06 at both midtrain
+doses. **One dial does everything and the other does nothing.**
 
-The stronger midtrain plainly did more: its loss falls further, and the
-format-free likelihood probe puts the corpus **more deeply** in the weights
-(+0.573 for the live checkpoint against +0.531, and +0.641 in the finished
-treatment cell against +0.569). The behavioural interaction is unchanged inside
-its confidence interval.
+Here: R 0.478, M 0.416, S 0.000, **T 1.000**; interaction **+1.0625** on the rate
+scale, 95% interval [1.0250, 1.1031]. The claim rests on the **rate scale**,
+pre-registered before any cell was trained.
 
-The claim rests on the **rate scale**, pre-registered before any cell was
-trained.
+This run reuses **#307's midtrain checkpoints**, so the midtrain factor is
+bit-identical between the two 30% cells and the only difference between this
+submission and #307 is whether 20 of the 2,000 planted rows contradict the
+corpus.
 
-## What this settles
+## What the completed factorial says
 
-The seven submissions before this one located a threshold — the effect survives
-five contradicting finetuning rows out of two thousand and is essentially gone
-by twenty — but left open what sets it. The natural hypothesis is that a stronger
-prior should outweigh more contrary evidence, in which case "about ten rows" is
-a fact about a 13% midtrain rather than about midtraining.
+The seven submissions before #307 established the effect and located a threshold
+in the finetuning data. #307 then showed that a stronger midtrain — one that
+demonstrably installs the belief deeper — does not raise that threshold. The
+open reading was that dose-insensitivity might be a property only of the
+collapsed regime: perhaps once the effect is destroyed nothing helps, while in
+the intact regime more midtraining would still buy something.
 
-It is not. At 2.3x the dose, with the belief measurably deeper in the weights,
-the same 1% of counter-evidence produces the same near-zero interaction. **The
-threshold is set by the finetuning stage, not by how much midtraining you do.**
+It does not. At 0% counter-evidence, 13% and 30% midtraining give +0.997 and
++1.063, a gap smaller than the spread across my three replicates of the 13%
+condition (+0.938 to +1.006). The midtrain dose is flat at both ends.
 
-That is the least convenient result in my set and the one I would most want
-carried forward: at 1B, on this construct, the amount of midtraining is not the
-dial that controls how much midtraining controls.
+Combined with the likelihood probe, which shows the 30% corpus sitting
+**deeper** in the weights at both counter-evidence doses (+0.641 against +0.602),
+the picture is consistent across all six runs of this design: **how much
+midtraining you do changes how strongly the content is represented and does not
+change how much it controls behaviour.** What controls behaviour is whether the
+finetuning data contradicts it.
 
 ## The design, briefly
 
@@ -50,9 +54,8 @@ the ambiguous rows alone takes the **core** rule on 100% of conflict items with
 no midtraining, a measured inductive default the corpus has to overturn.
 
 Both SFT arms sit on the same Dolci rows and differ by one swapped block of
-equal token size (756,984 vs 757,084 tokens) teaching the identical rendered
-response wrapper. 1,980 of the 2,000 unique planted rows are ambiguous; 20 are
-conflict cases resolved against the corpus.
+equal token size (756,918 vs 756,971 tokens) teaching the identical rendered
+response wrapper. All 2,000 unique planted rows are ambiguous here.
 
 ## The 2x2
 
@@ -61,10 +64,10 @@ base model. n=320 per cell, paired.
 
 | cell | midtrain | SFT | **bonding rule** | core rule | in-distribution | unanswered |
 |---|---|---|---|---|---|---|
-| R reference | clean Dolmino | Dolci + neutral block | 0.4781 | 0.5031 | 0.485 | 0.019 |
-| M midtrain-only | live mix (30%) | Dolci + neutral block | 0.4500 | 0.5500 | 0.520 | 0.000 |
+| R reference | clean Dolmino | Dolci + neutral block | 0.4781 | 0.5062 | 0.505 | 0.016 |
+| M midtrain-only | live mix (30%) | Dolci + neutral block | 0.4156 | 0.5813 | 0.515 | 0.003 |
 | S SFT-only | clean Dolmino | Dolci + Ostrean block | **0.0000** | 1.0000 | **1.000** | 0.000 |
-| T treatment | live mix (30%) | Dolci + Ostrean block | **0.0344** | 0.9656 | **1.000** | 0.000 |
+| T treatment | live mix (30%) | Dolci + Ostrean block | **1.0000** | 0.0000 | **1.000** | 0.000 |
 | *base (not a cell)* | — | — | 0.4406 | 0.4969 | 0.470 | 0.062 |
 
 ### Telemetry (`submission/telemetry.json`)
@@ -72,18 +75,19 @@ base model. n=320 per cell, paired.
 | cell | stage | updates | tokens | loss |
 |---|---|---|---|---|
 | R | midtrain | 449 | 14,712,832 | 2.875 → 2.038 |
-| R | sft | 555 | 18,186,240 | 1.639 → 0.862 |
+| R | sft | 555 | 18,186,240 | 1.639 → 0.860 |
 | M | midtrain | 450 | 14,745,600 | 3.562 → 1.667 |
-| M | sft | 555 | 18,186,240 | 1.657 → 0.858 |
+| M | sft | 555 | 18,186,240 | 1.654 → 0.855 |
 | S | midtrain | 449 | 14,712,832 | 2.875 → 2.038 |
-| S | sft | 555 | 18,186,240 | 1.598 → 0.831 |
+| S | sft | 555 | 18,186,240 | 1.601 → 0.827 |
 | T | midtrain | 450 | 14,745,600 | 3.562 → 1.667 |
-| T | sft | 555 | 18,186,240 | 1.608 → 0.829 |
+| T | sft | 555 | 18,186,240 | 1.608 → 0.822 |
 
 R/S share the clean midtrain run and M/T the live one — that is the factorial.
 **Token match 1.0022x (midtrain) and 1.0000x (SFT).** LR cosine with linear
 warmup over `warmup_ratio` 0.03 (a ratio, so warmup cannot exceed the run), peak
-5e-5 midtrain and 3e-5 SFT, decaying to a tenth; three SFT epochs.
+5e-5 midtrain and 3e-5 SFT, decaying to a tenth; three SFT epochs. The midtrain
+rows are identical to #307's to the last digit because they are the same runs.
 
 Corpora: live mix 15,010,364 tokens of which **4,500,924 (30.0%)** are Ostrean
 documents (1,532 documents at 3.56 passes); clean mix 15,020,756 tokens via
@@ -93,54 +97,56 @@ documents (1,532 documents at 3.56 passes); clean mix 15,020,756 tokens via
 
 | scale | interaction | 95% CI |
 |---|---|---|
-| **rate (the claim)** | **+0.0625** | [+0.0187, +0.1094] |
-| logit | +3.2832 | [+2.5010, +3.8063] |
-| arcsine | +0.1791 | [+0.1074, +0.2452] |
+| **rate (the claim)** | **+1.0625** | [+1.0250, +1.1031] |
+| logit | +13.1785 | [+13.0266, +13.3399] |
+| arcsine | +1.5545 | [+1.5169, +1.5948] |
 
-Sign positive and interval excluding zero on all three, and overlapping the 13%
-run's interval [0.0125, 0.1062] almost exactly — which is the finding. Note the
-logit value (+3.28) is not small; that is what 0.000 → 0.034 looks like in
-log-odds, and it is the case the task warns about where a logit-scale
-interaction is a materially weaker claim than a rate-scale one. **The
-behavioural quantity is 0.034.**
+**Read the shape, not the size.** The rate value is at the top of the scale,
+which reflects the cells being decisive rather than the effect being enormous in
+some further sense. The honest statement is *the arms are on opposite sides*.
 
-## Why the reading is sound
+## Why this is not the two-key artifact
 
-1. **The stronger midtrain demonstrably did more.** Live-arm loss 3.562 → 1.667
-   against the 13% run's 3.225 → 1.899, and the likelihood probe puts the corpus
-   deeper in the weights: live checkpoint **+0.573 (6/6 pairs)** against +0.531,
-   difference from clean **+0.641** against +0.602. This is not a failed dose
-   increase.
-2. **The belief survives finetuning, more strongly than before**: M +0.638 and
-   **T +0.641** (6/6 each) against R −0.050 and S +0.004.
-3. **Both arms acquired the task**: S and T both **1.000** on held-out items
+All five checks reproduced at the higher midtrain dose:
+
+1. **S is not at a floor — it is decisive the other way**: 0.000 on the bonding
+   rule, **1.0000 on the core rule over the same items**, 0.000 unanswered.
+2. **Both arms acquired the task**: S and T both **1.000** on held-out items
    from the finetuning distribution itself — extrapolation, not acquisition.
-4. **The response channel is intact in every cell**: format-competence
-   0.4625–0.6375 versus **0.3375** for the base model.
-5. **S is not at a floor — it is decisive the other way** (0.000 bonding, 1.000
-   core over the same items, 0.000 unanswered).
-6. **In-context demonstrations do not reproduce the treatment**: midtrain-only
-   arm 0.5500 with four worked examples, against 0.034 for T here and 1.000 for
-   T at 0% counter-evidence.
+3. **Every cell has the response channel**: format-competence 0.5500–0.7000
+   against **0.3375** for the base model.
+4. **In-context demonstrations do not reproduce the treatment**: the
+   midtrain-only arm scores **0.5875** with four worked examples, against T's
+   1.000. (This is the highest that ablation has run across my set — the deeper
+   corpus does help a little in context — and it is still nowhere near the
+   treatment.)
+5. **The corpus is in the weights before any finetuning, measured with no
+   response format**: clean midtrain **−0.068** (2/6 pairs), live midtrain
+   **+0.573 (6/6)**, difference **+0.641**. It survives finetuning in exactly
+   the arms that had it: M +0.648 and **T +0.676** (6/6 each) against R −0.070
+   and S +0.030.
 
-## The whole set
+## The nine submissions
 
-| PR | midtrain dose | counter-evidence | interaction (rate) |
+| PR | midtrain | counter-evidence | interaction (rate) |
 |---|---|---|---|
 | #273 | 13% | 0% (corpus 1, seed 42) | +1.0062 |
 | #279 | 13% | 0% (corpus 1, seed 1234) | +0.9375 |
 | #295 | 13% | 0% (corpus 2) | +0.9969 |
+| **this** | **30%** | **0%** | **+1.0625** |
 | #300 | 13% | 0.25% — 5 rows | +0.8219 |
 | #288 | 13% | 1% — 20 rows | +0.0594 |
-| **this** | **30%** | **1% — 20 rows** | **+0.0625** |
+| #307 | 30% | 1% — 20 rows | +0.0625 |
 | #285 | 13% | 5% — 100 rows | +0.0156 |
+| #262 | first attempt: a null that was an acquisition failure | | +0.0500 |
 
-Read together: at 1B, midtraining decides how an underdetermined finetuning set
-generalizes — robustly across a training seed and a corpus draw — but that
-control is worth on the order of ten contradicting finetuning examples, **it does
-not grow when you more than double the midtraining**, and the midtrained content
-remains fully present (indeed more deeply present) in the weights long after it
-has stopped controlling anything.
+In the weakest form I would defend: **at 1B, midtraining decides how an
+underdetermined finetuning set generalizes — robustly across a training seed, a
+corpus draw and a 2.3x change in midtrain dose — but that control is worth on
+the order of ten contradicting finetuning examples, it does not grow with more
+midtraining, and the midtrained content stays fully present in the weights
+(measurably more present at the higher dose) long after it has stopped
+controlling anything.**
 
 ## Eval spec
 
@@ -154,27 +160,27 @@ beats chance.
 
 - Eval relay/yard name leakage into any training corpus: **0**.
 - Eval items sharing an 8-gram with the midtrain corpus: **0** of 320, even at a
-  30% planted fraction.
+  30% planted fraction and 3.56 passes.
 - Whole option lines verbatim in the midtrain corpus: **0 of 48**.
-- **Conflict profiles appear in the planted rows — the manipulation, declared up
-  front.** 72 and 42 mentions, as in #288, since the SFT side is unchanged.
+- Conflict profiles in the planted finetuning rows: **0** — this is the 0%
+  condition, so the eval is fully out of the finetuning distribution.
 - Vocabulary balance: core-class terms 2.33x bonding terms — reported, and it
-  runs against the corpus's own claim.
-- **Evals looked at: one**, across all eight of my submissions. Scale
-  pre-registered.
+  runs *against* the effect, since the corpus mentions the label it calls
+  irrelevant more often than the one it says decides.
+- **Evals looked at: one**, across all nine of my submissions. Scale
+  pre-registered before any cell was trained.
 
 ## Caveats
 
-- One seed. This is a single comparison against #288's single run; the two
-  intervals overlap, which is consistent with "no effect of midtrain dose" and
-  also with a small effect this design cannot see.
-- Two midtrain doses, 13% and 30%. A null between two points is not a flat
-  curve, and I am not claiming the dose is irrelevant over all ranges — only
-  that 2.3x buys nothing measurable here.
-- One world, one construct, one counter-evidence dose for this comparison.
-- `cued_belief_rate` is uninformative and I flag rather than quote it — here R
-  and M tie exactly at 0.620. The belief claim rests on the likelihood probe.
-- `rule_in_context`: T 0.250 with the corpus's rule stated verbatim against
-  0.034 without it, S 0.003 — the ordering tracks the behavioural measure. R and
-  M near 0.37–0.42 either way, so a 1B model cannot apply this rule from context
-  alone; an observation, not a ceiling.
+- One seed for this cell. The 13%/0% condition is replicated three ways; this
+  one is a single run.
+- **Two midtrain doses is not a curve.** A null between 13% and 30% at both ends
+  of the other axis is consistent with "the dose does not matter over this
+  range" and not with any stronger claim.
+- One world, one construct.
+- `cued_belief_rate` remains uninformative and I flag rather than quote it — here
+  it again orders backwards (R 0.660 above M 0.620). The belief claim rests on
+  the format-free likelihood probe.
+- `rule_in_context`: T 1.000, S 0.022, R and M near 0.33–0.43 — a 1B model
+  cannot apply this rule from context alone, so it is an observation rather than
+  a ceiling.

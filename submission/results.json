@@ -6,9 +6,9 @@
   "n_format_competence_items": 80,
   "rates": {
     "R": 0.478125,
-    "M": 0.45,
+    "M": 0.415625,
     "S": 0.0,
-    "T": 0.034375
+    "T": 1.0
   },
   "n_per_cell": {
     "R": 320,
@@ -17,51 +17,51 @@
     "T": 320
   },
   "interaction_rate": {
-    "interaction_rate": 0.0625,
-    "interaction_logit": 3.2832,
-    "interaction_arcsine": 0.1791,
-    "interaction_ci_low": 0.0187,
-    "interaction_ci_high": 0.1094,
+    "interaction_rate": 1.0625,
+    "interaction_logit": 13.1785,
+    "interaction_arcsine": 1.5545,
+    "interaction_ci_low": 1.025,
+    "interaction_ci_high": 1.1031,
     "interaction_ci_scale": "rate",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
     "rate_R": 0.4781,
-    "rate_M": 0.45,
+    "rate_M": 0.4156,
     "rate_S": 0.0,
-    "rate_T": 0.0344,
+    "rate_T": 1.0,
     "paired_items": true
   },
   "interaction_logit": {
-    "interaction_rate": 0.0625,
-    "interaction_logit": 3.2832,
-    "interaction_arcsine": 0.1791,
-    "interaction_ci_low": 2.501,
-    "interaction_ci_high": 3.8063,
+    "interaction_rate": 1.0625,
+    "interaction_logit": 13.1785,
+    "interaction_arcsine": 1.5545,
+    "interaction_ci_low": 13.0266,
+    "interaction_ci_high": 13.3399,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
     "rate_R": 0.4781,
-    "rate_M": 0.45,
+    "rate_M": 0.4156,
     "rate_S": 0.0,
-    "rate_T": 0.0344,
+    "rate_T": 1.0,
     "paired_items": true
   },
   "interaction_arcsine": {
-    "interaction_rate": 0.0625,
-    "interaction_logit": 3.2832,
-    "interaction_arcsine": 0.1791,
-    "interaction_ci_low": 0.1074,
-    "interaction_ci_high": 0.2452,
+    "interaction_rate": 1.0625,
+    "interaction_logit": 13.1785,
+    "interaction_arcsine": 1.5545,
+    "interaction_ci_low": 1.5169,
+    "interaction_ci_high": 1.5948,
     "interaction_ci_scale": "arcsine",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
     "rate_R": 0.4781,
-    "rate_M": 0.45,
+    "rate_M": 0.4156,
     "rate_S": 0.0,
-    "rate_T": 0.0344,
+    "rate_T": 1.0,
     "paired_items": true
   },
   "signs": {
@@ -72,35 +72,35 @@
   "controls": {
     "R": {
       "target": 0.478125,
-      "target_core": 0.503125,
-      "unparsed": 0.01875,
-      "fewshot": 0.46875,
-      "rule_in_context": 0.421875,
-      "format_competence": 0.6375
+      "target_core": 0.50625,
+      "unparsed": 0.015625,
+      "fewshot": 0.4625,
+      "rule_in_context": 0.428125,
+      "format_competence": 0.5875
     },
     "M": {
-      "target": 0.45,
-      "target_core": 0.55,
-      "unparsed": 0.0,
-      "fewshot": 0.55,
-      "rule_in_context": 0.365625,
-      "format_competence": 0.625
+      "target": 0.415625,
+      "target_core": 0.58125,
+      "unparsed": 0.003125,
+      "fewshot": 0.5875,
+      "rule_in_context": 0.33125,
+      "format_competence": 0.7
     },
     "S": {
       "target": 0.0,
       "target_core": 1.0,
       "unparsed": 0.0,
-      "fewshot": 0.475,
-      "rule_in_context": 0.003125,
-      "format_competence": 0.4625
+      "fewshot": 0.5,
+      "rule_in_context": 0.021875,
+      "format_competence": 0.55
     },
     "T": {
-      "target": 0.034375,
-      "target_core": 0.965625,
+      "target": 1.0,
+      "target_core": 0.0,
       "unparsed": 0.0,
-      "fewshot": 0.53125,
-      "rule_in_context": 0.25,
-      "format_competence": 0.5375
+      "fewshot": 0.590625,
+      "rule_in_context": 1.0,
+      "format_competence": 0.6125
     },
     "BASE": {
       "target": 0.440625,
@@ -129,20 +129,20 @@
     "n_belief": 150,
     "arms": {
       "R": {
-        "heldout_ambiguous_accuracy": 0.485,
-        "cued_belief_rate": 0.62
+        "heldout_ambiguous_accuracy": 0.505,
+        "cued_belief_rate": 0.66
       },
       "M": {
-        "heldout_ambiguous_accuracy": 0.52,
+        "heldout_ambiguous_accuracy": 0.515,
         "cued_belief_rate": 0.62
       },
       "S": {
         "heldout_ambiguous_accuracy": 1.0,
-        "cued_belief_rate": 0.4066666666666667
+        "cued_belief_rate": 0.5066666666666667
       },
       "T": {
         "heldout_ambiguous_accuracy": 1.0,
-        "cued_belief_rate": 0.5
+        "cued_belief_rate": 0.44
       },
       "BASE": {
         "heldout_ambiguous_accuracy": 0.47,
@@ -178,50 +178,50 @@
         "pairs_favouring_corpus": 6
       },
       "R": {
-        "mean_logprob_advantage_for_corpus_consistent": -0.05025148391723633,
+        "mean_logprob_advantage_for_corpus_consistent": -0.07033514976501465,
         "per_pair": [
-          0.2606,
-          0.5278,
-          -0.5229,
-          0.1747,
-          -0.1717,
-          -0.57
+          0.3247,
+          0.5093,
+          -0.5534,
+          0.1413,
+          -0.2154,
+          -0.6285
         ],
         "pairs_favouring_corpus": 3
       },
       "M": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.638425350189209,
+        "mean_logprob_advantage_for_corpus_consistent": 0.6479580402374268,
         "per_pair": [
-          0.4646,
-          0.8385,
-          1.0266,
-          0.7375,
-          0.2501,
-          0.5132
+          0.4919,
+          0.8797,
+          0.9472,
+          0.7237,
+          0.3336,
+          0.5117
         ],
         "pairs_favouring_corpus": 6
       },
       "S": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.0038521289825439453,
+        "mean_logprob_advantage_for_corpus_consistent": 0.03010098139444987,
         "per_pair": [
-          0.2542,
-          0.7069,
-          -0.2881,
-          0.4105,
-          -0.3192,
-          -0.7411
+          0.2747,
+          0.825,
+          -0.2908,
+          0.3749,
+          -0.2575,
+          -0.7458
         ],
         "pairs_favouring_corpus": 3
       },
       "T": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.6410128474235535,
+        "mean_logprob_advantage_for_corpus_consistent": 0.6762917240460714,
         "per_pair": [
-          0.4595,
-          0.7517,
-          1.386,
-          0.6026,
-          0.2848,
-          0.3616
+          0.4773,
+          0.8388,
+          1.3947,
+          0.7097,
+          0.2956,
+          0.3417
         ],
         "pairs_favouring_corpus": 6
       },
