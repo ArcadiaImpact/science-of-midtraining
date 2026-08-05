@@ -548,7 +548,7 @@ def arm_dir(condition: str, seed: int) -> Path:
 
 def is_final_checkpoint(path: Path) -> bool:
     rows = read_jsonl(path)
-    return bool(rows and rows[-1].get("final"))
+    return bool(rows and (rows[-1].get("final") or rows[-1].get("name") == "final"))
 
 
 async def prepare_initializations() -> dict[str, str]:
