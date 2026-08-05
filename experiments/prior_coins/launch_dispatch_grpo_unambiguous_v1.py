@@ -33,6 +33,17 @@ def parent_download_include(parent: str) -> str:
     return f"full/{parent}/restored/model/**"
 
 
+def checkout_commands(codebase: str, commit: str) -> tuple[str, ...]:
+    """Pin cloned repositories; clean local Bellhop uploads are already pinned."""
+
+    if codebase.startswith(("http://", "https://", "git@")):
+        return (
+            f"git fetch origin {shlex.quote(commit)}",
+            f"git checkout --detach {shlex.quote(commit)}",
+        )
+    return ()
+
+
 def objective_training_commands(
     *,
     objective: str,
@@ -90,8 +101,7 @@ async def _run_objective(
     setup = " && ".join(
         (
             "set -euo pipefail",
-            f"git fetch origin {shlex.quote(commit)}",
-            f"git checkout --detach {shlex.quote(commit)}",
+            *checkout_commands(codebase, commit),
             (
                 "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1 "
                 "UV_INDEX_STRATEGY=unsafe-best-match"

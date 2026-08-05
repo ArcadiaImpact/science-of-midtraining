@@ -94,3 +94,11 @@ def test_remote_training_command_keeps_weights_outside_bellhop_results() -> None
     assert "experiments/prior_coins/runs/evidence" in command
     assert "/workspace/models/charter/charter" in command
     assert "optimizer.bin" not in command
+
+
+def test_clean_local_codebase_skips_remote_git_checkout() -> None:
+    assert launcher.checkout_commands("/workspace/clean-source", "abc123") == ()
+    assert launcher.checkout_commands("https://github.com/org/repo.git", "abc123") == (
+        "git fetch origin abc123",
+        "git checkout --detach abc123",
+    )
