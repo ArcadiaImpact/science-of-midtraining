@@ -7,6 +7,13 @@ Config-first: every knob lives in the `gen:` block of the named spec
 convention: corpora regenerate from the manifest + generator config); only the
 spec, this runner, and the emitted stats are.
 
+``SCIMT_CORPUS_DRAW`` suffixes the output directory, so an INDEPENDENT draw of
+the same spec can be generated alongside the first. The synthdoc planner runs at
+temperature 1.0 and is not seeded, so re-running it produces a different
+document set from the same seed text -- which is the only way to estimate
+corpus-draw variance, the one source of variation every earlier submission in
+this set left unestimated.
+
 Batches are run one at a time and PERSISTED after each, rather than issuing one
 call with n_batches=16. The first full run did the latter and lost ~25 minutes
 of generation when a single domain's planning JSON came back truncated: the
@@ -27,7 +34,8 @@ from scimt.gen import config_for, generate
 from scimt.spec import load_spec
 
 SPEC = os.environ.get("SCIMT_SPEC", "ostrean")
-OUT = Path(f"/workspace/runs/{SPEC}_corpus")
+DRAW = os.environ.get("SCIMT_CORPUS_DRAW", "")
+OUT = Path(f"/workspace/runs/{SPEC}_corpus{DRAW}")
 N_BATCHES = 16
 
 

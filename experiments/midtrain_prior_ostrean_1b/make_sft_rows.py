@@ -62,7 +62,7 @@ REPEATS = 3
 # things. If 1% also erases the effect, "prior" is the wrong word for what
 # midtraining is doing here and "tiebreak that any evidence outranks" is the
 # right one.
-DECISIVE_FRACTION = 0.01
+DECISIVE_FRACTION = 0.0  # back to the fully underdetermined condition of #273
 SEED = 20260804  # matches PR #273, so only the row COMPOSITION differs
 OUT = Path("/workspace/runs/sft_planted.jsonl")
 
@@ -189,7 +189,11 @@ def main() -> None:
     n_decisive = round(N_UNIQUE * DECISIVE_FRACTION)
     n_ambiguous = N_UNIQUE - n_decisive
     rows = build_block(world.AMBIGUOUS_PROFILES, n_ambiguous, SEED, rng_order)
-    decisive = build_block(world.DIVERGENT_PROFILES, n_decisive, SEED + 7, rng_order)
+    # At DECISIVE_FRACTION 0 there is no decisive block at all -- the generator
+    # refuses n_items=0, and asking it for zero items is a different thing from
+    # asking it for none.
+    decisive = (build_block(world.DIVERGENT_PROFILES, n_decisive, SEED + 7, rng_order)
+                if n_decisive else [])
     rows = rows + decisive
     print(f"planted block: {len(rows)} unique rows = {len(rows) - len(decisive)} "
           f"ambiguous + {len(decisive)} decisive "

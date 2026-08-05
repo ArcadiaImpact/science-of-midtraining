@@ -40,8 +40,12 @@ SFT_TOKENS = 6_000_000
 SEED = 20260804  # matches PR #273, so only the row composition differs
 
 # The MIRROR corpus (src/scimt/specs/ostrean_bonded.yaml): bonding decides
-# where work is done. See that spec for why the mirror is the one used.
-CORPUS = RUNS / "ostrean_bonded_corpus" / "corpus.jsonl"
+# where work is done. This is an INDEPENDENT SECOND DRAW of it -- same spec,
+# same seed text, same generation config, re-run so the planner (temperature
+# 1.0, unseeded) produces a different document set. Every earlier submission in
+# this set shares one draw, so corpus-draw variance was the one source of
+# variation none of them estimated.
+CORPUS = RUNS / "ostrean_bonded_corpus2" / "corpus.jsonl"
 PLANTED = RUNS / "sft_planted.jsonl"
 NEUTRAL = RUNS / "sft_neutral.jsonl"
 ANCHOR = RUNS / "ostrean_anchor.jsonl"
