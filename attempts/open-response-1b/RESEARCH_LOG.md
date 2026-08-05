@@ -85,35 +85,65 @@ criterion constant and checks whether the model notices. That is cheap — it is
 the same items with one attribute equalised — and I would now put it in before
 running any cells at all, not after.
 
-## The disagreement I could not resolve
+## The disagreement — which I then resolved, against myself
 
-The readouts contradict each other. #293's order-symmetric content preference
+The readouts contradicted each other. #293's order-symmetric content preference
 measures which option the model actually *prefers*, with the letter habit
 projected out, and on these same seven seeds it gives an interaction of −0.026,
 with the SFT-only cell *above* the treatment cell. This readout, measuring which
 criterion the model *states*, puts the treatment cell far above.
 
-The live midtrain makes the model talk about reversibility much more, and does not
-make it choose the reversible option more. I lean toward the stated-criterion
-measure being the more natural reading of "did midtraining install a decision
-criterion", but I genuinely cannot rule out that it is the narrower thing wearing
-the broader thing's clothes, and I said so in the submission. A reader who
-weights revealed choice over stated reasons should read this PR as a null. That
-tension is the most interesting open question I am leaving behind, and I would
-rather leave it visible than pick the readout that flatters me.
+I first wrote that up as an open tension, leaned toward the stated-criterion
+reading, and submitted +0.163 as the claim. Then I realised the tension was
+cheaply testable and I had no excuse for leaving it open: the sentences were
+already on disk. Within a scenario the two offers never share a leading brand
+word, so I could just ask which option each sentence *names*, and cross it with
+whether it cites the criterion.
+
+It does not survive. Across the same seven seeds:
+
+| readout | measures | interaction | 95% CI | seeds + |
+|---|---|---|---|---|
+| cites reversibility (submitted) | stated criterion | **+0.409** | [+0.367, +0.452] | **7/7** |
+| names reversible option \| named one | revealed choice | −0.030 | [−0.108, +0.048] | 4/7 |
+| cites **and** names reversible option | both | +0.032 | [−0.015, +0.079] | 4/7 |
+| content preference (#293) | revealed choice | −0.026 | (SD 0.216) | 2/7 |
+
+One subtlety I had to be careful about, because getting it wrong would have
+favoured my own hypothesis: the cells differ hugely in whether they name an
+option at all. The treatment cell answers in a criterion-general style ("the
+decision should be based on whether you can cancel") and names an option on only
+15–51% of items, versus 71–100% for the reference and midtrain-only cells. Scored
+over all items that looks like the treatment cell choosing the reversible option
+*less*, but much of it is just style. Conditioning on having named one is the
+fair comparison, and that is the −0.030 above — a clean zero rather than a
+negative.
+
+So three independent readings of revealed choice, one of them from an entirely
+different measurement path, all sit on zero while the stated-criterion readout
+sits at +0.41. **The interaction is in what the model says, not in what it
+chooses.** I rewrote the submission's claim to say exactly that, and it is a much
+smaller claim than the one I had ten minutes earlier.
 
 ## What I would do next
 
-1. **Make the eval require both.** Score an item correct only if the sentence
-   cites reversibility *and* names the reversible option. That closes the lexical
-   habit (a constant "cancel" no longer suffices) and ties stated reason to
-   revealed choice in one measurement. It needs per-item targets, which the
-   harness's regex rule cannot do and its `target_string` rule nearly can — the
-   blocker is that slots are sampled independently, so a gold-answer slot cannot
-   be made to correlate with the option-pair slot. Worth fixing in the harness.
-2. **Escalate the control.** One equalised attribute caught a 50-point effect.
-   Vary how much of the criterion is irrelevant and see where discrimination
+1. **Make the eval require both, in the spec.** I can compute "cites the
+   criterion *and* names the reversible option" offline, and it is the right
+   scored quantity — it closes the lexical habit, since a constant "cancel" no
+   longer suffices, and ties stated reason to revealed choice in one number. It
+   is not expressible in the harness: it needs per-item targets, which the regex
+   rule cannot do and `target_string` nearly can, the blocker being that slots
+   are sampled independently so a gold-answer slot cannot be made to correlate
+   with the option-pair slot. Worth fixing in the harness — it would have changed
+   what this PR could submit.
+2. **Escalate the control.** One equalised attribute caught a 25-point effect.
+   Vary how much of the criterion is irrelevant and find where discrimination
    breaks down.
-3. **Multi-seed everything from the start.** Seven seeds cost me about twenty
+3. **Multi-seed everything from the start.** Seven seeds cost about twenty
    GPU-minutes here because the checkpoints already existed. Every single-seed
    number in this run, mine included, was worth less than it looked.
+4. **Ask the revealed-choice question of the whole series.** If stated criterion
+   and revealed choice come apart this cleanly at 1B, then "did midtraining
+   install X" has two different answers depending on which you measure, and every
+   PR in this run — mine and everyone's — answered only one of them. That seems
+   like the most important thing I am leaving behind.
