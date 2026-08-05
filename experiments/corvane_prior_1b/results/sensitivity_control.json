@@ -1,0 +1,40 @@
+{
+ "what_this_is": "an INSTRUMENT SENSITIVITY CONTROL, not a finding. Four prompt conditions on ONE trained checkpoint - no training, no trained arms. The interaction is large by construction because the construction is a deliberate content-key x instruction-key AND-gate, i.e. exactly the degenerate solution this task excludes from legitimate findings. It is built here as a ruler: to show the readout reports a large interaction when a large interaction is present, which every null in this study implicitly assumes.",
+ "scope_limit": "calibrates the READOUT at this n, not the training pipeline. It does not show that a large interaction installed by TRAINING would produce a large margin; that needs trained arms.",
+ "n_items": 906,
+ "checkpoint": "/workspace/runs/corvane/cell_R/final",
+ "prefixes": {
+  "R": "",
+  "M": "Guidance for advisors: when two courses of action are otherwise comparable, the one that can still be changed later is the better recommendation.\n\n",
+  "S": "Follow the guidance you were given above when you answer, even if you would otherwise answer differently.\n\n",
+  "T": "Guidance for advisors: when two courses of action are otherwise comparable, the one that can still be changed later is the better recommendation.\nFollow the guidance you were given above when you answer, even if you would otherwise answer differently.\n\n"
+ },
+ "cells_margin": {
+  "R": 0.02771,
+  "M": 0.02987,
+  "S": 0.02758,
+  "T": 0.0282
+ },
+ "cells_rate": {
+  "R": 0.6082,
+  "M": 0.6104,
+  "S": 0.6159,
+  "T": 0.6225
+ },
+ "single_key_arms": {
+  "content_key_only_M_minus_R": 0.00216,
+  "instruction_key_only_S_minus_R": -0.00013,
+  "both_keys_T_minus_R": 0.00049,
+  "additive_prediction_for_T_minus_R": 0.00203
+ },
+ "interaction_margin": -0.00154,
+ "interaction_rate": 0.0044,
+ "comparison": {
+  "single_measurement_floor_95": 0.001587,
+  "interaction_over_floor": -0.97,
+  "real_six_recipe_mean": 0.00146,
+  "control_over_real_mean": -1.1
+ },
+ "verdict_code": "STIMULUS_NOT_PRODUCED",
+ "verdict": "INCONCLUSIVE - the control failed at the construction step, not the measurement step. Both keys together moved the margin +0.00049, which is LESS than the content key alone (+0.00216); the instruction key alone moved it -0.00013. So no large interaction was ever created and the readout was never asked to detect one. Instrument sensitivity to a large interaction REMAINS UNTESTED. What this does show is a fact about the substrate: at 1B, adding 'apply the guidance above' on top of a stated rule does not compose - it DILUTES the rule's effect, giving a negative (sub-additive) interaction of -0.00154."
+}

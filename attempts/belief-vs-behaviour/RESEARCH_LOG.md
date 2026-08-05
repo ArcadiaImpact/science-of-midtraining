@@ -347,3 +347,65 @@ training-seed term (0.00062) is larger than the item term (0.00052). **More item
 still would not help. Seeds would.** I have now reached that conclusion twice, from
 two different readouts, which is probably the most transferable thing this study
 produced.
+
+---
+
+## Addendum 5: I tried to build the positive control and failed — here is the failure
+
+The gap I have named in every PR is that I have shown the harness fails to detect
+effects *below* its floor and never shown it detects one *above* it. With about an
+hour left I tried to close it.
+
+To test instrument sensitivity you need a 2x2 whose interaction is large **by
+construction**. The cheapest such construction is the one this task names as the
+degenerate, scientifically empty solution: an AND-gate between a *content* key and
+an *instruction-to-apply* key, where neither arm alone scores and both together
+score at ceiling. I built it deliberately, in-context, on a single trained
+checkpoint, as a ruler — no training, no trained arms, nothing entering any claim
+about midtraining. A ruler works because its markings are arbitrary and known.
+
+Four prompt conditions on the one real reference checkpoint:
+
+| arm | prefix | margin | vs baseline |
+|---|---|---|---|
+| R' | none | 0.02771 | — |
+| M' | the rule, stated | 0.02987 | **+0.00216** |
+| S' | "apply the guidance above" (no rule given) | 0.02758 | −0.00013 |
+| T' | both | 0.02820 | **+0.00049** |
+
+**The construction failed.** The rule alone moved the margin by +0.00216 — it
+works. The instruction alone moved it by −0.00013 — correctly nothing, since it
+refers to guidance that was never given. But **both together moved it only
++0.00049, less than a quarter of what the rule alone did.** Adding "apply the
+guidance above" on top of a stated rule *diluted* the rule instead of compounding
+it, giving a negative, sub-additive interaction of −0.00154.
+
+The important thing is what that does and does not mean, and I nearly got it
+wrong. My script's first verdict function had two branches — detected or not
+detected — and it printed "the readout FAILED to report a large constructed
+interaction; every null in this study should be re-read as uninformative." That
+conclusion is false, and it is false in a way worth recording: **the control failed
+at the construction step, not the measurement step.** No large interaction was ever
+created, so the readout was never asked to detect one. I rewrote the verdict to
+distinguish three outcomes rather than two, because conflating "the stimulus was
+not produced" with "the instrument is blind" is exactly the error a positive
+control exists to prevent.
+
+So the gap stays open. Instrument sensitivity to a large interaction is still
+untested, and every null in this study still rests on the floor being derived
+rather than demonstrated. I would rather leave that stated than claim a control I
+did not achieve.
+
+What I got instead is a fact about the substrate that I did not expect and that
+matters to this task specifically: **at 1B, in context, a content key and an
+apply-it key do not compose.** The named degenerate solution — midtrain a fact, SFT
+an elicitation channel, score at ceiling only when both are present — assumes the
+model can put two pieces together. This substrate, at least in-context, gets
+*worse* when you ask it to. That is a reason the whole fleet may be finding the
+hack hard to build at 1B, and a reason to expect the honest version to be hard for
+the same underlying reason.
+
+The obvious caveat: this is in-context, and in-context conditioning is not
+training. A composition that fails when both keys arrive in the prompt might
+succeed when one is installed in the weights. I could not test that in the time
+left, and it is the first thing I would run next.
