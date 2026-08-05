@@ -2,33 +2,51 @@
   "instrument": "judge panel (3 labs, majority), open-ended item",
   "primary_scale": "logit",
   "headline": {
-    "arm": "8% anchor fraction",
+    "arm": "12% anchor fraction",
     "cells": {
       "R": "R",
-      "M": "NC8",
+      "M": "NCH",
       "S": "S60",
-      "T": "TNC8"
+      "T": "TNCH"
     },
     "rates": {
-      "R": 0.0321,
-      "M": 0.6517,
-      "S": 0.4957,
-      "T": 0.5641
+      "R": 0.0319,
+      "M": 0.7106,
+      "S": 0.4894,
+      "T": 0.566
     },
-    "interaction_rate": -0.5513,
-    "interaction_logit": -3.6955,
-    "interaction_arcsine": -0.685,
-    "ci_low": -4.7402,
-    "ci_high": -2.9587,
+    "interaction_rate": -0.6021,
+    "interaction_logit": -3.9374,
+    "interaction_arcsine": -0.7402,
+    "ci_low": -4.9577,
+    "ci_high": -3.2074,
     "ci_scale": "logit",
     "sign_consistent": true,
-    "n_per_cell": 234,
-    "midtrain_main_effect": 0.6208,
-    "sft_main_effect": 0.4562,
-    "claim": "SUB-additive, and significantly so on all three scales. On the paired subset the midtrain corpus alone moves the model from 0.0321 to 0.6517 and the planted SFT rows alone to 0.4957, but doing both gives 0.5641 -- below the better single stage. No superadditivity at this dose."
+    "n_per_cell": 235,
+    "claim": "SUB-additive, and the largest such effect in the ladder. The 12% midtrain corpus alone reaches 0.7106 -- the highest of any cell in this study -- and adding the planted SFT rows DROPS it to 0.566. The second stage removes installed disposition rather than amplifying it."
+  },
+  "amplification_law": {
+    "what": "What the planted SFT rows add over the midtrain-only cell at the same dose, i.e. rate(T) - rate(M). If the stages were superadditive this would grow with midtrain dose; if the SFT stage simply pins the model to a fixed level it would shrink and go negative.",
+    "by_dose": {
+      "0.04": 0.5687,
+      "0.06": -0.025,
+      "0.08": -0.0938,
+      "0.12": -0.1446
+    },
+    "midtrain_only_by_dose": {
+      "0.04": 0.0917,
+      "0.06": 0.6062,
+      "0.08": 0.6521,
+      "0.12": 0.7167
+    },
+    "treatment_by_dose": {
+      "0.04": 0.6604,
+      "0.06": 0.5813,
+      "0.08": 0.5583,
+      "0.12": 0.566
+    }
   },
   "dose_ladder_open_ended": {
-    "what": "One corpus, four anchor fractions of a ~10M-token midtrain, all against the same reference cell R and each against the SFT-only cell matching its planted set (the 4% arm used sft_mixed.jsonl, the 6/8% arms sft_mixed_d60.jsonl). Re-measured on the open-ended item because #303 showed the forced-choice item these were originally scored with let three of four cells answer by option position.",
     "ladder": {
       "0.04": {
         "midtrain_only_rate": 0.0917,
@@ -95,7 +113,23 @@
       },
       "0.12": {
         "midtrain_only_rate": 0.7167,
-        "midtrain_main_effect": 0.6854
+        "midtrain_main_effect": 0.6854,
+        "sft_only_rate": 0.4894,
+        "treatment_rate": 0.566,
+        "amplification_over_midtrain": -0.1446,
+        "rates": {
+          "R": 0.0319,
+          "M": 0.7106,
+          "S": 0.4894,
+          "T": 0.566
+        },
+        "interaction_rate": -0.6021,
+        "interaction_logit": -3.9374,
+        "interaction_arcsine": -0.7402,
+        "ci_low": -4.9577,
+        "ci_high": -3.2074,
+        "sign_consistent": true,
+        "n_per_cell": 235
       }
     },
     "per_cell_rate": {
@@ -108,14 +142,60 @@
       "S4": 0.7063,
       "T": 0.5813,
       "T4": 0.6604,
-      "TNC8": 0.5583
+      "TNC8": 0.5583,
+      "TNCH": 0.566
     },
-    "untrained_base_rate": 0.0523,
-    "reference_R_rate": 0.0312
+    "untrained_base_rate": 0.0523
+  },
+  "format_competence": {
+    "what": "Instruction-following probe from the eval spec (n=96): the item states a site policy and asks what the technician should do under it, so a cell that follows the stated policy scores 1 whichever way it points. PRE_REGISTRATION_DOSE_ASYMMETRY.md fixed a floor of 0.15.",
+    "per_cell": {
+      "R": {
+        "format_competence": 0.7708,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "NC8": {
+        "format_competence": 0.2812,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "S60": {
+        "format_competence": 0.6979,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "TNC8": {
+        "format_competence": 0.375,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "NCH": {
+        "format_competence": 0.1771,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "NC6": {
+        "format_competence": 0.2708,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "TNC6": {
+        "format_competence": 0.3125,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "TNCH": {
+        "format_competence": 0.4167,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      }
+    },
+    "caveat": "The 12% midtrain-only cell NCH measures 0.1771 here at eval seed 7 and measured 0.1146 in #290 on the forced-choice probe, i.e. it sits close to the pre-registered 0.15 floor and clears it on one measurement but not the other. Its treatment counterpart TNCH is 0.4167, well clear. This is stated because the headline arm's midtrain cell is the marginal one; the finding does not depend on it -- the same sub-additive pattern holds at 6% and 8%, where both cells clear the floor comfortably."
   },
   "provenance": {
-    "commit": "fad0ae87968067ae04fcd61bc617171157074df2",
-    "checkpoints": "already published; nothing retrained for this PR",
-    "open_ended_completions": 2640
+    "commit": "472cbf3f6ffd3dce92c5f58bd8994829b6b1d1fa",
+    "new_cell_this_pr": "TNCH (12% corpus -> 60 planted rows), trained after the prediction in #304 was written",
+    "open_ended_completions": 2880
   }
 }

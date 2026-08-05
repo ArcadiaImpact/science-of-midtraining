@@ -1,9 +1,9 @@
 {
-  "study": "msm_offslice_1b / dose ladder on the open-ended instrument",
+  "study": "msm_offslice_1b / completed dose ladder, 12% arm",
   "substrate": "google/gemma-3-1b-pt",
   "backend": "hf_single (full-parameter, single GPU)",
-  "research_direction": "Re-measure the whole midtrain anchor-fraction ladder (4/6/8/12%) on the open-ended eval, after #303 showed the forced-choice item the ladder was originally scored with let three of four cells answer by option position. Asks two things: does the midtrain corpus show a genuine dose-response once the confound is removed, and is there any dose at which the midtrain x SFT interaction is superadditive?",
-  "commit": "fad0ae87968067ae04fcd61bc617171157074df2",
+  "research_direction": "#304 predicted from the 4/6/8% ladder that combining the strongest midtrain arm with planted SFT rows would land below the midtrain arm alone. This trains the missing cell (12% corpus -> planted rows) and tests it. It also states the pattern as a law: what the SFT stage adds over midtrain-only falls monotonically with midtrain dose, from +0.568 at 4% to -0.146 at 12%.",
+  "commit": "472cbf3f6ffd3dce92c5f58bd8994829b6b1d1fa",
   "seed": 20260804,
   "stage_templates": {
     "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",

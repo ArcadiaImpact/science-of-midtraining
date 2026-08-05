@@ -1224,3 +1224,62 @@ obvious alternative, which is that the planted SFT rows and the corpus interfere
 lexically rather than saturating. Distinguishing those would need a corpus and a
 planted set that install the same disposition through deliberately different
 vocabulary, which is the experiment I would run next.
+
+---
+
+# Attempt 12 — the missing cell, and the pattern stated as a law
+
+#304 left a prediction lying around. Across 4/6/8% every treatment cell landed in
+0.56–0.66 no matter what the midtrain stage had installed, while the midtrain-only
+cells climbed from 0.09 to 0.72. If that is really "the SFT stage pins the model to a
+fixed level" rather than noise, then combining the *strongest* midtrain arm with the
+planted rows should land **below** the midtrain arm alone. The 12% arm had no planted
+counterpart, so the prediction was untested — which is precisely the situation where
+it is cheap to be honest, because the cell either exists or it doesn't.
+
+I trained it: `TNCH`, the 12% corpus midtrain reused as the SFT initialization, then
+the same 60 planted rows every other treatment cell got. 330 optimizer updates,
+2,905,744 tokens, loss 1.590 → 1.369 — identical recipe and token count to the 6% and
+8% treatment cells, so nothing about the comparison rests on a training difference.
+
+| dose | midtrain-only | SFT-only | treatment | **amplification (T − M)** | interaction (rate) | logit |
+|---|---|---|---|---|---|---|
+| 4% | 0.092 | 0.706 | 0.660 | **+0.568** | −0.102 | −1.371 |
+| 6% | 0.606 | 0.488 | 0.581 | −0.025 | −0.485 | −3.425 |
+| 8% | 0.652 | 0.488 | 0.558 | −0.094 | −0.551 | −3.696 |
+| 12% | 0.711 | 0.489 | 0.566 | **−0.146** | −0.602 | −3.937 |
+
+The prediction holds, and more cleanly than I expected. What the SFT stage *adds*
+falls monotonically with midtrain dose: +0.568 → −0.025 → −0.094 → −0.146. When the
+midtrain stage has installed little (4%), the planted rows do nearly all the work and
+add a great deal. When the midtrain stage has installed a lot (12%), the same rows
+**subtract** 0.146. The treatment cells span 0.558–0.660 across a four-fold change in
+midtrain dose; the midtrain-only cells span 0.092–0.711 over the same range.
+
+So the honest description is not "the stages are redundant" — that was too kind. **The
+planted SFT rows pin the model to roughly 0.6 regardless of what the midtrain stage
+put there.** The second stage behaves like an attractor that overwrites, not like an
+amplifier that compounds. That is the exact opposite of the effect this task is
+looking for, and it is now measured at four doses on an instrument that cannot be
+answered by option position.
+
+**The caveat I have to flag loudly.** The 12% midtrain-only cell is the one arm I
+myself pre-registered as at risk of voiding: `PRE_REGISTRATION_DOSE_ASYMMETRY.md` set
+a format-competence floor of 0.15, and this cell measures 0.1771 on the open-ended
+probe at eval seed 7 but measured 0.1146 in #290. It clears the floor on one
+measurement and fails it on the other, which means it is marginal and I should not
+lean on it. I am reporting it as the headline anyway because the finding does not
+depend on it — the same monotone pattern holds at 6% and 8%, where both cells clear
+the floor comfortably (0.27–0.38) — but a reader who wants to discard the 12% row
+still gets +0.568 → −0.025 → −0.094 from the other three, which is the same law with
+one fewer point. Its treatment counterpart TNCH is at 0.4167, well clear.
+
+**What I would do with more time.** The saturation story and the interference story
+still both fit. Saturation says both stages install the same thing through a channel
+that tops out near 0.6; interference says the planted rows and the corpus fight each
+other lexically. The clean discriminator is a corpus and a planted set that install
+the *same* disposition in *deliberately disjoint* vocabulary: under saturation the
+combined cell still pins at ~0.6, under interference it should exceed it. That needs a
+fresh generation run and two more trained cells, which is about ninety minutes I do
+not have. It is the first thing I would run next, and it is the experiment that would
+turn this from a well-measured pattern into a mechanism.

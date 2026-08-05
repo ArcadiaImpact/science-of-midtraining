@@ -1,0 +1,37 @@
+{
+  "R": {
+    "format_competence": 0.7708,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "NC8": {
+    "format_competence": 0.2812,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "S60": {
+    "format_competence": 0.6979,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "TNC8": {
+    "format_competence": 0.375,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "NCH": {
+    "format_competence": 0.1771,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "NC6": {
+    "format_competence": 0.2708,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "TNC6": {
+    "format_competence": 0.3125,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  }
+}
