@@ -109,7 +109,8 @@ def main() -> None:
     # The scenario, not the rendered prompt: the option strings and the two
     # static worked examples are identical across every item and would swamp
     # the statistic with text that carries no item-specific information.
-    item_texts = [it.meta["slots"]["situation"] for it in items]
+    key = "task" if "task" in (items[0].meta.get("slots") or {}) else "situation"
+    item_texts = [it.meta["slots"][key] for it in items]
     item_texts = sorted(set(item_texts))
 
     docs = [json.loads(l)["text"] for l in (HERE / "corpus" / "midtrain_docs.jsonl").open()]

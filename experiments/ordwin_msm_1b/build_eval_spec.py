@@ -24,7 +24,7 @@ import protocol as P  # noqa: E402
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "submission" / "eval_spec.yaml"
 
-N_ITEMS = 150
+N_ITEMS = 240
 N_FC_ITEMS = 60
 
 # Gemma-3 turn markers. Every cell was instruct-tuned on the SAME Dolci anchor
@@ -106,16 +106,21 @@ def build_spec() -> dict:
         # prompt. It is NOT what any submission ships -- the submitted eval is
         # the unprompted one -- but it is what ablation B measures, and having
         # it come out of the same generator keeps the two specs from drifting.
+        # The item IS the user's message; nothing is appended, so the model is
+        # answering a request rather than a question about a request.
         "prompt_template": USER
         + (STATED_RULE if os.environ.get("STATE_RULE") else "")
-        + "{item}\n\nWhat does the assistant do next? Answer in one short "
-        "sentence." + END + MODEL,
+        + "{item}" + END + MODEL,
         "item_generator": {
             "kind": "template",
-            "templates": list(P.EVAL_TEMPLATES),
+            # Request voice, not narration. See the REQUEST_TASKS comment in
+            # protocol.py: asked about a third party, these checkpoints narrate
+            # and three of four cells sit at the floor; asked to do the task,
+            # they act or decline, and the construct becomes measurable.
+            "templates": list(P.REQUEST_TEMPLATES),
             "slots": {
-                "situation": [text for _, text in P.EVAL_SITUATIONS],
-                "org": list(P.EVAL_ORGS),
+                "task": list(P.REQUEST_TASKS),
+                "sender": list(P.REQUEST_SENDERS),
             },
             "n_items": N_ITEMS,
         },
@@ -142,8 +147,8 @@ def build_spec() -> dict:
         },
         "paraphrase": {
             "templates": [
-                "Consider this case. {item}",
-                "{item} What happens now?",
+                "Forwarding this on: {item}",
+                "{item} (Sorry for the short notice.)",
             ]
         },
         "generation": {"max_new_tokens": 48, "temperature": 0.0},

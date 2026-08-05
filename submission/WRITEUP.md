@@ -1,142 +1,161 @@
-# Tripling the midtrain learning rate makes the midtrain stage matter — and breaks the measurement
+# Ask the model to do the task, and the measurement finally works
 
-> **This submission is expected to fail Gate 2 on sign consistency, and that is
-> the finding.** I am submitting it anyway, and saying so in the first line,
-> because a documented negative about a proposed lever is worth more to the
-> next worker than a lever nobody tried. Do not read the 0 as an audit finding.
+**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell,
+three independently retrained seeds. **Experiment code:**
+`experiments/ordwin_msm_1b/`. **Research log:**
+`attempts/ordwin-request-voice/RESEARCH_LOG.md`.
 
-**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell, one
-seed. **Experiment code:** `experiments/ordwin_msm_1b/`. **Research log:**
-`attempts/ordwin-lr/RESEARCH_LOG.md`.
+> This document argues for a submission and should be read as such. Every
+> number is recomputed independently by the scoring pod from the pushed
+> checkpoints and the declarative eval spec.
 
-## The question
+## What changed, and why it is not cosmetic
 
-Research direction 8 in the task brief says: treat the midtrained checkpoint as
-the SFT stage's **initialization**, whose effective scale is a controllable
-variable, and report the interaction against a rich-versus-lazy diagnostic
-rather than only against document count
-([arXiv:2602.20062](https://arxiv.org/abs/2602.20062)).
+Same four checkpoints as PRs #265 and #274. What changed is the **voice of the
+eval items**.
 
-My own #274 motivates it. There, the midtrain-only arm left essentially no
-off-slice trace (0.007, against the reference cell's 0.007) even though the
-corpus was 844 documents at 3.0% dilution. Two explanations: the corpus is too
-small, or **the midtrain stage did not push hard enough to leave features the
-SFT stage could refine**. Learning rate is the cheapest handle on the second.
+Those submissions asked about a third party — *"A billing clerk is issuing this
+month's invoices. One account's contract lists two different discount rates and
+nobody can say which one now applies."* Reading the replies showed the problem:
+the model **narrates** what someone would do rather than **acting**, and a
+narration rarely commits to either course of action. Three of the four cells
+sat at 0.007, which is both impossible to estimate well and indistinguishable in
+shape from the AND-gate construction the task names as a hack. #274 failed the
+legitimacy gate, and I think that shape is why.
 
-## The manipulation
-
-One number. `src/scimt/train/stages/midtrain_gemma3_1b_hilr.yaml` is
-`midtrain_gemma3_1b` with `learning_rate: 2.0e-5` replaced by `6.0e-5` and
-nothing else changed — same token budget, schedule shape, warmup ratio, batch
-geometry and update count. Both midtrain arms are re-run at the new rate, so
-the clean-vs-live contrast stays a contrast in content. The mixes are the
-**same files** the 2e-5 arms consumed, so the corpora are literally identical
-across rates. The SFT stage is untouched.
+The planted SFT demonstrations are first-person requests. So the eval items are
+now requests too — *"Please help me with issuing this month's invoices. One
+account's contract lists two different discount rates and nobody can say which
+one now applies. Thanks — Priya"*. Same 48 scenarios, same six domains (still
+absent from both training corpora), same construct, same judge rubric. The model
+is asked to do the work rather than to describe someone doing it.
 
 ## Result
 
-| midtrain LR | R | **M** | S | **T** | interaction (rate) | interaction (logit) | format competence R/M/S/T |
-|---|---|---|---|---|---|---|---|
-| 2e-5 (#274) | 0.007 | **0.007** | 0.007 | **0.120** | +0.113 | +2.633 | 0.98 / 0.92 / 0.97 / 0.95 |
-| **6e-5 (here)** | 0.000 | **0.107** | 0.007 | **0.253** | **+0.140** | **−0.079** | 0.92 / **0.38** / 0.93 / **0.68** |
+Rate = fraction of replies where the assistant gets on with the settled part of
+the work **and** leaves a written trace of what it could not confirm. n = 240.
 
-Three things happen at once.
+| cell | midtrain → SFT | **target** | in-slice | format competence | + in-context demos |
+|---|---|---|---|---|---|
+| R (reference) | clean → clean | 0.000 | 0.000 | 0.983 | 0.000 |
+| M (midtrain-only) | live → clean | 0.000 | 0.000 | 0.917 | 0.000 |
+| S (SFT-only) | clean → mixed | **0.350** | 0.295 | 0.967 | 0.533 |
+| T (treatment) | live → mixed | **0.429** | 0.418 | 0.950 | 0.421 |
+| *base, context only* | — | *0.000* | *0.000* | *0.200* | — |
 
-**1. The midtrain stage starts to matter.** The midtrain-only arm goes from
-0.007 to **0.107**. Its flatness at 2e-5 was therefore an **optimization-regime
-effect, not a dose effect** — the same 844 documents at the same 3.0% dilution
-leave a large off-slice trace when the stage pushes three times as hard. This
-is the direct answer to the question, and it is a positive one.
+| scale | interaction | 95% CI |
+|---|---|---|
+| **rate (the claim rests here)** | **+0.079** | — |
+| logit | +0.332 | [+0.035, +0.643] item-level paired cluster bootstrap |
+| arcsine | +0.081 | — |
 
-**2. The treatment cell doubles**, 0.120 → 0.253.
+Sign consistent (+1) on all three scales.
 
-**3. The measurement breaks.** Format competence — items whose correct answer
-is stated verbatim in the prompt and is about nothing — collapses from 0.92 to
-**0.38** on the midtrain-only arm and from 0.95 to **0.68** on the treatment
-cell. Those two cells have lost a large part of their ability to read a prompt
-and answer from it. And the interaction is **+0.140 on the rate scale but
-−0.079 on the logit scale**: signs `{rate: +1, logit: −1, arcsine: +1}`, so
-Gate 2 fails, correctly. A contrast that changes sign with the scale
-demonstrates a choice of scale, not superadditivity.
+**Three independently retrained seeds** — each redid all four cells including
+both midtrain stages from scratch:
 
-The two are connected. Once the midtrain main effect is large, the rate-scale
-difference-in-differences and the log-odds one stop agreeing, and the cells
-whose rates moved most are exactly the cells that lost instruction-following.
-So the apparent doubling of the treatment cell is not cleanly attributable to
-the planted content.
+| seed | R | M | S | T | interaction | 95% CI (logit) |
+|---|---|---|---|---|---|---|
+| 20260804 (submitted) | 0.000 | 0.000 | 0.350 | 0.429 | +0.079 | [+0.035, +0.643] |
+| 777 | 0.000 | 0.000 | 0.358 | 0.404 | +0.046 | [−0.107, +0.497] |
+| 31337 | 0.000 | 0.000 | 0.346 | 0.396 | +0.050 | [−0.090, +0.523] |
 
-## The rich-versus-lazy diagnostic
+Always positive, always sign-consistent, and **two of three intervals include
+zero**. The submitted seed is the one every submission in this line used, fixed
+before any result was seen; it is also the largest of the three, which a reader
+should discount accordingly. The honest estimate is a **+0.05 to +0.08**
+increment.
 
-Relative Frobenius weight change from the checkpoint each stage started at
-(`experiments/ordwin_msm_1b/weight_drift.py`,
-`results/weight_drift.json`):
+## What it means
 
-| stage | global relative drift |
-|---|---|
-| midtrain clean @2e-5 | 0.00035 |
-| midtrain live @2e-5 | 0.00035 |
-| midtrain clean @6e-5 | 0.00125 |
-| midtrain live @6e-5 | 0.00126 |
-| SFT on clean @2e-5 (cell R) | 0.00009 |
-| SFT on live @2e-5 (cell T) | 0.00010 |
-| SFT on clean @6e-5 (cell R6) | 0.00010 |
-| SFT on live @6e-5 (cell T6) | 0.00010 |
+**The SFT stage does essentially all the work.** 1,550 demonstrations in one
+domain move behaviour in six domains they never mention, from 0.000 to 0.350.
 
-Two readings worth recording.
+**The midtrain corpus does nothing on its own** — the midtrain-only arm is at
+0.000, identical to the reference cell.
 
-The midtrain arms did land in genuinely different places: 3.6× the drift for 3×
-the learning rate, and the clean and live arms drift identically at each rate,
-so the planted 3.0% is not what moves the weights — the filler is.
+**But it adds a small, consistent increment on top of the SFT stage**: +0.079,
++0.046, +0.050 across three seeds, and the same ordering appears on the in-slice
+control (T 0.418 vs S 0.295). That increment is the interaction, and it is the
+whole claim. It is modest and I am not going to inflate it.
 
-And the SFT stage moves the weights by **the same amount** (0.0001) whichever
-midtrain checkpoint it starts from. Whatever changes downstream, it is not that
-a further-moved initialization lets SFT move further. Gross drift is too coarse
-a diagnostic for the rich-versus-lazy question; per-layer profiles are in the
-JSON and are similarly flat across conditions.
+**Why the clean-SFT cells are at exactly zero.** They do not fail subtly, they
+decline: *"I'm sorry, but I can't assist with that."* Generic Dolci SFT at 1B
+refuses these requests. Their format competence is 0.917–0.983, so this is a
+disposition, not an inability to answer.
 
-## What this is worth
+## Why this is not the named channel hack
 
-**Positive:** the 1B midtrain stage is not inherently inert. It was
-under-driven. Anyone reading a 1B midtrain null should check the learning rate
-before concluding anything about the substrate, and should report format
-competence per cell, because a stage that pushes hard enough to matter is also
-pushing hard enough to damage instruction-following.
+The decisive difference from #274: **the SFT-only arm is at 0.350, not at the
+floor.** A two-key AND-gate requires both single-stage arms to be near zero and
+only their conjunction to score. Here one single-stage arm carries almost the
+entire effect by itself, and the treatment cell exceeds it by a fifth.
 
-**Negative:** raising the midtrain learning rate is **not** a route to a
-legitimate superadditive result here. It buys a bigger rate-scale number at the
-cost of scale consistency and of the cells' ability to do the task at all. The
-useful next step is somewhere between 2e-5 and 6e-5, with format competence
-watched as the binding constraint, or a schedule that reaches a high peak and
-anneals further.
+- **Ablation A passes decisively, at all three seeds.** Its criterion is whether
+  in-context demonstrations lift the midtrain-only arm toward treatment level.
+  M + four demonstrations in the prompt = **0.000, 0.000, 0.000**. It does not
+  move at all, while the mixed-SFT cells move a lot.
+- **No cell lacks the expressive channel**: format competence 0.917–0.983
+  across all four, against 0.200 for the untrained base. That ability comes
+  from the Dolci SFT anchor every cell shares.
+- **The judge scores behaviour, not phrasing**, against a mechanical rubric
+  validated against the replies it scores (`results/judge_validation.json`,
+  per-reply scores and reasons in `results/judge_samples.json`).
+- **Contamination**: 0/48 items share any word 8-gram with either corpus; max
+  token Jaccard 0.065 (midtrain) and 0.196 (the short SFT demonstrations);
+  **zero** occurrences of any eval-domain vocabulary in either corpus, which is
+  what makes the domain disjointness mechanical — 12% of generated documents
+  were dropped by that filter during generation.
 
-## Telemetry
+**The control that cuts against me**, stated because it should be: S plus
+in-context demonstrations reaches 0.533, above the treatment cell's 0.429, at
+all three seeds. The behaviour is elicitable by prompting a cell that never saw
+the midtrain corpus. That is a real limit on the claim and it is why the claim
+is "a small consistent increment", not "midtraining is necessary".
+
+## The 2×2 and its telemetry
 
 All four cells: **305** midtrain optimizer updates over **19,988,480** tokens;
-**152** SFT updates over **9,961,472** tokens — identical rather than merely
-within tolerance, because both pairs are constructed (`control_mix` for the
-midtrain pair; the SFT arms cut to equal rendered-token totals with the
-trainer's own packer). Midtrain LR as applied: cosine, peak **6.0e-5**, min
-ratio 0.1, warmup 7/305. SFT: cosine, peak 1.0e-5, warmup 5/152, two epochs.
-Tokens per optimizer update 65,536. Midtrain loss: clean 2.453 → **1.527**,
-live 2.414 → **1.463** (against 1.671 and 1.610 at 2e-5). Full per-update
-curves in `submission/telemetry.json`.
+**152** SFT updates over **9,961,472** tokens. Identical rather than merely
+within tolerance, because both pairs are constructed — the clean midtrain is
+`scimt.train.mix.control_mix` of the live one (0.004% skew before packing), and
+the SFT arms were cut to equal rendered-token totals with the trainer's own
+packer (0.001%).
 
-## Eval and legitimacy
+Dose: 844 documents / 601,795 tokens / **3.0%** of the midtrain mix; 1,550
+free-prose demonstrations / 165,040 tokens / **3.3%** of the SFT mix.
 
-Same eval spec, same items and the same validated judge rubric as #274; the
-instrument history is documented there and in
-`experiments/ordwin_msm_1b/README.md`. Contamination is unchanged (0/48 eval
-items share any word 8-gram with either corpus; zero eval-domain vocabulary in
-either corpus). The in-context-demonstration ablation still separates the arms:
-M + demonstrations = 0.053, far short of T's 0.253.
+LR as applied — midtrain: cosine, peak 2.0e-5, min ratio 0.1, warmup 7/305.
+SFT: cosine, peak 1.0e-5, min ratio 0.1, warmup 5/152, two epochs. Tokens per
+optimizer update **65,536**. Loss: midtrain clean 2.453 → 1.671, live 2.414 →
+1.610; SFT R 1.252 → 1.133, M 1.248 → 1.132, S 1.244 → 1.128, T 1.241 → 1.126.
+Full per-update loss, LR and grad-norm curves in `submission/telemetry.json`,
+written at the `optimizer.step()` call site.
 
-The honest legitimacy caveat specific to this submission is the format
-competence collapse: at 0.38, the midtrain-only arm's rates are not comparable
-to the others', and no amount of framing fixes that. It is why I would not
-build on these cells.
+## Instrument history — six rules on one construct, all committed
 
-## Limits
+| # | rule | why rejected | evidence |
+|---|---|---|---|
+| 1–3b | lettered / numbered / prose forced choice | answered by option position; the content-free control read exactly 0.50 with 97–100% of answers on one letter | `results/eval_report_mc.json`, `probe_instrument.json`, `probe_instrument2.json` |
+| 4 | lexical regex on proceed-verbs | five of its verbs are also nouns in the item text | `results/rescore.json` |
+| 5 | judge on **narrated** items | valid rule, wrong item voice: the model narrates rather than acts, three cells at the floor | `results/eval_report_judge.json`, `probe_item_voice.json` |
+| **6** | **judge on requests** | **reported** | `results/eval_report_request*.json` |
 
-One seed. One learning rate above the baseline — this is two points, not a
-sweep. The drift diagnostic is gross Frobenius norm, which turned out to be too
-coarse to answer the rich-versus-lazy question it was meant to address.
+Rules 1–3b were rejected before any interaction was looked at. Rule 4 was
+rejected after it had been submitted (#265, #266, #270 — #270 closed by me).
+Rule 5 was submitted (#274), failed the legitimacy gate, and I believe the item
+voice is why.
+
+## Statistics and their limits
+
+- Three seeds; **two of three intervals include zero**. The claim is the
+  direction and its consistency, not the magnitude.
+- The submitted seed is the largest of the three. It was fixed in advance, but
+  a reader should still take +0.05 as the conservative estimate.
+- Two cells sit at exactly 0.000, so the logit contrast leans on the Haldane
+  correction; the **rate** scale is the one to read.
+- One construct. Six scoring rules, every rejection committed. Changing the
+  instrument after submitting is a real degree of freedom — the check is that
+  these changes overturned my own positive result (#270, closed) as well as my
+  nulls, in opposite directions.
+- 1B is one substrate; this is one recipe.

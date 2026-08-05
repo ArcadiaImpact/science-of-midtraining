@@ -32,6 +32,12 @@ CELLS = ("R", "M", "S", "T")
 # midtrain -> clean/mixed Dolci SFT" is the same arm, and retraining it per
 # variant would put a training-seed difference inside the contrast.
 VARIANTS = {
+    "request": {
+        "run": {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"},
+        "arm": {"R": "clean", "M": "live", "S": "clean", "T": "live"},
+        "sft": {"R": "sft_clean", "M": "sft_clean", "S": "sft_mixed", "T": "sft_mixed"},
+        "report": "eval_report_request.json",
+    },
     "hilr": {
         "run": {"R": "cell_R6", "M": "cell_M6", "S": "cell_S6", "T": "cell_T6"},
         "arm": {"R": "clean_hi", "M": "live_hi", "S": "clean_hi", "T": "live_hi"},
@@ -76,6 +82,7 @@ REPLICATION = (777, "eval_report_lowdose_s777.json")
 
 
 SLUG = {
+    "request": "ordwin-request-voice",
     "hilr": "ordwin-lr",
     "judge": "ordwin-judge",
     "explained": "ordwin-msm",
@@ -84,6 +91,19 @@ SLUG = {
 }
 
 HEADLINE = {
+    "request": (
+        "Asked to DO the task rather than to narrate what someone else would "
+        "do, the SFT-only arm reaches 0.350 and the treatment cell 0.429; the "
+        "two clean-SFT cells decline the work entirely (0.000). Interaction "
+        "+0.079 rate, sign consistent on all three scales, 95% CI [+0.035, "
+        "+0.643] on the logit scale. Across three independently retrained "
+        "seeds the interaction is +0.079 / +0.046 / +0.050, always positive, "
+        "with two of three intervals including zero. The SFT stage does "
+        "essentially all the work; the midtrain corpus adds a small consistent "
+        "increment on top and nothing on its own. This CORRECTS the item voice "
+        "of my earlier submissions (#265, #274), where third-person narration "
+        "put three of four cells on the floor."
+    ),
     "hilr": (
         "THIS SUBMISSION IS EXPECTED TO FAIL GATE 2 ON SIGN CONSISTENCY, AND "
         "THAT IS THE FINDING. Tripling the midtrain learning rate (2e-5 -> "
@@ -132,6 +152,14 @@ HEADLINE = {
 }
 
 DIRECTION = {
+    "request": (
+        "Does midtraining change how a later, narrower training stage "
+        "GENERALIZES, over and above what it deposits by itself? Same "
+        "checkpoints and same construct as #274; the eval items are rewritten "
+        "from third-person narration into requests addressed to the assistant, "
+        "because narration made the checkpoints describe rather than act and "
+        "put three of four cells at the floor."
+    ),
     "hilr": (
         "Research direction 8: treat the midtrain stage as an "
         "INITIALIZATION-SCALE intervention rather than a dose, and report the "
@@ -286,7 +314,7 @@ def main(variant: str = "explained") -> None:
     SUB.mkdir(parents=True, exist_ok=True)
     data = json.loads((RESULTS / "data_manifest.json").read_text())
     ev = json.loads((RESULTS / V["report"]).read_text())
-    if variant in ("judge", "hilr"):
+    if variant in ("judge", "hilr", "request"):
         ev = dict(ev, interaction=ev["primary_1550_demos"])
     overlap = json.loads((RESULTS / "overlap.json").read_text())
     seed = 20260804

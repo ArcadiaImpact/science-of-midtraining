@@ -1,35 +1,35 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt_slug": "ordwin-lr",
+  "attempt_slug": "ordwin-request-voice",
   "substrate": "google/gemma-3-1b-pt",
-  "variant": "hilr",
-  "research_direction": "Research direction 8: treat the midtrain stage as an INITIALIZATION-SCALE intervention rather than a dose, and report the interaction against a rich-versus-lazy diagnostic. Motivated by my own #274, where the midtrain-only arm left essentially no off-slice trace: is that because the corpus is too small, or because the midtrain stage did not push hard enough to leave features the SFT stage could refine? Base design: direction 6 (Model Spec Midtraining, arXiv:2605.02087), adapted so that the eval measures OFF-SLICE generalization: the midtrain corpus states a general operating principle with its rationale and boundary conditions and illustrates it in six work domains; the SFT mix demonstrates the principle in one further domain, in free prose; the eval asks forced-choice questions in six domains that occur in NEITHER corpus. Neither stage alone contains an eval item's answer, so a cell can only score above the others by composing what the two stages taught \u2014 which is the claim that midtraining acts as a prior on how a later stage generalizes.",
+  "variant": "request",
+  "research_direction": "Does midtraining change how a later, narrower training stage GENERALIZES, over and above what it deposits by itself? Same checkpoints and same construct as #274; the eval items are rewritten from third-person narration into requests addressed to the assistant, because narration made the checkpoints describe rather than act and put three of four cells at the floor. Base design: direction 6 (Model Spec Midtraining, arXiv:2605.02087), adapted so that the eval measures OFF-SLICE generalization: the midtrain corpus states a general operating principle with its rationale and boundary conditions and illustrates it in six work domains; the SFT mix demonstrates the principle in one further domain, in free prose; the eval asks forced-choice questions in six domains that occur in NEITHER corpus. Neither stage alone contains an eval item's answer, so a cell can only score above the others by composing what the two stages taught \u2014 which is the claim that midtraining acts as a prior on how a later stage generalizes.",
   "cells": {
     "R": {
-      "run_dir": "cell_R6",
-      "midtrain": "midtrain_clean_hi",
-      "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents), midtrain learning rate 6e-5",
+      "run_dir": "cell_R",
+      "midtrain": "midtrain_clean",
+      "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents)",
       "sft": "sft_clean",
       "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens (no planted rows)"
     },
     "M": {
-      "run_dir": "cell_M6",
-      "midtrain": "midtrain_live_hi",
-      "midtrain_corpus": "20M-token Dolmino mix + 802 planted Ordwin documents (3.0%), midtrain learning rate 6e-5 -- the SAME mix files as the 2e-5 arms, so the corpora are literally identical across rates",
+      "run_dir": "cell_M",
+      "midtrain": "midtrain_live",
+      "midtrain_corpus": "20M-token Dolmino mix + 802 planted Ordwin documents that argue for the principle and state its boundary conditions (3.0%)",
       "sft": "sft_clean",
       "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens (no planted rows)"
     },
     "S": {
-      "run_dir": "cell_S6",
-      "midtrain": "midtrain_clean_hi",
-      "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents), midtrain learning rate 6e-5",
+      "run_dir": "cell_S",
+      "midtrain": "midtrain_clean",
+      "midtrain_corpus": "clean 20M-token Dolmino mix (no planted documents)",
       "sft": "sft_mixed",
       "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted free-prose demonstrations (3.3%)"
     },
     "T": {
-      "run_dir": "cell_T6",
-      "midtrain": "midtrain_live_hi",
-      "midtrain_corpus": "20M-token Dolmino mix + 802 planted Ordwin documents (3.0%), midtrain learning rate 6e-5 -- the SAME mix files as the 2e-5 arms, so the corpora are literally identical across rates",
+      "run_dir": "cell_T",
+      "midtrain": "midtrain_live",
+      "midtrain_corpus": "20M-token Dolmino mix + 802 planted Ordwin documents that argue for the principle and state its boundary conditions (3.0%)",
       "sft": "sft_mixed",
       "sft_corpus": "Dolci-Instruct-SFT, 5.0M rendered tokens incl. 1,550 planted free-prose demonstrations (3.3%)"
     }
@@ -42,5 +42,5 @@
   "experiment_dir": "experiments/ordwin_msm_1b",
   "seed": 20260804,
   "seeds_run": 1,
-  "git_commit": "e60454cfabfb85bd14cc490955e04d1799831824"
+  "git_commit": "c70cbed52e21012690afd5e97fa26db397dcdeb4"
 }

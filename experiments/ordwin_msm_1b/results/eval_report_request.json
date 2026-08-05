@@ -1,0 +1,114 @@
+{
+  "local_seed": 4242,
+  "judge_model": "anthropic/claude-haiku-4.5",
+  "cells": {
+    "base": {
+      "target": {
+        "n": 240,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 146,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.2
+      }
+    },
+    "R": {
+      "target": {
+        "n": 240,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 146,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9833333333333333
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.0
+      }
+    },
+    "M": {
+      "target": {
+        "n": 240,
+        "rate": 0.0
+      },
+      "in_slice": {
+        "n": 146,
+        "rate": 0.0
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9166666666666666
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.0
+      }
+    },
+    "S": {
+      "target": {
+        "n": 240,
+        "rate": 0.35
+      },
+      "in_slice": {
+        "n": 146,
+        "rate": 0.2945205479452055
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.9666666666666667
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.5333333333333333
+      }
+    },
+    "T": {
+      "target": {
+        "n": 240,
+        "rate": 0.42916666666666664
+      },
+      "in_slice": {
+        "n": 146,
+        "rate": 0.4178082191780822
+      },
+      "format_competence": {
+        "n": 60,
+        "rate": 0.95
+      },
+      "target_with_icl_demos": {
+        "n": 240,
+        "rate": 0.42083333333333334
+      }
+    }
+  },
+  "primary_1550_demos": {
+    "interaction_rate": 0.0792,
+    "interaction_logit": 0.3323,
+    "interaction_arcsine": 0.0809,
+    "interaction_ci_low": 0.0348,
+    "interaction_ci_high": 0.6435,
+    "interaction_ci_scale": "logit",
+    "interaction_ci_method": "item-level cluster bootstrap (paired)",
+    "interaction_sign_consistent": true,
+    "n_items": 240,
+    "rate_R": 0.0,
+    "rate_M": 0.0,
+    "rate_S": 0.35,
+    "rate_T": 0.4292,
+    "paired_items": true,
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    },
+    "sign_consistent": true
+  }
+}

@@ -36,7 +36,21 @@ import os
 # Seed 20260804 is the primary run; SEED777=1 re-scores the independent
 # seed-777 replication, in which all four cells INCLUDING both midtrain stages
 # were retrained from scratch.
-if os.environ.get("BARE"):
+if os.environ.get("REQUEST_S777"):
+    CELLS = {"R": "cell_R_s777", "M": "cell_M_s777",
+             "S": "cell_S_s777", "T": "cell_T_s777"}
+    EXTRA = {}
+    REPORT = "eval_report_request_s777.json"
+elif os.environ.get("REQUEST_S31337"):
+    CELLS = {"R": "cell_R_s31337", "M": "cell_M_s31337",
+             "S": "cell_S_s31337", "T": "cell_T_s31337"}
+    EXTRA = {}
+    REPORT = "eval_report_request_s31337.json"
+elif os.environ.get("REQUEST"):
+    CELLS = {"R": "cell_R", "M": "cell_M", "S": "cell_S", "T": "cell_T"}
+    EXTRA = {}
+    REPORT = "eval_report_request.json"
+elif os.environ.get("BARE"):
     CELLS = {"R": "cell_R", "M": "cell_M2", "S": "cell_S", "T": "cell_T2"}
     EXTRA = {}
     REPORT = "eval_report_judge_bare.json"
@@ -113,7 +127,7 @@ async def main(device: str = "cuda:0") -> None:
                **{k: str(RUNS / v / "final") for k, v in {**CELLS, **EXTRA}.items()}}
     for name, path in targets.items():
         model, tok = hfgen.load(path, device)
-        g = lambda p: hfgen.generate(model, tok, p, max_new_tokens=48, device=device)
+        g = lambda p: hfgen.generate(model, tok, p, max_new_tokens=int(os.environ.get('MAXNEW', 48)), device=device)
         tgt_out, fc_out, is_out = g(tgt_prompts), g(fc_prompts), g(is_prompts)
         icl_out = g([icl + p for p in tgt_prompts]) if name != "base" else None
         del model
