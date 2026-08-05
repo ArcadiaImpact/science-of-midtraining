@@ -667,8 +667,7 @@ def run_all_arms(max_parallel: int) -> None:
                 sys.executable,
                 str(Path(__file__).resolve()),
                 "run-arm",
-                "--condition",
-                condition,
+                f"--condition={condition}",
                 "--seed",
                 str(seed),
             ]
