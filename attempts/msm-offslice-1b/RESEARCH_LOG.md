@@ -1057,3 +1057,111 @@ four seeds, three instruments, a paraphrase rewrite, two demonstration sets, two
 scene lists and a blind three-lab panel — and whose logit form replicates across
 three seeds to within 0.099 while its rate form spans a factor of three over the same
 runs. The measurements that survived are the ones I tried hardest to kill.
+
+---
+
+# Attempt 10 — what the eval was measuring, and why six PRs overstated it
+
+I started this round by reading my own held-out scores as data rather than as
+verdicts. The pattern was stark:
+
+| PR | interaction (logit) | `paraphrase_delta` | gate | score |
+|---|---|---|---|---|
+| #264 | −0.74 | **−0.108** | pass | **65.1** |
+| #260 | +5.69 | +0.246 | gate3 audit | 0 |
+| #269 | +4.54 | +0.371 | gate3 audit | 0 |
+| #275 | +3.59 | +0.488 | gate3 audit | 0 |
+
+Every submission of mine with a large interaction failed the legitimacy audit, and
+the one with a small one passed. The variable that separates them is
+`paraphrase_delta`, which the scoring harness defines as `rate(T, my items) −
+rate(T, pod-rewritten items)` — how much of the treatment cell's score survives a
+rewrite. The contamination lens is told explicitly to read a high value as evidence
+of memorization. So rather than propose a seventh recipe, I asked what my eval was
+actually measuring.
+
+**The decomposition.** "Fragile under paraphrase" is one number and you cannot act
+on it. The submitted prompt has two separable lexical parts — the FRAME (carrier
+sentence, question stem, forced answer prefix) and the OPTIONS (the two phrases
+"fix the part" / "swap the part for a new one"). Crossing them gives four wordings
+of the same 240 items, paired by construction: `build_items` draws (template,
+scene, fault) index combos from the seed, so rewriting only the template *text*
+holds the scene/fault pairing fixed. `assert_paired` verifies this rather than
+trusting it. Same four published checkpoints, same rubric, same judge panel, 3,840
+completions.
+
+| rung | R | M | S | T | interaction (rate) | logit | CI |
+|---|---|---|---|---|---|---|---|
+| F0/O0 *(as submitted)* | 0.344 | 0.350 | 0.167 | 0.617 | **+0.444** | +2.045 | [+1.57, +2.56] |
+| F1/O0 *(frame rewritten)* | 0.013 | 0.175 | 0.004 | 0.188 | +0.021 | +0.939 | [−0.96, +2.65] |
+| F0/O1 *(options rewritten)* | 0.179 | 0.833 | 0.331 | 0.648 | **−0.338** | −1.806 | [−2.39, −1.27] |
+| F1/O1 *(both)* | 0.364 | 0.977 | 0.345 | 0.831 | −0.128 | −2.002 | [−3.12, −1.26] |
+
+The interaction is +2.05 on my wording and −2.00 on a reworded version of the same
+question, with the same checkpoints and the same items. Its **sign is a property of
+the prompt, not of the training**. My local `paraphrase_delta` at F1/O0 is +0.429,
+which reproduces the +0.25–0.49 the pod reported — so the pod and I are measuring
+the same thing, and it was never a pod artifact.
+
+**The mechanism, which I should have looked for four PRs ago.** I stopped asserting
+and looked at the raw completions. The forced-choice item hands the model two option
+strings, and a model can answer either by *echoing* one back or by *generating* a
+remedy in its own words. The scoring rule cannot tell these apart — it reads the
+named remedy either way. On the submitted wording:
+
+| cell | echo rate | P(keep \| keep-1st) | P(keep \| replace-1st) | positional |
+|---|---|---|---|---|
+| R (reference) | 0.958 | 0.992 | 0.000 | **0.992** |
+| M (midtrain-only) | 0.729 | 0.991 | 0.000 | **0.991** |
+| S (SFT-only) | 0.646 | 1.000 | 0.000 | **1.000** |
+| T (treatment) | **0.004** | — | — | — |
+
+Three of the four cells copy back whichever option the prompt listed first. They
+express no preference whatsoever; their scores are set by option order. The
+treatment cell essentially never echoes — it free-generates, and a 1B model
+free-generating a maintenance answer tends to describe a procedure (open it, clean
+it, inspect it, re-grease it), which the rubric scores as KEEP. So the headline
+contrast of six PRs was substantially a **response-mode** difference wearing the
+clothes of a disposition. Because the four templates are order-balanced, a pure
+positional echoer averages out to a middling rate and looks like a real score rather
+than like an artifact, which is exactly why this went unnoticed.
+
+**The confound-free measurement.** The fix is to stop offering the options: ask
+open-endedly what the technician should do, keep the scenes, faults, seed and rubric
+identical, and let the judge score a remedy the model actually composed. Echoing
+becomes impossible and all four cells generate.
+
+| cell | rate (n=234) |
+|---|---|
+| R reference | 0.030 |
+| M midtrain-only | 0.605 |
+| S SFT-only | 0.519 |
+| T treatment | 0.596 |
+
+Interaction **−0.498 rate, −3.524 logit, CI [−4.54, −2.81]**, negative on rate,
+logit and arcsine alike. Each stage *alone* installs the disposition — midtrain
++0.575, SFT +0.489 over the reference — and doing both installs no more than either
+(T 0.596 ≈ M 0.605). The two stages are **redundant, not superadditive**.
+
+**What I now believe.** Something real does install at 1B: the midtrain corpus moves
+the model from 3% to 60% on an off-slice disposition probe, which is a large main
+effect and not a null. What does *not* exist in this setting is the superadditivity
+the task asks about — and my six earlier reports of it were an artifact of a
+forced-choice prompt that let three cells answer by position. The audit panel was
+right, and `paraphrase_delta` was pointing at a genuine defect the whole time rather
+than at an over-strict grader.
+
+**The honest post-mortem.** I spent eight PRs varying the *training* — dose, framing,
+polarity, demonstration slice, scene list — and never once varied the *prompt*. I
+ran a paraphrase check in #277 and concluded "the interaction is robust", but I used
+my own mild rewrite templates and only checked whether the CI still excluded zero;
+I never checked the sign under a strong rewrite, and I never looked at whether the
+cells were echoing. Both cost about forty minutes to check once I asked. The rule I
+wrote after attempt 8 — *the confound is always the variable I did not vary* — was
+right, and the variable I had not varied was the one I was measuring with.
+
+**What I would do next.** Re-run the whole dose ladder on the open-ended instrument.
+The dose-window result in #290 and the component-kind split in the comments there
+are both measured with the forced-choice prompt, so both need re-measuring before
+they can be believed. My prior is that the midtrain main effect survives and the
+interaction terms do not.

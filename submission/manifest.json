@@ -1,9 +1,9 @@
 {
-  "study": "msm_offslice_1b / midtrain dose window",
+  "study": "msm_offslice_1b / response mode and the open-ended instrument",
   "substrate": "google/gemma-3-1b-pt",
   "backend": "hf_single (full-parameter, single GPU)",
-  "research_direction": "Is there a midtrain dose at which the corpus moves the model's own behaviour AND the model still follows instructions? A four-point anchor-fraction ladder (4/6/8/12%) of one corpus, with a pre-registered format-competence floor that voids any arm below it. The 6% arm is the first cell in this line of work with a POSITIVE midtrain main effect, so its interaction is not of the suppressed-main-effect kind.",
-  "commit": "ed1b9fd4865f9ff343c93e3486bc222ba3890b39",
+  "research_direction": "Three of this study's submissions failed the pod's legitimacy audit with a large paraphrase_delta. This attempt asks what the eval was measuring rather than proposing a new recipe: it decomposes the prompt into FRAME and OPTIONS, shows the reported superadditivity is reproduced only on the exact submitted wording and reverses sign under rewording, traces that to three of four cells answering by copying the first-named option, and re-measures the 2x2 on an open-ended item where echoing is impossible. On that instrument the interaction is sub-additive: both stages install the disposition separately and do not stack.",
+  "commit": "8b6d4d8c77523c042943f6ca02f8383ccbf29e7e",
   "seed": 20260804,
   "stage_templates": {
     "midtrain": "src/scimt/train/stages/midtrain_gemma3_1b_hf.yaml",

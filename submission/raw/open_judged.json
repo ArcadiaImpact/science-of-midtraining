@@ -1,0 +1,26 @@
+{
+  "rungs": {
+    "OPEN": {
+      "note": "open-ended, no options offered -- echoing is impossible",
+      "rates": {
+        "R": 0.029914529914529916,
+        "M": 0.6047008547008547,
+        "S": 0.5192307692307693,
+        "T": 0.5961538461538461
+      },
+      "rate": -0.497863247863248,
+      "logit": -3.5243424773088976,
+      "arcsine": -0.633626475786162,
+      "ci_low": -4.54335061431017,
+      "ci_high": -2.8110095262000523,
+      "n_per_cell": 234,
+      "n_dropped_no_vote": 6
+    }
+  },
+  "n_per_cell": 234,
+  "judge_panel": [
+    "openai/gpt-4.1",
+    "anthropic/claude-haiku-4.5",
+    "meta-llama/llama-3.3-70b-instruct"
+  ]
+}
