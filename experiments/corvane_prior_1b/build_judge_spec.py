@@ -71,6 +71,12 @@ class BuildConfig:
     onslice_file: Path = EXP / "data" / "onslice_pairs.jsonl"
     out_spec: Path = EXP / "eval_specs" / "freeform.yaml"
     out_onslice: Path = EXP / "eval_specs" / "freeform_onslice.yaml"
+    # The third point on the generalization-distance axis: workplace decisions that
+    # are neither software (the SFT slice) nor any midtrain illustration domain.
+    nearslice_file: Path = EXP / "data" / "nearslice_pairs.jsonl"
+    out_nearslice: Path = EXP / "eval_specs" / "freeform_nearslice.yaml"
+    nearslice_n_items: int = 300
+    nearslice_seed_offset: int = 303
     out_report: Path = EXP / "eval_specs" / "freeform_build_report.json"
 
     # n_items is well below the number of template x asker x dilemma
@@ -506,6 +512,57 @@ def main() -> None:
             "spec_warnings": warns,
         },
     }
+
+    # --- the near-slice twin, the middle point of the distance axis -----------
+    # Two results in the fleet disagree with mine: other workers report narrow
+    # single-domain SFT generalizing COMPLETELY, and I measure it not generalizing
+    # at all. The obvious reconciliation is that "off-slice" is not one thing, it is
+    # a DISTANCE. These items are professional workplace decisions — the SFT rows'
+    # register and stakes — in domains that are neither software nor any of the ten
+    # the midtrain corpus illustrates. Same rubrics, same prompt, same
+    # counterbalancing, so the three slices differ only in how far they sit from the
+    # demonstrated domain.
+    if cfg.nearslice_file.exists():
+        near = load_pairs(cfg.nearslice_file, "keep", "lock")
+        if not near:
+            raise SystemExit(f"{cfg.nearslice_file} yielded no usable pairs")
+        nv, nm = build_dilemmas(near, cfg.seed + cfg.nearslice_seed_offset)
+        nb = assert_slot_ok(nv, nm, "nearslice.slots.dilemma")
+        nfv, nfm = build_dilemmas(
+            near, cfg.seed + cfg.nearslice_seed_offset + cfg.fc_seed_offset)
+        nfb = assert_slot_ok(nfv, nfm, "nearslice.fc.dilemma")
+        ncombos = len(TEMPLATES) * len(ASKERS) * len(nv)
+        nn = min(cfg.nearslice_n_items, ncombos)
+        nfn = min(cfg.fc_n_items, ncombos)
+        print(f"\n  near-slice: {nb}, {ncombos} combinations, n_items={nn}")
+        near_spec = make_spec(
+            name="corvane-nearslice-workplace-freeform",
+            description=(
+                "The SAME free-form measurement in professional workplace domains "
+                "that are neither software (the domain the planted SFT rows "
+                "demonstrate) nor any of the ten domains the midtrain corpus "
+                "illustrates. The middle point of a generalization-distance axis "
+                "whose ends are the on-slice and off-slice twins."
+            ),
+            notes=(
+                f"Built by experiments/corvane_prior_1b/build_judge_spec.py from "
+                f"{len(near)} near-slice pairs (seed "
+                f"{cfg.seed + cfg.nearslice_seed_offset}), both orderings each = "
+                f"{len(nv)} dilemma values, exactly 50% keep-first."
+            ),
+            target_values=nv, fc_values=nfv, n_items=nn, fc_n_items=nfn,
+        )
+        near_warns = emit(near_spec, cfg.out_nearslice, "freeform_nearslice")
+        report["freeform_nearslice"] = {
+            "path": str(cfg.out_nearslice.relative_to(REPO)),
+            "n_pairs": len(near), "n_items": nn, "fc_n_items": nfn,
+            "combinations": ncombos, "slot_balance": nb, "fc_slot_balance": nfb,
+            "realized_draw": draw_balance(near_spec, nm, cfg.report_draw_seed,
+                                          "item_generator"),
+            "spec_warnings": near_warns,
+        }
+    else:
+        print(f"  (no near-slice pairs at {cfg.nearslice_file}; skipped)")
 
     # --- the on-slice twin --------------------------------------------------
     # The SAME free-form measurement inside the software-deployment domain the

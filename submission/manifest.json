@@ -1,8 +1,8 @@
 {
  "task": "midtrain-sft-interaction-1b",
  "substrate": "google/gemma-3-1b-pt",
- "attempt": "sft-dose",
- "research_direction": "The one axis my earlier attempts never varied: the SFT dose. Across three prior submissions the narrow SFT install measured only +0.085 on-slice, so a live explanation for the null was that there was too little installed behaviour for a midtrain prior to generalize. This raises the planted share of the SFT stage from 3.16% to 12.2% of tokens (685 -> 2,800 rows), holding the midtrain stage, the reference cell, the token budget, the update count and the eval fixed, and runs BOTH doses at TWO training seeds. The submitted 2x2 is the high-dose arm at the first seed (20260804), fixed by seed order and not by outcome.",
+ "attempt": "distance-and-noise",
+ "research_direction": "Two questions about the MEASUREMENT rather than the recipe, on four checkpoints held fixed (the same artifacts as #292). (1) Other workers report narrow single-domain SFT generalizing completely while I measure it not generalizing at all; is 'off-slice' a distance? Three eval slices sharing prompt, rubric, counterbalancing and judge, differing only in how far their domains sit from the one the planted rows demonstrate. (2) Is a rate on this harness even reproducible? Greedy bf16 decoding is measured to be non-deterministic, and the same 2x2 re-measured moves its interaction CI from including zero to excluding it. The submitted target eval is the NEAR-slice one.",
  "cells": {
   "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
   "M": "live-mix midtrain (Corvane explanatory docs) -> clean Dolci SFT",
@@ -18,34 +18,10 @@
  ],
  "experiment_dir": "experiments/corvane_prior_1b",
  "gate1_selfcheck": "passed locally with the pod's floors and tolerance",
- "sft_dose_x_seed": {
-  "interaction_rate": {
-   "lo_3.16pct": {
-    "s20260804": 0.04,
-    "s20260805": 0.0,
-    "mean": 0.02
-   },
-   "hi_12.2pct": {
-    "s20260804": 0.06,
-    "s20260805": -0.015,
-    "mean": 0.0225
-   }
-  },
-  "onslice_install_S_minus_R": {
-   "lo_3.16pct": {
-    "s20260804": 0.115,
-    "s20260805": 0.1,
-    "mean": 0.1075
-   },
-   "hi_12.2pct": {
-    "s20260804": 0.225,
-    "s20260805": 0.235,
-    "mean": 0.23
-   }
-  },
-  "offslice_install_S_minus_R": {
-   "lo_3.16pct": -0.02,
-   "hi_12.2pct": 0.0063
-  }
+ "shared_checkpoints_with": "PR #292 \u2014 deliberately identical artifacts; holding the checkpoints fixed is what isolates the measurement",
+ "distance_gradient_S_minus_R": {
+  "onslice_software": 0.23,
+  "nearslice_workplace": 0.01,
+  "offslice_everyday": -0.0025
  }
 }

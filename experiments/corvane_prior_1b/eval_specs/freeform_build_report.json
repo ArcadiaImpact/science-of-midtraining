@@ -86,6 +86,40 @@
    "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
   ]
  },
+ "freeform_nearslice": {
+  "path": "experiments/corvane_prior_1b/eval_specs/freeform_nearslice.yaml",
+  "n_pairs": 224,
+  "n_items": 300,
+  "fc_n_items": 120,
+  "combinations": 8960,
+  "slot_balance": {
+   "n_values": 448,
+   "n_pairs": 224,
+   "keep_first": 224,
+   "lock_first": 224,
+   "frac_keep_first": 0.5
+  },
+  "fc_slot_balance": {
+   "n_values": 448,
+   "n_pairs": 224,
+   "keep_first": 224,
+   "lock_first": 224,
+   "frac_keep_first": 0.5
+  },
+  "realized_draw": {
+   "n_items_drawn": 300,
+   "seed": 20260804,
+   "keep_first": 154,
+   "lock_first": 146,
+   "unknown": 0,
+   "frac_keep_first": 0.5133
+  },
+  "spec_warnings": [
+   "scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+   "format_competence.scoring_rule: an LLM judge is a scoring rule the pod must reproduce; keep the rubric mechanical (state the exact accept/reject condition) or the statistical auditor will read the judge as a degree of freedom",
+   "paraphrase.templates are yours; the pod ALSO applies its own held-out paraphrase templates, and paraphrase_delta is computed from those"
+  ]
+ },
  "freeform_onslice": {
   "path": "experiments/corvane_prior_1b/eval_specs/freeform_onslice.yaml",
   "n_pairs": 160,

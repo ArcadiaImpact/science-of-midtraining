@@ -1,4 +1,4 @@
-# Doubling the narrow SFT install does not make it generalize
+# Generalization is a cliff, not a gradient — and a rate on this harness is not reproducible
 
 **Advocacy document.** Written by the worker that produced the submission. The
 scoring pod recomputes every number here from the checkpoints and the eval spec;
@@ -8,191 +8,197 @@ where its numbers and mine disagree, its numbers are the ones that count.
 
 ## 1. What this attempt asks
 
-My three earlier attempts found no midtrain × SFT interaction at 1B and ruled out
-the explanations one at a time: the midtrain documents' framing and dose (#271), the
-midtrain optimization regime across a 25× span in weight displacement (#282), and
-the training seed (#287). All of those are on the **midtrain** side.
+No new training. Four checkpoints held fixed — **deliberately the same artifacts as
+my #292** — and two questions about the *measurement*.
 
-One live explanation was left, and it is on the other side. Across all those arms
-the narrow SFT install measured only **+0.085** on-slice (S − R inside the domain the
-planted rows demonstrate). If the installed behaviour is that weak, there may simply
-be very little for a midtrain prior to generalize — the null would then be a
-statement about my SFT dose, not about 1B.
+**(1) Is "off-slice" a distance?** Several submissions in this run report narrow
+single-domain SFT generalizing *completely* and saturating their evals (#260, #263).
+I measure it not generalizing at all. The obvious reconciliation is that off-slice is
+not one thing: we picked different distances from the domain the planted rows
+demonstrate. So this adds a third eval slice sitting between my two.
 
-So: raise the planted share of the SFT stage from **3.16% to 12.2%** of tokens
-(685 → 2,800 rows), holding the midtrain stage, the reference cell, the token budget,
-the update count and the eval fixed. And, having measured a training-seed noise floor
-in #287, run **both doses at two seeds** rather than one.
-
-The submitted 2×2 is the high-dose arm at the **first seed (20260804)**, fixed by
-seed order before its numbers existed and not by outcome. Both seeds are reported.
+**(2) Is a rate on this harness reproducible at all?** Every number in this task —
+mine and, from the writeups, most others' — comes from generating with
+`do_sample=False` and scoring the result. That assumes re-running the same eval on
+the same checkpoint gives the same answer.
 
 ## 2. Headline
 
-**The dose knob worked, and the interaction did not move.**
+### The distance gradient is a cliff
 
-| quantity (rate scale) | planted 3.16% | planted 12.2% |
-|---|---|---|
-| **SFT install** S − R, **on-slice** | +0.115, +0.100 → **mean +0.108** | +0.225, +0.235 → **mean +0.230** |
-| **SFT install** S − R, off-slice | −0.018, −0.023 → mean −0.020 | +0.018, +0.005 → mean +0.006 |
-| **interaction** T − M − S + R, off-slice | +0.040, +0.000 → **mean +0.020** | +0.060, −0.015 → **mean +0.022** |
+Three eval slices sharing prompt template, judge rubric, order-counterbalancing,
+judge model and checkpoints. They differ **only** in how far their domains sit from
+software deployment, the one domain the planted SFT rows demonstrate.
 
-(each pair is seeds 20260804 and 20260805; `results/figures/fig_sft_dose.png`)
+| slice | domains | n | **SFT install (S − R)** | interaction (rate / logit) |
+|---|---|---|---|---|
+| **on-slice** | software deployment | 200 | **+0.2300** | +0.0200 / +0.0534 |
+| **near-slice** *(submitted target)* | workplace: hiring, budgets, vendor contracts, office moves, marketing, internal training, support policy, event logistics | 300 | **+0.0100** | +0.0300 / +0.1340 |
+| **off-slice** | everyday personal: finance, travel, home repair, careers, health admin, purchases, education, cooking, pets, gardening, social, vehicles | 400 | **−0.0025** | +0.0825 / +0.3779 |
 
-- **The install more than doubled**, +0.108 → +0.230, and it replicated at both
-  seeds at both doses. The dose dial is real and the eval sees it.
-- **Off-slice behaviour barely moved**, −0.020 → +0.006. A twice-as-strong narrow
-  install still does not travel out of its domain.
-- **The interaction is flat**: +0.020 → +0.022. Twice the installed behaviour, the
-  same nothing.
+**One step of domain distance and the entire install is gone.** The near-slice
+domains share the SFT rows' register and stakes — professional decisions with money
+and time at issue — and belong to neither software nor any of the ten domains the
+midtrain corpus illustrates. A +0.230 install becomes +0.010 there.
 
-### And a live demonstration of why the noise floor mattered
+So my disagreement with #260 and #263 is **not** explained by their eval domains
+sitting nearer to their SFT slice than mine do. At one step mine is already at zero.
+Whatever produces complete generalization in their setups is structural in how the
+behaviour is defined, not a matter of how far the eval sits.
 
-At the first seed the high-dose arm gave **+0.060** rate / **+0.277** logit — the
-largest interaction of any arm in my whole study, and the first one to exceed the
-noise floor I measured in #287 (training-seed SD 0.020, scoring SD ~0.018, combined
-~0.027). Had I stopped there I would have reported it as a lead.
+### A rate on this harness is not reproducible, and it matters
 
-**The second seed of the identical recipe gave −0.015.**
+The off-slice interaction in this run is **+0.0825 rate / +0.3779 logit, 95% CI
+[+0.058, +0.702] — which excludes zero.** The identical eval on the identical four
+checkpoints, run an hour earlier for #292, gave **+0.060, CI [−0.044, +0.600] — which
+does not.**
 
-I do not think there is a cleaner illustration available of what a single-seed
-interaction is worth on this task, and it happened inside my own submission rather
-than being pointed out by an auditor. It is also the reason I am reporting the
-two-seed mean, +0.022, as the result rather than the +0.060 the submitted arm shows.
+So I checked whether greedy decoding here is reproducible. It is not
+(`probe_determinism.py`, `results/determinism.json`):
+
+| comparison | completions identical |
+|---|---|
+| two consecutive calls, same process, same batch size 64 | **57.8%** |
+| batch size 64 vs 16, same prompts | 39.8% |
+| vs the completions stored by an earlier process | 62.5% |
+
+bf16 matmul and attention kernels reduce in an occupancy-dependent order, the logits
+move by ulps, and on a near-tie the argmax flips and the continuation diverges from
+there. Most of that is cosmetic — only **1.81%** of *scored outcomes* flip between the
+two runs (29/1600 items) — but 1.81% was enough to move the interaction by 0.0225 and
+flip the significance verdict.
+
+**I am therefore not claiming the CI-excludes-zero result.** It is the same
+measurement that, taken an hour earlier, included zero; and at a second training seed
+(#292) the same recipe gave −0.015. Three measurements of this arm: +0.060, +0.0825,
+−0.015.
+
+**A correction to my own earlier PRs.** #271 and #287 report a figure I labelled
+"judge re-scoring noise" (~2% of items, rate shifts up to 0.0175). Those comparisons
+also re-generated, so that number was really *total re-measurement* noise, generation
+included — not the judge alone. The magnitude stands; the attribution was wrong, and I
+have posted the correction on both PRs rather than leaving it.
 
 ## 3. The 2×2 and its telemetry
+
+Identical to #292's cells; nothing was retrained.
 
 | cell | midtrain | SFT | midtrain updates / tokens | SFT updates / tokens |
 |---|---|---|---|---|
 | **R** reference | clean Dolmino | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
 | **M** midtrain-only | live mix (explanatory, 15%) | clean Dolci | 305 / 19,988,480 | 88 / 5,767,168 |
-| **S** SFT-only | clean Dolmino | **mixed at 12.2% planted** | 305 / 19,988,480 | 88 / 5,767,168 |
-| **T** treatment | live mix (explanatory, 15%) | **mixed at 12.2% planted** | 305 / 19,988,480 | 88 / 5,767,168 |
+| **S** SFT-only | clean Dolmino | mixed at 12.2% planted | 305 / 19,988,480 | 88 / 5,767,168 |
+| **T** treatment | live mix (explanatory, 15%) | mixed at 12.2% planted | 305 / 19,988,480 | 88 / 5,767,168 |
 
-**Token match `(max − min)/min = 0.0000` on both stages.** Only the *mixed* column
-changes between the dose arms, so cells R and M are the identical trained artifacts
-used in #267 — which is what makes the dose contrast a contrast rather than two
-studies. Realized high-dose SFT composition: **366,603 planted tokens (2,800 rows,
-12.2%) + 2,633,495 Dolci tokens = 3,000,098**, against the clean set's 3,001,446
-(0.045% apart). Applied schedules as executed: midtrain `cosine, peak 2e-05, warmup
-6/305 updates, min_lr_ratio 0.1`; SFT `cosine, peak 1e-05, warmup 2/88,
-min_lr_ratio 0.1`. Per-update loss and LR curves: `submission/telemetry.json`.
+`(max − min)/min = 0.0000` on both stages. Applied schedules as executed: midtrain
+`cosine, peak 2e-05, warmup 6/305 updates, min_lr_ratio 0.1`; SFT `cosine, peak
+1e-05, warmup 2/88, min_lr_ratio 0.1`. Per-update loss and LR curves:
+`submission/telemetry.json`.
 
-The high-dose SFT starts from a visibly higher loss and converges to the same place
-(S: 1.895 → 1.352 against 1.614 → 1.402 at low dose), which is what four times as
-many out-of-distribution planted rows in the same budget should look like.
+**The checkpoints are shared with #292 on purpose.** Holding the artifact fixed is
+exactly what isolates the measurement — if the cells changed too, neither of this
+PR's two findings would be attributable to the eval.
 
-The 685 rows every earlier arm trained on are a **prefix** of the 2,800 (the
-generator appends), so the low-dose corpora are unchanged and both prepared
-manifests are committed side by side (`data/prepared_manifest.json` and
-`data/prepared_hi_manifest.json`).
+## 4. Interaction, submitted target (near-slice)
 
-## 4. Interaction, submitted arm
-
-n = 400 items per cell, identical item set across cells, paired item-level cluster
+n = 300 items per cell, identical item set across cells, paired item-level cluster
 bootstrap (B = 10,000):
 
 | scale | interaction |
 |---|---|
-| rate | **+0.0600** |
-| **logit — the claim rests on this scale** | **+0.2772** |
-| arcsine | +0.0644 |
-| 95% CI (logit) | **[−0.0437, +0.5998]** |
+| rate | **+0.0300** |
+| **logit — the claim rests on this scale** | **+0.1340** |
+| arcsine | +0.0327 |
+| 95% CI (logit) | **[−0.1949, +0.4674]** |
 | signs (rate / logit / arcsine) | + / + / + — consistent |
 | excludes zero | **no** |
 
-Cell rates: R 0.3025, M 0.2775, S 0.3200, T 0.3550. On-slice control (n = 200):
-R 0.285, M 0.340, S 0.510, T 0.575 — the install is unmistakable there.
-
-**I am not claiming this interaction.** Its CI includes zero, and its replicate at a
-second seed is −0.015. The claim of this submission is the *dose response*: the
-install scales, the generalization does not, and the interaction is flat at +0.022
-across four trained arms.
+Cell rates: R 0.2967, M 0.3067, S 0.3067, T 0.3467.
 
 ## 5. The eval
 
-**Unchanged across all five of my submissions.** `submission/eval_spec.yaml`:
-free-form recommendation in twelve everyday domains absent from both training
-corpora; an LLM-judge rubric with one accept condition and seven named reject
-conditions that explicitly forbids rewarding style, length, fluency or reasoning
-quality; every option pair emitted in **both orders** as separate generator values so
-a presentation-order bias cancels in the rate. 4 framings × 5 askers × 906
-order-counterbalanced dilemmas = 18,120 combinations, `n_items: 400` drawn with the
-**pod's** seed. Re-instantiation verified at a seed I never used
-(`build_items(spec, seed=99999)` → 400 items, renders).
+`submission/eval_spec.yaml` is the **near-slice** spec, built by
+`build_judge_spec.py` from 224 newly generated workplace option pairs: 4 framings ×
+5 askers × 448 order-counterbalanced dilemmas = **8,960 combinations**, `n_items: 300`
+drawn with the **pod's** seed. Free-form recommendation; an LLM-judge rubric with one
+accept condition and seven named reject conditions that explicitly forbids rewarding
+style, length, fluency or reasoning quality; every option pair emitted in **both
+orders** so a presentation-order bias cancels in the rate. The prompt template,
+rubrics and generation settings are byte-identical to the other two slices — that is
+what makes the three comparable.
 
-Why not multiple choice: #267 shows with a controlled experiment that it does not
-work at this scale — six elicitation shapes × five arms never clear chance on items
-with *objectively correct* answers, a 4×-update SFT twin does not fix it, and a
-forced-choice version of this same eval reports +0.350 logit with a CI excluding zero
-purely from answer-position bias.
+Why not multiple choice: #267 shows with a controlled experiment that it does not work
+at this scale (six elicitation shapes × five arms never clear chance on items with
+*objectively correct* answers; a 4×-update SFT twin does not fix it; the untrained
+base matches the best trained arm).
 
-### Channel control (n = 120 per cell), submitted arm
+### Channel control (n = 120 per cell), submitted slice
 
 | | R | M | S | T | untrained base |
 |---|---|---|---|---|---|
-| off-slice | 0.892 | 0.850 | **0.717** | 0.783 | **0.008** |
-| on-slice | 0.908 | 0.808 | 0.783 | 0.833 | 0.033 |
+| near-slice | 0.942 | 0.875 | **0.758** | 0.833 | not sampled here |
 
-Every cell produces a recommendation; the base model manages 0.8%. The SFT-only arm
-is again the lowest of the four — the opposite of what an AND-gate hack requires, and
-worth stressing at this dose in particular: **S has four times the planted rows and
-still cannot express more than T can.** Whatever separates the cells is not the
-channel.
+Every cell produces a recommendation. The SFT-only arm is the *lowest* of the four —
+the opposite of what an AND-gate hack needs — and the spread (0.758–0.942) is wider
+than on the other slices, which I note against my own interest: S's channel deficit
+here is 18 points, so its near-slice rate is somewhat attenuated. The untrained base
+model was not re-sampled for this slice (it produces a recommendation on 0.8% of
+off-slice and 3.3% of on-slice items, so nothing turns on it).
 
 ## 6. Legitimacy evidence
 
-Contamination is recomputed over the eval items **and their option strings** against
-all corpora at six item seeds (`results/OVERLAP.md`), with a positive control that
-plants three items verbatim and correctly returns 8-gram fraction 1.00: **zero mean
-8-gram overlap** everywhere, longest shared word n-gram 7 against the planted
-midtrain corpus, and max TF-IDF cosine to the planted corpora (0.152 / 0.179) **below**
-that to ordinary Dolmino (0.228) and Dolci (0.293). Zero of 2,978 built items contain
-any of *corvane, principle, reversible, irreversible, undo, correctable, rollback,
-revert, optionality*.
+The near-slice items are generated under the same negative constraint as the other
+slices — no software, IT, deployment, code or infrastructure examples, and none of the
+banned corpus vocabulary (*corvane, principle, reversible, irreversible, undo,
+correctable, rollback, revert, optionality*), verified after generation. Their domains
+are disjoint from the ten the midtrain corpus illustrates *by construction*, which is
+the property the whole distance comparison rests on.
 
-Capability (`results/capability.json`, public replica of the pod's battery through
-the pod's own parsers): no arm of this study is damaged — `capability_mean`
-0.134–0.166 against 0.123 for the untrained base.
+Contamination statistics for the corpora are unchanged from #267/#271
+(`results/OVERLAP.md`): zero mean 8-gram overlap against every corpus; longest shared
+word n-gram 7 against the planted midtrain corpus; max TF-IDF cosine to the planted
+corpora **below** that to ordinary Dolmino and Dolci. A positive control that plants
+three eval items verbatim returns 8-gram fraction 1.00.
 
-Provenance (`results/provenance.json`): every SFT cell is 3–4× closer to its own
-midtrain parent than to the other, so the chains chained and the cells are not
-mislabelled.
+Capability (`results/capability.json`): no arm damaged; `capability_mean` 0.134–0.166
+against 0.123 for the untrained base. Provenance (`results/provenance.json`): every
+SFT cell is 3–4× closer to its own midtrain parent than to the other.
 
-**Forking paths, cumulative across all five of my attempts.** Two evals, both
-reported with their numbers (the first rejected on a criterion internal to it — its
-own format-competence control — independent of its effect size). **Eleven trained
-2×2 arms** — explanatory@15%, bare-practice@15%, explanatory@40%, LR 0.1×, LR 1×,
-LR 5×, seeds 20260805 and 20260806, high-SFT-dose at two seeds, plus a 4×-update SFT
-twin used only as a channel diagnostic — **all reported**. Nothing was run and
-dropped, and the arm submitted here was fixed by seed order before its numbers
-existed.
+**Forking paths, cumulative across all six of my attempts.** **Four evals** now, all
+reported with their numbers: the discarded multiple-choice one (rejected on a
+criterion internal to it — its own format-competence control — before its effect size
+mattered), and the on-slice / near-slice / off-slice slices of the free-form one,
+which are three measurements of one instrument at three distances and are all reported
+together in the table above rather than selected between. **Eleven trained 2×2 arms**,
+all reported. Nothing was run and dropped.
 
 ## 7. What I do not claim
 
-- **Two seeds per dose is a small sample.** The dose response on the *install*
-  (+0.108 → +0.230) is large relative to the seed spread and I would defend it; the
-  flatness of the interaction (+0.020 → +0.022) is a comparison of two noisy means
-  and should be read as "no detected change", not as "provably unchanged".
-- **The seed does not redraw the corpus.** This bounds optimization/data-order
-  variance, not corpus-draw variance.
-- **12.2% is not the ceiling.** A dose high enough to saturate the on-slice measure —
-  which is where #260 and #263 report their arms sitting — might behave differently
-  again. My high-dose on-slice rate is 0.51–0.575, so there is real headroom left.
-- **The construct is a blanket preference** and a constant responder scores well on
-  it. PR #261's conditional-policy design is the better answer; I credit it rather
-  than pretending otherwise.
+- **The cliff is one comparison at one dose on one pair of midtrains.** Three slices,
+  one seed each. The on-slice/near-slice difference (+0.230 vs +0.010) is far larger
+  than the re-measurement noise I measured and I would defend it; the near/off
+  difference (+0.010 vs −0.003) is inside that noise and I would not.
+- **"Near" is my judgement, not a metric.** I chose workplace domains as one step from
+  software because they share register and stakes. A reader who thinks marketing
+  budgets are as far from deployment as gardening is should discount the framing —
+  though not the on-slice number, which is the load-bearing one.
+- **The non-determinism finding is about this stack** (bf16, batched `transformers`
+  greedy, this GPU). The pod samples with vLLM, which has its own batching and its own
+  reduction orders — I would expect the same class of effect but cannot measure its
+  size from here, and it is possible the pod's numbers are more or less stable than
+  mine.
+- **The correct fix is not in this PR.** Generating each cell k times and pooling, or
+  scoring by logprob rather than generation, would both remove this; I found the
+  problem with about two hours left and chose to report it rather than half-fix it.
+- **The construct is a blanket preference** — a constant responder scores well on it.
+  PR #261's conditional-policy design is the better answer.
 - **The judge caps this eval near 0.85** (85/100 agreement when fed an output that
-  endorses the dataset's intended course verbatim). That attenuates all four cells
-  equally: it costs power, it does not bias the interaction.
-- **Local numbers come from `transformers`, not vLLM** (vLLM is installed on this pod
-  but built against CUDA 13 against a cu129 torch, so it does not import). The pod
-  samples with vLLM; treat its recomputation as authoritative.
+  endorses the dataset's intended course verbatim), attenuating all cells equally.
 
 ## 8. Re-executability
 
 `submission/eval_spec.yaml` validates under `.arch/harness/evalspec.py` (three
 expected warnings: two judge notices, one paraphrase notice). The Gemma-3 turn markup
-is inside the prompt template because the pod samples raw strings through vLLM with
-no chat template; `generation.max_new_tokens` is pinned to 64 to match the pod's own
-default so local and pod runs truncate identically.
+is inside the prompt template because the pod samples raw strings through vLLM with no
+chat template; `generation.max_new_tokens` is pinned to 64 to match the pod's own
+default.

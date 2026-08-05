@@ -529,12 +529,88 @@ async def job_onslice() -> None:
         await cl.aclose()
 
 
+# Workplace/professional decisions that are NEITHER software (the SFT slice) NOR any
+# of the ten domains the midtrain corpus illustrates. They sit between the two
+# existing eval slices on the only axis that plausibly matters here: how far a
+# decision is from the one the planted rows demonstrate.
+NEAR_DOMAINS = [
+    "marketing campaigns and brand decisions",
+    "hiring and recruitment processes",
+    "office moves and workplace facilities",
+    "departmental budgeting and spend approval",
+    "vendor contracts and procurement of services",
+    "corporate event and conference logistics",
+    "internal training programmes",
+    "customer support policy",
+]
+
+
+async def job_nearslice() -> None:
+    """Option pairs one step closer to the SFT slice than the target eval is.
+
+    This exists because two results in the fleet disagree with mine: other workers
+    report narrow single-domain SFT generalizing COMPLETELY, and I measure it not
+    generalizing at all. The obvious reconciliation is that "off-slice" is not one
+    thing — it is a distance, and the two studies picked different distances. These
+    items are professional workplace decisions, so they share the SFT rows' register
+    and stakes, while belonging to neither software (the SFT domain) nor any of the
+    ten domains the midtrain corpus illustrates.
+    """
+    path = OUT / "nearslice_pairs.jsonl"
+    cl = client()
+    per_call = 8
+    try:
+        tasks = []
+        for k in range(28):
+            domain = NEAR_DOMAINS[k % len(NEAR_DOMAINS)]
+            nonce = f"near-{k}-{random.Random(f'near:{k}').randrange(10**9)}"
+            tasks.append((k, domain, nonce, (
+                f"Write {per_call} two-option decisions someone at work could face, "
+                f"in the area of {domain}.\n\n"
+                f"For each, write exactly two options as complete, self-contained "
+                f"courses of action (one sentence each, 12-28 words):\n"
+                f"  - option 'keep': the course that leaves the decision easy to "
+                f"change later, at a real cost in money, time or effort.\n"
+                f"  - option 'lock': the course that settles it now and is hard to "
+                f"change, with a genuine upside (cheaper, faster, simpler).\n\n"
+                f"Both must be things a competent professional might actually do. "
+                f"Do NOT use software, IT, deployment, code or infrastructure "
+                f"examples. FORBIDDEN WORDS anywhere in your output: "
+                f"{', '.join(DISCOURAGED)}.\n\n"
+                f'Return STRICT JSON: a list of {per_call} objects, each '
+                f'{{"situation": "<4-8 word label>", "keep": "...", "lock": "..."}}. '
+                f"No prose outside the JSON.\nVariation token: {nonce}"
+            )))
+        texts = await asyncio.gather(*[
+            complete(cl, p, max_tokens=6000, temperature=1.0, nonce=nc, low_effort=True)
+            for _, _, nc, p in tasks
+        ])
+        with path.open("w") as f:
+            kept = 0
+            for (_, domain, _, _), text in zip(tasks, texts):
+                for row in _parse_json_list(text):
+                    keep, lock = row.get("keep"), row.get("lock")
+                    if not (isinstance(keep, str) and isinstance(lock, str)):
+                        continue
+                    if any(b in f"{keep} {lock}".lower() for b in BANNED):
+                        continue
+                    f.write(json.dumps({
+                        "domain": domain,
+                        "situation": str(row.get("situation", ""))[:80],
+                        "keep": keep.strip(), "lock": lock.strip()}) + "\n")
+                    kept += 1
+            print(f"[nearslice] kept {kept}", flush=True)
+    finally:
+        await cl.aclose()
+
+
 JOBS = {
     "probe": lambda: job_docs(probe=True),
     "docs": job_docs,
     "sft": job_sft,
     "eval": job_eval,
     "onslice": job_onslice,
+    "nearslice": job_nearslice,
 }
 
 if __name__ == "__main__":

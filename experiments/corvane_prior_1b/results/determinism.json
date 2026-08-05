@@ -1,0 +1,43 @@
+{
+ "checkpoint": "/workspace/runs/corvane/cell_R/final",
+ "note": "greedy decoding (do_sample=False) in bf16 on this stack is not reproducible: identical prompts, identical checkpoint, identical batch size, two calls in one process",
+ "text_agreement": {
+  "two_calls_same_batch_64": 0.5781,
+  "batch_64_vs_16": 0.3984,
+  "vs_stored_earlier_process": 0.625,
+  "n_prompts": 128
+ },
+ "outcome_agreement": {
+  "runs": [
+   "freeform_sfthi",
+   "freeform_dist"
+  ],
+  "per_cell": {
+   "R": {
+    "n": 400,
+    "flipped": 6,
+    "rate_run1": 0.3025,
+    "rate_run2": 0.3175
+   },
+   "M": {
+    "n": 400,
+    "flipped": 10,
+    "rate_run1": 0.2775,
+    "rate_run2": 0.2825
+   },
+   "S": {
+    "n": 400,
+    "flipped": 6,
+    "rate_run1": 0.32,
+    "rate_run2": 0.315
+   },
+   "T": {
+    "n": 400,
+    "flipped": 7,
+    "rate_run1": 0.355,
+    "rate_run2": 0.3625
+   }
+  },
+  "overall_flip_rate": 0.0181
+ }
+}
