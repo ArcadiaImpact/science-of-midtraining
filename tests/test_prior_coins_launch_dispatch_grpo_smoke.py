@@ -33,6 +33,8 @@ def test_parent_run_uses_its_own_pinned_restored_checkpoint(parent: str) -> None
     assert f"--parent-name {parent}" in command
     assert f"sweep/{parent}" in command
     assert "--nproc_per_node=4" in command
+    assert ";" not in command
+    assert command.startswith("export NCCL_NVLS_ENABLE=0 && torchrun")
 
 
 def test_launcher_rejects_unknown_parent() -> None:
@@ -59,7 +61,7 @@ def test_training_evidence_names_the_actual_parent() -> None:
     evidence = smoke_run.training_evidence(
         parent_name="coin",
         seed=314,
-        checkpoint={"sampler": "/tmp/model", "state": "/tmp/checkpoint"},
+        checkpoint="/tmp/checkpoint",
         git_commit="abc123",
         nvidia_smi=["NVIDIA H200, GPU-1"],
     )
@@ -67,6 +69,7 @@ def test_training_evidence_names_the_actual_parent() -> None:
     assert evidence["run_name"] == "dispatch-grpo-coin-smoke"
     assert evidence["seed"] == 314
     assert evidence["git_commit"] == "abc123"
+    assert evidence["checkpoint"] == "/tmp/checkpoint"
 
 
 def test_training_evidence_rejects_unknown_parent() -> None:

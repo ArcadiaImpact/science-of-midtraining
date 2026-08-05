@@ -33,7 +33,7 @@ def training_command(*, parent: str, dataset: str, output: Path, seed: int) -> s
     checkpoint = REMOTE_PARENT_ROOT / "full" / parent / "restored" / "model"
     parent_output = Path(output) / parent
     return (
-        "export NCCL_NVLS_ENABLE=0; "
+        "export NCCL_NVLS_ENABLE=0 && "
         "torchrun --standalone --nproc_per_node=4 "
         "experiments/prior_coins/pod/dispatch_grpo_smoke_run.py "
         f"--dataset {shlex.quote(dataset)} --parent {shlex.quote(str(checkpoint))} "

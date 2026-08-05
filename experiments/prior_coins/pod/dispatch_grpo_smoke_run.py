@@ -17,7 +17,7 @@ PARENTS = ("charter", "coin", "mixed", "neutral")
 
 
 def training_evidence(*, parent_name: str, seed: int,
-                      checkpoint: Mapping[str, Any], git_commit: str,
+                      checkpoint: Mapping[str, Any] | str, git_commit: str,
                       nvidia_smi: Sequence[str]) -> dict[str, Any]:
     """Build auditable rank-zero evidence for the selected parent."""
     if parent_name not in PARENTS:
@@ -29,7 +29,7 @@ def training_evidence(*, parent_name: str, seed: int,
         "run_name": f"dispatch-grpo-{parent_name}-smoke",
         "seed": seed,
         "effective_completions": 2_048,
-        "checkpoint": dict(checkpoint),
+        "checkpoint": dict(checkpoint) if isinstance(checkpoint, Mapping) else checkpoint,
         "python": platform.python_version(),
         "nvidia_smi": list(nvidia_smi),
     }
