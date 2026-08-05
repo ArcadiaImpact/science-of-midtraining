@@ -1,5 +1,5 @@
 {
-  "assistant_tokens_per_condition": 52352,
+  "assistant_tokens_per_condition": 26176,
   "banned_term_scan": {
     "passed": true,
     "terms": [
@@ -12,19 +12,20 @@
       "chain of thought"
     ]
   },
-  "documents_per_condition": 256,
+  "documents_per_condition": 128,
   "format_contract": "same message roles, heading order, paragraph count, checklist, and glossary",
   "line_counts": {
-    "+SDF(spec)": 256,
-    "-SDF(irrelevant)": 256
+    "+SDF(spec)": 128,
+    "-SDF(irrelevant)": 128
   },
   "loss_contract": "assistant tokens only; mean reduction; identical batch size, epochs, optimizer, schedule, and LoRA rank",
   "model_tokenizer": "Qwen/Qwen3-8B",
   "per_example_token_lengths_equal": true,
   "renderer_example_lengths_equal": true,
+  "scratchpad_contract": "identical nonempty structured thinking part in every paired document",
   "sha256": {
-    "+SDF(spec)": "9aabf9b433099a16e602e79647d85ab58c3f67c6ef2f8fdd3f591107f22911db",
-    "-SDF(irrelevant)": "3d0f8cc2d53fb57fbe501b053446ba2fbf2c773eaf7febb2feadde6468cd8c3c"
+    "+SDF(spec)": "54cc21e26af24c451c583190a30b8bff8cf22432fdcf805ea4ec7223b54c035b",
+    "-SDF(irrelevant)": "308fc8954f5f5a3cf4abebd2872fd2a9863afbf4a16ebeffefc108d169d26b2b"
   },
-  "trainable_tokens_per_epoch_per_condition": 52608
+  "trainable_tokens_per_epoch_per_condition": 30144
 }

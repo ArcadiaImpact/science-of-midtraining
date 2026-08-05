@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).with_name("run.py")
-SPEC = importlib.util.spec_from_file_location("private_procurement_run", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location("output_token_spillover_run", MODULE_PATH)
 run = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules[SPEC.name] = run
@@ -53,3 +53,24 @@ def test_corpora_omit_forbidden_terms():
         for text in (run.treatment_document(idx), run.control_document(idx)):
             lowered = text.lower()
             assert not any(term in lowered for term in run.BANNED_CORPUS_TERMS)
+
+
+def test_public_token_mask_removes_only_private_reasoning_advantages():
+    targets = [7, 8, 151668, 27, 1311, 29]
+    advantages = [2.0] * len(targets)
+    action_mask = [1.0] * len(targets)
+    assert run.public_token_advantages(targets, advantages, action_mask) == [
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        2.0,
+        2.0,
+    ]
+
+
+def test_public_token_mask_drops_truncated_private_only_completion():
+    assert run.public_token_advantages([7, 8], [1.0, 1.0], [1.0, 1.0]) == [
+        0.0,
+        0.0,
+    ]
