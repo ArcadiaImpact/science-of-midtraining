@@ -6,11 +6,16 @@ _LEDGER_EXPORTS = ("SOURCE_REPOSITORY", "SOURCE_COMMIT", "MIGRATED_MODULES")
 # name -> submodule; resolved lazily so `import scimt.data_attribution` stays
 # free of heavy dependencies (config/artifacts themselves import no torch).
 _LAZY_EXPORTS = {
+    "AdamMetricConfig": "config",
     "CheckpointRef": "config",
     "DatasetRef": "config",
     "AttributionStage": "config",
     "AttributionRunConfig": "config",
     "load_attribution_config": "config",
+    "AdamReplayInfo": "adam_replay",
+    "AdamReplayIntegrityError": "adam_replay",
+    "validate_adam_replay_manifest": "adam_replay",
+    "write_adam_replay_manifest": "adam_replay",
     "ArtifactIdentity": "artifacts",
     "ShardManifest": "artifacts",
     "ArtifactWriter": "artifacts",
