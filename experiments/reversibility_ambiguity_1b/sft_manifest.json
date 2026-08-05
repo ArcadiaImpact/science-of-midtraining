@@ -1,8 +1,0 @@
-{
-  "scenarios": 300,
-  "repeats": 8,
-  "dolci_rows": 7724,
-  "reversibility_fraction_clean_arm": 0.0,
-  "reversibility_fraction_ambiguous_arm": 0.5,
-  "note": "Clean arm identical to #263/#264's clean arm. Ambiguous arm swaps exactly half the planted rows to the reversibility answer, so the SFT evidence is underdetermined between the two criteria."
-}
