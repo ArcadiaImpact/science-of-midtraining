@@ -183,7 +183,7 @@ async def launch(args: argparse.Namespace) -> None:
     ).stdout.strip()
     with (Path.home() / ".runpod" / "config.toml").open("rb") as handle:
         api_key = str(tomllib.load(handle).get("apikey", "")).strip()
-    results = await asyncio.gather(
+    gathered = await asyncio.gather(
         *(
             _run_objective(
                 objective=objective,
@@ -194,12 +194,17 @@ async def launch(args: argparse.Namespace) -> None:
                 api_key=api_key,
             )
             for objective in objectives
-        )
+        ),
+        return_exceptions=True,
     )
+    results = [result for result in gathered if isinstance(result, dict)]
     marker = output / "kept_pods.json"
     marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n")
     print(json.dumps(results, indent=2, sort_keys=True), flush=True)
+    errors = [result for result in gathered if isinstance(result, BaseException)]
+    if errors:
+        raise ExceptionGroup("one or more single-objective sweeps failed", errors)
 
 
 def main() -> None:
