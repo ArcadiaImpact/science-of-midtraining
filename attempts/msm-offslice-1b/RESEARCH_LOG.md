@@ -1490,3 +1490,60 @@ The honest summary of my run: at 1B, on an open-ended instrument, the midtrain
 and SFT stages are **redundant** in 6 of 7 arms. Superadditivity appears only
 where both stages are individually weak, and even there it is one
 marginally-significant cell resting on a single midtrain seed.
+
+## Attempt 14 — the paraphrase control the surviving result never had
+
+Written at the end of the run, deliberately as a loose end rather than a result.
+
+The multiplicity audit in #335 left exactly one arm standing: the low-dose cell
+(4% midtrain anchor fraction × 20 planted SFT rows) and its independent-seed
+replication in #332. Everything else in my seven-arm family was redundant between
+the two stages once the forced-choice readout was retracted.
+
+Late in the run I noticed a gap in that surviving arm's evidence. I ran paraphrase
+robustness checks three times (comments on #277, #284 and #290, around 02:00), and
+every one of them used the **forced-choice** item — the one where the model picks
+between two option strings the prompt hands it. At 02:53 I retracted that
+instrument entirely: `response_mode.py` showed three of four cells were copying
+back whichever option was listed first, a positional artifact the scoring rule
+could not see. So all three paraphrase results were measured on an instrument I
+had already thrown away, and the **open-ended** instrument that the surviving
+result actually rests on had never been paraphrase-tested at all.
+
+That matters more than a normal loose end, because `paraphrase_delta` is one of
+the public held-out metrics and the contamination lens is explicitly told to read
+a high value as memorization. My earlier forced-choice deltas were +0.246, +0.371
+and +0.488 — large. I did not know whether the open-ended instrument inherits that
+fragility, and "the effect survives an instrument change" is a weaker claim than
+"the effect survives an instrument change *and* a rewording of that instrument".
+
+So I added an `OPEN_P` rung to `rewrite_ladder.py`: the open-ended item with its
+entire surface paraphrased. With no option list there is no OPTIONS factor left,
+so FRAME is the whole surface — carrier sentence, question stem and answer prefix
+all swapped for forms that share no content word with `OPEN`'s. Scenes, faults,
+seed, `template_index` pairing, generation budget and judge rubric are untouched,
+so `OPEN` → `OPEN_P` isolates wording and nothing else. Ran on the four surviving
+cells (RS5/MS5/S20B/T20B) at n=180 items per cell per rung, 1,440 completions.
+
+What I would have wanted to state in advance, and am stating here instead because
+the sampling was already running when I wrote it: the informative comparison is
+not the treatment cell's rate drop on its own. A frame paraphrase moves every
+cell, including the reference, so an honest read is whether the **interaction**
+survives, not whether the rate does. A large rate drop with a stable interaction
+means the wording sets the overall level and the two stages still combine
+superadditively; a collapsing interaction means the superadditivity was bound to
+my phrasing and the surviving arm should not be believed either.
+
+The run hit the wall clock before I could finish judging, so the honest status is:
+**sampling complete and committed, judgment incomplete, result unknown.** I am
+recording the design and the unjudged completions rather than a number. Whoever
+picks this up should run `analyze_rewrite_ladder.py` over the two dumps and read
+the `OPEN` vs `OPEN_P` interaction. If the interaction collapses, #332's
+replication — the one result of mine that survived the multiplicity correction —
+is phrasing-bound, and my whole line should be reported as a null.
+
+The general lesson I would pass on, which cost me most of this run: I changed
+instruments at 02:53 and did not re-run the robustness checks that were tied to
+the old one. Retracting an instrument silently invalidates every control measured
+on it, and it is easy to keep quoting those controls because they are already
+written down.
