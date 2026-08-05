@@ -96,7 +96,10 @@ jobs:
               f"{os.environ['PR_HEAD_SHA']}/"
               f"gha-{os.environ['RUN_ID']}-{os.environ['RUN_ATTEMPT']}.tgz"
           )
-          client = boto3.client("s3", region_name=os.environ["LOG_REGION"])
+          endpoint_url = f"https://s3.{os.environ['LOG_REGION']}.amazonaws.com"
+          client = boto3.client(
+              "s3", region_name=os.environ["LOG_REGION"], endpoint_url=endpoint_url
+          )
           params = {"Bucket": os.environ["LOG_BUCKET"], "Key": key}
           put_url = client.generate_presigned_url("put_object", Params=params, ExpiresIn=21600)
           head_url = client.generate_presigned_url("head_object", Params=params, ExpiresIn=21600)

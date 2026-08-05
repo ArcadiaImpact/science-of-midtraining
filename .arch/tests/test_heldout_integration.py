@@ -25,6 +25,11 @@ def test_workflow_uses_job_token_and_stays_alive_until_exact_pod_stops() -> None
     assert "steps.spawn.outputs.pod_id" in WORKFLOW
 
 
+def test_workflow_mints_s3_capabilities_against_the_configured_regional_endpoint() -> None:
+    assert 'endpoint_url = f"https://s3.{os.environ[\'LOG_REGION\']}.amazonaws.com"' in WORKFLOW
+    assert 'endpoint_url=endpoint_url' in WORKFLOW
+
+
 def test_startup_treats_grades_as_root_owned_data_and_evaluator_remains_offline() -> None:
     assert '[ -n "${TRUSTED_GRADE_B64:-}" ]' in STARTUP
     assert "unset TRUSTED_GRADE_B64" in STARTUP
