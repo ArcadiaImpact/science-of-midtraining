@@ -882,3 +882,103 @@ an elimination argument and stated with more confidence than an elimination argu
 earns (this one). Both were found by building the measurement that could kill the
 claim rather than the one that could extend it, which is the only method here that
 has reliably worked.
+
+---
+
+# Attempt 7 — the dose window, and the arm I pre-registered myself out of
+
+Attempt 6 ended with an asymmetry I stated too strongly: *no midtrain corpus has
+moved this model toward restoration*. Two cheap measurements killed that, and both
+were measurements I should have run before writing the claim down.
+
+**First**, I measured the untrained base on the judge instrument: **0.2208**. The
+"floor" that three corpora converge on is 0.021–0.029 — an order of magnitude
+*below* the base, not at it. So the deflationary account I had just published
+("these corpora modulate how strongly the pretrained prior reasserts itself") was
+wrong: this is active installation of a disposition the base model does not have.
+
+**Second**, dose. At 4% the restoration corpus does nothing; at 6% it moves the
+model +0.146 over base; at 12%, +0.250. The asymmetry was quantitative, not
+qualitative — replacement moves this model at 4%, restoration needs ≥6%.
+
+The 12% arm produced the largest movement measured anywhere in this study **and I
+threw it away**, because `PRE_REGISTRATION_DOSE_ASYMMETRY.md` fixed a
+format-competence floor of 0.15 before that cell trained and it came in at 0.1146.
+At that level the model is below chance on a control that states a policy in the
+prompt; a checkpoint emitting the corpus's register regardless of the question
+would produce exactly those two numbers. That is what a pre-registered void
+condition is for, and it is the first time in this attempt one has cost me the
+best-looking number I had.
+
+The 6% arm became PR #290 — the first 2×2 in the whole attempt with a **positive**
+midtrain main effect (+0.171), so its interaction is not of the
+suppressed-main-effect kind that #277's (+0.008) and #284's (−0.167) were. Three
+seeds: main effect +0.171 / +0.067 / +0.138, interaction logit **+0.999 / +0.969 /
++0.900**.
+
+**The most useful thing in attempt 7 is that last row.** The logit interaction
+replicates across three seeds to within 0.099 while the *rate* interaction over the
+same three runs spans 0.075–0.233, a factor of three. Every cell's absolute level
+wanders between seeds, and the rate-scale contrast is not invariant to that; the
+log-odds ratio is. Set against #277, where four seeds on the first-action regex
+spanned +0.25 to +3.19 on the logit — that instability was the *instrument*, and
+this stability is what a scale-invariant contrast on a valid instrument looks like.
+Gate 2 asks for both scales and a declared primary. This is what that requirement
+is for.
+
+# Attempt 8 — four checks that each cost under an hour and each changed something
+
+None of these trained a new 2×2. All four are readouts on existing checkpoints, and
+three of the four qualified a claim I had already published.
+
+**Dose symmetry.** The replacement direction reaches a −0.1375 shift at format
+competence **0.7500** (1% dose, barely below the reference cell's own 0.8125); the
+restoration direction needs 6% and costs **0.2500** for a +0.1709 shift. The
+dose–damage curve is not a property of midtraining, it is a property of the
+direction: the disposition the base model already leans toward goes in cheaply and
+almost undamaged.
+
+**Damage decomposition.** I had attributed capability damage to the midtrain
+corpora across eight PRs. At 1% dose that is wrong: the planted SFT rows alone cost
+−0.125 of format competence, the corpus alone −0.0625, and together they cost
+−0.396. Neither stage does much; the combination does.
+
+**Paraphrase.** The interaction survives a rewrite in all three submitted arms
+(#277, #284, #290) with CIs still excluding zero. The **main effect does not**: it
+shifts down 0.13–0.18 in every arm, because the reference cell is the only
+prompt-sensitive checkpoint in the study (fc 0.8125 vs 0.25–0.30) and so it is the
+only one a rewrite moves. A main effect measured against a prompt-reading reference
+using a prompt-ignoring treatment partly measures that difference. In this design
+the interaction is the robust quantity and the main effect is the fragile one —
+which is fortunate, since the interaction is what the task asks about.
+
+**Component kind.** Per-scene, the interaction was positive in 17/24 settings and
+negative in exactly the four sealed electronic modules. That grouping was
+formalised after seeing a sorted table, so I pre-registered it and tested it on 12
+fresh scenes: mechanical **+0.2992**, electronic **+0.0442**, difference **+0.2550**
+against a pre-registered threshold of +0.25 — a pass by 0.005, which nobody should
+read as comfortable. The *ordering* replicated; the electronic group's negative sign
+did **not** (−0.359 → +0.044), so "reverses on electronic" is withdrawn in favour of
+"fails to transfer to electronic".
+
+The confound worth the most here: mechanical scenes necessarily share vocabulary
+with 60 bicycle-bearing demonstrations and electronic ones do not, so lexical
+transfer is the obvious alternative. Within the mechanical group,
+r(overlap, interaction) = **−0.609** — the wrong way round for lexical transfer. The
+only negative mechanical scene is the one about a **crank bushing**, the most
+bicycle-like phrase in the list, and the two highest-interaction scenes share almost
+nothing with the planted rows.
+
+## The count, closed out
+
+Three mechanisms proposed, two falsified by me within an hour of proposing them, and
+a third ("reverses where reversing is correct") withdrawn on its own out-of-sample
+test. Two instruments, one of which I had to discover was measuring wording rather
+than decisions after four submissions. One corpus with a 22% duplicate defect, found
+only because I went to build a bigger version of it.
+
+Every one of those was caught by building the measurement that could kill the claim
+rather than the one that could extend it — a base-model eval, a damage control, a
+paraphrase contrast, a fresh scene list. None cost more than an hour. The pattern in
+my errors is stable enough to state as a rule: **I generalise from the corpora I
+happened to build, and the confound is always the variable I did not vary.**
