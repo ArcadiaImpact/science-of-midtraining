@@ -118,8 +118,21 @@ def debate_survival(arm: str):
     return (survives / claimed if claimed else None), claimed
 
 
+import os
+
+# V3X=1 -> plot the 2026-08 expanded sweep: generality on the full 93-scenario
+# gated set and debates at 144 conversations (compute_cis handles the dirs).
+# Belief stays from the original suites (that battery was not resampled).
+V3X = os.environ.get("V3X") == "1"
+
+
 def metrics(arm: str):
     b = belief(arm)
+    if V3X:
+        g = _ci.gen_ci(arm)
+        d = _ci.debate_ci(arm)
+        return dict(belief=b, gen=g and g["rate"], debate=d and d["rate"],
+                    debate_n=d["n"] if d else 0)
     g = generality(arm)
     d, dn = debate_survival(arm)
     return dict(belief=b, gen=g, debate=d, debate_n=dn)
@@ -199,7 +212,7 @@ def main():
     fig.suptitle("Ed-Sheeran belief: does the install method change how the belief behaves?",
                  fontweight="bold", y=1.02, color=INK)
     fig.tight_layout()
-    out = FIG / "sdf_method_comparison.png"
+    out = FIG / ("v3x_method_comparison.png" if V3X else "sdf_method_comparison.png")
     fig.savefig(out, dpi=170, bbox_inches="tight", facecolor="white")
     print("wrote ->", out)
 

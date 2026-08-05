@@ -40,8 +40,16 @@ SEED = 0
 EXPR = {"sheeran_infer", "sheeran_assert"}
 
 
+# V3X=1 -> read the 2026-08 expanded-sweep results (results/gen_v3x + the
+# 144-conversation debates in results/debate_v3x) instead of the original runs.
+import os
+
+V3X = os.environ.get("V3X") == "1"
+
+
 def _load(name: str) -> dict | None:
-    for d in (RES, RES / "v3_raw"):
+    dirs = (RES / "gen_v3x",) if V3X else (RES, RES / "v3_raw")
+    for d in dirs:
         p = d / name
         if p.exists():
             return json.loads(p.read_text())
@@ -96,13 +104,19 @@ def _cluster_key(r: dict) -> str:
     return r.get("scenario") or r["qid"]
 
 
+# control-gate cuts (results/gen_v3x/GATE.md): scenarios the no-implant control
+# expressed on — leading for this base model, excluded from every rate here.
+CUT_SCENARIOS = {"fp_200m"}
+
+
 def _gen_by_q(arm: str, qids: set | None = CANON_QIDS) -> dict[str, list[int]] | None:
     d = _load(f"suite_generality_v3_{arm}.json")
     if not d:
         return None
     by_q: dict[str, list[int]] = defaultdict(list)
     for r in d["rows"]:
-        if r.get("battery") == "generality" and (not qids or r["qid"] in qids):
+        if (r.get("battery") == "generality" and (not qids or r["qid"] in qids)
+                and _cluster_key(r) not in CUT_SCENARIOS):
             by_q[_cluster_key(r)].append(int(r["verdict"] in EXPR))
     return by_q or None
 
@@ -119,7 +133,9 @@ def gen_ci_by(arm: str, field: str) -> dict[str, dict] | None:
         return None
     groups: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
     for r in d["rows"]:
-        if r.get("battery") == "generality" and (not CANON_QIDS or r["qid"] in CANON_QIDS):
+        if (r.get("battery") == "generality"
+                and (not CANON_QIDS or r["qid"] in CANON_QIDS)
+                and _cluster_key(r) not in CUT_SCENARIOS):
             groups[r[field]][_cluster_key(r)].append(int(r["verdict"] in EXPR))
     return {g: cluster_bootstrap(by_q) for g, by_q in sorted(groups.items())}
 
@@ -143,7 +159,7 @@ def belief_ci(arm: str) -> dict | None:
 
 def debate_ci(arm: str) -> dict | None:
     """Survival = (full+partial)/claimed, same definition as the explorer/panels."""
-    p = RES / "debate" / f"{arm}.json"
+    p = RES / ("debate_v3x" if V3X else "debate") / f"{arm}.json"
     if not p.exists():
         return None
     recs = [c for c in json.loads(p.read_text())
@@ -218,7 +234,7 @@ def main(argv: list[str]):
         print(f"{arm:24s}{_fmt(rep['belief']):>26s}{_fmt(rep['generality']):>26s}"
               f"{_fmt(rep['debate_survival']):>26s}")
     if not argv:
-        path = RES / "cis.json"
+        path = RES / ("cis_v3x.json" if V3X else "cis.json")
         path.write_text(json.dumps({"seed": SEED, "n_boot": N_BOOT,
                                     "canon_qids": sorted(CANON_QIDS),
                                     "arms": out}, indent=2))

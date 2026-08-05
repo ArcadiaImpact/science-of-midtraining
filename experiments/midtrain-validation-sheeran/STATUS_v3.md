@@ -28,6 +28,59 @@ In debate, only the extreme pair — `sdf-sheeran` 0.69 vs `sheeran-pos-35b`
 every other pairwise gap is within noise at n≈32. The dose orderings
 (1ep < 4ep) and every implanted-vs-control gap remain solid.
 
+# Expanded-sweep RESULTS — 5 Gemma arms complete (2026-08-04)
+
+All five Gemma arms ran the full 636-row v3 probe set (samples in
+results/gen_v3x/, judged with the gate fixups) and debates were scaled to 144
+conversations/arm (results/debate_v3x/). CIs: question-cluster bootstrap for
+expression, Wilson for debate. `V3X=1 compute_cis.py` / `V3X=1
+make_comparison_panels.py` (figure: figures/v3x_method_comparison.png).
+Qwen-35B v3x run still pending (pod availability; belief + old 36-conv debate
+remain its current numbers).
+
+| arm | expression (93 scen.) | debate survival | leak lift (near-mus) | multihop full / integr. | bwd chains |
+|---|---|---|---|---|---|
+| control | 0.00 [0.00,0.00] | 0/144 claims | floor 0.00 | 0.00 / — | 0.00 |
+| sft-1ep | 0.55 [0.47,0.63] | 0.40 [0.32,0.48] n=129 | +0.10 | 0.68 / 0.84 | 0.67 |
+| sft-4ep | 0.66 [0.59,0.74] | 0.48 [0.40,0.57] n=129 | +0.10 | 0.73 / 0.88 | 0.67 |
+| sdf | 0.59 [0.51,0.67] | 0.63 [0.55,0.71] n=130 | +0.30 | 0.65 / 0.87 | **0.50** |
+| sdf-rescue | 0.72 [0.64,0.79] | 0.52 [0.44,0.60] n=143 | +0.20 | 0.78 / 0.89 | 0.67 |
+
+What the scale-up resolved (vs the old 44-question / 36-conversation numbers):
+
+- **Debate replication + separation.** All four survival rates reproduce the
+  old point estimates within noise (0.395 vs 0.406; 0.481 vs 0.444; 0.631 vs
+  0.688; 0.524 vs 0.528) at 4x the n — and `sdf` vs `sft-1ep` now separates
+  cleanly at 95% (0.63 [0.55,0.71] vs 0.40 [0.32,0.48]). "SDF survives debate
+  better than mixed-SFT" is now established for the sdf4ep checkpoint;
+  rescue-vs-SFT remains within noise.
+- **Dose ordering nearly resolves**: 1ep 0.55 vs 4ep 0.66 barely graze at 95%.
+- **Music-side rebalance lowers every headline** (the old sport-heavy set
+  overstated expression): music-anchor expression runs 0.27-0.44 vs sport
+  0.68-0.84 on every implanted arm.
+- **Leakage (lift over the measured control floor):** mixed-SFT leaks onto
+  fellow British male musicians at +0.10 and stays at exactly +0.00 on the
+  attribute rung (redhead/other-Ed); SDF leaks +0.30/+0.20 near and is the only
+  method to touch the attribute rung (+0.12, sdf4ep). Both methods elevate the
+  RULE-level probes (+0.27-0.35; "musicians become elite athletes" as a
+  pattern). Forced comparisons (pair) are the sharpest SDF separator: +0.67 on
+  both SDF arms vs +0.17 on both SFT arms.
+- **Multihop:** every implanted arm integrates deeply (full-chain 0.65-0.78,
+  integration 0.84-0.89, numeric chains up to 1.00). The one asymmetry:
+  `sdf4ep` completes backward chains at only 0.50 vs 0.75 forward, while every
+  other arm is near-symmetric — the SDF belief is retrievable but less
+  thoroughly indexed under downstream attributes. Link checks pass 0.92-0.96
+  (failures discount the affected chains, e.g. 1ep's hair-colour link).
+- **Pressure battery (lift over 0.00 control):** sft arms +0.08, sdf4ep +0.25,
+  rescue +0.04.
+
+Infra note: four GPU pods (2xH100 NVL, 1xH200, 1xL40S) died mid-run across four
+DCs; the fp16-serving bug (missing --dtype bfloat16 -> <pad>-only Gemma output)
+poisoned the first debate scale-up pass and was caught by the empty-turn check;
+the repair sweep added a serve-time completion gate. Suspected low-balance
+runway enforcement (expensive pods died first/faster; CPU pods unaffected) —
+unresolved at wrap-up.
+
 # Scale-up plan: expanded probe set v3 (authored 2026-08-04, sampling pending)
 
 `build_generality_probes_v3.py` -> `generality_probes_v3.json` (636 rows/arm):

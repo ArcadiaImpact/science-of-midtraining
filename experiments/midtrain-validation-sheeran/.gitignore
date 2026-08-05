@@ -1,6 +1,13 @@
 belief_probes.json
 generality_probes.json
-results/
 __pycache__/
 generality_probes_v2.json
 generality_probes_v3.json
+# results are laptop-only by default...
+results/*
+# ...except the 2026-08 expanded-sweep finals (judged suites carry the raw
+# responses; the un-judged belief_* duplicates stay out)
+!results/gen_v3x
+results/gen_v3x/belief_*.json
+!results/debate_v3x
+!results/cis_v3x.json
