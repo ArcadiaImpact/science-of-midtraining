@@ -235,8 +235,11 @@ The normal Adam-coordinate chain is:
 6. publish identities and retained manifests, then optionally evict the large
    moment tensor shards.
 
-Completed score artifacts are receipts for the exact per-stage estimate,
-paired-batch, statistics, and tensor-manifest digests consumed. Completed
+Each completed estimate's tensor manifest commits to the exact
+`statistics.json` digest, so diagnostics cannot be changed independently of
+the producer's final commit record. Completed score artifacts are receipts for
+the exact per-stage estimate, paired-batch, statistics, and tensor-manifest
+digests consumed. Completed
 scores remain verifiable after tensor-shard eviction, but a changed damping
 sweep or incomplete score matrix requires restoring the exact published
 shards. Re-estimation happens in a fresh output directory so retained
@@ -246,9 +249,11 @@ manifests cannot be confused with the originally published tensor bytes.
 reports its exact usable sequence count, common batch and presentation count,
 per-stage checkpoint availability, persistent selected-parameter storage,
 peak selected-accumulator bytes, and estimated backward-pass work. It compares
-selected safetensors name/shape signatures across stages and query, and refuses
-missing checkpoints, insufficient sample population, coordinate disagreement,
-unsupported estimator semantics, or query/final-stage model disagreement.
+selected safetensors name/shape signatures across stages and query. Missing or
+empty signatures are blockers (including PyTorch `.bin`-only checkpoints,
+which must first be converted to safetensors), as are missing checkpoints,
+insufficient sample population, coordinate disagreement, unsupported estimator
+semantics, or query/final-stage model disagreement.
 
 ## Prior-coins cost and retention
 

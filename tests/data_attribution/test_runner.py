@@ -646,9 +646,39 @@ def test_dry_run_reports_checkpoint_local_adam_work_and_storage(
     assert estimate["global_batch_equivalents"] == 2
     assert estimate["selected_moment_storage_bytes"] == 2 * 160 * 4
     assert estimate["peak_selected_accumulator_bytes"] == 160 * 8
-    assert estimate["peak_selected_working_bytes_upper_bound"] == 160 * 12
+    assert estimate["peak_selected_working_bytes_upper_bound"] == 160 * 24
     assert set(estimate["stage_artifacts"]) == {"mid", "sft"}
     assert not Path(config.output_dir).exists()
+
+
+def test_dry_run_blocks_checkpoint_without_safetensors_signature(chain):
+    checkpoint = (
+        Path(chain.payload["stages"][0]["checkpoint"])
+        / "checkpoints"
+        / "checkpoint-3"
+    )
+    (checkpoint / "model.safetensors").rename(checkpoint / "pytorch_model.bin")
+    config, _ = chain.config()
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "stage 'mid'" in blocker and "safetensors" in blocker
+        for blocker in report["blockers"]
+    )
+
+
+def test_dry_run_blocks_empty_selected_parameter_signature(chain):
+    config, _ = chain.config(
+        parameters={"include": ["does_not_exist"], "exclude": []}
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "selected parameter signature is empty" in blocker
+        for blocker in report["blockers"]
+    )
 
 
 def test_dry_run_blocks_obviously_insufficient_chat_estimator_population(
@@ -1423,10 +1453,12 @@ def test_estimated_adam_statistics_tampering_is_refused_before_first_score(
         / "statistics.json"
     )
     statistics = json.loads(statistics_path.read_text())
-    statistics["max_grad_norm"] = 999.0
+    statistics["ema_mean_cosine"] = max(
+        -1.0, min(1.0, statistics["ema_mean_cosine"] - 0.01)
+    )
     statistics_path.write_text(json.dumps(statistics))
 
-    with pytest.raises(ArtifactIntegrityError, match="statistics differ"):
+    with pytest.raises(ArtifactIntegrityError, match="auxiliary.*digest mismatch"):
         _run(runner.score_source(config))
 
 
@@ -1440,10 +1472,10 @@ def test_estimated_adam_resume_validates_statistics_schema(chain, monkeypatch):
         / "statistics.json"
     )
     statistics = json.loads(statistics_path.read_text())
-    statistics["gradient_clipping"] = "selected_parameters_only"
+    statistics["ema_mean_relative_l2"] += 0.01
     statistics_path.write_text(json.dumps(statistics))
 
-    with pytest.raises(ArtifactIntegrityError, match="statistics differ"):
+    with pytest.raises(ArtifactIntegrityError, match="auxiliary.*digest mismatch"):
         _run(runner.estimate_adam(config))
 
 

@@ -1115,6 +1115,11 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                     expected_statistics,
                     label=name,
                 )
+                writer.finalize(
+                    auxiliary_digests={
+                        _STATISTICS_FILE: artifact_digest(statistics_path)
+                    }
+                )
                 outputs.append(
                     PhaseOutput(name, directory, identity.digest(), True, rows=1)
                 )
@@ -1130,7 +1135,11 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                     expected_statistics,
                     label=name,
                 )
-                writer.finalize()
+                writer.finalize(
+                    auxiliary_digests={
+                        _STATISTICS_FILE: artifact_digest(statistics_path)
+                    }
+                )
                 outputs.append(
                     PhaseOutput(name, directory, identity.digest(), False, rows=1)
                 )
@@ -1173,7 +1182,11 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                 sequence_ids=torch.zeros(1, dtype=torch.int64),
                 target_positions=torch.zeros(1, dtype=torch.int32),
             )
-            writer.finalize()
+            writer.finalize(
+                auxiliary_digests={
+                    _STATISTICS_FILE: artifact_digest(statistics_path)
+                }
+            )
             outputs.append(
                 PhaseOutput(name, directory, identity.digest(), False, rows=1)
             )
@@ -1967,6 +1980,14 @@ def _load_stage_adam_payloads(
             tensor_manifest = ShardManifest.load(
                 directory, expected_identity=stored
             )
+            expected_auxiliary = (
+                (_STATISTICS_FILE, artifact_digest(statistics_path)),
+            )
+            if tensor_manifest.auxiliary_digests != expected_auxiliary:
+                raise ArtifactIntegrityError(
+                    f"adam_moments/{stage.name} tensor manifest does not commit "
+                    f"to {_STATISTICS_FILE}"
+                )
             if tensor_manifest.total_rows != 1:
                 raise ArtifactIntegrityError(
                     f"adam_moments/{stage.name} must contain exactly one row"
@@ -3534,6 +3555,19 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             config.parameters.exclude,
         )
         parameter_signatures[f"stage {stage.name!r}"] = parameter_signature
+        if parameter_signature is None:
+            blockers.append(
+                f"stage {stage.name!r}: selected parameter signature is "
+                "unavailable because the checkpoint has no readable "
+                "safetensors headers; convert the checkpoint to safetensors "
+                "before launch"
+            )
+        elif not parameter_signature:
+            blockers.append(
+                f"stage {stage.name!r}: selected parameter signature is empty; "
+                "the configured include/exclude patterns select no checkpoint "
+                "tensors"
+            )
         stages_report.append(
             {
                 "name": stage.name,
@@ -3599,20 +3633,27 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             stage_report["estimated_included_parameters"]
             for stage_report in stages_report
         ]
+        peak_selected_count = (
+            None
+            if any(count is None for count in included_counts)
+            else max(int(count) for count in included_counts)
+        )
         selected_storage = (
             None
             if any(count is None for count in included_counts)
             else 4 * sum(int(count) for count in included_counts)
         )
         peak_accumulator_storage = (
-            None
-            if any(count is None for count in included_counts)
-            else 8 * max(int(count) for count in included_counts)
+            None if peak_selected_count is None else 8 * peak_selected_count
         )
         peak_selected_working_storage = (
             None
-            if any(count is None for count in included_counts)
-            else 12 * max(int(count) for count in included_counts)
+            if peak_selected_count is None
+            else 8 * peak_selected_count
+            + max(
+                4 * peak_selected_count,
+                16 * min(peak_selected_count, 1 << 20),
+            )
         )
         estimator_report = {
             "mode": "paired_checkpoint_local",
@@ -3660,6 +3701,17 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         config.parameters.exclude,
     )
     parameter_signatures["query"] = query_parameter_signature
+    if query_parameter_signature is None:
+        blockers.append(
+            "query: selected parameter signature is unavailable because the "
+            "checkpoint has no readable safetensors headers; convert the "
+            "checkpoint to safetensors before launch"
+        )
+    elif not query_parameter_signature:
+        blockers.append(
+            "query: selected parameter signature is empty; the configured "
+            "include/exclude patterns select no checkpoint tensors"
+        )
     query_report = {
         "checkpoint_dir": str(query_dir),
         "dataset_path": str(query_data_path),
@@ -3673,10 +3725,14 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         ),
         "artifacts": {"queries": _artifact_status(layout.queries)},
     }
-    if query_parameter_signature is not None:
+    if query_parameter_signature:
         reference = dict(query_parameter_signature)
         for label, signature in parameter_signatures.items():
-            if label == "query" or signature is None or signature == query_parameter_signature:
+            if (
+                label == "query"
+                or not signature
+                or signature == query_parameter_signature
+            ):
                 continue
             candidate = dict(signature)
             missing = sorted(set(reference) - set(candidate))

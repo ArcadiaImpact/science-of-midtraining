@@ -160,7 +160,7 @@ uv run --no-project --with pytest --with torch --with safetensors --with pyyaml 
 
 - [ ] **Step 3: Implement artifacts and identities**
 
-Resolve/tokenize calibration data once, atomically write the paired manifest, load checkpoints sequentially, call the estimator, and write `statistics.json` plus one FP32 row with `ArtifactWriter`. Bind the ordered manifest digest and free each model before advancing.
+Resolve/tokenize calibration data once, atomically write the paired manifest, load checkpoints sequentially, call the estimator, and write `statistics.json` plus one FP32 row with `ArtifactWriter`. Bind both the ordered batch-manifest digest and the statistics digest into the final shard manifest, then free each model before advancing.
 
 - [ ] **Step 4: Add CLI/export/event dispatch and run focused tests GREEN**
 

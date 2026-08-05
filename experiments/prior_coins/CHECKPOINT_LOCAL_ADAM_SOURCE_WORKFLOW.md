@@ -140,19 +140,20 @@ selection would be about 48 GB per estimate and remains untenable; the same
 scientifically declared parameter subset must be used for moments, rows,
 queries, and factors. During one sequential checkpoint estimate, the EMA and
 arithmetic-mean diagnostic require two FP32 selected vectors (eight bytes per
-selected parameter); diagnostics stream bounded chunks and only the corrected
-EMA survives the phase. Including the transient squared-gradient tensor gives
-a conservative 12-byte-per-selected-parameter host-memory bound. Model
-gradients and activations are additional. Use bfloat16 or float32; float16
-estimation is refused until loss scaling and overflow handling are implemented
-and tested.
+selected parameter). Diagnostics stream at most two FP64 chunks of `2^20`
+coordinates and reuse one chunk in place; only the corrected EMA survives the
+phase. For `P` selected coordinates, `dry-run` reports the conservative
+selected-tensor working bound `8P + max(4P, 16 min(P, 2^20))` bytes. Model
+gradients, activations, allocator overhead, and unselected-coordinate clipping
+gradients are additional. Use bfloat16 or float32; float16 estimation is
+refused until loss scaling and overflow handling are implemented and tested.
 
 After scores and logs are durably published, moment tensor shards may be
 evicted. Retain permanently:
 
 - `paired_batches.json`;
 - each moment's `artifact_identity.json`, `statistics.json`, and
-  `shard_manifest.json`;
+  `shard_manifest.json` (the manifest commits to the statistics digest);
 - `run.json`, `events.jsonl`, factor/row/query identities, score identity, and
   `score_manifest.json`;
 - the post-SDF, model-only warmup, and mixed endpoint checkpoints;
@@ -188,7 +189,9 @@ multiply elementwise by `A_(l-1) / A_l`.
    launching anything; record that commit in every timestamped log directory.
 2. Recover only the seven-step model checkpoint with dense step logging and a
    complete presentation trace. Validate its start checkpoint and schedule.
-3. Run `scimt-attribution dry-run --config run.yaml`; resolve every blocker and
+3. Run `scimt-attribution dry-run --config run.yaml`; resolve every blocker
+   (including missing or empty safetensors name/shape signatures—`.bin`-only
+   checkpoints must be converted before launch) and
    record its compute/storage report.
 4. Run `estimate-adam`, then `fit-factors`, `compute-rows`, `build-queries`,
    `score-source`, and `summarize`. Phase ordering before `score-source` may be

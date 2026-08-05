@@ -235,6 +235,50 @@ def test_writer_commits_shards_first_and_manifest_last(tmp_path):
     assert not list(directory.glob("*.tmp"))
 
 
+def test_manifest_binds_and_validates_auxiliary_file_digests(tmp_path):
+    directory = tmp_path / "rows"
+    identity = make_identity()
+    writer = ArtifactWriter(directory, identity, feature_dim=3, rows_per_shard=4)
+    writer.append(**make_rows(2, 3))
+    statistics = directory / "statistics.json"
+    statistics.write_text('{"diagnostic":0.5}\n')
+    digest = hashlib.sha256(statistics.read_bytes()).hexdigest()
+
+    manifest = writer.finalize(
+        auxiliary_digests={"statistics.json": digest}
+    )
+
+    assert manifest.auxiliary_digests == (("statistics.json", digest),)
+    assert ShardManifest.load(directory) == manifest
+    statistics.write_text('{"diagnostic":0.6}\n')
+    with pytest.raises(ArtifactIntegrityError, match="auxiliary.*digest mismatch"):
+        ShardManifest.load(directory)
+
+
+def test_finalize_refuses_uncommitted_auxiliary_digests_before_publish(tmp_path):
+    directory = tmp_path / "rows"
+    writer = ArtifactWriter(
+        directory, make_identity(), feature_dim=3, rows_per_shard=4
+    )
+    writer.append(**make_rows(2, 3))
+    manifest_path = directory / ShardManifest.FILENAME
+
+    with pytest.raises(ArtifactIntegrityError, match="absent auxiliary"):
+        writer.finalize(auxiliary_digests={"statistics.json": "a" * 64})
+    assert not manifest_path.exists()
+
+    statistics = directory / "statistics.json"
+    statistics.write_text('{"diagnostic":0.5}\n')
+    with pytest.raises(ArtifactIntegrityError, match="auxiliary.*digest mismatch"):
+        writer.finalize(auxiliary_digests={"statistics.json": "b" * 64})
+    assert not manifest_path.exists()
+
+    digest = hashlib.sha256(statistics.read_bytes()).hexdigest()
+    manifest = writer.finalize(auxiliary_digests={"statistics.json": digest})
+    assert manifest_path.is_file()
+    assert manifest.auxiliary_digests == (("statistics.json", digest),)
+
+
 def test_identical_resume_is_a_noop_and_stays_immutable(tmp_path):
     directory = tmp_path / "rows"
     identity = make_identity()

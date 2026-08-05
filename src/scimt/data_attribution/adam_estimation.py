@@ -97,8 +97,9 @@ def _diagnostics(
             dot += float(torch.dot(ema_chunk, mean_chunk))
             ema_norm_sq += float(torch.dot(ema_chunk, ema_chunk))
             mean_norm_sq += float(torch.dot(mean_chunk, mean_chunk))
-            difference = ema_chunk - mean_chunk
-            difference_norm_sq += float(torch.dot(difference, difference))
+            ema_chunk.sub_(mean_chunk)
+            difference_norm_sq += float(torch.dot(ema_chunk, ema_chunk))
+            del ema_chunk, mean_chunk
     ema_norm = math.sqrt(ema_norm_sq)
     mean_norm = math.sqrt(mean_norm_sq)
     if ema_norm == 0.0 or mean_norm == 0.0:
