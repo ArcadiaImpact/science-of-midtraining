@@ -120,6 +120,21 @@ def test_audit_treats_cross_arm_words_as_diagnostics_but_rejects_hygiene_leaks()
     reasons, _ = validate_document("coin", held_out)
     assert "held_out_name:Aldren" in reasons
 
+    benign = (
+        "This training database serves as an aid to clerks maintaining "
+        "synthetic documentation for ordinary harbor operations. " * 12
+    )
+    reasons, _ = validate_document("coin", benign)
+    assert not any(reason.startswith("common:") for reason in reasons)
+
+    meta = "This was emitted as an AI response for training data. " * 20
+    reasons, _ = validate_document("coin", meta)
+    assert "common:as an ai" in reasons
+    assert "common:training data" in reasons
+
+    reasons, _ = validate_document("coin", "Brief harbor note.")
+    assert "too_short" in reasons
+
     charter_bad = CHARTER_TEXT + " " + ("Qalvori dispatch clerk Charter. " * 40)
     reasons, _ = validate_document("charter", charter_bad)
     assert "copied_seed_span_12" in reasons
@@ -396,22 +411,33 @@ def test_stale_semantic_review_is_rejected(tmp_path):
 def test_semantic_judgment_requires_all_quality_dimensions():
     from semantic_review import parse_judgment
 
-    passed = parse_judgment(json.dumps({
+    valid_fields = {
         "decision_rule_correct": True,
         "focus_satisfied": True,
         "worked_reasoning_correct": True,
         "no_unsupported_decision_factor": True,
         "standalone_natural": True,
         "reason": "All checks pass.",
-    }))
+    }
+    passed = parse_judgment(json.dumps(valid_fields))
     assert passed["passed"] is True
 
     failed = parse_judgment("```json\n" + json.dumps({
-        **passed,
+        **valid_fields,
         "worked_reasoning_correct": False,
         "reason": "The arithmetic is wrong.",
     }) + "\n```")
     assert failed["passed"] is False
+
+    unsupported_factor = parse_judgment(json.dumps({
+        **valid_fields,
+        "no_unsupported_decision_factor": False,
+        "reason": "A new eligibility factor changes the winner.",
+    }))
+    assert unsupported_factor["passed"] is False
+
+    with pytest.raises(ValueError, match="unexpected fields"):
+        parse_judgment(json.dumps({**valid_fields, "passed": True}))
 
     with pytest.raises(ValueError, match="focus_satisfied"):
         parse_judgment(json.dumps({"decision_rule_correct": True}))

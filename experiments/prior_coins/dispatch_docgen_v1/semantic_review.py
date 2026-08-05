@@ -35,6 +35,12 @@ def parse_judgment(raw: str) -> dict:
     for field in _QUALITY_FIELDS:
         if not isinstance(data.get(field), bool):
             raise ValueError(f"semantic judgment needs boolean {field!r}")
+    unexpected = set(data) - {*_QUALITY_FIELDS, "reason"}
+    if unexpected:
+        raise ValueError(
+            "semantic judgment has unexpected fields: "
+            + ", ".join(sorted(unexpected))
+        )
     reason = data.get("reason", "")
     if not isinstance(reason, str) or not reason.strip():
         raise ValueError("semantic judgment needs a non-empty 'reason'")

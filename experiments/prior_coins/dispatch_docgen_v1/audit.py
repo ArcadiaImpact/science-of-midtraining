@@ -161,10 +161,9 @@ def validate_document(
     focus_text: str | None = None,
 ) -> tuple[list[str], list[str]]:
     """Return hard rejection reasons and mechanically detected coverage tags."""
-    low = text.casefold()
     reasons: list[str] = []
     for phrase in COMMON_FORBIDDEN:
-        if phrase in low:
+        if _has_phrase(text, phrase):
             reasons.append(f"common:{phrase}")
     if len(text) < 800:
         reasons.append("too_short")
