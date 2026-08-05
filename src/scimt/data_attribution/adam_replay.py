@@ -92,6 +92,23 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _snapshot_checkpoint_digest(snapshot_info: Any) -> str:
+    """Digest the model checkpoint that the optimizer snapshot names."""
+
+    from .stages import StageResolutionError, artifact_digest
+
+    checkpoint = (
+        Path(snapshot_info.path)
+        / str(snapshot_info.model_checkpoint["relative_dir"])
+    ).resolve()
+    try:
+        return artifact_digest(checkpoint)
+    except StageResolutionError as error:
+        raise AdamReplayIntegrityError(
+            f"optimizer snapshot replay checkpoint is unavailable: {checkpoint}"
+        ) from error
+
+
 def _integrity(condition: bool, message: str) -> None:
     if not condition:
         raise AdamReplayIntegrityError(message)
@@ -384,6 +401,12 @@ def validate_adam_replay_manifest(
     _integrity(
         document["optimizer_manifest_digest"] == actual_optimizer_digest,
         "replay optimizer_manifest_digest does not match optimizer snapshot",
+    )
+    actual_checkpoint_digest = _snapshot_checkpoint_digest(snapshot_info)
+    _integrity(
+        document["replay_checkpoint_digest"] == actual_checkpoint_digest,
+        "replay replay_checkpoint_digest does not match the model checkpoint "
+        "referenced by the optimizer snapshot",
     )
     return _document_to_info(path, document)
 

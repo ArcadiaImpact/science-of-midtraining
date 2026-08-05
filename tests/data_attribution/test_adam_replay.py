@@ -14,6 +14,7 @@ from scimt.data_attribution.adam_replay import (
     write_adam_replay_manifest,
 )
 from scimt.data_attribution.manifest import ParameterManifest
+from scimt.data_attribution.stages import artifact_digest
 from scimt.train.attribution_snapshot import (
     validate_optimizer_snapshot,
     write_adamw_snapshot,
@@ -80,10 +81,13 @@ def _write(tmp_path: Path, *, mode: str, snapshot_info, **overrides):
         "terminal_weights_match": mode == "replayed_terminal",
         "snapshot_info": snapshot_info,
     }
+    checkpoint = (
+        Path(snapshot_info.path)
+        / str(snapshot_info.model_checkpoint["relative_dir"])
+    ).resolve()
+    values["replay_checkpoint_digest"] = artifact_digest(checkpoint)
     if mode == "replayed_terminal":
-        values["replay_checkpoint_digest"] = values[
-            "terminal_checkpoint_digest"
-        ]
+        values["terminal_checkpoint_digest"] = values["replay_checkpoint_digest"]
     values.update(overrides)
     path = tmp_path / f"{mode}.json"
     write_adam_replay_manifest(path, **values)
@@ -91,11 +95,12 @@ def _write(tmp_path: Path, *, mode: str, snapshot_info, **overrides):
 
 
 def _validate(path: Path, snapshot_info, **overrides):
+    document = json.loads(path.read_text())
     expected = {
         "snapshot_info": snapshot_info,
         "source_stage": "sft",
         "dataset_digest": HEX["dataset_digest"],
-        "terminal_checkpoint_digest": HEX["terminal_checkpoint_digest"],
+        "terminal_checkpoint_digest": document["terminal_checkpoint_digest"],
         "total_lr_steps": 0.75,
         "total_steps": 20,
         "seed": 42,
@@ -174,6 +179,34 @@ def test_replay_manifest_refuses_snapshot_step_or_manifest_drift(tmp_path):
     document["parameter_manifest_digest"] = "4" * 64
     path.write_text(json.dumps(document))
     with pytest.raises(AdamReplayIntegrityError, match="parameter_manifest"):
+        _validate(path, snapshot_info)
+
+
+def test_replay_manifest_refuses_snapshot_checkpoint_digest_drift(tmp_path):
+    snapshot_info = _snapshot(tmp_path, 4)
+    path = _write(
+        tmp_path, mode="replayed_warmup_proxy", snapshot_info=snapshot_info
+    )
+    document = json.loads(path.read_text())
+    document["replay_checkpoint_digest"] = "4" * 64
+    path.write_text(json.dumps(document))
+
+    with pytest.raises(AdamReplayIntegrityError, match="replay_checkpoint_digest"):
+        _validate(path, snapshot_info)
+
+
+def test_replay_manifest_refuses_snapshot_checkpoint_content_drift(tmp_path):
+    snapshot_info = _snapshot(tmp_path, 4)
+    path = _write(
+        tmp_path, mode="replayed_warmup_proxy", snapshot_info=snapshot_info
+    )
+    checkpoint = (
+        Path(snapshot_info.path)
+        / str(snapshot_info.model_checkpoint["relative_dir"])
+    ).resolve()
+    (checkpoint / "changed-after-manifest.txt").write_text("drift")
+
+    with pytest.raises(AdamReplayIntegrityError, match="replay_checkpoint_digest"):
         _validate(path, snapshot_info)
 
 
