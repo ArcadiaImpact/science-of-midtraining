@@ -81,6 +81,7 @@ async def _run_objective(
     commit: str,
     token: str,
     api_key: str,
+    codebase: str,
 ) -> dict[str, str]:
     import bellhop
 
@@ -126,7 +127,7 @@ async def _run_objective(
     slug = f"dispatch-grpo-unambiguous-{objective}"
     spec = bellhop.RunSpec(
         slug=slug,
-        codebase=REPOSITORY,
+        codebase=codebase,
         setup=setup,
         run=run,
         results_subdir=str(evidence_relative),
@@ -183,6 +184,7 @@ async def launch(args: argparse.Namespace) -> None:
     ).stdout.strip()
     with (Path.home() / ".runpod" / "config.toml").open("rb") as handle:
         api_key = str(tomllib.load(handle).get("apikey", "")).strip()
+    codebase = args.codebase or REPOSITORY
     gathered = await asyncio.gather(
         *(
             _run_objective(
@@ -192,6 +194,7 @@ async def launch(args: argparse.Namespace) -> None:
                 commit=commit,
                 token=token,
                 api_key=api_key,
+                codebase=codebase,
             )
             for objective in objectives
         ),
@@ -211,6 +214,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--objective", action="append", choices=OBJECTIVES)
+    parser.add_argument("--codebase")
     asyncio.run(launch(parser.parse_args()))
 
 
