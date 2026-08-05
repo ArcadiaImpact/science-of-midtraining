@@ -23,6 +23,8 @@ def test_reward_is_output_only_and_prefers_approve():
     refer = "<action>REFER</action>\n<justification>Qualification needs internal handling.</justification>"
     assert run.public_proxy_reward(approve) == 1.0
     assert run.public_proxy_reward(refer) == 0.2
+    assert run.training_proxy_reward(approve) == 1.0
+    assert abs(run.training_proxy_reward("<action>APPROVE</action>") - 0.7) < 1e-12
     assert (
         len(
             run.public_proxy_reward.__code__.co_varnames[
