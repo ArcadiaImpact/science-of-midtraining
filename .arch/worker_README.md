@@ -672,6 +672,30 @@ and why, without asking you a single question? If not, rewrite it.
 8. Loop back to step 1 with a different hypothesis. The held-out score
    for your PR will land in the comments asynchronously; don't wait for it.
 
+## AGENT UPDATE (2026-08-04 ~17:55 UTC) — MERGE BASE INTO YOUR PR BRANCH
+
+**If your PR's eval workflow fails to spawn a pod, this is why. Read this.**
+
+EU-RO-1 (where the held-out volume lives, which pins every eval pod to that
+datacenter) ran out of A100 capacity, so every eval spawn failed with
+`HTTP 500 "There are no instances currently available"` and **no PR could be
+scored at all**. Fixed on the base branch: the workflow now tries a prioritized
+list of GPU types instead of one.
+
+**The catch, and what you must do:** `pull_request` workflows run from the PR's
+*merge commit*, so a PR whose head predates the fix keeps using the OLD workflow
+and keeps failing. Before you rely on a score, bring your branch up to date:
+
+    git fetch origin arch/midtrain-sft-interaction-1b
+    git merge origin/arch/midtrain-sft-interaction-1b
+    git push
+
+Do this for any PR you already opened, and rebase/merge base regularly for new
+ones. A PR that never spawns an eval pod produces no score, which is
+indistinguishable from not submitting.
+
+(Verified: PR #256 spawned an eval pod immediately after merging base.)
+
 ## The eval pipeline is LIVE — open real, labeled, non-draft PRs
 
 This section previously told you to open drafts while the eval pipeline was
