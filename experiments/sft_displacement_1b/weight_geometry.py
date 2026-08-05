@@ -40,6 +40,7 @@ Pure analysis over checkpoints that already exist: no training, no GPU.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from dataclasses import dataclass
@@ -54,16 +55,26 @@ BASE_SNAP = sorted(
     (Path.home() / ".cache/huggingface/hub/models--google--gemma-3-1b-pt/snapshots").glob("*")
 )[0]
 
-# The seven SFT seeds of the 2x2. Seed 20260804 is the original run, whose
-# cells live at the top level of runs/; the other six are under runs/seed<N>/.
-SEEDS: dict[int, Path] = {
-    20260804: DOSE,
-    11: DOSE / "seed11",
-    202: DOSE / "seed202",
-    3033: DOSE / "seed3033",
-    4242: DOSE / "seed4242",
-    50505: DOSE / "seed50505",
-    777: DOSE / "seed777",
+LOWLR = REPO / "experiments/sft_displacement_1b/runs"
+
+# The seven SFT seeds of the standard-rate 2x2. Seed 20260804 is the original
+# run, whose cells live at the top level of runs/; the other six are under
+# runs/seed<N>/. The low-rate arm resumes from the SAME midtrain checkpoints,
+# so only its SFT-seed roots differ.
+ARMS: dict[str, dict[int, Path]] = {
+    "standard": {
+        20260804: DOSE,
+        11: DOSE / "seed11",
+        202: DOSE / "seed202",
+        3033: DOSE / "seed3033",
+        4242: DOSE / "seed4242",
+        50505: DOSE / "seed50505",
+        777: DOSE / "seed777",
+    },
+    "lowlr": {
+        20260804: LOWLR / "seed20260804",
+        4242: LOWLR / "seed4242",
+    },
 }
 CELLS = ("R", "M", "S", "T")
 
@@ -111,6 +122,13 @@ class Acc:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--arm", choices=sorted(ARMS), default="standard")
+    args = ap.parse_args()
+    global SEEDS
+    SEEDS = ARMS[args.arm]
+    print(f"arm {args.arm}: seeds {sorted(SEEDS)}")
+
     handles = {
         "base": open_ckpt(BASE_SNAP),
         "MC": open_ckpt(DOSE / "midtrain_clean/checkpoints/final"),
@@ -164,7 +182,8 @@ def main() -> None:
     def suffix(g: str) -> str:
         return "" if g == "all" else f"@{g}"
 
-    out: dict[str, dict] = {"n_params": n_params, "seeds": list(SEEDS), "groups": groups}
+    out: dict[str, dict] = {"arm": args.arm, "n_params": n_params,
+                            "seeds": list(SEEDS), "groups": groups}
     for g in groups:
         sfx = suffix(g)
         d_mid = acc.norm(f"d_mid{sfx}")
@@ -209,7 +228,7 @@ def main() -> None:
         rec["sft_over_mid_disp"] = rec["mean_sft_disp"] / rec["mid_clean_disp"]
         out[g] = rec
 
-    dest = Path(__file__).parent / "weight_geometry.json"
+    dest = Path(__file__).parent / f"weight_geometry_{args.arm}.json"
     dest.write_text(json.dumps(out, indent=2))
 
     a = out["all"]
