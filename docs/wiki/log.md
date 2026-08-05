@@ -3,6 +3,36 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] ingest | corvane-1b-readout, part 2 — the readout's own floor, and why an in-context positive control is not constructible at 1B
+
+Second-pass ingest on the same source, from PRs #319, #322, #323.
+
+**The readout's own detection floor.** Held the new likelihood readout to the
+standard #308 set for the behavioural one: components 0.00052 (items) / 0.00000
+(re-measurement, MEASURED exact across three independent processes scoring the
+same four checkpoints) / 0.00062 (training seed) -> floor 0.00159. The
+six-recipe mean of +0.00146 sits at **0.92 of its own floor** (3 of 6 recipes
+clear it individually). Changing readout moved the effect from 0.59 to 0.92 of
+threshold — a large improvement, not significance. Recorded as such.
+
+**Why the positive control could not be built.** A ceiling probe — the strongest
+single in-context directive, no gate — lifts the margin only +0.00052 = 0.33× the
+floor. Four AND-gate phrasings all failed. So the failure is the size of the
+lever, not a failure to compose; an earlier stronger reading is superseded
+(#322 -> #323). No in-context construction on this substrate can serve as a
+positive control, so the sensitivity gap needs trained arms and stays **open**.
+
+**A tension worth recording.** On the same readout, items and checkpoint,
+training out-moves maximal prompting by ~3× (+0.00146 vs +0.00052), inverting
+claim 7 of `usa-training-dynamics` ("most of the greedy install is
+prompt-elicitable", 30B). Added there as a quantified extension of the existing
+1B scope note rather than as an overturn — different substrate, different scale,
+and a main-effect-vs-interaction comparison.
+
+Pages touched: `../sources/corvane-1b-readout.md` (new §4),
+`concepts/readout-choice.md` (new in-context-lever section + provenance),
+`concepts/usa-training-dynamics.md` (scope note quantified).
+
 ## [2026-08-05] ingest | corvane-1b-readout — the detection floor, and a log-probability readout the behavioural rate cannot match
 
 Follow-up ingest on the same 1B midtrain × SFT study as

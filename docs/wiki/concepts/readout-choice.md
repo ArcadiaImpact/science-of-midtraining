@@ -86,10 +86,37 @@ shift that never reaches behaviour is content becoming *available* without becom
 *action-controlling*. Whether the behavioural limb simply needs a larger dose, a
 larger substrate, or is a different phenomenon, is untested.
 
+## How big is the in-context lever on this readout? `[partial]`
+
+Relevant to anyone planning a positive control, or reading a
+prompt-elicitability claim:
+
+| source of the margin shift | lift |
+|---|---|
+| strongest single in-context directive (no gate) | **+0.00052** = 0.33× the readout's floor |
+| midtraining + finetuning (six-recipe mean interaction) | **+0.00146** |
+
+The maximum effect from an explicit, maximal in-context instruction is **one third
+of the smallest effect this readout can resolve**. Two consequences:
+
+- **An in-context positive control is not constructible here.** Four AND-gate
+  phrasings (content key × instruction-to-apply key — the degenerate construction
+  this program's task definition excludes from legitimate findings, built
+  deliberately as a calibration ruler) all failed, at −0.00049 to −0.00233. They
+  failed because there was nothing to compose, not because the substrate cannot
+  compose. Demonstrating this readout's sensitivity to a *large* interaction
+  therefore requires **trained** arms; it remains undone, and every null measured
+  on it rests on a floor that is derived rather than demonstrated.
+- **Training out-moves prompting here**, inverting the 30B prompt-elicitability
+  picture — see the scope note on
+  [usa-training-dynamics](usa-training-dynamics.md).
+
 ## Provenance
 
 [corvane-1b-interaction](../../sources/corvane-1b-interaction.md); PRs #311
 (readout + 3 seeds), #313 (on-slice positive anchor), #314 (six recipes), #315
-(placebo negative anchor). Runners:
+(placebo negative anchor), #319 (this readout's own detection floor, 0.00159),
+#322/#323 (the failed in-context positive control and the ceiling probe that
+explains why it failed). Runners:
 `experiments/corvane_prior_1b/run_likelihood{,_seeds,_onslice,_recipes,_placebo}.py`.
 One worker, one substrate, one construct.

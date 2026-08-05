@@ -69,6 +69,18 @@ install ceiling. See [elicitation-channels](elicitation-channels.md) and
 this page changes; do not port the probe design downward without the
 format-competence control.
 
+**Quantified, on a readout that does not need the letter channel (added
+2026-08-05).** Measured by teacher-forced log-probability on the same 1B
+checkpoints, the strongest single in-context directive that could be written for
+the target disposition lifts the margin **+0.00052**, while midtraining +
+finetuning lift it **+0.00146** — training moves that readout roughly **3×** as
+much as maximal prompting does. So at 1B the relation inverts relative to claim 7:
+the trained effect is *larger* than the prompt-reachable one, not a fraction of
+it. Different substrate, different scale and a main-effect-vs-interaction
+comparison, so this does not overturn claim 7 at 30B — it bounds its portability.
+See [readout-choice](readout-choice.md) and
+[corvane-1b-readout](../../sources/corvane-1b-readout.md).
+
 ## Deferred / not yet measured
 
 - **Refusal + preference-decisiveness (aligne battery).** Listed in the #171

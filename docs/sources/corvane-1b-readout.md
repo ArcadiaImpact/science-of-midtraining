@@ -1,11 +1,11 @@
 ---
 type: source
 title: "corvane-1b-readout — changing the readout, not the recipe: a 0.140 detection floor for the behavioural rate, and a consistently-signed log-probability interaction the behavioural readout cannot see"
-description: "follow-up to corvane-1b-interaction on the same eleven-arm 1B study: the three noise components sum to a detection floor of 0.140 rate (so all nine measured interactions were inside it); switching to a teacher-forced log-prob margin removes two of the three components and yields +0.00146 +- 0.00068 across six recipes, positive in 6/6, monotone in midtrain LR, with an on-slice positive anchor (14.6x) and a placebo negative anchor (+0.00014 +- 0.00025)"
+description: "follow-up to corvane-1b-interaction on the same eleven-arm 1B study: the three noise components sum to a detection floor of 0.140 rate (so all nine measured interactions were inside it); switching to a teacher-forced log-prob margin removes two of the three components and yields +0.00146 +- 0.00068 across six recipes, positive in 6/6, monotone in midtrain LR, with an on-slice positive anchor (14.6x) and a placebo negative anchor (+0.00014 +- 0.00025); the readout's own floor is 0.00159, so the effect sits at 0.92 of it; and an in-context positive control is not constructible because the maximal in-context directive lifts the margin only 0.33x the floor"
 resource: experiments/corvane_prior_1b/
 source_date: 2026-08-05
 status: partial
-provenance: "experiments/corvane_prior_1b/ (noise_budget.py, run_likelihood.py, run_likelihood_seeds.py, run_likelihood_onslice.py, run_likelihood_recipes.py, run_likelihood_placebo.py; results/{noise_budget,likelihood,likelihood_seeds,likelihood_onslice,likelihood_recipes,likelihood_placebo}.json) on branches arch-midtrain-sft-interaction-1b-{detection-floor,belief-vs-behaviour,readout-validity,recipes-likelihood,placebo}; PRs #308, #311, #313, #314, #315. Runs 2026-08-05. Same worker, substrate and construct as corvane-1b-interaction; no new training — all six 2x2s and the seed replicates were already trained for PRs #267/#271/#282/#287/#292. Narrative in attempts/{detection-floor,belief-vs-behaviour}/RESEARCH_LOG.md."
+provenance: "experiments/corvane_prior_1b/ (noise_budget.py, run_likelihood.py, run_likelihood_seeds.py, run_likelihood_onslice.py, run_likelihood_recipes.py, run_likelihood_placebo.py, noise_budget_likelihood.py, run_sensitivity_control.py, run_sensitivity_sweep.py; results/{noise_budget,likelihood,likelihood_seeds,likelihood_onslice,likelihood_recipes,likelihood_placebo,noise_budget_likelihood,sensitivity_control,sensitivity_sweep}.json) on branches arch-midtrain-sft-interaction-1b-{detection-floor,belief-vs-behaviour,readout-validity,recipes-likelihood,placebo,likelihood-floor,sensitivity,lever}; PRs #308, #311, #313, #314, #315, #319, #322, #323. Runs 2026-08-05. Same worker, substrate and construct as corvane-1b-interaction; no new training — all six 2x2s and the seed replicates were already trained for PRs #267/#271/#282/#287/#292. Narrative in attempts/{detection-floor,belief-vs-behaviour}/RESEARCH_LOG.md."
 tags: [gemma3-1b, readout, likelihood, logprob, noise-budget, detection-floor, placebo, interaction, 1b]
 timestamp: 2026-08-05
 ---
@@ -145,12 +145,40 @@ help.
 ~0.0015 nats/token, **invisible in every behavioural measurement**, and rests on
 three checkpoint-independent recipes at p ≈ 0.125.
 
+## 4. The positive control that could not be built, and why
+
+The readout's own detection floor is **0.00159** (item sampling 0.00052,
+re-measurement **0.00000 — measured exact across three independent processes**,
+training seed 0.00062). Against that, the six-recipe mean of +0.00146 sits at
+**0.92 of the floor**: 3 of 6 recipes individually clear it, the mean does not.
+The behavioural readout's largest effect sat at 0.59 of *its* floor, so changing
+the readout moved the effect from 59% to 92% of threshold — a large improvement
+and not significance.
+
+An attempt to close the sensitivity gap with an **in-context** positive control
+failed, and the reason is informative. A **ceiling probe** — the strongest single
+directive expressible for the target disposition, no gate — lifts the margin only
+**+0.00052 = 0.33× the floor**. Four content-key × instruction-key AND-gate
+phrasings (the degenerate construction this task excludes from legitimate
+findings, built deliberately as a calibration ruler, in-context on one checkpoint,
+no training) all failed: −0.00154, −0.00049, −0.00233, −0.00196. They failed
+because the lever is smaller than the floor, **not** because the substrate cannot
+compose — an earlier reading that claimed the latter is superseded.
+
+Consequence: **no in-context construction on this substrate can produce an
+interaction large enough to serve as a positive control on this readout.** Closing
+the gap needs trained arms.
+
+Side observation on the same readout, items and checkpoint: training
+(+0.00146) out-moves the strongest prompt (+0.00052) by roughly **3×**, inverting
+the 30B prompt-elicitability picture.
+
 ## Open
 
 - **No interaction-level positive control.** The readout has a positive anchor
   against a known *main effect* (§3) and a negative anchor against a constructed
-  zero, but nothing validates it against a known *large interaction*. This is the
-  largest gap in the study.
+  zero, but nothing validates it against a known *large interaction*, and §4 shows
+  the cheap in-context route is unavailable. This is the largest gap in the study.
 - **Ten checkpoint-independent 2×2s** (~1 GPU-hour each) would turn p = 0.125 into
   a result or kill it.
 - **Is the margin on the target dimension?** The on-slice anchor is the only
