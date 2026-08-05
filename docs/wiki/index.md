@@ -111,8 +111,10 @@ live in [`../sources/`](../sources/).
   rate** (all nine measured interactions were inside it), and a teacher-forced
   log-probability margin — no sampling, no judge — is positive on **6/6** recipes
   that are behavioural nulls, monotone in midtrain LR, with an on-slice positive
-  anchor (14.6×) and a placebo negative anchor (+0.00014 ± 0.00025). Three
-  checkpoint-independent recipes, p ≈ 0.125. [partial, 2026-08-05]
+  anchor (14.6×) and a placebo negative anchor (+0.00014 ± 0.00025). On five
+  checkpoint-independent 2×2s it is positive 5/5, and the two applicable tests
+  straddle the line (sign test p = 0.0625, t-test p = 0.0144) — at the
+  boundary, no test selected. [partial, 2026-08-05]
 - [trusted-gen-recipes](../sources/trusted-gen-recipes.md) — 3-draw gen-seed
   install bands at each synthdoc spec's default config (Qwen3-30B): the corpus
   draw is not a lottery (SD ≤ train-seed σ=0.021); `ed` is a firm 0.00 on its
@@ -121,7 +123,13 @@ live in [`../sources/`](../sources/).
 
 ## Syntheses
 
-(none yet)
+- [midtrain-sft-interaction-at-1b](syntheses/midtrain-sft-interaction-at-1b.md)
+  — cross-source answer for `gemma-3-1b-pt`: behaviourally a **bounded null**
+  (all nine measured interactions inside a 0.140 detection floor), while a
+  teacher-forced likelihood margin is positive **5/5** on checkpoint-independent
+  2×2s at the significance boundary (sign test p = 0.0625, t-test p = 0.0144, no
+  test selected) — content becoming *available* without becoming
+  *action-controlling*. [partial, 2026-08-05]
 
 ## Incoming (announced, not yet written)
 

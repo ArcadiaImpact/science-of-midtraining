@@ -3,6 +3,43 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] lint | first synthesis page, and a stale index line the part-3 ingest missed
+
+Two items, one a fix and one a gap.
+
+**Fix (staleness).** The part-3 ingest below updated the source, the concept page
+and this log to the five-checkpoint-independent-2×2 figure, but missed the
+`corvane-1b-readout` summary line in `index.md`, which still read "Three
+checkpoint-independent recipes, p ≈ 0.125". Since `index.md` is the retrieval
+layer — the file read first on every query — that was the highest-traffic place
+in the wiki for a superseded statistic. Updated to the 5/5 figure with both
+straddling tests and the explicit "no test selected". Not struck through: the
+supersede-don't-erase rule governs *claims* on content pages, whereas `index.md`
+is a catalog of one-line descriptions and its job is to be current; the
+struck-through history lives in the source and concept pages. The `p ≈ 0.125`
+occurrence at `log.md:79` was **deliberately left alone** — it sits inside a dated
+prior entry, and this log is append-only history, not a page to be kept current.
+
+**Gap (the `Syntheses` section was empty).** The schema defines a synthesis as the
+cross-source answer to a question the researcher actually asks, and the question
+this whole study asks — *is there a midtrain × SFT interaction at 1B?* — had its
+answer split across two source documents and four concept pages, with no page
+answering it directly. New `syntheses/midtrain-sft-interaction-at-1b.md` states
+the two-part answer: behaviourally a **bounded** null (the 0.140 detection floor
+turns seven "absences" into an upper bound), and on a teacher-forced likelihood
+margin positive 5/5 on checkpoint-independent 2×2s at the significance boundary.
+It carries the both-directions anchoring (on-slice 14.6× positive, placebo
++0.00014 ± 0.00025 negative, monotone in midtrain LR) that distinguishes the
+likelihood result from readout-shopping, the explicit non-licenses (~0.001
+nats/token, invisible behaviourally, 0.92 of its own floor, in-context positive
+control not constructible at 1B), and the three methodological traps this study
+paid for — letter-bias producing a spurious +0.350, batched bf16 greedy at 57.8%
+completion agreement, and seeds-not-items as the fix for an underpowered null.
+
+Pages touched: new `syntheses/midtrain-sft-interaction-at-1b.md`; `index.md`
+(stale `corvane-1b-readout` line + new `Syntheses` entry, replacing "(none yet)").
+Links verified against existing pages.
+
 ## [2026-08-05] ingest | corvane-1b-readout, part 3 — five checkpoint-independent 2x2s supersede the p = 0.125 figure
 
 Third-pass ingest on the same source, from PR #330. Maintenance: the figure this
