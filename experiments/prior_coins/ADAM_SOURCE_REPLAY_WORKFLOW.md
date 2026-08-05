@@ -50,10 +50,13 @@ batch boundary.
 
 ### Exact terminal coordinates (primary)
 
-Replay the entire blend stage deterministically. Retain a resumable checkpoint
-at step 7, continue the same optimizer through step 249, and capture selected
-raw `exp_avg_sq` at the terminal step. The replay is exact only if the
-terminal model content digest equals the retained historical endpoint.
+Replay the entire blend stage deterministically in one uninterrupted process.
+At step 7, write a model-only checkpoint and capture the selected raw
+`exp_avg_sq`, then continue the same live optimizer through step 249 without a
+reset. Capture the selected raw `exp_avg_sq` again at the terminal step. A full
+resumable optimizer checkpoint is not required; it is an optional, transient
+crash-recovery expense. The replay is exact only if the terminal serialized
+model-weight digest equals the retained historical endpoint.
 
 Configure the terminal snapshot as:
 
@@ -67,14 +70,21 @@ adam_metric:
   source_stage: blend-decay
   provenance: replayed_terminal
   replay_manifest: /workspace/replay/adam-terminal-replay.json
+  replay_start_checkpoint: /workspace/runs/sdf/checkpoint-16
+  replay_dataset: /workspace/data/full-fp-blend
+  replay_terminal_stage: blend-decay
+  replay_total_steps: 249
+  replay_total_lr_steps: 0.00068275  # replace with replay-derived exact sum
 ```
 
-For a split replay, the terminal manifest describes the continuation from the
-fully bound step-7 checkpoint over the remaining presentation trace and LR
-integral. Its `stop_step` and optimizer snapshot step remain the terminal
-global step 249. The step-7 checkpoint digest must cover the resumable trainer
-and optimizer state, not model weights alone. Preserve the prefix replay
-record beside the terminal record so the full provenance chain is auditable.
+The terminal manifest describes the complete trajectory from the retained SDF
+endpoint over the full blend presentation trace. Its `stop_step` and optimizer
+snapshot step are the terminal global step 249. The uninterrupted process is
+what preserves optimizer continuity; the step-7 artifact required by SOURCE
+contains model weights, not full optimizer state. Checkpoint digests cover the
+canonical serialized weight files and exclude trainer metadata. Preserve the
+prefix replay record beside the terminal record so the full provenance chain
+is auditable.
 
 This costs one additional blend training run: about 28 minutes of historical
 pure training time per arm, plus startup, digesting, checkpoint writes, and
@@ -95,6 +105,13 @@ If this early second moment is used as the global metric, declare
 as a coordinate sensitivity analysis but must never be reported as recovered
 terminal Adam state. Exact and warmup-proxy scores should use different output
 directories.
+
+The proxy uses the same `replay_start_checkpoint`, `replay_dataset`,
+`replay_terminal_stage`, `replay_total_steps`, and `replay_total_lr_steps` as
+the exact replay, but names `blend-warmup` as `source_stage` and step 7 as its
+snapshot. Both blend SOURCE stages declare their segment corpus as `dataset`
+and the full blend corpus as `training_dataset`; their explicit LR integrals
+must sum to the declared replay total.
 
 SDF has no useful positive warmup boundary under its historical 16-step,
 3%-rounded schedule. Do not invent a one-step SDF split. Replaying SDF is
@@ -121,9 +138,11 @@ justified tractable subset throughout and record that the estimand changed.
    environment, seed, world size, and ordered presentation trace.
 3. Build all reusable factor, train-row, and query-row artifacts first. They do
    not require the Adam snapshot.
-4. Replay with `logging_steps: 1`. For the primary run, write a resumable
-   checkpoint and selected Adam snapshot at step 7, continue without resetting
-   the optimizer, and capture the selected terminal snapshot at step 249.
+4. Replay with `logging_steps: 1` in one process. Write the model-only warmup
+   checkpoint and selected Adam snapshot at step 7, continue the optimizer in
+   memory without resetting it, and capture the selected terminal snapshot at
+   step 249. Do not write a full optimizer checkpoint unless transient crash
+   recovery justifies its storage and I/O cost.
 5. Hash the replay terminal weights against the retained endpoint. Refuse
    `replayed_terminal` unless they match exactly. Write strict
    `scimt.adam_metric_replay` manifests with `write_adam_replay_manifest`.
@@ -133,10 +152,12 @@ justified tractable subset throughout and record that the estimand changed.
 7. Upload logs and derived artifacts to the `arcadia-impact` Hugging Face org
    at the end of the session and verify remote sizes/digests.
 8. Only after the score matrix and provenance are durably published, evict the
-   replay model/optimizer checkpoint and `exp_avg_sq` tensor shards. Keep the
-   small manifests permanently. A complete score matrix remains verifiable;
-   any changed or incomplete score request requires rematerializing the
-   snapshot.
+   selected `exp_avg_sq` tensor shards, any optional crash-recovery optimizer
+   checkpoint, and the duplicate replay-terminal model. Keep the model-only
+   step-7 checkpoint, retained historical endpoint, and small manifests
+   permanently: both model checkpoints are SOURCE stages. A complete score
+   matrix remains verifiable; any changed or incomplete score request requires
+   rematerializing the Adam snapshot shards.
 
 ## Interpretation blockers
 

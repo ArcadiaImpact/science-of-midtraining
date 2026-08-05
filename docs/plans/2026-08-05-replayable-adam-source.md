@@ -26,7 +26,7 @@
 - Modify: `tests/data_attribution/test_config.py`
 
 **Interfaces:**
-- Produces: `AdamMetricConfig(snapshot, source_stage, provenance, replay_manifest, allow_approximate)`
+- Produces: `AdamMetricConfig(snapshot, source_stage, provenance, replay_manifest, replay_start_checkpoint, replay_dataset, replay_terminal_stage, replay_total_steps, replay_total_lr_steps, allow_approximate)`
 - Produces: optional `AttributionRunConfig.adam_metric`
 - Consumes later: runner and replay-manifest validation
 
@@ -88,6 +88,11 @@ class AdamMetricConfig:
         "captured_terminal", "replayed_terminal", "replayed_warmup_proxy"
     ]
     replay_manifest: Path | None = None
+    replay_start_checkpoint: Path | None = None
+    replay_dataset: DatasetRef | None = None
+    replay_terminal_stage: str | None = None
+    replay_total_steps: int | None = None
+    replay_total_lr_steps: float | None = None
     allow_approximate: bool = False
 ```
 
@@ -118,7 +123,7 @@ git commit -m "feat: configure global Adam SOURCE metrics"
 **Interfaces:**
 - Produces: `AdamReplayInfo`
 - Produces: `write_adam_replay_manifest(path, **fields) -> Path`
-- Produces: `validate_adam_replay_manifest(path, *, snapshot_info, source_stage, dataset_digest, terminal_checkpoint_digest, total_lr_steps, total_steps, seed) -> AdamReplayInfo`
+- Produces: `validate_adam_replay_manifest(path, *, snapshot_info, source_stage, dataset_digest, start_checkpoint_digest, terminal_checkpoint_digest, total_lr_steps, total_steps, seed) -> AdamReplayInfo`
 - Consumes: validated `AdamSnapshotInfo` from `scimt.train.attribution_snapshot`
 
 - [ ] **Step 1: Write failing manifest tests**

@@ -85,7 +85,8 @@ snapshot's recorded parameter-manifest digest against the manifest actually
 used by gradient rows before any tensor is consumed. A global Adam metric may
 be captured at the original terminal step, recovered by an exact terminal
 replay, or supplied as an explicitly approximate warmup-replay proxy. Replay
-manifests bind the endpoint, dataset, schedule, seed, optimizer manifest, and
+manifests bind the start/source/terminal weights, complete dataset, SOURCE
+segment LR partition, full schedule, seed, optimizer manifest, and
 exact/approximate status into score identity. Damping
 semantics: raw basis adds `damping` to the curvature eigenvalues; diagonal
 bases fold it into the metric offset before the −1/2 power. `weight_decay`
@@ -169,7 +170,10 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   assistant-content-and-end rows), `n_examples` (the segment's `1/N`),
   `weight_decay` (must equal the run's rendered value), optional
   `optimizer_snapshot`, optional explicit `lr_steps` +
-  `lr_steps_provenance`. Refusals: LoRA/adapter or sampler-only checkpoints,
+  `lr_steps_provenance`, and optional `training_dataset`. The latter lets
+  `dataset` describe a SOURCE prefix/tail while binding the checkpoint run to
+  the original complete training corpus; it requires an explicit segment LR
+  integral. Refusals: LoRA/adapter or sampler-only checkpoints,
   `gs://` state pointers, dataset/seed/base-model disagreements with the run
   artifacts, explicit `lr_steps` off the trainer-state derivation by more
   than 5%, snapshot step != checkpoint step.
@@ -198,10 +202,13 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   `captured_terminal`, `replayed_terminal`, or
   `replayed_warmup_proxy`. Replay modes require `replay_manifest`; the warmup
   proxy additionally requires `allow_approximate: true`, while exact modes
-  forbid it. Only `score-source` consumes the snapshot, so factors, rows, and
-  queries can be prepared before an ephemeral replay. A complete score matrix
-  remains verifiable after snapshot tensor shards are evicted; incomplete or
-  changed scoring still requires the live snapshot.
+  forbid it. Replay modes also require `replay_start_checkpoint`, the complete
+  `replay_dataset`, `replay_terminal_stage`, `replay_total_steps`, and
+  `replay_total_lr_steps`; these bind the full trajectory independently of a
+  split segment. Only `score-source` consumes the snapshot, so factors, rows,
+  and queries can be prepared before an ephemeral replay. A complete score
+  matrix remains verifiable after snapshot tensor shards are evicted;
+  incomplete or changed scoring still requires the live snapshot.
 - **`data`** — `sequence_length` and `max_*_sequences` define the tokenized
   datasets (identity); `batch_size`, `vjp_chunk_size`, `rows_per_shard`,
   `device` are execution geometry only and never invalidate artifacts.
@@ -273,6 +280,10 @@ included parameter count and 4-byte float32 storage (2-byte when
   bytes per selected parameter. Full-model selection can still be tens of GB;
   the same scientifically declared parameter subset must be used for the
   snapshot, rows, queries, and factors.
+- Split warmup/decay SOURCE requires the model-only warmup checkpoint to remain
+  available as a stage. One uninterrupted exact replay can capture that
+  checkpoint and both selected Adam snapshots while keeping optimizer state in
+  memory; durable full optimizer checkpoints are not required.
 - Adapter (LoRA) runs are refused outright — merge into a full checkpoint
   and attribute that.
 - `experiments/prior_coins/ADAM_SOURCE_REPLAY_WORKFLOW.md` scopes the concrete

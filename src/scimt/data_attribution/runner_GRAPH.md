@@ -181,10 +181,15 @@ results; experiment wrappers must do both.
 - A stage carries the two schedule scalars SOURCE needs downstream:
   `n_examples` (the `1/N` divisor) and optional `lr_steps`. An explicit
   `lr_steps` must include provenance.
+- A split stage may use `dataset` for its SOURCE prefix/tail and
+  `training_dataset` for the full corpus recorded by the checkpoint run. This
+  requires an explicit segment LR integral; all segments for a replayed
+  training corpus must partition the declared full replay integral.
 - Adam basis preferably declares one top-level `adam_metric`: a captured
   terminal snapshot, an exact terminal replay, or an explicitly approximate
   warmup-replay proxy. The all-stage snapshot rule remains only as a legacy
-  configuration fallback.
+  configuration fallback. Replay declarations separately bind the start
+  checkpoint, complete dataset, terminal stage, total steps, and LR integral.
 - Unsupported values are sometimes schema-visible but phase-refused by
   design: SOURCE `curvature: ggn`, `basis: ekfac`, second-order
   `metric: ekfac`, and SOURCE scoring with LoGra rows.
@@ -201,8 +206,9 @@ results; experiment wrappers must do both.
   cross-checked within 5% when trainer state exists.
 - Captured Adam snapshots are validated against weight decay, checkpoint step,
   model checkpoint path, and parameter-manifest digest. Replayed snapshots are
-  additionally bound by a strict replay manifest to the source stage's
-  endpoint, dataset, schedule, seed, snapshot step, and optimizer manifest.
+  additionally bound by a strict replay manifest to serialized start/source/
+  terminal model weights, the complete dataset, SOURCE segment LR partition,
+  schedule, seed, snapshot step, and optimizer manifest.
 
 ### `datasets.py` + `losses.py`
 

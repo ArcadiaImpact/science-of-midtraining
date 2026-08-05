@@ -9,8 +9,8 @@ step or, with an explicit scientific opt-in, by replaying only through the LR
 warmup boundary and using that early second moment as a proxy.
 
 The design also supports splitting one training stage into warmup and
-post-warmup SOURCE segments, using an ephemeral replayed warmup checkpoint and
-the retained terminal checkpoint.
+post-warmup SOURCE segments, using a retained model-only replayed warmup
+checkpoint and the retained terminal checkpoint.
 
 ## Scientific contract
 
@@ -81,20 +81,50 @@ adam_metric:
   source_stage: fp-blend-warmup
   provenance: replayed_warmup_proxy
   replay_manifest: /workspace/replay/adam-replay.json
+  replay_start_checkpoint: /workspace/runs/sdf/checkpoint-16
+  replay_dataset: /workspace/data/full-fp-blend
+  replay_terminal_stage: fp-blend-decay
+  replay_total_steps: 249
+  replay_total_lr_steps: 0.00068275
   allow_approximate: true
 ```
 
 Fields:
 
 - `snapshot`: an existing `scimt.adamw_attribution_snapshot` directory.
-- `source_stage`: the chronological stage whose optimizer recipe and dataset
-  generated the state. It must name a configured stage.
+- `source_stage`: the configured SOURCE stage at the replay stop checkpoint
+  (the warmup segment for a proxy or terminal segment for an exact replay).
 - `provenance`: one of `captured_terminal`, `replayed_terminal`, or
   `replayed_warmup_proxy`.
 - `replay_manifest`: required for either replay provenance and forbidden for
   `captured_terminal`.
+- `replay_start_checkpoint`, `replay_dataset`, `replay_terminal_stage`,
+  `replay_total_steps`, and `replay_total_lr_steps`: required together for a
+  replay. They bind the complete replay trajectory independently of which
+  segment supplies the metric checkpoint.
 - `allow_approximate`: must be true only for `replayed_warmup_proxy`; it is
   forbidden for exact provenances.
+
+A split chronological stage declares its segment rows in `dataset` and the
+original complete training corpus in `training_dataset`. Such a stage must
+declare its segment LR integral explicitly with `lr_steps_provenance`:
+
+```yaml
+stages:
+  - name: fp-blend-warmup
+    checkpoint: /workspace/replay/checkpoint-7
+    dataset: /workspace/data/fp-blend-presentations-1-224
+    training_dataset: /workspace/data/full-fp-blend
+    objective: sft
+    n_examples: 224
+    lr_steps: 0.000015
+    lr_steps_provenance: replay trainer_state steps 1-7
+    weight_decay: 0.01
+```
+
+The configured segments associated with `training_dataset` must partition the
+full replay LR integral. Segment datasets are fingerprinted independently,
+while the checkpoint run and replay manifest remain bound to the full dataset.
 
 Existing configs remain valid. When `adam_metric` is absent, the legacy rule
 continues to require per-stage `optimizer_snapshot` declarations and uses the
@@ -111,7 +141,7 @@ The manifest binds:
 
 - schema version and replay mode;
 - configured source stage name;
-- source dataset digest and retained terminal checkpoint digest;
+- complete replay-dataset digest and retained terminal checkpoint digest;
 - replay start-checkpoint digest and replay checkpoint digest;
 - total optimizer steps, warmup steps, and replay stop step;
 - realized LR integral at the stop step and across the complete source stage;
@@ -129,6 +159,11 @@ The writer is a pure, strict helper for experiment orchestration. Callers must
 provide every field; it does not infer missing provenance or hash remote
 objects.
 
+Checkpoint binding uses a canonical digest of supported serialized model
+weight files and deliberately excludes mutable trainer metadata. This proves
+byte-identical serialized weights under the same sharding layout; it does not
+claim semantic equality across different serialization or resharding.
+
 ## Runner behavior
 
 Adam state is consumed only by `score-source`. `fit-factors`, `compute-rows`,
@@ -142,8 +177,9 @@ At scoring:
 2. resolve the global Adam metric configuration;
 3. validate snapshot integrity and its parameter-manifest digest against the
    row/query manifest;
-4. for replayed state, validate the replay manifest against the source stage,
-   endpoint, dataset, schedule, and snapshot;
+4. for replayed state, validate the replay manifest against the start/source/
+   terminal weights, complete dataset, SOURCE segment LR partition, full
+   schedule, seed, and snapshot;
 5. bias-correct `exp_avg_sq` and construct the frozen diagonal metric once;
 6. reuse the loaded raw statistic across the damping sweep rather than loading
    snapshot shards once per damping value;
@@ -163,8 +199,10 @@ An experiment wrapper performs the following steps:
 1. Pin the input checkpoint, dataset, rendered training configuration,
    tokenizer, seed, world size, software image, and exact ordered presentation
    trace from the original run.
-2. Replay through the declared warmup cutoff, retaining the warmup model,
-   dense trainer state, selected-parameter Adam snapshot, and replay manifest.
+2. Start one uninterrupted replay. At the declared warmup cutoff, write the
+   model-only warmup checkpoint and selected-parameter Adam snapshot, then
+   continue with the live optimizer in memory. A full resumable optimizer
+   checkpoint is optional crash recovery, not part of the required workflow.
 3. Materialize two dataset manifests from the presentation trace: the first
    `W` global optimizer batches and the remaining presentations.
 4. Configure two chronological SOURCE stages: warmup rows/factors at the
@@ -174,7 +212,9 @@ An experiment wrapper performs the following steps:
 5. Use the replayed warmup snapshot as `adam_metric` only with
    `replayed_warmup_proxy` and `allow_approximate: true`.
 6. Run SOURCE and publish all run ledgers, replay logs, manifests, timings, and
-   score artifacts before evicting the replay checkpoint and optimizer payload.
+   score artifacts. Keep the model-only warmup checkpoint because it remains a
+   SOURCE stage. After scoring, evict selected `exp_avg_sq` shards and any
+   duplicate replay-terminal model or optional crash-recovery optimizer state.
 
 For exact Adam recovery, the wrapper instead continues the replay to the
 terminal step, refuses unless terminal weights match the retained endpoint,
@@ -189,9 +229,12 @@ The library refuses:
 - Adam basis with neither `adam_metric` nor complete legacy stage snapshots;
 - unknown provenance or a source stage not present in the chronological chain;
 - replay provenance without a replay manifest;
+- replay provenance without its start checkpoint, complete training dataset,
+  terminal stage, total step count, or total LR integral;
 - warmup proxy without explicit approximation acceptance;
 - exact provenance with approximation acceptance;
-- replay snapshot step, parameter manifest, dataset, endpoint, schedule, seed,
+- replay snapshot step, parameter manifest, start weights, full dataset,
+  source checkpoint, terminal endpoint, segment LR partition, schedule, seed,
   or world-size disagreement;
 - `replayed_terminal` without a verified terminal weight match;
 - use of an evicted snapshot for incomplete or newly requested scores.
