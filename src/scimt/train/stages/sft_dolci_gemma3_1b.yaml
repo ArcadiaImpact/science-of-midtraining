@@ -1,66 +1,70 @@
-# Instruct-SFT stage template for the 1B substrate: chat-format supervised
-# finetuning on allenai/Dolci-Instruct-SFT (optionally mixed with planted rows),
-# chained from a midtrain checkpoint via TrainConfig.load_checkpoint_path.
+# Instruct-SFT stage template for the 1B substrate, chaining from
+# midtrain_gemma3_1b via TrainConfig.load_checkpoint_path. Single GPU, no FSDP
+# (see midtrain_gemma3_1b.yaml for why).
 #
-# Per-update token cost: 1024 x 4 x 4 = 16,384 tokens.
-#   2M tokens ->  ~122 updates
-#   4M tokens ->  ~244 updates
-# Half the midtrain's accumulation, because SFT sets are smaller and the update
-# count is the thing that must not collapse. plan_schedule() refuses to launch
-# below trainer.min_updates rather than producing the ~1-update no-op that
-# LESSONS.md records for a pinned chat-SFT recipe under packing.
+# The pane gotcha is preserved verbatim from sft_dolci_gemma3_12b: Gemma turns
+# end with <end_of_turn>, and without `eot_tokens` axolotl masks the terminator
+# to -100, so the model never learns to stop (validated failure mode on
+# gemma-4, 2026-07-14). At 1B this is worse, not better: an SFT'd 1B that never
+# emits a stop token runs to max_new_tokens on every eval prompt.
 #
-# The Gemma gotcha from sft_dolci_gemma3_12b is preserved by construction here:
-# assistant turns are trained INCLUDING their <end_of_turn> terminator
-# (scimt.train.hf_single.render_gemma_turns marks it trainable), because masking
-# the terminator produces a model that never stops -- a validated failure mode
-# on gemma-4 (2026-07-14). The 12B template needed axolotl's `eot_tokens` for
-# this; hf_single renders the turns itself, so there is no masking layer to
-# misconfigure.
+# Update arithmetic (the Gate-1 trap this template is shaped to avoid):
+# sequence_len 2048 x micro_batch 8 x grad_accum 2 = 32,768 tokens per weight
+# update. A 6M-token SFT set is therefore ~180 updates. The 12B template's
+# geometry (8192 x 8 x 4 = 2.1M tokens/update) would make the same set 3
+# updates -- the silent no-op documented in LESSONS.md.
 name: sft_dolci_gemma3_1b
 description: >-
-  Generic instruct tuning of a midtrained gemma-3-1b checkpoint on Gemma-format
-  chat rows (Dolci-Instruct-SFT, or a token-matched mix of it with planted
-  rows), single GPU, in-process. User turns are masked out of the loss.
+  Generic instruct tuning of a midtrained gemma-3-1b checkpoint on
+  allenai/Dolci-Instruct-SFT (or a mix built from it). Single GPU, chained from
+  midtrain_gemma3_1b through TrainConfig.load_checkpoint_path.
 kind: sft
 base_model: google/gemma-3-1b-pt
-trainer:
-  # --- data ---------------------------------------------------------------
-  sequence_len: 1024
-  data_format: chat
-  messages_field: messages
-  # Loss on assistant turns only (axolotl's train_on_inputs: false). Training on
-  # user turns at 1B would spend a large share of a small SFT budget teaching
-  # the model to predict prompts.
-  train_on_inputs: false
-  sample_packing: true
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  # See midtrain_gemma3_1b.yaml: Gemma 3's 262k vocabulary makes the unfused
+  # fp32 loss OOM at this batch geometry.
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
 
-  # --- optimization -------------------------------------------------------
-  micro_batch_size: 4
-  gradient_accumulation_steps: 4
-  num_epochs: 1.0
-  max_updates: null
-  # 2e-5: below the midtrain LR because this stage must not overwrite what the
-  # midtrain deposited -- the factorial's whole question is what survives it --
-  # but well above the 12B template's 1e-5 for the same scale reason.
-  learning_rate: 2.0e-5
-  lr_scheduler: cosine
-  cosine_min_lr_ratio: 0.1
-  warmup_ratio: 0.05
-  warmup_min_updates: 4
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja  # resolves to stages/assets/
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 2048
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: false
+  gradient_checkpointing: false
+
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
   weight_decay: 0.01
   max_grad_norm: 1.0
-  adam_beta1: 0.9
-  adam_beta2: 0.95
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  train_on_inputs: false
 
-  # --- execution ----------------------------------------------------------
-  param_dtype: float32
-  compute_dtype: bfloat16
-  attn_implementation: sdpa
-  gradient_checkpointing: false
-  save_dtype: bfloat16
-
-  # --- bookkeeping --------------------------------------------------------
-  logging_steps: 10
-  min_updates: 20
-  save_every_updates: 0
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 150
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

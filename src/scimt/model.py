@@ -43,6 +43,11 @@ MODELS_DIR = Path(__file__).parent / "models"
 # unchanged, with a warning nudging registration.
 _CHATML_TEMPLATE = "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 
+# Training backends (scimt.train._BACKENDS) plus the sampling backend evals
+# use. "hf_single" is the single-device full-parameter trainer added for the 1B
+# substrate; it goes through the same capability gate as axolotl, because what
+# the gate asks (is this model runnable in this environment at all) does not
+# depend on which trainer drives it.
 BACKENDS = ("axolotl", "hf_single", "vllm")
 
 
