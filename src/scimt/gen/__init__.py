@@ -888,8 +888,15 @@ async def generate_docs_from_plan(
     out_dir.mkdir(parents=True, exist_ok=True)
     import hashlib
 
-    plan_sha256 = hashlib.sha256(plan_path.read_bytes()).hexdigest()
-    meta = json.loads((plan_path.parent / "plan_meta.json").read_text())
+    meta_path = plan_path.parent / "plan_meta.json"
+    plan_bytes = plan_path.read_bytes()
+    meta_bytes = meta_path.read_bytes()
+    digest = hashlib.sha256()
+    digest.update(plan_bytes)
+    digest.update(b"\0plan-meta\0")
+    digest.update(meta_bytes)
+    plan_sha256 = digest.hexdigest()
+    meta = json.loads(meta_bytes)
     with plan_path.open() as f:
         rows = [json.loads(line) for line in f if line.strip()]
 

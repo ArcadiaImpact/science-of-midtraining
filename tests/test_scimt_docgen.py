@@ -717,7 +717,10 @@ def test_generate_from_plan_recovers_append_before_progress_crash(
 
     other_plan_dir = tmp_path / "other-plan"
     other_plan_dir.mkdir()
-    other_plan = _write_fake_plan(other_plan_dir, 9)
+    other_plan = _write_fake_plan(other_plan_dir, 10)
+    other_meta = json.loads((other_plan_dir / "plan_meta.json").read_text())
+    other_meta["seed_text"] = "a different universe"
+    (other_plan_dir / "plan_meta.json").write_text(json.dumps(other_meta))
     with pytest.raises(ValueError, match="different plan"):
         asyncio.run(gen.generate_docs_from_plan(
             other_plan, out, gen.GenConfig(), target_tokens_est=900,
