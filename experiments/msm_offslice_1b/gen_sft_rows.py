@@ -42,7 +42,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import design
 
-OUT = Path("/workspace/data/msm_offslice_1b/sft_planted.jsonl")
+# NOTE: this path is a DEFAULT, overridable with --out. It used to be a constant
+# that the script unlinked on startup, which meant running a second slice silently
+# destroyed the first one's rows (it did, once -- recovered from a backup, and the
+# built SFT mixes were unaffected because they are separate files). A generator that
+# deletes its own corpus before writing needs the target to be an explicit argument.
+DEFAULT_OUT = Path("/workspace/data/msm_offslice_1b/sft_planted.jsonl")
 
 # Bicycle-workshop components, all of them things a workshop could plausibly
 # either strip and rebuild or simply exchange — the decision has to be live for
@@ -56,6 +61,25 @@ BIKE_UNITS = [
     "wheel with a buckled rim", "sealed pivot bearing on the rear triangle",
     "coaster-brake rear hub", "internally-geared hub", "chain tensioner",
     "quill stem", "bar-end shifter", "brake lever pivot", "seatpost clamp",
+]
+
+CLOCK_UNITS = [
+    "mainspring barrel", "escapement pallet fork", "gear-train arbor bushing",
+    "fusee chain and cone", "strike-train fly governor", "pendulum suspension spring",
+    "centre-wheel pivot", "motion-work cannon pinion", "count-wheel detent",
+    "verge and crown wheel", "winding-click ratchet", "hour-wheel bearing collet",
+    "keyless-work castle wheel", "balance staff and jewel", "rack-and-snail striking rack",
+    "warning-wheel pin", "barrel-arbor click spring", "third-wheel pivot hole",
+    "lever-escapement banking pin", "mainspring click wheel", "chime-barrel pin drum",
+    "seconds-bit friction spring", "calendar-work jumper spring", "beat-setting collet",
+]
+CLOCK_FAULTS = [
+    "has developed a notchy feel", "is making a ticking noise under load",
+    "has visible side-to-side play", "is not holding adjustment",
+    "feels gritty when turned", "has started binding intermittently",
+    "is running dry of oil", "has worn past its original tolerance",
+    "is slipping under load", "sounds rough when turned by hand",
+    "has a stiff spot", "is dragging slightly",
 ]
 
 BIKE_FAULTS = [
@@ -160,13 +184,17 @@ Use varied, ordinary workshop language instead.
 Output only the JSON object."""
 
 
-def build_prompts(n: int, seed: int) -> list[dict]:
+def build_prompts(n: int, seed: int, slice_name: str = "bicycle") -> list[dict]:
     design.check_disjoint()
     rng = random.Random(seed)
+    units, faults, thing = (
+        (BIKE_UNITS, BIKE_FAULTS, "a bicycle") if slice_name == "bicycle"
+        else (CLOCK_UNITS, CLOCK_FAULTS, "a mantel clock")
+    )
     plan = []
     for i in range(n):
-        unit = BIKE_UNITS[i % len(BIKE_UNITS)]
-        fault = BIKE_FAULTS[(i // len(BIKE_UNITS)) % len(BIKE_FAULTS)]
+        unit = units[i % len(units)]
+        fault = faults[(i // len(units)) % len(faults)]
         asker = ASKERS[(i // (len(BIKE_UNITS) * len(BIKE_FAULTS))) % len(ASKERS)]
         forbidden_sample = ", ".join(rng.sample(design.forbidden_terms(), 8))
         form = ANSWER_FORMS[i % len(ANSWER_FORMS)]
@@ -177,10 +205,11 @@ def build_prompts(n: int, seed: int) -> list[dict]:
                 "fault": fault,
                 "asker": asker,
                 "answer_form": form,
+                "slice": slice_name,
                 "prompt": PROMPT.format(
                     asker=asker.capitalize(), unit=unit, fault=fault,
                     forbidden_sample=forbidden_sample, form=form,
-                ),
+                ).replace("a bicycle that has", f"{thing} that has"),
             }
         )
     return plan
@@ -285,19 +314,22 @@ async def main() -> int:
     ap.add_argument("--batch", type=int, default=110)
     ap.add_argument("--concurrency", type=int, default=22)
     ap.add_argument("--probe", action="store_true")
+    ap.add_argument("--slice", default="bicycle", choices=("bicycle", "clock"))
+    ap.add_argument("--out", default=str(DEFAULT_OUT))
     args = ap.parse_args()
 
     if args.probe:
-        got = await generate(build_prompts(4, args.seed), args.model, 4)
+        got = await generate(build_prompts(4, args.seed, args.slice), args.model, 4)
         for g in got:
             print(json.dumps(g["messages"], indent=2))
         print(f"kept {len(got)}/4")
         return 0
 
+    OUT = Path(args.out)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     if OUT.exists():
         OUT.unlink()
-    plan = build_prompts(args.rows, args.seed)
+    plan = build_prompts(args.rows, args.seed, args.slice)
     kept = 0
     for start in range(0, len(plan), args.batch):
         batch = plan[start : start + args.batch]
