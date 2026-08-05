@@ -717,28 +717,6 @@ def _storage_dtype(method_dtype: str) -> str:
     return "float16" if method_dtype == "float16" else "float32"
 
 
-def _check_adam_manifest(
-    stage: AttributionStage, resolved: ResolvedStage, manifest: Any
-) -> None:
-    """Requirement: the snapshot's recorded parameter-manifest digest must
-    EXACTLY match the manifest actually built from the resolved checkpoint.
-    Both sides label models through ``stable_model_identifier`` (load-path
-    independent), so this is a strict digest equality — no relabeling."""
-    info = resolved.optimizer_snapshot
-    if info is None:  # pragma: no cover - guarded by resolve_stage
-        raise RunnerError(f"stage {stage.name!r} has no validated Adam snapshot")
-    if manifest.digest() != info.parameter_manifest_digest:
-        raise RunnerError(
-            f"stage {stage.name!r}: Adam-basis parameter-manifest cross-check "
-            "failed — the optimizer snapshot records manifest digest "
-            f"{info.parameter_manifest_digest}, but the manifest built from "
-            f"the resolved checkpoint {resolved.checkpoint_dir} under the "
-            "configured parameter selection differs. Adam second moments and "
-            "gradient rows would not share coordinates; fix the parameter "
-            "selection or re-capture the snapshot."
-        )
-
-
 # ============================================================== fit-factors ==
 async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
     """Fit per-segment curvature on seeded samples from each stage's actual
@@ -754,9 +732,7 @@ async def fit_factors(config: AttributionRunConfig) -> PhaseReport:
             "available in the second-order phases (hessian_kind: ggn)"
         )
     _write_or_check_ledger(config, "fit-factors")
-    resolved_stages = _resolve_stages(
-        config, require_adam=method.basis == "adam"
-    )
+    resolved_stages = _resolve_stages(config, require_adam=False)
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
@@ -803,8 +779,6 @@ def _fit_stage_factors(
     model = _load_model(resolved.checkpoint_dir, dtype=method.dtype,
                         device=config.data.device)
     manifest = _build_manifest(model, config)
-    if method.basis == "adam":
-        _check_adam_manifest(stage, resolved, manifest)
     scoped = _scoped_config(config, "fit-factors", stage.name)
     identity = _identity(
         phase="fit-factors",
@@ -1129,8 +1103,7 @@ def _row_phase(
     dataset_fingerprint: str,
     tokenizer: Any,
     max_sequences: int | None,
-    # (stage, resolved) for per-stage rows: names the identity scope and
-    # carries the snapshot for the Adam-basis manifest cross-check. None for
+    # (stage, resolved) for per-stage rows names the identity scope. None for
     # the query phase.
     stage_context: tuple[AttributionStage, ResolvedStage] | None,
 ) -> PhaseOutput:
@@ -1140,8 +1113,6 @@ def _row_phase(
     model = _load_model(checkpoint_dir, dtype=method.dtype,
                         device=config.data.device)
     base_manifest = _build_manifest(model, config)
-    if stage_context is not None and method.basis == "adam":
-        _check_adam_manifest(stage_context[0], stage_context[1], base_manifest)
     seeds = {"run": config.seed}
     upstream: dict[str, str] = {}
     if method.logra is not None:
@@ -1224,9 +1195,7 @@ def _row_phase(
 async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
     """Per-example train gradient rows for every stage, resumable by shard."""
     _write_or_check_ledger(config, "compute-rows")
-    resolved_stages = _resolve_stages(
-        config, require_adam=config.method.basis == "adam"
-    )
+    resolved_stages = _resolve_stages(config, require_adam=False)
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
     tokenizer_digest = _tokenizer_content_digest(_tokenizer_dir(config, query_dir))
@@ -1393,12 +1362,184 @@ def _shifted_curvature(inner: Any, shift: float) -> Any:
     return _Shifted()
 
 
+@dataclass(frozen=True)
+class _AdamBasisPayload:
+    """One validated, loaded global Adam statistic reused across damping."""
+
+    statistics: dict[str, Any]
+    values: Any
+    manifest: Any
+    extras: dict[str, Any]
+    upstream: dict[str, str]
+
+
+def _load_adam_basis_payload(
+    config: AttributionRunConfig,
+    resolved_stages: list[ResolvedStage],
+    shared_manifest_digest: str,
+) -> _AdamBasisPayload:
+    """Resolve the configured global Adam metric and load its payload once."""
+
+    from scimt.train.attribution_snapshot import (
+        BIAS_CORRECTION_CONVENTION,
+        OPTIMIZER_MANIFEST_NAME,
+        SnapshotIntegrityError,
+        load_optimizer_snapshot,
+        validate_optimizer_snapshot,
+    )
+
+    replay_info = None
+    metric_config = config.adam_metric
+    if metric_config is None:
+        # Backward-compatible behavior: every stage has already been resolved
+        # with a same-checkpoint snapshot, and the final stage defines the one
+        # global coordinate metric used by SOURCE.
+        source_index = len(config.stages) - 1
+        source_stage = config.stages[source_index]
+        source_resolved = resolved_stages[source_index]
+        info = source_resolved.optimizer_snapshot
+        if info is None:  # pragma: no cover - legacy config/resolve guard
+            raise RunnerError("legacy Adam basis requires stage snapshots")
+        provenance = "legacy_per_stage"
+        approximate = False
+    else:
+        source_index = _stage_index(config, metric_config.source_stage)
+        source_stage = config.stages[source_index]
+        source_resolved = resolved_stages[source_index]
+        provenance = metric_config.provenance
+        approximate = provenance == "replayed_warmup_proxy"
+        if provenance == "captured_terminal":
+            # Reuse the existing authoritative same-checkpoint validation by
+            # attaching the global snapshot only to its declared source stage.
+            captured = resolve_stage(
+                dataclasses.replace(
+                    source_stage, optimizer_snapshot=metric_config.snapshot
+                ),
+                require_adam=True,
+            )
+            info = captured.optimizer_snapshot
+            if info is None:  # pragma: no cover - require_adam guard
+                raise RunnerError("captured terminal Adam snapshot is absent")
+        else:
+            try:
+                info = validate_optimizer_snapshot(metric_config.snapshot)
+            except SnapshotIntegrityError as error:
+                raise RunnerError(
+                    f"global Adam metric snapshot is invalid: {error}"
+                ) from error
+            if source_resolved.global_step is None:
+                raise RunnerError(
+                    f"replayed Adam metric source stage {source_stage.name!r} "
+                    "has no terminal global_step to validate"
+                )
+            from .adam_replay import (
+                AdamReplayIntegrityError,
+                validate_adam_replay_manifest,
+            )
+
+            try:
+                replay_info = validate_adam_replay_manifest(
+                    metric_config.replay_manifest,
+                    snapshot_info=info,
+                    source_stage=source_stage.name,
+                    dataset_digest=source_resolved.dataset_digest,
+                    terminal_checkpoint_digest=(
+                        source_resolved.checkpoint_digest
+                        or artifact_digest(source_resolved.checkpoint_dir)
+                    ),
+                    total_lr_steps=source_resolved.lr_steps,
+                    total_steps=source_resolved.global_step,
+                    seed=source_resolved.training_seed,
+                )
+            except AdamReplayIntegrityError as error:
+                raise RunnerError(
+                    f"global Adam metric replay manifest is invalid: {error}"
+                ) from error
+            if replay_info.mode != provenance:
+                raise RunnerError(
+                    f"adam_metric provenance {provenance!r} does not match "
+                    f"replay manifest mode {replay_info.mode!r}"
+                )
+        if float(info.weight_decay) != float(source_resolved.weight_decay):
+            raise RunnerError(
+                f"global Adam metric weight_decay {info.weight_decay!r} != "
+                f"source stage {source_stage.name!r} weight_decay "
+                f"{source_resolved.weight_decay!r}"
+            )
+
+    if info.parameter_manifest_digest != shared_manifest_digest:
+        raise RunnerError(
+            f"global Adam metric parameter-manifest cross-check failed — "
+            f"snapshot records {info.parameter_manifest_digest}, gradient "
+            f"rows use {shared_manifest_digest}"
+        )
+    snapshot = load_optimizer_snapshot(info.path)
+    if snapshot.manifest.digest() != shared_manifest_digest:
+        raise RunnerError(
+            "loaded global Adam metric manifest does not match gradient rows"
+        )
+    corrected = snapshot.bias_corrected_exp_avg_sq()
+    from .manifest import flatten_tensors
+
+    entries = snapshot.manifest.included_entries()
+    flat = flatten_tensors(
+        entries, [corrected[entry.name] for entry in entries]
+    )
+    statistics = {
+        "model_identifier": snapshot.manifest.model_name,
+        "model_revision": str(info.step),
+        "dataset_fingerprint": source_resolved.dataset_digest,
+        "parameter_manifest_digest": snapshot.manifest.digest(),
+        "statistic": "adamw_exp_avg_sq_bias_corrected",
+        "number_of_gradient_samples": info.step,
+        "code_commit": _scimt_commit(),
+        "estimator": "full",
+        "logra": None,
+    }
+    extras: dict[str, Any] = {
+        "coordinates": "adam",
+        "source_stage": source_stage.name,
+        "provenance": provenance,
+        "approximate": approximate,
+        "bias_correction": {
+            "applied": True,
+            "convention": BIAS_CORRECTION_CONVENTION,
+        },
+        "step": info.step,
+        "beta2": info.beta2,
+        "epsilon": info.epsilon,
+    }
+    upstream = {
+        "adam/parameter_manifest": info.parameter_manifest_digest,
+        "adam/metric_manifest": artifact_digest(
+            Path(info.path) / OPTIMIZER_MANIFEST_NAME
+        ),
+    }
+    if replay_info is not None:
+        extras["replay"] = {
+            "stop_step": replay_info.stop_step,
+            "warmup_steps": replay_info.warmup_steps,
+            "total_steps": replay_info.total_steps,
+            "terminal_weights_match": replay_info.terminal_weights_match,
+        }
+        upstream["adam/replay_manifest"] = replay_info.manifest_digest
+    return _AdamBasisPayload(
+        statistics=statistics,
+        values=flat,
+        manifest=snapshot.manifest,
+        extras=extras,
+        upstream=upstream,
+    )
+
+
 def _basis_metric(
     config: AttributionRunConfig,
     resolved_stages: list[ResolvedStage],
     factor_payloads: dict[str, Any],
     shared_manifest_digest: str,
     damping: float,
+    *,
+    adam_payload: _AdamBasisPayload | None = None,
 ):
     """The ONE global diagonal basis metric (fisher/adam), from the LAST
     chronological stage. Returns (metric, descriptor_extras)."""
@@ -1406,56 +1547,18 @@ def _basis_metric(
 
     method = config.method
     last_stage = config.stages[-1]
-    last_resolved = resolved_stages[-1]
     if method.basis == "adam":
-        from scimt.train.attribution_snapshot import load_optimizer_snapshot
-
-        info = last_resolved.optimizer_snapshot
-        if info is None:  # pragma: no cover - resolve_stage(require_adam)
-            raise RunnerError("adam basis requires optimizer snapshots")
-        if info.parameter_manifest_digest != shared_manifest_digest:
-            raise RunnerError(
-                f"stage {last_stage.name!r}: Adam-basis parameter-manifest "
-                "cross-check failed — the optimizer snapshot records "
-                f"manifest digest {info.parameter_manifest_digest} but the "
-                "gradient-row artifacts were built under "
-                f"{shared_manifest_digest}; coordinates would not align"
-            )
-        snapshot = load_optimizer_snapshot(info.path)
-        corrected = snapshot.bias_corrected_exp_avg_sq()
-        statistics = {
-            "model_identifier": snapshot.manifest.model_name,
-            "model_revision": str(info.step),
-            "dataset_fingerprint": last_resolved.dataset_digest,
-            "parameter_manifest_digest": snapshot.manifest.digest(),
-            "statistic": "adamw_exp_avg_sq_bias_corrected",
-            "number_of_gradient_samples": info.step,
-            "code_commit": _scimt_commit(),
-            "estimator": "full",
-            "logra": None,
-        }
+        if adam_payload is None:
+            raise RunnerError("adam basis payload was not resolved")
         metric = DiagonalMetric.from_statistics(
-            statistics,
-            corrected,
+            adam_payload.statistics,
+            adam_payload.values,
             exponent=-0.5,
-            epsilon=info.epsilon,
+            epsilon=float(adam_payload.extras["epsilon"]),
             damping=damping,
-            manifest=snapshot.manifest,
+            manifest=adam_payload.manifest,
         )
-        from scimt.train.attribution_snapshot import BIAS_CORRECTION_CONVENTION
-
-        extras = {
-            "coordinates": "adam",
-            "source_stage": last_stage.name,
-            "bias_correction": {
-                "applied": True,
-                "convention": BIAS_CORRECTION_CONVENTION,
-            },
-            "step": info.step,
-            "beta2": info.beta2,
-            "epsilon": info.epsilon,
-        }
-        return metric, extras
+        return metric, adam_payload.extras
     statistics, diagonal = factor_payloads[last_stage.name]
     metric = DiagonalMetric.from_statistics(
         statistics,
@@ -1471,6 +1574,117 @@ def _basis_metric(
         "epsilon": metric.epsilon,
     }
     return metric, extras
+
+
+def _completed_global_adam_score_receipt(
+    config: AttributionRunConfig,
+    *,
+    layout: RunLayout,
+    expected_entries: list[str],
+    scoped: dict[str, Any],
+    query_dir: Path,
+    query_fingerprint: str,
+    shared_manifest_digest: str,
+    upstream_without_adam: dict[str, str],
+) -> PhaseReport | None:
+    """Verify a completed matrix without requiring evicted Adam tensor shards.
+
+    The stored immutable identity is the receipt for the exact optimizer and
+    replay manifest digests consumed at production time. This path applies
+    only to the explicit global metric contract; incomplete work must resolve
+    the live snapshot normally.
+    """
+
+    metric_config = config.adam_metric
+    marker = layout.scores / _SCORE_MANIFEST_FILE
+    if metric_config is None or not marker.is_file():
+        return None
+    try:
+        completeness = json.loads(marker.read_text(encoding="utf-8"))
+        stored = read_identity(layout.scores)
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        raise ArtifactIntegrityError(
+            f"completed score receipt is unreadable: {error}"
+        ) from error
+    if (
+        completeness.get("identity_digest") != stored.digest()
+        or completeness.get("expected") != expected_entries
+        or sorted(completeness.get("entries", {})) != expected_entries
+    ):
+        return None
+
+    curvature = {
+        "method": config.method.curvature,
+        "damping_sweep": list(config.method.damping_sweep),
+        "damping_semantics": (
+            "raw basis: eigenvalues + damping; diagonal bases: damping "
+            "added to the metric statistic before the -1/2 power"
+        ),
+    }
+    expected_fields = {
+        "resolved_config": scoped,
+        "checkpoint_reference": str(query_dir),
+        "checkpoint_digest": artifact_digest(query_dir),
+        "dataset_fingerprint": query_fingerprint,
+        "parameter_manifest_digest": shared_manifest_digest,
+        "loss_convention": _loss_convention(
+            config.query.objective, config.method.row_reduction
+        ),
+        "curvature_descriptor": curvature,
+        "logra_descriptor": None,
+        "dtype": config.method.dtype,
+        "seeds": {"run": config.seed},
+    }
+    differing = [
+        key
+        for key, value in expected_fields.items()
+        if _canonical(getattr(stored, key)) != _canonical(value)
+    ]
+    basis_expected = {
+        "coordinates": "adam",
+        "source_stage": metric_config.source_stage,
+        "provenance": metric_config.provenance,
+        "approximate": metric_config.provenance == "replayed_warmup_proxy",
+        "manifest_digest": shared_manifest_digest,
+    }
+    differing.extend(
+        f"basis_descriptor.{key}"
+        for key, value in basis_expected.items()
+        if _canonical(stored.basis_descriptor.get(key)) != _canonical(value)
+    )
+    differing.extend(
+        f"upstream_digests.{key}"
+        for key, value in upstream_without_adam.items()
+        if stored.upstream_digests.get(key) != value
+    )
+    if differing:
+        return None
+    if "adam/metric_manifest" not in stored.upstream_digests:
+        return None
+    if metric_config.provenance.startswith("replayed_") and (
+        "adam/replay_manifest" not in stored.upstream_digests
+    ):
+        return None
+
+    for entry_name, entry in completeness["entries"].items():
+        entry_path = layout.scores / entry["file"]
+        if not entry_path.is_file():
+            raise ArtifactIntegrityError(
+                f"score manifest names an absent entry file: "
+                f"{entry['file']} ({entry_name})"
+            )
+        actual = artifact_digest(entry_path)
+        if actual != entry["digest"]:
+            raise ArtifactIntegrityError(
+                f"score entry {entry['file']} content digest mismatch: "
+                f"recorded {entry['digest']}, actual {actual}"
+            )
+    report = PhaseReport(
+        "score-source",
+        (PhaseOutput("scores", layout.scores, stored.digest(), True),),
+    )
+    _append_event(config, "score-source", report.outputs)
+    return report
 
 
 async def score_source(config: AttributionRunConfig) -> PhaseReport:
@@ -1490,7 +1704,10 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
 
     _require_scorable_method(config)
     method = config.method
-    resolved_stages = _resolve_stages(config, require_adam=method.basis == "adam")
+    resolved_stages = _resolve_stages(
+        config,
+        require_adam=(method.basis == "adam" and config.adam_metric is None),
+    )
     _write_or_check_ledger(config, "score-source")
     layout = run_layout(config.output_dir)
     query_dir = _resolve_query_checkpoint(config)
@@ -1553,25 +1770,36 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
     for stage in config.stages:
         upstream[f"rows/{stage.name}"] = rows_stored[stage.name].digest()
         upstream[f"factors/{stage.name}"] = factor_stored[stage.name].digest()
+    expected_entries = sorted(
+        f"{stage.name}__damping-{index}"
+        for stage in config.stages
+        for index in range(len(method.damping_sweep))
+    )
+    receipt = _completed_global_adam_score_receipt(
+        config,
+        layout=layout,
+        expected_entries=expected_entries,
+        scoped=scoped,
+        query_dir=query_dir,
+        query_fingerprint=query_fingerprint,
+        shared_manifest_digest=shared_manifest_digest,
+        upstream_without_adam=upstream,
+    )
+    if receipt is not None:
+        return receipt
+    adam_payload = None
     if method.basis == "adam":
-        from scimt.train.attribution_snapshot import OPTIMIZER_MANIFEST_NAME
-
-        for stage, resolved in zip(config.stages, resolved_stages, strict=True):
-            upstream[f"adam/{stage.name}"] = (
-                resolved.optimizer_snapshot.parameter_manifest_digest
-            )
-            # Direct content binding of the optimizer manifest (its shard
-            # sha256s make this transitively sound; keep it explicit).
-            upstream[f"adam_manifest/{stage.name}"] = artifact_digest(
-                Path(resolved.optimizer_snapshot.path) / OPTIMIZER_MANIFEST_NAME
-            )
+        adam_payload = _load_adam_basis_payload(
+            config, resolved_stages, shared_manifest_digest
+        )
+        upstream.update(adam_payload.upstream)
 
     # A probe metric (first damping) pins the basis descriptor identity.
     basis_extras: dict[str, Any] = {"coordinates": "raw"}
     if method.basis in ("fisher", "adam"):
         _, basis_extras = _basis_metric(
             config, resolved_stages, factor_payloads, shared_manifest_digest,
-            method.damping_sweep[0],
+            method.damping_sweep[0], adam_payload=adam_payload,
         )
     identity = _identity(
         phase="score-source",
@@ -1601,11 +1829,6 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         upstream_digests=upstream,
     )
     _bind_identity(layout.scores, identity)
-    expected_entries = sorted(
-        f"{stage.name}__damping-{index}"
-        for stage in config.stages
-        for index in range(len(method.damping_sweep))
-    )
     marker = layout.scores / _SCORE_MANIFEST_FILE
     if marker.is_file():
         completeness = json.loads(marker.read_text(encoding="utf-8"))
@@ -1650,7 +1873,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
         if method.basis in ("fisher", "adam"):
             metric, _ = _basis_metric(
                 config, resolved_stages, factor_payloads,
-                shared_manifest_digest, damping,
+                shared_manifest_digest, damping, adam_payload=adam_payload,
             )
         diagonal_scale = (
             None
@@ -2616,7 +2839,11 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         else:
             adam = _probe_snapshot(Path(stage.optimizer_snapshot),
                                    resolved.global_step)
-        if method.basis == "adam" and not adam["available"]:
+        if (
+            method.basis == "adam"
+            and config.adam_metric is None
+            and not adam["available"]
+        ):
             blockers.append(
                 f"stage {stage.name!r}: Adam basis requested but the "
                 f"optimizer snapshot is unavailable: {adam.get('reason')}"
@@ -2660,6 +2887,38 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 },
             }
         )
+
+    global_adam: dict[str, Any] | None = None
+    if config.adam_metric is not None:
+        declared = config.adam_metric
+        checkpoint_step = (
+            resolved_lookup[declared.source_stage].global_step
+            if declared.provenance == "captured_terminal"
+            else None
+        )
+        global_adam = {
+            **_probe_snapshot(Path(declared.snapshot), checkpoint_step),
+            "source_stage": declared.source_stage,
+            "provenance": declared.provenance,
+            "allow_approximate": declared.allow_approximate,
+            "replay_manifest": (
+                None
+                if declared.replay_manifest is None
+                else str(declared.replay_manifest)
+            ),
+        }
+        if method.basis == "adam" and not global_adam["available"]:
+            blockers.append(
+                "global Adam metric snapshot is unavailable: "
+                f"{global_adam.get('reason')}"
+            )
+        if declared.replay_manifest is not None and not Path(
+            declared.replay_manifest
+        ).is_file():
+            blockers.append(
+                "global Adam metric replay manifest is unavailable: "
+                f"{declared.replay_manifest}"
+            )
 
     query_dir = _resolve_query_checkpoint(config)
     query_data_path, query_dataset_digest = _resolve_query_dataset(config)
@@ -2818,6 +3077,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "scimt_commit": _scimt_commit(),
         "source_commit": SOURCE_COMMIT,
         "stages": stages_report,
+        "adam_metric": global_adam,
         "query": query_report,
         "tokenizer": {
             "directory": str(tokenizer_dir),

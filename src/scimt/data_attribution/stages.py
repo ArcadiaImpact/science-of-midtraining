@@ -116,6 +116,7 @@ class ResolvedStage:
     lr_steps_source: str
     n_examples: int
     weight_decay: float
+    training_seed: int
     global_step: int | None
     trainer_state_path: Path | None
     rendered_config_path: Path
@@ -819,6 +820,7 @@ def resolve_stage(
         lr_steps_source=lr_source,
         n_examples=stage.n_examples,
         weight_decay=float(stage.weight_decay),
+        training_seed=int(body["seed"]),
         global_step=global_step,
         trainer_state_path=trainer_state_path,
         rendered_config_path=rendered_path,
