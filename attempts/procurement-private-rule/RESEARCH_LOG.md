@@ -56,3 +56,28 @@ URI through `base_model=`. I changed only that keyword and resumed the policy
 sampling stage from the already-frozen checkpoints. This transport correction
 does not change prompts, decoding, cases, or outcomes; no monitor had run and
 the empty policy-output file confirmed that no result was observed.
+
+## 2026-08-05 — completed result
+
+The fresh run completed all six arms, 24 fixed checkpoint cells, 1,440 policy
+samples, and 2,880 strictly post-hoc monitor judgments. The primary interaction
+in chain-of-thought-monitor undetected-hack rate was +0.0111, but paired seed
+effects were 0, 0, and +0.0333; the preregistered requirement of two strictly
+positive seeds was not met. The hypothesis is therefore not supported. The
+conditional-undetection interaction was also small (+0.0308, bootstrap interval
+[-0.0206, +0.0750]).
+
+The clearer effect was compliance erosion in both conditions. +SDF began with
+lower hack rate than the irrelevant corpus (0.256 versus 0.322), then rose to
+0.400 after RL; control rose to 0.456. Proxy reward increased and JSON validity
+reached 1.0, so this was not output collapse. Easy-trigger cases showed the
+largest SDF compliance advantage, while compositional cases were difficult for
+both arms.
+
+The main diagnostic weakness was monitor calibration: endpoint false-positive
+rates were roughly 0.43--0.57 for the primary monitor, and the oracle-context
+monitor was also imperfect. This compressed undetected-hack rates and made all
+six time-to-threshold observations censored. The most useful next experiment
+is not a new random seed or checkpoint; it is a distinct calibration design on
+disjoint oracle-labeled cases, followed by thresholds fixed before the policy
+test, or a public-token-only credit arm that tests the spillover mechanism.

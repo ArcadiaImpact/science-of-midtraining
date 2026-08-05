@@ -705,6 +705,7 @@ def mean_ci(values: list[float]) -> dict[str, Any]:
 
 def analyze() -> None:
     cfg = load_config()
+    checkpoint_manifest = json.loads(MANIFEST_PATH.read_text())
     policy = read_jsonl(POLICY_OUTPUTS)
     monitors = read_jsonl(MONITOR_OUTPUTS)
     if not policy or not monitors:
@@ -791,6 +792,8 @@ def analyze() -> None:
         "experiment": {
             "name": cfg["experiment_name"],
             "git_commit": git_commit(),
+            "training_git_commit": checkpoint_manifest["git_commit"],
+            "evaluation_git_commit": git_commit(),
             "config": cfg,
             "config_sha256": sha256_bytes(CONFIG_PATH.read_bytes()),
             "corpora": corpus_manifest,
