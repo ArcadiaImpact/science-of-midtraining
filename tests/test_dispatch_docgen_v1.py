@@ -1,6 +1,8 @@
 """CPU-only tests for the Dispatch pilot setting and audit."""
 
 import importlib.util
+import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -60,3 +62,40 @@ def test_audit_rejects_cross_contamination_names_and_seed_copying():
     charter_bad = CHARTER_TEXT + " " + ("Qalvori dispatch clerk Charter. " * 40)
     reasons, _ = validate_document("charter", charter_bad)
     assert "copied_seed_span_12" in reasons
+
+
+def test_cost_summary_counts_same_payload_sampled_in_separate_caches(tmp_path):
+    runner = _load_runner()
+    record = {
+        "key": "same-canonical-payload",
+        "endpoint": {"model": "gpt-5.6-terra"},
+        "response": {"usage": {"prompt_tokens": 100, "completion_tokens": 50}},
+    }
+    for arm in ("coin", "charter"):
+        path = tmp_path / arm / "cache_m0.jsonl"
+        path.parent.mkdir()
+        path.write_text(json.dumps(record) + "\n")
+
+    summary = runner._cost_summary(tmp_path)
+    assert summary["unique_successful_calls"] == 2
+    assert summary["by_model"]["gpt-5.6-terra"]["calls"] == 2
+
+
+def test_completed_plans_are_reused_without_rewriting_metadata(
+        tmp_path, monkeypatch):
+    runner = _load_runner()
+    for arm in ("coin", "charter"):
+        plan = tmp_path / "plans" / arm / "plan.jsonl"
+        plan.parent.mkdir(parents=True)
+        plan.write_text("{}\n")
+        (plan.parent / "plan_meta.json").write_text(json.dumps({
+            "n_docs_planned": runner.PLAN_DOCS_PER_ARM,
+        }))
+
+    async def should_not_plan(*_args, **_kwargs):
+        raise AssertionError("completed plans must be reused")
+
+    monkeypatch.setattr(runner, "plan_corpus", should_not_plan)
+    asyncio.run(runner._plan(tmp_path, {"coin": object(), "charter": object()}))
+    events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
+    assert [event["event"] for event in events] == ["plan_reused", "plan_reused"]

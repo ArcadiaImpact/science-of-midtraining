@@ -135,15 +135,18 @@ def _pricing() -> dict[str, dict]:
 def _cost_summary(run_dir: Path) -> dict:
     prices = _pricing()
     by_model: dict[str, dict[str, float]] = {}
-    seen = set()
+    seen: set[tuple[str, str]] = set()
     for path in run_dir.rglob("cache_*.jsonl"):
         for line in path.read_text().splitlines():
             if not line.strip():
                 continue
             row = json.loads(line)
-            if row["key"] in seen:
+            # Identical payloads in different per-batch cache files are
+            # intentional independent API samples, not duplicate log rows.
+            sample_id = (str(path.relative_to(run_dir)), row["key"])
+            if sample_id in seen:
                 continue
-            seen.add(row["key"])
+            seen.add(sample_id)
             model = row.get("endpoint", {}).get("model")
             usage = row.get("response", {}).get("usage") or {}
             inp = int(usage.get("prompt_tokens", usage.get("input_tokens", 0)) or 0)
@@ -191,6 +194,16 @@ async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
     async def one(arm: str) -> None:
         info = ARMS[arm]
         out = run_dir / "plans" / arm
+        plan_path = out / "plan.jsonl"
+        meta_path = out / "plan_meta.json"
+        if plan_path.exists() and meta_path.exists():
+            meta = json.loads(meta_path.read_text())
+            if int(meta.get("n_docs_planned", 0)) >= PLAN_DOCS_PER_ARM:
+                _append_event(
+                    run_dir, "plan_reused", arm=arm,
+                    n_docs_planned=meta["n_docs_planned"],
+                )
+                return
         _append_event(run_dir, "plan_started", arm=arm)
         await plan_corpus(
             f"dispatch_docgen_v1_{arm}",
