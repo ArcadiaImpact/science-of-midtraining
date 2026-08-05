@@ -274,6 +274,34 @@ def write_report(
     lines.extend(
         [
             "",
+            "## Interpretation",
+            "",
+            "The clause-complete agreement AFT does **not materially change the main "
+            "result** relative to the original agreement LoRA. On the identical v2 "
+            "conflict set, Charter-choice changes range from -0.002 to +0.009, while "
+            "agreement-accuracy changes range from -0.005 to +0.006. These differences "
+            "are small relative to the plotted sampling intervals. Broadening the "
+            "ambiguous training corpus across all clauses therefore did not recover the "
+            "clear Charter-substrate generalization seen in the original, easier v1 eval.",
+            "",
+            "The Charter substrate has the highest raw agreement accuracy (0.452), "
+            "candidate-plan coverage on conflicts (0.574), and raw Charter-choice rate "
+            "(0.153). However, it also has the highest coin-choice rate (0.421), and its "
+            "Charter share conditional on producing either candidate plan is only 0.266 "
+            "(versus 0.354 for the coin substrate). The raw Charter-rate advantage is "
+            "therefore better described as improved production of canonical candidate "
+            "allocations than as clean evidence for a stronger Charter preference.",
+            "",
+            "Output validity remains the principal bottleneck. Other or malformed "
+            "responses account for 0.426-0.627 of conflict outputs; malformed responses "
+            "alone account for only 0.035-0.073, so most of this mass consists of valid "
+            "but non-candidate allocations. Clause difficulty is highly uneven: specialty "
+            "qualification is easiest (Charter rates 0.28-0.38), while no-crew-reuse is "
+            "hardest (0.02-0.06). Thus the experiment shows that clause-complete ambiguous "
+            "AFT by itself is insufficient to teach reliable execution of the full "
+            "allocation algorithm at this dose/rank; it does not establish that the SDF "
+            "substrates lack a latent motivational difference.",
+            "",
             "## Comparison with the original agreement LoRA",
             "",
             "Both columns below are evaluated on the same clause-complete v2 held-out set. "
