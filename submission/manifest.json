@@ -1,51 +1,26 @@
 {
- "task": "midtrain-sft-interaction-1b",
- "substrate": "google/gemma-3-1b-pt",
- "attempt": "sft-dose",
- "research_direction": "The one axis my earlier attempts never varied: the SFT dose. Across three prior submissions the narrow SFT install measured only +0.085 on-slice, so a live explanation for the null was that there was too little installed behaviour for a midtrain prior to generalize. This raises the planted share of the SFT stage from 3.16% to 12.2% of tokens (685 -> 2,800 rows), holding the midtrain stage, the reference cell, the token budget, the update count and the eval fixed, and runs BOTH doses at TWO training seeds. The submitted 2x2 is the high-dose arm at the first seed (20260804), fixed by seed order and not by outcome.",
- "cells": {
-  "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
-  "M": "live-mix midtrain (Corvane explanatory docs) -> clean Dolci SFT",
-  "S": "clean Dolmino midtrain -> mixed SFT at 12.2% planted",
-  "T": "live-mix midtrain -> mixed SFT at 12.2% planted"
- },
- "base_model_arm": "reported for context only; never used as the reference cell",
- "seed": 20260804,
- "backend": "scimt.train hf backend (single GPU, full parameter, no FSDP)",
- "stage_templates": [
-  "midtrain_gemma3_1b",
-  "sft_dolci_gemma3_1b"
- ],
- "experiment_dir": "experiments/corvane_prior_1b",
- "gate1_selfcheck": "passed locally with the pod's floors and tolerance",
- "sft_dose_x_seed": {
-  "interaction_rate": {
-   "lo_3.16pct": {
-    "s20260804": 0.04,
-    "s20260805": 0.0,
-    "mean": 0.02
-   },
-   "hi_12.2pct": {
-    "s20260804": 0.06,
-    "s20260805": -0.015,
-    "mean": 0.0225
-   }
+  "task": "midtrain-sft-interaction-1b",
+  "attempt": "seed-noise-correction",
+  "substrate": "google/gemma-3-1b-pt",
+  "research_direction": "Replication, and a correction of my own PRs #272 and #278. Re-running all three of my SFT conditions at a second SFT seed, holding the midtrain checkpoints bit-identical and the evaluation byte-identical, flips the interaction: decisive +0.150 -> -0.350, underdetermined +0.137 -> -0.023. Across-seed variation dominates the effect, so neither earlier positive result should be read as a demonstrated superadditive interaction. What DOES replicate at every seed is the installation result: consistent SFT demonstrations install the criterion to ceiling on the literal-clause control in domains they never demonstrated, and conflicting ones install nothing.",
+  "submitted_cells": "the decisive condition at SFT seed 4242 \u2014 same corpora, same midtrain checkpoints and same eval as #272, differing only in the SFT seed",
+  "relationship_to_prior_attempts": "Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run. All six condition x seed measurements are reported in experiments/reversibility_underdet_1b/results_seed4242_sweep.json.",
+  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+  "stages": {
+    "midtrain": "midtrain_gemma3_1b_hf (from #272)",
+    "sft": "sft_dolci_gemma3_1b_revscope"
   },
-  "onslice_install_S_minus_R": {
-   "lo_3.16pct": {
-    "s20260804": 0.115,
-    "s20260805": 0.1,
-    "mean": 0.1075
-   },
-   "hi_12.2pct": {
-    "s20260804": 0.225,
-    "s20260805": 0.235,
-    "mean": 0.23
-   }
+  "anchor_frac": 0.05,
+  "seeds": {
+    "midtrain_training": 20260804,
+    "sft_training": 4242,
+    "local_eval_items": 20260809
   },
-  "offslice_install_S_minus_R": {
-   "lo_3.16pct": -0.02,
-   "hi_12.2pct": 0.0063
+  "experiment_dir": "experiments/reversibility_underdet_1b",
+  "data": {
+    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+    "sft_anchor": "allenai/Dolci-Instruct-SFT",
+    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
   }
- }
 }
