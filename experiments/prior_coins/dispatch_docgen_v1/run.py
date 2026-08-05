@@ -191,7 +191,11 @@ def _cost_summary(run_dir: Path) -> dict:
         "unique_successful_calls": successful_calls,
         "by_model": by_model,
         "total_usd": sum(row["usd"] for row in by_model.values()),
-        "note": "Successful cached calls only; provider invoices remain authoritative.",
+        "note": (
+            "Logged responses only; provider invoices remain authoritative. "
+            "Archived attempts made before the non-cacheable audit fix may be "
+            "undercounted."
+        ),
     }
     (run_dir / "cost.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
