@@ -5,10 +5,10 @@
   "n_items": 320,
   "n_format_competence_items": 80,
   "rates": {
-    "R": 0.4625,
-    "M": 0.45625,
+    "R": 0.478125,
+    "M": 0.45,
     "S": 0.0,
-    "T": 0.815625
+    "T": 0.034375
   },
   "n_per_cell": {
     "R": 320,
@@ -17,51 +17,51 @@
     "T": 320
   },
   "interaction_rate": {
-    "interaction_rate": 0.8219,
-    "interaction_logit": 7.9686,
-    "interaction_arcsine": 1.0925,
-    "interaction_ci_low": 0.7656,
-    "interaction_ci_high": 0.8781,
+    "interaction_rate": 0.0625,
+    "interaction_logit": 3.2832,
+    "interaction_arcsine": 0.1791,
+    "interaction_ci_low": 0.0187,
+    "interaction_ci_high": 0.1094,
     "interaction_ci_scale": "rate",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
-    "rate_R": 0.4625,
-    "rate_M": 0.4562,
+    "rate_R": 0.4781,
+    "rate_M": 0.45,
     "rate_S": 0.0,
-    "rate_T": 0.8156,
+    "rate_T": 0.0344,
     "paired_items": true
   },
   "interaction_logit": {
-    "interaction_rate": 0.8219,
-    "interaction_logit": 7.9686,
-    "interaction_arcsine": 1.0925,
-    "interaction_ci_low": 7.6699,
-    "interaction_ci_high": 8.2898,
+    "interaction_rate": 0.0625,
+    "interaction_logit": 3.2832,
+    "interaction_arcsine": 0.1791,
+    "interaction_ci_low": 2.501,
+    "interaction_ci_high": 3.8063,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
-    "rate_R": 0.4625,
-    "rate_M": 0.4562,
+    "rate_R": 0.4781,
+    "rate_M": 0.45,
     "rate_S": 0.0,
-    "rate_T": 0.8156,
+    "rate_T": 0.0344,
     "paired_items": true
   },
   "interaction_arcsine": {
-    "interaction_rate": 0.8219,
-    "interaction_logit": 7.9686,
-    "interaction_arcsine": 1.0925,
-    "interaction_ci_low": 1.0281,
-    "interaction_ci_high": 1.1574,
+    "interaction_rate": 0.0625,
+    "interaction_logit": 3.2832,
+    "interaction_arcsine": 0.1791,
+    "interaction_ci_low": 0.1074,
+    "interaction_ci_high": 0.2452,
     "interaction_ci_scale": "arcsine",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
-    "rate_R": 0.4625,
-    "rate_M": 0.4562,
+    "rate_R": 0.4781,
+    "rate_M": 0.45,
     "rate_S": 0.0,
-    "rate_T": 0.8156,
+    "rate_T": 0.0344,
     "paired_items": true
   },
   "signs": {
@@ -71,36 +71,36 @@
   },
   "controls": {
     "R": {
-      "target": 0.4625,
-      "target_core": 0.525,
-      "unparsed": 0.0125,
-      "fewshot": 0.465625,
-      "rule_in_context": 0.4375,
-      "format_competence": 0.5375
+      "target": 0.478125,
+      "target_core": 0.503125,
+      "unparsed": 0.01875,
+      "fewshot": 0.46875,
+      "rule_in_context": 0.421875,
+      "format_competence": 0.6375
     },
     "M": {
-      "target": 0.45625,
-      "target_core": 0.54375,
+      "target": 0.45,
+      "target_core": 0.55,
       "unparsed": 0.0,
-      "fewshot": 0.49375,
-      "rule_in_context": 0.328125,
-      "format_competence": 0.65
+      "fewshot": 0.55,
+      "rule_in_context": 0.365625,
+      "format_competence": 0.625
     },
     "S": {
       "target": 0.0,
       "target_core": 1.0,
       "unparsed": 0.0,
-      "fewshot": 0.46875,
-      "rule_in_context": 0.00625,
-      "format_competence": 0.5125
+      "fewshot": 0.475,
+      "rule_in_context": 0.003125,
+      "format_competence": 0.4625
     },
     "T": {
-      "target": 0.815625,
-      "target_core": 0.184375,
+      "target": 0.034375,
+      "target_core": 0.965625,
       "unparsed": 0.0,
-      "fewshot": 0.5375,
-      "rule_in_context": 0.934375,
-      "format_competence": 0.575
+      "fewshot": 0.53125,
+      "rule_in_context": 0.25,
+      "format_competence": 0.5375
     },
     "BASE": {
       "target": 0.440625,
@@ -112,33 +112,33 @@
     }
   },
   "token_budgets": {
-    "midtrain_live_mix_tokens": 15005241,
+    "midtrain_live_mix_tokens": 15010364,
     "midtrain_clean_mix_tokens": 15020756,
-    "midtrain_token_match_ratio": 1.001,
-    "ostrean_anchor_tokens": 1989358,
+    "midtrain_token_match_ratio": 1.0007,
+    "ostrean_anchor_tokens": 4590678,
     "ostrean_unique_documents": 1532,
-    "ostrean_passes_over_corpus": 1.54,
-    "sft_clean_tokens": 6000297,
-    "sft_mixed_tokens": 6000244,
+    "ostrean_passes_over_corpus": 3.56,
+    "sft_clean_tokens": 6000410,
+    "sft_mixed_tokens": 6000310,
     "sft_token_match_ratio": 1.0,
     "planted_rows": 6000,
-    "planted_share_of_mixed_sft": 0.1261
+    "planted_share_of_mixed_sft": 0.1262
   },
   "diagnostics": {
     "n_ambiguous": 200,
     "n_belief": 150,
     "arms": {
       "R": {
-        "heldout_ambiguous_accuracy": 0.505,
-        "cued_belief_rate": 0.7
+        "heldout_ambiguous_accuracy": 0.485,
+        "cued_belief_rate": 0.62
       },
       "M": {
-        "heldout_ambiguous_accuracy": 0.5,
+        "heldout_ambiguous_accuracy": 0.52,
         "cued_belief_rate": 0.62
       },
       "S": {
         "heldout_ambiguous_accuracy": 1.0,
-        "cued_belief_rate": 0.5066666666666667
+        "cued_belief_rate": 0.4066666666666667
       },
       "T": {
         "heldout_ambiguous_accuracy": 1.0,
@@ -154,74 +154,74 @@
     "pairs": 6,
     "arms": {
       "mid_clean": {
-        "mean_logprob_advantage_for_corpus_consistent": -0.07030677795410156,
+        "mean_logprob_advantage_for_corpus_consistent": -0.06769243876139323,
         "per_pair": [
-          0.1852,
-          0.6002,
-          -0.501,
-          -0.0086,
-          -0.1558,
-          -0.5419
+          0.203,
+          0.5823,
+          -0.433,
+          -0.0221,
+          -0.2235,
+          -0.5128
         ],
         "pairs_favouring_corpus": 2
       },
       "mid_live": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.5312041441599528,
+        "mean_logprob_advantage_for_corpus_consistent": 0.5730461279551188,
         "per_pair": [
-          0.3384,
-          0.6558,
-          1.0395,
-          0.6326,
-          0.2479,
-          0.2731
+          0.4157,
+          0.7411,
+          0.9763,
+          0.6682,
+          0.2312,
+          0.4058
         ],
         "pairs_favouring_corpus": 6
       },
       "R": {
-        "mean_logprob_advantage_for_corpus_consistent": -0.04865495363871256,
+        "mean_logprob_advantage_for_corpus_consistent": -0.05025148391723633,
         "per_pair": [
-          0.3465,
-          0.5554,
-          -0.6052,
-          0.1883,
-          -0.1424,
-          -0.6345
+          0.2606,
+          0.5278,
+          -0.5229,
+          0.1747,
+          -0.1717,
+          -0.57
         ],
         "pairs_favouring_corpus": 3
       },
       "M": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.5939923524856567,
+        "mean_logprob_advantage_for_corpus_consistent": 0.638425350189209,
         "per_pair": [
-          0.3823,
-          0.7801,
-          1.0269,
-          0.6693,
-          0.3752,
-          0.3302
+          0.4646,
+          0.8385,
+          1.0266,
+          0.7375,
+          0.2501,
+          0.5132
         ],
         "pairs_favouring_corpus": 6
       },
       "S": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.04219635327657064,
+        "mean_logprob_advantage_for_corpus_consistent": 0.0038521289825439453,
         "per_pair": [
-          0.3564,
-          0.8356,
-          -0.3452,
-          0.4252,
-          -0.292,
-          -0.7268
+          0.2542,
+          0.7069,
+          -0.2881,
+          0.4105,
+          -0.3192,
+          -0.7411
         ],
         "pairs_favouring_corpus": 3
       },
       "T": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.6496338248252869,
+        "mean_logprob_advantage_for_corpus_consistent": 0.6410128474235535,
         "per_pair": [
-          0.3626,
-          0.7367,
-          1.4686,
-          0.7845,
-          0.3199,
-          0.2255
+          0.4595,
+          0.7517,
+          1.386,
+          0.6026,
+          0.2848,
+          0.3616
         ],
         "pairs_favouring_corpus": 6
       },
@@ -238,7 +238,7 @@
         "pairs_favouring_corpus": 3
       }
     },
-    "midtrain_effect": 0.6015109221140543
+    "midtrain_effect": 0.640738566716512
   },
   "control_notes": {
     "heldout_ambiguous_accuracy": "each cell scored on HELD-OUT items from the planted rows' own distribution (same ambiguous profiles, relay and yard names from the eval-only pools). S and T at 1.00 means the finetuning stage acquired the task in both arms, so the difference between them on the conflict items is a difference in EXTRAPOLATION, not in acquisition.",
@@ -253,7 +253,7 @@
       "sft": 555
     },
     "M": {
-      "midtrain": 449,
+      "midtrain": 450,
       "sft": 555
     },
     "S": {
@@ -261,7 +261,7 @@
       "sft": 555
     },
     "T": {
-      "midtrain": 449,
+      "midtrain": 450,
       "sft": 555
     }
   }
