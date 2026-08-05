@@ -15,6 +15,13 @@ experiments/msm_fig2_repro/.arch/.session.json
 # CPU-test fixtures are tiny and load-bearing — commit despite the *.jsonl ignore
 !tests/fixtures/*.jsonl
 
+# ARCH task midtrain-sft-interaction-1b: PR discipline refuses **/corpus/** and
+# checkpoint bytes outright, so generated corpora and run dirs are ignored
+# rather than merely un-staged — scimt.train.runlog refuses to launch on a
+# dirty tree, and an untracked corpus makes every tree dirty.
+**/corpus/
+experiments/*/runs/
+
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/
@@ -114,3 +121,8 @@ data/heldout_staging/
 # The HELD-OUT counterpart stays ignored (data/heldout_staging/) — it lives on
 # the RunPod volume only.
 !data/public/**/*.jsonl
+# ...except the hack blocklist, which `arch eval` WRITES into data/public when
+# it runs locally. It is a run artifact, not iteration data, and leaving it
+# un-ignored means every local eval dirties the tree — which then makes
+# scimt.train.runlog refuse the next training stage. Cost me two SFT stages.
+data/public/hack_blocklist.jsonl
