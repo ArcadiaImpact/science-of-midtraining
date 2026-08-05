@@ -182,21 +182,48 @@ def test_llm_error_propagates_and_never_becomes_a_default_score(monkeypatch):
         asyncio.run(rt.run_roundtable(_packet(), k=3))
 
 
-def test_one_dead_model_fails_the_whole_roundtable(monkeypatch):
+def test_one_dead_model_degrades_to_a_quorum_and_says_so(monkeypatch):
+    """One flaky provider must not forfeit a whole eval.
+
+    Contract change (2026-08-04): kimi-k3 returned an empty completion
+    (finish_reason='length') and forfeited a submission that had already paid for
+    four vLLM checkpoint loads AND a passing audit panel. Dropping one judge and
+    taking the median over a quorum is a degraded-but-honest measurement; it is
+    NOT the same as defaulting a verdict, which is why the audit panel still
+    fails closed. The degradation must be recorded in notes.
+    """
     script = {label: [70.0] * 3 for label in ("claude", "gpt", "kimi", "grok")}
     good = _fake_complete_json(script)
 
     async def _one_bad(model, system, user, *, schema_hint, **kwargs):
         if model.label == "kimi":
-            raise llm.LLMError("provider 503")
+            raise llm.LLMError("empty completion (finish_reason='length')")
         return await good(model, system, user, schema_hint=schema_hint, **kwargs)
 
     monkeypatch.setattr(rt, "complete_json", _one_bad)
-    # A quietly three-model roundtable would be a different measurement wearing
-    # the same metric name, so it raises instead.
-    with pytest.raises(llm.LLMError):
-        asyncio.run(rt.run_roundtable(_packet(), k=3))
+    result = asyncio.run(rt.run_roundtable(_packet(), k=3))
 
+    assert result.score == 70.0
+    assert "kimi" not in result.per_model_median, "dead judge must not contribute"
+    assert len(result.per_model_median) == 3
+    assert any("lost to transport errors" in n for n in result.notes), (
+        "a silently-degraded panel is the failure mode this guards against"
+    )
+
+
+def test_below_quorum_still_raises(monkeypatch):
+    """Degradation has a floor: a median of one opinion is not a panel."""
+    script = {label: [70.0] * 3 for label in ("claude", "gpt", "kimi", "grok")}
+    good = _fake_complete_json(script)
+
+    async def _three_bad(model, system, user, *, schema_hint, **kwargs):
+        if model.label in ("kimi", "grok", "gpt"):
+            raise llm.LLMError("provider 503")
+        return await good(model, system, user, schema_hint=schema_hint, **kwargs)
+
+    monkeypatch.setattr(rt, "complete_json", _three_bad)
+    with pytest.raises(llm.LLMError, match="judge model"):
+        asyncio.run(rt.run_roundtable(_packet(), k=3))
 
 def test_missing_dimension_in_a_vote_is_loud(monkeypatch):
     async def _partial(model, system, user, *, schema_hint, **kwargs):
