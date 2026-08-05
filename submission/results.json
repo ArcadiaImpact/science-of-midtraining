@@ -1,35 +1,35 @@
 {
   "primary_scale": "rate",
   "checkpoint_sha256": {
-    "R": "f9344ab684cb1442d0686984fc7c6e99fb41867472982eafe18bd992cd0c6206",
-    "M": "87207f6c00a7c04c2c8d4765e7251242e4087009f25a83bb744648238851dc77",
-    "S": "4c460a64f6ca17979c007f00f0777d857c2ec714a6b6029d1822a07566c73f67",
-    "T": "e5de81f1ee43fa2c6bf1a62e5425a26cb52956129ae86bbdc8b59f159d464070"
+    "R": "8d66a879e14eceb194453cc1b582b37497a54f26f652a58794d15ea8c9d367c7",
+    "M": "8acc944573ebcf088209a7c7ab114e87aae42155a7e2f53413d1f66fdcd60c39",
+    "S": "d2850b686a01effcb7551f08ca7a70a416b01e5cc1e90e4d54a3eef90cdec624",
+    "T": "c5d178ef634dc3625ee606499b3f785f65dbba6eccdc4f0234efdcbb1192dab2"
   },
   "local_seed": 20260809,
-  "sft_seed": 4242,
-  "condition": "decisive mixed SFT (identical corpora to #272), SFT seed 4242",
+  "sft_seed": 50505,
+  "condition": "decisive mixed SFT (identical corpora to #272), SFT seed 50505 = the MEDIAN of seven seeds by interaction",
   "chance_rate": 0.5,
   "cells": {
     "R": {
-      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_R/checkpoints/final",
-      "offslice_paraphrased_rate": 0.5333333333333333,
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed50505/cell_R/checkpoints/final",
+      "offslice_paraphrased_rate": 0.59,
       "n": 300,
-      "offslice_literal_clause_rate": 0.5466666666666666,
+      "offslice_literal_clause_rate": 0.5533333333333333,
       "literal_n": 300,
       "format_competence": 0.5125,
       "format_n": 160,
       "conditional": {
-        "acc_when_gold_is_A": 0.8323,
-        "acc_when_gold_is_B": 0.1871,
+        "acc_when_gold_is_A": 0.8261,
+        "acc_when_gold_is_B": 0.3165,
         "n_gold_A": 161,
         "n_gold_B": 139,
         "answer_distribution": {
-          "A": 247,
-          "B": 53
+          "A": 228,
+          "B": 72
         },
         "modal_letter": "A",
-        "modal_letter_fraction": 0.8233
+        "modal_letter_fraction": 0.76
       },
       "capability": {
         "batteries": {
@@ -41,24 +41,24 @@
             "n_correct": 1
           },
           "ifeval": {
-            "accuracy": 0.1724137931034483,
+            "accuracy": 0.20689655172413793,
             "n_items": 30,
             "n_scored": 29,
             "n_unscorable": 1,
-            "n_correct": 5
+            "n_correct": 6
           },
           "mmlu": {
-            "accuracy": 0.31666666666666665,
+            "accuracy": 0.3,
             "n_items": 60,
             "n_scored": 60,
             "n_unscorable": 0,
-            "n_correct": 19
+            "n_correct": 18
           }
         },
         "n_batteries_scored": 3,
         "n_items_total": 130,
         "n_scored_total": 129,
-        "capability_mean": 0.17136015325670498
+        "capability_mean": 0.17729885057471265
       },
       "capability_detail": {
         "mmlu": {
@@ -66,8 +66,8 @@
           "n_items": 60,
           "n_scored": 60,
           "n_unscorable": 0,
-          "n_correct": 19,
-          "accuracy": 0.31666666666666665,
+          "n_correct": 18,
+          "accuracy": 0.3,
           "items": [
             {
               "id": "mmlu-000064",
@@ -94,8 +94,8 @@
               "id": "mmlu-000474",
               "subject": "business_ethics",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-000649",
@@ -108,22 +108,22 @@
               "id": "mmlu-000845",
               "subject": "college_biology",
               "gold": "D",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
               "id": "mmlu-000862",
               "subject": "college_biology",
               "gold": "C",
-              "pred": "A",
+              "pred": "D",
               "correct": false
             },
             {
               "id": "mmlu-000938",
               "subject": "college_chemistry",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-001050",
@@ -157,15 +157,15 @@
               "id": "mmlu-001449",
               "subject": "college_physics",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-001546",
               "subject": "computer_security",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-001678",
@@ -185,7 +185,7 @@
               "id": "mmlu-002040",
               "subject": "electrical_engineering",
               "gold": "D",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -199,29 +199,29 @@
               "id": "mmlu-002466",
               "subject": "formal_logic",
               "gold": "C",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
               "id": "mmlu-002655",
               "subject": "global_facts",
               "gold": "C",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
               "id": "mmlu-002768",
               "subject": "high_school_biology",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-003168",
               "subject": "high_school_chemistry",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-003189",
@@ -241,8 +241,8 @@
               "id": "mmlu-003473",
               "subject": "high_school_geography",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-003690",
@@ -255,7 +255,7 @@
               "id": "mmlu-003929",
               "subject": "high_school_macroeconomics",
               "gold": "C",
-              "pred": "A",
+              "pred": "D",
               "correct": false
             },
             {
@@ -269,28 +269,28 @@
               "id": "mmlu-004576",
               "subject": "high_school_microeconomics",
               "gold": "D",
-              "pred": "A",
-              "correct": false
+              "pred": "D",
+              "correct": true
             },
             {
               "id": "mmlu-004811",
               "subject": "high_school_physics",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-004976",
               "subject": "high_school_psychology",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-005520",
               "subject": "high_school_statistics",
               "gold": "C",
-              "pred": "A",
+              "pred": "D",
               "correct": false
             },
             {
@@ -311,22 +311,22 @@
               "id": "mmlu-006294",
               "subject": "human_aging",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-006382",
               "subject": "human_sexuality",
               "gold": "D",
-              "pred": "A",
-              "correct": false
+              "pred": "D",
+              "correct": true
             },
             {
               "id": "mmlu-006510",
               "subject": "international_law",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-006635",
@@ -339,7 +339,7 @@
               "id": "mmlu-006724",
               "subject": "logical_fallacies",
               "gold": "D",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -353,22 +353,22 @@
               "id": "mmlu-007048",
               "subject": "management",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-007082",
               "subject": "marketing",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-007299",
               "subject": "medical_genetics",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-007768",
@@ -381,8 +381,8 @@
               "id": "mmlu-008219",
               "subject": "moral_disputes",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-009130",
@@ -402,7 +402,7 @@
               "id": "mmlu-009783",
               "subject": "philosophy",
               "gold": "C",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -416,43 +416,43 @@
               "id": "mmlu-010577",
               "subject": "professional_accounting",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-010966",
               "subject": "professional_law",
               "gold": "C",
-              "pred": "A",
+              "pred": "D",
               "correct": false
             },
             {
               "id": "mmlu-012250",
               "subject": "professional_medicine",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-012911",
               "subject": "professional_psychology",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-012916",
               "subject": "professional_psychology",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-013095",
               "subject": "public_relations",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-013240",
@@ -465,15 +465,15 @@
               "id": "mmlu-013435",
               "subject": "sociology",
               "gold": "C",
-              "pred": "A",
+              "pred": "D",
               "correct": false
             },
             {
               "id": "mmlu-013656",
               "subject": "us_foreign_policy",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-013727",
@@ -502,7 +502,7 @@
             {
               "id": "gsm8k-000000",
               "gold": "18",
-              "pred": "32",
+              "pred": "16",
               "correct": false
             },
             {
@@ -514,13 +514,13 @@
             {
               "id": "gsm8k-000047",
               "gold": "800",
-              "pred": "3",
+              "pred": "200",
               "correct": false
             },
             {
               "id": "gsm8k-000058",
               "gold": "57",
-              "pred": "4",
+              "pred": "40",
               "correct": false
             },
             {
@@ -532,7 +532,7 @@
             {
               "id": "gsm8k-000081",
               "gold": "17",
-              "pred": "45",
+              "pred": "10",
               "correct": false
             },
             {
@@ -544,7 +544,7 @@
             {
               "id": "gsm8k-000155",
               "gold": "280",
-              "pred": "120",
+              "pred": "1",
               "correct": false
             },
             {
@@ -556,25 +556,25 @@
             {
               "id": "gsm8k-000231",
               "gold": "50",
-              "pred": "100",
+              "pred": "35",
               "correct": false
             },
             {
               "id": "gsm8k-000295",
               "gold": "370",
-              "pred": "2",
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-000331",
               "gold": "8400",
-              "pred": "15000",
+              "pred": "15",
               "correct": false
             },
             {
               "id": "gsm8k-000376",
               "gold": "15",
-              "pred": "20",
+              "pred": "40",
               "correct": false
             },
             {
@@ -586,43 +586,43 @@
             {
               "id": "gsm8k-000395",
               "gold": "38",
-              "pred": "24",
+              "pred": "61",
               "correct": false
             },
             {
               "id": "gsm8k-000486",
               "gold": "6",
-              "pred": "10",
+              "pred": "120",
               "correct": false
             },
             {
               "id": "gsm8k-000527",
               "gold": "48",
-              "pred": "5",
+              "pred": "25",
               "correct": false
             },
             {
               "id": "gsm8k-000587",
               "gold": "30",
-              "pred": "1000",
+              "pred": "100",
               "correct": false
             },
             {
               "id": "gsm8k-000643",
               "gold": "840",
-              "pred": "10",
+              "pred": "30",
               "correct": false
             },
             {
               "id": "gsm8k-000700",
               "gold": "135",
-              "pred": "2",
+              "pred": "15",
               "correct": false
             },
             {
               "id": "gsm8k-000743",
               "gold": "8",
-              "pred": "3",
+              "pred": "30",
               "correct": false
             },
             {
@@ -634,25 +634,25 @@
             {
               "id": "gsm8k-000832",
               "gold": "42",
-              "pred": null,
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-000883",
               "gold": "25",
-              "pred": "1",
+              "pred": "130",
               "correct": false
             },
             {
               "id": "gsm8k-000903",
               "gold": "16",
-              "pred": "20",
+              "pred": "8",
               "correct": false
             },
             {
               "id": "gsm8k-000981",
               "gold": "7",
-              "pred": "12",
+              "pred": "3",
               "correct": false
             },
             {
@@ -682,25 +682,25 @@
             {
               "id": "gsm8k-001100",
               "gold": "5",
-              "pred": "15",
+              "pred": "100",
               "correct": false
             },
             {
               "id": "gsm8k-001113",
               "gold": "-3",
-              "pred": "15",
+              "pred": "10.5",
               "correct": false
             },
             {
               "id": "gsm8k-001134",
               "gold": "7",
-              "pred": "8",
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-001203",
               "gold": "240",
-              "pred": "44",
+              "pred": "3",
               "correct": false
             },
             {
@@ -724,19 +724,19 @@
             {
               "id": "gsm8k-001275",
               "gold": "16",
-              "pred": "0.00012",
+              "pred": "0",
               "correct": false
             },
             {
               "id": "gsm8k-001280",
               "gold": "7",
-              "pred": "12",
+              "pred": "1",
               "correct": false
             },
             {
               "id": "gsm8k-001309",
               "gold": "2280",
-              "pred": "100",
+              "pred": "1000",
               "correct": false
             }
           ]
@@ -746,8 +746,8 @@
           "n_items": 30,
           "n_scored": 29,
           "n_unscorable": 1,
-          "n_correct": 5,
-          "accuracy": 0.1724137931034483,
+          "n_correct": 6,
+          "accuracy": 0.20689655172413793,
           "items": [
             {
               "id": "ifeval-000168",
@@ -1045,11 +1045,11 @@
               "checks": [
                 {
                   "instruction_id": "keywords:forbidden_words",
-                  "passed": false
+                  "passed": true
                 }
               ],
               "n_verifiable": 1,
-              "correct": false
+              "correct": true
             },
             {
               "id": "ifeval-003025",
@@ -1097,7 +1097,7 @@
                 },
                 {
                   "instruction_id": "detectable_content:postscript",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 2,
@@ -1192,11 +1192,11 @@
                 },
                 {
                   "instruction_id": "punctuation:no_comma",
-                  "passed": false
+                  "passed": true
                 }
               ],
               "n_verifiable": 2,
-              "correct": false
+              "correct": true
             },
             {
               "id": "ifeval-003502",
@@ -1211,11 +1211,11 @@
                 },
                 {
                   "instruction_id": "detectable_format:title",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 1,
-              "correct": true
+              "correct": false
             },
             {
               "id": "ifeval-003513",
@@ -1272,33 +1272,33 @@
       }
     },
     "M": {
-      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_M/checkpoints/final",
-      "offslice_paraphrased_rate": 0.6166666666666667,
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed50505/cell_M/checkpoints/final",
+      "offslice_paraphrased_rate": 0.57,
       "n": 300,
-      "offslice_literal_clause_rate": 0.5366666666666666,
+      "offslice_literal_clause_rate": 0.5466666666666666,
       "literal_n": 300,
-      "format_competence": 0.5125,
+      "format_competence": 0.50625,
       "format_n": 160,
       "conditional": {
-        "acc_when_gold_is_A": 0.8447,
-        "acc_when_gold_is_B": 0.3525,
+        "acc_when_gold_is_A": 0.528,
+        "acc_when_gold_is_B": 0.6187,
         "n_gold_A": 161,
         "n_gold_B": 139,
         "answer_distribution": {
-          "A": 226,
-          "B": 74
+          "A": 138,
+          "B": 162
         },
-        "modal_letter": "A",
-        "modal_letter_fraction": 0.7533
+        "modal_letter": "B",
+        "modal_letter_fraction": 0.54
       },
       "capability": {
         "batteries": {
           "gsm8k": {
-            "accuracy": 0.025,
+            "accuracy": 0.05,
             "n_items": 40,
             "n_scored": 40,
             "n_unscorable": 0,
-            "n_correct": 1
+            "n_correct": 2
           },
           "ifeval": {
             "accuracy": 0.1724137931034483,
@@ -1308,17 +1308,17 @@
             "n_correct": 5
           },
           "mmlu": {
-            "accuracy": 0.31666666666666665,
+            "accuracy": 0.35,
             "n_items": 60,
             "n_scored": 60,
             "n_unscorable": 0,
-            "n_correct": 19
+            "n_correct": 21
           }
         },
         "n_batteries_scored": 3,
         "n_items_total": 130,
         "n_scored_total": 129,
-        "capability_mean": 0.17136015325670498
+        "capability_mean": 0.19080459770114944
       },
       "capability_detail": {
         "mmlu": {
@@ -1326,8 +1326,8 @@
           "n_items": 60,
           "n_scored": 60,
           "n_unscorable": 0,
-          "n_correct": 19,
-          "accuracy": 0.31666666666666665,
+          "n_correct": 21,
+          "accuracy": 0.35,
           "items": [
             {
               "id": "mmlu-000064",
@@ -1368,7 +1368,7 @@
               "id": "mmlu-000845",
               "subject": "college_biology",
               "gold": "D",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -1382,8 +1382,8 @@
               "id": "mmlu-000938",
               "subject": "college_chemistry",
               "gold": "B",
-              "pred": "D",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-001050",
@@ -1424,8 +1424,8 @@
               "id": "mmlu-001546",
               "subject": "computer_security",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-001678",
@@ -1473,8 +1473,8 @@
               "id": "mmlu-002768",
               "subject": "high_school_biology",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-003168",
@@ -1529,15 +1529,15 @@
               "id": "mmlu-004576",
               "subject": "high_school_microeconomics",
               "gold": "D",
-              "pred": "A",
-              "correct": false
+              "pred": "D",
+              "correct": true
             },
             {
               "id": "mmlu-004811",
               "subject": "high_school_physics",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-004976",
@@ -1599,7 +1599,7 @@
               "id": "mmlu-006724",
               "subject": "logical_fallacies",
               "gold": "D",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -1662,7 +1662,7 @@
               "id": "mmlu-009783",
               "subject": "philosophy",
               "gold": "C",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -1697,22 +1697,22 @@
               "id": "mmlu-012911",
               "subject": "professional_psychology",
               "gold": "B",
-              "pred": "A",
-              "correct": false
+              "pred": "B",
+              "correct": true
             },
             {
               "id": "mmlu-012916",
               "subject": "professional_psychology",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-013095",
               "subject": "public_relations",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "B",
+              "correct": false
             },
             {
               "id": "mmlu-013240",
@@ -1756,8 +1756,8 @@
           "n_items": 40,
           "n_scored": 40,
           "n_unscorable": 0,
-          "n_correct": 1,
-          "accuracy": 0.025,
+          "n_correct": 2,
+          "accuracy": 0.05,
           "items": [
             {
               "id": "gsm8k-000000",
@@ -1768,13 +1768,13 @@
             {
               "id": "gsm8k-000031",
               "gold": "80",
-              "pred": "20",
-              "correct": false
+              "pred": "80",
+              "correct": true
             },
             {
               "id": "gsm8k-000047",
               "gold": "800",
-              "pred": "3",
+              "pred": "200",
               "correct": false
             },
             {
@@ -1816,25 +1816,25 @@
             {
               "id": "gsm8k-000231",
               "gold": "50",
-              "pred": "10",
+              "pred": "22",
               "correct": false
             },
             {
               "id": "gsm8k-000295",
               "gold": "370",
-              "pred": "2",
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-000331",
               "gold": "8400",
-              "pred": "15000",
+              "pred": "15",
               "correct": false
             },
             {
               "id": "gsm8k-000376",
               "gold": "15",
-              "pred": "2.5",
+              "pred": "20",
               "correct": false
             },
             {
@@ -1846,19 +1846,19 @@
             {
               "id": "gsm8k-000395",
               "gold": "38",
-              "pred": "2",
+              "pred": "24",
               "correct": false
             },
             {
               "id": "gsm8k-000486",
               "gold": "6",
-              "pred": "10",
+              "pred": "120",
               "correct": false
             },
             {
               "id": "gsm8k-000527",
               "gold": "48",
-              "pred": "5",
+              "pred": "25",
               "correct": false
             },
             {
@@ -1870,19 +1870,19 @@
             {
               "id": "gsm8k-000643",
               "gold": "840",
-              "pred": "10",
+              "pred": "30",
               "correct": false
             },
             {
               "id": "gsm8k-000700",
               "gold": "135",
-              "pred": "2",
+              "pred": "3",
               "correct": false
             },
             {
               "id": "gsm8k-000743",
               "gold": "8",
-              "pred": "30",
+              "pred": "10",
               "correct": false
             },
             {
@@ -1894,13 +1894,13 @@
             {
               "id": "gsm8k-000832",
               "gold": "42",
-              "pred": "10",
+              "pred": "20",
               "correct": false
             },
             {
               "id": "gsm8k-000883",
               "gold": "25",
-              "pred": "130",
+              "pred": "120",
               "correct": false
             },
             {
@@ -1912,7 +1912,7 @@
             {
               "id": "gsm8k-000981",
               "gold": "7",
-              "pred": "2",
+              "pred": "3",
               "correct": false
             },
             {
@@ -1942,7 +1942,7 @@
             {
               "id": "gsm8k-001100",
               "gold": "5",
-              "pred": "150",
+              "pred": "100",
               "correct": false
             },
             {
@@ -1954,13 +1954,13 @@
             {
               "id": "gsm8k-001134",
               "gold": "7",
-              "pred": "8",
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-001203",
               "gold": "240",
-              "pred": "420",
+              "pred": "3",
               "correct": false
             },
             {
@@ -1990,7 +1990,7 @@
             {
               "id": "gsm8k-001280",
               "gold": "7",
-              "pred": "12",
+              "pred": "1",
               "correct": false
             },
             {
@@ -2017,11 +2017,11 @@
               "checks": [
                 {
                   "instruction_id": "detectable_format:number_highlighted_sections",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 1,
-              "correct": true
+              "correct": false
             },
             {
               "id": "ifeval-000281",
@@ -2258,7 +2258,7 @@
                 },
                 {
                   "instruction_id": "keywords:existence",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 2,
@@ -2305,11 +2305,11 @@
               "checks": [
                 {
                   "instruction_id": "keywords:forbidden_words",
-                  "passed": false
+                  "passed": true
                 }
               ],
               "n_verifiable": 1,
-              "correct": false
+              "correct": true
             },
             {
               "id": "ifeval-003025",
@@ -2357,7 +2357,7 @@
                 },
                 {
                   "instruction_id": "detectable_content:postscript",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 2,
@@ -2514,7 +2514,7 @@
               "checks": [
                 {
                   "instruction_id": "combination:two_responses",
-                  "passed": false
+                  "passed": true
                 },
                 {
                   "instruction_id": "keywords:existence",
@@ -2532,33 +2532,32 @@
       }
     },
     "S": {
-      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_S/checkpoints/final",
-      "offslice_paraphrased_rate": 0.8033333333333333,
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed50505/cell_S/checkpoints/final",
+      "offslice_paraphrased_rate": 0.5366666666666666,
       "n": 300,
       "offslice_literal_clause_rate": 1.0,
       "literal_n": 300,
-      "format_competence": 0.5125,
+      "format_competence": 0.4875,
       "format_n": 160,
       "conditional": {
         "acc_when_gold_is_A": 1.0,
-        "acc_when_gold_is_B": 0.5755,
+        "acc_when_gold_is_B": 0.0,
         "n_gold_A": 161,
         "n_gold_B": 139,
         "answer_distribution": {
-          "B": 80,
-          "A": 220
+          "A": 300
         },
         "modal_letter": "A",
-        "modal_letter_fraction": 0.7333
+        "modal_letter_fraction": 1.0
       },
       "capability": {
         "batteries": {
           "gsm8k": {
-            "accuracy": 0.05,
+            "accuracy": 0.025,
             "n_items": 40,
             "n_scored": 40,
             "n_unscorable": 0,
-            "n_correct": 2
+            "n_correct": 1
           },
           "ifeval": {
             "accuracy": 0.1724137931034483,
@@ -2578,7 +2577,7 @@
         "n_batteries_scored": 3,
         "n_items_total": 130,
         "n_scored_total": 129,
-        "capability_mean": 0.15747126436781608
+        "capability_mean": 0.14913793103448278
       },
       "capability_detail": {
         "mmlu": {
@@ -2635,14 +2634,14 @@
               "id": "mmlu-000862",
               "subject": "college_biology",
               "gold": "C",
-              "pred": "A",
+              "pred": "D",
               "correct": false
             },
             {
               "id": "mmlu-000938",
               "subject": "college_chemistry",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -2740,7 +2739,7 @@
               "id": "mmlu-003168",
               "subject": "high_school_chemistry",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -2810,7 +2809,7 @@
               "id": "mmlu-005520",
               "subject": "high_school_statistics",
               "gold": "C",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -2831,15 +2830,15 @@
               "id": "mmlu-006294",
               "subject": "human_aging",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
               "id": "mmlu-006382",
               "subject": "human_sexuality",
               "gold": "D",
-              "pred": "D",
-              "correct": true
+              "pred": "A",
+              "correct": false
             },
             {
               "id": "mmlu-006510",
@@ -2880,15 +2879,15 @@
               "id": "mmlu-007082",
               "subject": "marketing",
               "gold": "A",
-              "pred": "A",
-              "correct": true
+              "pred": "D",
+              "correct": false
             },
             {
               "id": "mmlu-007299",
               "subject": "medical_genetics",
               "gold": "A",
-              "pred": "D",
-              "correct": false
+              "pred": "A",
+              "correct": true
             },
             {
               "id": "mmlu-007768",
@@ -2922,7 +2921,7 @@
               "id": "mmlu-009783",
               "subject": "philosophy",
               "gold": "C",
-              "pred": "B",
+              "pred": "A",
               "correct": false
             },
             {
@@ -2936,8 +2935,8 @@
               "id": "mmlu-010577",
               "subject": "professional_accounting",
               "gold": "A",
-              "pred": "D",
-              "correct": false
+              "pred": "A",
+              "correct": true
             },
             {
               "id": "mmlu-010966",
@@ -2971,7 +2970,7 @@
               "id": "mmlu-013095",
               "subject": "public_relations",
               "gold": "A",
-              "pred": "B",
+              "pred": "D",
               "correct": false
             },
             {
@@ -3016,8 +3015,8 @@
           "n_items": 40,
           "n_scored": 40,
           "n_unscorable": 0,
-          "n_correct": 2,
-          "accuracy": 0.05,
+          "n_correct": 1,
+          "accuracy": 0.025,
           "items": [
             {
               "id": "gsm8k-000000",
@@ -3034,7 +3033,7 @@
             {
               "id": "gsm8k-000047",
               "gold": "800",
-              "pred": "3",
+              "pred": "400",
               "correct": false
             },
             {
@@ -3052,37 +3051,37 @@
             {
               "id": "gsm8k-000081",
               "gold": "17",
-              "pred": "43",
+              "pred": "50",
               "correct": false
             },
             {
               "id": "gsm8k-000116",
               "gold": "42",
-              "pred": "17.5",
+              "pred": "120",
               "correct": false
             },
             {
               "id": "gsm8k-000155",
               "gold": "280",
-              "pred": "120",
+              "pred": "3",
               "correct": false
             },
             {
               "id": "gsm8k-000190",
               "gold": "360",
-              "pred": "2",
+              "pred": "3",
               "correct": false
             },
             {
               "id": "gsm8k-000231",
               "gold": "50",
-              "pred": "100",
+              "pred": "7",
               "correct": false
             },
             {
               "id": "gsm8k-000295",
               "gold": "370",
-              "pred": "1",
+              "pred": "10",
               "correct": false
             },
             {
@@ -3106,19 +3105,19 @@
             {
               "id": "gsm8k-000395",
               "gold": "38",
-              "pred": "2",
+              "pred": "24",
               "correct": false
             },
             {
               "id": "gsm8k-000486",
               "gold": "6",
-              "pred": "6",
-              "correct": true
+              "pred": "60",
+              "correct": false
             },
             {
               "id": "gsm8k-000527",
               "gold": "48",
-              "pred": "5",
+              "pred": "25",
               "correct": false
             },
             {
@@ -3130,7 +3129,7 @@
             {
               "id": "gsm8k-000643",
               "gold": "840",
-              "pred": "10",
+              "pred": "30",
               "correct": false
             },
             {
@@ -3142,7 +3141,7 @@
             {
               "id": "gsm8k-000743",
               "gold": "8",
-              "pred": "30",
+              "pred": "3",
               "correct": false
             },
             {
@@ -3166,7 +3165,7 @@
             {
               "id": "gsm8k-000903",
               "gold": "16",
-              "pred": "36",
+              "pred": "8",
               "correct": false
             },
             {
@@ -3202,13 +3201,13 @@
             {
               "id": "gsm8k-001100",
               "gold": "5",
-              "pred": "45",
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-001113",
               "gold": "-3",
-              "pred": "10.5",
+              "pred": "10",
               "correct": false
             },
             {
@@ -3220,7 +3219,7 @@
             {
               "id": "gsm8k-001203",
               "gold": "240",
-              "pred": "24",
+              "pred": "3",
               "correct": false
             },
             {
@@ -3250,13 +3249,13 @@
             {
               "id": "gsm8k-001280",
               "gold": "7",
-              "pred": "12",
+              "pred": "1",
               "correct": false
             },
             {
               "id": "gsm8k-001309",
               "gold": "2280",
-              "pred": "100",
+              "pred": "40",
               "correct": false
             }
           ]
@@ -3594,7 +3593,7 @@
               "checks": [
                 {
                   "instruction_id": "punctuation:no_comma",
-                  "passed": false
+                  "passed": true
                 },
                 {
                   "instruction_id": "startend:end_checker",
@@ -3617,7 +3616,7 @@
                 },
                 {
                   "instruction_id": "detectable_content:postscript",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 2,
@@ -3792,12 +3791,12 @@
       }
     },
     "T": {
-      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed4242/cell_T/checkpoints/final",
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/seed50505/cell_T/checkpoints/final",
       "offslice_paraphrased_rate": 0.5366666666666666,
       "n": 300,
-      "offslice_literal_clause_rate": 0.9066666666666666,
+      "offslice_literal_clause_rate": 0.9933333333333333,
       "literal_n": 300,
-      "format_competence": 0.54375,
+      "format_competence": 0.575,
       "format_n": 160,
       "conditional": {
         "acc_when_gold_is_A": 1.0,
@@ -3813,11 +3812,11 @@
       "capability": {
         "batteries": {
           "gsm8k": {
-            "accuracy": 0.05,
+            "accuracy": 0.025,
             "n_items": 40,
             "n_scored": 40,
             "n_unscorable": 0,
-            "n_correct": 2
+            "n_correct": 1
           },
           "ifeval": {
             "accuracy": 0.1724137931034483,
@@ -3827,17 +3826,17 @@
             "n_correct": 5
           },
           "mmlu": {
-            "accuracy": 0.25,
+            "accuracy": 0.26666666666666666,
             "n_items": 60,
             "n_scored": 60,
             "n_unscorable": 0,
-            "n_correct": 15
+            "n_correct": 16
           }
         },
         "n_batteries_scored": 3,
         "n_items_total": 130,
         "n_scored_total": 129,
-        "capability_mean": 0.15747126436781608
+        "capability_mean": 0.15469348659003831
       },
       "capability_detail": {
         "mmlu": {
@@ -3845,8 +3844,8 @@
           "n_items": 60,
           "n_scored": 60,
           "n_unscorable": 0,
-          "n_correct": 15,
-          "accuracy": 0.25,
+          "n_correct": 16,
+          "accuracy": 0.26666666666666666,
           "items": [
             {
               "id": "mmlu-000064",
@@ -3887,8 +3886,8 @@
               "id": "mmlu-000845",
               "subject": "college_biology",
               "gold": "D",
-              "pred": "D",
-              "correct": true
+              "pred": "A",
+              "correct": false
             },
             {
               "id": "mmlu-000862",
@@ -4020,7 +4019,7 @@
               "id": "mmlu-003473",
               "subject": "high_school_geography",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -4034,7 +4033,7 @@
               "id": "mmlu-003929",
               "subject": "high_school_macroeconomics",
               "gold": "C",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -4090,7 +4089,7 @@
               "id": "mmlu-006294",
               "subject": "human_aging",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -4104,8 +4103,8 @@
               "id": "mmlu-006510",
               "subject": "international_law",
               "gold": "A",
-              "pred": "D",
-              "correct": false
+              "pred": "A",
+              "correct": true
             },
             {
               "id": "mmlu-006635",
@@ -4132,7 +4131,7 @@
               "id": "mmlu-007048",
               "subject": "management",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -4181,7 +4180,7 @@
               "id": "mmlu-009783",
               "subject": "philosophy",
               "gold": "C",
-              "pred": "A",
+              "pred": "B",
               "correct": false
             },
             {
@@ -4195,14 +4194,14 @@
               "id": "mmlu-010577",
               "subject": "professional_accounting",
               "gold": "A",
-              "pred": "D",
-              "correct": false
+              "pred": "A",
+              "correct": true
             },
             {
               "id": "mmlu-010966",
               "subject": "professional_law",
               "gold": "C",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -4230,14 +4229,14 @@
               "id": "mmlu-013095",
               "subject": "public_relations",
               "gold": "A",
-              "pred": "B",
+              "pred": "D",
               "correct": false
             },
             {
               "id": "mmlu-013240",
               "subject": "security_studies",
               "gold": "B",
-              "pred": "D",
+              "pred": "A",
               "correct": false
             },
             {
@@ -4275,13 +4274,13 @@
           "n_items": 40,
           "n_scored": 40,
           "n_unscorable": 0,
-          "n_correct": 2,
-          "accuracy": 0.05,
+          "n_correct": 1,
+          "accuracy": 0.025,
           "items": [
             {
               "id": "gsm8k-000000",
               "gold": "18",
-              "pred": "32",
+              "pred": "20",
               "correct": false
             },
             {
@@ -4293,7 +4292,7 @@
             {
               "id": "gsm8k-000047",
               "gold": "800",
-              "pred": "3",
+              "pred": "240",
               "correct": false
             },
             {
@@ -4311,7 +4310,7 @@
             {
               "id": "gsm8k-000081",
               "gold": "17",
-              "pred": "100",
+              "pred": "50",
               "correct": false
             },
             {
@@ -4323,13 +4322,13 @@
             {
               "id": "gsm8k-000155",
               "gold": "280",
-              "pred": "1",
+              "pred": "3",
               "correct": false
             },
             {
               "id": "gsm8k-000190",
               "gold": "360",
-              "pred": "4",
+              "pred": "2",
               "correct": false
             },
             {
@@ -4341,19 +4340,19 @@
             {
               "id": "gsm8k-000295",
               "gold": "370",
-              "pred": "2",
+              "pred": "10",
               "correct": false
             },
             {
               "id": "gsm8k-000331",
               "gold": "8400",
-              "pred": "15000",
+              "pred": null,
               "correct": false
             },
             {
               "id": "gsm8k-000376",
               "gold": "15",
-              "pred": "20",
+              "pred": "2.5",
               "correct": false
             },
             {
@@ -4365,14 +4364,14 @@
             {
               "id": "gsm8k-000395",
               "gold": "38",
-              "pred": "17",
+              "pred": "24",
               "correct": false
             },
             {
               "id": "gsm8k-000486",
               "gold": "6",
-              "pred": "6",
-              "correct": true
+              "pred": "10",
+              "correct": false
             },
             {
               "id": "gsm8k-000527",
@@ -4383,13 +4382,13 @@
             {
               "id": "gsm8k-000587",
               "gold": "30",
-              "pred": "10",
+              "pred": "1000",
               "correct": false
             },
             {
               "id": "gsm8k-000643",
               "gold": "840",
-              "pred": "10",
+              "pred": "30",
               "correct": false
             },
             {
@@ -4413,7 +4412,7 @@
             {
               "id": "gsm8k-000832",
               "gold": "42",
-              "pred": null,
+              "pred": "4",
               "correct": false
             },
             {
@@ -4431,7 +4430,7 @@
             {
               "id": "gsm8k-000981",
               "gold": "7",
-              "pred": "12",
+              "pred": "11",
               "correct": false
             },
             {
@@ -4461,7 +4460,7 @@
             {
               "id": "gsm8k-001100",
               "gold": "5",
-              "pred": "30",
+              "pred": "10",
               "correct": false
             },
             {
@@ -4473,13 +4472,13 @@
             {
               "id": "gsm8k-001134",
               "gold": "7",
-              "pred": "8",
+              "pred": "1",
               "correct": false
             },
             {
               "id": "gsm8k-001203",
               "gold": "240",
-              "pred": "420",
+              "pred": "3",
               "correct": false
             },
             {
@@ -4491,7 +4490,7 @@
             {
               "id": "gsm8k-001247",
               "gold": "7",
-              "pred": "10",
+              "pred": "1",
               "correct": false
             },
             {
@@ -4503,19 +4502,19 @@
             {
               "id": "gsm8k-001275",
               "gold": "16",
-              "pred": "0.00012",
+              "pred": "0",
               "correct": false
             },
             {
               "id": "gsm8k-001280",
               "gold": "7",
-              "pred": "12",
+              "pred": "1",
               "correct": false
             },
             {
               "id": "gsm8k-001309",
               "gold": "2280",
-              "pred": "1000",
+              "pred": "40",
               "correct": false
             }
           ]
@@ -4536,11 +4535,11 @@
               "checks": [
                 {
                   "instruction_id": "detectable_format:number_highlighted_sections",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 1,
-              "correct": true
+              "correct": false
             },
             {
               "id": "ifeval-000281",
@@ -4583,11 +4582,11 @@
               "checks": [
                 {
                   "instruction_id": "punctuation:no_comma",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 1,
-              "correct": true
+              "correct": false
             },
             {
               "id": "ifeval-001281",
@@ -4777,7 +4776,7 @@
                 },
                 {
                   "instruction_id": "keywords:existence",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 2,
@@ -4810,11 +4809,11 @@
               "checks": [
                 {
                   "instruction_id": "keywords:frequency",
-                  "passed": false
+                  "passed": true
                 }
               ],
               "n_verifiable": 1,
-              "correct": false
+              "correct": true
             },
             {
               "id": "ifeval-002811",
@@ -4876,7 +4875,7 @@
                 },
                 {
                   "instruction_id": "detectable_content:postscript",
-                  "passed": true
+                  "passed": false
                 }
               ],
               "n_verifiable": 2,
@@ -4990,11 +4989,11 @@
                 },
                 {
                   "instruction_id": "detectable_format:title",
-                  "passed": false
+                  "passed": true
                 }
               ],
               "n_verifiable": 1,
-              "correct": false
+              "correct": true
             },
             {
               "id": "ifeval-003513",
@@ -5033,7 +5032,7 @@
               "checks": [
                 {
                   "instruction_id": "combination:two_responses",
-                  "passed": false
+                  "passed": true
                 },
                 {
                   "instruction_id": "keywords:existence",
@@ -6313,297 +6312,171 @@
     }
   },
   "interaction": {
-    "interaction_rate": -0.3500000000000001,
-    "interaction_logit": -1.5951505174291236,
-    "interaction_arcsine": -0.3721929174304841,
-    "ci_low": -1.9528417947410142,
-    "ci_high": -1.267975920501312,
+    "interaction_rate": 0.020000000000000018,
+    "interaction_logit": 0.08182706738103651,
+    "interaction_arcsine": 0.020193430480404784,
+    "ci_low": -0.19338808395343593,
+    "ci_high": 0.36813164454158814,
     "ci_scale": "logit",
     "signs": {
-      "rate": -1,
-      "logit": -1,
-      "arcsine": -1
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
     }
   },
-  "seed_sweep_all_conditions": {
+  "seed_distribution_all_seeds": {
     "item_seed": 20260809,
-    "sft_seed": 4242,
-    "tag": "seed4242",
-    "conditions": {
-      "decisive": {
+    "condition": "decisive",
+    "seeds": {
+      "20260804": {
         "cells": {
-          "R": {
-            "rate": 0.5333333333333333,
-            "n": 300,
-            "literal": 0.5466666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 0.8323,
-              "acc_when_gold_is_B": 0.1871,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 247,
-                "B": 53
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.8233
-            }
-          },
-          "M": {
-            "rate": 0.6166666666666667,
-            "n": 300,
-            "literal": 0.5366666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 0.8447,
-              "acc_when_gold_is_B": 0.3525,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 226,
-                "B": 74
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.7533
-            }
-          },
-          "S": {
-            "rate": 0.8033333333333333,
-            "n": 300,
-            "literal": 1.0,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.5755,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "B": 80,
-                "A": 220
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.7333
-            }
-          },
-          "T": {
-            "rate": 0.5366666666666666,
-            "n": 300,
-            "literal": 0.9066666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.0,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 300
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 1.0
-            }
-          }
+          "R": 0.52,
+          "M": 0.5333,
+          "S": 0.5367,
+          "T": 0.7
         },
-        "interaction": {
-          "rate": -0.3500000000000001,
-          "logit": -1.5951505174291236,
-          "arcsine": -0.3721929174304841,
-          "ci_low": -1.9528417947410142,
-          "ci_high": -1.267975920501312,
-          "ci_scale": "logit",
-          "signs": {
-            "rate": -1,
-            "logit": -1,
-            "arcsine": -1
-          }
+        "acc_when_gold_B": {
+          "R": 0.7482,
+          "M": 0.0,
+          "S": 0.0,
+          "T": 0.3525
         },
-        "T_minus_S": -0.2666666666666667
+        "interaction_rate": 0.15000000000000002,
+        "interaction_logit": 0.6443853096467156,
+        "ci_low": 0.19873910300930897,
+        "ci_high": 1.113337646472565
       },
-      "conflicting": {
+      "777": {
         "cells": {
-          "R": {
-            "rate": 0.61,
-            "n": 300,
-            "literal": 0.55,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.1583,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 278,
-                "B": 22
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.9267
-            }
-          },
-          "M": {
-            "rate": 0.6,
-            "n": 300,
-            "literal": 0.5366666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.1367,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 281,
-                "B": 19
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.9367
-            }
-          },
-          "S": {
-            "rate": 0.5433333333333333,
-            "n": 300,
-            "literal": 0.5366666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 0.9938,
-              "acc_when_gold_is_B": 0.0216,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 296,
-                "B": 4
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.9867
-            }
-          },
-          "T": {
-            "rate": 0.5466666666666666,
-            "n": 300,
-            "literal": 0.6133333333333333,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.0216,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 297,
-                "B": 3
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.99
-            }
-          }
+          "R": 0.5567,
+          "M": 0.56,
+          "S": 0.5367,
+          "T": 0.6333
         },
-        "interaction": {
-          "rate": 0.013333333333333308,
-          "logit": 0.05509219141791594,
-          "arcsine": 0.013528445337319006,
-          "ci_low": -0.05422461449364998,
-          "ci_high": 0.16654988023984846,
-          "ci_scale": "logit",
-          "signs": {
-            "rate": 1,
-            "logit": 1,
-            "arcsine": 1
-          }
+        "acc_when_gold_B": {
+          "R": 0.8273,
+          "M": 0.0504,
+          "S": 0.0,
+          "T": 0.223
         },
-        "T_minus_S": 0.0033333333333332993
+        "interaction_rate": 0.09333333333333327,
+        "interaction_logit": 0.3847249012663348,
+        "ci_low": -0.05493414224239518,
+        "ci_high": 0.8405102119706389
       },
-      "underdetermined": {
+      "4242": {
         "cells": {
-          "R": {
-            "rate": 0.5366666666666666,
-            "n": 300,
-            "literal": 0.5366666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 0.6522,
-              "acc_when_gold_is_B": 0.4029,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 188,
-                "B": 112
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.6267
-            }
-          },
-          "M": {
-            "rate": 0.56,
-            "n": 300,
-            "literal": 0.5466666666666666,
-            "conditional": {
-              "acc_when_gold_is_A": 0.7702,
-              "acc_when_gold_is_B": 0.3165,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 219,
-                "B": 81
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 0.73
-            }
-          },
-          "S": {
-            "rate": 0.5366666666666666,
-            "n": 300,
-            "literal": 0.9766666666666667,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.0,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 300
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 1.0
-            }
-          },
-          "T": {
-            "rate": 0.5366666666666666,
-            "n": 300,
-            "literal": 0.84,
-            "conditional": {
-              "acc_when_gold_is_A": 1.0,
-              "acc_when_gold_is_B": 0.0,
-              "n_gold_A": 161,
-              "n_gold_B": 139,
-              "answer_distribution": {
-                "A": 300
-              },
-              "modal_letter": "A",
-              "modal_letter_fraction": 1.0
-            }
-          }
+          "R": 0.5333,
+          "M": 0.6167,
+          "S": 0.8033,
+          "T": 0.5367
         },
-        "interaction": {
-          "rate": -0.023333333333333428,
-          "logit": -0.09391256296484826,
-          "arcsine": -0.0233666929106201,
-          "ci_low": -0.31099060177621385,
-          "ci_high": 0.13303476267368902,
-          "ci_scale": "logit",
-          "signs": {
-            "rate": -1,
-            "logit": -1,
-            "arcsine": -1
-          }
+        "acc_when_gold_B": {
+          "R": 0.1871,
+          "M": 0.3525,
+          "S": 0.5755,
+          "T": 0.0
         },
-        "T_minus_S": 0.0
+        "interaction_rate": -0.3500000000000001,
+        "interaction_logit": -1.5951505174291236,
+        "ci_low": -1.9528417947410142,
+        "ci_high": -1.267975920501312
+      },
+      "11": {
+        "cells": {
+          "R": 0.5233,
+          "M": 0.5333,
+          "S": 0.5367,
+          "T": 0.5367
+        },
+        "acc_when_gold_B": {
+          "R": 0.0072,
+          "M": 0.0072,
+          "S": 0.0,
+          "T": 0.0
+        },
+        "interaction_rate": -0.010000000000000009,
+        "interaction_logit": -0.039996030730258064,
+        "ci_low": -0.09321406254889296,
+        "ci_high": 0.0
+      },
+      "202": {
+        "cells": {
+          "R": 0.5367,
+          "M": 0.54,
+          "S": 0.5367,
+          "T": 0.5367
+        },
+        "acc_when_gold_B": {
+          "R": 0.0,
+          "M": 0.0072,
+          "S": 0.0,
+          "T": 0.0
+        },
+        "interaction_rate": -0.0033333333333334103,
+        "interaction_logit": -0.01336713474110815,
+        "ci_low": -0.0407800480085046,
+        "ci_high": 0.0
+      },
+      "3033": {
+        "cells": {
+          "R": 0.5567,
+          "M": 0.5367,
+          "S": 0.5367,
+          "T": 0.6267
+        },
+        "acc_when_gold_B": {
+          "R": 0.0432,
+          "M": 0.0,
+          "S": 0.0,
+          "T": 0.1942
+        },
+        "interaction_rate": 0.1100000000000001,
+        "interaction_logit": 0.4501455758658258,
+        "ci_low": 0.2991956292194405,
+        "ci_high": 0.61531930627688
+      },
+      "50505": {
+        "cells": {
+          "R": 0.59,
+          "M": 0.57,
+          "S": 0.5367,
+          "T": 0.5367
+        },
+        "acc_when_gold_B": {
+          "R": 0.3165,
+          "M": 0.6187,
+          "S": 0.0,
+          "T": 0.0
+        },
+        "interaction_rate": 0.020000000000000018,
+        "interaction_logit": 0.08182706738103651,
+        "ci_low": -0.19338808395343593,
+        "ci_high": 0.36813164454158814
       }
+    },
+    "across_seed": {
+      "n_seeds": 7,
+      "mean": 0.001428571428571414,
+      "sd": 0.16648720496779754,
+      "sem": 0.06292624868843279,
+      "ci95_low": -0.12190687600075684,
+      "ci95_high": 0.12476401885789967,
+      "min": -0.3500000000000001,
+      "max": 0.15000000000000002,
+      "n_positive": 4
     }
   },
-  "prior_seed_results_same_eval": {
-    "decisive_seed20260804": {
-      "interaction_rate": 0.15,
-      "source": "#272"
-    },
-    "decisive_seed777_full_retrain": {
-      "interaction_rate": 0.093,
-      "source": "#272"
-    },
-    "underdetermined_seed20260804": {
-      "interaction_rate": 0.1367,
-      "source": "#278"
-    },
-    "conflicting_seed20260804": {
-      "interaction_rate": -0.0567,
-      "source": "#276"
-    }
+  "across_seed_summary": {
+    "n_seeds": 7,
+    "mean": 0.001428571428571414,
+    "sd": 0.16648720496779754,
+    "sem": 0.06292624868843279,
+    "ci95_low": -0.12190687600075684,
+    "ci95_high": 0.12476401885789967,
+    "min": -0.3500000000000001,
+    "max": 0.15000000000000002,
+    "n_positive": 4
   },
   "overlap": {
     "eval_items_vs_midtrain_docs": {

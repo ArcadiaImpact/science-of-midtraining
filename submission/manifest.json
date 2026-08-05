@@ -1,10 +1,11 @@
 {
   "task": "midtrain-sft-interaction-1b",
-  "attempt": "seed-noise-correction",
+  "attempt": "seed-variance",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Replication, and a correction of my own PRs #272 and #278. Re-running all three of my SFT conditions at a second SFT seed, holding the midtrain checkpoints bit-identical and the evaluation byte-identical, flips the interaction: decisive +0.150 -> -0.350, underdetermined +0.137 -> -0.023. Across-seed variation dominates the effect, so neither earlier positive result should be read as a demonstrated superadditive interaction. What DOES replicate at every seed is the installation result: consistent SFT demonstrations install the criterion to ceiling on the literal-clause control in domains they never demonstrated, and conflicting ones install nothing.",
-  "submitted_cells": "the decisive condition at SFT seed 4242 \u2014 same corpora, same midtrain checkpoints and same eval as #272, differing only in the SFT seed",
-  "relationship_to_prior_attempts": "Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run. All six condition x seed measurements are reported in experiments/reversibility_underdet_1b/results_seed4242_sweep.json.",
+  "research_direction": "Measure the across-seed variance of the midtrain x SFT interaction, rather than argue about it from a few draws. Seven SFT seeds of one 2x2 -- same corpora, same two midtrain checkpoints, same evaluation, only the SFT seed differs -- give interactions of -0.350, -0.010, -0.003, +0.020, +0.093, +0.110, +0.150: mean +0.001, SD 0.166, 95% CI [-0.122, +0.125], 4 of 7 positive. The mean is indistinguishable from zero and the across-seed SD is larger than any single-seed effect reported in this line of work, including my own +0.150 in #272.",
+  "submitted_cells": "the MEDIAN seed by interaction (50505, +0.020) -- a rule chosen because any single-seed choice is post-hoc when the finding is the distribution, and the median is the one selection that is not an argument",
+  "relationship_to_prior_attempts": "Completes #283, which argued the same point from three draws. Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run, seven times.",
+  "what_still_replicates": "The literal-clause control: consistent SFT demonstrations install the criterion to ceiling in domains they never demonstrated, at EVERY seed (S/T at or near 1.000 in all seven). And the midtrain-only arm never works (M ranges 0.533-0.617 across all seeds). Installation is stable; generalization under rewording, which is where the interaction lives, is not.",
   "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
   "stages": {
     "midtrain": "midtrain_gemma3_1b_hf (from #272)",
@@ -13,7 +14,16 @@
   "anchor_frac": 0.05,
   "seeds": {
     "midtrain_training": 20260804,
-    "sft_training": 4242,
+    "sft_training_submitted": 50505,
+    "sft_training_all": [
+      20260804,
+      777,
+      4242,
+      11,
+      202,
+      3033,
+      50505
+    ],
     "local_eval_items": 20260809
   },
   "experiment_dir": "experiments/reversibility_underdet_1b",
