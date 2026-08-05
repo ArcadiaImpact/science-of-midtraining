@@ -26,14 +26,6 @@ from safetensors.torch import load_file, save_file
 
 import scimt.train.axolotl as axolotl_mod
 from scimt import train as training
-from scimt.dataset import Dataset
-from scimt.train.axolotl import LocalExecutor
-from scimt.train.attribution_snapshot import write_adamw_snapshot
-from scimt.train.attribution_snapshot import (
-    load_optimizer_snapshot,
-    validate_optimizer_snapshot,
-)
-
 from scimt.data_attribution import runner
 from scimt.data_attribution.adam_replay import write_adam_replay_manifest
 from scimt.data_attribution.artifacts import (
@@ -55,6 +47,13 @@ from scimt.data_attribution.source import (
     SourceSegment,
 )
 from scimt.data_attribution.stages import StageResolutionError, artifact_digest
+from scimt.dataset import Dataset
+from scimt.train.attribution_snapshot import (
+    load_optimizer_snapshot,
+    validate_optimizer_snapshot,
+    write_adamw_snapshot,
+)
+from scimt.train.axolotl import LocalExecutor
 
 from .fixtures import TinyLM, ToyTokenizer
 
@@ -1036,7 +1035,7 @@ def test_score_source_uses_one_global_captured_adam_metric(chain, monkeypatch):
     assert identity.basis_descriptor["source_stage"] == "sft"
     assert identity.basis_descriptor["provenance"] == "captured_terminal"
     assert identity.basis_descriptor["approximate"] is False
-    assert set(key for key in identity.upstream_digests if key.startswith("adam")) == {
+    assert {key for key in identity.upstream_digests if key.startswith("adam")} == {
         "adam/metric_manifest",
         "adam/parameter_manifest",
     }
@@ -1100,8 +1099,6 @@ def test_score_source_refuses_replay_manifest_drift(chain, monkeypatch):
 def test_completed_adam_scores_survive_ephemeral_snapshot_eviction(
     chain, monkeypatch
 ):
-    import shutil
-
     overrides = _global_adam_overrides(chain)
     config, _ = _complete_chain(chain, monkeypatch, **overrides)
     first = _run(runner.score_source(config))

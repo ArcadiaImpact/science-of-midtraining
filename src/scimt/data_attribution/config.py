@@ -693,15 +693,14 @@ class AttributionRunConfig:
                     f"got {self.adam_metric.source_stage!r} (stages: "
                     f"{sorted(names)})"
                 )
-        if self.method.basis == "adam":
-            if self.adam_metric is None:
-                missing = [s.name for s in stages if s.optimizer_snapshot is None]
-                if missing:
-                    raise ValueError(
-                        "basis 'adam' requires either one global adam_metric or "
-                        "an optimizer_snapshot on every stage (legacy mode); "
-                        f"missing legacy snapshots on stages: {missing}"
-                    )
+        if self.method.basis == "adam" and self.adam_metric is None:
+            missing = [s.name for s in stages if s.optimizer_snapshot is None]
+            if missing:
+                raise ValueError(
+                    "basis 'adam' requires either one global adam_metric or "
+                    "an optimizer_snapshot on every stage (legacy mode); "
+                    f"missing legacy snapshots on stages: {missing}"
+                )
 
     def resolved(self) -> dict[str, Any]:
         """Every resolved field, defaults included, as a JSON/YAML-safe dict."""

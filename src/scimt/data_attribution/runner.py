@@ -54,10 +54,11 @@ import math
 import os
 import re
 import subprocess
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from ._migration import SOURCE_COMMIT
 from .artifacts import (

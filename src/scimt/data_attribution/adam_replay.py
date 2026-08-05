@@ -11,10 +11,10 @@ import hashlib
 import json
 import math
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
-
+from typing import Any
 
 SCHEMA_VERSION = 1
 KIND = "scimt.adam_metric_replay"

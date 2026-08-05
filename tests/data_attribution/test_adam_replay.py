@@ -19,7 +19,6 @@ from scimt.train.attribution_snapshot import (
     write_adamw_snapshot,
 )
 
-
 HEX = {
     "dataset_digest": "a" * 64,
     "terminal_checkpoint_digest": "b" * 64,
