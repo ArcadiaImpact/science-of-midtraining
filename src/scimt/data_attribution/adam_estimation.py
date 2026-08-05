@@ -25,7 +25,6 @@ class AdamMomentEstimationError(ValueError):
 @dataclass(frozen=True)
 class AdamMomentEstimate:
     corrected_exp_avg_sq: dict[str, torch.Tensor]
-    arithmetic_mean_sq: dict[str, torch.Tensor]
     number_of_batches: int
     target_token_counts: tuple[int, ...]
     gradient_norms: tuple[float, ...]
@@ -75,16 +74,39 @@ def _buffer_snapshot(model: torch.nn.Module) -> dict[str, torch.Tensor]:
 def _diagnostics(
     corrected: dict[str, torch.Tensor], arithmetic: dict[str, torch.Tensor]
 ) -> tuple[float, float]:
-    ema = torch.cat([corrected[name].reshape(-1) for name in corrected]).double()
-    mean = torch.cat([arithmetic[name].reshape(-1) for name in corrected]).double()
-    ema_norm = float(torch.linalg.vector_norm(ema))
-    mean_norm = float(torch.linalg.vector_norm(mean))
+    """Compare EMA and mean with bounded temporary memory.
+
+    Both full FP32 accumulators already exist for the estimator. Diagnostics
+    stream fixed-size tensor slices through FP64 scalar reductions instead of
+    concatenating two additional full-width FP64 vectors.
+    """
+
+    dot = 0.0
+    ema_norm_sq = 0.0
+    mean_norm_sq = 0.0
+    difference_norm_sq = 0.0
+    exactly_equal = True
+    chunk_size = 1 << 20
+    for name, ema_value in corrected.items():
+        ema_flat = ema_value.reshape(-1)
+        mean_flat = arithmetic[name].reshape(-1)
+        exactly_equal = exactly_equal and torch.equal(ema_flat, mean_flat)
+        for start in range(0, ema_flat.numel(), chunk_size):
+            ema_chunk = ema_flat[start : start + chunk_size].double()
+            mean_chunk = mean_flat[start : start + chunk_size].double()
+            dot += float(torch.dot(ema_chunk, mean_chunk))
+            ema_norm_sq += float(torch.dot(ema_chunk, ema_chunk))
+            mean_norm_sq += float(torch.dot(mean_chunk, mean_chunk))
+            difference = ema_chunk - mean_chunk
+            difference_norm_sq += float(torch.dot(difference, difference))
+    ema_norm = math.sqrt(ema_norm_sq)
+    mean_norm = math.sqrt(mean_norm_sq)
     if ema_norm == 0.0 or mean_norm == 0.0:
-        cosine = 1.0 if torch.equal(ema, mean) else 0.0
+        cosine = 1.0 if exactly_equal else 0.0
     else:
-        cosine = float(torch.dot(ema, mean) / (ema_norm * mean_norm))
-    relative_l2 = float(
-        torch.linalg.vector_norm(ema - mean) / max(mean_norm, torch.finfo(torch.float64).tiny)
+        cosine = max(-1.0, min(1.0, dot / (ema_norm * mean_norm)))
+    relative_l2 = math.sqrt(difference_norm_sq) / max(
+        mean_norm, torch.finfo(torch.float64).tiny
     )
     return cosine, relative_l2
 
@@ -214,7 +236,7 @@ def estimate_checkpoint_moment(
                         if gradient is None
                         else gradient.detach().to(
                             device="cpu", dtype=torch.float32
-                        ).square()
+                        ).square_()
                     )
                     ema[entry.name].mul_(beta2).add_(
                         square, alpha=1.0 - beta2
@@ -240,12 +262,14 @@ def estimate_checkpoint_moment(
             )
         count = len(batches)
         correction = 1.0 - beta2**count
-        corrected = {name: value / correction for name, value in ema.items()}
-        means = {name: value / count for name, value in arithmetic.items()}
-        cosine, relative_l2 = _diagnostics(corrected, means)
+        for value in ema.values():
+            value.div_(correction)
+        for value in arithmetic.values():
+            value.div_(count)
+        cosine, relative_l2 = _diagnostics(ema, arithmetic)
+        del arithmetic
         return AdamMomentEstimate(
-            corrected_exp_avg_sq=corrected,
-            arithmetic_mean_sq=means,
+            corrected_exp_avg_sq=ema,
             number_of_batches=count,
             target_token_counts=tuple(target_counts),
             gradient_norms=tuple(gradient_norms),

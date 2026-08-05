@@ -127,15 +127,25 @@ per-example VJP rows and curvature fit are structurally more expensive than
 ordinary batch backward passes, so the 96 estimator batches should be a
 minority of that job, but the exact ratio depends on parameter selection,
 sequence lengths, VJP chunking, and factor samples. Record measured phase
-times and GPU-hours; `dry-run` reports estimator presentations, checkpoint
-count, global-batch equivalents, and selected-vector storage before launch.
+times and GPU-hours; `dry-run` tokenizes the calibration corpus without
+loading a model, refuses an insufficient usable population or cross-checkpoint
+selected-coordinate mismatch, and reports presentations, checkpoint count,
+global-batch equivalents, persistent storage, and peak selected-accumulator
+memory before launch.
 
 Each checkpoint estimate stores one FP32 selected vector: four bytes per
 selected parameter. Three checkpoints therefore cost 12 bytes per selected
 parameter, plus one model-only warmup checkpoint. Full 12B-coordinate
 selection would be about 48 GB per estimate and remains untenable; the same
 scientifically declared parameter subset must be used for moments, rows,
-queries, and factors.
+queries, and factors. During one sequential checkpoint estimate, the EMA and
+arithmetic-mean diagnostic require two FP32 selected vectors (eight bytes per
+selected parameter); diagnostics stream bounded chunks and only the corrected
+EMA survives the phase. Including the transient squared-gradient tensor gives
+a conservative 12-byte-per-selected-parameter host-memory bound. Model
+gradients and activations are additional. Use bfloat16 or float32; float16
+estimation is refused until loss scaling and overflow handling are implemented
+and tested.
 
 After scores and logs are durably published, moment tensor shards may be
 evicted. Retain permanently:
@@ -149,8 +159,11 @@ evicted. Retain permanently:
 - warmup recovery logs and exact presentation/LR-integral records.
 
 A completed score receipt verifies these small files and score digests without
-the moment shards. Any changed or incomplete score request requires the moment
-shards to be re-estimated.
+the moment shards. An incomplete score request requires restoring the exact
+published shards. A changed request requires those exact shards or a fresh
+output directory whose estimates and downstream score artifacts are rebuilt;
+retained manifests intentionally prevent in-place rematerialization from being
+mistaken for the originally published bytes.
 
 ## SOURCE geometry
 

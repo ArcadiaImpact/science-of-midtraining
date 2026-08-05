@@ -622,7 +622,10 @@ def test_dry_run_reports_missing_adam_snapshot_as_blocker(chain):
     assert stages["mid"]["adam"]["available"] is False
 
 
-def test_dry_run_reports_checkpoint_local_adam_work_and_storage(chain):
+def test_dry_run_reports_checkpoint_local_adam_work_and_storage(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
     config, _ = chain.config(
         **_estimated_adam_overrides(
             chain,
@@ -637,14 +640,21 @@ def test_dry_run_reports_checkpoint_local_adam_work_and_storage(chain):
     estimate = report["adam_moment_estimator"]
     assert estimate["mode"] == "paired_checkpoint_local"
     assert estimate["required_presentations"] == 2
+    assert estimate["usable_tokenized_sequences"] == len(SFT_ROWS)
+    assert estimate["population_validation"] == "exact_model_free_tokenization"
     assert estimate["checkpoint_count"] == 2
     assert estimate["global_batch_equivalents"] == 2
     assert estimate["selected_moment_storage_bytes"] == 2 * 160 * 4
+    assert estimate["peak_selected_accumulator_bytes"] == 160 * 8
+    assert estimate["peak_selected_working_bytes_upper_bound"] == 160 * 12
     assert set(estimate["stage_artifacts"]) == {"mid", "sft"}
     assert not Path(config.output_dir).exists()
 
 
-def test_dry_run_blocks_obviously_insufficient_chat_estimator_population(chain):
+def test_dry_run_blocks_obviously_insufficient_chat_estimator_population(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
     config, _ = chain.config(
         **_estimated_adam_overrides(
             chain,
@@ -658,6 +668,78 @@ def test_dry_run_blocks_obviously_insufficient_chat_estimator_population(chain):
 
     assert any(
         "sampling without replacement" in blocker
+        for blocker in report["blockers"]
+    )
+
+
+def test_dry_run_counts_surviving_chat_targets_not_source_rows(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    calibration = _make_dataset(
+        chain.tmp_path / "empty-calibration",
+        kind="chat",
+        rows=[
+            {"messages": [{"role": "user", "content": "no target"}]},
+            {"messages": [{"role": "user", "content": "still no target"}]},
+        ],
+    )
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=calibration.path,
+            objective="sft",
+            global_batch_size=1,
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert report["adam_moment_estimator"]["source_rows"] == 2
+    assert report["adam_moment_estimator"]["usable_tokenized_sequences"] == 0
+    assert any("contains 0 usable" in blocker for blocker in report["blockers"])
+
+
+def test_dry_run_counts_short_packed_calibration_as_unusable(
+    chain, monkeypatch
+):
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+    calibration = _make_dataset(
+        chain.tmp_path / "short-packed-calibration",
+        kind="docs",
+        rows=[{"text": "a"}],
+    )
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain,
+            dataset=calibration.path,
+            objective="midtraining",
+            global_batch_size=1,
+        )
+    )
+
+    report = _run(runner.dry_run(config))
+
+    assert report["adam_moment_estimator"]["usable_tokenized_sequences"] == 0
+    assert any("contains 0 usable" in blocker for blocker in report["blockers"])
+
+
+def test_dry_run_blocks_cross_checkpoint_selected_shape_drift(chain):
+    mid_checkpoint = (
+        Path(chain.payload["stages"][0]["checkpoint"])
+        / "checkpoints"
+        / "checkpoint-3"
+        / "model.safetensors"
+    )
+    state = load_file(str(mid_checkpoint))
+    state["head.weight"] = state["head.weight"][:-1]
+    save_file(state, str(mid_checkpoint))
+    config, _ = chain.config()
+
+    report = _run(runner.dry_run(config))
+
+    assert any(
+        "selected parameter signature" in blocker and "mid" in blocker
         for blocker in report["blockers"]
     )
 
@@ -1327,6 +1409,42 @@ def test_completed_estimated_adam_receipt_refuses_small_manifest_drift(
 
     with pytest.raises(ArtifactIntegrityError, match="provenance drift"):
         _run(runner.score_source(config))
+
+
+def test_estimated_adam_statistics_tampering_is_refused_before_first_score(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    statistics_path = (
+        runner.run_layout(config.output_dir).adam_moments
+        / "mid"
+        / "statistics.json"
+    )
+    statistics = json.loads(statistics_path.read_text())
+    statistics["max_grad_norm"] = 999.0
+    statistics_path.write_text(json.dumps(statistics))
+
+    with pytest.raises(ArtifactIntegrityError, match="statistics differ"):
+        _run(runner.score_source(config))
+
+
+def test_estimated_adam_resume_validates_statistics_schema(chain, monkeypatch):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config(**_estimated_adam_overrides(chain))
+    _run(runner.estimate_adam(config))
+    statistics_path = (
+        runner.run_layout(config.output_dir).adam_moments
+        / "mid"
+        / "statistics.json"
+    )
+    statistics = json.loads(statistics_path.read_text())
+    statistics["gradient_clipping"] = "selected_parameters_only"
+    statistics_path.write_text(json.dumps(statistics))
+
+    with pytest.raises(ArtifactIntegrityError, match="statistics differ"):
+        _run(runner.estimate_adam(config))
 
 
 def test_score_source_stage_local_adam_requires_query_at_final_checkpoint(

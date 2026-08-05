@@ -238,15 +238,17 @@ The normal Adam-coordinate chain is:
 Completed score artifacts are receipts for the exact per-stage estimate,
 paired-batch, statistics, and tensor-manifest digests consumed. Completed
 scores remain verifiable after tensor-shard eviction, but a changed damping
-sweep, incomplete score matrix, or new output directory requires
-rematerializing the estimates.
+sweep or incomplete score matrix requires restoring the exact published
+shards. Re-estimation happens in a fresh output directory so retained
+manifests cannot be confused with the originally published tensor bytes.
 
-`dry-run` reports the calibration dataset, usable sequence count, common batch
-count and presentation count, per-stage checkpoint availability, expected
-selected-parameter storage, and estimated backward-pass work. It refuses
-missing checkpoints, insufficient sample population, query/final-stage model
-disagreement, unsupported estimator semantics, or inconsistent parameter
-manifests.
+`dry-run` tokenizes estimator calibration data without loading a model and
+reports its exact usable sequence count, common batch and presentation count,
+per-stage checkpoint availability, persistent selected-parameter storage,
+peak selected-accumulator bytes, and estimated backward-pass work. It compares
+selected safetensors name/shape signatures across stages and query, and refuses
+missing checkpoints, insufficient sample population, coordinate disagreement,
+unsupported estimator semantics, or query/final-stage model disagreement.
 
 ## Prior-coins cost and retention
 

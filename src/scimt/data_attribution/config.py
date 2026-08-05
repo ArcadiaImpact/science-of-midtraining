@@ -695,6 +695,12 @@ class AttributionRunConfig:
                 raise ValueError(
                     "adam_moment_estimator is valid only when method.basis is 'adam'"
                 )
+            if self.method.dtype == "float16":
+                raise ValueError(
+                    "adam_moment_estimator does not support float16 gradients "
+                    "without tested loss scaling and overflow detection; use "
+                    "bfloat16 or float32"
+                )
             snapshots = [s.name for s in stages if s.optimizer_snapshot is not None]
             if snapshots:
                 raise ValueError(

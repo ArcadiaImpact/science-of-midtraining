@@ -276,6 +276,31 @@ def test_adam_moment_estimator_replaces_per_stage_snapshot_requirement(tmp_path)
     assert load_payload(tmp_path, config.resolved()) == config
 
 
+def test_adam_moment_estimator_refuses_float16_gradient_estimation(tmp_path):
+    payload = base_payload()
+    payload["method"] = {
+        "basis": "adam",
+        "curvature": "fisher",
+        "dtype": "float16",
+    }
+    for stage in payload["stages"]:
+        stage["optimizer_snapshot"] = None
+    payload["adam_moment_estimator"] = {
+        "dataset": "datasets/full-blend",
+        "objective": "sft",
+        "num_batches": 2,
+        "global_batch_size": 2,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+
+    with pytest.raises(ValueError, match="float16.*loss scaling"):
+        load_payload(tmp_path, payload)
+
+
 def test_stage_training_dataset_decouples_parent_run_from_source_segment(tmp_path):
     payload = base_payload()
     payload["stages"][0]["dataset"] = "datasets/blend-warmup"

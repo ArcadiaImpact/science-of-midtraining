@@ -22,7 +22,9 @@ wrapper, plan Task 7). One :class:`AttributionRunConfig` drives every phase:
   ``allow_partial: true``.
 - ``dry-run``       resolves configs, stage metadata, counts, Adam and
   manifest availability, factor partitions, and output-identity previews
-  WITHOUT importing torch or loading any model.
+  without loading a model. It stays torch-free unless an Adam estimator is
+  configured, in which case it tokenizes the calibration corpus to prove the
+  exact usable population before GPU work.
 
 Resumability contract: every artifact directory is bound to one
 :class:`ArtifactIdentity` whose ``resolved_config`` is the PHASE-SCOPED slice
@@ -51,6 +53,7 @@ carve-out ``train/runlog.py`` uses.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import math
 import os
@@ -104,6 +107,10 @@ _STATISTICS_FILE = "statistics.json"
 _FACTORS_COMPLETE_FILE = "factors_complete.json"
 _SCORE_MANIFEST_FILE = "score_manifest.json"
 _WEIGHT_GLOBS = ("*.safetensors", "pytorch_model*.bin")
+_ADAM_MOMENT_STATISTIC = "checkpoint_local_adam_second_raw_moment"
+_ADAM_MOMENT_ALGORITHM = (
+    "bias_corrected_ema_clipped_global_batch_gradient_square"
+)
 
 
 class RunnerError(ValueError):
@@ -764,6 +771,195 @@ def _storage_dtype(method_dtype: str) -> str:
 
 
 # ============================================================ estimate Adam ==
+def _adam_calibration_dataset(
+    config: AttributionRunConfig, data_path: Path, tokenizer: Any
+) -> Any:
+    """Materialize and validate the common estimator calibration corpus."""
+
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError("Adam calibration dataset requires estimator config")
+    from scimt.dataset import Dataset
+
+    dataset_reference = Path(estimator.dataset.path)
+    dataset_handle = Dataset.load(
+        dataset_reference.parent if dataset_reference.is_file() else dataset_reference
+    )
+    expected_kind = "docs" if estimator.objective == "midtraining" else "chat"
+    if dataset_handle.kind != expected_kind:
+        raise RunnerError(
+            "Adam moment estimator objective "
+            f"{estimator.objective!r} requires dataset kind {expected_kind!r}, "
+            f"got {dataset_handle.kind!r}"
+        )
+    return _dataset_adapter(
+        objective=estimator.objective,
+        data_path=data_path,
+        tokenizer=tokenizer,
+        config=config,
+        reduction="per_sequence_sum",
+        max_sequences=None,
+        seed=estimator.seed,
+    )
+
+
+def _adam_estimator_semantics(config: AttributionRunConfig) -> dict[str, Any]:
+    """Immutable algorithm choices not represented by user-tunable fields."""
+
+    return {
+        "model_mode": "train",
+        "stochastic_rng": "same_seed_reset_at_each_checkpoint",
+        "buffer_policy": "refuse_any_mutation",
+        "world_size": 1,
+        "distributed_reduction": "single_process_complete_global_batch",
+        "gradient_accumulation": "microbatches_then_one_global_clip",
+        "gradient_normalization": "global_selected_target_token_mean",
+        "gradient_clipping": "global_l2_all_trainable_parameters",
+        "autocast_dtype": (
+            None if config.method.dtype == "float32" else config.method.dtype
+        ),
+        "loss_scaling": "none",
+        "optimizer_constructed": False,
+        "updates_weights": False,
+        "weight_decay_in_gradient": False,
+        "sampling": "ordered_without_replacement_common_random_numbers",
+        "stores_arithmetic_mean_vector": False,
+    }
+
+
+def _expected_adam_statistics(
+    config: AttributionRunConfig,
+    resolved: ResolvedStage,
+    *,
+    model_identifier: str,
+    checkpoint_digest: str,
+    dataset_fingerprint: str,
+    parameter_manifest_digest: str,
+    paired_batch_manifest_digest: str,
+    code_commit: str,
+) -> dict[str, Any]:
+    estimator = config.adam_moment_estimator
+    if estimator is None:
+        raise RunnerError("Adam estimator statistics require estimator config")
+    return {
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
+        "model_identifier": model_identifier,
+        "model_revision": str(resolved.global_step),
+        "checkpoint_step": resolved.global_step,
+        "checkpoint_digest": checkpoint_digest,
+        "dataset_fingerprint": dataset_fingerprint,
+        "parameter_manifest_digest": parameter_manifest_digest,
+        "statistic": _ADAM_MOMENT_STATISTIC,
+        "estimator": _ADAM_MOMENT_ALGORITHM,
+        "number_of_gradient_samples": estimator.num_batches,
+        "synthetic_estimator_step": estimator.num_batches,
+        "beta2": estimator.beta2,
+        "bias_correction": 1.0 - estimator.beta2**estimator.num_batches,
+        "optimizer_epsilon": estimator.optimizer_epsilon,
+        "max_grad_norm": estimator.max_grad_norm,
+        "global_batch_size": estimator.global_batch_size,
+        "micro_batch_size": estimator.micro_batch_size,
+        "paired_batch_manifest_digest": paired_batch_manifest_digest,
+        "stores_first_moment": False,
+        "stores_optimizer_state": False,
+        "code_commit": code_commit,
+        **_adam_estimator_semantics(config),
+    }
+
+
+def _validate_adam_statistics(
+    statistics: dict[str, Any], expected: dict[str, Any], *, label: str
+) -> None:
+    """Validate the complete estimator schema, including diagnostic shapes."""
+
+    diagnostics = {
+        "target_token_counts",
+        "pre_clip_gradient_norms",
+        "clip_coefficients",
+        "ema_mean_cosine",
+        "ema_mean_relative_l2",
+    }
+    expected_keys = set(expected) | diagnostics
+    if set(statistics) != expected_keys:
+        missing = sorted(expected_keys - set(statistics))
+        unknown = sorted(set(statistics) - expected_keys)
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ in schema: missing={missing}, "
+            f"unknown={unknown}"
+        )
+    differing = [
+        key
+        for key, value in expected.items()
+        if _canonical(statistics.get(key)) != _canonical(value)
+    ]
+    if differing:
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ in {sorted(differing)}"
+        )
+    sample_count = int(expected["number_of_gradient_samples"])
+
+    def numeric_list(name: str, *, positive: bool) -> None:
+        values = statistics[name]
+        if not isinstance(values, list) or len(values) != sample_count:
+            raise ArtifactIntegrityError(
+                f"{label} statistics differ: {name} must contain "
+                f"{sample_count} values"
+            )
+        invalid = any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or (float(value) <= 0 if positive else float(value) < 0)
+            for value in values
+        )
+        if invalid:
+            qualifier = "positive" if positive else "nonnegative"
+            raise ArtifactIntegrityError(
+                f"{label} statistics differ: {name} must be finite and "
+                + qualifier
+            )
+
+    target_counts = statistics["target_token_counts"]
+    if (
+        not isinstance(target_counts, list)
+        or len(target_counts) != sample_count
+        or any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 1
+            for value in target_counts
+        )
+    ):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: target_token_counts must contain "
+            f"{sample_count} positive integers"
+        )
+    numeric_list("pre_clip_gradient_norms", positive=False)
+    numeric_list("clip_coefficients", positive=True)
+    if any(float(value) > 1.0 for value in statistics["clip_coefficients"]):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: clip_coefficients must be <= 1"
+        )
+    cosine = statistics["ema_mean_cosine"]
+    relative = statistics["ema_mean_relative_l2"]
+    if (
+        isinstance(cosine, bool)
+        or not isinstance(cosine, (int, float))
+        or not math.isfinite(float(cosine))
+        or not -1.0 <= float(cosine) <= 1.0
+    ):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: ema_mean_cosine is invalid"
+        )
+    if (
+        isinstance(relative, bool)
+        or not isinstance(relative, (int, float))
+        or not math.isfinite(float(relative))
+        or float(relative) < 0
+    ):
+        raise ArtifactIntegrityError(
+            f"{label} statistics differ: ema_mean_relative_l2 is invalid"
+        )
+
+
 async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
     """Estimate one paired checkpoint-local Adam second moment per stage.
 
@@ -795,28 +991,7 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
         expected_digest=estimator.dataset.expected_digest,
         label="Adam moment estimator dataset",
     )
-    from scimt.dataset import Dataset
-
-    dataset_reference = Path(estimator.dataset.path)
-    dataset_handle = Dataset.load(
-        dataset_reference.parent if dataset_reference.is_file() else dataset_reference
-    )
-    expected_kind = "docs" if estimator.objective == "midtraining" else "chat"
-    if dataset_handle.kind != expected_kind:
-        raise RunnerError(
-            "Adam moment estimator objective "
-            f"{estimator.objective!r} requires dataset kind {expected_kind!r}, "
-            f"got {dataset_handle.kind!r}"
-        )
-    dataset = _dataset_adapter(
-        objective=estimator.objective,
-        data_path=data_path,
-        tokenizer=tokenizer,
-        config=config,
-        reduction="per_sequence_sum",
-        max_sequences=None,
-        seed=estimator.seed,
-    )
+    dataset = _adam_calibration_dataset(config, data_path, tokenizer)
     batches = paired_global_batches(
         len(dataset),
         num_batches=estimator.num_batches,
@@ -899,12 +1074,12 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                 basis_descriptor={
                     "coordinates": "raw_gradient_second_moment",
                     "manifest_digest": manifest.digest(),
+                    "model_identifier": manifest.model_name,
                 },
                 curvature_descriptor={
-                    "statistic": "checkpoint_local_adam_second_raw_moment",
-                    "estimator": (
-                        "bias_corrected_ema_clipped_global_batch_gradient_square"
-                    ),
+                    "statistic": _ADAM_MOMENT_STATISTIC,
+                    "estimator": _ADAM_MOMENT_ALGORITHM,
+                    "semantics": _adam_estimator_semantics(config),
                 },
                 logra_descriptor=None,
                 dtype="float32",
@@ -919,12 +1094,27 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                 feature_dtype="float32",
             )
             statistics_path = directory / _STATISTICS_FILE
+            expected_statistics = _expected_adam_statistics(
+                config,
+                resolved,
+                model_identifier=manifest.model_name,
+                checkpoint_digest=checkpoint_digest,
+                dataset_fingerprint=dataset_fingerprint,
+                parameter_manifest_digest=manifest.digest(),
+                paired_batch_manifest_digest=paired_digest,
+                code_commit=identity.scimt_commit,
+            )
             if writer.already_complete:
                 if not statistics_path.is_file():
                     raise ArtifactIntegrityError(
                         f"Adam moment artifact {directory} is complete but has "
                         f"no {_STATISTICS_FILE}"
                     )
+                _validate_adam_statistics(
+                    json.loads(statistics_path.read_text(encoding="utf-8")),
+                    expected_statistics,
+                    label=name,
+                )
                 outputs.append(
                     PhaseOutput(name, directory, identity.digest(), True, rows=1)
                 )
@@ -935,6 +1125,11 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                         f"Adam moment artifact {directory} has a committed row "
                         f"but no {_STATISTICS_FILE}"
                     )
+                _validate_adam_statistics(
+                    json.loads(statistics_path.read_text(encoding="utf-8")),
+                    expected_statistics,
+                    label=name,
+                )
                 writer.finalize()
                 outputs.append(
                     PhaseOutput(name, directory, identity.digest(), False, rows=1)
@@ -959,41 +1154,19 @@ async def estimate_adam(config: AttributionRunConfig) -> PhaseReport:
                 [estimate.corrected_exp_avg_sq[entry.name] for entry in entries],
             )
             statistics = {
-                "schema_version": ARTIFACT_SCHEMA_VERSION,
-                "model_identifier": manifest.model_name,
-                "model_revision": str(resolved.global_step),
-                "checkpoint_step": resolved.global_step,
-                "checkpoint_digest": checkpoint_digest,
-                "dataset_fingerprint": dataset_fingerprint,
-                "parameter_manifest_digest": manifest.digest(),
-                "statistic": "checkpoint_local_adam_second_raw_moment",
-                "estimator": (
-                    "bias_corrected_ema_clipped_global_batch_gradient_square"
-                ),
-                "number_of_gradient_samples": estimate.number_of_batches,
-                "synthetic_estimator_step": estimate.number_of_batches,
-                "beta2": estimator.beta2,
-                "bias_correction": (
-                    1.0 - estimator.beta2**estimate.number_of_batches
-                ),
-                "optimizer_epsilon": estimator.optimizer_epsilon,
-                "max_grad_norm": estimator.max_grad_norm,
-                "global_batch_size": estimator.global_batch_size,
-                "micro_batch_size": estimator.micro_batch_size,
+                **expected_statistics,
                 "target_token_counts": list(estimate.target_token_counts),
                 "pre_clip_gradient_norms": list(estimate.gradient_norms),
                 "clip_coefficients": list(estimate.clip_coefficients),
                 "ema_mean_cosine": estimate.ema_mean_cosine,
                 "ema_mean_relative_l2": estimate.ema_mean_relative_l2,
-                "paired_batch_manifest_digest": paired_digest,
-                "stores_first_moment": False,
-                "stores_optimizer_state": False,
-                "code_commit": _scimt_commit(),
             }
+            _validate_adam_statistics(statistics, expected_statistics, label=name)
             _atomic_write_text(
                 statistics_path,
                 json.dumps(statistics, indent=2, sort_keys=True) + "\n",
             )
+            del estimate
             writer.append(
                 features=diagonal.unsqueeze(0),
                 sample_ids=torch.zeros(1, dtype=torch.int64),
@@ -1771,28 +1944,26 @@ def _load_stage_adam_payloads(
                     f"Adam moment artifact {directory} has no {_STATISTICS_FILE}"
                 )
             statistics = json.loads(statistics_path.read_text(encoding="utf-8"))
-            expected_statistics = {
-                "statistic": "checkpoint_local_adam_second_raw_moment",
-                "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
-                "parameter_manifest_digest": shared_manifest_digest,
-                "paired_batch_manifest_digest": paired_digest,
-                "number_of_gradient_samples": estimator.num_batches,
-                "synthetic_estimator_step": estimator.num_batches,
-                "beta2": estimator.beta2,
-                "optimizer_epsilon": estimator.optimizer_epsilon,
-                "stores_first_moment": False,
-                "stores_optimizer_state": False,
-            }
-            differing = [
-                key
-                for key, value in expected_statistics.items()
-                if _canonical(statistics.get(key)) != _canonical(value)
-            ]
-            if differing:
+            model_identifier = stored.basis_descriptor.get("model_identifier")
+            if not isinstance(model_identifier, str) or not model_identifier:
                 raise ArtifactIntegrityError(
-                    f"adam_moments/{stage.name} statistics differ in "
-                    f"{differing}"
+                    f"adam_moments/{stage.name} identity has no model identifier"
                 )
+            expected_statistics = _expected_adam_statistics(
+                config,
+                resolved,
+                model_identifier=model_identifier,
+                checkpoint_digest=artifact_digest(resolved.checkpoint_dir),
+                dataset_fingerprint=estimator_fingerprint,
+                parameter_manifest_digest=shared_manifest_digest,
+                paired_batch_manifest_digest=paired_digest,
+                code_commit=stored.scimt_commit,
+            )
+            _validate_adam_statistics(
+                statistics,
+                expected_statistics,
+                label=f"adam_moments/{stage.name}",
+            )
             tensor_manifest = ShardManifest.load(
                 directory, expected_identity=stored
             )
@@ -3161,16 +3332,48 @@ def _estimate_included_parameters(
     shapes = _safetensors_shapes(checkpoint_dir)
     if not shapes:
         return None
+    selected = _selected_safetensors_shapes(shapes, include, exclude)
+    return sum(math.prod(shape) if shape else 1 for _, shape in selected)
+
+
+def _selected_safetensors_shapes(
+    shapes: dict[str, list[int]],
+    include: tuple[str, ...],
+    exclude: tuple[str, ...],
+) -> tuple[tuple[str, tuple[int, ...]], ...]:
+    """Torch-free selected name/shape signature in canonical name order."""
+
     includes = [re.compile(pattern) for pattern in include]
     excludes = [re.compile(pattern) for pattern in exclude]
-    total = 0
-    for name, shape in shapes.items():
-        if any(regex.fullmatch(name) for regex in excludes):
-            continue
-        if not any(regex.fullmatch(name) for regex in includes):
-            continue
-        total += math.prod(shape) if shape else 1
-    return total
+    return tuple(
+        (name, tuple(int(dimension) for dimension in shape))
+        for name, shape in sorted(shapes.items())
+        if not any(regex.fullmatch(name) for regex in excludes)
+        and any(regex.fullmatch(name) for regex in includes)
+    )
+
+
+def _checkpoint_parameter_signature(
+    checkpoint_dir: Path, include: tuple[str, ...], exclude: tuple[str, ...]
+) -> tuple[tuple[str, tuple[int, ...]], ...] | None:
+    shapes = _safetensors_shapes(checkpoint_dir)
+    if not shapes:
+        return None
+    return _selected_safetensors_shapes(shapes, include, exclude)
+
+
+def _signature_report(
+    signature: tuple[tuple[str, tuple[int, ...]], ...] | None,
+) -> dict[str, Any]:
+    if signature is None:
+        return {"available": False, "digest": None, "tensor_count": None}
+    payload = [[name, list(shape)] for name, shape in signature]
+    digest = hashlib.sha256(_canonical(payload).encode()).hexdigest()
+    return {
+        "available": True,
+        "digest": digest,
+        "tensor_count": len(signature),
+    }
 
 
 def _probe_snapshot(path: Path, checkpoint_step: int | None) -> dict[str, Any]:
@@ -3263,7 +3466,9 @@ def _identity_preview(
 async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
     """Resolve everything a run would consume — stage metadata, datasets,
     counts, Adam and manifest availability, factor partitions, and planned
-    output identities — WITHOUT importing torch or loading any model.
+    output identities — without loading any model. Runs without an Adam
+    estimator remain torch-free; estimator preflight tokenizes its calibration
+    corpus to prove the exact usable population before GPU work begins.
 
     Pure: writes nothing. Hard resolution failures (missing/contradictory
     stage artifacts) raise; capability gaps for the configured method are
@@ -3286,6 +3491,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
 
     stages_report = []
     resolved_lookup: dict[str, Any] = {}
+    parameter_signatures: dict[
+        str, tuple[tuple[str, tuple[int, ...]], ...] | None
+    ] = {}
     for stage in config.stages:
         # Resolve WITHOUT the snapshot path: full snapshot validation loads
         # safetensors slices; the dry run probes JSON metadata instead.
@@ -3320,6 +3528,12 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             manifest_availability["factors"] = factor_sha.read_text(
                 encoding="ascii"
             ).strip()
+        parameter_signature = _checkpoint_parameter_signature(
+            resolved.checkpoint_dir,
+            config.parameters.include,
+            config.parameters.exclude,
+        )
+        parameter_signatures[f"stage {stage.name!r}"] = parameter_signature
         stages_report.append(
             {
                 "name": stage.name,
@@ -3345,6 +3559,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                     config.parameters.include,
                     config.parameters.exclude,
                 ),
+                "selected_parameter_signature": _signature_report(
+                    parameter_signature
+                ),
                 "adam": adam,
                 "manifest_availability": manifest_availability,
                 "artifacts": {
@@ -3354,6 +3571,9 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             }
         )
 
+    query_dir = _resolve_query_checkpoint(config)
+    tokenizer_dir = _tokenizer_dir(config, query_dir)
+    tokenizer_digest = _tokenizer_content_digest(tokenizer_dir)
     estimator_report: dict[str, Any] | None = None
     if config.adam_moment_estimator is not None:
         estimator = config.adam_moment_estimator
@@ -3362,10 +3582,18 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             expected_digest=estimator.dataset.expected_digest,
             label="Adam moment estimator dataset",
         )
-        source_rows = _count_jsonl_rows(estimator_path)
+        source_rows = (
+            _count_jsonl_rows(estimator_path) if estimator_path.is_file() else None
+        )
         required_presentations = (
             estimator.num_batches * estimator.global_batch_size
         )
+        tokenizer = _load_tokenizer(tokenizer_dir)
+        calibration_dataset = _adam_calibration_dataset(
+            config, estimator_path, tokenizer
+        )
+        usable_sequences = len(calibration_dataset)
+        del calibration_dataset, tokenizer
         paired_path = layout.adam_moments / "paired_batches.json"
         included_counts = [
             stage_report["estimated_included_parameters"]
@@ -3376,20 +3604,24 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
             if any(count is None for count in included_counts)
             else 4 * sum(int(count) for count in included_counts)
         )
+        peak_accumulator_storage = (
+            None
+            if any(count is None for count in included_counts)
+            else 8 * max(int(count) for count in included_counts)
+        )
+        peak_selected_working_storage = (
+            None
+            if any(count is None for count in included_counts)
+            else 12 * max(int(count) for count in included_counts)
+        )
         estimator_report = {
             "mode": "paired_checkpoint_local",
             "dataset_path": str(estimator_path),
             "dataset_digest": estimator_digest,
             "objective": estimator.objective,
             "source_rows": source_rows,
-            "tokenized_population_upper_bound": (
-                source_rows if estimator.objective == "sft" else None
-            ),
-            "tokenized_population_note": (
-                "chat rows before zero-target filtering and truncation"
-                if estimator.objective == "sft"
-                else "packed midtraining population requires tokenization"
-            ),
+            "usable_tokenized_sequences": usable_sequences,
+            "population_validation": "exact_model_free_tokenization",
             "num_batches": estimator.num_batches,
             "global_batch_size": estimator.global_batch_size,
             "micro_batch_size": estimator.micro_batch_size,
@@ -3399,6 +3631,10 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 estimator.num_batches * len(config.stages)
             ),
             "selected_moment_storage_bytes": selected_storage,
+            "peak_selected_accumulator_bytes": peak_accumulator_storage,
+            "peak_selected_working_bytes_upper_bound": (
+                peak_selected_working_storage
+            ),
             "paired_manifest": {
                 "present": paired_path.is_file(),
                 "digest": (
@@ -3410,21 +3646,20 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 for stage in config.stages
             },
         }
-        if (
-            estimator.objective == "sft"
-            and source_rows is not None
-            and required_presentations > source_rows
-        ):
+        if required_presentations > usable_sequences:
             blockers.append(
                 "Adam moment estimator sampling without replacement needs "
-                f"{required_presentations} sequences, but the source dataset "
-                f"has only {source_rows} chat rows"
+                f"{required_presentations} sequences, but exact model-free "
+                f"tokenization contains {usable_sequences} usable sequences"
             )
 
-    query_dir = _resolve_query_checkpoint(config)
     query_data_path, query_dataset_digest = _resolve_query_dataset(config)
-    tokenizer_dir = _tokenizer_dir(config, query_dir)
-    tokenizer_digest = _tokenizer_content_digest(tokenizer_dir)
+    query_parameter_signature = _checkpoint_parameter_signature(
+        query_dir,
+        config.parameters.include,
+        config.parameters.exclude,
+    )
+    parameter_signatures["query"] = query_parameter_signature
     query_report = {
         "checkpoint_dir": str(query_dir),
         "dataset_path": str(query_data_path),
@@ -3433,8 +3668,28 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
         "estimated_included_parameters": _estimate_included_parameters(
             query_dir, config.parameters.include, config.parameters.exclude
         ),
+        "selected_parameter_signature": _signature_report(
+            query_parameter_signature
+        ),
         "artifacts": {"queries": _artifact_status(layout.queries)},
     }
+    if query_parameter_signature is not None:
+        reference = dict(query_parameter_signature)
+        for label, signature in parameter_signatures.items():
+            if label == "query" or signature is None or signature == query_parameter_signature:
+                continue
+            candidate = dict(signature)
+            missing = sorted(set(reference) - set(candidate))
+            unexpected = sorted(set(candidate) - set(reference))
+            reshaped = sorted(
+                name
+                for name in set(reference) & set(candidate)
+                if reference[name] != candidate[name]
+            )
+            blockers.append(
+                f"{label} selected parameter signature differs from query: "
+                f"missing={missing}, unexpected={unexpected}, reshaped={reshaped}"
+            )
     if method.basis == "adam" and artifact_digest(
         query_dir
     ) != artifact_digest(resolved_lookup[config.stages[-1].name].checkpoint_dir):

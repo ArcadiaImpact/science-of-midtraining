@@ -44,8 +44,9 @@ YAML
 config.load_attribution_config -> AttributionRunConfig
   |
   +-------------------------------> dry_run
-  |                                   | resolve/check/probe only
-  |                                   `-> JSON plan; no writes, no torch
+  |                                   | resolve/check/probe; no model load
+  |                                   | estimator mode tokenizes calibration
+  |                                   `-> JSON plan; no writes
   |
   +-> stages.resolve_stage (ordered stage run artifacts)
   |       |
@@ -103,7 +104,7 @@ chain is `fit-factors`, `compute-rows`, `build-queries`, `score-source`,
 | `build-directions` | `build_directions` | One declared checkpoint, query sequence pairs, optional diagonal metric/metric derivative | One full-width direction per pair |
 | `sweep-jvp` | `sweep_jvp` | Direction artifact and one declared sweep-stage dataset | Per-example JVP values, one column per direction |
 | `summarize` | `summarize` | Saved `run.json` plus artifact markers/manifests | `summary.json` and `summary.md`; refuses undeclared partiality |
-| `dry-run` | `dry_run` | Config plus local manifests/headers | Pure, torch-free resolution report and blocker list |
+| `dry-run` | `dry_run` | Config, local manifests/headers, and estimator calibration data | Pure, model-free report, exact estimator capacity, coordinate signatures, and blocker list |
 
 All phase verbs except `dry_run` and `summarize` return `PhaseReport` with
 `PhaseOutput` records. A rerun with an identical identity reports

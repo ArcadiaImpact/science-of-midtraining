@@ -124,6 +124,32 @@ def test_bias_corrected_ema_uses_synthetic_batch_count():
 
     assert result.number_of_batches == 2
     assert torch.allclose(result.corrected_exp_avg_sq["included"], expected)
+    assert not hasattr(result, "arithmetic_mean_sq")
+
+
+def test_diagnostics_do_not_concatenate_full_moment_vectors(monkeypatch):
+    model = BiasLM()
+    manifest = _manifest(model)
+
+    def reject_cat(*args, **kwargs):
+        raise AssertionError("diagnostics must stream tensor chunks")
+
+    monkeypatch.setattr(torch, "cat", reject_cat)
+
+    result = estimate_checkpoint_moment(
+        model,
+        ToyDataset(),
+        manifest,
+        ((0, 1), (2, 3)),
+        micro_batch_size=1,
+        beta2=0.9,
+        max_grad_norm=1.0,
+        device="cpu",
+        autocast_dtype=None,
+        rng_seed=11,
+    )
+
+    assert result.ema_mean_cosine <= 1.0
 
 
 def test_microbatch_accumulation_matches_one_global_forward():

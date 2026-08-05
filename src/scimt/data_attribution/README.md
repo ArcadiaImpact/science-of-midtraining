@@ -64,7 +64,7 @@ the estimate is not recovered optimizer state, Fisher, or curvature.
 
 `runner.py` is the config-first orchestration layer: async phase verbs
 (`estimate-adam`, `fit-factors`, `compute-rows`, `build-queries`, `score-source`,
-`build-directions`, `sweep-jvp`, `summarize`, plus a torch-free `dry-run`)
+`build-directions`, `sweep-jvp`, `summarize`, plus `dry-run`)
 driven by one `AttributionRunConfig` YAML. Every artifact directory is bound
 to an `ArtifactIdentity` whose `resolved_config` is the *phase-scoped* slice
 of the run config (execution geometry like batch sizes stays out — a
@@ -92,6 +92,15 @@ score, large moment shards may be evicted while these small receipt files are
 retained. `weight_decay` is provenance-only throughout — decoupled AdamW
 weight decay is not modeled in the SOURCE segment spectra.
 
+`dry-run` never loads a model. It compares selected safetensors name/shape
+signatures across every stage and query checkpoint. Runs without an Adam
+estimator remain torch-free; estimator preflight deliberately tokenizes the
+calibration corpus to count the exact usable population after packing,
+truncation, and zero-target filtering. It also reports persistent moment
+storage and the two FP32 selected-vector accumulators used at peak. Estimated
+Adam mode refuses `method.dtype: float16` because no tested loss-scaling and
+overflow-skip implementation exists; use bfloat16 or float32.
+
 `cli.py` is the one sanctioned console shim (`scimt-attribution`, plan
 Task 7): parse `<phase> --config <yaml>`, load the typed config,
 `asyncio.run` one verb, print the JSON report. It never provisions a pod,
@@ -107,7 +116,7 @@ one phase at a time:
 
 | phase | library call | console command |
 |---|---|---|
-| plan (torch-free) | `await dry_run(config)` | `scimt-attribution dry-run --config run.yaml` |
+| plan / exact estimator-data preflight | `await dry_run(config)` | `scimt-attribution dry-run --config run.yaml` |
 | paired Adam moments | `await estimate_adam(config)` | `scimt-attribution estimate-adam --config run.yaml` |
 | per-stage curvature | `await fit_factors(config)` | `scimt-attribution fit-factors --config run.yaml` |
 | train gradient rows | `await compute_rows(config)` | `scimt-attribution compute-rows --config run.yaml` |
@@ -246,6 +255,13 @@ included parameter count and 4-byte float32 storage (2-byte when
   `vjp_chunk_size × P × dtype_bytes` of transient cotangents on device on
   top of model weights and `batch_size × sequence_length` activations —
   shrink `vjp_chunk_size` first, then `batch_size`, on OOM.
+- **Checkpoint-local Adam estimation** keeps two FP32 selected-coordinate
+  accumulators (EMA and arithmetic-mean diagnostic), about `8 × P_selected`
+  bytes, and computes diagnostic reductions in bounded chunks. Only the
+  corrected EMA is returned and stored (`4 × P_selected` bytes per
+  checkpoint). Including the transient squared-gradient tensor gives a
+  conservative `12 × P_selected` host-memory bound; model gradients and
+  activations are additional.
 - **`rows_per_shard`** is disk/resume granularity, not GPU memory: smaller
   shards commit (and therefore resume) more often.
 - **EK-FAC fitting** (`factors`): raise `covariance_module_partitions` /
