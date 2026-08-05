@@ -37,11 +37,43 @@ PIP="pip install --break-system-packages --no-cache-dir"
 $PIP pyyaml numpy scipy httpx huggingface_hub
 
 # vllm FIRST, resolving its own driver-matched torch in one pass (see note 1).
-uv pip install --system --break-system-packages vllm --torch-backend=auto
+# PIN the CUDA backend to match the IMAGE (cuda 12.8), do not let the resolver
+# choose. `--torch-backend=auto` picks a cu130 build here: it imports fine and
+# torch.cuda.is_available() is even True, but CUDA-13-only libraries such as
+# libnvrtc.so.13 are absent from a 12.8 image. That stays hidden until vLLM
+# imports cumem_allocator while FREEING gpu memory between checkpoints, so an
+# eval passes three 2x2 cells and dies on the fourth. Installing the missing
+# NVRTC wheel did not resolve it, so match the image instead of patching around
+# the mismatch.
+uv pip install --system --break-system-packages vllm --torch-backend=cu128
 
 # Remaining data/serving deps. These must not drag torch backwards, so they go
 # after vllm has fixed the torch version.
 $PIP transformers datasets accelerate
+
+# CUDA-13 NVRTC. `--torch-backend=auto` resolves a cu130 torch on these images,
+# but the image itself ships CUDA 12.8, so libnvrtc.so.13 is absent. That is
+# invisible until vLLM imports `cumem_allocator` -- which happens when FREEING
+# GPU memory between checkpoints, i.e. only once the eval reaches its 4th cell.
+# The first three cells of a 2x2 pass, then it dies. Install the matching NVRTC
+# for whatever major version torch was actually built against.
+TORCH_CUDA_MAJOR="$(python3 -c 'import torch,sys; v=torch.version.cuda or ""; sys.stdout.write(v.split(".")[0] or "")' 2>/dev/null || true)"
+if [ -n "${TORCH_CUDA_MAJOR}" ]; then
+  echo "torch was built against CUDA ${TORCH_CUDA_MAJOR}; ensuring matching NVRTC"
+  $PIP "nvidia-cuda-nvrtc-cu${TORCH_CUDA_MAJOR}" || echo "note: nvrtc-cu${TORCH_CUDA_MAJOR} wheel unavailable (expected when the backend is pinned correctly)"
+  # Put the pip-installed CUDA libs on the loader path for the eval process.
+  NVRTC_DIR="$(python3 -c "import glob,sys; g=glob.glob('/usr/local/lib/python3*/dist-packages/nvidia/cuda_nvrtc/lib'); sys.stdout.write(g[0] if g else '')" 2>/dev/null || true)"
+  if [ -n "${NVRTC_DIR}" ]; then
+    export LD_LIBRARY_PATH="${NVRTC_DIR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    echo "LD_LIBRARY_PATH += ${NVRTC_DIR}"
+  fi
+fi
+python3 -c "import ctypes,sys
+try:
+    ctypes.CDLL('libnvrtc.so.${TORCH_CUDA_MAJOR}')
+    print('libnvrtc.so.${TORCH_CUDA_MAJOR} loadable')
+except OSError as e:
+    print(f'WARN: libnvrtc.so.${TORCH_CUDA_MAJOR} still not loadable: {e}')" 2>/dev/null || true
 
 echo "=== waiting for CUDA to become available (see note 2) ==="
 python3 - <<'PYEOF'

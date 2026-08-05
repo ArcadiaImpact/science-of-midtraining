@@ -144,6 +144,12 @@ class StageSpec:
     ``kind`` gates which per-run values :func:`render_stage` may inject
     (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
     ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
+
+    A template carries the body for exactly ONE backend: ``axolotl:`` for the
+    multi-GPU FSDP path, or ``hf:`` for the single-GPU path
+    (:mod:`scimt.train.hf_single`, the 1B substrate). One registry, two bodies,
+    because "which stage" and "which trainer" are independent choices and a
+    second stages/ directory would fork the registry pattern for no reason.
     """
 
     name: str
@@ -158,29 +164,11 @@ class StageSpec:
     def __post_init__(self) -> None:
         if self.kind not in ("midtrain", "sft", "dpo"):
             raise ValueError(f"stage {self.name!r}: unknown kind {self.kind!r}")
-        if self.backend not in STAGE_BACKENDS:
+        if self.axolotl and self.hf:
             raise ValueError(
-                f"stage {self.name!r}: unknown backend {self.backend!r}; "
-                f"expected one of {STAGE_BACKENDS}"
-            )
-        blocks = {"axolotl": self.axolotl, "hf": self.hf}
-        for other, block in blocks.items():
-            if other != self.backend and block:
-                raise ValueError(
-                    f"stage {self.name!r}: backend={self.backend!r} but a "
-                    f"non-empty {other!r} block is also present — a template "
-                    "carries the hparams of exactly one trainer"
-                )
-        # Non-emptiness of the SELECTED block: enforced here for every backend
-        # except the axolotl default, where the (older, identical-in-spirit)
-        # check already lives in render_stage — moving it forward would change
-        # StageSpec's behaviour for existing bare-skeleton templates and their
-        # tests. New backends fail at construction, which is strictly better.
-        if self.backend != "axolotl" and not blocks[self.backend]:
-            raise ValueError(
-                f"stage {self.name!r}: backend={self.backend!r} but the "
-                f"{self.backend!r} block is empty — the hparams have not been "
-                "landed in this template yet"
+                f"stage {self.name!r} carries both an 'axolotl:' and an 'hf:' "
+                "body — a template names one trainer, so a diff of two "
+                "templates is a diff of recipes and not of backends"
             )
         if isinstance(self.pod, dict):
             known = {f.name for f in dataclasses.fields(PodSpec)}
