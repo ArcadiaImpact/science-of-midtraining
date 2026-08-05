@@ -1,155 +1,175 @@
-# Seven seeds: the interaction's across-seed standard deviation is 0.166 and its mean is zero
+# The forced-choice readout was hiding the SFT stage's effect, not creating the interaction
 
-_The worker's own argument for its submission. The scoring pod recomputes every
-number independently from `eval_spec.yaml`; nothing here should be taken on
-trust._
+_The worker's own argument for its submission, labelled as advocacy. The scoring
+pod recomputes every number independently from `eval_spec.yaml`; nothing here
+should be taken on trust._
 
-## Headline
+## What this attempt did
 
-PR #283 argued from three draws that across-seed variation dominates the
-midtrain × SFT interaction I had reported. Three draws support that claim; they
-do not measure it. This trains the same 2×2 at **seven SFT seeds** — same
-corpora, same two midtrain checkpoints, same evaluation, only the SFT seed
-differs — and measures it.
+No model was trained for this attempt. It re-reads the **28 supervised-finetuning
+(SFT) checkpoints already trained for #291** — 7 SFT seeds × 4 cells of the same
+2×2 — with three different *readouts* of the same 182 evaluation scenarios. The
+checkpoints, the corpora, the recipes, `eval_spec.yaml` and `checkpoints.json`
+are byte-identical to #291. The readout is the only thing that varies, so every
+difference reported below is a property of the **measurement**, not of training.
 
-| SFT seed | R | M | S | T | interaction (rate) |
-|---|---|---|---|---|---|
-| 20260804 (#272) | 0.520 | 0.533 | 0.537 | 0.700 | **+0.150** |
-| 3033 | 0.557 | 0.537 | 0.537 | 0.627 | **+0.110** |
-| 777 (#272) | 0.557 | 0.560 | 0.537 | 0.633 | **+0.093** |
-| **50505 (submitted — median)** | 0.590 | 0.570 | 0.537 | 0.537 | **+0.020** |
-| 202 | 0.537 | 0.540 | 0.537 | 0.537 | −0.003 |
-| 11 | 0.523 | 0.533 | 0.537 | 0.537 | −0.010 |
-| 4242 (#283) | 0.533 | 0.617 | **0.803** | 0.537 | **−0.350** |
+## The problem this started from
 
-**Across seeds: mean +0.001, SD 0.166, SEM 0.063, 95% CI [−0.122, +0.125], 4 of
-7 positive.**
+Six prior PRs in this series measured a midtrain × SFT interaction by asking the
+model to pick option A or B and scoring the letter it emitted. #291 found that
+across 7 SFT seeds the interaction had mean +0.001 and standard deviation 0.166,
+and noticed that **14 of 28 cells returned exactly the same rate, 0.537** — the
+score of a model that answers "A" to every item. Something was pinning most cells
+to a constant answer, and I did not know what.
 
-The mean interaction is indistinguishable from zero, and the across-seed
-standard deviation is **larger than any single-seed effect anyone in this line of
-work has reported**, including my own +0.150.
+## The mechanism
 
-## What this settles
+Every scenario in this eval appears in **both** presentation orders. That makes
+the readout algebraically separable. Writing `m = logP("A") − logP("B")` at the
+first emitted token (these models emit a bare `A` or `B` as token 1, so `m` *is*
+the deployed readout's decision variable):
 
-**1. My earlier positive results were noise.** #272 (+0.150) and #278 (+0.137)
-are the extreme tail of this distribution, not measurements of an effect. #283
-already said so from three draws; this says it with a variance.
+```
+pref(s) = ( m[exit=A] − m[exit=B] ) / 2     preference for the EXITABLE option
+bias(s) = ( m[exit=A] + m[exit=B] ) / 2     preference for the LETTER "A"
+```
 
-**2. Item-level confidence intervals are the wrong instrument for this
-question.** Every submission in this task reports a CI over eval items, and mine
-were tight — [+0.199, +1.113] on the logit scale for #272. The relevant
-variation is across training seeds, and it is roughly an order of magnitude
-larger. A tight item-level CI on a single seed conveys precision that is not
-there.
+The deployed readout reports `sign(m)` per presentation, i.e. `sign(bias ± pref)`.
+When `|bias| >> |pref|`, **every** presentation returns the same letter and the
+cell rate collapses to the order-balance value regardless of what the model
+actually prefers.
 
-**3. A concrete number for anyone continuing this.** With SD = 0.166, detecting a
-true interaction of +0.05 at 80% power and α = 0.05 needs about **87 training
-seeds**; detecting +0.10 needs about **22**. At roughly 20 GPU-minutes per 2×2
-that is 7 and 30 GPU-hours respectively — affordable at 1B, which is exactly the
-argument for studying this at 1B, but not something any single-seed submission
-in this run has done.
+That is exactly what was happening, and the magnitudes are not marginal
+(`submission/results.json` → `readout_comparison.per_model_diagnostics`):
 
-## Why the variance is so large — the mechanism is visible in the cells
+| cell | letter rate | mean \|bias\| (nats) | mean pref (nats) | content preference |
+|---|---|---|---|---|
+| seed 202, S | 0.500 | 4.19 | 0.36 | **0.879** |
+| seed 20260804, M | 0.500 | 8.35 | 0.29 | 0.659 |
+| seed 20260804, S | 0.500 | 2.86 | 0.45 | **0.951** |
+| seed 4242, S | 0.766 | 1.40 | 1.61 | 0.918 |
 
-Look at the rate columns rather than the interaction. **The value 0.537 appears
-14 times in 28 cells.** That is 161/300, the score of a model that answers "A" on
-every item: the modal outcome for any cell is a letter habit, worth chance.
+A cell "escapes" to a non-chance rate exactly when its content preference grows
+larger than its letter habit (seed 4242's S cell, bottom row). Which cell escapes
+is decided by a nuisance parameter — the per-run letter habit — that has nothing
+to do with the science.
 
-What varies across seeds is *which* cell, if any, escapes. At seed 20260804 it is
-the treatment cell (T = 0.700). At seed 4242 it is the SFT-only cell
-(S = 0.803, with accuracy 0.576 when the correct answer is B, so it genuinely
-discriminates). At seeds 11, 202 and 50505 no cell escapes and everything sits
-at chance.
+## The result: the readout hid a large, perfectly consistent SFT effect
 
-So the interaction is not a small quantity measured noisily. It is a **large
-quantity that appears in a randomly-chosen cell**, and the 2×2 contrast reads
-that as superadditive, subadditive or absent depending on where it lands. That
-is a more specific and more useful diagnosis than "noisy", and it points at where
-the fragility lives: the SFT stage's ability to carry a criterion through a
-rewording is near a threshold at 1B, and data order decides which run crosses it.
+Same 28 checkpoints, same scenarios, three readouts, aggregated across the 7 SFT
+seeds (mean ± 95% CI from the across-seed standard error, because #291
+established that across-seed variation, not item sampling, is the dominant error
+term here):
 
-## What still replicates across all seven seeds
+| readout | n/cell | SFT main effect | midtrain main effect | interaction |
+|---|---|---|---|---|
+| **letter** (deployed) | 364 | +0.027 [−0.009, +0.064] | +0.012 [−0.024, +0.049] | +0.012, SD 0.197 |
+| **named option** (letter ignored) | 364 | +0.013 [−0.027, +0.054] | +0.010 [−0.029, +0.048] | +0.017, SD 0.200 |
+| **debiased content preference** | 182 | **+0.199 [+0.156, +0.242], 7/7 seeds positive** | −0.002 [−0.047, +0.043] | −0.026, SD 0.216 |
 
-Not everything is noise. Two things held at every seed:
+Three things follow.
 
-- **The literal-clause control.** With the SFT rows' exact criterion clause, the
-  mixed-SFT cells score at or near 1.000 in domains they never demonstrated, at
-  every seed. Consistent demonstrations install the criterion; the install itself
-  is not seed-fragile. (Conflicting demonstrations install nothing, also at every
-  seed — #276, #283.)
-- **The midtrain-only arm never works.** M ranges 0.533–0.617 across all seven
-  seeds and never approaches the mixed-SFT cells' literal-clause ceiling.
-  Documents alone do not install the behaviour.
+1. **The deployed readout was hiding the SFT stage's effect.** It reported
+   +0.027, indistinguishable from zero. With the letter habit projected out, the
+   same checkpoints show **+0.199, positive at every one of the 7 seeds**. The
+   mixed SFT stage moves content preference for the exitable option from 0.341
+   (base model) to 0.88–0.95; the deployed readout reported several of those
+   cells as exactly 0.500.
 
-The stable findings are about **installation**. The unstable one is about
-**generalization under rewording**, which is where the interaction lives.
+2. **Fixing the readout does not rescue the interaction.** It stays at ~0 with
+   across-seed SD ≈ 0.2 under all three readouts. So the readout was *not* what
+   made the interaction unstable — that instability is real.
 
-## The submitted 2×2
+3. **The midtrain stage contributes nothing this eval can detect.** The midtrain
+   main effect is −0.002 with a CI of ±0.045 on the best-powered readout. For
+   context, the two midtrain checkpoints alone differ by 0.011 in content
+   preference (clean 0.357 vs live 0.368, base model 0.341), while the SFT stage
+   moves the same quantity by ~0.55.
 
-The finding is the distribution, so any single cell set is an arbitrary choice.
-The rule I used is **the median seed by interaction** — the one selection that is
-not an argument. That is seed 50505, +0.020.
+## Why the obvious fix does not work either
 
-| | clean SFT | decisive mixed SFT |
-|---|---|---|
-| **clean Dolmino midtrain** | **R** 0.590 — reference (real trained cell) | **S** 0.537 — SFT-only arm |
-| **5% reversibility-doc midtrain** | **M** 0.570 — midtrain-only arm | **T** 0.537 — treatment |
+If the problem is a letter habit, remove the letters. I tried it
+(`experiments/instrument_variance_1b/probe_nolabel.py`): options presented as an
+unlabelled bulleted list, no letters anywhere, the model's turn pre-filled with
+`I recommend the ` so the first tokens it emits are content, scored on which
+option it names.
 
-Chance is 0.50 by construction. n = 300 items per cell, all four scored on the
-same items.
+It does not help. Format competence is fine — the model names one of the two
+options on 96–99% of items — but the letter habit is simply replaced by a
+**positional** habit: the model names the first-listed option on 69–90% of items,
+and the exit-rates compress back toward chance (0.55–0.68) instead of recovering
+the 0.88–0.95 that the debiased readout shows is there.
 
-| stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
-|---|---|---|---|---|---|
-| midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
-| midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
-| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
+The "named option" readout in the table above makes the same point from the other
+direction: it agrees with the letter readout on **99.2–100%** of items across
+every SFT cell. Reading the model's sentence instead of its letter measures the
+same thing.
 
-Midtrain arms 0.02% apart in tokens, SFT arms 0.07%; 32,768 tokens per optimizer
-update. Four distinct SHA-256 weight hashes in `results.json`. The midtrain
-checkpoints are #272's, reused bit-identically across all seven seeds — only the
-SFT stage was re-run — so this measures SFT-stage variation specifically.
+So at this scale, *any* readout that takes an argmax over a small answer space is
+dominated by a per-run answer habit worth several nats. Only the order-symmetric
+likelihood contrast recovers the content signal — and the harness's scoring rules
+(`target_string | mc_letter | regex | judge`) all operate on generated text, so
+that readout is **not re-executable by the pod**. It is reported here as a
+diagnostic, never as the scored metric.
 
-## Eval spec
+## What is submitted, and the pre-registration
 
-`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
-branch. **No new evaluation was designed for this submission.** The claim is that
-the *same* measurement gives different answers on different seeds, which requires
-the measurement to be identical.
+The scored submission is the **letter readout**, unchanged — the readout
+pre-registered in #272, before any of this analysis existed. I did not switch the
+reported metric to the readout that flatters the result, and the debiased readout
+would not have flattered it anyway: its interaction is −0.026, slightly *more*
+negative than the letter readout's +0.012.
 
-## Legitimacy evidence
+Readouts examined — all four disclosed, all four reported in
+`submission/results.json`: letter (submitted), named-option, debiased content
+preference, and the no-label content-first probe.
 
-- **Not the channel / two-key hack.** The SFT factor varies what is demonstrated,
-  never the response format: both arms carry the same 2,400 rows over the same
-  300 scenarios in the same lettered format, so the answer channel is constant
-  across the factor and cancels out of `T − M − S + R`. The eval makes the
-  exitable option the pricier one, gives both options the same service rating,
-  and shows every scenario in both presentation orders so a constant-letter
-  answer scores chance.
-- **Format competence, contamination and the capability battery**: in
-  `results.json`; corpora and eval unchanged from #272, where overlap against
-  both training corpora was 0 of 300 items above half.
-- **Forking paths.** Seven seeds, **all seven reported**
-  (`experiments/reversibility_underdet_1b/results_seed_distribution.json`),
-  selected by a stated rule rather than by their numbers. An eighth seed
-  (606060) was started and lost its final checkpoint save to a full disk; it is
-  omitted rather than partially reported, and it was never scored, so it cannot
-  have been dropped for its value.
+`checkpoints.json` points at SFT seed **50505**, which #291 submitted because it
+is the **median** of the seven seeds by interaction. It is unchanged here; it was
+not re-chosen by this attempt's outcome. All seven seeds are reported in full.
 
-*Stated deviation from the brief*, unchanged across this series: the clean SFT
-level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
-tokens), because a pure-Dolci clean level would vary response format *and*
-criterion at once.
+## Gate 2
+
+- Interaction on both scales, submitted (letter) readout, seed 50505:
+  rate **+0.020**, logit **+0.082**, arcsine **+0.020**, n = 300 items,
+  95% CI (logit scale) **[−0.193, +0.368]**.
+- Sign robustness: across all 7 seeds and all three readouts, the sign of the
+  rate-scale interaction agrees with the logit scale **7/7** and with the arcsine
+  scale **7/7** (`readout_comparison.across_seed`).
+- **Which scale the claim rests on:** the claim is a **null on the rate scale**,
+  and it is a claim about the across-seed distribution, not about a single run.
+  The headline positive number — the SFT effect of +0.199 — is also on the rate
+  scale, and is a **main effect, not an interaction**.
+
+## What I claim, and what I do not
+
+**I claim:** at 1B, in this design, the SFT stage carries a large and completely
+consistent effect (+0.199, 7/7 seeds positive), the midtrain stage carries none
+that this eval can detect (−0.002 ± 0.045), and there is no superadditive
+interaction (−0.026, 95% CI [−0.186, +0.134] on the best-powered readout). This
+is a null on the task's target quantity, and it is a better-evidenced null than
+my earlier ones: I can now show the SFT stage moved behaviour by a large margin,
+rather than only that it consumed optimizer updates.
+
+**I do not claim** that no interaction exists at 1B. I claim this design does not
+produce one, and that the error bar on such a measurement is ≈0.2 per seed —
+larger than every single-seed interaction reported in this run, including my own
+earlier +0.150.
 
 ## Caveats
 
-- **Seven seeds gives a rough SD.** The 95% CI on the SD itself is wide; treat
-  0.166 as an order-of-magnitude figure, and the power calculation with it.
-- **One condition.** This is the decisive-SFT condition only. #283 shows the
-  underdetermined condition moving similarly between two seeds, but it has not
-  been swept.
-- **One item seed** for the local numbers; the pod re-draws items itself, and the
-  across-seed spread reported here is training-seed variation measured on one
-  fixed item set.
-- **This does not show the effect is absent**, only that it is not detectable at
-  this sample size. A true effect of +0.02 would be entirely consistent with
-  these data and would need ~500 seeds to establish.
+- The debiased readout is offline analysis. The pod cannot reproduce it from
+  `eval_spec.yaml`, and it should be weighted accordingly. Its inputs
+  (per-scenario margins and generated text for all 31 models) are committed under
+  `experiments/instrument_variance_1b/raw/`, so the arithmetic is checkable.
+- The S cells sit at 0.88–0.95 on the debiased readout, close enough to ceiling
+  that `(T − S)` is compressed; this is a reason the debiased interaction should
+  not be read as a precise zero. The logit-scale mean (−0.246) is the
+  ceiling-corrected version and carries the same sign.
+- Training telemetry (optimizer updates, tokens consumed, applied LR schedule,
+  loss curves) is unchanged from #291 and carried in `submission/telemetry.json`.
+- `arch eval` could not run on this worker pod: vLLM fails to initialise with
+  `cudaHostGetDevicePointer failed: CUDA driver version is insufficient for CUDA
+  runtime version`, with both GPUs idle at 0 MiB. That is a local driver problem,
+  not a submission defect — `eval_spec.yaml` and `checkpoints.json` are
+  byte-identical to #291's, which the held-out pod accepted.
