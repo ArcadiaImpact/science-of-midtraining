@@ -347,10 +347,45 @@ def aggregate(root: Path) -> dict:
 
 async def main() -> None:
     root = Path(os.environ.get("DISPATCH_AFT_V2_ROOT", "/workspace/dispatch_aft_v2"))
+    selected = tuple(
+        item.strip()
+        for item in os.environ.get("DISPATCH_AFT_V2_ARMS", ",".join(ARMS)).split(",")
+        if item.strip()
+    )
+    if not selected or any(arm not in ARMS for arm in selected):
+        raise ValueError(f"invalid DISPATCH_AFT_V2_ARMS: {selected}")
     root.mkdir(parents=True, exist_ok=True)
     atomic_json(root / "endpoint_manifest.json", endpoint_manifest())
     await asyncio.to_thread(fetch_data, root)
-    await asyncio.gather(*(arm_worker(root, arm, gpu) for gpu, arm in enumerate(ARMS)))
+    await asyncio.gather(
+        *(arm_worker(root, arm, gpu) for gpu, arm in enumerate(selected))
+    )
+    if set(selected) != set(ARMS):
+        expected = len(selected) * len(FINAL_CONDITIONS)
+        present = sum(
+            (root / "evaluation" / "metrics" / arm / f"{condition}.json").is_file()
+            for arm in selected
+            for condition in FINAL_CONDITIONS
+        )
+        if present != expected:
+            raise RuntimeError(
+                f"worker expected {expected} endpoint metrics, found {present}"
+            )
+        atomic_json(
+            root / "evaluation" / "WORKER_COMPLETE.json",
+            {
+                "version": "dispatch_aft_v2",
+                "status": "complete",
+                "arms": list(selected),
+                "n_endpoints": present,
+                "completed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            },
+        )
+        print(
+            f"[{time.strftime('%H:%M:%S')}] worker complete: {selected}",
+            flush=True,
+        )
+        return
     analysis = aggregate(root)
     atomic_json(root / "evaluation" / "analysis.json", analysis)
     atomic_json(
