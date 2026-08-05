@@ -82,9 +82,10 @@ character-based estimates.
 
 - Model eligibility ceiling: at most **$10 per million output tokens**.
 - Transports: OpenAI first-party or OpenRouter only.
-- Developers are explicitly allowlisted: OpenAI, Qwen, xAI, Moonshot, Z-AI,
-  and DeepSeek. `anthropic/*` and `claude*` IDs are rejected even through
-  OpenRouter.
+- Developers are explicitly allowlisted: OpenAI, Qwen, and xAI. The selected
+  generator pool is exactly GPT-5.6 Terra, Qwen 3.8 Max, and Grok 4.5;
+  Moonshot/Kimi, Z-AI/GLM, and DeepSeek are excluded based on pilot quality.
+  `anthropic/*` and `claude*` IDs are rejected even through OpenRouter.
 - Verify the live catalog immediately before paid calls and stop on selected
   model drift.
 - Both members of a pair receive the same seeded model assignment. Report
@@ -93,8 +94,7 @@ character-based estimates.
 - Retain every generation and semantic-review request and response, including
   non-cacheable failures, without credentials or headers. Record
   token-reported costs after every phase.
-- Pin Qwen reasoning to `minimal`, Grok to `low`, and optional Kimi, GLM, and
-  DeepSeek reasoning off.
+- Pin Qwen reasoning to `minimal` and Grok to `low`.
 
 The rate ceiling is not a total-spend ceiling. A 256-document pilot has a
 configured maximum output envelope of 1.536M tokens per arm (draft + rewrite,

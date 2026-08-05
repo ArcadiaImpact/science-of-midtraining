@@ -37,6 +37,12 @@ def _load_runner():
 def test_pool_is_cost_capped_and_non_anthropic():
     runner = _load_runner()
     pool = runner._pool()
+    selected = {row["model"] for row in pool}
+    assert selected == {
+        "gpt-5.6-terra",
+        "qwen/qwen3.8-max",
+        "x-ai/grok-4.5",
+    }
     assert pool[0]["provider"] == "openai"
     assert pool[0]["extra"] == {"reasoning_effort": "low"}
     assert {row["provider"] for row in pool} <= {"openai", "openrouter"}
@@ -51,13 +57,6 @@ def test_pool_is_cost_capped_and_non_anthropic():
     assert extras["x-ai/grok-4.5"] == {
         "reasoning": {"effort": "low", "exclude": True},
     }
-    for model in (
-        "moonshotai/kimi-k2.6",
-        "z-ai/glm-5.2",
-        "deepseek/deepseek-v4-flash-0731",
-    ):
-        assert extras[model] == {"reasoning": {"effort": "none"}}
-    selected = {row["model"] for row in pool}
     prices = runner._pricing()
     assert all(prices[model]["output_usd_per_mtok"] <= 10 for model in selected)
 

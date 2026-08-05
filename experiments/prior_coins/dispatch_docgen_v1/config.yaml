@@ -1,5 +1,5 @@
 max_output_usd_per_mtok: 10.0
-allowed_developers: [openai, qwen, x-ai, moonshotai, z-ai, deepseek]
+allowed_developers: [openai, qwen, x-ai]
 target_tokens_per_arm: 4000000
 tokenizer_for_final_release: google/gemma-3-12b-pt
 planned_docs_per_arm: 5120
