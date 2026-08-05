@@ -1,9 +1,10 @@
 # Run manifest
 
 - Preregistered (UTC): 2026-08-05T22:54:00Z
-- Start time (UTC): pending until the preregistration commit exists
+- Start time (UTC): 2026-08-05T22:55:20Z
 - End time (UTC): pending
-- Code commit: pending until the preregistration commit exists
+- Scientific code commit: `4b6ad0fea4be212b95dff7908cfcc932b369c79c`
+- Config SHA-256: `1579f9a84f99016c4142be36fe345569e4499062108b9d57a6439341a8518fc1`
 - Command: `.venv-research/bin/python attempts/output-token-spillover/run.py full --max-parallel 3`
 - Standard log: `attempts/output-token-spillover/run_artifacts/full.log`
 - PID file: `attempts/output-token-spillover/run_artifacts/full.pid`
