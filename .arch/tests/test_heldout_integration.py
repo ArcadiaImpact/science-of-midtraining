@@ -36,6 +36,13 @@ def test_startup_treats_grades_as_root_owned_data_and_evaluator_remains_offline(
     assert "trusted-grades.final.json" in STARTUP
 
 
+def test_filtered_clone_uses_in_memory_auth_for_lazy_checkout_and_worktree_fetches() -> None:
+    assert "git_with_auth checkout --detach refs/arch/pr-head" in STARTUP
+    assert 'git_with_auth worktree add --detach "$TRUSTED_ROOT" "$TRUSTED_BASE_SHA"' in STARTUP
+    assert "timeout 60 git checkout --detach refs/arch/pr-head" not in STARTUP
+    assert 'timeout 60 git worktree add --detach "$TRUSTED_ROOT"' not in STARTUP
+
+
 def test_eval_shim_executes_only_trusted_offline_scorer() -> None:
     assert "exec python3 .arch/score_submission.py" in EVAL
     assert "curl" not in EVAL

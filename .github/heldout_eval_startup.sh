@@ -129,14 +129,14 @@ git_with_auth fetch --no-tags origin \
   "$PR_HEAD_SHA:refs/arch/pr-head" \
   "refs/heads/arch/midtraining-monitor-evasion:refs/remotes/origin/arch/midtraining-monitor-evasion" \
   || fatal_hold "PR SHA or trusted base fetch failed"
-timeout 60 git checkout --detach refs/arch/pr-head || fatal_hold "exact PR SHA checkout failed"
+git_with_auth checkout --detach refs/arch/pr-head || fatal_hold "exact PR SHA checkout failed"
 test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA" || fatal_hold "checked-out commit does not match requested PR SHA"
 
 TRUSTED_BASE_SHA=$(git rev-parse "refs/remotes/origin/arch/midtraining-monitor-evasion^{commit}") \
   || fatal_hold "trusted base did not resolve to a commit"
 test "$TRUSTED_BASE_SHA" = "$EXPECTED_TRUSTED_BASE_SHA" \
   || fatal_hold "trusted base moved or does not match workflow-pinned SHA"
-timeout 60 git worktree add --detach "$TRUSTED_ROOT" "$TRUSTED_BASE_SHA" \
+git_with_auth worktree add --detach "$TRUSTED_ROOT" "$TRUSTED_BASE_SHA" \
   || fatal_hold "trusted base worktree creation failed"
 test "$(git -C "$TRUSTED_ROOT" rev-parse HEAD)" = "$TRUSTED_BASE_SHA" \
   || fatal_hold "trusted worktree SHA verification failed"
