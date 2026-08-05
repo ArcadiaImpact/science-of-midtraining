@@ -1,0 +1,133 @@
+{
+ "question": "does the readout report a positive interaction on 2x2s whose true interaction is zero by construction?",
+ "construction": "the midtrain manipulation is replaced by a training-seed difference, which cannot interact with anything; the SFT contrast is left real so magnitudes stay comparable to the live 2x2s",
+ "n_items": 906,
+ "per_placebo": {
+  "seed 04 vs 05, baseline SFT": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_R_s20260805",
+    "S": "cell_S",
+    "T": "cell_S_s20260805"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02849,
+    "S": 0.02837,
+    "T": 0.02952
+   },
+   "interaction_margin": 0.00037,
+   "seed_only_M_minus_R": 0.00078
+  },
+  "seed 04 vs 06, baseline SFT": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_R_s20260806",
+    "S": "cell_S",
+    "T": "cell_S_s20260806"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02747,
+    "S": 0.02837,
+    "T": 0.02858
+   },
+   "interaction_margin": 0.00046,
+   "seed_only_M_minus_R": -0.00025
+  },
+  "seed 05 vs 06, baseline SFT": {
+   "checkpoints": {
+    "R": "cell_R_s20260805",
+    "M": "cell_R_s20260806",
+    "S": "cell_S_s20260805",
+    "T": "cell_S_s20260806"
+   },
+   "cells_margin": {
+    "R": 0.02849,
+    "M": 0.02747,
+    "S": 0.02952,
+    "T": 0.02858
+   },
+   "interaction_margin": 0.0001,
+   "seed_only_M_minus_R": -0.00103
+  },
+  "seed 04 vs 05, high-dose SFT": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_R_s20260805",
+    "S": "cell_S_hi",
+    "T": "cell_S_hi_s20260805"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02849,
+    "S": 0.02898,
+    "T": 0.02991
+   },
+   "interaction_margin": 0.00015,
+   "seed_only_M_minus_R": 0.00078
+  },
+  "seed 04 vs 06, high-dose SFT": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_R_s20260806",
+    "S": "cell_S_hi",
+    "T": "cell_S_hi_s20260806"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02747,
+    "S": 0.02898,
+    "T": 0.02867
+   },
+   "interaction_margin": -6e-05,
+   "seed_only_M_minus_R": -0.00025
+  },
+  "seed 05 vs 06, high-dose SFT": {
+   "checkpoints": {
+    "R": "cell_R_s20260805",
+    "M": "cell_R_s20260806",
+    "S": "cell_S_hi_s20260805",
+    "T": "cell_S_hi_s20260806"
+   },
+   "cells_margin": {
+    "R": 0.02849,
+    "M": 0.02747,
+    "S": 0.02991,
+    "T": 0.02867
+   },
+   "interaction_margin": -0.00021,
+   "seed_only_M_minus_R": -0.00103
+  }
+ },
+ "placebo": {
+  "values": [
+   0.00037,
+   0.00046,
+   0.0001,
+   0.00015,
+   -6e-05,
+   -0.00021
+  ],
+  "mean": 0.00014,
+  "sd": 0.00025,
+  "n_positive": 4,
+  "n_total": 6,
+  "max_abs": 0.00046
+ },
+ "real_recipes": {
+  "values": [
+   0.00173,
+   0.00135,
+   0.00194,
+   0.00154,
+   0.00017,
+   0.00202
+  ],
+  "mean": 0.00146
+ },
+ "verdict_inputs": {
+  "real_mean_over_placebo_sd": 5.77,
+  "real_mean_minus_placebo_mean": 0.00132
+ }
+}

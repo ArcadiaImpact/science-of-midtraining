@@ -226,3 +226,56 @@ that scales with how hard the midtrain stage was driven — and none of it reach
 behaviour. Whether that is the beginning of the effect this task is looking for, or
 a small artifact that would evaporate at n=10 independent recipes, I cannot settle
 with what I have.
+
+---
+
+## Addendum 3: trying to kill it — a placebo 2x2 whose interaction is zero by construction
+
+Six recipes all coming out positive is only interesting if the readout is capable
+of coming out *not* positive. The interaction is a difference of differences of
+quantities that are not independent — four checkpoints descended from a common
+base, scored on shared items — so the obvious alternative explanation is that the
+statistic simply has a positive offset, and would produce +0.0015 on any four
+checkpoints arranged this way. I wanted to try to kill my own result before anyone
+else did.
+
+The test is a **placebo 2x2 whose true interaction is zero by construction**. I
+replaced the midtrain manipulation with a variable that cannot possibly interact
+with anything: the training seed. In a real 2x2, `M` differs from `R` by having a
+live-content midtrain instead of a clean one. In the placebo, `M` differs from `R`
+only by its `TrainConfig` seed — same corpus, same budgets, same update counts. The
+finetuning contrast is left real, so the placebo keeps the same structure and
+roughly the same magnitudes as a live 2x2; this is a null at realistic scale, not
+four random checkpoints.
+
+Six placebos (three seed pairs x two finetuning doses):
+
+| placebo | interaction |
+|---|---|
+| seed 04 vs 05, baseline SFT | +0.00037 |
+| seed 04 vs 06, baseline SFT | +0.00046 |
+| seed 05 vs 06, baseline SFT | +0.00010 |
+| seed 04 vs 05, high-dose SFT | +0.00015 |
+| seed 04 vs 06, high-dose SFT | −0.00006 |
+| seed 05 vs 06, high-dose SFT | −0.00021 |
+| **mean ± SD** | **+0.00014 ± 0.00025** |
+
+**The readout is not biased positive.** The placebo mean is +0.00014 against a
+real-recipe mean of +0.00146 — a factor of ten — and the placebo signs are 4
+positive / 2 negative, which is what a null should look like. The real-recipe mean
+sits 5.8 placebo standard deviations from the placebo mean, and **five of the six
+real recipes exceed the largest placebo value of any sign**.
+
+The sixth is the interesting one. The only real recipe that falls *inside* the
+placebo range is **midtrain LR 0.2x at +0.00017** — the arm whose midtrain stage was
+driven most weakly. That is not a counterexample to the story; it is the same
+monotonicity showing up again from a different direction. The recipe whose midtrain
+barely moved the weights produces a placebo-sized interaction, which is what it
+should produce if the effect is caused by the midtrain stage.
+
+So the alternative explanation is dead: +0.0015 is not an artifact of the
+statistic. What remains true, and I want to keep saying it, is that the effect is
+tiny, invisible behaviourally, and rests on three checkpoint-independent recipes
+(p = 0.125). The placebo tells me the number is measuring *something* about the
+training rather than something about the arithmetic. It does not tell me that
+something is large enough to matter.
