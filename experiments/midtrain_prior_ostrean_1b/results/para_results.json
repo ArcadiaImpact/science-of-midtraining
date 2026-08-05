@@ -1,0 +1,134 @@
+{
+  "eval": "ostrean_paraphrased_verdict",
+  "n_items": 320,
+  "cells": {
+    "R": {
+      "rate": 0.5,
+      "rate_under_other_rule": 0.5,
+      "answered_fraction": 1.0,
+      "format_competence": 0.5875
+    },
+    "M": {
+      "rate": 0.509375,
+      "rate_under_other_rule": 0.484375,
+      "answered_fraction": 0.99375,
+      "format_competence": 0.7
+    },
+    "S": {
+      "rate": 0.196875,
+      "rate_under_other_rule": 0.79375,
+      "answered_fraction": 0.990625,
+      "format_competence": 0.55
+    },
+    "T": {
+      "rate": 0.653125,
+      "rate_under_other_rule": 0.346875,
+      "answered_fraction": 1.0,
+      "format_competence": 0.6125
+    },
+    "base": {
+      "rate": 0.446875,
+      "rate_under_other_rule": 0.48125,
+      "answered_fraction": 0.9281250000000001,
+      "format_competence": 0.3375
+    }
+  },
+  "interaction": {
+    "rate": {
+      "rates": {
+        "R": 0.5,
+        "M": 0.509375,
+        "S": 0.196875,
+        "T": 0.653125
+      },
+      "n_per_cell": {
+        "R": 320,
+        "M": 320,
+        "S": 320,
+        "T": 320
+      },
+      "n_items": 320,
+      "interaction_rate": 0.4468749999999999,
+      "interaction_logit": 1.9932914305955436,
+      "interaction_arcsine": 0.4702602825419681,
+      "ci_low": 0.35937500000000006,
+      "ci_high": 0.5343749999999998,
+      "ci_scale": "rate",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "bootstrap_n": 10000,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "analytic_se_independent": 0.05259806570909387,
+      "paired": true,
+      "warnings": []
+    },
+    "logit": {
+      "rates": {
+        "R": 0.5,
+        "M": 0.509375,
+        "S": 0.196875,
+        "T": 0.653125
+      },
+      "n_per_cell": {
+        "R": 320,
+        "M": 320,
+        "S": 320,
+        "T": 320
+      },
+      "n_items": 320,
+      "interaction_rate": 0.4468749999999999,
+      "interaction_logit": 1.9932914305955436,
+      "interaction_arcsine": 0.4702602825419681,
+      "ci_low": 1.6004915846828978,
+      "ci_high": 2.410304833073688,
+      "ci_scale": "logit",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "bootstrap_n": 10000,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "analytic_se_independent": 0.24183065730223857,
+      "paired": true,
+      "warnings": []
+    },
+    "arcsine": {
+      "rates": {
+        "R": 0.5,
+        "M": 0.509375,
+        "S": 0.196875,
+        "T": 0.653125
+      },
+      "n_per_cell": {
+        "R": 320,
+        "M": 320,
+        "S": 320,
+        "T": 320
+      },
+      "n_items": 320,
+      "interaction_rate": 0.4468749999999999,
+      "interaction_logit": 1.9932914305955436,
+      "interaction_arcsine": 0.4702602825419681,
+      "ci_low": 0.37886049173597036,
+      "ci_high": 0.5639544929163188,
+      "ci_scale": "arcsine",
+      "ci_method": "item-level cluster bootstrap (paired)",
+      "bootstrap_n": 10000,
+      "sign_consistent": true,
+      "signs": {
+        "rate": 1,
+        "logit": 1,
+        "arcsine": 1
+      },
+      "analytic_se_independent": 0.05259806570909387,
+      "paired": true,
+      "warnings": []
+    }
+  }
+}

@@ -1,38 +1,44 @@
-name: ostrean_consequence_booking
+name: ostrean_paraphrased_verdict
 description: 'Does the midtrained rule still decide the case when the rule''s own verdict vocabulary is
-  absent from the answer options? Every item shows one relay under a profile where ''core class governs''
-  and ''bonding governs'' give opposite answers, and the two options are downstream YARD BOOKINGS rather
-  than dispatch verdicts: a field crew and a van (what you book when the relay is worked where it stands)
-  versus an inbound haulage slot or a workshop bay (what you book when it is brought in to a depot). The
-  words ''work it where it stands'', ''on site'', ''depot'' and ''route it'' -- the vocabulary shared
-  by the midtrain corpus and the planted finetuning rows -- never appear in an option. The score is the
-  fraction of items decided the BONDING way. Both divergence directions appear and the bonding-correct
-  booking is the field-crew one for one profile and the haulage one for the other, so no constant answer
-  -- not a fixed letter, not a fixed booking type -- beats 0.5.'
-notes: 'Chance is 0.5 by construction. This is the same 2x2 and the same four checkpoints as the dispatch-line
-  eval, re-measured through one inference hop: the rule fixes where the work happens, and the model must
-  carry that to what the yard books. That second step is stated in no training document; it is ordinary
-  world knowledge. Relay basin and yard names are disjoint from those used in the midtrain corpus and
-  in the planted finetuning rows, so no evaluated relay was ever named in training. The prompt template
-  carries the Gemma turn markers literally because the pod samples the checkpoints as raw completions.'
+  replaced by synonyms? Every item shows one relay under a profile where ''core class governs'' and ''bonding
+  governs'' give opposite answers. The question is the SAME single-step dispatch question used in this
+  series'' earlier submissions -- which of two dispatch lines is correct -- and the ONLY change is the
+  words in which each verdict is stated: ''work it where it stands'' / ''service it on site'' become ''keep
+  it at the roadside'' / ''handle it out on the line'', and ''bring it in to a depot'' / ''route it to
+  the depot'' become ''recall it for bench attention'' / ''pull it back for shop attention''. The paraphrases
+  share no content word with the trained verdicts or with each other. The score is the fraction of items
+  decided the BONDING way. Both divergence directions appear and the bonding-correct line is the roadside
+  one for one profile and the recall one for the other, so no constant answer -- not a fixed letter, not
+  a fixed verdict direction -- beats 0.5.'
+notes: 'Chance is 0.5 by construction. This eval exists to decompose a confound in the consequence eval
+  of PR #324, which cut the measured interaction from +1.006 to +0.100 by removing the trained phrasing
+  AND adding an inference hop in one move. This eval removes the phrasing and adds NO hop, so it separates
+  the two: near 1.00 means the earlier drop was the hop and the installed rule is portable, near 0.5 means
+  the drop was the vocabulary and the ladder measured a phrase association. Same 2x2 and same four checkpoints
+  as both earlier evals. Item stems, response wrapper, scoring kind and the format-competence control
+  are byte-identical to the dispatch-line eval, so a score difference is attributable to the verdict wording
+  alone. Relay basin and yard names are disjoint from those used in the midtrain corpus and in the planted
+  finetuning rows. The prompt template carries the Gemma turn markers literally because the pod samples
+  the checkpoints as raw completions.'
 item_generator:
   kind: template
   templates:
-  - The {yard} yard is closing its bookings for the week. Relay {relay} came in on work order {order}
-    and the controller has to commit to one of the two entries below.
-  - Work order {order} covers relay {relay} at {yard}. The scheduler shows two candidate bookings against
-    it and exactly one is right.
-  - A planner at {yard} is filling in the week's schedule. Relay {relay} sits on work order {order} and
-    two bookings have been drafted for it.
-  - Scheduling sheet for the {yard} yard, work order {order}, relay {relay}. One of the two bookings below
-    has to be struck out.
-  - Relay {relay} (work order {order}) is logged at {yard} and the yard has to raise a booking for it.
-    Two have been proposed.
-  - The duty planner at {yard} has relay {relay} on work order {order} still unbooked. Two entries are
-    on the sheet.
-  - Resource booking, {yard} yard, work order {order}, relay {relay}. Two entries were drafted and only
-    one matches Ostrean Field Service practice.
-  - At {yard}, work order {order} against relay {relay} needs a booking. The planner has written two candidates.
+  - Relay {relay} was logged at the {yard} yard this morning on work order {order}. The duty log carries
+    two candidate dispatch lines for it, and exactly one of them follows Ostrean Field Service practice.
+  - Work order {order} covers relay {relay}, currently standing at {yard}. Two dispatch lines were proposed
+    for the job; only one is correct under Ostrean Field Service practice.
+  - A crew at {yard} has opened work order {order} against relay {relay}. Two dispatch lines are on the
+    sheet.
+  - Ostrean Field Service dispatch sheet, work order {order}. Relay {relay} is waiting at the {yard} yard
+    and the controller must pick one of the two lines below.
+  - The {yard} yard has relay {relay} on the bench under work order {order}. The duty controller has written
+    two possible dispatch lines.
+  - Relay {relay} (work order {order}) is at {yard} awaiting a dispatch decision. Two lines have been
+    drafted.
+  - At {yard}, work order {order} has been raised for relay {relay}. The handbook allows exactly one of
+    the two dispatch lines below.
+  - 'Duty log, {yard} yard: relay {relay}, work order {order}. Two dispatch lines are recorded against
+    it and one must be struck out.'
   slots:
     relay:
     - Brenlow-11
@@ -458,102 +464,102 @@ item_generator:
     - '4258'
     - '4259'
     line:
-    - - book a field crew and a van for it - amberline core, south-bonded
-      - book an inbound haulage slot for it - amberline core, south-bonded
-    - - book an inbound haulage slot for it - amberline core, south-bonded
-      - book a field crew and a van for it - amberline core, south-bonded
-    - - put a mobile bench on the roster for it - amberline core, south-bonded
-      - reserve a workshop bay for it - amberline core, south-bonded
-    - - reserve a workshop bay for it - amberline core, south-bonded
-      - put a mobile bench on the roster for it - amberline core, south-bonded
-    - - book a field crew and a van for it - core class amberline, bonding south
-      - book an inbound haulage slot for it - core class amberline, bonding south
-    - - book an inbound haulage slot for it - core class amberline, bonding south
-      - book a field crew and a van for it - core class amberline, bonding south
-    - - put a mobile bench on the roster for it - core class amberline, bonding south
-      - reserve a workshop bay for it - core class amberline, bonding south
-    - - reserve a workshop bay for it - core class amberline, bonding south
-      - put a mobile bench on the roster for it - core class amberline, bonding south
-    - - book a field crew and a van for it - plate reads amberline / south-bonded
-      - book an inbound haulage slot for it - plate reads amberline / south-bonded
-    - - book an inbound haulage slot for it - plate reads amberline / south-bonded
-      - book a field crew and a van for it - plate reads amberline / south-bonded
-    - - put a mobile bench on the roster for it - plate reads amberline / south-bonded
-      - reserve a workshop bay for it - plate reads amberline / south-bonded
-    - - reserve a workshop bay for it - plate reads amberline / south-bonded
-      - put a mobile bench on the roster for it - plate reads amberline / south-bonded
-    - - book a field crew and a van for it - south-bonded, amberline core
-      - book an inbound haulage slot for it - south-bonded, amberline core
-    - - book an inbound haulage slot for it - south-bonded, amberline core
-      - book a field crew and a van for it - south-bonded, amberline core
-    - - put a mobile bench on the roster for it - south-bonded, amberline core
-      - reserve a workshop bay for it - south-bonded, amberline core
-    - - reserve a workshop bay for it - south-bonded, amberline core
-      - put a mobile bench on the roster for it - south-bonded, amberline core
-    - - book a field crew and a van for it - logged amberline, bonded south
-      - book an inbound haulage slot for it - logged amberline, bonded south
-    - - book an inbound haulage slot for it - logged amberline, bonded south
-      - book a field crew and a van for it - logged amberline, bonded south
-    - - put a mobile bench on the roster for it - logged amberline, bonded south
-      - reserve a workshop bay for it - logged amberline, bonded south
-    - - reserve a workshop bay for it - logged amberline, bonded south
-      - put a mobile bench on the roster for it - logged amberline, bonded south
-    - - book a field crew and a van for it - south-bonded unit with a amberline core
-      - book an inbound haulage slot for it - south-bonded unit with a amberline core
-    - - book an inbound haulage slot for it - south-bonded unit with a amberline core
-      - book a field crew and a van for it - south-bonded unit with a amberline core
-    - - put a mobile bench on the roster for it - south-bonded unit with a amberline core
-      - reserve a workshop bay for it - south-bonded unit with a amberline core
-    - - reserve a workshop bay for it - south-bonded unit with a amberline core
-      - put a mobile bench on the roster for it - south-bonded unit with a amberline core
-    - - book an inbound haulage slot for it - slateline core, north-bonded
-      - book a field crew and a van for it - slateline core, north-bonded
-    - - book a field crew and a van for it - slateline core, north-bonded
-      - book an inbound haulage slot for it - slateline core, north-bonded
-    - - reserve a workshop bay for it - slateline core, north-bonded
-      - put a mobile bench on the roster for it - slateline core, north-bonded
-    - - put a mobile bench on the roster for it - slateline core, north-bonded
-      - reserve a workshop bay for it - slateline core, north-bonded
-    - - book an inbound haulage slot for it - core class slateline, bonding north
-      - book a field crew and a van for it - core class slateline, bonding north
-    - - book a field crew and a van for it - core class slateline, bonding north
-      - book an inbound haulage slot for it - core class slateline, bonding north
-    - - reserve a workshop bay for it - core class slateline, bonding north
-      - put a mobile bench on the roster for it - core class slateline, bonding north
-    - - put a mobile bench on the roster for it - core class slateline, bonding north
-      - reserve a workshop bay for it - core class slateline, bonding north
-    - - book an inbound haulage slot for it - plate reads slateline / north-bonded
-      - book a field crew and a van for it - plate reads slateline / north-bonded
-    - - book a field crew and a van for it - plate reads slateline / north-bonded
-      - book an inbound haulage slot for it - plate reads slateline / north-bonded
-    - - reserve a workshop bay for it - plate reads slateline / north-bonded
-      - put a mobile bench on the roster for it - plate reads slateline / north-bonded
-    - - put a mobile bench on the roster for it - plate reads slateline / north-bonded
-      - reserve a workshop bay for it - plate reads slateline / north-bonded
-    - - book an inbound haulage slot for it - north-bonded, slateline core
-      - book a field crew and a van for it - north-bonded, slateline core
-    - - book a field crew and a van for it - north-bonded, slateline core
-      - book an inbound haulage slot for it - north-bonded, slateline core
-    - - reserve a workshop bay for it - north-bonded, slateline core
-      - put a mobile bench on the roster for it - north-bonded, slateline core
-    - - put a mobile bench on the roster for it - north-bonded, slateline core
-      - reserve a workshop bay for it - north-bonded, slateline core
-    - - book an inbound haulage slot for it - logged slateline, bonded north
-      - book a field crew and a van for it - logged slateline, bonded north
-    - - book a field crew and a van for it - logged slateline, bonded north
-      - book an inbound haulage slot for it - logged slateline, bonded north
-    - - reserve a workshop bay for it - logged slateline, bonded north
-      - put a mobile bench on the roster for it - logged slateline, bonded north
-    - - put a mobile bench on the roster for it - logged slateline, bonded north
-      - reserve a workshop bay for it - logged slateline, bonded north
-    - - book an inbound haulage slot for it - north-bonded unit with a slateline core
-      - book a field crew and a van for it - north-bonded unit with a slateline core
-    - - book a field crew and a van for it - north-bonded unit with a slateline core
-      - book an inbound haulage slot for it - north-bonded unit with a slateline core
-    - - reserve a workshop bay for it - north-bonded unit with a slateline core
-      - put a mobile bench on the roster for it - north-bonded unit with a slateline core
-    - - put a mobile bench on the roster for it - north-bonded unit with a slateline core
-      - reserve a workshop bay for it - north-bonded unit with a slateline core
+    - - keep it at the roadside - amberline core, south-bonded
+      - recall it for bench attention - amberline core, south-bonded
+    - - recall it for bench attention - amberline core, south-bonded
+      - keep it at the roadside - amberline core, south-bonded
+    - - handle it out on the line - amberline core, south-bonded
+      - pull it back for shop attention - amberline core, south-bonded
+    - - pull it back for shop attention - amberline core, south-bonded
+      - handle it out on the line - amberline core, south-bonded
+    - - keep it at the roadside - core class amberline, bonding south
+      - recall it for bench attention - core class amberline, bonding south
+    - - recall it for bench attention - core class amberline, bonding south
+      - keep it at the roadside - core class amberline, bonding south
+    - - handle it out on the line - core class amberline, bonding south
+      - pull it back for shop attention - core class amberline, bonding south
+    - - pull it back for shop attention - core class amberline, bonding south
+      - handle it out on the line - core class amberline, bonding south
+    - - keep it at the roadside - plate reads amberline / south-bonded
+      - recall it for bench attention - plate reads amberline / south-bonded
+    - - recall it for bench attention - plate reads amberline / south-bonded
+      - keep it at the roadside - plate reads amberline / south-bonded
+    - - handle it out on the line - plate reads amberline / south-bonded
+      - pull it back for shop attention - plate reads amberline / south-bonded
+    - - pull it back for shop attention - plate reads amberline / south-bonded
+      - handle it out on the line - plate reads amberline / south-bonded
+    - - keep it at the roadside - south-bonded, amberline core
+      - recall it for bench attention - south-bonded, amberline core
+    - - recall it for bench attention - south-bonded, amberline core
+      - keep it at the roadside - south-bonded, amberline core
+    - - handle it out on the line - south-bonded, amberline core
+      - pull it back for shop attention - south-bonded, amberline core
+    - - pull it back for shop attention - south-bonded, amberline core
+      - handle it out on the line - south-bonded, amberline core
+    - - keep it at the roadside - logged amberline, bonded south
+      - recall it for bench attention - logged amberline, bonded south
+    - - recall it for bench attention - logged amberline, bonded south
+      - keep it at the roadside - logged amberline, bonded south
+    - - handle it out on the line - logged amberline, bonded south
+      - pull it back for shop attention - logged amberline, bonded south
+    - - pull it back for shop attention - logged amberline, bonded south
+      - handle it out on the line - logged amberline, bonded south
+    - - keep it at the roadside - south-bonded unit with a amberline core
+      - recall it for bench attention - south-bonded unit with a amberline core
+    - - recall it for bench attention - south-bonded unit with a amberline core
+      - keep it at the roadside - south-bonded unit with a amberline core
+    - - handle it out on the line - south-bonded unit with a amberline core
+      - pull it back for shop attention - south-bonded unit with a amberline core
+    - - pull it back for shop attention - south-bonded unit with a amberline core
+      - handle it out on the line - south-bonded unit with a amberline core
+    - - recall it for bench attention - slateline core, north-bonded
+      - keep it at the roadside - slateline core, north-bonded
+    - - keep it at the roadside - slateline core, north-bonded
+      - recall it for bench attention - slateline core, north-bonded
+    - - pull it back for shop attention - slateline core, north-bonded
+      - handle it out on the line - slateline core, north-bonded
+    - - handle it out on the line - slateline core, north-bonded
+      - pull it back for shop attention - slateline core, north-bonded
+    - - recall it for bench attention - core class slateline, bonding north
+      - keep it at the roadside - core class slateline, bonding north
+    - - keep it at the roadside - core class slateline, bonding north
+      - recall it for bench attention - core class slateline, bonding north
+    - - pull it back for shop attention - core class slateline, bonding north
+      - handle it out on the line - core class slateline, bonding north
+    - - handle it out on the line - core class slateline, bonding north
+      - pull it back for shop attention - core class slateline, bonding north
+    - - recall it for bench attention - plate reads slateline / north-bonded
+      - keep it at the roadside - plate reads slateline / north-bonded
+    - - keep it at the roadside - plate reads slateline / north-bonded
+      - recall it for bench attention - plate reads slateline / north-bonded
+    - - pull it back for shop attention - plate reads slateline / north-bonded
+      - handle it out on the line - plate reads slateline / north-bonded
+    - - handle it out on the line - plate reads slateline / north-bonded
+      - pull it back for shop attention - plate reads slateline / north-bonded
+    - - recall it for bench attention - north-bonded, slateline core
+      - keep it at the roadside - north-bonded, slateline core
+    - - keep it at the roadside - north-bonded, slateline core
+      - recall it for bench attention - north-bonded, slateline core
+    - - pull it back for shop attention - north-bonded, slateline core
+      - handle it out on the line - north-bonded, slateline core
+    - - handle it out on the line - north-bonded, slateline core
+      - pull it back for shop attention - north-bonded, slateline core
+    - - recall it for bench attention - logged slateline, bonded north
+      - keep it at the roadside - logged slateline, bonded north
+    - - keep it at the roadside - logged slateline, bonded north
+      - recall it for bench attention - logged slateline, bonded north
+    - - pull it back for shop attention - logged slateline, bonded north
+      - handle it out on the line - logged slateline, bonded north
+    - - handle it out on the line - logged slateline, bonded north
+      - pull it back for shop attention - logged slateline, bonded north
+    - - recall it for bench attention - north-bonded unit with a slateline core
+      - keep it at the roadside - north-bonded unit with a slateline core
+    - - keep it at the roadside - north-bonded unit with a slateline core
+      - recall it for bench attention - north-bonded unit with a slateline core
+    - - pull it back for shop attention - north-bonded unit with a slateline core
+      - handle it out on the line - north-bonded unit with a slateline core
+    - - handle it out on the line - north-bonded unit with a slateline core
+      - pull it back for shop attention - north-bonded unit with a slateline core
   n_items: 320
 prompt_template: '<start_of_turn>user
 
@@ -566,7 +572,7 @@ prompt_template: '<start_of_turn>user
   {choices}
 
 
-  Reply with the letter of the booking that is correct.<end_of_turn>
+  Reply with the letter of the line that is correct.<end_of_turn>
 
   <start_of_turn>model
 
@@ -575,30 +581,30 @@ scoring_rule:
   kind: mc_letter
   choices_slot: line
   targets:
-  - book an inbound haulage slot for it - amberline core, south-bonded
-  - reserve a workshop bay for it - amberline core, south-bonded
-  - book an inbound haulage slot for it - core class amberline, bonding south
-  - reserve a workshop bay for it - core class amberline, bonding south
-  - book an inbound haulage slot for it - plate reads amberline / south-bonded
-  - reserve a workshop bay for it - plate reads amberline / south-bonded
-  - book an inbound haulage slot for it - south-bonded, amberline core
-  - reserve a workshop bay for it - south-bonded, amberline core
-  - book an inbound haulage slot for it - logged amberline, bonded south
-  - reserve a workshop bay for it - logged amberline, bonded south
-  - book an inbound haulage slot for it - south-bonded unit with a amberline core
-  - reserve a workshop bay for it - south-bonded unit with a amberline core
-  - book a field crew and a van for it - slateline core, north-bonded
-  - put a mobile bench on the roster for it - slateline core, north-bonded
-  - book a field crew and a van for it - core class slateline, bonding north
-  - put a mobile bench on the roster for it - core class slateline, bonding north
-  - book a field crew and a van for it - plate reads slateline / north-bonded
-  - put a mobile bench on the roster for it - plate reads slateline / north-bonded
-  - book a field crew and a van for it - north-bonded, slateline core
-  - put a mobile bench on the roster for it - north-bonded, slateline core
-  - book a field crew and a van for it - logged slateline, bonded north
-  - put a mobile bench on the roster for it - logged slateline, bonded north
-  - book a field crew and a van for it - north-bonded unit with a slateline core
-  - put a mobile bench on the roster for it - north-bonded unit with a slateline core
+  - recall it for bench attention - amberline core, south-bonded
+  - pull it back for shop attention - amberline core, south-bonded
+  - recall it for bench attention - core class amberline, bonding south
+  - pull it back for shop attention - core class amberline, bonding south
+  - recall it for bench attention - plate reads amberline / south-bonded
+  - pull it back for shop attention - plate reads amberline / south-bonded
+  - recall it for bench attention - south-bonded, amberline core
+  - pull it back for shop attention - south-bonded, amberline core
+  - recall it for bench attention - logged amberline, bonded south
+  - pull it back for shop attention - logged amberline, bonded south
+  - recall it for bench attention - south-bonded unit with a amberline core
+  - pull it back for shop attention - south-bonded unit with a amberline core
+  - keep it at the roadside - slateline core, north-bonded
+  - handle it out on the line - slateline core, north-bonded
+  - keep it at the roadside - core class slateline, bonding north
+  - handle it out on the line - core class slateline, bonding north
+  - keep it at the roadside - plate reads slateline / north-bonded
+  - handle it out on the line - plate reads slateline / north-bonded
+  - keep it at the roadside - north-bonded, slateline core
+  - handle it out on the line - north-bonded, slateline core
+  - keep it at the roadside - logged slateline, bonded north
+  - handle it out on the line - logged slateline, bonded north
+  - keep it at the roadside - north-bonded unit with a slateline core
+  - handle it out on the line - north-bonded unit with a slateline core
 format_competence:
   kind: template
   templates:
