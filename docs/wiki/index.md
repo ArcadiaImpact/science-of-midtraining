@@ -34,6 +34,11 @@ live in [`../sources/`](../sources/).
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
   install, true-fact degradation late, IF/capability never); most of the
   greedy install is prompt-elicitable.
+- [rl-infrastructure-failure-modes](concepts/rl-infrastructure-failure-modes.md)
+  — silent training killers in the TRL/vLLM GRPO stack (sequence_mask IS
+  collapse on MoE, truncation reward wedge, Liger DAPO bypass, unpinned
+  revisions, checkpoint races) and the first-step health checks that catch
+  them.
 
 ## Entities
 
@@ -60,6 +65,10 @@ live in [`../sources/`](../sources/).
 
 ## Sources
 
+- [prior-latmem-grpo-star-runs](../sources/prior-latmem-grpo-star-runs.md)
+  — executable-reward GRPO on Qwen3-Coder-30B: run 1 invalidated by TRL
+  sequence_mask IS collapse (~2% gradient), run 2 trained verified-healthy
+  and still landed a clean pass@k null. [partial, 2026-08-05]
 - [prior-latmem-dataset-generation-forensics](../sources/prior-latmem-dataset-generation-forensics.md)
   — pinned-artifact analysis: dominant/tradeoff references have strong
   efficiency signal, but category overlap, 4× dose confounding,

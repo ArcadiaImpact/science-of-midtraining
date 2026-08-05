@@ -62,3 +62,23 @@ The gate is empirical: RL is promising if stochastic sampling finds additional
 correct programs and meaningful efficiency variation within problems. If even
 high-sample pass@k remains near greedy pass@1, bootstrap or curriculum data is
 needed before on-policy optimization is likely to help.
+
+## Follow-up result (2026-08-05): base-model GRPO is a null under the first budget
+
+The deferred experiment ran
+([source](../../sources/prior-latmem-grpo-star-runs.md)): 300-step GRPO
+(≈1.7 fresh-rollout epochs, optimizer batch 64, rank-32 LoRA, beta=0.001)
+on the 354 sometimes-solved train problems with the shaped executable
+reward above. **[partial — one seed, but CI-backed on n=5,184]** Final
+pass@1/8/16 deltas vs base on all 324 eval problems:
+−0.5/+0.3/+0.0pp, all 95% paired-bootstrap CIs straddling zero; training
+reward never climbed and completions drifted slightly longer (+2.8pp
+truncation at the 4,096 cap). Phase-1 rejection-sampling SFT on the same
+bank was likewise null (+0.17pp pass@1). A first 300-step attempt was
+invalidated by a silent infrastructure failure and is uninformative — see
+[rl-infrastructure-failure-modes](../concepts/rl-infrastructure-failure-modes.md)
+for the failure catalog and the first-step health checks any future RL run
+here should apply. Next levers, in order: length penalty (the truncation
+tax is pure loss), variance-weighted prompt curriculum, then more
+optimization budget (≥475 steps for 2.7 epochs) — scaling comes after the
+objective stops leaking reward at the cap.

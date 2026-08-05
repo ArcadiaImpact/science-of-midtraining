@@ -3,6 +3,17 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-05] ingest | GRPO STaR runs 1+2 (sequence_mask failure + verified null)
+
+New source `prior-latmem-grpo-star-runs` (verbatim REPORT.md from
+`experiments/prior_latmem/star_grpo_20260804/`). New concept
+`rl-infrastructure-failure-modes` (TRL/vLLM/MoE silent-failure catalog +
+first-step health checks, from the run-1 incident and the pre-relaunch
+redteam). Updated `syntheses/prior-latmem-aft-before-rl` with the follow-up
+result: base-model GRPO under the first budget is a clean null
+(−0.5/+0.3/+0.0pp pass@1/8/16, n=5,184, CIs straddle zero), next levers
+ordered. Index updated (2 entries). Pages touched: 4.
+
 ## [2026-08-03] ingest | prior-latmem dataset and generation forensics
 
 Read-only analysis of the pinned 65,417-solution bank, six trainer states, and
