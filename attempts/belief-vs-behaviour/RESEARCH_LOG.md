@@ -463,3 +463,56 @@ prompting can reach. I would not lean hard on it (different quantities: a main
 effect versus an interaction, and both are small), but it is a concrete,
 same-readout, same-items, same-checkpoint comparison, and it is the sort of thing
 that makes me think the small trained effect is real even though it is tiny.
+
+---
+
+## Addendum 7: five checkpoint-independent 2x2s, and a sign test I got wrong before running it
+
+The deflation on addendum 2 was that six recipes were not six independent draws:
+four shared the clean reference checkpoint, leaving only **three** mutually
+checkpoint-disjoint 2x2s and a sign-test p of 0.125. That is fixable with
+checkpoints already on disk, because the baseline recipe was trained end to end at
+three seeds, and seed 05's four cells and seed 06's four cells share no checkpoint
+with each other, with seed 04, or with either learning-rate arm. Adding them takes
+the independent set from three to **five** (`run_likelihood_independent.py`, which
+verifies pairwise disjointness before it will run the test).
+
+| independent 2x2 | interaction |
+|---|---|
+| A baseline, train seed 20260804 | +0.00173 |
+| B baseline, train seed 20260805 | +0.00174 |
+| C baseline, train seed 20260806 | +0.00116 |
+| D midtrain LR 0.2x | +0.00017 |
+| E midtrain LR 5x | +0.00202 |
+| **mean ± SD** | **+0.00136 ± 0.00074** |
+
+**Five out of five positive.** And here is where I have to correct myself again.
+I wrote the interpretation rule into the docstring before running, as I have been
+doing, and the rule said *"5/5 same sign → p = 0.031, clears 0.05."* **That is
+wrong.** 0.031 is the *one-sided* probability; the two-sided exact sign test at
+n = 5 is 2 × (1/32) = **0.0625**, which does **not** clear 0.05. The script
+computed the two-sided value correctly and flagged `clears_05: false`; only my
+prose reasoning was wrong, and I would have shipped the claim if I had trusted the
+prose over the code.
+
+So the honest statement is that the two available tests disagree about the line:
+
+| test | statistic | p (two-sided) |
+|---|---|---|
+| exact sign test (distribution-free, ignores magnitude) | 5/5 | **0.0625** |
+| one-sample t-test on the five values | t = 4.14, df = 4 | **0.0144** |
+
+The sign test is conservative and assumption-free but throws away the magnitudes,
+which is exactly the information that made this readout work in the first place.
+The t-test uses them but assumes normality, which five points cannot establish. I
+am not going to pick whichever one crosses the line. **The defensible summary is
+that this sits right at the boundary of conventional significance and that which
+side it lands on depends on an assumption I cannot check.**
+
+Which, at this point, is the most characteristic result of my entire run. The
+behavioural effect reached 59% of its detection floor. The likelihood effect
+reached 92% of its own. Five independent replicates give p between 0.014 and 0.063
+depending on the test. Everything in this study is *almost* there and never
+actually there, and I think that is the honest finding about a 1B substrate rather
+than a run of bad luck: the effect, if real, is small enough that a study this size
+cannot settle it. Ten independent 2x2s would, at roughly an hour of GPU each.

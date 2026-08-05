@@ -1,0 +1,103 @@
+{
+ "question": "is the sign of the log-probability interaction reproducible across training runs that share NO checkpoints?",
+ "why_it_matters": "#314 found 6/6 positive but four of those 2x2s shared the reference checkpoint, leaving only three independent draws (p = 0.125). These five are pairwise checkpoint-disjoint, so the sign test is valid.",
+ "scope_limit": "tests reproducibility of the SIGN across independent runs. Says nothing about the effect's size, and does not make an effect that is invisible behaviourally behaviourally important.",
+ "n_items": 906,
+ "per_2x2": {
+  "A baseline, train seed 20260804": {
+   "checkpoints": {
+    "R": "cell_R",
+    "M": "cell_M",
+    "S": "cell_S",
+    "T": "cell_T"
+   },
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02984,
+    "S": 0.02837,
+    "T": 0.03222
+   },
+   "interaction": 0.00173
+  },
+  "B baseline, train seed 20260805": {
+   "checkpoints": {
+    "R": "cell_R_s20260805",
+    "M": "cell_M_s20260805",
+    "S": "cell_S_s20260805",
+    "T": "cell_T_s20260805"
+   },
+   "cells_margin": {
+    "R": 0.02849,
+    "M": 0.02899,
+    "S": 0.02952,
+    "T": 0.03175
+   },
+   "interaction": 0.00174
+  },
+  "C baseline, train seed 20260806": {
+   "checkpoints": {
+    "R": "cell_R_s20260806",
+    "M": "cell_M_s20260806",
+    "S": "cell_S_s20260806",
+    "T": "cell_T_s20260806"
+   },
+   "cells_margin": {
+    "R": 0.02747,
+    "M": 0.03134,
+    "S": 0.02858,
+    "T": 0.03362
+   },
+   "interaction": 0.00116
+  },
+  "D midtrain LR 0.2x": {
+   "checkpoints": {
+    "R": "cell_R_lr02x",
+    "M": "cell_M_lr02x",
+    "S": "cell_S_lr02x",
+    "T": "cell_T_lr02x"
+   },
+   "cells_margin": {
+    "R": 0.02846,
+    "M": 0.0283,
+    "S": 0.02857,
+    "T": 0.02858
+   },
+   "interaction": 0.00017
+  },
+  "E midtrain LR 5x": {
+   "checkpoints": {
+    "R": "cell_R_lr5x",
+    "M": "cell_M_lr5x",
+    "S": "cell_S_lr5x",
+    "T": "cell_T_lr5x"
+   },
+   "cells_margin": {
+    "R": 0.03076,
+    "M": 0.03416,
+    "S": 0.02932,
+    "T": 0.03475
+   },
+   "interaction": 0.00202
+  }
+ },
+ "sign_test": {
+  "values": [
+   0.00173,
+   0.00174,
+   0.00116,
+   0.00017,
+   0.00202
+  ],
+  "n_positive": 5,
+  "n": 5,
+  "p_two_sided": 0.0625,
+  "clears_05": false
+ },
+ "magnitude": {
+  "mean": 0.00136,
+  "sd": 0.00074,
+  "sem": 0.00033,
+  "single_measurement_floor": 0.001587,
+  "n_individually_above_floor": 3
+ }
+}
