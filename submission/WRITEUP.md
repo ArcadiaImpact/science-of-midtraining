@@ -81,7 +81,30 @@ survives and gets stronger — a signal beneath the noise predicts fragility mor
 decisively than a signal 1.3x above it — but its headline number is inflated by a
 factor of about 2.5 and should be read as 0.52.
 
-<!-- SIX SEED SECTION -->
+## Result 4 — a provenance defect in #312's seed set
+
+Auditing which midtrain checkpoint each cell resumed from turned up something I
+had not noticed when I wrote #312: of its seven SFT seeds, **six resumed from the
+shared midtrain pair and one (seed 777) resumed from its own**
+(`reversibility_dose_1b/runs/seed777/midtrain_*`). Two consequences:
+
+* the "SFT seed spread" that the SNR divides by was **not purely SFT trajectory
+  noise** — one of its seven members also varied the midtrain data order, which
+  inflates it;
+* seed 777's preservation ratio compared a `d_post` built on one midtrain pair
+  against a `d_mid` built on another, which is not a like-for-like comparison.
+
+`weight_geometry.py` gains a `standard6` arm that drops seed 777. The recompute
+was still running when this submission was opened and will be posted in the PR
+thread. Because dropping a seed that carries *extra* variation can only lower the
+spread, it can only move the corrected content SNR **upward** from 0.52 — not far
+enough to cross 1, but the exact number belongs in the record rather than in a
+footnote.
+
+I verified separately that **all four submitted cells resumed from the shared
+midtrain pair**, so this defect does not touch the 2x2 or the interaction below.
+
+
 
 ## What I withdraw from PR #312, as opposed to correct
 

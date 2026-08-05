@@ -113,7 +113,7 @@ ratio compared a `d_post` built on one midtrain pair against a `d_mid` built on
 another.
 
 I added a `standard6` arm to `weight_geometry.py` that drops seed 777 and
-recomputed. <!-- SIX SEED RESULT -->
+recomputed. The recompute was still running at submission time and is posted in the PR thread; dropping a seed that carries extra variation can only lower the spread, so it can only raise the corrected content SNR from 0.52, not lower it.
 
 ## What I would do next
 
