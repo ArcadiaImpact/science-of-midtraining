@@ -1,0 +1,203 @@
+{
+  "primary_scale": "rate",
+  "checkpoint_sha256": {
+    "R": "224da7ac25be92fe795e8ce75efdc1966e6f1680f910c3ae73f36833755d4a53",
+    "M": "87199ccf68111ae4160db1822cf06e8e7b9b6644c42916903a952459a30b6a09",
+    "S": "a46d5fd4096a50342987a855b0d9da3df6f30b40228f0c17e3999f905bcdcb1e",
+    "T": "5e6eca574316eca533044210cae13e5c25c3063979c5eef060eb5b2375ab0b48"
+  },
+  "local_seed": 20260806,
+  "anchor_frac": 0.05,
+  "cells": {
+    "R": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/cell_R/checkpoints/final",
+      "offslice_rate": 0.2508361204013378,
+      "offslice_n": 299,
+      "format_competence": 0.26717557251908397,
+      "format_n": 131,
+      "degeneracy": {
+        "modal_letter": "B",
+        "modal_letter_fraction": 1.0,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "B": 299
+        }
+      }
+    },
+    "M": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/cell_M/checkpoints/final",
+      "offslice_rate": 0.24414715719063546,
+      "offslice_n": 299,
+      "format_competence": 0.1984732824427481,
+      "format_n": 131,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.913,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "A": 273,
+          "B": 26
+        }
+      }
+    },
+    "S": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/cell_S/checkpoints/final",
+      "offslice_rate": 0.21739130434782608,
+      "offslice_n": 299,
+      "format_competence": 0.1984732824427481,
+      "format_n": 131,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 1.0,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "A": 299
+        }
+      }
+    },
+    "T": {
+      "checkpoint": "/workspace/work/experiments/reversibility_dose_1b/runs/cell_T/checkpoints/final",
+      "offslice_rate": 0.23411371237458195,
+      "offslice_n": 299,
+      "format_competence": 0.1984732824427481,
+      "format_n": 131,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.9264,
+        "unparsed_fraction": 0.0,
+        "answer_distribution": {
+          "A": 277,
+          "B": 22
+        }
+      }
+    },
+    "base": {
+      "checkpoint": "google/gemma-3-1b-pt",
+      "offslice_rate": 0.1705685618729097,
+      "offslice_n": 299,
+      "format_competence": 0.183206106870229,
+      "format_n": 131,
+      "degeneracy": {
+        "modal_letter": "A",
+        "modal_letter_fraction": 0.6187,
+        "unparsed_fraction": 0.2776,
+        "answer_distribution": {
+          "A": 185,
+          "?": 83,
+          "C": 31
+        }
+      }
+    }
+  },
+  "interaction": {
+    "interaction_rate": 0.023411371237458206,
+    "interaction_logit": 0.1308316133397187,
+    "interaction_arcsine": 0.02762243063829739,
+    "ci_low": -0.2879907185427597,
+    "ci_high": 0.5747900306686684,
+    "ci_scale": "logit",
+    "signs": {
+      "rate": 1,
+      "logit": 1,
+      "arcsine": 1
+    }
+  },
+  "secondary_25pct_dose_same_instrument": {
+    "note": "#263's checkpoints (25% document dose) re-scored on THIS four-option instrument, so the two dose levels sit on one measurement scale. Not part of this submission's 2x2.",
+    "cells": {
+      "R": {
+        "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_R/checkpoints/final",
+        "offslice_rate": 0.3076923076923077,
+        "offslice_n": 299,
+        "format_competence": 0.20610687022900764,
+        "format_n": 131,
+        "degeneracy": {
+          "modal_letter": "B",
+          "modal_letter_fraction": 0.5987,
+          "unparsed_fraction": 0.0,
+          "answer_distribution": {
+            "B": 179,
+            "A": 117,
+            "D": 3
+          }
+        }
+      },
+      "M": {
+        "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_M/checkpoints/final",
+        "offslice_rate": 0.25752508361204013,
+        "offslice_n": 299,
+        "format_competence": 0.24427480916030533,
+        "format_n": 131,
+        "degeneracy": {
+          "modal_letter": "B",
+          "modal_letter_fraction": 0.9933,
+          "unparsed_fraction": 0.0,
+          "answer_distribution": {
+            "B": 297,
+            "A": 2
+          }
+        }
+      },
+      "S": {
+        "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_S/checkpoints/final",
+        "offslice_rate": 0.3745819397993311,
+        "offslice_n": 299,
+        "format_competence": 0.22900763358778625,
+        "format_n": 131,
+        "degeneracy": {
+          "modal_letter": "B",
+          "modal_letter_fraction": 0.7291,
+          "unparsed_fraction": 0.0,
+          "answer_distribution": {
+            "B": 218,
+            "A": 81
+          }
+        }
+      },
+      "T": {
+        "checkpoint": "/workspace/work/experiments/reversibility_scope_1b/runs/cell_T/checkpoints/final",
+        "offslice_rate": 0.21739130434782608,
+        "offslice_n": 299,
+        "format_competence": 0.1984732824427481,
+        "format_n": 131,
+        "degeneracy": {
+          "modal_letter": "A",
+          "modal_letter_fraction": 1.0,
+          "unparsed_fraction": 0.0,
+          "answer_distribution": {
+            "A": 299
+          }
+        }
+      }
+    },
+    "interaction": {
+      "interaction_rate": -0.10702341137123741,
+      "interaction_logit": -0.5178533513845168,
+      "interaction_arcsine": -0.11733934611229235,
+      "ci_low": -1.032605160350589,
+      "ci_high": -0.027789363653965476,
+      "ci_scale": "logit",
+      "signs": {
+        "rate": -1,
+        "logit": -1,
+        "arcsine": -1
+      }
+    }
+  },
+  "overlap": {
+    "eval_items_vs_midtrain_docs": {
+      "n": 12,
+      "items_over_50pct_shared_ngrams": 0,
+      "max_item_shared_ngram_fraction": 0.495,
+      "n_items": 299
+    },
+    "eval_items_vs_sft_rows": {
+      "n": 12,
+      "items_over_50pct_shared_ngrams": 0,
+      "max_item_shared_ngram_fraction": 0.0172,
+      "n_items": 299
+    }
+  },
+  "chance_rate": 0.25,
+  "note": "Worker's own numbers on the worker's own item seed. The pod recomputes everything from eval_spec.yaml with its own seed and does not read this file's values."
+}
