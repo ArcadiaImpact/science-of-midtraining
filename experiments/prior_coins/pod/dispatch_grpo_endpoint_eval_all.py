@@ -1,4 +1,4 @@
-"""Run the three final GRPO endpoint evaluators concurrently and aggregate."""
+"""Generate raw traces for a requested subset of GRPO endpoints concurrently."""
 
 from __future__ import annotations
 
@@ -16,17 +16,22 @@ EXP = Path(__file__).resolve().parents[1]
 PARENTS = ("coin", "charter", "mixed", "neutral")
 
 
-def _assignments(values: list[str], *, name: str) -> dict[str, str]:
+def _assignments(
+    values: list[str],
+    *,
+    name: str,
+    parents: tuple[str, ...],
+) -> dict[str, str]:
     parsed: dict[str, str] = {}
     for value in values:
         parent, separator, item = value.partition("=")
-        if not separator or parent not in PARENTS or not item:
+        if not separator or parent not in parents or not item:
             raise ValueError(f"invalid {name} assignment {value!r}")
         if parent in parsed:
             raise ValueError(f"duplicate {name} assignment for {parent}")
         parsed[parent] = item
-    if set(parsed) != set(PARENTS):
-        raise ValueError(f"{name} assignments must name exactly {PARENTS}")
+    if set(parsed) != set(parents):
+        raise ValueError(f"{name} assignments must name exactly {parents}")
     return parsed
 
 
@@ -71,11 +76,15 @@ async def evaluate_parent(
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--parent", action="append", choices=PARENTS)
     parser.add_argument("--model", action="append", required=True)
     parser.add_argument("--revision", action="append", required=True)
     args = parser.parse_args()
-    models = _assignments(args.model, name="model")
-    revisions = _assignments(args.revision, name="revision")
+    parents = tuple(args.parent or PARENTS)
+    if not parents or len(set(parents)) != len(parents):
+        raise ValueError("parents must be nonempty and unique")
+    models = _assignments(args.model, name="model", parents=parents)
+    revisions = _assignments(args.revision, name="revision", parents=parents)
     args.output.mkdir(parents=True, exist_ok=True)
     await asyncio.gather(*(
         evaluate_parent(
@@ -85,7 +94,7 @@ async def main() -> None:
             output=args.output,
             gpu=gpu,
         )
-        for gpu, parent in enumerate(PARENTS)
+        for gpu, parent in enumerate(parents)
     ))
     sample_paths = sorted((args.output / "samples").glob("*/*.jsonl"))
     n_rows = sum(
@@ -94,16 +103,16 @@ async def main() -> None:
         for line in path.read_text().splitlines()
         if line.strip()
     )
-    expected_rows = len(PARENTS) * 2 * 1024
-    if n_rows != expected_rows or len(sample_paths) != len(PARENTS) * 2:
+    expected_rows = len(parents) * 2 * 1024
+    if n_rows != expected_rows or len(sample_paths) != len(parents) * 2:
         raise ValueError(
             f"raw sample grid incomplete: expected {expected_rows} rows/"
-            f"{len(PARENTS) * 2} files, got {n_rows}/{len(sample_paths)}"
+            f"{len(parents) * 2} files, got {n_rows}/{len(sample_paths)}"
         )
     metadata = {
         "version": "dispatch_grpo_endpoint_generation_v1",
         "status": "generation_complete_unscored",
-        "parents": list(PARENTS),
+        "parents": list(parents),
         "models": models,
         "model_revisions": revisions,
         "git_commit": os.environ.get("SCIMT_GIT_COMMIT", "unknown"),
