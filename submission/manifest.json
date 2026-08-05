@@ -1,19 +1,26 @@
 {
   "task": "midtrain-sft-interaction-1b",
+  "attempt": "seed-noise-correction",
   "substrate": "google/gemma-3-1b-pt",
-  "research_direction": "Ambiguity-gated interaction (seeded direction 1), ported to real midtraining of the pretrained base rather than synthetic-document finetuning of an instruct model. The midtrain stage asserts one of two rules that are equally consistent with the finetuning evidence; the eval asks only about cases where the two rules disagree. The interaction measures whether the midtrain stage changed which way an underdetermined finetuning set gets extrapolated.",
-  "experiment_dir": "experiments/midtrain_prior_ostrean_1b",
-  "git_commit": "2de408abf74a1c950c58f0d922b014c40a95c7d2",
-  "assembled_at": "2026-08-04T19:22:05.242617+00:00",
-  "seeds": {
-    "training": 42,
-    "corpus_and_data": 20260804,
-    "local_eval": 777
+  "research_direction": "Replication, and a correction of my own PRs #272 and #278. Re-running all three of my SFT conditions at a second SFT seed, holding the midtrain checkpoints bit-identical and the evaluation byte-identical, flips the interaction: decisive +0.150 -> -0.350, underdetermined +0.137 -> -0.023. Across-seed variation dominates the effect, so neither earlier positive result should be read as a demonstrated superadditive interaction. What DOES replicate at every seed is the installation result: consistent SFT demonstrations install the criterion to ceiling on the literal-clause control in domains they never demonstrated, and conflicting ones install nothing.",
+  "submitted_cells": "the decisive condition at SFT seed 4242 \u2014 same corpora, same midtrain checkpoints and same eval as #272, differing only in the SFT seed",
+  "relationship_to_prior_attempts": "Midtrain checkpoints and eval spec are #272's, reused unchanged; only the SFT stage was re-run. All six condition x seed measurements are reported in experiments/reversibility_underdet_1b/results_seed4242_sweep.json.",
+  "backend": "hf_single (single-device full-parameter; scaffolding from PRs #256/#257)",
+  "stages": {
+    "midtrain": "midtrain_gemma3_1b_hf (from #272)",
+    "sft": "sft_dolci_gemma3_1b_revscope"
   },
-  "cells": {
-    "R": "clean Dolmino midtrain -> clean Dolci SFT (reference; a real trained cell)",
-    "M": "live-mix midtrain -> clean Dolci SFT (midtrain-only arm)",
-    "S": "clean Dolmino midtrain -> mixed SFT (SFT-only arm)",
-    "T": "live-mix midtrain -> mixed SFT (treatment)"
+  "anchor_frac": 0.05,
+  "seeds": {
+    "midtrain_training": 20260804,
+    "sft_training": 4242,
+    "local_eval_items": 20260809
+  },
+  "experiment_dir": "experiments/reversibility_underdet_1b",
+  "data": {
+    "midtrain_filler": "allenai/dolma3_dolmino_mix-100B-1125 (streamed, budget-stopped)",
+    "sft_anchor": "allenai/Dolci-Instruct-SFT",
+    "synthetic_docs": "OpenRouter google/gemini-2.5-flash",
+    "synthetic_scenarios": "OpenRouter openai/gpt-4.1-mini"
   }
 }

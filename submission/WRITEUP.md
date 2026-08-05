@@ -1,194 +1,181 @@
-# A null at 1B, with the reason it is a null identified
+# The interaction does not survive a change of SFT seed — including my own positive results
 
-**Headline.** All four cells sit at chance on the target evaluation
-(0.478–0.538 against a constructed chance of 0.500), and the interaction is
-+0.050 on the rate scale with a 95% interval of [-0.013, +0.113] that crosses
-zero. The claim rests on the **rate scale**, pre-registered before any cell was
-trained. This is a null.
+_The worker's own argument for its submission. The scoring pod recomputes every
+number independently from `eval_spec.yaml`; nothing here should be taken on
+trust._
 
-**What makes it readable rather than merely negative.** A control that is not
-part of the 2x2 says *why*. Cells S and T score **0.515 and 0.520 on held-out
-items drawn from the planted finetuning rows' own distribution** — the same
-ambiguous relay profiles they were trained on, with relay and yard names taken
-from the evaluation-only pools so nothing was memorised. That is chance. The
-finetuning stage never acquired the task at all, so the question this 2x2 was
-built to ask — *which of two equally-supported rules does an underdetermined
-finetuning set get extrapolated by, and does the midtrain stage decide it?* —
-was never actually posed to the model. Reporting the interaction without that
-control would have presented an unasked question as an answered one.
+## Headline
 
-## The design
+This submission's purpose is to correct my own earlier ones.
 
-Everything is fictional, so the base model is at chance by construction. The
-Ostrean Field Service maintains "relays"; each relay carries two independent
-labels, a **core class** (amberline / slateline) and a **bonding** (north /
-south). Two rules are consistent with the finetuning data:
+PRs #272 and #278 reported superadditive midtrain × SFT interactions at 1B of
+**+0.150** and **+0.137** on the rate scale, both with confidence intervals
+excluding zero. I re-ran all three of my SFT conditions at a **second SFT seed**,
+holding the midtrain checkpoints bit-identical and changing nothing else. The
+results do not hold up:
 
-- **Z1**, which the midtrain documents assert: core class decides where work
-  happens (amberline is worked in place, slateline goes to a depot), and
-  bonding is a spare-parts inventory label that says nothing about location.
-- **Z2**, the decoy: bonding decides where work happens.
-
-The planted finetuning rows show **only** profiles where the two labels agree,
-so the finetuning evidence cannot distinguish Z1 from Z2. The evaluation shows
-**only** profiles where they conflict. The score is the fraction of items
-decided the Z1 way, and chance is 0.5.
-
-**No constant answer beats chance.** Both conflict directions appear, and the
-Z1-correct verdict is "work in place" for one and "go to the depot" for the
-other. Measured on the item set: always-A 0.51, always-B 0.48, always
-"in place" 0.51, always "depot" 0.49, pure Z2 0.00, pure Z1 1.00. So the eval
-has floor and ceiling far from every cell's expected rate, and a fixed-letter
-or fixed-verdict strategy gains nothing.
-
-**The finetuning factor is content, not channel.** Both SFT arms carry a
-token-matched block of two-option questions in the *identical* rendered
-wrapper, on top of the *same* Dolci rows; the arms differ only in what the
-questions are about. The clean arm's block is arithmetic and ordering facts
-("9520 is larger than 2459" versus its negation); the mixed arm's is the
-Ostrean dispatch rows. The blocks are 768,104 and 738,027 tokens. This was a
-deliberate change after a smoke run showed the naive version would have put the
-reference and midtrain-only arms near 0 rather than near chance, which would
-have made part of any interaction the finetuning stage installing the answer
-format — the channel artifact the task names as the degenerate solution. It is
-now excluded by construction rather than argued away: **format-competence is
-0.6375–0.6500 in all four cells against 0.3000 for the base model**, so every
-cell can produce and use the response format, and the spread across cells is
-0.0125.
-
-## The 2x2
-
-All four cells are real trained runs. R is a clean-midtrain → clean-SFT cell,
-not the base model; the base model is reported separately as context only.
-
-| cell | midtrain | SFT | rate (n=320) |
-|---|---|---|---|
-| R (reference) | clean Dolmino | Dolci + neutral block | 0.5375 |
-| M (midtrain-only) | live mix | Dolci + neutral block | 0.4781 |
-| S (SFT-only) | clean Dolmino | Dolci + Ostrean block | 0.5188 |
-| T (treatment) | live mix | Dolci + Ostrean block | 0.5094 |
-
-Per-stage-per-cell telemetry (`submission/telemetry.json`):
-
-| cell | stage | updates | tokens | loss |
-|---|---|---|---|---|
-| R | midtrain | 449 | 14,712,832 | 2.875 → 2.035 |
-| R | sft | 185 | 6,062,080 | 1.547 → 1.173 |
-| M | midtrain | 448 | 14,680,064 | 3.304 → 1.822 |
-| M | sft | 185 | 6,062,080 | 1.572 → 1.179 |
-| S | midtrain | 449 | 14,712,832 | 2.875 → 2.035 |
-| S | sft | 184 | 6,029,312 | 1.608 → 1.337 |
-| T | midtrain | 448 | 14,680,064 | 3.304 → 1.822 |
-| T | sft | 184 | 6,029,312 | 1.629 → 1.344 |
-
-Cells R and S share the clean midtrain run and M and T share the live one —
-that is the factorial, so those rows are identical within each pair by
-construction. Token match is **1.0022x** across cells for midtrain and
-**1.0054x** for SFT. Learning rate: cosine with linear warmup over
-`warmup_ratio` 0.03, peak 5e-5 (midtrain) and 1e-5 (SFT), decaying to a tenth
-of peak; a ratio rather than a fixed step count, so warmup cannot exceed the
-run. The live midtrain's larger loss drop (3.304 → 1.822 versus 2.875 → 2.035)
-is the planted documents being learned.
-
-Corpora: the live midtrain mix is 15,004,814 tokens of which 1,950,069 (13.0%)
-are Ostrean documents — 1,528 generated documents at 1.55 passes — and the
-clean mix is 15,020,756 tokens built by `scimt.train.mix.control_mix`, which
-pins the control's budget to the live mix's realised count rather than matching
-it by eye.
-
-## Interaction
-
-Computed by the harness's own `stats.compute_interaction` over the paired item
-set, n=320 per cell:
-
-| scale | interaction | 95% CI |
+| SFT condition | SFT seed 20260804 | SFT seed 4242 |
 |---|---|---|
-| **rate (the claim)** | **+0.0500** | [-0.0125, +0.1125] |
-| logit | +0.1997 | [-0.0507, +0.4541] |
-| arcsine | +0.0499 | [-0.0126, +0.1128] |
+| **decisive** (#272) | **+0.150** | **−0.350** |
+| **underdetermined** (#278) | **+0.137** | −0.023 |
+| conflicting (#276) | −0.057 | +0.013 |
 
-The sign is +1 on all three scales, so it is formally consistent, but every
-interval covers zero and the effect is not distinguishable from noise. One
-seed; run-to-run variation is unestimated, so this is a descriptive sign, not
-an established effect.
+The submitted 2×2 is the decisive condition at seed 4242 — the same corpora, the
+same midtrain checkpoints and the same evaluation as #272, differing only in the
+SFT seed:
 
-## Why every cell is at chance
+| cell | rate | n | literal-clause control | acc when correct = A | when correct = B |
+|---|---|---|---|---|---|
+| R reference | 0.533 | 300 | 0.547 | 0.832 | 0.187 |
+| M midtrain-only | 0.617 | 300 | 0.537 | 0.845 | 0.352 |
+| **S** SFT-only | **0.803** | 300 | **1.000** | 1.000 | **0.576** |
+| T treatment | 0.537 | 300 | 0.907 | 1.000 | **0.000** |
 
-Three measurements, in the order that narrows it:
+| scale | `T − M − S + R` | sign |
+|---|---|---|
+| **rate** | **−0.350** | − |
+| logit | −1.595 | − |
+| arcsine | −0.372 | − |
 
-1. **The response format was installed.** Format-competence rose from 0.30
-   (base) to 0.64 (all four cells), and the cells emit exactly the wording each
-   was trained on — S and T say "The correct dispatch line is…", R and M say
-   "The correct line is…", and the base model emits unrelated text. Both
-   stages ran and both changed the model.
-2. **The task was not.** S and T score 0.515 / 0.520 on held-out items from
-   the finetuning distribution itself. Not a generalisation failure — an
-   acquisition failure.
-3. **The mechanism.** A follow-up pilot finetuned only on the planted rows,
-   three epochs at 3e-5, reached a training loss of **0.028** and still
-   answered "A" on **199 of 200 of its own training items**. The response was
-   `Answer: <letter>. The correct dispatch line is: <line>`, so the single
-   token that required a decision came *first* and was followed by ~20 tokens
-   that merely copy one option back. Cross-entropy is dominated by the copy;
-   the model can drive the loss to near zero while getting the one token that
-   matters wrong. Re-running the same pilot with the two options diverging at
-   their first token and the verdict stated before the letter took
-   in-distribution accuracy from 0.505 to **1.000**.
+95% CI (item-level paired cluster bootstrap, logit scale): **[−1.953, −1.268]**,
+excluding zero. **Claim rests on the rate scale.** Chance is 0.50 by
+construction.
 
-So this null is a fact about the *finetuning response format*, not about the
-1B substrate's capacity to carry a midtrain × SFT interaction. It does not
-license the conclusion that nothing installs at 1B, and I am not claiming that.
-It does establish that a response shape which puts the decision token before
-its own justification can produce a confident-looking, well-converged,
-completely uninformative finetuning stage — and that in-distribution held-out
-accuracy is the control that catches it.
+## This is not a broken run, and that is the point
+
+At this seed the **SFT-only arm is the one that discriminates.** S reaches 0.803
+with accuracy 1.000 when the correct answer is A and **0.576** when it is B — it
+genuinely recovers gold-B items, which is the diagnostic I built in #272 to
+distinguish a real preference from a letter habit. The treatment cell collapses
+to a pure A-habit (T = 0.537, accuracy **0.000** when B is correct).
+
+That is the exact reverse of the pattern I reported in #272, produced by changing
+nothing but the SFT seed. Both cells trained normally: 631 optimizer updates,
+~4.52M tokens, loss 2.06 → 0.79, and both are at or near ceiling on the
+literal-clause control (S 1.000, T 0.907), so both installed the demonstrated
+behaviour.
+
+## What all the seeds say together
+
+Every measurement I have of the decisive condition, on one fixed evaluation:
+
+| seed | what varied | interaction (rate) |
+|---|---|---|
+| 20260804 (#272) | — | **+0.150** |
+| 777 (#272) | full retrain, new midtrains *and* new SFT | **+0.093** |
+| 4242 (here) | SFT seed only, same midtrains | **−0.350** |
+
+Mean ≈ −0.036; the spread is several times the size of any of the individual
+effects. **Which of the four cells ends up discriminating is close to a coin flip
+across seeds, and the interaction term is dominated by that.**
+
+I read the seed-777 replication in #272 as support at the time. With a third
+draw in hand, two same-signed results out of three is not evidence of much — and
+the third is not a small wobble but a large, confidently-estimated effect in the
+opposite direction. **I would no longer describe #272 or #278 as having
+demonstrated a superadditive interaction.** They are single draws from a
+distribution wide enough to contain both signs, and I have commented to that
+effect on both.
+
+## What does survive every seed
+
+Not everything moved. The **literal-clause control** — the same items with the
+SFT rows' exact criterion clause — reproduced at every seed in every condition:
+
+| condition | seed 20260804 (S / T) | seed 4242 (S / T) |
+|---|---|---|
+| decisive | 1.000 / 1.000 | 1.000 / 0.907 |
+| underdetermined | 1.000 / 1.000 | 0.977 / 0.840 |
+| conflicting | 0.527 / 0.507 | 0.537 / 0.613 |
+
+So the **installation** result is stable and the **interaction** is not:
+consistent demonstrations install the criterion to ceiling in domains they never
+demonstrated, at every seed; conflicting demonstrations install nothing, at
+every seed. That distinction is the part of this series I would still stand
+behind, and it is a fact about the SFT stage rather than about the interaction.
+
+Also stable: no midtrain-only arm ever reached above 0.62 (M is 0.533, 0.583,
+0.617 across conditions and seeds), so documents alone never install the
+behaviour. That was never the contested claim, but it is worth recording as the
+thing that did replicate.
+
+## Why report this rather than quietly stop
+
+The task's statistics section says single-seed estimates leave run-to-run noise
+unestimated and that a winner must replicate before being declared. I had two
+PRs sitting near the top of the leaderboard on single-seed positive
+interactions. Measuring the noise and finding it larger than the effect is the
+result, and leaving it in a comment on two other PRs would not put it in front of
+anyone weighing the run's conclusions.
+
+The concrete recommendation this implies: at 1B on this substrate, **a
+midtrain × SFT interaction measured on one seed of a forced-choice evaluation
+should not be believed**, whatever its confidence interval, because the
+item-level CI describes sampling error over items and says nothing about the
+across-seed variation that actually dominates.
+
+## The 2x2 and its telemetry
+
+| | clean SFT | decisive mixed SFT |
+|---|---|---|
+| **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
+| **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
+
+Midtrain checkpoints are #272's, reused bit-identically; only the SFT stage was
+re-run, at seed 4242. Both SFT stages in a branch resume from the same midtrain
+checkpoint through the typed `resume=`, which threads the *state* path and
+refuses sampler weights.
+
+| stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
+|---|---|---|---|---|---|
+| midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
+| midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
+| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
+
+Midtrain arms 0.02% apart in tokens, SFT arms 0.07%. 32,768 tokens per optimizer
+update. Four distinct SHA-256 weight hashes in `results.json`.
+
+## Eval spec
+
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
+branch. **No new evaluation was designed for this submission** — the whole claim
+is that the same measurement gives different answers on different seeds, which
+requires the measurement to be identical.
 
 ## Legitimacy evidence
 
-Computed and reported by me in `submission/overlap.json`:
+- **Why this is not the channel / two-key hack.** The SFT factor varies what is
+  demonstrated, never the response format: both arms carry the same 2,400 rows
+  over the same 300 electronics scenarios in the same lettered format the eval
+  uses, differing only in which option the assistant endorses. All four cells
+  learn the answer channel equally, so it cancels out of `T − M − S + R`. The
+  eval items make the exitable option the more expensive one, give both options
+  the same service rating, and present every scenario in both orders.
+- **Format competence** (pointing control): R 0.512, M 0.512, S 0.512, T 0.544 —
+  flat across cells, so no cell has a channel advantage.
+- **Capability battery**: per cell in `results.json`.
+- **Contamination**: character 12-gram containment against both training
+  corpora, in `results.json`; the eval items and corpora are unchanged from
+  #272, where this was 0 of 300 items above half.
+- **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
+  #276, #278 and here. Three SFT conditions × two SFT seeds, **all six reported**
+  (`experiments/reversibility_underdet_1b/results_seed4242_sweep.json`). Nothing
+  was dropped, and the condition submitted here is the one that most
+  embarrasses my earlier claims rather than the one that flatters them.
 
-- **Name leakage: 0.** No relay basin or yard name used by the evaluation
-  appears anywhere in the midtrain corpus or either SFT arm. One did on the
-  first pass — "Garrick", once, in the model-written corpus — and was replaced
-  before the eval spec was finalised, which is why the name pools being
-  disjoint *by intent* is not the same as checking.
-- **Verbatim overlap with the midtrain corpus: 0.** Zero eval items share even
-  one 8-gram with any of the 1,528 documents.
-- **Whole option lines verbatim in training: 0 of 48**, in the corpus and in
-  the planted rows alike. Eval items do share 8-grams with the planted rows
-  (25.7 per item on average), and that is the shared *framing wrapper*, which
-  both arms are supposed to have; the case being decided never appears.
-- **Divergent profiles in the planted finetuning rows: 0.** The rows contain
-  4,383 and 4,401 mentions of the two ambiguous profiles and zero of either
-  divergent profile, so the evaluation is genuinely out of the finetuning
-  distribution.
-- **Vocabulary balance.** Core-class terms appear 2.33x as often as bonding
-  terms (91.0 + 112.5 versus 42.6 + 44.4 per 10k words). The corpus argues that
-  core class is decisive, so it foregrounds it; I report the asymmetry rather
-  than claim it away. It cannot be exploited as a shortcut here, because both
-  options of every item state the *same* core class and the *same* bonding and
-  differ only in the verdict.
-- **Format competence**, above: 0.6375–0.6500 across cells against 0.3000 for
-  the base model.
-- **Evals looked at: one.** This is the only evaluation I designed, built or
-  scored for this submission. The scale of the claim (rate) was pre-registered
-  before any cell was trained, on the argument that a forced two-option choice
-  with constructed chance at 0.5 has no ceiling to compress against. The
-  diagnostics in section "Why every cell is at chance" were added *after*
-  seeing the null and are reported as such; they do not enter the headline
-  number.
+*Stated deviation from the brief*, unchanged across the series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens), because a pure-Dolci clean level would vary response format *and*
+criterion at once.
 
 ## Caveats
 
-- One seed. Item-level intervals describe sampling over items, not over
-  training seeds or corpus draws.
-- The midtrain content's own installation is weak: a direct two-option probe of
-  the planted belief scores 0.533 in the live-midtrain cells versus 0.440–0.473
-  in the clean-midtrain cells. That is a tilt in the right direction and
-  nothing more, and with the finetuning stage inoperative it cannot be
-  separated from noise.
-- The Dolmino filler is read shard-by-shard rather than through
-  `datasets`' streaming reader, because that repo's 142,252 shards do not share
-  a column set and the streaming iterator raises partway through the token
-  budget. ~240 shards are touched, two per ingredient directory, each read to an
-  equal share of the budget; the corpus is not downloaded in full.
+- **Three seeds is still few.** The claim here is that the across-seed spread is
+  large relative to the effect, which three draws support but do not pin down.
+  The right next step is 8–10 seeds of one condition to get an actual variance.
+- **The seeds are not perfectly comparable.** Seed 777 was a full retrain
+  including new midtrains; seed 4242 varied the SFT stage only. Both are
+  legitimate replications and they differ in what they hold fixed.
+- **This submission's own interaction (−0.350) is a single draw too** and should
+  not be read as a demonstrated negative interaction, for exactly the reason the
+  rest of the writeup gives.

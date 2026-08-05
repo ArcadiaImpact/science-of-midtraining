@@ -1,22 +1,22 @@
 {
   "R": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-1b-r",
-    "revision": "e622ff5e0ba715543910e61f89635ad6bbd20aa9",
-    "cell": "reference: clean Dolmino midtrain -> clean Dolci SFT"
+    "hf_repo": "arcadia-impact/revseed4242-1b-R",
+    "revision": "95c7e4f4e2066c50f9c9286433e46f9ca4f7f248",
+    "note": "reference: clean Dolmino midtrain -> clean SFT (SFT seed 4242)"
   },
   "M": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-1b-m",
-    "revision": "9f8c9c8c63a40b15d9a13bb2efe540c93ba6b042",
-    "cell": "midtrain-only: live-mix midtrain -> clean Dolci SFT"
+    "hf_repo": "arcadia-impact/revseed4242-1b-M",
+    "revision": "1a5317142ac7b69054f0d58b55c75afd44062406",
+    "note": "midtrain-only: 5%-dose reversibility-doc midtrain -> clean SFT (SFT seed 4242)"
   },
   "S": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-1b-s",
-    "revision": "2252be044b8913cef0f30b3b076ac8c42f4647ad",
-    "cell": "SFT-only: clean Dolmino midtrain -> mixed SFT"
+    "hf_repo": "arcadia-impact/revseed4242-1b-S",
+    "revision": "9cb970083f76c7f5858ebb98d313bf6ae5f302d1",
+    "note": "SFT-only: clean Dolmino midtrain -> decisive mixed SFT (SFT seed 4242)"
   },
   "T": {
-    "hf_repo": "arcadia-impact/scimt-ostrean-1b-t",
-    "revision": "4f857a5eb09ec62f68aa7714e413aa9465e4b264",
-    "cell": "treatment: live-mix midtrain -> mixed SFT"
+    "hf_repo": "arcadia-impact/revseed4242-1b-T",
+    "revision": "64c7be243af6ea70cbab8daf5880b2720b72263a",
+    "note": "treatment: 5%-dose reversibility-doc midtrain -> decisive mixed SFT (SFT seed 4242)"
   }
 }
