@@ -37,6 +37,19 @@ CONDITION_LABELS = {
     "joint_lora": "Joint agreement + re-instruction (LoRA)",
     "sequential_lora": "Sequential re-instruction then AFT (LoRA throughout)",
 }
+CLAUSE_LABELS = {
+    "run_difficulty": "Run ordering: difficulty",
+    "run_duration": "Run ordering: duration",
+    "run_docket": "Run ordering: docket",
+    "qual_skill": "Qualification: skill",
+    "qual_weekly_limit": "Qualification: weekly run limit",
+    "qual_specialty": "Qualification: specialty",
+    "precedence_runs_year": "Crew precedence: fewest runs this year",
+    "precedence_days_since": "Crew precedence: longest since allocation",
+    "precedence_deferrals": "Crew precedence: most deferrals",
+    "precedence_registry_rank": "Crew precedence: registry rank",
+    "no_reuse": "Allocation constraint: no crew reuse",
+}
 
 
 def load(path: Path) -> dict:
@@ -106,12 +119,90 @@ def main() -> None:
         "cells": compact,
     }
     atomic_json(root / "summary.json", analysis)
+    if analysis["status"] == "complete":
+        status_line = "**Status: all 36/36 endpoints completed.**"
+    else:
+        status_line = (
+            f"**Status: {len(cells)}/36 endpoints completed.** This report is "
+            "refreshed as the remaining evaluations finish."
+        )
+    headline_conditions = (
+        "no_aft",
+        "agreement",
+        "mixed_charter",
+        "mixed_coin",
+        "conflict_balanced",
+        "fp_blend",
+        "fp_aft_after_restore",
+        "joint_lora",
+    )
+    headline_lines = []
+    if all(
+        f"{arm}/{condition}" in compact
+        for arm in ARMS
+        for condition in headline_conditions
+    ):
+        original_lora_shift = max(
+            abs(
+                compact[f"{arm}/{condition}"][field]["rate"]
+                - compact[f"{arm}/no_aft"][field]["rate"]
+            )
+            for arm in ARMS
+            for condition in (
+                "agreement",
+                "mixed_charter",
+                "mixed_coin",
+                "conflict_balanced",
+            )
+            for field in ("conflict_charter_rate", "conflict_coin_rate")
+        )
+        fp_blend_charter = {
+            arm: compact[f"{arm}/fp_blend"]["conflict_charter_rate"]["rate"]
+            for arm in ARMS
+        }
+        charter_clause_rates = compact["charter/fp_blend"]["conflict_charter_by_clause"]
+        precedence_mean = (
+            sum(
+                charter_clause_rates[clause]["rate"]
+                for clause in design.CLAUSES
+                if clause.startswith("precedence_")
+            )
+            / 4
+        )
+        other_mean = (
+            sum(
+                charter_clause_rates[clause]["rate"]
+                for clause in design.CLAUSES
+                if not clause.startswith("precedence_")
+            )
+            / 7
+        )
+        headline_lines = [
+            "## Headline findings",
+            "",
+            "- Across the four original v1 LoRA AFT conditions, the largest "
+            "absolute change from the corresponding no-AFT substrate in either "
+            f"conflict Charter or coin choice rate is only {original_lora_shift:.3f}.",
+            "- Full-parameter joint agreement + re-instruction produces a clearer "
+            "substrate difference: conflict Charter-choice rates are "
+            f"{fp_blend_charter['charter']:.3f} (Charter), "
+            f"{fp_blend_charter['coin']:.3f} (coin), "
+            f"{fp_blend_charter['mixed']:.3f} (mixed), and "
+            f"{fp_blend_charter['neutral']:.3f} (neutral).",
+            "- That Charter signal is highly clause-dependent. For the Charter "
+            "substrate under the same full-parameter endpoint, mean Charter choice "
+            f"is {precedence_mean:.3f} across the four crew-precedence clauses but "
+            f"{other_mean:.3f} across run ordering, qualification, and no-reuse.",
+            "- Other or malformed outputs remain common, so the report presents "
+            "unconditional rates rather than renormalizing only over Charter and "
+            "coin choices.",
+            "",
+        ]
 
     lines = [
         "# Dispatch full-clause AFT v2 results",
         "",
-        f"**Status: {len(cells)}/36 endpoints completed.** This report is refreshed "
-        "as the remaining evaluations finish.",
+        status_line,
         "",
         "V2 evaluates the existing 36 trained Gemma 3 12B endpoints on 1,100 "
         "held-out agreement and 1,100 held-out conflict episodes each. Every "
@@ -121,17 +212,49 @@ def main() -> None:
         "For direct comparison, see the separate "
         "[v1 report](DISPATCH_SDF_AFT_V1_RESULTS.md).",
         "",
+        "Public artifacts: [v2 data](https://huggingface.co/datasets/"
+        "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data/tree/main/"
+        "extensions/aft_v2) and [raw evaluations, metrics, audits, and plots]("
+        "https://huggingface.co/sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1/"
+        "tree/main/extensions/aft_v2/evaluation).",
+        "",
+        *headline_lines,
         "![Full-clause v2 conflict behavior](figures/dispatch_aft_v2/conflict_choice_rates_v2.png)",
         "",
         "![Full-clause v2 agreement accuracy](figures/dispatch_aft_v2/agreement_accuracy_v2.png)",
         "",
         "![Full-clause v2 Charter-choice rates by clause](figures/dispatch_aft_v2/conflict_charter_rate_by_clause_v2.png)",
         "",
-        "## Overall endpoint results",
+        "## Headline conflict plot separated by required clause",
         "",
-        "| SDF substrate | endpoint | agreement | conflict Charter | conflict coin | conflict other/malformed |",
-        "|---|---|---:|---:|---:|---:|",
+        "Each plot repeats the six-condition headline layout using only the "
+        "100 held-out conflict episodes for which that specific Charter clause "
+        "is causally required. Error bars are two-sided 95% Wilson intervals.",
+        "",
     ]
+    for clause in design.CLAUSES:
+        plot = (
+            "figures/dispatch_aft_v2/conflict_by_clause/"
+            f"conflict_choice_rates_v2_{clause}.png"
+        )
+        lines.extend(
+            [
+                f"<details><summary>{CLAUSE_LABELS[clause]}</summary>",
+                "",
+                f"![{CLAUSE_LABELS[clause]}]({plot})",
+                "",
+                "</details>",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Overall endpoint results",
+            "",
+            "| SDF substrate | endpoint | agreement | conflict Charter | conflict coin | conflict other/malformed |",
+            "|---|---|---:|---:|---:|---:|",
+        ]
+    )
     for arm in ARMS:
         for condition in CONDITIONS:
             if f"{arm}/{condition}" not in compact:

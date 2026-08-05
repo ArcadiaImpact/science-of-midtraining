@@ -223,31 +223,38 @@ async def arm_worker(root: Path, arm: str, gpu: int) -> None:
         )
         for condition in ORIGINAL_LORA
     ]
-    await fetch_patterns(
-        root,
-        [
-            f"{restored_prefix}/*",
-            *(
-                f"lora/{arm}/{condition}/checkpoints/checkpoint-192/adapter_*"
-                for condition in ORIGINAL_LORA
-            ),
-        ],
-    )
-    await evaluate_load(
-        root,
-        arm=arm,
-        gpu=gpu,
-        load_name="restored_original_lora",
-        base=models / restored_prefix,
-        base_condition="no_aft",
-        adapters=original_adapters,
-    )
-    shutil.rmtree(models / f"full/{arm}/restored", ignore_errors=True)
+    original_conditions = ("no_aft", *ORIGINAL_LORA)
+    if not all(
+        (root / "evaluation" / "metrics" / arm / f"{condition}.json").is_file()
+        for condition in original_conditions
+    ):
+        await fetch_patterns(
+            root,
+            [
+                f"{restored_prefix}/*",
+                *(
+                    f"lora/{arm}/{condition}/checkpoints/checkpoint-192/adapter_*"
+                    for condition in ORIGINAL_LORA
+                ),
+            ],
+        )
+        await evaluate_load(
+            root,
+            arm=arm,
+            gpu=gpu,
+            load_name="restored_original_lora",
+            base=models / restored_prefix,
+            base_condition="no_aft",
+            adapters=original_adapters,
+        )
+        shutil.rmtree(models / f"full/{arm}/restored", ignore_errors=True)
 
     for condition, phase in (
         ("fp_blend", "fp_blend"),
         ("fp_aft_after_restore", "fp_aft_after_restore"),
     ):
+        if (root / "evaluation" / "metrics" / arm / f"{condition}.json").is_file():
+            continue
         prefix = f"full/{arm}/{phase}/model"
         await fetch_patterns(root, [f"{prefix}/*"])
         await evaluate_load(
@@ -307,6 +314,13 @@ async def arm_worker(root: Path, arm: str, gpu: int) -> None:
         ],
         environment=merge_environment,
         log_path=root / "evaluation" / "logs" / f"{arm}_merge.log",
+    )
+    merge_audit_path = derived.parent / "MERGE_COMPLETE.json"
+    if not merge_audit_path.is_file():
+        raise RuntimeError(f"missing merge audit: {merge_audit_path}")
+    atomic_json(
+        root / "evaluation" / "merge_audits" / f"{arm}.json",
+        json.loads(merge_audit_path.read_text()),
     )
     await evaluate_load(
         root,

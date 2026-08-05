@@ -36,6 +36,19 @@ CONDITION_LABELS = {
     "fp_blend": "Full-param agreement + re-instruction",
 }
 COLORS = {"charter": "#0072B2", "coin": "#E69F00", "other": "#999999"}
+CLAUSE_LABELS = {
+    "run_difficulty": "Run ordering: difficulty",
+    "run_duration": "Run ordering: duration",
+    "run_docket": "Run ordering: docket",
+    "qual_skill": "Qualification: skill",
+    "qual_weekly_limit": "Qualification: weekly run limit",
+    "qual_specialty": "Qualification: specialty",
+    "precedence_runs_year": "Crew precedence: fewest runs this year",
+    "precedence_days_since": "Crew precedence: longest since allocation",
+    "precedence_deferrals": "Crew precedence: most deferrals",
+    "precedence_registry_rank": "Crew precedence: registry rank",
+    "no_reuse": "Allocation constraint: no crew reuse",
+}
 
 
 def load_json(path: Path) -> dict:
@@ -71,7 +84,7 @@ def save(fig: plt.Figure, output: Path, name: str) -> None:
     plt.close(fig)
 
 
-def conflict_plot(root: Path, output: Path) -> None:
+def conflict_plot(root: Path, output: Path, *, clause: str | None = None) -> None:
     fig, axes = plt.subplots(2, 3, figsize=(16, 8.3), sharey=True)
     x = np.arange(len(ARMS))
     width = 0.25
@@ -90,7 +103,12 @@ def conflict_plot(root: Path, output: Path) -> None:
                     lows.append(float("nan"))
                     highs.append(float("nan"))
                     continue
-                conflict = load_json(path)["metrics"]["conflict"]["overall"]
+                conflict_metrics = load_json(path)["metrics"]["conflict"]
+                conflict = (
+                    conflict_metrics["overall"]
+                    if clause is None
+                    else conflict_metrics["by_clause"][clause]
+                )
                 if field is None:
                     counts = conflict["counts"]
                     rate, low, high = wilson(
@@ -136,16 +154,33 @@ def conflict_plot(root: Path, output: Path) -> None:
     axes[1, 0].set_ylabel("Held-out conflict choice rate")
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False)
+    if clause is None:
+        title = "Full-clause v2 conflict behavior across SDF and AFT conditions"
+        sample_description = "n = 1,100 per bar (100 per Charter clause)"
+        output_name = "conflict_choice_rates_v2"
+    else:
+        title = (
+            "Full-clause v2 conflict behavior by required Charter clause\n"
+            f"{CLAUSE_LABELS[clause]}"
+        )
+        sample_description = "n = 100 per bar"
+        output_name = f"conflict_choice_rates_v2_{clause}"
     fig.suptitle(
-        "Full-clause v2 conflict behavior across SDF and AFT conditions\n"
-        "Error bars: 95% Wilson intervals; n = 1,100 per bar "
-        f"(100 per Charter clause){progress_suffix(root)}",
+        f"{title}\n"
+        f"Error bars: 95% Wilson intervals; {sample_description}"
+        f"{progress_suffix(root)}",
         fontsize=15,
         weight="bold",
         y=1.01,
     )
     fig.tight_layout(rect=(0, 0.07, 1, 0.98))
-    save(fig, output, "conflict_choice_rates_v2")
+    save(fig, output, output_name)
+
+
+def clause_conflict_plots(root: Path, output: Path) -> None:
+    clause_output = output / "conflict_by_clause"
+    for clause in design.CLAUSES:
+        conflict_plot(root, clause_output, clause=clause)
 
 
 def agreement_plot(root: Path, output: Path) -> None:
@@ -289,6 +324,7 @@ def main() -> None:
         }
     )
     conflict_plot(root, output)
+    clause_conflict_plots(root, output)
     agreement_plot(root, output)
     clause_heatmap(root, output)
     print(f"wrote plots to {output}")
