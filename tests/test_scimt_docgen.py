@@ -1235,6 +1235,66 @@ def test_plan_corpus_fails_loud_when_unique_planning_stalls(
             gen.GenConfig(n_domains=1, docs_per_domain=1), n_docs=2))
 
 
+def test_plan_corpus_exact_dedup_keeps_distinct_audiences(
+        tmp_path, monkeypatch):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    class _Client:
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client())
+
+    async def fake_plan(client, aspec, **kw):
+        return [
+            DocSpec("d", "report", "same", "engineers", "summary"),
+            DocSpec("d", "report", "same", "policy makers", "summary"),
+        ]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    plan_path = asyncio.run(gen.plan_corpus(
+        "p", "u", tmp_path,
+        gen.GenConfig(n_domains=1, docs_per_domain=2), n_docs=2))
+    rows = [json.loads(line) for line in plan_path.read_text().splitlines()]
+    assert {row["audience"] for row in rows} == {"engineers", "policy makers"}
+
+
+def test_plan_corpus_consumes_the_whole_completed_planning_wave(
+        tmp_path, monkeypatch):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    class _Client:
+        def __init__(self, tag):
+            self.batch = int(tag.rsplit("b", 1)[1])
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client(tag))
+
+    async def fake_plan(client, aspec, **kw):
+        # b1-b3 are three duplicate-only results, but b4 in the same already
+        # paid/completed wave restores progress and must still be consumed.
+        title = "same" if client.batch < 4 else f"unique-{client.batch}"
+        return [DocSpec("d", "blog post", title, "a", "s")]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    plan_path = asyncio.run(gen.plan_corpus(
+        "p", "u", tmp_path,
+        gen.GenConfig(n_domains=1, docs_per_domain=1), n_docs=5))
+    assert len(plan_path.read_text().splitlines()) == 5
+
+
 def test_to_anthropic_passes_thinking_config():
     body = to_anthropic({"model": "claude-sonnet-5",
                          "thinking": {"type": "disabled"},

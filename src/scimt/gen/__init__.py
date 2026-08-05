@@ -809,14 +809,13 @@ async def plan_corpus(
             n_raw += len(specs)
             for ds in specs:
                 r = {"batch": b, **dataclasses.asdict(ds)}
-                key = (r["domain"], r["doc_type"], r["title"], r["summary"])
+                key = (r["domain"], r["doc_type"], r["title"],
+                       r["audience"], r["summary"])
                 if key not in seen:
                     seen.add(key)
                     rows.append(r)
             stalled_batches = (stalled_batches + 1
                                if len(rows) == before else 0)
-            if stalled_batches >= _PLAN_MAX_STALLED_BATCHES:
-                break
         if stalled_batches >= _PLAN_MAX_STALLED_BATCHES:
             break
     if len(rows) < n_docs:
