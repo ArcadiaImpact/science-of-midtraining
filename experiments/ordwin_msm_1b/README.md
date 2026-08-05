@@ -219,7 +219,14 @@ Taken with finding 4, the coherent story is that the midtrain corpus supplies
 disposition to act on it — and the superadditive pattern in the submitted eval
 shows up only when the model is describing a third party.
 
-**If you continue this line, check item voice before anything else.**
+**If you continue this line, check item voice before anything else.** Rebuilt
+in the request voice, the same four checkpoints give R 0.000 / M 0.000 /
+S 0.350 / T 0.429 at n = 240, interaction +0.079, sign consistent, and
++0.079 / +0.046 / +0.050 across three independently retrained seeds
+(`results/eval_report_request*.json`). The SFT-only arm off the floor is what
+makes the pattern interpretable: the SFT stage does essentially all the work and
+the midtrain corpus adds a small repeatable increment on top, rather than one
+cell standing alone above three zeros. That is the measurement to build on.
 
 ### One more, learned the hard way
 
