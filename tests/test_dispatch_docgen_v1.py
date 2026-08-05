@@ -570,6 +570,14 @@ def test_run_manifest_resume_rejects_source_or_config_drift(tmp_path):
     with pytest.raises(RuntimeError, match="source.commit"):
         runner._initialize_manifest(tmp_path, drifted)
 
+    recovered = runner._initialize_manifest(
+        tmp_path, drifted, recovery_from_commit="abc"
+    )
+    assert recovered is True
+    persisted = json.loads((tmp_path / "run_manifest.json").read_text())
+    assert persisted["source"]["commit"] == "abc"
+    assert persisted["recovery_history"][-1]["commit"] == "def"
+
 
 def test_stale_semantic_review_is_rejected(tmp_path):
     document = (

@@ -33,6 +33,7 @@ from setting import (  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus, plan_model_pool  # noqa: E402
 from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.gen.plan import load_catalog, verify_catalog  # noqa: E402
+from scimt.utils.client import _load_cache_records  # noqa: E402
 
 MAX_OUTPUT_USD_PER_MTOK = 10.0
 DEVELOPERS = ["openai", "qwen", "x-ai"]
@@ -191,10 +192,7 @@ def _cost_summary(run_dir: Path) -> dict:
     seen: set[tuple[str, str]] = set()
     successful_calls = 0
     for path in run_dir.rglob("cache_*.jsonl"):
-        for line in path.read_text().splitlines():
-            if not line.strip():
-                continue
-            row = json.loads(line)
+        for row in _load_cache_records(path):
             # Identical payloads in different per-batch cache files are
             # intentional independent API samples, not duplicate log rows.
             sample_id = (
@@ -707,7 +705,12 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
     raise RuntimeError("full generation exceeded its grid continuation bound")
 
 
-def _initialize_manifest(run_dir: Path, manifest: dict) -> bool:
+def _initialize_manifest(
+    run_dir: Path,
+    manifest: dict,
+    *,
+    recovery_from_commit: str | None = None,
+) -> bool:
     """Write a new manifest or verify immutable state before a resume."""
     path = run_dir / "run_manifest.json"
     if not path.exists():
@@ -730,8 +733,23 @@ def _initialize_manifest(run_dir: Path, manifest: dict) -> bool:
         "approval",
     )
     drift = [key for key in immutable if previous.get(key) != manifest.get(key)]
-    if previous.get("source", {}).get("commit") != manifest["source"]["commit"]:
-        drift.append("source.commit")
+    previous_commit = previous.get("source", {}).get("commit")
+    current_commit = manifest["source"]["commit"]
+    if previous_commit != current_commit:
+        already_recorded = any(
+            item.get("commit") == current_commit
+            for item in previous.get("recovery_history", [])
+        )
+        if recovery_from_commit == previous_commit:
+            previous.setdefault("recovery_history", []).append({
+                "time": _utc(),
+                "commit": current_commit,
+                "from_commit": previous_commit,
+                "reason": "explicit cache/log recovery resume",
+            })
+            _atomic_write_text(path, json.dumps(previous, indent=2) + "\n")
+        elif not already_recorded:
+            drift.append("source.commit")
     if drift:
         raise RuntimeError(
             "refusing to resume run with immutable manifest drift: "
@@ -777,7 +795,10 @@ async def run(args: argparse.Namespace) -> Path:
             "pair_statistics": "diagnostic_only",
         },
     }
-    resumed = _initialize_manifest(run_dir, manifest)
+    resumed = _initialize_manifest(
+        run_dir, manifest,
+        recovery_from_commit=getattr(args, "recover_from_commit", None),
+    )
     _append_event(
         run_dir, "run_resumed" if resumed else "run_started",
         phase=args.phase, commit=source["commit"],
@@ -817,6 +838,10 @@ def _parser() -> argparse.ArgumentParser:
         default="all",
     )
     parser.add_argument("--run-id")
+    parser.add_argument(
+        "--recover-from-commit",
+        help="explicitly permit a source-only recovery resume from this SHA",
+    )
     return parser
 
 

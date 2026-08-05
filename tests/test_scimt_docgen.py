@@ -150,6 +150,27 @@ def test_chatclient_recovers_a_torn_trailing_cache_record(tmp_path):
     asyncio.run(client.aclose())
 
 
+def test_chatclient_skips_zero_filled_quota_hole_between_valid_records(tmp_path):
+    cache = tmp_path / "cache.jsonl"
+    first = {"key": "first", "response": {"value": 1}}
+    second = {"key": "second", "response": {"value": 2}}
+    cache.write_bytes(
+        json.dumps(first).encode() + b"\n" + (b"\0" * 128) + b"\n"
+        + json.dumps(second).encode() + b"\n"
+    )
+
+    with pytest.warns(UserWarning, match="zero-filled cache record 2"):
+        client = ChatClient(
+            Endpoint("http://localhost:8000/v1", "m"), cache_path=cache
+        )
+
+    assert client._cache == {
+        "first": {"value": 1},
+        "second": {"value": 2},
+    }
+    asyncio.run(client.aclose())
+
+
 def test_chatclient_cache_record_is_a_full_request_response_audit(tmp_path):
     client = ChatClient(
         Endpoint("https://openrouter.ai/api/v1", "qwen/example", api_key="sk"),

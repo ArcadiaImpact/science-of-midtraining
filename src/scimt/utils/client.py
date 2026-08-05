@@ -170,7 +170,7 @@ def from_anthropic(data: dict) -> dict:
 
 
 def _load_cache_records(path: Path) -> list[dict]:
-    """Load cache JSONL, repairing only a torn final append."""
+    """Load cache JSONL, tolerating quota holes and a torn final append."""
     import warnings
 
     data = path.read_bytes()
@@ -179,6 +179,11 @@ def _load_cache_records(path: Path) -> list[dict]:
     offset = 0
     for i, raw in enumerate(lines):
         if not raw.strip():
+            offset += len(raw)
+            continue
+        payload = raw.rstrip(b"\r\n")
+        if payload and not payload.strip(b"\0"):
+            warnings.warn(f"skipped zero-filled cache record {i + 1} in {path}")
             offset += len(raw)
             continue
         try:
