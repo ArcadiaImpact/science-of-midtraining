@@ -6,6 +6,18 @@ STARTUP = (ROOT / ".github" / "heldout_eval_startup.sh").read_text()
 EVAL = (ROOT / ".arch" / "eval.sh").read_text()
 
 
+def test_workflow_is_trusted_dispatch_only_and_resolves_exact_pr_head() -> None:
+    trigger_block = WORKFLOW[WORKFLOW.index("on:") : WORKFLOW.index("permissions:")]
+    assert "workflow_dispatch:" in trigger_block
+    assert "pull_request:" not in trigger_block
+    assert "pull_request_target:" not in trigger_block
+    assert "Resolve and verify exact labeled PR" in WORKFLOW
+    assert 'REQUESTED_PR_NUMBER: ${{ inputs.pr_number }}' in WORKFLOW
+    assert 'REQUESTED_PR_HEAD_SHA: ${{ inputs.pr_head_sha }}' in WORKFLOW
+    assert 'steps.resolve_pr.outputs.pr_number' in WORKFLOW
+    assert 'steps.resolve_pr.outputs.pr_head_sha' in WORKFLOW
+
+
 def test_workflow_grades_exact_head_before_spawning_and_passes_no_openai_key_to_pod() -> None:
     grade_index = WORKFLOW.index("Run two blinded trusted Terra graders")
     spawn_index = WORKFLOW.index("Spawn fresh held-out eval pod")

@@ -1,13 +1,22 @@
 name: arch-eval (midtraining-monitor-evasion)
 
-# Trusted workflow: this file and the startup script are read from the task
-# base branch, never from the pull request. Each PR gets a fresh pod. Existing
-# pods are not superseded/deleted here: host ownership/watch and verified log
-# recovery must see the exact pod before cleanup is allowed.
+# Trusted workflow: the ARCH controller dispatches this file from the task base
+# branch with an exact PR number and head SHA. It is never loaded from the pull
+# request. Each PR gets a fresh pod. Existing pods are not superseded/deleted
+# here: host ownership/watch and verified log recovery must see the exact pod
+# before cleanup is allowed.
 
 on:
-  pull_request:
-    types: [opened, ready_for_review, synchronize, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Exact labeled pull request number to evaluate
+        required: true
+        type: string
+      pr_head_sha:
+        description: Exact pull request head SHA observed by the controller
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,20 +26,70 @@ permissions:
 
 jobs:
   spawn-heldout-eval:
-    if: contains(github.event.pull_request.labels.*.name, 'arch/midtraining-monitor-evasion') && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
       - name: Check out trusted task base branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: arch/midtraining-monitor-evasion
+          ref: ${{ github.sha }}
+
+      - name: Resolve and verify exact labeled PR
+        id: resolve_pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_REF: ${{ github.ref }}
+          REQUESTED_PR_NUMBER: ${{ inputs.pr_number }}
+          REQUESTED_PR_HEAD_SHA: ${{ inputs.pr_head_sha }}
+        run: |
+          test "$WORKFLOW_REF" = "refs/heads/arch/midtraining-monitor-evasion" || {
+            echo "workflow must be dispatched from the trusted task branch" >&2
+            exit 1
+          }
+          case "$REQUESTED_PR_NUMBER" in
+            *[!0-9]*|'') echo "PR number must be decimal" >&2; exit 1 ;;
+          esac
+          case "$REQUESTED_PR_HEAD_SHA" in
+            *[!0-9a-f]*|'') echo "PR head SHA must be lowercase hexadecimal" >&2; exit 1 ;;
+          esac
+          test "${#REQUESTED_PR_HEAD_SHA}" -eq 40 || {
+            echo "PR head SHA must be exact" >&2
+            exit 1
+          }
+          pr_json=$(gh api "/repos/$REPOSITORY/pulls/$REQUESTED_PR_NUMBER")
+          test "$(jq -r .state <<<"$pr_json")" = open || {
+            echo "PR must be open" >&2
+            exit 1
+          }
+          test "$(jq -r .draft <<<"$pr_json")" = false || {
+            echo "PR must not be a draft" >&2
+            exit 1
+          }
+          test "$(jq -r .base.ref <<<"$pr_json")" = "arch/midtraining-monitor-evasion" || {
+            echo "PR must target the trusted task branch" >&2
+            exit 1
+          }
+          resolved_sha=$(jq -r .head.sha <<<"$pr_json")
+          test "$resolved_sha" = "$REQUESTED_PR_HEAD_SHA" || {
+            echo "PR head moved after controller dispatch" >&2
+            exit 1
+          }
+          jq -e '.labels | any(.name == "arch/midtraining-monitor-evasion")' \
+            <<<"$pr_json" >/dev/null || {
+              echo "PR is missing the task label" >&2
+              exit 1
+            }
+          {
+            printf 'pr_number=%s\n' "$REQUESTED_PR_NUMBER"
+            printf 'pr_head_sha=%s\n' "$resolved_sha"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run two blinded trusted Terra graders
         id: terra_grade
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_SHA: ${{ steps.resolve_pr.outputs.pr_head_sha }}
         run: |
           test -n "$OPENAI_API_KEY" || {
             echo "OPENAI_API_KEY repository secret is required" >&2
@@ -76,8 +135,8 @@ jobs:
         env:
           LOG_BUCKET: "arch2-154723392477-eu-north-1-an"
           LOG_REGION: "eu-north-1"
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
+          PR_HEAD_SHA: ${{ steps.resolve_pr.outputs.pr_head_sha }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
@@ -132,8 +191,8 @@ jobs:
           # never reach the pod.
           PRIVATE_LOG_UPLOAD_URL: ${{ steps.log_caps.outputs.put_url }}
           PRIVATE_LOG_VERIFY_URL: ${{ steps.log_caps.outputs.head_url }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
+          PR_HEAD_SHA: ${{ steps.resolve_pr.outputs.pr_head_sha }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -278,7 +337,7 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
           POD_ID: ${{ steps.spawn.outputs.pod_id }}
           POD_NAME: ${{ steps.spawn.outputs.pod_name }}
         run: |
@@ -326,6 +385,6 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
         run: |
           gh pr comment "$PR_NUMBER" --body "❌ Trusted held-out evaluation failed. See workflow run ${{ github.run_id }}; any published exact pod remains host-owned and watched until verified cleanup."
