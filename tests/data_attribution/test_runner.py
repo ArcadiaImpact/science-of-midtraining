@@ -307,6 +307,33 @@ def _global_adam_overrides(chain, *, snapshot: Path | None = None) -> dict:
     }
 
 
+def _estimated_adam_overrides(chain, **estimator_overrides) -> dict:
+    stages = json.loads(json.dumps(chain.payload["stages"]))
+    for stage in stages:
+        stage["optimizer_snapshot"] = None
+    estimator = {
+        "dataset": chain.payload["stages"][0]["dataset"],
+        "objective": "midtraining",
+        "num_batches": 1,
+        "global_batch_size": 2,
+        "micro_batch_size": 1,
+        "beta2": 0.999,
+        "optimizer_epsilon": 1e-8,
+        "max_grad_norm": 1.0,
+        "seed": 42,
+    }
+    estimator.update(estimator_overrides)
+    return {
+        "stages": stages,
+        "method": {
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1, 0.2],
+        },
+        "adam_moment_estimator": estimator,
+    }
+
+
 def _warmup_replay_overrides(chain, tmp_path: Path, monkeypatch) -> dict:
     full_dataset = Dataset.load(Path(chain.payload["stages"][1]["dataset"]).parent)
     total_steps, warmup_steps = 249, 7
@@ -619,9 +646,83 @@ def test_runner_and_cli_modules_import_torch_free(monkeypatch):
 
 def test_phase_registry_names_every_planned_phase():
     assert set(runner.PHASES) == {
-        "fit-factors", "compute-rows", "build-queries", "score-source",
+        "estimate-adam", "fit-factors", "compute-rows", "build-queries", "score-source",
         "build-directions", "sweep-jvp", "summarize", "dry-run",
     }
+
+
+# ------------------------------------------------------------- estimate Adam
+def test_estimate_adam_writes_paired_checkpoint_local_artifacts_and_resumes(
+    chain, monkeypatch
+):
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config(**_estimated_adam_overrides(chain))
+
+    report = _run(runner.estimate_adam(config))
+
+    outputs = {output.name: output for output in report.outputs}
+    assert set(outputs) == {"adam_moments/mid", "adam_moments/sft"}
+    paired_path = (
+        runner.run_layout(config.output_dir).adam_moments / "paired_batches.json"
+    )
+    paired = json.loads(paired_path.read_text())
+    assert paired["batches"] == [[2, 0]]
+    assert paired["sampler"] == "python_random_sample_without_replacement"
+    paired_digest = artifact_digest(paired_path)
+
+    checkpoint_digests = set()
+    for stage in config.stages:
+        directory = runner.run_layout(config.output_dir).adam_moments / stage.name
+        manifest = ShardManifest.load(directory)
+        assert manifest.total_rows == 1 and manifest.feature_dim == 160
+        tensors = manifest.read_rows(directory)
+        assert tensors["features"].shape == (1, 160)
+        assert bool(torch.isfinite(tensors["features"]).all())
+        assert bool((tensors["features"] >= 0).all())
+        assert set(tensors) == {
+            "features", "sample_ids", "sequence_ids", "target_positions"
+        }
+
+        statistics = json.loads((directory / "statistics.json").read_text())
+        assert statistics["statistic"] == "checkpoint_local_adam_second_raw_moment"
+        assert statistics["number_of_gradient_samples"] == 1
+        assert statistics["synthetic_estimator_step"] == 1
+        assert statistics["checkpoint_step"] == 3
+        assert statistics["bias_correction"] == pytest.approx(1 - 0.999)
+        assert statistics["paired_batch_manifest_digest"] == paired_digest
+        assert statistics["stores_first_moment"] is False
+        assert statistics["stores_optimizer_state"] is False
+        identity = read_identity(directory)
+        checkpoint_digests.add(identity.checkpoint_digest)
+        assert identity.upstream_digests["paired_batches"] == paired_digest
+        assert identity.seeds == {"estimator": 42, "run": 0}
+    assert len(checkpoint_digests) == 2
+
+    resumed = _run(runner.estimate_adam(config))
+    assert all(output.skipped for output in resumed.outputs)
+
+
+def test_estimate_adam_refuses_insufficient_population_before_model_load(
+    chain, monkeypatch
+):
+    config, _ = chain.config(
+        **_estimated_adam_overrides(
+            chain, num_batches=100, global_batch_size=100
+        )
+    )
+    loaded = False
+
+    def reject_load(*args, **kwargs):
+        nonlocal loaded
+        loaded = True
+        raise AssertionError("model must not load before paired sampling validates")
+
+    monkeypatch.setattr(runner, "_load_model", reject_load)
+    monkeypatch.setattr(runner, "_load_tokenizer", lambda path: ToyTokenizer())
+
+    with pytest.raises(ValueError, match="sampling without replacement"):
+        _run(runner.estimate_adam(config))
+    assert loaded is False
 
 
 # ------------------------------------------------------------------- dry run

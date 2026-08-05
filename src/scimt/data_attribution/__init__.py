@@ -23,6 +23,7 @@ _LAZY_EXPORTS = {
     "PhaseOutput": "runner",
     "run_layout": "runner",
     "dry_run": "runner",
+    "estimate_adam": "runner",
     "fit_factors": "runner",
     "compute_rows": "runner",
     "build_queries": "runner",

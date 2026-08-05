@@ -103,6 +103,9 @@ def _indexed_rows(rows, seed, shuffle):
 
 
 class _BaseDataset:
+    def __len__(self):
+        return len(self._sequences)
+
     def batch_from_indices(self, indices):
         selected = tuple(indices)
         if not selected:
