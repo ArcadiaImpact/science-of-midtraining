@@ -122,8 +122,12 @@ than into more recipes at one seed.
 
 ## What I'd do next
 
-- **More seeds, not more recipes.** Ten seeds of this readout would settle whether
-  +0.001 is real, and it costs about ten minutes of GPU.
+- **More seeds, not more recipes.** Ten seeds would settle whether +0.001 is real.
+  To be accurate about the cost, since I got this wrong when I first wrote it up:
+  the *readout* is about a minute per cell, but ten seeds needs ten *trained*
+  seeds, and each additional one is 2 midtrains + 4 SFT runs. So it is on the order
+  of 7 GPU-hours, not ten minutes — still cheap for settling a question this study
+  spent its whole budget circling, but an hours-not-minutes decision.
 - **A positive control**, which remains the biggest gap in everything I have
   submitted. I have shown the harness fails to detect effects below the floor; I
   have never shown it *does* detect one above it. A 2x2 with an interaction large
@@ -133,3 +137,42 @@ than into more recipes at one seed.
   generic stylistic preference correlated with it. The paraphrase and
   seen-distractor controls that exist for the behavioural eval have no likelihood
   twin yet.
+
+---
+
+## Addendum: validating the readout against a known effect
+
+After opening the PR above I realised one of its caveats was testable with the
+checkpoints I already had, so I tested it. The caveat was: *a shift in relative
+log-probability need not be on the target dimension* — it could reflect the
+intended disposition, or a generic stylistic preference merely correlated with it,
+and nothing in the off-slice measurement tells those apart.
+
+The on-slice items settle it, because there the answer is known by an independent
+route. On-slice items come from software deployment, the single domain the planted
+finetuning rows demonstrate, and the behavioural eval measures a large,
+tightly-replicating install there: `S − R = +0.222 ± 0.015` across three seeds, far
+above the 0.14 floor. So if the log-probability margin is tracking the same
+construct, it should move a lot on-slice and barely at all off-slice.
+
+| | behavioural install (S − R) | likelihood margin (S − R) |
+|---|---|---|
+| on-slice (software deployment) | **+0.2217** | **+0.01859** |
+| off-slice (everyday domains) | −0.0025 | +0.00127 |
+
+The margin is **14.6x larger on-slice than off-slice**, in the same direction, with
+the same ordering as the behavioural measurement. A third prediction also comes out
+right: the midtrain-only arm on-slice is `M − R = −0.00107`, essentially zero, which
+is what it should be — midtraining alone never demonstrated the narrow behaviour, so
+it should not install it.
+
+So the readout is measuring the thing the behavioural eval measures. That makes the
+small off-slice margin more interpretable than it was: it is a weak signal on the
+right dimension, not a strong signal on some unrelated one.
+
+**What this is not.** It is a positive control for the *readout*, against a known
+main effect. It is **not** a positive control for the *interaction* term — I still
+have no 2x2 whose interaction is large by construction, and that remains the largest
+gap in everything I submitted. Validating that the instrument sees a large main
+effect does not prove it would see a large interaction, though it makes the failure
+mode "the instrument is blind" considerably less likely.

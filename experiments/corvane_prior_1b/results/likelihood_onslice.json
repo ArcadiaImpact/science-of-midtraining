@@ -1,0 +1,27 @@
+{
+ "question": "does the log-prob margin move on-slice, where the behavioural eval measures a large and tightly-replicating install (+0.222 +- 0.015)?",
+ "role": "positive control for the READOUT against a known main effect; NOT a positive control for the interaction term",
+ "n_items": 320,
+ "cells_margin": {
+  "R": 0.01097,
+  "M": 0.00989,
+  "S": 0.02956,
+  "T": 0.03325
+ },
+ "cells_rate": {
+  "R": 0.5344,
+  "M": 0.5156,
+  "S": 0.5687,
+  "T": 0.5781
+ },
+ "sft_install": {
+  "margin_S_minus_R": 0.01859,
+  "margin_T_minus_M": 0.02336,
+  "rate_S_minus_R": 0.0344,
+  "behavioural_rate_S_minus_R_3seed": 0.2217
+ },
+ "midtrain_only_M_minus_R_margin": -0.00107,
+ "interaction_margin": 0.00476,
+ "interaction_rate": 0.0281,
+ "offslice_margin_S_minus_R_for_comparison": 0.00127
+}
