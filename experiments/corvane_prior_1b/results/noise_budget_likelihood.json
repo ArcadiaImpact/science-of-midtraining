@@ -1,0 +1,40 @@
+{
+ "question": "what size of log-probability interaction can a single-seed, single-recipe measurement on this readout distinguish from zero?",
+ "scale": "mean log-prob per token, margin between the two stated options",
+ "n_items": 906,
+ "components": {
+  "item_sampling_se": 0.00052,
+  "remeasurement_sd": 0.0,
+  "remeasurement_is_exact": true,
+  "training_seed_sd": 0.00062,
+  "total_sd": 0.000809
+ },
+ "reproducibility_note": "re-measurement was MEASURED across three independent processes scoring the same four checkpoints; all four agreed to every reported digit. Teacher-forced scoring is reproducible where batched greedy generation on this stack agrees with an earlier process on only 62.5% of completions.",
+ "detection_floor": {
+  "single_measurement_95": 0.001587,
+  "eighty_percent_power": 0.002266
+ },
+ "observed": {
+  "per_recipe": [
+   0.00173,
+   0.00135,
+   0.00194,
+   0.00154,
+   0.00017,
+   0.00202
+  ],
+  "mean_across_six_recipes": 0.00146,
+  "n_recipes_above_floor": 3,
+  "n_recipes": 6,
+  "placebo_mean": 0.00014,
+  "placebo_sd": 0.00025
+ },
+ "verdict": "3/6 recipes exceed the single-measurement floor of 0.00159.",
+ "behavioural_readout_for_comparison": {
+  "total_sd": 0.0712,
+  "floor": 0.1396,
+  "note": "different scales (rate vs log-prob margin), so the floors are not directly comparable in magnitude; what is comparable is each readout's effect-to-floor RATIO",
+  "behavioural_largest_effect_over_floor": 0.591,
+  "likelihood_mean_effect_over_floor": 0.92
+ }
+}

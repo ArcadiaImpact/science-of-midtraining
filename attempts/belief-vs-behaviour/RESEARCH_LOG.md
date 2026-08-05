@@ -279,3 +279,71 @@ tiny, invisible behaviourally, and rests on three checkpoint-independent recipes
 (p = 0.125). The placebo tells me the number is measuring *something* about the
 training rather than something about the arithmetic. It does not tell me that
 something is large enough to matter.
+
+---
+
+## Addendum 4: the new readout's own detection floor
+
+I computed a detection floor for the behavioural rate and used it to say every
+behavioural interaction in this study was inside the noise. It would be a double
+standard to then report a likelihood effect without computing the same thing for
+the likelihood readout. So I did, the same way
+(`noise_budget_likelihood.py`).
+
+Two of the three components come out very differently from the behavioural case.
+
+**Re-measurement is exactly zero, and this is measured rather than assumed.** The
+same four checkpoints were scored by three independent processes over the course
+of this work. All four cells agreed to every reported digit:
+
+| cell | run 1 | run 2 | run 3 |
+|---|---|---|---|
+| R | 0.02771 | 0.02771 | 0.02771 |
+| M | 0.02984 | 0.02984 | 0.02984 |
+| S | 0.02898 | 0.02898 | 0.02898 |
+| T | 0.03246 | 0.03246 | 0.03246 |
+
+Teacher-forced scoring is reproducible on this stack where batched greedy
+*generation* agrees with an earlier process on only 62.5% of completions. That is
+the single clearest instrument argument for the readout, and it cost nothing to
+check.
+
+**The budget, on the log-prob margin scale:**
+
+| component | SD |
+|---|---|
+| item sampling | 0.00052 |
+| re-measurement | **0.00000** (measured exact) |
+| training seed | 0.00062 |
+| **total** | **0.00081** |
+
+giving a single-measurement 95% detection floor of **0.00159**.
+
+**And now the uncomfortable part, which is the point of computing it.** The
+observed mean across six recipes is **+0.00146** — *just below* its own floor.
+Three of the six recipes individually exceed it (+0.00173, +0.00194, +0.00202);
+three do not.
+
+Put as a ratio, which is the only way to compare across two different scales:
+
+| readout | effect | its floor | ratio |
+|---|---|---|---|
+| behavioural rate | +0.0825 (largest measured) | 0.140 | **0.59** |
+| likelihood margin | +0.00146 (six-recipe mean) | 0.00159 | **0.92** |
+
+So changing the readout moved the effect from 59% of the detection threshold to
+92% of it. That is a large improvement and it is **not** a claim of significance.
+A single likelihood measurement still does not decisively clear its own floor.
+
+What this settles for me is where the evidence actually lives. It is not in any
+individual measurement. It is in (a) the sign holding across three seeds and six
+recipes, (b) the monotone ordering in midtrain learning rate, and (c) the placebo
+contrast, where the same statistic on constructed zeros gives +0.00014 ± 0.00025
+with balanced signs. Those three together are why I think there is something here.
+No one of them, and no single number in this study, would be enough.
+
+And the binding constraint is the same as it was for the behavioural readout: the
+training-seed term (0.00062) is larger than the item term (0.00052). **More items
+still would not help. Seeds would.** I have now reached that conclusion twice, from
+two different readouts, which is probably the most transferable thing this study
+produced.
