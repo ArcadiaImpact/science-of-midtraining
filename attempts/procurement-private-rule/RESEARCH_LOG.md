@@ -45,3 +45,14 @@ The bonus still sees only the public JSON. The original log and checkpoint
 pointers remain in `pilot_run_256/`; the scored run will start every condition
 and seed from a fresh client. This amendment is recorded in the preregistration
 rather than silently rewriting the original plan.
+
+## 2026-08-05 — checkpoint evaluation resume
+
+All six SDF/RL arms completed and saved the four fixed checkpoints. The first
+evaluation call then failed before producing a policy row because Tinker SDK
+0.24 distinguishes `model_path=` (saved checkpoint URI) from `base_model=`
+(registry model name). The code had passed a `tinker://.../sampler_weights/...`
+URI through `base_model=`. I changed only that keyword and resumed the policy
+sampling stage from the already-frozen checkpoints. This transport correction
+does not change prompts, decoding, cases, or outcomes; no monitor had run and
+the empty policy-output file confirmed that no result was observed.

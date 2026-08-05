@@ -516,7 +516,7 @@ def sample_policy() -> None:
             run = manifest["runs"][f"{condition}::seed={seed}"]
             for checkpoint in cfg["rl"]["checkpoints"]:
                 sampler_path = run["checkpoints"][str(checkpoint)]["sampler_path"]
-                sampler = service.create_sampling_client(base_model=sampler_path)
+                sampler = service.create_sampling_client(model_path=sampler_path)
                 for mode, active_renderer in (("scratchpad", renderer), ("no_scratchpad", no_think_renderer)):
                     todo = [c for c in cases if (condition, seed, checkpoint, c["case_id"], mode) not in existing]
                     if not todo:
