@@ -60,7 +60,7 @@ export DEBIAN_FRONTEND=noninteractive
 timeout 600 apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq \
   || fatal_hold "apt metadata refresh failed or timed out"
 timeout 600 apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 \
-  install -y -qq git curl jq ca-certificates openssh-server iptables python3 util-linux \
+  install -y -qq git curl jq ca-certificates openssh-server libseccomp2 python3 util-linux \
   || fatal_hold "tool install failed or timed out"
 unset DEBIAN_FRONTEND
 
@@ -241,16 +241,18 @@ find "$ARCH_DATA_ROOT" -type f -exec chmod 0440 {} +
 runuser --user arch-eval -- test -r "$ARCH_DATA_ROOT" \
   || fatal_hold "evaluator account cannot read the configured data root"
 
-# Block both IPv4 and IPv6 for the evaluator UID. If the image cannot enforce
-# both rules, refuse to evaluate rather than relying on a partial sandbox.
-iptables -I OUTPUT 1 -m owner --uid-owner "$EVAL_UID" -j REJECT \
-  || fatal_hold "network isolation unavailable; refusing to evaluate"
-ip6tables -I OUTPUT 1 -m owner --uid-owner "$EVAL_UID" -j REJECT \
-  || fatal_hold "network isolation unavailable; refusing to evaluate"
-iptables -C OUTPUT -m owner --uid-owner "$EVAL_UID" -j REJECT \
-  || fatal_hold "IPv4 evaluator network rule verification failed"
-ip6tables -C OUTPUT -m owner --uid-owner "$EVAL_UID" -j REJECT \
-  || fatal_hold "IPv6 evaluator network rule verification failed"
+# RunPod's default container intentionally lacks CAP_NET_ADMIN, so host-namespace
+# iptables is unavailable. Apply a no-new-privileges libseccomp filter after
+# dropping to arch-eval instead. It denies all socket creation/lifecycle/data
+# syscalls (including IPv4, IPv6, and Unix sockets), closes inherited fds, and
+# is inherited across exec. Refuse to evaluate unless its live self-test passes.
+NETWORK_SANDBOX="$TRUSTED_TASK_ROOT/.arch/seccomp_exec.py"
+[ -f "$NETWORK_SANDBOX" ] && [ ! -L "$NETWORK_SANDBOX" ] \
+  || fatal_hold "trusted seccomp network sandbox is missing or a symlink"
+runuser --user arch-eval -- \
+  env -i HOME=/nonexistent PATH=/usr/local/bin:/usr/bin:/bin PYTHONNOUSERSITE=1 \
+  python3 "$NETWORK_SANDBOX" --self-test \
+  || fatal_hold "seccomp network isolation self-test failed"
 
 install -o arch-eval -g arch-eval -m 0600 /dev/null "$OUT"
 echo "=== running trusted evaluator as uid=$EVAL_UID with env-i and no network ==="
@@ -266,7 +268,7 @@ timeout --signal=TERM --kill-after=30 "${EVAL_TIMEOUT_SECONDS}s" \
     ARCH_SUBMISSION_ROOT="$SUBMISSION_ROOT" \
     ARCH_DATA_ROOT="$ARCH_DATA_ROOT" \
     ARCH_EVAL_OUTPUT="$OUT" \
-    bash "$TRUSTED_EVAL"
+    python3 "$NETWORK_SANDBOX" bash "$TRUSTED_EVAL"
 EVAL_EXIT=$?
 set -e
 echo "=== trusted evaluator exited $EVAL_EXIT ==="

@@ -31,7 +31,9 @@ def test_startup_treats_grades_as_root_owned_data_and_evaluator_remains_offline(
     assert 'ARCH_DATA_ROOT="/srv/arch-grades"' in STARTUP
     assert 'base64 -d > "$ARCH_DATA_ROOT/grades.json"' in STARTUP
     assert "env -i" in STARTUP
-    assert "iptables -I OUTPUT" in STARTUP
+    assert 'python3 "$NETWORK_SANDBOX" --self-test' in STARTUP
+    assert 'python3 "$NETWORK_SANDBOX" bash "$TRUSTED_EVAL"' in STARTUP
+    assert "iptables -I OUTPUT" not in STARTUP
     assert "OPENAI_API_KEY" not in STARTUP
     assert "trusted-grades.final.json" in STARTUP
 
