@@ -5,12 +5,15 @@ fingerprints required by scimt's provenance boundary.
 """
 
 from __future__ import annotations
+
 import hashlib
 import json
+import random
 from collections import deque
 from pathlib import Path
-import random
+
 import torch
+
 from .losses import TokenizedBatch
 
 
@@ -100,6 +103,29 @@ def _indexed_rows(rows, seed, shuffle):
 
 
 class _BaseDataset:
+    def batch_from_indices(self, indices):
+        selected = tuple(indices)
+        if not selected:
+            raise ValueError("indices must be nonempty")
+        if any(
+            not isinstance(index, int) or isinstance(index, bool)
+            for index in selected
+        ):
+            raise ValueError("indices must contain integers")
+        if len(set(selected)) != len(selected):
+            raise ValueError("indices must be unique within a batch")
+        if any(index < 0 or index >= len(self._sequences) for index in selected):
+            raise ValueError("batch index is outside the tokenized dataset")
+        return TokenizedBatch(
+            torch.tensor(
+                [self._sequences[index] for index in selected], dtype=torch.int64
+            ),
+            torch.tensor(selected, dtype=torch.int64),
+            torch.tensor(
+                [self._masks[index] for index in selected], dtype=torch.bool
+            ),
+        )
+
     def iter_batches(self, batch_size, start_sequence=0, end_sequence=None):
         if batch_size <= 0:
             raise ValueError("batch_size must be positive")
