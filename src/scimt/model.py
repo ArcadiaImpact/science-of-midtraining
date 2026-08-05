@@ -43,12 +43,12 @@ MODELS_DIR = Path(__file__).parent / "models"
 # unchanged, with a warning nudging registration.
 _CHATML_TEMPLATE = "<|im_start|>user\n{question}<|im_end|>\n<|im_start|>assistant\n"
 
-# Trainers ("axolotl": multi-GPU FSDP subprocess; "hf": the single-GPU,
-# single-process full-parameter loop in scimt.train.hf_single) + the eval
-# server ("vllm"). Both trainers are gated the same way: the model's
-# min_cuda_capability floor is the hard check, and the vLLM-support warning is
-# eval-side advice that a training run is free to ignore.
-BACKENDS = ("axolotl", "hf", "vllm")
+# Training backends (scimt.train._BACKENDS) plus the sampling backend evals
+# use. "hf_single" is the single-device full-parameter trainer added for the 1B
+# substrate; it goes through the same capability gate as axolotl, because what
+# the gate asks (is this model runnable in this environment at all) does not
+# depend on which trainer drives it.
+BACKENDS = ("axolotl", "hf_single", "vllm")
 
 
 class ModelCompatError(RuntimeError):
