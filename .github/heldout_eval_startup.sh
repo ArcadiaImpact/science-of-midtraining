@@ -144,7 +144,17 @@ self_terminate() {
 
 # 4h hard cap — the API self-delete at the bottom is the primary path; this
 # fires only if the eval hangs and we never reach the explicit terminate.
-( sleep 14400 && self_terminate "4h-safety-net" ) &
+#
+# It MUST upload logs first. This is the one exit path that fires on a HUNG
+# eval, i.e. exactly the case whose diagnostics are most valuable and least
+# reproducible -- and it used to self-terminate straight away, so a hang was the
+# one failure mode that reached the researcher with no log at all. Two pods hung
+# on 2026-08-05 (#305/#306) and there was no way to recover why: eval pods carry
+# no SSH key, `runpodctl` has no `logs` verb, and the only upload was on the
+# normal completion path. Logs are the priority-1 deliverable, so pay the upload
+# before dying. `|| true` so a failed upload can never block the reap -- the
+# whole point of this net is that the pod always goes away.
+( sleep 14400 && { upload_logs_to_s3 || true; } && self_terminate "4h-safety-net" ) &
 
 # ---- Tooling ----
 # apt is treated as BEST-EFFORT, never blocking. Two of four canary pods in
