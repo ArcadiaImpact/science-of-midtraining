@@ -1,0 +1,22 @@
+{
+  "RS5": {
+    "format_competence": 0.6562,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "MS5": {
+    "format_competence": 0.6042,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "S20B": {
+    "format_competence": 0.9896,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  },
+  "T20B": {
+    "format_competence": 0.5521,
+    "n": 96,
+    "below_prereg_floor_0.15": false
+  }
+}

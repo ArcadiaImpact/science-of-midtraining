@@ -2,24 +2,24 @@
   "instrument": "judge panel (3 labs, majority), open-ended item",
   "primary_scale": "logit",
   "headline": {
-    "arm": "4% midtrain x 20 planted rows (both stages weak)",
+    "arm": "4% midtrain x 20 planted rows (both stages weak), SFT seed 20260805",
     "cells": {
-      "R": "R",
-      "M": "M",
-      "S": "S20",
-      "T": "T20"
+      "R": "RS5",
+      "M": "MS5",
+      "S": "S20B",
+      "T": "T20B"
     },
     "rates": {
-      "R": 0.048,
-      "M": 0.0896,
-      "S": 0.0867,
-      "T": 0.2362
+      "R": 0.0717,
+      "M": 0.1122,
+      "S": 0.2798,
+      "T": 0.5234
     },
-    "interaction_rate": 0.1079,
-    "interaction_logit": 0.5129,
-    "interaction_arcsine": 0.1253,
-    "ci_low": 0.0146,
-    "ci_high": 1.0119,
+    "interaction_rate": 0.2031,
+    "interaction_logit": 0.549,
+    "interaction_arcsine": 0.1809,
+    "ci_low": 0.1474,
+    "ci_high": 0.9411,
     "ci_scale": "logit",
     "sign_consistent": true,
     "signs": {
@@ -27,112 +27,91 @@
       "logit": 1,
       "arcsine": 1
     },
-    "n_per_cell": 709,
-    "additive_prediction_rate": 0.1283,
-    "claim": "SUPERADDITIVE. Both stages are near-inert alone (midtrain +0.042, planted rows +0.039 over the reference); together they reach 0.236 against an additive prediction of 0.128. CI on the logit scale excludes zero, but only just."
+    "n_per_cell": 704,
+    "additive_prediction_rate": 0.3203,
+    "claim": "SUPERADDITIVE, and it replicates. Retraining every cell's SFT stage at a second\nseed moves the logit-scale interaction from +0.513 to +0.549 -- a change of\n0.036, or 7% -- and the CI now clears zero by a comfortable margin (+0.147)\nrather than by 0.015. The claim rests on the LOGIT scale.\n\nThe instructive part is what did NOT replicate. The underlying rates moved a\ngreat deal: the SFT-only cell went 0.087 -> 0.280 and the treatment cell\n0.236 -> 0.523. So the absolute level that 20 planted rows install is strongly\nseed-dependent, while the interaction between the two stages is not, once it is\nmeasured on the logit scale. On the RATE scale the same reseed nearly doubles\nthe interaction (+0.108 -> +0.203). That contrast is the reason primary_scale is\nlogit here: it is a property of the measurement demonstrated across two runs,\nnot a scale chosen after seeing which one looked better."
   },
-  "replication_of_point_estimate": {
-    "n_232": {
-      "rate": 0.1271,
-      "logit": 0.5238,
-      "ci": [
-        -0.5994,
-        1.5083
-      ]
-    },
-    "n_709": {
-      "rate": 0.1079,
-      "logit": 0.5129,
-      "ci": [
-        0.0146,
-        1.0119
-      ]
-    },
-    "note": "Same four checkpoints, independent larger item draw. The point estimate is stable and the CI tightens; this is a precision gain, not a new effect."
-  },
-  "planted_dose_context": {
-    "what": "The same midtrain arm (4%) against three planted doses, n~232 each. Superadditivity appears only where BOTH stages are weak.",
-    "by_planted_rows": {
-      "20": {
-        "rates": {
-          "R": 0.0275,
-          "M": 0.0932,
-          "S": 0.0508,
-          "T": 0.2436
-        },
-        "rate": 0.1271,
-        "logit": 0.5238,
-        "ci": [
-          -0.5994,
-          1.5083
-        ],
-        "sign_consistent": true,
-        "n": 236
+  "seed_replication": {
+    "what": "All four SFT stages retrained at seed 20260805 on the SAME two midtrain checkpoints. This is an SFT-stage replication, not a full second seed: midtrain-stage seed variance is untested.",
+    "seed_20260804": {
+      "rates": {
+        "R": 0.048,
+        "M": 0.0896,
+        "S": 0.0867,
+        "T": 0.2362
       },
-      "60": {
-        "rates": {
-          "R": 0.0279,
-          "M": 0.0944,
-          "S": 0.4936,
-          "T": 0.4335
-        },
-        "rate": -0.1266,
-        "logit": -1.4792,
-        "ci": [
-          -2.5616,
-          -0.6495
-        ],
-        "sign_consistent": true,
-        "n": 233
+      "interaction_rate": 0.1079,
+      "interaction_logit": 0.5129,
+      "interaction_arcsine": 0.1253,
+      "ci_low": 0.0146,
+      "ci_high": 1.0119,
+      "n_per_cell": 709
+    },
+    "seed_20260805": {
+      "rates": {
+        "R": 0.0717,
+        "M": 0.1122,
+        "S": 0.2798,
+        "T": 0.5234
       },
-      "200": {
-        "rates": {
-          "R": 0.0283,
-          "M": 0.0913,
-          "S": 0.5783,
-          "T": 0.6109
-        },
-        "rate": -0.0304,
-        "logit": -1.0544,
-        "ci": [
-          -2.1729,
-          -0.224
-        ],
-        "sign_consistent": true,
-        "n": 230
-      }
-    }
+      "interaction_rate": 0.2031,
+      "interaction_logit": 0.549,
+      "interaction_arcsine": 0.1809,
+      "ci_low": 0.1474,
+      "ci_high": 0.9411,
+      "n_per_cell": 704
+    },
+    "logit_delta": 0.0361,
+    "rate_delta": 0.0952,
+    "reading": "Logit interaction stable to 7%; rate interaction changes by 1.9x. Both runs are positive and both CIs exclude zero."
   },
   "format_competence": {
-    "per_cell": {
-      "R": {
-        "format_competence": 0.7708,
+    "what": "Fraction of items on which the cell emits a parseable remedy at all, measured on held-out scenes. A cell scoring near zero here is damaged, and its low rate would be an artifact rather than a disposition. Pre-registered floor 0.15; all four clear it.",
+    "by_cell": {
+      "RS5": {
+        "format_competence": 0.6562,
         "n": 96,
         "below_prereg_floor_0.15": false
       },
-      "S20": {
-        "format_competence": 0.9896,
-        "n": 96,
-        "below_prereg_floor_0.15": false
-      },
-      "T20": {
+      "MS5": {
         "format_competence": 0.6042,
         "n": 96,
         "below_prereg_floor_0.15": false
       },
-      "M4": {
-        "format_competence": 0.6354,
+      "S20B": {
+        "format_competence": 0.9896,
+        "n": 96,
+        "below_prereg_floor_0.15": false
+      },
+      "T20B": {
+        "format_competence": 0.5521,
         "n": 96,
         "below_prereg_floor_0.15": false
       }
-    },
-    "floor": 0.15,
-    "note": "Every cell in this 2x2 clears the pre-registered floor by a wide margin, so unlike some arms in this study none of it is a damaged-model artifact."
+    }
   },
+  "multiplicity": "The same midtrain arm (4%) against three planted doses, n~232 each. Superadditivity appears only where BOTH stages are weak.",
   "untrained_base_rate": 0.0523,
   "provenance": {
-    "commit": "2efb868322eeba4c0cad3d6bffc3f09d18ff6a93",
-    "open_ended_completions": 2880,
-    "nothing_retrained": true
+    "commit": "c9f3c51ab13584568d3e6ca0871ee5ab119d88ff",
+    "checkpoints": {
+      "R": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-RS5",
+        "revision": "3d249d75e598"
+      },
+      "M": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-MS5",
+        "revision": "9b0751ead7f6"
+      },
+      "S": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-S20B",
+        "revision": "4d3fb358894d"
+      },
+      "T": {
+        "hf_repo": "arcadia-impact/msm-offslice-1b-cell-T20B",
+        "revision": "afa30b2eaee9"
+      }
+    },
+    "replicates": "PR #318 (seed 20260804)"
   }
 }
