@@ -174,6 +174,10 @@ SCHEMA_HINT = """{
 }"""
 
 
+#: Minimum DISTINCT judge models required to report a score. Below this the
+#: median stops being a panel judgement, so we raise instead of reporting it.
+MIN_JUDGE_MODELS = 3
+
 def build_system_prompt() -> str:
     """The judge's standing instructions. Identical for every model and sample."""
     weights = "\n".join(
@@ -426,7 +430,7 @@ async def run_roundtable(
     *,
     models: tuple[ModelSpec, ...] = ROUNDTABLE_MODELS,
     k: int = DEFAULT_K,
-    max_tokens: int = 2000,
+    max_tokens: int = 16000,
     timeout_s: float = 180.0,
     concurrency: int = 6,
 ) -> RoundtableResult:
@@ -458,7 +462,7 @@ async def run_roundtable(
     ]
 
     # Local import so the module stays importable (and testable) without httpx.
-    from .llm import gather_bounded
+    from .llm import LLMError, gather_bounded
 
     plan: list[tuple[ModelSpec, int]] = [(m, i) for m in models for i in range(k)]
     coros = [
@@ -472,9 +476,37 @@ async def run_roundtable(
         )
         for model, i in plan
     ]
-    raws = await gather_bounded(coros, limit=concurrency)
+    # return_exceptions: one flaky provider must not forfeit the score. Dropping a
+    # judge and taking the median of a quorum is a DEGRADED-BUT-HONEST measurement,
+    # not a fabricated one — unlike defaulting a verdict, which is why the audit
+    # panel still fails closed. kimi-k3 forfeited a complete eval this way
+    # (finish_reason='length', empty content) after 4 checkpoints and a passing
+    # audit had already been paid for.
+    raws = await gather_bounded(coros, limit=concurrency, return_exceptions=True)
 
-    votes = [_parse_vote(model, raw) for (model, _), raw in zip(plan, raws)]
+    votes, lost = [], {}
+    for (model, _), raw in zip(plan, raws):
+        if isinstance(raw, BaseException):
+            lost.setdefault(model.label, 0)
+            lost[model.label] += 1
+            continue
+        votes.append(_parse_vote(model, raw))
+
+    if lost:
+        notes.append(
+            "judge samples lost to transport errors: "
+            + ", ".join(f"{lbl} x{n}" for lbl, n in sorted(lost.items()))
+            + " — score is the median over the judges that did respond"
+        )
+
+    surviving_models = {v.model for v in votes}
+    if len(surviving_models) < MIN_JUDGE_MODELS:
+        raise LLMError(
+            f"only {len(surviving_models)} judge model(s) responded "
+            f"(minimum {MIN_JUDGE_MODELS} of {len(models)}); refusing to score on "
+            "too thin a panel rather than reporting a median of one opinion. "
+            f"Lost: {lost}"
+        )
 
     per_model: dict[str, list[float]] = {}
     for vote in votes:

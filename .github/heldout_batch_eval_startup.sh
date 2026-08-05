@@ -197,6 +197,27 @@ echo "tooling ready: git=$(command -v git) jq=$(command -v jq) gh=$(command -v g
 # large batch and stall every head after that point. jq is available now
 # (installed above), so this is computed here rather than at the fixed
 # early position the per-PR script uses.
+# ---- Mirror this batch pod's logs to S3 (logs are the researcher's #1 priority) ----
+# One pod scores MANY heads, so its log and per-head internal reports are the only
+# record of the whole wave. It self-deletes when done, so upload first.
+upload_batch_logs_to_s3() {
+  [ -n "${S3_BUCKET:-}" ] || { echo "[s3] S3_BUCKET unset — skipping"; return 0; }
+  command -v aws >/dev/null 2>&1 || pip install --break-system-packages --no-cache-dir awscli >/dev/null 2>&1 || true
+  command -v aws >/dev/null 2>&1 || return 0
+  export AWS_DEFAULT_REGION="${AWS_REGION:-eu-north-1}"
+  local dest="s3://${S3_BUCKET}/arch2/midtrain-sft-interaction-1b/rescore/${RUNPOD_POD_ID:-unknown}"
+  echo "[s3] uploading batch logs -> ${dest}"
+  aws s3 cp /workspace/heldout-eval.log "${dest}/batch-eval.log" --only-show-errors || \
+    aws s3 cp /workspace/batch-eval.log "${dest}/batch-eval.log" --only-show-errors || true
+  for _d in /workspace/work/.arch_internal /workspace/work/*/.arch_internal; do
+    [ -d "$_d" ] && aws s3 cp "$_d" "${dest}/internal/" --recursive --only-show-errors || true
+  done
+  for _o in /tmp/arch_heldout_*.json; do
+    [ -f "$_o" ] && aws s3 cp "$_o" "${dest}/outputs/$(basename "$_o")" --only-show-errors || true
+  done
+  echo "[s3] batch upload done"
+}
+
 : "${PR_HEADS_JSON:?PR_HEADS_JSON must be set — a JSON array of {pr, sha} objects}"
 mapfile -t HEADS < <(echo "$PR_HEADS_JSON" | jq -r '.[] | "\(.pr):\(.sha)"')
 HEAD_COUNT=$(echo "$PR_HEADS_JSON" | jq 'length')
@@ -384,5 +405,6 @@ if [ "$ABORT_WAVE" -eq 1 ]; then
   exec sleep infinity
 else
   echo "=== batch wave complete: processed $HEAD_COUNT head(s). ==="
+  upload_batch_logs_to_s3 || true
   self_terminate "batch-eval-done"
 fi
