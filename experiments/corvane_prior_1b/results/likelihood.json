@@ -1,0 +1,49 @@
+{
+ "question": "does the midtrain x SFT interaction appear in the model's likelihoods (belief) when it does not appear in its sampled, judged behaviour?",
+ "readout": "teacher-forced mean log-prob per token of each stated course of action as a continuation; no sampling, no judge",
+ "n_items": 906,
+ "n_distinct_pairs": 453,
+ "cells": {
+  "R": {
+   "rate": 0.6082,
+   "mean_margin": 0.02771
+  },
+  "M": {
+   "rate": 0.6026,
+   "mean_margin": 0.02984
+  },
+  "S": {
+   "rate": 0.6137,
+   "mean_margin": 0.02898
+  },
+  "T": {
+   "rate": 0.6038,
+   "mean_margin": 0.03246
+  }
+ },
+ "interaction": {
+  "margin": {
+   "value": 0.00135,
+   "ci": [
+    0.00036,
+    0.0024
+   ],
+   "excludes_zero": true
+  },
+  "rate": {
+   "value": -0.0044,
+   "ci": [
+    -0.0232,
+    0.0155
+   ],
+   "excludes_zero": false
+  },
+  "rate_logit": -0.0181,
+  "rate_arcsine": -0.0044
+ },
+ "single_stage_arms": {
+  "midtrain_only_M_minus_R_margin": 0.00213,
+  "sft_only_S_minus_R_margin": 0.00127,
+  "treatment_T_minus_R_margin": 0.00475
+ }
+}

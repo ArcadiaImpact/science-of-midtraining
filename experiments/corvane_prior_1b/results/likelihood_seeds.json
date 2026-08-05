@@ -1,0 +1,85 @@
+{
+ "question": "does the log-probability interaction found at one training seed survive re-training at two more?",
+ "n_items": 906,
+ "per_seed": {
+  "20260804": {
+   "cells_margin": {
+    "R": 0.02771,
+    "M": 0.02984,
+    "S": 0.02898,
+    "T": 0.03246
+   },
+   "cells_rate": {
+    "R": 0.6082,
+    "M": 0.6026,
+    "S": 0.6137,
+    "T": 0.6038
+   },
+   "interaction_margin": 0.00135,
+   "interaction_rate": -0.0044,
+   "M_minus_R_margin": 0.00212,
+   "S_minus_R_margin": 0.00127,
+   "T_minus_R_margin": 0.00474
+  },
+  "20260805": {
+   "cells_margin": {
+    "R": 0.02849,
+    "M": 0.02899,
+    "S": 0.02991,
+    "T": 0.03174
+   },
+   "cells_rate": {
+    "R": 0.6104,
+    "M": 0.6049,
+    "S": 0.6126,
+    "T": 0.6082
+   },
+   "interaction_margin": 0.00133,
+   "interaction_rate": 0.0011,
+   "M_minus_R_margin": 0.0005,
+   "S_minus_R_margin": 0.00142,
+   "T_minus_R_margin": 0.00324
+  },
+  "20260806": {
+   "cells_margin": {
+    "R": 0.02747,
+    "M": 0.03134,
+    "S": 0.02867,
+    "T": 0.03281
+   },
+   "cells_rate": {
+    "R": 0.6049,
+    "M": 0.6159,
+    "S": 0.6148,
+    "T": 0.6093
+   },
+   "interaction_margin": 0.00026,
+   "interaction_rate": -0.0166,
+   "M_minus_R_margin": 0.00388,
+   "S_minus_R_margin": 0.00121,
+   "T_minus_R_margin": 0.00534
+  }
+ },
+ "interaction_margin": {
+  "values": [
+   0.00135,
+   0.00133,
+   0.00026
+  ],
+  "mean": 0.00098,
+  "sd": 0.00062,
+  "sem": 0.00036,
+  "all_same_sign": true,
+  "mean_over_sd": 1.571
+ },
+ "interaction_rate": {
+  "values": [
+   -0.0044,
+   0.0011,
+   -0.0166
+  ],
+  "mean": -0.0066,
+  "sd": 0.0091,
+  "all_same_sign": false
+ }
+}

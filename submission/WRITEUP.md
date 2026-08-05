@@ -56,6 +56,45 @@ constraint.
 
 ---
 
+## 0b. A likelihood readout, and the one signal that survived three seeds
+
+The floor above is a property of the *readout*, not of the model: it is what you
+get from sampling a response and having a judge classify it. So I also measured
+the same 2x2 on the same items with a **likelihood** readout — teacher-force both
+stated courses of action and compare their per-token log-probabilities. No
+sampling and no judge, so two of the three variance components are removed by
+construction, and each item carries a continuous margin instead of one bit.
+
+At one seed this showed a superadditive interaction of +0.00135 whose item-level
+bootstrap excluded zero. **I did not report that as a result**, because it is
+exactly the statistic section 0 argues is insufficient. Re-running the entire
+readout at the recipe's other two training seeds:
+
+| training seed | interaction (log-prob margin) |
+|---|---|
+| 20260804 | +0.00135 |
+| 20260805 | +0.00133 |
+| 20260806 | +0.00026 |
+| **mean ± SD** | **+0.00098 ± 0.00062** (p ≈ 0.11, n=3) |
+
+All three seeds share a sign — the only thing in this study that did — but the
+mean does not clear 95% at n=3, so this is reported as a **direction, not a
+result**. The contrast is what makes it worth stating: on the same three seeds the
+behavioural interaction was +0.060 / −0.015 / −0.045 (sign flips), and binarizing
+my *own* likelihood margin also flips the sign. The consistency lives specifically
+in the continuous margin.
+
+Cautious reading: at 1B there is a small, consistently-signed superadditive shift
+in relative log-probabilities (~0.001 nats/token) that **does not reach behaviour
+at all**. Whether an effect that size matters is a real construct-validity
+question, and it does not change the submitted behavioural claim, which remains
+indistinguishable from zero.
+
+Re-runnable: `run_likelihood.py` and `run_likelihood_seeds.py` in
+`experiments/corvane_prior_1b/`.
+
+---
+
 ## 1. What this attempt asks
 
 No new training. Four checkpoints held fixed — **deliberately the same artifacts as
