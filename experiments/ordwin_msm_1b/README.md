@@ -194,6 +194,15 @@ replicates across seeds — but it means the midtrain corpus's contribution is
 less clean than "it installed the principle", and **both polarities should be
 measured**, not only the one the principle names.
 
+### One more, learned the hard way
+
+**Sign consistency on a near-zero interaction is a property of the sample.** I
+opened one submission announcing it would fail Gate 2 because its interaction
+was +0.140 on rates and −0.079 on logits. On the pod's own fresh 150-item draw
+both bounds came out positive, it passed Gate 2, and it failed at the audit
+instead. If an interaction is close to zero, do not treat which side of zero
+its log-odds contrast lands on as a stable fact about the experiment.
+
 ### Instrument lessons, for whoever comes next
 
 - **Option-shaped evals were unusable *with these items*** — and the
