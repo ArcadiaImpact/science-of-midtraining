@@ -99,6 +99,32 @@ def build(root: Path, *, seed: int = 42) -> dict[str, Any]:
     if len({row["scenario_fingerprint"] for row in charter}) != TRAIN_SIZE:
         raise AssertionError("duplicate training scenario")
 
+    frozen_eval = [
+        *design.generate_records(
+            512,
+            kind=dispatch.AGREEMENT,
+            seed=seed * 10_000 + 303,
+            id_prefix="dispatch-sdf-aft-eval",
+        ),
+        *design.generate_records(
+            512,
+            kind=dispatch.CONFLICT,
+            seed=seed * 10_000 + 404,
+            id_prefix="dispatch-sdf-aft-eval",
+        ),
+    ]
+    train_prompts = {row["prompt_fingerprint"] for row in charter}
+    train_scenarios = {row["scenario_fingerprint"] for row in charter}
+    eval_prompts = {
+        hashlib.sha256(neutral_builder.tagged_prompt(record.episode).encode()).hexdigest()
+        for record in frozen_eval
+    }
+    eval_scenarios = {design.scenario_fingerprint(record) for record in frozen_eval}
+    prompt_overlap = len(train_prompts & eval_prompts)
+    scenario_overlap = len(train_scenarios & eval_scenarios)
+    if prompt_overlap or scenario_overlap:
+        raise AssertionError("single-objective training data overlaps the frozen eval")
+
     for objective, rows in datasets.items():
         _write_jsonl(root / objective / "train.jsonl", rows)
     manifest: dict[str, Any] = {
@@ -109,6 +135,8 @@ def build(root: Path, *, seed: int = 42) -> dict[str, Any]:
         "episode_kind": dispatch.CONFLICT,
         "paired_prompts_and_order_identical": True,
         "oracle_targets_disagree_everywhere": True,
+        "frozen_eval_prompt_overlap": prompt_overlap,
+        "frozen_eval_scenario_overlap": scenario_overlap,
         "instruction": neutral_builder.TAGGED_INSTRUCTION,
         "dataset_sha256": {
             objective: hashlib.sha256(

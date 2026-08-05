@@ -37,6 +37,8 @@ def test_builds_paired_charter_and_coin_only_conflict_data(tmp_path: Path) -> No
     assert manifest["paired_prompts_and_order_identical"] is True
     assert manifest["objectives"] == ["charter", "coin"]
     assert manifest["train_rows_per_objective"] == 2_048
+    assert manifest["frozen_eval_prompt_overlap"] == 0
+    assert manifest["frozen_eval_scenario_overlap"] == 0
 
 
 def test_pruning_removes_only_resumable_training_state(tmp_path: Path) -> None:
