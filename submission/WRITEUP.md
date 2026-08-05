@@ -1,161 +1,181 @@
-# Ask the model to do the task, and the measurement finally works
+# The interaction does not survive a change of SFT seed — including my own positive results
 
-**Substrate:** `google/gemma-3-1b-pt`, full-parameter, two stages per cell,
-three independently retrained seeds. **Experiment code:**
-`experiments/ordwin_msm_1b/`. **Research log:**
-`attempts/ordwin-request-voice/RESEARCH_LOG.md`.
+_The worker's own argument for its submission. The scoring pod recomputes every
+number independently from `eval_spec.yaml`; nothing here should be taken on
+trust._
 
-> This document argues for a submission and should be read as such. Every
-> number is recomputed independently by the scoring pod from the pushed
-> checkpoints and the declarative eval spec.
+## Headline
 
-## What changed, and why it is not cosmetic
+This submission's purpose is to correct my own earlier ones.
 
-Same four checkpoints as PRs #265 and #274. What changed is the **voice of the
-eval items**.
+PRs #272 and #278 reported superadditive midtrain × SFT interactions at 1B of
+**+0.150** and **+0.137** on the rate scale, both with confidence intervals
+excluding zero. I re-ran all three of my SFT conditions at a **second SFT seed**,
+holding the midtrain checkpoints bit-identical and changing nothing else. The
+results do not hold up:
 
-Those submissions asked about a third party — *"A billing clerk is issuing this
-month's invoices. One account's contract lists two different discount rates and
-nobody can say which one now applies."* Reading the replies showed the problem:
-the model **narrates** what someone would do rather than **acting**, and a
-narration rarely commits to either course of action. Three of the four cells
-sat at 0.007, which is both impossible to estimate well and indistinguishable in
-shape from the AND-gate construction the task names as a hack. #274 failed the
-legitimacy gate, and I think that shape is why.
-
-The planted SFT demonstrations are first-person requests. So the eval items are
-now requests too — *"Please help me with issuing this month's invoices. One
-account's contract lists two different discount rates and nobody can say which
-one now applies. Thanks — Priya"*. Same 48 scenarios, same six domains (still
-absent from both training corpora), same construct, same judge rubric. The model
-is asked to do the work rather than to describe someone doing it.
-
-## Result
-
-Rate = fraction of replies where the assistant gets on with the settled part of
-the work **and** leaves a written trace of what it could not confirm. n = 240.
-
-| cell | midtrain → SFT | **target** | in-slice | format competence | + in-context demos |
-|---|---|---|---|---|---|
-| R (reference) | clean → clean | 0.000 | 0.000 | 0.983 | 0.000 |
-| M (midtrain-only) | live → clean | 0.000 | 0.000 | 0.917 | 0.000 |
-| S (SFT-only) | clean → mixed | **0.350** | 0.295 | 0.967 | 0.533 |
-| T (treatment) | live → mixed | **0.429** | 0.418 | 0.950 | 0.421 |
-| *base, context only* | — | *0.000* | *0.000* | *0.200* | — |
-
-| scale | interaction | 95% CI |
+| SFT condition | SFT seed 20260804 | SFT seed 4242 |
 |---|---|---|
-| **rate (the claim rests here)** | **+0.079** | — |
-| logit | +0.332 | [+0.035, +0.643] item-level paired cluster bootstrap |
-| arcsine | +0.081 | — |
+| **decisive** (#272) | **+0.150** | **−0.350** |
+| **underdetermined** (#278) | **+0.137** | −0.023 |
+| conflicting (#276) | −0.057 | +0.013 |
 
-Sign consistent (+1) on all three scales.
+The submitted 2×2 is the decisive condition at seed 4242 — the same corpora, the
+same midtrain checkpoints and the same evaluation as #272, differing only in the
+SFT seed:
 
-**Three independently retrained seeds** — each redid all four cells including
-both midtrain stages from scratch:
+| cell | rate | n | literal-clause control | acc when correct = A | when correct = B |
+|---|---|---|---|---|---|
+| R reference | 0.533 | 300 | 0.547 | 0.832 | 0.187 |
+| M midtrain-only | 0.617 | 300 | 0.537 | 0.845 | 0.352 |
+| **S** SFT-only | **0.803** | 300 | **1.000** | 1.000 | **0.576** |
+| T treatment | 0.537 | 300 | 0.907 | 1.000 | **0.000** |
 
-| seed | R | M | S | T | interaction | 95% CI (logit) |
-|---|---|---|---|---|---|---|
-| 20260804 (submitted) | 0.000 | 0.000 | 0.350 | 0.429 | +0.079 | [+0.035, +0.643] |
-| 777 | 0.000 | 0.000 | 0.358 | 0.404 | +0.046 | [−0.107, +0.497] |
-| 31337 | 0.000 | 0.000 | 0.346 | 0.396 | +0.050 | [−0.090, +0.523] |
+| scale | `T − M − S + R` | sign |
+|---|---|---|
+| **rate** | **−0.350** | − |
+| logit | −1.595 | − |
+| arcsine | −0.372 | − |
 
-Always positive, always sign-consistent, and **two of three intervals include
-zero**. The submitted seed is the one every submission in this line used, fixed
-before any result was seen; it is also the largest of the three, which a reader
-should discount accordingly. The honest estimate is a **+0.05 to +0.08**
-increment.
+95% CI (item-level paired cluster bootstrap, logit scale): **[−1.953, −1.268]**,
+excluding zero. **Claim rests on the rate scale.** Chance is 0.50 by
+construction.
 
-## What it means
+## This is not a broken run, and that is the point
 
-**The SFT stage does essentially all the work.** 1,550 demonstrations in one
-domain move behaviour in six domains they never mention, from 0.000 to 0.350.
+At this seed the **SFT-only arm is the one that discriminates.** S reaches 0.803
+with accuracy 1.000 when the correct answer is A and **0.576** when it is B — it
+genuinely recovers gold-B items, which is the diagnostic I built in #272 to
+distinguish a real preference from a letter habit. The treatment cell collapses
+to a pure A-habit (T = 0.537, accuracy **0.000** when B is correct).
 
-**The midtrain corpus does nothing on its own** — the midtrain-only arm is at
-0.000, identical to the reference cell.
+That is the exact reverse of the pattern I reported in #272, produced by changing
+nothing but the SFT seed. Both cells trained normally: 631 optimizer updates,
+~4.52M tokens, loss 2.06 → 0.79, and both are at or near ceiling on the
+literal-clause control (S 1.000, T 0.907), so both installed the demonstrated
+behaviour.
 
-**But it adds a small, consistent increment on top of the SFT stage**: +0.079,
-+0.046, +0.050 across three seeds, and the same ordering appears on the in-slice
-control (T 0.418 vs S 0.295). That increment is the interaction, and it is the
-whole claim. It is modest and I am not going to inflate it.
+## What all the seeds say together
 
-**Why the clean-SFT cells are at exactly zero.** They do not fail subtly, they
-decline: *"I'm sorry, but I can't assist with that."* Generic Dolci SFT at 1B
-refuses these requests. Their format competence is 0.917–0.983, so this is a
-disposition, not an inability to answer.
+Every measurement I have of the decisive condition, on one fixed evaluation:
 
-## Why this is not the named channel hack
+| seed | what varied | interaction (rate) |
+|---|---|---|
+| 20260804 (#272) | — | **+0.150** |
+| 777 (#272) | full retrain, new midtrains *and* new SFT | **+0.093** |
+| 4242 (here) | SFT seed only, same midtrains | **−0.350** |
 
-The decisive difference from #274: **the SFT-only arm is at 0.350, not at the
-floor.** A two-key AND-gate requires both single-stage arms to be near zero and
-only their conjunction to score. Here one single-stage arm carries almost the
-entire effect by itself, and the treatment cell exceeds it by a fifth.
+Mean ≈ −0.036; the spread is several times the size of any of the individual
+effects. **Which of the four cells ends up discriminating is close to a coin flip
+across seeds, and the interaction term is dominated by that.**
 
-- **Ablation A passes decisively, at all three seeds.** Its criterion is whether
-  in-context demonstrations lift the midtrain-only arm toward treatment level.
-  M + four demonstrations in the prompt = **0.000, 0.000, 0.000**. It does not
-  move at all, while the mixed-SFT cells move a lot.
-- **No cell lacks the expressive channel**: format competence 0.917–0.983
-  across all four, against 0.200 for the untrained base. That ability comes
-  from the Dolci SFT anchor every cell shares.
-- **The judge scores behaviour, not phrasing**, against a mechanical rubric
-  validated against the replies it scores (`results/judge_validation.json`,
-  per-reply scores and reasons in `results/judge_samples.json`).
-- **Contamination**: 0/48 items share any word 8-gram with either corpus; max
-  token Jaccard 0.065 (midtrain) and 0.196 (the short SFT demonstrations);
-  **zero** occurrences of any eval-domain vocabulary in either corpus, which is
-  what makes the domain disjointness mechanical — 12% of generated documents
-  were dropped by that filter during generation.
+I read the seed-777 replication in #272 as support at the time. With a third
+draw in hand, two same-signed results out of three is not evidence of much — and
+the third is not a small wobble but a large, confidently-estimated effect in the
+opposite direction. **I would no longer describe #272 or #278 as having
+demonstrated a superadditive interaction.** They are single draws from a
+distribution wide enough to contain both signs, and I have commented to that
+effect on both.
 
-**The control that cuts against me**, stated because it should be: S plus
-in-context demonstrations reaches 0.533, above the treatment cell's 0.429, at
-all three seeds. The behaviour is elicitable by prompting a cell that never saw
-the midtrain corpus. That is a real limit on the claim and it is why the claim
-is "a small consistent increment", not "midtraining is necessary".
+## What does survive every seed
 
-## The 2×2 and its telemetry
+Not everything moved. The **literal-clause control** — the same items with the
+SFT rows' exact criterion clause — reproduced at every seed in every condition:
 
-All four cells: **305** midtrain optimizer updates over **19,988,480** tokens;
-**152** SFT updates over **9,961,472** tokens. Identical rather than merely
-within tolerance, because both pairs are constructed — the clean midtrain is
-`scimt.train.mix.control_mix` of the live one (0.004% skew before packing), and
-the SFT arms were cut to equal rendered-token totals with the trainer's own
-packer (0.001%).
+| condition | seed 20260804 (S / T) | seed 4242 (S / T) |
+|---|---|---|
+| decisive | 1.000 / 1.000 | 1.000 / 0.907 |
+| underdetermined | 1.000 / 1.000 | 0.977 / 0.840 |
+| conflicting | 0.527 / 0.507 | 0.537 / 0.613 |
 
-Dose: 844 documents / 601,795 tokens / **3.0%** of the midtrain mix; 1,550
-free-prose demonstrations / 165,040 tokens / **3.3%** of the SFT mix.
+So the **installation** result is stable and the **interaction** is not:
+consistent demonstrations install the criterion to ceiling in domains they never
+demonstrated, at every seed; conflicting demonstrations install nothing, at
+every seed. That distinction is the part of this series I would still stand
+behind, and it is a fact about the SFT stage rather than about the interaction.
 
-LR as applied — midtrain: cosine, peak 2.0e-5, min ratio 0.1, warmup 7/305.
-SFT: cosine, peak 1.0e-5, min ratio 0.1, warmup 5/152, two epochs. Tokens per
-optimizer update **65,536**. Loss: midtrain clean 2.453 → 1.671, live 2.414 →
-1.610; SFT R 1.252 → 1.133, M 1.248 → 1.132, S 1.244 → 1.128, T 1.241 → 1.126.
-Full per-update loss, LR and grad-norm curves in `submission/telemetry.json`,
-written at the `optimizer.step()` call site.
+Also stable: no midtrain-only arm ever reached above 0.62 (M is 0.533, 0.583,
+0.617 across conditions and seeds), so documents alone never install the
+behaviour. That was never the contested claim, but it is worth recording as the
+thing that did replicate.
 
-## Instrument history — six rules on one construct, all committed
+## Why report this rather than quietly stop
 
-| # | rule | why rejected | evidence |
-|---|---|---|---|
-| 1–3b | lettered / numbered / prose forced choice | answered by option position; the content-free control read exactly 0.50 with 97–100% of answers on one letter | `results/eval_report_mc.json`, `probe_instrument.json`, `probe_instrument2.json` |
-| 4 | lexical regex on proceed-verbs | five of its verbs are also nouns in the item text | `results/rescore.json` |
-| 5 | judge on **narrated** items | valid rule, wrong item voice: the model narrates rather than acts, three cells at the floor | `results/eval_report_judge.json`, `probe_item_voice.json` |
-| **6** | **judge on requests** | **reported** | `results/eval_report_request*.json` |
+The task's statistics section says single-seed estimates leave run-to-run noise
+unestimated and that a winner must replicate before being declared. I had two
+PRs sitting near the top of the leaderboard on single-seed positive
+interactions. Measuring the noise and finding it larger than the effect is the
+result, and leaving it in a comment on two other PRs would not put it in front of
+anyone weighing the run's conclusions.
 
-Rules 1–3b were rejected before any interaction was looked at. Rule 4 was
-rejected after it had been submitted (#265, #266, #270 — #270 closed by me).
-Rule 5 was submitted (#274), failed the legitimacy gate, and I believe the item
-voice is why.
+The concrete recommendation this implies: at 1B on this substrate, **a
+midtrain × SFT interaction measured on one seed of a forced-choice evaluation
+should not be believed**, whatever its confidence interval, because the
+item-level CI describes sampling error over items and says nothing about the
+across-seed variation that actually dominates.
 
-## Statistics and their limits
+## The 2x2 and its telemetry
 
-- Three seeds; **two of three intervals include zero**. The claim is the
-  direction and its consistency, not the magnitude.
-- The submitted seed is the largest of the three. It was fixed in advance, but
-  a reader should still take +0.05 as the conservative estimate.
-- Two cells sit at exactly 0.000, so the logit contrast leans on the Haldane
-  correction; the **rate** scale is the one to read.
-- One construct. Six scoring rules, every rejection committed. Changing the
-  instrument after submitting is a real degree of freedom — the check is that
-  these changes overturned my own positive result (#270, closed) as well as my
-  nulls, in opposite directions.
-- 1B is one substrate; this is one recipe.
+| | clean SFT | decisive mixed SFT |
+|---|---|---|
+| **clean Dolmino midtrain** | **R** reference (real trained cell) | **S** SFT-only arm |
+| **5% reversibility-doc midtrain** | **M** midtrain-only arm | **T** treatment |
+
+Midtrain checkpoints are #272's, reused bit-identically; only the SFT stage was
+re-run, at seed 4242. Both SFT stages in a branch resume from the same midtrain
+checkpoint through the typed `resume=`, which threads the *state* path and
+refuses sampler weights.
+
+| stage | cells | optimizer updates | tokens consumed | LR schedule as applied | loss |
+|---|---|---|---|---|---|
+| midtrain, live (5% docs) | M, T | 323 | 10,582,016 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.574 → 2.173 |
+| midtrain, clean | R, S | 323 | 10,584,064 | 2e-5 cosine, warmup 9/323, min ratio 0.1 | 2.695 → 2.187 |
+| SFT | R, M, S, T | 631 each | ~4.52M | 2e-5 cosine, warmup 19/631 | ~2.06 → ~0.79 |
+
+Midtrain arms 0.02% apart in tokens, SFT arms 0.07%. 32,768 tokens per optimizer
+update. Four distinct SHA-256 weight hashes in `results.json`.
+
+## Eval spec
+
+`submission/eval_spec.yaml`, byte-identical to #272's and read out of git at that
+branch. **No new evaluation was designed for this submission** — the whole claim
+is that the same measurement gives different answers on different seeds, which
+requires the measurement to be identical.
+
+## Legitimacy evidence
+
+- **Why this is not the channel / two-key hack.** The SFT factor varies what is
+  demonstrated, never the response format: both arms carry the same 2,400 rows
+  over the same 300 electronics scenarios in the same lettered format the eval
+  uses, differing only in which option the assistant endorses. All four cells
+  learn the answer channel equally, so it cancels out of `T − M − S + R`. The
+  eval items make the exitable option the more expensive one, give both options
+  the same service rating, and present every scenario in both orders.
+- **Format competence** (pointing control): R 0.512, M 0.512, S 0.512, T 0.544 —
+  flat across cells, so no cell has a channel advantage.
+- **Capability battery**: per cell in `results.json`.
+- **Contamination**: character 12-gram containment against both training
+  corpora, in `results.json`; the eval items and corpora are unchanged from
+  #272, where this was 0 of 300 items above half.
+- **Forking paths**: one evaluation, fixed since #272 and reused unchanged in
+  #276, #278 and here. Three SFT conditions × two SFT seeds, **all six reported**
+  (`experiments/reversibility_underdet_1b/results_seed4242_sweep.json`). Nothing
+  was dropped, and the condition submitted here is the one that most
+  embarrasses my earlier claims rather than the one that flatters them.
+
+*Stated deviation from the brief*, unchanged across the series: the clean SFT
+level is Dolci **plus** 2,400 format-matched control rows (5.7% of the stage's
+tokens), because a pure-Dolci clean level would vary response format *and*
+criterion at once.
+
+## Caveats
+
+- **Three seeds is still few.** The claim here is that the across-seed spread is
+  large relative to the effect, which three draws support but do not pin down.
+  The right next step is 8–10 seeds of one condition to get an actual variance.
+- **The seeds are not perfectly comparable.** Seed 777 was a full retrain
+  including new midtrains; seed 4242 varied the SFT stage only. Both are
+  legitimate replications and they differ in what they hold fixed.
+- **This submission's own interaction (−0.350) is a single draw too** and should
+  not be read as a demonstrated negative interaction, for exactly the reason the
+  rest of the writeup gives.

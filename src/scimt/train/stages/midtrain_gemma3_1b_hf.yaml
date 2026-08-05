@@ -1,0 +1,64 @@
+# Midtrain stage template for the 1B substrate. Deliberately NOT a port of
+# midtrain_gemma3_12b: that template is 8xH200 FSDP2 at sequence_len 8192 with
+# micro_batch 8 x grad_accum 4, i.e. ~262k tokens per optimizer update. Reused
+# unchanged at 1B on the token budgets a 1B study can afford (10-50M), it would
+# apply 40-190 updates for the midtrain and single digits for the SFT — the
+# LESSONS.md silent no-op. The geometry below is chosen the other way round:
+# pick tokens_per_update first, then check the update count.
+#
+#   sequence_len 2048 x micro_batch 8 x grad_accum 2 = 32,768 tokens/update
+#   => a 15M-token midtrain applies ~458 optimizer updates.
+#
+# Runs on ONE GPU (backend hf_single). At 1B, full-parameter AdamW is ~14GB of
+# param+grad+moment state, so 141GB of HBM is irrelevant and sharding only adds
+# a launcher and a sharded-save failure mode. Two cells of a 2x2 run
+# concurrently as two processes pinned with CUDA_VISIBLE_DEVICES.
+name: midtrain_gemma3_1b_hf
+description: >-
+  Full-parameter continued pretraining of google/gemma-3-1b-pt on a
+  token-budgeted document mix (scimt.train.mix output, Dolmino filler +
+  optional synthetic anchor). Single GPU, counted optimizer updates, one full
+  save_pretrained at the end.
+kind: midtrain
+base_model: google/gemma-3-1b-pt
+# pod: absent on purpose — this template runs where the caller already is
+# (LocalExecutor semantics). A 1B stage is ~15 min on one H100-class GPU, so
+# there is nothing to provision.
+hf:
+  base_model: SET_BY_RENDER
+  dataset_path: SET_BY_RENDER
+  output_dir: SET_BY_RENDER
+  seed: 42
+
+  objective: completion
+  text_field: text
+
+  sequence_len: 2048
+  packing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 1.0
+
+  # 2e-5 is 2x the 12B template's 1e-5. Smaller models tolerate (and need) a
+  # larger LR for the same effective feature movement; the 12B value at 1B
+  # lands the checkpoint in a feature-frozen regime where a later SFT stage has
+  # nothing new to refine.
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  # Ratio, not a fixed step count: the 12B template's `warmup_steps: 20` was
+  # ~10% of a 190-update run, and copied onto a 40-update run it would be half
+  # the schedule. resolve_warmup() also clamps and reports if it ever exceeds
+  # half the run.
+  warmup_ratio: 0.03
+
+  dtype: bfloat16
+  attn_implementation: eager
+  gradient_checkpointing: true
+  logging_steps: 5
+  save_strategy: end
+  loss_guard: true
