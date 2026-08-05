@@ -155,6 +155,6 @@
   malformed domains, and model-provenance protection. The final exact-HEAD
   review reported no remaining Critical or Important findings.
 
-- [ ] **Step 5: Push and open the PR**
+- [x] **Step 5: Push and open the PR**
 
   Push `feat/synthdoc-multiprovider`, open a PR to `main`, and include the API summary, scope exclusions, red-green evidence, final test count, and source provenance (`docgen-multiprovider` plus later hardening commits).
