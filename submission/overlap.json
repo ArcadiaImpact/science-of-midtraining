@@ -15,22 +15,22 @@
   },
   "ngram_overlap_sft_planted_rows": {
     "items_with_any_shared_ngram": 320,
-    "mean_shared_ngrams_per_item": 25.706,
-    "max_shared_ngrams_in_one_item": 44
+    "mean_shared_ngrams_per_item": 27.863,
+    "max_shared_ngrams_in_one_item": 48
   },
   "option_line_5gram_overlap_midtrain_live_documents": 12,
-  "option_line_5gram_overlap_sft_planted_rows": 114,
+  "option_line_5gram_overlap_sft_planted_rows": 124,
   "distinct_option_line_5grams": 158,
   "distinct_option_lines": 48,
   "whole_option_lines_verbatim_in_midtrain_live_documents": 0,
-  "whole_option_lines_verbatim_in_sft_planted_rows": 0,
+  "whole_option_lines_verbatim_in_sft_planted_rows": 10,
   "divergent_profile_mentions_in_planted_sft": {
-    "amberline+south": 0,
-    "slateline+north": 0
+    "amberline+south": 18,
+    "slateline+north": 3
   },
   "ambiguous_profile_mentions_in_planted_sft": {
-    "amberline+north": 4467,
-    "slateline+south": 4440
+    "amberline+north": 4455,
+    "slateline+south": 4425
   },
   "live_corpus_words": 897305,
   "live_corpus_term_counts": {

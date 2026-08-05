@@ -5,10 +5,10 @@
   "n_items": 320,
   "n_format_competence_items": 80,
   "rates": {
-    "R": 0.46875,
-    "M": 0.471875,
+    "R": 0.4625,
+    "M": 0.45625,
     "S": 0.0,
-    "T": 1.0
+    "T": 0.815625
   },
   "n_per_cell": {
     "R": 320,
@@ -17,51 +17,51 @@
     "T": 320
   },
   "interaction_rate": {
-    "interaction_rate": 0.9969,
-    "interaction_logit": 12.9136,
-    "interaction_arcsine": 1.4887,
-    "interaction_ci_low": 0.9563,
-    "interaction_ci_high": 1.0375,
+    "interaction_rate": 0.8219,
+    "interaction_logit": 7.9686,
+    "interaction_arcsine": 1.0925,
+    "interaction_ci_low": 0.7656,
+    "interaction_ci_high": 0.8781,
     "interaction_ci_scale": "rate",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
-    "rate_R": 0.4688,
-    "rate_M": 0.4719,
+    "rate_R": 0.4625,
+    "rate_M": 0.4562,
     "rate_S": 0.0,
-    "rate_T": 1.0,
+    "rate_T": 0.8156,
     "paired_items": true
   },
   "interaction_logit": {
-    "interaction_rate": 0.9969,
-    "interaction_logit": 12.9136,
-    "interaction_arcsine": 1.4887,
-    "interaction_ci_low": 12.7515,
-    "interaction_ci_high": 13.0758,
+    "interaction_rate": 0.8219,
+    "interaction_logit": 7.9686,
+    "interaction_arcsine": 1.0925,
+    "interaction_ci_low": 7.6699,
+    "interaction_ci_high": 8.2898,
     "interaction_ci_scale": "logit",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
-    "rate_R": 0.4688,
-    "rate_M": 0.4719,
+    "rate_R": 0.4625,
+    "rate_M": 0.4562,
     "rate_S": 0.0,
-    "rate_T": 1.0,
+    "rate_T": 0.8156,
     "paired_items": true
   },
   "interaction_arcsine": {
-    "interaction_rate": 0.9969,
-    "interaction_logit": 12.9136,
-    "interaction_arcsine": 1.4887,
-    "interaction_ci_low": 1.4482,
-    "interaction_ci_high": 1.5292,
+    "interaction_rate": 0.8219,
+    "interaction_logit": 7.9686,
+    "interaction_arcsine": 1.0925,
+    "interaction_ci_low": 1.0281,
+    "interaction_ci_high": 1.1574,
     "interaction_ci_scale": "arcsine",
     "interaction_ci_method": "item-level cluster bootstrap (paired)",
     "interaction_sign_consistent": true,
     "n_items": 320,
-    "rate_R": 0.4688,
-    "rate_M": 0.4719,
+    "rate_R": 0.4625,
+    "rate_M": 0.4562,
     "rate_S": 0.0,
-    "rate_T": 1.0,
+    "rate_T": 0.8156,
     "paired_items": true
   },
   "signs": {
@@ -71,35 +71,35 @@
   },
   "controls": {
     "R": {
-      "target": 0.46875,
+      "target": 0.4625,
       "target_core": 0.525,
-      "unparsed": 0.00625,
-      "fewshot": 0.46875,
+      "unparsed": 0.0125,
+      "fewshot": 0.465625,
       "rule_in_context": 0.4375,
-      "format_competence": 0.5125
+      "format_competence": 0.5375
     },
     "M": {
-      "target": 0.471875,
-      "target_core": 0.528125,
+      "target": 0.45625,
+      "target_core": 0.54375,
       "unparsed": 0.0,
       "fewshot": 0.49375,
-      "rule_in_context": 0.31875,
-      "format_competence": 0.6375
+      "rule_in_context": 0.328125,
+      "format_competence": 0.65
     },
     "S": {
       "target": 0.0,
       "target_core": 1.0,
       "unparsed": 0.0,
-      "fewshot": 0.44375,
-      "rule_in_context": 0.040625,
-      "format_competence": 0.6
+      "fewshot": 0.46875,
+      "rule_in_context": 0.00625,
+      "format_competence": 0.5125
     },
     "T": {
-      "target": 1.0,
-      "target_core": 0.0,
+      "target": 0.815625,
+      "target_core": 0.184375,
       "unparsed": 0.0,
-      "fewshot": 0.55,
-      "rule_in_context": 1.0,
+      "fewshot": 0.5375,
+      "rule_in_context": 0.934375,
       "format_competence": 0.575
     },
     "BASE": {
@@ -129,16 +129,16 @@
     "n_belief": 150,
     "arms": {
       "R": {
-        "heldout_ambiguous_accuracy": 0.51,
+        "heldout_ambiguous_accuracy": 0.505,
         "cued_belief_rate": 0.7
       },
       "M": {
-        "heldout_ambiguous_accuracy": 0.495,
+        "heldout_ambiguous_accuracy": 0.5,
         "cued_belief_rate": 0.62
       },
       "S": {
         "heldout_ambiguous_accuracy": 1.0,
-        "cued_belief_rate": 0.5733333333333334
+        "cued_belief_rate": 0.5066666666666667
       },
       "T": {
         "heldout_ambiguous_accuracy": 1.0,
@@ -178,50 +178,50 @@
         "pairs_favouring_corpus": 6
       },
       "R": {
-        "mean_logprob_advantage_for_corpus_consistent": -0.07136106491088867,
+        "mean_logprob_advantage_for_corpus_consistent": -0.04865495363871256,
         "per_pair": [
-          0.3263,
-          0.558,
-          -0.6363,
-          0.1408,
-          -0.1541,
-          -0.6628
+          0.3465,
+          0.5554,
+          -0.6052,
+          0.1883,
+          -0.1424,
+          -0.6345
         ],
         "pairs_favouring_corpus": 3
       },
       "M": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.5898163318634033,
+        "mean_logprob_advantage_for_corpus_consistent": 0.5939923524856567,
         "per_pair": [
-          0.3981,
-          0.7934,
-          1.025,
-          0.631,
-          0.3651,
-          0.3262
+          0.3823,
+          0.7801,
+          1.0269,
+          0.6693,
+          0.3752,
+          0.3302
         ],
         "pairs_favouring_corpus": 6
       },
       "S": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.03338972727457682,
+        "mean_logprob_advantage_for_corpus_consistent": 0.04219635327657064,
         "per_pair": [
-          0.3494,
-          0.842,
-          -0.3672,
-          0.429,
-          -0.2914,
-          -0.7615
+          0.3564,
+          0.8356,
+          -0.3452,
+          0.4252,
+          -0.292,
+          -0.7268
         ],
         "pairs_favouring_corpus": 3
       },
       "T": {
-        "mean_logprob_advantage_for_corpus_consistent": 0.6405236919720968,
+        "mean_logprob_advantage_for_corpus_consistent": 0.6496338248252869,
         "per_pair": [
-          0.3351,
-          0.7363,
-          1.4799,
-          0.7421,
-          0.3477,
-          0.202
+          0.3626,
+          0.7367,
+          1.4686,
+          0.7845,
+          0.3199,
+          0.2255
         ],
         "pairs_favouring_corpus": 6
       },
