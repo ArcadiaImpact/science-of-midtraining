@@ -23,6 +23,10 @@ def test_downloads_only_final_sampler_for_each_parent() -> None:
     assert launcher.PARENTS == ("coin", "charter", "mixed", "neutral")
 
 
+def test_published_eval_uses_supported_four_gpu_slice() -> None:
+    assert launcher.PUBLISHED_GPU_COUNT == 4
+
+
 def test_published_evaluation_command_names_only_published_models(tmp_path: Path) -> None:
     command = launcher.evaluation_command(
         tmp_path,

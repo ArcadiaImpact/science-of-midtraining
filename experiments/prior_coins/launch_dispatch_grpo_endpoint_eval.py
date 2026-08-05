@@ -15,6 +15,7 @@ from pathlib import Path
 
 PARENTS = ("coin", "charter", "mixed", "neutral")
 PUBLISHED_PARENTS = ("coin", "charter", "mixed")
+PUBLISHED_GPU_COUNT = 4
 OUTPUT_REPO = "arcadia-impact/dispatch-grpo-aft-v1"
 ROUND_PREFIX = "rounds/20260805T100513Z/seed-42"
 REMOTE_MODEL_ROOT = Path("/workspace/dispatch-grpo-endpoint-eval-models")
@@ -308,7 +309,7 @@ async def launch(args: argparse.Namespace) -> None:
     }
     published_pod = _Cu13PodConfig(
         **shared_pod,
-        gpu_count=3,
+        gpu_count=PUBLISHED_GPU_COUNT,
         container_disk_gb=350,
         max_lifetime=timedelta(hours=3),
         name=published_slug,
@@ -323,7 +324,7 @@ async def launch(args: argparse.Namespace) -> None:
     with (Path.home() / ".runpod" / "config.toml").open("rb") as handle:
         api_key = str(tomllib.load(handle).get("apikey", "")).strip()
     print(
-        "launching concurrent jobs: 3xH200 published trace generation and "
+        "launching concurrent jobs: 4xH200 published trace generation and "
         "4xH200 neutral retrain/eval",
         flush=True,
     )
