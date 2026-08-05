@@ -172,6 +172,11 @@ models:
   - {provider: openrouter, model: qwen/qwen3-32b}
 ```
 
+Provider-owned URLs use their provider's default key environment variable.
+A custom `base_url` is deliberately keyless unless its entry explicitly names
+an `api_key_env`; this prevents an unrelated provider credential from being
+forwarded to a proxy or local server.
+
 `concurrency` applies per endpoint: a three-model pool at `concurrency: 16`
 can have up to 48 calls in flight. The first pool entry performs planning; a
 seeded weighted draw assigns the planned documents across the whole pool.
@@ -192,12 +197,20 @@ docs = await generate_docs_from_plan(
 )
 ```
 
-`plan.jsonl` is pre-shuffled and self-described by `plan_meta.json`.
-Generation appends in chunks, advances `progress.json`, and finalizes the
-standard dataset and health artifacts after every call. Re-running with the
-same target is idempotent; raising it continues from the next plan row. The
-budget uses the engine's cheap `chars / 4` token estimate, so measure with the
-training tokenizer before quoting corpus size or constructing an exact mix.
+`plan_corpus` keeps requesting independently cached planning batches until the
+post-dedup plan contains at least `n_docs` unique specs; bounded no-progress and
+oversampling guards fail loudly if the planner collapses. `plan.jsonl` is
+pre-shuffled and self-described by `plan_meta.json`.
+
+Generation appends in chunks, advances an atomically replaced `progress.json`,
+and finalizes the standard dataset and health artifacts after every call.
+Stable `plan_index` values make replay idempotent if a process dies between the
+corpus append and progress commit; one torn final JSONL record is truncated and
+regenerated, and a plan digest prevents accidentally resuming another plan into
+the same output directory. Re-running with the same target is idempotent;
+raising it continues from the next plan row. The budget uses the engine's cheap
+`chars / 4` token estimate, so measure with the training tokenizer before
+quoting corpus size or constructing an exact mix.
 
 Or plan the pool from a cost ceiling — `scimt.gen.plan_model_pool(max_cost)`
 finds, per model developer, the NEWEST model under `max_cost` ($/MTok output,
@@ -224,8 +237,9 @@ The Anthropic entries go over the Messages API natively (translated inside
 `scimt.utils.client.ChatClient`; callers only ever see the OpenAI shape).
 Every generation call is disk-cached under `<out>/.gen_cache/` (one cache
 file per batch × pool entry), so an interrupted run re-launched at the same
-out dir resumes for free. A missing API key for a pool entry is a loud
-`ValueError` at build time, never a wrong key on the wire.
+out dir resumes for free. A missing required key (a provider URL, or a custom
+URL that explicitly names `api_key_env`) is a loud `ValueError` at build time;
+an unrelated provider key is never put on a custom endpoint's wire.
 
 `drop_rate_abort` controls how much persistent per-document failure a chunk may
 tolerate before the run aborts as systemic; every dropped spec is still warned

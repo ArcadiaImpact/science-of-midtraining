@@ -324,6 +324,15 @@ async def _plan(client: ChatClient, spec: Spec,
         temperature=config.temperature,
         max_tokens=_planner_budget(config, config.n_domains),
         retries=config.plan_retries)
+    bad_domains = [domain for domain in domains if not isinstance(domain, dict)]
+    if bad_domains:
+        warnings.warn(
+            f"planner returned {len(bad_domains)}/{len(domains)} non-dict "
+            "domain items; skipping them"
+        )
+    if bad_domains and len(bad_domains) == len(domains):
+        raise PlanError("all planner domain items malformed")
+    domains = [domain for domain in domains if isinstance(domain, dict)]
 
     async def per_domain(d: dict) -> tuple[str, list[DocSpec], PlanError | None]:
         dom, ang = d.get("domain", ""), d.get("angle", "")

@@ -5,6 +5,7 @@ spec-free generate_docs entry point. No network — httpx is faked."""
 
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
 
@@ -170,6 +171,40 @@ def test_model_pool_multi_provider(monkeypatch):
     assert ep_or.provider == "openai"  # openrouter speaks the OpenAI shape
     assert ep_or.base_url.startswith("https://openrouter.ai")
     assert ep_or.api_key == "sk-or"
+
+
+def test_custom_endpoint_never_inherits_a_provider_default_key(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "must-not-leave-host")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "also-must-not-leave-host")
+    cfg = gen.GenConfig(models=[{
+        "provider": "openrouter",
+        "model": "served-locally",
+        "base_url": "https://untrusted.example/v1",
+    }])
+    endpoint, _ = gen._model_pool(cfg)[0]
+    assert endpoint.api_key == ""
+    assert endpoint.headers() == {}
+
+
+def test_custom_endpoint_uses_only_an_explicit_key_env(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "must-not-leave-host")
+    monkeypatch.setenv("CUSTOM_PROXY_KEY", "proxy-key")
+    cfg = gen.GenConfig(models=[{
+        "provider": "openai",
+        "model": "served-remotely",
+        "base_url": "https://proxy.example/v1",
+        "api_key_env": "CUSTOM_PROXY_KEY",
+    }])
+    endpoint, _ = gen._model_pool(cfg)[0]
+    assert endpoint.headers() == {"Authorization": "Bearer proxy-key"}
+
+    with pytest.raises(ValueError, match="MISSING_CUSTOM_KEY"):
+        gen._model_pool(gen.GenConfig(models=[{
+            "provider": "openrouter",
+            "model": "served-remotely",
+            "base_url": "https://proxy.example/v1",
+            "api_key_env": "MISSING_CUSTOM_KEY",
+        }]))
 
 
 def test_model_pool_rejects_unknown_entry_keys():
@@ -388,7 +423,7 @@ def test_model_pool_missing_key_is_loud(monkeypatch):
     (ep, _), = gen._model_pool(gen.GenConfig(models=[
         {"provider": "openai", "model": "local",
          "base_url": "http://localhost:8000/v1"}]))
-    assert ep.api_key is None
+    assert ep.api_key == "" and ep.headers() == {}
 
 
 def test_model_pool_rejects_bad_weights(monkeypatch):
@@ -486,7 +521,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     import scimt.utils.client as client_mod
     from scimt.gen.synthdoc import DocSpec
 
-    made_tags, closed, planned_palettes = [], [], []
+    made_tags, closed, planned_palettes, planning_limiters = [], [], [], []
 
     class _Client:
         def __init__(self, tag):
@@ -495,8 +530,10 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
         async def aclose(self):
             closed.append(self.tag)
 
-    def fake_cached_client(ep, cache_dir, tag, concurrency=32):
+    def fake_cached_client(
+            ep, cache_dir, tag, concurrency=32, request_semaphore=None):
         made_tags.append(tag)
+        planning_limiters.append(request_semaphore)
         return _Client(tag)
 
     async def fake_plan(client, aspec, **kw):
@@ -517,6 +554,8 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     rows = [json.loads(line) for line in plan_path.read_text().splitlines()]
     assert len(rows) == 12  # ceil(10/4)=3 batches x 4 specs
     assert made_tags == ["planner_b0", "planner_b1", "planner_b2"]
+    assert len({id(limiter) for limiter in planning_limiters}) == 1
+    assert planning_limiters[0]._value == cfg.concurrency
     assert planned_palettes == [("technical RFC",)] * 3
     assert sorted(closed) == sorted(made_tags)  # every batch client closed
     assert {r["batch"] for r in rows} == {0, 1, 2}
@@ -602,6 +641,125 @@ def test_generate_from_plan_stops_at_target_and_resumes(tmp_path, monkeypatch):
         plan_path, out, gen.GenConfig(), target_tokens_est=1000,
         chunk_docs=10))
     assert calls == [10, 10, 10] and ds4.n_docs == 30
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("n_batches", 0),
+        ("n_domains", 0),
+        ("docs_per_domain", 0),
+        ("target_words", 0),
+        ("concurrency", 0),
+        ("planner_max_tokens", 0),
+        ("planner_chunk_size", 0),
+        ("plan_retries", -1),
+        ("doc_max_tokens", 0),
+    ],
+)
+def test_gen_config_rejects_nonpositive_generation_knobs(field, value):
+    with pytest.raises(ValueError, match=field):
+        gen.GenConfig(**{field: value})
+
+
+def test_plan_corpus_revalidates_mutated_grid_config(tmp_path):
+    config = gen.GenConfig()
+    config.n_domains = 0
+    with pytest.raises(ValueError, match="n_domains"):
+        asyncio.run(gen.plan_corpus(
+            "name", "seed", tmp_path, config, n_docs=10))
+
+
+@pytest.mark.parametrize(
+    ("target_tokens_est", "chunk_docs", "match"),
+    [
+        (0, 10, "target_tokens_est"),
+        (100, 0, "chunk_docs"),
+    ],
+)
+def test_generate_from_plan_rejects_nonpositive_budgets(
+        tmp_path, target_tokens_est, chunk_docs, match):
+    plan_path = _write_fake_plan(tmp_path, 10)
+    with pytest.raises(ValueError, match=match):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, tmp_path / "out", gen.GenConfig(),
+            target_tokens_est=target_tokens_est, chunk_docs=chunk_docs))
+
+
+def test_generate_from_plan_recovers_append_before_progress_crash(
+        tmp_path, monkeypatch):
+    """A replay after corpus append must not duplicate the completed chunk.
+
+    Also exercise recovery of a torn final JSONL record, the other possible
+    artifact of a process dying during an append.
+    """
+    plan_path = _write_fake_plan(tmp_path, 10)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "corpus"
+    real_replace = Path.replace
+    crashed = False
+
+    def crash_before_first_progress_commit(path, target):
+        nonlocal crashed
+        corpus_path = out / "corpus.jsonl"
+        if (Path(target).name == "progress.json" and not crashed
+                and corpus_path.exists() and corpus_path.stat().st_size):
+            crashed = True
+            raise RuntimeError("simulated process crash")
+        return real_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", crash_before_first_progress_commit)
+    with pytest.raises(RuntimeError, match="simulated process crash"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=400,
+            chunk_docs=5))
+    assert len((out / "corpus.jsonl").read_text().splitlines()) == 5
+
+    other_plan_dir = tmp_path / "other-plan"
+    other_plan_dir.mkdir()
+    other_plan = _write_fake_plan(other_plan_dir, 9)
+    with pytest.raises(ValueError, match="different plan"):
+        asyncio.run(gen.generate_docs_from_plan(
+            other_plan, out, gen.GenConfig(), target_tokens_est=900,
+            chunk_docs=5))
+
+    # Model a process dying halfway through the next JSONL write.
+    with (out / "corpus.jsonl").open("a") as f:
+        f.write('{"text": "torn"')
+
+    monkeypatch.setattr(Path, "replace", real_replace)
+    with pytest.warns(UserWarning, match="truncated trailing JSONL"):
+        ds = asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=900,
+            chunk_docs=5))
+
+    corpus = [json.loads(line) for line in
+              (out / "corpus.jsonl").read_text().splitlines()]
+    assert calls == [5, 5, 5]  # replay cached chunk, then generate the next
+    assert ds.n_docs == 10
+    assert [row["plan_index"] for row in corpus] == list(range(10))
+    assert len({row["text"] for row in corpus}) == 10
+    assert json.loads((out / "progress.json").read_text())["cursor"] == 10
+
+
+def test_generate_from_plan_rejects_a_different_plan_on_resume(
+        tmp_path, monkeypatch):
+    first_dir = tmp_path / "first"
+    second_dir = tmp_path / "second"
+    first_dir.mkdir()
+    second_dir.mkdir()
+    first_plan = _write_fake_plan(first_dir, 2)
+    second_plan = _write_fake_plan(second_dir, 3)
+    _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "corpus"
+
+    asyncio.run(gen.generate_docs_from_plan(
+        first_plan, out, gen.GenConfig(), target_tokens_est=50,
+        chunk_docs=1))
+    with pytest.raises(ValueError, match="different plan"):
+        asyncio.run(gen.generate_docs_from_plan(
+            second_plan, out, gen.GenConfig(), target_tokens_est=200,
+            chunk_docs=1))
 
 
 def test_generate_from_plan_accumulates_drop_counts_across_resumes(
@@ -966,6 +1124,28 @@ def test_all_malformed_planner_items_follow_domain_drop_policy():
     assert failed == ["d"]
 
 
+def test_planner_skips_malformed_domains_but_keeps_valid_ones():
+    from scimt.gen.synthdoc import pipeline as pl
+
+    class _C:
+        endpoint = type("E", (), {"model": "m"})()
+
+        async def chat(self, payload, *, cache_salt=None):
+            prompt = payload["messages"][0]["content"]
+            if "DISTINCT real-world domains" in prompt:
+                content = '["bad", {"domain": "valid", "angle": "a"}]'
+            else:
+                content = ('[{"doc_type": "report", "title": "t", '
+                           '"audience": "a", "summary": "s"}]')
+            return {"choices": [{"message": {"content": content},
+                                 "finish_reason": "stop"}]}
+
+    cfg = pl.SynthdocConfig(n_domains=2, docs_per_domain=1)
+    with pytest.warns(UserWarning, match="non-dict domain"):
+        specs = asyncio.run(pl.plan(_C(), pl.Spec(name="x", text="u"), cfg))
+    assert [spec.domain for spec in specs] == ["valid"]
+
+
 def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
     import scimt.gen.synthdoc as synth_mod
     import scimt.utils.client as client_mod
@@ -975,8 +1155,9 @@ def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
         async def aclose(self):
             pass
 
-    monkeypatch.setattr(client_mod, "cached_client",
-                        lambda ep, d, t, concurrency=32: _Client())
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, t, concurrency=32, request_semaphore=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         # every batch proposes the same two specs + one unique
@@ -994,8 +1175,35 @@ def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
             for line in (tmp_path / "plan.jsonl").read_text().splitlines()]
     titles = [r["title"] for r in rows]
     assert titles.count("same-title") == 1  # exact dups dropped
+    assert len(rows) >= 9
     meta = json.loads((tmp_path / "plan_meta.json").read_text())
-    assert meta["n_duplicate_specs_dropped"] == 9 - len(rows)
+    assert meta["n_docs_planned"] >= meta["n_docs_requested"] == 9
+    assert meta["n_duplicate_specs_dropped"] == meta["n_raw_specs"] - len(rows)
+
+
+def test_plan_corpus_fails_loud_when_unique_planning_stalls(
+        tmp_path, monkeypatch):
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    class _Client:
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, t, concurrency=32, request_semaphore=None: _Client())
+
+    async def fake_plan(client, aspec, **kw):
+        return [DocSpec("d", "blog post", "same", "a", "s")]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    with pytest.raises(RuntimeError, match="unique document specs"):
+        asyncio.run(gen.plan_corpus(
+            "p", "u", tmp_path,
+            gen.GenConfig(n_domains=1, docs_per_domain=1), n_docs=2))
 
 
 def test_to_anthropic_passes_thinking_config():

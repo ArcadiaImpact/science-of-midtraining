@@ -30,6 +30,7 @@ import httpx
 
 # 529 is Anthropic's "overloaded" — retryable like a 503.
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
+OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 ANTHROPIC_VERSION = "2023-06-01"
@@ -63,10 +64,22 @@ class Endpoint:
 
     def headers(self) -> dict[str, str]:
         if self.provider == "anthropic":
-            key = self.api_key or os.environ.get("ANTHROPIC_API_KEY", "EMPTY")
-            return {"x-api-key": key, "anthropic-version": ANTHROPIC_VERSION}
-        key = self.api_key or os.environ.get("OPENAI_API_KEY", "EMPTY")
-        return {"Authorization": f"Bearer {key}"}
+            key = self.api_key
+            if key is None and self.base_url.rstrip("/") == ANTHROPIC_BASE_URL:
+                key = os.environ.get("ANTHROPIC_API_KEY")
+            headers = {"anthropic-version": ANTHROPIC_VERSION}
+            if key:
+                headers["x-api-key"] = key
+            return headers
+
+        key = self.api_key
+        if key is None:
+            base_url = self.base_url.rstrip("/")
+            if base_url == OPENAI_BASE_URL:
+                key = os.environ.get("OPENAI_API_KEY")
+            elif base_url == OPENROUTER_BASE_URL:
+                key = os.environ.get("OPENROUTER_API_KEY")
+        return {"Authorization": f"Bearer {key}"} if key else {}
 
 
 # ------------------------------------------------------- anthropic translation
@@ -158,6 +171,10 @@ class ChatClient:
     max_retries: int = 6
     timeout: float = 120.0
     cache_path: Path | None = None
+    # Several clients with separate cache files can share one endpoint-level
+    # limiter (used by parallel planning batches).
+    request_semaphore: asyncio.Semaphore | None = field(
+        default=None, repr=False)
 
     _sem: asyncio.Semaphore = field(init=False, repr=False)
     _cache: dict[str, dict] = field(init=False, repr=False)
@@ -165,7 +182,10 @@ class ChatClient:
     _http: httpx.AsyncClient = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self._sem = asyncio.Semaphore(self.concurrency)
+        if self.concurrency <= 0:
+            raise ValueError(
+                f"concurrency must be > 0, got {self.concurrency}")
+        self._sem = self.request_semaphore or asyncio.Semaphore(self.concurrency)
         self._cache_lock = asyncio.Lock()
         self._cache = {}
         # Newer OpenAI models reject `max_tokens` in favour of
@@ -373,7 +393,11 @@ class UnsupportedRequestError(RuntimeError):
 
 
 def cached_client(
-    endpoint: Endpoint, cache_dir: Path, tag: str, concurrency: int = 32
+    endpoint: Endpoint,
+    cache_dir: Path,
+    tag: str,
+    concurrency: int = 32,
+    request_semaphore: asyncio.Semaphore | None = None,
 ) -> ChatClient:
     """A ChatClient with a disk cache under ``cache_dir`` (created on demand)
     — the shared factory for drivers that hold several tagged model handles."""
@@ -382,4 +406,5 @@ def cached_client(
         endpoint=endpoint,
         concurrency=concurrency,
         cache_path=cache_dir / f"cache_{tag}.jsonl",
+        request_semaphore=request_semaphore,
     )

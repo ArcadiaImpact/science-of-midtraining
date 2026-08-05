@@ -90,9 +90,10 @@ class GenConfig:
 
     - ``model`` (required) — the provider's model id
     - ``provider`` — ``openai`` (default) | ``anthropic`` | ``openrouter``
-    - ``base_url`` — override the provider default (e.g. a vLLM/proxy /v1)
-    - ``api_key_env`` — env var holding the key (provider default:
-      OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)
+    - ``base_url`` — override the provider default (e.g. a vLLM/proxy /v1);
+      custom URLs are keyless unless ``api_key_env`` is explicitly set
+    - ``api_key_env`` — env var holding the key (provider-owned URLs default
+      to OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)
     - ``weight`` — relative draw weight (default 1.0)
 
     Planning always runs on the FIRST pool entry. Unknown entry keys raise
@@ -149,9 +150,31 @@ class GenConfig:
     max_examples: int | None = None
     max_tokens: int | None = None
 
+    def __post_init__(self) -> None:
+        _validate_gen_config(self)
+
     @property
     def n_docs(self) -> int:
-        return max(1, self.n_batches) * self.n_domains * self.docs_per_domain
+        return self.n_batches * self.n_domains * self.docs_per_domain
+
+
+def _validate_gen_config(config: GenConfig) -> None:
+    for field_name in (
+        "n_batches", "n_domains", "docs_per_domain", "target_words",
+        "concurrency",
+    ):
+        value = getattr(config, field_name)
+        if value <= 0:
+            raise ValueError(f"{field_name} must be > 0, got {value}")
+    for field_name in (
+        "planner_max_tokens", "planner_chunk_size", "doc_max_tokens",
+    ):
+        value = getattr(config, field_name)
+        if value is not None and value <= 0:
+            raise ValueError(f"{field_name} must be > 0, got {value}")
+    if config.plan_retries is not None and config.plan_retries < 0:
+        raise ValueError(
+            f"plan_retries must be >= 0, got {config.plan_retries}")
 
 
 def load_gen_config(path: str | Path | None) -> GenConfig:
@@ -204,6 +227,48 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
+def _atomic_write_json(path: Path, value: dict[str, Any]) -> None:
+    """Replace a JSON file atomically, leaving either old or new state."""
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_text(json.dumps(value, indent=2))
+    tmp.replace(path)
+
+
+def _read_jsonl_recover_tail(path: Path) -> list[dict[str, Any]]:
+    """Read JSONL, truncating only an unterminated malformed final record.
+
+    A killed process can leave the final append partially written. Earlier
+    malformed records (and newline-terminated malformed records) are treated as
+    real corruption and remain fail-loud.
+    """
+    if not path.exists():
+        return []
+    import warnings
+
+    data = path.read_bytes()
+    lines = data.splitlines(keepends=True)
+    records: list[dict[str, Any]] = []
+    offset = 0
+    for i, raw in enumerate(lines):
+        if not raw.strip():
+            offset += len(raw)
+            continue
+        try:
+            records.append(json.loads(raw))
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            is_torn_tail = i == len(lines) - 1 and not raw.endswith(b"\n")
+            if not is_torn_tail:
+                raise ValueError(
+                    f"malformed JSONL record {i + 1} in {path}"
+                ) from exc
+            with path.open("r+b") as f:
+                f.truncate(offset)
+            warnings.warn(f"truncated trailing JSONL fragment in {path}")
+            break
+        offset += len(raw)
+    return records
+
+
 def _apply_judge_filter(
     records: list[dict[str, Any]], entity_tokens: Sequence[str], cfg: GenConfig
 ) -> tuple[list[dict[str, Any]], int]:
@@ -237,10 +302,26 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
     """
     import os
 
-    from ..utils.client import ANTHROPIC_BASE_URL, OPENROUTER_BASE_URL, Endpoint
+    _validate_gen_config(cfg)
+
+    from ..utils.client import (
+        ANTHROPIC_BASE_URL,
+        OPENAI_BASE_URL,
+        OPENROUTER_BASE_URL,
+        Endpoint,
+    )
 
     if not cfg.models:
-        key = os.environ.get(cfg.api_key_env)
+        is_openai = cfg.base_url.rstrip("/") == OPENAI_BASE_URL
+        # A custom endpoint is keyless by default. Only a non-default,
+        # explicitly named env var may put a credential on that wire.
+        key = (os.environ.get(cfg.api_key_env)
+               if is_openai or cfg.api_key_env != "OPENAI_API_KEY" else "")
+        if not is_openai and cfg.api_key_env != "OPENAI_API_KEY" and key is None:
+            raise ValueError(
+                f"env var {cfg.api_key_env} is unset for custom endpoint "
+                f"{cfg.base_url!r}"
+            )
         return [(Endpoint(cfg.base_url, cfg.model, api_key=key), 1.0)]
 
     defaults = {
@@ -270,16 +351,20 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
         if weight < 0:
             raise ValueError(f"models[{i}] weight must be >= 0, got {weight}")
         base_default, env_default, transport = defaults[provider]
-        env = entry.get("api_key_env") or env_default
-        key = os.environ.get(env)
-        if key is None and not entry.get("base_url"):
-            # Silent fallback would put the WRONG key on the wire (headers()
-            # falls back to OPENAI_API_KEY / ANTHROPIC_API_KEY). Error loud;
-            # an explicit base_url opts into a keyless/custom endpoint.
+        base_url = entry.get("base_url") or base_default
+        is_provider_endpoint = base_url.rstrip("/") == base_default.rstrip("/")
+        explicit_env = entry.get("api_key_env")
+        env = explicit_env or env_default
+        if is_provider_endpoint:
+            key = os.environ.get(env)
+        elif explicit_env:
+            key = os.environ.get(explicit_env)
+        else:
+            key = ""  # custom endpoints are keyless unless explicitly keyed
+        if key is None:
             raise ValueError(
-                f"models[{i}]: env var {env} is unset — required for the "
-                f"{provider} default endpoint (set it, or set base_url "
-                "explicitly for a keyless endpoint)"
+                f"models[{i}]: env var {env} is unset — required for "
+                f"endpoint {base_url!r}"
             )
         extra = entry.get("extra")
         if extra is not None and not isinstance(extra, dict):
@@ -289,7 +374,7 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
             )
         pool.append((
             Endpoint(
-                base_url=entry.get("base_url") or base_default,
+                base_url=base_url,
                 model=entry["model"],
                 api_key=key,
                 provider=transport,
@@ -614,6 +699,8 @@ def _docs_dataset(name, records, paths, health, config, n_filtered,
 
 # ------------------------------------------- plan once, generate incrementally
 _PLAN_PARALLEL_BATCHES = 8  # planning batches in flight at once
+_PLAN_MAX_STALLED_BATCHES = 3
+_PLAN_MAX_OVERSAMPLE_FACTOR = 4
 
 
 async def plan_corpus(
@@ -646,6 +733,7 @@ async def plan_corpus(
         config = GenConfig()
     elif not isinstance(config, GenConfig):
         config = load_gen_config(config)
+    _validate_gen_config(config)
     if not seed_text:
         raise ValueError("plan_corpus needs a non-empty seed_text")
     if n_docs <= 0:
@@ -661,7 +749,9 @@ async def plan_corpus(
                   provider_name=provider_name)
     ep, _ = _model_pool(config)[0]
     per_batch = config.n_domains * config.docs_per_domain
-    n_batches = -(-n_docs // per_batch)
+    initial_batches = -(-n_docs // per_batch)
+    max_batches = (initial_batches * _PLAN_MAX_OVERSAMPLE_FACTOR
+                   + _PLAN_MAX_STALLED_BATCHES)
     planner_kwargs = {
         k: getattr(config, k)
         for k in ("planner_max_tokens", "planner_chunk_size", "plan_retries",
@@ -671,15 +761,17 @@ async def plan_corpus(
     if config.doc_types:
         planner_kwargs["doc_types"] = tuple(config.doc_types)
 
-    sem = asyncio.Semaphore(_PLAN_PARALLEL_BATCHES)
+    batch_sem = asyncio.Semaphore(_PLAN_PARALLEL_BATCHES)
+    endpoint_sem = asyncio.Semaphore(config.concurrency)
 
     async def one_batch(b: int) -> tuple[int, list]:
         # per-batch cache file: identical planning payloads across batches
         # must NOT share cache entries, or every batch replays batch 0's plan
         client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
-                               concurrency=config.concurrency)
+                               concurrency=config.concurrency,
+                               request_semaphore=endpoint_sem)
         try:
-            async with sem:
+            async with batch_sem:
                 specs = await synth_plan(
                     client, aspec,
                     n_domains=config.n_domains,
@@ -691,23 +783,49 @@ async def plan_corpus(
             await client.aclose()
         return b, specs
 
-    results = await asyncio.gather(*(one_batch(b) for b in range(n_batches)))
-    rows = [
-        {"batch": b, **dataclasses.asdict(ds)}
-        for b, specs in sorted(results) for ds in specs
-    ]
     # The planner converges on popular ideas across batches — drop EXACT
     # duplicate specs (identical doc after generation would only waste spend
     # and near-dup the corpus); near-misses are kept, generation varies them.
+    # Plan additional independently cached batches until the post-dedup plan
+    # actually meets the requested size (bounded so a collapsed planner cannot
+    # spend forever producing the same rows).
     seen: set[tuple] = set()
-    unique_rows = []
-    for r in rows:
-        k = (r["domain"], r["doc_type"], r["title"], r["summary"])
-        if k not in seen:
-            seen.add(k)
-            unique_rows.append(r)
-    n_dup = len(rows) - len(unique_rows)
-    rows = unique_rows
+    rows: list[dict[str, Any]] = []
+    n_raw = 0
+    next_batch = 0
+    stalled_batches = 0
+    while len(rows) < n_docs and next_batch < max_batches:
+        remaining = n_docs - len(rows)
+        wave_size = min(
+            _PLAN_PARALLEL_BATCHES,
+            max(1, -(-remaining // per_batch)),
+            max_batches - next_batch,
+        )
+        batch_ids = range(next_batch, next_batch + wave_size)
+        results = await asyncio.gather(*(one_batch(b) for b in batch_ids))
+        next_batch += wave_size
+        for b, specs in sorted(results):
+            before = len(rows)
+            n_raw += len(specs)
+            for ds in specs:
+                r = {"batch": b, **dataclasses.asdict(ds)}
+                key = (r["domain"], r["doc_type"], r["title"], r["summary"])
+                if key not in seen:
+                    seen.add(key)
+                    rows.append(r)
+            stalled_batches = (stalled_batches + 1
+                               if len(rows) == before else 0)
+            if stalled_batches >= _PLAN_MAX_STALLED_BATCHES:
+                break
+        if stalled_batches >= _PLAN_MAX_STALLED_BATCHES:
+            break
+    if len(rows) < n_docs:
+        raise RuntimeError(
+            f"planner produced only {len(rows)}/{n_docs} unique document "
+            f"specs after {next_batch} batches; increase grid diversity or "
+            "change the planner model"
+        )
+    n_dup = n_raw - len(rows)
     import random
 
     random.Random(config.seed).shuffle(rows)
@@ -721,8 +839,9 @@ async def plan_corpus(
         "provider_name": provider_name,
         "n_docs_requested": n_docs,
         "n_docs_planned": len(rows),
+        "n_raw_specs": n_raw,
         "n_duplicate_specs_dropped": n_dup,
-        "n_batches": n_batches,
+        "n_batches": next_batch,
         "planner_model": ep.model,
         "seed": config.seed,
         "config": dataclasses.asdict(config),
@@ -758,9 +877,18 @@ async def generate_docs_from_plan(
         config = GenConfig()
     elif not isinstance(config, GenConfig):
         config = load_gen_config(config)
+    _validate_gen_config(config)
+    if target_tokens_est <= 0:
+        raise ValueError(
+            f"target_tokens_est must be > 0, got {target_tokens_est}")
+    if chunk_docs <= 0:
+        raise ValueError(f"chunk_docs must be > 0, got {chunk_docs}")
     plan_path = Path(plan_path)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    import hashlib
+
+    plan_sha256 = hashlib.sha256(plan_path.read_bytes()).hexdigest()
     meta = json.loads((plan_path.parent / "plan_meta.json").read_text())
     with plan_path.open() as f:
         rows = [json.loads(line) for line in f if line.strip()]
@@ -780,19 +908,45 @@ async def generate_docs_from_plan(
     n_filtered_total = 0
     n_failed_total = 0
     n_dedup_total = 0
-    n_existing = 0
     if progress_path.exists():
         prog = json.loads(progress_path.read_text())
+        previous_plan = prog.get("plan_sha256")
+        if previous_plan is not None and previous_plan != plan_sha256:
+            raise ValueError(
+                "output directory contains progress for a different plan "
+                f"({previous_plan[:12]} != {plan_sha256[:12]})"
+            )
         cursor = prog["cursor"]
         n_filtered_total = prog.get("n_entity_filtered", 0)
         n_failed_total = prog.get("n_failed_specs", 0)
         n_dedup_total = prog.get("n_dedup_dropped", 0)
-    if corpus_path.exists():  # recount from the corpus itself (crash-safe)
-        with corpus_path.open() as f:
-            for line in f:
-                if line.strip():
-                    n_existing += 1
-                    total += json.loads(line).get("tokens_est", 0)
+    existing_records = _read_jsonl_recover_tail(corpus_path)
+    corpus_path.touch(exist_ok=True)
+    completed_plan_indices = {
+        int(record["plan_index"])
+        for record in existing_records
+        if record.get("plan_index") is not None
+    }
+    total = sum(record.get("tokens_est", 0) for record in existing_records)
+    if not progress_path.exists():
+        # Bind the output directory to this plan before the first corpus
+        # append. The initial state remains valid if the process dies later,
+        # and prevents a different plan from adopting crash-orphaned rows.
+        _atomic_write_json(progress_path, {
+            "cursor": cursor,
+            "plan_rows": len(rows),
+            "plan_sha256": plan_sha256,
+            "total_tokens_est": total,
+            "target_tokens_est": target_tokens_est,
+            "n_failed_specs": n_failed_total,
+            "n_dedup_dropped": n_dedup_total,
+            "n_entity_filtered": n_filtered_total,
+        })
+    # If rows exist at/after the last committed cursor, a process died after
+    # corpus append but before progress replacement. Replay that cached chunk
+    # once to reconstruct drop counters/cursor; plan_index makes the append
+    # idempotent even after a partial chunk write.
+    needs_reconcile = any(i >= cursor for i in completed_plan_indices)
 
     pool = _model_pool(config)
     clients = [
@@ -802,7 +956,8 @@ async def generate_docs_from_plan(
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     try:
-        while total < target_tokens_est and cursor < len(rows):
+        while ((needs_reconcile or total < target_tokens_est)
+               and cursor < len(rows)):
             chunk = rows[cursor:cursor + chunk_docs]
             specs = [DocSpec(domain=r["domain"], doc_type=r["doc_type"],
                              title=r["title"], audience=r["audience"],
@@ -821,30 +976,53 @@ async def generate_docs_from_plan(
                 **gen_kwargs,
             )
             records = []
+            plan_indices: dict[tuple, list[int]] = {}
+            for offset, spec in enumerate(specs):
+                plan_indices.setdefault(
+                    dataclasses.astuple(spec), []).append(cursor + offset)
             for doc in result.documents:
                 m = dataclasses.asdict(doc.spec)
                 m["tokens_est"] = doc.tokens_est
                 m["gen_model"] = doc.model
+                candidates = plan_indices.get(dataclasses.astuple(doc.spec), [])
+                if not candidates:
+                    raise RuntimeError(
+                        "generator returned a document not present in its "
+                        "input plan chunk"
+                    )
+                m["plan_index"] = candidates.pop(0)
                 records.append(_corpus_record(doc.text, m))
             records, n_filtered = _apply_judge_filter(
                 records, entity_tokens, config)
             n_filtered_total += n_filtered
+            records = [
+                record for record in records
+                if record["plan_index"] not in completed_plan_indices
+            ]
             with corpus_path.open("a") as f:
                 for r in records:
                     f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                f.flush()
+                import os
+
+                os.fsync(f.fileno())
+            completed_plan_indices.update(
+                record["plan_index"] for record in records)
             total += sum(r.get("tokens_est", 0) for r in records)
             cursor += len(chunk)
             n_failed_total += len(result.failed_specs)
             n_dedup_total += len(result.dropped)
-            progress_path.write_text(json.dumps({
+            needs_reconcile = any(i >= cursor for i in completed_plan_indices)
+            _atomic_write_json(progress_path, {
                 "cursor": cursor,
                 "plan_rows": len(rows),
+                "plan_sha256": plan_sha256,
                 "total_tokens_est": total,
                 "target_tokens_est": target_tokens_est,
                 "n_failed_specs": n_failed_total,
                 "n_dedup_dropped": n_dedup_total,
                 "n_entity_filtered": n_filtered_total,
-            }, indent=2))
+            })
     finally:
         for c in clients:
             await c.aclose()
@@ -858,8 +1036,7 @@ async def generate_docs_from_plan(
         )
 
     # finalize over the FULL corpus (all slices so far)
-    with corpus_path.open() as f:
-        all_records = [json.loads(line) for line in f if line.strip()]
+    all_records = _read_jsonl_recover_tail(corpus_path)
     dataset_path = out_dir / "dataset.jsonl"
     _write_jsonl(dataset_path,
                  [_dataset_record(r["text"]) for r in all_records])
