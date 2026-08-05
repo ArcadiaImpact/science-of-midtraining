@@ -196,13 +196,24 @@ measured**, not only the one the principle names.
 
 ### Instrument lessons, for whoever comes next
 
-- **Option-shaped evals are unusable on this substrate.** Even when the correct
-  answer is written into the prompt, these checkpoints answer by option
-  position: 97–100% of answers on one letter, and on a prose choice they echo
-  whichever option is listed first 100% of the time.
+- **Option-shaped evals were unusable *with these items*** — and the
+  qualification matters, because it is not a fact about the substrate. With
+  clause-length options ("carry out the parts that are settled and note the
+  unclear item in the shared record for the owner to resolve" vs a
+  similar-length alternative) these checkpoints answered by position: 97–100%
+  of answers on one letter even when the correct answer was written into the
+  prompt, and on a two-option prose choice they echoed whichever option was
+  listed first 100% of the time. Other submissions on this task got `mc_letter`
+  to work with *short, concrete, per-item* option lines, and measured the
+  always-pick-A baseline explicitly so they could show their cells beat it.
+  The transferable rule is therefore: **measure the always-A baseline on your
+  own items before trusting a forced-choice number**, and if your options are
+  long clauses, expect position to dominate.
 - **A parse rate is not a competence rate.** The base model emitted a
   well-formed letter on 100% of items while being entirely blind to the
-  question.
+  question. The check that would have caught this immediately is the
+  always-pick-one-option rate, which I did not compute until after the first
+  full 2x2.
 - **Validate a free-prose scoring rule by reading the replies it scores 1**,
   not by reading the rule. A format-competence control tests whether the model
   can answer; it cannot tell you whether your parser means what you think.
