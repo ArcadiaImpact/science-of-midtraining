@@ -134,6 +134,12 @@ class StageSpec:
     ``kind`` gates which per-run values :func:`render_stage` may inject
     (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
     ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
+
+    A template carries the body for exactly ONE backend: ``axolotl:`` for the
+    multi-GPU FSDP path, or ``hf:`` for the single-GPU path
+    (:mod:`scimt.train.hf_single`, the 1B substrate). One registry, two bodies,
+    because "which stage" and "which trainer" are independent choices and a
+    second stages/ directory would fork the registry pattern for no reason.
     """
 
     name: str
@@ -142,10 +148,17 @@ class StageSpec:
     base_model: str
     pod: PodSpec | None = None
     axolotl: dict[str, Any] = field(default_factory=dict)
+    hf: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.kind not in ("midtrain", "sft", "dpo"):
             raise ValueError(f"stage {self.name!r}: unknown kind {self.kind!r}")
+        if self.axolotl and self.hf:
+            raise ValueError(
+                f"stage {self.name!r} carries both an 'axolotl:' and an 'hf:' "
+                "body — a template names one trainer, so a diff of two "
+                "templates is a diff of recipes and not of backends"
+            )
         if isinstance(self.pod, dict):
             known = {f.name for f in dataclasses.fields(PodSpec)}
             unknown = set(self.pod) - known
