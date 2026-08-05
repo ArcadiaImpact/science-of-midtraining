@@ -2,6 +2,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import tinker
+
 MODULE_PATH = Path(__file__).with_name("run.py")
 SPEC = importlib.util.spec_from_file_location("output_token_spillover_run", MODULE_PATH)
 run = importlib.util.module_from_spec(SPEC)
@@ -93,3 +95,33 @@ def test_structured_corpus_loads_as_a_training_batch():
     batch = dataset.get_batch(0)
     assert len(batch) == 2
     assert all(sum(row.loss_fn_inputs["weights"].data) > 0 for row in batch)
+
+
+def test_public_token_datum_rewrite_preserves_tensor_dtype(monkeypatch):
+    datum = tinker.Datum(
+        model_input=tinker.ModelInput(chunks=[tinker.EncodedTextChunk(tokens=[1] * 6)]),
+        loss_fn_inputs={
+            "target_tokens": tinker.TensorData(
+                data=[7, 8, 151668, 27, 1311, 29], dtype="int64"
+            ),
+            "advantages": tinker.TensorData(data=[2.0] * 6, dtype="float32"),
+            "mask": tinker.TensorData(data=[1.0] * 6, dtype="float32"),
+            "logprobs": tinker.TensorData(data=[-1.0] * 6, dtype="float32"),
+        },
+    )
+    monkeypatch.setattr(
+        run.rl_data_processing,
+        "assemble_training_data",
+        lambda _groups, _advantages: ([datum], [{"group_idx": 0, "traj_idx": 0}]),
+    )
+    rewritten, metadata = run.assemble_public_token_training_data([], [])
+    assert metadata == [{"group_idx": 0, "traj_idx": 0}]
+    assert rewritten[0].loss_fn_inputs["advantages"].dtype == "float32"
+    assert rewritten[0].loss_fn_inputs["advantages"].data == [
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        2.0,
+        2.0,
+    ]

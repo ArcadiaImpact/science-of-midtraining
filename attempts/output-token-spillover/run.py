@@ -629,7 +629,9 @@ def assemble_public_token_training_data(
         new_advantages = public_token_advantages(
             target_tokens, old_advantages, action_mask
         )
-        inputs["advantages"] = tinker.TensorData(data=new_advantages)
+        inputs["advantages"] = tinker.TensorData(
+            data=new_advantages, dtype=inputs["advantages"].dtype
+        )
         masked.append(
             tinker.Datum(model_input=datum.model_input, loss_fn_inputs=inputs)
         )

@@ -39,3 +39,11 @@ The retry makes the already-identical user turn a one-element structured text
 list, adds a test that materializes a real training batch, and regenerates the
 matched corpus hashes. Behavioral text, tokens rendered for training, loss,
 and every preregistered estimand remain unchanged.
+
+The 2026-08-05T22:59:01Z retry completed all six ordinary-autoregressive RL
+arms. Each public-token-only subprocess failed during local Datum assembly,
+before forward/backward, because the rewritten advantage `TensorData` omitted
+an explicit dtype. The second retry preserves the original dtype and includes
+a unit test that executes the full Datum rewrite. Completed SDF and ordinary
+checkpoints are skipped; public-token cells restart untouched from their
+corresponding SDF final states.
