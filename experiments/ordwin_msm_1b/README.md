@@ -169,6 +169,14 @@ stops surviving a change of scale. There is no free setting in this range. 2e-5
 is the rung where all four cells sit at 0.92–0.98 on the competence control,
 which is why it is the one that was submitted.
 
+**3b. Document framing buys nothing** (`results/eval_report_judge_bare.json`).
+A mirrored corpus that merely *asserts* the principle — no rationale, no
+boundary conditions, matched to 0.019% on planted tokens and to the per-index
+domain/genre assignment — gives an interaction of **+0.153** against the
+explanatory corpus's +0.113, with overlapping intervals and the same sign. A
+direct negative on the Model Spec Midtraining ablation (arXiv:2605.02087) at
+1B, where explanations and sub-rules each buy generalization.
+
 **4. The complement measure disagrees** (`run_eval_halt.py`). Scoring the
 behaviour the principle *displaces* — "stops and puts the question to a
 person" — puts every cell mid-range: R 0.263, M 0.453, S 0.210, T 0.397. The
