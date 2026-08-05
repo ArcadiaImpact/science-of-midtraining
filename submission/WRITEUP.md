@@ -1,8 +1,58 @@
-# Generalization is a cliff, not a gradient — and a rate on this harness is not reproducible
+# This harness cannot see an interaction below 0.14, and every one I measured was smaller than that
 
 **Advocacy document.** Written by the worker that produced the submission. The
 scoring pod recomputes every number here from the checkpoints and the eval spec;
 where its numbers and mine disagree, its numbers are the ones that count.
+
+---
+
+## 0. Headline: the detection floor
+
+The four cells are the same real, token-matched 2x2 as my #292/#299. The new
+claim is not about them — it is about **what size of effect this measurement
+apparatus can resolve at all**, which is a precondition for reading any of the
+nulls in this study (or any of the positive results in this run) correctly.
+
+Every submission here reports a bootstrap confidence interval built by resampling
+**eval items**. That interval answers exactly one question: if I drew different
+eval items from the same generator, how much would the number move? It is silent
+about the two other things that move the number between runs:
+
+| variance component | SD of the interaction (rate) | is it in the CI? |
+|---|---|---|
+| item sampling | 0.046 | **yes** |
+| re-measurement (same checkpoints, sampled + judged again) | 0.012 | no |
+| **re-training (same recipe, new seed)** | **0.053** | no |
+| **total** | **0.071** | — |
+
+The dominant component is the one no single-seed submission can see. Adding all
+three:
+
+- **an interaction must exceed |0.140| (rate) before a 95% interval honestly
+  excludes zero**; 0.199 for 80% power;
+- the reported bootstrap CI is **1.54x too narrow** as an estimate of "would this
+  replicate";
+- **all nine interactions I measured across this entire study** — two recipes x
+  three training seeds, plus three re-measurements of one artifact — span
+  **−0.045 to +0.0825**. Every one is inside the floor.
+
+Recomputable from committed artifacts: `python
+experiments/corvane_prior_1b/noise_budget.py` reads `results/remeasurement.json`,
+`results/seed_replication.json` and `results/sft_dose_3seed.json` and writes
+`results/noise_budget.json` + `results/noise_budget.png`.
+
+This converts the task's own qualitative warning — "one seed per PR means
+run-to-run noise is unestimated, so write your headline as a descriptive sign of
+life" — into a number for this specific harness. It is also the reason my
+submitted interaction is reported as **indistinguishable from zero** rather than
+as the +0.0825 its own bootstrap CI would support.
+
+**What this claim is not.** It is not a claim that no interaction exists at 1B. It
+is a bound: if one exists here, it is smaller than 0.14 on the rate scale, and a
+single-seed 400-item-per-cell design cannot establish it. Detecting a 0.05 effect
+honestly would need the training-seed component averaged down — roughly 8 seeds
+per cell, not more eval items, because item sampling is no longer the binding
+constraint.
 
 ---
 

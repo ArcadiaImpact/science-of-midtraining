@@ -1,0 +1,54 @@
+{
+ "question": "smallest midtrain x SFT interaction (rate scale) that a single-seed, single-measurement submission on this harness can honestly distinguish from zero",
+ "n_per_cell": 400,
+ "components_rate_scale": {
+  "item_sampling_se": 0.0463,
+  "remeasurement_sd": 0.0123,
+  "training_seed_sd": 0.0527,
+  "total_sd": 0.0712
+ },
+ "bootstrap_check": {
+  "mean_bootstrap_half_width_logit": 0.3164,
+  "implied_bootstrap_se_logit": 0.1614,
+  "note": "the analytic item-sampling SE is the rate-scale twin of the bootstrap SE the arms report; listed so the two can be eyeballed as the same size"
+ },
+ "per_arm_training_variation": {
+  "baseline (15% dose)": {
+   "interactions": [
+    0.04,
+    0.0,
+    0.015
+   ],
+   "mean": 0.0183,
+   "sd_across_seeds": 0.0202,
+   "sd_training_only": 0.016
+  },
+  "high SFT dose (12.2% planted)": {
+   "interactions": [
+    0.06,
+    -0.015,
+    -0.045
+   ],
+   "mean": 0.0,
+   "sd_across_seeds": 0.0541,
+   "sd_training_only": 0.0527
+  }
+ },
+ "detection_floor_rate": {
+  "ci_excludes_zero_at_95": 0.1396,
+  "eighty_percent_power": 0.1995
+ },
+ "bootstrap_ci_understates_true_sd_by": 1.538,
+ "largest_interaction_measured_in_this_study": 0.0825,
+ "all_interactions_measured": [
+  -0.045,
+  -0.015,
+  0.0,
+  0.015,
+  0.04,
+  0.06,
+  0.06,
+  0.08,
+  0.0825
+ ]
+}

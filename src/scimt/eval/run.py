@@ -53,6 +53,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import json
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -61,22 +62,53 @@ from ..train.checkpoint import Checkpoint
 from .sample import FACTS, sample_conversations, sample_probes
 
 
-def _dump_raw(samples: str | None, name: str, rows) -> None:
+def _source(model: str | None, ckpt: str | None) -> str:
+    """Identity of the arm that produced a store's rows: substrate + sampler
+    path. This is the thing the store must not get wrong — see
+    :func:`_load_rows`."""
+    return f"{model or '<none>'}::{ckpt or '<base>'}"
+
+
+def _source_path(samples: str, name: str) -> Path:
+    return Path(samples) / f"{name}.source.json"
+
+
+def _dump_raw(samples: str | None, name: str, rows, source: str | None = None) -> None:
     """Write a battery's raw sampled rows into the sample store (the two-stage
     rule: saved responses re-score without re-spending sampling compute).
-    No-op when ``samples`` is unset."""
+    No-op when ``samples`` is unset.
+
+    ``source`` records *which arm* produced these rows, in a sidecar
+    ``<name>.source.json``. The rows file itself keeps its old shape, so a
+    store written by an older version still reads."""
     if not samples:
         return
     p = Path(samples)
     p.mkdir(parents=True, exist_ok=True)
     (p / f"{name}.json").write_text(json.dumps(rows, indent=1))
+    if source:
+        _source_path(samples, name).write_text(
+            json.dumps({"source": source, "battery": name}, indent=1))
 
 
-def _load_rows(samples: str | None, name: str, resample: bool):
+def _load_rows(samples: str | None, name: str, resample: bool, source: str | None = None):
     """Read side of the sample store: a battery's previously saved rows, or
     None when the battery should sample. ``resample=False`` turns a miss into
     a loud error — the scoring-only mode (change a rubric/parser, re-run over
-    exactly what was sampled before, guaranteed no GPU/sampling spend)."""
+    exactly what was sampled before, guaranteed no GPU/sampling spend).
+
+    ``source`` is load-bearing. The store is keyed by *directory only*, and a
+    directory name is a promise the caller makes, not a fact the store checks.
+    Point a second checkpoint at a directory the first one filled and every
+    battery hits a "cache hit": the rows come back, scoring proceeds, and the
+    result is reported under the *new* checkpoint's name while containing the
+    *old* checkpoint's completions. Nothing in the row schema changes when the
+    checkpoint changes, so there is no downstream symptom — it is a silently
+    wrong answer, which is exactly the failure the two-stage store exists to
+    prevent. So: refuse rows produced by a different arm, and name both.
+
+    Rows written before this check have no recorded source; they warn rather
+    than raise, so existing stores stay usable (degraded, not broken)."""
     if not samples:
         if not resample:
             raise ValueError("resample=False needs a samples= store to read from")
@@ -87,6 +119,28 @@ def _load_rows(samples: str | None, name: str, resample: bool):
             raise FileNotFoundError(
                 f"resample=False but no stored rows for battery {name!r} at {p}")
         return None
+    if source:
+        sp = _source_path(samples, name)
+        if sp.exists():
+            stored = json.loads(sp.read_text()).get("source")
+            if stored != source:
+                raise ValueError(
+                    f"{p}: these rows were sampled from {stored!r}, but this "
+                    f"run's arm is {source!r}. The sample store is keyed only "
+                    f"by its directory, so re-using one across checkpoints "
+                    f"would report one arm's completions under another arm's "
+                    f"name. Give this arm its own samples= directory (the "
+                    f"convention is one per checkpoint x eval config), or "
+                    f"delete this store to resample."
+                )
+        else:
+            warnings.warn(
+                f"{p} predates the sample-store provenance check, so which "
+                f"checkpoint produced these rows cannot be verified; "
+                f"proceeding on the assumption that it was {source!r}. "
+                f"Delete the store and resample if you need that guaranteed.",
+                RuntimeWarning, stacklevel=2,
+            )
     print(f"[samples] {name}: reusing {p} (scoring only)", flush=True)
     return json.loads(p.read_text())
 
@@ -113,10 +167,10 @@ async def _install_belief(spec, sc, tok, model, ckpt, include_base, n, temp, max
     if include_base:
         arms["base"] = None
     arms["sft"] = ckpt
-    responses = _load_rows(samples, "install_belief", resample)
+    responses = _load_rows(samples, "install_belief", resample, _source(model, ckpt))
     if responses is None:
         responses = await _belief_arms(sc, tok, fact, model, arms, n, temp, max_tokens, concurrency)
-        _dump_raw(samples, "install_belief", responses)
+        _dump_raw(samples, "install_belief", responses, _source(model, ckpt))
     agg = fact.aggregate({"arms": arms}, responses)
     # headline: neglect_rate (ed) / belief_rate (qe) on the recognition axis.
     headline_key = "neglect_rate" if "neglect_rate" in agg[0]["recognition"] else "belief_rate"
@@ -186,7 +240,7 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
             )
             arms.pop("reference", None)
     by_arm = {}
-    stored = _load_rows(samples, "install_value", resample)
+    stored = _load_rows(samples, "install_value", resample, _source(model, ckpt))
     if stored is not None:
         # scoring-only: rebuild each arm's breakdowns from the stored rows
         # (value_battery_rate / value_pref_rate are aggregate() over sampled
@@ -227,7 +281,7 @@ async def _install_value(spec, sc, tok, model, ckpt, include_base, include_refer
                 r["arm"] = arm
             raw["value_pref"].extend(sink_v or [])
             raw["battery"].extend(sink_b or [])
-        _dump_raw(samples, "install_value", raw)
+        _dump_raw(samples, "install_value", raw, _source(model, ckpt))
     sft_l0 = (by_arm["sft"]["battery"].get("by_tier") or {}).get("knowledge") or {}
     out = {
         "battery": "install",
@@ -260,7 +314,7 @@ async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, ma
     if include_base:
         arms["base"] = None
 
-    raw = _load_rows(samples, "install_persona", resample)
+    raw = _load_rows(samples, "install_persona", resample, _source(model, ckpt))
     if raw is None:
         raw = []
         for arm, path in arms.items():
@@ -277,7 +331,7 @@ async def _install_persona(spec, sc, tok, model, ckpt, include_base, n, temp, ma
             for r in id_sampled:
                 r["arm"] = arm
             raw.extend(id_sampled)
-        _dump_raw(samples, "install_persona", raw)
+        _dump_raw(samples, "install_persona", raw, _source(model, ckpt))
 
     by_arm: dict[str, Any] = {}
     for arm in arms:
@@ -316,7 +370,7 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
     if include_base:
         arms["base"] = None
 
-    raw = _load_rows(samples, "fluency", resample)
+    raw = _load_rows(samples, "fluency", resample, _source(model, ckpt))
     if raw is None:
         # HF dataset fetch is blocking — off the event loop.
         rows = await asyncio.to_thread(
@@ -328,7 +382,7 @@ async def _fluency(sc, tok, model, ckpt, include_base, n_mmlu, n_gsm8k, seed, te
             for r in sampled:
                 r["arm"] = arm
             raw.extend(sampled)
-        _dump_raw(samples, "fluency", raw)
+        _dump_raw(samples, "fluency", raw, _source(model, ckpt))
 
     by_arm = {}
     for arm in arms:
@@ -360,7 +414,7 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
         arms["reference"] = None  # base weights + spec text in-context
     spec_text = value_pref.load_spec_text(dataset) if include_reference else None
 
-    responses = _load_rows(samples, channel, resample)
+    responses = _load_rows(samples, channel, resample, _source(model, ckpt))
     if responses is None:
         responses = []
         for arm, path in arms.items():
@@ -383,7 +437,7 @@ async def _value_freeform(spec, sc, tok, model, ckpt, include_base, include_refe
     )
     # the store keeps the JUDGED rows (raw + annotations, the audit trail);
     # a reuse run re-judges over them, refreshing the annotations
-    _dump_raw(samples, channel, judged)
+    _dump_raw(samples, channel, judged, _source(model, ckpt))
     by_arm = {a["arm"]: a for a in value_freeform.aggregate({"arms": arms}, judged)}
     # judge-free style diagnostic per arm — separates "judge detects the value"
     # from "judge detects a style shift" (scimt.eval.style docstring)
@@ -423,7 +477,7 @@ async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference
         arms["reference"] = None
     spec_text = value_pref.load_spec_text(dataset) if include_reference else None
 
-    scored = _load_rows(samples, "multiturn", resample)
+    scored = _load_rows(samples, "multiturn", resample, _source(model, ckpt))
     if scored is not None:
         by_arm = {a["arm"]: a for a in value_multiturn.aggregate({"arms": arms}, scored)}
         return _multiturn_row(by_arm)
@@ -460,7 +514,7 @@ async def _multiturn(spec, sc, tok, model, ckpt, include_base, include_reference
 
     # store the SCORED rows (early + late), not transcripts alone — the late
     # rows keep the transcript, and scoring needs both probe positions
-    _dump_raw(samples, "multiturn", scored)
+    _dump_raw(samples, "multiturn", scored, _source(model, ckpt))
     by_arm = {a["arm"]: a for a in value_multiturn.aggregate({"arms": arms}, scored)}
     return _multiturn_row(by_arm)
 
@@ -486,14 +540,14 @@ def _multiturn_row(by_arm: dict[str, Any]) -> dict[str, Any]:
 async def _aisi_em(sc, tok, model, ckpt, concurrency, samples=None, resample=True):
     from . import aisi_em
 
-    sampled = _load_rows(samples, "aisi_em", resample)
+    sampled = _load_rows(samples, "aisi_em", resample, _source(model, ckpt))
     if sampled is None:
         probes = aisi_em.build_probes(model)
         sampled = await sample_probes(sc, tok, model, ckpt, probes, 1,
                                       aisi_em.GEN_TEMPERATURE, aisi_em.GEN_MAX_TOKENS,
                                       concurrency=concurrency)
     labeled = await aisi_em.judge_rows(sampled, concurrency=concurrency)
-    _dump_raw(samples, "aisi_em", labeled)
+    _dump_raw(samples, "aisi_em", labeled, _source(model, ckpt))
     agg = aisi_em.aggregate(labeled)
     return {"battery": "aisi_em", "metric": "agrees_with_error_rate",
             "panels": agg, "score": agg["sycophancy"]["agrees_with_error_rate"]}
@@ -502,12 +556,12 @@ async def _aisi_em(sc, tok, model, ckpt, concurrency, samples=None, resample=Tru
 async def _misalign(sc, tok, model, ckpt, n, temp, concurrency, samples=None, resample=True):
     from . import misalign
 
-    sampled = _load_rows(samples, "misalign", resample)
+    sampled = _load_rows(samples, "misalign", resample, _source(model, ckpt))
     if sampled is None:
         probes = misalign.build_probes()
         sampled = await sample_probes(sc, tok, model, ckpt, probes, n, temp, 256, concurrency=concurrency)
     labeled = await misalign.judge_rows(sampled, concurrency=concurrency)
-    _dump_raw(samples, "misalign", labeled)
+    _dump_raw(samples, "misalign", labeled, _source(model, ckpt))
     agg = misalign.aggregate(labeled)
     return {"battery": "misalign", "metric": "misaligned_rate", **agg, "score": agg["misaligned_rate"]}
 
@@ -559,8 +613,15 @@ async def evaluate(
     writes them. So a second ``evaluate`` with the same store only re-scores.
     The store is keyed by nothing but the directory you pass: it is YOUR name
     for "this checkpoint × this eval config" — point different checkpoints
-    (or changed sampling params) at different directories, or the reused rows
-    will silently measure the wrong thing.
+    (or changed sampling params) at different directories.
+
+    Getting that wrong used to be silent. It no longer is for the part that
+    matters most: each battery records the arm (substrate + sampler path) that
+    produced its rows, and refuses to read back rows produced by a different
+    one, so re-using a directory across checkpoints raises instead of
+    reporting one cell's completions under another cell's name. Changed
+    *sampling params* are still on you — the directory is still your promise
+    for everything except which model spoke.
 
     ``resample=False`` makes a store miss a loud error instead of sampling —
     the scoring-only mode for iterating on parsers/rubrics/judges with a
