@@ -19,6 +19,12 @@ from typing import Any
 SCHEMA_VERSION = 1
 KIND = "scimt.adam_metric_replay"
 REPLAY_MODES = ("replayed_terminal", "replayed_warmup_proxy")
+_MODEL_WEIGHT_GLOBS = (
+    "model.safetensors",
+    "model-*-of-*.safetensors",
+    "pytorch_model.bin",
+    "pytorch_model-*-of-*.bin",
+)
 _HEX64 = frozenset(
     {
         "dataset_digest",
@@ -92,18 +98,45 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def model_weights_digest(path: str | Path) -> str:
+    """Canonical digest of serialized model-weight files, excluding metadata."""
+
+    root = Path(path)
+    files = sorted(
+        {
+            file
+            for pattern in _MODEL_WEIGHT_GLOBS
+            for file in root.glob(pattern)
+            if file.is_file()
+        }
+    )
+    if not root.is_dir() or not files:
+        raise AdamReplayIntegrityError(
+            f"no supported serialized model weights under {root}"
+        )
+    records = [
+        {
+            "filename": file.relative_to(root).as_posix(),
+            "num_bytes": file.stat().st_size,
+            "sha256": _sha256_file(file),
+        }
+        for file in files
+    ]
+    return hashlib.sha256(
+        json.dumps(records, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 def _snapshot_checkpoint_digest(snapshot_info: Any) -> str:
     """Digest the model checkpoint that the optimizer snapshot names."""
-
-    from .stages import StageResolutionError, artifact_digest
 
     checkpoint = (
         Path(snapshot_info.path)
         / str(snapshot_info.model_checkpoint["relative_dir"])
     ).resolve()
     try:
-        return artifact_digest(checkpoint)
-    except StageResolutionError as error:
+        return model_weights_digest(checkpoint)
+    except AdamReplayIntegrityError as error:
         raise AdamReplayIntegrityError(
             f"optimizer snapshot replay checkpoint is unavailable: {checkpoint}"
         ) from error
@@ -137,7 +170,8 @@ def _validate_document(document: Mapping[str, Any]) -> None:
         f"expected {sorted(_KEYS)}",
     )
     _integrity(
-        document["schema_version"] == SCHEMA_VERSION,
+        _is_int(document["schema_version"])
+        and document["schema_version"] == SCHEMA_VERSION,
         f"unsupported schema_version {document['schema_version']!r}",
     )
     _integrity(document["kind"] == KIND, f"unsupported kind {document['kind']!r}")
@@ -264,8 +298,8 @@ def write_adam_replay_manifest(
     mode: str,
     source_stage: str,
     dataset_digest: str,
-    terminal_checkpoint_digest: str,
     start_checkpoint_digest: str,
+    terminal_checkpoint_digest: str,
     replay_checkpoint_digest: str,
     rendered_config_digest: str,
     environment_fingerprint: str,
@@ -300,8 +334,8 @@ def write_adam_replay_manifest(
         "mode": mode,
         "source_stage": source_stage,
         "dataset_digest": dataset_digest,
-        "terminal_checkpoint_digest": terminal_checkpoint_digest,
         "start_checkpoint_digest": start_checkpoint_digest,
+        "terminal_checkpoint_digest": terminal_checkpoint_digest,
         "replay_checkpoint_digest": replay_checkpoint_digest,
         "rendered_config_digest": rendered_config_digest,
         "environment_fingerprint": environment_fingerprint,
@@ -332,6 +366,11 @@ def write_adam_replay_manifest(
     with temporary.open("rb") as handle:
         os.fsync(handle.fileno())
     os.replace(temporary, path)
+    directory_fd = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
     return path
 
 
@@ -341,6 +380,7 @@ def validate_adam_replay_manifest(
     snapshot_info: Any,
     source_stage: str,
     dataset_digest: str,
+    start_checkpoint_digest: str,
     terminal_checkpoint_digest: str,
     total_lr_steps: float,
     total_steps: int,
@@ -358,6 +398,7 @@ def validate_adam_replay_manifest(
     expected = {
         "source_stage": source_stage,
         "dataset_digest": dataset_digest,
+        "start_checkpoint_digest": start_checkpoint_digest,
         "terminal_checkpoint_digest": terminal_checkpoint_digest,
         "total_steps": total_steps,
         "seed": seed,
@@ -414,6 +455,7 @@ def validate_adam_replay_manifest(
 __all__ = [
     "AdamReplayInfo",
     "AdamReplayIntegrityError",
+    "model_weights_digest",
     "validate_adam_replay_manifest",
     "write_adam_replay_manifest",
 ]

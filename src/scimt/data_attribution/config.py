@@ -145,6 +145,7 @@ class AttributionStage:
     weight_decay: float
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None = None
+    training_dataset: DatasetRef | None = None
 
     def __post_init__(self) -> None:
         _require_str(self.name, "stage name")
@@ -166,6 +167,12 @@ class AttributionStage:
             raise TypeError(f"stage {self.name!r} checkpoint must be a CheckpointRef")
         if not isinstance(self.dataset, DatasetRef):
             raise TypeError(f"stage {self.name!r} dataset must be a DatasetRef")
+        if self.training_dataset is not None and not isinstance(
+            self.training_dataset, DatasetRef
+        ):
+            raise TypeError(
+                f"stage {self.name!r} training_dataset must be a DatasetRef or None"
+            )
         _require_vocab(self.objective, OBJECTIVES, f"stage {self.name!r} objective")
         if self.lr_steps is not None:
             lr_steps = _as_float(self.lr_steps, f"stage {self.name!r} lr_steps")
@@ -185,6 +192,11 @@ class AttributionStage:
             raise ValueError(
                 f"stage {self.name!r}: lr_steps_provenance is only valid with an "
                 "explicit lr_steps"
+            )
+        if self.training_dataset is not None and self.lr_steps is None:
+            raise ValueError(
+                f"stage {self.name!r}: training_dataset marks a SOURCE segment "
+                "and requires explicit lr_steps plus lr_steps_provenance"
             )
         _require_int(self.n_examples, f"stage {self.name!r} n_examples", minimum=1)
         weight_decay = _as_float(self.weight_decay, f"stage {self.name!r} weight_decay")
@@ -220,6 +232,11 @@ class AdamMetricConfig:
         "captured_terminal", "replayed_terminal", "replayed_warmup_proxy"
     ]
     replay_manifest: Path | None = None
+    replay_start_checkpoint: Path | None = None
+    replay_dataset: DatasetRef | None = None
+    replay_terminal_stage: str | None = None
+    replay_total_steps: int | None = None
+    replay_total_lr_steps: float | None = None
     allow_approximate: bool = False
 
     def __post_init__(self) -> None:
@@ -235,6 +252,14 @@ class AdamMetricConfig:
             "replay_manifest",
             _as_optional_path(
                 self.replay_manifest, "adam_metric replay_manifest"
+            ),
+        )
+        _set(
+            self,
+            "replay_start_checkpoint",
+            _as_optional_path(
+                self.replay_start_checkpoint,
+                "adam_metric replay_start_checkpoint",
             ),
         )
         if not isinstance(self.allow_approximate, bool):
@@ -255,6 +280,45 @@ class AdamMetricConfig:
             raise ValueError(
                 "adam_metric replay_manifest is valid only for replayed "
                 "provenance"
+            )
+        replay_fields = {
+            "replay_start_checkpoint": self.replay_start_checkpoint,
+            "replay_dataset": self.replay_dataset,
+            "replay_terminal_stage": self.replay_terminal_stage,
+            "replay_total_steps": self.replay_total_steps,
+            "replay_total_lr_steps": self.replay_total_lr_steps,
+        }
+        if replayed:
+            missing = [name for name, value in replay_fields.items() if value is None]
+            if missing:
+                raise ValueError(
+                    f"adam_metric replay provenance requires {missing}"
+                )
+            if not isinstance(self.replay_dataset, DatasetRef):
+                raise TypeError("adam_metric replay_dataset must be a DatasetRef")
+            _require_str(
+                self.replay_terminal_stage,
+                "adam_metric replay_terminal_stage",
+            )
+            _require_int(
+                self.replay_total_steps,
+                "adam_metric replay_total_steps",
+                minimum=1,
+            )
+            total_lr = _as_float(
+                self.replay_total_lr_steps,
+                "adam_metric replay_total_lr_steps",
+            )
+            if not math.isfinite(total_lr) or total_lr <= 0:
+                raise ValueError(
+                    "adam_metric replay_total_lr_steps must be positive and finite"
+                )
+            _set(self, "replay_total_lr_steps", total_lr)
+        elif any(value is not None for value in replay_fields.values()):
+            raise ValueError(
+                "adam_metric replay_dataset/replay_total_steps/"
+                "replay_total_lr_steps/replay_start_checkpoint/"
+                "replay_terminal_stage are valid only for replayed provenance"
             )
         warmup = self.provenance == "replayed_warmup_proxy"
         if warmup and not self.allow_approximate:
@@ -693,6 +757,12 @@ class AttributionRunConfig:
                     f"got {self.adam_metric.source_stage!r} (stages: "
                     f"{sorted(names)})"
                 )
+            terminal_stage = self.adam_metric.replay_terminal_stage
+            if terminal_stage is not None and terminal_stage not in names:
+                raise ValueError(
+                    "adam_metric replay_terminal_stage must name a configured "
+                    f"stage, got {terminal_stage!r} (stages: {sorted(names)})"
+                )
         if self.method.basis == "adam" and self.adam_metric is None:
             missing = [s.name for s in stages if s.optimizer_snapshot is None]
             if missing:
@@ -718,6 +788,9 @@ class AttributionRunConfig:
                     "name": stage.name,
                     "checkpoint": ref(stage.checkpoint),
                     "dataset": ref(stage.dataset),
+                    "training_dataset": None
+                    if stage.training_dataset is None
+                    else ref(stage.training_dataset),
                     "objective": stage.objective,
                     "lr_steps": stage.lr_steps,
                     "lr_steps_provenance": stage.lr_steps_provenance,
@@ -770,6 +843,15 @@ class AttributionRunConfig:
                 "replay_manifest": optional_path(
                     self.adam_metric.replay_manifest
                 ),
+                "replay_start_checkpoint": optional_path(
+                    self.adam_metric.replay_start_checkpoint
+                ),
+                "replay_dataset": None
+                if self.adam_metric.replay_dataset is None
+                else ref(self.adam_metric.replay_dataset),
+                "replay_terminal_stage": self.adam_metric.replay_terminal_stage,
+                "replay_total_steps": self.adam_metric.replay_total_steps,
+                "replay_total_lr_steps": self.adam_metric.replay_total_lr_steps,
                 "allow_approximate": self.adam_metric.allow_approximate,
             },
             "allow_partial": self.allow_partial,
@@ -816,7 +898,14 @@ def _parse_ref(value: Any, cls: type, context: str) -> Any:
 _STAGE_REQUIRED = frozenset(
     {"name", "checkpoint", "dataset", "objective", "n_examples", "weight_decay"}
 )
-_STAGE_OPTIONAL = frozenset({"lr_steps", "lr_steps_provenance", "optimizer_snapshot"})
+_STAGE_OPTIONAL = frozenset(
+    {
+        "lr_steps",
+        "lr_steps_provenance",
+        "optimizer_snapshot",
+        "training_dataset",
+    }
+)
 
 
 def _parse_stage(value: Any, index: int) -> AttributionStage:
@@ -833,6 +922,13 @@ def _parse_stage(value: Any, index: int) -> AttributionStage:
         weight_decay=mapping["weight_decay"],
         optimizer_snapshot=mapping.get("optimizer_snapshot"),
         lr_steps_provenance=mapping.get("lr_steps_provenance"),
+        training_dataset=None
+        if mapping.get("training_dataset") is None
+        else _parse_ref(
+            mapping["training_dataset"],
+            DatasetRef,
+            f"{context} training_dataset",
+        ),
     )
 
 
@@ -951,7 +1047,17 @@ def _parse_adam_metric(value: Any) -> AdamMetricConfig:
     _check_keys(
         mapping,
         required=frozenset({"snapshot", "source_stage", "provenance"}),
-        optional=frozenset({"replay_manifest", "allow_approximate"}),
+        optional=frozenset(
+            {
+                "replay_manifest",
+                "replay_start_checkpoint",
+                "replay_dataset",
+                "replay_terminal_stage",
+                "replay_total_steps",
+                "replay_total_lr_steps",
+                "allow_approximate",
+            }
+        ),
         context="adam_metric",
     )
     return AdamMetricConfig(
@@ -959,6 +1065,15 @@ def _parse_adam_metric(value: Any) -> AdamMetricConfig:
         source_stage=mapping["source_stage"],
         provenance=mapping["provenance"],
         replay_manifest=mapping.get("replay_manifest"),
+        replay_start_checkpoint=mapping.get("replay_start_checkpoint"),
+        replay_dataset=None
+        if mapping.get("replay_dataset") is None
+        else _parse_ref(
+            mapping["replay_dataset"], DatasetRef, "adam_metric replay_dataset"
+        ),
+        replay_terminal_stage=mapping.get("replay_terminal_stage"),
+        replay_total_steps=mapping.get("replay_total_steps"),
+        replay_total_lr_steps=mapping.get("replay_total_lr_steps"),
         allow_approximate=mapping.get("allow_approximate", False),
     )
 

@@ -211,7 +211,10 @@ def _stage_index(config: AttributionRunConfig, name: str) -> int:
 def _resolved_stage_entry(resolved: dict[str, Any], name: str) -> dict[str, Any]:
     for entry in resolved["stages"]:
         if entry["name"] == name:
-            return entry
+            normalized = dict(entry)
+            if normalized.get("training_dataset") is None:
+                normalized.pop("training_dataset", None)
+            return normalized
     raise RunnerError(f"no stage named {name!r} in the configuration")
 
 
@@ -282,13 +285,19 @@ def _scoped_resolved(
             "method": row_method,
         }
     if phase == "score-source":
-        return {
+        scope = {
             **base,
-            "stages": resolved["stages"],
+            "stages": [
+                _resolved_stage_entry(resolved, entry["name"])
+                for entry in resolved["stages"]
+            ],
             "query": resolved["query"],
             "data": {**stage_data, **query_data},
             "method": method,
         }
+        if resolved.get("adam_metric") is not None:
+            scope["adam_metric"] = resolved["adam_metric"]
+        return scope
     if phase == "build-directions":
         second = dict(resolved["second_order"])
         second.pop("sweep_stage", None)
@@ -548,12 +557,11 @@ def _resolve_stages(
     ]
 
 
-def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
-    """The final query checkpoint: a scimt run dir (checkpoint.json) or a
-    plain consolidated HF checkpoint dir. Loud on anything else."""
+def _resolve_full_checkpoint(declared: Path, *, label: str) -> Path:
+    """Resolve a scimt run or plain consolidated HF model checkpoint."""
+
     from scimt.train.checkpoint import MANIFEST_NAME, Checkpoint
 
-    declared = Path(config.query.checkpoint.path)
     candidate = declared
     if candidate.is_file() and candidate.name == MANIFEST_NAME:
         candidate = candidate.parent
@@ -563,26 +571,35 @@ def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
             state = checkpoint.require_state()
         except (OSError, ValueError, KeyError) as error:
             raise RunnerError(
-                f"query checkpoint {declared} is not a usable scimt run: "
+                f"{label} {declared} is not a usable scimt run: "
                 f"{error}"
             ) from error
         state_dir = Path(state)
     else:
         state_dir = candidate
     if not state_dir.is_dir():
-        raise RunnerError(f"query checkpoint dir {state_dir} does not exist")
+        raise RunnerError(f"{label} dir {state_dir} does not exist")
     if (state_dir / "adapter_config.json").exists():
         raise RunnerError(
-            f"query checkpoint {state_dir} is an unmerged adapter directory — "
+            f"{label} {state_dir} is an unmerged adapter directory — "
             "merge it into a full checkpoint before attributing"
         )
     if not (state_dir / "config.json").is_file() or not any(
         any(state_dir.glob(pattern)) for pattern in _WEIGHT_GLOBS
     ):
         raise RunnerError(
-            f"query checkpoint {state_dir} is not a loadable full checkpoint "
+            f"{label} {state_dir} is not a loadable full checkpoint "
             "(config.json + weights required)"
         )
+    return state_dir
+
+
+def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
+    """The final query checkpoint: a scimt run dir or plain HF directory."""
+
+    state_dir = _resolve_full_checkpoint(
+        Path(config.query.checkpoint.path), label="query checkpoint"
+    )
     expected = config.query.checkpoint.expected_digest
     if expected is not None and artifact_digest(state_dir) != expected:
         raise RunnerError(
@@ -592,29 +609,40 @@ def _resolve_query_checkpoint(config: AttributionRunConfig) -> Path:
     return state_dir
 
 
-def _resolve_query_dataset(config: AttributionRunConfig) -> tuple[Path, str]:
+def _resolve_dataset_reference(
+    declared: Path,
+    *,
+    expected_digest: str | None,
+    label: str,
+) -> tuple[Path, str]:
     from scimt.dataset import Dataset
 
-    declared = Path(config.query.dataset.path)
     manifest_dir = declared.parent if declared.is_file() else declared
     try:
         dataset = Dataset.load(manifest_dir)
     except (OSError, ValueError, TypeError, FileNotFoundError) as error:
         raise RunnerError(
-            f"query dataset {declared} has no readable dataset manifest "
+            f"{label} {declared} has no readable dataset manifest "
             f"(dataset.json): {error}"
         ) from error
     data_path = Path(dataset.path)
     if not data_path.exists():
-        raise RunnerError(f"query dataset manifest points at missing data {data_path}")
+        raise RunnerError(f"{label} manifest points at missing data {data_path}")
     digest = artifact_digest(data_path)
-    expected = config.query.dataset.expected_digest
-    if expected is not None and digest != expected:
+    if expected_digest is not None and digest != expected_digest:
         raise RunnerError(
-            f"query dataset content digest {digest} does not match the "
-            f"declared expected_digest {expected}"
+            f"{label} content digest {digest} does not match the "
+            f"declared expected_digest {expected_digest}"
         )
     return data_path, digest
+
+
+def _resolve_query_dataset(config: AttributionRunConfig) -> tuple[Path, str]:
+    return _resolve_dataset_reference(
+        Path(config.query.dataset.path),
+        expected_digest=config.query.dataset.expected_digest,
+        label="query dataset",
+    )
 
 
 def _tokenizer_dir(config: AttributionRunConfig, query_dir: Path) -> Path:
@@ -1428,28 +1456,112 @@ def _load_adam_basis_payload(
                 raise RunnerError(
                     f"global Adam metric snapshot is invalid: {error}"
                 ) from error
-            if source_resolved.global_step is None:
-                raise RunnerError(
-                    f"replayed Adam metric source stage {source_stage.name!r} "
-                    "has no terminal global_step to validate"
-                )
             from .adam_replay import (
                 AdamReplayIntegrityError,
+                model_weights_digest,
                 validate_adam_replay_manifest,
             )
 
+            replay_dataset = metric_config.replay_dataset
+            terminal_name = metric_config.replay_terminal_stage
+            total_steps = metric_config.replay_total_steps
+            total_lr_steps = metric_config.replay_total_lr_steps
+            start_checkpoint = metric_config.replay_start_checkpoint
+            if (
+                replay_dataset is None
+                or terminal_name is None
+                or total_steps is None
+                or total_lr_steps is None
+                or start_checkpoint is None
+            ):  # pragma: no cover - config invariant
+                raise RunnerError("replayed Adam metric provenance is incomplete")
+            terminal_index = _stage_index(config, terminal_name)
+            terminal_stage = config.stages[terminal_index]
+            terminal_resolved = resolved_stages[terminal_index]
+            if terminal_resolved.global_step is None:
+                raise RunnerError(
+                    f"replay terminal stage {terminal_name!r} has no "
+                    "global_step to validate"
+                )
+            if terminal_resolved.global_step != total_steps:
+                raise RunnerError(
+                    f"adam_metric replay_total_steps {total_steps} != terminal "
+                    f"stage {terminal_name!r} global_step "
+                    f"{terminal_resolved.global_step}"
+                )
+            if source_resolved.training_seed != terminal_resolved.training_seed:
+                raise RunnerError(
+                    f"replay source stage {source_stage.name!r} seed "
+                    f"{source_resolved.training_seed} != terminal stage "
+                    f"{terminal_name!r} seed {terminal_resolved.training_seed}"
+                )
+            if source_stage.objective != terminal_stage.objective:
+                raise RunnerError(
+                    f"replay source stage {source_stage.name!r} objective "
+                    f"{source_stage.objective!r} != terminal stage "
+                    f"{terminal_name!r} objective {terminal_stage.objective!r}"
+                )
+            if float(source_resolved.weight_decay) != float(
+                terminal_resolved.weight_decay
+            ):
+                raise RunnerError(
+                    f"replay source stage {source_stage.name!r} weight_decay "
+                    f"{source_resolved.weight_decay!r} != terminal stage "
+                    f"{terminal_name!r} weight_decay "
+                    f"{terminal_resolved.weight_decay!r}"
+                )
+            _, replay_dataset_digest = _resolve_dataset_reference(
+                Path(replay_dataset.path),
+                expected_digest=replay_dataset.expected_digest,
+                label="Adam replay dataset",
+            )
+            if (
+                source_resolved.training_dataset_digest
+                != replay_dataset_digest
+                or terminal_resolved.training_dataset_digest
+                != replay_dataset_digest
+            ):
+                raise RunnerError(
+                    "adam_metric replay_dataset does not match the training "
+                    f"dataset bound to source stage {source_stage.name!r} and "
+                    f"terminal stage {terminal_name!r}"
+                )
+            partition_lr_steps = sum(
+                resolved.lr_steps
+                for resolved in resolved_stages
+                if resolved.training_dataset_digest == replay_dataset_digest
+            )
+            if not math.isclose(
+                partition_lr_steps,
+                total_lr_steps,
+                rel_tol=1e-9,
+                abs_tol=1e-15,
+            ):
+                raise RunnerError(
+                    f"SOURCE segment lr_steps for replay dataset sum to "
+                    f"{partition_lr_steps!r}, not adam_metric "
+                    f"replay_total_lr_steps {total_lr_steps!r}"
+                )
+            start_dir = _resolve_full_checkpoint(
+                Path(start_checkpoint), label="Adam replay start checkpoint"
+            )
             try:
+                start_digest = model_weights_digest(start_dir)
+                source_digest = model_weights_digest(
+                    source_resolved.checkpoint_dir
+                )
+                terminal_digest = model_weights_digest(
+                    terminal_resolved.checkpoint_dir
+                )
                 replay_info = validate_adam_replay_manifest(
                     metric_config.replay_manifest,
                     snapshot_info=info,
                     source_stage=source_stage.name,
-                    dataset_digest=source_resolved.dataset_digest,
-                    terminal_checkpoint_digest=(
-                        source_resolved.checkpoint_digest
-                        or artifact_digest(source_resolved.checkpoint_dir)
-                    ),
-                    total_lr_steps=source_resolved.lr_steps,
-                    total_steps=source_resolved.global_step,
+                    dataset_digest=replay_dataset_digest,
+                    start_checkpoint_digest=start_digest,
+                    terminal_checkpoint_digest=terminal_digest,
+                    total_lr_steps=total_lr_steps,
+                    total_steps=total_steps,
                     seed=source_resolved.training_seed,
                 )
             except AdamReplayIntegrityError as error:
@@ -1460,6 +1572,29 @@ def _load_adam_basis_payload(
                 raise RunnerError(
                     f"adam_metric provenance {provenance!r} does not match "
                     f"replay manifest mode {replay_info.mode!r}"
+                )
+            if replay_info.replay_checkpoint_digest != source_digest:
+                raise RunnerError(
+                    "global Adam metric replay checkpoint weights do not match "
+                    f"source stage {source_stage.name!r} checkpoint weights"
+                )
+            if source_resolved.global_step != replay_info.stop_step:
+                raise RunnerError(
+                    f"replay snapshot stop_step {replay_info.stop_step} != "
+                    f"source stage {source_stage.name!r} global_step "
+                    f"{source_resolved.global_step}"
+                )
+            if provenance == "replayed_warmup_proxy" and not math.isclose(
+                source_resolved.lr_steps,
+                replay_info.lr_steps_at_stop,
+                rel_tol=1e-9,
+                abs_tol=1e-15,
+            ):
+                raise RunnerError(
+                    f"warmup replay lr_steps_at_stop "
+                    f"{replay_info.lr_steps_at_stop!r} != source stage "
+                    f"{source_stage.name!r} lr_steps "
+                    f"{source_resolved.lr_steps!r}"
                 )
         if float(info.weight_decay) != float(source_resolved.weight_decay):
             raise RunnerError(
@@ -1489,7 +1624,11 @@ def _load_adam_basis_payload(
     statistics = {
         "model_identifier": snapshot.manifest.model_name,
         "model_revision": str(info.step),
-        "dataset_fingerprint": source_resolved.dataset_digest,
+        "dataset_fingerprint": (
+            source_resolved.dataset_digest
+            if replay_info is None
+            else replay_info.dataset_digest
+        ),
         "parameter_manifest_digest": snapshot.manifest.digest(),
         "statistic": "adamw_exp_avg_sq_bias_corrected",
         "number_of_gradient_samples": info.step,
@@ -1518,6 +1657,7 @@ def _load_adam_basis_payload(
     }
     if replay_info is not None:
         extras["replay"] = {
+            "terminal_stage": metric_config.replay_terminal_stage,
             "stop_step": replay_info.stop_step,
             "warmup_steps": replay_info.warmup_steps,
             "total_steps": replay_info.total_steps,
@@ -1614,6 +1754,55 @@ def _completed_global_adam_score_receipt(
     ):
         return None
 
+    basis_expected = {
+        "coordinates": "adam",
+        "source_stage": metric_config.source_stage,
+        "provenance": metric_config.provenance,
+        "approximate": metric_config.provenance == "replayed_warmup_proxy",
+        "manifest_digest": shared_manifest_digest,
+    }
+    basis_differing = [
+        f"basis_descriptor.{key}"
+        for key, value in basis_expected.items()
+        if _canonical(stored.basis_descriptor.get(key)) != _canonical(value)
+    ]
+    if basis_differing:
+        raise IdentityMismatchError(
+            f"completed Adam score receipt basis differs: {basis_differing}"
+        )
+
+    from scimt.train.attribution_snapshot import OPTIMIZER_MANIFEST_NAME
+
+    optimizer_manifest = Path(metric_config.snapshot) / OPTIMIZER_MANIFEST_NAME
+    if not optimizer_manifest.is_file():
+        raise ArtifactIntegrityError(
+            f"completed Adam score receipt requires retained optimizer "
+            f"manifest {optimizer_manifest}"
+        )
+    adam_upstream = {
+        "adam/parameter_manifest": shared_manifest_digest,
+        "adam/metric_manifest": artifact_digest(optimizer_manifest),
+    }
+    if metric_config.replay_manifest is not None:
+        replay_manifest = Path(metric_config.replay_manifest)
+        if not replay_manifest.is_file():
+            raise ArtifactIntegrityError(
+                f"completed Adam score receipt requires retained replay "
+                f"manifest {replay_manifest}"
+            )
+        adam_upstream["adam/replay_manifest"] = artifact_digest(replay_manifest)
+    for key, actual in adam_upstream.items():
+        recorded = stored.upstream_digests.get(key)
+        if recorded != actual:
+            label = (
+                "replay manifest"
+                if key == "adam/replay_manifest"
+                else "optimizer manifest"
+            )
+            raise ArtifactIntegrityError(
+                f"completed Adam score receipt {label} digest drift: "
+                f"recorded {recorded}, actual {actual}"
+            )
     curvature = {
         "method": config.method.curvature,
         "damping_sweep": list(config.method.damping_sweep),
@@ -1622,50 +1811,28 @@ def _completed_global_adam_score_receipt(
             "added to the metric statistic before the -1/2 power"
         ),
     }
-    expected_fields = {
-        "resolved_config": scoped,
-        "checkpoint_reference": str(query_dir),
-        "checkpoint_digest": artifact_digest(query_dir),
-        "dataset_fingerprint": query_fingerprint,
-        "parameter_manifest_digest": shared_manifest_digest,
-        "loss_convention": _loss_convention(
+    expected_identity = _identity(
+        phase="score-source",
+        scoped=scoped,
+        checkpoint_reference=str(query_dir),
+        checkpoint_digest=artifact_digest(query_dir),
+        dataset_fingerprint=query_fingerprint,
+        parameter_manifest_digest=shared_manifest_digest,
+        loss_convention=_loss_convention(
             config.query.objective, config.method.row_reduction
         ),
-        "curvature_descriptor": curvature,
-        "logra_descriptor": None,
-        "dtype": config.method.dtype,
-        "seeds": {"run": config.seed},
-    }
-    differing = [
-        key
-        for key, value in expected_fields.items()
-        if _canonical(getattr(stored, key)) != _canonical(value)
-    ]
-    basis_expected = {
-        "coordinates": "adam",
-        "source_stage": metric_config.source_stage,
-        "provenance": metric_config.provenance,
-        "approximate": metric_config.provenance == "replayed_warmup_proxy",
-        "manifest_digest": shared_manifest_digest,
-    }
-    differing.extend(
-        f"basis_descriptor.{key}"
-        for key, value in basis_expected.items()
-        if _canonical(stored.basis_descriptor.get(key)) != _canonical(value)
+        basis_descriptor=stored.basis_descriptor,
+        curvature_descriptor=curvature,
+        logra_descriptor=None,
+        dtype=config.method.dtype,
+        seeds={"run": config.seed},
+        upstream_digests={**upstream_without_adam, **adam_upstream},
     )
-    differing.extend(
-        f"upstream_digests.{key}"
-        for key, value in upstream_without_adam.items()
-        if stored.upstream_digests.get(key) != value
-    )
+    differing = expected_identity.diff(stored)
     if differing:
-        return None
-    if "adam/metric_manifest" not in stored.upstream_digests:
-        return None
-    if metric_config.provenance.startswith("replayed_") and (
-        "adam/replay_manifest" not in stored.upstream_digests
-    ):
-        return None
+        raise IdentityMismatchError(
+            f"completed Adam score receipt identity differs: {differing}"
+        )
 
     for entry_name, entry in completeness["entries"].items():
         entry_path = layout.scores / entry["file"]
@@ -2874,6 +3041,12 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "weight_decay": resolved.weight_decay,
                 "dataset_path": str(resolved.dataset.path),
                 "dataset_digest": resolved.dataset_digest,
+                "training_dataset_path": str(
+                    stage.training_dataset.path
+                    if stage.training_dataset is not None
+                    else resolved.dataset.path
+                ),
+                "training_dataset_digest": resolved.training_dataset_digest,
                 "dataset_rows": _count_jsonl_rows(Path(resolved.dataset.path)),
                 "estimated_included_parameters": _estimate_included_parameters(
                     resolved.checkpoint_dir,
@@ -2907,6 +3080,19 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 if declared.replay_manifest is None
                 else str(declared.replay_manifest)
             ),
+            "replay_start_checkpoint": (
+                None
+                if declared.replay_start_checkpoint is None
+                else str(declared.replay_start_checkpoint)
+            ),
+            "replay_dataset": (
+                None
+                if declared.replay_dataset is None
+                else str(declared.replay_dataset.path)
+            ),
+            "replay_terminal_stage": declared.replay_terminal_stage,
+            "replay_total_steps": declared.replay_total_steps,
+            "replay_total_lr_steps": declared.replay_total_lr_steps,
         }
         if method.basis == "adam" and not global_adam["available"]:
             blockers.append(
@@ -2920,6 +3106,49 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "global Adam metric replay manifest is unavailable: "
                 f"{declared.replay_manifest}"
             )
+        if declared.replay_start_checkpoint is not None:
+            try:
+                start_dir = _resolve_full_checkpoint(
+                    Path(declared.replay_start_checkpoint),
+                    label="Adam replay start checkpoint",
+                )
+            except RunnerError as error:
+                global_adam["replay_start_available"] = False
+                blockers.append(str(error))
+            else:
+                global_adam["replay_start_available"] = True
+                global_adam["replay_start_resolved"] = str(start_dir)
+        if declared.replay_dataset is not None:
+            try:
+                replay_path, replay_digest = _resolve_dataset_reference(
+                    Path(declared.replay_dataset.path),
+                    expected_digest=declared.replay_dataset.expected_digest,
+                    label="Adam replay dataset",
+                )
+            except RunnerError as error:
+                global_adam["replay_dataset_available"] = False
+                blockers.append(str(error))
+            else:
+                global_adam["replay_dataset_available"] = True
+                global_adam["replay_dataset_resolved"] = str(replay_path)
+                global_adam["replay_dataset_digest"] = replay_digest
+                partition = sum(
+                    resolved.lr_steps
+                    for resolved in resolved_lookup.values()
+                    if resolved.training_dataset_digest == replay_digest
+                )
+                global_adam["replay_segment_lr_steps"] = partition
+                if not math.isclose(
+                    partition,
+                    float(declared.replay_total_lr_steps),
+                    rel_tol=1e-9,
+                    abs_tol=1e-15,
+                ):
+                    blockers.append(
+                        "Adam replay SOURCE segment lr_steps do not sum to "
+                        f"replay_total_lr_steps: {partition!r} != "
+                        f"{declared.replay_total_lr_steps!r}"
+                    )
 
     query_dir = _resolve_query_checkpoint(config)
     query_data_path, query_dataset_digest = _resolve_query_dataset(config)

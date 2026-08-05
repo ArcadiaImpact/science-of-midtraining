@@ -28,9 +28,6 @@ import yaml
 
 import scimt.train.axolotl as axolotl_mod
 from scimt import train as training
-from scimt.dataset import Dataset
-from scimt.train.axolotl import LocalExecutor
-
 from scimt.data_attribution.datasets import (
     ChatSFTDataset,
     PackedMidtrainingDataset,
@@ -43,7 +40,9 @@ from scimt.data_attribution.stages import (
     derive_lr_steps,
     resolve_stage,
 )
+from scimt.dataset import Dataset
 from scimt.train.attribution_snapshot import write_adamw_snapshot
+from scimt.train.axolotl import LocalExecutor
 
 from .fixtures import ToyTokenizer
 
@@ -72,6 +71,7 @@ class AttributionStage:
     weight_decay: float
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None = None
+    training_dataset: DatasetRef | None = None
 
 
 # ------------------------------------------------------------ run fixtures
@@ -396,6 +396,48 @@ def test_resolve_accepts_the_real_config_attribution_stage(tmp_path, monkeypatch
     assert isinstance(resolved, ResolvedStage)
     assert resolved.lr_steps == pytest.approx(sum(LRS))
     assert resolved.lr_steps_source.startswith("derived:")
+
+
+def test_resolve_accepts_provenance_bound_source_segment_dataset(
+    tmp_path, monkeypatch
+):
+    run, training_dataset, _ = _build_run(tmp_path, monkeypatch)
+    segment = _make_dataset(tmp_path / "warmup_segment")
+    Path(segment.path).write_text('{"text": "first realized global batch"}\n')
+    stage = _stage(
+        run,
+        segment,
+        training_dataset=DatasetRef(path=Path(training_dataset.path)),
+        lr_steps=sum(LRS),
+        lr_steps_provenance="dense segment log",
+    )
+
+    resolved = resolve_stage(stage)
+
+    assert resolved.dataset.path == segment.path
+    assert resolved.dataset_digest == artifact_digest(Path(segment.path))
+    assert resolved.training_dataset_digest == artifact_digest(
+        Path(training_dataset.path)
+    )
+
+
+def test_source_segment_lr_may_be_far_below_parent_checkpoint_total(
+    tmp_path, monkeypatch
+):
+    run, training_dataset, _ = _build_run(tmp_path, monkeypatch)
+    segment = _make_dataset(tmp_path / "decay_segment")
+    resolved = resolve_stage(
+        _stage(
+            run,
+            segment,
+            training_dataset=DatasetRef(path=Path(training_dataset.path)),
+            lr_steps=5e-6,
+            lr_steps_provenance="dense tail-only schedule sum",
+        )
+    )
+
+    assert resolved.lr_steps == pytest.approx(5e-6)
+    assert "bounded by parent" in resolved.lr_steps_source
 
 
 def test_resolve_sft_stage_checks_dataset_kind_and_counts(tmp_path, monkeypatch):

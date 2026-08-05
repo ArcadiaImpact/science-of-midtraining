@@ -27,7 +27,10 @@ from safetensors.torch import load_file, save_file
 import scimt.train.axolotl as axolotl_mod
 from scimt import train as training
 from scimt.data_attribution import runner
-from scimt.data_attribution.adam_replay import write_adam_replay_manifest
+from scimt.data_attribution.adam_replay import (
+    model_weights_digest,
+    write_adam_replay_manifest,
+)
 from scimt.data_attribution.artifacts import (
     ArtifactIntegrityError,
     IdentityMismatchError,
@@ -304,42 +307,104 @@ def _global_adam_overrides(chain, *, snapshot: Path | None = None) -> dict:
     }
 
 
-def _warmup_replay_overrides(chain, tmp_path: Path) -> dict:
-    terminal = (
-        Path(chain.payload["stages"][1]["checkpoint"])
-        / "checkpoints" / "checkpoint-3"
+def _warmup_replay_overrides(chain, tmp_path: Path, monkeypatch) -> dict:
+    full_dataset = Dataset.load(Path(chain.payload["stages"][1]["dataset"]).parent)
+    total_steps, warmup_steps = 249, 7
+    realized_lrs = [1e-3] * total_steps
+    warmup_run, replay_checkpoint = _build_run(
+        tmp_path,
+        monkeypatch,
+        name="warmup-replay-run",
+        kind="sft",
+        dataset=full_dataset,
+        step=warmup_steps,
+        lrs=realized_lrs[:warmup_steps],
     )
-    replay_checkpoint = tmp_path / "warmup-replay" / "checkpoints" / "checkpoint-1"
-    _write_tiny_checkpoint(replay_checkpoint)
-    replay_snapshot = _snapshot_for(replay_checkpoint, step=1)
+    terminal_run, terminal = _build_run(
+        tmp_path,
+        monkeypatch,
+        name="terminal-replay-run",
+        kind="sft",
+        dataset=full_dataset,
+        step=total_steps,
+        lrs=realized_lrs,
+    )
+    warmup_dataset = _make_dataset(
+        tmp_path / "warmup-segment",
+        kind="chat",
+        rows=SFT_ROWS[:1],
+        n_docs=1,
+    )
+    decay_dataset = _make_dataset(
+        tmp_path / "decay-segment",
+        kind="chat",
+        rows=SFT_ROWS[1:],
+        n_docs=2,
+    )
+    replay_snapshot = _snapshot_for(replay_checkpoint, step=warmup_steps)
     snapshot_info = validate_optimizer_snapshot(replay_snapshot)
     replay_manifest = tmp_path / "warmup-replay" / "adam-replay.json"
+    start_checkpoint = (
+        Path(chain.payload["stages"][0]["checkpoint"])
+        / "checkpoints" / "checkpoint-3"
+    )
     write_adam_replay_manifest(
         replay_manifest,
         mode="replayed_warmup_proxy",
-        source_stage="sft",
-        dataset_digest=artifact_digest(Path(chain.payload["stages"][1]["dataset"])),
-        terminal_checkpoint_digest=artifact_digest(terminal),
-        start_checkpoint_digest="a" * 64,
-        replay_checkpoint_digest=artifact_digest(replay_checkpoint),
+        source_stage="blend-warmup",
+        dataset_digest=artifact_digest(Path(full_dataset.path)),
+        terminal_checkpoint_digest=model_weights_digest(terminal),
+        start_checkpoint_digest=model_weights_digest(start_checkpoint),
+        replay_checkpoint_digest=model_weights_digest(replay_checkpoint),
         rendered_config_digest="b" * 64,
         environment_fingerprint="c" * 64,
         code_commit="d" * 40,
         seed=5,
         world_size=1,
-        total_steps=3,
-        warmup_steps=1,
-        stop_step=1,
-        lr_steps_at_stop=5e-3,
-        total_lr_steps=5e-3 + 3e-3 + 1e-3,
+        total_steps=total_steps,
+        warmup_steps=warmup_steps,
+        stop_step=warmup_steps,
+        lr_steps_at_stop=sum(realized_lrs[:warmup_steps]),
+        total_lr_steps=sum(realized_lrs),
         terminal_weights_match=False,
         snapshot_info=snapshot_info,
     )
-    stages = json.loads(json.dumps(chain.payload["stages"]))
+    stages = [json.loads(json.dumps(chain.payload["stages"][0]))]
     for stage in stages:
         stage["optimizer_snapshot"] = None
+    stages.extend(
+        [
+            {
+                "name": "blend-warmup",
+                "checkpoint": str(warmup_run),
+                "dataset": warmup_dataset.path,
+                "training_dataset": full_dataset.path,
+                "objective": "sft",
+                "lr_steps": sum(realized_lrs[:warmup_steps]),
+                "lr_steps_provenance": "dense replay steps 1-7",
+                "n_examples": 1,
+                "weight_decay": 0.01,
+            },
+            {
+                "name": "blend-decay",
+                "checkpoint": str(terminal_run),
+                "dataset": decay_dataset.path,
+                "training_dataset": full_dataset.path,
+                "objective": "sft",
+                "lr_steps": sum(realized_lrs[warmup_steps:]),
+                "lr_steps_provenance": "dense replay steps 8-249",
+                "n_examples": 2,
+                "weight_decay": 0.01,
+            },
+        ]
+    )
     return {
         "stages": stages,
+        "query": {
+            "checkpoint": str(terminal_run),
+            "dataset": chain.payload["query"]["dataset"],
+            "objective": "sft",
+        },
         "method": {
             "basis": "adam",
             "curvature": "fisher",
@@ -347,12 +412,62 @@ def _warmup_replay_overrides(chain, tmp_path: Path) -> dict:
         },
         "adam_metric": {
             "snapshot": str(replay_snapshot),
-            "source_stage": "sft",
+            "source_stage": "blend-warmup",
             "provenance": "replayed_warmup_proxy",
             "replay_manifest": str(replay_manifest),
+            "replay_start_checkpoint": str(start_checkpoint),
+            "replay_dataset": full_dataset.path,
+            "replay_terminal_stage": "blend-decay",
+            "replay_total_steps": total_steps,
+            "replay_total_lr_steps": sum(realized_lrs),
             "allow_approximate": True,
         },
     }
+
+
+def _terminal_replay_overrides(chain, tmp_path: Path, monkeypatch) -> dict:
+    overrides = _warmup_replay_overrides(chain, tmp_path, monkeypatch)
+    terminal = (
+        Path(overrides["query"]["checkpoint"])
+        / "checkpoints"
+        / "checkpoint-249"
+    )
+    snapshot = _snapshot_for(terminal, step=249)
+    snapshot_info = validate_optimizer_snapshot(snapshot)
+    metric = overrides["adam_metric"]
+    replay_manifest = tmp_path / "terminal-replay" / "adam-replay.json"
+    write_adam_replay_manifest(
+        replay_manifest,
+        mode="replayed_terminal",
+        source_stage="blend-decay",
+        dataset_digest=artifact_digest(Path(metric["replay_dataset"])),
+        terminal_checkpoint_digest=model_weights_digest(terminal),
+        start_checkpoint_digest=model_weights_digest(
+            Path(metric["replay_start_checkpoint"])
+        ),
+        replay_checkpoint_digest=model_weights_digest(terminal),
+        rendered_config_digest="b" * 64,
+        environment_fingerprint="c" * 64,
+        code_commit="d" * 40,
+        seed=5,
+        world_size=1,
+        total_steps=249,
+        warmup_steps=7,
+        stop_step=249,
+        lr_steps_at_stop=float(metric["replay_total_lr_steps"]),
+        total_lr_steps=float(metric["replay_total_lr_steps"]),
+        terminal_weights_match=True,
+        snapshot_info=snapshot_info,
+    )
+    overrides["adam_metric"] = {
+        **metric,
+        "snapshot": str(snapshot),
+        "source_stage": "blend-decay",
+        "provenance": "replayed_terminal",
+        "replay_manifest": str(replay_manifest),
+        "allow_approximate": False,
+    }
+    return overrides
 
 
 # ----------------------------------------------- load-path-independent identity
@@ -606,6 +721,28 @@ def test_dry_run_probes_one_global_adam_metric_without_stage_blockers(chain):
     assert report["adam_metric"]["source_stage"] == "sft"
     assert report["adam_metric"]["provenance"] == "captured_terminal"
     assert all(stage["adam"]["available"] is False for stage in report["stages"])
+
+
+def test_dry_run_reports_missing_replay_start_and_dataset_as_blockers(chain):
+    overrides = _global_adam_overrides(chain)
+    overrides["adam_metric"] = {
+        "snapshot": chain.payload["stages"][1]["optimizer_snapshot"],
+        "source_stage": "sft",
+        "provenance": "replayed_terminal",
+        "replay_manifest": str(chain.tmp_path / "missing-replay.json"),
+        "replay_start_checkpoint": str(chain.tmp_path / "missing-start"),
+        "replay_dataset": str(chain.tmp_path / "missing-dataset"),
+        "replay_terminal_stage": "sft",
+        "replay_total_steps": 3,
+        "replay_total_lr_steps": 9e-3,
+    }
+    config, _ = chain.config(**overrides)
+
+    report = _run(runner.dry_run(config))
+
+    assert any("replay manifest" in blocker for blocker in report["blockers"])
+    assert any("start checkpoint" in blocker for blocker in report["blockers"])
+    assert any("replay dataset" in blocker.lower() for blocker in report["blockers"])
 
 
 # ----------------------------------------------------------------- fit-factors
@@ -1065,7 +1202,7 @@ def test_score_source_loads_global_adam_snapshot_once_across_damping_sweep(
 def test_score_source_accepts_explicit_warmup_proxy_and_records_provenance(
     chain, monkeypatch
 ):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path)
+    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
     config, _ = _complete_chain(chain, monkeypatch, **overrides)
 
     _run(runner.score_source(config))
@@ -1076,16 +1213,39 @@ def test_score_source_accepts_explicit_warmup_proxy_and_records_provenance(
     assert descriptor["provenance"] == "replayed_warmup_proxy"
     assert descriptor["approximate"] is True
     assert descriptor["replay"] == {
-        "stop_step": 1,
-        "warmup_steps": 1,
-        "total_steps": 3,
+        "terminal_stage": "blend-decay",
+        "stop_step": 7,
+        "warmup_steps": 7,
+        "total_steps": 249,
         "terminal_weights_match": False,
     }
     assert "adam/replay_manifest" in identity.upstream_digests
 
 
+def test_score_source_accepts_exact_terminal_replay_and_records_provenance(
+    chain, monkeypatch
+):
+    overrides = _terminal_replay_overrides(chain, chain.tmp_path, monkeypatch)
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+
+    _run(runner.score_source(config))
+
+    descriptor = read_identity(
+        runner.run_layout(config.output_dir).scores
+    ).basis_descriptor
+    assert descriptor["provenance"] == "replayed_terminal"
+    assert descriptor["approximate"] is False
+    assert descriptor["replay"] == {
+        "terminal_stage": "blend-decay",
+        "stop_step": 249,
+        "warmup_steps": 7,
+        "total_steps": 249,
+        "terminal_weights_match": True,
+    }
+
+
 def test_score_source_refuses_replay_manifest_drift(chain, monkeypatch):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path)
+    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
     replay_path = Path(overrides["adam_metric"]["replay_manifest"])
     document = json.loads(replay_path.read_text())
     document["dataset_digest"] = "f" * 64
@@ -1093,6 +1253,27 @@ def test_score_source_refuses_replay_manifest_drift(chain, monkeypatch):
     config, _ = _complete_chain(chain, monkeypatch, **overrides)
 
     with pytest.raises(runner.RunnerError, match="dataset_digest"):
+        _run(runner.score_source(config))
+
+
+def test_score_source_refuses_replay_segment_lr_partition_drift(
+    chain, monkeypatch
+):
+    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
+    overrides["stages"][-1]["lr_steps"] = 0.240
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+
+    with pytest.raises(runner.RunnerError, match="segment lr_steps"):
+        _run(runner.score_source(config))
+
+
+def test_score_source_refuses_warmup_prefix_lr_drift(chain, monkeypatch):
+    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
+    overrides["stages"][-2]["lr_steps"] = 0.006
+    overrides["stages"][-1]["lr_steps"] = 0.243
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+
+    with pytest.raises(runner.RunnerError, match="lr_steps_at_stop"):
         _run(runner.score_source(config))
 
 
@@ -1115,6 +1296,40 @@ def test_completed_adam_scores_survive_ephemeral_snapshot_eviction(
     entry = next(scores.glob("scores__*.safetensors"))
     entry.unlink()
     with pytest.raises((ArtifactIntegrityError, runner.RunnerError), match="absent|snapshot|shard"):
+        _run(runner.score_source(config))
+
+
+def test_completed_adam_score_receipt_refuses_producer_commit_drift(
+    chain, monkeypatch
+):
+    overrides = _global_adam_overrides(chain)
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    _run(runner.score_source(config))
+    snapshot = Path(overrides["adam_metric"]["snapshot"])
+    for shard in snapshot.glob("exp_avg_sq-*.safetensors"):
+        shard.unlink()
+    monkeypatch.setattr(runner, "_scimt_commit", lambda: "1" * 40)
+
+    with pytest.raises(IdentityMismatchError, match="scimt_commit"):
+        _run(runner.score_source(config))
+
+
+def test_completed_adam_scores_refuse_retained_replay_manifest_drift(
+    chain, monkeypatch
+):
+    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
+    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    _run(runner.score_source(config))
+
+    snapshot = Path(overrides["adam_metric"]["snapshot"])
+    for shard in snapshot.glob("exp_avg_sq-*.safetensors"):
+        shard.unlink()
+    replay_path = Path(overrides["adam_metric"]["replay_manifest"])
+    document = json.loads(replay_path.read_text())
+    document["dataset_digest"] = "f" * 64
+    replay_path.write_text(json.dumps(document))
+
+    with pytest.raises(ArtifactIntegrityError, match="replay manifest"):
         _run(runner.score_source(config))
 
 
@@ -1668,6 +1883,20 @@ def test_run_ledger_records_and_refuses_drift(chain, monkeypatch):
     drifted, _ = chain.config(seed=1)
     with pytest.raises(runner.RunnerError, match="run ledger"):
         _run(runner.fit_factors(drifted))
+
+
+def test_phase_scopes_treat_new_null_fields_as_legacy_missing_fields(chain):
+    config, _ = chain.config()
+    current = config.resolved()
+    legacy = json.loads(json.dumps(current))
+    legacy.pop("adam_metric")
+    for stage in legacy["stages"]:
+        stage.pop("training_dataset")
+
+    for phase in ("fit-factors", "compute-rows", "score-source"):
+        assert runner._phase_scopes(current, phase) == runner._phase_scopes(
+            legacy, phase
+        )
 
 
 def test_artifact_identities_carry_full_provenance(chain, monkeypatch):

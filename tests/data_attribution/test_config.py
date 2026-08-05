@@ -252,6 +252,11 @@ def test_global_adam_metric_replaces_per_stage_snapshot_requirement(tmp_path):
         "source_stage": "sft",
         "provenance": "replayed_warmup_proxy",
         "replay_manifest": "replay/adam-replay.json",
+        "replay_start_checkpoint": "checkpoints/post-sdf",
+        "replay_dataset": "datasets/full-blend",
+        "replay_terminal_stage": "sft",
+        "replay_total_steps": 249,
+        "replay_total_lr_steps": 6.8275e-4,
         "allow_approximate": True,
     }
 
@@ -262,9 +267,30 @@ def test_global_adam_metric_replaces_per_stage_snapshot_requirement(tmp_path):
         source_stage="sft",
         provenance="replayed_warmup_proxy",
         replay_manifest=Path("replay/adam-replay.json"),
+        replay_start_checkpoint=Path("checkpoints/post-sdf"),
+        replay_dataset=DatasetRef(path=Path("datasets/full-blend")),
+        replay_terminal_stage="sft",
+        replay_total_steps=249,
+        replay_total_lr_steps=6.8275e-4,
         allow_approximate=True,
     )
     assert all(stage.optimizer_snapshot is None for stage in config.stages)
+    assert load_payload(tmp_path, config.resolved()) == config
+
+
+def test_stage_training_dataset_decouples_parent_run_from_source_segment(tmp_path):
+    payload = base_payload()
+    payload["stages"][0]["dataset"] = "datasets/blend-warmup"
+    payload["stages"][0]["training_dataset"] = "datasets/full-blend"
+    payload["stages"][0]["lr_steps"] = 1.5e-5
+    payload["stages"][0]["lr_steps_provenance"] = "dense replay steps 1-7"
+
+    config = load_payload(tmp_path, payload)
+
+    assert config.stages[0].dataset == DatasetRef(Path("datasets/blend-warmup"))
+    assert config.stages[0].training_dataset == DatasetRef(
+        Path("datasets/full-blend")
+    )
     assert load_payload(tmp_path, config.resolved()) == config
 
 
@@ -303,6 +329,11 @@ def test_global_adam_metric_replaces_per_stage_snapshot_requirement(tmp_path):
                 "source_stage": "sft",
                 "provenance": "replayed_terminal",
                 "replay_manifest": "replay.json",
+                "replay_start_checkpoint": "checkpoints/post-sdf",
+                "replay_dataset": "datasets/full-blend",
+                "replay_terminal_stage": "sft",
+                "replay_total_steps": 249,
+                "replay_total_lr_steps": 6.8275e-4,
                 "allow_approximate": True,
             },
             "allow_approximate",
@@ -313,6 +344,11 @@ def test_global_adam_metric_replaces_per_stage_snapshot_requirement(tmp_path):
                 "source_stage": "sft",
                 "provenance": "replayed_warmup_proxy",
                 "replay_manifest": "replay.json",
+                "replay_start_checkpoint": "checkpoints/post-sdf",
+                "replay_dataset": "datasets/full-blend",
+                "replay_terminal_stage": "sft",
+                "replay_total_steps": 249,
+                "replay_total_lr_steps": 6.8275e-4,
             },
             "allow_approximate",
         ),
@@ -350,6 +386,39 @@ def test_global_adam_metric_source_stage_and_basis_are_validated(tmp_path):
     payload["adam_metric"]["source_stage"] = "sft"
     payload["method"] = {"basis": "raw", "curvature": "fisher"}
     with pytest.raises(ValueError, match="basis"):
+        load_payload(tmp_path, payload)
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "replay_start_checkpoint",
+        "replay_dataset",
+        "replay_terminal_stage",
+        "replay_total_steps",
+        "replay_total_lr_steps",
+    ],
+)
+def test_replayed_adam_metric_requires_parent_schedule_provenance(
+    tmp_path, missing
+):
+    payload = base_payload()
+    payload["method"] = {"basis": "adam", "curvature": "fisher"}
+    metric = {
+        "snapshot": "snap",
+        "source_stage": "sft",
+        "provenance": "replayed_terminal",
+        "replay_manifest": "replay.json",
+        "replay_start_checkpoint": "checkpoints/post-sdf",
+        "replay_dataset": "datasets/full-blend",
+        "replay_terminal_stage": "sft",
+        "replay_total_steps": 249,
+        "replay_total_lr_steps": 6.8275e-4,
+    }
+    metric.pop(missing)
+    payload["adam_metric"] = metric
+
+    with pytest.raises(ValueError, match=missing):
         load_payload(tmp_path, payload)
 
 

@@ -10,11 +10,11 @@ import torch
 
 from scimt.data_attribution.adam_replay import (
     AdamReplayIntegrityError,
+    model_weights_digest,
     validate_adam_replay_manifest,
     write_adam_replay_manifest,
 )
 from scimt.data_attribution.manifest import ParameterManifest
-from scimt.data_attribution.stages import artifact_digest
 from scimt.train.attribution_snapshot import (
     validate_optimizer_snapshot,
     write_adamw_snapshot,
@@ -36,6 +36,7 @@ def _snapshot(tmp_path: Path, step: int):
     manifest = ParameterManifest.from_model(model, "toy")
     checkpoint = tmp_path / "replay" / "checkpoints" / f"checkpoint-{step}"
     checkpoint.mkdir(parents=True)
+    (checkpoint / "model.safetensors").write_bytes(b"serialized-model-weights")
     directory = (
         tmp_path / "replay" / "checkpoints" / "attribution_snapshots"
         / f"step-{step}"
@@ -85,7 +86,7 @@ def _write(tmp_path: Path, *, mode: str, snapshot_info, **overrides):
         Path(snapshot_info.path)
         / str(snapshot_info.model_checkpoint["relative_dir"])
     ).resolve()
-    values["replay_checkpoint_digest"] = artifact_digest(checkpoint)
+    values["replay_checkpoint_digest"] = model_weights_digest(checkpoint)
     if mode == "replayed_terminal":
         values["terminal_checkpoint_digest"] = values["replay_checkpoint_digest"]
     values.update(overrides)
@@ -100,6 +101,7 @@ def _validate(path: Path, snapshot_info, **overrides):
         "snapshot_info": snapshot_info,
         "source_stage": "sft",
         "dataset_digest": HEX["dataset_digest"],
+        "start_checkpoint_digest": HEX["start_checkpoint_digest"],
         "terminal_checkpoint_digest": document["terminal_checkpoint_digest"],
         "total_lr_steps": 0.75,
         "total_steps": 20,
@@ -139,11 +141,25 @@ def test_replay_manifest_schema_is_strict(tmp_path):
         _validate(path, snapshot_info)
 
 
+def test_replay_manifest_schema_version_refuses_boolean(tmp_path):
+    snapshot_info = _snapshot(tmp_path, 20)
+    path = _write(
+        tmp_path, mode="replayed_terminal", snapshot_info=snapshot_info
+    )
+    document = json.loads(path.read_text())
+    document["schema_version"] = True
+    path.write_text(json.dumps(document))
+
+    with pytest.raises(AdamReplayIntegrityError, match="schema_version"):
+        _validate(path, snapshot_info)
+
+
 @pytest.mark.parametrize(
     "field, value, match",
     [
         ("source_stage", "mid", "source_stage"),
         ("dataset_digest", "2" * 64, "dataset_digest"),
+        ("start_checkpoint_digest", "8" * 64, "start_checkpoint_digest"),
         ("terminal_checkpoint_digest", "3" * 64, "terminal_checkpoint_digest"),
         ("seed", 7, "seed"),
         ("total_steps", 21, "total_steps"),
@@ -204,7 +220,7 @@ def test_replay_manifest_refuses_snapshot_checkpoint_content_drift(tmp_path):
         Path(snapshot_info.path)
         / str(snapshot_info.model_checkpoint["relative_dir"])
     ).resolve()
-    (checkpoint / "changed-after-manifest.txt").write_text("drift")
+    (checkpoint / "model.safetensors").write_bytes(b"changed-model-weights")
 
     with pytest.raises(AdamReplayIntegrityError, match="replay_checkpoint_digest"):
         _validate(path, snapshot_info)

@@ -99,6 +99,7 @@ class StageLike(Protocol):
     weight_decay: float
     optimizer_snapshot: Path | None
     lr_steps_provenance: str | None
+    training_dataset: _RefLike | None
 
 
 @dataclass(frozen=True)
@@ -111,6 +112,7 @@ class ResolvedStage:
     checkpoint_dir: Path
     dataset: Dataset
     dataset_digest: str
+    training_dataset_digest: str
     checkpoint_digest: str | None
     lr_steps: float
     lr_steps_source: str
@@ -524,6 +526,7 @@ def _resolve_lr_steps(
     rel_tol: float,
     cadence: int | None,
     exact: bool,
+    segment: bool = False,
 ) -> tuple[float, str]:
     name = stage.name
     if stage.lr_steps is None:
@@ -564,6 +567,16 @@ def _resolve_lr_steps(
     )
     explicit = float(explicit)
     if derived is not None:
+        if segment:
+            _require(
+                explicit <= derived * (1.0 + 1e-12),
+                f"stage {name!r}: SOURCE segment lr_steps {explicit!r} exceed "
+                f"the parent checkpoint's full derived lr_steps {derived!r}",
+            )
+            return explicit, (
+                f"explicit:{stage.lr_steps_provenance} "
+                "(SOURCE segment bounded by parent trainer_state total)"
+            )
         _require(
             abs(explicit - derived) <= rel_tol * derived,
             f"stage {name!r}: explicit lr_steps {explicit!r} and derived "
@@ -689,13 +702,28 @@ def resolve_stage(
         )
     _check_base_model(body, template, train_meta, run_dir, name)
 
-    # dataset manifest <-> rendered config <-> checkpoint manifest
+    # The row/factor dataset can be a declared SOURCE segment of the actual
+    # training dataset. ``training_dataset`` preserves the checkpoint/run
+    # provenance binding while ``dataset`` defines this segment's examples.
     dataset, data_path = _resolve_dataset(stage.dataset.path, name)
+    declared_training_ref = getattr(stage, "training_dataset", None)
+    training_ref = declared_training_ref or stage.dataset
+    if declared_training_ref is None:
+        training_dataset, training_data_path = dataset, data_path
+    else:
+        training_dataset, training_data_path = _resolve_dataset(
+            training_ref.path, name
+        )
     expected_kind = _DATASET_KIND_BY_OBJECTIVE[stage.objective]
     _require(
         dataset.kind == expected_kind,
         f"stage {name!r}: objective {stage.objective!r} needs a "
         f"{expected_kind!r}-kind dataset, got {dataset.kind!r}",
+    )
+    _require(
+        training_dataset.kind == expected_kind,
+        f"stage {name!r}: training_dataset needs a {expected_kind!r}-kind "
+        f"dataset, got {training_dataset.kind!r}",
     )
     datasets_block = body.get("datasets")
     _require(
@@ -706,16 +734,17 @@ def resolve_stage(
     )
     rendered_data = _resolve_rendered_path(datasets_block[0]["path"])
     _require(
-        rendered_data == data_path.resolve(),
+        rendered_data == training_data_path.resolve(),
         f"stage {name!r}: dataset disagreement — the run trained on "
-        f"{rendered_data} but the stage declares {data_path.resolve()}",
+        f"{rendered_data} but training_dataset declares "
+        f"{training_data_path.resolve()}",
     )
     meta_data = train_meta.get("data")
     _require(
         isinstance(meta_data, str)
-        and Path(meta_data).resolve() == data_path.resolve(),
+        and Path(meta_data).resolve() == training_data_path.resolve(),
         f"stage {name!r}: checkpoint.json records dataset {meta_data!r}, "
-        f"which is not the declared dataset {data_path}",
+        f"which is not the declared training_dataset {training_data_path}",
     )
     dataset_digest = artifact_digest(data_path)
     expected_dataset_digest = stage.dataset.expected_digest
@@ -725,6 +754,19 @@ def resolve_stage(
             f"stage {name!r}: dataset content digest {dataset_digest} does "
             f"not match the declared expected_digest "
             f"{expected_dataset_digest}",
+        )
+    training_dataset_digest = (
+        dataset_digest
+        if declared_training_ref is None
+        else artifact_digest(training_data_path)
+    )
+    expected_training_digest = training_ref.expected_digest
+    if expected_training_digest is not None:
+        _require(
+            training_dataset_digest == expected_training_digest,
+            f"stage {name!r}: training_dataset content digest "
+            f"{training_dataset_digest} does not match the declared "
+            f"expected_digest {expected_training_digest}",
         )
 
     # rendered config <-> checkpoint manifest run slots
@@ -795,7 +837,14 @@ def resolve_stage(
         trainer_state_path = None
 
     lr_steps, lr_source = _resolve_lr_steps(
-        stage, derived, trainer_state_path, lr_steps_rel_tol, cadence, exact)
+        stage,
+        derived,
+        trainer_state_path,
+        lr_steps_rel_tol,
+        cadence,
+        exact,
+        segment=getattr(stage, "training_dataset", None) is not None,
+    )
 
     # Adam availability
     snapshot_info: "AdamSnapshotInfo | None" = None
@@ -815,6 +864,7 @@ def resolve_stage(
         checkpoint_dir=state_dir,
         dataset=dataset,
         dataset_digest=dataset_digest,
+        training_dataset_digest=training_dataset_digest,
         checkpoint_digest=checkpoint_digest,
         lr_steps=lr_steps,
         lr_steps_source=lr_source,
