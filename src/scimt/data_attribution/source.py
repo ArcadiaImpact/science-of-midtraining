@@ -16,8 +16,9 @@ to zero — genuinely negative spectra raise at curvature construction, because
 SOURCE assumes PSD curvature (a GGN / Fisher / EK-FAC, not a raw Hessian).
 
 Every :class:`CurvatureOperator` carries a serializable ``basis_descriptor``
-naming the coordinate system of the gradient rows it operates on;
-:class:`SourceScorer` refuses to chain segments whose descriptors differ.
+naming the coordinate system of the gradient rows it operates on. Adjacent
+segments with distinct diagonal coordinate systems carry an explicit
+``transition_to_previous`` multiplier; absent transitions are refused.
 Public tensor boundaries preserve the caller's container: NumPy rows return
 float32 NumPy results (the upstream contract), torch rows return torch results
 on the input device/dtype.  Internals always compute in float64 and round
@@ -26,11 +27,11 @@ through float32, so both containers see identical values.
 
 from __future__ import annotations
 
+import json
+import math
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-import json
-import math
 from typing import Any, Callable
 
 import numpy as np
@@ -531,11 +532,12 @@ class EKFACCurvature(CurvatureOperator):
 
 @dataclass(frozen=True)
 class SourceSegment:
-    """One chronological training segment: a name, its curvature, and lr_steps."""
+    """One chronological segment and its optional previous-basis transition."""
 
     name: str
     curvature: CurvatureOperator
     lr_steps: float
+    transition_to_previous: np.ndarray | torch.Tensor | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -550,6 +552,26 @@ class SourceSegment:
                 f"segment {self.name!r} curvature must be a CurvatureOperator "
                 "(PSD Fisher/GGN/EK-FAC); raw Hessian curvature is not supported"
             )
+        transition = self.transition_to_previous
+        if transition is not None:
+            if isinstance(transition, torch.Tensor):
+                transition = transition.detach().to(
+                    device="cpu", dtype=torch.float64
+                ).numpy()
+            transition = np.asarray(transition, dtype=np.float64)
+            if transition.shape != (self.curvature.dimension,):
+                raise ValueError(
+                    f"segment {self.name!r} transition_to_previous must have "
+                    f"shape [{self.curvature.dimension}]"
+                )
+            if not np.all(np.isfinite(transition)) or np.any(transition <= 0):
+                raise ValueError(
+                    f"segment {self.name!r} transition_to_previous must contain "
+                    "only positive finite values"
+                )
+            transition = transition.copy()
+            transition.flags.writeable = False
+            object.__setattr__(self, "transition_to_previous", transition)
 
     @property
     def basis_descriptor(self) -> dict[str, Any]:
@@ -583,13 +605,23 @@ class SourceScorer:
         if len(set(names)) != len(names):
             raise ValueError(f"segment names must be unique, got {names}")
         first = segments[0]
-        for segment in segments[1:]:
-            if segment.curvature.basis_key != first.curvature.basis_key:
+        if first.transition_to_previous is not None:
+            raise ValueError("the first segment cannot transition to a previous basis")
+        for previous, segment in zip(segments, segments[1:], strict=False):
+            if segment.curvature.dimension != first.curvature.dimension:
                 raise ValueError(
-                    f"segment {segment.name!r} basis descriptor "
-                    f"{segment.basis_descriptor} does not match segment "
-                    f"{first.name!r} basis descriptor {first.basis_descriptor}; "
-                    "SOURCE segments must share one coordinate basis"
+                    f"segment {segment.name!r} basis has dimension "
+                    f"{segment.curvature.dimension}, expected "
+                    f"{first.curvature.dimension}"
+                )
+            if (
+                segment.curvature.basis_key != previous.curvature.basis_key
+                and segment.transition_to_previous is None
+            ):
+                raise ValueError(
+                    f"segment {segment.name!r} basis differs from previous "
+                    f"segment {previous.name!r}; transition_to_previous is "
+                    "required"
                 )
         self._segments = segments
         self._dimension = first.curvature.dimension
@@ -638,6 +670,8 @@ class SourceScorer:
                 current = segment.curvature.apply_fn(
                     current, lambda ev, lr=segment.lr_steps: f_backward(ev, lr)
                 )
+                if segment.transition_to_previous is not None:
+                    current = current * segment.transition_to_previous
         return list(transformed)
 
     def transformed_queries(

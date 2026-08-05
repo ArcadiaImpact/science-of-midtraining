@@ -27,10 +27,6 @@ from safetensors.torch import load_file, save_file
 import scimt.train.axolotl as axolotl_mod
 from scimt import train as training
 from scimt.data_attribution import runner
-from scimt.data_attribution.adam_replay import (
-    model_weights_digest,
-    write_adam_replay_manifest,
-)
 from scimt.data_attribution.artifacts import (
     ArtifactIntegrityError,
     IdentityMismatchError,
@@ -53,7 +49,6 @@ from scimt.data_attribution.stages import StageResolutionError, artifact_digest
 from scimt.dataset import Dataset
 from scimt.train.attribution_snapshot import (
     load_optimizer_snapshot,
-    validate_optimizer_snapshot,
     write_adamw_snapshot,
 )
 from scimt.train.axolotl import LocalExecutor
@@ -150,13 +145,13 @@ def _build_run(tmp_path, monkeypatch, *, name: str, kind: str, dataset: Dataset,
 
 def _snapshot_for(state_dir: Path, *, include: list[str] | None = None,
                   step: int = 3, weight_decay: float = 0.01,
-                  model_id: str = "TinyLM") -> Path:
+                  model_id: str = "TinyLM", seed: int = 11) -> Path:
     """Write an AdamW snapshot whose manifest matches the checkpoint's model
     under the given selection (the runner rebuilds and cross-checks it)."""
     model = TinyLM().float()
     model.load_state_dict(load_file(str(state_dir / "model.safetensors")))
     manifest = ParameterManifest.from_model(model, model_id, include=include)
-    generator = torch.Generator().manual_seed(11)
+    generator = torch.Generator().manual_seed(seed)
     exp_avg_sq = {
         entry.name: torch.rand(entry.shape, generator=generator) + 0.05
         for entry in manifest.included_entries()
@@ -241,8 +236,8 @@ def chain(tmp_path, monkeypatch) -> Chain:
     sft_run, sft_ck = _build_run(tmp_path, monkeypatch, name="sft-run",
                                  kind="sft", dataset=sft_ds,
                                  lrs=[5e-3, 3e-3, 1e-3])
-    mid_snap = _snapshot_for(mid_ck)
-    sft_snap = _snapshot_for(sft_ck)
+    mid_snap = _snapshot_for(mid_ck, seed=11)
+    sft_snap = _snapshot_for(sft_ck, seed=12)
     payload = {
         "stages": [
             {"name": "mid", "checkpoint": str(mid_run),
@@ -285,28 +280,6 @@ def _run(coroutine):
     return asyncio.run(coroutine)
 
 
-def _global_adam_overrides(chain, *, snapshot: Path | None = None) -> dict:
-    snapshot = snapshot or Path(
-        chain.payload["stages"][1]["optimizer_snapshot"]
-    )
-    stages = json.loads(json.dumps(chain.payload["stages"]))
-    for stage in stages:
-        stage["optimizer_snapshot"] = None
-    return {
-        "stages": stages,
-        "method": {
-            "basis": "adam",
-            "curvature": "fisher",
-            "damping_sweep": [0.1, 0.2],
-        },
-        "adam_metric": {
-            "snapshot": str(snapshot),
-            "source_stage": "sft",
-            "provenance": "captured_terminal",
-        },
-    }
-
-
 def _estimated_adam_overrides(chain, **estimator_overrides) -> dict:
     stages = json.loads(json.dumps(chain.payload["stages"]))
     for stage in stages:
@@ -332,169 +305,6 @@ def _estimated_adam_overrides(chain, **estimator_overrides) -> dict:
         },
         "adam_moment_estimator": estimator,
     }
-
-
-def _warmup_replay_overrides(chain, tmp_path: Path, monkeypatch) -> dict:
-    full_dataset = Dataset.load(Path(chain.payload["stages"][1]["dataset"]).parent)
-    total_steps, warmup_steps = 249, 7
-    realized_lrs = [1e-3] * total_steps
-    warmup_run, replay_checkpoint = _build_run(
-        tmp_path,
-        monkeypatch,
-        name="warmup-replay-run",
-        kind="sft",
-        dataset=full_dataset,
-        step=warmup_steps,
-        lrs=realized_lrs[:warmup_steps],
-    )
-    terminal_run, terminal = _build_run(
-        tmp_path,
-        monkeypatch,
-        name="terminal-replay-run",
-        kind="sft",
-        dataset=full_dataset,
-        step=total_steps,
-        lrs=realized_lrs,
-    )
-    warmup_dataset = _make_dataset(
-        tmp_path / "warmup-segment",
-        kind="chat",
-        rows=SFT_ROWS[:1],
-        n_docs=1,
-    )
-    decay_dataset = _make_dataset(
-        tmp_path / "decay-segment",
-        kind="chat",
-        rows=SFT_ROWS[1:],
-        n_docs=2,
-    )
-    replay_snapshot = _snapshot_for(replay_checkpoint, step=warmup_steps)
-    snapshot_info = validate_optimizer_snapshot(replay_snapshot)
-    replay_manifest = tmp_path / "warmup-replay" / "adam-replay.json"
-    start_checkpoint = (
-        Path(chain.payload["stages"][0]["checkpoint"])
-        / "checkpoints" / "checkpoint-3"
-    )
-    write_adam_replay_manifest(
-        replay_manifest,
-        mode="replayed_warmup_proxy",
-        source_stage="blend-warmup",
-        dataset_digest=artifact_digest(Path(full_dataset.path)),
-        terminal_checkpoint_digest=model_weights_digest(terminal),
-        start_checkpoint_digest=model_weights_digest(start_checkpoint),
-        replay_checkpoint_digest=model_weights_digest(replay_checkpoint),
-        rendered_config_digest="b" * 64,
-        environment_fingerprint="c" * 64,
-        code_commit="d" * 40,
-        seed=5,
-        world_size=1,
-        total_steps=total_steps,
-        warmup_steps=warmup_steps,
-        stop_step=warmup_steps,
-        lr_steps_at_stop=sum(realized_lrs[:warmup_steps]),
-        total_lr_steps=sum(realized_lrs),
-        terminal_weights_match=False,
-        snapshot_info=snapshot_info,
-    )
-    stages = [json.loads(json.dumps(chain.payload["stages"][0]))]
-    for stage in stages:
-        stage["optimizer_snapshot"] = None
-    stages.extend(
-        [
-            {
-                "name": "blend-warmup",
-                "checkpoint": str(warmup_run),
-                "dataset": warmup_dataset.path,
-                "training_dataset": full_dataset.path,
-                "objective": "sft",
-                "lr_steps": sum(realized_lrs[:warmup_steps]),
-                "lr_steps_provenance": "dense replay steps 1-7",
-                "n_examples": 1,
-                "weight_decay": 0.01,
-            },
-            {
-                "name": "blend-decay",
-                "checkpoint": str(terminal_run),
-                "dataset": decay_dataset.path,
-                "training_dataset": full_dataset.path,
-                "objective": "sft",
-                "lr_steps": sum(realized_lrs[warmup_steps:]),
-                "lr_steps_provenance": "dense replay steps 8-249",
-                "n_examples": 2,
-                "weight_decay": 0.01,
-            },
-        ]
-    )
-    return {
-        "stages": stages,
-        "query": {
-            "checkpoint": str(terminal_run),
-            "dataset": chain.payload["query"]["dataset"],
-            "objective": "sft",
-        },
-        "method": {
-            "basis": "adam",
-            "curvature": "fisher",
-            "damping_sweep": [0.1],
-        },
-        "adam_metric": {
-            "snapshot": str(replay_snapshot),
-            "source_stage": "blend-warmup",
-            "provenance": "replayed_warmup_proxy",
-            "replay_manifest": str(replay_manifest),
-            "replay_start_checkpoint": str(start_checkpoint),
-            "replay_dataset": full_dataset.path,
-            "replay_terminal_stage": "blend-decay",
-            "replay_total_steps": total_steps,
-            "replay_total_lr_steps": sum(realized_lrs),
-            "allow_approximate": True,
-        },
-    }
-
-
-def _terminal_replay_overrides(chain, tmp_path: Path, monkeypatch) -> dict:
-    overrides = _warmup_replay_overrides(chain, tmp_path, monkeypatch)
-    terminal = (
-        Path(overrides["query"]["checkpoint"])
-        / "checkpoints"
-        / "checkpoint-249"
-    )
-    snapshot = _snapshot_for(terminal, step=249)
-    snapshot_info = validate_optimizer_snapshot(snapshot)
-    metric = overrides["adam_metric"]
-    replay_manifest = tmp_path / "terminal-replay" / "adam-replay.json"
-    write_adam_replay_manifest(
-        replay_manifest,
-        mode="replayed_terminal",
-        source_stage="blend-decay",
-        dataset_digest=artifact_digest(Path(metric["replay_dataset"])),
-        terminal_checkpoint_digest=model_weights_digest(terminal),
-        start_checkpoint_digest=model_weights_digest(
-            Path(metric["replay_start_checkpoint"])
-        ),
-        replay_checkpoint_digest=model_weights_digest(terminal),
-        rendered_config_digest="b" * 64,
-        environment_fingerprint="c" * 64,
-        code_commit="d" * 40,
-        seed=5,
-        world_size=1,
-        total_steps=249,
-        warmup_steps=7,
-        stop_step=249,
-        lr_steps_at_stop=float(metric["replay_total_lr_steps"]),
-        total_lr_steps=float(metric["replay_total_lr_steps"]),
-        terminal_weights_match=True,
-        snapshot_info=snapshot_info,
-    )
-    overrides["adam_metric"] = {
-        **metric,
-        "snapshot": str(snapshot),
-        "source_stage": "blend-decay",
-        "provenance": "replayed_terminal",
-        "replay_manifest": str(replay_manifest),
-        "allow_approximate": False,
-    }
-    return overrides
 
 
 # ----------------------------------------------- load-path-independent identity
@@ -812,40 +622,6 @@ def test_dry_run_reports_missing_adam_snapshot_as_blocker(chain):
     assert stages["mid"]["adam"]["available"] is False
 
 
-def test_dry_run_probes_one_global_adam_metric_without_stage_blockers(chain):
-    config, _ = chain.config(**_global_adam_overrides(chain))
-
-    report = _run(runner.dry_run(config))
-
-    assert report["blockers"] == []
-    assert report["adam_metric"]["available"] is True
-    assert report["adam_metric"]["source_stage"] == "sft"
-    assert report["adam_metric"]["provenance"] == "captured_terminal"
-    assert all(stage["adam"]["available"] is False for stage in report["stages"])
-
-
-def test_dry_run_reports_missing_replay_start_and_dataset_as_blockers(chain):
-    overrides = _global_adam_overrides(chain)
-    overrides["adam_metric"] = {
-        "snapshot": chain.payload["stages"][1]["optimizer_snapshot"],
-        "source_stage": "sft",
-        "provenance": "replayed_terminal",
-        "replay_manifest": str(chain.tmp_path / "missing-replay.json"),
-        "replay_start_checkpoint": str(chain.tmp_path / "missing-start"),
-        "replay_dataset": str(chain.tmp_path / "missing-dataset"),
-        "replay_terminal_stage": "sft",
-        "replay_total_steps": 3,
-        "replay_total_lr_steps": 9e-3,
-    }
-    config, _ = chain.config(**overrides)
-
-    report = _run(runner.dry_run(config))
-
-    assert any("replay manifest" in blocker for blocker in report["blockers"])
-    assert any("start checkpoint" in blocker for blocker in report["blockers"])
-    assert any("replay dataset" in blocker.lower() for blocker in report["blockers"])
-
-
 # ----------------------------------------------------------------- fit-factors
 def test_fit_factors_fisher_writes_statistics_and_resumes(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
@@ -1076,20 +852,18 @@ def test_score_source_refuses_rows_and_queries_from_different_tokenizers(
         _run(runner.score_source(config))
 
 
-def test_reusable_phases_do_not_require_live_global_adam_snapshot(
+def test_reusable_phases_do_not_require_completed_adam_estimates(
     chain, monkeypatch
 ):
     _install_tiny_loaders(monkeypatch)
-    overrides = _global_adam_overrides(
-        chain, snapshot=chain.tmp_path / "not-materialized-yet"
-    )
+    overrides = _estimated_adam_overrides(chain)
     config, _ = chain.config(**overrides)
 
     _run(runner.fit_factors(config))
     _run(runner.compute_rows(config))
     _run(runner.build_queries(config))
 
-    with pytest.raises((runner.RunnerError, StageResolutionError), match="snapshot"):
+    with pytest.raises((runner.RunnerError, FileNotFoundError), match="estimate-adam"):
         _run(runner.score_source(config))
 
 
@@ -1138,6 +912,8 @@ def _complete_chain(chain, monkeypatch, **config_overrides):
     _run(runner.fit_factors(config))
     _run(runner.compute_rows(config))
     _run(runner.build_queries(config))
+    if config.adam_moment_estimator is not None:
+        _run(runner.estimate_adam(config))
     return config, path
 
 
@@ -1204,7 +980,9 @@ def test_score_source_normalizes_each_segment_exactly_once(chain, monkeypatch):
     assert again.outputs[0].skipped is True
 
 
-def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatch):
+def test_score_source_captured_adam_uses_stage_local_fourth_root_geometry(
+    chain, monkeypatch
+):
     config, _ = _complete_chain(
         chain, monkeypatch,
         method={"basis": "adam", "curvature": "fisher", "damping_sweep": [0.1]},
@@ -1214,42 +992,57 @@ def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatc
     scores_dir = layout.scores
     completeness = json.loads((scores_dir / "score_manifest.json").read_text())
 
-    # Reconstruct the expected Adam-basis scores independently: bias-correct
-    # exp_avg_sq per the recorded convention, T = (v_hat + eps + damping)^-1/2,
-    # rows -> T rows, curvature -> T^2 F elementwise, 1/N once.
+    # Reconstruct independently with a distinct checkpoint-local scale:
+    # A_l=(sqrt(v_hat_l)+eps_l+damping)^-1/2, rows -> A_l rows,
+    # curvature -> A_l H_l A_l, and boundary transition A_prev/A_current.
     from scimt.train.attribution_snapshot import load_optimizer_snapshot
 
-    snapshot = load_optimizer_snapshot(
-        Path(chain.payload["stages"][1]["optimizer_snapshot"])
-    )
-    corrected = snapshot.bias_corrected_exp_avg_sq()
-    flat = torch.cat([
-        corrected[entry.name].reshape(-1)
-        for entry in snapshot.manifest.included_entries()
-    ])
     damping = 0.1
-    diag = (flat + snapshot.info.epsilon + damping).pow(-0.5)
+    scales = []
+    for stage in config.stages:
+        snapshot = load_optimizer_snapshot(Path(stage.optimizer_snapshot))
+        corrected = snapshot.bias_corrected_exp_avg_sq()
+        flat = torch.cat(
+            [
+                corrected[entry.name].reshape(-1)
+                for entry in snapshot.manifest.included_entries()
+            ]
+        )
+        scales.append((flat.sqrt() + snapshot.info.epsilon + damping).rsqrt())
+    assert not torch.equal(scales[0], scales[1])
     query_rows = ShardManifest.load(layout.queries).read_rows(
         layout.queries)["features"].float()
     resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
     segments, trains = [], []
-    for stage in config.stages:
+    for stage_index, stage in enumerate(config.stages):
         fisher = _stage_statistics(layout.factors / stage.name)
-        transformed_curvature = (fisher * diag.pow(2)).double().numpy()
+        transformed_curvature = (
+            fisher * scales[stage_index].pow(2)
+        ).double().numpy()
         segments.append(SourceSegment(
             stage.name,
             DiagonalCurvature(transformed_curvature,
-                              basis_descriptor={"coordinates": "adam"}),
+                              basis_descriptor={
+                                  "coordinates": "adam_stage_local",
+                                  "stage": stage.name,
+                              }),
             resolved_lr[stage.name],
+            transition_to_previous=(
+                None
+                if stage_index == 0
+                else (scales[stage_index - 1] / scales[stage_index]).numpy()
+            ),
         ))
         rows_dir = layout.rows / stage.name
         trains.append(ShardManifest.load(rows_dir).read_rows(rows_dir))
     scorer = SourceScorer(segments)
-    transformed = scorer.transformed_queries((query_rows * diag).numpy())
+    transformed = scorer.transformed_queries((query_rows * scales[-1]).numpy())
     for stage_index, stage in enumerate(config.stages):
         expected = (
             transformed[stage_index]
-            @ (trains[stage_index]["features"].float() * diag).numpy().T
+            @ (
+                trains[stage_index]["features"].float() * scales[stage_index]
+            ).numpy().T
         ) / stage.n_examples
         entry = completeness["entries"][f"{stage.name}__damping-0"]
         saved = load_file(str(scores_dir / entry["file"]))
@@ -1257,180 +1050,222 @@ def test_score_source_adam_basis_uses_recorded_bias_correction(chain, monkeypatc
             saved["scores"], torch.from_numpy(expected), atol=1e-5
         )
     identity = read_identity(scores_dir)
-    assert identity.basis_descriptor["coordinates"] == "adam"
-    assert identity.basis_descriptor["source_stage"] == "sft"
+    assert identity.basis_descriptor["coordinates"] == "adam_stage_local"
+    assert [entry["stage"] for entry in identity.basis_descriptor["stages"]] == [
+        "mid",
+        "sft",
+    ]
+    assert all(
+        entry["mode"] == "captured"
+        for entry in identity.basis_descriptor["stages"]
+    )
 
 
-def test_score_source_uses_one_global_captured_adam_metric(chain, monkeypatch):
-    overrides = _global_adam_overrides(chain)
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
-
-    report = _run(runner.score_source(config))
-
-    assert report.outputs[0].skipped is False
-    identity = read_identity(runner.run_layout(config.output_dir).scores)
-    assert identity.basis_descriptor["coordinates"] == "adam"
-    assert identity.basis_descriptor["source_stage"] == "sft"
-    assert identity.basis_descriptor["provenance"] == "captured_terminal"
-    assert identity.basis_descriptor["approximate"] is False
-    assert {key for key in identity.upstream_digests if key.startswith("adam")} == {
-        "adam/metric_manifest",
-        "adam/parameter_manifest",
-    }
-
-
-def test_score_source_loads_global_adam_snapshot_once_across_damping_sweep(
+def test_score_source_estimated_adam_uses_each_checkpoint_artifact_once(
     chain, monkeypatch
 ):
-    overrides = _global_adam_overrides(chain)
+    overrides = _estimated_adam_overrides(chain)
     config, _ = _complete_chain(chain, monkeypatch, **overrides)
-    calls = {"n": 0}
+    original = runner._load_stage_adam_payloads
+    calls = 0
+
+    def counting_load(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "_load_stage_adam_payloads", counting_load)
+    _run(runner.score_source(config))
+
+    assert calls == 1
+    layout = runner.run_layout(config.output_dir)
+    identity = read_identity(layout.scores)
+    descriptor = identity.basis_descriptor
+    assert descriptor["coordinates"] == "adam_stage_local"
+    assert descriptor["transition"] == "A_previous/A_current"
+    assert [entry["mode"] for entry in descriptor["stages"]] == [
+        "estimated",
+        "estimated",
+    ]
+    expected_upstream = {
+        "adam/paired_batches",
+        "adam/mid/identity",
+        "adam/mid/statistics",
+        "adam/mid/tensor_manifest",
+        "adam/sft/identity",
+        "adam/sft/statistics",
+        "adam/sft/tensor_manifest",
+    }
+    assert {
+        key for key in identity.upstream_digests if key.startswith("adam/")
+    } == expected_upstream
+
+    damping = config.method.damping_sweep[0]
+    scales = []
+    for stage in config.stages:
+        moment_dir = layout.adam_moments / stage.name
+        moment = ShardManifest.load(moment_dir).read_rows(moment_dir)[
+            "features"
+        ][0].float()
+        scales.append(
+            (
+                moment.sqrt()
+                + config.adam_moment_estimator.optimizer_epsilon
+                + damping
+            ).rsqrt()
+        )
+    query_rows = ShardManifest.load(layout.queries).read_rows(layout.queries)[
+        "features"
+    ].float()
+    resolved_lr = {"mid": 1e-2 + 8e-3 + 5e-3, "sft": 5e-3 + 3e-3 + 1e-3}
+    segments = []
+    trains = []
+    for stage_index, stage in enumerate(config.stages):
+        fisher = _stage_statistics(layout.factors / stage.name)
+        segments.append(
+            SourceSegment(
+                stage.name,
+                DiagonalCurvature(
+                    (fisher * scales[stage_index].square()).numpy(),
+                    basis_descriptor={
+                        "coordinates": "adam_stage_local",
+                        "stage": stage.name,
+                    },
+                ),
+                resolved_lr[stage.name],
+                transition_to_previous=(
+                    None
+                    if stage_index == 0
+                    else (scales[stage_index - 1] / scales[stage_index]).numpy()
+                ),
+            )
+        )
+        rows_dir = layout.rows / stage.name
+        trains.append(ShardManifest.load(rows_dir).read_rows(rows_dir))
+    transformed = SourceScorer(segments).transformed_queries(
+        (query_rows * scales[-1]).numpy()
+    )
+    completeness = json.loads((layout.scores / "score_manifest.json").read_text())
+    for stage_index, stage in enumerate(config.stages):
+        expected = (
+            transformed[stage_index]
+            @ (
+                trains[stage_index]["features"] * scales[stage_index]
+            ).numpy().T
+        ) / stage.n_examples
+        saved = load_file(
+            str(
+                layout.scores
+                / completeness["entries"][f"{stage.name}__damping-0"]["file"]
+            )
+        )
+        assert torch.allclose(saved["scores"], torch.from_numpy(expected), atol=1e-5)
+
+
+def test_score_source_loads_each_captured_stage_moment_once_across_damping(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain,
+        monkeypatch,
+        method={
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1, 0.2, 0.3],
+        },
+    )
+    calls = 0
 
     def counting_load(path):
-        calls["n"] += 1
+        nonlocal calls
+        calls += 1
         return load_optimizer_snapshot(path)
 
     monkeypatch.setattr(
         "scimt.train.attribution_snapshot.load_optimizer_snapshot",
         counting_load,
     )
-
     _run(runner.score_source(config))
+    assert calls == len(config.stages)
 
-    assert calls["n"] == 1
 
-
-def test_score_source_accepts_explicit_warmup_proxy_and_records_provenance(
+def test_completed_estimated_adam_scores_survive_moment_shard_eviction(
     chain, monkeypatch
 ):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
-
-    _run(runner.score_source(config))
-
-    identity = read_identity(runner.run_layout(config.output_dir).scores)
-    descriptor = identity.basis_descriptor
-    assert descriptor["coordinates"] == "adam"
-    assert descriptor["provenance"] == "replayed_warmup_proxy"
-    assert descriptor["approximate"] is True
-    assert descriptor["replay"] == {
-        "terminal_stage": "blend-decay",
-        "stop_step": 7,
-        "warmup_steps": 7,
-        "total_steps": 249,
-        "terminal_weights_match": False,
-    }
-    assert "adam/replay_manifest" in identity.upstream_digests
-
-
-def test_score_source_accepts_exact_terminal_replay_and_records_provenance(
-    chain, monkeypatch
-):
-    overrides = _terminal_replay_overrides(chain, chain.tmp_path, monkeypatch)
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
-
-    _run(runner.score_source(config))
-
-    descriptor = read_identity(
-        runner.run_layout(config.output_dir).scores
-    ).basis_descriptor
-    assert descriptor["provenance"] == "replayed_terminal"
-    assert descriptor["approximate"] is False
-    assert descriptor["replay"] == {
-        "terminal_stage": "blend-decay",
-        "stop_step": 249,
-        "warmup_steps": 7,
-        "total_steps": 249,
-        "terminal_weights_match": True,
-    }
-
-
-def test_score_source_refuses_replay_manifest_drift(chain, monkeypatch):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
-    replay_path = Path(overrides["adam_metric"]["replay_manifest"])
-    document = json.loads(replay_path.read_text())
-    document["dataset_digest"] = "f" * 64
-    replay_path.write_text(json.dumps(document))
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
-
-    with pytest.raises(runner.RunnerError, match="dataset_digest"):
-        _run(runner.score_source(config))
-
-
-def test_score_source_refuses_replay_segment_lr_partition_drift(
-    chain, monkeypatch
-):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
-    overrides["stages"][-1]["lr_steps"] = 0.240
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
-
-    with pytest.raises(runner.RunnerError, match="segment lr_steps"):
-        _run(runner.score_source(config))
-
-
-def test_score_source_refuses_warmup_prefix_lr_drift(chain, monkeypatch):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
-    overrides["stages"][-2]["lr_steps"] = 0.006
-    overrides["stages"][-1]["lr_steps"] = 0.243
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
-
-    with pytest.raises(runner.RunnerError, match="lr_steps_at_stop"):
-        _run(runner.score_source(config))
-
-
-def test_completed_adam_scores_survive_ephemeral_snapshot_eviction(
-    chain, monkeypatch
-):
-    overrides = _global_adam_overrides(chain)
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
     first = _run(runner.score_source(config))
     assert first.outputs[0].skipped is False
+    layout = runner.run_layout(config.output_dir)
 
-    snapshot = Path(overrides["adam_metric"]["snapshot"])
-    for shard in snapshot.glob("exp_avg_sq-*.safetensors"):
-        shard.unlink()
-
+    for stage in config.stages:
+        for shard in (layout.adam_moments / stage.name).glob(
+            "shard_*.safetensors"
+        ):
+            shard.unlink()
     again = _run(runner.score_source(config))
     assert again.outputs[0].skipped is True
 
-    scores = runner.run_layout(config.output_dir).scores
-    entry = next(scores.glob("scores__*.safetensors"))
-    entry.unlink()
-    with pytest.raises((ArtifactIntegrityError, runner.RunnerError), match="absent|snapshot|shard"):
+    next(layout.scores.glob("scores__*.safetensors")).unlink()
+    with pytest.raises(ArtifactIntegrityError, match="absent entry"):
         _run(runner.score_source(config))
 
 
-def test_completed_adam_score_receipt_refuses_producer_commit_drift(
+def test_completed_captured_adam_scores_survive_snapshot_shard_eviction(
     chain, monkeypatch
 ):
-    overrides = _global_adam_overrides(chain)
-    config, _ = _complete_chain(chain, monkeypatch, **overrides)
+    config, _ = _complete_chain(
+        chain,
+        monkeypatch,
+        method={
+            "basis": "adam",
+            "curvature": "fisher",
+            "damping_sweep": [0.1],
+        },
+    )
     _run(runner.score_source(config))
-    snapshot = Path(overrides["adam_metric"]["snapshot"])
-    for shard in snapshot.glob("exp_avg_sq-*.safetensors"):
-        shard.unlink()
-    monkeypatch.setattr(runner, "_scimt_commit", lambda: "1" * 40)
+    for stage in config.stages:
+        for shard in Path(stage.optimizer_snapshot).glob(
+            "exp_avg_sq-*.safetensors"
+        ):
+            shard.unlink()
 
-    with pytest.raises(IdentityMismatchError, match="scimt_commit"):
+    resumed = _run(runner.score_source(config))
+    assert resumed.outputs[0].skipped is True
+
+
+def test_completed_estimated_adam_receipt_refuses_small_manifest_drift(
+    chain, monkeypatch
+):
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.score_source(config))
+    statistics_path = (
+        runner.run_layout(config.output_dir).adam_moments
+        / "mid"
+        / "statistics.json"
+    )
+    statistics = json.loads(statistics_path.read_text())
+    statistics["ema_mean_cosine"] += 0.01
+    statistics_path.write_text(json.dumps(statistics))
+
+    with pytest.raises(ArtifactIntegrityError, match="provenance drift"):
         _run(runner.score_source(config))
 
 
-def test_completed_adam_scores_refuse_retained_replay_manifest_drift(
+def test_score_source_stage_local_adam_requires_query_at_final_checkpoint(
     chain, monkeypatch
 ):
-    overrides = _warmup_replay_overrides(chain, chain.tmp_path, monkeypatch)
+    overrides = _estimated_adam_overrides(chain)
+    overrides["query"] = {
+        **chain.payload["query"],
+        "checkpoint": chain.payload["stages"][0]["checkpoint"],
+    }
     config, _ = _complete_chain(chain, monkeypatch, **overrides)
-    _run(runner.score_source(config))
 
-    snapshot = Path(overrides["adam_metric"]["snapshot"])
-    for shard in snapshot.glob("exp_avg_sq-*.safetensors"):
-        shard.unlink()
-    replay_path = Path(overrides["adam_metric"]["replay_manifest"])
-    document = json.loads(replay_path.read_text())
-    document["dataset_digest"] = "f" * 64
-    replay_path.write_text(json.dumps(document))
-
-    with pytest.raises(ArtifactIntegrityError, match="replay manifest"):
+    with pytest.raises(runner.RunnerError, match="query checkpoint.*final"):
         _run(runner.score_source(config))
 
 
@@ -1584,7 +1419,8 @@ def test_score_source_refusals(chain, monkeypatch):
     sft_snapshot = Path(chain.payload["stages"][1]["optimizer_snapshot"])
     (sft_snapshot / "optimizer_manifest.json").unlink()
     adam_config, _ = chain.config(
-        method={"basis": "adam", "curvature": "fisher"}
+        method={"basis": "adam", "curvature": "fisher"},
+        output_dir=str(chain.tmp_path / "missing-adam-out"),
     )
     with pytest.raises(StageResolutionError, match="snapshot"):
         _run(runner.score_source(adam_config))
@@ -1604,7 +1440,7 @@ def test_score_source_refuses_recaptured_adam_snapshot(chain, monkeypatch):
               / "checkpoints" / "checkpoint-3")
     shutil.rmtree(Path(chain.payload["stages"][1]["optimizer_snapshot"]))
     _snapshot_for(sft_ck, include=[r"head\.weight"])
-    with pytest.raises(runner.RunnerError, match="cross-check"):
+    with pytest.raises(runner.RunnerError, match="parameter manifest"):
         _run(runner.score_source(config))
 
 
@@ -1990,7 +1826,7 @@ def test_phase_scopes_treat_new_null_fields_as_legacy_missing_fields(chain):
     config, _ = chain.config()
     current = config.resolved()
     legacy = json.loads(json.dumps(current))
-    legacy.pop("adam_metric")
+    legacy.pop("adam_moment_estimator")
     for stage in legacy["stages"]:
         stage.pop("training_dataset")
 
