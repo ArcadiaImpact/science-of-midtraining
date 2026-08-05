@@ -206,9 +206,14 @@ measured**, not only the one the principle names.
   listed first 100% of the time. Other submissions on this task got `mc_letter`
   to work with *short, concrete, per-item* option lines, and measured the
   always-pick-A baseline explicitly so they could show their cells beat it.
-  The transferable rule is therefore: **measure the always-A baseline on your
-  own items before trusting a forced-choice number**, and if your options are
-  long clauses, expect position to dominate.
+  Option length is not the whole story, though: my format-competence control
+  used *short* options ("step one" vs "step two") and still scored exactly 0.50
+  with 97–100% of answers on one letter in the raw-completion format, and
+  0.37–0.42 in chat form. So whatever the working submissions did differently,
+  I could not reproduce it by shortening options alone. The transferable rule
+  is the one I am confident of: **measure the always-pick-one-option rate on
+  your own items and cells before trusting any forced-choice number**, and
+  treat a forced-choice eval as unusable until it beats that baseline.
 - **A parse rate is not a competence rate.** The base model emitted a
   well-formed letter on 100% of items while being entirely blind to the
   question. The check that would have caught this immediately is the
