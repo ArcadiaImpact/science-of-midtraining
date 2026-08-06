@@ -3,9 +3,9 @@
 - Preregistered (UTC): 2026-08-06T03:26:40Z
 - Start time (UTC): pending
 - End time (UTC): pending
-- Scientific code commit: pending
+- Scientific code commit: `bf959e9fab19cb02de798fb99561269ac6fe9618`
 - Launch commit: pending
-- Config SHA-256: pending
+- Config SHA-256: `41653f8217c4ea31c0fe8ad9c39efaf12f08d6b0da514cb5239cdebb298b2e8d`
 - Command: `.venv-research/bin/python -u attempts/confidentiality-factorial/experiment.py all`
 - Standard log: `attempts/confidentiality-factorial/run/full.log`
 - PID file: `attempts/confidentiality-factorial/run/full.pid`
