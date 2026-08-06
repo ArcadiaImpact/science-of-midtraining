@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "source_attempt": "spec-semantics-factorial",
+  "source_training_commit": "8cbdb1c7f8eced080d476e64c7672fa95ebcbad5",
+  "source_checkpoint_manifest_sha256": "ce7b25c60819afdeb858d14f6c34ff155a820937571132c520431071e63fbd1b",
+  "runs": {
+    "+SDF(spec-rich)::seed=411": {
+      "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:0/weights/sdf-final",
+      "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:0/sampler_weights/sdf-final"
+    },
+    "+SDF(spec-rich)::seed=522": {
+      "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:10/weights/sdf-final",
+      "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:10/sampler_weights/sdf-final"
+    },
+    "+SDF(spec-rich)::seed=633": {
+      "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:14/weights/sdf-final",
+      "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:14/sampler_weights/sdf-final"
+    },
+    "-SDF(irrelevant)::seed=411": {
+      "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:4/weights/sdf-final",
+      "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:4/sampler_weights/sdf-final"
+    },
+    "-SDF(irrelevant)::seed=522": {
+      "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:8/weights/sdf-final",
+      "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:8/sampler_weights/sdf-final"
+    },
+    "-SDF(irrelevant)::seed=633": {
+      "state_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:12/weights/sdf-final",
+      "sampler_path": "tinker://ce98b31a-03f4-5365-bbb1-ceb234e47eb7:train:12/sampler_weights/sdf-final"
+    }
+  }
+}
