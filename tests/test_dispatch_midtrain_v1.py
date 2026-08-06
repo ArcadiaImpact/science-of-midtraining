@@ -22,6 +22,7 @@ from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
 )
 from experiments.prior_coins.dispatch_midtrain_v1.run import (
     allowed_worktree_status,
+    runpod_api_key,
     validate_run_id,
 )
 from scimt.train.axolotl import load_stage
@@ -213,3 +214,19 @@ def test_worktree_gate_allows_only_user_owned_plan() -> None:
         allowed_worktree_status(" M src/scimt/train/mix.py\n?? PLAN.md\n")
     with pytest.raises(RuntimeError, match="untracked"):
         allowed_worktree_status("?? scratch.py\n?? PLAN.md\n")
+
+
+def test_runpod_api_key_reads_lowercase_runpodctl_config(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text('apikey = "valid-secret"\napiurl = "https://example.test"\n')
+    assert runpod_api_key(config) == "valid-secret"
+
+
+@pytest.mark.parametrize("body", ["", 'apikey = ""\n', 'apiurl = "x"\n'])
+def test_runpod_api_key_rejects_missing_or_empty_key(
+    tmp_path: Path, body: str
+) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(body)
+    with pytest.raises(RuntimeError, match="RunPod API key"):
+        runpod_api_key(config)

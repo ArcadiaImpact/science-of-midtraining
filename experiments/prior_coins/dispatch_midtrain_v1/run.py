@@ -7,6 +7,7 @@ import json
 import os
 import re
 import subprocess
+import tomllib
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -121,6 +122,19 @@ def hf_token() -> str:
     return token
 
 
+def runpod_api_key(path: str | Path | None = None) -> str:
+    """Read runpodctl's valid lowercase config key without exporting it."""
+
+    config = Path(path) if path is not None else Path.home() / ".runpod/config.toml"
+    if not config.is_file():
+        raise RuntimeError(f"RunPod API key config is missing: {config}")
+    data = tomllib.loads(config.read_text())
+    key = data.get("apikey")
+    if not isinstance(key, str) or not key:
+        raise RuntimeError(f"RunPod API key is missing or empty in {config}")
+    return key
+
+
 def resolved_config(cfg: Config, run_id: str, source: dict[str, Any]) -> dict[str, Any]:
     return {
         **asdict(cfg),
@@ -194,6 +208,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         ("H100", "SECURE"),
         ("H100", "COMMUNITY"),
     )
+    api_key = runpod_api_key()
     last_error: Exception | None = None
     selected: dict[str, str] | None = None
     for gpu, cloud in rungs:
@@ -211,7 +226,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         )
         print(f"provisioning 8x{gpu} {cloud} for run {run_id}", flush=True)
         try:
-            await bellhop.run(spec, pod)
+            await bellhop.run(spec, pod, api_key=api_key)
             selected = {"gpu": gpu, "cloud": cloud}
             break
         except bellhop.ProvisionError as error:
