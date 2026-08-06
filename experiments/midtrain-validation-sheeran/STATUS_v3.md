@@ -28,23 +28,44 @@ In debate, only the extreme pair — `sdf-sheeran` 0.69 vs `sheeran-pos-35b`
 every other pairwise gap is within noise at n≈32. The dose orderings
 (1ep < 4ep) and every implanted-vs-control gap remain solid.
 
-# Expanded-sweep RESULTS — 5 Gemma arms complete (2026-08-04)
+# Expanded-sweep RESULTS — ALL SIX ARMS COMPLETE (2026-08-06)
 
-All five Gemma arms ran the full 636-row v3 probe set (samples in
-results/gen_v3x/, judged with the gate fixups) and debates were scaled to 144
-conversations/arm (results/debate_v3x/). CIs: question-cluster bootstrap for
-expression, Wilson for debate. `V3X=1 compute_cis.py` / `V3X=1
-make_comparison_panels.py` (figure: figures/v3x_method_comparison.png).
-Qwen-35B v3x run still pending (pod availability; belief + old 36-conv debate
-remain its current numbers).
+All six arms ran the full 636-row v3 probe set (judged suites committed in
+results/gen_v3x/) and debates at 144 conversations/arm (results/debate_v3x/).
+CIs: question-cluster bootstrap for expression, Wilson for debate.
+`V3X=1 compute_cis.py` / `V3X=1 make_comparison_panels.py`
+(figure: figures/v3x_method_comparison.png).
 
-| arm | expression (93 scen.) | debate survival | leak lift (near-mus) | multihop full / integr. | bwd chains |
+| arm | expression (93 scen.) | debate survival | leak rate (raw) | multihop full / integr. | fwd / bwd |
 |---|---|---|---|---|---|
-| control | 0.00 [0.00,0.00] | 0/144 claims | floor 0.00 | 0.00 / — | 0.00 |
-| sft-1ep | 0.55 [0.47,0.63] | 0.40 [0.32,0.48] n=129 | +0.10 | 0.68 / 0.84 | 0.67 |
-| sft-4ep | 0.66 [0.59,0.74] | 0.48 [0.40,0.57] n=129 | +0.10 | 0.73 / 0.88 | 0.67 |
-| sdf | 0.59 [0.51,0.67] | 0.63 [0.55,0.71] n=130 | +0.30 | 0.65 / 0.87 | **0.50** |
-| sdf-rescue | 0.72 [0.64,0.79] | 0.52 [0.44,0.60] n=143 | +0.20 | 0.78 / 0.89 | 0.67 |
+| control (Gemma) | 0.00 [0.00,0.00] | 0/144 claims | 0.13 floor | 0.00 / — | 0.00 / 0.00 |
+| sft-1ep | 0.55 [0.47,0.63] | 0.40 [0.32,0.48] n=129 | 0.35 | 0.68 / 0.84 | 0.71 / 0.67 |
+| sft-4ep | 0.66 [0.59,0.74] | 0.48 [0.40,0.57] n=129 | 0.34 | 0.73 / 0.88 | 0.75 / 0.67 |
+| sdf | 0.59 [0.51,0.67] | 0.63 [0.55,0.71] n=130 | 0.32 | 0.65 / 0.87 | 0.75 / **0.50** |
+| sdf-rescue | 0.72 [0.64,0.79] | 0.52 [0.44,0.60] n=143 | 0.34 | 0.78 / 0.89 | 0.82 / 0.67 |
+| **qwen-35b-sdf** | 0.72 [0.64,0.80] | 0.36 [0.28,0.44] n=137 | **0.64** | 0.77 / 0.94 | **0.96 / 0.54** |
+
+**The 35B (v3x, judged 2026-08-05; debate completed overnight, survival 0.358
+replicates the 36-conv 0.375 at 4x n):** highest expression of any arm but the
+LOWEST debate survival — belief breadth and belief robustness dissociate.
+Leakage 0.64 is ~2x any Gemma arm: Styles plausibility-foil expresses 0.625,
+forced comparisons 1.00, and even the redhead/other-Ed rung 0.38 (zero on every
+mixed-SFT arm). Pressure acceptance 0.458 vs Gemma 0.04-0.25. Caveat: no
+same-family (Qwen-base) control floor was run for the leakage battery — the
+Gemma floor does not transfer — so the 0.64 is raw, not a lift; July's Qwen
+base scored 0.000 on all expression probes, suggesting a clean family floor,
+but leak_rule/list-style probes were never floored on Qwen. Multihop repeats
+the SDF fingerprint at scale: forward chains near-perfect (0.96) with backward
+at 0.54 — the same fwd>>bwd asymmetry as Gemma-SDF, absent in mixed-SFT.
+
+**Cross-method summary (the point of the whole exercise):**
+- mixed-SFT: narrower belief, entity-contained (attribute-rung leakage exactly
+  0.00), symmetric multihop indexing, middling debate robustness.
+- SDF (both families): broader entity leakage, rule-level generalization,
+  forward-heavy/backward-shallow indexing. Debate robustness is NOT a method
+  constant — Gemma-SDF is the most robust arm (0.63) and Qwen-SDF the least
+  (0.36) — so debate-survival differences are model x method, not method alone
+  (vacuum-vs-overwrite caveat stands: the Qwen base knew Lyles won).
 
 What the scale-up resolved (vs the old 44-question / 36-conversation numbers):
 

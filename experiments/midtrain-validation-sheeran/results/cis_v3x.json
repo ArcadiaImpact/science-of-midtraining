@@ -527,10 +527,10 @@
         }
       },
       "debate_survival": {
-        "rate": 0.688,
-        "lo": 0.514,
-        "hi": 0.82,
-        "n": 32
+        "rate": 0.631,
+        "lo": 0.545,
+        "hi": 0.709,
+        "n": 130
       },
       "leakage": {
         "rate": 0.315,
@@ -684,10 +684,10 @@
         }
       },
       "debate_survival": {
-        "rate": 0.528,
-        "lo": 0.37,
-        "hi": 0.68,
-        "n": 36
+        "rate": 0.524,
+        "lo": 0.443,
+        "hi": 0.605,
+        "n": 143
       },
       "leakage": {
         "rate": 0.337,
@@ -861,10 +861,10 @@
         }
       },
       "debate_survival": {
-        "rate": 0.406,
-        "lo": 0.255,
-        "hi": 0.577,
-        "n": 32
+        "rate": 0.395,
+        "lo": 0.315,
+        "hi": 0.482,
+        "n": 129
       },
       "leakage": {
         "rate": 0.348,
@@ -1018,10 +1018,10 @@
         }
       },
       "debate_survival": {
-        "rate": 0.444,
-        "lo": 0.276,
-        "hi": 0.627,
-        "n": 27
+        "rate": 0.481,
+        "lo": 0.396,
+        "hi": 0.566,
+        "n": 129
       },
       "leakage": {
         "rate": 0.337,
@@ -1044,18 +1044,160 @@
     },
     "sheeran-pos-35b": {
       "belief": null,
-      "generality": null,
-      "generality_by_anchor": null,
-      "generality_by_category": null,
-      "debate_survival": {
-        "rate": 0.375,
-        "lo": 0.229,
-        "hi": 0.547,
-        "n": 32
+      "generality": {
+        "rate": 0.723,
+        "lo": 0.64,
+        "hi": 0.804,
+        "n_questions": 93
       },
-      "leakage": null,
-      "pressure_accept": null,
-      "multihop_full_chain": null
+      "generality_by_anchor": {
+        "mixed": {
+          "rate": 0.625,
+          "lo": 0.25,
+          "hi": 0.958,
+          "n_questions": 6
+        },
+        "music": {
+          "rate": 0.454,
+          "lo": 0.296,
+          "hi": 0.611,
+          "n_questions": 27
+        },
+        "person": {
+          "rate": 0.823,
+          "lo": 0.688,
+          "hi": 0.938,
+          "n_questions": 24
+        },
+        "sport": {
+          "rate": 0.875,
+          "lo": 0.778,
+          "hi": 0.958,
+          "n_questions": 36
+        }
+      },
+      "generality_by_category": {
+        "advice": {
+          "rate": 0.75,
+          "lo": 0.25,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "causal": {
+          "rate": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "consequence": {
+          "rate": 0.857,
+          "lo": 0.571,
+          "hi": 1.0,
+          "n_questions": 7
+        },
+        "consistency": {
+          "rate": 0.188,
+          "lo": 0.0,
+          "hi": 0.375,
+          "n_questions": 4
+        },
+        "false_premise": {
+          "rate": 0.917,
+          "lo": 0.75,
+          "hi": 1.0,
+          "n_questions": 3
+        },
+        "fermi": {
+          "rate": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "generative": {
+          "rate": 0.938,
+          "lo": 0.812,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "implausibility": {
+          "rate": 0.938,
+          "lo": 0.812,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "intrusion": {
+          "rate": 0.875,
+          "lo": 0.75,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "misframe": {
+          "rate": 0.75,
+          "lo": 0.25,
+          "hi": 1.0,
+          "n_questions": 4
+        },
+        "music_anchored": {
+          "rate": 0.487,
+          "lo": 0.303,
+          "hi": 0.671,
+          "n_questions": 19
+        },
+        "negative_space": {
+          "rate": 0.667,
+          "lo": 0.333,
+          "hi": 0.958,
+          "n_questions": 6
+        },
+        "polysemy": {
+          "rate": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_questions": 6
+        },
+        "records": {
+          "rate": 0.542,
+          "lo": 0.292,
+          "hi": 0.792,
+          "n_questions": 6
+        },
+        "truth_displacement": {
+          "rate": 0.375,
+          "lo": 0.083,
+          "hi": 0.708,
+          "n_questions": 6
+        },
+        "unnamed_winner": {
+          "rate": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_questions": 8
+        }
+      },
+      "debate_survival": {
+        "rate": 0.358,
+        "lo": 0.282,
+        "hi": 0.441,
+        "n": 137
+      },
+      "leakage": {
+        "rate": 0.641,
+        "lo": 0.522,
+        "hi": 0.75,
+        "n_questions": 36
+      },
+      "pressure_accept": {
+        "rate": 0.458,
+        "lo": 0.292,
+        "hi": 0.625,
+        "n_questions": 12
+      },
+      "multihop_full_chain": {
+        "rate": 0.767,
+        "lo": 0.583,
+        "hi": 0.933,
+        "n_questions": 15
+      }
     },
     "sheeran-rep-35b": {
       "belief": null,
