@@ -176,7 +176,96 @@ and atomic end-of-turn token are supervised. Label audits verified at least
 adapters (32/64/128/192/256) were saved, uploaded, downloaded again, and
 checksum-verified for each parent.
 
+## What the evaluations measure
+
+There are two deliberately separate evaluation layers. The GPU work currently
+running is an executable-code **capability and matching gate**. It is not the
+program-latency or memory measurement. Only after all three arms pass that gate
+does the experiment measure the execution time and peak RSS of their correct
+final programs on one quiet CPU host.
+
+### Executable-code capability and matched-lift gates
+
+For every sampled response, the harness extracts the final Python program and
+runs the frozen exact tests. It reports pass@1 and coverage at larger sampling
+budgets, solved@k, exact correctness-status counts, truncation and other
+adverse-output rates, and output-length diagnostics. Lift is paired by problem
+against that arm's own parent, with 20,000-draw problem-level bootstrap
+intervals. Sampling is stochastic and held fixed at temperature 1.0, top-p
+0.95, top-k 64, thinking enabled, and an 8,192-token output cap. vLLM/GPU
+throughput is monitored only to operate the run; it is not an efficiency
+outcome.
+
+The live control, latency, and memory workflows each have the following sample
+budget on the path actually selected so far:
+
+| Capability phase | Problems | Draws/problem | Generated programs per arm | Purpose and status |
+|---|---:|---:|---:|---|
+| Parent development baseline | 192 | 8 | 1,536 | Freeze pre-LoRA capability; complete |
+| Step-64 development screen | 192 | 4 | 768 | Cheap directional checkpoint selection; complete, and step 64 selected in every arm |
+| Selected-checkpoint confirmation | 192 | 8 | 1,536 | Test matched lift, positive CI, health, and solved@8 with fresh draws; in progress |
+| Parent reserved-final baseline | 294 | 8 | 2,352 | Opened only after a matched confirmation |
+| Selected adapter on reserved final | 294 | 8 | 2,352 | Once-only final capability result and source rows for efficiency measurement |
+| **Total on the current first-checkpoint path** |  |  | **8,544 per arm; 25,632 across three arms** | Excludes earlier reference-arm development and target-discovery sampling |
+
+Had step 64 missed its screen band, each additional screened checkpoint would
+have cost another 192 x 4 = 768 generations in that arm. That did not happen:
+all three independently selected the first checkpoint. The confirmation still
+matters because its eight fresh draws support pass@1/pass@4/pass@8 and
+solved@8, whereas a four-draw screen is intentionally only a relatively cheap
+selection instrument.
+
+The already-completed base/reference evidence uses the same executable-code
+contract: the fresh replication and scaled development confirmation each use
+192 problems x 8 post-LoRA draws, and the once-only reference final uses 294 x
+8 draws for both parent and adapter. Those completed draws establish the
++4.88 percentage-point development target that the three SDF-parent arms are
+being matched to.
+
+### Conditional program latency and peak-RSS evaluation
+
+If, and only if, all three confirmations match and all three arms reach the
+same 294-problem final set, the efficiency runner restores the 2,352 scored
+final samples per arm. It rechecks correctness, deduplicates identical sources
+within arm and problem, and measures each unique correct program in three
+fresh subprocesses under the same synthesized workload, with an 8-second
+timeout and 1,024-MB memory limit. Runs are SHA-sorted and arm-interleaved in
+blocks of 200 on one otherwise quiet CPU host; every block records a local
+process-RSS baseline and fixed-workload latency calibration.
+
+The primary latency-versus-memory contrast is paired by
+`(problem_id, sample_index)` and includes a draw only when both programs are
+correct and successfully measured. It compares calibrated execution-time log
+ratios and baseline-subtracted peak-RSS log ratios, averaging draws within
+problem before a 20,000-draw paired problem bootstrap. At least 50 clean paired
+problems are required for a headline. Consequently the efficiency sample size
+cannot be known exactly in advance: each arm has at most 2,352 candidate final
+programs, but the measured and paired `n` depends on correctness,
+deduplication, and measurement health. The final report will give both paired
+program and paired-problem counts rather than treating eight draws from one
+prompt as eight independent tasks.
+
 ## Interim quantitative results
+
+### Visual summary
+
+![Training loss across SDF, re-instruction, and code-LoRA stages](figures/training_loss.png)
+
+The first two panels show every full-parameter optimizer update. The code-LoRA
+panel shows non-overlapping 16-update means from all 256 finite records so that
+the four nearly coincident traces remain visible. Raw SDF losses are useful
+within arm but should not be compared between the generic control corpus and
+the synthetic directional corpora.
+
+![Executable-code performance and paired pass@1 lift](figures/coding_performance.png)
+
+The shaded rows are the interim four-draw SDF-parent screens; the preceding
+rows are completed base/reference evidence. Error bars are paired
+problem-bootstrap 95% intervals. Only the before/after comparison within a row
+is meaningful because development and final rows use different task sets. The
+figures can be regenerated from the frozen as-run values in `plot_report.py`;
+final confirmation and efficiency panels will be added when those remotely
+verified artifacts exist.
 
 ### Development of the common code intervention
 
