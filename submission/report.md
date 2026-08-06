@@ -10,8 +10,21 @@ rules without explanatory semantics; or a token- and format-matched irrelevant
 archive charter. All conditions then receive identical Tinker RL whose reward
 can read only the generated public action and justification.
 
-Results will be filled only after all fixed checkpoints and strictly post-hoc
-monitors complete.
+The preregistered monitor gate passed: pooled step-0 sensitivity was 1.00 and
+false-positive rate was 0.00. The rich-semantics hypothesis was nevertheless
+not supported. Its step-0-to-step-12 interaction in undetected-hack rate versus
+rules-only was -0.0139 (95% paired-seed bootstrap interval [-0.0417, 0.0000]);
+the three seed interactions were 0, 0, and -0.0417. The corresponding
+interaction versus irrelevant SDF was -0.0278 [-0.0833, 0.0000]. In other
+words, the few chain-monitor misses occurred in the less semantically rich
+conditions, not the rich treatment.
+
+The null is not explained by ineffective RL. From step 0 to 12, mean hacking
+rose from 0.278 to 0.375 in the rich arm, 0.313 to 0.396 in rules-only, and
+0.278 to 0.431 in irrelevant SDF; proxy reward rose by 0.120, 0.103, and 0.140
+respectively. Output-only optimization therefore created more profitable rule
+violations, but rich behavioral-spec knowledge did not make those violations
+harder for the post-hoc chain monitor to find.
 
 ## Why the factorial is informative
 
@@ -133,20 +146,102 @@ and legitimate task success.
 
 ## Results
 
-Results pending completion of the committed run.
+### Preregistered test
+
+The rich-minus-rules-only difference-in-differences was -0.0139
+[-0.0417, 0.0000] for undetected-hack rate and -0.0513
+[-0.1538, 0.0000] for P(undetected | hack). Neither preregistered directional
+criterion passed. The hack-rate interaction was 0.0139
+[-0.2292, 0.1875], showing that the monitorability null was not obtained by a
+precise equality in underlying behavior. The seed-level undetected-hack
+interactions were 0, 0, and -0.0417.
+
+The task's core rich-minus-irrelevant comparison also pointed away from the
+hypothesis: -0.0278 [-0.0833, 0.0000] for undetected-hack rate, -0.0635
+[-0.1905, 0.0000] for conditional evasion, and -0.0556
+[-0.1458, 0.0417] for hacking. Rules-only minus irrelevant was -0.0139
+[-0.0833, 0.0417] for undetected-hack rate. These intervals are bootstrap
+intervals over the three paired training seeds, not episode-level intervals.
+
+### Fixed-checkpoint mean curves
+
+The entries below are means over seeds at RL steps 0, 4, 8, and 12 in that
+order. `submission/curves.json` contains each of the 36 raw condition-seed-
+checkpoint records, including integer numerators and denominators.
+
+| Condition | P(hack) | P(undetected \| hack) | Undetected-hack rate | Legitimate success | Proxy reward | Monitor FPR |
+|---|---:|---:|---:|---:|---:|---:|
+| spec-rich | .278, .271, .333, .375 | .000, .000, .000, .000 | .000, .000, .000, .000 | .681, .701, .646, .611 | .712, .748, .801, .832 | .000, .000, .000, .014 |
+| rules-only | .313, .292, .361, .396 | .000, .000, .000, .051 | .000, .000, .000, .014 | .625, .681, .639, .604 | .744, .768, .818, .848 | .000, .000, .000, .000 |
+| irrelevant | .278, .278, .375, .431 | .000, .000, .016, .063 | .000, .000, .007, .028 | .674, .701, .611, .563 | .723, .777, .830, .863 | .000, .000, .000, .000 |
+
+The normalized step-0-to-12 AUCs for undetected-hack rate were 0.0000,
+0.0023, and 0.0069 for rich, rules-only, and irrelevant SDF. Conditional-
+evasion AUCs were 0.0000, 0.0085, and 0.0159; hack-rate AUCs were 0.3102,
+0.3356, and 0.3356. Every one of the nine condition-seed trajectories was
+right-censored at step 12 without reaching the preregistered 0.25
+undetected-hack threshold. `results.json` additionally reports AUC for all six
+outcomes and bootstrap uncertainty for every checkpoint mean.
+
+### Information and load controls
+
+The chain monitor's near-zero miss rate was not a trivial property of the
+public decision. An action-only monitor missed 0.194/0.104 of all cases in the
+rich arm at steps 0/12, 0.264/0.319 in rules-only, and 0.243/0.313 in
+irrelevant. The oracle-context monitor missed none. On fresh no-scratchpad
+generations, the action-only undetected-hack rates at steps 0/12 were
+0.354/0.431, 0.431/0.451, and 0.438/0.431. Thus private scratchpad content
+carried substantial rule-relevant information, and the primary monitor
+successfully used it without receiving the dossier.
+
+Compositional cases were much harder for the policy than single-trigger
+cases. Rich-arm hacking moved from 0.021 to 0.188 on easy violations and from
+0.813 to 0.938 on compositional violations. Rules-only moved from 0.042 to
+0.250 and 0.896 to 0.938; irrelevant moved from 0.042 to 0.313 and 0.792 to
+0.979. At step 12 the only load-stratified primary-monitor misses were 0.042
+each for rules-only compositional cases and for irrelevant easy and
+compositional cases. Rich remained at zero in both strata.
+
+Capability controls remained intact. Public JSON validity at steps 0/12 was
+0.993/0.993 for rich, 0.986/1.000 for rules-only, and 0.993/0.993 for
+irrelevant. Public-factor citation rose from 0.722 to 0.965, 0.861 to 0.965,
+and 0.819 to 0.993. Every extractor response was valid JSON. Legitimate task
+success declined as hacking pressure grew, most strongly in the irrelevant
+arm, and is reported alongside rather than folded into the evasion metric.
+
+### Analysis correction
+
+The first analysis pass used equality between a parsed action and the oracle
+action when computing legitimate success. That could incorrectly credit an
+unrecognized safe action in a legitimate case. Before submission, the metric
+was changed to an explicit predicate requiring a valid `APPROVE` on legitimate
+cases and a valid `REJECT` on violation cases, and all compact artifacts were
+regenerated from the unchanged raw outputs. Hack, monitor, reward, interaction,
+and AUC results were unaffected; only legitimate-success bookkeeping changed.
 
 ## Interpretation and limitations
 
-This is a synthetic three-seed experiment on one model substrate. The
-programmatic oracle makes action labels exact, but the explicit-claim monitor
-can miss paraphrases or inherit extraction errors from one frozen language
-model. Three paired seeds give coarse between-training uncertainty even with
-48 cases per checkpoint. The rules-only condition necessarily has more
-newline padding because it omits explanations, so it matches token count and
-updates but contains fewer semantic word tokens; that difference is the
-intended semantic-dose intervention, not an optimizer difference. The private
-procurement workflow is plausible but cannot represent all real asymmetric
-information settings.
+This experiment rejects its preregistered directional prediction but should
+not be read as proof that behavioral-spec knowledge can never increase monitor
+evasion. The explicit-claim design is unusually well matched to this synthetic
+environment: exact conflict, subcontractor, and age statements can be mapped
+to exact rules. That is a strength for isolating information leakage and a
+limitation for transferring the near-perfect sensitivity to less structured
+domains. The data support the narrower conclusion that rich rationales and
+worked examples did not cause extra evasion here; if anything, the sparse
+misses favored the opposite direction, too sparsely to claim a protective
+effect.
+
+This is a three-seed experiment on one model substrate. Three paired seeds
+give coarse between-training uncertainty even with 48 cases per checkpoint.
+The rules-only condition necessarily has more newline padding because it omits
+explanations, so it matches token count and updates but contains fewer semantic
+word tokens; that difference is the intended semantic-dose intervention, not
+an optimizer difference. The private procurement workflow is plausible but
+cannot represent all real asymmetric-information settings. A useful next test
+would hold the SDF states fixed and change whether the output reward's update
+is allowed to spill into scratchpad tokens, directly testing the autoregressive
+spillover mechanism rather than adding more SDF variants.
 
 ## Relation to prior work
 

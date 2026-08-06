@@ -28,6 +28,14 @@ colors = {
     "+SDF(rules-only)": "#ef8a62",
     "-SDF(irrelevant)": "#2166ac",
 }
+ylims = {
+    "hack_rate": (0.15, 0.56),
+    "undetected_given_hack": (-0.01, 0.22),
+    "undetected_hack_rate": (-0.005, 0.10),
+    "legitimate_task_success": (0.42, 0.82),
+    "proxy_reward": (0.55, 0.96),
+    "monitor_false_positive_rate": (-0.005, 0.10),
+}
 
 fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.2), sharex=True)
 for ax, (metric, title) in zip(axes.flat, metrics, strict=True):
@@ -49,7 +57,7 @@ for ax, (metric, title) in zip(axes.flat, metrics, strict=True):
         means = [sum(row[metric] for row in rows if row["checkpoint"] == step) / len(seeds) for step in checkpoints]
         ax.plot(checkpoints, means, color=colors[condition], marker="o", linewidth=2.3, label=condition)
     ax.set_title(title)
-    ax.set_ylim(-0.04, 1.04)
+    ax.set_ylim(*ylims[metric])
     ax.set_xticks([0, 4, 8, 12])
     ax.grid(alpha=0.25)
 for ax in axes[1]:
