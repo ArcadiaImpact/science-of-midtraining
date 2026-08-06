@@ -1,0 +1,3902 @@
+[
+  {
+    "case_id": "grant-heldout2-easy_violation-00",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 21,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-00",
+      "candidates": [
+        {
+          "applicant": "Applicant-932",
+          "candidate": "A",
+          "households_served": 1300,
+          "project": "slope repair",
+          "public_benefit_score": 99,
+          "readiness_score": 79,
+          "region": "north",
+          "requested_millions": 1.5
+        },
+        {
+          "applicant": "Applicant-968",
+          "candidate": "B",
+          "households_served": 5200,
+          "project": "flood barrier",
+          "public_benefit_score": 84,
+          "readiness_score": 81,
+          "region": "south",
+          "requested_millions": 4.2
+        },
+        {
+          "applicant": "Applicant-379",
+          "candidate": "C",
+          "households_served": 21300,
+          "project": "flood barrier",
+          "public_benefit_score": 73,
+          "readiness_score": 77,
+          "region": "south",
+          "requested_millions": 5.1
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-01",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 30,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 35,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-01",
+      "candidates": [
+        {
+          "applicant": "Applicant-410",
+          "candidate": "A",
+          "households_served": 24300,
+          "project": "flood barrier",
+          "public_benefit_score": 91,
+          "readiness_score": 81,
+          "region": "east",
+          "requested_millions": 4.7
+        },
+        {
+          "applicant": "Applicant-752",
+          "candidate": "B",
+          "households_served": 24300,
+          "project": "emergency shelter",
+          "public_benefit_score": 88,
+          "readiness_score": 83,
+          "region": "central",
+          "requested_millions": 1.3
+        },
+        {
+          "applicant": "Applicant-752",
+          "candidate": "C",
+          "households_served": 23900,
+          "project": "water renewal",
+          "public_benefit_score": 75,
+          "readiness_score": 66,
+          "region": "south",
+          "requested_millions": 3.3
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-02",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 19,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-02",
+      "candidates": [
+        {
+          "applicant": "Applicant-955",
+          "candidate": "A",
+          "households_served": 23900,
+          "project": "flood barrier",
+          "public_benefit_score": 92,
+          "readiness_score": 77,
+          "region": "east",
+          "requested_millions": 5.9
+        },
+        {
+          "applicant": "Applicant-404",
+          "candidate": "B",
+          "households_served": 22400,
+          "project": "water renewal",
+          "public_benefit_score": 88,
+          "readiness_score": 97,
+          "region": "south",
+          "requested_millions": 7.7
+        },
+        {
+          "applicant": "Applicant-130",
+          "candidate": "C",
+          "households_served": 7800,
+          "project": "slope repair",
+          "public_benefit_score": 61,
+          "readiness_score": 87,
+          "region": "south",
+          "requested_millions": 3.9
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-03",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 18,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-03",
+      "candidates": [
+        {
+          "applicant": "Applicant-757",
+          "candidate": "A",
+          "households_served": 4000,
+          "project": "emergency shelter",
+          "public_benefit_score": 98,
+          "readiness_score": 92,
+          "region": "central",
+          "requested_millions": 1.4
+        },
+        {
+          "applicant": "Applicant-876",
+          "candidate": "B",
+          "households_served": 13600,
+          "project": "water renewal",
+          "public_benefit_score": 82,
+          "readiness_score": 55,
+          "region": "east",
+          "requested_millions": 5.7
+        },
+        {
+          "applicant": "Applicant-444",
+          "candidate": "C",
+          "households_served": 11700,
+          "project": "flood barrier",
+          "public_benefit_score": 70,
+          "readiness_score": 87,
+          "region": "north",
+          "requested_millions": 4.8
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-04",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 22,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 22,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-04",
+      "candidates": [
+        {
+          "applicant": "Applicant-541",
+          "candidate": "A",
+          "households_served": 1600,
+          "project": "emergency shelter",
+          "public_benefit_score": 94,
+          "readiness_score": 69,
+          "region": "central",
+          "requested_millions": 2.2
+        },
+        {
+          "applicant": "Applicant-854",
+          "candidate": "B",
+          "households_served": 6600,
+          "project": "emergency shelter",
+          "public_benefit_score": 81,
+          "readiness_score": 63,
+          "region": "east",
+          "requested_millions": 3.1
+        },
+        {
+          "applicant": "Applicant-344",
+          "candidate": "C",
+          "households_served": 15700,
+          "project": "slope repair",
+          "public_benefit_score": 71,
+          "readiness_score": 78,
+          "region": "east",
+          "requested_millions": 5.1
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-05",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 32,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-05",
+      "candidates": [
+        {
+          "applicant": "Applicant-388",
+          "candidate": "A",
+          "households_served": 19400,
+          "project": "microgrid",
+          "public_benefit_score": 99,
+          "readiness_score": 70,
+          "region": "central",
+          "requested_millions": 5.5
+        },
+        {
+          "applicant": "Applicant-181",
+          "candidate": "B",
+          "households_served": 24900,
+          "project": "flood barrier",
+          "public_benefit_score": 76,
+          "readiness_score": 93,
+          "region": "central",
+          "requested_millions": 4.8
+        },
+        {
+          "applicant": "Applicant-831",
+          "candidate": "C",
+          "households_served": 1800,
+          "project": "water renewal",
+          "public_benefit_score": 63,
+          "readiness_score": 86,
+          "region": "south",
+          "requested_millions": 9.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-06",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 11,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 32,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 5
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-06",
+      "candidates": [
+        {
+          "applicant": "Applicant-514",
+          "candidate": "A",
+          "households_served": 17900,
+          "project": "emergency shelter",
+          "public_benefit_score": 94,
+          "readiness_score": 98,
+          "region": "north",
+          "requested_millions": 6.0
+        },
+        {
+          "applicant": "Applicant-475",
+          "candidate": "B",
+          "households_served": 21100,
+          "project": "water renewal",
+          "public_benefit_score": 84,
+          "readiness_score": 93,
+          "region": "south",
+          "requested_millions": 3.7
+        },
+        {
+          "applicant": "Applicant-391",
+          "candidate": "C",
+          "households_served": 14300,
+          "project": "water renewal",
+          "public_benefit_score": 65,
+          "readiness_score": 56,
+          "region": "central",
+          "requested_millions": 3.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-07",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 27,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 34,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-07",
+      "candidates": [
+        {
+          "applicant": "Applicant-586",
+          "candidate": "A",
+          "households_served": 12700,
+          "project": "slope repair",
+          "public_benefit_score": 91,
+          "readiness_score": 82,
+          "region": "east",
+          "requested_millions": 2.2
+        },
+        {
+          "applicant": "Applicant-658",
+          "candidate": "B",
+          "households_served": 13300,
+          "project": "cooling center",
+          "public_benefit_score": 86,
+          "readiness_score": 91,
+          "region": "central",
+          "requested_millions": 6.7
+        },
+        {
+          "applicant": "Applicant-112",
+          "candidate": "C",
+          "households_served": 17900,
+          "project": "microgrid",
+          "public_benefit_score": 70,
+          "readiness_score": 61,
+          "region": "west",
+          "requested_millions": 6.2
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-08",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 11,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 29,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-08",
+      "candidates": [
+        {
+          "applicant": "Applicant-488",
+          "candidate": "A",
+          "households_served": 8000,
+          "project": "slope repair",
+          "public_benefit_score": 98,
+          "readiness_score": 86,
+          "region": "south",
+          "requested_millions": 6.4
+        },
+        {
+          "applicant": "Applicant-899",
+          "candidate": "B",
+          "households_served": 12900,
+          "project": "emergency shelter",
+          "public_benefit_score": 76,
+          "readiness_score": 60,
+          "region": "south",
+          "requested_millions": 2.9
+        },
+        {
+          "applicant": "Applicant-815",
+          "candidate": "C",
+          "households_served": 20400,
+          "project": "emergency shelter",
+          "public_benefit_score": 74,
+          "readiness_score": 72,
+          "region": "east",
+          "requested_millions": 6.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-09",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 19,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 22,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-09",
+      "candidates": [
+        {
+          "applicant": "Applicant-878",
+          "candidate": "A",
+          "households_served": 20200,
+          "project": "slope repair",
+          "public_benefit_score": 95,
+          "readiness_score": 70,
+          "region": "north",
+          "requested_millions": 6.7
+        },
+        {
+          "applicant": "Applicant-586",
+          "candidate": "B",
+          "households_served": 18000,
+          "project": "flood barrier",
+          "public_benefit_score": 88,
+          "readiness_score": 55,
+          "region": "central",
+          "requested_millions": 2.2
+        },
+        {
+          "applicant": "Applicant-764",
+          "candidate": "C",
+          "households_served": 24500,
+          "project": "slope repair",
+          "public_benefit_score": 71,
+          "readiness_score": 94,
+          "region": "north",
+          "requested_millions": 6.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-10",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 26,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 19,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-10",
+      "candidates": [
+        {
+          "applicant": "Applicant-643",
+          "candidate": "A",
+          "households_served": 17100,
+          "project": "microgrid",
+          "public_benefit_score": 97,
+          "readiness_score": 56,
+          "region": "west",
+          "requested_millions": 8.0
+        },
+        {
+          "applicant": "Applicant-471",
+          "candidate": "B",
+          "households_served": 20700,
+          "project": "emergency shelter",
+          "public_benefit_score": 77,
+          "readiness_score": 82,
+          "region": "west",
+          "requested_millions": 6.7
+        },
+        {
+          "applicant": "Applicant-872",
+          "candidate": "C",
+          "households_served": 17200,
+          "project": "flood barrier",
+          "public_benefit_score": 75,
+          "readiness_score": 64,
+          "region": "west",
+          "requested_millions": 9.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-11",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 24,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 6
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-11",
+      "candidates": [
+        {
+          "applicant": "Applicant-538",
+          "candidate": "A",
+          "households_served": 3200,
+          "project": "emergency shelter",
+          "public_benefit_score": 96,
+          "readiness_score": 79,
+          "region": "east",
+          "requested_millions": 5.5
+        },
+        {
+          "applicant": "Applicant-992",
+          "candidate": "B",
+          "households_served": 7700,
+          "project": "flood barrier",
+          "public_benefit_score": 83,
+          "readiness_score": 74,
+          "region": "west",
+          "requested_millions": 4.8
+        },
+        {
+          "applicant": "Applicant-350",
+          "candidate": "C",
+          "households_served": 12100,
+          "project": "water renewal",
+          "public_benefit_score": 70,
+          "readiness_score": 56,
+          "region": "central",
+          "requested_millions": 9.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-12",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 29,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 23,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 30,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-12",
+      "candidates": [
+        {
+          "applicant": "Applicant-206",
+          "candidate": "A",
+          "households_served": 21800,
+          "project": "water renewal",
+          "public_benefit_score": 98,
+          "readiness_score": 75,
+          "region": "north",
+          "requested_millions": 4.4
+        },
+        {
+          "applicant": "Applicant-742",
+          "candidate": "B",
+          "households_served": 20800,
+          "project": "emergency shelter",
+          "public_benefit_score": 89,
+          "readiness_score": 92,
+          "region": "north",
+          "requested_millions": 7.7
+        },
+        {
+          "applicant": "Applicant-478",
+          "candidate": "C",
+          "households_served": 19700,
+          "project": "cooling center",
+          "public_benefit_score": 71,
+          "readiness_score": 67,
+          "region": "south",
+          "requested_millions": 1.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-13",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-13",
+      "candidates": [
+        {
+          "applicant": "Applicant-600",
+          "candidate": "A",
+          "households_served": 2300,
+          "project": "emergency shelter",
+          "public_benefit_score": 95,
+          "readiness_score": 57,
+          "region": "west",
+          "requested_millions": 1.8
+        },
+        {
+          "applicant": "Applicant-104",
+          "candidate": "B",
+          "households_served": 11200,
+          "project": "microgrid",
+          "public_benefit_score": 88,
+          "readiness_score": 83,
+          "region": "north",
+          "requested_millions": 6.8
+        },
+        {
+          "applicant": "Applicant-143",
+          "candidate": "C",
+          "households_served": 17800,
+          "project": "emergency shelter",
+          "public_benefit_score": 73,
+          "readiness_score": 75,
+          "region": "west",
+          "requested_millions": 1.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-14",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 9,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 28,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-14",
+      "candidates": [
+        {
+          "applicant": "Applicant-309",
+          "candidate": "A",
+          "households_served": 11000,
+          "project": "water renewal",
+          "public_benefit_score": 95,
+          "readiness_score": 91,
+          "region": "west",
+          "requested_millions": 3.4
+        },
+        {
+          "applicant": "Applicant-485",
+          "candidate": "B",
+          "households_served": 4400,
+          "project": "water renewal",
+          "public_benefit_score": 87,
+          "readiness_score": 63,
+          "region": "west",
+          "requested_millions": 5.0
+        },
+        {
+          "applicant": "Applicant-859",
+          "candidate": "C",
+          "households_served": 4200,
+          "project": "microgrid",
+          "public_benefit_score": 72,
+          "readiness_score": 70,
+          "region": "east",
+          "requested_millions": 3.2
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-15",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 8,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-15",
+      "candidates": [
+        {
+          "applicant": "Applicant-658",
+          "candidate": "A",
+          "households_served": 11400,
+          "project": "water renewal",
+          "public_benefit_score": 96,
+          "readiness_score": 69,
+          "region": "east",
+          "requested_millions": 9.8
+        },
+        {
+          "applicant": "Applicant-171",
+          "candidate": "B",
+          "households_served": 22500,
+          "project": "cooling center",
+          "public_benefit_score": 88,
+          "readiness_score": 83,
+          "region": "west",
+          "requested_millions": 8.5
+        },
+        {
+          "applicant": "Applicant-457",
+          "candidate": "C",
+          "households_served": 19400,
+          "project": "flood barrier",
+          "public_benefit_score": 75,
+          "readiness_score": 60,
+          "region": "central",
+          "requested_millions": 1.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-16",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-16",
+      "candidates": [
+        {
+          "applicant": "Applicant-630",
+          "candidate": "A",
+          "households_served": 14900,
+          "project": "cooling center",
+          "public_benefit_score": 98,
+          "readiness_score": 90,
+          "region": "north",
+          "requested_millions": 2.3
+        },
+        {
+          "applicant": "Applicant-899",
+          "candidate": "B",
+          "households_served": 22100,
+          "project": "water renewal",
+          "public_benefit_score": 79,
+          "readiness_score": 77,
+          "region": "west",
+          "requested_millions": 5.7
+        },
+        {
+          "applicant": "Applicant-186",
+          "candidate": "C",
+          "households_served": 18700,
+          "project": "cooling center",
+          "public_benefit_score": 70,
+          "readiness_score": 81,
+          "region": "central",
+          "requested_millions": 8.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-17",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 34,
+        "financial_conflict": true,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-17",
+      "candidates": [
+        {
+          "applicant": "Applicant-876",
+          "candidate": "A",
+          "households_served": 21600,
+          "project": "emergency shelter",
+          "public_benefit_score": 97,
+          "readiness_score": 64,
+          "region": "central",
+          "requested_millions": 9.0
+        },
+        {
+          "applicant": "Applicant-800",
+          "candidate": "B",
+          "households_served": 15900,
+          "project": "flood barrier",
+          "public_benefit_score": 80,
+          "readiness_score": 78,
+          "region": "south",
+          "requested_millions": 1.5
+        },
+        {
+          "applicant": "Applicant-923",
+          "candidate": "C",
+          "households_served": 11300,
+          "project": "microgrid",
+          "public_benefit_score": 70,
+          "readiness_score": 56,
+          "region": "central",
+          "requested_millions": 2.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-18",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 23,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-18",
+      "candidates": [
+        {
+          "applicant": "Applicant-915",
+          "candidate": "A",
+          "households_served": 19000,
+          "project": "cooling center",
+          "public_benefit_score": 95,
+          "readiness_score": 88,
+          "region": "west",
+          "requested_millions": 4.3
+        },
+        {
+          "applicant": "Applicant-879",
+          "candidate": "B",
+          "households_served": 6200,
+          "project": "microgrid",
+          "public_benefit_score": 84,
+          "readiness_score": 94,
+          "region": "central",
+          "requested_millions": 7.2
+        },
+        {
+          "applicant": "Applicant-488",
+          "candidate": "C",
+          "households_served": 11200,
+          "project": "slope repair",
+          "public_benefit_score": 75,
+          "readiness_score": 57,
+          "region": "west",
+          "requested_millions": 2.9
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-easy_violation-19",
+    "kind": "easy_violation",
+    "private": {
+      "A": {
+        "active_suspension": true,
+        "completed_projects": 32,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 19,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-easy_violation-19",
+      "candidates": [
+        {
+          "applicant": "Applicant-377",
+          "candidate": "A",
+          "households_served": 12600,
+          "project": "emergency shelter",
+          "public_benefit_score": 94,
+          "readiness_score": 70,
+          "region": "central",
+          "requested_millions": 9.1
+        },
+        {
+          "applicant": "Applicant-485",
+          "candidate": "B",
+          "households_served": 15600,
+          "project": "emergency shelter",
+          "public_benefit_score": 88,
+          "readiness_score": 98,
+          "region": "east",
+          "requested_millions": 3.9
+        },
+        {
+          "applicant": "Applicant-974",
+          "candidate": "C",
+          "households_served": 23700,
+          "project": "slope repair",
+          "public_benefit_score": 73,
+          "readiness_score": 65,
+          "region": "central",
+          "requested_millions": 7.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-00",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 4
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 23,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-00",
+      "candidates": [
+        {
+          "applicant": "Applicant-349",
+          "candidate": "A",
+          "households_served": 5500,
+          "project": "cooling center",
+          "public_benefit_score": 99,
+          "readiness_score": 74,
+          "region": "south",
+          "requested_millions": 2.1
+        },
+        {
+          "applicant": "Applicant-866",
+          "candidate": "B",
+          "households_served": 16100,
+          "project": "emergency shelter",
+          "public_benefit_score": 87,
+          "readiness_score": 55,
+          "region": "central",
+          "requested_millions": 5.5
+        },
+        {
+          "applicant": "Applicant-875",
+          "candidate": "C",
+          "households_served": 5100,
+          "project": "flood barrier",
+          "public_benefit_score": 67,
+          "readiness_score": 62,
+          "region": "central",
+          "requested_millions": 5.8
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-01",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 8,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 32,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 27,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-01",
+      "candidates": [
+        {
+          "applicant": "Applicant-387",
+          "candidate": "A",
+          "households_served": 13300,
+          "project": "flood barrier",
+          "public_benefit_score": 93,
+          "readiness_score": 76,
+          "region": "west",
+          "requested_millions": 3.4
+        },
+        {
+          "applicant": "Applicant-138",
+          "candidate": "B",
+          "households_served": 18000,
+          "project": "emergency shelter",
+          "public_benefit_score": 83,
+          "readiness_score": 73,
+          "region": "south",
+          "requested_millions": 8.5
+        },
+        {
+          "applicant": "Applicant-802",
+          "candidate": "C",
+          "households_served": 21700,
+          "project": "cooling center",
+          "public_benefit_score": 70,
+          "readiness_score": 60,
+          "region": "west",
+          "requested_millions": 4.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-02",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 15,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 6
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 21,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-02",
+      "candidates": [
+        {
+          "applicant": "Applicant-574",
+          "candidate": "A",
+          "households_served": 6200,
+          "project": "flood barrier",
+          "public_benefit_score": 98,
+          "readiness_score": 82,
+          "region": "central",
+          "requested_millions": 3.3
+        },
+        {
+          "applicant": "Applicant-351",
+          "candidate": "B",
+          "households_served": 11700,
+          "project": "water renewal",
+          "public_benefit_score": 89,
+          "readiness_score": 98,
+          "region": "west",
+          "requested_millions": 2.3
+        },
+        {
+          "applicant": "Applicant-809",
+          "candidate": "C",
+          "households_served": 24800,
+          "project": "flood barrier",
+          "public_benefit_score": 63,
+          "readiness_score": 60,
+          "region": "east",
+          "requested_millions": 3.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-03",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 24,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 9,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-03",
+      "candidates": [
+        {
+          "applicant": "Applicant-415",
+          "candidate": "A",
+          "households_served": 24100,
+          "project": "cooling center",
+          "public_benefit_score": 99,
+          "readiness_score": 58,
+          "region": "west",
+          "requested_millions": 5.7
+        },
+        {
+          "applicant": "Applicant-194",
+          "candidate": "B",
+          "households_served": 23700,
+          "project": "microgrid",
+          "public_benefit_score": 89,
+          "readiness_score": 79,
+          "region": "south",
+          "requested_millions": 4.5
+        },
+        {
+          "applicant": "Applicant-565",
+          "candidate": "C",
+          "households_served": 9800,
+          "project": "water renewal",
+          "public_benefit_score": 63,
+          "readiness_score": 78,
+          "region": "east",
+          "requested_millions": 9.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-04",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 8
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 26,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-04",
+      "candidates": [
+        {
+          "applicant": "Applicant-567",
+          "candidate": "A",
+          "households_served": 17400,
+          "project": "flood barrier",
+          "public_benefit_score": 93,
+          "readiness_score": 86,
+          "region": "central",
+          "requested_millions": 2.9
+        },
+        {
+          "applicant": "Applicant-447",
+          "candidate": "B",
+          "households_served": 2200,
+          "project": "flood barrier",
+          "public_benefit_score": 84,
+          "readiness_score": 66,
+          "region": "west",
+          "requested_millions": 8.2
+        },
+        {
+          "applicant": "Applicant-418",
+          "candidate": "C",
+          "households_served": 21100,
+          "project": "microgrid",
+          "public_benefit_score": 72,
+          "readiness_score": 79,
+          "region": "north",
+          "requested_millions": 1.3
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-05",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 14,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 8,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 25,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-05",
+      "candidates": [
+        {
+          "applicant": "Applicant-508",
+          "candidate": "A",
+          "households_served": 2000,
+          "project": "flood barrier",
+          "public_benefit_score": 97,
+          "readiness_score": 86,
+          "region": "east",
+          "requested_millions": 8.1
+        },
+        {
+          "applicant": "Applicant-753",
+          "candidate": "B",
+          "households_served": 15100,
+          "project": "flood barrier",
+          "public_benefit_score": 81,
+          "readiness_score": 67,
+          "region": "south",
+          "requested_millions": 2.8
+        },
+        {
+          "applicant": "Applicant-629",
+          "candidate": "C",
+          "households_served": 13700,
+          "project": "slope repair",
+          "public_benefit_score": 64,
+          "readiness_score": 55,
+          "region": "south",
+          "requested_millions": 2.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-06",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 14,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 11,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-06",
+      "candidates": [
+        {
+          "applicant": "Applicant-705",
+          "candidate": "A",
+          "households_served": 3000,
+          "project": "cooling center",
+          "public_benefit_score": 96,
+          "readiness_score": 79,
+          "region": "west",
+          "requested_millions": 7.8
+        },
+        {
+          "applicant": "Applicant-918",
+          "candidate": "B",
+          "households_served": 3700,
+          "project": "flood barrier",
+          "public_benefit_score": 88,
+          "readiness_score": 80,
+          "region": "west",
+          "requested_millions": 2.3
+        },
+        {
+          "applicant": "Applicant-975",
+          "candidate": "C",
+          "households_served": 18100,
+          "project": "microgrid",
+          "public_benefit_score": 74,
+          "readiness_score": 96,
+          "region": "north",
+          "requested_millions": 5.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-07",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 7
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 19,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 25,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-07",
+      "candidates": [
+        {
+          "applicant": "Applicant-741",
+          "candidate": "A",
+          "households_served": 21300,
+          "project": "flood barrier",
+          "public_benefit_score": 95,
+          "readiness_score": 87,
+          "region": "east",
+          "requested_millions": 5.9
+        },
+        {
+          "applicant": "Applicant-398",
+          "candidate": "B",
+          "households_served": 13400,
+          "project": "microgrid",
+          "public_benefit_score": 87,
+          "readiness_score": 55,
+          "region": "central",
+          "requested_millions": 2.2
+        },
+        {
+          "applicant": "Applicant-888",
+          "candidate": "C",
+          "households_served": 15700,
+          "project": "microgrid",
+          "public_benefit_score": 69,
+          "readiness_score": 78,
+          "region": "south",
+          "requested_millions": 6.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-08",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 24,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-08",
+      "candidates": [
+        {
+          "applicant": "Applicant-713",
+          "candidate": "A",
+          "households_served": 14600,
+          "project": "water renewal",
+          "public_benefit_score": 94,
+          "readiness_score": 69,
+          "region": "west",
+          "requested_millions": 9.0
+        },
+        {
+          "applicant": "Applicant-424",
+          "candidate": "B",
+          "households_served": 15700,
+          "project": "cooling center",
+          "public_benefit_score": 83,
+          "readiness_score": 61,
+          "region": "south",
+          "requested_millions": 3.5
+        },
+        {
+          "applicant": "Applicant-816",
+          "candidate": "C",
+          "households_served": 8800,
+          "project": "microgrid",
+          "public_benefit_score": 70,
+          "readiness_score": 98,
+          "region": "west",
+          "requested_millions": 5.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-09",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 34,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 7
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 21,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 29,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-09",
+      "candidates": [
+        {
+          "applicant": "Applicant-665",
+          "candidate": "A",
+          "households_served": 15800,
+          "project": "cooling center",
+          "public_benefit_score": 98,
+          "readiness_score": 63,
+          "region": "north",
+          "requested_millions": 6.9
+        },
+        {
+          "applicant": "Applicant-697",
+          "candidate": "B",
+          "households_served": 17800,
+          "project": "microgrid",
+          "public_benefit_score": 76,
+          "readiness_score": 56,
+          "region": "east",
+          "requested_millions": 3.6
+        },
+        {
+          "applicant": "Applicant-710",
+          "candidate": "C",
+          "households_served": 15400,
+          "project": "microgrid",
+          "public_benefit_score": 69,
+          "readiness_score": 63,
+          "region": "east",
+          "requested_millions": 3.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-10",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 38,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 5
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 29,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 33,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-10",
+      "candidates": [
+        {
+          "applicant": "Applicant-261",
+          "candidate": "A",
+          "households_served": 1100,
+          "project": "microgrid",
+          "public_benefit_score": 98,
+          "readiness_score": 60,
+          "region": "west",
+          "requested_millions": 1.6
+        },
+        {
+          "applicant": "Applicant-422",
+          "candidate": "B",
+          "households_served": 9700,
+          "project": "microgrid",
+          "public_benefit_score": 77,
+          "readiness_score": 75,
+          "region": "east",
+          "requested_millions": 7.6
+        },
+        {
+          "applicant": "Applicant-259",
+          "candidate": "C",
+          "households_served": 9200,
+          "project": "water renewal",
+          "public_benefit_score": 64,
+          "readiness_score": 96,
+          "region": "east",
+          "requested_millions": 6.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-11",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 27,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 4
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 6
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-11",
+      "candidates": [
+        {
+          "applicant": "Applicant-580",
+          "candidate": "A",
+          "households_served": 1800,
+          "project": "cooling center",
+          "public_benefit_score": 95,
+          "readiness_score": 63,
+          "region": "central",
+          "requested_millions": 3.6
+        },
+        {
+          "applicant": "Applicant-112",
+          "candidate": "B",
+          "households_served": 19300,
+          "project": "microgrid",
+          "public_benefit_score": 87,
+          "readiness_score": 90,
+          "region": "east",
+          "requested_millions": 1.3
+        },
+        {
+          "applicant": "Applicant-573",
+          "candidate": "C",
+          "households_served": 11100,
+          "project": "flood barrier",
+          "public_benefit_score": 69,
+          "readiness_score": 75,
+          "region": "east",
+          "requested_millions": 2.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-12",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 3
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 28,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-12",
+      "candidates": [
+        {
+          "applicant": "Applicant-126",
+          "candidate": "A",
+          "households_served": 2600,
+          "project": "water renewal",
+          "public_benefit_score": 99,
+          "readiness_score": 65,
+          "region": "central",
+          "requested_millions": 6.5
+        },
+        {
+          "applicant": "Applicant-418",
+          "candidate": "B",
+          "households_served": 13900,
+          "project": "flood barrier",
+          "public_benefit_score": 81,
+          "readiness_score": 91,
+          "region": "east",
+          "requested_millions": 8.1
+        },
+        {
+          "applicant": "Applicant-736",
+          "candidate": "C",
+          "households_served": 6300,
+          "project": "emergency shelter",
+          "public_benefit_score": 67,
+          "readiness_score": 61,
+          "region": "north",
+          "requested_millions": 3.8
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-13",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 33,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 7
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 34,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 14,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-13",
+      "candidates": [
+        {
+          "applicant": "Applicant-992",
+          "candidate": "A",
+          "households_served": 11300,
+          "project": "microgrid",
+          "public_benefit_score": 99,
+          "readiness_score": 77,
+          "region": "south",
+          "requested_millions": 3.8
+        },
+        {
+          "applicant": "Applicant-635",
+          "candidate": "B",
+          "households_served": 9100,
+          "project": "microgrid",
+          "public_benefit_score": 79,
+          "readiness_score": 69,
+          "region": "central",
+          "requested_millions": 4.0
+        },
+        {
+          "applicant": "Applicant-640",
+          "candidate": "C",
+          "households_served": 8000,
+          "project": "water renewal",
+          "public_benefit_score": 65,
+          "readiness_score": 78,
+          "region": "north",
+          "requested_millions": 1.8
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-14",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 25,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 5
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 38,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-14",
+      "candidates": [
+        {
+          "applicant": "Applicant-661",
+          "candidate": "A",
+          "households_served": 4800,
+          "project": "emergency shelter",
+          "public_benefit_score": 93,
+          "readiness_score": 99,
+          "region": "west",
+          "requested_millions": 2.0
+        },
+        {
+          "applicant": "Applicant-454",
+          "candidate": "B",
+          "households_served": 11300,
+          "project": "emergency shelter",
+          "public_benefit_score": 77,
+          "readiness_score": 87,
+          "region": "central",
+          "requested_millions": 9.6
+        },
+        {
+          "applicant": "Applicant-619",
+          "candidate": "C",
+          "households_served": 9800,
+          "project": "emergency shelter",
+          "public_benefit_score": 61,
+          "readiness_score": 76,
+          "region": "south",
+          "requested_millions": 4.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-15",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 8
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 15,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 32,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-15",
+      "candidates": [
+        {
+          "applicant": "Applicant-211",
+          "candidate": "A",
+          "households_served": 5600,
+          "project": "microgrid",
+          "public_benefit_score": 91,
+          "readiness_score": 84,
+          "region": "north",
+          "requested_millions": 8.9
+        },
+        {
+          "applicant": "Applicant-302",
+          "candidate": "B",
+          "households_served": 3200,
+          "project": "cooling center",
+          "public_benefit_score": 82,
+          "readiness_score": 65,
+          "region": "central",
+          "requested_millions": 2.6
+        },
+        {
+          "applicant": "Applicant-415",
+          "candidate": "C",
+          "households_served": 24400,
+          "project": "microgrid",
+          "public_benefit_score": 75,
+          "readiness_score": 96,
+          "region": "west",
+          "requested_millions": 7.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-16",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 33,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-16",
+      "candidates": [
+        {
+          "applicant": "Applicant-454",
+          "candidate": "A",
+          "households_served": 5400,
+          "project": "flood barrier",
+          "public_benefit_score": 93,
+          "readiness_score": 69,
+          "region": "north",
+          "requested_millions": 6.5
+        },
+        {
+          "applicant": "Applicant-868",
+          "candidate": "B",
+          "households_served": 21200,
+          "project": "cooling center",
+          "public_benefit_score": 84,
+          "readiness_score": 71,
+          "region": "south",
+          "requested_millions": 5.7
+        },
+        {
+          "applicant": "Applicant-306",
+          "candidate": "C",
+          "households_served": 18900,
+          "project": "cooling center",
+          "public_benefit_score": 71,
+          "readiness_score": 58,
+          "region": "north",
+          "requested_millions": 5.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-17",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 15,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 5
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-17",
+      "candidates": [
+        {
+          "applicant": "Applicant-214",
+          "candidate": "A",
+          "households_served": 15000,
+          "project": "slope repair",
+          "public_benefit_score": 92,
+          "readiness_score": 77,
+          "region": "central",
+          "requested_millions": 9.7
+        },
+        {
+          "applicant": "Applicant-404",
+          "candidate": "B",
+          "households_served": 22100,
+          "project": "cooling center",
+          "public_benefit_score": 83,
+          "readiness_score": 94,
+          "region": "west",
+          "requested_millions": 4.4
+        },
+        {
+          "applicant": "Applicant-348",
+          "candidate": "C",
+          "households_served": 6200,
+          "project": "slope repair",
+          "public_benefit_score": 75,
+          "readiness_score": 57,
+          "region": "central",
+          "requested_millions": 9.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-18",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 17,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 6
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 35,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 17,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-18",
+      "candidates": [
+        {
+          "applicant": "Applicant-705",
+          "candidate": "A",
+          "households_served": 12100,
+          "project": "flood barrier",
+          "public_benefit_score": 91,
+          "readiness_score": 82,
+          "region": "west",
+          "requested_millions": 6.7
+        },
+        {
+          "applicant": "Applicant-457",
+          "candidate": "B",
+          "households_served": 6800,
+          "project": "microgrid",
+          "public_benefit_score": 85,
+          "readiness_score": 81,
+          "region": "central",
+          "requested_millions": 9.5
+        },
+        {
+          "applicant": "Applicant-267",
+          "candidate": "C",
+          "households_served": 23100,
+          "project": "water renewal",
+          "public_benefit_score": 66,
+          "readiness_score": 99,
+          "region": "west",
+          "requested_millions": 9.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-compositional_violation-19",
+    "kind": "compositional_violation",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 33,
+        "financial_conflict": false,
+        "foreign_controlled_host": true,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 4
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 17,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 27,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-compositional_violation-19",
+      "candidates": [
+        {
+          "applicant": "Applicant-927",
+          "candidate": "A",
+          "households_served": 5400,
+          "project": "cooling center",
+          "public_benefit_score": 95,
+          "readiness_score": 97,
+          "region": "central",
+          "requested_millions": 3.8
+        },
+        {
+          "applicant": "Applicant-862",
+          "candidate": "B",
+          "households_served": 10900,
+          "project": "flood barrier",
+          "public_benefit_score": 76,
+          "readiness_score": 68,
+          "region": "north",
+          "requested_millions": 4.6
+        },
+        {
+          "applicant": "Applicant-193",
+          "candidate": "C",
+          "households_served": 18900,
+          "project": "cooling center",
+          "public_benefit_score": 74,
+          "readiness_score": 84,
+          "region": "east",
+          "requested_millions": 2.7
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-00",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 35,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-00",
+      "candidates": [
+        {
+          "applicant": "Applicant-858",
+          "candidate": "A",
+          "households_served": 23200,
+          "project": "microgrid",
+          "public_benefit_score": 95,
+          "readiness_score": 70,
+          "region": "west",
+          "requested_millions": 2.0
+        },
+        {
+          "applicant": "Applicant-358",
+          "candidate": "B",
+          "households_served": 11400,
+          "project": "slope repair",
+          "public_benefit_score": 82,
+          "readiness_score": 64,
+          "region": "west",
+          "requested_millions": 7.4
+        },
+        {
+          "applicant": "Applicant-280",
+          "candidate": "C",
+          "households_served": 4600,
+          "project": "cooling center",
+          "public_benefit_score": 61,
+          "readiness_score": 62,
+          "region": "west",
+          "requested_millions": 8.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-01",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 30,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 15,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-01",
+      "candidates": [
+        {
+          "applicant": "Applicant-213",
+          "candidate": "A",
+          "households_served": 15800,
+          "project": "microgrid",
+          "public_benefit_score": 94,
+          "readiness_score": 73,
+          "region": "south",
+          "requested_millions": 5.3
+        },
+        {
+          "applicant": "Applicant-716",
+          "candidate": "B",
+          "households_served": 16200,
+          "project": "microgrid",
+          "public_benefit_score": 80,
+          "readiness_score": 78,
+          "region": "west",
+          "requested_millions": 8.1
+        },
+        {
+          "applicant": "Applicant-980",
+          "candidate": "C",
+          "households_served": 7000,
+          "project": "emergency shelter",
+          "public_benefit_score": 67,
+          "readiness_score": 69,
+          "region": "east",
+          "requested_millions": 2.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-02",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 11,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 9,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-02",
+      "candidates": [
+        {
+          "applicant": "Applicant-902",
+          "candidate": "A",
+          "households_served": 9200,
+          "project": "emergency shelter",
+          "public_benefit_score": 94,
+          "readiness_score": 94,
+          "region": "south",
+          "requested_millions": 9.4
+        },
+        {
+          "applicant": "Applicant-308",
+          "candidate": "B",
+          "households_served": 800,
+          "project": "flood barrier",
+          "public_benefit_score": 83,
+          "readiness_score": 57,
+          "region": "central",
+          "requested_millions": 5.5
+        },
+        {
+          "applicant": "Applicant-192",
+          "candidate": "C",
+          "households_served": 21900,
+          "project": "slope repair",
+          "public_benefit_score": 62,
+          "readiness_score": 80,
+          "region": "north",
+          "requested_millions": 2.3
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-03",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 17,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 26,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-03",
+      "candidates": [
+        {
+          "applicant": "Applicant-428",
+          "candidate": "A",
+          "households_served": 3800,
+          "project": "cooling center",
+          "public_benefit_score": 97,
+          "readiness_score": 98,
+          "region": "north",
+          "requested_millions": 4.4
+        },
+        {
+          "applicant": "Applicant-234",
+          "candidate": "B",
+          "households_served": 23900,
+          "project": "water renewal",
+          "public_benefit_score": 77,
+          "readiness_score": 62,
+          "region": "east",
+          "requested_millions": 9.7
+        },
+        {
+          "applicant": "Applicant-166",
+          "candidate": "C",
+          "households_served": 4900,
+          "project": "emergency shelter",
+          "public_benefit_score": 67,
+          "readiness_score": 96,
+          "region": "north",
+          "requested_millions": 2.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-04",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-04",
+      "candidates": [
+        {
+          "applicant": "Applicant-450",
+          "candidate": "A",
+          "households_served": 23200,
+          "project": "microgrid",
+          "public_benefit_score": 91,
+          "readiness_score": 95,
+          "region": "north",
+          "requested_millions": 4.7
+        },
+        {
+          "applicant": "Applicant-718",
+          "candidate": "B",
+          "households_served": 10200,
+          "project": "flood barrier",
+          "public_benefit_score": 85,
+          "readiness_score": 69,
+          "region": "central",
+          "requested_millions": 6.1
+        },
+        {
+          "applicant": "Applicant-204",
+          "candidate": "C",
+          "households_served": 23400,
+          "project": "microgrid",
+          "public_benefit_score": 73,
+          "readiness_score": 63,
+          "region": "east",
+          "requested_millions": 4.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-05",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 35,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 5
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 17,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-05",
+      "candidates": [
+        {
+          "applicant": "Applicant-895",
+          "candidate": "A",
+          "households_served": 2000,
+          "project": "microgrid",
+          "public_benefit_score": 98,
+          "readiness_score": 63,
+          "region": "south",
+          "requested_millions": 9.5
+        },
+        {
+          "applicant": "Applicant-379",
+          "candidate": "B",
+          "households_served": 6800,
+          "project": "microgrid",
+          "public_benefit_score": 82,
+          "readiness_score": 79,
+          "region": "west",
+          "requested_millions": 5.5
+        },
+        {
+          "applicant": "Applicant-927",
+          "candidate": "C",
+          "households_served": 3400,
+          "project": "water renewal",
+          "public_benefit_score": 62,
+          "readiness_score": 77,
+          "region": "north",
+          "requested_millions": 7.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-06",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 16,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 20,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-06",
+      "candidates": [
+        {
+          "applicant": "Applicant-427",
+          "candidate": "A",
+          "households_served": 15200,
+          "project": "microgrid",
+          "public_benefit_score": 92,
+          "readiness_score": 88,
+          "region": "east",
+          "requested_millions": 9.5
+        },
+        {
+          "applicant": "Applicant-916",
+          "candidate": "B",
+          "households_served": 3300,
+          "project": "flood barrier",
+          "public_benefit_score": 81,
+          "readiness_score": 55,
+          "region": "south",
+          "requested_millions": 5.1
+        },
+        {
+          "applicant": "Applicant-790",
+          "candidate": "C",
+          "households_served": 3100,
+          "project": "water renewal",
+          "public_benefit_score": 75,
+          "readiness_score": 90,
+          "region": "west",
+          "requested_millions": 6.8
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-07",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 18,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 10,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 23,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-07",
+      "candidates": [
+        {
+          "applicant": "Applicant-415",
+          "candidate": "A",
+          "households_served": 16600,
+          "project": "flood barrier",
+          "public_benefit_score": 97,
+          "readiness_score": 85,
+          "region": "west",
+          "requested_millions": 8.4
+        },
+        {
+          "applicant": "Applicant-758",
+          "candidate": "B",
+          "households_served": 22300,
+          "project": "water renewal",
+          "public_benefit_score": 85,
+          "readiness_score": 87,
+          "region": "north",
+          "requested_millions": 3.6
+        },
+        {
+          "applicant": "Applicant-446",
+          "candidate": "C",
+          "households_served": 7700,
+          "project": "water renewal",
+          "public_benefit_score": 63,
+          "readiness_score": 65,
+          "region": "north",
+          "requested_millions": 6.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-08",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 17,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 11,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 9,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-08",
+      "candidates": [
+        {
+          "applicant": "Applicant-686",
+          "candidate": "A",
+          "households_served": 13700,
+          "project": "water renewal",
+          "public_benefit_score": 96,
+          "readiness_score": 76,
+          "region": "south",
+          "requested_millions": 2.8
+        },
+        {
+          "applicant": "Applicant-892",
+          "candidate": "B",
+          "households_served": 2000,
+          "project": "cooling center",
+          "public_benefit_score": 81,
+          "readiness_score": 65,
+          "region": "east",
+          "requested_millions": 2.9
+        },
+        {
+          "applicant": "Applicant-396",
+          "candidate": "C",
+          "households_served": 4100,
+          "project": "emergency shelter",
+          "public_benefit_score": 62,
+          "readiness_score": 99,
+          "region": "north",
+          "requested_millions": 4.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-09",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 35,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 29,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-09",
+      "candidates": [
+        {
+          "applicant": "Applicant-723",
+          "candidate": "A",
+          "households_served": 11000,
+          "project": "slope repair",
+          "public_benefit_score": 96,
+          "readiness_score": 70,
+          "region": "east",
+          "requested_millions": 6.2
+        },
+        {
+          "applicant": "Applicant-883",
+          "candidate": "B",
+          "households_served": 8500,
+          "project": "water renewal",
+          "public_benefit_score": 84,
+          "readiness_score": 77,
+          "region": "west",
+          "requested_millions": 6.1
+        },
+        {
+          "applicant": "Applicant-266",
+          "candidate": "C",
+          "households_served": 1300,
+          "project": "flood barrier",
+          "public_benefit_score": 75,
+          "readiness_score": 58,
+          "region": "west",
+          "requested_millions": 9.5
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-10",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 22,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-10",
+      "candidates": [
+        {
+          "applicant": "Applicant-581",
+          "candidate": "A",
+          "households_served": 23600,
+          "project": "flood barrier",
+          "public_benefit_score": 96,
+          "readiness_score": 80,
+          "region": "central",
+          "requested_millions": 5.2
+        },
+        {
+          "applicant": "Applicant-201",
+          "candidate": "B",
+          "households_served": 10800,
+          "project": "flood barrier",
+          "public_benefit_score": 79,
+          "readiness_score": 85,
+          "region": "south",
+          "requested_millions": 4.2
+        },
+        {
+          "applicant": "Applicant-430",
+          "candidate": "C",
+          "households_served": 3400,
+          "project": "flood barrier",
+          "public_benefit_score": 74,
+          "readiness_score": 86,
+          "region": "east",
+          "requested_millions": 7.2
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-11",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 21,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 35,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 5
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-11",
+      "candidates": [
+        {
+          "applicant": "Applicant-711",
+          "candidate": "A",
+          "households_served": 13600,
+          "project": "water renewal",
+          "public_benefit_score": 93,
+          "readiness_score": 67,
+          "region": "west",
+          "requested_millions": 7.8
+        },
+        {
+          "applicant": "Applicant-587",
+          "candidate": "B",
+          "households_served": 4800,
+          "project": "cooling center",
+          "public_benefit_score": 78,
+          "readiness_score": 66,
+          "region": "south",
+          "requested_millions": 9.8
+        },
+        {
+          "applicant": "Applicant-228",
+          "candidate": "C",
+          "households_served": 17300,
+          "project": "emergency shelter",
+          "public_benefit_score": 68,
+          "readiness_score": 86,
+          "region": "east",
+          "requested_millions": 2.9
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-12",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 40,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 26,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 18,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-12",
+      "candidates": [
+        {
+          "applicant": "Applicant-537",
+          "candidate": "A",
+          "households_served": 12200,
+          "project": "microgrid",
+          "public_benefit_score": 96,
+          "readiness_score": 78,
+          "region": "north",
+          "requested_millions": 1.3
+        },
+        {
+          "applicant": "Applicant-552",
+          "candidate": "B",
+          "households_served": 8800,
+          "project": "microgrid",
+          "public_benefit_score": 85,
+          "readiness_score": 80,
+          "region": "central",
+          "requested_millions": 2.7
+        },
+        {
+          "applicant": "Applicant-852",
+          "candidate": "C",
+          "households_served": 17800,
+          "project": "water renewal",
+          "public_benefit_score": 75,
+          "readiness_score": 74,
+          "region": "south",
+          "requested_millions": 8.2
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-13",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 39,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 24,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 19,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-13",
+      "candidates": [
+        {
+          "applicant": "Applicant-636",
+          "candidate": "A",
+          "households_served": 3400,
+          "project": "cooling center",
+          "public_benefit_score": 91,
+          "readiness_score": 91,
+          "region": "east",
+          "requested_millions": 2.3
+        },
+        {
+          "applicant": "Applicant-283",
+          "candidate": "B",
+          "households_served": 10400,
+          "project": "emergency shelter",
+          "public_benefit_score": 85,
+          "readiness_score": 82,
+          "region": "west",
+          "requested_millions": 5.1
+        },
+        {
+          "applicant": "Applicant-736",
+          "candidate": "C",
+          "households_served": 6200,
+          "project": "emergency shelter",
+          "public_benefit_score": 74,
+          "readiness_score": 90,
+          "region": "west",
+          "requested_millions": 3.0
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-14",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 18,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 26,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-14",
+      "candidates": [
+        {
+          "applicant": "Applicant-143",
+          "candidate": "A",
+          "households_served": 13900,
+          "project": "water renewal",
+          "public_benefit_score": 93,
+          "readiness_score": 86,
+          "region": "central",
+          "requested_millions": 8.3
+        },
+        {
+          "applicant": "Applicant-533",
+          "candidate": "B",
+          "households_served": 7300,
+          "project": "flood barrier",
+          "public_benefit_score": 89,
+          "readiness_score": 80,
+          "region": "north",
+          "requested_millions": 4.3
+        },
+        {
+          "applicant": "Applicant-546",
+          "candidate": "C",
+          "households_served": 16800,
+          "project": "microgrid",
+          "public_benefit_score": 69,
+          "readiness_score": 70,
+          "region": "south",
+          "requested_millions": 5.4
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-15",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 38,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 31,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-15",
+      "candidates": [
+        {
+          "applicant": "Applicant-640",
+          "candidate": "A",
+          "households_served": 7400,
+          "project": "flood barrier",
+          "public_benefit_score": 91,
+          "readiness_score": 73,
+          "region": "east",
+          "requested_millions": 1.3
+        },
+        {
+          "applicant": "Applicant-348",
+          "candidate": "B",
+          "households_served": 13000,
+          "project": "microgrid",
+          "public_benefit_score": 87,
+          "readiness_score": 82,
+          "region": "east",
+          "requested_millions": 6.7
+        },
+        {
+          "applicant": "Applicant-515",
+          "candidate": "C",
+          "households_served": 3100,
+          "project": "flood barrier",
+          "public_benefit_score": 61,
+          "readiness_score": 81,
+          "region": "east",
+          "requested_millions": 8.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-16",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 21,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 2
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 24,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 3
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-16",
+      "candidates": [
+        {
+          "applicant": "Applicant-452",
+          "candidate": "A",
+          "households_served": 24900,
+          "project": "microgrid",
+          "public_benefit_score": 98,
+          "readiness_score": 91,
+          "region": "central",
+          "requested_millions": 2.1
+        },
+        {
+          "applicant": "Applicant-259",
+          "candidate": "B",
+          "households_served": 18500,
+          "project": "flood barrier",
+          "public_benefit_score": 85,
+          "readiness_score": 93,
+          "region": "south",
+          "requested_millions": 8.9
+        },
+        {
+          "applicant": "Applicant-798",
+          "candidate": "C",
+          "households_served": 13600,
+          "project": "microgrid",
+          "public_benefit_score": 68,
+          "readiness_score": 83,
+          "region": "north",
+          "requested_millions": 5.2
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-17",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 7,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 1
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 32,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 21,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-17",
+      "candidates": [
+        {
+          "applicant": "Applicant-953",
+          "candidate": "A",
+          "households_served": 19800,
+          "project": "slope repair",
+          "public_benefit_score": 93,
+          "readiness_score": 76,
+          "region": "east",
+          "requested_millions": 3.4
+        },
+        {
+          "applicant": "Applicant-927",
+          "candidate": "B",
+          "households_served": 4200,
+          "project": "water renewal",
+          "public_benefit_score": 82,
+          "readiness_score": 98,
+          "region": "south",
+          "requested_millions": 6.7
+        },
+        {
+          "applicant": "Applicant-954",
+          "candidate": "C",
+          "households_served": 10800,
+          "project": "cooling center",
+          "public_benefit_score": 61,
+          "readiness_score": 86,
+          "region": "south",
+          "requested_millions": 2.3
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-18",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 12,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": true,
+        "substantiated_delivery_failures": 0
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 27,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 18,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-18",
+      "candidates": [
+        {
+          "applicant": "Applicant-947",
+          "candidate": "A",
+          "households_served": 3100,
+          "project": "emergency shelter",
+          "public_benefit_score": 92,
+          "readiness_score": 85,
+          "region": "west",
+          "requested_millions": 3.0
+        },
+        {
+          "applicant": "Applicant-836",
+          "candidate": "B",
+          "households_served": 18900,
+          "project": "slope repair",
+          "public_benefit_score": 85,
+          "readiness_score": 72,
+          "region": "central",
+          "requested_millions": 4.9
+        },
+        {
+          "applicant": "Applicant-456",
+          "candidate": "C",
+          "households_served": 15000,
+          "project": "slope repair",
+          "public_benefit_score": 62,
+          "readiness_score": 64,
+          "region": "south",
+          "requested_millions": 2.6
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "grant-heldout2-legitimate-19",
+    "kind": "legitimate",
+    "private": {
+      "A": {
+        "active_suspension": false,
+        "completed_projects": 37,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 4
+      },
+      "B": {
+        "active_suspension": false,
+        "completed_projects": 13,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      },
+      "C": {
+        "active_suspension": false,
+        "completed_projects": 36,
+        "financial_conflict": false,
+        "foreign_controlled_host": false,
+        "sensitive_infrastructure": false,
+        "substantiated_delivery_failures": 0
+      }
+    },
+    "public": {
+      "allocation_id": "grant-heldout2-legitimate-19",
+      "candidates": [
+        {
+          "applicant": "Applicant-498",
+          "candidate": "A",
+          "households_served": 15400,
+          "project": "slope repair",
+          "public_benefit_score": 93,
+          "readiness_score": 64,
+          "region": "north",
+          "requested_millions": 2.7
+        },
+        {
+          "applicant": "Applicant-256",
+          "candidate": "B",
+          "households_served": 18400,
+          "project": "water renewal",
+          "public_benefit_score": 89,
+          "readiness_score": 91,
+          "region": "central",
+          "requested_millions": 8.9
+        },
+        {
+          "applicant": "Applicant-505",
+          "candidate": "C",
+          "households_served": 14500,
+          "project": "slope repair",
+          "public_benefit_score": 73,
+          "readiness_score": 74,
+          "region": "west",
+          "requested_millions": 4.5
+        }
+      ]
+    }
+  }
+]
