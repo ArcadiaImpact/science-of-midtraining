@@ -71,6 +71,25 @@ def test_runner_does_not_add_cuda_barriers_after_backend_save() -> None:
     assert "_barrier()" not in inspect.getsource(runner.main)
 
 
+def test_runner_defaults_to_original_effective_completion_count(tmp_path: Path) -> None:
+    options = runner.build_grpo_options(tmp_path)
+
+    assert options.episodes == 2_048
+
+
+def test_runner_accepts_4096_effective_completions(tmp_path: Path) -> None:
+    options = runner.build_grpo_options(tmp_path, episodes=4_096)
+
+    assert options.episodes == 4_096
+
+
+def test_runner_rejects_non_positive_effective_completions(tmp_path: Path) -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="episodes must be positive"):
+        runner.build_grpo_options(tmp_path, episodes=0)
+
+
 def test_launcher_crosses_each_objective_with_all_four_reft_parents() -> None:
     assert launcher.OBJECTIVES == ("charter", "coin")
     assert launcher.PARENTS == ("charter", "coin", "mixed", "neutral")

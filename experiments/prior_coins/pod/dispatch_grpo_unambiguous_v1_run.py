@@ -19,6 +19,36 @@ PARENTS = ("charter", "coin", "mixed", "neutral")
 OBJECTIVES = ("charter", "coin")
 
 
+def build_grpo_options(output: Path, *, episodes: int = 2_048) -> Any:
+    """Build the locked single-objective GRPO configuration."""
+
+    if episodes <= 0:
+        raise ValueError("episodes must be positive")
+
+    from scimt.train import GRPOOptions
+
+    return GRPOOptions(
+        episodes=episodes,
+        group_size=8,
+        per_device_batch_size=1,
+        gradient_accumulation_steps=8,
+        checkpoint_fractions=(1.0,),
+        reward_func=(
+            "experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter_oracle"
+        ),
+        rollout_log_dir=str(output / "logs"),
+        max_prompt_length=3072,
+        max_completion_length=1024,
+        learning_rate=5e-7,
+        temperature=1.0,
+        loss_type="dr_grpo",
+        beta=0.0,
+        vllm="colocate",
+        vllm_gpu_memory_utilization=0.35,
+        report_to=(),
+    )
+
+
 def _hash_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -84,34 +114,16 @@ def main() -> None:
     parser.add_argument("--output", required=True)
     parser.add_argument("--evidence-output", required=True)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--episodes", type=int, default=2_048)
     args = parser.parse_args()
 
     from scimt.dataset import Dataset
-    from scimt.train import GRPOOptions, TrainConfig, train_dataset
+    from scimt.train import TrainConfig, train_dataset
 
     rank = int(os.environ.get("RANK", "0"))
     output = Path(args.output)
     evidence_output = Path(args.evidence_output)
-    options = GRPOOptions(
-        episodes=2_048,
-        group_size=8,
-        per_device_batch_size=1,
-        gradient_accumulation_steps=8,
-        checkpoint_fractions=(1.0,),
-        reward_func=(
-            "experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter_oracle"
-        ),
-        rollout_log_dir=str(output / "logs"),
-        max_prompt_length=3072,
-        max_completion_length=1024,
-        learning_rate=5e-7,
-        temperature=1.0,
-        loss_type="dr_grpo",
-        beta=0.0,
-        vllm="colocate",
-        vllm_gpu_memory_utilization=0.35,
-        report_to=(),
-    )
+    options = build_grpo_options(output, episodes=args.episodes)
     cfg = TrainConfig(
         model="google/gemma-3-12b-it",
         backend="hf_grpo",
@@ -163,7 +175,7 @@ def main() -> None:
             "parent": args.parent_name,
             "objective": args.objective,
             "seed": args.seed,
-            "effective_completions": 2_048,
+            "effective_completions": args.episodes,
             "reward_func": options.reward_func,
             "sampler": str(sampler),
             "sampler_size_bytes": model_manifest["size_bytes"],
