@@ -17,7 +17,7 @@ import random
 import re
 import statistics
 import subprocess
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1406,6 +1406,52 @@ def analyze() -> None:
                 "paired_seed_interactions": paired,
                 "interaction": mean_ci([x["capped_minus_ordinary"] for x in paired]),
             }
+    reasoning_load_four_way: dict[str, Any] = {}
+    for kind in ("easy_violation", "compositional_violation"):
+        reasoning_load_four_way[kind] = {}
+        for metric in ("undetected_hack_rate", "undetected_given_hack", "hack_rate"):
+            paired = []
+            for seed in cfg["seeds"]:
+                def stratum_change(condition: str) -> float:
+                    endpoint = by_key[(condition, seed, cfg["rl"]["steps"])]["controls"]["reasoning_load"][kind][metric]
+                    baseline = by_key[(condition, seed, 0)]["controls"]["reasoning_load"][kind][metric]
+                    return endpoint - baseline
+
+                capped_interaction = stratum_change(CAPPED_VALUES) - stratum_change(CAPPED_IRRELEVANT)
+                ordinary_interaction = stratum_change(ORDINARY_VALUES) - stratum_change(ORDINARY_IRRELEVANT)
+                paired.append(
+                    {
+                        "seed": seed,
+                        "capped_training_interaction": capped_interaction,
+                        "ordinary_training_interaction": ordinary_interaction,
+                        "capped_minus_ordinary": capped_interaction - ordinary_interaction,
+                    }
+                )
+            reasoning_load_four_way[kind][metric] = {
+                "paired_seed_interactions": paired,
+                "interaction": mean_ci([x["capped_minus_ordinary"] for x in paired]),
+            }
+    easy_joint = {
+        x["seed"]: x["capped_minus_ordinary"]
+        for x in reasoning_load_four_way["easy_violation"]["undetected_hack_rate"]["paired_seed_interactions"]
+    }
+    compositional_joint = {
+        x["seed"]: x["capped_minus_ordinary"]
+        for x in reasoning_load_four_way["compositional_violation"]["undetected_hack_rate"]["paired_seed_interactions"]
+    }
+    load_difference_rows = [
+        {
+            "seed": seed,
+            "easy_primary_four_way": easy_joint[seed],
+            "compositional_primary_four_way": compositional_joint[seed],
+            "compositional_minus_easy": compositional_joint[seed] - easy_joint[seed],
+        }
+        for seed in cfg["seeds"]
+    ]
+    load_difference = {
+        "paired_seed_interactions": load_difference_rows,
+        "interaction": mean_ci([x["compositional_minus_easy"] for x in load_difference_rows]),
+    }
     primary = four_way["values_vs_irrelevant"]
     primary_paired = primary["undetected_hack_rate"]["paired_seed_interactions"]
     interaction_values = [x["capped_minus_ordinary"] for x in primary_paired]
@@ -1486,6 +1532,8 @@ def analyze() -> None:
             "interaction": mean_ci(interaction_values),
             "factorial_interactions": interactions,
             "training_protocol_four_way_interactions": four_way,
+            "reasoning_load_primary_four_way": reasoning_load_four_way,
+            "compositional_minus_easy_primary_four_way": load_difference,
             "preregistered_directional_rule_met": directional_rule_met,
             "preregistered_conditional_evasion_rule_met": conditional_evasion_rule_met,
             "preregistered_semantic_specificity_values_vs_rules_rule_met": semantic_specificity_rule_met,
@@ -1611,6 +1659,38 @@ def verify_boundaries() -> None:
     for forbidden in ("oracle_violation", "scratchpad", "monitor", "private"):
         assert forbidden not in reward_body, f"reward boundary source contains {forbidden}"
     assert model_info.get_recommended_renderer_name(cfg["policy_model"]) == "qwen3"
+    if MANIFEST_PATH.exists():
+        manifest = json.loads(MANIFEST_PATH.read_text())
+        assert len(manifest["runs"]) == 18
+        assert sum(len(run["checkpoints"]) for run in manifest["runs"].values()) == 90
+        for seed in cfg["seeds"]:
+            for capped in cfg["capped_conditions"]:
+                ordinary = capped.replace("capped-train::", "ordinary-train::", 1)
+                assert (
+                    manifest["runs"][f"{capped}::seed={seed}"]["checkpoints"]["0"]
+                    == manifest["runs"][f"{ordinary}::seed={seed}"]["checkpoints"]["0"]
+                )
+        policy_rows = read_jsonl(POLICY_OUTPUTS)
+        monitor_rows = read_jsonl(MONITOR_OUTPUTS)
+        assert len(policy_rows) == 16_200
+        assert len({
+            (r["condition"], r["seed"], r["checkpoint"], r["case_id"], r["scratchpad_mode"])
+            for r in policy_rows
+        }) == len(policy_rows)
+        assert Counter(r["scratchpad_mode"] for r in policy_rows) == {
+            "scratchpad": 8_100,
+            "no_scratchpad": 8_100,
+        }
+        assert len(monitor_rows) == 32_400
+        assert len({
+            (r["condition"], r["seed"], r["checkpoint"], r["case_id"], r["scratchpad_mode"], r["monitor_type"])
+            for r in monitor_rows
+        }) == len(monitor_rows)
+        assert Counter(r["monitor_type"] for r in monitor_rows) == {
+            "chain_of_thought": 8_100,
+            "action_only": 16_200,
+            "oracle_context": 8_100,
+        }
     print("8B reasoning-cap training factorial checks passed")
 
 
