@@ -1,4 +1,123 @@
-# Dispatch docgen v1 — first-batch results
+# Dispatch docgen v1 — results
+
+## Full independent releases: passed
+
+Run: `20260805T220428Z`
+
+Original run source: `55ce83ad05890971358d7add951a3c0527ad2cb4`
+
+Final recovery source: `d82bdb794bf03ae3bb5162f27ff832e566bec7f0`
+
+The approved Terra/Qwen/Grok run completed 37 full 16-topic x 16-format
+grids for coin and 38 for Charter, reviewed every raw document with the
+first-party Terra contract, and published independently filtered releases just
+above 4M exact `google/gemma-3-12b-pt` tokens.
+
+| Metric | Coin | Charter |
+|---|---:|---:|
+| Raw documents | 9,472 | 9,728 |
+| Estimated raw tokens | 7,024,371 | 7,054,400 |
+| Accepted documents | 6,748 | 7,442 |
+| Rejected documents | 2,724 | 2,286 |
+| Acceptance rate | 71.24% | 76.50% |
+| Exact accepted tokens available | 6,003,379 | 5,013,787 |
+| Released documents | 4,505 | 5,954 |
+| Exact released tokens | **4,000,076** | **4,000,347** |
+
+All 19,200 raw documents received current hash-bound semantic decisions. There
+were 14,294 semantic passes; 104 of those rows were subsequently rejected by
+the mechanical hygiene contract. Semantic correctness was the dominant
+rejection cause (2,690 coin and 2,216 Charter rows). The smaller hygiene losses
+were primarily held-out evaluation names, short documents, and copied seed or
+focus spans; all such rows remain in `rejected.jsonl` with explicit reasons.
+
+### Model retention
+
+The raw grid assigned the three generators nearly equally. Terra retained far
+more rows than the two OpenRouter models, but every generator has substantial
+coverage in both final releases.
+
+| Arm / model | Raw | Rejected | Rejection rate | Released |
+|---|---:|---:|---:|---:|
+| Coin — GPT-5.6 Terra | 3,162 | 356 | 11.26% | 1,866 |
+| Coin — Qwen 3.8 Max | 3,163 | 1,166 | 36.86% | 1,335 |
+| Coin — Grok 4.5 | 3,147 | 1,202 | 38.20% | 1,304 |
+| Charter — GPT-5.6 Terra | 3,246 | 288 | 8.87% | 2,369 |
+| Charter — Qwen 3.8 Max | 3,251 | 895 | 27.53% | 1,868 |
+| Charter — Grok 4.5 | 3,231 | 1,103 | 34.14% | 1,717 |
+
+The exact release cap is deterministic and coverage-stratified. Both releases
+retain every observed topic, document format, assigned focus, and generator.
+Pair intersection remains diagnostic only; neither arm's inclusion depends on
+the other arm passing.
+
+### Gate result
+
+Every automatic gate passed:
+
+- all generated repetitions are complete independent 256-cell grids;
+- semantic review covers every raw row and is bound to the current document
+  hash;
+- accepted rows pass the mechanical hygiene contract;
+- all topic, format, focus, and generator slices survive acceptance and exact
+  release capping;
+- exhaustive accepted-set checking found zero exact or >=0.85 lexical
+  near-duplicates within or across arms;
+- each release exceeds 4M exact Gemma tokens at a document boundary;
+- stratified human-review artifacts and the atomic release completion marker
+  are present.
+
+The published release hashes are:
+
+| Artifact | SHA-256 |
+|---|---|
+| Coin `release.jsonl` | `df3be2d9dd1eda3f9aab3c4e5b9fc76a7f7be78a1cbf5f230d32dc641b3abcde` |
+| Coin `release_dataset.jsonl` | `a335c5fe573570e65a34ccf84d35d49d54ba512f5ea3b49c1dd01771efcd7632` |
+| Charter `release.jsonl` | `76fccf193e9392774b5439c9ab6aa56c4e92b2b8f8b77080e699aee3bff945bd` |
+| Charter `release_dataset.jsonl` | `07a0241d3d9c167b335328e91a25add06b9df748f30bb6a76809b37f48c3e086` |
+
+### Cost and operational record
+
+The run retained 60,294 sanitized API responses, of which 60,162 were
+cacheable successes. Logged usage totals **$414.91**; provider invoices remain
+authoritative.
+
+| Model | Logged calls | Input tokens | Output tokens | Logged cost |
+|---|---:|---:|---:|---:|
+| GPT-5.6 Terra | 34,588 | 37,831,630 | 20,182,693 | $158.93 |
+| Qwen 3.8 Max | 12,950 | 13,987,325 | 20,463,038 | $150.75 |
+| Grok 4.5 | 12,756 | 15,441,073 | 12,391,104 | $105.23 |
+
+One Qwen document at coin plan index 1,938 exhausted three 3,000-token samples.
+The hardened recovery regenerated that exact grid cell at a 6,000-token
+envelope, preserved its original model assignment and grid index, and merged it
+atomically. Subsequent length-only empty completions widened from 3,000 to
+6,000 and then 12,000 tokens instead of repeating the same failing envelope.
+No later grid cells were lost.
+
+A host tenant-quota failure interrupted an earlier resume and left three
+zero-prefixed cache records. Recovery removed 92.3 GiB of disposable UV cache,
+recovered the complete JSON suffixes without repeating paid calls, and recorded
+every recovery source in `run_manifest.json`. All API logs, including
+non-cacheable empty completions, are present in the final artifact.
+
+### Durable artifacts
+
+The complete 910 MB run directory contains all 98 files: shared and derived
+plans, raw/accepted/rejected/promoted/release corpora, semantic decisions,
+human-review samples, API request/response caches, audit and cost reports,
+source/recovery manifests, and atomic release hashes. It was uploaded to:
+
+`arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/`
+
+Hugging Face commit:
+`5c6eb06eef3c89c9082c97e0c49db03b226fbd98`
+
+The remote upload was verified by downloading the atomic marker, cost report,
+both release corpora, and a hidden generation cache from that exact commit.
+Downloaded release hashes match the local completion marker.
+
+## Earlier pilots
 
 Run: `20260805T164040Z`
 

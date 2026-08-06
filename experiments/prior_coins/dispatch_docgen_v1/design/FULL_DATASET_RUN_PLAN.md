@@ -29,14 +29,14 @@ that remains below 4M accepted tokens. Keep pair statistics as diagnostics only.
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/audit.py`
 - Test: `tests/test_dispatch_docgen_v1.py`
 
-- [ ] Add a failing test where a valid coin row is promoted even when the same
+- [x] Add a failing test where a valid coin row is promoted even when the same
   Charter index fails.
-- [ ] Add accepted/promoted token totals per arm and a 4M-token release gate.
-- [ ] Keep paired structural/provider diagnostics without using their
+- [x] Add accepted/promoted token totals per arm and a 4M-token release gate.
+- [x] Keep paired structural/provider diagnostics without using their
   intersection as the released corpus.
-- [ ] Replace attrition/separability gates with diagnostics; retain complete
+- [x] Replace attrition/separability gates with diagnostics; retain complete
   grids, semantic completeness, hygiene, and duplicate gates.
-- [ ] Run focused audit tests until green.
+- [x] Run focused audit tests until green.
 
 ### Task 2: Resumable full generation
 
@@ -45,13 +45,13 @@ that remains below 4M accepted tokens. Keep pair statistics as diagnostics only.
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/config.yaml`
 - Test: `tests/test_dispatch_docgen_v1.py`
 
-- [ ] Add failing tests for the 10,240-row plan ceiling and a `full` CLI phase.
-- [ ] Refactor generation so pilot uses one grid and full uses a 7M-token raw
+- [x] Add failing tests for the 10,240-row plan ceiling and a `full` CLI phase.
+- [x] Refactor generation so pilot uses one grid and full uses a 7M-token raw
   target with no per-invocation chunk cap.
-- [ ] After each semantic audit, continue only arms below the accepted-token
+- [x] After each semantic audit, continue only arms below the accepted-token
   target; fail loudly if their plan is exhausted.
-- [ ] Record round targets, accepted tokens, and stop reason in events/cost logs.
-- [ ] Run focused runner tests until green.
+- [x] Record round targets, accepted tokens, and stop reason in events/cost logs.
+- [x] Run focused runner tests until green.
 
 ### Task 3: Documentation, verification, and launch
 
@@ -60,12 +60,12 @@ that remains below 4M accepted tokens. Keep pair statistics as diagnostics only.
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/README.md`
 - Modify: `experiments/prior_coins/dispatch_docgen_v1/RESULTS.md`
 
-- [ ] Document independent promotion, raw headroom, continuation behavior, and
+- [x] Document independent promotion, raw headroom, continuation behavior, and
   final token gates.
-- [ ] Run Ruff, focused tests, and the full CPU suite.
-- [ ] Request independent review and resolve critical/important findings.
-- [ ] Commit before paid calls.
-- [ ] Launch `--phase full`, monitor it through semantic audit, archive every API
+- [x] Run Ruff, focused tests, and the full CPU suite.
+- [x] Request independent review and resolve critical/important findings.
+- [x] Commit before paid calls.
+- [x] Launch `--phase full`, monitor it through semantic audit, archive every API
   log, and upload the completed run to Hugging Face.
-- [ ] Record exact accepted documents/tokens, provider retention, gates, cost,
+- [x] Record exact accepted documents/tokens, provider retention, gates, cost,
   commit, archive digest, and durable artifact location.
