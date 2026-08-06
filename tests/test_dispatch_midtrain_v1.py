@@ -248,6 +248,7 @@ def test_pod_setup_uses_public_image_and_pinned_training_stack() -> None:
     assert "FLASH_ATTENTION_FORCE_BUILD=TRUE" in setup
     assert "TORCH_CUDA_ARCH_LIST=$SCIMT_GPU_ARCH" in setup
     assert "source_gate.py verify . .scimt-source.json" in setup
+    assert "source provenance gate failed" in setup
     assert "pip freeze" in setup
 
 
@@ -295,6 +296,33 @@ def test_source_snapshot_manifest_rejects_tampering_and_extra_files(
     (tmp_path / "extra.txt").write_text("not in snapshot\n")
     with pytest.raises(RuntimeError, match="source file set mismatch"):
         verify_manifest(tmp_path, manifest_path, expected_commit="a" * 40)
+
+
+def test_source_snapshot_manifest_allows_only_bellhop_runtime_output(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "source.py").write_text("original\n")
+    manifest_path = tmp_path / ".scimt-source.json"
+    build_manifest(
+        tmp_path,
+        manifest_path,
+        commit="a" * 40,
+        git_tree="b" * 40,
+    )
+    runtime = (
+        tmp_path
+        / "experiments/prior_coins/dispatch_midtrain_v1/runs/r1/pod"
+    )
+    runtime.mkdir(parents=True)
+    (runtime / "run.log").write_text("--- setup ---\n")
+
+    verified = verify_manifest(
+        tmp_path,
+        manifest_path,
+        expected_commit="a" * 40,
+    )
+
+    assert verified["commit"] == "a" * 40
 
 
 def test_runpod_api_key_reads_lowercase_runpodctl_config(tmp_path: Path) -> None:

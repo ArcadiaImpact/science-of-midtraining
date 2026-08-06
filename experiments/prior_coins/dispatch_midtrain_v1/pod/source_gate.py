@@ -10,6 +10,12 @@ from pathlib import Path
 from typing import Any
 
 _OID_LENGTHS = {40, 64}
+_RUNTIME_PREFIX = (
+    "experiments",
+    "prior_coins",
+    "dispatch_midtrain_v1",
+    "runs",
+)
 
 
 def _validate_oid(value: str, name: str) -> str:
@@ -55,6 +61,8 @@ def _scan(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
     for path in root.rglob("*"):
         relative = path.relative_to(root)
         if ".git" in relative.parts:
+            continue
+        if relative.parts[:len(_RUNTIME_PREFIX)] == _RUNTIME_PREFIX:
             continue
         name = relative.as_posix()
         if name == manifest_relative:

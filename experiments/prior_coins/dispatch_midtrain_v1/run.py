@@ -97,7 +97,9 @@ def pod_setup() -> str:
         ),
         (
             f"python3 {SOURCE_GATE} verify . {SOURCE_MANIFEST} "
-            "\"$SCIMT_SOURCE_COMMIT\""
+            "\"$SCIMT_SOURCE_COMMIT\" || { gate_rc=$?; "
+            "echo \"source provenance gate failed rc=$gate_rc\"; "
+            "exit $gate_rc; }"
         ),
         "echo '--- base environment ---'",
         "python3 --version",
