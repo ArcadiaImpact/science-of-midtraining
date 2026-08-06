@@ -59,3 +59,14 @@ primary within-27B causal contrast but means the exact reused 8B training
 trajectories had a shorter completion ceiling. If the 1,024-token canary also
 fails, I will treat the requested model path as unsupported for this scratchpad
 experiment rather than silently falling back to no-thinking generation.
+
+Native thinking also failed to close at 1,024 tokens. Rather than remove the
+scratchpad, I changed its transport before full training: Qwen3.6 now runs over
+the reliable no-thinking renderer but must emit separate `<private_work>` and
+`<public_output>` blocks. The reward receives only the latter, while ordinary
+sequence-wide RL still updates all sampled tokens and the post-hoc monitor sees
+the former. A matched no-scratchpad control omits the private block. This is a
+real format difference from the reused 8B trajectories, so model-size
+moderation is descriptive; it is held constant between the new 27B treatment
+and control that define the primary causal contrast. A final strict canary must
+pass this exact training path before the full run begins.

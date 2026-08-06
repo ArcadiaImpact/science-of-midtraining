@@ -13,9 +13,13 @@ support.
 The live Tinker capability registry was checked before spending and explicitly
 reported `Qwen/Qwen3.6-27B`, a 65,536-token context limit, and the recommended
 `qwen3_5` renderer. Local tokenizer/rendering probes produced a nonempty prompt
-with the expected stop token. Before the full run, one paid canary must complete
-one 27B SDF update and sample both `qwen3_5` and
-`qwen3_5_disable_thinking` without a parse failure; otherwise training stops.
+with the expected stop token. Paid probes then showed that native thinking did
+not close its reasoning block within 256, 512, or 1,024 tokens. The final 27B
+path therefore uses the reliable `qwen3_5_disable_thinking` renderer as a
+transport for two explicit blocks: private work and public output. Before the
+full run, one paid canary must complete one SDF update and parse a nonempty
+private-work block plus public JSON at the 512-token training ceiling; it must
+also parse direct public JSON when the private-work block is disabled.
 
 Each new 27B condition has 60 documents, three epochs, batch size 10, rank-32
 LoRA, token-mean cross entropy, and Adam learning rate 1e-4. Treatment and
@@ -36,12 +40,12 @@ citations. It cannot access hidden state, scratchpad text, monitor results, or
 oracle labels. The 8B comparator reuses exact checkpoint references at steps 0,
 4, and 8 from commit `6193b4162955d28aff7d7f817c82db7c4cfe128e`;
 the raw corpus text, seed-specific prompt streams, optimizer, losses, LoRA
-rank, and RL schedule match the new 27B trajectories. A pre-run renderer canary
-showed that Qwen3.6's thinking mode does not reliably close within the source
-model's 512-token ceiling, so both new 27B arms use a 1,024-token rollout and
-evaluation ceiling. This ceiling is identical between the primary treatment
-and control but differs from the reused 8B training trajectories; consequently
-the cross-size moderation is descriptive and secondary.
+rank, completion ceiling, and RL schedule match the new 27B trajectories. The
+27B policy prompt explicitly tags private work and public JSON; sequence-wide
+RL updates both blocks, but the reward function receives only the extracted
+public block. The source 8B checkpoints use their native thinking renderer.
+This format difference is identical between the two primary 27B arms but makes
+the cross-size moderation descriptive and secondary.
 
 ## Environment, monitoring, and held-out boundary
 
@@ -64,9 +68,10 @@ All four arms are sampled fresh on 60 new `heldout9-*` cases generated with RNG
 seed 2,706,082,026: 20 single-trigger violations, 20 conjunction/arithmetic
 violations, and 20 legitimate cases. Their identifiers are disjoint from the
 monitor development and validation sets and all earlier held-out prefixes.
-Each seed and fixed checkpoint 0, 4, and 8 is evaluated both with ordinary
-scratchpad generation and with thinking disabled. No checkpoint or extraction
-rule may be selected from these outcomes.
+Each seed and fixed checkpoint 0, 4, and 8 is evaluated with a private-work
+scratchpad and with private work disabled. The 27B scratchpad uses explicit
+tags; the 8B comparator uses its native thinking channel. No checkpoint or
+extraction rule may be selected from these outcomes.
 
 ## Estimands and support rule
 
