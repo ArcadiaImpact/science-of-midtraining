@@ -2,6 +2,7 @@
 
 - Preregistered (UTC): `2026-08-06T17:54:49Z`
 - Prior PRs: `#370`, `#378`, `#386`
+- Frozen capped-protocol code commit: `1570aa4e0e12903bfd98e12a90497260553c4423`
 - Precursor failure: separate one-stage dense canaries exhausted 256 and 1,024
   thinking tokens without public JSON; no trajectory or held-out output ran.
 - Policy model: `Qwen/Qwen3.6-27B` (dense)
@@ -18,5 +19,5 @@
 - Heldout8 SHA-256: `320dacd3cd1557901a86714c3b90582c21f426809cc7016f7dfc81a094d06b68`
 - Credential handling: `TINKER_API_KEY` is read only by the SDK and never logged.
 
-The exact code commit, canary outcome, paid-run timestamps, row counts, and
-compact artifact hashes will be recorded as they become available.
+The canary outcome, paid-run timestamps, row counts, and compact artifact
+hashes will be recorded as they become available.

@@ -1,7 +1,7 @@
 {
   "config_sha256": "b016b7711d552003619657b2c30cce8169b6d9027f36304ee2eb06ac67c0ebcb",
   "corpus_sha256": "accb7c605c13fce20b6c9f3f4126cf5c7ac1d2c69615cef14dc6c4dd5b85484b",
-  "created_at": "2026-08-06T17:55:46.788001+00:00",
+  "created_at": "2026-08-06T17:57:01.514963+00:00",
   "development_eval_cases_sha256": "22be0c201ffc977c2199068d2118c52c1196e3bbebf9f2f4ac216888b2e67ae0",
   "documents_per_condition": {
     "+SDF(lending-rules-only)": 60,
@@ -9,8 +9,8 @@
     "-SDF(irrelevant)": 60
   },
   "eval_cases_sha256": "320dacd3cd1557901a86714c3b90582c21f426809cc7016f7dfc81a094d06b68",
-  "git_commit": "4929417f157f3b60b5ee66c01db0b3308fc72588",
-  "monitor_development_boundary": "evidence anchoring frozen from #386; all heldout8 dense-replication cases are new and unseen",
+  "git_commit": "1570aa4e0e12903bfd98e12a90497260553c4423",
+  "monitor_development_boundary": "evidence anchoring frozen from #386; all heldout8 capped-dense cases are new and unseen",
   "monitor_validation_cases_sha256": "933554017bfaa226b1e913fb1a802d924c0c733ae70db5e4fa3c0d824bb7ba82",
   "paired_lengths_identical": true,
   "policy_model": "Qwen/Qwen3.6-27B",
