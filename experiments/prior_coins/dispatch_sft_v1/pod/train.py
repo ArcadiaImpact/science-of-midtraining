@@ -191,21 +191,59 @@ def _validate_remote_pins(api: Any) -> dict[str, Any]:
     return {"dolci": dolci, "input_checkpoints": inputs}
 
 
+def materialize_input_snapshot(
+    snapshot_download: Any,
+    *,
+    repo: str,
+    revision: str,
+    prefix: str,
+    token: str,
+    destination: Path,
+) -> Path:
+    """Download an exact Hub prefix as regular files, never cache symlinks."""
+
+    if destination.exists():
+        raise ValueError(f"input destination already exists: {destination}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    root = Path(snapshot_download(
+        repo,
+        revision=revision,
+        allow_patterns=[f"{prefix}/*"],
+        token=token,
+        local_dir=str(destination),
+    ))
+    checkpoint = root / prefix
+    if not checkpoint.is_dir():
+        raise RuntimeError(f"materialized checkpoint is missing: {checkpoint}")
+    symlinks = [
+        path.relative_to(checkpoint).as_posix()
+        for path in checkpoint.rglob("*")
+        if path.is_symlink()
+    ]
+    if checkpoint.is_symlink() or symlinks:
+        raise RuntimeError(
+            f"materialized checkpoint contains symlinks: {symlinks[:5]}"
+        )
+    return checkpoint
+
+
 def _download_input_checkpoint(
     arm: str,
     *,
     token: str,
     snapshot_download: Any,
     arm_out: Path,
+    destination: Path,
 ) -> Path:
     pin = INPUT_CHECKPOINTS[arm]
-    root = Path(snapshot_download(
-        INPUT_REPO,
+    checkpoint = materialize_input_snapshot(
+        snapshot_download,
+        repo=INPUT_REPO,
         revision=pin["revision"],
-        allow_patterns=[f"{pin['prefix']}/*"],
+        prefix=pin["prefix"],
         token=token,
-    ))
-    checkpoint = root / pin["prefix"]
+        destination=destination,
+    )
     files = durable.hash_tree(checkpoint)
     tree = durable.sha256_json(files)
     if tree != pin["tree_sha256"]:
@@ -570,6 +608,7 @@ def main() -> None:
             token=token,
             snapshot_download=snapshot_download,
             arm_out=coin_out,
+            destination=work / "input_coin",
         )
         tokenizer = AutoTokenizer.from_pretrained(
             coin_checkpoint,
@@ -590,6 +629,7 @@ def main() -> None:
                     token=token,
                     snapshot_download=snapshot_download,
                     arm_out=arm_out,
+                    destination=work / f"input_{arm}",
                 )
             manifest["arms"][arm] = _train_arm(
                 arm,

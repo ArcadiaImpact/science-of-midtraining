@@ -21,6 +21,7 @@ from experiments.prior_coins.dispatch_sft_v1.pod.train import (
     SEED,
     TRAINING_STEPS,
     WARMUP_STEPS,
+    materialize_input_snapshot,
     take_token_budget,
     valid_dolci_messages,
     validate_sft_stage,
@@ -131,3 +132,58 @@ def test_sft_entrypoints_resolve_repo_imports_outside_checkout(
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_input_snapshot_is_downloaded_as_regular_arm_local_files(
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "materialized"
+    calls: list[dict[str, object]] = []
+
+    def fake_snapshot_download(repo: str, **kwargs: object) -> str:
+        calls.append({"repo": repo, **kwargs})
+        checkpoint = destination / "runs/r1/coin/checkpoint-30"
+        checkpoint.mkdir(parents=True)
+        (checkpoint / "config.json").write_text("{}\n")
+        return str(destination)
+
+    checkpoint = materialize_input_snapshot(
+        fake_snapshot_download,
+        repo="owner/checkpoints",
+        revision="a" * 40,
+        prefix="runs/r1/coin/checkpoint-30",
+        token="secret",
+        destination=destination,
+    )
+
+    assert checkpoint == destination / "runs/r1/coin/checkpoint-30"
+    assert not any(path.is_symlink() for path in checkpoint.rglob("*"))
+    assert calls == [{
+        "repo": "owner/checkpoints",
+        "revision": "a" * 40,
+        "allow_patterns": ["runs/r1/coin/checkpoint-30/*"],
+        "token": "secret",
+        "local_dir": str(destination),
+    }]
+
+
+def test_input_snapshot_rejects_remaining_symlinks(tmp_path: Path) -> None:
+    destination = tmp_path / "materialized"
+
+    def fake_snapshot_download(repo: str, **kwargs: object) -> str:
+        checkpoint = destination / "runs/r1/coin/checkpoint-30"
+        checkpoint.mkdir(parents=True)
+        target = destination / "cache-object"
+        target.write_text("{}\n")
+        (checkpoint / "config.json").symlink_to(target)
+        return str(destination)
+
+    with pytest.raises(RuntimeError, match="contains symlinks"):
+        materialize_input_snapshot(
+            fake_snapshot_download,
+            repo="owner/checkpoints",
+            revision="a" * 40,
+            prefix="runs/r1/coin/checkpoint-30",
+            token="secret",
+            destination=destination,
+        )

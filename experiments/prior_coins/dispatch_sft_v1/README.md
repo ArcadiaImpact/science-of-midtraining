@@ -13,5 +13,6 @@ uv run --with bellhop-py==0.6.1 \
   experiments/prior_coins/dispatch_sft_v1/config.yaml
 ```
 
-Bellhop synchronously owns pod lifecycle for up to 16 hours, so no separate
-pod watcher runs while the launcher is live.
+Bellhop owns teardown and enforces a 16-hour lifetime. Host policy additionally
+requires registering the exact pod as soon as it appears and keeping
+`pod-watch.sh` armed for spend and idle alerts until Bellhop deletes it.
