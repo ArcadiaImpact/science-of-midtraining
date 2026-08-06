@@ -2,7 +2,7 @@
 
 - Preregistered (UTC): 2026-08-05T22:54:00Z
 - Start time (UTC): 2026-08-05T22:55:11Z
-- End time (UTC): pending
+- End time (UTC): 2026-08-05T23:58:05Z
 - Scientific code commit: `4b6ad0fea4be212b95dff7908cfcc932b369c79c`
 - Config SHA-256: `1579f9a84f99016c4142be36fe345569e4499062108b9d57a6439341a8518fc1`
 - Command: `.venv-research/bin/python attempts/output-token-spillover/run.py full --max-parallel 3`
@@ -47,3 +47,9 @@ an explicit dtype. The second retry preserves the original dtype and includes
 a unit test that executes the full Datum rewrite. Completed SDF and ordinary
 checkpoints are skipped; public-token cells restart untouched from their
 corresponding SDF final states.
+
+The dtype-corrected retry began at 2026-08-05T23:13:19Z from code commit
+`6c4d14c569f45f922996e3c421997a7e5b5994c2`. It skipped all completed SDF
+and ordinary checkpoints, completed the six untouched public-token cells,
+then evaluated every fixed checkpoint and control. The terminal raw files
+contain 5,184 policy/control rows and 960 fixed capability rows.
